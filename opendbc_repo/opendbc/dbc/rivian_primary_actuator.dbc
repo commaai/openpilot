@@ -1,0 +1,1021 @@
+VERSION "PrimaryActuatorCAN"
+
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: ACM CGM EPAS_P ESP IBM OCS RCM SAS TestTool VDM Vector_XXX
+
+
+BO_ 64 SAS_Status: 8 SAS
+ SG_ SAS_Status_Checksum : 7|8@0+ (1,0) [0|255] "Unitless" ACM,EPAS_P,ESP,RCM,VDM
+ SG_ SAS_Status_Counter : 11|4@0+ (1,0) [0|15] "Unitless" ACM,EPAS_P,ESP,RCM,VDM
+ SG_ SAS_Status_AngleSafe : 23|15@0- (0.0009765625,0) [-14.5|14.5] "rad" ACM,EPAS_P,ESP,RCM,VDM
+ SG_ SAS_Status_Calibrated : 24|1@0+ (1,0) [0|1] "" ACM,EPAS_P,ESP,RCM,VDM
+ SG_ SAS_Status_AngleSpeedSafe : 39|14@0- (0.0078125,0) [-50|50] "rad/s" ACM,EPAS_P,ESP,RCM,VDM
+ SG_ SAS_StatusQ : 41|2@0+ (1,0) [0|3] "" ACM,EPAS_P,ESP,RCM,VDM
+
+BO_ 256 ACM_Status: 8 ACM
+ SG_ ACM_Status_Checksum : 7|8@0+ (1,0) [0|255] "-" EPAS_P,VDM
+ SG_ ACM_Status_Counter : 11|4@0+ (1,0) [0|15] "-" EPAS_P,VDM
+ SG_ ACM_Unkown1 : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACM_FeatureStatus : 23|3@0+ (1,0) [0|7] "" EPAS_P,VDM
+ SG_ ACM_FaultStatus : 26|3@0+ (1,0) [0|7] "" EPAS_P,VDM
+ SG_ ACM_FaultSupervisorState : 42|3@0+ (1,0) [0|7] "" ACMB
+
+BO_ 257 ACM_AebRequest: 8 ACM
+ SG_ ACM_AebRequest_Checksum : 7|8@0+ (1,0) [0|255] "" ESP,VDM
+ SG_ ACM_AebRequest_Counter : 11|4@0+ (1,0) [0|15] "" ESP,VDM
+ SG_ ACM_StopRequest : 17|1@0+ (1,0) [0|1] "" ESP,VDM
+ SG_ ACM_FailInfo : 19|2@0+ (1,0) [0|3] "" ESP,VDM
+ SG_ ACM_DbsLevel : 21|2@0+ (1,0) [0|3] "" ESP,VDM
+ SG_ ACM_OnOffStatus : 23|2@0+ (1,0) [0|3] "" ESP,VDM
+ SG_ ACM_DecelRequest : 27|12@0+ (0.004885,0) [0|15.998375] "m/s^2" ESP,VDM
+ SG_ ACM_WarnLevel : 44|2@0+ (1,0) [0|3] "" ESP,VDM
+ SG_ ACM_PrefillEnableRequest : 46|1@0+ (1,0) [0|1] "" ESP,VDM
+ SG_ ACM_EnableRequest : 47|1@0+ (1,0) [0|1] "" ESP,VDM
+
+BO_ 258 ESP_AebFb: 8 ESP
+ SG_ ESP_AebFeedback_Checksum : 7|8@0+ (1,0) [0|255] "" ACM
+ SG_ ESP_AebFeedback_Counter : 11|4@0+ (1,0) [0|15] "" ACM
+ SG_ iB_BrakePedalApplied_Q : 14|2@0+ (1,0) [0|3] "" ACM
+ SG_ iB_BrakePedalApplied : 15|1@0+ (1,0) [0|1] "" ACM
+ SG_ ESP_DecelFeedback : 23|12@0+ (0.004885,-16) [-16|3.99919] "m/s^2" ACM
+ SG_ ESP_AebActive : 24|1@0+ (1,0) [0|1] "" ACM
+ SG_ ESP_AebAvailable : 25|1@0+ (1,0) [0|1] "" ACM
+ SG_ ESP_DbsActive : 26|1@0+ (1,0) [0|1] "" ACM
+ SG_ ESP_PrefillActiveFeedback : 27|1@0+ (1,0) [0|1] "" ACM
+ SG_ ESP_PrefillAvailable : 32|1@0+ (1,0) [0|1] "" ACM
+ SG_ ESP_DbsAvailable : 33|1@0+ (1,0) [0|1] "" ACM
+
+BO_ 272 ACM_SteeringControl: 8 ACM
+ SG_ ACM_SteeringControl_Checksum : 7|8@0+ (1,0) [0|0] "" EPAS_P
+ SG_ ACM_SteeringControl_Counter : 11|4@0+ (1,0) [0|0] "" EPAS_P
+ SG_ ACM_EacEnabled : 13|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_HapticRequired : 15|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_SteeringAngleRequest : 23|15@0+ (0.1,-1638.4) [-1638.4|1638.3] "deg" EPAS_P
+
+BO_ 288 ACM_lkaHbaCmd: 8 ACM
+ SG_ ACM_lkaHbaCmd_Checksum : 7|8@0+ (1,0) [0|255] "" EPAS_P
+ SG_ ACM_lkaHbaCmd_Counter : 11|4@0+ (1,0) [0|15] "" EPAS_P
+ SG_ ACM_lkaElkRequest : 14|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_HapticRequest : 15|1@0+ (1,0) [0|1] "" EPAS_P
+ SG_ ACM_lkaStrToqReq : 23|11@0+ (1,-1024) [-1024|1024] "" EPAS_P
+ SG_ ACM_lkaSymbolState : 26|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_lkaToiFlt : 27|1@0+ (1,0) [0|1] "" EPAS_P
+ SG_ ACM_lkaActToi : 28|1@0+ (1,0) [0|1] "" EPAS_P
+ SG_ ACM_hbaSysState : 34|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_hbaLamp : 35|1@0+ (1,0) [0|1] "" EPAS_P
+ SG_ ACM_slifOnOffState : 37|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_elkOnOffState : 39|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_ldwLHWarning : 43|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_lkaLaneRecogState : 45|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_hbaOnOffState : 47|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_ldwlkaOnOffState : 48|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_ldwWarnTimingState : 51|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_lkaHandsoffSoundWarning : 53|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_lkaHandsoffDisplayWarning : 55|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_ldwRHWarning : 58|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_ldwWarnTypeState : 61|3@0+ (1,0) [0|7] "" EPAS_P
+
+BO_ 304 RCM_IMU_LatAccYaw: 8 RCM
+ SG_ RCM_LateralAccelYaw_Checksum : 7|8@0+ (1,0) [0|25] "" ACM,ESP,VDM
+ SG_ RCM_LateralAccelYaw_Counter : 11|4@0+ (1,0) [0|15] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LatAcc_Stat_SensAvail : 12|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LatAcc_Stat_Fail : 13|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LatAcc_Stat_Init : 14|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LatAcc_Stat_Startup : 15|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_Yaw_Stat_SensAvail : 16|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_Yaw_Stat_Fail : 17|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_Yaw_Stat_Init : 18|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_Yaw_Stat_Startup : 19|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LatAcc : 39|16@0+ (0.004998293,-163.784065024) [-40.961|40.961] "m/s2" ACM,ESP,VDM
+ SG_ RCM_IMU_Yaw : 55|16@0+ (0.0125,-409.6) [-163.85|163.85] "deg/sec" ACM,ESP,VDM
+
+BO_ 309 RCM_IMU_HeaveRoll: 8 RCM
+ SG_ RCM_HeaveRoll_Checksum : 7|8@0+ (1,0) [0|25] "" VDM
+ SG_ RCM_HeaveRoll_Counter : 11|4@0+ (1,0) [0|15] "" VDM
+ SG_ RCM_IMU_Heave : 23|16@0+ (0.004998293,-163.784065024) [-34.32328|34.32328] "m/s2" VDM
+ SG_ RCM_IMU_Roll : 39|16@0+ (0.0125,-409.6) [-100.0125|100.0125] "deg/sec" VDM
+ SG_ RCM_IMU_Roll_Stat_SensAvail : 48|1@0+ (1,0) [0|1] "" VDM
+ SG_ RCM_IMU_Roll_Stat_Fail : 49|1@0+ (1,0) [0|1] "" VDM
+ SG_ RCM_IMU_Roll_Stat_Init : 50|1@0+ (1,0) [0|1] "" VDM
+ SG_ RCM_IMU_Roll_Stat_Startup : 51|1@0+ (1,0) [0|1] "" VDM
+ SG_ RCM_IMU_Heave_Stat_SensAvail : 52|1@0+ (1,0) [0|1] "" VDM
+ SG_ RCM_IMU_Heave_Stat_Fail : 53|1@0+ (1,0) [0|1] "" VDM
+ SG_ RCM_IMU_Heave_Stat_Init : 54|1@0+ (1,0) [0|1] "" VDM
+ SG_ RCM_IMU_Heave_Stat_Startup : 55|1@0+ (1,0) [0|1] "" VDM
+
+BO_ 320 RCM_IMU_LongAcc: 8 RCM
+ SG_ RCM_LongAcc_Checksum : 7|8@0+ (1,0) [0|25] "" ACM,ESP,VDM
+ SG_ RCM_LongAcc_Counter : 11|4@0+ (1,0) [0|15] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LongAcc_Sig : 39|16@0+ (0.004998293,-163.784065024) [-40.961|40.961] "m/s2" ACM,ESP,VDM
+ SG_ RCM_IMU_LongAcc_Stat_SensAvail : 48|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LongAcc_Stat_Fail : 49|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LongAcc_Stat_Init : 50|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LongAcc_Stat_Startup : 51|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+
+BO_ 336 VDM_PropStatus: 7 VDM
+ SG_ VDM_PropStatus_Checksum : 7|8@0+ (1,0) [0|255] "Unitless" ACM,EPAS_P,ESP,RCM
+ SG_ VDM_PropStatus_Counter : 11|4@0+ (1,0) [0|15] "Unitless" ACM,EPAS_P,ESP,RCM
+ SG_ VDM_PropsnActv : 13|2@0+ (1,0) [0|3] "" ACM,EPAS_P,ESP,RCM
+ SG_ VDM_VehicleSpeedQ : 15|2@0+ (1,0) [0|3] "" ACM,EPAS_P,ESP,RCM
+ SG_ VDM_Prndl_Status : 19|4@0+ (1,0) [0|15] "" ACM,EPAS_P,ESP,RCM
+ SG_ VDM_Prndl_Request : 23|4@0+ (1,0) [0|15] "" ACM,EPAS_P,ESP,RCM
+ SG_ VDM_AcceleratorPedalPosition : 31|10@0+ (0.1,0) [0|102.3] "" ACM,EPAS_P,ESP,RCM
+ SG_ VDM_VehicleSpeed : 47|16@0+ (0.01,0) [0|400] "Kph" ACM,EPAS_P,ESP,RCM
+
+BO_ 338 VDM_OutputSignals: 8 VDM
+ SG_ VDM_OutputSigs_Checksum : 7|8@0+ (1,0) [0|255] "Unitless" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_OutputSigs_Counter : 11|4@0+ (1,0) [0|15] "Unitless" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_LfcRequestType : 13|2@0+ (1,0) [0|3] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_LfcActiveRequest : 14|1@0+ (1,0) [0|1] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_BrakeLightRequest : 15|1@0+ (1,0) [0|0] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_Lfc_BrakeTorqueRequest : 23|15@0+ (2,-65534) [-65534|0] "Nm" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_StcTorqueRequest : 39|11@0+ (0.0078125,-8) [-8|7.9921875] "Nm" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_StcFault : 43|1@0+ (1,0) [0|1] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_StcActiveRequest : 44|1@0+ (1,0) [0|1] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_EpbRequest : 49|2@0+ (1,0) [0|3] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_ABSOffRoadModeRequest : 50|1@0+ (1,0) [0|1] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_HhcActiveRequest : 51|1@0+ (1,0) [0|1] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_EspPartialModeRequest : 53|2@0+ (1,0) [0|3] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_SteeringModeRequest : 59|2@0+ (1,0) [0|3] "" ACM,EPAS_P,ESP,IBM,RCM
+ SG_ VDM_EpasPowerMode : 61|2@0+ (1,0) [0|3] "" ACM,EPAS_P,ESP,IBM,RCM
+
+BO_ 352 ACM_longitudinalRequest: 5 ACM
+ SG_ ACM_longitudinalRequest_Checksum : 7|8@0+ (1,0) [0|255] "-" VDM
+ SG_ ACM_longitudinalRequest_Counter : 11|4@0+ (1,0) [0|15] "-" VDM
+ SG_ ACM_AccelerationRequest : 23|11@0+ (0.01,-10.24) [-10.24|10.23] "m/s^2" VDM
+ SG_ ACM_PrndRequest : 27|4@0+ (1,0) [0|7] "" VDM
+ SG_ ACM_longInterfaceEnable : 37|2@0+ (1,0) [0|3] "" VDM
+ SG_ ACM_VehicleHoldRequest : 39|2@0+ (1,0) [0|3] "" VDM
+
+BO_ 354 VDM_AdasSts: 8 VDM
+ SG_ VDM_AdasStatus_Checksum : 7|8@0+ (1,0) [0|0] "" ACM
+ SG_ VDM_AdasStatus_Counter : 11|4@0+ (1,0) [0|0] "" ACM
+ SG_ VDM_AdasDecelLimit : 17|10@0+ (0.01,0) [0|-10.23] "m/s^2" ACM
+ SG_ VDM_AdasDriverAccelPriorityStatus : 19|2@0+ (1,0) [0|3] "" ACM
+ SG_ VDM_AdasFaultStatus : 23|4@0+ (1,0) [0|15] "" ACM
+ SG_ VDM_AdasAccelLimit : 33|10@0+ (0.01,0) [0|10.23] "m/s^2" ACM
+ SG_ VDM_AdasDriverModeStatus : 36|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AdasUnkown1 : 50|8@0+ (1,0) [0|255] "" XXX
+ SG_ VDM_AdasInterfaceStatus : 52|2@0+ (1,0) [0|3] "" ACM
+ SG_ VDM_AdasVehicleHoldStatus : 55|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_UserAdasRequest : 58|3@0+ (1,0) [0|7] "" ACM
+
+BO_ 357 VDM_AdasStalk: 4 VDM
+ SG_ VDM_AdasStalk_Checksum : 7|8@0+ (1,0) [0|255] "Unitless" ACM
+ SG_ VDM_AdasStalk_Counter : 11|4@0+ (1,0) [0|15] "Unitless" ACM
+ SG_ VDM_AdasStalkGapAdjust : 17|2@0+ (1,0) [0|3] "" ACM
+ SG_ VDM_AdasStalkAccCancelRes : 19|2@0+ (1,0) [0|3] "" ACM
+ SG_ VDM_AdasStalkAutonomyButton : 20|1@0+ (1,0) [0|1] "" ACM
+ SG_ VDM_AdasStalkAccEnableAdj : 23|3@0+ (1,0) [0|7] "" ACM
+
+BO_ 384 VDM_CGM_GW: 8 CGM
+ SG_ VDM_CGM_GW_Checksum : 7|8@0+ (1,0) [0|0] "" ESP,IBM
+ SG_ VDM_CGM_GW_Counter : 11|4@0+ (1,0) [0|0] "" ESP,IBM
+ SG_ CGM_TrailerPresent : 13|2@0+ (1,0) [0|3] "" ESP,IBM
+ SG_ CGM_DriverPresent : 15|2@0+ (1,0) [0|3] "" ESP,IBM
+ SG_ CGM_TimeSinceLastIgnitionOn : 23|16@0+ (1,0) [0|65535] "s" ESP,IBM
+ SG_ CGM_IgnSwtState : 35|4@0+ (1,0) [0|15] "" ESP,IBM
+
+BO_ 432 ESP_TorqueLimit_Front: 8 ESP
+ SG_ ESP_Torque_Front_Checksum : 7|8@0+ (1,0) [0|255] "" VDM
+ SG_ ESP_Torque_Front_Counter : 11|4@0+ (1,0) [0|15] "" VDM
+ SG_ ESP_Torque_Front_MinQ : 14|1@0+ (1,0) [0|1] "" VDM
+ SG_ ESP_Torque_Front_MaxQ : 15|1@0+ (1,0) [0|1] "" VDM
+ SG_ ESP_Torque_Front_Max : 23|16@0+ (0.5,-16384) [-16384|16383] "Nm" VDM
+ SG_ ESP_Torque_Front_Min : 39|16@0+ (0.5,-16384) [-16384|16383] "Nm" VDM
+
+BO_ 448 ESP_TorqueLimit_Rear: 8 ESP
+ SG_ ESP_Torque_Rear_Checksum : 7|8@0+ (1,0) [0|255] "" VDM
+ SG_ ESP_Torque_Rear_Counter : 11|4@0+ (1,0) [0|15] "" VDM
+ SG_ ESP_Torque_Rear_MinQ : 14|1@0+ (1,0) [0|1] "" VDM
+ SG_ ESP_Torque_Rear_MaxQ : 15|1@0+ (1,0) [0|1] "" VDM
+ SG_ ESP_Torque_Rear_Max : 23|16@0+ (0.5,-16384) [-16384|16383] "Nm" VDM
+ SG_ ESP_Torque_Rear_Min : 39|16@0+ (0.5,-16384) [-16384|16383] "Nm" VDM
+
+BO_ 516 RCM_ALR_Status: 8 RCM
+ SG_ RCM_ALR_Status_Signal : 0|2@1+ (1,0) [0|3] "" OCS
+
+BO_ 520 ESP_Status: 8 ESP
+ SG_ ESP_Status_Checksum : 7|8@0+ (1,0) [0|255] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Status_Counter : 11|4@0+ (1,0) [0|15] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_BrakeLightActive_Q : 12|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_BrakeLightActive : 13|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Hhc_Active : 14|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Hhc_Available : 15|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Abs_OffRoad_Mode : 16|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Tsm_Active : 17|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_FaultLamp_EBD : 18|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_FaultLamp_VDC : 19|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_FaultLamp_ABS : 20|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Esp_Active : 21|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Abs_Active : 23|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Partial_Mode : 25|2@0+ (1,0) [0|3] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Dtc_Active : 26|1@0+ (1,0) [0|1] "Enum" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Vehicle_Speed_Q : 28|2@0+ (1,0) [0|3] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Lfc_Available : 30|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Hba_Active : 31|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_BrkTrq : 38|15@0+ (2,-65534) [-65534|0] "Nm" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Lfc_Active : 39|1@0+ (1,0) [0|1] "" ACM,CGM,EPAS_P,RCM,VDM
+ SG_ ESP_Vehicle_Speed : 55|16@0+ (0.01,0) [0|400] "kph" ACM,CGM,EPAS_P,RCM,VDM
+
+BO_ 521 ESP_WSpeed_Front: 8 ESP
+ SG_ ESP_WSpeed_Front_CRC : 7|8@0+ (1,0) [0|255] "" ACM,VDM
+ SG_ ESP_WSpeed_Front_Message_Counter : 11|4@0+ (1,0) [0|15] "" ACM,VDM
+ SG_ ESP_Wheel_Speed_Left_Front_Q : 13|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Speed_Right_Front_Q : 15|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Speed_Left_Front : 23|16@0+ (0.01,0) [0|400] "kph" ACM,VDM
+ SG_ ESP_Wheel_Speed_Right_Front : 39|16@0+ (0.01,0) [0|400] "kph" ACM,VDM
+ SG_ ESP_Wheel_Dir_Right_Front : 53|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Dir_Left_Front : 55|2@0+ (1,0) [0|3] "" ACM,VDM
+
+BO_ 522 ESP_WSpeed_Rear: 8 ESP
+ SG_ ESP_WSpeed_Rear_CRC : 7|8@0+ (1,0) [0|255] "" ACM,VDM
+ SG_ ESP_WSpeed_Rear_Message_Counter : 11|4@0+ (1,0) [0|15] "" ACM,VDM
+ SG_ ESP_Wheel_Speed_Left_Rear_Q : 13|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Speed_Right_Rear_Q : 15|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Speed_Left_Rear : 23|16@0+ (0.01,0) [0|400] "kph" ACM,VDM
+ SG_ ESP_Wheel_Speed_Right_Rear : 39|16@0+ (0.01,0) [0|400] "kph" ACM,VDM
+ SG_ ESP_Wheel_Dir_Right_Rear : 53|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Dir_Left_Rear : 55|2@0+ (1,0) [0|3] "" ACM,VDM
+
+BO_ 523 ESP_Wheel_Pulse_Veh: 8 ESP
+ SG_ ESP_Wheel_Pulse_CRC : 7|8@0+ (1,0) [0|255] "" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Message_Counter : 11|4@0+ (1,0) [0|15] "" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Left_Front : 23|8@0+ (1,0) [0|255] "Pulse" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Left_Rear : 31|8@0+ (1,0) [0|255] "Pulse" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Right_Front : 39|8@0+ (1,0) [0|255] "Pulse" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Right_Rear : 47|8@0+ (1,0) [0|255] "Pulse" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Right_Front_Q : 49|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Right_Rear_Q : 51|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Left_Rear_Q : 53|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_Wheel_Pulse_Left_Front_Q : 55|2@0+ (1,0) [0|3] "" ACM,VDM
+
+BO_ 524 ESP_Brake_Pressure: 8 ESP
+ SG_ ESP_BrakeP_Checksum : 7|8@0+ (1,0) [0|255] "" ACM,RCM,VDM
+ SG_ ESP_BrakeP_Message_Counter : 11|4@0+ (1,0) [0|15] "" ACM,RCM,VDM
+ SG_ ESP_BrakePressure_RF_Q : 13|2@0+ (1,0) [0|3] "" ACM,RCM,VDM
+ SG_ ESP_BrakePressure_LF_Q : 15|2@0+ (1,0) [0|3] "" ACM,RCM,VDM
+ SG_ ESP_BrakePressure_LF : 23|8@0+ (1,0) [0|255] "bar" ACM,RCM,VDM
+ SG_ ESP_BrakePressure_LR : 31|8@0+ (1,0) [0|255] "bar" ACM,RCM,VDM
+ SG_ ESP_BrakePressure_RF : 39|8@0+ (1,0) [0|255] "bar" ACM,RCM,VDM
+ SG_ ESP_BrakePressure_RR : 47|8@0+ (1,0) [0|255] "bar" ACM,RCM,VDM
+ SG_ ESP_MasterCyl_Pressure : 55|10@0+ (0.25,0) [0|255] "bar" ACM,RCM,VDM
+ SG_ ESP_MasterCyl_Pressure_Q : 57|2@0+ (1,0) [0|3] "" ACM,RCM,VDM
+ SG_ ESP_BrakePressure_RR_Q : 59|2@0+ (1,0) [0|3] "" ACM,RCM,VDM
+ SG_ ESP_BrakePressure_LR_Q : 61|2@0+ (1,0) [0|3] "" ACM,RCM,VDM
+
+BO_ 529 VDM_Torque_Front: 8 VDM
+ SG_ VDM_Torque_Front_Checksum : 7|8@0+ (1,0) [0|255] "Unitless" ESP
+ SG_ VDM_Torque_Front_Counter : 11|4@0+ (1,0) [0|15] "Unitless" ESP
+ SG_ VDM_Torque_Front_Max : 23|11@0+ (1,-1023) [-1023|1024] "Nm" ESP
+ SG_ VDM_Torque_Front_Min : 26|11@0+ (1,-1023) [-1023|1024] "Nm" ESP
+ SG_ VDM_Torque_Front_MaxQ : 28|1@0+ (1,0) [0|1] "" ESP
+ SG_ VDM_OutputTorqueFront : 47|11@0+ (1,-1023) [-1023|1024] "Nm" ESP
+ SG_ VDM_DriverIntendedTorqueFront : 50|11@0+ (1,-1023) [-1023|1024] "Nm" ESP
+ SG_ VDM_OutputTorqueFrontQ : 51|1@0+ (1,0) [0|1] "" ESP
+ SG_ VDM_Torque_Front_MinQ : 52|1@0+ (1,0) [0|1] "" ESP
+
+BO_ 530 VDM_Torque_Rear: 8 VDM
+ SG_ VDM_Torque_Rear_Checksum : 7|8@0+ (1,0) [0|255] "Unitless" ESP
+ SG_ VDM_Torque_Rear_Counter : 11|4@0+ (1,0) [0|15] "Unitless" ESP
+ SG_ VDM_Torque_Rear_Max : 23|11@0+ (1,-1023) [-1023|1024] "Nm" ESP
+ SG_ VDM_Torque_Rear_Min : 26|11@0+ (1,-1023) [-1023|1024] "Nm" ESP
+ SG_ VDM_Torque_Rear_MaxQ : 28|1@0+ (1,0) [0|1] "" ESP
+ SG_ VDM_OutputTorqueRear : 47|11@0+ (1,-1023) [-1023|1024] "Nm" ESP
+ SG_ VDM_DriverIntendedTorque_Rear : 50|11@0+ (1,-1023) [-1023|1024] "Nm" ESP
+ SG_ VDM_OutputTorqueRearQ : 51|1@0+ (1,0) [0|1] "" ESP
+ SG_ VDM_Torque_Rear_MinQ : 52|1@0+ (1,0) [0|1] "" ESP
+
+BO_ 565 IndicatorLights: 8 XXX
+ SG_ checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ RearDriverDoor : 24|2@0+ (1,0) [0|3] "" XXX
+ SG_ FrontPassengerDoor : 26|2@0+ (1,0) [0|3] "" XXX
+ SG_ DriverDoor : 28|2@0+ (1,0) [0|3] "" XXX
+ SG_ RearPassengerDoor : 38|2@0+ (1,0) [0|3] "" XXX
+ SG_ TurnLightLeft : 40|2@0+ (1,0) [0|3] "" XXX
+ SG_ IgnitionOn : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ TurnLightRight : 54|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 592 VDM_EcasStatus: 8 VDM
+ SG_ VDM_EcasHeightFL : 7|8@0- (1,0) [-128|127] "mm" ACM
+ SG_ VDM_EcasHeightFR : 15|8@0- (1,0) [-128|127] "mm" ACM
+ SG_ VDM_EcasHeightRL : 23|8@0- (1,0) [-128|127] "mm" ACM
+ SG_ VDM_EcasHeightRR : 31|8@0- (1,0) [-128|127] "mm" ACM
+
+BO_ 789 BCM_Status: 8 VDM
+ SG_ BCM_AmbientAirTemperature : 15|8@0- (1,0) [-60|100] "degC" ESP
+
+BO_ 801 SCCM_WheelTouch: 7 SCCM
+ SG_ SCCM_WheelTouch_Checksum : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ SCCM_WheelTouch_Counter : 11|4@0+ (1,0) [0|15] "" XXX
+ SG_ SCCM_WheelTouch_HandsOn : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ SETME_X52 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ SCCM_WheelTouch_CapacitiveValue : 32|12@1+ (1,0) [0|4095] "" XXX
+
+BO_ 811 ESP_EpbStatus: 8 ESP
+ SG_ ESP_EpbStatus_Checksum : 7|8@0+ (1,0) [0|255] "" ACM,VDM
+ SG_ ESP_EpbStatus_Counter : 11|4@0+ (1,0) [0|15] "" ACM,VDM
+ SG_ ESP_EpbAvailable : 12|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ ESP_EpbServiceMode : 13|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ ESP_EpbWarningLamp : 15|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ ESP_EpbMessageDisplayRequest : 20|5@0+ (1,0) [0|30] "" ACM,VDM
+ SG_ ESP_EpbStatus : 23|3@0+ (1,0) [0|7] "" ACM,VDM
+ SG_ ESP_EpbClampForce : 31|16@0+ (1,0) [0|65534] "N" ACM,VDM
+ SG_ ESP_EpbFunctionLamp : 47|2@0+ (1,0) [0|3] "" ACM,VDM
+
+BO_ 826 RCM_Status: 8 RCM
+ SG_ RCM_IMU_LongAcc_Checksum : 7|8@0+ (1,0) [0|25] "" ACM,ESP,VDM
+ SG_ RCM_IMU_LongAcc_MSG_Counter : 11|4@0+ (1,0) [0|15] "" ACM,ESP,VDM
+ SG_ RCM_Status_DETECT_CRUSH : 21|3@0+ (1,0) [0|7] "" ACM,ESP,VDM
+ SG_ RCM_Status_IND_WARN_RCM : 23|2@0+ (1,0) [0|3] "" ACM,ESP,VDM
+ SG_ RCM_Status_IND_ACT_RCM_PASS : 25|2@0+ (1,0) [0|3] "" ACM,ESP,VDM
+ SG_ RCM_Status_IND_WARN_BELT_DRIVER : 27|2@0+ (1,0) [0|3] "" ACM,ESP,VDM
+ SG_ RCM_Status_IND_WARN_BELT_PASS : 31|2@0+ (1,0) [0|3] "" ACM,ESP,VDM
+
+BO_ 848 EPASP_Status: 4 EPAS_P
+ SG_ EPAS_Ecu1Status_Checksum : 7|8@0+ (1,0) [0|255] "" ACM,VDM
+ SG_ EPAS_Ecu1Status_Counter : 11|4@0+ (1,0) [0|15] "" ACM,VDM
+ SG_ EPAS_Ecu1EacSts : 14|3@0+ (1,0) [0|7] "" ACM,VDM
+ SG_ EPAS_Ecu1PowerMode : 18|3@0+ (1,0) [0|7] "" ACM,VDM
+ SG_ EPAS_Ecu1Role : 20|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ EPAS_Ecu1State : 31|4@0+ (1,0) [0|15] "" ACM,VDM
+
+BO_ 864 EPASS_Status: 4 VDM
+ SG_ EPASS_Ecu2Status_Checksum : 7|8@0+ (1,0) [0|255] "" ACM,EPAS_P
+ SG_ EPASS_Ecu2Status_Counter : 11|4@0+ (1,0) [0|15] "" ACM,EPAS_P
+ SG_ EPAS_Ecu2EacSts : 14|3@0+ (1,0) [0|7] "" ACM,EPAS_P
+ SG_ EPAS_Ecu2PowerMode : 18|3@0+ (1,0) [0|7] "" ACM,EPAS_P
+ SG_ EPASS_Ecu2Role : 20|2@0+ (1,0) [0|3] "" ACM,EPAS_P
+ SG_ EPASS_Ecu2State : 31|4@0+ (1,0) [0|15] "" ACM,EPAS_P
+
+BO_ 880 ACM_tsrCmd: 8 ACM
+ SG_ ACM_tsrCmd_Checksum : 7|8@0+ (1,0) [0|0] "" Vector_XXX
+ SG_ ACM_tsrCmd_Counter : 11|4@0+ (1,0) [0|15] "" Vector_XXX
+ SG_ ACM_tsrConInfoStaCon2 : 19|4@0+ (1,0) [0|15] "" Vector_XXX
+ SG_ ACM_tsrConInfoStaCon1 : 23|4@0+ (1,0) [0|15] "" Vector_XXX
+ SG_ ACM_tsrSpdDisClsMain : 31|8@0+ (1,0) [0|255] "" Vector_XXX
+ SG_ ACM_tsrSpdDisCluCon1 : 39|8@0+ (1,0) [0|255] "" Vector_XXX
+ SG_ ACM_tsrSpdDisCluCon2 : 47|8@0+ (1,0) [0|255] "" Vector_XXX
+ SG_ ACM_tsrSpdDisCluConM : 55|8@0+ (1,0) [0|255] "" Vector_XXX
+ SG_ ACM_tsrAddInfoDisplay : 59|2@0+ (1,0) [0|3] "" Vector_XXX
+ SG_ ACM_tsrOvrlapSignDis : 61|2@0+ (1,0) [0|3] "" Vector_XXX
+ SG_ ACM_tsrStatus : 63|2@0+ (1,0) [0|3] "" Vector_XXX
+
+BO_ 896 EPAS_SystemStatus: 5 EPAS_P
+ SG_ EPAS_SytemStatus_Checksum : 7|8@0+ (1,0) [0|255] "" ACM,VDM
+ SG_ EPAS_SystemStatus_Counter : 11|4@0+ (1,0) [0|15] "" ACM,VDM
+ SG_ EPAS_SteeringReduced : 12|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ EPAS_SteeringFault : 13|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ EPAS_SteeringMode : 15|2@0+ (1,0) [0|3] "" ACM,VDM
+ SG_ EPAS_TorsionBarTorque : 23|12@0+ (0.01,-20.5) [-20.49|20.43] "" ACM,VDM
+ SG_ EPAS_StcFault : 32|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ EPAS_StcActive : 33|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ EPAS_StcUnavailable : 34|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ H_CAN_EPSS_ToiFlt : 35|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ H_CAN_EPSS_ToiActive : 36|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ H_CAN_EPS_ToiUnavailable : 37|1@0+ (1,0) [0|1] "" ACM,VDM
+ SG_ EPAS_HandsOnLevel : 39|2@0+ (1,0) [0|3] "" ACM,VDM
+
+BO_ 907 ESPiB1: 6 ESP
+ SG_ ESPiB1_Checksum : 7|8@0+ (1,0) [0|255] "" IBM
+ SG_ ESPiB1_AliveCounter : 11|4@0+ (1,0) [0|15] "" IBM
+ SG_ ESPiB1_IgnitionOn : 12|1@0+ (1,0) [0|1] "" IBM
+ SG_ ESPiB1_VehicleSpeed_Q : 15|2@0+ (1,0) [0|3] "" IBM
+ SG_ ESPiB1_VehicleSpeed : 23|8@0+ (0.4,0) [0|100] "m/s" IBM
+
+BO_ 908 ESPiB2: 4 ESP
+ SG_ ESPiB2_Checksum : 7|8@0+ (1,0) [0|255] "" IBM
+ SG_ ESPiB2_Alive_Counter : 11|4@0+ (1,0) [0|15] "" IBM
+ SG_ ESPiB2_qTargetExternal_Q : 15|2@0+ (1,0) [0|3] "" IBM
+ SG_ ESPiB2_qTargetExternal : 23|16@0+ (0.0078125,-252) [-252|252] "ml/s" IBM
+
+BO_ 909 ESPiB3: 7 ESP
+ SG_ ESPiB3_Checksum : 7|8@0+ (1,0) [0|255] "" IBM
+ SG_ ESPiB3_AliveCounter : 11|4@0+ (1,0) [0|15] "" IBM
+ SG_ ESPiB3_ABSActive : 12|1@0+ (1,0) [0|1] "" IBM
+ SG_ ESPiB3_ForceBlendingActive : 15|2@0+ (1,0) [0|3] "" IBM
+ SG_ ESPiB3_pMcVirtual : 23|10@0+ (0.25,0) [0|250] "bar" IBM
+ SG_ ESPiB3_pMcVirtual_Q : 29|2@0+ (1,0) [0|3] "" IBM
+ SG_ ESPiB3_pForceBlendingMC : 39|10@0+ (0.25,0) [0|250] "" IBM
+ SG_ ESPiB3_pMC1 : 43|10@0+ (0.3,-30) [-30|276.6] "bar" IBM
+ SG_ ESPiB3_pForceBlendingMC_Q : 45|2@0+ (1,0) [0|3] "" IBM
+ SG_ ESPiB3_pMC1_Q : 49|2@0+ (1,0) [0|3] "" IBM
+
+BO_ 910 iBESP1: 7 IBM
+ SG_ iBESP1_Checksum : 7|8@0+ (1,0) [0|255] "" ESP,VDM
+ SG_ iBESP1_AliveCounter : 11|4@0+ (1,0) [0|15] "" ESP,VDM
+ SG_ iBESP1_ExtReqPrio : 12|1@0+ (1,0) [0|1] "" ESP,VDM
+ SG_ iBESP1_ExtReqStatus : 15|3@0+ (1,0) [0|7] "" ESP,VDM
+ SG_ iBESP1_sOutputRodDriver : 23|12@0+ (0.015625,-5) [-5|47] "mm" ESP,VDM
+ SG_ iBESP1_sOutputRodDriver_Q : 27|2@0+ (1,0) [0|3] "" ESP,VDM
+ SG_ iBESP1_sOutputRodAct : 39|12@0+ (0.015625,-5) [-5|47] "mm" ESP,VDM
+ SG_ iBESP1_sOutputRodAct_Q : 43|2@0+ (1,0) [0|3] "" ESP,VDM
+
+BO_ 911 iBESP2: 6 IBM
+ SG_ iBESP2_Checksum : 7|8@0+ (1,0) [0|255] "" ACM,ESP,VDM
+ SG_ iBESP2_AliveCounter : 11|4@0+ (1,0) [0|15] "" ACM,ESP,VDM
+ SG_ iBESP2_CompatibilityIndex : 15|4@0+ (1,0) [0|15] "" ACM,ESP,VDM
+ SG_ iBESP2_pRunout_Q : 17|2@0+ (1,0) [0|3] "" ACM,ESP,VDM
+ SG_ iBESP2_iBDiagActive : 19|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ iBESP2_HbcRequest : 20|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ iBESP2_BrakePedalApplied_Q : 22|2@0+ (1,0) [0|3] "" ACM,ESP,VDM
+ SG_ iBESP2_BrakePedalApplied : 23|1@0+ (1,0) [0|1] "" ACM,ESP,VDM
+ SG_ iBESP2_pRunout : 31|8@0+ (1,0) [0|250] "bar" ACM,ESP,VDM
+ SG_ iBESP2_RprMode : 39|3@0+ (1,0) [0|7] "" ACM,ESP,VDM
+
+BO_ 912 EPAS_AdasStatus: 7 EPAS_P
+ SG_ EPAS_AdasStatus_Checksum : 7|8@0+ (1,0) [0|0] "" ACM,VDM
+ SG_ EPAS_AdasStatus_Counter : 11|4@0+ (1,0) [0|15] "" ACM,VDM
+ SG_ EPAS_SteeringAngleSpeed : 23|14@0+ (0.1,-819) [-819|819.3] "deg/s" ACM,VDM
+ SG_ EPAS_EacStatus : 35|3@0+ (1,0) [0|7] "" ACM,VDM
+ SG_ EPAS_EacErrorCode : 39|4@0+ (1,0) [0|15] "" ACM,VDM
+ SG_ EPAS_InternalSas : 47|14@0+ (0.1,-819.2) [-819.2|819] "deg" ACM,VDM
+ SG_ EPAS_InternalSasQ : 49|1@0+ (1,0) [0|1] "" ACM,VDM
+
+BO_ 929 VDM_ModSw_DrvModPosSts_GW: 8 VDM
+ SG_ VDM_AchDriveModeRequestConfirm : 0|1@0+ (1,0) [0|1] "" ACM
+ SG_ VDM_AchDriveModeRequestPullRearw : 1|1@0+ (1,0) [0|1] "" ACM
+ SG_ VDM_AchDriveModeRequestPushDown : 2|1@0+ (1,0) [0|1] "" ACM
+ SG_ VDM_AchDriveModeRequestPushForwa : 3|1@0+ (1,0) [0|1] "" ACM
+ SG_ VDM_AchDriveModeRequestPushUp : 4|1@0+ (1,0) [0|1] "" ACM
+ SG_ VDM_AchDriveModeRequestRest : 5|1@0+ (1,0) [0|1] "" ACM
+ SG_ VDM_AchDriveMode4x4 : 20|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveMode : 23|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveModeAirSuspension : 28|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveModeAbs : 31|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveModeDrivability : 36|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveModeDamping : 39|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveModeRollControl : 44|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveModeEsp : 47|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveModeEpas : 52|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_AchDriveModeTcs : 55|3@0+ (1,0) [0|7] "" ACM
+
+BO_ 1024 VehicleConfig: 7 CGM
+ SG_ VCM_VehicleType : 7|8@0+ (1,0) [0|255] "" ACM,ESP
+ SG_ VCM_HandOfDrive : 9|1@0+ (1,0) [0|1] "" ACM,ESP
+ SG_ VCM_BatterySize : 15|6@0+ (1,0) [0|63] "" ACM,ESP
+ SG_ VCM_Market : 23|8@0+ (1,0) [0|255] "" ACM,ESP
+
+BO_ 1265 Cluster: 6 XXX
+ SG_ Cluster_Unit : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ Cluster_VehicleSpeed : 15|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ Cluster_Odometer : 23|32@0+ (0.1,0) [0|429496729.5] "" XXX
+
+BO_ 1280 RCM_Dtc: 8 RCM
+ SG_ RCM_Dtc_Checksum : 7|8@0+ (1,0) [0|25] "" VDM
+ SG_ RCM_Dtc_Counter : 11|4@0+ (1,0) [0|15] "" VDM
+ SG_ RCM_Dtc_HighByte : 23|8@0+ (1,0) [0|255] "" VDM
+ SG_ RCM_Dtc_MidByte : 31|8@0+ (1,0) [0|255] "" VDM
+ SG_ RCM_Dtc_LowByte : 39|8@0+ (1,0) [0|255] "" VDM
+ SG_ RCM_Dtc_Stat_Bit : 47|8@0+ (1,0) [0|255] "" VDM
+ SG_ RCM_Dtc_Number : 55|8@0+ (1,0) [0|255] "" VDM
+
+BO_ 1281 RCM_SerialIdentifier: 8 RCM
+ SG_ RCM_SerialNumber : 7|64@0+ (1,0) [0|1.84467440737096e+19] "" ESP,VDM
+
+BO_ 1328 Dummy_ACM_PrimaryActuatorCAN: 8 ACM
+ SG_ Dummy_ACM_PrimaryActuatorCAN : 7|8@0+ (1,0) [0|255] "" TestTool
+
+BO_ 1329 Dummy_CGM_PrimaryActuatorCAN: 1 CGM
+ SG_ Dummy_CGM_PrimaryActuatorCAN : 7|8@0+ (1,0) [0|255] "" TestTool
+
+BO_ 1330 Dummy_VDM_PrimaryActuatorCAN: 1 VDM
+ SG_ Dummy_VDM_PrimaryActuatorCAN : 7|8@0+ (1,0) [0|255] "" TestTool
+
+BO_ 1535 DoorStatus: 8 XXX
+ SG_ DoorOpen : 8|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1545 XCP_Cmd_VDM: 8 TestTool
+
+BO_ 1609 XCP_Resp_VDM: 8 VDM
+
+BO_ 1635 XCP_Cmd_EPAS_P: 8 TestTool
+
+BO_ 1636 XCP_Daq_EPAS_P: 8 EPAS_P
+
+BO_ 1637 XCP_Resp_EPAS_P: 8 EPAS_P
+
+BO_ 1640 OCS_PassSeatInfo: 8 OCS
+ SG_ OCS_Checksum : 0|8@1+ (1,0) [0|255] "-" RCM
+ SG_ OCS_Counter : 8|4@1+ (1,0) [0|15] "-" RCM
+ SG_ OCS_FrontPassClass : 16|4@1+ (1,0) [0|15] "" RCM
+ SG_ OCS_FrontPassClassValid : 20|1@1+ (1,0) [0|1] "" RCM
+ SG_ OCS_FrontPassFaultStatus : 21|2@1+ (1,0) [0|3] "" RCM
+ SG_ OCS_Reserved_1 : 23|1@1+ (1,0) [0|1] "" RCM
+ SG_ OCS_FrontPassSBRStatus : 24|4@1+ (1,0) [0|15] "" RCM
+ SG_ OCS_OperatingMode : 28|4@1+ (1,0) [0|15] "" RCM
+ SG_ OCS_Reserved_2 : 56|8@1+ (1,0) [0|255] "" RCM
+
+BO_ 1705 XCP_Daq_VDM: 8 VDM
+
+BO_ 1800 Diag_PhysReq_ACM_PrimaryActuator: 8 TestTool
+
+BO_ 1843 Diag_PhysReq_EPAS_P_PrimaryActua: 8 TestTool
+
+BO_ 1844 Diag_PhysReq_RCM_PrimaryActuator: 8 TestTool
+
+BO_ 1845 Diag_PhysReq_ESP_PrimaryActuator: 8 TestTool
+
+BO_ 1846 Diag_PhysReq_IBM_PrimaryActuator: 8 TestTool
+
+BO_ 1864 Diag_PhysResp_ACM_PrimaryActuato: 8 ACM
+
+BO_ 1907 Diag_PhysResp_EPAS_P_PrimaryActu: 8 EPAS_P
+
+BO_ 1908 Diag_PhysResp_RCM_PrimaryActuato: 8 RCM
+
+BO_ 1909 Diag_PhysResp_ESP_PrimaryActuato: 8 ESP
+
+BO_ 1910 Diag_PhysResp_IBM_PrimaryActuato: 8 IBM
+
+CM_ BO_ 64 "External steering angle sensor message.";
+CM_ BO_ 801 "Not a reference message. Suspected ECU source is SCCM (Steering Column Control Module). Used by ACM to show hold wheel message on ACC engagement.";
+CM_ SG_ 64 SAS_Status_Checksum "Actual steering wheel angle from the actual centre position of the steering wheel. The signal value is a signed value from zero (at centre steering wheel position) where a left turn (counterclockwise from steering wheel centre position) is represented by positive values and right turn (clockwise from steering wheel centre position) will have negative value.  Checksum for steering wheel sensor data.";
+CM_ SG_ 64 SAS_Status_Counter "Actual steering wheel angle from the actual centre position of the steering wheel. The signal value is a signed value from zero (at centre steering wheel position) where a left turn (counterclockwise from steering wheel centre position) is represented by positive values and right turn (clockwise from steering wheel centre position) will have negative value.  Counter value for steering wheel sensor data.";
+CM_ SG_ 64 SAS_Status_AngleSafe "Actual steering wheel angle from the actual centre position of the steering wheel. The signal value is a signed value from zero (at centre steering wheel position) where a left turn (counterclockwise from steering wheel centre position) is represented by positive values and right turn (clockwise from steering wheel centre position) will have negative value.  Actual steering wheel angle from the actual centre position of the steering wheel. The signal value is a signed value from zero (at centre steering wheel";
+CM_ SG_ 64 SAS_Status_AngleSpeedSafe "Actual steering wheel angle from the actual centre position of the steering wheel. The signal value is a signed value from zero (at centre steering wheel position) where a left turn (counterclockwise from steering wheel centre position) is represented by positive values and right turn (clockwise from steering wheel centre position) will have negative value.  Steering angle speed with steering wheel rotation direction.  Turning the steering wheel left (counterclockwise) is represented by positive values and";
+CM_ SG_ 64 SAS_StatusQ "Actual steering wheel angle from the actual centre position of the steering wheel. The signal value is a signed value from zero (at centre steering wheel position) where a left turn (counterclockwise from steering wheel centre position) is represented by positive values and right turn (clockwise from steering wheel centre position) will have negative value.  Qf for steering wheel sensor information";
+CM_ SG_ 256 ACM_Status_Checksum "Checksum signal for frame";
+CM_ SG_ 256 ACM_Status_Counter "Message counter signal for frame";
+CM_ SG_ 256 ACM_FeatureStatus "Current active ADAS feature";
+CM_ SG_ 256 ACM_FaultStatus "Reason for ACM fault";
+CM_ SG_ 257 ACM_AebRequest_Checksum "J1850";
+CM_ SG_ 257 ACM_AebRequest_Counter "Message Counter";
+CM_ SG_ 257 ACM_StopRequest "AEB Stop Request subsequent to AEB event";
+CM_ SG_ 257 ACM_FailInfo "AEB System Failure flags";
+CM_ SG_ 257 ACM_DbsLevel "Dynamic Braking Support (DBS) Level";
+CM_ SG_ 257 ACM_OnOffStatus "AEB System On/Off Status";
+CM_ SG_ 257 ACM_DecelRequest "AEB Target Deceleration command";
+CM_ SG_ 257 ACM_WarnLevel "AEB Warning Level";
+CM_ SG_ 257 ACM_PrefillEnableRequest "AEB Pre-fill Enable Request";
+CM_ SG_ 257 ACM_EnableRequest "AEB Enable Request";
+CM_ SG_ 258 ESP_AebFeedback_Checksum "J1850 Checksum";
+CM_ SG_ 258 ESP_AebFeedback_Counter "Message Counter";
+CM_ SG_ 258 iB_BrakePedalApplied_Q "Description: Qualifier for iBESP2_BrakePedalApplied signal";
+CM_ SG_ 258 iB_BrakePedalApplied "Description: Indicates whether the driver operates the brake pedal. Only active when the driver brakes, not when an external brake command implemented on iB
+
+Note:
+1.Needed for HBB and HBC
+
+2. Monitoring for pMC (BSM)";
+CM_ SG_ 258 ESP_DecelFeedback "AEB Decel Feedback";
+CM_ SG_ 258 ESP_AebActive "AEB Active";
+CM_ SG_ 258 ESP_AebAvailable "AEB Available";
+CM_ SG_ 258 ESP_DbsActive "DBS Active";
+CM_ SG_ 258 ESP_PrefillActiveFeedback "Prefill Active Feedback";
+CM_ BO_ 272 "External steering angle control message for EPAS.";
+CM_ SG_ 272 ACM_SteeringControl_Checksum "Checksum for DAS_steeringControl message. Refer to AUTOSAR E2E library Profile 1.";
+CM_ SG_ 272 ACM_SteeringControl_Counter "Message counter for DAS_steeringControl message. It counts from 0 to 14 and rolls back to 0 after reaching14. Refer to AUTOSAR E2E library Profile 1.";
+CM_ SG_ 272 ACM_EacEnabled "External angle control type for EPAS.";
+CM_ SG_ 272 ACM_HapticRequired "External angle control type for EPAS.";
+CM_ SG_ 272 ACM_SteeringAngleRequest "External angle control request for EPAS";
+CM_ SG_ 304 RCM_IMU_LatAcc "Inertial Measurement Unit Lateral Acceleration Primary";
+CM_ SG_ 320 RCM_IMU_LongAcc_Sig "Inertial Measurement Unit Longitudinal Accleration Primary";
+CM_ SG_ 338 VDM_EpbRequest "Apply and release request (EVIC, Shift to From Park/Stalk Switch Input)";
+CM_ SG_ 338 VDM_EpasPowerMode "EPAS power mode request.";
+CM_ SG_ 352 ACM_longitudinalRequest_Checksum "Checksum signal for frame";
+CM_ SG_ 352 ACM_longitudinalRequest_Counter "Message counter signal for frame";
+CM_ SG_ 352 ACM_AccelerationRequest "Acceleration Request command from the ACM";
+CM_ SG_ 352 ACM_VehicleHoldRequired "Vehicle hold request flag";
+CM_ SG_ 352 ACM_PrndRequest "Gear state Request command from the ACM";
+CM_ SG_ 352 ACM_longInterfaceEnable "Acceleration Interface Enable Request from the ACM";
+CM_ SG_ 352 ACM_VehicleHoldRequest "Vehicle hold request from ACM";
+CM_ SG_ 354 VDM_AdasStatus_Checksum "VDM_AdasSts message j1850 checksum.";
+CM_ SG_ 354 VDM_AdasStatus_Counter "VDM_AdasSts message counter.";
+CM_ SG_ 354 VDM_AdasFaultStatus "Fault status of ADAS requests from VDM.";
+CM_ SG_ 354 VDM_AdasDriverModeStatus "Signal which describes who is commanding the torque - Human or ADAS";
+CM_ SG_ 432 ESP_Torque_Front_MinQ "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 432 ESP_Torque_Front_MaxQ "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 432 ESP_Torque_Front_Max "ESP intervention, ESP tractive torque limit per axle.";
+CM_ SG_ 432 ESP_Torque_Front_Min "ESP intervention, ESP regen torque limit per axle.";
+CM_ SG_ 448 ESP_Torque_Rear_Checksum "J1850 Checksum";
+CM_ SG_ 448 ESP_Torque_Rear_Counter "Message Counter";
+CM_ SG_ 448 ESP_Torque_Rear_MinQ "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 448 ESP_Torque_Rear_MaxQ "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 448 ESP_Torque_Rear_Max "ESP intervention, ESP tractive torque limit per axle.";
+CM_ SG_ 448 ESP_Torque_Rear_Min "ESP intervention, ESP regen torque limit per axle.";
+CM_ SG_ 520 ESP_Status_Checksum "J1850 Checksum";
+CM_ SG_ 520 ESP_Status_Counter "Message Counter";
+CM_ SG_ 520 ESP_BrakeLightActive_Q "Indication of whether ESP_BrakeLightActive signal is valid";
+CM_ SG_ 520 ESP_BrakeLightActive "ESP Request to Activate Rear Brake Lamps";
+CM_ SG_ 520 ESP_Hhc_Active "HHC Active";
+CM_ SG_ 520 ESP_Hhc_Available "HHC Available";
+CM_ SG_ 520 ESP_Tsm_Active "Trailer Sway Mitigation Active Flag";
+CM_ SG_ 520 ESP_FaultLamp_EBD "ESP request to display ABS-TC Fault Lamp";
+CM_ SG_ 520 ESP_FaultLamp_VDC "ESP request to display ABS/ESP Fault Lamp";
+CM_ SG_ 520 ESP_FaultLamp_ABS "ESP request to display ABS Fault Lamp";
+CM_ SG_ 520 ESP_Esp_Active "Vehicle Stability Control is actively managing a stability event";
+CM_ SG_ 520 ESP_Abs_Active "Anti-Lock Brakes is actively working to prevent the brakes from locking up";
+CM_ SG_ 520 ESP_Partial_Mode "ESP current PATA mode";
+CM_ SG_ 520 ESP_Dtc_Active "Drag Torque Control is actively requesting torque.";
+CM_ SG_ 520 ESP_Vehicle_Speed_Q "Indication of whether ESP_VehicleSpeed signal is valid";
+CM_ SG_ 520 ESP_Lfc_Available "LFC Available";
+CM_ SG_ 520 ESP_Hba_Active "HBA Active";
+CM_ SG_ 520 ESP_BrkTrq "ESP Brake Torque";
+CM_ SG_ 520 ESP_Lfc_Active "LFC Active";
+CM_ SG_ 520 ESP_Vehicle_Speed "ESP calculated vehicle speed. Average of front wheels on rear wheel drive vehicles. Average of all four wheels on dual motor vehicles.";
+CM_ SG_ 521 ESP_WSpeed_Front_CRC "J1850 Checksum";
+CM_ SG_ 521 ESP_WSpeed_Front_Message_Counter "Message Counter";
+CM_ SG_ 521 ESP_Wheel_Speed_Left_Front_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 521 ESP_Wheel_Speed_Right_Front_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 521 ESP_Wheel_Speed_Left_Front "Wheel Speed Left Front";
+CM_ SG_ 521 ESP_Wheel_Speed_Right_Front "Wheel Speed Right Front";
+CM_ SG_ 521 ESP_Wheel_Dir_Right_Front "Wheel Rotation Direction Right Front";
+CM_ SG_ 521 ESP_Wheel_Dir_Left_Front "Wheel Rotation Direction Left Front";
+CM_ SG_ 522 ESP_WSpeed_Rear_CRC "J1850 Checksum";
+CM_ SG_ 522 ESP_WSpeed_Rear_Message_Counter "Message Counter";
+CM_ SG_ 522 ESP_Wheel_Speed_Left_Rear_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 522 ESP_Wheel_Speed_Right_Rear_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 522 ESP_Wheel_Speed_Left_Rear "Wheel Speed Left Rear";
+CM_ SG_ 522 ESP_Wheel_Speed_Right_Rear "Wheel Speed Right Rear";
+CM_ SG_ 522 ESP_Wheel_Dir_Right_Rear "Wheel Rotation Direction Right Rear";
+CM_ SG_ 522 ESP_Wheel_Dir_Left_Rear "Wheel Rotation Direction Left Rear";
+CM_ SG_ 523 ESP_Wheel_Pulse_CRC "J1850 Checksum";
+CM_ SG_ 523 ESP_Wheel_Pulse_Message_Counter "Message Counter";
+CM_ SG_ 523 ESP_Wheel_Pulse_Left_Front "Wheel Pulse Left Front";
+CM_ SG_ 523 ESP_Wheel_Pulse_Left_Rear "Wheel Pule Left Rear";
+CM_ SG_ 523 ESP_Wheel_Pulse_Right_Front "Wheel Pulse Right Front";
+CM_ SG_ 523 ESP_Wheel_Pulse_Right_Rear "Wheel Pulse Right Rear";
+CM_ SG_ 523 ESP_Wheel_Pulse_Right_Front_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 523 ESP_Wheel_Pulse_Right_Rear_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 523 ESP_Wheel_Pulse_Left_Rear_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 523 ESP_Wheel_Pulse_Left_Front_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 524 ESP_BrakeP_Checksum "J1850 Checksum";
+CM_ SG_ 524 ESP_BrakeP_Message_Counter "Message Counter";
+CM_ SG_ 524 ESP_BrakePressure_RF_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 524 ESP_BrakePressure_LF_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 524 ESP_BrakePressure_LF "Brake Pressure Left Front";
+CM_ SG_ 524 ESP_BrakePressure_LR "Brake Pressure Left Rear";
+CM_ SG_ 524 ESP_BrakePressure_RF "Brake Pressure Right Front";
+CM_ SG_ 524 ESP_BrakePressure_RR "Brake Pressure Right Rear";
+CM_ SG_ 524 ESP_MasterCyl_Pressure "Master Cylinder Brake Pressure";
+CM_ SG_ 524 ESP_MasterCyl_Pressure_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 524 ESP_BrakePressure_RR_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 524 ESP_BrakePressure_LR_Q "Indication of whether signal with corresponding name is valid";
+CM_ SG_ 529 VDM_OutputTorqueFront "Output torque which is currently provided by the electric machine";
+CM_ SG_ 529 VDM_DriverIntendedTorqueFront "Driver Requested Torque pre ESP limits being applied";
+CM_ SG_ 530 VDM_OutputTorqueRear "Output torque which is currently provided by the electric machine";
+CM_ SG_ 530 VDM_DriverIntendedTorque_Rear "Driver Requested Torque pre ESP limits being applied";
+CM_ SG_ 592 VDM_EcasHeightFL "Change in ride height, with zero referenced to normal/design ride height";
+CM_ SG_ 592 VDM_EcasHeightFR "Change in ride height, with zero referenced to normal/design ride height";
+CM_ SG_ 592 VDM_EcasHeightRL "Change in ride height, with zero referenced to normal/design ride height";
+CM_ SG_ 592 VDM_EcasHeightRR "Change in ride height, with zero referenced to normal/design ride height";
+CM_ SG_ 811 ESP_EpbStatus_Checksum "J1850 Checksum";
+CM_ SG_ 811 ESP_EpbStatus_Counter "Message Counter";
+CM_ SG_ 811 ESP_EpbAvailable "EPB Availability. Shows the availability of the EPB function.";
+CM_ SG_ 811 ESP_EpbServiceMode "Indication whether EPB is in service mode.";
+CM_ SG_ 811 ESP_EpbWarningLamp "Failure Driver Lamp indication for EPB.";
+CM_ SG_ 811 ESP_EpbMessageDisplayRequest "EPB text message";
+CM_ SG_ 811 ESP_EpbStatus "Current EPB actuator state.";
+CM_ SG_ 811 ESP_EpbClampForce "Currently applied clamp force of EPB.";
+CM_ SG_ 811 ESP_EpbFunctionLamp "Driver Lamp indication for EPB (LED on button).";
+CM_ BO_ 848 "Forwarded Message from EPAS Primary to Secondary ECU via Public CAN.";
+CM_ BO_ 864 "Forwarded Message from EPAS Secondary to Primary ECU via Public CAN .";
+CM_ BO_ 896 "EPAS status info.";
+CM_ SG_ 896 EPAS_SytemStatus_Checksum "Checksum for EPAS_sysStatus message. Refer to AUTOSAR E2E library Profile 1.";
+CM_ SG_ 896 EPAS_SystemStatus_Counter "Message counter for EPAS_sysStatus message. It counts from 0 to 14 and rolls back to 0 after reaching14. Refer to AUTOSAR E2E library Profile 1.";
+CM_ SG_ 896 EPAS_SteeringReduced "Power steering is functional, but reduced.";
+CM_ SG_ 896 EPAS_SteeringFault "Power steering is not-available.";
+CM_ SG_ 896 EPAS_SteeringMode "ESP current PATA mode";
+CM_ BO_ 907 "Basic communication ESP iBooster";
+CM_ SG_ 907 ESPiB1_Checksum "J1850 Checksum";
+CM_ SG_ 907 ESPiB1_AliveCounter "Message Counter";
+CM_ SG_ 907 ESPiB1_IgnitionOn "Description: Indicates whether the key is turned or not in the car
+
+Note: Used in PostRun calculation in iBooster";
+CM_ SG_ 907 ESPiB1_VehicleSpeed_Q "Description: Qualifier of the signal : ESPiB1_VehicleSpeed_Q
+
+Note: Robert Bosch Standard qualifier";
+CM_ SG_ 907 ESPiB1_VehicleSpeed "Description: Averaged wheel speed (signal in m/s on CAN but monitored in km/h in dbc)
+
+Note:
+for standstill detection in iBooster
+
+1. For HEV function in iBoosterhev
+
+2. For EBR
+3. Logic for Pressure Reduction";
+CM_ SG_ 908 ESPiB2_Checksum "J1850 Checksum";
+CM_ SG_ 908 ESPiB2_Alive_Counter "Message Counter";
+CM_ SG_ 908 ESPiB2_qTargetExternal_Q "Description: Qualifier for the volume flow interface
+
+Note: Qualifier for the volume flow interface";
+CM_ SG_ 908 ESPiB2_qTargetExternal "Description: Target flow of the brake system to be applied by iBooster for EBR.
+
+Note: For EBR through iBooster, interface needs to be operated together with ESPiB_pTargetExternal.";
+CM_ BO_ 909 "Extended communication ESP iBooster";
+CM_ SG_ 909 ESPiB3_Checksum "J1850 Checksum";
+CM_ SG_ 909 ESPiB3_AliveCounter "Message Counter";
+CM_ SG_ 909 ESPiB3_ABSActive "Description: Indicates that at least one wheel ABS is in control
+
+Note:
+1. For ABS pressure limitation
+
+2. For HEV function";
+CM_ SG_ 909 ESPiB3_ForceBlendingActive "Description: Control state of force-blending interface
+
+Note: Used by PFC in iB";
+CM_ SG_ 909 ESPiB3_pMcVirtual "Description: Virtual master cylinder pressure determined in ESP from boost body position of iBooster.
+
+note:
+1. to control the force-blending of recuperation in ESPhev.
+2. For JumpIn/Gain Adjustment in iBooster";
+CM_ SG_ 909 ESPiB3_pMcVirtual_Q "Description: Qualifier for the ESPiB3_pMcVirtual_Q signal";
+CM_ SG_ 909 ESPiB3_pForceBlendingMC "Description : Master Cylinder pressure used by force blending function. Can differ from real master cylinder pressure, to avoid short peaks and disturbances which should not be compensated by force-blending
+
+Note: Used by PFC in iB";
+CM_ SG_ 909 ESPiB3_pMC1 "Description: Current pressure of the master cylinder pressure sensor in the ESP. Raw value without offset compensation.
+
+
+Note:
+1. For pressure reduction logic
+
+2. For HEV Function
+
+3. For EBR
+
+4. For runout definition";
+CM_ SG_ 909 ESPiB3_pForceBlendingMC_Q "Description: Qualifier for the ESPiB3_pForceBlendingMC";
+CM_ SG_ 909 ESPiB3_pMC1_Q "Description: Qualifier for ESPiB3_pMC1_Q signal";
+CM_ SG_ 910 iBESP1_ExtReqPrio "To determine driver's braking request for EBR together with sPushRod, eg for CDD";
+CM_ SG_ 910 iBESP1_ExtReqStatus "Status of external brake request (EBR) function";
+CM_ SG_ 910 iBESP1_sOutputRodDriver "Information of driver brake request.
+Calculation of:
+- target value  for output rod in iBooster
+Also shows pedal travel with active pressure increase via iBooster";
+CM_ SG_ 910 iBESP1_sOutputRodDriver_Q "Information about the signal quality of sOutputRodDriver";
+CM_ SG_ 910 iBESP1_sOutputRodAct "Current value for output rod in iBooster indicates the shifted volume in master cylinder. Gives information, if the compensation port is closed.";
+CM_ SG_ 910 iBESP1_sOutputRodAct_Q "Information about the signal quality of sOutputRodAct";
+CM_ SG_ 911 iBESP2_CompatibilityIndex "Description: iB is sending an static number which which must fit to the same number monitored in ESP to ensure the compatibility of the two ECU.";
+CM_ SG_ 911 iBESP2_pRunout_Q "Description: Qualifier for the iBESP2_pRunout signal";
+CM_ SG_ 911 iBESP2_iBDiagActive "iB is in extended Diag Session (iB_ActiveMode = Diagnosis)";
+CM_ SG_ 911 iBESP2_HbcRequest "request HBC if amplification of iB is not possible";
+CM_ SG_ 911 iBESP2_BrakePedalApplied_Q "Description: Qualifier for iBESP2_BrakePedalApplied signal";
+CM_ SG_ 911 iBESP2_BrakePedalApplied "Description: Indicates whether the driver operates the brake pedal. Only active when the driver brakes, not when an external brake command implemented on iB
+
+Note:
+1.Needed for HBB and HBC
+
+2. Monitoring for pMC (BSM)";
+CM_ SG_ 911 iBESP2_pRunout "Description: In driver braking: maximum achievable master cylinder pressure with boost (runout.)
+With an active pressure increase: maximum achievable brake master cylinder pressure.
+
+Note:
+1. Required for HBB
+
+2. For LDM demand on iB (EBR)";
+CM_ SG_ 912 EPAS_EacStatus "Status of the EAC function of EPAS, to indicate what mode is active.";
+CM_ SG_ 912 EPAS_EacErrorCode "EPAS external angle control error code.";
+CM_ SG_ 912 EPAS_InternalSas "Steering wheel angle measured by EPAS";
+CM_ SG_ 912 EPAS_InternalSasQ "Steering angle sensor validity status";
+CM_ SG_ 1640 OCS_Checksum "Checksum signal for frame";
+VAL_ 64 SAS_Status_Calibrated 0 "SAS_Status_Calibrated_Not_Calibrated" 1 "SAS_Status_Calibrated_Calibrated";
+VAL_ 64 SAS_StatusQ 0 "SAS_Status_UndefinedDataACCur" 1 "SAS_Status_TmpUnDefinedData" 2 "SAS_Status_DataACCurrentNotWithinSpecification" 3 "SAS_Status_ACCurrentData";
+VAL_ 256 ACM_FeatureStatus 0 "ACM_FeatureStatus_Standby" 1 "ACM_FeatureStatus_Acc" 2 "ACM_FeatureStatus_Hwp" 3 "ACM_FeatureStatus_Uf" 4 "ACM_FeatureStatus_Faulted";
+VAL_ 256 ACM_FaultStatus 0 "ACM_FaultStatus_NoFault" 1 "ACM_FaultStatus_Faulted" 7 "ACM_FaultStatus_Sna";
+VAL_ 256 ACM_FaultSupervisorState 0 "Nominal_Operation" 1 "SS_1" 2 "SS_2" 3 "SS_3" 4 "SS_4" 5 "SS_5" 6 "SS_6" 7 "Reserved";
+VAL_ 257 ACM_StopRequest 0 "ACM_StopRequest_No_Request" 1 "ACM_StopRequest_Request";
+VAL_ 257 ACM_FailInfo 0 "ACM_FailInfo_Normal" 1 "ACM_FailInfo_Temp_Unav_By_Camera" 2 "ACM_FailInfo_Temp_Unav_By_Radar" 3 "ACM_FailInfo_Service_Required";
+VAL_ 257 ACM_DbsLevel 0 "ACM_DbsLevel_No_Activation" 1 "ACM_DbsLevel_Level_1" 2 "ACM_DbsLevel_Level_2" 3 "ACM_DbsLevel_Level_3";
+VAL_ 257 ACM_OnOffStatus 0 "ACM_OnOffStatus_Off" 1 "ACM_OnOffStatus_On_Fcw" 2 "ACM_OnOffStatus_On_Aeb" 3 "ACM_OnOffStatus_Invalid";
+VAL_ 257 ACM_WarnLevel 0 "ACM_WarnLevel_No_Warning" 1 "ACM_WarnLevel_Warning_Level_1" 2 "ACM_WarnLevel_Warning_Level_2" 3 "ACM_WarnLevel_Warning_Level_3";
+VAL_ 257 ACM_PrefillEnableRequest 0 "ACM_PrefillEnableRequest_Disable" 1 "ACM_PrefillEnableRequest_Enable";
+VAL_ 257 ACM_EnableRequest 0 "ACM_EnableRequest_Disable" 1 "ACM_EnableRequest_Enable";
+VAL_ 258 iB_BrakePedalApplied_Q 0 "iB_BrakePedalApplied_Q_No_Init_Or_Off" 1 "iB_BrakePedalApplied_Q_Applied_Normal" 2 "iB_BrakePedalApplied_Q_Applied_Faulty";
+VAL_ 258 iB_BrakePedalApplied 0 "iB_BrakePedalApplied_NotApplied" 1 "iB_BrakePedalApplied_Applied";
+VAL_ 258 ESP_AebActive 0 "ESP_AebActive_Inactive" 1 "ESP_AebActive_Active";
+VAL_ 258 ESP_AebAvailable 0 "ESP_AebAvailable_Not_Available" 1 "ESP_AebAvailable_Available";
+VAL_ 258 ESP_DbsActive 0 "ESP_DbsActive_Dbs_Inactive" 1 "ESP_DbsActive_Dbs_Active";
+VAL_ 258 ESP_PrefillActiveFeedback 0 "ESP_PrefillActiveFeedback_Inactive" 1 "ESP_PrefillActiveFeedback_Active";
+VAL_ 258 ESP_PrefillAvailable 0 "ESP_PrefillAvailible_NotAvailable" 1 "ESP_PrefillAvailible_Available";
+VAL_ 258 ESP_DbsAvailable 0 "ESP_DbsAvailable_NotAvailable" 1 "ESP_DbsAvailable_Available";
+VAL_ 272 ACM_EacEnabled 0 "ACM_EacEnable_None" 1 "ACM_EacEnable_Enabled" 2 "ACM_EacEnable_Reserved";
+VAL_ 272 ACM_HapticRequired 0 "ACM_HapticRequired_Inactive" 1 "ACM_HapticRequired_Active";
+VAL_ 288 ACM_HapticRequest 0 "ACM_HapticRequest_No_Request" 1 "ACM_HapticRequest_Haptic_Request";
+VAL_ 288 ACM_lkaSymbolState 0 "ACM_LKASYMBOLSTATE_OFF" 1 "ACM_LKASYMBOLSTATE_WHITE_ON_LDW_STANDBY" 2 "ACM_LKASYMBOLSTATE_GREEN_ON_LDW_LKA_STANDBY" 3 "ACM_LKASYMBOLSTATE_GREEN_BLNK_LDW_WARN_OR_LKA_CNTRL" 4 "ACM_LKASYMBOLSTATE_ORANGE_ON_FAIL" 5 "ACM_LKASYMBOLSTATE_ORANGE_BLINK_NOT_CALIBRATED" 6 "ACM_LKASYMBOLSTATE_ORANGE_ON_REGULATION" 7 "ACM_LKASYMBOLSTATE_WHITE_BLINK";
+VAL_ 288 ACM_lkaToiFlt 0 "ACM_LKATOIFLT_NO_FAULT" 1 "ACM_LKATOIFLT_FAULT_PRESENT";
+VAL_ 288 ACM_lkaActToi 0 "ACM_LKAACTTOI_DE_ACTIVATE_TOI" 1 "ACM_LKAACTTOI_ACTIVATE_TOI";
+VAL_ 288 ACM_hbaSysState 0 "ACM_HBASYSSTATE_DEFAULT_DISABLE" 1 "ACM_HBASYSSTATE_HBA_ENABLE_HIGH_BEAM_OFF" 2 "ACM_HBASYSSTATE_HBA_ENABLE_HIGH_BEAM_ON" 7 "ACM_HBASYSSTATE_SYSTEM_FAIL";
+VAL_ 288 ACM_ldwRHWarning 0 "ACM_LKARHWARNING_NO_WARNING" 1 "ACM_LKARHWARNING_HAPTIC_WARNING_AND_DISPLAY" 2 "ACM_LKARHWARNING_ACOUSTIC_WARNING_AND_DISPLAY" 3 "ACM_LKARHWARNING_HAPTIC_ACOUSTIC_AND_DISPLAY";
+VAL_ 288 ACM_ldwLHWarning 0 "ACM_LKALHWARNING_NO_WARNING" 1 "ACM_LKALHWARNING_HAPTIC_WARNING_AND_DISPLAY" 2 "ACM_LKALHWARNING_ACOUSTIC_WARNING_AND_DISPLAY" 3 "ACM_LKALHWARNING_HAPTIC_ACOUSTIC_AND_DISPLAY";
+VAL_ 288 ACM_lkaLaneRecogState 0 "ACM_LKALANERECOGSTATE_NOT_RECOGNITION" 1 "ACM_LKALANERECOGSTATE_LEFT_LANE_RECOGNITION" 2 "ACM_LKALANERECOGSTATE_RIGHT_LANE_RECOGNITION" 3 "ACM_LKALANERECOGSTATE_FULL_LANE_RECOGNITION";
+VAL_ 288 ACM_hbaLamp 0 "ACM_HBALAMP_HBA_INDICATOR_LAMP_OFF" 1 "ACM_HBALAMP_HBA_INDICATOR_LAMP_ON";
+VAL_ 288 ACM_lkaHandsoffSoundWarning 0 "ACM_LKAHANDSOFFSOUNDWARNING_NO_INFO" 1 "ACM_LKAHANDSOFFSOUNDWARNING_WARNING" 2 "ACM_LKAHANDSOFFSOUNDWARNING_RESERVED_2" 3 "ACM_LKAHANDSOFFSOUNDWARNING_RESERVED_3";
+VAL_ 288 ACM_lkaHandsoffDisplayWarning 0 "ACM_LKAHANDSOFFDISPLAYWARNING_NO_INFO" 1 "ACM_LKAHANDSOFFDISPLAYWARNING_WARNING" 2 "ACM_LKAHANDSOFFDISPLAYWARNING_RESERVED_2" 3 "ACM_LKAHANDSOFFDISPLAYWARNING_RESERVED_3";
+VAL_ 288 ACM_lkaElkRequest 0 "off" 1 "applying torque right for left departure" 2 "applying torque left for right departure";
+VAL_ 288 ACM_ldwlkaOnOffState 1 "LDW on" 2 "LKAS+LDW on" 3 "all off";
+VAL_ 288 ACM_elkOnOffState 1 "LKAS toggled on" 2 "LKAS toggled off";
+VAL_ 304 RCM_IMU_LatAcc_Stat_SensAvail 0 "RCM_IMU_LatAcc_Stat_SensAvail_InSpec" 1 "RCM_IMU_LatAcc_Stat_SensAvail_NotInSpec";
+VAL_ 304 RCM_IMU_LatAcc_Stat_Fail 0 "RCM_IMU_LatAcc_Stat_Fail_NotFailed" 1 "RCM_IMU_LatAcc_Stat_Fail_Failed";
+VAL_ 304 RCM_IMU_LatAcc_Stat_Init 0 "RCM_IMU_LatAcc_Stat_Init_Finished" 1 "RCM_IMU_LatAcc_Stat_Init_Running";
+VAL_ 304 RCM_IMU_LatAcc_Stat_Startup 0 "RCM_IMU_LatAcc_Stat_Startup_Finished" 1 "RCM_IMU_LatAcc_Stat_Startup_Running";
+VAL_ 304 RCM_IMU_Yaw_Stat_SensAvail 0 "RCM_IMU_Yaw_Stat_SensAvail_InSpec" 1 "RCM_IMU_Yaw_Stat_SensAvail_NotInSpec";
+VAL_ 304 RCM_IMU_Yaw_Stat_Fail 0 "RCM_IMU_Yaw_Stat_Fail_NotFailed" 1 "RCM_IMU_Yaw_Stat_Fail_Failed";
+VAL_ 304 RCM_IMU_Yaw_Stat_Init 0 "RCM_IMU_Yaw_Stat_Init_Finish" 1 "RCM_IMU_Yaw_Stat_Init_Running";
+VAL_ 304 RCM_IMU_Yaw_Stat_Startup 0 "RCM_IMU_Yaw_Stat_Startup_Finished" 1 "RCM_IMU_Yaw_Stat_Startup_Running";
+VAL_ 309 RCM_IMU_Roll_Stat_SensAvail 0 "RCM_IMU_Roll_Stat_SensAvail_InSpec" 1 "RCM_IMU_Roll_Stat_SensAvail_NotInSpec";
+VAL_ 309 RCM_IMU_Roll_Stat_Fail 0 "RCM_IMU_Roll_Stat_Fail_NotFailed" 1 "RCM_IMU_Roll_Stat_Fail_Failed";
+VAL_ 309 RCM_IMU_Roll_Stat_Init 0 "RCM_IMU_Roll_Stat_Init_Finished" 1 "RCM_IMU_Roll_Stat_Init_Running";
+VAL_ 309 RCM_IMU_Roll_Stat_Startup 0 "RCM_IMU_Roll_Stat_Startup_Finished" 1 "RCM_IMU_Roll_Stat_Startup_Running";
+VAL_ 309 RCM_IMU_Heave_Stat_SensAvail 0 "RCM_IMU_Heave_Stat_SensAvail_InSpec" 1 "RCM_IMU_Heave_Stat_SensAvail_NotInSpec";
+VAL_ 309 RCM_IMU_Heave_Stat_Fail 0 "RCM_IMU_Heave_Stat_Fail_NotFailed" 1 "RCM_IMU_Heave_Stat_Fail_Failed";
+VAL_ 309 RCM_IMU_Heave_Stat_Init 0 "RCM_IMU_Heave_Stat_Init_Finished" 1 "RCM_IMU_Heave_Stat_Init_Running";
+VAL_ 309 RCM_IMU_Heave_Stat_Startup 0 "RCM_IMU_Heave_Stat_Startup_Finished" 1 "RCM_IMU_Heave_Stat_Startup_Running";
+VAL_ 320 RCM_IMU_LongAcc_Stat_SensAvail 0 "RCM_IMU_LongAcc_Stat_SensAvail_InSpec" 1 "RCM_IMU_LongAcc_Stat_SensAvail_NotInSpec";
+VAL_ 320 RCM_IMU_LongAcc_Stat_Fail 0 "RCM_IMU_LongAcc_Stat_Fail_NotFailed" 1 "RCM_IMU_LongAcc_Stat_Fail_Failed";
+VAL_ 320 RCM_IMU_LongAcc_Stat_Init 0 "RCM_IMU_LongAcc_Stat_Init_Finished" 1 "RCM_IMU_LongAcc_Stat_Init_Running";
+VAL_ 320 RCM_IMU_LongAcc_Stat_Startup 0 "RCM_IMU_LongAcc_Stat_Startup_Finished" 1 "RCM_IMU_LongAcc_Stat_Startup_Running";
+VAL_ 336 VDM_PropsnActv 0 "VDM_PropsnActv_Not_Defined" 1 "VDM_PropsnActv_Active" 2 "VDM_PropsnActv_Inactive";
+VAL_ 336 VDM_VehicleSpeedQ 0 "VDM_VehSpdQ_Inactive" 1 "VDM_VehSpdQ_Active";
+VAL_ 336 VDM_Prndl_Status 0 "VDM_Prndl_Status_Not_Defined" 1 "VDM_Prndl_Status_Park" 2 "VDM_Prndl_Status_Reverse" 3 "VDM_Prndl_Status_Neutral" 4 "VDM_Prndl_Status_Drive";
+VAL_ 336 VDM_Prndl_Request 0 "VDM_Prndl_Request_No_Req" 1 "VDM_Prndl_Request_Park" 2 "VDM_Prndl_Request_Reverse" 3 "VDM_Prndl_Request_Neutral" 4 "VDM_Prndl_Request_Drive";
+VAL_ 338 VDM_LfcRequestType 0 "LFC_Request_Type_No_Request" 1 "LFC_Request_Type_Brake_Torque_Request_Fx" 2 "LFC_Request_Type_Standstill_Hold_Request_Ssm" 3 "LFC_Request_Type_Release_Ssm";
+VAL_ 338 VDM_LfcActiveRequest 0 "VDM_LfcActiveRequest_Inactive" 1 "VDM_LfcActiveRequest_Active";
+VAL_ 338 VDM_StcFault 0 "Stc_NoFault" 1 "Stc_Fault";
+VAL_ 338 VDM_StcActiveRequest 0 "Stc_NotActive" 1 "Stc_Active";
+VAL_ 338 VDM_EpbRequest 0 "VDM_EpbRequest_No_Request" 1 "VDM_EpbRequest_Release_Req" 2 "VDM_EpbRequest_Apply_Req" 3 "VDM_EpbRequest_Sna";
+VAL_ 338 VDM_ABSOffRoadModeRequest 0 "VDM_ABSOffRoadModeRequest_Inactive" 1 "VDM_ABSOffRoadModeRequest_Active";
+VAL_ 338 VDM_HhcActiveRequest 0 "VDM_HhcActiveRequest_Inactive" 1 "VDM_HhcActiveRequest_Active";
+VAL_ 338 VDM_EspPartialModeRequest 0 "VDM_EspPartialModeRequest_Normal" 1 "VDM_EspPartialModeRequest_Sport" 2 "VDM_EspPartialModeRequest_Esc_Off" 3 "VDM_EspPartialModeRequest_Reserved";
+VAL_ 338 VDM_SteeringModeRequest 0 "VDM_SteeringModeRequest_Default" 1 "VDM_SteeringModeRequest_Normal" 2 "VDM_SteeringModeRequest_Sport" 3 "VDM_SteeringModeRequest_Comfort";
+VAL_ 338 VDM_EpasPowerMode 0 "VDM_EpasPowerMode_Drive_Off" 1 "VDM_EpasPowerMode_Drive_On" 2 "VDM_EpasPowerMode_Shutdown";
+VAL_ 352 ACM_VehicleHoldRequired 0 "ACM_VEHICLEHOLDREQ_NO_REQUEST" 1 "ACM_VEHICLEHOLDREQ_VEHICLE_HOLD_REQUEST";
+VAL_ 352 ACM_PrndRequest 0 "ACM_PRNDREQ_NO_REQUEST" 1 "ACM_PRNDREQ_PARK" 2 "ACM_PRNDREQ_REVERSE" 3 "ACM_PRNDREQ_NEUTRAL" 4 "ACM_PRNDREQ_DRIVE";
+VAL_ 352 ACM_longInterfaceEnable 0 "ACM_LONGIFEN_INIT" 1 "ACM_LONGIFEN_LONGITUDINAL_INTERFACE_ENABLE" 2 "ACM_LONGIFEN_LONGITUDINAL_INTERFACE_DISABLE" 3 "ACM_LONGIFEN_SNA";
+VAL_ 352 ACM_VehicleHoldRequest 0 "NO_REQUEST" 1 "HOLD_REQUEST";
+VAL_ 354 VDM_AdasDriverAccelPriorityStatus 0 "VDM_AdasDriverAccelPriorityStatus_Driver" 1 "VDM_AdasDriverAccelPriorityStatus_Adas";
+VAL_ 354 VDM_AdasFaultStatus 0 "VDM_AdasFlaultStatus_No_Fault" 1 "VDM_AdasFaultStatus_Brk_Intv" 2 "VDM_AdasFlaultStatus_Cntr_Fault" 3 "VDM_AdasFlaultStatus_Imps_Cmd" 15 "VDM_AdasFlaultStatus_Sna";
+VAL_ 354 VDM_AdasDriverModeStatus 0 "VDM_AdasDriverModeStatus_Human" 1 "VDM_AdasDriverModeStatus_Adas" 2 "VDM_AdasDriverModeStatus_Reserved" 3 "VDM_AdasDriverModeStatus_Sna";
+VAL_ 354 VDM_AdasInterfaceStatus 0 "VDM_AdasInterfaceStatus_Unavailable" 1 "VDM_AdasInterfaceStatus_Available" 2 "VDM_AdasInterfaceStatus_Enabled" 3 "VDM_AdasInterfaceStatus_Faulted";
+VAL_ 354 VDM_AdasVehicleHoldStatus 0 "VDM_AdasVehicleHoldStatus_NotHold" 1 "VDM_AdasVehicleHoldStatus_Hold";
+VAL_ 357 VDM_AdasStalkGapAdjust 0 "VDM_AdasStalkGapAdjust_No_Required" 1 "VDM_AdasStalkGapAdjust_GapDecrement" 2 "VDM_AdasStalkGapAdjust_GapIncrement";
+VAL_ 357 VDM_AdasStalkAccCancelRes 0 "VDM_AdasStalkAccCancelRes_NoRequired" 1 "VDM_AdasStalkAccCancelRes_Cancel" 2 "VDM_AdasStalkAccCancelRes_Resume";
+VAL_ 357 VDM_AdasStalkAutonomyButton 0 "VDM_AdasStalkAutonomyButton_No_Required" 1 "VDM_AdasStalkAutonomyButton_Pressed";
+VAL_ 357 VDM_AdasStalkAccEnableAdj 0 "VDM_AdasStalkAccEnableAdj_No_Required" 1 "VDM_AdasStalkAccEnableAdj_UpDetent1" 2 "VDM_AdasStalkAccEnableAdj_UpDetent2" 3 "VDM_AdasStalkAccEnableAdj_DownDetent1" 4 "VDM_AdasStalkAccEnableAdj_DownDetent2";
+VAL_ 384 CGM_TrailerPresent 0 "CGM_TrailerPresent_Trailer_Not_Present" 1 "CGM_TrailerPresent_Trailer_Present" 3 "CGM_TrailerPresent_Invalid";
+VAL_ 384 CGM_DriverPresent 0 "CGM_DriverPresent_Driver_Not_Present" 1 "CGM_DriverPresent_Driver_Present" 3 "CGM_DriverPresent_Invalid";
+VAL_ 384 CGM_IgnSwtState 0 "IGNSWTSTATE_OFF" 1 "IGNSWTSTATE_STANDBY" 2 "IGNSWTSTATE_ACCESSORY" 3 "IGNSWTSTATE_RUN" 4 "IGNSWTSTATE_CRANK";
+VAL_ 432 ESP_Torque_Front_MinQ 0 "ESP_TorqueFront_MinQ_Invalid" 1 "ESP_TorqueFront_MinQ_Valid";
+VAL_ 432 ESP_Torque_Front_MaxQ 0 "ESP_TorqueFront_MaxQ_Invalid" 1 "ESP_TorqueFront_MaxQ_Valid";
+VAL_ 448 ESP_Torque_Rear_MinQ 0 "ESP_TorqueLimitRear_MinQ_Invalid" 1 "ESP_TorqueLimitRear_MinQ_Valid";
+VAL_ 448 ESP_Torque_Rear_MaxQ 0 "ESP_TorqueLimitRear_MaxQ_Invalid" 1 "ESP_TorqueLimitRear_MaxQ_Valid";
+VAL_ 516 RCM_ALR_Status_Signal 0 "ALR_Unknown" 1 "ALR_Not_Engaged" 2 "ALR_Engaged" 3 "ALR_Invalid";
+VAL_ 520 ESP_BrakeLightActive_Q 0 "ESP_BRAKELIGHTACTIVE_Q_INVALID" 1 "ESP_BRAKELIGHTACTIVE_Q_VALID";
+VAL_ 520 ESP_BrakeLightActive 0 "ESP_BRAKELIGHTACTIVE_INACTIVE" 1 "ESP_BRAKELIGHTACTIVE_ACTIVE";
+VAL_ 520 ESP_Hhc_Active 0 "ESP_HHCACTV_INACTIVE" 1 "ESP_HHCACTV_ACTIVE";
+VAL_ 520 ESP_Hhc_Available 0 "ESP_HHCAVL_NOT_INITIALIZED" 1 "ESP_HHCAVL_ACTIVE";
+VAL_ 520 ESP_Abs_OffRoad_Mode 0 "ABS_OFFROAD_NORMAL" 1 "ABS_OFFROAD_OFFROAD";
+VAL_ 520 ESP_Tsm_Active 0 "TSM_ACTIVE_INACTIVE" 1 "TSM_ACTIVE_ACTIVE";
+VAL_ 520 ESP_FaultLamp_EBD 0 "ESP_FAULTLAMP_EBD_OFF" 1 "ESP_FAULTLAMP_EBD_ON";
+VAL_ 520 ESP_FaultLamp_VDC 0 "ESP_FAULTLAMP_VDC_OFF" 1 "ESP_FAULTLAMP_VDC_ON";
+VAL_ 520 ESP_FaultLamp_ABS 0 "ESP_FAULTLAMP_ABS_OFF" 1 "ESP_FAULTLAMP_ABS_ON";
+VAL_ 520 ESP_Esp_Active 0 "ESP_ACTIVE_INACTIVE" 1 "ESP_ACTIVE_ACTIVE";
+VAL_ 520 ESP_Abs_Active 0 "ABS_ACTIVE_INACTIVE" 1 "ABS_ACTIVE_ACTIVE";
+VAL_ 520 ESP_Partial_Mode 0 "ESP_PATA_MODE_NORMAL" 1 "ESP_PATA_MODE_SPORT" 2 "ESP_PATA_MODE_ESC_OFF" 3 "ESP_PATA_MODE_RESERVED";
+VAL_ 520 ESP_Vehicle_Speed_Q 0 "ESP_VEHICLE_SPEED_Q_NOT_INITIALIZED" 1 "ESP_VEHICLE_SPEED_Q_NORMAL" 2 "ESP_VEHICLE_SPEED_Q_FAULT";
+VAL_ 520 ESP_Lfc_Available 0 "LFC_AVAILABLE_NOT_AVAILABLE" 1 "LFC_AVAILABLE_AVAILABLE";
+VAL_ 520 ESP_Hba_Active 0 "ESP_HBAACTV_INACTIVE" 1 "ESP_HBAACTV_ACTIVE";
+VAL_ 520 ESP_Lfc_Active 0 "LFC_ACTIVE_INACTIVE" 1 "LFC_ACTIVE_ACTIVE";
+VAL_ 521 ESP_Wheel_Speed_Left_Front_Q 0 "ESP_WHEEL_SPEED_LEFT_FRONT_Q_NOT_INITIALIZED" 1 "ESP_WHEEL_SPEED_LEFT_FRONT_Q_NORMAL" 2 "ESP_WHEEL_SPEED_LEFT_FRONT_Q_FAULT";
+VAL_ 521 ESP_Wheel_Speed_Right_Front_Q 0 "ESP_WHEEL_SPEED_RIGHT_FRONT_Q_NOT_INITIALIZED" 1 "ESP_WHEEL_SPEED_RIGHT_FRONT_Q_NORMAL" 2 "ESP_WHEEL_SPEED_RIGHT_FRONT_Q_FAULT";
+VAL_ 521 ESP_Wheel_Dir_Right_Front 0 "ESP_WHEEL_DIR_RIGHT_FRONT_FORWARDDIRECTION" 1 "ESP_WHEEL_DIR_RIGHT_FRONT_BACKWARDDIRECTION" 2 "ESP_WHEEL_DIR_RIGHT_FRONT_STANDSTILL" 3 "ESP_WHEEL_DIR_RIGHT_FRONT_NOTDEFINABLE";
+VAL_ 521 ESP_Wheel_Dir_Left_Front 0 "ESP_WHEEL_DIR_LEFT_FRONT_FORWARDDIRECTION" 1 "ESP_WHEEL_DIR_LEFT_FRONT_BACKWARDDIRECTION" 2 "ESP_WHEEL_DIR_LEFT_FRONT_STANDSTILL" 3 "ESP_WHEEL_DIR_LEFT_FRONT_NOTDEFINABLE";
+VAL_ 522 ESP_Wheel_Speed_Left_Rear_Q 0 "ESP_WHEEL_SPEED_LEFT_REAR_Q_NOT_INITIALIZED" 1 "ESP_WHEEL_SPEED_LEFT_REAR_Q_NORMAL" 2 "ESP_WHEEL_SPEED_LEFT_REAR_Q_FAULT";
+VAL_ 522 ESP_Wheel_Speed_Right_Rear_Q 0 "ESP_WHEEL_SPEED_RIGHT_REAR_Q_NOT_INITIALIZED" 1 "ESP_WHEEL_SPEED_RIGHT_REAR_Q_NORMAL" 2 "ESP_WHEEL_SPEED_RIGHT_REAR_Q_FAULT";
+VAL_ 522 ESP_Wheel_Dir_Right_Rear 0 "ESP_WHEEL_DIR_RIGHT_REAR_FORWARDDIRECTION" 1 "ESP_WHEEL_DIR_RIGHT_REAR_BACKWARDDIRECTION" 2 "ESP_WHEEL_DIR_RIGHT_REAR_STANDSTILL" 3 "ESP_WHEEL_DIR_RIGHT_REAR_NOTDEFINABLE";
+VAL_ 522 ESP_Wheel_Dir_Left_Rear 0 "ESP_WHEEL_DIR_LEFT_REAR_FORWARDDIRECTION" 1 "ESP_WHEEL_DIR_LEFT_REAR_BACKWARDDIRECTION" 2 "ESP_WHEEL_DIR_LEFT_REAR_STANDSTILL" 3 "ESP_WHEEL_DIR_LEFT_REAR_NOTDEFINABLE";
+VAL_ 523 ESP_Wheel_Pulse_Right_Front_Q 0 "ESP_WHEEL_PULSE_RIGHT_FRONT_Q_NOT_INITIALIZED" 1 "ESP_WHEEL_PULSE_RIGHT_FRONT_Q_NORMAL" 2 "ESP_WHEEL_PULSE_RIGHT_FRONT_Q_FAULT";
+VAL_ 523 ESP_Wheel_Pulse_Right_Rear_Q 0 "ESP_WHEEL_PULSE_RIGHT_REAR_Q_NOT_INITIALIZED" 1 "ESP_WHEEL_PULSE_RIGHT_REAR_Q_NORMAL" 2 "ESP_WHEEL_PULSE_RIGHT_REAR_Q_FAULT";
+VAL_ 523 ESP_Wheel_Pulse_Left_Rear_Q 0 "ESP_WHEEL_PULSE_LEFT_REAR_Q_NOT_INITIALIZED" 1 "ESP_WHEEL_PULSE_LEFT_REAR_Q_NORMAL" 2 "ESP_WHEEL_PULSE_LEFT_REAR_Q_FAULT";
+VAL_ 523 ESP_Wheel_Pulse_Left_Front_Q 0 "ESP_WHEEL_PULSE_LEFT_FRONT_Q_NOT_INITIALIZED" 1 "ESP_WHEEL_PULSE_LEFT_FRONT_Q_NORMAL" 2 "ESP_WHEEL_PULSE_LEFT_FRONT_Q_FAULT";
+VAL_ 524 ESP_BrakePressure_RF_Q 0 "ESP_BRAKEPRESSURE_RF_Q_NOT_INITIALIZED" 1 "ESP_BRAKEPRESSURE_RF_Q_NORMAL" 2 "ESP_BRAKEPRESSURE_RF_Q_FAULT";
+VAL_ 524 ESP_BrakePressure_LF_Q 0 "ESP_BRAKEPRESSURE_LF_Q_NOT_INITIALIZED" 1 "ESP_BRAKEPRESSURE_LF_Q_NORMAL" 2 "ESP_BRAKEPRESSURE_LF_Q_FAULT";
+VAL_ 524 ESP_MasterCyl_Pressure_Q 0 "ESP_MASTERCYL_PRESSURE_Q_NOT_INITIALIZED" 1 "ESP_MASTERCYL_PRESSURE_Q_NORMAL" 2 "ESP_MASTERCYL_PRESSURE_Q_FAULT";
+VAL_ 524 ESP_BrakePressure_RR_Q 0 "ESP_BRAKEPRESSURE_RR_Q_NOT_INITIALIZED" 1 "ESP_BRAKEPRESSURE_RR_Q_NORMAL" 2 "ESP_BRAKEPRESSURE_RR_Q_FAULT";
+VAL_ 524 ESP_BrakePressure_LR_Q 0 "ESP_BRAKEPRESSURE_LR_Q_NOT_INITIALIZED" 1 "ESP_BRAKEPRESSURE_LR_Q_NORMAL" 2 "ESP_BRAKEPRESSURE_LR_Q_FAULT";
+VAL_ 529 VDM_Torque_Front_MaxQ 0 "VDM_Torque_Front_MaxQ_Invalid" 1 "VDM_Torque_Front_MaxQ_Valid";
+VAL_ 529 VDM_OutputTorqueFrontQ 0 "VDM_OutputTorqueFrontQ_Invalid" 1 "VDM_OutputTorqueFrontQ_Valid";
+VAL_ 529 VDM_Torque_Front_MinQ 0 "VDM_Torque_Front_MinQ_Invalid" 1 "VDM_Torque_FrontinQ_Valid";
+VAL_ 530 VDM_Torque_Rear_MaxQ 0 "VDM_Torque_Rear_MaxQ_Invalid" 1 "VDM_Torque_Rear_MaxQ_Valid";
+VAL_ 530 VDM_OutputTorqueRearQ 0 "VDM_OutputTorqueRearQ_Invalid" 1 "VDM_OutputTorqueRearQ_Valid";
+VAL_ 530 VDM_Torque_Rear_MinQ 0 "VDM_Torque_Rear_MinQ_Invalid" 1 "VDM_Torque_Rear_MinQ_Valid";
+VAL_ 565 RearDriverDoor 0 "SNA" 1 "Open" 2 "Closed" 3 "SNA";
+VAL_ 565 FrontPassengerDoor 0 "SNA" 1 "Open" 2 "Closed" 3 "SNA";
+VAL_ 565 DriverDoor 0 "SNA" 1 "Open" 2 "Closed" 3 "SNA";
+VAL_ 565 RearPassengerDoor 0 "SNA" 1 "Open" 2 "Closed" 3 "SNA";
+VAL_ 811 ESP_EpbAvailable 0 "ESP_EpbAvailable_Not_Available" 1 "ESP_EpbAvailable_Available";
+VAL_ 811 ESP_EpbServiceMode 0 "ESP_EpbServiceMode_Not_Active" 1 "ESP_EpbServiceMode_Active";
+VAL_ 811 ESP_EpbWarningLamp 0 "ESP_EpbWarningLamp_Off" 1 "ESP_EpbWarningLamp_Continous" 2 "ESP_EpbWarningLamp_Blink" 3 "ESP_EpbWarningLamp_Sna";
+VAL_ 811 ESP_EpbStatus 0 "ESP_EpbStatus_Released" 1 "ESP_EpbStatus_Applied" 2 "ESP_EpbStatus_Releasing" 3 "ESP_EpbStatus_Applying" 4 "ESP_EpbStatus_Dynamic_Control" 5 "ESP_EpbStatus_Unknown" 7 "ESP_EpbStatus_Sna";
+VAL_ 811 ESP_EpbFunctionLamp 0 "ESP_EpbFunction_Lamp_Off" 1 "ESP_EpbFunctionLamp_Continous" 2 "ESP_EpbFunctionLamp_Blink" 3 "ESP_EpbFunctionLamp_Sna";
+VAL_ 826 RCM_Status_DETECT_CRUSH 0 "DETECT_CRUSH_Normal_Condition" 1 "DETECT_CRUSH_Collision_Detection";
+VAL_ 826 RCM_Status_IND_WARN_RCM 0 "IND_WARN_RCM_Off" 1 "IND_WARN_RCM_Lighting";
+VAL_ 826 RCM_Status_IND_ACT_RCM_PASS 0 "IWBP_On_Ind_onOFF_Ind_on" 1 "IWBP_On_Ind_offOFF_Ind_on" 2 "IWBP_On_Ind_onOFF_Ind_off" 3 "IWBP_On_Ind_offOFF_Ind_off";
+VAL_ 826 RCM_Status_IND_WARN_BELT_DRIVER 0 "IWBP_Equipped" 1 "IWBP_Not_Equipped" 2 "IWBP_Undetermined" 3 "IWBP_SW_Failure";
+VAL_ 826 RCM_Status_IND_WARN_BELT_PASS 0 "IWBP_Equipped" 1 "IWBP_Not_Equipped" 2 "IWBP_Undetermined" 3 "IWBP_SW_Failure";
+VAL_ 848 EPAS_Ecu1EacSts 0 "EPAS_Ecu1EacSts_Eac_Inhibited" 1 "EPAS_Ecu1EacSts_Eac_Available" 2 "EPAS_Ecu1EacSts_Eac_Active" 3 "EPAS_Ecu1EacSts_Eac_Fault" 7 "EPAS_Ecu1EacSts_Sna";
+VAL_ 848 EPAS_Ecu1PowerMode 0 "EPASP_powerMode_Drive_Off" 1 "EPASP_powerMode_Drive_On" 2 "EPASP_powerMode_Shutdown" 3 "EPASP_powerMode_Sna";
+VAL_ 848 EPAS_Ecu1Role 0 "EPASP_ROLE_MASTER" 1 "EPASP_ROLE_SLAVE" 2 "EPASP_ROLE_RESERVED";
+VAL_ 848 EPAS_Ecu1State 0 "EPAS_Ecu1State_Initialisation_Arbitration" 1 "EPAS_Ecu1State_Reserved" 2 "EPAS_Ecu1State_Reserved1" 3 "EPAS_Ecu1State_Initialisation_Complete" 4 "EPAS_Ecu1State_Passive" 5 "EPAS_Ecu1State_Passive_Faulted" 6 "EPAS_Ecu1State_Assist_Active" 7 "EPAS_Ecu1State_Assist_Standby" 8 "EPAS_Ecu1State_Eac_Active" 9 "EPAS_Ecu1State_Eac_Standby" 15 "EPAS_Ecu1State_Invalid";
+VAL_ 864 EPAS_Ecu2EacSts 0 "EPAS_Ecu2EacSts_Eac_Inhibited" 1 "EPAS_Ecu2EacSts_Eac_Available" 2 "EPAS_Ecu2EacSts_Eac_Active" 3 "EPAS_Ecu2EacSts_Eac_Fault" 7 "EPAS_Ecu2EacSts_Sna";
+VAL_ 864 EPAS_Ecu2PowerMode 0 "EPASS_powerMode_Drive_Off" 1 "EPASS_powerMode_Drive_On" 2 "EPASS_powerMode_Shutdown" 3 "EPASS_powerMode_Sna";
+VAL_ 864 EPASS_Ecu2Role 0 "EPASS_Ecu2Role_Master" 1 "EPASS_Ecu2Role_Slave" 2 "EPASS_Ecu2Role_Reserved";
+VAL_ 864 EPASS_Ecu2State 0 "EPASS_Ecu2State_Initialisation_Arbitration" 1 "EPASS_Ecu2State_Reserved" 2 "EPASS_Ecu2State_Reserved1" 3 "EPASS_Ecu2State_Initialisation_Complete" 4 "EPASS_Ecu2State_Passive" 5 "EPASS_Ecu2State_Passive_Faulted" 6 "EPASS_Ecu2State_Assist_Active" 7 "EPASS_Ecu2State_Assist_Standby" 8 "EPASS_Ecu2State_Eac_Active" 9 "EPASS_Ecu2State_Eac_Standby" 15 "EPASS_Ecu2State_Invalid";
+VAL_ 880 ACM_tsrConInfoStaCon2 0 "ACM_TSRCONINFOSTACON2_NONE_DEFAULT" 1 "ACM_TSRCONINFOSTACON2_RAIN" 2 "ACM_TSRCONINFOSTACON2_SNOW" 3 "ACM_TSRCONINFOSTACON2_SNOW_RAIN" 4 "ACM_TSRCONINFOSTACON2_TARILER" 5 "ACM_TSRCONINFOSTACON2_DISTANCE" 6 "ACM_TSRCONINFOSTACON2_TIME" 7 "ACM_TSRCONINFOSTACON2_FOG" 8 "ACM_TSRCONINFOSTACON2_RESERVED_8" 9 "ACM_TSRCONINFOSTACON2_RESERVED_9" 10 "ACM_TSRCONINFOSTACON2_RESERVED_10" 11 "ACM_TSRCONINFOSTACON2_RESERVED_11" 12 "ACM_TSRCONINFOSTACON2_RESERVED_12" 14 "ACM_TSRCONINFOSTACON2_GENERIC" 15 "ACM_TSRCONINFOSTACON2_RESERVED_15";
+VAL_ 880 ACM_tsrConInfoStaCon1 0 "ACM_TSRCONINFOSTACON1_NONE_DEFAULT" 1 "ACM_TSRCONINFOSTACON1_RAIN" 2 "ACM_TSRCONINFOSTACON1_SNOW" 3 "ACM_TSRCONINFOSTACON1_SNOW_RAIN" 4 "ACM_TSRCONINFOSTACON1_TARILER" 5 "ACM_TSRCONINFOSTACON1_DISTANCE" 6 "ACM_TSRCONINFOSTACON1_TIME" 7 "ACM_TSRCONINFOSTACON1_FOG" 8 "ACM_TSRCONINFOSTACON1_RESERVED_8" 9 "ACM_TSRCONINFOSTACON1_RESERVED_9" 10 "ACM_TSRCONINFOSTACON1_RESERVED_10" 11 "ACM_TSRCONINFOSTACON1_RESERVED_11" 12 "ACM_TSRCONINFOSTACON1_RESERVED_12" 14 "ACM_TSRCONINFOSTACON1_GENERIC" 15 "ACM_TSRCONINFOSTACON1_RESERVED_15";
+VAL_ 880 ACM_tsrSpdDisClsMain 0 "TSR_Speed_No_Recognition_Default" 253 "TSR_Speed_Unlimited_Speed" 254 "TSR_Speed_Reserved" 255 "TSR_Speed_Invalid";
+VAL_ 880 ACM_tsrSpdDisCluCon1 0 "ACM_TSRSPDDISCLUCON1_NO_RECOGNITION_DEFAULT" 1 "ACM_TSRSPDDISCLUCON1_A1_252_PH_1XHEX_KPHORMPH" 253 "ACM_TSRSPDDISCLUCON1_LHD_CONDITIONAL_NO_PASSING_ZONE" 254 "ACM_TSRSPDDISCLUCON1_RHD_CONDITIONAL_NO_PASSING_ZONE" 255 "ACM_TSRSPDDISCLUCON1_INVALID";
+VAL_ 880 ACM_tsrSpdDisCluCon2 0 "ACM_TSRSPDDISCLUCON2_NO_RECOGNITION_DEFAULT" 1 "ACM_TSRSPDDISCLUCON2_A1_252_PH_1XHEX_KPHORMPH" 253 "ACM_TSRSPDDISCLUCON2_LHD_CONDITIONAL_NO_PASSING_ZONE" 254 "ACM_TSRSPDDISCLUCON2_RHD_CONDITIONAL_NO_PASSING_ZONE" 255 "ACM_TSRSPDDISCLUCON2_INVALID";
+VAL_ 880 ACM_tsrSpdDisCluConM 0 "ACM_TSRSPDDISCLUCONM_NO_RECOGNITION_DEFAULT" 253 "ACM_TSRSPDDISCLUCONM_UNLIMITED_SPEED" 254 "ACM_TSRSPDDISCLUCONM_RESERVED" 255 "ACM_TSRSPDDISCLUCONM_INVALID";
+VAL_ 880 ACM_tsrAddInfoDisplay 0 "ACM_TSRADDINFODISPLAY_NONE_DISPLAY_DEFAULT" 1 "ACM_TSRADDINFODISPLAY_LHD_NO_PASSING_ZONE_DISPLAY" 2 "ACM_TSRADDINFODISPLAY_RHD_NO_PASSING_ZONE_DISPLAY" 3 "ACM_TSRADDINFODISPLAY_INVALID";
+VAL_ 880 ACM_tsrOvrlapSignDis 0 "ACM_TSROVRLAPSIGNDIS_NONE_DEFAULT" 1 "ACM_TSROVRLAPSIGNDIS_OVERLAP_SIGN" 2 "ACM_TSROVRLAPSIGNDIS_RESERVED";
+VAL_ 880 ACM_tsrStatus 0 "ACM_TSRSTATUS_TSR_INFORMATION_VALID_DEFAULT" 1 "ACM_TSRSTATUS_TSR_INFORMATION_INVALID_FAILURE" 2 "ACM_TSRSTATUS_TSR_INFORMATION_TEMPORARY_UNAVAILABLE";
+VAL_ 896 EPAS_SteeringReduced 0 "EPAS_EPAS_SteeringReduced_Normal_Assist" 1 "EPAS_EPAS_SteeringReduced_Reduced_Assist";
+VAL_ 896 EPAS_SteeringFault 0 "EPAS_SteeringFault_No_Fault" 1 "EPAS_SteeringFault_Fault";
+VAL_ 896 EPAS_SteeringMode 0 "EPASP_SteeringMode_Default" 1 "EPASP_SteeringMode_Normal" 2 "EPASP_SteeringMode_Sport" 3 "EPASP_SteeringMode_Comfort";
+VAL_ 896 EPAS_StcFault 0 "Stc_NoFault" 1 "Stc_Fault";
+VAL_ 896 EPAS_StcActive 0 "Stc_NotActive" 1 "Stc_Active";
+VAL_ 896 EPAS_StcUnavailable 0 "Stc_Available" 1 "Stc_Unavailable";
+VAL_ 896 H_CAN_EPSS_ToiFlt 0 "H_CAN_EPS_ToiFault_No_Fault" 1 "H_CAN_EPS_ToiFault_Fault";
+VAL_ 896 H_CAN_EPSS_ToiActive 0 "H_CAN_EPS_ToiActive_Deactivated" 1 "H_CAN_EPS_ToiActive_Activated";
+VAL_ 896 H_CAN_EPS_ToiUnavailable 0 "H_CAN_EPS_ToiUnavailable_Available" 1 "H_CAN_EPS_ToiUnavailable_Unavailable";
+VAL_ 896 EPAS_HandsOnLevel 0 "EPAS_HandsOnLevel_Level_0" 1 "EPAS_HandsOnLevel_Level_1" 2 "EPAS_HandsOnLevel_Level_2" 3 "EPAS_HandsOnLevel_Level_3";
+VAL_ 907 ESPiB1_IgnitionOn 0 "ESPIB1_IgnitionOn_Not_Initilized" 1 "ESPIB1_IgnitionOn_Normal";
+VAL_ 907 ESPiB1_VehicleSpeed_Q 0 "ESPiB1_VehicleSpeed_Q_VehicleSpeedQualifier_NotInit" 1 "ESPiB1_VehicleSpeed_Q_VehicleSpeedQualifier_Normal" 2 "ESPiB1_VehicleSpeed_Q_VehicleSpeedQualifier_Faulty";
+VAL_ 908 ESPiB2_qTargetExternal_Q 0 "ESPiB2_qTargetExternal_Q_QTarget_Off" 1 "ESPiB2_qTargetExternal_Q_QTarget_EBR" 2 "ESPiB2_qTargetExternal_Q_QTarget_EBRmaxPerformance";
+VAL_ 909 ESPiB3_ABSActive 0 "ESPIB3_ABSACTIVE_ABS_IS_INACTIVE" 1 "ESPIB3_ABSACTIVE_ABS_IS_ACTIVE";
+VAL_ 909 ESPiB3_ForceBlendingActive 0 "ESPIB3_FORCEBLENDINGACTIVE_PFC_INACTIVE" 1 "ESPIB3_FORCEBLENDINGACTIVE_PFC_HOLD" 2 "ESPIB3_FORCEBLENDINGACTIVE_PFC_ACTIVE";
+VAL_ 909 ESPiB3_pMcVirtual_Q 0 "ESPIB3_PMCVIRTUAL_Q_PMCVIRTUAL_NOTINITIALIZED" 1 "ESPIB3_PMCVIRTUAL_Q_PMCVIRTUAL_NORMAL" 2 "ESPIB3_PMCVIRTUAL_Q_PMCVIRTUAL_FAULTY";
+VAL_ 909 ESPiB3_pForceBlendingMC_Q 0 "ESPIB3_PFORCEBLENDINGMC_Q_PFORCEBLENDINGMC_NOTINITIALIZED" 1 "ESPIB3_PFORCEBLENDINGMC_Q_PFORCEBLENDINGMC_NORMAL" 2 "ESPIB3_PFORCEBLENDINGMC_Q_PFORCEBLENDINGMC_FAULTY";
+VAL_ 909 ESPiB3_pMC1_Q 0 "ESPIB3_PMC1_Q_MCPRESSUREQUALIFIER_NOTINIT" 1 "ESPIB3_PMC1_Q_MCPRESSUREQUALIFIER_NORMAL" 2 "ESPIB3_PMC1_Q_MCPRESSUREQUALIFIER_FAULTY";
+VAL_ 910 iBESP1_ExtReqStatus 0 "iBESP1_ExtReqStatus_NotInitialized" 1 "iBESP1_ExtReqStatus_EBR_NotAvailable" 2 "iBESP1_ExtReqStatus_EBR_Available";
+VAL_ 910 iBESP1_sOutputRodDriver_Q 0 "IBESP1_SOUTPUTRODDRIVER_Q_SOUTPUTRODDRIVER_NOTINITIALIZED" 1 "IBESP1_SOUTPUTRODDRIVER_Q_SOUTPUTRODDRIVER_NORMAL" 2 "IBESP1_SOUTPUTRODDRIVER_Q_SOUTPUTRODDRIVER_FAULTY";
+VAL_ 910 iBESP1_sOutputRodAct_Q 0 "IBESP1_SOUTPUTRODACT_Q_SOUTPUTRODACT_NOTINITIALIZED" 1 "IBESP1_SOUTPUTRODACT_Q_SOUTPUTRODACT_NORMAL" 2 "IBESP1_SOUTPUTRODACT_Q_SOUTPUTRODACT_FAULTY";
+VAL_ 911 iBESP2_pRunout_Q 0 "IBESP2_PRUNOUT_Q_P_RUNOUT_NOT_INITIALIZED" 1 "IBESP2_PRUNOUT_Q_P_RUNOUT_NORMAL" 2 "IBESP2_PRUNOUT_Q_P_RUNOUT_FAULTY";
+VAL_ 911 iBESP2_BrakePedalApplied_Q 0 "IBESP2_BRAKEPEDALAPPLIED_Q_BRAKE_PEDAL_APPLIED_NO_INIT_OR_OFF" 1 "IBESP2_BRAKEPEDALAPPLIED_Q_BRAKE_PEDAL_APPLIED_NORMAL" 2 "IBESP2_BRAKEPEDALAPPLIED_Q_BRAKE_PEDAL_APPLIED_FAULTY";
+VAL_ 911 iBESP2_BrakePedalApplied 0 "iBESP2_BrakePedalApplied_NotApplied" 1 "iBESP2_BrakePedalApplied_Applied";
+VAL_ 911 iBESP2_RprMode 0 "IBESP2_RPRMODE_RPR_PASSIVE" 1 "IBESP2_RPRMODE_RPR_PRELOAD" 2 "IBESP2_RPRMODE_RPR_HOLD" 3 "IBESP2_RPRMODE_RPR_SUCTION" 4 "IBESP2_RPRMODE_RPR_HOLDLOWPRESSURE" 5 "IBESP2_RPRMODE_RPR_ABORT";
+VAL_ 912 EPAS_EacStatus 0 "EPAS_EacStatus_Eac_Inhibited" 1 "EPAS_EacStatus_Eac_Available" 2 "EPAS_EacStatus_Eac_Active" 3 "EPAS_EacStatus_Eac_Standby" 4 "EPAS_EacStatus_Eac_Fault" 5 "EPAS_EacStatus_Sna";
+VAL_ 912 EPAS_EacErrorCode 0 "EPAS_No_Err" 1 "EPAS_High_Angle_Cmd_Err" 2 "EPAS_High_Actual_Angle_Err" 3 "EPAS_High_Actual_Angle_Rate_Err" 4 "EPAS_Feature_Fault_Err" 5 "EPAS_Feature_Status_Invalid_Err" 6 "EPAS_Feature_Angle_Thd_Err" 7 "EPAS_Angle_Control_Cntr_Err" 8 "EPAS_Angle_Control_Mia_Err" 9 "EPAS_Angle_Control_Crc_Err" 10 "EPAS_Vehspd_Corrln_Failr_Err" 11 "EPAS_Vehspd_Max_Thd_Err" 12 "EPAS_Hands_On_Detn_Err" 13 "EPAS_Ext_Angle_Plausibility_Err" 14 "EPAS_High_Delta_Angle_Err" 15 "EPAS_Max_Steady_State_Err";
+VAL_ 912 EPAS_InternalSasQ 0 "EPAS_INTERNALSASQF_VALID" 1 "EPAS_INTERNALSASQF_INVALID";
+VAL_ 929 VDM_AchDriveModeRequestConfirm 0 "VDM_AchDriveModeRequestConfirm_NoRequest" 1 "VDM_AchDriveModeRequestConfirm_Request";
+VAL_ 929 VDM_AchDriveModeRequestPullRearw 0 "VDM_AchDriveModeRequestPullRearward_NoRequired" 1 "VDM_AchDriveModeRequestPullRearward_Required";
+VAL_ 929 VDM_AchDriveModeRequestPushDown 0 "VDM_AchDriveModeRequestPushDown_NoRequired" 1 "VDM_AchDriveModeRequestPushDown_Required";
+VAL_ 929 VDM_AchDriveModeRequestPushForwa 0 "VDM_AchDriveModeRequestPushForward_NoRequired" 1 "VDM_AchDriveModeRequestPushForward_Required";
+VAL_ 929 VDM_AchDriveModeRequestPushUp 0 "VDM_AchDriveModeRequestPushUp_NoRequired" 1 "VDM_AchDriveModeRequestPushUp_Required";
+VAL_ 929 VDM_AchDriveModeRequestRest 0 "VDM_AchDriveModeRequestRest_NoRequired" 1 "VDM_AchDriveModeRequestRest_Required";
+VAL_ 929 VDM_AchDriveMode4x4 0 "VDM_AchDriveMode4x4_A4x4Auto" 1 "VDM_AchDriveMode4x4_P4x4Permenant" 6 "VDM_AchDriveMode4x4_I_Transition" 7 "VDM_AchDriveMode4x4_Fault";
+VAL_ 929 VDM_AchDriveMode 0 "VDM_AchDriveMode_Eco" 1 "VDM_AchDriveMode_OnRoadComford" 2 "VDM_AchDriveMode_OnRoadSport" 3 "VDM_AchDriveMode_OffRoad" 4 "VDM_AchDriveMode_OffRoadSport" 5 "VDM_AchDriveMode_Autonomy";
+VAL_ 929 VDM_AchDriveModeAirSuspension 0 "VDM_AchDriveModeAirSuspension_Kneel" 1 "VDM_AchDriveModeAirSuspension_Aero" 2 "VDM_AchDriveModeAirSuspension_Design" 3 "VDM_AchDriveModeAirSuspension_High" 4 "VDM_AchDriveModeAirSuspension_Max" 7 "VDM_AchDriveModeAirSuspension_Null";
+VAL_ 929 VDM_AchDriveModeAbs 0 "VDM_AchDriveModeAbs_OnRoad" 1 "VDM_AchDriveModeAbs_OffRoad" 6 "VDM_AchDriveModeAbs_InTransition" 7 "VDM_AchDriveModeAbs_Fault";
+VAL_ 929 VDM_AchDriveModeDrivability 0 "VDM_AchDriveModeDrivability_Eco" 1 "VDM_AchDriveModeDrivability_Sport" 2 "VDM_AchDriveModeDrivability_OffRoad" 6 "VDM_AchDriveModeDrivability_InTransition" 7 "VDM_AchDriveModeDrivability_Null";
+VAL_ 929 VDM_AchDriveModeDamping 0 "VDM_AchDriveModeDamping_Kneel" 1 "VDM_AchDriveModeDamping_Aero" 2 "VDM_AchDriveModeDamping_Design" 3 "VDM_AchDriveModeDamping_High" 4 "VDM_AchDriveModeDamping_AirSuspensionMax" 6 "VDM_AchDriveModeDamping_InTransition" 7 "VDM_AchDriveModeDamping_Fault";
+VAL_ 929 VDM_AchDriveModeRollControl 0 "VDM_AchDriveModeRollControl_Low" 1 "VDM_AchDriveModeRollControl_Middle" 2 "VDM_AchDriveModeRollControl_High" 6 "VDM_AchDriveModeRollControl_InTransition" 7 "VDM_AchDriveModeRollControl_Null";
+VAL_ 929 VDM_AchDriveModeEsp 0 "VDM_AchDriveModeEsp_EspOn" 1 "VDM_AchDriveModeEsp_EspReduced" 2 "VDM_AchDriveModeEsp_EspOff" 6 "VDM_AchDriveModeEsp_InTransition" 7 "VDM_AchDriveModeEsp_Null";
+VAL_ 929 VDM_AchDriveModeEpas 0 "VDM_AchDriveModeEpas_TcsStable" 1 "VDM_AchDriveModeEpas_TcsSportRoad" 2 "VDM_AchDriveModeEpas_TcsSportOffRoad" 3 "VDM_AchDriveModeEpas_TcsOff" 7 "VDM_AchDriveModeEpas_Null";
+VAL_ 929 VDM_AchDriveModeTcs 0 "VDM_AchDriveModeTcs_Stable" 1 "VDM_AchDriveModeTcs_SportRoad" 2 "VDM_AchDriveModeTcs_SportOffRoad" 3 "VDM_AchDriveModeTcs_Off" 7 "VDM_AchDriveModeTcs_Null";
+VAL_ 1024 VCM_VehicleType 0 "VCM_VehicleType_Sna" 1 "VCM_VehicleType_R1T" 2 "VCM_VehicleType_R1S" 3 "VCM_VehicleType_Reserved_AProj" 4 "VCM_VehicleType_Reserved_BProj" 5 "VCM_VehicleType_Reserved_CProj" 6 "VCM_VehicleType_Reserved_DProj" 7 "VCM_VehicleType_Reserved_EProj";
+VAL_ 1024 VCM_HandOfDrive 0 "VCM_HandOfDrive_Lhd" 1 "VCM_HandOfDrive_Rhd";
+VAL_ 1024 VCM_BatterySize 0 "VCM_BatterySize_Sna" 1 "VCM_BatterySize_A105kW" 2 "VCM_BatterySize_A130kW" 3 "VCM_BatterySize_A180kW" 4 "VCM_BatterySize_BxxxkW" 5 "VCM_BatterySize_CxxxkW" 6 "VCM_BatterySize_DxxxkW" 7 "VCM_BatterySize_ExxxkW";
+VAL_ 1024 VCM_Market 0 "VCM_Market_Sna" 1 "VCM_Market_RegionB" 2 "VCM_Market_RegionC" 3 "VCM_Market_RegionD" 4 "VCM_Market_RegionE" 5 "VCM_Market_RegionF" 6 "VCM_Market_RegionG" 7 "VCM_Market_RegionH";
+VAL_ 1265 Cluster_Unit 0 "KPH" 1 "MPH";
+VAL_ 1640 OCS_FrontPassClass 0 "OCS_FrontPassClass_Classification_Unknown" 1 "OCS_FrontPassClass_Reserved_1" 2 "OCS_FrontPassClass_One_YO_CRS" 3 "OCS_FrontPassClass_Reserved_2" 4 "OCS_FrontPassClass_Reserved_3" 5 "OCS_FrontPassClass_Reserved_4" 6 "OCS_FrontPassClass_Small_Adult" 7 "OCS_FrontPassClass_Medium_Adult" 8 "OCS_FrontPassClass_Reserved_5" 9 "OCS_FrontPassClass_Reserved_6" 10 "OCS_FrontPassClass_Reserved_7" 11 "OCS_FrontPassClass_Reserved_8" 12 "OCS_FrontPassClass_Reserved_9" 13 "OCS_FrontPassClass_Reserved_10" 14 "OCS_FrontPassClass_Reserved_11" 15 "OCS_FrontPassClass_Reserved_12";
+VAL_ 1640 OCS_FrontPassClassValid 0 "Not_Valid" 1 "Valid";
+VAL_ 1640 OCS_FrontPassFaultStatus 0 "No_Fault_Present" 1 "Fault_Status" 2 "Reserved_1" 3 "Reserved_2";
+VAL_ 1640 OCS_Reserved_1 0 "OCS_Reserved_Reserved";
+VAL_ 1640 OCS_FrontPassSBRStatus 0 "Unknown" 1 "Empty" 2 "Occupied";
+VAL_ 1640 OCS_OperatingMode 0 "OCS_OperatingMode_Initialisation" 1 "OCS_OperatingMode_Normal_Mode" 2 "OCS_OperatingMode_Empty_Seat_Calibration_Active" 3 "OCS_OperatingMode_Barrier_Airbag_Test_Mode" 4 "OCS_OperatingMode_Voltage_Out_Of_Range" 5 "OCS_OperatingMode_Falut_Active" 6 "OCS_OperatingMode_Reserved_1" 7 "OCS_OperatingMode_Reserved_2" 8 "OCS_OperatingMode_Reserved_3" 9 "OCS_OperatingMode_Reserved_4" 10 "OCS_OperatingMode_Reserved_5" 11 "OCS_OperatingMode_Reserved_6" 12 "OCS_OperatingMode_Reserved_7" 13 "OCS_OperatingMode_Reserved_8" 14 "OCS_OperatingMode_Reserved_9" 15 "OCS_OperatingMode_Reserved_10";
+VAL_ 1640 OCS_Reserved_2 0 "OCS_Reserved_2_Reserved";
