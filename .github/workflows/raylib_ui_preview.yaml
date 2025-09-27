@@ -172,5 +172,5 @@ jobs:
             ## raylib UI Preview
             ${{ steps.find_diff.outputs.DIFF }}
           comment_tag: run_id_screenshots_raylib
-          pr_number: ${{ github.event.number }}
+          pr_number: 36216
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
