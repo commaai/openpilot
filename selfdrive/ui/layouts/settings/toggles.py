@@ -76,7 +76,7 @@ class TogglesLayout(Widget):
         icon="monitoring.png",
       ),
       toggle_item(
-        "Record Microphone Audio",
+        "Record and Upload Microphone Audio",
         DESCRIPTIONS["RecordAudio"],
         self._params.get_bool("RecordAudio"),
         icon="microphone.png",
