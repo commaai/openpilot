@@ -11,10 +11,10 @@ from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import HARDWARE, PC, TICI
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.common.realtime import Ratekeeper
 
-_DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
+_DEFAULT_FPS = int(os.getenv("FPS", 60))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
@@ -177,8 +177,8 @@ class GuiApplication:
     return self._target_fps
 
   def set_target_fps(self, fps: int):
-    rl.set_target_fps(fps)
     self._target_fps = fps
+    rl.set_target_fps(fps)
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
