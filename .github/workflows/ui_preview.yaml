@@ -53,7 +53,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           run_id: ${{ steps.get_run_id.outputs.run_id }}
           search_artifacts: true
-          name: report-1-${{ env.REPORT_NAME }}
+          name: raylib-report-1-${{ env.REPORT_NAME }}
           path: ${{ github.workspace }}/pr_ui
 
       - name: Getting master ui
