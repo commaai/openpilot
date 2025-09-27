@@ -42,6 +42,13 @@ class Scroller(Widget):
   def _render(self, _):
     # TODO: don't draw items that are not in the viewport
     visible_items = [item for item in self._items if item.is_visible]
+
+    # Add line separator between items
+    if self._line_separator is not None:
+      l = len(visible_items)
+      for i in range(1, len(visible_items)):
+        visible_items.insert(l - i, self._line_separator)
+
     content_height = sum(item.rect.height for item in visible_items) + self._spacing * (len(visible_items))
     if not self._pad_end:
       content_height -= self._spacing
@@ -49,11 +56,6 @@ class Scroller(Widget):
 
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
-
-    if self._line_separator is not None:
-      l = len(visible_items)
-      for i in range(1, len(visible_items)):
-        visible_items.insert(l - i, self._line_separator)
 
     cur_height = 0
     for idx, item in enumerate(visible_items):
@@ -73,13 +75,5 @@ class Scroller(Widget):
       item.set_position(x, y)
       item.set_parent_rect(self._rect)
       item.render()
-
-      # draw line sep
-      # if self._line_separator and len(self._items) > 0:
-      #   self._items.append(LineSeparator())
-      # if self._line_separator:
-      #   sep = LineSeparator()
-      #   sep.set_position(x, y + item.rect.height + self._spacing // 2)
-      #   sep.render()
 
     rl.end_scissor_mode()
