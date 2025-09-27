@@ -29,17 +29,17 @@ jobs:
       pull-requests: write
       actions: read
     steps:
-      - name: Waiting for ui generation to start
-        run: sleep 30
-
-      - name: Waiting for ui generation to end
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: ${{ env.SHA }}
-          check-name: ${{ env.UI_JOB_NAME }}
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          allowed-conclusions: success
-          wait-interval: 20
+#      - name: Waiting for ui generation to start
+#        run: sleep 30
+#
+#      - name: Waiting for ui generation to end
+#        uses: lewagon/wait-on-check-action@v1.3.4
+#        with:
+#          ref: ${{ env.SHA }}
+#          check-name: ${{ env.UI_JOB_NAME }}
+#          repo-token: ${{ secrets.GITHUB_TOKEN }}
+#          allowed-conclusions: success
+#          wait-interval: 20
 
       - name: Getting workflow run ID
         id: get_run_id
