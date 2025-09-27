@@ -62,6 +62,5 @@ Refer to **slice_outputs** and **parse_vision_outputs/parse_policy_outputs** in 
     * (deprecated) distracted probabilities: 2
     * using phone probability: 1
     * distracted probability: 1
-  * common outputs 2
-    * poor camera vision probability: 1
+  * common outputs 1
     * left hand drive probability: 1

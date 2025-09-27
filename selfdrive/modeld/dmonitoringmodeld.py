@@ -25,13 +25,13 @@ from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from
 MODEL_WIDTH, MODEL_HEIGHT = DM_INPUT_SIZE
 CALIB_LEN = 3
 FEATURE_LEN = 512
-OUTPUT_SIZE = 84 + FEATURE_LEN
+OUTPUT_SIZE = 83 + FEATURE_LEN
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
-
+# TODO: slice from meta
 class DriverStateResult(ctypes.Structure):
   _fields_ = [
     ("face_orientation", ctypes.c_float*3),
@@ -46,8 +46,8 @@ class DriverStateResult(ctypes.Structure):
     ("left_blink_prob", ctypes.c_float),
     ("right_blink_prob", ctypes.c_float),
     ("sunglasses_prob", ctypes.c_float),
-    ("occluded_prob", ctypes.c_float),
-    ("ready_prob", ctypes.c_float*4),
+    ("_unused_c", ctypes.c_float),
+    ("_unused_d", ctypes.c_float*4),
     ("not_ready_prob", ctypes.c_float*2)]
 
 
@@ -55,7 +55,6 @@ class DMonitoringModelResult(ctypes.Structure):
   _fields_ = [
     ("driver_state_lhd", DriverStateResult),
     ("driver_state_rhd", DriverStateResult),
-    ("poor_vision_prob", ctypes.c_float),
     ("wheel_on_right_prob", ctypes.c_float),
     ("features", ctypes.c_float*FEATURE_LEN)]
 
@@ -107,8 +106,6 @@ def fill_driver_state(msg, ds_result: DriverStateResult):
   msg.leftBlinkProb = float(sigmoid(ds_result.left_blink_prob))
   msg.rightBlinkProb = float(sigmoid(ds_result.right_blink_prob))
   msg.sunglassesProb = float(sigmoid(ds_result.sunglasses_prob))
-  msg.occludedProb = float(sigmoid(ds_result.occluded_prob))
-  msg.readyProb = [float(sigmoid(x)) for x in ds_result.ready_prob]
   msg.notReadyProb = [float(sigmoid(x)) for x in ds_result.not_ready_prob]
 
 
@@ -119,7 +116,6 @@ def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts:
   ds.frameId = frame_id
   ds.modelExecutionTime = execution_time
   ds.gpuExecutionTime = gpu_execution_time
-  ds.poorVisionProb = float(sigmoid(model_result.poor_vision_prob))
   ds.wheelOnRightProb = float(sigmoid(model_result.wheel_on_right_prob))
   ds.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
   fill_driver_state(ds.leftDriverData, model_result.driver_state_lhd)
