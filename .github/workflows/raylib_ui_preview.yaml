@@ -66,8 +66,7 @@ jobs:
           ref: openpilot_master_ui_raylib
 
       - name: Saving new master ui
-        #if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        if: true
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         working-directory: ${{ github.workspace }}/master_ui_raylib
         run: |
           git checkout --orphan=new_master_ui_raylib
