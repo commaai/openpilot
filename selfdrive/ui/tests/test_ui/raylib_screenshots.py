@@ -29,28 +29,27 @@ def setup_homescreen(click, pm: PubMaster):
 
 
 def setup_settings_device(click, pm: PubMaster):
-  # open settings from home (top-left click)
   click(100, 100)
 
 
 def setup_settings_network(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 450)  # Network settings - try middle Y coordinate
+  click(278, 450)
 
 
 def setup_settings_toggles(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 600)  # Toggles settings
+  click(278, 600)
 
 
 def setup_settings_software(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 720)  # Software settings
+  click(278, 720)
 
 
 def setup_settings_firehose(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 845)  # Firehose settings (between software and developer)
+  click(278, 845)
 
 
 def setup_settings_developer(click, pm: PubMaster):
@@ -66,6 +65,11 @@ def setup_keyboard(click, pm: PubMaster):
 
 def setup_pair_device(click, pm: PubMaster):
   click(1950, 800)
+
+
+def setup_offroad_alert(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(240, 216)
 
 
 CASES = {
@@ -117,10 +121,10 @@ class TestUI:
 
   def click(self, x: int, y: int, *args, **kwargs):
     pyautogui.mouseDown(self.ui.left + x, self.ui.top + y, *args, **kwargs)
-    time.sleep(0.01)  # Delay between mouse down and up
+    time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
-  @with_processes(["raylib_ui"])  # same decorator pattern
+  @with_processes(["raylib_ui"])
   def test_ui(self, name, setup_case):
     self.setup()
     setup_case(self.click, self.pm)
