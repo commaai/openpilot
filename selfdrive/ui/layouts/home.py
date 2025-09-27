@@ -120,14 +120,6 @@ class HomeLayout(Widget):
       self._set_state(HomeLayoutState.ALERTS)
       return
 
-    # TODO: move this into respective widgets, no need to be here?
-    # TODO: update alert never had handle input?
-    # # Content area input handling
-    # if self.current_state == HomeLayoutState.UPDATE:
-    #   self.update_alert.handle_input(mouse_pos, True)
-    # elif self.current_state == HomeLayoutState.ALERTS:
-    #   self.offroad_alert.handle_input(mouse_pos, True)
-
   def _render_header(self):
     font = gui_app.font(FontWeight.MEDIUM)
 
