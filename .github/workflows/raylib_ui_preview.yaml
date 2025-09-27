@@ -15,7 +15,8 @@ on:
 env:
   UI_JOB_NAME: "Create raylib UI Report"
   REPORT_NAME: "master"  # ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
-  SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
+  #SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
+  SHA: ${{ github.sha }}
   BRANCH_NAME: "openpilot/pr-${{ github.event.number }}-raylib-ui"
 
 jobs:
@@ -29,16 +30,16 @@ jobs:
       pull-requests: write
       actions: read
     steps:
-#      - name: Waiting for ui generation to start
-#        run: sleep 30
-#
-#      - name: Waiting for ui generation to end
-#        uses: lewagon/wait-on-check-action@v1.3.4
-#        with:
-#          ref: ${{ env.SHA }}
-#          check-name: ${{ env.UI_JOB_NAME }}
-#          repo-token: ${{ secrets.GITHUB_TOKEN }}
-#          allowed-conclusions: success
+      - name: Waiting for ui generation to start
+        run: sleep 30
+
+      - name: Waiting for ui generation to end
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ env.SHA }}
+          check-name: ${{ env.UI_JOB_NAME }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          allowed-conclusions: success
 #          wait-interval: 20
 
       - name: Getting workflow run ID
