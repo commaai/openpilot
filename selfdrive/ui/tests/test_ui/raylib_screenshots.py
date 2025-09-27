@@ -52,7 +52,13 @@ def setup_settings_firehose(click, pm: PubMaster):
 
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 950)  # Developer settings - adjusted up slightly
+  click(278, 950)
+
+
+def setup_keyboard(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 950)
+  click(1930, 270)
 
 
 CASES = {
@@ -63,6 +69,7 @@ CASES = {
   "settings_software": setup_settings_software,
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
+  "keyboard": setup_keyboard,
 }
 
 
