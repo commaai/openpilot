@@ -1,5 +1,4 @@
 import pyray as rl
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -19,7 +18,7 @@ class SetupWidget(Widget):
     self._open_settings_callback = callback
 
   def _render(self, rect: rl.Rectangle):
-    if ui_state.prime_state.get_type() > PrimeType.UNPAIRED:
+    if ui_state.prime_state.is_paired():
       self._render_firehose_prompt(rect)
     else:
       self._render_registration(rect)
