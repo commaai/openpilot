@@ -3,6 +3,7 @@ import pyray as rl
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -233,14 +234,14 @@ class OffroadAlert(AbstractAlert):
   def _build_alerts(self):
     self.sorted_alerts = []
     try:
-      with open("../selfdrived/alerts_offroad.json", "rb") as f:
+      with open(os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json"), "rb") as f:
         alerts_config = json.load(f)
         for key, config in sorted(alerts_config.items(), key=lambda x: x[1].get("severity", 0), reverse=True):
           severity = config.get("severity", 0)
           alert_data = AlertData(key=key, text="", severity=severity)
           self.sorted_alerts.append(alert_data)
     except (FileNotFoundError, json.JSONDecodeError):
-      pass
+      cloudlog.exception("Failed to load offroad alerts")
 
   def _render_content(self, content_rect: rl.Rectangle):
     y_offset = 20
