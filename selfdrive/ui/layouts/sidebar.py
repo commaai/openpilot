@@ -77,6 +77,7 @@ class Sidebar(Widget):
     self._flag_img = gui_app.texture("images/button_flag.png", HOME_BTN.width, HOME_BTN.height)
     self._settings_img = gui_app.texture("images/button_settings.png", SETTINGS_BTN.width, SETTINGS_BTN.height)
     self._mic_img = gui_app.texture("icons/microphone.png", 30, 30)
+    self._mic_indicator_rect = rl.Rectangle(0, 0, 0, 0)
     self._font_regular = gui_app.font(FontWeight.NORMAL)
     self._font_bold = gui_app.font(FontWeight.SEMI_BOLD)
 
@@ -149,7 +150,7 @@ class Sidebar(Widget):
     elif rl.check_collision_point_rec(mouse_pos, HOME_BTN) and ui_state.started:
       if self._on_flag_click:
         self._on_flag_click()
-    elif rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect):
+    elif self._recording_audio and rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect):
       if self._open_settings_callback:
         self._open_settings_callback()
 
