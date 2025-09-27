@@ -68,25 +68,24 @@ def setup_pair_device(click, pm: PubMaster):
 
 
 def setup_offroad_alert(click, pm: PubMaster):
+  set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99')
   for alert in OFFROAD_ALERTS:
     set_offroad_alert(alert, True)
 
-
   setup_settings_device(click, pm)
   click(240, 216)
-  time.sleep(1)
 
 
 CASES = {
-  # "homescreen": setup_homescreen,
-  # "settings_device": setup_settings_device,
-  # "settings_network": setup_settings_network,
-  # "settings_toggles": setup_settings_toggles,
-  # "settings_software": setup_settings_software,
-  # "settings_firehose": setup_settings_firehose,
-  # "settings_developer": setup_settings_developer,
-  # "keyboard": setup_keyboard,
-  # "pair_device": setup_pair_device,
+  "homescreen": setup_homescreen,
+  "settings_device": setup_settings_device,
+  "settings_network": setup_settings_network,
+  "settings_toggles": setup_settings_toggles,
+  "settings_software": setup_settings_software,
+  "settings_firehose": setup_settings_firehose,
+  "settings_developer": setup_settings_developer,
+  "keyboard": setup_keyboard,
+  "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
 }
 
