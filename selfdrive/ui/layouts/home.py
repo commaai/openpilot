@@ -114,11 +114,8 @@ class HomeLayout(Widget):
 
     if self.update_available and rl.check_collision_point_rec(mouse_pos, self.update_notif_rect):
       self._set_state(HomeLayoutState.UPDATE)
-      return
-
-    if self.alert_count > 0 and rl.check_collision_point_rec(mouse_pos, self.alert_notif_rect):
+    elif self.alert_count > 0 and rl.check_collision_point_rec(mouse_pos, self.alert_notif_rect):
       self._set_state(HomeLayoutState.ALERTS)
-      return
 
   def _render_header(self):
     font = gui_app.font(FontWeight.MEDIUM)
