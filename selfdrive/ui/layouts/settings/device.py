@@ -40,16 +40,10 @@ class DeviceLayout(Widget):
     items = self._initialize_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
-  def _update_state(self):
-    # Update Pair Device button visibility based on current pairing status
-    if hasattr(self, '_pair_device_btn'):
-      self._pair_device_btn.set_visible(not ui_state.prime_state.is_paired())
-
   def _initialize_items(self):
     dongle_id = self._params.get("DongleId") or "N/A"
     serial = self._params.get("HardwareSerial") or "N/A"
 
-    # Create Pair Device button as class variable for dynamic visibility control
     self._pair_device_btn = button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device)
     self._pair_device_btn.set_visible(not ui_state.prime_state.is_paired())
 
@@ -66,6 +60,9 @@ class DeviceLayout(Widget):
     ]
     regulatory_btn.set_visible(TICI)
     return items
+
+  def _update_state(self):
+    self._pair_device_btn.set_visible(not ui_state.prime_state.is_paired())
 
   def _render(self, rect):
     self._scroller.render(rect)
