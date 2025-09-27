@@ -53,11 +53,9 @@ class NavButton(Widget):
     self._x_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._y_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
 
-  def _update_state(self):
+  def set_position(self, x: float, y: float) -> None:
     self._x_pos_filter.update_dt(1 / gui_app.target_fps)
     self._y_pos_filter.update_dt(1 / gui_app.target_fps)
-
-  def set_position(self, x: float, y: float) -> None:
     x = self._x_pos_filter.update(x)
     y = self._y_pos_filter.update(y)
     changed = (self._rect.x != x or self._rect.y != y)

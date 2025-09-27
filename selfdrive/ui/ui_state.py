@@ -168,7 +168,6 @@ class Device:
     if self._interaction_time <= 0:
       self.reset_interactive_timeout()
 
-    self._brightness_filter.update_dt(1 / gui_app.target_fps)
     self._update_brightness()
     self._update_wakefulness()
 
@@ -190,6 +189,7 @@ class Device:
 
       clipped_brightness = float(np.clip(100 * clipped_brightness, 10, 100))
 
+    self._brightness_filter.update_dt(1 / gui_app.target_fps)
     brightness = round(self._brightness_filter.update(clipped_brightness))
     if not self._awake:
       brightness = 0
