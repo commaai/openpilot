@@ -1,0 +1,139 @@
+name: "raylib ui preview"
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'selfdrive/ui/**'
+      - 'system/ui/**'
+  pull_request_target:
+    types: [assigned, opened, synchronize, reopened, edited]
+    branches: [ master ]
+    paths:
+      - 'selfdrive/ui/**'
+      - 'system/ui/**'
+  workflow_dispatch:
+
+env:
+  UI_JOB_NAME: "Create Raylib UI Report"
+  REPORT_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'raylib_master' || format('raylib_pr-{0}', github.event.number) }}
+  SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
+  BRANCH_NAME: "openpilot/raylib-pr-${{ github.event.number }}"
+
+jobs:
+  preview:
+    if: github.repository == 'commaai/openpilot'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: ./.github/workflows/setup-with-retry
+        id: setup-step
+
+      - name: Build openpilot
+        run: |
+          ${{ env.RUN }} "scons -j$(nproc)"
+
+      - name: Generate raylib screenshots
+        run: |
+          ${{ env.RUN }} "python3 selfdrive/ui/tests/test_ui/raylib_screenshots.py"
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-1-${{ env.REPORT_NAME }}
+          path: selfdrive/ui/tests/test_ui/report_1/screenshots/*.png
+
+  comment:
+    needs: preview
+    if: github.repository == 'commaai/openpilot'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+    steps:
+      - name: Waiting for screenshots generation
+        run: sleep 10
+
+      - name: Getting workflow run ID
+        id: get_run_id
+        run: |
+          echo "run_id=$(curl https://api.github.com/repos/${{ github.repository }}/commits/${{ env.SHA }}/check-runs | jq -r '.check_runs[] | select(.name == "Create Raylib UI Report") | .html_url | capture("(?<number>[0-9]+)") | .number')" >> $GITHUB_OUTPUT
+
+      - name: Download artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          run_id: ${{ steps.get_run_id.outputs.run_id }}
+          search_artifacts: true
+          name: report-1-${{ env.REPORT_NAME }}
+          path: ${{ github.workspace }}/pr_ui
+
+      - name: Checkout master raylib refs
+        uses: actions/checkout@v4
+        with:
+          repository: commaai/ci-artifacts
+          ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+          path: ${{ github.workspace }}/master_ui
+          ref: openpilot_master_ui_raylib
+
+      - name: Save new master raylib ui
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        working-directory: ${{ github.workspace }}/master_ui
+        run: |
+          git checkout --orphan=new_master_ui
+          git rm -rf * || true
+          git branch -D openpilot_master_ui_raylib || true
+          git branch -m openpilot_master_ui_raylib
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          mv ${{ github.workspace }}/pr_ui/*.png .
+          git add .
+          git commit -m "raylib screenshots for commit ${{ env.SHA }}"
+          git push origin openpilot_master_ui_raylib --force
+
+      - name: Install ImageMagick
+        if: github.event_name == 'pull_request_target'
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - name: Compute diffs and comment on PR
+        if: github.event_name == 'pull_request_target'
+        run: |
+          scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1)
+          DIFF=""
+          TABLE="<details><summary>Raylib UI Screenshots</summary><table>"
+          for s in $scenes; do
+            if [ ! -f "${{ github.workspace }}/master_ui/${s}.png" ]; then
+              DIFF="${DIFF}<details open><summary>${s} : $${\\color{cyan}\\text{NEW}}$$</summary><table><tr><td><img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${s}.png\"></td></tr></table></details>"
+            elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui/${s}.png ${{ github.workspace }}/pr_ui/${s}.png ${{ github.workspace }}/pr_ui/${s}_diff.png; then
+              mv ${{ github.workspace }}/master_ui/${s}.png ${{ github.workspace }}/pr_ui/${s}_master_ref.png
+              DIFF="${DIFF}<details open><summary>${s} : $${\\color{red}\\text{DIFFERENT}}$$</summary><table><tr><td> master <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${s}_master_ref.png\"></td><td> proposed <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${s}.png\"></td></tr><tr><td colspan=2> diff <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${s}_diff.png\"></td></tr></table></details>"
+            else
+              rm -f ${{ github.workspace }}/pr_ui/${s}_diff.png
+            fi
+            TABLE="${TABLE}<tr><td><img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${s}.png\"></td></tr>"
+          done
+          TABLE="${TABLE}</table></details>"
+
+          cd ${{ github.workspace }}/master_ui
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          git checkout --orphan=${{ env.BRANCH_NAME }}
+          git rm -rf * || true
+          mv ${{ github.workspace }}/pr_ui/* .
+          git add .
+          git commit -m "raylib screenshots for PR #${{ github.event.number }}"
+          git push origin ${{ env.BRANCH_NAME }} --force
+
+          COMMENT="<!-- _(run_id_raylib_screenshots **${{ github.run_id }}**)_ -->\n## Raylib UI Preview\n${DIFF}${TABLE}"
+          gh api repos/${{ github.repository }}/issues/${{ github.event.number }}/comments -f body="$COMMENT" -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
+
+
