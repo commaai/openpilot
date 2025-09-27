@@ -172,19 +172,7 @@ class Sidebar(Widget):
     rl.draw_texture(button_img, int(HOME_BTN.x), int(HOME_BTN.y), tint)
 
     # Microphone button
-    if self._recording_audio or 1:
-      """
-      if (recording_audio) {
-        const QRect mic_indicator_btn = QRect(158, 252, 75, 40);
-        p.setBrush(danger_color);
-        p.setOpacity(mic_indicator_pressed ? 0.65 : 1.0);
-        p.drawRoundedRect(mic_indicator_btn, mic_indicator_btn.height() / 2, mic_indicator_btn.height() / 2);
-        int icon_x = mic_indicator_btn.x() + (mic_indicator_btn.width() - mic_img.width()) / 2;
-        int icon_y = mic_indicator_btn.y() + (mic_indicator_btn.height() - mic_img.height()) / 2;
-        p.drawPixmap(icon_x, icon_y, mic_img);
-      }
-      """
-
+    if self._recording_audio:
       self._mic_indicator_rect = rl.Rectangle(rect.x + rect.width - 138, rect.y + 245, 75, 40)
 
       mic_pressed = mouse_down and rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect)
