@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import DEFAULT_FPS
+from openpilot.system.ui.lib.application import FPS
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
 from openpilot.system.ui.widgets import Widget
 
@@ -14,7 +14,7 @@ CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
 PATH_COLOR_TRANSITION_DURATION = 0.5  # Seconds for color transition animation
-PATH_BLEND_INCREMENT = 1.0 / (PATH_COLOR_TRANSITION_DURATION * DEFAULT_FPS)
+PATH_BLEND_INCREMENT = 1.0 / (PATH_COLOR_TRANSITION_DURATION * FPS)
 
 MAX_POINTS = 200
 
