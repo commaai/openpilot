@@ -71,7 +71,6 @@ class Sidebar(Widget):
     self._temp_status = MetricData("TEMP", "GOOD", Colors.GOOD)
     self._panda_status = MetricData("VEHICLE", "ONLINE", Colors.GOOD)
     self._connect_status = MetricData("CONNECT", "OFFLINE", Colors.WARNING)
-
     self._recording_audio = False
 
     self._home_img = gui_app.texture("images/button_home.png", HOME_BTN.width, HOME_BTN.height)
@@ -151,7 +150,6 @@ class Sidebar(Widget):
       if self._on_flag_click:
         self._on_flag_click()
     elif rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect):
-      # emit openSettings(2, "RecordAudio");
       if self._open_settings_callback:
         self._open_settings_callback()
 
