@@ -64,7 +64,6 @@ class PairingDialog(Widget):
       self.last_qr_generation = current_time
 
   def _update_state(self):
-    print(ui_state.prime_state.prime_type)
     if ui_state.prime_state.is_paired():
       gui_app.set_modal_overlay(None)
 

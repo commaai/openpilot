@@ -4,7 +4,7 @@ from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import Button, gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 
 
 class SetupWidget(Widget):
@@ -13,15 +13,17 @@ class SetupWidget(Widget):
     self._open_settings_callback = None
     self._pairing_dialog: PairingDialog | None = None
     self._pair_device_btn = Button("Pair device", self._show_pairing, button_style=ButtonStyle.PRIMARY)
+    self._open_settings_btn = Button("Open", lambda: self._open_settings_callback() if self._open_settings_callback else None,
+                                     button_style=ButtonStyle.PRIMARY)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
 
   def _render(self, rect: rl.Rectangle):
-    if ui_state.prime_state.is_paired():
-      self._render_firehose_prompt(rect)
-    else:
+    if not ui_state.prime_state.is_paired():
       self._render_registration(rect)
+    else:
+      self._render_firehose_prompt(rect)
 
   def _render_registration(self, rect: rl.Rectangle):
     """Render registration prompt."""
@@ -79,9 +81,7 @@ class SetupWidget(Widget):
     # Open button
     button_height = 48 + 64  # font size + padding
     button_rect = rl.Rectangle(x, y, w, button_height)
-    if gui_button(button_rect, "Open", button_style=ButtonStyle.PRIMARY):
-      if self._open_settings_callback:
-        self._open_settings_callback()
+    self._open_settings_btn.render(button_rect)
 
   def _show_pairing(self):
     if not self._pairing_dialog:
