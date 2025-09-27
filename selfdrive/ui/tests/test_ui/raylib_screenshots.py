@@ -20,6 +20,9 @@ TEST_OUTPUT_DIR = TEST_DIR / "report_1"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 UI_DELAY = 0.1
 
+# Global coordinates for shared UI elements
+DEVELOPER_BUTTON = (278, 950)
+
 
 def setup_homescreen(click, pm: PubMaster):
   pass
@@ -52,12 +55,12 @@ def setup_settings_firehose(click, pm: PubMaster):
 
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 950)
+  click(*DEVELOPER_BUTTON)
 
 
 def setup_keyboard(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 950)
+  click(*DEVELOPER_BUTTON)
   click(1930, 270)
 
 
