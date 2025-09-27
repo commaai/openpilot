@@ -5,7 +5,7 @@ from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import Button, gui_button, ButtonStyle
 
 
 class SetupWidget(Widget):
@@ -13,6 +13,7 @@ class SetupWidget(Widget):
     super().__init__()
     self._open_settings_callback = None
     self._pairing_dialog: PairingDialog | None = None
+    self._pair_device_btn = Button("Pair device", self._show_pairing, button_style=ButtonStyle.PRIMARY)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
@@ -46,8 +47,7 @@ class SetupWidget(Widget):
       y += 50
 
     button_rect = rl.Rectangle(x, y + 50, w, 128)
-    if gui_button(button_rect, "Pair device", button_style=ButtonStyle.PRIMARY):
-      self._show_pairing()
+    self._pair_device_btn.render(button_rect)
 
   def _render_firehose_prompt(self, rect: rl.Rectangle):
     """Render firehose prompt widget."""
