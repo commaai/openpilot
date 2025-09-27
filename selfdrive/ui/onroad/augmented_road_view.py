@@ -94,9 +94,8 @@ class AugmentedRoadView(CameraView):
     rl.end_scissor_mode()
 
   def _handle_mouse_press(self, _):
-    if not self._hud_renderer.user_interacting():
-      if self._click_callback is not None:
-        self._click_callback()
+    if not self._hud_renderer.user_interacting() and self._click_callback is not None:
+      self._click_callback()
 
   def _handle_mouse_release(self, _):
     # We only call click callback on press if not interacting with HUD
