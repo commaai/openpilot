@@ -29,9 +29,39 @@ def setup_settings_device(click, pm: PubMaster):
   click(100, 100)
 
 
+def setup_settings_network(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 450)  # Network settings - try middle Y coordinate
+
+
+def setup_settings_toggles(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 600)  # Toggles settings
+
+
+def setup_settings_software(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 720)  # Software settings
+
+
+def setup_settings_firehose(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 845)  # Firehose settings (between software and developer)
+
+
+def setup_settings_developer(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 970)  # Developer settings
+
+
 CASES = {
   "homescreen": setup_homescreen,
   "settings_device": setup_settings_device,
+  "settings_network": setup_settings_network,
+  "settings_toggles": setup_settings_toggles,
+  "settings_software": setup_settings_software,
+  "settings_firehose": setup_settings_firehose,
+  "settings_developer": setup_settings_developer,
 }
 
 
