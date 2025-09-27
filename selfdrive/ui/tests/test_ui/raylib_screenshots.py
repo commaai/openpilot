@@ -64,6 +64,10 @@ def setup_keyboard(click, pm: PubMaster):
   click(1930, 270)
 
 
+def setup_pair_device(click, pm: PubMaster):
+  click(1950, 800)
+
+
 CASES = {
   "homescreen": setup_homescreen,
   "settings_device": setup_settings_device,
@@ -73,6 +77,7 @@ CASES = {
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard,
+  "pair_device": setup_pair_device,
 }
 
 
