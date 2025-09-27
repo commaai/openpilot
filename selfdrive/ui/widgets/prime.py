@@ -1,7 +1,7 @@
 import pyray as rl
 
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import tr, gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
@@ -29,21 +29,21 @@ class PrimeWidget(Widget):
     w = rect.width - 160
 
     # Title
-    gui_label(rl.Rectangle(x, y, w, 90), "Upgrade Now", 75, font_weight=FontWeight.BOLD)
+    gui_label(rl.Rectangle(x, y, w, 90), tr("Upgrade Now12345"), 75, font_weight=FontWeight.BOLD)
 
     # Description with wrapping
     desc_y = y + 140
     font = gui_app.font(FontWeight.LIGHT)
-    wrapped_text = "\n".join(wrap_text(font, "Become a comma prime member at connect.comma.ai", 56, int(w)))
+    wrapped_text = "\n".join(wrap_text(font, tr("Become a comma prime member at connect.comma.ai"), 56, int(w)))
     text_size = measure_text_cached(font, wrapped_text, 56)
     rl.draw_text_ex(font, wrapped_text, rl.Vector2(x, desc_y), 56, 0, rl.WHITE)
 
     # Features section
     features_y = desc_y + text_size.y + 50
-    gui_label(rl.Rectangle(x, features_y, w, 50), "PRIME FEATURES:", 41, font_weight=FontWeight.BOLD)
+    gui_label(rl.Rectangle(x, features_y, w, 50), tr("PRIME FEATURES:"), 41, font_weight=FontWeight.BOLD)
 
     # Feature list
-    features = ["Remote access", "24/7 LTE connectivity", "1 year of drive storage", "Remote snapshots"]
+    features = [tr("Remote access"), tr("24/7 LTE connectivity"), tr("1 year of drive storage"), tr("Remote snapshots")]
     for i, feature in enumerate(features):
       item_y = features_y + 80 + i * 65
       gui_label(rl.Rectangle(x, item_y, 50, 60), "✓", 50, color=rl.Color(70, 91, 234, 255))
@@ -58,5 +58,5 @@ class PrimeWidget(Widget):
     y = rect.y + 40
 
     font = gui_app.font(FontWeight.BOLD)
-    rl.draw_text_ex(font, "✓ SUBSCRIBED", rl.Vector2(x, y), 41, 0, rl.Color(134, 255, 78, 255))
-    rl.draw_text_ex(font, "comma prime", rl.Vector2(x, y + 61), 75, 0, rl.WHITE)
+    rl.draw_text_ex(font, tr("✓ SUBSCRIBED"), rl.Vector2(x, y), 41, 0, rl.Color(134, 255, 78, 255))
+    rl.draw_text_ex(font, tr("comma prime"), rl.Vector2(x, y + 61), 75, 0, rl.WHITE)

@@ -8,7 +8,7 @@ from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButto
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR
+from openpilot.system.ui.lib.application import tr, gui_app, FontWeight, DEFAULT_TEXT_COLOR
 from openpilot.system.ui.widgets import Widget
 
 HEADER_HEIGHT = 80
@@ -139,7 +139,7 @@ class HomeLayout(Widget):
       highlight_color = rl.Color(255, 140, 40, 255) if self.current_state == HomeLayoutState.UPDATE else rl.Color(255, 102, 0, 255)
       rl.draw_rectangle_rounded(self.update_notif_rect, 0.3, 10, highlight_color)
 
-      text = "UPDATE"
+      text = tr("UPDATE")
       text_width = measure_text_cached(font, text, HEAD_BUTTON_FONT_SIZE).x
       text_x = self.update_notif_rect.x + (self.update_notif_rect.width - text_width) // 2
       text_y = self.update_notif_rect.y + (self.update_notif_rect.height - HEAD_BUTTON_FONT_SIZE) // 2

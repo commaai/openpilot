@@ -12,6 +12,7 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.ui.lib.multilang import Multilang
 from openpilot.common.realtime import Ratekeeper
 
 DEFAULT_FPS = int(os.getenv("FPS", "60"))
@@ -403,5 +404,8 @@ class GuiApplication:
       cloudlog.error(f"FPS dropped critically below {fps}. Shutting down UI.")
       os._exit(1)
 
+
+multilang = Multilang()
+tr = multilang.translate
 
 gui_app = GuiApplication(2160, 1080)
