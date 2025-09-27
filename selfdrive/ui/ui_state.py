@@ -9,7 +9,6 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
-from openpilot.system.ui.lib.application import FPS
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app
 
@@ -151,7 +150,7 @@ class Device:
 
     self._offroad_brightness: int = BACKLIGHT_OFFROAD
     self._last_brightness: int = 0
-    self._brightness_filter = FirstOrderFilter(BACKLIGHT_OFFROAD, 10.00, 1 / FPS)
+    self._brightness_filter = FirstOrderFilter(BACKLIGHT_OFFROAD, 10.00, 1 / gui_app.target_fps)
     self._brightness_thread: threading.Thread | None = None
 
   def reset_interactive_timeout(self, timeout: int = -1) -> None:
@@ -167,6 +166,7 @@ class Device:
     if self._interaction_time <= 0:
       self.reset_interactive_timeout()
 
+    self._brightness_filter.update_dt(1 / gui_app.target_fps)
     self._update_brightness()
     self._update_wakefulness()
 

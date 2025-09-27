@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import FPS
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
 from openpilot.system.ui.widgets import Widget
 
@@ -14,7 +14,6 @@ CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
 PATH_COLOR_TRANSITION_DURATION = 0.5  # Seconds for color transition animation
-PATH_BLEND_INCREMENT = 1.0 / (PATH_COLOR_TRANSITION_DURATION * FPS)
 
 MAX_POINTS = 200
 
@@ -78,6 +77,10 @@ class ModelRenderer(Widget):
     if car_params := Params().get("CarParams"):
       cp = messaging.log_from_bytes(car_params, car.CarParams)
       self._longitudinal_control = cp.openpilotLongitudinalControl
+
+  @property
+  def _PATH_BLEND_INCREMENT(self):
+    return 1.0 / (PATH_COLOR_TRANSITION_DURATION * gui_app.target_fps)
 
   def set_transform(self, transform: np.ndarray):
     self._car_space_transform = transform.astype(np.float32)
@@ -294,7 +297,7 @@ class ModelRenderer(Widget):
 
       # Update blend factor
       if self._blend_factor < 1.0:
-        self._blend_factor = min(self._blend_factor + PATH_BLEND_INCREMENT, 1.0)
+        self._blend_factor = min(self._blend_factor + self._PATH_BLEND_INCREMENT, 1.0)
 
       begin_colors = NO_THROTTLE_COLORS if allow_throttle else THROTTLE_COLORS
       end_colors = THROTTLE_COLORS if allow_throttle else NO_THROTTLE_COLORS

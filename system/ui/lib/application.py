@@ -14,8 +14,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC, TICI
 from openpilot.common.realtime import Ratekeeper
 
-_DEFAULT_FPS = 20 if TICI else 60
-FPS = int(os.getenv("FPS", _DEFAULT_FPS))
+_DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
@@ -131,7 +130,7 @@ class GuiApplication:
     self._scaled_height = int(self._height * self._scale)
     self._render_texture: rl.RenderTexture | None = None
     self._textures: dict[str, rl.Texture] = {}
-    self._target_fps: int = FPS
+    self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
     self._trace_log_callback = None
@@ -146,7 +145,7 @@ class GuiApplication:
   def request_close(self):
     self._window_close_requested = True
 
-  def init_window(self, title: str, fps: int = FPS):
+  def init_window(self, title: str, fps: int = _DEFAULT_FPS):
     atexit.register(self.close)  # Automatically call close() on exit
 
     HARDWARE.set_display_power(True)
@@ -165,14 +164,21 @@ class GuiApplication:
       rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
       self._render_texture = rl.load_render_texture(self._width, self._height)
       rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-    rl.set_target_fps(fps)
 
-    self._target_fps = fps
+    self.set_target_fps(fps)
     self._set_styles()
     self._load_fonts()
 
     if not PC:
       self._mouse.start()
+
+  @property
+  def target_fps(self):
+    return self._target_fps
+
+  def set_target_fps(self, fps: int):
+    self._target_fps = fps
+    rl.set_target_fps(fps)
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
