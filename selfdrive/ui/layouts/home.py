@@ -56,6 +56,10 @@ class HomeLayout(Widget):
     self._exp_mode_button = ExperimentalModeButton()
     self._setup_callbacks()
 
+  def show_event(self):
+    self.offroad_alert.show_event()
+    self.update_alert.show_event()
+
   def _setup_callbacks(self):
     self.update_alert.set_dismiss_callback(lambda: self._set_state(HomeLayoutState.HOME))
     self.offroad_alert.set_dismiss_callback(lambda: self._set_state(HomeLayoutState.HOME))
