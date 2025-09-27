@@ -14,7 +14,6 @@ from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.helpers import with_processes
 
-
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "report_1"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
@@ -66,8 +65,8 @@ class TestUI:
     # Take full screenshot and crop to UI window (handles multi-monitor setups)
     full_screenshot = pyautogui.screenshot()
     cropped = full_screenshot.crop((self.ui.left, self.ui.top,
-                                  self.ui.left + self.ui.width,
-                                  self.ui.top + self.ui.height))
+                                    self.ui.left + self.ui.width,
+                                    self.ui.top + self.ui.height))
     cropped.save(SCREENSHOTS_DIR / f"{name}.png")
 
   def click(self, x: int, y: int, *args, **kwargs):
@@ -96,5 +95,3 @@ def create_screenshots():
 
 if __name__ == "__main__":
   create_screenshots()
-
-
