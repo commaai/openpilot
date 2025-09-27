@@ -289,7 +289,8 @@ class ModelRenderer(Widget):
         draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
     else:
       # Blend throttle/no throttle colors based on transition
-      blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, round(self._blend_filter.x * 100) / 100)
+      blend_factor = round(self._blend_filter.x * 100) / 100
+      blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, blend_factor)
       gradient = {
         'start': (0.0, 1.0),  # Bottom of path
         'end': (0.0, 0.0),  # Top of path
