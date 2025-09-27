@@ -1,11 +1,7 @@
-import os
-import json
 import pyray as rl
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
-from openpilot.common.swaglog import cloudlog
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
@@ -13,6 +9,7 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
+from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
 class AlertColors:
@@ -232,15 +229,10 @@ class OffroadAlert(AbstractAlert):
 
   def _build_alerts(self):
     self.sorted_alerts = []
-    try:
-      with open(os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json"), "rb") as f:
-        alerts_config = json.load(f)
-        for key, config in sorted(alerts_config.items(), key=lambda x: x[1].get("severity", 0), reverse=True):
-          severity = config.get("severity", 0)
-          alert_data = AlertData(key=key, text="", severity=severity)
-          self.sorted_alerts.append(alert_data)
-    except (FileNotFoundError, json.JSONDecodeError):
-      cloudlog.exception("Failed to load offroad alerts")
+    for key, config in sorted(OFFROAD_ALERTS.items(), key=lambda x: x[1].get("severity", 0), reverse=True):
+      severity = config.get("severity", 0)
+      alert_data = AlertData(key=key, text="", severity=severity)
+      self.sorted_alerts.append(alert_data)
 
   def _render_content(self, content_rect: rl.Rectangle):
     y_offset = 20
