@@ -9,6 +9,7 @@ import pyautogui
 import pywinctl
 
 from cereal import log
+from cereal import messaging
 from cereal.messaging import PubMaster
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
@@ -51,7 +52,7 @@ def setup_settings_firehose(click, pm: PubMaster):
 
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 970)  # Developer settings
+  click(278, 950)  # Developer settings - adjusted up slightly
 
 
 CASES = {
@@ -74,9 +75,9 @@ class TestUI:
   def setup(self):
     # Seed minimal offroad state
     self.pm = PubMaster(["deviceState"])
-    ds = log.DeviceState.new_message()
-    ds.networkType = log.DeviceState.NetworkType.wifi
-    ds.started = False
+    ds = messaging.new_message('deviceState')
+    ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
+    ds.deviceState.started = False
     for _ in range(5):
       self.pm.send('deviceState', ds)
       ds.clear_write_flag()
@@ -84,7 +85,7 @@ class TestUI:
 
     # Find the raylib UI window
     time.sleep(1)  # Wait for UI to appear
-    ui_windows = pywinctl.getWindowsWithTitle("ui")
+    ui_windows = pywinctl.getWindowsWithTitle("UI")
     if ui_windows:
       self.ui = ui_windows[0]
     else:
@@ -100,10 +101,11 @@ class TestUI:
     cropped.save(SCREENSHOTS_DIR / f"{name}.png")
 
   def click(self, x: int, y: int, *args, **kwargs):
-    pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
-    time.sleep(UI_DELAY)
+    pyautogui.mouseDown(self.ui.left + x, self.ui.top + y, *args, **kwargs)
+    time.sleep(0.01)  # Delay between mouse down and up
+    pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
-  @with_processes(["ui"])  # same decorator pattern
+  @with_processes(["raylib_ui"])  # same decorator pattern
   def test_ui(self, name, setup_case):
     self.setup()
     setup_case(self.click, self.pm)
