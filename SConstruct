@@ -5,6 +5,7 @@ import sysconfig
 import platform
 import shlex
 import numpy as np
+import panda
 
 import SCons.Errors
 
@@ -92,6 +93,8 @@ env = Environment(
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
+
+env.AppendUnique(CPPPATH=[panda.INCLUDE_PATH])
 
 # Arch-specific flags and paths
 if arch == "larch64":
@@ -242,10 +245,6 @@ SConscript(['cereal/SConscript'])
 Import('socketmaster', 'msgq')
 messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
-
-
-# Build other submodules
-SConscript(['panda/SConscript'])
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
