@@ -5,6 +5,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.onboarding import OnboardingDialog
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
@@ -36,6 +37,7 @@ class DeviceLayout(Widget):
     self._driver_camera: DriverCameraDialog | None = None
     self._pair_device_dialog: PairingDialog | None = None
     self._fcc_dialog: HtmlRenderer | None = None
+    self._onboarding_dialog = OnboardingDialog()
 
     items = self._initialize_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
@@ -148,4 +150,4 @@ class DeviceLayout(Widget):
     gui_app.set_modal_overlay(self._fcc_dialog, callback=lambda result: setattr(self, '_fcc_dialog', None))
 
   def _on_review_training_guide(self):
-    gui_app.set_modal_overlay()
+    gui_app.set_modal_overlay(self._onboarding_dialog)

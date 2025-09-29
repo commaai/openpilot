@@ -184,21 +184,30 @@ class GuiApplication:
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
-    cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
+    t = time.monotonic()
+    cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}_{keep_aspect_ratio}"
+    print('gen cache key', time.monotonic() - t, cache_key)
     if cache_key in self._textures:
       return self._textures[cache_key]
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
+      print('loaded file', time.monotonic() - t, fspath)
       texture_obj = self._load_texture_from_image(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      print('texture from image', time.monotonic() - t)
     self._textures[cache_key] = texture_obj
+    print()
     return texture_obj
 
   def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     """Load and resize a texture, storing it for later automatic unloading."""
+    t = time.monotonic()
     image = rl.load_image(image_path)
+    print('loaded image', time.monotonic() - t, image_path)
 
     if alpha_premultiply:
       rl.image_alpha_premultiply(image)
+
+    print('alpha premultiply', time.monotonic() - t, alpha_premultiply)
 
     # Resize with aspect ratio preservation if requested
     if keep_aspect_ratio:
@@ -217,11 +226,16 @@ class GuiApplication:
     else:
       rl.image_resize(image, width, height)
 
+    print('resized image', time.monotonic() - t, width, height, keep_aspect_ratio)
+
     texture = rl.load_texture_from_image(image)
+    print('loaded texture', time.monotonic() - t)
     # Set texture filtering to smooth the result
     rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+    print('set texture filter', time.monotonic() - t)
 
     rl.unload_image(image)
+    print('unloaded image', time.monotonic() - t)
     return texture
 
   def close(self):
