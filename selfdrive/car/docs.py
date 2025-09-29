@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import os
 
 from openpilot.common.basedir import BASEDIR
@@ -8,14 +7,14 @@ from opendbc.car.docs import get_all_car_docs, generate_cars_md
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
+
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Auto generates supported cars documentation",
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  doc_path = get_doc_path()
+  if doc_path is None:
+    print("No doc path found, run from a car brand directory", file=sys.stderr)
+    sys.exit(1)
 
-  parser.add_argument("--template", default=CARS_MD_TEMPLATE, help="Override default template filename")
-  parser.add_argument("--out", default=CARS_MD_OUT, help="Override default generated filename")
-  args = parser.parse_args()
+  car_docs = get_car_docs()
 
-  with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_all_car_docs(), args.template))
-  print(f"Generated and written to {args.out}")
+  with open(doc_path, "w") as f:
+    json.dump(car_docs, f, indent=2, sort_keys=True)
