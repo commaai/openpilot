@@ -35,6 +35,7 @@ class HtmlElement:
 
 class HtmlRenderer(Widget):
   def __init__(self, file_path: str):
+    super().__init__()
     self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
@@ -122,7 +123,7 @@ class HtmlRenderer(Widget):
     rl.end_scissor_mode()
 
     button_width = (rect.width - 3 * 50) // 3
-    button_x = content_rect.x + (content_rect.width - button_width) / 2
+    button_x = content_rect.x + content_rect.width - button_width
     button_y = content_rect.y + content_rect.height - button_height
     button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)
     if gui_button(button_rect, "OK", button_style=ButtonStyle.PRIMARY) == 1:

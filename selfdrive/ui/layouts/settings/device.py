@@ -145,9 +145,7 @@ class DeviceLayout(Widget):
   def _on_regulatory(self):
     if not self._fcc_dialog:
       self._fcc_dialog = HtmlRenderer(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
+    gui_app.set_modal_overlay(self._fcc_dialog, callback=lambda result: setattr(self, '_fcc_dialog', None))
 
-    gui_app.set_modal_overlay(self._fcc_dialog,
-      callback=lambda result: setattr(self, '_fcc_dialog', None),
-    )
-
-  def _on_review_training_guide(self): pass
+  def _on_review_training_guide(self):
+    gui_app.set_modal_overlay()
