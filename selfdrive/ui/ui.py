@@ -8,11 +8,8 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 
 
 def main():
-  # Configure real-time process for optimal UI performance
-  # Use real-time scheduling with high priority
-  # Core 0 is shared with other non-critical processes (calibrationd, locationd, etc.)
-  # Priority 54 for consistent UI performance
-  config_realtime_process(0, 54)
+  # TODO: https://github.com/commaai/agnos-builder/pull/490
+  # os.nice(-20)
 
   gui_app.init_window("UI")
   main_layout = MainLayout()
