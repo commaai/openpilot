@@ -298,7 +298,42 @@ class LongitudinalMpc:
 
   @staticmethod
   def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
-    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
+    # Human-like asymmetric acceleration decay (ignore a_lead_tau)
+    # - Positive accel: decay quickly toward 0 (drivers rarely sustain accel)
+    # - Negative accel: decay toward 0 but enforce a temporary mild-braking floor that relaxes to 0
+    a_lead_traj_orig = a_lead * np.exp(-a_lead_tau * (T_IDXS ** 2) / 2.)
+    a0 = float(a_lead)
+    if a0 > 0.0:
+      tau_pos = 0.4  # s, fast decay for positive acceleration
+      a0_capped = min(a0, 0.5)  # don't project strong positive accel
+      decay = np.exp(-T_IDXS / tau_pos)
+      a_lead_traj = a0_capped * decay
+    else:
+      # Raw decay of current braking toward 0 with magnitude-dependent time constant
+      decel_mag = np.clip(-a0, 0.0, 6.0)
+      tau_neg = np.interp(decel_mag, [0.0, 2.0, 6.0], [1.0, 1.6, 2.4])
+      a_traj_raw = a0 * np.exp(-T_IDXS / tau_neg)
+
+      # Temporary braking floor that relaxes toward 0 to avoid premature optimism
+      # Floor magnitude depends on current braking magnitude
+      floor0 = np.interp(decel_mag, [0.0, 2.0, 6.0], [0.3, 0.7, 1.2])  # m/s^2
+      tau_floor = 2.5  # s, relax floor slowly
+      a_floor_t = -floor0 * np.exp(-T_IDXS / tau_floor)
+
+      # Final trajectory honors at least the braking floor, then releases to 0 later
+      a_lead_traj = np.minimum(a_traj_raw, a_floor_t)
+
+    # Debug prints to compare original vs new behavior
+    if (a_lead is not None) and (a_lead_tau is not None):
+      try:
+        if (a_lead < -1.0) and (a_lead_tau > 0.5):
+          print('   ', a_lead)
+          print('orig', a_lead_traj_orig.tolist())
+          print('new', a_lead_traj.tolist())
+          print()
+      except Exception:
+        pass
+
     v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
     lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
