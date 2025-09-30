@@ -8,6 +8,7 @@ from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, Pan
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets import Widget
+from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
 
 
 ONROAD_FPS = 20
@@ -40,6 +41,11 @@ class MainLayout(Widget):
 
     # Set callbacks
     self._setup_callbacks()
+
+    # Start onboarding if terms or training not completed
+    self._onboarding_window = OnboardingWindow()
+    if not self._onboarding_window.completed:
+      gui_app.set_modal_overlay(self._onboarding_window)
 
   def _render(self, _):
     self._handle_onroad_transition()
