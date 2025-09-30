@@ -8,7 +8,6 @@ from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, Pan
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets import Widget
-# from openpilot.selfdrive.ui.layouts.onboarding import maybe_show_onboarding, completed
 from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
 
 
