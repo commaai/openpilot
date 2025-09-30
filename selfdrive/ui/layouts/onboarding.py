@@ -68,7 +68,6 @@ class TrainingGuide(Widget):
         self._step = 0
         if self._completed_callback:
           self._completed_callback()
-        return
 
   def _render(self, _):
     rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
@@ -96,16 +95,8 @@ class TermsPage(Widget):
     self._desc = Label("You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing.",
                        font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=TextAlignment.LEFT)
 
-    self._decline_btn = Button("Decline", click_callback=self._on_decline_clicked)
-    self._accept_btn = Button("Agree", button_style=ButtonStyle.PRIMARY, click_callback=self._on_accept_clicked)
-
-  def _on_accept_clicked(self):
-    if self._on_accept:
-      self._on_accept()
-
-  def _on_decline_clicked(self):
-    if self._on_decline:
-      self._on_decline()
+    self._decline_btn = Button("Decline", click_callback=on_decline)
+    self._accept_btn = Button("Agree", button_style=ButtonStyle.PRIMARY, click_callback=on_accept)
 
   def _render(self, _):
     welcome_x = self._rect.x + 165
