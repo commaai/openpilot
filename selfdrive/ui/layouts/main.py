@@ -59,9 +59,6 @@ class MainLayout(Widget):
     self._layouts[MainState.ONROAD].set_click_callback(self._on_onroad_clicked)
     device.add_interactive_timeout_callback(self._set_mode_for_state)
 
-  # def completed(self) -> bool:
-  #   return completed()
-
   def _update_layout_rects(self):
     self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
 
