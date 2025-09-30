@@ -1,7 +1,6 @@
 import pyray as rl
 from enum import IntEnum
 import cereal.messaging as messaging
-from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
@@ -9,10 +8,6 @@ from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
-
-
-ONROAD_FPS = 20
-OFFROAD_FPS = 60
 
 
 class MainState(IntEnum):
@@ -30,8 +25,6 @@ class MainLayout(Widget):
     self._sidebar = Sidebar()
     self._current_mode = MainState.HOME
     self._prev_onroad = False
-
-    gui_app.set_target_fps(OFFROAD_FPS)
 
     # Initialize layouts
     self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
@@ -86,9 +79,6 @@ class MainLayout(Widget):
       self._layouts[self._current_mode].hide_event()
       self._current_mode = layout
       self._layouts[self._current_mode].show_event()
-
-      # No need to draw onroad faster than source (model at 20Hz) and prevents screen tearing
-      gui_app.set_target_fps(ONROAD_FPS if self._current_mode == MainState.ONROAD else OFFROAD_FPS)
 
   def open_settings(self, panel_type: PanelType):
     self._layouts[MainState.SETTINGS].set_current_panel(panel_type)
