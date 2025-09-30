@@ -26,6 +26,12 @@ DM_RECORD_YES_RECT = rl.Rectangle(695, 794, 558, 187)
 RESTART_TRAINING_RECT = rl.Rectangle(612.0 - 525, 795.0, 662.0 - 190, 186.0)
 
 
+class OnboardingState(IntEnum):
+  TERMS = 0
+  ONBOARDING = 1
+  DECLINE = 2
+
+
 class TrainingGuide(Widget):
   def __init__(self, completed_callback=None):
     super().__init__()
@@ -155,12 +161,6 @@ class DeclinePage(Widget):
     text_rect = rl.Rectangle(self._rect.x + 165, self._rect.y + (btn_y - text_height) / 2, self._rect.width - (165 * 2), text_height)
     rl.draw_rectangle_lines_ex(text_rect, 3, rl.RED)
     self._text.render(text_rect)
-
-
-class OnboardingState(IntEnum):
-  TERMS = 0
-  ONBOARDING = 1
-  DECLINE = 2
 
 
 class OnboardingWindow(Widget):
