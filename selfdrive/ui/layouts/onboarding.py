@@ -8,7 +8,6 @@ from openpilot.common.params_pyx import Params
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app
 
-
 DEBUG = True
 
 STEP_RECTS = [rl.Rectangle(104.0, 800.0, 633.0, 175.0), rl.Rectangle(1835.0, 0.0, 2159.0, 1080.0), rl.Rectangle(1835.0, 0.0, 2156.0, 1080.0),
@@ -19,9 +18,10 @@ STEP_RECTS = [rl.Rectangle(104.0, 800.0, 633.0, 175.0), rl.Rectangle(1835.0, 0.0
               rl.Rectangle(1336.0, 438.0, 490.0, 393.0), rl.Rectangle(1835.0, 0.0, 2159.0, 1080.0), rl.Rectangle(1835.0, 0.0, 2159.0, 1080.0),
               rl.Rectangle(612.0 - 525, 795.0, 662.0 + 525, 186.0)]
 
-
 DM_RECORD_STEP = 9
 DM_RECORD_YES_RECT = rl.Rectangle(695, 794, 558, 187)
+
+RESTART_TRAINING_RECT = rl.Rectangle(612.0 - 525, 795.0, 662.0 - 190, 186.0)
 
 
 class OnboardingDialog(Widget):
@@ -29,7 +29,7 @@ class OnboardingDialog(Widget):
     super().__init__()
 
     self._params = Params()
-    self._step = 18
+    self._step = 0
     self._load_images()
 
   def _load_images(self):
@@ -42,19 +42,24 @@ class OnboardingDialog(Widget):
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
-      if self._step >= len(self._images) - 1:
-        self._completed_training()
-        gui_app.set_modal_overlay(None)
-        return
-
       if self._step == DM_RECORD_STEP:
         yes = rl.check_collision_point_rec(mouse_pos, DM_RECORD_YES_RECT)
         print(f"putting RecordFront to {yes}")
         self._params.put_bool("RecordFront", yes)
 
+      elif self._step == len(self._images) - 1:
+        if rl.check_collision_point_rec(mouse_pos, RESTART_TRAINING_RECT):
+          self._step = -1
+
       self._step += 1
 
+      if self._step >= len(self._images):
+        self._completed_training()
+        gui_app.set_modal_overlay(None)
+        return
+
   def _completed_training(self):
+    self._step = 0
     current_training_version = self._params.get("TrainingVersion")
     self._params.put("CompletedTrainingVersion", current_training_version)
 
