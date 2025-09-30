@@ -125,7 +125,6 @@ class TermsPage(Widget):
     return -1
 
 
-
 class DeclinePage(Widget):
   def __init__(self, back_callback=None):
     super().__init__()
@@ -156,8 +155,6 @@ class DeclinePage(Widget):
     text_rect = rl.Rectangle(self._rect.x + 165, self._rect.y + (btn_y - text_height) / 2, self._rect.width - (165 * 2), text_height)
     rl.draw_rectangle_lines_ex(text_rect, 3, rl.RED)
     self._text.render(text_rect)
-
-
 
 
 class OnboardingState(IntEnum):
