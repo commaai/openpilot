@@ -4,10 +4,11 @@ from enum import IntEnum
 
 import pyray as rl
 from openpilot.common.basedir import BASEDIR
+from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.lib.application import gui_app
-
-from selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
+from openpilot.system.ui.widgets.label import Label, TextAlignment
+from openpilot.selfdrive.ui.ui_state import ui_state
 
 DEBUG = True
 
@@ -79,59 +80,6 @@ class OnboardingDialog(Widget):
       rl.draw_rectangle_lines_ex(STEP_RECTS[self._step], 3, rl.RED)
 
 
-from openpilot.system.ui.lib.text_measure import measure_text_cached  # noqa: F401
-from openpilot.system.ui.lib.application import FontWeight
-from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.widgets.label import Label, TextAlignment
-from openpilot.common.params_pyx import Params
-
-
-"""
-void TermsPage::showEvent(QShowEvent *event) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(45, 35, 45, 45);
-  main_layout->setSpacing(0);
-
-  QVBoxLayout *vlayout = new QVBoxLayout();
-  vlayout->setContentsMargins(165, 165, 165, 0);
-  main_layout->addLayout(vlayout);
-
-  QLabel *title = new QLabel(tr("Welcome to openpilot"));
-  title->setStyleSheet("font-size: 90px; font-weight: 500;");
-  vlayout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  vlayout->addSpacing(90);
-  QLabel *desc = new QLabel(tr("You must accept the Terms and Conditions to use openpilot. Read the latest terms at <span style='color: #465BEA;'>https://comma.ai/terms</span> before continuing."));
-  desc->setWordWrap(true);
-  desc->setStyleSheet("font-size: 80px; font-weight: 300;");
-  vlayout->addWidget(desc, 0);
-
-  vlayout->addStretch();
-
-  QHBoxLayout* buttons = new QHBoxLayout;
-  buttons->setMargin(0);
-  buttons->setSpacing(45);
-  main_layout->addLayout(buttons);
-
-  QPushButton *decline_btn = new QPushButton(tr("Decline"));
-  buttons->addWidget(decline_btn);
-  QObject::connect(decline_btn, &QPushButton::clicked, this, &TermsPage::declinedTerms);
-
-  accept_btn = new QPushButton(tr("Agree"));
-  accept_btn->setStyleSheet(R"(
-    QPushButton {
-      background-color: #465BEA;
-    }
-    QPushButton:pressed {
-      background-color: #3049F4;
-    }
-  )");
-  buttons->addWidget(accept_btn);
-  QObject::connect(accept_btn, &QPushButton::clicked, this, &TermsPage::acceptedTerms);
-}
-"""
-
-
 class TermsPage(Widget):
   def __init__(self, on_accept=None, on_decline=None):
     super().__init__()
@@ -170,83 +118,12 @@ class TermsPage(Widget):
     self._desc.render(desc_rect)
 
     btn_y = self._rect.y + self._rect.height - 160 - 45
-    btn_spacing = 45
     btn_width = (self._rect.width - 45 * 3) / 2
     self._decline_btn.render(rl.Rectangle(self._rect.x + 45, btn_y, btn_width, 160))
     self._accept_btn.render(rl.Rectangle(self._rect.x + 45 * 2 + btn_width, btn_y, btn_width, 160))
 
     return -1
 
-
-# --- Onboarding helpers ---
-# def completed(params: _Params | None = None) -> bool:
-#   p = params or _Params()
-#   current_terms_version = p.get("TermsVersion")
-#   current_training_version = p.get("TrainingVersion")
-#   accepted_terms = p.get("HasAcceptedTerms") == current_terms_version
-#   training_done = p.get("CompletedTrainingVersion") == current_training_version
-#   return accepted_terms and training_done
-
-
-# def show_training_guide():
-#   gui_app.set_modal_overlay(OnboardingDialog())
-#
-#
-# def maybe_show_onboarding():
-#   p = _Params()
-#   current_terms_version = p.get("TermsVersion")
-#   current_training_version = p.get("TrainingVersion")
-#   accepted_terms = p.get("HasAcceptedTerms") == current_terms_version
-#   training_done = p.get("CompletedTrainingVersion") == current_training_version
-#
-#   if not accepted_terms:
-#     def _on_accept():
-#       p.put("HasAcceptedTerms", current_terms_version)
-#       if p.get("CompletedTrainingVersion") != current_training_version:
-#         show_training_guide()
-#
-#     def _on_decline():
-#       p.put_bool("DoUninstall", True)
-#
-#     gui_app.set_modal_overlay(TermsPage(on_accept=_on_accept, on_decline=_on_decline))
-#   elif not training_done:
-#     show_training_guide()
-
-
-
-"""
-void DeclinePage::showEvent(QShowEvent *event) {
-  if (layout()) {
-    return;
-  }
-
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(45);
-  main_layout->setSpacing(40);
-
-  QLabel *text = new QLabel(this);
-  text->setText(tr("You must accept the Terms and Conditions in order to use openpilot."));
-  text->setStyleSheet(R"(font-size: 80px; font-weight: 300; margin: 200px;)");
-  text->setWordWrap(true);
-  main_layout->addWidget(text, 0, Qt::AlignCenter);
-
-  QHBoxLayout* buttons = new QHBoxLayout;
-  buttons->setSpacing(45);
-  main_layout->addLayout(buttons);
-
-  QPushButton *back_btn = new QPushButton(tr("Back"));
-  buttons->addWidget(back_btn);
-
-  QObject::connect(back_btn, &QPushButton::clicked, this, &DeclinePage::getBack);
-
-  QPushButton *uninstall_btn = new QPushButton(tr("Decline, uninstall %1").arg(getBrand()));
-  uninstall_btn->setStyleSheet("background-color: #B73D3D");
-  buttons->addWidget(uninstall_btn);
-  QObject::connect(uninstall_btn, &QPushButton::clicked, [=]() {
-    Params().putBool("DoUninstall", true);
-  });
-}
-"""
 
 
 class DeclinePage(Widget):
@@ -281,50 +158,6 @@ class DeclinePage(Widget):
     self._text.render(text_rect)
 
 
-"""
-OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  std::string current_terms_version = params.get("TermsVersion");
-  std::string current_training_version = params.get("TrainingVersion");
-  accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
-  training_done = params.get("CompletedTrainingVersion") == current_training_version;
-
-  TermsPage* terms = new TermsPage(this);
-  addWidget(terms);
-  connect(terms, &TermsPage::acceptedTerms, [=]() {
-    params.put("HasAcceptedTerms", current_terms_version);
-    accepted_terms = true;
-    updateActiveScreen();
-  });
-  connect(terms, &TermsPage::declinedTerms, [=]() { setCurrentIndex(2); });
-
-  TrainingGuide* tr = new TrainingGuide(this);
-  addWidget(tr);
-  connect(tr, &TrainingGuide::completedTraining, [=]() {
-    training_done = true;
-    params.put("CompletedTrainingVersion", current_training_version);
-    updateActiveScreen();
-  });
-
-  DeclinePage* declinePage = new DeclinePage(this);
-  addWidget(declinePage);
-  connect(declinePage, &DeclinePage::getBack, [=]() { updateActiveScreen(); });
-
-  setStyleSheet(R"(
-    * {
-      color: white;
-      background-color: black;
-    }
-    QPushButton {
-      height: 160px;
-      font-size: 55px;
-      font-weight: 400;
-      border-radius: 10px;
-      background-color: #4F4F4F;
-    }
-  )");
-  updateActiveScreen();
-}
-"""
 
 
 class OnboardingState(IntEnum):
@@ -338,8 +171,8 @@ class OnboardingWindow(Widget):
     super().__init__()
     self._current_terms_version = ui_state.params.get("TermsVersion")
     self._current_training_version = ui_state.params.get("TrainingVersion")
-    self._accepted_terms = ui_state.params.get("HasAcceptedTerms") == self._current_terms_version
-    self._training_done = ui_state.params.get("CompletedTrainingVersion") == self._current_training_version
+    self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == self._current_terms_version
+    self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == self._current_training_version
 
     self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
 
