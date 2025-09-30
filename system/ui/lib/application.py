@@ -334,7 +334,7 @@ class GuiApplication:
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
-    all_chars += "–✓×°"
+    all_chars += "–✓×°§"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
