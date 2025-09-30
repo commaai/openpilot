@@ -7,6 +7,14 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app
 
+STEP_RECTS = [(rl.Rectangle(104.0, 800.0, 737.0, 975.0)), (rl.Rectangle(1835.0, 2.0, 2159.0, 1078.0)), (rl.Rectangle(1844.0, 4.0, 2156.0, 1078.0)),
+              (rl.Rectangle(1526.0, 473.0, 1953.0, 945.0)), (rl.Rectangle(1643.0, 441.0, 1860.0, 664.0)), (rl.Rectangle(1844.0, 5.0, 2155.0, 1076.0)),
+              (rl.Rectangle(1786.0, 591.0, 2053.0, 827.0)), (rl.Rectangle(1353.0, 2.0, 2157.0, 1078.0)), (rl.Rectangle(1458.0, 485.0, 2091.0, 696.0)),
+              (rl.Rectangle(695.0, 794.0, 1253.0, 981.0)), (rl.Rectangle(1560.0, 170.0, 1952.0, 567.0)), (rl.Rectangle(1842.0, 1.0, 2159.0, 1078.0)),
+              (rl.Rectangle(1351.0, 0.0, 2158.0, 1079.0)), (rl.Rectangle(1841.0, 1.0, 2158.0, 1078.0)), (rl.Rectangle(1531.0, 82.0, 1972.0, 1002.0)),
+              (rl.Rectangle(1336.0, 438.0, 1826.0, 831.0)), (rl.Rectangle(1843.0, 1.0, 2159.0, 1077.0)), (rl.Rectangle(1842.0, 2.0, 1842.0, 3.0)),
+              (rl.Rectangle(612.0, 795.0, 1274.0, 981.0))]
+
 
 class OnboardingDialog(Widget):
   def __init__(self):
