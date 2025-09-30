@@ -8,7 +8,8 @@ from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, Pan
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets import Widget
-from openpilot.selfdrive.ui.layouts.onboarding import maybe_show_onboarding, completed
+# from openpilot.selfdrive.ui.layouts.onboarding import maybe_show_onboarding, completed
+from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
 
 
 ONROAD_FPS = 20
@@ -42,8 +43,10 @@ class MainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
-    # Handle onboarding (terms/training) as a modal overlay
-    maybe_show_onboarding()
+    # Start onboarding if terms or training not completed
+    self._onboarding_window = OnboardingWindow()
+    if not self._onboarding_window.completed:
+      gui_app.set_modal_overlay(self._onboarding_window)
 
   def _render(self, _):
     self._handle_onroad_transition()
@@ -57,8 +60,8 @@ class MainLayout(Widget):
     self._layouts[MainState.ONROAD].set_click_callback(self._on_onroad_clicked)
     device.add_interactive_timeout_callback(self._set_mode_for_state)
 
-  def completed(self) -> bool:
-    return completed()
+  # def completed(self) -> bool:
+  #   return completed()
 
   def _update_layout_rects(self):
     self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
