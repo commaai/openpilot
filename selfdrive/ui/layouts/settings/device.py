@@ -37,7 +37,7 @@ class DeviceLayout(Widget):
     self._driver_camera: DriverCameraDialog | None = None
     self._pair_device_dialog: PairingDialog | None = None
     self._fcc_dialog: HtmlRenderer | None = None
-    self._onboarding_dialog = OnboardingDialog()
+    self._onboarding_dialog: OnboardingDialog | None = None
 
     items = self._initialize_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
@@ -150,4 +150,6 @@ class DeviceLayout(Widget):
     gui_app.set_modal_overlay(self._fcc_dialog, callback=lambda result: setattr(self, '_fcc_dialog', None))
 
   def _on_review_training_guide(self):
+    if not self._onboarding_dialog:
+      self._onboarding_dialog = OnboardingDialog()
     gui_app.set_modal_overlay(self._onboarding_dialog)
