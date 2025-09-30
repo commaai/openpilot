@@ -125,20 +125,15 @@ class TermsPage(Widget):
 class DeclinePage(Widget):
   def __init__(self, back_callback=None):
     super().__init__()
-    self._back_callback = back_callback
     self._text = Label("You must accept the Terms and Conditions in order to use openpilot.",
                        font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=TextAlignment.LEFT)
-    self._back_btn = Button("Back", click_callback=self._on_back_clicked)
+    self._back_btn = Button("Back", click_callback=back_callback)
     self._uninstall_btn = Button("Decline, uninstall openpilot", button_style=ButtonStyle.DANGER,
                                  click_callback=self._on_uninstall_clicked)
 
   def _on_uninstall_clicked(self):
     ui_state.params.put_bool("DoUninstall", True)
     gui_app.request_close()
-
-  def _on_back_clicked(self):
-    if self._back_callback:
-      self._back_callback()
 
   def _render(self, _):
     btn_y = self._rect.y + self._rect.height - 160 - 45
