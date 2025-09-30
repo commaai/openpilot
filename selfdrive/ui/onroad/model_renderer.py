@@ -7,7 +7,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import DEFAULT_FPS
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
 from openpilot.system.ui.widgets import Widget
 
@@ -48,7 +48,7 @@ class ModelRenderer(Widget):
     super().__init__()
     self._longitudinal_control = False
     self._experimental_mode = False
-    self._blend_filter = FirstOrderFilter(1.0, 0.25, 1 / gui_app.target_fps)
+    self._blend_filter = FirstOrderFilter(1.0, 0.25, 1 / DEFAULT_FPS)
     self._prev_allow_throttle = True
     self._lane_line_probs = np.zeros(4, dtype=np.float32)
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
@@ -277,7 +277,6 @@ class ModelRenderer(Widget):
       return
 
     allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
-    self._blend_filter.update_dt(1 / gui_app.target_fps)
     self._blend_filter.update(int(allow_throttle))
 
     if self._experimental_mode:
