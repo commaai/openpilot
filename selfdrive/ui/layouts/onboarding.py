@@ -4,7 +4,7 @@ import time  # noqa: F401
 
 import pyray as rl
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.params_pyx import Params
+from openpilot.common.params_pyx import Params as _Params
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app
 
@@ -83,6 +83,7 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached  # noqa: F4
 from openpilot.system.ui.lib.application import FontWeight
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import Label, TextAlignment
+from openpilot.common.params_pyx import Params
 
 # --- Added: TermsPage (Python rewrite of C++ TermsPage) using Button/Label ---
 class TermsPage(Widget):
@@ -152,3 +153,38 @@ class TermsPage(Widget):
   def _render(self, _):
     # Rendering handled by sub-widgets via render() calls in _update_layout_rects
     return -1
+
+
+# --- Onboarding helpers ---
+def completed(params: _Params | None = None) -> bool:
+  p = params or _Params()
+  current_terms_version = p.get("TermsVersion")
+  current_training_version = p.get("TrainingVersion")
+  accepted_terms = p.get("HasAcceptedTerms") == current_terms_version
+  training_done = p.get("CompletedTrainingVersion") == current_training_version
+  return accepted_terms and training_done
+
+
+def show_training_guide():
+  gui_app.set_modal_overlay(OnboardingDialog())
+
+
+def maybe_show_onboarding():
+  p = _Params()
+  current_terms_version = p.get("TermsVersion")
+  current_training_version = p.get("TrainingVersion")
+  accepted_terms = p.get("HasAcceptedTerms") == current_terms_version
+  training_done = p.get("CompletedTrainingVersion") == current_training_version
+
+  if not accepted_terms:
+    def _on_accept():
+      p.put("HasAcceptedTerms", current_terms_version)
+      if p.get("CompletedTrainingVersion") != current_training_version:
+        show_training_guide()
+
+    def _on_decline():
+      p.put_bool("DoUninstall", True)
+
+    gui_app.set_modal_overlay(TermsPage(on_accept=_on_accept, on_decline=_on_decline))
+  elif not training_done:
+    show_training_guide()
