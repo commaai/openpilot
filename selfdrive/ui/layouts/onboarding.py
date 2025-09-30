@@ -83,6 +83,8 @@ class TrainingGuide(Widget):
     if DEBUG:
       rl.draw_rectangle_lines_ex(STEP_RECTS[self._step], 3, rl.RED)
 
+    return -1
+
 
 class TermsPage(Widget):
   def __init__(self, on_accept=None, on_decline=None):
@@ -108,23 +110,23 @@ class TermsPage(Widget):
   def _render(self, _):
     welcome_x = self._rect.x + 165
     welcome_y = self._rect.y + 165
-
-    # self._title.set_position(welcome_x, welcome_y)
     welcome_rect = rl.Rectangle(welcome_x, welcome_y, self._rect.width - welcome_x, 90)
-    rl.draw_rectangle_lines_ex(welcome_rect, 3, rl.RED)
     self._title.render(welcome_rect)
 
     desc_x = welcome_x
     # TODO: Label doesn't top align when wrapping
     desc_y = welcome_y - 100
     desc_rect = rl.Rectangle(desc_x, desc_y, self._rect.width - desc_x, self._rect.height - desc_y - 250)
-    rl.draw_rectangle_lines_ex(desc_rect, 3, rl.RED)
     self._desc.render(desc_rect)
 
     btn_y = self._rect.y + self._rect.height - 160 - 45
     btn_width = (self._rect.width - 45 * 3) / 2
     self._decline_btn.render(rl.Rectangle(self._rect.x + 45, btn_y, btn_width, 160))
     self._accept_btn.render(rl.Rectangle(self._rect.x + 45 * 2 + btn_width, btn_y, btn_width, 160))
+
+    if DEBUG:
+      rl.draw_rectangle_lines_ex(welcome_rect, 3, rl.RED)
+      rl.draw_rectangle_lines_ex(desc_rect, 3, rl.RED)
 
     return -1
 
@@ -148,16 +150,16 @@ class DeclinePage(Widget):
       self._back_callback()
 
   def _render(self, _):
-    # btns:
     btn_y = self._rect.y + self._rect.height - 160 - 45
     btn_width = (self._rect.width - 45 * 3) / 2
     self._back_btn.render(rl.Rectangle(self._rect.x + 45, btn_y, btn_width, 160))
     self._uninstall_btn.render(rl.Rectangle(self._rect.x + 45 * 2 + btn_width, btn_y, btn_width, 160))
 
-    # text rect in middle of top and buttony
+    # text rect in middle of top and button
     text_height = btn_y - (200 + 45)
     text_rect = rl.Rectangle(self._rect.x + 165, self._rect.y + (btn_y - text_height) / 2, self._rect.width - (165 * 2), text_height)
-    rl.draw_rectangle_lines_ex(text_rect, 3, rl.RED)
+    if DEBUG:
+      rl.draw_rectangle_lines_ex(text_rect, 3, rl.RED)
     self._text.render(text_rect)
 
 
@@ -188,13 +190,14 @@ class OnboardingWindow(Widget):
   def _on_terms_accepted(self):
     ui_state.params.put("HasAcceptedTerms", self._current_terms_version)
     self._state = OnboardingState.ONBOARDING
+    if self._training_done:
+      gui_app.set_modal_overlay(None)
 
   def _on_completed_training(self):
     ui_state.params.put("CompletedTrainingVersion", self._current_training_version)
     gui_app.set_modal_overlay(None)
 
   def _render(self, _):
-    print(f"OnboardingWindow state: {self._state}, accepted_terms: {self._accepted_terms}, training_done: {self._training_done}")
     if self._training_guide is None:
       self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
 
