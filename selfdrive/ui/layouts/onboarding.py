@@ -66,6 +66,13 @@ class OnboardingDialog(Widget):
   def _render(self, _):
     rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
 
+    # progress bar
+    if 0 < self._step < len(STEP_RECTS) - 1:
+      h = 20
+      w = int((self._step / (len(STEP_RECTS) - 1)) * self._rect.width)
+      rl.draw_rectangle(int(self._rect.x), int(self._rect.y + self._rect.height - h),
+                        w, h, rl.Color(70, 91, 234, 255))
+
     if DEBUG:
       rl.draw_rectangle_lines_ex(STEP_RECTS[self._step], 3, rl.RED)
 
