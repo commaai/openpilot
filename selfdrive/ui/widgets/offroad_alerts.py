@@ -1,15 +1,15 @@
-import json
 import pyray as rl
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
+from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
 class AlertColors:
@@ -69,26 +69,23 @@ class AbstractAlert(Widget, ABC):
   def get_content_height(self) -> float:
     pass
 
-  def handle_input(self, mouse_pos: rl.Vector2, mouse_clicked: bool) -> bool:
-    if not mouse_clicked or not self.scroll_panel.is_touch_valid():
-      return False
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+
+    if not self.scroll_panel.is_touch_valid():
+      return
 
     if rl.check_collision_point_rec(mouse_pos, self.dismiss_btn_rect):
       if self.dismiss_callback:
         self.dismiss_callback()
-      return True
 
-    if self.snooze_visible and rl.check_collision_point_rec(mouse_pos, self.snooze_btn_rect):
+    elif self.snooze_visible and rl.check_collision_point_rec(mouse_pos, self.snooze_btn_rect):
       self.params.put_bool("SnoozeUpdate", True)
       if self.dismiss_callback:
         self.dismiss_callback()
-      return True
 
-    if self.has_reboot_btn and rl.check_collision_point_rec(mouse_pos, self.reboot_btn_rect):
+    elif self.has_reboot_btn and rl.check_collision_point_rec(mouse_pos, self.reboot_btn_rect):
       HARDWARE.reboot()
-      return True
-
-    return False
 
   def _render(self, rect: rl.Rectangle):
     rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.width, 10, AlertColors.BACKGROUND)
@@ -232,15 +229,10 @@ class OffroadAlert(AbstractAlert):
 
   def _build_alerts(self):
     self.sorted_alerts = []
-    try:
-      with open("../selfdrived/alerts_offroad.json", "rb") as f:
-        alerts_config = json.load(f)
-        for key, config in sorted(alerts_config.items(), key=lambda x: x[1].get("severity", 0), reverse=True):
-          severity = config.get("severity", 0)
-          alert_data = AlertData(key=key, text="", severity=severity)
-          self.sorted_alerts.append(alert_data)
-    except (FileNotFoundError, json.JSONDecodeError):
-      pass
+    for key, config in sorted(OFFROAD_ALERTS.items(), key=lambda x: x[1].get("severity", 0), reverse=True):
+      severity = config.get("severity", 0)
+      alert_data = AlertData(key=key, text="", severity=severity)
+      self.sorted_alerts.append(alert_data)
 
   def _render_content(self, content_rect: rl.Rectangle):
     y_offset = 20
