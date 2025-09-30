@@ -79,8 +79,12 @@ class OnboardingDialog(Widget):
     return -1
 
 
-# --- Added: TermsPage (Python rewrite of C++ TermsPage) ---
-from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.text_measure import measure_text_cached  # noqa: F401
+from openpilot.system.ui.lib.application import FontWeight
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
+from openpilot.system.ui.widgets.label import Label, TextAlignment
+
+# --- Added: TermsPage (Python rewrite of C++ TermsPage) using Button/Label ---
 class TermsPage(Widget):
   def __init__(self, on_accept=None, on_decline=None):
     super().__init__()
@@ -92,21 +96,25 @@ class TermsPage(Widget):
     self._content_margins = (165, 165, 165, 0)
     self._spacing = 90
 
-    # Colors
-    self._primary = rl.Color(70, 91, 234, 255)
-    self._primary_pressed = rl.Color(48, 73, 244, 255)
-    self._default_btn_bg = rl.Color(79, 79, 79, 255)
-    self._text_color = rl.WHITE
+    # Widgets
+    self._title = Label("Welcome to openpilot", font_size=90, font_weight=FontWeight.MEDIUM,
+                        text_alignment=TextAlignment.LEFT)
+    desc_text = ("You must accept the Terms and Conditions to use openpilot. " +
+                 "Read the latest terms at https://comma.ai/terms before continuing.")
+    self._desc = Label(desc_text, font_size=80, font_weight=FontWeight.LIGHT,
+                       text_alignment=TextAlignment.LEFT)
 
-    # Fonts
-    self._title_font = gui_app.font()
-    self._desc_font = gui_app.font()
-    self._title_size = 90
-    self._desc_size = 80
+    self._decline_btn = Button("Decline", click_callback=self._on_decline_clicked)
+    self._accept_btn = Button("Agree", button_style=ButtonStyle.PRIMARY,
+                              click_callback=self._on_accept_clicked)
 
-    # Buttons state
-    self._pressed_accept = False
-    self._pressed_decline = False
+  def _on_accept_clicked(self):
+    if self._on_accept:
+      self._on_accept()
+
+  def _on_decline_clicked(self):
+    if self._on_decline:
+      self._on_decline()
 
   def _update_layout_rects(self):
     # Compute layout rects based on current widget rect
@@ -119,98 +127,28 @@ class TermsPage(Widget):
     main_rect = rl.Rectangle(content_rect.x + cl, content_rect.y + ct,
                              content_rect.width - (cl + cr), content_rect.height - (ct + cb))
 
-    # Title rect (align top-left, height derived from font size)
-    self._title_rect = rl.Rectangle(main_rect.x, main_rect.y, main_rect.width, self._title_size + 10)
+    # Title
+    title_rect = rl.Rectangle(main_rect.x, main_rect.y, main_rect.width, 110)
+    self._title.render(title_rect)
 
-    # Description rect below title with spacing
-    desc_y = self._title_rect.y + self._title_rect.height + self._spacing
-    # Allow multi-line; give it generous height
-    self._desc_rect = rl.Rectangle(main_rect.x, desc_y, main_rect.width, main_rect.height - (self._title_rect.height + self._spacing + 250))
+    # Description below title
+    desc_y = title_rect.y + title_rect.height + self._spacing
+    desc_rect = rl.Rectangle(main_rect.x, desc_y, main_rect.width, main_rect.height - (title_rect.height + self._spacing + 250))
+    self._desc.render(desc_rect)
 
     # Buttons row at the bottom with spacing 45 and fixed height 160
     buttons_spacing = 45
     buttons_height = 160
     buttons_y = content_rect.y + content_rect.height - buttons_height
 
-    # Two equal width buttons split the content area
     total_spacing = buttons_spacing
     btn_width = (content_rect.width - total_spacing) / 2
-    self._decline_rect = rl.Rectangle(content_rect.x, buttons_y, btn_width, buttons_height)
-    self._accept_rect = rl.Rectangle(content_rect.x + btn_width + buttons_spacing, buttons_y, btn_width, buttons_height)
+    decline_rect = rl.Rectangle(content_rect.x, buttons_y, btn_width, buttons_height)
+    accept_rect = rl.Rectangle(content_rect.x + btn_width + buttons_spacing, buttons_y, btn_width, buttons_height)
 
-  def _handle_mouse_press(self, mouse_pos):
-    if rl.check_collision_point_rec(mouse_pos, self._accept_rect):
-      self._pressed_accept = True
-    if rl.check_collision_point_rec(mouse_pos, self._decline_rect):
-      self._pressed_decline = True
-    return True
-
-  def _handle_mouse_release(self, mouse_pos):
-    accept_clicked = self._pressed_accept and rl.check_collision_point_rec(mouse_pos, self._accept_rect)
-    decline_clicked = self._pressed_decline and rl.check_collision_point_rec(mouse_pos, self._decline_rect)
-    self._pressed_accept = False
-    self._pressed_decline = False
-
-    if accept_clicked and self._on_accept:
-      self._on_accept()
-    elif decline_clicked and self._on_decline:
-      self._on_decline()
-    return True
+    self._decline_btn.render(decline_rect)
+    self._accept_btn.render(accept_rect)
 
   def _render(self, _):
-    # Background handled by app; draw content
-    # Title
-    title = "Welcome to openpilot"
-    rl.draw_text_ex(self._title_font, title,
-                    rl.Vector2(self._title_rect.x, self._title_rect.y),
-                    self._title_size, 0, self._text_color)
-
-    # Description (no HTML span; we mimic color by including the link as plain text)
-    desc = ("You must accept the Terms and Conditions to use openpilot. " +
-            "Read the latest terms at https://comma.ai/terms before continuing.")
-
-    # Render wrapped description
-    self._render_wrapped_text(self._desc_rect, desc, self._desc_font, self._desc_size, self._text_color)
-
-    # Buttons
-    self._draw_button(self._decline_rect, "Decline", self._default_btn_bg)
-    self._draw_button(self._accept_rect, "Agree", self._primary, pressed=self._pressed_accept, pressed_bg=self._primary_pressed)
-
+    # Rendering handled by sub-widgets via render() calls in _update_layout_rects
     return -1
-
-  def _draw_button(self, rect: rl.Rectangle, text: str, bg: rl.Color, pressed: bool = False, pressed_bg: rl.Color | None = None):
-    roundness = 10 / (min(rect.width, rect.height) / 2)
-    color = pressed_bg if (pressed and pressed_bg is not None) else bg
-    rl.draw_rectangle_rounded(rect, roundness, 20, color)
-
-    # Center text
-    size = measure_text_cached(self._desc_font, text, 55)
-    rl.draw_text_ex(self._desc_font,
-                    text,
-                    rl.Vector2(rect.x + (rect.width - size.x) / 2, rect.y + (rect.height - size.y) / 2),
-                    55, 0, rl.WHITE)
-
-  def _render_wrapped_text(self, rect: rl.Rectangle, text: str, font, font_size: int, color: rl.Color):
-    # Simple word wrap rendering using raylib helpers
-    words = text.split(" ")
-    x = rect.x
-    y = rect.y
-    line = ""
-    space_width = measure_text_cached(font, " ", font_size).x
-    for word in words:
-      w_size = measure_text_cached(font, word, font_size)
-      l_size = measure_text_cached(font, line, font_size) if line else rl.Vector2(0, 0)
-      if l_size.x + (space_width if line else 0) + w_size.x > rect.width:
-        # draw current line
-        rl.draw_text_ex(font, line, rl.Vector2(x, y), font_size, 0, color)
-        y += w_size.y
-        line = word
-      else:
-        line = word if not line else f"{line} {word}"
-
-      # stop if exceeding height
-      if y > rect.y + rect.height - w_size.y:
-        break
-
-    if line and y <= rect.y + rect.height:
-      rl.draw_text_ex(font, line, rl.Vector2(x, y), font_size, 0, color)
