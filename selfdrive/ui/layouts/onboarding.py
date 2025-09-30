@@ -63,16 +63,12 @@ class TrainingGuide(Widget):
 
       self._step += 1
 
+      # Finished?
       if self._step >= len(self._images):
-        self._completed_training()
+        self._step = 0
         if self._completed_callback:
           self._completed_callback()
         return
-
-  def _completed_training(self):
-    self._step = 0
-    current_training_version = ui_state.params.get("TrainingVersion")
-    ui_state.params.put("CompletedTrainingVersion", current_training_version)
 
   def _render(self, _):
     rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
