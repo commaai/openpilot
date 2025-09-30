@@ -17,7 +17,7 @@ STEP_RECTS = [rl.Rectangle(104.0, 800.0, 633.0, 175.0), rl.Rectangle(1835.0, 0.0
               rl.Rectangle(95.0, 794.0, 1158.0, 187.0), rl.Rectangle(1560.0, 170.0, 392.0, 397.0), rl.Rectangle(1835.0, 0.0, 2159.0, 1080.0),
               rl.Rectangle(1351.0, 0.0, 807.0, 1080.0), rl.Rectangle(1835.0, 0.0, 2158.0, 1080.0), rl.Rectangle(1531.0, 82.0, 441.0, 920.0),
               rl.Rectangle(1336.0, 438.0, 490.0, 393.0), rl.Rectangle(1835.0, 0.0, 2159.0, 1080.0), rl.Rectangle(1835.0, 0.0, 2159.0, 1080.0),
-              rl.Rectangle(612.0, 795.0, 662.0, 186.0)]
+              rl.Rectangle(612.0 - 525, 795.0, 662.0 + 525, 186.0)]
 
 
 DM_RECORD_STEP = 9
@@ -29,7 +29,7 @@ class OnboardingDialog(Widget):
     super().__init__()
 
     self._params = Params()
-    self._step = 0
+    self._step = 18
     self._load_images()
 
   def _load_images(self):
