@@ -19,8 +19,8 @@ VELOCITY_HISTORY_SIZE = 5      # Track velocity over multiple frames for smoothe
 class ScrollState(IntEnum):
   IDLE = 0
   DRAGGING_CONTENT = 1
-  DRAGGING_SCROLLBAR = 2
-  BOUNCING = 3
+  # DRAGGING_SCROLLBAR = 2
+  # BOUNCING = 3
 
 
 class GuiScrollPanel:
@@ -36,21 +36,22 @@ class GuiScrollPanel:
     self._bounce_offset: float = 0.0
     self._velocity_history: deque[float] = deque(maxlen=VELOCITY_HISTORY_SIZE)
     self._last_drag_time: float = 0.0
-    self._content_rect: rl.Rectangle | None = None
-    self._bounds_rect: rl.Rectangle | None = None
 
-  def handle_scroll(self, bounds: rl.Rectangle, content: rl.Rectangle) -> rl.Vector2:
+  def update(self, bounds: rl.Rectangle, content: rl.Rectangle) -> rl.Vector2:
+    print('state', self._scroll_state)
     # TODO: HACK: this class is driven by mouse events, so we need to ensure we have at least one event to process
-    for mouse_event in gui_app.mouse_events or [MouseEvent(MousePos(0, 0), 0, False, False, False, time.monotonic())]:
+    for mouse_event in gui_app.mouse_events:  # or [MouseEvent(MousePos(0, 0), 0, False, False, False, time.monotonic())]:
       if mouse_event.slot == 0:
         self._handle_mouse_event(mouse_event, bounds, content)
+
+    self._update_state()
+
     return self._offset
 
-  def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
-    # Store rectangles for reference
-    self._content_rect = content
-    self._bounds_rect = bounds
+  def _update_state(self):
+    pass
 
+  def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
     max_scroll_y = max(content.height - bounds.height, 0)
 
     # Start dragging on mouse press
@@ -175,15 +176,3 @@ class GuiScrollPanel:
 
   def is_touch_valid(self):
     return not self._is_dragging
-
-  def get_normalized_scroll_position(self) -> float:
-    """Returns the current scroll position as a value from 0.0 to 1.0"""
-    if not self._content_rect or not self._bounds_rect:
-      return 0.0
-
-    max_scroll_y = max(self._content_rect.height - self._bounds_rect.height, 0)
-    if max_scroll_y == 0:
-      return 0.0
-
-    normalized = -self._offset.y / max_scroll_y
-    return max(0.0, min(1.0, normalized))

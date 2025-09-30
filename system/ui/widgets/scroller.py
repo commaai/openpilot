@@ -52,7 +52,7 @@ class Scroller(Widget):
     content_height = sum(item.rect.height for item in visible_items) + self._spacing * (len(visible_items))
     if not self._pad_end:
       content_height -= self._spacing
-    scroll = self.scroll_panel.handle_scroll(self._rect, rl.Rectangle(0, 0, self._rect.width, content_height))
+    scroll = self.scroll_panel.update(self._rect, rl.Rectangle(0, 0, self._rect.width, content_height))
 
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
