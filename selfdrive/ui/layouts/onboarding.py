@@ -26,7 +26,7 @@ DM_RECORD_YES_RECT = rl.Rectangle(695, 794, 558, 187)
 RESTART_TRAINING_RECT = rl.Rectangle(612.0 - 525, 795.0, 662.0 - 190, 186.0)
 
 
-class OnboardingDialog(Widget):
+class TrainingGuide(Widget):
   def __init__(self, completed_callback=None):
     super().__init__()
     self._completed_callback = completed_callback
@@ -174,7 +174,7 @@ class OnboardingWindow(Widget):
     self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
 
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_terms_declined)
-    self._training_guide: OnboardingDialog | None = None
+    self._training_guide: TrainingGuide | None = None
     self._decline_page = DeclinePage(back_callback=self._on_decline_back)
 
   @property
@@ -198,7 +198,7 @@ class OnboardingWindow(Widget):
   def _render(self, _):
     print(f"OnboardingWindow state: {self._state}, accepted_terms: {self._accepted_terms}, training_done: {self._training_done}")
     if self._training_guide is None:
-      self._training_guide = OnboardingDialog(completed_callback=self._on_completed_training)
+      self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
 
     if self._state == OnboardingState.TERMS:
       self._terms.render(self._rect)
