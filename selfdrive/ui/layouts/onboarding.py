@@ -157,7 +157,7 @@ class DeclinePage(Widget):
 
     # text rect in middle of top and button
     text_height = btn_y - (200 + 45)
-    text_rect = rl.Rectangle(self._rect.x + 165, self._rect.y + (btn_y - text_height) / 2, self._rect.width - (165 * 2), text_height)
+    text_rect = rl.Rectangle(self._rect.x + 165, self._rect.y + (btn_y - text_height) / 2 + 10, self._rect.width - (165 * 2), text_height)
     if DEBUG:
       rl.draw_rectangle_lines_ex(text_rect, 3, rl.RED)
     self._text.render(text_rect)
