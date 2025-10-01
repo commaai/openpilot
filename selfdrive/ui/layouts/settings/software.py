@@ -24,7 +24,6 @@ class SoftwareLayout(Widget):
     self._install_btn = button_item("Install Update", "INSTALL", callback=self._on_install_update)
     self._install_btn.set_visible(False)
 
-
     items = self._init_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
@@ -39,7 +38,6 @@ class SoftwareLayout(Widget):
     return items
 
   def _render(self, rect):
-    self._update_state()
     self._scroller.render(rect)
 
   def _update_state(self):
@@ -79,7 +77,6 @@ class SoftwareLayout(Widget):
           self._download_btn.description = "up to date, last checked never"
         self._download_btn.action_item.set_text("CHECK")
       self._download_btn.set_enabled(True)
-
 
     # Update install button
     self._install_btn.set_visible(ui_state.is_offroad() and update_available)
