@@ -1,9 +1,7 @@
-import copy
-import time
 import math
 import pyray as rl
 from enum import IntEnum
-from openpilot.system.ui.lib.application import gui_app, MouseEvent, MousePos, DEFAULT_FPS
+from openpilot.system.ui.lib.application import gui_app, MouseEvent, DEFAULT_FPS
 from openpilot.common.filter_simple import FirstOrderFilter
 
 # Scroll constants for smooth scrolling behavior
@@ -30,13 +28,7 @@ class GuiScrollPanel:
 
   def update(self, bounds: rl.Rectangle, content: rl.Rectangle) -> float:
     # print('state', self._scroll_state)
-    # TODO: HACK: this class is driven by mouse events, so we need to ensure we have at least one event to process
-    print('mouse events', len(gui_app.mouse_events))
-    # for mouse_event in gui_app.mouse_events or [MouseEvent(MousePos(0, 0), 0, False, False, False, time.monotonic())]:
-    prev_mouse_event = MouseEvent(gui_app.last_mouse_event.pos, gui_app.last_mouse_event.slot,
-                                  gui_app.last_mouse_event.left_down, gui_app.last_mouse_event.left_pressed,
-                                  gui_app.last_mouse_event.left_released, time.monotonic())
-    for mouse_event in gui_app.mouse_events or [prev_mouse_event]:
+    for mouse_event in gui_app.mouse_events:
       if mouse_event.slot == 0:
         self._handle_mouse_event(mouse_event, bounds, content)
 
@@ -93,9 +85,15 @@ class GuiScrollPanel:
 
       # self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
 
-    if abs(self._offset_filter_y.x) < 1e-3:
+    elif self._scroll_state == ScrollState.DRAGGING_CONTENT:
+      # Mouse not moving, decay velocity
+      if not len(gui_app.mouse_events):
+        self._velocity_filter_y.update(0.0)
+
+    # Settle to exact bounds
+    if abs(self._offset_filter_y.x) < 1e-2:
       self._offset_filter_y.x = 0.0
-    elif abs(self._offset_filter_y.x + max_scroll_distance) < 1e-3:
+    elif abs(self._offset_filter_y.x + max_scroll_distance) < 1e-2:
       self._offset_filter_y.x = -max_scroll_distance
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
