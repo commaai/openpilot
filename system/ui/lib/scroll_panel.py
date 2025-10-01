@@ -29,7 +29,7 @@ class ScrollState(IntEnum):
 
 
 class GuiScrollPanel:
-  def __init__(self, show_vertical_scroll_bar: bool = False):
+  def __init__(self):
     # TODO: remove ability to scroll x and y, we only need one and it simplifies a lot of things
     self._scroll_state: ScrollState = ScrollState.IDLE
     self._last_mouse_y: float = 0.0
@@ -37,7 +37,6 @@ class GuiScrollPanel:
     self._offset_filter_y = FirstOrderFilter(0.0, 0.1, 1 / DEFAULT_FPS)
     # self._offset = rl.Vector2(0, 0)
     self._view = rl.Rectangle(0, 0, 0, 0)
-    self._show_vertical_scroll_bar: bool = show_vertical_scroll_bar
     self._velocity_y = 0.0  # Velocity for inertia
     self._velocity_filter_y = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS)  # TODO: raise rc?
     # self._is_dragging: bool = False
