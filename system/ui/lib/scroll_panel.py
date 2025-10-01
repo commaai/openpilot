@@ -47,7 +47,6 @@ class GuiScrollPanel:
     max_scroll_distance = max(0, content.height - bounds.height)
     if self._scroll_state == ScrollState.IDLE:
       above_bounds, below_bounds = self._check_bounds(bounds, content)
-      print('above', above_bounds, 'below', below_bounds)
 
       # Decay velocity when idle
       if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
