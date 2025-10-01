@@ -45,23 +45,11 @@ class Updater(Widget):
     self.update_thread = None
     self.wifi_manager_ui = WifiManagerUI(WifiManager())
 
-    # Create button instances
-    self._wifi_button = Button("Connect to Wi-Fi", click_callback=self._on_wifi_clicked)
-    self._install_button = Button("Install", click_callback=self._on_install_clicked, button_style=ButtonStyle.PRIMARY)
-    self._back_button = Button("Back", click_callback=self._on_back_clicked)
-    self._reboot_button = Button("Reboot", click_callback=self._on_reboot_clicked)
-
-  def _on_wifi_clicked(self):
-    self.current_screen = Screen.WIFI
-
-  def _on_install_clicked(self):
-    self.install_update()
-
-  def _on_back_clicked(self):
-    self.current_screen = Screen.PROMPT
-
-  def _on_reboot_clicked(self):
-    HARDWARE.reboot()
+    # Buttons
+    self._wifi_button = Button("Connect to Wi-Fi", click_callback=lambda: setattr(self, "current_screen", Screen.WIFI))
+    self._install_button = Button("Install", click_callback=self.install_update, button_style=ButtonStyle.PRIMARY)
+    self._back_button = Button("Back", click_callback=lambda: setattr(self, "current_screen", Screen.PROMPT))
+    self._reboot_button = Button("Reboot", click_callback=lambda: HARDWARE.reboot())
 
   def install_update(self):
     self.current_screen = Screen.PROGRESS
@@ -114,12 +102,10 @@ class Updater(Widget):
 
     # WiFi button
     wifi_button_rect = rl.Rectangle(MARGIN, button_y, button_width, BUTTON_HEIGHT)
-    self._wifi_button.set_rect(wifi_button_rect)
     self._wifi_button.render(wifi_button_rect)
 
     # Install button
     install_button_rect = rl.Rectangle(MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT)
-    self._install_button.set_rect(install_button_rect)
     self._install_button.render(install_button_rect)
 
   def render_wifi_screen(self, rect: rl.Rectangle):
@@ -128,7 +114,6 @@ class Updater(Widget):
     self.wifi_manager_ui.render(wifi_rect)
 
     back_button_rect = rl.Rectangle(MARGIN, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
-    self._back_button.set_rect(back_button_rect)
     self._back_button.render(back_button_rect)
 
   def render_progress_screen(self, rect: rl.Rectangle):
@@ -148,7 +133,6 @@ class Updater(Widget):
     # Show reboot button if needed
     if self.show_reboot_button:
       reboot_rect = rl.Rectangle(MARGIN + 100, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
-      self._reboot_button.set_rect(reboot_rect)
       self._reboot_button.render(reboot_rect)
 
   def _render(self, rect: rl.Rectangle):
