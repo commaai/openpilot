@@ -139,6 +139,9 @@ class TextAction(ItemAction):
     rl.draw_text_ex(self._font, current_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, self.color)
     return False
 
+  def set_text(self, text: str | Callable[[], str]):
+    self._text_source = text
+
   def get_width(self) -> int:
     text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
     return int(text_width + TEXT_PADDING)

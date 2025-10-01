@@ -3,7 +3,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
-from openpilot.system.ui.widgets.list_view import button_item, text_item
+from openpilot.system.ui.widgets.list_view import button_item, TextAction, ListItem
 from openpilot.system.ui.widgets.scroller import Scroller
 
 
@@ -12,7 +12,8 @@ class SoftwareLayout(Widget):
     super().__init__()
 
     # Create text item for current version
-    self._version_item = text_item("Current Version", ui_state.params.get("UpdaterCurrentDescription", "Unknown"))
+    version_action = TextAction(ui_state.params.get("UpdaterCurrentDescription", "Unknown"))
+    self._version_item = ListItem(title="Current Version", action_item=version_action)
 
     # Create download button with initial state
     self._download_btn = button_item("Download", "CHECK", callback=self._on_download_update)
@@ -40,7 +41,7 @@ class SoftwareLayout(Widget):
   def _update_state(self):
     # Update current version
     current_desc = ui_state.params.get("UpdaterCurrentDescription", "Unknown")
-    self._version_item.set_description(current_desc)
+    self._version_item.action_item.set_text(current_desc)
 
     # Update download button state
     updater_state = ui_state.params.get("UpdaterState", "idle")
@@ -50,35 +51,35 @@ class SoftwareLayout(Widget):
 
     if updater_state != "idle":
       self._download_btn.set_enabled(False)
-      self._download_btn.set_description(updater_state)
+      self._download_btn.description = updater_state
     else:
       if failed_count > 0:
-        self._download_btn.set_description("failed to check for update")
-        self._download_btn.set_text("CHECK")
+        self._download_btn.description = "failed to check for update"
+        self._download_btn.action_item._text_source = "CHECK"
       elif fetch_available:
-        self._download_btn.set_description("update available")
-        self._download_btn.set_text("DOWNLOAD")
+        self._download_btn.description = "update available"
+        self._download_btn.action_item._text_source = "DOWNLOAD"
       else:
         last_update = ui_state.params.get("LastUpdateTime", "")
         if last_update:
           # TODO: Format time ago
-          self._download_btn.set_description(f"up to date, last checked {last_update}")
+          self._download_btn.description = f"up to date, last checked {last_update}"
         else:
-          self._download_btn.set_description("up to date, last checked never")
-        self._download_btn.set_text("CHECK")
+          self._download_btn.description = "up to date, last checked never"
+        self._download_btn.action_item._text_source = "CHECK"
       self._download_btn.set_enabled(True)
 
     # Update install button
     if update_available:
       new_desc = ui_state.params.get("UpdaterNewDescription", "")
-      self._install_btn.set_description(new_desc)
+      self._install_btn.description = new_desc
       self._install_btn.set_visible(True)
     else:
       self._install_btn.set_visible(False)
 
   def _on_download_update(self):
     # Check if we should start checking or stop downloading
-    if self._download_btn.get_text() == "CHECK":
+    if self._download_btn.action_item.text == "CHECK":
       # Start checking for updates
       os.system("pkill -SIGUSR1 -f system.updated.updated")
     else:
