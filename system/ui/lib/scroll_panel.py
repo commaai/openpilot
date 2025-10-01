@@ -64,8 +64,6 @@ class GuiScrollPanel:
       below_bounds = self._offset_filter_y.x < -(content.height - bounds.height)
       print('above', above_bounds, 'below', below_bounds)
 
-      self._velocity_filter_y.x = 0
-
       # Decay velocity when idle
       if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
         # self._offset.y += self._velocity_filter_y.x / DEFAULT_FPS
@@ -148,8 +146,8 @@ class GuiScrollPanel:
         # print('dt', 'dt2', dt)
         if dt > 0:
           drag_velocity = delta_y / dt
-          self._velocity_filter_y.update(drag_velocity)
-          # print('vel', drag_velocity, 'filtered', self._velocity_filter_y.x)
+          #  TODO: temp comment
+          # self._velocity_filter_y.update(drag_velocity)
 
 
         # TODO: just store last mouse event!
