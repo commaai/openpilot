@@ -33,7 +33,6 @@ class MultiOptionDialog(Widget):
     # Create scroller with option buttons
     self.scroller = Scroller(self.option_buttons, spacing=LIST_ITEM_SPACING)
 
-    # Create button widgets
     self.cancel_button = Button("Cancel", click_callback=lambda: gui_app.set_modal_overlay(None))
     self.select_button = Button("Select", click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
 
