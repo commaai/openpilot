@@ -117,6 +117,10 @@ elif arch == "Darwin":
     f"{brew_prefix}/include",
     f"{brew_prefix}/opt/openssl@3.0/include",
   ])
+  # Ensure native Apple Silicon builds always target arm64 - issue with linker especially
+  env.Append(CCFLAGS=["-arch", "arm64"])
+  env.Append(CXXFLAGS=["-arch", "arm64"])
+  env.Append(LINKFLAGS=["-arch", "arm64"])
 else:
   env.Append(LIBPATH=[
     "/usr/lib",
