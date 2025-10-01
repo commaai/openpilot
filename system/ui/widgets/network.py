@@ -340,7 +340,6 @@ class WifiManagerUI(Widget):
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)
     offset = self.scroll_panel.update(rect, content_rect)
-    clicked = self.scroll_panel.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     for i, network in enumerate(self._networks):
@@ -349,14 +348,14 @@ class WifiManagerUI(Widget):
       if not rl.check_collision_recs(item_rect, rect):
         continue
 
-      self._draw_network_item(item_rect, network, clicked)
+      self._draw_network_item(item_rect, network)
       if i < len(self._networks) - 1:
         line_y = int(item_rect.y + item_rect.height - 1)
         rl.draw_line(int(item_rect.x), int(line_y), int(item_rect.x + item_rect.width), line_y, rl.LIGHTGRAY)
 
     rl.end_scissor_mode()
 
-  def _draw_network_item(self, rect, network: Network, clicked: bool):
+  def _draw_network_item(self, rect, network: Network):
     spacing = 50
     ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
@@ -396,18 +395,16 @@ class WifiManagerUI(Widget):
     self._draw_signal_strength_icon(signal_icon_rect, network)
 
   def _networks_buttons_callback(self, network):
-    if self.scroll_panel.is_touch_valid():
-      if not network.is_saved and network.security_type != SecurityType.OPEN:
-        self.state = UIState.NEEDS_AUTH
-        self._state_network = network
-        self._password_retry = False
-      elif not network.is_connected:
-        self.connect_to_network(network)
+    if not network.is_saved and network.security_type != SecurityType.OPEN:
+      self.state = UIState.NEEDS_AUTH
+      self._state_network = network
+      self._password_retry = False
+    elif not network.is_connected:
+      self.connect_to_network(network)
 
   def _forget_networks_buttons_callback(self, network):
-    if self.scroll_panel.is_touch_valid():
-      self.state = UIState.SHOW_FORGET_CONFIRM
-      self._state_network = network
+    self.state = UIState.SHOW_FORGET_CONFIRM
+    self._state_network = network
 
   def _draw_status_icon(self, rect, network: Network):
     """Draw the status icon based on network's connection state"""
@@ -449,8 +446,10 @@ class WifiManagerUI(Widget):
     for n in self._networks:
       self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
                                               button_style=ButtonStyle.TRANSPARENT_WHITE)
+      self._networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
       self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                      font_size=45)
+      self._forget_networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
 
   def _on_need_auth(self, ssid):
     network = next((n for n in self._networks if n.ssid == ssid), None)
