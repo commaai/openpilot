@@ -51,7 +51,6 @@ class GuiScrollPanel:
 
       # Decay velocity when idle
       if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
-        # self._velocity_filter_y.update(0)
         # Faster decay if bouncing back from out of bounds
         friction = math.exp(-BOUNCE_RETURN_RATE * 1 / DEFAULT_FPS)
         self._velocity_filter_y.x *= friction ** 2 if (above_bounds or below_bounds) else friction
@@ -59,31 +58,12 @@ class GuiScrollPanel:
         self._velocity_filter_y.x = 0.0
 
       if above_bounds or below_bounds:
-        # if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
-        #   # self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
-        #   # self._velocity_filter_y.update(0)
-        #   self._velocity_filter_y.x *= INERTIA_FRICTION
-        #   self._offset_filter_y.x = self._offset_filter_y.x
-        # else:
         if above_bounds:
-          # self._offset_filter_y.x = self._offset_filter_y.update(0)
           self._offset_filter_y.update(0)
         else:
-          # self._offset_filter_y.x = self._offset_filter_y.update(-max_scroll_distance)
           self._offset_filter_y.update(-max_scroll_distance)
 
       self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
-
-      # else:
-        # if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
-        #   # self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
-        #   # self._velocity_filter_y.update(0)
-        #   self._velocity_filter_y.x *= INERTIA_FRICTION
-        # else:
-        #   self._velocity_filter_y.x = 0.0
-        # self._offset_filter_y.x = self._offset_filter_y.x
-
-      # self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
 
     elif self._scroll_state == ScrollState.DRAGGING_CONTENT:
       # Mouse not moving, decay velocity
@@ -124,11 +104,9 @@ class GuiScrollPanel:
           delta_y /= 3
 
         self._offset_filter_y.x += delta_y
-        # self._offset_filter_y.initialized = False
 
         # Track velocity for inertia
         dt = mouse_event.t - self._last_drag_time
-        # print('dt', 'dt2', dt)
         if dt > 0:
           drag_velocity = delta_y / dt
           self._velocity_filter_y.update(drag_velocity)
