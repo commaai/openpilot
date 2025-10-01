@@ -13,8 +13,8 @@ class ButtonStyle(IntEnum):
   PRIMARY = 1  # For main actions
   DANGER = 2  # For critical actions, like reboot or delete
   TRANSPARENT = 3  # For buttons with transparent background and border
-  TRANSPARENT_WHITE_TEXT = 3  # For buttons with transparent background and border and white text
-  TRANSPARENT_WHITE_BORDER = 9  # For buttons with transparent background and white border and text
+  TRANSPARENT_WHITE_TEXT = 9  # For buttons with transparent background and border and white text
+  TRANSPARENT_WHITE_BORDER = 10  # For buttons with transparent background and white border and text
   ACTION = 4
   LIST_ACTION = 5  # For list items with action buttons
   NO_EFFECT = 6
