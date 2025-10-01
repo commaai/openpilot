@@ -136,7 +136,7 @@ class GuiScrollPanel:
         #   delta_y /= 2
         # Rubber banding effect when out of bands
         if above_bounds or below_bounds:
-          delta_y /= 2
+          delta_y /= 3
 
         # print('offset', self._offset.y, 'bounds', bounds.height, 'content', content.height)
 
