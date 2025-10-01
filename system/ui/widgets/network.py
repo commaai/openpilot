@@ -77,9 +77,6 @@ class NetworkUI(Widget):
     self._nav_button = NavButton("Advanced")
     self._nav_button.set_click_callback(self._cycle_panel)
 
-  def _update_state(self):
-    self._wifi_manager.process_callbacks()
-
   def show_event(self):
     self._set_current_panel(PanelType.WIFI)
     self._wifi_panel.show_event()
@@ -304,6 +301,9 @@ class WifiManagerUI(Widget):
   def _load_icons(self):
     for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
       gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
+
+  def _update_state(self):
+    self._wifi_manager.process_callbacks()
 
   def _render(self, rect: rl.Rectangle):
     if not self._networks:
