@@ -40,8 +40,7 @@ class HtmlRenderer(Widget):
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._scroll_panel = GuiScrollPanel()
-    self._ok_button = Button("OK", click_callback=self._on_ok_clicked, button_style=ButtonStyle.PRIMARY)
-    self._dialog_result = DialogResult.NO_ACTION
+    self._ok_button = Button("OK", click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
 
     self.styles: dict[ElementType, dict[str, Any]] = {
       ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 16},
@@ -55,9 +54,6 @@ class HtmlRenderer(Widget):
     }
 
     self.parse_html_file(file_path)
-
-  def _on_ok_clicked(self):
-    self._dialog_result = DialogResult.CONFIRM
 
   def parse_html_file(self, file_path: str) -> None:
     with open(file_path, encoding='utf-8') as file:
@@ -133,7 +129,7 @@ class HtmlRenderer(Widget):
     button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)
     self._ok_button.render(button_rect)
 
-    return self._dialog_result
+    return -1
 
   def _render_content(self, rect: rl.Rectangle, scroll_offset: float = 0) -> float:
     current_y = rect.y + scroll_offset
