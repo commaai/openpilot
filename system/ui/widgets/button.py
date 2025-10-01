@@ -14,7 +14,7 @@ class ButtonStyle(IntEnum):
   PRIMARY = 1  # For main actions
   DANGER = 2  # For critical actions, like reboot or delete
   TRANSPARENT = 3  # For buttons with transparent background and border
-  TRANSPARENT_WHITE = 3  # For buttons with transparent background and border
+  TRANSPARENT_WHITE_TEXT = 3  # For buttons with transparent background and border and white text
   ACTION = 4
   LIST_ACTION = 5  # For list items with action buttons
   NO_EFFECT = 6
@@ -31,7 +31,7 @@ BUTTON_TEXT_COLOR = {
   ButtonStyle.PRIMARY: rl.Color(228, 228, 228, 255),
   ButtonStyle.DANGER: rl.Color(228, 228, 228, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
-  ButtonStyle.TRANSPARENT_WHITE: rl.WHITE,
+  ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.WHITE,
   ButtonStyle.ACTION: rl.BLACK,
   ButtonStyle.LIST_ACTION: rl.Color(228, 228, 228, 255),
   ButtonStyle.NO_EFFECT: rl.Color(228, 228, 228, 255),
@@ -40,7 +40,7 @@ BUTTON_TEXT_COLOR = {
 }
 
 BUTTON_DISABLED_TEXT_COLORS = {
-  ButtonStyle.TRANSPARENT_WHITE: rl.WHITE,
+  ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.WHITE,
 }
 
 BUTTON_BACKGROUND_COLORS = {
@@ -48,7 +48,7 @@ BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.PRIMARY: rl.Color(70, 91, 234, 255),
   ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
-  ButtonStyle.TRANSPARENT_WHITE: rl.BLANK,
+  ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
   ButtonStyle.ACTION: rl.Color(189, 189, 189, 255),
   ButtonStyle.LIST_ACTION: rl.Color(57, 57, 57, 255),
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
@@ -61,7 +61,7 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.PRIMARY: rl.Color(48, 73, 244, 255),
   ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
-  ButtonStyle.TRANSPARENT_WHITE: rl.BLANK,
+  ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
   ButtonStyle.ACTION: rl.Color(130, 130, 130, 255),
   ButtonStyle.LIST_ACTION: rl.Color(74, 74, 74, 74),
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
@@ -70,7 +70,7 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
 }
 
 BUTTON_DISABLED_BACKGROUND_COLORS = {
-  ButtonStyle.TRANSPARENT_WHITE: rl.BLANK,
+  ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
 }
 
 _pressed_buttons: set[str] = set()  # Track mouse press state globally
