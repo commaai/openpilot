@@ -59,9 +59,9 @@ class GuiScrollPanel:
   def _update_state(self, bounds: rl.Rectangle, content: rl.Rectangle):
     rl.draw_rectangle_lines(0, 0, abs(int(self._velocity_filter_y.x)), 10, rl.RED)
 
+    max_scroll_distance = max(0, content.height - bounds.height)
     if self._scroll_state == ScrollState.IDLE:
-      above_bounds = self._offset_filter_y.x > 0
-      below_bounds = self._offset_filter_y.x < -(content.height - bounds.height)
+      above_bounds, below_bounds = self._check_bounds(bounds, content)
       print('above', above_bounds, 'below', below_bounds)
 
       # Decay velocity when idle
@@ -85,8 +85,8 @@ class GuiScrollPanel:
           # self._offset_filter_y.x = self._offset_filter_y.update(0)
           self._offset_filter_y.update(0)
         else:
-          # self._offset_filter_y.x = self._offset_filter_y.update(-(content.height - bounds.height))
-          self._offset_filter_y.update(-(content.height - bounds.height))
+          # self._offset_filter_y.x = self._offset_filter_y.update(-max_scroll_distance)
+          self._offset_filter_y.update(-max_scroll_distance)
 
       self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
 
@@ -103,8 +103,8 @@ class GuiScrollPanel:
 
     if abs(self._offset_filter_y.x) < 1e-3:
       self._offset_filter_y.x = 0.0
-    elif abs(self._offset_filter_y.x + content.height - bounds.height) < 1e-3:
-      self._offset_filter_y.x = -(content.height - bounds.height)
+    elif abs(self._offset_filter_y.x + max_scroll_distance) < 1e-3:
+      self._offset_filter_y.x = -max_scroll_distance
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
     if self._scroll_state == ScrollState.IDLE:
@@ -126,8 +126,7 @@ class GuiScrollPanel:
         # self._offset_filter_y.x = self._offset.y
       else:
         delta_y = mouse_event.pos.y - self._last_mouse_y
-        above_bounds = self._offset_filter_y.x > 0
-        below_bounds = self._offset_filter_y.x < -(content.height - bounds.height)
+        above_bounds, below_bounds = self._check_bounds(bounds, content)
         # TODO: should it be anytime? match ios?
         # if above_bounds and delta_y > 0 or below_bounds and delta_y < 0:
         #   delta_y /= 2
@@ -146,9 +145,7 @@ class GuiScrollPanel:
         # print('dt', 'dt2', dt)
         if dt > 0:
           drag_velocity = delta_y / dt
-          #  TODO: temp comment
-          # self._velocity_filter_y.update(drag_velocity)
-
+          self._velocity_filter_y.update(drag_velocity)
 
         # TODO: just store last mouse event!
     self._last_drag_time = mouse_event.t
@@ -276,6 +273,12 @@ class GuiScrollPanel:
         self._offset.y = MAX_BOUNCE_DISTANCE
       elif self._offset.y < -(max_scroll_y + MAX_BOUNCE_DISTANCE):
         self._offset.y = -(max_scroll_y + MAX_BOUNCE_DISTANCE)
+
+  def _check_bounds(self, bounds: rl.Rectangle, content: rl.Rectangle) -> tuple[bool, bool]:
+    max_scroll_distance = max(0, content.height - bounds.height)
+    above_bounds = self._offset_filter_y.x > 0
+    below_bounds = self._offset_filter_y.x < -max_scroll_distance
+    return above_bounds, below_bounds
 
   def is_touch_valid(self):
     return self._scroll_state == ScrollState.IDLE and abs(self._velocity_filter_y.x) < MIN_VELOCITY_FOR_CLICKING
