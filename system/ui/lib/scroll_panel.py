@@ -100,13 +100,18 @@ class GuiScrollPanel:
     if self._scroll_state == ScrollState.IDLE:
       if mouse_event.left_pressed:
         self._start_mouse_y = mouse_event.pos.y
+        # Interrupt scrolling with new drag
+        # TODO: stop scrolling with any tap, need to fix is_touch_valid
+        if abs(self._velocity_filter_y.x) > MIN_VELOCITY_FOR_CLICKING:
+          self._scroll_state = ScrollState.DRAGGING_CONTENT
+          # Start velocity at initial measurement for more immediate response
+          self._velocity_filter_y.initialized = False
 
       if mouse_event.left_down:
         if abs(mouse_event.pos.y - self._start_mouse_y) > DRAG_THRESHOLD:
           self._scroll_state = ScrollState.DRAGGING_CONTENT
           # Start velocity at initial measurement for more immediate response
           self._velocity_filter_y.initialized = False
-          # TODO: minimum change if y to start dragging
 
     elif self._scroll_state == ScrollState.DRAGGING_CONTENT:
       if mouse_event.left_released:
@@ -114,9 +119,6 @@ class GuiScrollPanel:
       else:
         delta_y = mouse_event.pos.y - self._last_mouse_y
         above_bounds, below_bounds = self._check_bounds(bounds, content)
-        # TODO: should it be anytime? match ios?
-        # if above_bounds and delta_y > 0 or below_bounds and delta_y < 0:
-        #   delta_y /= 2
         # Rubber banding effect when out of bands
         if above_bounds or below_bounds:
           delta_y /= 3
