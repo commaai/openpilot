@@ -60,7 +60,7 @@ class TextWindow(Widget):
     scroll = self._scroll_panel.update(self._textarea_rect, self._content_rect)
     rl.begin_scissor_mode(int(self._textarea_rect.x), int(self._textarea_rect.y), int(self._textarea_rect.width), int(self._textarea_rect.height))
     for i, line in enumerate(self._wrapped_lines):
-      position = rl.Vector2(self._textarea_rect.x + scroll, self._textarea_rect.y + scroll + i * LINE_HEIGHT)
+      position = rl.Vector2(self._textarea_rect.x, self._textarea_rect.y + scroll + i * LINE_HEIGHT)
       if position.y + LINE_HEIGHT < self._textarea_rect.y or position.y > self._textarea_rect.y + self._textarea_rect.height:
         continue
       rl.draw_text_ex(gui_app.font(), line, position, FONT_SIZE, 0, rl.WHITE)
