@@ -168,10 +168,6 @@ class DualButtonAction(ItemAction):
     left_rect = rl.Rectangle(rect.x, button_y, button_width, button_height)
     right_rect = rl.Rectangle(rect.x + button_width + button_spacing, button_y, button_width, button_height)
 
-    # Set button enabled state
-    self.left_button.set_enabled(self.enabled)
-    self.right_button.set_enabled(self.enabled)
-
     # Render buttons
     self.left_button.render(left_rect)
     self.right_button.render(right_rect)
