@@ -1,9 +1,9 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import FontWeight
-from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle, TextAlignment
+from openpilot.system.ui.widgets.button import Button, ButtonStyle, TextAlignment
 from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.scroller import Scroller
 
 # Constants
 MARGIN = 50
@@ -22,7 +22,23 @@ class MultiOptionDialog(Widget):
     self.options = options
     self.current = current
     self.selection = current
-    self.scroll = GuiScrollPanel()
+
+    # Create option buttons
+    self.option_buttons = []
+    for option in options:
+      button = Button(option, click_callback=lambda opt=option: self._on_option_clicked(opt),
+                      text_alignment=TextAlignment.LEFT, button_style=ButtonStyle.NORMAL)
+      self.option_buttons.append(button)
+
+    # Create scroller with option buttons
+    self.scroller = Scroller(self.option_buttons, spacing=LIST_ITEM_SPACING)
+
+    # Create button widgets
+    self.cancel_button = Button("Cancel", click_callback=lambda: gui_app.set_modal_overlay(None))
+    self.select_button = Button("Select", click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
+
+  def _on_option_clicked(self, option):
+    self.selection = option
 
   def _render(self, rect):
     dialog_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - 2 * MARGIN, rect.height - 2 * MARGIN)
@@ -36,36 +52,29 @@ class MultiOptionDialog(Widget):
     # Options area
     options_y = content_rect.y + TITLE_FONT_SIZE + ITEM_SPACING
     options_h = content_rect.height - TITLE_FONT_SIZE - BUTTON_HEIGHT - 2 * ITEM_SPACING
-    view_rect = rl.Rectangle(content_rect.x, options_y, content_rect.width, options_h)
-    content_h = len(self.options) * (ITEM_HEIGHT + LIST_ITEM_SPACING)
-    list_content_rect = rl.Rectangle(content_rect.x, options_y, content_rect.width, content_h)
+    options_rect = rl.Rectangle(content_rect.x, options_y, content_rect.width, options_h)
 
-    # Scroll and render options
-    offset = self.scroll.update(view_rect, list_content_rect)
-    valid_click = self.scroll.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
-
-    rl.begin_scissor_mode(int(view_rect.x), int(options_y), int(view_rect.width), int(options_h))
+    # Update button styles and set width based on selection
     for i, option in enumerate(self.options):
-      item_y = options_y + i * (ITEM_HEIGHT + LIST_ITEM_SPACING) + offset
-      item_rect = rl.Rectangle(view_rect.x, item_y, view_rect.width, ITEM_HEIGHT)
+      selected = option == self.selection
+      button = self.option_buttons[i]
+      button.set_button_style(ButtonStyle.PRIMARY if selected else ButtonStyle.NORMAL)
+      button.set_rect(rl.Rectangle(0, 0, options_rect.width, ITEM_HEIGHT))
 
-      if rl.check_collision_recs(item_rect, view_rect):
-        selected = option == self.selection
-        style = ButtonStyle.PRIMARY if selected else ButtonStyle.NORMAL
-
-        if gui_button(item_rect, option, button_style=style, text_alignment=TextAlignment.LEFT) and valid_click:
-          self.selection = option
-    rl.end_scissor_mode()
+    # Render scroller with options
+    self.scroller.render(options_rect)
 
     # Buttons
     button_y = content_rect.y + content_rect.height - BUTTON_HEIGHT
     button_w = (content_rect.width - BUTTON_SPACING) / 2
 
-    if gui_button(rl.Rectangle(content_rect.x, button_y, button_w, BUTTON_HEIGHT), "Cancel"):
-      return 0
+    # Cancel button
+    cancel_rect = rl.Rectangle(content_rect.x, button_y, button_w, BUTTON_HEIGHT)
+    self.cancel_button.render(cancel_rect)
 
-    if gui_button(rl.Rectangle(content_rect.x + button_w + BUTTON_SPACING, button_y, button_w, BUTTON_HEIGHT),
-                  "Select", is_enabled=self.selection != self.current, button_style=ButtonStyle.PRIMARY):
-      return 1
+    # Select button
+    select_rect = rl.Rectangle(content_rect.x + button_w + BUTTON_SPACING, button_y, button_w, BUTTON_HEIGHT)
+    self.select_button.set_enabled(self.selection != self.current)
+    self.select_button.render(select_rect)
 
     return -1

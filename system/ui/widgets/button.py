@@ -200,6 +200,11 @@ class Button(Widget):
   def set_text(self, text):
     self._label.set_text(text)
 
+  def set_button_style(self, button_style: ButtonStyle):
+    self._button_style = button_style
+    self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
+    self._label.set_text_color(BUTTON_TEXT_COLOR[self._button_style])
+
   def _update_state(self):
     if self.enabled:
       self._label.set_text_color(BUTTON_TEXT_COLOR[self._button_style])
