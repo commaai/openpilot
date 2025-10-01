@@ -58,14 +58,13 @@ class TextWindow(Widget):
 
     button_text = "Exit" if PC else "Reboot"
     self._button = Button(button_text, click_callback=self._on_button_clicked, button_style=ButtonStyle.TRANSPARENT_WHITE_BORDER)
-    self._exit = False
 
-  def _on_button_clicked(self):
+  @staticmethod
+  def _on_button_clicked():
     if PC:
       gui_app.request_close()
     else:
       HARDWARE.reboot()
-    self._exit = True
 
   def _render(self, rect: rl.Rectangle):
     scroll = self._scroll_panel.update(self._textarea_rect, self._content_rect)
@@ -80,7 +79,7 @@ class TextWindow(Widget):
     button_bounds = rl.Rectangle(rect.width - MARGIN - BUTTON_SIZE.x - SPACING, rect.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
     self._button.render(button_bounds)
 
-    return 1 if self._exit else 0
+    return -1
 
 
 if __name__ == "__main__":
