@@ -7,6 +7,7 @@ from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, Pan
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets import Widget
+from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
 
 
 class MainState(IntEnum):
@@ -34,6 +35,11 @@ class MainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
+    # Start onboarding if terms or training not completed
+    self._onboarding_window = OnboardingWindow()
+    if not self._onboarding_window.completed:
+      gui_app.set_modal_overlay(self._onboarding_window)
+
   def _render(self, _):
     self._handle_onroad_transition()
     self._render_main_content()
@@ -43,7 +49,7 @@ class MainLayout(Widget):
                                 on_flag=self._on_bookmark_clicked)
     self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
-    self._layouts[MainState.ONROAD].set_callbacks(on_click=self._on_onroad_clicked)
+    self._layouts[MainState.ONROAD].set_click_callback(self._on_onroad_clicked)
     device.add_interactive_timeout_callback(self._set_mode_for_state)
 
   def _update_layout_rects(self):
