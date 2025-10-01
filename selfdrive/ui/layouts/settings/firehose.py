@@ -71,7 +71,7 @@ class FirehoseLayout(Widget):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, content_height)
 
     # Handle scrolling and render with clipping
-    scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
+    scroll_offset = self.scroll_panel.update(rect, content_rect)
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._render_content(rect, scroll_offset)
     rl.end_scissor_mode()

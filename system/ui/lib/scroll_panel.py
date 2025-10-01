@@ -2,12 +2,14 @@ import time
 import pyray as rl
 from collections import deque
 from enum import IntEnum
-from openpilot.system.ui.lib.application import gui_app, MouseEvent, MousePos
+from openpilot.system.ui.lib.application import gui_app, MouseEvent, MousePos, DEFAULT_FPS
+from openpilot.common.filter_simple import FirstOrderFilter
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
-INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down
-MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
+INERTIA_FRICTION = 0.95        # The rate at which the inertia slows down
+# MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
+MIN_VELOCITY = 2               # px/s, changes from auto scroll to steady state
 DRAG_THRESHOLD = 12            # Pixels of movement to consider it a drag, not a click
 BOUNCE_FACTOR = 0.2            # Elastic bounce when scrolling past boundaries
 BOUNCE_RETURN_SPEED = 0.15     # How quickly it returns from the bounce
@@ -25,33 +27,98 @@ class ScrollState(IntEnum):
 
 class GuiScrollPanel:
   def __init__(self, show_vertical_scroll_bar: bool = False):
+    # TODO: remove ability to scroll x and y, we only need one and it simplifies a lot of things
     self._scroll_state: ScrollState = ScrollState.IDLE
     self._last_mouse_y: float = 0.0
     self._start_mouse_y: float = 0.0  # Track the initial mouse position for drag detection
+    self._offset_filter_y = FirstOrderFilter(0.0, 0.1, 1 / DEFAULT_FPS)
+    self._offset_filter_x = FirstOrderFilter(0.0, 0.1, 1 / DEFAULT_FPS)
     self._offset = rl.Vector2(0, 0)
     self._view = rl.Rectangle(0, 0, 0, 0)
     self._show_vertical_scroll_bar: bool = show_vertical_scroll_bar
     self._velocity_y = 0.0  # Velocity for inertia
+    self._velocity_filter_y = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS)  # TODO: raise rc?
     self._is_dragging: bool = False
     self._bounce_offset: float = 0.0
     self._velocity_history: deque[float] = deque(maxlen=VELOCITY_HISTORY_SIZE)
     self._last_drag_time: float = 0.0
 
   def update(self, bounds: rl.Rectangle, content: rl.Rectangle) -> rl.Vector2:
-    print('state', self._scroll_state)
+    # print('state', self._scroll_state)
     # TODO: HACK: this class is driven by mouse events, so we need to ensure we have at least one event to process
     for mouse_event in gui_app.mouse_events:  # or [MouseEvent(MousePos(0, 0), 0, False, False, False, time.monotonic())]:
       if mouse_event.slot == 0:
         self._handle_mouse_event(mouse_event, bounds, content)
 
-    self._update_state()
+    self._update_state(bounds, content)
 
     return self._offset
 
-  def _update_state(self):
-    pass
+  def _update_state(self, bounds: rl.Rectangle, content: rl.Rectangle):
+    if self._scroll_state == ScrollState.IDLE:
+      above_bounds = self._offset.y > 0
+      below_bounds = self._offset.y < -(content.height - bounds.height)
+      if above_bounds or below_bounds:
+        if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
+          self._offset.y += self._velocity_filter_y.x / DEFAULT_FPS
+          # self._velocity_filter_y.update(0)
+          self._velocity_filter_y.x *= INERTIA_FRICTION
+          self._offset_filter_y.x = self._offset.y
+        else:
+          if above_bounds:
+            self._offset.y = self._offset_filter_y.update(0)
+          else:
+            self._offset.y = self._offset_filter_y.update(-(content.height - bounds.height))
+
+      else:
+        if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
+          self._offset.y += self._velocity_filter_y.x / DEFAULT_FPS
+          # self._velocity_filter_y.update(0)
+          self._velocity_filter_y.x *= INERTIA_FRICTION
+        else:
+          self._velocity_filter_y.x = 0.0
+        self._offset_filter_y.x = self._offset.y
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
+    if self._scroll_state == ScrollState.IDLE:
+      if mouse_event.left_pressed:
+        self._scroll_state = ScrollState.DRAGGING_CONTENT
+        # TODO: minimum change if y to start dragging
+        self._is_dragging = True
+        self._start_mouse_y = mouse_event.pos.y
+        self._last_mouse_y = mouse_event.pos.y
+
+    elif self._scroll_state == ScrollState.DRAGGING_CONTENT:
+      if mouse_event.left_released:
+        self._scroll_state = ScrollState.IDLE
+        self._is_dragging = False
+      else:
+        delta_y = mouse_event.pos.y - self._last_mouse_y
+        above_bounds = self._offset.y > 0
+        below_bounds = self._offset.y < -(content.height - bounds.height)
+        # TODO: should it be anytime? match ios?
+        if above_bounds and delta_y > 0 or below_bounds and delta_y < 0:
+          delta_y /= 2
+
+        print('offset', self._offset.y, 'bounds', bounds.height, 'content', content.height)
+
+        self._offset.y += delta_y
+        self._offset_filter_x.x = self._offset.x
+        self._offset_filter_y.x = self._offset.y
+
+        dt = mouse_event.t - self._last_drag_time
+        if dt > 0:
+          drag_velocity = delta_y / dt
+          self._velocity_filter_y.update(drag_velocity)
+          print('vel', drag_velocity, 'filtered', self._velocity_filter_y.x)
+          rl.draw_rectangle_lines(0, 0, abs(int(self._velocity_filter_y.x)), 10, rl.RED)
+
+        # TODO: just store last event!
+        self._last_mouse_y = mouse_event.pos.y
+        self._last_drag_time = mouse_event.t
+
+
+  def _handle_mouse_event_old(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
     max_scroll_y = max(content.height - bounds.height, 0)
 
     # Start dragging on mouse press
@@ -175,4 +242,5 @@ class GuiScrollPanel:
         self._offset.y = -(max_scroll_y + MAX_BOUNCE_DISTANCE)
 
   def is_touch_valid(self):
+    return True
     return not self._is_dragging
