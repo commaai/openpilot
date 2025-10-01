@@ -23,14 +23,9 @@ class MultiOptionDialog(Widget):
     self.current = current
     self.selection = current
 
-    # Create option buttons
-    self.option_buttons = []
-    for option in options:
-      button = Button(option, click_callback=lambda opt=option: self._on_option_clicked(opt),
-                      text_alignment=TextAlignment.LEFT, button_style=ButtonStyle.NORMAL)
-      self.option_buttons.append(button)
-
     # Create scroller with option buttons
+    self.option_buttons = [Button(option, click_callback=lambda opt=option: self._on_option_clicked(opt),
+                                  text_alignment=TextAlignment.LEFT, button_style=ButtonStyle.NORMAL) for option in options]
     self.scroller = Scroller(self.option_buttons, spacing=LIST_ITEM_SPACING)
 
     self.cancel_button = Button("Cancel", click_callback=lambda: gui_app.set_modal_overlay(None))
@@ -60,18 +55,15 @@ class MultiOptionDialog(Widget):
       button.set_button_style(ButtonStyle.PRIMARY if selected else ButtonStyle.NORMAL)
       button.set_rect(rl.Rectangle(0, 0, options_rect.width, ITEM_HEIGHT))
 
-    # Render scroller with options
     self.scroller.render(options_rect)
 
     # Buttons
     button_y = content_rect.y + content_rect.height - BUTTON_HEIGHT
     button_w = (content_rect.width - BUTTON_SPACING) / 2
 
-    # Cancel button
     cancel_rect = rl.Rectangle(content_rect.x, button_y, button_w, BUTTON_HEIGHT)
     self.cancel_button.render(cancel_rect)
 
-    # Select button
     select_rect = rl.Rectangle(content_rect.x + button_w + BUTTON_SPACING, button_y, button_w, BUTTON_HEIGHT)
     self.select_button.set_enabled(self.selection != self.current)
     self.select_button.render(select_rect)
