@@ -6,7 +6,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import Button, gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 
 ITEM_BASE_WIDTH = 600
@@ -149,9 +149,16 @@ class DualButtonAction(ItemAction):
                right_callback: Callable = None, enabled: bool | Callable[[], bool] = True):
     super().__init__(width=0, enabled=enabled)  # Width 0 means use full width
     self.left_text, self.right_text = left_text, right_text
-    self.left_callback, self.right_callback = left_callback, right_callback
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+    self.left_button = Button(left_text, click_callback=left_callback, button_style=ButtonStyle.LIST_ACTION)
+    self.right_button = Button(right_text, click_callback=right_callback, button_style=ButtonStyle.DANGER)
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(touch_callback)
+    self.left_button.set_touch_valid_callback(touch_callback)
+    self.right_button.set_touch_valid_callback(touch_callback)
+
+  def _render(self, rect: rl.Rectangle):
     button_spacing = 30
     button_height = 120
     button_width = (rect.width - button_spacing) / 2
@@ -160,16 +167,9 @@ class DualButtonAction(ItemAction):
     left_rect = rl.Rectangle(rect.x, button_y, button_width, button_height)
     right_rect = rl.Rectangle(rect.x + button_width + button_spacing, button_y, button_width, button_height)
 
-    left_clicked = gui_button(left_rect, self.left_text, button_style=ButtonStyle.LIST_ACTION) == 1
-    right_clicked = gui_button(right_rect, self.right_text, button_style=ButtonStyle.DANGER) == 1
-
-    if left_clicked and self.left_callback:
-      self.left_callback()
-      return True
-    if right_clicked and self.right_callback:
-      self.right_callback()
-      return True
-    return False
+    # Render buttons
+    self.left_button.render(left_rect)
+    self.right_button.render(right_rect)
 
 
 class MultipleButtonAction(ItemAction):

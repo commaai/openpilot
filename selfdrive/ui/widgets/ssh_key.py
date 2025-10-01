@@ -2,13 +2,14 @@ import pyray as rl
 import requests
 import threading
 import copy
+from collections.abc import Callable
 from enum import Enum
 
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import DialogResult
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.list_view import (
@@ -38,8 +39,14 @@ class SshKeyAction(ItemAction):
     self._params = Params()
     self._error_message: str = ""
     self._text_font = gui_app.font(FontWeight.MEDIUM)
+    self._button = Button("", click_callback=self._handle_button_click, button_style=ButtonStyle.LIST_ACTION,
+                          border_radius=BUTTON_BORDER_RADIUS, font_size=BUTTON_FONT_SIZE)
 
     self._refresh_state()
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(touch_callback)
+    self._button.set_touch_valid_callback(touch_callback)
 
   def _refresh_state(self):
     self._username = self._params.get("GithubUsername")
@@ -66,18 +73,11 @@ class SshKeyAction(ItemAction):
       )
 
     # Draw button
-    if gui_button(
-      rl.Rectangle(
-        rect.x + rect.width - BUTTON_WIDTH, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
-      ),
-      self._state.value,
-      is_enabled=self._state != SshKeyActionState.LOADING,
-      border_radius=BUTTON_BORDER_RADIUS,
-      font_size=BUTTON_FONT_SIZE,
-      button_style=ButtonStyle.LIST_ACTION,
-    ):
-      self._handle_button_click()
-      return True
+    button_rect = rl.Rectangle(rect.x + rect.width - BUTTON_WIDTH, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
+    self._button.set_rect(button_rect)
+    self._button.set_text(self._state.value)
+    self._button.set_enabled(self._state != SshKeyActionState.LOADING)
+    self._button.render(button_rect)
     return False
 
   def _handle_button_click(self):
