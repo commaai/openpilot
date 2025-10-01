@@ -61,9 +61,8 @@ class TextWindow(Widget):
 
   @staticmethod
   def _on_button_clicked():
-    if PC:
-      gui_app.request_close()
-    else:
+    gui_app.request_close()
+    if not PC:
       HARDWARE.reboot()
 
   def _render(self, rect: rl.Rectangle):
@@ -78,8 +77,6 @@ class TextWindow(Widget):
 
     button_bounds = rl.Rectangle(rect.width - MARGIN - BUTTON_SIZE.x - SPACING, rect.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
     self._button.render(button_bounds)
-
-    return -1
 
 
 if __name__ == "__main__":
