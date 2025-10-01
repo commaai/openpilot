@@ -95,6 +95,8 @@ class SshKeyAction(ItemAction):
       return
 
     username = self._keyboard.text.strip()
+    if not username:
+      return
 
     self._state = SshKeyActionState.LOADING
     threading.Thread(target=lambda: self._fetch_ssh_key(username), daemon=True).start()
