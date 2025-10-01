@@ -62,7 +62,9 @@ class GuiScrollPanel:
     if self._scroll_state == ScrollState.IDLE:
       above_bounds = self._offset_filter_y.x > 0
       below_bounds = self._offset_filter_y.x < -(content.height - bounds.height)
-      print('above bounds', above_bounds, 'below_bounds', below_bounds)
+      print('above', above_bounds, 'below', below_bounds)
+
+      self._velocity_filter_y.x = 0
 
       # Decay velocity when idle
       if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
@@ -73,7 +75,6 @@ class GuiScrollPanel:
       else:
         self._velocity_filter_y.x = 0.0
       # self._offset_filter_y.x = self._offset.y
-
 
       if above_bounds or below_bounds:
         # if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
@@ -89,8 +90,7 @@ class GuiScrollPanel:
           # self._offset_filter_y.x = self._offset_filter_y.update(-(content.height - bounds.height))
           self._offset_filter_y.update(-(content.height - bounds.height))
 
-      # self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
-      self._offset_filter_y.update(self._offset_filter_y.x + self._velocity_filter_y.x / DEFAULT_FPS)
+      self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
 
       # else:
         # if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
@@ -102,6 +102,11 @@ class GuiScrollPanel:
         # self._offset_filter_y.x = self._offset_filter_y.x
 
       # self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
+
+    if abs(self._offset_filter_y.x) < 1e-3:
+      self._offset_filter_y.x = 0.0
+    elif abs(self._offset_filter_y.x + content.height - bounds.height) < 1e-3:
+      self._offset_filter_y.x = -(content.height - bounds.height)
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
     if self._scroll_state == ScrollState.IDLE:
