@@ -92,7 +92,7 @@ class DeviceLayout(Widget):
 
   def _reset_calibration_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(lambda: alert_dialog("Disengage to Reset Calibration"))
+      gui_app.set_modal_overlay(alert_dialog("Disengage to Reset Calibration"))
       return
 
     dialog = ConfirmDialog("Are you sure you want to reset calibration?", "Reset")
@@ -112,7 +112,7 @@ class DeviceLayout(Widget):
 
   def _reboot_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(lambda: alert_dialog("Disengage to Reboot"))
+      gui_app.set_modal_overlay(alert_dialog("Disengage to Reboot"))
       return
 
     dialog = ConfirmDialog("Are you sure you want to reboot?", "Reboot")
@@ -124,7 +124,7 @@ class DeviceLayout(Widget):
 
   def _power_off_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(lambda: alert_dialog("Disengage to Power Off"))
+      gui_app.set_modal_overlay(alert_dialog("Disengage to Power Off"))
       return
 
     dialog = ConfirmDialog("Are you sure you want to power off?", "Power Off")
