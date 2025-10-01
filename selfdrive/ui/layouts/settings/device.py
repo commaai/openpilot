@@ -99,7 +99,6 @@ class DeviceLayout(Widget):
     gui_app.set_modal_overlay(dialog, callback=self._reset_calibration)
 
   def _reset_calibration(self, result: int):
-    print('hello', result)
     if ui_state.engaged or result != DialogResult.CONFIRM:
       return
 
