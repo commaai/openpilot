@@ -23,18 +23,15 @@ class GuiScrollPanel:
     self._last_mouse_y: float = 0.0
     self._start_mouse_y: float = 0.0  # Track the initial mouse position for drag detection
     self._offset_filter_y = FirstOrderFilter(0.0, 0.1, 1 / DEFAULT_FPS)
-    self._velocity_filter_y = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS)  # TODO: raise rc?
+    self._velocity_filter_y = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS)
     self._last_drag_time: float = 0.0
 
   def update(self, bounds: rl.Rectangle, content: rl.Rectangle) -> float:
-    # print('state', self._scroll_state)
     for mouse_event in gui_app.mouse_events:
       if mouse_event.slot == 0:
         self._handle_mouse_event(mouse_event, bounds, content)
 
     self._update_state(bounds, content)
-
-    print('offset', self._offset_filter_y.x, 'vel', self._velocity_filter_y.x)
 
     return self._offset_filter_y.x
 
