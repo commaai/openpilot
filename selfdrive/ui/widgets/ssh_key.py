@@ -55,7 +55,7 @@ class SshKeyAction(ItemAction):
     # Show error dialog if there's an error
     if self._error_message:
       message = copy.copy(self._error_message)
-      gui_app.set_modal_overlay(lambda: alert_dialog(message))
+      gui_app.set_modal_overlay(alert_dialog(message))
       self._username = ""
       self._error_message = ""
 
