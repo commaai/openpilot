@@ -2,8 +2,8 @@ import pyray as rl
 import requests
 import threading
 import copy
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable
 
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, FontWeight
