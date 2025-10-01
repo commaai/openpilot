@@ -9,7 +9,7 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_text_box, gui_label
 from openpilot.system.ui.widgets.network import WifiManagerUI
 
@@ -44,6 +44,24 @@ class Updater(Widget):
     self.process = None
     self.update_thread = None
     self.wifi_manager_ui = WifiManagerUI(WifiManager())
+
+    # Create button instances
+    self._wifi_button = Button("Connect to Wi-Fi", click_callback=self._on_wifi_clicked)
+    self._install_button = Button("Install", click_callback=self._on_install_clicked, button_style=ButtonStyle.PRIMARY)
+    self._back_button = Button("Back", click_callback=self._on_back_clicked)
+    self._reboot_button = Button("Reboot", click_callback=self._on_reboot_clicked)
+
+  def _on_wifi_clicked(self):
+    self.current_screen = Screen.WIFI
+
+  def _on_install_clicked(self):
+    self.install_update()
+
+  def _on_back_clicked(self):
+    self.current_screen = Screen.PROMPT
+
+  def _on_reboot_clicked(self):
+    HARDWARE.reboot()
 
   def install_update(self):
     self.current_screen = Screen.PROGRESS
@@ -96,15 +114,13 @@ class Updater(Widget):
 
     # WiFi button
     wifi_button_rect = rl.Rectangle(MARGIN, button_y, button_width, BUTTON_HEIGHT)
-    if gui_button(wifi_button_rect, "Connect to Wi-Fi"):
-      self.current_screen = Screen.WIFI
-      return  # Return to avoid processing other buttons after screen change
+    self._wifi_button.set_rect(wifi_button_rect)
+    self._wifi_button.render(wifi_button_rect)
 
     # Install button
     install_button_rect = rl.Rectangle(MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT)
-    if gui_button(install_button_rect, "Install", button_style=ButtonStyle.PRIMARY):
-      self.install_update()
-      return  # Return to avoid further processing after action
+    self._install_button.set_rect(install_button_rect)
+    self._install_button.render(install_button_rect)
 
   def render_wifi_screen(self, rect: rl.Rectangle):
     # Draw the Wi-Fi manager UI
@@ -112,9 +128,8 @@ class Updater(Widget):
     self.wifi_manager_ui.render(wifi_rect)
 
     back_button_rect = rl.Rectangle(MARGIN, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
-    if gui_button(back_button_rect, "Back"):
-      self.current_screen = Screen.PROMPT
-      return  # Return to avoid processing other interactions after screen change
+    self._back_button.set_rect(back_button_rect)
+    self._back_button.render(back_button_rect)
 
   def render_progress_screen(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(MARGIN + 100, 330, rect.width - MARGIN * 2 - 200, 100)
@@ -133,10 +148,8 @@ class Updater(Widget):
     # Show reboot button if needed
     if self.show_reboot_button:
       reboot_rect = rl.Rectangle(MARGIN + 100, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
-      if gui_button(reboot_rect, "Reboot"):
-        # Return True to signal main loop to exit before rebooting
-        HARDWARE.reboot()
-        return
+      self._reboot_button.set_rect(reboot_rect)
+      self._reboot_button.render(reboot_rect)
 
   def _render(self, rect: rl.Rectangle):
     if self.current_screen == Screen.PROMPT:
