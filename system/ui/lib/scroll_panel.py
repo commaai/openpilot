@@ -1,4 +1,5 @@
 import time
+import math
 import pyray as rl
 from collections import deque
 from enum import IntEnum
@@ -17,6 +18,7 @@ BOUNCE_RETURN_SPEED = 0.15     # How quickly it returns from the bounce
 MAX_BOUNCE_DISTANCE = 150      # Maximum distance for bounce effect
 FLICK_MULTIPLIER = 1.8         # Multiplier for flick gestures
 VELOCITY_HISTORY_SIZE = 5      # Track velocity over multiple frames for smoother motion
+BOUNCE_RETURN_RATE = 5
 
 
 class ScrollState(IntEnum):
@@ -70,7 +72,8 @@ class GuiScrollPanel:
         # self._offset.y += self._velocity_filter_y.x / DEFAULT_FPS
         # self._velocity_filter_y.update(0)
         # Faster decay if bouncing back from out of bounds
-        self._velocity_filter_y.x *= INERTIA_FRICTION ** 2 if (above_bounds or below_bounds) else INERTIA_FRICTION
+        friction = math.exp(-BOUNCE_RETURN_RATE * 1 / DEFAULT_FPS)
+        self._velocity_filter_y.x *= friction ** 2 if (above_bounds or below_bounds) else friction
       else:
         self._velocity_filter_y.x = 0.0
       # self._offset_filter_y.x = self._offset.y
