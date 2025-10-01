@@ -46,23 +46,16 @@ class Updater(Widget):
     self.wifi_manager_ui = WifiManagerUI(WifiManager())
 
     # Buttons
-    self._wifi_button = Button("Connect to Wi-Fi", click_callback=lambda: self._set_current_screen(Screen.WIFI))
+    self._wifi_button = Button("Connect to Wi-Fi", click_callback=lambda: self.set_current_screen(Screen.WIFI))
     self._install_button = Button("Install", click_callback=self.install_update, button_style=ButtonStyle.PRIMARY)
-    self._back_button = Button("Back", click_callback=lambda: self._set_current_screen(Screen.PROMPT))
+    self._back_button = Button("Back", click_callback=lambda: self.set_current_screen(Screen.PROMPT))
     self._reboot_button = Button("Reboot", click_callback=lambda: HARDWARE.reboot())
 
-  def _set_current_screen(self, screen: Screen):
-    if screen == Screen.WIFI and self.current_screen != Screen.WIFI:
-      print("Showing Wi-Fi manager")
-      self.wifi_manager_ui.show_event()
-    elif self.current_screen == Screen.WIFI and screen != Screen.WIFI:
-      print("Hiding Wi-Fi manager")
-      self.wifi_manager_ui.hide_event()
-
+  def set_current_screen(self, screen: Screen):
     self.current_screen = screen
 
   def install_update(self):
-    self._set_current_screen(Screen.PROGRESS)
+    self.set_current_screen(Screen.PROGRESS)
     self.progress_value = 0
     self.progress_text = "Downloading..."
     self.show_reboot_button = False
