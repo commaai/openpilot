@@ -33,7 +33,7 @@ class GuiScrollPanel:
 
     self._update_state(bounds, content)
 
-    return self._offset_filter_y.x
+    return float(self._offset_filter_y.x)
 
   def _update_state(self, bounds: rl.Rectangle, content: rl.Rectangle):
     rl.draw_rectangle_lines(0, 0, abs(int(self._velocity_filter_y.x)), 10, rl.RED)

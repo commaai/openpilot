@@ -106,7 +106,7 @@ class FirehoseLayout(Widget):
 
     return height
 
-  def _render_content(self, rect: rl.Rectangle, scroll_offset: rl.Vector2):
+  def _render_content(self, rect: rl.Rectangle, scroll_offset: float):
     x = int(rect.x + 40)
     y = int(rect.y + 40 + scroll_offset)
     w = int(rect.width - 80)
