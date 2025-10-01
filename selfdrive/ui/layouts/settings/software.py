@@ -3,13 +3,16 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
-from openpilot.system.ui.widgets.list_view import button_item, text_item
+from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
 from openpilot.system.ui.widgets.scroller import Scroller
 
 
 class SoftwareLayout(Widget):
   def __init__(self):
     super().__init__()
+
+    # Create onroad warning label
+    self._onroad_label = ListItem(title="Updates are only downloaded while the car is off.")
 
     # Create text item for current version
     self._version_item = text_item("Current Version", ui_state.params.get("UpdaterCurrentDescription", "Unknown"))
@@ -21,28 +24,37 @@ class SoftwareLayout(Widget):
     self._install_btn = button_item("Install Update", "INSTALL", callback=self._on_install_update)
     self._install_btn.set_visible(False)
 
+
     items = self._init_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
   def _init_items(self):
     items = [
+      self._onroad_label,
       self._version_item,
       self._download_btn,
       self._install_btn,
-      button_item("Target Branch", "SELECT", callback=self._on_select_branch),
       button_item("Uninstall", "UNINSTALL", callback=self._on_uninstall),
     ]
     return items
 
   def _render(self, rect):
+    self._update_state()
     self._scroller.render(rect)
 
   def _update_state(self):
-    # Update current version
-    current_desc = ui_state.params.get("UpdaterCurrentDescription", "Unknown")
-    self._version_item.action_item.set_text(current_desc)
+    # Show/hide onroad warning
+    self._onroad_label.set_visible(ui_state.is_onroad())
 
-    # Update download button state
+    # Update current version and release notes
+    current_desc = ui_state.params.get("UpdaterCurrentDescription", "Unknown")
+    current_release_notes = ui_state.params.get("UpdaterCurrentReleaseNotes", "")
+    self._version_item.action_item.set_text(current_desc)
+    self._version_item.description = current_release_notes
+
+    # Update download button visibility and state
+    self._download_btn.set_visible(ui_state.is_offroad())
+
     updater_state = ui_state.params.get("UpdaterState", "idle")
     failed_count = int(ui_state.params.get("UpdateFailedCount", "0"))
     fetch_available = ui_state.params.get_bool("UpdaterFetchAvailable")
@@ -61,18 +73,23 @@ class SoftwareLayout(Widget):
       else:
         last_update = ui_state.params.get("LastUpdateTime", "")
         if last_update:
-          # TODO: Format time ago
+          # TODO: Format time ago like Qt does
           self._download_btn.description = f"up to date, last checked {last_update}"
         else:
           self._download_btn.description = "up to date, last checked never"
         self._download_btn.action_item.set_text("CHECK")
       self._download_btn.set_enabled(True)
 
+
     # Update install button
+    self._install_btn.set_visible(ui_state.is_offroad() and update_available)
     if update_available:
       new_desc = ui_state.params.get("UpdaterNewDescription", "")
-      self._install_btn.description = new_desc
-      self._install_btn.set_visible(True)
+      new_release_notes = ui_state.params.get("UpdaterNewReleaseNotes", "")
+      self._install_btn.action_item.set_text("INSTALL")
+      self._install_btn.description = f"{new_desc}\n{new_release_notes}"
+      # Enable install button for testing (like Qt showEvent)
+      self._install_btn.set_enabled(True)
     else:
       self._install_btn.set_visible(False)
 
@@ -99,5 +116,3 @@ class SoftwareLayout(Widget):
     # Trigger reboot to install update
     ui_state.params.put_bool("DoReboot", True)
 
-  def _on_select_branch(self):
-    pass
