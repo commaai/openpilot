@@ -7,7 +7,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
-INERTIA_FRICTION = 0.95        # The rate at which the inertia slows down
+INERTIA_FRICTION = 0.9        # The rate at which the inertia slows down
 # MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
 MIN_VELOCITY = 2               # px/s, changes from auto scroll to steady state
 DRAG_THRESHOLD = 12            # Pixels of movement to consider it a drag, not a click
@@ -64,11 +64,11 @@ class GuiScrollPanel:
           # self._velocity_filter_y.update(0)
           self._velocity_filter_y.x *= INERTIA_FRICTION
           self._offset_filter_y.x = self._offset.y
+        # else:
+        if above_bounds:
+          self._offset.y = self._offset_filter_y.update(0)
         else:
-          if above_bounds:
-            self._offset.y = self._offset_filter_y.update(0)
-          else:
-            self._offset.y = self._offset_filter_y.update(-(content.height - bounds.height))
+          self._offset.y = self._offset_filter_y.update(-(content.height - bounds.height))
 
       else:
         if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
