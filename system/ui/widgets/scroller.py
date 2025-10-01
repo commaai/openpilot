@@ -68,8 +68,7 @@ class Scroller(Widget):
       cur_height += item.rect.height + self._spacing * (idx != 0)
 
       # Consider scroll
-      x += scroll.x
-      y += scroll.y
+      y += scroll
 
       # Update item state
       item.set_position(x, y)

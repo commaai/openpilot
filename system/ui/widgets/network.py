@@ -344,7 +344,7 @@ class WifiManagerUI(Widget):
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     for i, network in enumerate(self._networks):
-      y_offset = rect.y + i * ITEM_HEIGHT + offset.y
+      y_offset = rect.y + i * ITEM_HEIGHT + offset
       item_rect = rl.Rectangle(rect.x, y_offset, rect.width, ITEM_HEIGHT)
       if not rl.check_collision_recs(item_rect, rect):
         continue
