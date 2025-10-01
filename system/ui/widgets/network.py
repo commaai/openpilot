@@ -5,7 +5,7 @@ from typing import cast
 import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
-from openpilot.system.ui.lib.application import gui_app, DEFAULT_FPS
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
 from openpilot.system.ui.widgets import Widget
@@ -50,8 +50,8 @@ class NavButton(Widget):
     super().__init__()
     self.text = text
     self.set_rect(rl.Rectangle(0, 0, 400, 100))
-    self._x_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
-    self._y_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
+    self._x_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
+    self._y_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
 
   def set_position(self, x: float, y: float) -> None:
     x = self._x_pos_filter.update(x)

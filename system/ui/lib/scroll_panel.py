@@ -1,7 +1,7 @@
 import math
 import pyray as rl
 from enum import IntEnum
-from openpilot.system.ui.lib.application import gui_app, MouseEvent, DEFAULT_FPS
+from openpilot.system.ui.lib.application import gui_app, MouseEvent
 from openpilot.common.filter_simple import FirstOrderFilter
 
 # Scroll constants for smooth scrolling behavior
@@ -24,8 +24,8 @@ class GuiScrollPanel:
     self._scroll_state: ScrollState = ScrollState.IDLE
     self._last_mouse_y: float = 0.0
     self._start_mouse_y: float = 0.0  # Track the initial mouse position for drag detection
-    self._offset_filter_y = FirstOrderFilter(0.0, 0.1, 1 / DEFAULT_FPS)
-    self._velocity_filter_y = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS)
+    self._offset_filter_y = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._velocity_filter_y = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
     self._last_drag_time: float = 0.0
 
   def update(self, bounds: rl.Rectangle, content: rl.Rectangle) -> float:
@@ -51,7 +51,7 @@ class GuiScrollPanel:
       # Decay velocity when idle
       if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
         # Faster decay if bouncing back from out of bounds
-        friction = math.exp(-BOUNCE_RETURN_RATE * 1 / DEFAULT_FPS)
+        friction = math.exp(-BOUNCE_RETURN_RATE * 1 / gui_app.target_fps)
         self._velocity_filter_y.x *= friction ** 2 if (above_bounds or below_bounds) else friction
       else:
         self._velocity_filter_y.x = 0.0
@@ -62,7 +62,7 @@ class GuiScrollPanel:
         else:
           self._offset_filter_y.update(-max_scroll_distance)
 
-      self._offset_filter_y.x += self._velocity_filter_y.x / DEFAULT_FPS
+      self._offset_filter_y.x += self._velocity_filter_y.x / gui_app.target_fps
 
     elif self._scroll_state == ScrollState.DRAGGING_CONTENT:
       # Mouse not moving, decay velocity
