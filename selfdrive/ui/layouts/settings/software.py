@@ -3,7 +3,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
-from openpilot.system.ui.widgets.list_view import button_item, TextAction, ListItem
+from openpilot.system.ui.widgets.list_view import button_item, text_item
 from openpilot.system.ui.widgets.scroller import Scroller
 
 
@@ -12,8 +12,7 @@ class SoftwareLayout(Widget):
     super().__init__()
 
     # Create text item for current version
-    version_action = TextAction(ui_state.params.get("UpdaterCurrentDescription", "Unknown"))
-    self._version_item = ListItem(title="Current Version", action_item=version_action)
+    self._version_item = text_item("Current Version", ui_state.params.get("UpdaterCurrentDescription", "Unknown"))
 
     # Create download button with initial state
     self._download_btn = button_item("Download", "CHECK", callback=self._on_download_update)
@@ -55,10 +54,10 @@ class SoftwareLayout(Widget):
     else:
       if failed_count > 0:
         self._download_btn.description = "failed to check for update"
-        self._download_btn.action_item._text_source = "CHECK"
+        self._download_btn.action_item.set_text("CHECK")
       elif fetch_available:
         self._download_btn.description = "update available"
-        self._download_btn.action_item._text_source = "DOWNLOAD"
+        self._download_btn.action_item.set_text("DOWNLOAD")
       else:
         last_update = ui_state.params.get("LastUpdateTime", "")
         if last_update:
@@ -66,7 +65,7 @@ class SoftwareLayout(Widget):
           self._download_btn.description = f"up to date, last checked {last_update}"
         else:
           self._download_btn.description = "up to date, last checked never"
-        self._download_btn.action_item._text_source = "CHECK"
+        self._download_btn.action_item.set_text("CHECK")
       self._download_btn.set_enabled(True)
 
     # Update install button

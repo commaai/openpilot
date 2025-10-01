@@ -96,6 +96,9 @@ class ButtonAction(ItemAction):
     super().set_touch_valid_callback(touch_callback)
     self._button.set_touch_valid_callback(touch_callback)
 
+  def set_text(self, text: str | Callable[[], str]):
+    self._text_source = text
+
   @property
   def text(self):
     return _resolve_value(self._text_source, "Error")
