@@ -138,7 +138,6 @@ class GuiApplication:
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
-    self._last_mouse_event: MouseEvent = MouseEvent(MousePos(0, 0), 0, False, False, False, 0.0)
 
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
@@ -243,10 +242,6 @@ class GuiApplication:
   def mouse_events(self) -> list[MouseEvent]:
     return self._mouse_events
 
-  @property
-  def last_mouse_event(self) -> MouseEvent:
-    return self._last_mouse_event
-
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
@@ -256,8 +251,6 @@ class GuiApplication:
 
         # Store all mouse events for the current frame
         self._mouse_events = self._mouse.get_events()
-        if len(self._mouse_events) > 0:
-          self._last_mouse_event = self._mouse_events[-1]
 
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
