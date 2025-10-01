@@ -1,3 +1,5 @@
+import copy
+import time
 import math
 import pyray as rl
 from enum import IntEnum
@@ -13,30 +15,28 @@ DRAG_THRESHOLD = 12                 # pixels of movement to consider it a drag, 
 
 
 class ScrollState(IntEnum):
-  IDLE = 0  # Not dragging, content may be bouncing or scrolling with inertia
+  IDLE = 0              # Not dragging, content may be bouncing or scrolling with inertia
   DRAGGING_CONTENT = 1  # User is actively dragging the content
 
 
 class GuiScrollPanel:
   def __init__(self):
-    # TODO: remove ability to scroll x and y, we only need one and it simplifies a lot of things
     self._scroll_state: ScrollState = ScrollState.IDLE
     self._last_mouse_y: float = 0.0
     self._start_mouse_y: float = 0.0  # Track the initial mouse position for drag detection
     self._offset_filter_y = FirstOrderFilter(0.0, 0.1, 1 / DEFAULT_FPS)
-    # self._offset = rl.Vector2(0, 0)
-    self._view = rl.Rectangle(0, 0, 0, 0)
-    self._velocity_y = 0.0  # Velocity for inertia
     self._velocity_filter_y = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS)  # TODO: raise rc?
-    # self._is_dragging: bool = False
-    self._bounce_offset: float = 0.0
     self._last_drag_time: float = 0.0
 
   def update(self, bounds: rl.Rectangle, content: rl.Rectangle) -> float:
     # print('state', self._scroll_state)
     # TODO: HACK: this class is driven by mouse events, so we need to ensure we have at least one event to process
     print('mouse events', len(gui_app.mouse_events))
-    for mouse_event in gui_app.mouse_events:  # or [MouseEvent(MousePos(0, 0), 0, False, False, False, time.monotonic())]:
+    # for mouse_event in gui_app.mouse_events or [MouseEvent(MousePos(0, 0), 0, False, False, False, time.monotonic())]:
+    prev_mouse_event = MouseEvent(gui_app.last_mouse_event.pos, gui_app.last_mouse_event.slot,
+                                  gui_app.last_mouse_event.left_down, gui_app.last_mouse_event.left_pressed,
+                                  gui_app.last_mouse_event.left_released, time.monotonic())
+    for mouse_event in gui_app.mouse_events or [prev_mouse_event]:
       if mouse_event.slot == 0:
         self._handle_mouse_event(mouse_event, bounds, content)
 
@@ -59,14 +59,12 @@ class GuiScrollPanel:
 
       # Decay velocity when idle
       if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
-        # self._offset.y += self._velocity_filter_y.x / DEFAULT_FPS
         # self._velocity_filter_y.update(0)
         # Faster decay if bouncing back from out of bounds
         friction = math.exp(-BOUNCE_RETURN_RATE * 1 / DEFAULT_FPS)
         self._velocity_filter_y.x *= friction ** 2 if (above_bounds or below_bounds) else friction
       else:
         self._velocity_filter_y.x = 0.0
-      # self._offset_filter_y.x = self._offset.y
 
       if above_bounds or below_bounds:
         # if abs(self._velocity_filter_y.x) > MIN_VELOCITY:
@@ -111,13 +109,10 @@ class GuiScrollPanel:
           # Start velocity at initial measurement for more immediate response
           self._velocity_filter_y.initialized = False
           # TODO: minimum change if y to start dragging
-          # self._is_dragging = True
 
     elif self._scroll_state == ScrollState.DRAGGING_CONTENT:
       if mouse_event.left_released:
         self._scroll_state = ScrollState.IDLE
-        # self._is_dragging = False
-        # self._offset_filter_y.x = self._offset.y
       else:
         delta_y = mouse_event.pos.y - self._last_mouse_y
         above_bounds, below_bounds = self._check_bounds(bounds, content)
@@ -128,10 +123,7 @@ class GuiScrollPanel:
         if above_bounds or below_bounds:
           delta_y /= 3
 
-        # print('offset', self._offset.y, 'bounds', bounds.height, 'content', content.height)
-
         self._offset_filter_y.x += delta_y
-        # self._offset_filter_y.x = self._offset.y
         # self._offset_filter_y.initialized = False
 
         # Track velocity for inertia
