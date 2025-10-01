@@ -77,20 +77,21 @@ class GuiScrollPanel:
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
     if self._scroll_state == ScrollState.IDLE:
-      if mouse_event.left_pressed:
-        self._start_mouse_y = mouse_event.pos.y
-        # Interrupt scrolling with new drag
-        # TODO: stop scrolling with any tap, need to fix is_touch_valid
-        if abs(self._velocity_filter_y.x) > MIN_VELOCITY_FOR_CLICKING:
-          self._scroll_state = ScrollState.DRAGGING_CONTENT
-          # Start velocity at initial measurement for more immediate response
-          self._velocity_filter_y.initialized = False
+      if rl.check_collision_point_rec(mouse_event.pos, bounds):
+        if mouse_event.left_pressed:
+          self._start_mouse_y = mouse_event.pos.y
+          # Interrupt scrolling with new drag
+          # TODO: stop scrolling with any tap, need to fix is_touch_valid
+          if abs(self._velocity_filter_y.x) > MIN_VELOCITY_FOR_CLICKING:
+            self._scroll_state = ScrollState.DRAGGING_CONTENT
+            # Start velocity at initial measurement for more immediate response
+            self._velocity_filter_y.initialized = False
 
-      if mouse_event.left_down:
-        if abs(mouse_event.pos.y - self._start_mouse_y) > DRAG_THRESHOLD:
-          self._scroll_state = ScrollState.DRAGGING_CONTENT
-          # Start velocity at initial measurement for more immediate response
-          self._velocity_filter_y.initialized = False
+        if mouse_event.left_down:
+          if abs(mouse_event.pos.y - self._start_mouse_y) > DRAG_THRESHOLD:
+            self._scroll_state = ScrollState.DRAGGING_CONTENT
+            # Start velocity at initial measurement for more immediate response
+            self._velocity_filter_y.initialized = False
 
     elif self._scroll_state == ScrollState.DRAGGING_CONTENT:
       if mouse_event.left_released:
