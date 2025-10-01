@@ -116,10 +116,10 @@ class HtmlRenderer(Widget):
 
     total_height = self.get_total_height(int(scrollable_rect.width))
     scroll_content_rect = rl.Rectangle(scrollable_rect.x, scrollable_rect.y, scrollable_rect.width, total_height)
-    scroll_offset = self._scroll_panel.handle_scroll(scrollable_rect, scroll_content_rect)
+    scroll_offset = self._scroll_panel.update(scrollable_rect, scroll_content_rect)
 
     rl.begin_scissor_mode(int(scrollable_rect.x), int(scrollable_rect.y), int(scrollable_rect.width), int(scrollable_rect.height))
-    self._render_content(scrollable_rect, scroll_offset.y)
+    self._render_content(scrollable_rect, scroll_offset)
     rl.end_scissor_mode()
 
     button_width = (rect.width - 3 * 50) // 3
