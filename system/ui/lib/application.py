@@ -142,6 +142,10 @@ class GuiApplication:
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
 
+  @property
+  def target_fps(self):
+    return self._target_fps
+
   def request_close(self):
     self._window_close_requested = True
 
