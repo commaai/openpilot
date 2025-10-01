@@ -109,7 +109,7 @@ class AbstractAlert(Widget, ABC):
   def _render_scrollable_content(self):
     content_total_height = self.get_content_height()
     content_bounds = rl.Rectangle(0, 0, self.scroll_panel_rect.width, content_total_height)
-    scroll_offset = self.scroll_panel.handle_scroll(self.scroll_panel_rect, content_bounds)
+    scroll_offset = self.scroll_panel.update(self.scroll_panel_rect, content_bounds)
 
     rl.begin_scissor_mode(
       int(self.scroll_panel_rect.x),
@@ -120,7 +120,7 @@ class AbstractAlert(Widget, ABC):
 
     content_rect_with_scroll = rl.Rectangle(
       self.scroll_panel_rect.x,
-      self.scroll_panel_rect.y + scroll_offset.y,
+      self.scroll_panel_rect.y + scroll_offset,
       self.scroll_panel_rect.width,
       content_total_height,
     )
