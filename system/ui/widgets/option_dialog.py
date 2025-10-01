@@ -41,12 +41,12 @@ class MultiOptionDialog(Widget):
     list_content_rect = rl.Rectangle(content_rect.x, options_y, content_rect.width, content_h)
 
     # Scroll and render options
-    offset = self.scroll.handle_scroll(view_rect, list_content_rect)
+    offset = self.scroll.update(view_rect, list_content_rect)
     valid_click = self.scroll.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(view_rect.x), int(options_y), int(view_rect.width), int(options_h))
     for i, option in enumerate(self.options):
-      item_y = options_y + i * (ITEM_HEIGHT + LIST_ITEM_SPACING) + offset.y
+      item_y = options_y + i * (ITEM_HEIGHT + LIST_ITEM_SPACING) + offset
       item_rect = rl.Rectangle(view_rect.x, item_y, view_rect.width, ITEM_HEIGHT)
 
       if rl.check_collision_recs(item_rect, view_rect):
