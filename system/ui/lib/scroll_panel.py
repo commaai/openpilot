@@ -46,6 +46,7 @@ class GuiScrollPanel:
   def update(self, bounds: rl.Rectangle, content: rl.Rectangle) -> float:
     # print('state', self._scroll_state)
     # TODO: HACK: this class is driven by mouse events, so we need to ensure we have at least one event to process
+    print('mouse events', len(gui_app.mouse_events))
     for mouse_event in gui_app.mouse_events:  # or [MouseEvent(MousePos(0, 0), 0, False, False, False, time.monotonic())]:
       if mouse_event.slot == 0:
         self._handle_mouse_event(mouse_event, bounds, content)
