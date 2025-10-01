@@ -120,7 +120,7 @@ class AbstractAlert(Widget, ABC):
 
     content_rect_with_scroll = rl.Rectangle(
       self.scroll_panel_rect.x,
-      self.scroll_panel_rect.y + scroll_offset.y,
+      self.scroll_panel_rect.y + scroll_offset,
       self.scroll_panel_rect.width,
       content_total_height,
     )

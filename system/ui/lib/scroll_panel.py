@@ -7,7 +7,8 @@ from openpilot.system.ui.lib.application import gui_app, MouseEvent, MousePos, D
 from openpilot.common.filter_simple import FirstOrderFilter
 
 # Scroll constants for smooth scrolling behavior
-MOUSE_WHEEL_SCROLL_SPEED = 30
+# MOUSE_WHEEL_SCROLL_SPEED = 30
+MOUSE_WHEEL_SCROLL_SPEED = 50
 INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down
 # MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
 MIN_VELOCITY = 2               # px/s, changes from auto scroll to steady state
@@ -60,6 +61,9 @@ class GuiScrollPanel:
 
   def _update_state(self, bounds: rl.Rectangle, content: rl.Rectangle):
     rl.draw_rectangle_lines(0, 0, abs(int(self._velocity_filter_y.x)), 10, rl.RED)
+
+    # Handle mouse wheel
+    self._offset_filter_y.x += rl.get_mouse_wheel_move() * MOUSE_WHEEL_SCROLL_SPEED
 
     max_scroll_distance = max(0, content.height - bounds.height)
     if self._scroll_state == ScrollState.IDLE:
