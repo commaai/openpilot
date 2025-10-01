@@ -11,6 +11,8 @@ MIN_VELOCITY = 2                    # px/s, changes from auto scroll to steady s
 MIN_VELOCITY_FOR_CLICKING = 2 * 60  # px/s, accepts clicks while auto scrolling below this velocity
 DRAG_THRESHOLD = 12                 # pixels of movement to consider it a drag, not a click
 
+DEBUG = False
+
 
 class ScrollState(IntEnum):
   IDLE = 0              # Not dragging, content may be bouncing or scrolling with inertia
@@ -36,7 +38,8 @@ class GuiScrollPanel:
     return float(self._offset_filter_y.x)
 
   def _update_state(self, bounds: rl.Rectangle, content: rl.Rectangle):
-    rl.draw_rectangle_lines(0, 0, abs(int(self._velocity_filter_y.x)), 10, rl.RED)
+    if DEBUG:
+      rl.draw_rectangle_lines(0, 0, abs(int(self._velocity_filter_y.x)), 10, rl.RED)
 
     # Handle mouse wheel
     self._offset_filter_y.x += rl.get_mouse_wheel_move() * MOUSE_WHEEL_SCROLL_SPEED
