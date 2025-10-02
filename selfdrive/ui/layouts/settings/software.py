@@ -1,5 +1,8 @@
 from openpilot.common.params import Params
-from openpilot.system.ui.lib.application import gui_app
+import os
+import pyray as rl
+from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item
@@ -26,10 +29,30 @@ class SoftwareLayout(Widget):
 
   def _render(self, rect):
     self._scroller.render(rect)
+    if os.getenv("DEBUG_TEXT_COMPARE") == "1":
+      self._draw_text_compare()
 
   def _on_download_update(self): pass
   def _on_install_update(self): pass
   def _on_select_branch(self): pass
+
+  def _draw_text_compare(self):
+    try:
+      font = gui_app.font(FontWeight.NORMAL)
+      samples = [(50, "Hg"), (40, "Hg"), (35, "Hg")]
+      left_x = 40
+      top_y = 40
+      row_h = 120
+
+      for i, (size, text) in enumerate(samples):
+        y = top_y + i * row_h
+        rl.draw_line_ex(rl.Vector2(left_x, y), rl.Vector2(left_x, y + size), 2, rl.RED)
+        text_pos = rl.Vector2(left_x + 10, y)
+        rl.draw_text_ex(font, text, text_pos, size, 0, rl.WHITE)
+        ts = measure_text_cached(font, text, size)
+        rl.draw_rectangle_lines(int(text_pos.x), int(text_pos.y), int(ts.x), int(ts.y), rl.GREEN)
+    except Exception:
+      pass
 
   def _on_uninstall(self):
     def handle_uninstall_confirmation(result):

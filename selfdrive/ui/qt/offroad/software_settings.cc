@@ -96,6 +96,51 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   updateLabels();
 }
 
+void SoftwarePanel::paintEvent(QPaintEvent *event) {
+  QWidget::paintEvent(event);
+  if (qEnvironmentVariableIsSet("DEBUG_TEXT_COMPARE") && qgetenv("DEBUG_TEXT_COMPARE") == "1") {
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    struct Sample { int size; const char *text; };
+    const Sample samples[] = {{50, "Hg"}, {40, "Hg"}, {35, "Hg"}};
+
+    int left_x = 8;  // far left to avoid overlapping content
+    int top_y = 40;
+    int row_h = 120;
+
+    for (int i = 0; i < 3; ++i) {
+      int sz = samples[i].size;
+      QString text = samples[i].text;
+      int y = top_y + i * row_h;
+
+      QFont f = font();
+      f.setPixelSize(sz);
+      p.setFont(f);
+      QFontMetrics fm(f);
+      QRect br = fm.boundingRect(text);
+
+      int tx = left_x + 12;
+      int ty = y + fm.ascent(); // baseline
+      p.setPen(Qt::white);
+      p.drawText(tx, ty, text);
+
+      // Green: full font metrics box (top at ascent, height = fm.height())
+      p.setPen(QPen(Qt::green, 1));
+      QRect r(tx, ty - fm.ascent(), br.width(), fm.height());
+      p.drawRect(r);
+
+      // Tight bounding rect of the actual glyph
+      QRect tr = fm.tightBoundingRect(text);
+      QRect trp = tr.translated(tx, ty); // translate from baseline-origin to scene coords
+
+      // Red: from top of green box to bottom of actual glyph box
+      p.setPen(QPen(Qt::red, 2));
+      p.drawLine(QPoint(left_x, r.top()), QPoint(left_x, trp.bottom()));
+    }
+  }
+}
+
 void SoftwarePanel::showEvent(QShowEvent *event) {
   // nice for testing on PC
   installBtn->setEnabled(true);

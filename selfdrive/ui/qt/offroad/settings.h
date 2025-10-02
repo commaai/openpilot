@@ -86,6 +86,7 @@ public:
   explicit SoftwarePanel(QWidget* parent = nullptr);
 
 private:
+  void paintEvent(QPaintEvent *event) override;
   void showEvent(QShowEvent *event) override;
   void updateLabels();
   void checkForUpdates();
