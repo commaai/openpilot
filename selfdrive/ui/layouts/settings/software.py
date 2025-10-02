@@ -117,12 +117,10 @@ class SoftwareLayout(Widget):
   def _on_download_update(self):
     # Check if we should start checking or start downloading
     if self._download_btn.action_item.text == "CHECK":
-      print('Starting update check...')
       # Start checking for updates
       os.system("pkill -SIGUSR1 -f system.updated.updated")
     else:
       # Start downloading
-      print('Starting update download...')
       os.system("pkill -SIGHUP -f system.updated.updated")
 
   def _on_uninstall(self):
