@@ -141,10 +141,15 @@ class GuiApplication:
 
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
+    self._text_scale: float = float(os.getenv("TEXT_SIZE_SCALE", "1.22"))
 
   @property
   def target_fps(self):
     return self._target_fps
+
+  @property
+  def text_scale(self) -> float:
+    return self._text_scale
 
   def request_close(self):
     self._window_close_requested = True
@@ -173,6 +178,7 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+    self._monkey_patch_text_functions()
 
     if not PC:
       self._mouse.start()
@@ -345,12 +351,69 @@ class GuiApplication:
     rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
+    try:
+      font = self._fonts[FontWeight.NORMAL]
+      base = float(font.baseSize) if getattr(font, 'baseSize', 0) else 200.0
+
+      # Estimate line height from glyph extents: min(top), max(bottom) across a set with ascenders/descenders
+      codepoints = [ord(c) for c in "HXYZAMNQgjpqy"]
+      min_top = 1e9
+      max_bottom = -1e9
+      for cp in codepoints:
+        idx = rl.get_glyph_index(font, cp)
+        # Some glyphs may be missing; skip if index invalid
+        try:
+          gi = font.glyphs[idx]
+          rec = font.recs[idx]
+          top = float(getattr(gi, 'offsetY', 0.0))
+          bottom = top + float(getattr(rec, 'height', 0.0))
+          if top < min_top:
+            min_top = top
+          if bottom > max_bottom:
+            max_bottom = bottom
+        except Exception:
+          continue
+
+      line_px = max(1.0, max_bottom - min_top)
+      # Compute scale purely from font: map baseSize to the tight glyph line box height
+      # so requesting N px roughly yields a line box of N px, matching typical UI sizing.
+      # scale = baseSize / linePx (usually > 1.0 for Inter on Linux)
+      denom = line_px if line_px > 0.01 else 1.0
+      self._text_scale = base / denom
+
+      cloudlog.info(
+        f"raylib font metrics: baseSize={base:.1f} linePx={line_px:.1f} textScale={self._text_scale:.3f}")
+    except Exception as e:
+      cloudlog.exception(f"font metrics computation failed: {e}")
+
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, DEFAULT_TEXT_SIZE)
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.BACKGROUND_COLOR, rl.color_to_int(rl.BLACK))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(DEFAULT_TEXT_COLOR))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
+
+  def _monkey_patch_text_functions(self):
+    # Wrap pyray text APIs to apply a global text size scale so our px sizes match Qt
+    try:
+      if not hasattr(rl, "_orig_draw_text_ex"):
+        rl._orig_draw_text_ex = rl.draw_text_ex
+      if not hasattr(rl, "_orig_measure_text_ex"):
+        rl._orig_measure_text_ex = rl.measure_text_ex
+
+      scale = self._text_scale
+
+      def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
+        return rl._orig_draw_text_ex(font, text, position, float(font_size) * scale, spacing, tint)
+
+      def _measure_text_ex_scaled(font, text, font_size, spacing):
+        return rl._orig_measure_text_ex(font, text, float(font_size) * scale, spacing)
+
+      rl.draw_text_ex = _draw_text_ex_scaled
+      rl.measure_text_ex = _measure_text_ex_scaled
+      cloudlog.info(f"raylib text functions wrapped with scale={scale}")
+    except Exception as e:
+      cloudlog.exception(f"failed to wrap text functions: {e}")
 
   def _set_log_callback(self):
     ffi_libc = cffi.FFI()

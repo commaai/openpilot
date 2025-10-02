@@ -39,9 +39,9 @@ class SoftwareLayout(Widget):
   def _draw_text_compare(self):
     try:
       font = gui_app.font(FontWeight.NORMAL)
-      samples = [(50, "Hg"), (40, "Hg"), (35, "Hg")]
-      left_x = 40
-      top_y = 40
+      samples = [(100, "HH"), (80, "HH"), (70, "HH")]
+      left_x = 10
+      top_y = int(gui_app.height / 2 + 40)
       row_h = 120
 
       for i, (size, text) in enumerate(samples):
@@ -51,6 +51,19 @@ class SoftwareLayout(Widget):
         rl.draw_text_ex(font, text, text_pos, size, 0, rl.WHITE)
         ts = measure_text_cached(font, text, size)
         rl.draw_rectangle_lines(int(text_pos.x), int(text_pos.y), int(ts.x), int(ts.y), rl.GREEN)
+
+      # Metrics readout
+      info_y = top_y + len(samples) * row_h + 40
+      info_lines = [
+        f"SCALE={os.getenv('SCALE','')} target_fps={gui_app.target_fps}",
+      ]
+      for size, text in samples:
+        ts = measure_text_cached(font, text, size)
+        info_lines.append(f"sz={size} meas.h={ts.y} baseSize=200")
+      info_font = gui_app.font(FontWeight.NORMAL)
+      info_size = 20
+      for i, line in enumerate(info_lines):
+        rl.draw_text_ex(info_font, line, rl.Vector2(left_x, info_y + i * 24), info_size, 0, rl.WHITE)
     except Exception:
       pass
 
