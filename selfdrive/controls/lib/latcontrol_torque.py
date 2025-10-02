@@ -69,15 +69,15 @@ class LatControlTorque(LatControl):
       low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       # pid error calculated as difference between expected and measured lateral acceleration
       setpoint = lag_compensated_desired_lateral_accel + low_speed_factor * desired_curvature
-      #setpoint_expected = current_expected_lateral_accel + low_speed_factor * current_expected_curvature
+      setpoint_expected = current_expected_lateral_accel + low_speed_factor * current_expected_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       gravity_adjusted_lateral_accel = lag_compensated_desired_lateral_accel - roll_compensation
-      #error_expected = float(setpoint_expected - measurement)
-      error = float(setpoint - measurement)
-      error_rate = (error - self.error_pre) / DT_CTRL
-      self.error_pre = error
+      error_expected = float(setpoint_expected - measurement)
+      #error = float(setpoint - measurement)
+      error_rate = (error_expected - self.error_pre) / DT_CTRL
+      self.error_pre = error_expected
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
-      pid_log.error = float(setpoint - measurement)
+      pid_log.error = float(error_expected)
       ff = gravity_adjusted_lateral_accel
       # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
       ff -= self.torque_params.latAccelOffset
