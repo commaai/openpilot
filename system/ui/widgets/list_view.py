@@ -14,6 +14,7 @@ ITEM_BASE_HEIGHT = 170
 ITEM_PADDING = 20
 ITEM_TEXT_FONT_SIZE = 50
 ITEM_TEXT_COLOR = rl.WHITE
+ITEM_TEXT_VALUE_COLOR = rl.Color(170, 170, 170, 255)
 ITEM_DESC_TEXT_COLOR = rl.Color(128, 128, 128, 255)
 ITEM_DESC_FONT_SIZE = 40
 ITEM_DESC_V_OFFSET = 140
@@ -124,7 +125,7 @@ class ButtonAction(ItemAction):
       text_size = measure_text_cached(self._font, value_text, ITEM_TEXT_FONT_SIZE)
       text_x = button_rect.x - spacing - text_size.x
       text_y = rect.y + (rect.height - text_size.y) / 2
-      rl.draw_text_ex(self._font, value_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_DESC_TEXT_COLOR)
+      rl.draw_text_ex(self._font, value_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_VALUE_COLOR)
 
     # TODO: just use the generic Widget click callbacks everywhere, no returning from render
     pressed = self._pressed
@@ -405,7 +406,7 @@ def button_item(title: str, button_text: str | Callable[[], str], description: s
 
 def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
               callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
-  action = TextAction(text=value, color=rl.Color(170, 170, 170, 255), enabled=enabled)
+  action = TextAction(text=value, color=ITEM_TEXT_VALUE_COLOR, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
