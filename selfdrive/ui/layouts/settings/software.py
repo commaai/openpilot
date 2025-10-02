@@ -11,16 +11,11 @@ class SoftwareLayout(Widget):
   def __init__(self):
     super().__init__()
 
-    # Create onroad warning label
     self._onroad_label = ListItem(title="Updates are only downloaded while the car is off.")
-
-    # Create text item for current version
     self._version_item = text_item("Current Version", ui_state.params.get("UpdaterCurrentDescription") or "Unknown")
-
-    # Create download button with initial state
     self._download_btn = button_item("Download", "CHECK", callback=self._on_download_update)
 
-    # Create install button (initially hidden)
+    # Install button is initially hidden
     self._install_btn = button_item("Install Update", "INSTALL", callback=self._on_install_update)
     self._install_btn.set_visible(False)
 
