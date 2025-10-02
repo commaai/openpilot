@@ -141,15 +141,11 @@ class GuiApplication:
 
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
-    self._text_scale: float = float(os.getenv("TEXT_SIZE_SCALE", "1.22"))
+    self._font_scale_by_id: dict[int, float] = {}
 
   @property
   def target_fps(self):
     return self._target_fps
-
-  @property
-  def text_scale(self) -> float:
-    return self._text_scale
 
   def request_close(self):
     self._window_close_requested = True
@@ -350,39 +346,30 @@ class GuiApplication:
 
     rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
-
+    # Compute per-font scale: map baseSize to tight glyph line height for each loaded weight
     try:
-      font = self._fonts[FontWeight.NORMAL]
-      base = float(font.baseSize) if getattr(font, 'baseSize', 0) else 200.0
-
-      # Estimate line height from glyph extents: min(top), max(bottom) across a set with ascenders/descenders
-      codepoints = [ord(c) for c in "HXYZAMNQgjpqy"]
-      min_top = 1e9
-      max_bottom = -1e9
-      for cp in codepoints:
-        idx = rl.get_glyph_index(font, cp)
-        # Some glyphs may be missing; skip if index invalid
-        try:
-          gi = font.glyphs[idx]
-          rec = font.recs[idx]
-          top = float(getattr(gi, 'offsetY', 0.0))
-          bottom = top + float(getattr(rec, 'height', 0.0))
-          if top < min_top:
-            min_top = top
-          if bottom > max_bottom:
-            max_bottom = bottom
-        except Exception:
-          continue
-
-      line_px = max(1.0, max_bottom - min_top)
-      # Compute scale purely from font: map baseSize to the tight glyph line box height
-      # so requesting N px roughly yields a line box of N px, matching typical UI sizing.
-      # scale = baseSize / linePx (usually > 1.0 for Inter on Linux)
-      denom = line_px if line_px > 0.01 else 1.0
-      self._text_scale = base / denom
-
-      cloudlog.info(
-        f"raylib font metrics: baseSize={base:.1f} linePx={line_px:.1f} textScale={self._text_scale:.3f}")
+      for weight, font in self._fonts.items():
+        base = float(getattr(font, 'baseSize', 200.0))
+        min_top = 1e9
+        max_bottom = -1e9
+        for cp in [ord(c) for c in "HXYZAMNQgjpqy"]:
+          try:
+            idx = rl.get_glyph_index(font, cp)
+            gi = font.glyphs[idx]
+            rec = font.recs[idx]
+            top = float(getattr(gi, 'offsetY', 0.0))
+            bottom = top + float(getattr(rec, 'height', 0.0))
+            if top < min_top:
+              min_top = top
+            if bottom > max_bottom:
+              max_bottom = bottom
+          except Exception:
+            continue
+        line_px = max(1.0, max_bottom - min_top)
+        scale = (base / line_px) if line_px > 0.01 else 1.0
+        tex_id = int(font.texture.id) if hasattr(font, 'texture') and hasattr(font.texture, 'id') else 0
+        self._font_scale_by_id[tex_id] = scale
+        cloudlog.info(f"font scale computed: weight={weight} baseSize={base:.1f} linePx={line_px:.1f} scale={scale:.3f}")
     except Exception as e:
       cloudlog.exception(f"font metrics computation failed: {e}")
 
@@ -400,18 +387,25 @@ class GuiApplication:
         rl._orig_draw_text_ex = rl.draw_text_ex
       if not hasattr(rl, "_orig_measure_text_ex"):
         rl._orig_measure_text_ex = rl.measure_text_ex
-
-      scale = self._text_scale
-
       def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
+        try:
+          tex_id = int(font.texture.id)
+          scale = self._font_scale_by_id.get(tex_id, 1.0)
+        except Exception:
+          scale = 1.0
         return rl._orig_draw_text_ex(font, text, position, float(font_size) * scale, spacing, tint)
 
       def _measure_text_ex_scaled(font, text, font_size, spacing):
+        try:
+          tex_id = int(font.texture.id)
+          scale = self._font_scale_by_id.get(tex_id, 1.0)
+        except Exception:
+          scale = 1.0
         return rl._orig_measure_text_ex(font, text, float(font_size) * scale, spacing)
 
       rl.draw_text_ex = _draw_text_ex_scaled
       rl.measure_text_ex = _measure_text_ex_scaled
-      cloudlog.info(f"raylib text functions wrapped with scale={scale}")
+      cloudlog.info("raylib text functions wrapped with per-font scale")
     except Exception as e:
       cloudlog.exception(f"failed to wrap text functions: {e}")
 
