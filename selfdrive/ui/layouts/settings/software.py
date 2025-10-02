@@ -15,7 +15,7 @@ class SoftwareLayout(Widget):
     self._onroad_label = ListItem(title="Updates are only downloaded while the car is off.")
 
     # Create text item for current version
-    self._version_item = text_item("Current Version", ui_state.params.get("UpdaterCurrentDescription", "Unknown"))
+    self._version_item = text_item("Current Version", ui_state.params.get("UpdaterCurrentDescription") or "Unknown")
 
     # Create download button with initial state
     self._download_btn = button_item("Download", "CHECK", callback=self._on_download_update)
@@ -45,16 +45,16 @@ class SoftwareLayout(Widget):
     self._onroad_label.set_visible(ui_state.is_onroad())
 
     # Update current version and release notes
-    current_desc = ui_state.params.get("UpdaterCurrentDescription", "Unknown")
-    current_release_notes = ui_state.params.get("UpdaterCurrentReleaseNotes", "")
+    current_desc = ui_state.params.get("UpdaterCurrentDescription") or "Unknown"
+    current_release_notes = (ui_state.params.get("UpdaterCurrentReleaseNotes") or b"").decode("utf-8", "replace")
     self._version_item.action_item.set_text(current_desc)
     self._version_item.description = current_release_notes
 
     # Update download button visibility and state
     self._download_btn.set_visible(ui_state.is_offroad())
 
-    updater_state = ui_state.params.get("UpdaterState", "idle")
-    failed_count = int(ui_state.params.get("UpdateFailedCount", "0"))
+    updater_state = ui_state.params.get("UpdaterState") or "idle"
+    failed_count = ui_state.params.get("UpdateFailedCount") or 0
     fetch_available = ui_state.params.get_bool("UpdaterFetchAvailable")
     update_available = ui_state.params.get_bool("UpdateAvailable")
 
@@ -69,7 +69,7 @@ class SoftwareLayout(Widget):
         self._download_btn.action_item.set_value("update available")
         self._download_btn.action_item.set_text("DOWNLOAD")
       else:
-        last_update = ui_state.params.get("LastUpdateTime", "")
+        last_update = ui_state.params.get("LastUpdateTime")
         if last_update:
           # TODO: Format time ago like Qt does
           self._download_btn.action_item.set_value(f"up to date, last checked {last_update}")
@@ -81,8 +81,8 @@ class SoftwareLayout(Widget):
     # Update install button
     self._install_btn.set_visible(ui_state.is_offroad() and update_available)
     if update_available:
-      new_desc = ui_state.params.get("UpdaterNewDescription", "")
-      new_release_notes = ui_state.params.get("UpdaterNewReleaseNotes", "")
+      new_desc = ui_state.params.get("UpdaterNewDescription") or ""
+      new_release_notes = (ui_state.params.get("UpdaterNewReleaseNotes") or b"").decode("utf-8", "replace")
       self._install_btn.action_item.set_text("INSTALL")
       self._install_btn.action_item.set_value(new_desc)
       self._install_btn.description = new_release_notes
