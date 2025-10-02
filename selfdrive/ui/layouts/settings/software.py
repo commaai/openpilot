@@ -44,7 +44,7 @@ class SoftwareLayout(Widget):
     super().__init__()
 
     self._onroad_label = ListItem(title="Updates are only downloaded while the car is off.")
-    self._version_item = text_item("Current Version", ui_state.params.get("UpdaterCurrentDescription") or "Unknown")
+    self._version_item = text_item("Current Version", ui_state.params.get("UpdaterCurrentDescription") or "")
     self._download_btn = button_item("Download", "CHECK", callback=self._on_download_update)
 
     # Install button is initially hidden
@@ -77,7 +77,7 @@ class SoftwareLayout(Widget):
     self._onroad_label.set_visible(ui_state.is_onroad())
 
     # Update current version and release notes
-    current_desc = ui_state.params.get("UpdaterCurrentDescription") or "Unknown"
+    current_desc = ui_state.params.get("UpdaterCurrentDescription") or ""
     current_release_notes = (ui_state.params.get("UpdaterCurrentReleaseNotes") or b"").decode("utf-8", "replace")
     self._version_item.action_item.set_text(current_desc)
     self._version_item.description = current_release_notes
