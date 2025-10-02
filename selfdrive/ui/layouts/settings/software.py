@@ -59,7 +59,7 @@ class SoftwareLayout(Widget):
     update_available = ui_state.params.get_bool("UpdateAvailable")
 
     if updater_state != "idle":
-      self._download_btn.set_enabled(False)
+      self._download_btn.action_item.set_enabled(False)
       self._download_btn.action_item.set_value(updater_state)
     else:
       if failed_count > 0:
@@ -76,7 +76,7 @@ class SoftwareLayout(Widget):
         else:
           self._download_btn.action_item.set_value("up to date, last checked never")
         self._download_btn.action_item.set_text("CHECK")
-      self._download_btn.set_enabled(True)
+      self._download_btn.action_item.set_enabled(True)
 
     # Update install button
     self._install_btn.set_visible(ui_state.is_offroad() and update_available)
@@ -87,7 +87,7 @@ class SoftwareLayout(Widget):
       self._install_btn.action_item.set_value(new_desc)
       self._install_btn.description = new_release_notes
       # Enable install button for testing (like Qt showEvent)
-      self._install_btn.set_enabled(True)
+      self._install_btn.action_item.set_enabled(True)
     else:
       self._install_btn.set_visible(False)
 
