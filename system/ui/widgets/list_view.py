@@ -77,7 +77,9 @@ class ButtonAction(ItemAction):
   def __init__(self, text: str | Callable[[], str], width: int = BUTTON_WIDTH, enabled: bool | Callable[[], bool] = True):
     super().__init__(width, enabled)
     self._text_source = text
+    self._value_source: str | Callable[[], str] | None = None
     self._pressed = False
+    self._font = gui_app.font(FontWeight.NORMAL)
 
     def pressed():
       self._pressed = True
@@ -99,15 +101,30 @@ class ButtonAction(ItemAction):
   def set_text(self, text: str | Callable[[], str]):
     self._text_source = text
 
+  def set_value(self, value: str | Callable[[], str]):
+    self._value_source = value
+
   @property
   def text(self):
     return _resolve_value(self._text_source, "Error")
+
+  @property
+  def value(self):
+    return _resolve_value(self._value_source, "")
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self._button.set_text(self.text)
     self._button.set_enabled(_resolve_value(self.enabled))
     button_rect = rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._button.render(button_rect)
+
+    value_text = self.value
+    if value_text:
+      spacing = 20
+      text_size = measure_text_cached(self._font, value_text, ITEM_TEXT_FONT_SIZE)
+      text_x = button_rect.x - spacing - text_size.x
+      text_y = rect.y + (rect.height - text_size.y) / 2
+      rl.draw_text_ex(self._font, value_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_DESC_TEXT_COLOR)
 
     # TODO: just use the generic Widget click callbacks everywhere, no returning from render
     pressed = self._pressed

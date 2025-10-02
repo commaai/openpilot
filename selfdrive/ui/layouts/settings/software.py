@@ -60,21 +60,21 @@ class SoftwareLayout(Widget):
 
     if updater_state != "idle":
       self._download_btn.set_enabled(False)
-      self._download_btn.description = updater_state
+      self._download_btn.action_item.set_value(updater_state)
     else:
       if failed_count > 0:
-        self._download_btn.description = "failed to check for update"
+        self._download_btn.action_item.set_value("failed to check for update")
         self._download_btn.action_item.set_text("CHECK")
       elif fetch_available:
-        self._download_btn.description = "update available"
+        self._download_btn.action_item.set_value("update available")
         self._download_btn.action_item.set_text("DOWNLOAD")
       else:
         last_update = ui_state.params.get("LastUpdateTime", "")
         if last_update:
           # TODO: Format time ago like Qt does
-          self._download_btn.description = f"up to date, last checked {last_update}"
+          self._download_btn.action_item.set_value(f"up to date, last checked {last_update}")
         else:
-          self._download_btn.description = "up to date, last checked never"
+          self._download_btn.action_item.set_value("up to date, last checked never")
         self._download_btn.action_item.set_text("CHECK")
       self._download_btn.set_enabled(True)
 
@@ -84,7 +84,8 @@ class SoftwareLayout(Widget):
       new_desc = ui_state.params.get("UpdaterNewDescription", "")
       new_release_notes = ui_state.params.get("UpdaterNewReleaseNotes", "")
       self._install_btn.action_item.set_text("INSTALL")
-      self._install_btn.description = f"{new_desc}\n{new_release_notes}"
+      self._install_btn.action_item.set_value(new_desc)
+      self._install_btn.description = new_release_notes
       # Enable install button for testing (like Qt showEvent)
       self._install_btn.set_enabled(True)
     else:
