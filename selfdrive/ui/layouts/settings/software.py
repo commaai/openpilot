@@ -1,6 +1,6 @@
 import os
 import time
-from datetime import datetime, timezone
+import datetime
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
@@ -13,16 +13,16 @@ from openpilot.system.ui.widgets.scroller import Scroller
 UPDATED_TIMEOUT = 10  # seconds to wait for updated to respond
 
 
-def time_ago(date: datetime | None) -> str:
+def time_ago(date: datetime.datetime | None) -> str:
   if not date:
     return "never"
 
   if not system_time_valid():
     return date.strftime("%a %b %d %Y")
 
-  now = datetime.now(timezone.utc)
+  now = datetime.datetime.now(datetime.UTC)
   if date.tzinfo is None:
-    date = date.replace(tzinfo=timezone.utc)
+    date = date.replace(tzinfo=datetime.UTC)
 
   diff_seconds = int((now - date).total_seconds())
   if diff_seconds < 60:
