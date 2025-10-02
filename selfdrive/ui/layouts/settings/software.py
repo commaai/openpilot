@@ -64,6 +64,7 @@ class SoftwareLayout(Widget):
       self._version_item,
       self._download_btn,
       self._install_btn,
+      button_item("Target Branch", "SELECT", callback=self._on_select_branch),
       button_item("Uninstall", "UNINSTALL", callback=self._on_uninstall),
     ]
     return items
@@ -156,3 +157,5 @@ class SoftwareLayout(Widget):
     # Trigger reboot to install update
     self._install_btn.action_item.set_enabled(False)
     ui_state.params.put_bool("DoReboot", True)
+
+  def _on_select_branch(self): pass
