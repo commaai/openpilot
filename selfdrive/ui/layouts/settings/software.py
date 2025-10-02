@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime, timezone
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -7,6 +8,9 @@ from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
 from openpilot.system.ui.widgets.scroller import Scroller
+
+# TODO: remove this. updater fails to respond on startup if time is not correct
+UPDATED_TIMEOUT = 10  # seconds to wait for updated to respond
 
 
 def time_ago(date: datetime | None) -> str:
@@ -47,6 +51,10 @@ class SoftwareLayout(Widget):
     self._install_btn = button_item("Install Update", "INSTALL", callback=self._on_install_update)
     self._install_btn.set_visible(False)
 
+    # Track waiting-for-updater transition to avoid brief re-enable while still idle
+    self._waiting_for_updater = False
+    self._waiting_start_ts: float = 0.0
+
     items = self._init_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
@@ -82,6 +90,8 @@ class SoftwareLayout(Widget):
     update_available = ui_state.params.get_bool("UpdateAvailable")
 
     if updater_state != "idle":
+      # Updater responded
+      self._waiting_for_updater = False
       self._download_btn.action_item.set_enabled(False)
       self._download_btn.action_item.set_value(updater_state)
     else:
@@ -99,7 +109,13 @@ class SoftwareLayout(Widget):
         else:
           self._download_btn.action_item.set_value("up to date, last checked never")
         self._download_btn.action_item.set_text("CHECK")
-      self._download_btn.action_item.set_enabled(True)
+
+      # If we've been waiting too long without a state change, reset state
+      if self._waiting_for_updater and (time.monotonic() - self._waiting_start_ts > UPDATED_TIMEOUT):
+        self._waiting_for_updater = False
+
+      # Only enable if we're not waiting for updater to flip out of idle
+      self._download_btn.action_item.set_enabled(not self._waiting_for_updater)
 
     # Update install button
     self._install_btn.set_visible(ui_state.is_offroad() and update_available)
@@ -116,11 +132,16 @@ class SoftwareLayout(Widget):
 
   def _on_download_update(self):
     # Check if we should start checking or start downloading
+    self._download_btn.action_item.set_enabled(False)
     if self._download_btn.action_item.text == "CHECK":
       # Start checking for updates
+      self._waiting_for_updater = True
+      self._waiting_start_ts = time.monotonic()
       os.system("pkill -SIGUSR1 -f system.updated.updated")
     else:
       # Start downloading
+      self._waiting_for_updater = True
+      self._waiting_start_ts = time.monotonic()
       os.system("pkill -SIGHUP -f system.updated.updated")
 
   def _on_uninstall(self):
