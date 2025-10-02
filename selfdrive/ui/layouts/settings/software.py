@@ -1,10 +1,38 @@
 import os
+from datetime import datetime, timezone
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
 from openpilot.system.ui.widgets.scroller import Scroller
+
+
+def time_ago(date: datetime | None) -> str:
+  if not date:
+    return "never"
+
+  if not system_time_valid():
+    return date.strftime("%a %b %d %Y")
+
+  now = datetime.now(timezone.utc)
+  if date.tzinfo is None:
+    date = date.replace(tzinfo=timezone.utc)
+
+  diff_seconds = int((now - date).total_seconds())
+  if diff_seconds < 60:
+    return "now"
+  if diff_seconds < 3600:
+    m = diff_seconds // 60
+    return f"{m} minute{'s' if m != 1 else ''} ago"
+  if diff_seconds < 86400:
+    h = diff_seconds // 3600
+    return f"{h} hour{'s' if h != 1 else ''} ago"
+  if diff_seconds < 604800:
+    d = diff_seconds // 86400
+    return f"{d} day{'s' if d != 1 else ''} ago"
+  return date.strftime("%a %b %d %Y")
 
 
 class SoftwareLayout(Widget):
@@ -66,8 +94,8 @@ class SoftwareLayout(Widget):
       else:
         last_update = ui_state.params.get("LastUpdateTime")
         if last_update:
-          # TODO: Format time ago like Qt does
-          self._download_btn.action_item.set_value(f"up to date, last checked {last_update}")
+          formatted = time_ago(last_update)
+          self._download_btn.action_item.set_value(f"up to date, last checked {formatted}")
         else:
           self._download_btn.action_item.set_value("up to date, last checked never")
         self._download_btn.action_item.set_text("CHECK")
@@ -107,5 +135,5 @@ class SoftwareLayout(Widget):
 
   def _on_install_update(self):
     # Trigger reboot to install update
+    self._install_btn.action_item.set_enabled(False)
     ui_state.params.put_bool("DoReboot", True)
-
