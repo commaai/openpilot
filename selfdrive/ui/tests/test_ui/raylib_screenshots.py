@@ -69,7 +69,8 @@ def setup_pair_device(click, pm: PubMaster):
 
 
 def setup_offroad_alert(click, pm: PubMaster):
-  set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99')
+  set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
+  set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
   for alert in OFFROAD_ALERTS:
     set_offroad_alert(alert, True)
 

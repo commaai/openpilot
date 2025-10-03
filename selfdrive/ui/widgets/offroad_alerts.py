@@ -1,14 +1,16 @@
 import pyray as rl
+from enum import IntEnum
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
@@ -17,21 +19,23 @@ class AlertColors:
   LOW_SEVERITY = rl.Color(41, 41, 41, 255)
   BACKGROUND = rl.Color(57, 57, 57, 255)
   BUTTON = rl.WHITE
+  BUTTON_PRESSED = rl.Color(200, 200, 200, 255)
   BUTTON_TEXT = rl.BLACK
   SNOOZE_BG = rl.Color(79, 79, 79, 255)
+  SNOOZE_BG_PRESSED = rl.Color(100, 100, 100, 255)
   TEXT = rl.WHITE
 
 
 class AlertConstants:
-  BUTTON_SIZE = (400, 125)
-  SNOOZE_BUTTON_SIZE = (550, 125)
-  REBOOT_BUTTON_SIZE = (600, 125)
+  MIN_BUTTON_WIDTH = 400
+  BUTTON_HEIGHT = 125
   MARGIN = 50
   SPACING = 30
   FONT_SIZE = 48
-  BORDER_RADIUS = 30
+  BORDER_RADIUS = 30 * 2  # matches Qt's 30px
   ALERT_HEIGHT = 120
-  ALERT_SPACING = 20
+  ALERT_SPACING = 10
+  ALERT_INSET = 60
 
 
 @dataclass
@@ -42,6 +46,41 @@ class AlertData:
   visible: bool = False
 
 
+class ButtonStyle(IntEnum):
+  LIGHT = 0
+  DARK = 1
+
+
+class ActionButton(Widget):
+  def __init__(self, text: str, style: ButtonStyle = ButtonStyle.LIGHT,
+               min_width: int = AlertConstants.MIN_BUTTON_WIDTH):
+    super().__init__()
+    self._style = style
+    self._min_width = min_width
+    self._font = gui_app.font(FontWeight.MEDIUM)
+    self.set_text(text)
+
+  def set_text(self, text: str):
+    self._text = text
+    self._text_width = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self._text, AlertConstants.FONT_SIZE).x
+    self._rect.width = max(self._text_width + 60 * 2, self._min_width)
+    self._rect.height = AlertConstants.BUTTON_HEIGHT
+
+  def _render(self, _):
+    roundness = AlertConstants.BORDER_RADIUS / self._rect.height
+    bg_color = AlertColors.BUTTON if self._style == ButtonStyle.LIGHT else AlertColors.SNOOZE_BG
+    if self.is_pressed:
+      bg_color = AlertColors.BUTTON_PRESSED if self._style == ButtonStyle.LIGHT else AlertColors.SNOOZE_BG_PRESSED
+
+    rl.draw_rectangle_rounded(self._rect, roundness, 10, bg_color)
+
+    # center text
+    color = rl.WHITE if self._style == ButtonStyle.DARK else rl.BLACK
+    text_x = int(self._rect.x + (self._rect.width - self._text_width) // 2)
+    text_y = int(self._rect.y + (self._rect.height - AlertConstants.FONT_SIZE) // 2)
+    rl.draw_text_ex(self._font, self._text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
+
+
 class AbstractAlert(Widget, ABC):
   def __init__(self, has_reboot_btn: bool = False):
     super().__init__()
@@ -49,17 +88,35 @@ class AbstractAlert(Widget, ABC):
     self.has_reboot_btn = has_reboot_btn
     self.dismiss_callback: Callable | None = None
 
-    self.dismiss_btn_rect = rl.Rectangle(0, 0, *AlertConstants.BUTTON_SIZE)
-    self.snooze_btn_rect = rl.Rectangle(0, 0, *AlertConstants.SNOOZE_BUTTON_SIZE)
-    self.reboot_btn_rect = rl.Rectangle(0, 0, *AlertConstants.REBOOT_BUTTON_SIZE)
+    def snooze_callback():
+      self.params.put_bool("SnoozeUpdate", True)
+      if self.dismiss_callback:
+        self.dismiss_callback()
 
-    self.snooze_visible = False
+    def excessive_actuation_callback():
+      self.params.remove("Offroad_ExcessiveActuation")
+      if self.dismiss_callback:
+        self.dismiss_callback()
+
+    self.dismiss_btn = ActionButton("Close")
+
+    self.snooze_btn = ActionButton("Snooze Update", style=ButtonStyle.DARK)
+    self.snooze_btn.set_click_callback(snooze_callback)
+
+    self.excessive_actuation_btn = ActionButton("Acknowledge Excessive Actuation", style=ButtonStyle.DARK, min_width=800)
+    self.excessive_actuation_btn.set_click_callback(excessive_actuation_callback)
+
+    self.reboot_btn = ActionButton("Reboot and Update", min_width=600)
+    self.reboot_btn.set_click_callback(lambda: HARDWARE.reboot())
+
+    # TODO: just use a Scroller?
     self.content_rect = rl.Rectangle(0, 0, 0, 0)
     self.scroll_panel_rect = rl.Rectangle(0, 0, 0, 0)
     self.scroll_panel = GuiScrollPanel()
 
   def set_dismiss_callback(self, callback: Callable):
     self.dismiss_callback = callback
+    self.dismiss_btn.set_click_callback(self.dismiss_callback)
 
   @abstractmethod
   def refresh(self) -> bool:
@@ -69,28 +126,10 @@ class AbstractAlert(Widget, ABC):
   def get_content_height(self) -> float:
     pass
 
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-
-    if not self.scroll_panel.is_touch_valid():
-      return
-
-    if rl.check_collision_point_rec(mouse_pos, self.dismiss_btn_rect):
-      if self.dismiss_callback:
-        self.dismiss_callback()
-
-    elif self.snooze_visible and rl.check_collision_point_rec(mouse_pos, self.snooze_btn_rect):
-      self.params.put_bool("SnoozeUpdate", True)
-      if self.dismiss_callback:
-        self.dismiss_callback()
-
-    elif self.has_reboot_btn and rl.check_collision_point_rec(mouse_pos, self.reboot_btn_rect):
-      HARDWARE.reboot()
-
   def _render(self, rect: rl.Rectangle):
-    rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.width, 10, AlertColors.BACKGROUND)
+    rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.height, 10, AlertColors.BACKGROUND)
 
-    footer_height = AlertConstants.BUTTON_SIZE[1] + AlertConstants.SPACING
+    footer_height = AlertConstants.BUTTON_HEIGHT + AlertConstants.SPACING
     content_height = rect.height - 2 * AlertConstants.MARGIN - footer_height
 
     self.content_rect = rl.Rectangle(
@@ -133,44 +172,26 @@ class AbstractAlert(Widget, ABC):
     pass
 
   def _render_footer(self, rect: rl.Rectangle):
-    footer_y = rect.y + rect.height - AlertConstants.MARGIN - AlertConstants.BUTTON_SIZE[1]
-    font = gui_app.font(FontWeight.MEDIUM)
+    footer_y = rect.y + rect.height - AlertConstants.MARGIN - AlertConstants.BUTTON_HEIGHT
 
-    self.dismiss_btn_rect.x = rect.x + AlertConstants.MARGIN
-    self.dismiss_btn_rect.y = footer_y
-    rl.draw_rectangle_rounded(self.dismiss_btn_rect, 0.3, 10, AlertColors.BUTTON)
+    dismiss_x = rect.x + AlertConstants.MARGIN
+    self.dismiss_btn.set_position(dismiss_x, footer_y)
+    self.dismiss_btn.render()
 
-    text = "Close"
-    text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
-    text_x = self.dismiss_btn_rect.x + (AlertConstants.BUTTON_SIZE[0] - text_width) // 2
-    text_y = self.dismiss_btn_rect.y + (AlertConstants.BUTTON_SIZE[1] - AlertConstants.FONT_SIZE) // 2
-    rl.draw_text_ex(
-      font, text, rl.Vector2(int(text_x), int(text_y)), AlertConstants.FONT_SIZE, 0, AlertColors.BUTTON_TEXT
-    )
+    if self.has_reboot_btn:
+      reboot_x = rect.x + rect.width - AlertConstants.MARGIN - self.reboot_btn.rect.width
+      self.reboot_btn.set_position(reboot_x, footer_y)
+      self.reboot_btn.render()
 
-    if self.snooze_visible:
-      self.snooze_btn_rect.x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.SNOOZE_BUTTON_SIZE[0]
-      self.snooze_btn_rect.y = footer_y
-      rl.draw_rectangle_rounded(self.snooze_btn_rect, 0.3, 10, AlertColors.SNOOZE_BG)
+    elif self.excessive_actuation_btn.is_visible:
+      actuation_x = rect.x + rect.width - AlertConstants.MARGIN - self.excessive_actuation_btn.rect.width
+      self.excessive_actuation_btn.set_position(actuation_x, footer_y)
+      self.excessive_actuation_btn.render()
 
-      text = "Snooze Update"
-      text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
-      text_x = self.snooze_btn_rect.x + (AlertConstants.SNOOZE_BUTTON_SIZE[0] - text_width) // 2
-      text_y = self.snooze_btn_rect.y + (AlertConstants.SNOOZE_BUTTON_SIZE[1] - AlertConstants.FONT_SIZE) // 2
-      rl.draw_text_ex(font, text, rl.Vector2(int(text_x), int(text_y)), AlertConstants.FONT_SIZE, 0, AlertColors.TEXT)
-
-    elif self.has_reboot_btn:
-      self.reboot_btn_rect.x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.REBOOT_BUTTON_SIZE[0]
-      self.reboot_btn_rect.y = footer_y
-      rl.draw_rectangle_rounded(self.reboot_btn_rect, 0.3, 10, AlertColors.BUTTON)
-
-      text = "Reboot and Update"
-      text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
-      text_x = self.reboot_btn_rect.x + (AlertConstants.REBOOT_BUTTON_SIZE[0] - text_width) // 2
-      text_y = self.reboot_btn_rect.y + (AlertConstants.REBOOT_BUTTON_SIZE[1] - AlertConstants.FONT_SIZE) // 2
-      rl.draw_text_ex(
-        font, text, rl.Vector2(int(text_x), int(text_y)), AlertConstants.FONT_SIZE, 0, AlertColors.BUTTON_TEXT
-      )
+    elif self.snooze_btn.is_visible:
+      snooze_x = rect.x + rect.width - AlertConstants.MARGIN - self.snooze_btn.rect.width
+      self.snooze_btn.set_position(snooze_x, footer_y)
+      self.snooze_btn.render()
 
 
 class OffroadAlert(AbstractAlert):
@@ -184,13 +205,14 @@ class OffroadAlert(AbstractAlert):
 
     active_count = 0
     connectivity_needed = False
+    excessive_actuation = False
 
     for alert_data in self.sorted_alerts:
       text = ""
       alert_json = self.params.get(alert_data.key)
 
       if alert_json:
-        text = alert_json.get("text", "").replace("{}", alert_json.get("extra", ""))
+        text = alert_json.get("text", "").replace("%1", alert_json.get("extra", ""))
 
       alert_data.text = text
       alert_data.visible = bool(text)
@@ -201,7 +223,11 @@ class OffroadAlert(AbstractAlert):
       if alert_data.key == "Offroad_ConnectivityNeeded" and alert_data.visible:
         connectivity_needed = True
 
-    self.snooze_visible = connectivity_needed
+      if alert_data.key == "Offroad_ExcessiveActuation" and alert_data.visible:
+        excessive_actuation = True
+
+    self.excessive_actuation_btn.set_visible(excessive_actuation)
+    self.snooze_btn.set_visible(connectivity_needed and not excessive_actuation)
     return active_count
 
   def get_content_height(self) -> float:
@@ -215,11 +241,11 @@ class OffroadAlert(AbstractAlert):
       if not alert_data.visible:
         continue
 
-      text_width = int(self.content_rect.width - 90)
+      text_width = int(self.content_rect.width - (AlertConstants.ALERT_INSET * 2))
       wrapped_lines = wrap_text(font, alert_data.text, AlertConstants.FONT_SIZE, text_width)
       line_count = len(wrapped_lines)
       text_height = line_count * (AlertConstants.FONT_SIZE + 5)
-      alert_item_height = max(text_height + 40, AlertConstants.ALERT_HEIGHT)
+      alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
       total_height += alert_item_height + AlertConstants.ALERT_SPACING
 
     if total_height > 20:
@@ -235,7 +261,7 @@ class OffroadAlert(AbstractAlert):
       self.sorted_alerts.append(alert_data)
 
   def _render_content(self, content_rect: rl.Rectangle):
-    y_offset = 20
+    y_offset = AlertConstants.ALERT_SPACING
     font = gui_app.font(FontWeight.NORMAL)
 
     for alert_data in self.sorted_alerts:
@@ -243,11 +269,11 @@ class OffroadAlert(AbstractAlert):
         continue
 
       bg_color = AlertColors.HIGH_SEVERITY if alert_data.severity > 0 else AlertColors.LOW_SEVERITY
-      text_width = int(content_rect.width - 90)
+      text_width = int(content_rect.width - (AlertConstants.ALERT_INSET * 2))
       wrapped_lines = wrap_text(font, alert_data.text, AlertConstants.FONT_SIZE, text_width)
       line_count = len(wrapped_lines)
       text_height = line_count * (AlertConstants.FONT_SIZE + 5)
-      alert_item_height = max(text_height + 40, AlertConstants.ALERT_HEIGHT)
+      alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
 
       alert_rect = rl.Rectangle(
         content_rect.x + 10,
@@ -256,10 +282,11 @@ class OffroadAlert(AbstractAlert):
         alert_item_height,
       )
 
-      rl.draw_rectangle_rounded(alert_rect, 0.2, 10, bg_color)
+      roundness = AlertConstants.BORDER_RADIUS / min(alert_rect.height, alert_rect.width)
+      rl.draw_rectangle_rounded(alert_rect, roundness, 10, bg_color)
 
-      text_x = alert_rect.x + 30
-      text_y = alert_rect.y + 20
+      text_x = alert_rect.x + AlertConstants.ALERT_INSET
+      text_y = alert_rect.y + AlertConstants.ALERT_INSET
 
       for i, line in enumerate(wrapped_lines):
         rl.draw_text_ex(
@@ -280,6 +307,7 @@ class UpdateAlert(AbstractAlert):
     self.release_notes = ""
     self._wrapped_release_notes = ""
     self._cached_content_height: float = 0.0
+    self._html_renderer: HtmlRenderer | None = None
 
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
@@ -315,4 +343,4 @@ class UpdateAlert(AbstractAlert):
       text_width = rl.measure_text(no_notes_text, AlertConstants.FONT_SIZE)
       text_x = content_rect.x + (content_rect.width - text_width) // 2
       text_y = content_rect.y + 50
-      rl.draw_text(no_notes_text, int(text_x), int(text_y), AlertConstants.FONT_SIZE, AlertColors.TEXT)
+      rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), no_notes_text, (int(text_x), int(text_y)), AlertConstants.FONT_SIZE, 0, AlertColors.TEXT)

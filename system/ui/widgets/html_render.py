@@ -34,13 +34,11 @@ class HtmlElement:
 
 
 class HtmlRenderer(Widget):
-  def __init__(self, file_path: str):
+  def __init__(self, file_path: str | None = None, text: str | None = None):
     super().__init__()
     self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
-    self._scroll_panel = GuiScrollPanel()
-    self._ok_button = Button("OK", click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
 
     self.styles: dict[ElementType, dict[str, Any]] = {
       ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 16},
@@ -53,7 +51,12 @@ class HtmlRenderer(Widget):
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "color": rl.BLACK, "margin_top": 0, "margin_bottom": 12},
     }
 
-    self.parse_html_file(file_path)
+    if file_path is not None:
+      self.parse_html_file(file_path)
+    elif text is not None:
+      self.parse_html_content(text)
+    else:
+      raise ValueError("Either file_path or text must be provided")
 
   def parse_html_file(self, file_path: str) -> None:
     with open(file_path, encoding='utf-8') as file:
@@ -106,33 +109,7 @@ class HtmlRenderer(Widget):
     self.elements.append(element)
 
   def _render(self, rect: rl.Rectangle):
-    margin = 50
-    content_rect = rl.Rectangle(rect.x + margin, rect.y + margin, rect.width - (margin * 2), rect.height - (margin * 2))
-
-    button_height = 160
-    button_spacing = 20
-    scrollable_height = content_rect.height - button_height - button_spacing
-
-    scrollable_rect = rl.Rectangle(content_rect.x, content_rect.y, content_rect.width, scrollable_height)
-
-    total_height = self.get_total_height(int(scrollable_rect.width))
-    scroll_content_rect = rl.Rectangle(scrollable_rect.x, scrollable_rect.y, scrollable_rect.width, total_height)
-    scroll_offset = self._scroll_panel.update(scrollable_rect, scroll_content_rect)
-
-    rl.begin_scissor_mode(int(scrollable_rect.x), int(scrollable_rect.y), int(scrollable_rect.width), int(scrollable_rect.height))
-    self._render_content(scrollable_rect, scroll_offset)
-    rl.end_scissor_mode()
-
-    button_width = (rect.width - 3 * 50) // 3
-    button_x = content_rect.x + content_rect.width - button_width
-    button_y = content_rect.y + content_rect.height - button_height
-    button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)
-    self._ok_button.render(button_rect)
-
-    return -1
-
-  def _render_content(self, rect: rl.Rectangle, scroll_offset: float = 0) -> float:
-    current_y = rect.y + scroll_offset
+    current_y = rect.y
     padding = 20
     content_width = rect.width - (padding * 2)
 
@@ -164,7 +141,7 @@ class HtmlRenderer(Widget):
       # Apply bottom margin
       current_y += element.margin_bottom
 
-    return current_y - rect.y - scroll_offset  # Return total content height
+    return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
     total_height = 0.0
@@ -193,3 +170,38 @@ class HtmlRenderer(Widget):
     if weight == FontWeight.BOLD:
       return self._bold_font
     return self._normal_font
+
+
+class HtmlModal(Widget):
+  def __init__(self, file_path: str | None = None, text: str | None = None):
+    super().__init__()
+    self._content = HtmlRenderer(file_path=file_path, text=text)
+    self._scroll_panel = GuiScrollPanel()
+    self._ok_button = Button("OK", click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
+
+  def _render(self, rect: rl.Rectangle):
+    margin = 50
+    content_rect = rl.Rectangle(rect.x + margin, rect.y + margin, rect.width - (margin * 2), rect.height - (margin * 2))
+
+    button_height = 160
+    button_spacing = 20
+    scrollable_height = content_rect.height - button_height - button_spacing
+
+    scrollable_rect = rl.Rectangle(content_rect.x, content_rect.y, content_rect.width, scrollable_height)
+
+    total_height = self._content.get_total_height(int(scrollable_rect.width))
+    scroll_content_rect = rl.Rectangle(scrollable_rect.x, scrollable_rect.y, scrollable_rect.width, total_height)
+    scroll_offset = self._scroll_panel.update(scrollable_rect, scroll_content_rect)
+    scroll_content_rect.y += scroll_offset
+
+    rl.begin_scissor_mode(int(scrollable_rect.x), int(scrollable_rect.y), int(scrollable_rect.width), int(scrollable_rect.height))
+    self._content.render(scroll_content_rect)
+    rl.end_scissor_mode()
+
+    button_width = (rect.width - 3 * 50) // 3
+    button_x = content_rect.x + content_rect.width - button_width
+    button_y = content_rect.y + content_rect.height - button_height
+    button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)
+    self._ok_button.render(button_rect)
+
+    return -1

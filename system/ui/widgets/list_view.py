@@ -14,6 +14,7 @@ ITEM_BASE_HEIGHT = 170
 ITEM_PADDING = 20
 ITEM_TEXT_FONT_SIZE = 50
 ITEM_TEXT_COLOR = rl.WHITE
+ITEM_TEXT_VALUE_COLOR = rl.Color(170, 170, 170, 255)
 ITEM_DESC_TEXT_COLOR = rl.Color(128, 128, 128, 255)
 ITEM_DESC_FONT_SIZE = 40
 ITEM_DESC_V_OFFSET = 140
@@ -77,7 +78,9 @@ class ButtonAction(ItemAction):
   def __init__(self, text: str | Callable[[], str], width: int = BUTTON_WIDTH, enabled: bool | Callable[[], bool] = True):
     super().__init__(width, enabled)
     self._text_source = text
+    self._value_source: str | Callable[[], str] | None = None
     self._pressed = False
+    self._font = gui_app.font(FontWeight.NORMAL)
 
     def pressed():
       self._pressed = True
@@ -96,15 +99,33 @@ class ButtonAction(ItemAction):
     super().set_touch_valid_callback(touch_callback)
     self._button.set_touch_valid_callback(touch_callback)
 
+  def set_text(self, text: str | Callable[[], str]):
+    self._text_source = text
+
+  def set_value(self, value: str | Callable[[], str]):
+    self._value_source = value
+
   @property
   def text(self):
     return _resolve_value(self._text_source, "Error")
+
+  @property
+  def value(self):
+    return _resolve_value(self._value_source, "")
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self._button.set_text(self.text)
     self._button.set_enabled(_resolve_value(self.enabled))
     button_rect = rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._button.render(button_rect)
+
+    value_text = self.value
+    if value_text:
+      spacing = 20
+      text_size = measure_text_cached(self._font, value_text, ITEM_TEXT_FONT_SIZE)
+      text_x = button_rect.x - spacing - text_size.x
+      text_y = rect.y + (rect.height - text_size.y) / 2
+      rl.draw_text_ex(self._font, value_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_VALUE_COLOR)
 
     # TODO: just use the generic Widget click callbacks everywhere, no returning from render
     pressed = self._pressed
@@ -138,6 +159,9 @@ class TextAction(ItemAction):
     text_y = rect.y + (rect.height - text_size.y) / 2
     rl.draw_text_ex(self._font, current_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, self.color)
     return False
+
+  def set_text(self, text: str | Callable[[], str]):
+    self._text_source = text
 
   def get_width(self) -> int:
     text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
@@ -174,17 +198,16 @@ class DualButtonAction(ItemAction):
 
 class MultipleButtonAction(ItemAction):
   def __init__(self, buttons: list[str], button_width: int, selected_index: int = 0, callback: Callable = None):
-    super().__init__(width=len(buttons) * (button_width + 20), enabled=True)
+    super().__init__(width=len(buttons) * button_width + (len(buttons) - 1) * RIGHT_ITEM_PADDING, enabled=True)
     self.buttons = buttons
     self.button_width = button_width
     self.selected_button = selected_index
     self.callback = callback
     self._font = gui_app.font(FontWeight.MEDIUM)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
-    spacing = 20
+  def _render(self, rect: rl.Rectangle):
+    spacing = RIGHT_ITEM_PADDING
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
-    clicked = -1
 
     for i, text in enumerate(self.buttons):
       button_x = rect.x + i * (self.button_width + spacing)
@@ -192,8 +215,7 @@ class MultipleButtonAction(ItemAction):
 
       # Check button state
       mouse_pos = rl.get_mouse_position()
-      is_hovered = rl.check_collision_point_rec(mouse_pos, button_rect) and self.enabled
-      is_pressed = is_hovered and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and self.is_pressed
+      is_pressed = rl.check_collision_point_rec(mouse_pos, button_rect) and self.enabled and self.is_pressed
       is_selected = i == self.selected_button
 
       # Button colors
@@ -217,16 +239,16 @@ class MultipleButtonAction(ItemAction):
       text_color = rl.Color(228, 228, 228, 255) if self.enabled else rl.Color(150, 150, 150, 255)
       rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, text_color)
 
-      # Handle click
-      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self.is_pressed:
-        clicked = i
-
-    if clicked >= 0:
-      self.selected_button = clicked
-      if self.callback:
-        self.callback(clicked)
-      return True
-    return False
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    spacing = RIGHT_ITEM_PADDING
+    button_y = self._rect.y + (self._rect.height - BUTTON_HEIGHT) / 2
+    for i, _text in enumerate(self.buttons):
+      button_x = self._rect.x + i * (self.button_width + spacing)
+      button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
+      if rl.check_collision_point_rec(mouse_pos, button_rect):
+        self.selected_button = i
+        if self.callback:
+          self.callback(i)
 
 
 class ListItem(Widget):
@@ -382,7 +404,7 @@ def button_item(title: str, button_text: str | Callable[[], str], description: s
 
 def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
               callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
-  action = TextAction(text=value, color=rl.Color(170, 170, 170, 255), enabled=enabled)
+  action = TextAction(text=value, color=ITEM_TEXT_VALUE_COLOR, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 

@@ -246,6 +246,8 @@ class AdvancedNetworkSettings(Widget):
     gui_app.set_modal_overlay(self._keyboard, update_password)
 
   def _update_state(self):
+    self._wifi_manager.process_callbacks()
+
     # If not using prime SIM, show GSM settings and enable IPv4 forwarding
     show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
