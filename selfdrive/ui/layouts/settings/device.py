@@ -60,7 +60,7 @@ class DeviceLayout(Widget):
       button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
       dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
     ]
-    # regulatory_btn.set_visible(TICI)
+    regulatory_btn.set_visible(TICI)
     return items
 
   def _render(self, rect):
