@@ -18,12 +18,11 @@ class IconButton(Widget):
     super().__init__()
     self._texture = texture
 
-  def _render(self, rect: rl.Rectangle) -> bool | int | None:
+  def _render(self, rect: rl.Rectangle):
     color = rl.Color(180, 180, 180, 150) if self.is_pressed else rl.WHITE
     draw_x = rect.x + (rect.width - self._texture.width) / 2
     draw_y = rect.y + (rect.height - self._texture.height) / 2
     rl.draw_texture(self._texture, int(draw_x), int(draw_y), color)
-    return False
 
 
 class PairingDialog(Widget):
