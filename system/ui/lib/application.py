@@ -317,6 +317,14 @@ class GuiApplication:
   def font(self, font_weight: FontWeight = FontWeight.NORMAL):
     return self._fonts[font_weight]
 
+  def get_font_scale(self, font: rl.Font) -> float:
+    """Return per-font scale factor computed from glyph metrics."""
+    try:
+      tex_id = int(font.texture.id)
+      return self._font_scale_by_id.get(tex_id, 1.0)
+    except Exception:
+      return 1.0
+
   @property
   def width(self):
     return self._width
@@ -385,8 +393,6 @@ class GuiApplication:
     try:
       if not hasattr(rl, "_orig_draw_text_ex"):
         rl._orig_draw_text_ex = rl.draw_text_ex
-      if not hasattr(rl, "_orig_measure_text_ex"):
-        rl._orig_measure_text_ex = rl.measure_text_ex
       def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
         try:
           tex_id = int(font.texture.id)
@@ -395,17 +401,8 @@ class GuiApplication:
           scale = 1.0
         return rl._orig_draw_text_ex(font, text, position, float(font_size) * scale, spacing, tint)
 
-      def _measure_text_ex_scaled(font, text, font_size, spacing):
-        try:
-          tex_id = int(font.texture.id)
-          scale = self._font_scale_by_id.get(tex_id, 1.0)
-        except Exception:
-          scale = 1.0
-        return rl._orig_measure_text_ex(font, text, float(font_size) * scale, spacing)
-
       rl.draw_text_ex = _draw_text_ex_scaled
-      rl.measure_text_ex = _measure_text_ex_scaled
-      cloudlog.info("raylib text functions wrapped with per-font scale")
+      cloudlog.info("raylib draw_text_ex wrapped with per-font scale")
     except Exception as e:
       cloudlog.exception(f"failed to wrap text functions: {e}")
 
