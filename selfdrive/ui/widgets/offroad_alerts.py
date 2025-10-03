@@ -341,4 +341,4 @@ class UpdateAlert(AbstractAlert):
       text_width = rl.measure_text(no_notes_text, AlertConstants.FONT_SIZE)
       text_x = content_rect.x + (content_rect.width - text_width) // 2
       text_y = content_rect.y + 50
-      rl.draw_text(no_notes_text, int(text_x), int(text_y), AlertConstants.FONT_SIZE, AlertColors.TEXT)
+      rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), no_notes_text, (int(text_x), int(text_y)), AlertConstants.FONT_SIZE, 0, AlertColors.TEXT)
