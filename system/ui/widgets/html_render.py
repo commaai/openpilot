@@ -109,12 +109,7 @@ class HtmlRenderer(Widget):
     self.elements.append(element)
 
   def _render(self, rect: rl.Rectangle):
-    # Pure content rendering inside given rect; no scrolling or buttons
-    self._render_content(rect, 0)
-    return -1
-
-  def _render_content(self, rect: rl.Rectangle, scroll_offset: float = 0) -> float:
-    current_y = rect.y + scroll_offset
+    current_y = rect.y
     padding = 20
     content_width = rect.width - (padding * 2)
 
@@ -146,7 +141,7 @@ class HtmlRenderer(Widget):
       # Apply bottom margin
       current_y += element.margin_bottom
 
-    return current_y - rect.y - scroll_offset  # Return total content height
+    return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
     total_height = 0.0
@@ -197,9 +192,10 @@ class HtmlModal(Widget):
     total_height = self._content.get_total_height(int(scrollable_rect.width))
     scroll_content_rect = rl.Rectangle(scrollable_rect.x, scrollable_rect.y, scrollable_rect.width, total_height)
     scroll_offset = self._scroll_panel.update(scrollable_rect, scroll_content_rect)
+    scroll_content_rect.y += scroll_offset
 
     rl.begin_scissor_mode(int(scrollable_rect.x), int(scrollable_rect.y), int(scrollable_rect.width), int(scrollable_rect.height))
-    self._content._render_content(scrollable_rect, scroll_offset)
+    self._content.render(scroll_content_rect)
     rl.end_scissor_mode()
 
     button_width = (rect.width - 3 * 50) // 3

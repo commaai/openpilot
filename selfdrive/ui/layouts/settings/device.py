@@ -11,7 +11,7 @@ from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog, alert_dialog
-from openpilot.system.ui.widgets.html_render import HtmlRenderer
+from openpilot.system.ui.widgets.html_render import HtmlModal
 from openpilot.system.ui.widgets.list_view import text_item, button_item, dual_button_item
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.scroller import Scroller
@@ -36,7 +36,7 @@ class DeviceLayout(Widget):
     self._select_language_dialog: MultiOptionDialog | None = None
     self._driver_camera: DriverCameraDialog | None = None
     self._pair_device_dialog: PairingDialog | None = None
-    self._fcc_dialog: HtmlRenderer | None = None
+    self._fcc_dialog: HtmlModal | None = None
     self._training_guide: TrainingGuide | None = None
 
     items = self._initialize_items()
@@ -60,7 +60,7 @@ class DeviceLayout(Widget):
       button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
       dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
     ]
-    regulatory_btn.set_visible(TICI)
+    # regulatory_btn.set_visible(TICI)
     return items
 
   def _render(self, rect):
@@ -140,7 +140,7 @@ class DeviceLayout(Widget):
 
   def _on_regulatory(self):
     if not self._fcc_dialog:
-      self._fcc_dialog = HtmlRenderer(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
+      self._fcc_dialog = HtmlModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
     gui_app.set_modal_overlay(self._fcc_dialog)
 
   def _on_review_training_guide(self):
