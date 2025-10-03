@@ -1,4 +1,5 @@
 import pyray as rl
+from enum import IntEnum
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -20,15 +21,13 @@ class AlertColors:
   BUTTON_PRESSED = rl.Color(200, 200, 200, 255)
   BUTTON_TEXT = rl.BLACK
   SNOOZE_BG = rl.Color(79, 79, 79, 255)
+  SNOOZE_BG_PRESSED = rl.Color(100, 100, 100, 255)
   TEXT = rl.WHITE
 
 
 class AlertConstants:
   MIN_BUTTON_WIDTH = 400
   BUTTON_HEIGHT = 125
-  BUTTON_SIZE = (400, 125)
-  SNOOZE_BUTTON_SIZE = (550, 125)
-  REBOOT_BUTTON_SIZE = (600, 125)
   MARGIN = 50
   SPACING = 30
   FONT_SIZE = 48
@@ -46,9 +45,16 @@ class AlertData:
   visible: bool = False
 
 
+class ButtonStyle(IntEnum):
+  LIGHT = 0
+  DARK = 1
+
+
 class ActionButton(Widget):
-  def __init__(self, text: str, min_width=AlertConstants.MIN_BUTTON_WIDTH):
+  def __init__(self, text: str, style: ButtonStyle = ButtonStyle.LIGHT,
+               min_width: int = AlertConstants.MIN_BUTTON_WIDTH):
     super().__init__()
+    self._style = style
     self._min_width = min_width
     self._font = gui_app.font(FontWeight.MEDIUM)
     self.set_text(text)
@@ -61,14 +67,17 @@ class ActionButton(Widget):
 
   def _render(self, _):
     roundness = AlertConstants.BORDER_RADIUS / self._rect.height
-    color = AlertColors.BUTTON_PRESSED if self.is_pressed else AlertColors.BUTTON
-    rl.draw_rectangle_rounded(self._rect, roundness, 10, color)
+    bg_color = AlertColors.BUTTON if self._style == ButtonStyle.LIGHT else AlertColors.SNOOZE_BG
+    if self.is_pressed:
+      bg_color = AlertColors.BUTTON_PRESSED if self._style == ButtonStyle.LIGHT else AlertColors.SNOOZE_BG_PRESSED
+
+    rl.draw_rectangle_rounded(self._rect, roundness, 10, bg_color)
 
     # center text
+    color = rl.WHITE if self._style == ButtonStyle.DARK else rl.BLACK
     text_x = int(self._rect.x + (self._rect.width - self._text_width) // 2)
     text_y = int(self._rect.y + (self._rect.height - AlertConstants.FONT_SIZE) // 2)
-
-    rl.draw_text_ex(self._font, self._text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, AlertColors.BUTTON_TEXT)
+    rl.draw_text_ex(self._font, self._text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
 
 
 class AbstractAlert(Widget, ABC):
@@ -83,15 +92,21 @@ class AbstractAlert(Widget, ABC):
       if self.dismiss_callback:
         self.dismiss_callback()
 
-    self.dismissing_btn = ActionButton("Close")
+    def excessive_actuation_callback():
+      self.params.remove("Offroad_ExcessiveActuation")
+      if self.dismiss_callback:
+        self.dismiss_callback()
 
-    self.snoozing_btn = ActionButton("Snooze Update")
-    self.snoozing_btn.set_click_callback(snooze_callback)
+    self.dismiss_btn = ActionButton("Close")
 
-    self.excessive_actuation_btn = ActionButton("Acknowledge Excessive Actuation", min_width=800)
+    self.snooze_btn = ActionButton("Snooze Update", style=ButtonStyle.DARK)
+    self.snooze_btn.set_click_callback(snooze_callback)
 
-    self.rebooting_btn = ActionButton("Reboot and Update", min_width=600)
-    self.rebooting_btn.set_click_callback(lambda: HARDWARE.reboot())
+    self.excessive_actuation_btn = ActionButton("Acknowledge Excessive Actuation", style=ButtonStyle.DARK, min_width=800)
+    self.excessive_actuation_btn.set_click_callback(excessive_actuation_callback)
+
+    self.reboot_btn = ActionButton("Reboot and Update", min_width=600)
+    self.reboot_btn.set_click_callback(lambda: HARDWARE.reboot())
 
     # TODO: just use a Scroller?
     self.content_rect = rl.Rectangle(0, 0, 0, 0)
@@ -100,7 +115,7 @@ class AbstractAlert(Widget, ABC):
 
   def set_dismiss_callback(self, callback: Callable):
     self.dismiss_callback = callback
-    self.dismissing_btn.set_click_callback(self.dismiss_callback)
+    self.dismiss_btn.set_click_callback(self.dismiss_callback)
 
   @abstractmethod
   def refresh(self) -> bool:
@@ -113,7 +128,7 @@ class AbstractAlert(Widget, ABC):
   def _render(self, rect: rl.Rectangle):
     rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.height, 10, AlertColors.BACKGROUND)
 
-    footer_height = AlertConstants.BUTTON_SIZE[1] + AlertConstants.SPACING
+    footer_height = AlertConstants.BUTTON_HEIGHT + AlertConstants.SPACING
     content_height = rect.height - 2 * AlertConstants.MARGIN - footer_height
 
     self.content_rect = rl.Rectangle(
@@ -156,21 +171,26 @@ class AbstractAlert(Widget, ABC):
     pass
 
   def _render_footer(self, rect: rl.Rectangle):
-    footer_y = rect.y + rect.height - AlertConstants.MARGIN - AlertConstants.BUTTON_SIZE[1]
+    footer_y = rect.y + rect.height - AlertConstants.MARGIN - AlertConstants.BUTTON_HEIGHT
 
     dismiss_x = rect.x + AlertConstants.MARGIN
-    self.dismissing_btn.set_position(dismiss_x, footer_y)
-    self.dismissing_btn.render()
+    self.dismiss_btn.set_position(dismiss_x, footer_y)
+    self.dismiss_btn.render()
 
-    if self.snoozing_btn.is_visible:
-      snooze_x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.SNOOZE_BUTTON_SIZE[0]
-      self.snoozing_btn.set_position(snooze_x, footer_y)
-      self.snoozing_btn.render()
+    if self.has_reboot_btn:
+      reboot_x = rect.x + rect.width - AlertConstants.MARGIN - self.reboot_btn.rect.width
+      self.reboot_btn.set_position(reboot_x, footer_y)
+      self.reboot_btn.render()
 
-    elif self.has_reboot_btn:
-      reboot_x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.REBOOT_BUTTON_SIZE[0]
-      self.rebooting_btn.set_position(reboot_x, footer_y)
-      self.rebooting_btn.render()
+    elif self.excessive_actuation_btn.is_visible:
+      actuation_x = rect.x + rect.width - AlertConstants.MARGIN - self.excessive_actuation_btn.rect.width
+      self.excessive_actuation_btn.set_position(actuation_x, footer_y)
+      self.excessive_actuation_btn.render()
+
+    elif self.snooze_btn.is_visible:
+      snooze_x = rect.x + rect.width - AlertConstants.MARGIN - self.snooze_btn.rect.width
+      self.snooze_btn.set_position(snooze_x, footer_y)
+      self.snooze_btn.render()
 
 
 class OffroadAlert(AbstractAlert):
@@ -184,6 +204,7 @@ class OffroadAlert(AbstractAlert):
 
     active_count = 0
     connectivity_needed = False
+    excessive_actuation = False
 
     for alert_data in self.sorted_alerts:
       text = ""
@@ -201,7 +222,11 @@ class OffroadAlert(AbstractAlert):
       if alert_data.key == "Offroad_ConnectivityNeeded" and alert_data.visible:
         connectivity_needed = True
 
-    self.snoozing_btn.set_visible(connectivity_needed)
+      if alert_data.key == "Offroad_ExcessiveActuation" and alert_data.visible:
+        excessive_actuation = True
+
+    self.excessive_actuation_btn.set_visible(excessive_actuation)
+    self.snooze_btn.set_visible(connectivity_needed and not excessive_actuation)
     return active_count
 
   def get_content_height(self) -> float:
