@@ -73,25 +73,36 @@ class HtmlRenderer(Widget):
     html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
     html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
 
-    # Find all HTML elements
+    # Find all HTML elements and also render text nodes outside tags as paragraphs
     pattern = r'<(h[1-6]|p)(?:[^>]*)>(.*?)</\1>|<br\s*/?>'
-    matches = re.finditer(pattern, html_content, re.DOTALL | re.IGNORECASE)
+    matches = list(re.finditer(pattern, html_content, re.DOTALL | re.IGNORECASE))
 
+    def _add_text_node_as_paragraph(text: str) -> None:
+      txt = re.sub(r'\s+', ' ', text).strip()
+      if txt:
+        self._add_element(ElementType.P, txt)
+
+    last_end = 0
     for match in matches:
+      # Add any plain text between previous end and this match as a paragraph
+      if match.start() > last_end:
+        _add_text_node_as_paragraph(html_content[last_end:match.start()])
+
       if match.group(0).lower().startswith('<br'):
-        # Handle <br> tags
         self._add_element(ElementType.BR, "")
       else:
         tag = match.group(1).lower()
-        content = match.group(2).strip()
-
-        # Clean up content - remove extra whitespace
-        content = re.sub(r'\s+', ' ', content)
-        content = content.strip()
-
-        if content:  # Only add non-empty elements
+        content = match.group(2)
+        content = re.sub(r'\s+', ' ', content).strip()
+        if content:
           element_type = ElementType(tag)
           self._add_element(element_type, content)
+
+      last_end = match.end()
+
+    # Trailing text after the last tag
+    if last_end < len(html_content):
+      _add_text_node_as_paragraph(html_content[last_end:])
 
   def _add_element(self, element_type: ElementType, content: str) -> None:
     style = self.styles[element_type]
