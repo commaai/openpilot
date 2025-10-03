@@ -29,7 +29,7 @@ class AlertConstants:
   MARGIN = 50
   SPACING = 30
   FONT_SIZE = 48
-  BORDER_RADIUS = 30
+  BORDER_RADIUS = 30 * 2  # matches Qt's 30px
   ALERT_HEIGHT = 120
   ALERT_SPACING = 20
 
@@ -88,7 +88,7 @@ class AbstractAlert(Widget, ABC):
       HARDWARE.reboot()
 
   def _render(self, rect: rl.Rectangle):
-    rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.width, 10, AlertColors.BACKGROUND)
+    rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.height, 10, AlertColors.BACKGROUND)
 
     footer_height = AlertConstants.BUTTON_SIZE[1] + AlertConstants.SPACING
     content_height = rect.height - 2 * AlertConstants.MARGIN - footer_height
@@ -138,7 +138,8 @@ class AbstractAlert(Widget, ABC):
 
     self.dismiss_btn_rect.x = rect.x + AlertConstants.MARGIN
     self.dismiss_btn_rect.y = footer_y
-    rl.draw_rectangle_rounded(self.dismiss_btn_rect, 0.3, 10, AlertColors.BUTTON)
+    roundness = AlertConstants.BORDER_RADIUS / self.dismiss_btn_rect.height
+    rl.draw_rectangle_rounded(self.dismiss_btn_rect, roundness, 10, AlertColors.BUTTON)
 
     text = "Close"
     text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
@@ -151,7 +152,8 @@ class AbstractAlert(Widget, ABC):
     if self.snooze_visible:
       self.snooze_btn_rect.x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.SNOOZE_BUTTON_SIZE[0]
       self.snooze_btn_rect.y = footer_y
-      rl.draw_rectangle_rounded(self.snooze_btn_rect, 0.3, 10, AlertColors.SNOOZE_BG)
+      roundness = AlertConstants.BORDER_RADIUS / self.snooze_btn_rect.height
+      rl.draw_rectangle_rounded(self.snooze_btn_rect, roundness, 10, AlertColors.SNOOZE_BG)
 
       text = "Snooze Update"
       text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
@@ -162,7 +164,8 @@ class AbstractAlert(Widget, ABC):
     elif self.has_reboot_btn:
       self.reboot_btn_rect.x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.REBOOT_BUTTON_SIZE[0]
       self.reboot_btn_rect.y = footer_y
-      rl.draw_rectangle_rounded(self.reboot_btn_rect, 0.3, 10, AlertColors.BUTTON)
+      roundness = AlertConstants.BORDER_RADIUS / self.reboot_btn_rect.height
+      rl.draw_rectangle_rounded(self.reboot_btn_rect, roundness, 10, AlertColors.BUTTON)
 
       text = "Reboot and Update"
       text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
@@ -256,7 +259,8 @@ class OffroadAlert(AbstractAlert):
         alert_item_height,
       )
 
-      rl.draw_rectangle_rounded(alert_rect, 0.2, 10, bg_color)
+      roundness = AlertConstants.BORDER_RADIUS / min(alert_rect.height, alert_rect.width)
+      rl.draw_rectangle_rounded(alert_rect, roundness, 10, bg_color)
 
       text_x = alert_rect.x + 30
       text_y = alert_rect.y + 20
