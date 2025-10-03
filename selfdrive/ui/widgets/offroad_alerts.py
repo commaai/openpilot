@@ -10,6 +10,7 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
@@ -306,6 +307,7 @@ class UpdateAlert(AbstractAlert):
     self.release_notes = ""
     self._wrapped_release_notes = ""
     self._cached_content_height: float = 0.0
+    self._html_renderer: HtmlRenderer | None = None
 
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
