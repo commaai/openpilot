@@ -214,6 +214,7 @@ class WifiManager:
       self._callback_queue.append(lambda _cb=cb: _cb(*args))
 
   def process_callbacks(self):
+    print('processing wifi callbacks')
     # Call from UI thread to run any pending callbacks
     to_run, self._callback_queue = self._callback_queue, []
     for cb in to_run:

@@ -246,6 +246,9 @@ class AdvancedNetworkSettings(Widget):
     gui_app.set_modal_overlay(self._keyboard, update_password)
 
   def _update_state(self):
+    print('AN process callbacks')
+    self._wifi_manager.process_callbacks()
+
     # If not using prime SIM, show GSM settings and enable IPv4 forwarding
     show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
@@ -283,15 +286,18 @@ class WifiManagerUI(Widget):
   def show_event(self):
     # start/stop scanning when widget is visible
     self._wifi_manager.set_active(True)
+    print('wifi active')
 
   def hide_event(self):
     self._wifi_manager.set_active(False)
+    print('wifi deactive')
 
   def _load_icons(self):
     for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
       gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
 
   def _update_state(self):
+    print('WM process callbacks')
     self._wifi_manager.process_callbacks()
 
   def _render(self, rect: rl.Rectangle):
