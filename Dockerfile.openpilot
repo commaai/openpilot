@@ -11,4 +11,4 @@ COPY . ${OPENPILOT_PATH}/
 
 ENV UV_BIN="/home/batman/.local/bin/"
 ENV PATH="$UV_BIN:$PATH"
-RUN UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV uv run --frozen scons --cache-readonly -j$(nproc)
+RUN UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV uv run scons --cache-readonly -j$(nproc)
