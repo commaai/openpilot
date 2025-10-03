@@ -187,22 +187,22 @@ class HomeLayout(Widget):
 
   def _refresh(self):
     # TODO: implement _update_state with a timer
-    new_update_available = self.update_alert.refresh()
-    new_alert_count = self.offroad_alert.refresh()
-    alerts_present = new_alert_count > 0
+    update_available = self.update_alert.refresh()
+    alert_count = self.offroad_alert.refresh()
+    alerts_present = alert_count > 0
 
     # Edge-triggered transitions like Qt
-    if not new_update_available and not alerts_present:
+    if not update_available and not alerts_present:
       self.current_state = HomeLayoutState.HOME
-    elif new_update_available and ((not self._prev_update_available) or (not alerts_present and self.current_state == HomeLayoutState.ALERTS)):
+    elif update_available and ((not self._prev_update_available) or (not alerts_present and self.current_state == HomeLayoutState.ALERTS)):
       self.current_state = HomeLayoutState.UPDATE
-    elif alerts_present and ((not self._prev_alerts_present) or (not new_update_available and self.current_state == HomeLayoutState.UPDATE)):
+    elif alerts_present and ((not self._prev_alerts_present) or (not update_available and self.current_state == HomeLayoutState.UPDATE)):
       self.current_state = HomeLayoutState.ALERTS
 
     # Commit flags
-    self.update_available = new_update_available
-    self.alert_count = new_alert_count
-    self._prev_update_available = new_update_available
+    self.update_available = update_available
+    self.alert_count = alert_count
+    self._prev_update_available = update_available
     self._prev_alerts_present = alerts_present
 
   def _get_version_text(self) -> str:
