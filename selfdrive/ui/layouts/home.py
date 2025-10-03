@@ -8,6 +8,7 @@ from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButto
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.widgets.label import Label
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, DEFAULT_TEXT_COLOR
 from openpilot.system.ui.widgets import Widget
 
@@ -51,6 +52,8 @@ class HomeLayout(Widget):
 
     self.update_notif_rect = rl.Rectangle(0, 0, 200, HEADER_HEIGHT - 10)
     self.alert_notif_rect = rl.Rectangle(0, 0, 220, HEADER_HEIGHT - 10)
+
+    self._version_label = Label("", 48, FontWeight.NORMAL, text_color=DEFAULT_TEXT_COLOR)
 
     self._prime_widget = PrimeWidget()
     self._setup_widget = SetupWidget()
