@@ -329,7 +329,7 @@ class UpdateAlert(AbstractAlert):
     return self._cached_content_height
 
   def _render_content(self, content_rect: rl.Rectangle):
-    self.release_notes = "<h1>These are epic release notes</h1>\n\n- Feature 1\n- Feature 2\n- Bug fixes and improvements\n- Make epic"
+    self.release_notes = "<h1>These are epic release notes</h1>\n\n<p>- Feature 1</p>\n<p>- Feature 2</p>\n<p>- Bug fixes and improvements</p>\n<p>- Make epic</p>"
 
     html = HtmlRenderer(text=self.release_notes)
 
