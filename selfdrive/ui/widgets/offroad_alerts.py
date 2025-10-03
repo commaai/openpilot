@@ -54,6 +54,8 @@ class AbstractAlert(Widget, ABC):
     self.reboot_btn_rect = rl.Rectangle(0, 0, *AlertConstants.REBOOT_BUTTON_SIZE)
 
     self.snooze_visible = False
+    self._action_text: str = ""
+    self._action_handler: Callable[[], None] | None = None
     self.content_rect = rl.Rectangle(0, 0, 0, 0)
     self.scroll_panel_rect = rl.Rectangle(0, 0, 0, 0)
     self.scroll_panel = GuiScrollPanel()
@@ -80,7 +82,10 @@ class AbstractAlert(Widget, ABC):
         self.dismiss_callback()
 
     elif self.snooze_visible and rl.check_collision_point_rec(mouse_pos, self.snooze_btn_rect):
-      self.params.put_bool("SnoozeUpdate", True)
+      if self._action_handler is not None:
+        self._action_handler()
+      else:
+        self.params.put_bool("SnoozeUpdate", True)
       if self.dismiss_callback:
         self.dismiss_callback()
 
@@ -153,7 +158,7 @@ class AbstractAlert(Widget, ABC):
       self.snooze_btn_rect.y = footer_y
       rl.draw_rectangle_rounded(self.snooze_btn_rect, 0.3, 10, AlertColors.SNOOZE_BG)
 
-      text = "Snooze Update"
+      text = self._action_text or "Snooze Update"
       text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
       text_x = self.snooze_btn_rect.x + (AlertConstants.SNOOZE_BUTTON_SIZE[0] - text_width) // 2
       text_y = self.snooze_btn_rect.y + (AlertConstants.SNOOZE_BUTTON_SIZE[1] - AlertConstants.FONT_SIZE) // 2
@@ -177,6 +182,7 @@ class OffroadAlert(AbstractAlert):
   def __init__(self):
     super().__init__(has_reboot_btn=False)
     self.sorted_alerts: list[AlertData] = []
+    self._has_excessive_actuation = False
 
   def refresh(self):
     if not self.sorted_alerts:
@@ -184,6 +190,7 @@ class OffroadAlert(AbstractAlert):
 
     active_count = 0
     connectivity_needed = False
+    has_excessive = False
 
     for alert_data in self.sorted_alerts:
       text = ""
@@ -200,8 +207,21 @@ class OffroadAlert(AbstractAlert):
 
       if alert_data.key == "Offroad_ConnectivityNeeded" and alert_data.visible:
         connectivity_needed = True
+      if alert_data.key == "Offroad_ExcessiveActuation" and alert_data.visible:
+        has_excessive = True
 
-    self.snooze_visible = connectivity_needed
+    # Action button: if excessive actuation visible, show acknowledge; else if connectivity, show snooze
+    self._has_excessive_actuation = has_excessive
+    if has_excessive:
+      self.snooze_visible = True
+      self._action_text = "Acknowledge Excessive Actuation"
+      def _ack():
+        self.params.remove("Offroad_ExcessiveActuation")
+      self._action_handler = _ack
+    else:
+      self.snooze_visible = connectivity_needed
+      self._action_text = "Snooze Update" if connectivity_needed else ""
+      self._action_handler = None
     return active_count
 
   def get_content_height(self) -> float:
