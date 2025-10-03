@@ -88,7 +88,7 @@ class HomeLayout(Widget):
     elif self.current_state == HomeLayoutState.ALERTS:
       self._render_alerts_view()
 
-  def _update_layout_rects(self):
+  def _update_state(self):
     self.header_rect = rl.Rectangle(
       self._rect.x + CONTENT_MARGIN, self._rect.y + CONTENT_MARGIN, self._rect.width - 2 * CONTENT_MARGIN, HEADER_HEIGHT
     )
@@ -129,7 +129,7 @@ class HomeLayout(Widget):
     # Update notification button
     if self.update_available:
       # Highlight if currently viewing updates
-      highlight_color = rl.Color(255, 140, 40, 255) if self.current_state == HomeLayoutState.UPDATE else rl.Color(255, 102, 0, 255)
+      highlight_color = rl.Color(75, 95, 255, 255) if self.current_state == HomeLayoutState.UPDATE else rl.Color(54, 77, 239, 255)
       rl.draw_rectangle_rounded(self.update_notif_rect, 0.3, 10, highlight_color)
 
       text = "UPDATE"
