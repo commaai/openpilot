@@ -285,11 +285,9 @@ class WifiManagerUI(Widget):
   def show_event(self):
     # start/stop scanning when widget is visible
     self._wifi_manager.set_active(True)
-    print('wifi active')
 
   def hide_event(self):
     self._wifi_manager.set_active(False)
-    print('wifi deactive')
 
   def _load_icons(self):
     for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
