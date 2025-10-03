@@ -246,7 +246,6 @@ class AdvancedNetworkSettings(Widget):
     gui_app.set_modal_overlay(self._keyboard, update_password)
 
   def _update_state(self):
-    print('AN process callbacks')
     self._wifi_manager.process_callbacks()
 
     # If not using prime SIM, show GSM settings and enable IPv4 forwarding
@@ -297,7 +296,6 @@ class WifiManagerUI(Widget):
       gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
 
   def _update_state(self):
-    print('WM process callbacks')
     self._wifi_manager.process_callbacks()
 
   def _render(self, rect: rl.Rectangle):
