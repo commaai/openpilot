@@ -156,15 +156,20 @@ class AbstractAlert(Widget, ABC):
     )
 
     if self.snooze_visible:
-      self.snooze_btn_rect.x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.SNOOZE_BUTTON_SIZE[0]
+      text = self._action_text or "Snooze Update"
+      text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
+      button_width = int(text_width + 120)  # match Qt padding-left/right: 60px each
+
+      self.snooze_btn_rect.width = button_width
+      self.snooze_btn_rect.height = AlertConstants.SNOOZE_BUTTON_SIZE[1]
+      self.snooze_btn_rect.x = rect.x + rect.width - AlertConstants.MARGIN - button_width
       self.snooze_btn_rect.y = footer_y
+
       roundness = AlertConstants.BORDER_RADIUS / self.snooze_btn_rect.height
       rl.draw_rectangle_rounded(self.snooze_btn_rect, roundness, 10, AlertColors.SNOOZE_BG)
 
-      text = self._action_text or "Snooze Update"
-      text_width = measure_text_cached(font, text, AlertConstants.FONT_SIZE).x
-      text_x = self.snooze_btn_rect.x + (AlertConstants.SNOOZE_BUTTON_SIZE[0] - text_width) // 2
-      text_y = self.snooze_btn_rect.y + (AlertConstants.SNOOZE_BUTTON_SIZE[1] - AlertConstants.FONT_SIZE) // 2
+      text_x = self.snooze_btn_rect.x + (button_width - text_width) // 2
+      text_y = self.snooze_btn_rect.y + (self.snooze_btn_rect.height - AlertConstants.FONT_SIZE) // 2
       rl.draw_text_ex(font, text, rl.Vector2(int(text_x), int(text_y)), AlertConstants.FONT_SIZE, 0, AlertColors.TEXT)
 
     elif self.has_reboot_btn:
