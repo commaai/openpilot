@@ -1,3 +1,4 @@
+import sys
 import pyray as rl
 from enum import IntEnum
 from abc import ABC, abstractmethod
@@ -305,14 +306,18 @@ class UpdateAlert(AbstractAlert):
   def __init__(self):
     super().__init__(has_reboot_btn=True)
     self.release_notes = ""
+    self._html_renderer = HtmlRenderer(text="")
     self._wrapped_release_notes = ""
     self._cached_content_height: float = 0.0
-    self._html_renderer: HtmlRenderer | None = None
 
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
     if update_available:
       self.release_notes = (self.params.get("UpdaterCurrentReleaseNotes") or b"").decode("utf8").strip()
+      print("Release notes:", self.release_notes)
+      print()
+      self._html_renderer.parse_html_content(self.release_notes)
+      print('\n'.join(map(str, self._html_renderer.elements)))
       self._cached_content_height = 0
 
     return update_available
@@ -329,12 +334,13 @@ class UpdateAlert(AbstractAlert):
     return self._cached_content_height
 
   def _render_content(self, content_rect: rl.Rectangle):
-    print(self.release_notes)
+    # print(self.release_notes)
     # self.release_notes = "<h1>These are epic release notes</h1>\n\n<p>- Feature 1</p>\n<p>- Feature 2</p>\n<p>- Bug fixes and improvements</p>\n<p>- Make epic</p>"
 
-    html = HtmlRenderer(text=self.release_notes)
+    # html = HtmlRenderer(text=self.release_notes)
+    self._html_renderer.render(rl.Rectangle(content_rect.x + 30, content_rect.y + 30, content_rect.width - 60, content_rect.height - 60))
 
-    html.render(rl.Rectangle(content_rect.x + 30, content_rect.y + 30, content_rect.width - 60, content_rect.height - 60))
+    # sys.exit(1)
 
     return
 

@@ -18,6 +18,8 @@ class ElementType(Enum):
   H5 = "h5"
   H6 = "h6"
   P = "p"
+  UL = "ul"
+  LI = "li"
   BR = "br"
 
 
@@ -31,6 +33,7 @@ class HtmlElement:
   margin_top: int
   margin_bottom: int
   line_height: float = 1.2
+  indent_level: int = 0
 
 
 class HtmlRenderer(Widget):
@@ -39,6 +42,8 @@ class HtmlRenderer(Widget):
     self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
+    self._list_indent_px = 40
+    self._indent_level = 0
 
     self.styles: dict[ElementType, dict[str, Any]] = {
       ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 16},
@@ -48,6 +53,7 @@ class HtmlRenderer(Widget):
       ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 12, "margin_bottom": 6},
       ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 10, "margin_bottom": 4},
       ElementType.P: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 8, "margin_bottom": 12},
+      ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "color": rl.BLACK, "margin_top": 0, "margin_bottom": 12},
     }
 
@@ -73,25 +79,39 @@ class HtmlRenderer(Widget):
     html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
     html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
 
-    # Find all HTML elements
-    pattern = r'<(h[1-6]|p)(?:[^>]*)>(.*?)</\1>|<br\s*/?>'
-    matches = re.finditer(pattern, html_content, re.DOTALL | re.IGNORECASE)
+    def is_tag(_token: str) -> tuple[bool, bool, ElementType | None]:
+      supported_tag = _token in (f'<{e.value}>' for e in ElementType)
+      supported_end_tag = _token in (f'</{e.value}>' for e in ElementType)
+      _tag = ElementType(_token[1:-1].strip('/')) if supported_tag or supported_end_tag else None
+      return supported_tag, supported_end_tag, _tag
 
-    for match in matches:
-      if match.group(0).lower().startswith('<br'):
-        # Handle <br> tags
-        self._add_element(ElementType.BR, "")
+    # Parse HTML
+    tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
+    cur = []
+    cur_tag = None
+    for token in tokens:
+      is_start_tag, is_end_tag, tag = is_tag(token)
+      if tag is not None:
+        if tag == ElementType.BR:
+          self._add_element(ElementType.BR, "")
+
+        elif tag == ElementType.UL:
+          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
+
+        elif is_start_tag:
+          cur_tag = tag
+
+        elif is_end_tag:
+          if cur_tag is not None:
+            text = ' '.join(cur).strip()
+            cur = []
+            if text:
+              if cur_tag == ElementType.LI:
+                text = '• ' + text
+
+              self._add_element(cur_tag, text)
       else:
-        tag = match.group(1).lower()
-        content = match.group(2).strip()
-
-        # Clean up content - remove extra whitespace
-        content = re.sub(r'\s+', ' ', content)
-        content = content.strip()
-
-        if content:  # Only add non-empty elements
-          element_type = ElementType(tag)
-          self._add_element(element_type, content)
+        cur.append(token)
 
   def _add_element(self, element_type: ElementType, content: str) -> None:
     style = self.styles[element_type]
@@ -104,6 +124,7 @@ class HtmlRenderer(Widget):
       color=style["color"],
       margin_top=style["margin_top"],
       margin_bottom=style["margin_bottom"],
+      indent_level=self._indent_level,
     )
 
     self.elements.append(element)
@@ -134,7 +155,8 @@ class HtmlRenderer(Widget):
           if current_y > rect.y + rect.height:
             break
 
-          rl.draw_text_ex(font, line, rl.Vector2(rect.x + padding, current_y), element.font_size, 0, rl.WHITE)
+          text_x = rect.x + (max(element.indent_level - 1, 0) * self._list_indent_px)
+          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, rl.WHITE)
 
           current_y += element.font_size * element.line_height
 
