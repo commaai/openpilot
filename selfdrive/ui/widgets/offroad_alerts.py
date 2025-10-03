@@ -32,6 +32,7 @@ class AlertConstants:
   BORDER_RADIUS = 30 * 2  # matches Qt's 30px
   ALERT_HEIGHT = 120
   ALERT_SPACING = 10
+  ALERT_INSET = 60
 
 
 @dataclass
@@ -218,11 +219,11 @@ class OffroadAlert(AbstractAlert):
       if not alert_data.visible:
         continue
 
-      text_width = int(self.content_rect.width - 90)
+      text_width = int(self.content_rect.width - (AlertConstants.ALERT_INSET * 2))
       wrapped_lines = wrap_text(font, alert_data.text, AlertConstants.FONT_SIZE, text_width)
       line_count = len(wrapped_lines)
       text_height = line_count * (AlertConstants.FONT_SIZE + 5)
-      alert_item_height = max(text_height + 40, AlertConstants.ALERT_HEIGHT)
+      alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
       total_height += alert_item_height + AlertConstants.ALERT_SPACING
 
     if total_height > 20:
@@ -238,7 +239,7 @@ class OffroadAlert(AbstractAlert):
       self.sorted_alerts.append(alert_data)
 
   def _render_content(self, content_rect: rl.Rectangle):
-    y_offset = 20
+    y_offset = AlertConstants.ALERT_SPACING
     font = gui_app.font(FontWeight.NORMAL)
 
     for alert_data in self.sorted_alerts:
@@ -246,11 +247,11 @@ class OffroadAlert(AbstractAlert):
         continue
 
       bg_color = AlertColors.HIGH_SEVERITY if alert_data.severity > 0 else AlertColors.LOW_SEVERITY
-      text_width = int(content_rect.width - 90)
+      text_width = int(content_rect.width - (AlertConstants.ALERT_INSET * 2))
       wrapped_lines = wrap_text(font, alert_data.text, AlertConstants.FONT_SIZE, text_width)
       line_count = len(wrapped_lines)
       text_height = line_count * (AlertConstants.FONT_SIZE + 5)
-      alert_item_height = max(text_height + 40, AlertConstants.ALERT_HEIGHT)
+      alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
 
       alert_rect = rl.Rectangle(
         content_rect.x + 10,
@@ -262,8 +263,8 @@ class OffroadAlert(AbstractAlert):
       roundness = AlertConstants.BORDER_RADIUS / min(alert_rect.height, alert_rect.width)
       rl.draw_rectangle_rounded(alert_rect, roundness, 10, bg_color)
 
-      text_x = alert_rect.x + 30
-      text_y = alert_rect.y + 20
+      text_x = alert_rect.x + AlertConstants.ALERT_INSET
+      text_y = alert_rect.y + AlertConstants.ALERT_INSET
 
       for i, line in enumerate(wrapped_lines):
         rl.draw_text_ex(
