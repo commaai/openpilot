@@ -2,13 +2,17 @@ FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED=1
 
-ENV OPENPILOT_PATH=/home/batman/openpilot
+ENV USER=batman
+USER $USER
+ENV OPENPILOT_PATH=/home/$USER/openpilot
 
 RUN mkdir -p ${OPENPILOT_PATH}
 WORKDIR ${OPENPILOT_PATH}
 
 COPY . ${OPENPILOT_PATH}/
 
-ENV UV_BIN="/home/batman/.local/bin/"
+ENV UV_BIN="/home/$USER/.local/bin/"
 ENV PATH="$UV_BIN:$PATH"
-RUN uv run scons --cache-readonly -j$(nproc)
+RUN uv sync
+USER root
+RUN scons --cache-readonly -j$(nproc)
