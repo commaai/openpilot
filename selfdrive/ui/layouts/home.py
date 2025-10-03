@@ -199,7 +199,6 @@ class HomeLayout(Widget):
     elif alerts_present and ((not self._prev_alerts_present) or (not update_available and self.current_state == HomeLayoutState.UPDATE)):
       self.current_state = HomeLayoutState.ALERTS
 
-    # Commit flags
     self.update_available = update_available
     self.alert_count = alert_count
     self._prev_update_available = update_available
