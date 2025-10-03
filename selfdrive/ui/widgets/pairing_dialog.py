@@ -146,7 +146,7 @@ class PairingDialog(Widget):
       rl.draw_circle(int(circle_x), int(circle_y), circle_radius, rl.Color(70, 70, 70, 255))
       number = str(i + 1)
       number_width = measure_text_cached(font, number, 30).x
-      rl.draw_text(number, int(circle_x - number_width // 2), int(circle_y - 15), 30, rl.WHITE)
+      rl.draw_text_ex(font, number, (int(circle_x - number_width // 2), int(circle_y - 15)), 30, 0, rl.WHITE)
 
       # Text
       rl.draw_text_ex(font, "\n".join(wrapped), rl.Vector2(text_x, y), 47, 0.0, rl.BLACK)
