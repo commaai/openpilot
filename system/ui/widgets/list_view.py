@@ -205,7 +205,7 @@ class MultipleButtonAction(ItemAction):
     self.callback = callback
     self._font = gui_app.font(FontWeight.MEDIUM)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle):
     spacing = 20
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
 
