@@ -34,7 +34,7 @@ class HtmlElement:
 
 
 class HtmlRenderer(Widget):
-  def __init__(self, file_path: str):
+  def __init__(self, file_path: str | None = None, text: str | None = None):
     super().__init__()
     self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
@@ -53,7 +53,12 @@ class HtmlRenderer(Widget):
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "color": rl.BLACK, "margin_top": 0, "margin_bottom": 12},
     }
 
-    self.parse_html_file(file_path)
+    if file_path is not None:
+      self.parse_html_file(file_path)
+    elif text is not None:
+      self.parse_html_content(text)
+    else:
+      raise ValueError("Either file_path or text must be provided")
 
   def parse_html_file(self, file_path: str) -> None:
     with open(file_path, encoding='utf-8') as file:

@@ -10,6 +10,7 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
@@ -306,6 +307,7 @@ class UpdateAlert(AbstractAlert):
     self.release_notes = ""
     self._wrapped_release_notes = ""
     self._cached_content_height: float = 0.0
+    self._html_renderer: HtmlRenderer | None = None
 
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
@@ -327,6 +329,14 @@ class UpdateAlert(AbstractAlert):
     return self._cached_content_height
 
   def _render_content(self, content_rect: rl.Rectangle):
+    self.release_notes = "<h1>These are epic release notes</h1>\n\n- Feature 1\n- Feature 2\n- Bug fixes and improvements\n- Make epic"
+
+    html = HtmlRenderer(text=self.release_notes)
+
+    html.render(rl.Rectangle(content_rect.x + 30, content_rect.y + 30, content_rect.width - 60, content_rect.height - 60))
+
+    return
+
     if self.release_notes:
       rl.draw_text_ex(
         gui_app.font(FontWeight.NORMAL),
