@@ -198,7 +198,7 @@ class DualButtonAction(ItemAction):
 
 class MultipleButtonAction(ItemAction):
   def __init__(self, buttons: list[str], button_width: int, selected_index: int = 0, callback: Callable = None):
-    super().__init__(width=len(buttons) * (button_width + 20), enabled=True)
+    super().__init__(width=len(buttons) * button_width + (len(buttons) - 1) * RIGHT_ITEM_PADDING, enabled=True)
     self.buttons = buttons
     self.button_width = button_width
     self.selected_button = selected_index
@@ -206,7 +206,7 @@ class MultipleButtonAction(ItemAction):
     self._font = gui_app.font(FontWeight.MEDIUM)
 
   def _render(self, rect: rl.Rectangle):
-    spacing = 20
+    spacing = RIGHT_ITEM_PADDING
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
 
     for i, text in enumerate(self.buttons):
@@ -240,7 +240,7 @@ class MultipleButtonAction(ItemAction):
       rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, text_color)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    spacing = 20
+    spacing = RIGHT_ITEM_PADDING
     button_y = self._rect.y + (self._rect.height - BUTTON_HEIGHT) / 2
     for i, _text in enumerate(self.buttons):
       button_x = self._rect.x + i * (self.button_width + spacing)
