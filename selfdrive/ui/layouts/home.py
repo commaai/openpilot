@@ -41,6 +41,8 @@ class HomeLayout(Widget):
 
     self.update_available = False
     self.alert_count = 0
+    self._prev_update_available = False
+    self._prev_alerts_present = False
 
     self.header_rect = rl.Rectangle(0, 0, 0, 0)
     self.content_rect = rl.Rectangle(0, 0, 0, 0)
@@ -185,19 +187,35 @@ class HomeLayout(Widget):
 
   def _refresh(self):
     # TODO: implement _update_state with a timer
-    self.update_available = self.update_alert.refresh()
-    self.alert_count = self.offroad_alert.refresh()
-    self._update_state_priority(self.update_available, self.alert_count > 0)
+    new_update_available = self.update_alert.refresh()
+    new_alert_count = self.offroad_alert.refresh()
 
-  def _update_state_priority(self, update_available: bool, alerts_present: bool):
-    current_state = self.current_state
+    # Decide state using Qt parity logic (edge-triggered open)
+    self._update_state_priority(
+      new_update_available,
+      new_alert_count > 0,
+      self._prev_update_available,
+      self._prev_alerts_present,
+    )
+
+    # Commit new flags and expose
+    self.update_available = new_update_available
+    self.alert_count = new_alert_count
+    self._prev_update_available = new_update_available
+    self._prev_alerts_present = (new_alert_count > 0)
+
+  def _update_state_priority(self, update_available: bool, alerts_present: bool,
+                             prev_update_available: bool, prev_alerts_present: bool):
+    idx = self.current_state
 
     if not update_available and not alerts_present:
-      self.current_state = HomeLayoutState.HOME
-    elif update_available and (current_state == HomeLayoutState.HOME or (not alerts_present and current_state == HomeLayoutState.ALERTS)):
-      self.current_state = HomeLayoutState.UPDATE
-    elif alerts_present and (current_state == HomeLayoutState.HOME or (not update_available and current_state == HomeLayoutState.UPDATE)):
-      self.current_state = HomeLayoutState.ALERTS
+      idx = HomeLayoutState.HOME
+    elif update_available and ((not prev_update_available) or (not alerts_present and idx == HomeLayoutState.ALERTS)):
+      idx = HomeLayoutState.UPDATE
+    elif alerts_present and ((not prev_alerts_present) or (not update_available and idx == HomeLayoutState.UPDATE)):
+      idx = HomeLayoutState.ALERTS
+
+    self.current_state = idx
 
   def _get_version_text(self) -> str:
     brand = "openpilot"
