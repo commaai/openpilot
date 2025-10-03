@@ -108,8 +108,8 @@ class MouseState:
       ev = MouseEvent(
         MousePos(x, y),
         slot,
-        rl.is_mouse_button_pressed(slot),
-        rl.is_mouse_button_released(slot),
+        rl.is_mouse_button_pressed(slot),  # noqa: TID251
+        rl.is_mouse_button_released(slot),  # noqa: TID251
         rl.is_mouse_button_down(slot),
         time.monotonic(),
       )

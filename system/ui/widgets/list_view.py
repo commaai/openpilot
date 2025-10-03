@@ -198,17 +198,16 @@ class DualButtonAction(ItemAction):
 
 class MultipleButtonAction(ItemAction):
   def __init__(self, buttons: list[str], button_width: int, selected_index: int = 0, callback: Callable = None):
-    super().__init__(width=len(buttons) * (button_width + 20), enabled=True)
+    super().__init__(width=len(buttons) * button_width + (len(buttons) - 1) * RIGHT_ITEM_PADDING, enabled=True)
     self.buttons = buttons
     self.button_width = button_width
     self.selected_button = selected_index
     self.callback = callback
     self._font = gui_app.font(FontWeight.MEDIUM)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
-    spacing = 20
+  def _render(self, rect: rl.Rectangle):
+    spacing = RIGHT_ITEM_PADDING
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
-    clicked = -1
 
     for i, text in enumerate(self.buttons):
       button_x = rect.x + i * (self.button_width + spacing)
@@ -216,8 +215,7 @@ class MultipleButtonAction(ItemAction):
 
       # Check button state
       mouse_pos = rl.get_mouse_position()
-      is_hovered = rl.check_collision_point_rec(mouse_pos, button_rect) and self.enabled
-      is_pressed = is_hovered and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and self.is_pressed
+      is_pressed = rl.check_collision_point_rec(mouse_pos, button_rect) and self.enabled and self.is_pressed
       is_selected = i == self.selected_button
 
       # Button colors
@@ -241,16 +239,16 @@ class MultipleButtonAction(ItemAction):
       text_color = rl.Color(228, 228, 228, 255) if self.enabled else rl.Color(150, 150, 150, 255)
       rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, text_color)
 
-      # Handle click
-      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self.is_pressed:
-        clicked = i
-
-    if clicked >= 0:
-      self.selected_button = clicked
-      if self.callback:
-        self.callback(clicked)
-      return True
-    return False
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    spacing = RIGHT_ITEM_PADDING
+    button_y = self._rect.y + (self._rect.height - BUTTON_HEIGHT) / 2
+    for i, _text in enumerate(self.buttons):
+      button_x = self._rect.x + i * (self.button_width + spacing)
+      button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
+      if rl.check_collision_point_rec(mouse_pos, button_rect):
+        self.selected_button = i
+        if self.callback:
+          self.callback(i)
 
 
 class ListItem(Widget):
