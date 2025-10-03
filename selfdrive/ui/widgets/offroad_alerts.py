@@ -312,7 +312,7 @@ class UpdateAlert(AbstractAlert):
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
     if update_available:
-      self.release_notes = self.params.get("UpdaterNewReleaseNotes")
+      self.release_notes = (self.params.get("UpdaterCurrentReleaseNotes") or b"").decode("utf8").strip()
       self._cached_content_height = 0
 
     return update_available
@@ -329,7 +329,8 @@ class UpdateAlert(AbstractAlert):
     return self._cached_content_height
 
   def _render_content(self, content_rect: rl.Rectangle):
-    self.release_notes = "<h1>These are epic release notes</h1>\n\n<p>- Feature 1</p>\n<p>- Feature 2</p>\n<p>- Bug fixes and improvements</p>\n<p>- Make epic</p>"
+    print(self.release_notes)
+    # self.release_notes = "<h1>These are epic release notes</h1>\n\n<p>- Feature 1</p>\n<p>- Feature 2</p>\n<p>- Bug fixes and improvements</p>\n<p>- Make epic</p>"
 
     html = HtmlRenderer(text=self.release_notes)
 
