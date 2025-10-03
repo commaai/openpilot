@@ -191,7 +191,7 @@ class HomeLayout(Widget):
     alert_count = self.offroad_alert.refresh()
     alerts_present = alert_count > 0
 
-    # Edge-triggered transitions like Qt
+    # Show panels on transition from no alert/update to any alerts/update
     if not update_available and not alerts_present:
       self.current_state = HomeLayoutState.HOME
     elif update_available and ((not self._prev_update_available) or (not alerts_present and self.current_state == HomeLayoutState.ALERTS)):
