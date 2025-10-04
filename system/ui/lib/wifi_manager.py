@@ -148,11 +148,10 @@ class WifiManager:
     self._callback_queue: list[Callable] = []
 
     self._tethering_ssid = "weedle"
-    dongle_id = ''
     if params is not None:
       dongle_id = params.get("DongleId")
-    if dongle_id:
-      self._tethering_ssid += "-" + dongle_id[:4]
+      if dongle_id:
+        self._tethering_ssid += "-" + dongle_id[:4]
 
     # Callbacks
     self._need_auth: list[Callable[[str], None]] = []
