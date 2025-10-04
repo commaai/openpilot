@@ -25,9 +25,14 @@ class ElementType(Enum):
   BR = "br"
 
 
+TAG_NAMES = '|'.join([t.value for t in ElementType])
+START_TAG_RE = re.compile(f'<({TAG_NAMES})>')
+END_TAG_RE = re.compile(f'</({TAG_NAMES})>')
+
+
 def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
-  supported_tag = token in (f'<{e.value}>' for e in ElementType)
-  supported_end_tag = token in (f'</{e.value}>' for e in ElementType)
+  supported_tag = bool(START_TAG_RE.fullmatch(token))
+  supported_end_tag = bool(END_TAG_RE.fullmatch(token))
   tag = ElementType(token[1:-1].strip('/')) if supported_tag or supported_end_tag else None
   return supported_tag, supported_end_tag, tag
 
@@ -89,8 +94,9 @@ class HtmlRenderer(Widget):
 
     # Parse HTML
     tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
-    cur = []
-    cur_tag = None
+
+    current_content: list[str] = []
+    current_tag: ElementType | None = None
     for token in tokens:
       is_start_tag, is_end_tag, tag = is_tag(token)
       if tag is not None:
@@ -101,19 +107,18 @@ class HtmlRenderer(Widget):
           self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
         elif is_start_tag:
-          cur_tag = tag
+          current_tag = tag
 
         elif is_end_tag:
-          if cur_tag is not None:
-            text = ' '.join(cur).strip()
-            cur = []
+          if current_tag is not None:
+            text = ' '.join(current_content).strip()
+            current_content = []
             if text:
-              if cur_tag == ElementType.LI:
+              if current_tag == ElementType.LI:
                 text = '• ' + text
-
-              self._add_element(cur_tag, text)
+              self._add_element(current_tag, text)
       else:
-        cur.append(token)
+        current_content.append(token)
 
   def _add_element(self, element_type: ElementType, content: str) -> None:
     style = self.styles[element_type]
