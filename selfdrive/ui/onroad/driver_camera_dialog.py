@@ -22,7 +22,7 @@ class DriverCameraDialog(CameraView):
 
   def _handle_mouse_release(self, _):
     super()._handle_mouse_release(_)
-    stop_dmonitoringmodeld()
+    self.stop_dmonitoringmodeld()
 
   def _render(self, rect):
     super()._render(rect)
