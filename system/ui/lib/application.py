@@ -272,14 +272,22 @@ class GuiApplication:
           else:
             raise Exception
 
+          # Send show event to Widget
+          if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
+            self._modal_overlay.overlay.show_event()
+            self._modal_overlay_shown = True
+
           if result >= 0:
             # Clear the overlay and execute the callback
             original_modal = self._modal_overlay
             self._modal_overlay = ModalOverlay()
             if original_modal.callback is not None:
               original_modal.callback(result)
+            if hasattr(original_modal.overlay, 'hide_event'):
+              original_modal.overlay.hide_event()
           yield True
         else:
+          self._modal_overlay_shown = False
           yield False
 
         if self._render_texture:
