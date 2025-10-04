@@ -1,0 +1,14 @@
+FROM ghcr.io/commaai/openpilot-base:latest
+
+ENV PYTHONUNBUFFERED=1
+
+ENV OPENPILOT_PATH=/home/batman/openpilot
+
+RUN mkdir -p ${OPENPILOT_PATH}
+WORKDIR ${OPENPILOT_PATH}
+
+COPY . ${OPENPILOT_PATH}/
+
+ENV UV_BIN="/home/batman/.local/bin/"
+ENV PATH="$UV_BIN:$PATH"
+RUN UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV uv run scons --cache-readonly -j$(nproc)
