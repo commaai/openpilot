@@ -16,7 +16,7 @@ class DriverCameraDialog(CameraView):
 
   def show_event(self):
     super().show_event()
-    device.reset_interactive_timeout(5)
+    device.reset_interactive_timeout(60)
     ui_state.params.put_bool("IsDriverViewEnabled", True)
 
   def hide_event(self):
