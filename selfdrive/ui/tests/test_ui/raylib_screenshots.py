@@ -98,12 +98,18 @@ def setup_confirmation_dialog(click, pm: PubMaster):
   click(1985, 791)  # reset calibration
 
 
-def setup_update_available(click, pm: PubMaster):
+def setup_homescreen_update_available(click, pm: PubMaster):
   params = Params()
   params.put_bool("UpdateAvailable", True)
   put_update_params(params)
   setup_settings(click, pm)
   close_settings(click, pm)
+
+
+def setup_software_release_notes(click, pm: PubMaster):
+  setup_settings(click, pm)
+  setup_settings_software(click, pm)
+  click(588, 110)  # expand description for current version
 
 
 CASES = {
@@ -117,8 +123,9 @@ CASES = {
   "keyboard": setup_keyboard,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
-  "update_available": setup_update_available,
+  "homescreen_update_available": setup_homescreen_update_available,
   "confirmation_dialog": setup_confirmation_dialog,
+  "software_release_notes": setup_software_release_notes,
 }
 
 
