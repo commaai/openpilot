@@ -161,12 +161,8 @@ class HomeLayout(Widget):
     if self.update_available or self.alert_count > 0:
       version_text_width -= SPACING * 1.5
 
-    version_rect = rl.Rectangle(
-      self.header_rect.x + self.header_rect.width - version_text_width,
-      self.header_rect.y,
-      version_text_width,
-      self.header_rect.height
-    )
+    version_rect = rl.Rectangle(self.header_rect.x + self.header_rect.width - version_text_width, self.header_rect.y,
+                                version_text_width, self.header_rect.height)
 
     gui_label(version_rect, self._get_version_text(), 48, rl.WHITE, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT)
 
