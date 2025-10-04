@@ -11,6 +11,7 @@ from openpilot.system.ui.widgets.button import Button, ButtonStyle
 
 LIST_INDENT_PX = 40
 
+
 class ElementType(Enum):
   H1 = "h1"
   H2 = "h2"
