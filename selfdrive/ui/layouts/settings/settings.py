@@ -2,6 +2,7 @@ import pyray as rl
 from dataclasses import dataclass
 from enum import IntEnum
 from collections.abc import Callable
+from openpilot.common.params import Params
 from openpilot.selfdrive.ui.layouts.settings.developer import DeveloperLayout
 from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
 from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
@@ -54,12 +55,13 @@ class SettingsLayout(Widget):
     self._current_panel = PanelType.DEVICE
 
     # Panel configuration
-    wifi_manager = WifiManager()
+    params = Params()
+    wifi_manager = WifiManager(params)
     wifi_manager.set_active(False)
 
     self._panels = {
       PanelType.DEVICE: PanelInfo("Device", DeviceLayout()),
-      PanelType.NETWORK: PanelInfo("Network", NetworkUI(wifi_manager)),
+      PanelType.NETWORK: PanelInfo("Network", NetworkUI(params, wifi_manager)),
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayout()),
       PanelType.SOFTWARE: PanelInfo("Software", SoftwareLayout()),
       PanelType.FIREHOSE: PanelInfo("Firehose", FirehoseLayout()),
