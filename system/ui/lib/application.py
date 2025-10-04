@@ -180,6 +180,10 @@ class GuiApplication:
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
+    # Send show event to Widget
+    if hasattr(overlay, 'show_event'):
+      overlay.show_event()
+
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
     if cache_key in self._textures:
@@ -271,11 +275,6 @@ class GuiApplication:
             result = self._modal_overlay.overlay()
           else:
             raise Exception
-
-          # Send show event to Widget
-          if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
-            self._modal_overlay.overlay.show_event()
-            self._modal_overlay_shown = True
 
           if result >= 0:
             # Clear the overlay and execute the callback
