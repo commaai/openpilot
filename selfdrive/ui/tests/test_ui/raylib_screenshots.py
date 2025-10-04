@@ -20,7 +20,7 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
-UI_DELAY = 0.1
+UI_DELAY = 0.2
 
 # Offroad alerts to test
 OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
