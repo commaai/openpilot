@@ -103,7 +103,7 @@ def setup_update_with_offroad_alerts(click, pm: PubMaster):
 
 CASES = {
   "homescreen": setup_homescreen,
-  "settings_device": setup_settings_device,
+  "settings_device": setup_settings,
   "settings_network": setup_settings_network,
   "settings_toggles": setup_settings_toggles,
   "settings_software": setup_settings_software,
