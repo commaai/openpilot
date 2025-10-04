@@ -124,9 +124,6 @@ class HtmlRenderer(Widget):
         elif tag == ElementType.UL:
           self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
-        # elif is_start_tag:
-        #   current_tag = tag
-
         elif is_start_tag or is_end_tag:
           # Always add content regardless of opening or closing tag
           close_tag()
@@ -151,6 +148,7 @@ class HtmlRenderer(Widget):
       font_weight=style["weight"],
       margin_top=style["margin_top"],
       margin_bottom=style["margin_bottom"],
+      indent_level=self._indent_level,
     )
 
     self.elements.append(element)
@@ -181,7 +179,8 @@ class HtmlRenderer(Widget):
           if current_y > rect.y + rect.height:
             break
 
-          rl.draw_text_ex(font, line, rl.Vector2(rect.x + padding, current_y), element.font_size, 0, self._text_color)
+          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
+          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
 
           current_y += element.font_size * element.line_height
 
