@@ -90,8 +90,6 @@ def setup_confirmation_dialog(click, pm: PubMaster):
 
 
 def setup_update_with_offroad_alerts(click, pm: PubMaster):
-  setup_offroad_alert(click, pm)
-
   params = Params()
   params.put_bool("UpdateAvailable", True)
   params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
