@@ -16,12 +16,10 @@ class DriverCameraDialog(CameraView):
   def show_event(self):
     super().show_event()
     ui_state.params.put_bool("IsDriverViewEnabled", True)
-    print('show event')
 
   def hide_event(self):
     super().hide_event()
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    print('hide event')
 
   def _handle_mouse_release(self, _):
     super()._handle_mouse_release(_)
