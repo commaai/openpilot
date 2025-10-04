@@ -7,6 +7,7 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
+from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
 
 ITEM_BASE_WIDTH = 600
@@ -41,6 +42,10 @@ class ItemAction(Widget, ABC):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, width, 0))
     self._enabled_source = enabled
+
+  def get_width_hint(self) -> float:
+    # Return's action ideal width, 0 means use full width
+    return self._rect.width
 
   def set_enabled(self, enabled: bool | Callable[[], bool]):
     self._enabled_source = enabled
@@ -147,17 +152,14 @@ class TextAction(ItemAction):
   def text(self):
     return _resolve_value(self._text_source, "Error")
 
-  def _update_state(self):
+  def get_width_hint(self) -> float:
     text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
-    self._rect.width = int(text_width + TEXT_PADDING)
+    return text_width + TEXT_PADDING
 
   def _render(self, rect: rl.Rectangle) -> bool:
-    current_text = self.text
-    text_size = measure_text_cached(self._font, current_text, ITEM_TEXT_FONT_SIZE)
-
-    text_x = rect.x + (rect.width - text_size.x) / 2
-    text_y = rect.y + (rect.height - text_size.y) / 2
-    rl.draw_text_ex(self._font, current_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, self.color)
+    gui_label(self._rect, self.text, font_size=ITEM_TEXT_FONT_SIZE, color=self.color,
+              font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
+              alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
     return False
 
   def set_text(self, text: str | Callable[[], str]):
@@ -374,10 +376,15 @@ class ListItem(Widget):
     if not self.action_item:
       return rl.Rectangle(0, 0, 0, 0)
 
-    right_width = self.action_item.rect.width
+    right_width = self.action_item.get_width_hint()
     if right_width == 0:  # Full width action (like DualButtonAction)
       return rl.Rectangle(item_rect.x + ITEM_PADDING, item_rect.y,
                           item_rect.width - (ITEM_PADDING * 2), ITEM_BASE_HEIGHT)
+
+    # Clip width to available space, never overlapping this Item's title
+    content_width = item_rect.width - (ITEM_PADDING * 2)
+    title_width = measure_text_cached(self._font, self.title, ITEM_TEXT_FONT_SIZE).x
+    right_width = min(content_width - title_width, right_width)
 
     right_x = item_rect.x + item_rect.width - right_width
     right_y = item_rect.y
