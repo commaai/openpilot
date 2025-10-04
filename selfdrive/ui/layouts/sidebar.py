@@ -216,14 +216,21 @@ class Sidebar(Widget):
     # Draw border
     rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.3, 10, 2, Colors.METRIC_BORDER)
 
-    # Draw label and value
-    labels = [metric.label, metric.value]
-    text_y = metric_rect.y + (metric_rect.height / 2 - len(labels) * FONT_SIZE)
-    for text in labels:
-      text_size = measure_text_cached(self._font_bold, text, FONT_SIZE)
-      text_y += text_size.y
-      text_pos = rl.Vector2(
-        metric_rect.x + 22 + (metric_rect.width - 22 - text_size.x) / 2,
-        text_y
-      )
-      rl.draw_text_ex(self._font_bold, text, text_pos, FONT_SIZE, 0, Colors.WHITE)
+    label_size = measure_text_cached(self._font_bold, metric.label, FONT_SIZE)
+    value_size = measure_text_cached(self._font_bold, metric.value, FONT_SIZE)
+    text_height = label_size.y + value_size.y
+
+    label_y = metric_rect.y + (metric_rect.height - text_height) / 2
+    value_y = label_y + label_size.y
+
+    # label
+    rl.draw_text_ex(self._font_bold, metric.label, rl.Vector2(
+      metric_rect.x + 22 + (metric_rect.width - 22 - label_size.x) / 2,
+      label_y
+    ), FONT_SIZE, 0, Colors.WHITE)
+
+    # value
+    rl.draw_text_ex(self._font_bold, metric.value, rl.Vector2(
+      metric_rect.x + 22 + (metric_rect.width - 22 - value_size.x) / 2,
+      value_y
+    ), FONT_SIZE, 0, Colors.WHITE)
