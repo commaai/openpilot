@@ -156,6 +156,7 @@ class TestUI:
   @with_processes(["raylib_ui"])
   def test_ui(self, name, setup_case):
     self.setup()
+    time.sleep(UI_DELAY)  # wait for UI to start
     setup_case(self.click, self.pm)
     self.screenshot(name)
 
