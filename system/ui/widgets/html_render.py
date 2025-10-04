@@ -33,11 +33,16 @@ class HtmlElement:
 
 
 class HtmlRenderer(Widget):
-  def __init__(self, file_path: str | None = None, text: str | None = None):
+  def __init__(self, file_path: str | None = None, text: str | None = None,
+               text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
+    self._text_color = text_color
     self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
+
+    if text_size is None:
+      text_size = {}
 
     self.styles: dict[ElementType, dict[str, Any]] = {
       ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
@@ -46,7 +51,7 @@ class HtmlRenderer(Widget):
       ElementType.H4: {"size": 48, "weight": FontWeight.BOLD, "margin_top": 16, "margin_bottom": 8},
       ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
       ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
-      ElementType.P: {"size": 38, "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
 
@@ -132,7 +137,7 @@ class HtmlRenderer(Widget):
           if current_y > rect.y + rect.height:
             break
 
-          rl.draw_text_ex(font, line, rl.Vector2(rect.x + padding, current_y), element.font_size, 0, rl.WHITE)
+          rl.draw_text_ex(font, line, rl.Vector2(rect.x + padding, current_y), element.font_size, 0, self._text_color)
 
           current_y += element.font_size * element.line_height
 
