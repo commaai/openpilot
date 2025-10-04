@@ -33,8 +33,11 @@ if __name__ == "__main__":
   try:
     main()
   finally:
-    _1percent_low = np.percentile(frame_times, 1) * 1000
+    _1percent_high = np.percentile(frame_times, 99) * 1000
+    _1percent_low_fps = 1 / np.percentile(frame_times, 99)
     average = np.mean(frame_times) * 1000
     median = np.median(frame_times) * 1000
     stddev = np.std(frame_times) * 1000
-    print(f"\nUI 1% low: {_1percent_low:.2f}ms, avg: {average:.2f}ms, median: {median:.2f}ms, stddev: {stddev:.2f}ms")
+    _min = np.min(frame_times) * 1000
+    _max = np.max(frame_times) * 1000
+    print(f"\nUI 1% high: {_1percent_high:.2f}ms, avg: {average:.2f}ms, median: {median:.2f}ms, stddev: {stddev:.2f}ms, min: {_min:.2f}ms, max: {_max:.2f}ms, 1% low fps: {_1percent_low_fps:.1f}fps")
