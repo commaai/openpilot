@@ -27,9 +27,10 @@ def on_click(x, y, button, pressed):
       print(f"Clicks: {clicks}")
 
 
-try:
-  # Start mouse listener
-  with mouse.Listener(on_click=on_click) as listener:
-    listener.join()
-except KeyboardInterrupt:
-  print("\nExiting...")
+if __name__ == "__main__":
+  try:
+    # Start mouse listener
+    with mouse.Listener(on_click=on_click) as listener:
+      listener.join()
+  except KeyboardInterrupt:
+    print("\nExiting...")
