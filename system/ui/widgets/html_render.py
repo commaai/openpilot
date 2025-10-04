@@ -25,6 +25,13 @@ class ElementType(Enum):
   BR = "br"
 
 
+def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
+  supported_tag = token in (f'<{e.value}>' for e in ElementType)
+  supported_end_tag = token in (f'</{e.value}>' for e in ElementType)
+  tag = ElementType(token[1:-1].strip('/')) if supported_tag or supported_end_tag else None
+  return supported_tag, supported_end_tag, tag
+
+
 @dataclass
 class HtmlElement:
   type: ElementType
@@ -79,12 +86,6 @@ class HtmlRenderer(Widget):
     # Remove DOCTYPE, html, head, body tags but keep their content
     html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
     html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
-
-    def is_tag(_token: str) -> tuple[bool, bool, ElementType | None]:
-      supported_tag = _token in (f'<{e.value}>' for e in ElementType)
-      supported_end_tag = _token in (f'</{e.value}>' for e in ElementType)
-      _tag = ElementType(_token[1:-1].strip('/')) if supported_tag or supported_end_tag else None
-      return supported_tag, supported_end_tag, _tag
 
     # Parse HTML
     tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
