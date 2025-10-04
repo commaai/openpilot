@@ -14,6 +14,9 @@ from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
+NO_RELEASE_NOTES = "<h2>No release notes available.</h2>"
+
+
 class AlertColors:
   HIGH_SEVERITY = rl.Color(226, 44, 44, 255)
   LOW_SEVERITY = rl.Color(41, 41, 41, 255)
@@ -307,13 +310,16 @@ class UpdateAlert(AbstractAlert):
     self.release_notes = ""
     self._wrapped_release_notes = ""
     self._cached_content_height: float = 0.0
-    self._html_renderer: HtmlRenderer | None = None
+    self._html_renderer = HtmlRenderer(text="")
 
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
     if update_available:
-      self.release_notes = self.params.get("UpdaterNewReleaseNotes")
+      self.release_notes = (self.params.get("UpdaterNewReleaseNotes") or b"").decode("utf8").strip()
+      self._html_renderer.parse_html_content(self.release_notes or NO_RELEASE_NOTES)
       self._cached_content_height = 0
+    else:
+      self._html_renderer.parse_html_content(NO_RELEASE_NOTES)
 
     return update_available
 
@@ -329,18 +335,5 @@ class UpdateAlert(AbstractAlert):
     return self._cached_content_height
 
   def _render_content(self, content_rect: rl.Rectangle):
-    if self.release_notes:
-      rl.draw_text_ex(
-        gui_app.font(FontWeight.NORMAL),
-        self._wrapped_release_notes,
-        rl.Vector2(content_rect.x + 30, content_rect.y + 30),
-        AlertConstants.FONT_SIZE,
-        0.0,
-        AlertColors.TEXT,
-      )
-    else:
-      no_notes_text = "No release notes available."
-      text_width = rl.measure_text(no_notes_text, AlertConstants.FONT_SIZE)
-      text_x = content_rect.x + (content_rect.width - text_width) // 2
-      text_y = content_rect.y + 50
-      rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), no_notes_text, (int(text_x), int(text_y)), AlertConstants.FONT_SIZE, 0, AlertColors.TEXT)
+    notes_rect = rl.Rectangle(content_rect.x + 30, content_rect.y + 30, content_rect.width - 60, content_rect.height - 60)
+    self._html_renderer.render(notes_rect)
