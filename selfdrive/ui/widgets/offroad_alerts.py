@@ -310,12 +310,10 @@ class UpdateAlert(AbstractAlert):
     self._html_renderer: HtmlRenderer | None = None
 
   def refresh(self) -> bool:
-    print('refresh!')
     update_available: bool = self.params.get_bool("UpdateAvailable")
     if update_available:
       self.release_notes = self.params.get("UpdaterNewReleaseNotes")
       self._cached_content_height = 0
-      print('update available!')
 
     return update_available
 
