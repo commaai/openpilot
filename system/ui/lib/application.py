@@ -178,6 +178,10 @@ class GuiApplication:
       self._mouse.start()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    if self._modal_overlay.overlay is not None:
+      if hasattr(self._modal_overlay.overlay, 'hide_event'):
+        self._modal_overlay.overlay.hide_event()
+
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
     # Send show event to Widget
