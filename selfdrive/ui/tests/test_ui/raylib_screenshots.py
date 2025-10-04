@@ -89,7 +89,7 @@ def setup_confirmation_dialog(click, pm: PubMaster):
   click(1985, 791)  # reset calibration
 
 
-def setup_update_with_offroad_alerts(click, pm: PubMaster):
+def setup_update_available(click, pm: PubMaster):
   params = Params()
   params.put_bool("UpdateAvailable", True)
   params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
@@ -110,8 +110,8 @@ CASES = {
   "keyboard": setup_keyboard,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
+  "update_available": setup_update_available,
   "confirmation_dialog": setup_confirmation_dialog,
-  "update_available": setup_update_with_offroad_alerts,
 }
 
 
