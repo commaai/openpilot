@@ -5,11 +5,7 @@ Run with: python print_mouse_coords.py
 Press Ctrl+C to exit.
 """
 
-import pyautogui
 from pynput import mouse
-
-# Disable pyautogui failsafe for easier use
-pyautogui.FAILSAFE = False
 
 print("Mouse coordinate printer - Press Ctrl+C to exit")
 print("Click to set the top left origin")
