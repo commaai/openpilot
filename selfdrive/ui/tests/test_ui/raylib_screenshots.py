@@ -12,10 +12,12 @@ import pywinctl
 from cereal import log
 from cereal import messaging
 from cereal.messaging import PubMaster
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from system.updated.updated import parse_release_notes
 
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
@@ -32,6 +34,10 @@ def setup_homescreen(click, pm: PubMaster):
 
 def setup_settings(click, pm: PubMaster):
   click(100, 100)
+
+
+def close_settings(click, pm: PubMaster):
+  click(240, 216)
 
 
 def setup_settings_network(click, pm: PubMaster):
@@ -75,7 +81,7 @@ def setup_offroad_alert(click, pm: PubMaster):
     set_offroad_alert(alert, True)
 
   setup_settings(click, pm)
-  click(240, 216)
+  close_settings(click, pm)
 
 
 def setup_confirmation_dialog(click, pm: PubMaster):
@@ -83,19 +89,31 @@ def setup_confirmation_dialog(click, pm: PubMaster):
   click(1985, 791)  # reset calibration
 
 
+def setup_update_with_offroad_alerts(click, pm: PubMaster):
+  setup_offroad_alert(click, pm)
+
+  params = Params()
+  params.put_bool("UpdateAvailable", True)
+  params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+  description = "0.10.1 / html-release-notes-2 / 7864838 / Oct 03"
+  params.put("UpdaterCurrentDescription", description)
+  setup_settings(click, pm)
+  close_settings(click, pm)
+
 
 CASES = {
-  # "homescreen": setup_homescreen,
-  # "settings_device": setup_settings_device,
-  # "settings_network": setup_settings_network,
-  # "settings_toggles": setup_settings_toggles,
-  # "settings_software": setup_settings_software,
-  # "settings_firehose": setup_settings_firehose,
-  # "settings_developer": setup_settings_developer,
-  # "keyboard": setup_keyboard,
-  # "pair_device": setup_pair_device,
-  # "offroad_alert": setup_offroad_alert,
+  "homescreen": setup_homescreen,
+  "settings_device": setup_settings_device,
+  "settings_network": setup_settings_network,
+  "settings_toggles": setup_settings_toggles,
+  "settings_software": setup_settings_software,
+  "settings_firehose": setup_settings_firehose,
+  "settings_developer": setup_settings_developer,
+  "keyboard": setup_keyboard,
+  "pair_device": setup_pair_device,
+  "offroad_alert": setup_offroad_alert,
   "confirmation_dialog": setup_confirmation_dialog,
+  "update_available": setup_update_with_offroad_alerts,
 }
 
 
