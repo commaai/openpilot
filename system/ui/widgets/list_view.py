@@ -269,7 +269,7 @@ class ListItem(Widget):
     self._font = gui_app.font(FontWeight.NORMAL)
     self._icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE) if self.icon else None
 
-    self._html_renderer = HtmlRenderer(text="", text_size_override={ElementType.P: ITEM_DESC_FONT_SIZE},
+    self._html_renderer = HtmlRenderer(text="", text_size={ElementType.P: ITEM_DESC_FONT_SIZE},
                                        text_color=ITEM_DESC_TEXT_COLOR)
     self.set_description(self.description)
 
