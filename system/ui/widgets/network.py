@@ -3,8 +3,7 @@ from functools import partial
 from typing import cast
 
 import pyray as rl
-from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.system.ui.lib.application import gui_app, DEFAULT_FPS
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
 from openpilot.system.ui.widgets import Widget
@@ -13,7 +12,17 @@ from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.list_view import text_item, button_item, ListItem, ToggleAction, MultipleButtonAction, ButtonAction
+from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
+
+# These are only used for AdvancedNetworkSettings, standalone apps just need WifiManagerUI
+try:
+  from openpilot.common.params import Params
+  from openpilot.selfdrive.ui.ui_state import ui_state
+  from openpilot.selfdrive.ui.lib.prime_state import PrimeType
+except Exception:
+  Params = None
+  ui_state = None  # type: ignore
+  PrimeType = None  # type: ignore
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -47,16 +56,6 @@ class NavButton(Widget):
     super().__init__()
     self.text = text
     self.set_rect(rl.Rectangle(0, 0, 400, 100))
-    self._x_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
-    self._y_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
-
-  def set_position(self, x: float, y: float) -> None:
-    x = self._x_pos_filter.update(x)
-    y = self._y_pos_filter.update(y)
-    changed = (self._rect.x != x or self._rect.y != y)
-    self._rect.x, self._rect.y = x, y
-    if changed:
-      self._update_layout_rects()
 
   def _render(self, _):
     color = rl.Color(74, 74, 74, 255) if self.is_pressed else rl.Color(57, 57, 57, 255)
@@ -73,9 +72,6 @@ class NetworkUI(Widget):
     self._advanced_panel = AdvancedNetworkSettings(wifi_manager)
     self._nav_button = NavButton("Advanced")
     self._nav_button.set_click_callback(self._cycle_panel)
-
-  def _update_state(self):
-    self._wifi_manager.process_callbacks()
 
   def show_event(self):
     self._set_current_panel(PanelType.WIFI)
@@ -114,33 +110,53 @@ class AdvancedNetworkSettings(Widget):
     super().__init__()
     self._wifi_manager = wifi_manager
     self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
+    self._params = Params()
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
     # Tethering
     self._tethering_action = ToggleAction(initial_state=False)
-    self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
+    tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
 
-    # Tethering Password
+    # Edit tethering password
     self._tethering_password_action = ButtonAction(text="EDIT")
-    self._tethering_password_btn = ListItem(title="Tethering Password", action_item=self._tethering_password_action, callback=self._edit_tethering_password)
+    tethering_password_btn = ListItem(title="Tethering Password", action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
-    # TODO: Roaming toggle, edit APN settings, and cellular metered toggle
+    # Roaming toggle
+    roaming_enabled = self._params.get_bool("GsmRoaming")
+    self._roaming_action = ToggleAction(initial_state=roaming_enabled)
+    self._roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
 
-    # Metered
+    # Cellular metered toggle
+    cellular_metered = self._params.get_bool("GsmMetered")
+    self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
+    self._cellular_metered_btn = ListItem(title="Cellular Metered", description="Prevent large data uploads when on a metered cellular connection",
+                                          action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
+
+    # APN setting
+    self._apn_btn = button_item("APN Setting", "EDIT", callback=self._edit_apn)
+
+    # Wi-Fi metered toggle
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
-    self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
-                                      action_item=self._wifi_metered_action)
+    wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
+                                action_item=self._wifi_metered_action)
 
     items: list[Widget] = [
-      self._tethering_btn,
-      self._tethering_password_btn,
+      tethering_btn,
+      tethering_password_btn,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
-      self._wifi_metered_btn,
+      self._roaming_btn,
+      self._apn_btn,
+      self._cellular_metered_btn,
+      wifi_metered_btn,
       button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
+
+    # Set initial config
+    metered = self._params.get_bool("GsmMetered")
+    self._wifi_manager.update_gsm_settings(roaming_enabled, self._params.get("GsmApn") or "", metered)
 
   def _on_network_updated(self, networks: list[Network]):
     self._tethering_action.set_enabled(True)
@@ -161,6 +177,35 @@ class AdvancedNetworkSettings(Widget):
     if checked:
       self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
+
+  def _toggle_roaming(self):
+    roaming_state = self._roaming_action.state
+    self._params.put_bool("GsmRoaming", roaming_state)
+    self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn") or "", self._params.get_bool("GsmMetered"))
+
+  def _edit_apn(self):
+    def update_apn(result):
+      if result != 1:
+        return
+
+      apn = self._keyboard.text.strip()
+      if apn == "":
+        self._params.remove("GsmApn")
+      else:
+        self._params.put("GsmApn", apn)
+
+      self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), apn, self._params.get_bool("GsmMetered"))
+
+    current_apn = self._params.get("GsmApn") or ""
+    self._keyboard.reset(min_text_size=0)
+    self._keyboard.set_title("Enter APN", "leave blank for automatic configuration")
+    self._keyboard.set_text(current_apn)
+    gui_app.set_modal_overlay(self._keyboard, update_apn)
+
+  def _toggle_cellular_metered(self):
+    metered = self._cellular_metered_action.state
+    self._params.put_bool("GsmMetered", metered)
+    self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), self._params.get("GsmApn") or "", metered)
 
   def _toggle_wifi_metered(self, metered):
     metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)
@@ -207,6 +252,16 @@ class AdvancedNetworkSettings(Widget):
     self._keyboard.set_text(self._wifi_manager.tethering_password)
     gui_app.set_modal_overlay(self._keyboard, update_password)
 
+  def _update_state(self):
+    self._wifi_manager.process_callbacks()
+
+    # If not using prime SIM, show GSM settings and enable IPv4 forwarding
+    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    self._wifi_manager.set_ipv4_forward(show_cell_settings)
+    self._roaming_btn.set_visible(show_cell_settings)
+    self._apn_btn.set_visible(show_cell_settings)
+    self._cellular_metered_btn.set_visible(show_cell_settings)
+
   def _render(self, _):
     self._scroller.render(self._rect)
 
@@ -245,6 +300,9 @@ class WifiManagerUI(Widget):
     for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
       gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
 
+  def _update_state(self):
+    self._wifi_manager.process_callbacks()
+
   def _render(self, rect: rl.Rectangle):
     if not self._networks:
       gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
@@ -279,24 +337,23 @@ class WifiManagerUI(Widget):
 
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)
-    offset = self.scroll_panel.handle_scroll(rect, content_rect)
-    clicked = self.scroll_panel.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    offset = self.scroll_panel.update(rect, content_rect)
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     for i, network in enumerate(self._networks):
-      y_offset = rect.y + i * ITEM_HEIGHT + offset.y
+      y_offset = rect.y + i * ITEM_HEIGHT + offset
       item_rect = rl.Rectangle(rect.x, y_offset, rect.width, ITEM_HEIGHT)
       if not rl.check_collision_recs(item_rect, rect):
         continue
 
-      self._draw_network_item(item_rect, network, clicked)
+      self._draw_network_item(item_rect, network)
       if i < len(self._networks) - 1:
         line_y = int(item_rect.y + item_rect.height - 1)
         rl.draw_line(int(item_rect.x), int(line_y), int(item_rect.x + item_rect.width), line_y, rl.LIGHTGRAY)
 
     rl.end_scissor_mode()
 
-  def _draw_network_item(self, rect, network: Network, clicked: bool):
+  def _draw_network_item(self, rect, network: Network):
     spacing = 50
     ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
@@ -336,18 +393,16 @@ class WifiManagerUI(Widget):
     self._draw_signal_strength_icon(signal_icon_rect, network)
 
   def _networks_buttons_callback(self, network):
-    if self.scroll_panel.is_touch_valid():
-      if not network.is_saved and network.security_type != SecurityType.OPEN:
-        self.state = UIState.NEEDS_AUTH
-        self._state_network = network
-        self._password_retry = False
-      elif not network.is_connected:
-        self.connect_to_network(network)
+    if not network.is_saved and network.security_type != SecurityType.OPEN:
+      self.state = UIState.NEEDS_AUTH
+      self._state_network = network
+      self._password_retry = False
+    elif not network.is_connected:
+      self.connect_to_network(network)
 
   def _forget_networks_buttons_callback(self, network):
-    if self.scroll_panel.is_touch_valid():
-      self.state = UIState.SHOW_FORGET_CONFIRM
-      self._state_network = network
+    self.state = UIState.SHOW_FORGET_CONFIRM
+    self._state_network = network
 
   def _draw_status_icon(self, rect, network: Network):
     """Draw the status icon based on network's connection state"""
@@ -388,9 +443,11 @@ class WifiManagerUI(Widget):
     self._networks = networks
     for n in self._networks:
       self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
-                                              button_style=ButtonStyle.TRANSPARENT_WHITE)
+                                              button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
+      self._networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
       self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                      font_size=45)
+      self._forget_networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
 
   def _on_need_auth(self, ssid):
     network = next((n for n in self._networks if n.ssid == ssid), None)

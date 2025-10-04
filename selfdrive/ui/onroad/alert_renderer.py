@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from cereal import messaging, log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.hardware import TICI
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_FPS
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_text_box
@@ -26,9 +26,9 @@ SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
 # Constants
 ALERT_COLORS = {
-  AlertStatus.normal: rl.Color(0, 0, 0, 235),  # Black
-  AlertStatus.userPrompt: rl.Color(0xFE, 0x8C, 0x34, 235),  # Orange
-  AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 235),  # Red
+  AlertStatus.normal: rl.Color(0x15, 0x15, 0x15, 0xF1),      # #151515 with alpha 0xF1
+  AlertStatus.userPrompt: rl.Color(0xDA, 0x6F, 0x25, 0xF1),  # #DA6F25 with alpha 0xF1
+  AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 0xF1),    # #C92231 with alpha 0xF1
 }
 
 
@@ -76,7 +76,7 @@ class AlertRenderer(Widget):
     # Check if selfdriveState messages have stopped arriving
     if not sm.updated['selfdriveState']:
       recv_frame = sm.recv_frame['selfdriveState']
-      time_since_onroad = (sm.frame - ui_state.started_frame) / DEFAULT_FPS
+      time_since_onroad = time.monotonic() - ui_state.started_time
 
       # 1. Never received selfdriveState since going onroad
       waiting_for_startup = recv_frame < ui_state.started_frame

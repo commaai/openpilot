@@ -9,9 +9,8 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
-from openpilot.system.ui.lib.application import DEFAULT_FPS
-from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.hardware import HARDWARE
 
 UI_BORDER_SIZE = 30
 BACKLIGHT_OFFROAD = 50
@@ -51,6 +50,7 @@ class UIState:
         "managerState",
         "selfdriveState",
         "longitudinalPlan",
+        "rawAudioData",
       ]
     )
 
@@ -59,6 +59,7 @@ class UIState:
     # UI Status tracking
     self.status: UIStatus = UIStatus.DISENGAGED
     self.started_frame: int = 0
+    self.started_time: float = 0.0
     self._engaged_prev: bool = False
     self._started_prev: bool = False
 
@@ -131,6 +132,7 @@ class UIState:
       if self.started:
         self.status = UIStatus.DISENGAGED
         self.started_frame = self.sm.frame
+        self.started_time = time.monotonic()
 
       self._started_prev = self.started
 
@@ -151,7 +153,7 @@ class Device:
 
     self._offroad_brightness: int = BACKLIGHT_OFFROAD
     self._last_brightness: int = 0
-    self._brightness_filter = FirstOrderFilter(BACKLIGHT_OFFROAD, 10.00, 1 / DEFAULT_FPS)
+    self._brightness_filter = FirstOrderFilter(BACKLIGHT_OFFROAD, 10.00, 1 / gui_app.target_fps)
     self._brightness_thread: threading.Thread | None = None
 
   def reset_interactive_timeout(self, timeout: int = -1) -> None:

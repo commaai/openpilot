@@ -2,6 +2,7 @@ import atexit
 import threading
 import time
 import uuid
+import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
@@ -15,7 +16,6 @@ from jeepney.low_level import MessageType
 from jeepney.wrappers import Properties
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.params import Params
 from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
                                                     NM_802_11_AP_SEC_PAIR_WEP104, NM_802_11_AP_SEC_GROUP_WEP40,
                                                     NM_802_11_AP_SEC_GROUP_WEP104, NM_802_11_AP_SEC_KEY_MGMT_PSK,
@@ -23,9 +23,14 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
-                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
                                                     NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NMDeviceState)
+
+try:
+  from openpilot.common.params import Params
+except Exception:
+  Params = None
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
@@ -142,13 +147,16 @@ class WifiManager:
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
+    self._ipv4_forward = False
+
     self._last_network_update: float = 0.0
     self._callback_queue: list[Callable] = []
 
     self._tethering_ssid = "weedle"
-    dongle_id = Params().get("DongleId")
-    if dongle_id:
-      self._tethering_ssid += "-" + dongle_id[:4]
+    if Params is not None:
+      dongle_id = Params().get("DongleId")
+      if dongle_id:
+        self._tethering_ssid += "-" + dongle_id[:4]
 
     # Callbacks
     self._need_auth: list[Callable[[str], None]] = []
@@ -170,7 +178,7 @@ class WifiManager:
       self._scan_thread.start()
       self._state_thread.start()
 
-      if self._tethering_ssid not in self._get_connections():
+      if Params is not None and self._tethering_ssid not in self._get_connections():
         self._add_tethering_connection()
 
       self._tethering_password = self._get_tethering_password()
@@ -277,25 +285,24 @@ class WifiManager:
 
   def _wait_for_wifi_device(self):
     while not self._exit:
-      device_path = self._get_wifi_device()
+      device_path = self._get_adapter(NM_DEVICE_TYPE_WIFI)
       if device_path is not None:
+        self._wifi_device = device_path
         break
       time.sleep(1)
 
-  def _get_wifi_device(self) -> str | None:
-    if self._wifi_device is not None:
-      return self._wifi_device
-
-    device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
-    for device_path in device_paths:
-      dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
-      dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
-
-      if dev_type == NM_DEVICE_TYPE_WIFI:
-        self._wifi_device = device_path
-        break
-
-    return self._wifi_device
+  def _get_adapter(self, adapter_type: int) -> str | None:
+    # Return the first NetworkManager device path matching adapter_type
+    try:
+      device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
+      for device_path in device_paths:
+        dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
+        dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
+        if dev_type == adapter_type:
+          return str(device_path)
+    except Exception as e:
+      cloudlog.exception(f"Error getting adapter type {adapter_type}: {e}")
+    return None
 
   def _get_connections(self) -> dict[str, str]:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
@@ -500,10 +507,18 @@ class WifiManager:
 
     return str(secrets['802-11-wireless-security'].get('psk', ('s', ''))[1])
 
+  def set_ipv4_forward(self, enabled: bool):
+    self._ipv4_forward = enabled
+
   def set_tethering_active(self, active: bool):
     def worker():
       if active:
         self.activate_connection(self._tethering_ssid, block=True)
+
+        if not self._ipv4_forward:
+          time.sleep(5)
+          cloudlog.warning("net.ipv4.ip_forward = 0")
+          subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
       else:
         self._deactivate_connection(self._tethering_ssid)
 
@@ -644,6 +659,89 @@ class WifiManager:
 
   def __del__(self):
     self.stop()
+
+  def update_gsm_settings(self, roaming: bool, apn: str, metered: bool):
+    """Update GSM settings for cellular connection"""
+
+    def worker():
+      try:
+        lte_connection_path = self._get_lte_connection_path()
+        if not lte_connection_path:
+          cloudlog.warning("No LTE connection found")
+          return
+
+        settings = self._get_connection_settings(lte_connection_path)
+
+        if len(settings) == 0:
+          cloudlog.warning(f"Failed to get connection settings for {lte_connection_path}")
+          return
+
+        # Ensure dicts exist
+        if 'gsm' not in settings:
+          settings['gsm'] = {}
+        if 'connection' not in settings:
+          settings['connection'] = {}
+
+        changes = False
+        auto_config = apn == ""
+
+        if settings['gsm'].get('auto-config', ('b', False))[1] != auto_config:
+          cloudlog.warning(f'Changing gsm.auto-config to {auto_config}')
+          settings['gsm']['auto-config'] = ('b', auto_config)
+          changes = True
+
+        if settings['gsm'].get('apn', ('s', ''))[1] != apn:
+          cloudlog.warning(f'Changing gsm.apn to {apn}')
+          settings['gsm']['apn'] = ('s', apn)
+          changes = True
+
+        if settings['gsm'].get('home-only', ('b', False))[1] == roaming:
+          cloudlog.warning(f'Changing gsm.home-only to {not roaming}')
+          settings['gsm']['home-only'] = ('b', not roaming)
+          changes = True
+
+        # Unknown means NetworkManager decides
+        metered_int = int(MeteredType.UNKNOWN if metered else MeteredType.NO)
+        if settings['connection'].get('metered', ('i', 0))[1] != metered_int:
+          cloudlog.warning(f'Changing connection.metered to {metered_int}')
+          settings['connection']['metered'] = ('i', metered_int)
+          changes = True
+
+        if changes:
+          # Update the connection settings (temporary update)
+          conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+          reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,)))
+
+          if reply.header.message_type == MessageType.error:
+            cloudlog.warning(f"Failed to update GSM settings: {reply}")
+            return
+
+          self._activate_modem_connection(lte_connection_path)
+      except Exception as e:
+        cloudlog.exception(f"Error updating GSM settings: {e}")
+
+    threading.Thread(target=worker, daemon=True).start()
+
+  def _get_lte_connection_path(self) -> str | None:
+    try:
+      settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
+      known_connections = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
+
+      for conn_path in known_connections:
+        settings = self._get_connection_settings(conn_path)
+        if settings and settings.get('connection', {}).get('id', ('s', ''))[1] == 'lte':
+          return str(conn_path)
+    except Exception as e:
+      cloudlog.exception(f"Error finding LTE connection: {e}")
+    return None
+
+  def _activate_modem_connection(self, connection_path: str):
+    try:
+      modem_device = self._get_adapter(NM_DEVICE_TYPE_MODEM)
+      if modem_device and connection_path:
+        self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo', (connection_path, modem_device, "/")))
+    except Exception as e:
+      cloudlog.exception(f"Error activating modem connection: {e}")
 
   def stop(self):
     if not self._exit:

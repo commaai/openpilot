@@ -6,20 +6,37 @@ import time
 from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.selfdrive.ui.ui_state import ui_state
 
 
-class PairingDialog:
+class IconButton(Widget):
+  def __init__(self, texture: rl.Texture):
+    super().__init__()
+    self._texture = texture
+
+  def _render(self, rect: rl.Rectangle):
+    color = rl.Color(180, 180, 180, 150) if self.is_pressed else rl.WHITE
+    draw_x = rect.x + (rect.width - self._texture.width) / 2
+    draw_y = rect.y + (rect.height - self._texture.height) / 2
+    rl.draw_texture(self._texture, int(draw_x), int(draw_y), color)
+
+
+class PairingDialog(Widget):
   """Dialog for device pairing with QR code."""
 
   QR_REFRESH_INTERVAL = 300  # 5 minutes in seconds
 
   def __init__(self):
+    super().__init__()
     self.params = Params()
     self.qr_texture: rl.Texture | None = None
     self.last_qr_generation = 0
+    self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
+    self._close_btn.set_click_callback(lambda: gui_app.set_modal_overlay(None))
 
   def _get_pairing_url(self) -> str:
     try:
@@ -60,7 +77,11 @@ class PairingDialog:
       self._generate_qr_code()
       self.last_qr_generation = current_time
 
-  def render(self, rect: rl.Rectangle) -> int:
+  def _update_state(self):
+    if ui_state.prime_state.is_paired():
+      gui_app.set_modal_overlay(None)
+
+  def _render(self, rect: rl.Rectangle) -> int:
     rl.clear_background(rl.Color(224, 224, 224, 255))
 
     self._check_qr_refresh()
@@ -71,19 +92,9 @@ class PairingDialog:
 
     # Close button
     close_size = 80
-    close_icon = gui_app.texture("icons/close.png", close_size, close_size)
-    close_rect = rl.Rectangle(content_rect.x, y, close_size, close_size)
-
-    mouse_pos = rl.get_mouse_position()
-    is_hover = rl.check_collision_point_rec(mouse_pos, close_rect)
-    is_pressed = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
-    is_released = rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
-
-    color = rl.Color(180, 180, 180, 150) if (is_hover and is_pressed) else rl.WHITE
-    rl.draw_texture(close_icon, int(content_rect.x), int(y), color)
-
-    if (is_hover and is_released) or rl.is_key_pressed(rl.KeyboardKey.KEY_ESCAPE):
-      return 1
+    pad = 20
+    close_rect = rl.Rectangle(content_rect.x - pad, y - pad, close_size + pad * 2, close_size + pad * 2)
+    self._close_btn.render(close_rect)
 
     y += close_size + 40
 
@@ -135,7 +146,7 @@ class PairingDialog:
       rl.draw_circle(int(circle_x), int(circle_y), circle_radius, rl.Color(70, 70, 70, 255))
       number = str(i + 1)
       number_width = measure_text_cached(font, number, 30).x
-      rl.draw_text(number, int(circle_x - number_width // 2), int(circle_y - 15), 30, rl.WHITE)
+      rl.draw_text_ex(font, number, (int(circle_x - number_width // 2), int(circle_y - 15)), 30, 0, rl.WHITE)
 
       # Text
       rl.draw_text_ex(font, "\n".join(wrapped), rl.Vector2(text_x, y), 47, 0.0, rl.BLACK)

@@ -71,20 +71,26 @@ class Sidebar(Widget):
     self._temp_status = MetricData("TEMP", "GOOD", Colors.GOOD)
     self._panda_status = MetricData("VEHICLE", "ONLINE", Colors.GOOD)
     self._connect_status = MetricData("CONNECT", "OFFLINE", Colors.WARNING)
+    self._recording_audio = False
 
     self._home_img = gui_app.texture("images/button_home.png", HOME_BTN.width, HOME_BTN.height)
     self._flag_img = gui_app.texture("images/button_flag.png", HOME_BTN.width, HOME_BTN.height)
     self._settings_img = gui_app.texture("images/button_settings.png", SETTINGS_BTN.width, SETTINGS_BTN.height)
+    self._mic_img = gui_app.texture("icons/microphone.png", 30, 30)
+    self._mic_indicator_rect = rl.Rectangle(0, 0, 0, 0)
     self._font_regular = gui_app.font(FontWeight.NORMAL)
     self._font_bold = gui_app.font(FontWeight.SEMI_BOLD)
 
     # Callbacks
     self._on_settings_click: Callable | None = None
     self._on_flag_click: Callable | None = None
+    self._open_settings_callback: Callable | None = None
 
-  def set_callbacks(self, on_settings: Callable | None = None, on_flag: Callable | None = None):
+  def set_callbacks(self, on_settings: Callable | None = None, on_flag: Callable | None = None,
+                    open_settings: Callable | None = None):
     self._on_settings_click = on_settings
     self._on_flag_click = on_flag
+    self._open_settings_callback = open_settings
 
   def _render(self, rect: rl.Rectangle):
     # Background
@@ -101,6 +107,7 @@ class Sidebar(Widget):
 
     device_state = sm['deviceState']
 
+    self._recording_audio = sm.alive['rawAudioData']
     self._update_network_status(device_state)
     self._update_temperature_status(device_state)
     self._update_connection_status(device_state)
@@ -143,6 +150,9 @@ class Sidebar(Widget):
     elif rl.check_collision_point_rec(mouse_pos, HOME_BTN) and ui_state.started:
       if self._on_flag_click:
         self._on_flag_click()
+    elif self._recording_audio and rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect):
+      if self._open_settings_callback:
+        self._open_settings_callback()
 
   def _draw_buttons(self, rect: rl.Rectangle):
     mouse_pos = rl.get_mouse_position()
@@ -159,6 +169,17 @@ class Sidebar(Widget):
 
     tint = Colors.BUTTON_PRESSED if (ui_state.started and flag_pressed) else Colors.BUTTON_NORMAL
     rl.draw_texture(button_img, int(HOME_BTN.x), int(HOME_BTN.y), tint)
+
+    # Microphone button
+    if self._recording_audio:
+      self._mic_indicator_rect = rl.Rectangle(rect.x + rect.width - 138, rect.y + 245, 75, 40)
+
+      mic_pressed = mouse_down and rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect)
+      bg_color = rl.Color(Colors.DANGER.r, Colors.DANGER.g, Colors.DANGER.b, int(255 * 0.65)) if mic_pressed else Colors.DANGER
+
+      rl.draw_rectangle_rounded(self._mic_indicator_rect, 1, 10, bg_color)
+      rl.draw_texture(self._mic_img, int(self._mic_indicator_rect.x + (self._mic_indicator_rect.width - self._mic_img.width) / 2),
+                      int(self._mic_indicator_rect.y + (self._mic_indicator_rect.height - self._mic_img.height) / 2), Colors.WHITE)
 
   def _draw_network_indicator(self, rect: rl.Rectangle):
     # Signal strength dots
@@ -195,14 +216,21 @@ class Sidebar(Widget):
     # Draw border
     rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.3, 10, 2, Colors.METRIC_BORDER)
 
-    # Draw label and value
-    labels = [metric.label, metric.value]
-    text_y = metric_rect.y + (metric_rect.height / 2 - len(labels) * FONT_SIZE)
-    for text in labels:
-      text_size = measure_text_cached(self._font_bold, text, FONT_SIZE)
-      text_y += text_size.y
-      text_pos = rl.Vector2(
-        metric_rect.x + 22 + (metric_rect.width - 22 - text_size.x) / 2,
-        text_y
-      )
-      rl.draw_text_ex(self._font_bold, text, text_pos, FONT_SIZE, 0, Colors.WHITE)
+    label_size = measure_text_cached(self._font_bold, metric.label, FONT_SIZE)
+    value_size = measure_text_cached(self._font_bold, metric.value, FONT_SIZE)
+    text_height = label_size.y + value_size.y
+
+    label_y = metric_rect.y + (metric_rect.height - text_height) / 2
+    value_y = label_y + label_size.y
+
+    # label
+    rl.draw_text_ex(self._font_bold, metric.label, rl.Vector2(
+      metric_rect.x + 22 + (metric_rect.width - 22 - label_size.x) / 2,
+      label_y
+    ), FONT_SIZE, 0, Colors.WHITE)
+
+    # value
+    rl.draw_text_ex(self._font_bold, metric.value, rl.Vector2(
+      metric_rect.x + 22 + (metric_rect.width - 22 - value_size.x) / 2,
+      value_y
+    ), FONT_SIZE, 0, Colors.WHITE)

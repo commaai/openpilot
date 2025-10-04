@@ -5,12 +5,13 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget, DialogResult
-from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog, alert_dialog
-from openpilot.system.ui.widgets.html_render import HtmlRenderer
+from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog, alert_dialog
+from openpilot.system.ui.widgets.html_render import HtmlModal
 from openpilot.system.ui.widgets.list_view import text_item, button_item, dual_button_item
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.scroller import Scroller
@@ -35,7 +36,8 @@ class DeviceLayout(Widget):
     self._select_language_dialog: MultiOptionDialog | None = None
     self._driver_camera: DriverCameraDialog | None = None
     self._pair_device_dialog: PairingDialog | None = None
-    self._fcc_dialog: HtmlRenderer | None = None
+    self._fcc_dialog: HtmlModal | None = None
+    self._training_guide: TrainingGuide | None = None
 
     items = self._initialize_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
@@ -44,10 +46,13 @@ class DeviceLayout(Widget):
     dongle_id = self._params.get("DongleId") or "N/A"
     serial = self._params.get("HardwareSerial") or "N/A"
 
+    self._pair_device_btn = button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device)
+    self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
+
     items = [
       text_item("Dongle ID", dongle_id),
       text_item("Serial", serial),
-      button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device),
+      self._pair_device_btn,
       button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
       button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
       regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory),
@@ -87,13 +92,11 @@ class DeviceLayout(Widget):
 
   def _reset_calibration_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(lambda: alert_dialog("Disengage to Reset Calibration"))
+      gui_app.set_modal_overlay(alert_dialog("Disengage to Reset Calibration"))
       return
 
-    gui_app.set_modal_overlay(
-      lambda: confirm_dialog("Are you sure you want to reset calibration?", "Reset"),
-      callback=self._reset_calibration,
-    )
+    dialog = ConfirmDialog("Are you sure you want to reset calibration?", "Reset")
+    gui_app.set_modal_overlay(dialog, callback=self._reset_calibration)
 
   def _reset_calibration(self, result: int):
     if ui_state.engaged or result != DialogResult.CONFIRM:
@@ -108,13 +111,11 @@ class DeviceLayout(Widget):
 
   def _reboot_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(lambda: alert_dialog("Disengage to Reboot"))
+      gui_app.set_modal_overlay(alert_dialog("Disengage to Reboot"))
       return
 
-    gui_app.set_modal_overlay(
-      lambda: confirm_dialog("Are you sure you want to reboot?", "Reboot"),
-      callback=self._perform_reboot,
-    )
+    dialog = ConfirmDialog("Are you sure you want to reboot?", "Reboot")
+    gui_app.set_modal_overlay(dialog, callback=self._perform_reboot)
 
   def _perform_reboot(self, result: int):
     if not ui_state.engaged and result == DialogResult.CONFIRM:
@@ -122,13 +123,11 @@ class DeviceLayout(Widget):
 
   def _power_off_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(lambda: alert_dialog("Disengage to Power Off"))
+      gui_app.set_modal_overlay(alert_dialog("Disengage to Power Off"))
       return
 
-    gui_app.set_modal_overlay(
-      lambda: confirm_dialog("Are you sure you want to power off?", "Power Off"),
-      callback=self._perform_power_off,
-    )
+    dialog = ConfirmDialog("Are you sure you want to power off?", "Power Off")
+    gui_app.set_modal_overlay(dialog, callback=self._perform_power_off)
 
   def _perform_power_off(self, result: int):
     if not ui_state.engaged and result == DialogResult.CONFIRM:
@@ -141,10 +140,12 @@ class DeviceLayout(Widget):
 
   def _on_regulatory(self):
     if not self._fcc_dialog:
-      self._fcc_dialog = HtmlRenderer(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
+      self._fcc_dialog = HtmlModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
+    gui_app.set_modal_overlay(self._fcc_dialog)
 
-    gui_app.set_modal_overlay(self._fcc_dialog,
-      callback=lambda result: setattr(self, '_fcc_dialog', None),
-    )
-
-  def _on_review_training_guide(self): pass
+  def _on_review_training_guide(self):
+    if not self._training_guide:
+      def completed_callback():
+        gui_app.set_modal_overlay(None)
+      self._training_guide = TrainingGuide(completed_callback=completed_callback)
+    gui_app.set_modal_overlay(self._training_guide)
