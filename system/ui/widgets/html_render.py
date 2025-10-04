@@ -9,6 +9,8 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 
+LIST_INDENT_PX = 40
+
 
 class ElementType(Enum):
   H1 = "h1"
@@ -42,7 +44,6 @@ class HtmlRenderer(Widget):
     self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
-    self._list_indent_px = 40
     self._indent_level = 0
 
     self.styles: dict[ElementType, dict[str, Any]] = {
@@ -155,7 +156,7 @@ class HtmlRenderer(Widget):
           if current_y > rect.y + rect.height:
             break
 
-          text_x = rect.x + (max(element.indent_level - 1, 0) * self._list_indent_px)
+          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
           rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, rl.WHITE)
 
           current_y += element.font_size * element.line_height
