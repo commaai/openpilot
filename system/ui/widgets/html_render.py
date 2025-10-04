@@ -197,31 +197,31 @@ class HtmlRenderer(Widget):
 
   def get_total_height(self, content_width: int) -> float:
     if not self._height_needs_recompute and self._prev_content_width == content_width:
-      return self.total_height
+      return self._total_height
 
-    self.total_height = 0.0
+    self._total_height = 0.0
     padding = 20
     usable_width = content_width - (padding * 2)
 
     for element in self.elements:
       if element.type == ElementType.BR:
-        self.total_height += element.margin_bottom
+        self._total_height += element.margin_bottom
         continue
 
-      self.total_height += element.margin_top
+      self._total_height += element.margin_top
 
       if element.content:
         font = self._get_font(element.font_weight)
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
 
         for _ in wrapped_lines:
-          self.total_height += element.font_size * element.line_height
+          self._total_height += element.font_size * element.line_height
 
-      self.total_height += element.margin_bottom
+      self._total_height += element.margin_bottom
 
     self._prev_content_width = content_width
     self._height_needs_recompute = False
-    return self.total_height
+    return self._total_height
 
   def _get_font(self, weight: FontWeight):
     if weight == FontWeight.BOLD:
