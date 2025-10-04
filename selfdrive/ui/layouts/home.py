@@ -8,8 +8,8 @@ from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButto
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.widgets.label import Label
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, DEFAULT_TEXT_COLOR
+from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets import Widget
 
 HEADER_HEIGHT = 80
@@ -52,8 +52,6 @@ class HomeLayout(Widget):
 
     self.update_notif_rect = rl.Rectangle(0, 0, 200, HEADER_HEIGHT - 10)
     self.alert_notif_rect = rl.Rectangle(0, 0, 220, HEADER_HEIGHT - 10)
-
-    self._version_label = Label("", 48, FontWeight.NORMAL, text_color=DEFAULT_TEXT_COLOR)
 
     self._prime_widget = PrimeWidget()
     self._setup_widget = SetupWidget()
@@ -129,8 +127,12 @@ class HomeLayout(Widget):
   def _render_header(self):
     font = gui_app.font(FontWeight.MEDIUM)
 
+    version_text_width = self.header_rect.width
+
     # Update notification button
     if self.update_available:
+      version_text_width -= self.update_notif_rect.width
+
       # Highlight if currently viewing updates
       highlight_color = rl.Color(75, 95, 255, 255) if self.current_state == HomeLayoutState.UPDATE else rl.Color(54, 77, 239, 255)
       rl.draw_rectangle_rounded(self.update_notif_rect, 0.3, 10, highlight_color)
@@ -143,6 +145,8 @@ class HomeLayout(Widget):
 
     # Alert notification button
     if self.alert_count > 0:
+      version_text_width -= self.alert_notif_rect.width
+
       # Highlight if currently viewing alerts
       highlight_color = rl.Color(255, 70, 70, 255) if self.current_state == HomeLayoutState.ALERTS else rl.Color(226, 44, 44, 255)
       rl.draw_rectangle_rounded(self.alert_notif_rect, 0.3, 10, highlight_color)
@@ -153,12 +157,18 @@ class HomeLayout(Widget):
       text_y = self.alert_notif_rect.y + (self.alert_notif_rect.height - HEAD_BUTTON_FONT_SIZE) // 2
       rl.draw_text_ex(font, alert_text, rl.Vector2(int(text_x), int(text_y)), HEAD_BUTTON_FONT_SIZE, 0, rl.WHITE)
 
-    # Version text (right aligned)
-    version_text = self._get_version_text()
-    text_width = measure_text_cached(gui_app.font(FontWeight.NORMAL), version_text, 48).x
-    version_x = self.header_rect.x + self.header_rect.width - text_width
-    version_y = self.header_rect.y + (self.header_rect.height - 48) // 2
-    rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), version_text, rl.Vector2(int(version_x), int(version_y)), 48, 0, DEFAULT_TEXT_COLOR)
+    # Draw version text (right-aligned)
+    if self.update_available or self.alert_count > 0:
+      version_text_width -= SPACING * 1.5
+
+    version_rect = rl.Rectangle(
+      self.header_rect.x + self.header_rect.width - version_text_width,
+      self.header_rect.y,
+      version_text_width,
+      self.header_rect.height
+    )
+
+    gui_label(version_rect, self._get_version_text(), 48, rl.WHITE, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT)
 
   def _render_home_content(self):
     self._render_left_column()
