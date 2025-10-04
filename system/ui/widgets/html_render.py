@@ -191,7 +191,6 @@ class HtmlRenderer(Widget):
     return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
-    # TODO: cache this
     total_height = 0.0
     padding = 20
     usable_width = content_width - (padding * 2)
