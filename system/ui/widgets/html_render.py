@@ -54,7 +54,6 @@ class HtmlRenderer(Widget):
                text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
     self._text_color = text_color
-
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._indent_level = 0
