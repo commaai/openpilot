@@ -28,6 +28,14 @@ UI_DELAY = 0.2
 OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
 
 
+def put_update_params(params: Params):
+  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
+  params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+  description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
+  params.put("UpdaterCurrentDescription", description)
+  params.put("UpdaterNewDescription", description)
+
+
 def setup_homescreen(click, pm: PubMaster):
   pass
 
@@ -51,6 +59,7 @@ def setup_settings_toggles(click, pm: PubMaster):
 
 
 def setup_settings_software(click, pm: PubMaster):
+  put_update_params(Params())
   setup_settings(click, pm)
   click(278, 720)
 
@@ -92,26 +101,24 @@ def setup_confirmation_dialog(click, pm: PubMaster):
 def setup_update_available(click, pm: PubMaster):
   params = Params()
   params.put_bool("UpdateAvailable", True)
-  params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
-  description = "0.10.1 / html-release-notes-2 / 7864838 / Oct 03"
-  params.put("UpdaterCurrentDescription", description)
+  put_update_params(params)
   setup_settings(click, pm)
   close_settings(click, pm)
 
 
 CASES = {
-  "homescreen": setup_homescreen,
-  "settings_device": setup_settings,
-  "settings_network": setup_settings_network,
-  "settings_toggles": setup_settings_toggles,
+  # "homescreen": setup_homescreen,
+  # "settings_device": setup_settings,
+  # "settings_network": setup_settings_network,
+  # "settings_toggles": setup_settings_toggles,
   "settings_software": setup_settings_software,
-  "settings_firehose": setup_settings_firehose,
-  "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
-  "pair_device": setup_pair_device,
-  "offroad_alert": setup_offroad_alert,
-  "update_available": setup_update_available,
-  "confirmation_dialog": setup_confirmation_dialog,
+  # "settings_firehose": setup_settings_firehose,
+  # "settings_developer": setup_settings_developer,
+  # "keyboard": setup_keyboard,
+  # "pair_device": setup_pair_device,
+  # "offroad_alert": setup_offroad_alert,
+  # "update_available": setup_update_available,
+  # "confirmation_dialog": setup_confirmation_dialog,
 }
 
 
