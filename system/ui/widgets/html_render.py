@@ -53,7 +53,10 @@ class HtmlRenderer(Widget):
                text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
     self._text_color = text_color
-    self.elements: list[HtmlElement] = []
+
+    self._total_height = 0.0
+    self._height_needs_recompute = True
+    self._prev_content_width = -1
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._indent_level = 0
@@ -73,6 +76,7 @@ class HtmlRenderer(Widget):
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
 
+    self.elements: list[HtmlElement] = []
     if file_path is not None:
       self.parse_html_file(file_path)
     elif text is not None:
@@ -87,6 +91,7 @@ class HtmlRenderer(Widget):
 
   def parse_html_content(self, html_content: str) -> None:
     self.elements.clear()
+    self._height_needs_recompute = True
 
     # Remove HTML comments
     html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
@@ -190,27 +195,32 @@ class HtmlRenderer(Widget):
     return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
-    total_height = 0.0
+    if not self._height_needs_recompute and self._prev_content_width == content_width:
+      return self.total_height
+
+    self.total_height = 0.0
     padding = 20
     usable_width = content_width - (padding * 2)
 
     for element in self.elements:
       if element.type == ElementType.BR:
-        total_height += element.margin_bottom
+        self.total_height += element.margin_bottom
         continue
 
-      total_height += element.margin_top
+      self.total_height += element.margin_top
 
       if element.content:
         font = self._get_font(element.font_weight)
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
 
         for _ in wrapped_lines:
-          total_height += element.font_size * element.line_height
+          self.total_height += element.font_size * element.line_height
 
-      total_height += element.margin_bottom
+      self.total_height += element.margin_bottom
 
-    return total_height
+    self._prev_content_width = content_width
+    self._height_needs_recompute = False
+    return self.total_height
 
   def _get_font(self, weight: FontWeight):
     if weight == FontWeight.BOLD:
