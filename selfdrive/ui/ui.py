@@ -11,7 +11,10 @@ import atexit
 
 frame_times = []
 
+i = 0
+
 def main():
+  global i
   # TODO: https://github.com/commaai/agnos-builder/pull/490
   # os.nice(-20)
 
@@ -27,6 +30,9 @@ def main():
     if not showing_dialog:
       main_layout.render()
     frame_times.append(time.monotonic() - t)
+    i += 1
+    if i % 100 == 0:
+      print_data()
     print("UI loop time", f'{(frame_times[-1]) * 1000:.3f}ms, theoretical fps: {1 / (frame_times[-1]):.1f}')
 
 
