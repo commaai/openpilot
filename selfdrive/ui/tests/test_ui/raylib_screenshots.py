@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import sys
 import shutil
@@ -14,7 +15,7 @@ from cereal import messaging
 from cereal.messaging import PubMaster
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.test.helpers import with_processes, processes_context
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -144,4 +145,72 @@ def create_screenshots():
 
 
 if __name__ == "__main__":
-  create_screenshots()
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--add", type=str, help="Add a new case with the given name")
+  args = parser.parse_args()
+
+  if args.add:
+    # Interactive mode: start the UI and wait until it is closed
+    name = args.add
+    print(f"[add] Starting raylib_ui for interactive case '{name}'. Close the UI window to exit.")
+
+    # Ensure output dir exists
+    TEST_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Seed minimal offroad state
+    pm = PubMaster(["deviceState"])
+    ds = messaging.new_message('deviceState')
+    ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
+    for _ in range(5):
+      pm.send('deviceState', ds)
+      ds.clear_write_flag()
+      time.sleep(0.05)
+
+    # Enable click logging to a file under the report directory
+    click_log_path = TEST_OUTPUT_DIR / f"clicks_{name}.csv"
+    os.environ["CLICK_LOG"] = str(click_log_path)
+
+    with processes_context(["raylib_ui"], init_time=0):
+      # Try to locate the UI window; if not found, assume Xvfb top-left position
+      try:
+        ui = pywinctl.getWindowsWithTitle("UI")[0]
+        print(f"[add] UI window found at ({ui.left}, {ui.top}) size {ui.width}x{ui.height}")
+      except Exception as e:
+        print(f"[add] Failed to find UI window, will poll until it appears: {e}")
+        ui = None
+
+      # Poll until the UI window appears
+      start_time = time.monotonic()
+      while ui is None and (time.monotonic() - start_time) < 10.0:
+        try:
+          ui = pywinctl.getWindowsWithTitle("UI")[0]
+        except Exception:
+          ui = None
+        time.sleep(UI_DELAY)
+
+      if ui is None:
+        print("[add] UI window not found; running until process exits.")
+
+      # Main loop: wait for the UI window to close (or process to exit via context manager)
+      try:
+        while True:
+          # If we can see the window, check it's still valid; otherwise just idle
+          if ui is not None:
+            try:
+              # Access a property to ensure window handle is still valid
+              _ = ui.title
+            except Exception:
+              print("[add] UI window closed.")
+              break
+          time.sleep(UI_DELAY)
+      except KeyboardInterrupt:
+        print("[add] Interrupted, stopping.")
+
+    if click_log_path.exists():
+      print(f"[add] Clicks stored at: {click_log_path}")
+    else:
+      print("[add] No clicks recorded or file missing.")
+
+  else:
+    create_screenshots()

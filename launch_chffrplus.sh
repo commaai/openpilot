@@ -23,7 +23,7 @@ function agnos_init {
     if $AGNOS_PY --verify $MANIFEST; then
       sudo reboot
     fi
-    $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
+    $DIR/system/ui/updater.py $AGNOS_PY $MANIFEST
   fi
 }
 

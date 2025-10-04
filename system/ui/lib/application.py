@@ -141,6 +141,8 @@ class GuiApplication:
 
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
+    # Click logging
+    self._click_log_path: str | None = os.getenv("CLICK_LOG") or None
 
   @property
   def target_fps(self):
@@ -255,6 +257,17 @@ class GuiApplication:
 
         # Store all mouse events for the current frame
         self._mouse_events = self._mouse.get_events()
+        # Optionally log clicks
+        if self._click_log_path and self._mouse_events:
+          try:
+            with open(self._click_log_path, "a", encoding="utf-8") as f:
+              for ev in self._mouse_events:
+                if ev.left_pressed:
+                  f.write(f"pressed,{ev.pos.x:.1f},{ev.pos.y:.1f},{ev.t}\n")
+                if ev.left_released:
+                  f.write(f"released,{ev.pos.x:.1f},{ev.pos.y:.1f},{ev.t}\n")
+          except Exception:
+            pass
 
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
