@@ -155,6 +155,7 @@ class HtmlRenderer(Widget):
     self.elements.append(element)
 
   def _render(self, rect: rl.Rectangle):
+    # TODO: speed up by removing duplicate calculations across renders
     current_y = rect.y
     padding = 20
     content_width = rect.width - (padding * 2)
