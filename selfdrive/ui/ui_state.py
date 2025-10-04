@@ -210,7 +210,6 @@ class Device:
       self.reset_interactive_timeout()
 
     interaction_timeout = time.monotonic() > self._interaction_time
-    print(self._interactive_timeout_callbacks)
     if interaction_timeout and not self._prev_timed_out:
       for callback in self._interactive_timeout_callbacks:
         callback()
