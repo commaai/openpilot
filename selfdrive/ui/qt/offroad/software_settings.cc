@@ -6,8 +6,6 @@
 
 #include <QDebug>
 #include <QLabel>
-#include <QApplication>
-#include <QScreen>
 
 #include "common/params.h"
 #include "common/util.h"
@@ -96,80 +94,6 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
 
   updateLabels();
-}
-
-void SoftwarePanel::paintEvent(QPaintEvent *event) {
-  QWidget::paintEvent(event);
-  if (qEnvironmentVariableIsSet("DEBUG_TEXT_COMPARE") && qgetenv("DEBUG_TEXT_COMPARE") == "1") {
-    QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-
-    struct Sample { int size; const char *text; };
-    const Sample samples[] = {{100, "HH"}, {80, "HH"}, {70, "HH"}};
-
-    int left_x = 8;  // far left to avoid overlapping content
-    int top_y = height() / 2 + 40;  // bottom half of screen
-    int row_h = 120;
-
-    for (int i = 0; i < 3; ++i) {
-      int sz = samples[i].size;
-      QString text = samples[i].text;
-      int y = top_y + i * row_h;
-
-      QFont f = font();
-      f.setPixelSize(sz);
-      p.setFont(f);
-      QFontMetrics fm(f);
-      QRect br = fm.boundingRect(text);
-
-      int tx = left_x + 12;
-      int ty = y + fm.ascent(); // baseline
-      p.setPen(Qt::white);
-      p.drawText(tx, ty, text);
-
-      // Green: full font metrics box (top at ascent, height = fm.height())
-      p.setPen(QPen(Qt::green, 1));
-      QRect r(tx, ty - fm.ascent(), br.width(), fm.height());
-      p.drawRect(r);
-
-      // Tight bounding rect of the actual glyph (optional for reference)
-
-      // Red: exactly font-size pixels tall, starting at top of the green box
-      p.setPen(QPen(Qt::red, 2));
-      p.drawLine(QPoint(left_x, r.top()), QPoint(left_x, r.top() + sz));
-    }
-
-    // Metrics readout
-    QFont mf = font();
-    mf.setPixelSize(18);
-    p.setFont(mf);
-    auto scr = QApplication::primaryScreen();
-    QString scale_line = QString("QT_SCALE_FACTOR=%1 DPR=%2 logicalDPI=%3 physicalDPI=%4")
-                           .arg(QString::fromUtf8(qgetenv("QT_SCALE_FACTOR")))
-                           .arg(scr ? scr->devicePixelRatio() : 0.0)
-                           .arg(scr ? scr->logicalDotsPerInch() : 0.0)
-                           .arg(scr ? scr->physicalDotsPerInch() : 0.0);
-    p.setPen(Qt::white);
-    p.drawText(left_x, top_y + 3 * row_h + 40, scale_line);
-
-    // Per-size metrics (height and tight height)
-    int metrics_y = top_y + 3 * row_h + 70;
-    const int line_step = 22;
-    for (int i = 0; i < 3; ++i) {
-      int sz = samples[i].size;
-      QFont f = font();
-      f.setPixelSize(sz);
-      QFontMetrics fm(f);
-      QRect tr = fm.tightBoundingRect("HH");
-      QString mline = QString("sz=%1 fm.height=%2 tight.h=%3 ascent=%4 descent=%5")
-                        .arg(sz)
-                        .arg(fm.height())
-                        .arg(tr.height())
-                        .arg(fm.ascent())
-                        .arg(fm.descent());
-      p.drawText(left_x, metrics_y + i * line_step, mline);
-    }
-  }
 }
 
 void SoftwarePanel::showEvent(QShowEvent *event) {

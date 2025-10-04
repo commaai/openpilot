@@ -1,7 +1,3 @@
-from openpilot.common.params import Params
-import pyray as rl
-from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.text_measure import measure_text_cached
 import os
 import time
 import datetime
@@ -75,8 +71,6 @@ class SoftwareLayout(Widget):
 
   def _render(self, rect):
     self._scroller.render(rect)
-    if os.getenv("DEBUG_TEXT_COMPARE") == "1":
-      self._draw_text_compare()
 
   def _update_state(self):
     # Show/hide onroad warning
@@ -150,37 +144,6 @@ class SoftwareLayout(Widget):
       self._waiting_for_updater = True
       self._waiting_start_ts = time.monotonic()
       os.system("pkill -SIGHUP -f system.updated.updated")
-
-  def _draw_text_compare(self):
-    try:
-      font = gui_app.font(FontWeight.NORMAL)
-      samples = [(100, "HH"), (80, "HH"), (70, "HH")]
-      left_x = 10
-      top_y = int(gui_app.height / 2 + 40)
-      row_h = 120
-
-      for i, (size, text) in enumerate(samples):
-        y = top_y + i * row_h
-        rl.draw_line_ex(rl.Vector2(left_x, y), rl.Vector2(left_x, y + size), 2, rl.RED)
-        text_pos = rl.Vector2(left_x + 10, y)
-        rl.draw_text_ex(font, text, text_pos, size, 0, rl.WHITE)
-        ts = measure_text_cached(font, text, size)
-        rl.draw_rectangle_lines(int(text_pos.x), int(text_pos.y), int(ts.x), int(ts.y), rl.GREEN)
-
-      # Metrics readout
-      info_y = top_y + len(samples) * row_h + 40
-      info_lines = [
-        f"SCALE={os.getenv('SCALE','')} target_fps={gui_app.target_fps}",
-      ]
-      for size, text in samples:
-        ts = measure_text_cached(font, text, size)
-        info_lines.append(f"sz={size} meas.h={ts.y} baseSize=200")
-      info_font = gui_app.font(FontWeight.NORMAL)
-      info_size = 20
-      for i, line in enumerate(info_lines):
-        rl.draw_text_ex(info_font, line, rl.Vector2(left_x, info_y + i * 24), info_size, 0, rl.WHITE)
-    except Exception:
-      pass
 
   def _on_uninstall(self):
     def handle_uninstall_confirmation(result):
