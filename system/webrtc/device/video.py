@@ -21,6 +21,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
     self._sock = messaging.sub_sock(self.camera_to_sock_mapping[camera_type], conflate=True)
     self._pts = 0
+    self._t0_ns = time.monotonic_ns()
 
   async def recv(self):
     while True:
@@ -34,8 +35,6 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     packet = av.Packet(evta.header + evta.data)
     packet.time_base = self._time_base
 
-    if getattr(self,"_t0_ns", None) is None:
-      self._t0_ns = time.monotonic_ns()
     self._pts =  ((time.monotonic_ns()-self._t0_ns) * self._clock_rate) // 1_000_000_000
     packet.pts = self._pts
     self.log_debug("track sending frame %d", self._pts)
