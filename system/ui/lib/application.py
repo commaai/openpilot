@@ -31,7 +31,7 @@ DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
 
 # Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
-# The real scales for the fonts below ranges from 1.212 to 1.266
+# The real scales for the fonts below range from 1.212 to 1.266
 FONT_SCALE = 1.242
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
