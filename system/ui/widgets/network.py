@@ -20,6 +20,7 @@ try:
   from openpilot.selfdrive.ui.ui_state import ui_state
   from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 except Exception:
+  Params = None
   ui_state = None  # type: ignore
   PrimeType = None  # type: ignore
 
@@ -109,7 +110,7 @@ class AdvancedNetworkSettings(Widget):
     super().__init__()
     self._wifi_manager = wifi_manager
     self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
-    self._params = Params()  # type: ignore # noqa: F821
+    self._params = Params()
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
