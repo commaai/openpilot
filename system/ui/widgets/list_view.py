@@ -9,6 +9,8 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 
+from system.ui.widgets.html_render import HtmlRenderer, ElementType
+
 ITEM_BASE_WIDTH = 600
 ITEM_BASE_HEIGHT = 170
 ITEM_PADDING = 20
@@ -258,7 +260,7 @@ class ListItem(Widget):
     super().__init__()
     self.title = title
     self.icon = icon
-    self.description = description
+    self._description = description
     self.description_visible = description_visible
     self.callback = callback
     self.action_item = action_item
@@ -267,11 +269,15 @@ class ListItem(Widget):
     self._font = gui_app.font(FontWeight.NORMAL)
     self._icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE) if self.icon else None
 
+    self._html_renderer = HtmlRenderer(text="", text_size_override={ElementType.P: ITEM_DESC_FONT_SIZE},
+                                       text_color=ITEM_DESC_TEXT_COLOR)
+    self.set_description(self.description)
+
     # Cached properties for performance
-    self._prev_max_width: int = 0
-    self._wrapped_description: str | None = None
-    self._prev_description: str | None = None
-    self._description_height: float = 0
+    # self._prev_max_width: int = 0
+    # self._wrapped_description: str | None = None
+    self._prev_description: str | None = self.description  # TODO
+    # self._description_height: float = 0
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -297,6 +303,13 @@ class ListItem(Widget):
       self.description_visible = not self.description_visible
       content_width = self.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
       self._rect.height = self.get_item_height(self._font, content_width)
+      print('toggled description_visible to', self.description_visible, 'new height', self._rect.height)
+
+  def _update_state(self):
+    new_description = self.description
+    if new_description != self._prev_description:
+      print('description changed!')
+      self.set_description(new_description)
 
   def _render(self, _):
     if not self.is_visible:
@@ -323,16 +336,30 @@ class ListItem(Widget):
       rl.draw_text_ex(self._font, self.title, rl.Vector2(text_x, item_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_COLOR)
 
     # Draw description if visible
-    current_description = self.get_description()
-    if self.description_visible and current_description and self._wrapped_description:
-      rl.draw_text_ex(
-        self._font,
-        self._wrapped_description,
-        rl.Vector2(text_x, self._rect.y + ITEM_DESC_V_OFFSET),
-        ITEM_DESC_FONT_SIZE,
-        0,
-        ITEM_DESC_TEXT_COLOR,
+    if self.description_visible:
+      # TODO: the height changes if no description avail
+      content_width = self.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
+      description_height = self._html_renderer.get_total_height(content_width)
+      print('content_width', content_width, 'description_height', description_height)
+      description_rect = rl.Rectangle(
+        self._rect.x + ITEM_PADDING,
+        self._rect.y + ITEM_DESC_V_OFFSET,
+        content_width,
+        description_height
       )
+      self._html_renderer.render(description_rect)
+
+    # # Draw description if visible
+    # current_description = self.get_description()
+    # if self.description_visible and current_description and self._wrapped_description:
+    #   rl.draw_text_ex(
+    #     self._font,
+    #     self._wrapped_description,
+    #     rl.Vector2(text_x, self._rect.y + ITEM_DESC_V_OFFSET),
+    #     ITEM_DESC_FONT_SIZE,
+    #     0,
+    #     ITEM_DESC_TEXT_COLOR,
+    #   )
 
     # Draw right item if present
     if self.action_item:
@@ -343,30 +370,47 @@ class ListItem(Widget):
         if self.callback:
           self.callback()
 
-  def get_description(self):
-    return _resolve_value(self.description, None)
+  def set_description(self, description: str | Callable[[], str] | None):
+    print('got description', description)
+    self._description = description
+    self._html_renderer.parse_html_content(self.description)
+
+  @property
+  def description(self):
+    return _resolve_value(self._description, "")
 
   def get_item_height(self, font: rl.Font, max_width: int) -> float:
     if not self.is_visible:
       return 0
 
-    current_description = self.get_description()
-    if self.description_visible and current_description:
-      if (
-        not self._wrapped_description
-        or current_description != self._prev_description
-        or max_width != self._prev_max_width
-      ):
-        self._prev_max_width = max_width
-        self._prev_description = current_description
+    height = ITEM_BASE_HEIGHT
+    print('base height', height, 'desc visible', self.description_visible)
+    if self.description_visible:
+      # TODO: we should use full width always here!
+      description_height = self._html_renderer.get_total_height(self.get_content_width(max_width))
+      print('desc height', description_height)
+      height += description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
+      print('new height', height)
+    return height
 
-        wrapped_lines = wrap_text(font, current_description, ITEM_DESC_FONT_SIZE, max_width)
-        self._wrapped_description = "\n".join(wrapped_lines)
-        self._description_height = len(wrapped_lines) * ITEM_DESC_FONT_SIZE + 10
-      return ITEM_BASE_HEIGHT + self._description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
-    return ITEM_BASE_HEIGHT
+    # current_description = self.get_description()
+    # if self.description_visible and current_description:
+    #   if (
+    #     not self._wrapped_description
+    #     or current_description != self._prev_description
+    #     or max_width != self._prev_max_width
+    #   ):
+    #     self._prev_max_width = max_width
+    #     self._prev_description = current_description
+    #
+    #     wrapped_lines = wrap_text(font, current_description, ITEM_DESC_FONT_SIZE, max_width)
+    #     self._wrapped_description = "\n".join(wrapped_lines)
+    #     self._description_height = len(wrapped_lines) * ITEM_DESC_FONT_SIZE + 10
+    #   return ITEM_BASE_HEIGHT + self._description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
+    # return ITEM_BASE_HEIGHT
 
   def get_content_width(self, total_width: int) -> int:
+    return total_width
     if self.action_item and self.action_item.rect.width > 0:
       return total_width - int(self.action_item.rect.width) - RIGHT_ITEM_PADDING
     return total_width

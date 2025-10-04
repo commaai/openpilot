@@ -51,21 +51,28 @@ class HtmlElement:
 
 
 class HtmlRenderer(Widget):
-  def __init__(self, file_path: str | None = None, text: str | None = None):
+  def __init__(self, file_path: str | None = None, text: str | None = None,
+               text_size_override: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
+    self._text_color = text_color
     self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._indent_level = 0
 
+    if text_size_override is None:
+      text_size_override = {}
+
+    # Untagged text defaults to <p>
     self.styles: dict[ElementType, dict[str, Any]] = {
+      # TOOD: remove useless colors??
       ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 16},
       ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 24, "margin_bottom": 12},
       ElementType.H3: {"size": 52, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 10},
       ElementType.H4: {"size": 48, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 16, "margin_bottom": 8},
       ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 12, "margin_bottom": 6},
       ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 10, "margin_bottom": 4},
-      ElementType.P: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 8, "margin_bottom": 12},
+      ElementType.P: {"size": text_size_override.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 8, "margin_bottom": 12},
       ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "color": rl.BLACK, "margin_top": 0, "margin_bottom": 12},
     }
@@ -95,6 +102,20 @@ class HtmlRenderer(Widget):
     # Parse HTML
     tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
 
+    def close_tag():
+      nonlocal current_content
+      nonlocal current_tag
+
+      if current_tag is None:
+        current_tag = ElementType.P
+
+      text = ' '.join(current_content).strip()
+      current_content = []
+      if text:
+        if current_tag == ElementType.LI:
+          text = '• ' + text
+        self._add_element(current_tag, text)
+
     current_content: list[str] = []
     current_tag: ElementType | None = None
     for token in tokens:
@@ -106,19 +127,24 @@ class HtmlRenderer(Widget):
         elif tag == ElementType.UL:
           self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
-        elif is_start_tag:
-          current_tag = tag
+        # elif is_start_tag:
+        #   current_tag = tag
 
-        elif is_end_tag:
-          if current_tag is not None:
-            text = ' '.join(current_content).strip()
-            current_content = []
-            if text:
-              if current_tag == ElementType.LI:
-                text = '• ' + text
-              self._add_element(current_tag, text)
+        elif is_start_tag or is_end_tag:
+          # if current_tag is None:
+          #   current_tag = ElementType.P
+
+          close_tag()
+
+          if is_start_tag:
+            current_tag = tag
+
       else:
         current_content.append(token)
+
+    if current_content:
+      close_tag()
+
 
   def _add_element(self, element_type: ElementType, content: str) -> None:
     style = self.styles[element_type]
@@ -163,7 +189,7 @@ class HtmlRenderer(Widget):
             break
 
           text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
-          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, rl.WHITE)
+          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
 
           current_y += element.font_size * element.line_height
 
@@ -173,6 +199,7 @@ class HtmlRenderer(Widget):
     return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
+    # TODO: cache this
     total_height = 0.0
     padding = 20
     usable_width = content_width - (padding * 2)
