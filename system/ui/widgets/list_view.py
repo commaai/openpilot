@@ -404,19 +404,6 @@ class ListItem(Widget):
     right_y = item_rect.y
     return rl.Rectangle(right_x, right_y, right_width, ITEM_BASE_HEIGHT)
 
-    # # Compute the leftmost x we allow the right item to start at, so it never covers the title
-    # content_x = item_rect.x + ITEM_PADDING
-    # text_x = content_x
-    # if self.icon:
-    #   text_x += ICON_SIZE + ITEM_PADDING
-    # title_width = measure_text_cached(self._font, self.title, ITEM_TEXT_FONT_SIZE).x if self.title else 0
-    # min_right_x = text_x + title_width + RIGHT_ITEM_PADDING
-    #
-    # # Place the action so it doesn't overlap the title
-    # right_x = max(min_right_x, item_rect.x + item_rect.width - right_width)
-    # right_y = item_rect.y
-    # return rl.Rectangle(right_x, right_y, right_width, ITEM_BASE_HEIGHT)
-
 
 # Factory functions
 def simple_item(title: str, callback: Callable | None = None) -> ListItem:
