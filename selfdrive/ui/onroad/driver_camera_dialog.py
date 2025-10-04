@@ -12,11 +12,17 @@ class DriverCameraDialog(CameraView):
   def __init__(self):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
+
+  def show_event(self):
+    super().show_event()
     ui_state.params.put_bool("IsDriverViewEnabled", True)
+
+  def hide_event(self):
+    super().hide_event()
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
 
   def _handle_mouse_release(self, _):
     super()._handle_mouse_release(_)
-    ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
 
   def _render(self, rect):
