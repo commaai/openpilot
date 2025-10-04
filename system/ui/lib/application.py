@@ -30,6 +30,10 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
 
+# Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
+# The real scales for the fonts below ranges from 1.212 to 1.266
+FONT_SCALE = 1.242
+
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
@@ -380,6 +384,7 @@ class GuiApplication:
         cloudlog.info(f"font scale computed: weight={weight} baseSize={base:.1f} linePx={line_px:.1f} scale={scale:.3f}")
     except Exception as e:
       cloudlog.exception(f"font metrics computation failed: {e}")
+    print(self._font_scale_by_id)
 
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
