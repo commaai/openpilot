@@ -16,6 +16,7 @@ from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, Multip
 
 # These are only used for AdvancedNetworkSettings, standalone apps just need WifiManagerUI
 try:
+  from openpilot.common.params import Params
   from openpilot.selfdrive.ui.ui_state import ui_state
   from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 except Exception:
@@ -106,7 +107,6 @@ class NetworkUI(Widget):
 class AdvancedNetworkSettings(Widget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
-
     self._wifi_manager = wifi_manager
     self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
     self._params = Params()  # type: ignore # noqa: F821
