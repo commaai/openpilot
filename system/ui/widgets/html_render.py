@@ -43,7 +43,6 @@ class HtmlElement:
   content: str
   font_size: int
   font_weight: FontWeight
-  color: rl.Color
   margin_top: int
   margin_bottom: int
   line_height: float = 1.2
@@ -52,31 +51,29 @@ class HtmlElement:
 
 class HtmlRenderer(Widget):
   def __init__(self, file_path: str | None = None, text: str | None = None,
-               text_size_override: dict | None = None, text_color: rl.Color = rl.WHITE):
+               text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
     self._text_color = text_color
-    self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._indent_level = 0
 
-    if text_size_override is None:
-      text_size_override = {}
+    if text_size is None:
+      text_size = {}
 
     # Untagged text defaults to <p>
     self.styles: dict[ElementType, dict[str, Any]] = {
-      # TOOD: remove useless colors??
-      ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 16},
-      ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 24, "margin_bottom": 12},
-      ElementType.H3: {"size": 52, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 10},
-      ElementType.H4: {"size": 48, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 16, "margin_bottom": 8},
-      ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 12, "margin_bottom": 6},
-      ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 10, "margin_bottom": 4},
-      ElementType.P: {"size": text_size_override.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 8, "margin_bottom": 12},
-      ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
-      ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "color": rl.BLACK, "margin_top": 0, "margin_bottom": 12},
+      ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
+      ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "margin_top": 24, "margin_bottom": 12},
+      ElementType.H3: {"size": 52, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 10},
+      ElementType.H4: {"size": 48, "weight": FontWeight.BOLD, "margin_top": 16, "margin_bottom": 8},
+      ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
+      ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
+      ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
 
+    self.elements: list[HtmlElement] = []
     if file_path is not None:
       self.parse_html_file(file_path)
     elif text is not None:
@@ -106,6 +103,7 @@ class HtmlRenderer(Widget):
       nonlocal current_content
       nonlocal current_tag
 
+      # If no tag is set, default to paragraph so we don't lose text
       if current_tag is None:
         current_tag = ElementType.P
 
@@ -127,15 +125,11 @@ class HtmlRenderer(Widget):
         elif tag == ElementType.UL:
           self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
-        # elif is_start_tag:
-        #   current_tag = tag
-
         elif is_start_tag or is_end_tag:
-          # if current_tag is None:
-          #   current_tag = ElementType.P
-
+          # Always add content regardless of opening or closing tag
           close_tag()
 
+          # TODO: reset to None if end tag?
           if is_start_tag:
             current_tag = tag
 
@@ -145,7 +139,6 @@ class HtmlRenderer(Widget):
     if current_content:
       close_tag()
 
-
   def _add_element(self, element_type: ElementType, content: str) -> None:
     style = self.styles[element_type]
 
@@ -154,7 +147,6 @@ class HtmlRenderer(Widget):
       content=content,
       font_size=style["size"],
       font_weight=style["weight"],
-      color=style["color"],
       margin_top=style["margin_top"],
       margin_bottom=style["margin_bottom"],
       indent_level=self._indent_level,

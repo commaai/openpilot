@@ -83,7 +83,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         id: find_diff
         run: >-
-          sudo apt-get install -y imagemagick
+          sudo apt-get update && sudo apt-get install -y imagemagick
 
           scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1 | grep -v 'pair_device')
           A=($scenes)
