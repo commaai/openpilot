@@ -55,9 +55,6 @@ class HtmlRenderer(Widget):
     super().__init__()
     self._text_color = text_color
 
-    self._total_height = 0.0
-    self._height_needs_recompute = True
-    self._prev_content_width = -1
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._indent_level = 0
@@ -92,7 +89,6 @@ class HtmlRenderer(Widget):
 
   def parse_html_content(self, html_content: str) -> None:
     self.elements.clear()
-    self._height_needs_recompute = True
 
     # Remove HTML comments
     html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
@@ -196,32 +192,27 @@ class HtmlRenderer(Widget):
     return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
-    if not self._height_needs_recompute and self._prev_content_width == content_width:
-      return self._total_height
-
-    self._total_height = 0.0
+    total_height = 0.0
     padding = 20
     usable_width = content_width - (padding * 2)
 
     for element in self.elements:
       if element.type == ElementType.BR:
-        self._total_height += element.margin_bottom
+        total_height += element.margin_bottom
         continue
 
-      self._total_height += element.margin_top
+      total_height += element.margin_top
 
       if element.content:
-        font = self._get_font(element.font_weight)
+        font = get_font(element.font_weight)
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
 
         for _ in wrapped_lines:
-          self._total_height += element.font_size * element.line_height
+          total_height += element.font_size * element.line_height
 
-      self._total_height += element.margin_bottom
+      total_height += element.margin_bottom
 
-    self._prev_content_width = content_width
-    self._height_needs_recompute = False
-    return self._total_height
+    return total_height
 
   def _get_font(self, weight: FontWeight):
     if weight == FontWeight.BOLD:
