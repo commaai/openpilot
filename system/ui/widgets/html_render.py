@@ -118,13 +118,14 @@ class HtmlRenderer(Widget):
     current_content: list[str] = []
     current_tag: ElementType | None = None
     for token in tokens:
+      print()
+      print('  token', token)
       is_start_tag, is_end_tag, tag = is_tag(token)
       if tag is not None:
+        print('tag', tag)
+
         if tag == ElementType.BR:
           self._add_element(ElementType.BR, "")
-
-        elif tag == ElementType.UL:
-          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
         elif is_start_tag or is_end_tag:
           # Always add content regardless of opening or closing tag
@@ -133,6 +134,12 @@ class HtmlRenderer(Widget):
           # TODO: reset to None if end tag?
           if is_start_tag:
             current_tag = tag
+
+        # increment after we add the content for the current tag
+        if tag == ElementType.UL:
+          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
+
+        print('indent level', self._indent_level)
 
       else:
         current_content.append(token)
@@ -154,6 +161,7 @@ class HtmlRenderer(Widget):
     )
 
     self.elements.append(element)
+    print(element)
 
   def _render(self, rect: rl.Rectangle):
     # TODO: speed up by removing duplicate calculations across renders
