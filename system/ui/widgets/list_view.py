@@ -268,7 +268,6 @@ class ListItem(Widget):
     self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
     self._font = gui_app.font(FontWeight.NORMAL)
     self._icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE) if self.icon else None
-    self._title_width = 0
 
     self._html_renderer = HtmlRenderer(text="", text_size={ElementType.P: ITEM_DESC_FONT_SIZE},
                                        text_color=ITEM_DESC_TEXT_COLOR)

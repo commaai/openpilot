@@ -158,7 +158,7 @@ class Device:
 
   def reset_interactive_timeout(self, timeout: int = -1) -> None:
     if timeout == -1:
-      timeout = 10 if ui_state.ignition else 300
+      timeout = 10 if ui_state.ignition else 30
     self._interaction_time = time.monotonic() + timeout
 
   def add_interactive_timeout_callback(self, callback: Callable):
