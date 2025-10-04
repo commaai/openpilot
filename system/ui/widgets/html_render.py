@@ -9,6 +9,7 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 
+LIST_INDENT_PX = 40
 
 class ElementType(Enum):
   H1 = "h1"
@@ -18,7 +19,21 @@ class ElementType(Enum):
   H5 = "h5"
   H6 = "h6"
   P = "p"
+  UL = "ul"
+  LI = "li"
   BR = "br"
+
+
+TAG_NAMES = '|'.join([t.value for t in ElementType])
+START_TAG_RE = re.compile(f'<({TAG_NAMES})>')
+END_TAG_RE = re.compile(f'</({TAG_NAMES})>')
+
+
+def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
+  supported_tag = bool(START_TAG_RE.fullmatch(token))
+  supported_end_tag = bool(END_TAG_RE.fullmatch(token))
+  tag = ElementType(token[1:-1].strip('/')) if supported_tag or supported_end_tag else None
+  return supported_tag, supported_end_tag, tag
 
 
 @dataclass
@@ -30,6 +45,7 @@ class HtmlElement:
   margin_top: int
   margin_bottom: int
   line_height: float = 1.2
+  indent_level: int = 0
 
 
 class HtmlRenderer(Widget):
@@ -40,10 +56,12 @@ class HtmlRenderer(Widget):
     self.elements: list[HtmlElement] = []
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
+    self._indent_level = 0
 
     if text_size is None:
       text_size = {}
 
+    # Untagged text defaults to <p>
     self.styles: dict[ElementType, dict[str, Any]] = {
       ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
       ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "margin_top": 24, "margin_bottom": 12},
@@ -77,25 +95,51 @@ class HtmlRenderer(Widget):
     html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
     html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
 
-    # Find all HTML elements
-    pattern = r'<(h[1-6]|p)(?:[^>]*)>(.*?)</\1>|<br\s*/?>'
-    matches = re.finditer(pattern, html_content, re.DOTALL | re.IGNORECASE)
+    # Parse HTML
+    tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
 
-    for match in matches:
-      if match.group(0).lower().startswith('<br'):
-        # Handle <br> tags
-        self._add_element(ElementType.BR, "")
+    def close_tag():
+      nonlocal current_content
+      nonlocal current_tag
+
+      # If no tag is set, default to paragraph so we don't lose text
+      if current_tag is None:
+        current_tag = ElementType.P
+
+      text = ' '.join(current_content).strip()
+      current_content = []
+      if text:
+        if current_tag == ElementType.LI:
+          text = '• ' + text
+        self._add_element(current_tag, text)
+
+    current_content: list[str] = []
+    current_tag: ElementType | None = None
+    for token in tokens:
+      is_start_tag, is_end_tag, tag = is_tag(token)
+      if tag is not None:
+        if tag == ElementType.BR:
+          self._add_element(ElementType.BR, "")
+
+        elif tag == ElementType.UL:
+          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
+
+        # elif is_start_tag:
+        #   current_tag = tag
+
+        elif is_start_tag or is_end_tag:
+          # Always add content regardless of opening or closing tag
+          close_tag()
+
+          # TODO: reset to None if end tag?
+          if is_start_tag:
+            current_tag = tag
+
       else:
-        tag = match.group(1).lower()
-        content = match.group(2).strip()
+        current_content.append(token)
 
-        # Clean up content - remove extra whitespace
-        content = re.sub(r'\s+', ' ', content)
-        content = content.strip()
-
-        if content:  # Only add non-empty elements
-          element_type = ElementType(tag)
-          self._add_element(element_type, content)
+    if current_content:
+      close_tag()
 
   def _add_element(self, element_type: ElementType, content: str) -> None:
     style = self.styles[element_type]
