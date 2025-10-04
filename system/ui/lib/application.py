@@ -181,6 +181,8 @@ class GuiApplication:
     if self._modal_overlay.overlay is not None:
       if hasattr(self._modal_overlay.overlay, 'hide_event'):
         self._modal_overlay.overlay.hide_event()
+      if self._modal_overlay.callback is not None:
+        self._modal_overlay.callback(-1)
 
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
