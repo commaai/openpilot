@@ -302,7 +302,6 @@ class ListItem(Widget):
   def _update_state(self):
     new_description = self.description
     if new_description != self._prev_description:
-      print('description changed!')
       self.set_description(new_description)
 
   def _render(self, _):
