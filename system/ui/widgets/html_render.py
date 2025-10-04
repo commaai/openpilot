@@ -70,6 +70,7 @@ class HtmlRenderer(Widget):
       ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
       ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
       ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
 
@@ -122,9 +123,6 @@ class HtmlRenderer(Widget):
         if tag == ElementType.BR:
           self._add_element(ElementType.BR, "")
 
-        elif tag == ElementType.UL:
-          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
-
         elif is_start_tag or is_end_tag:
           # Always add content regardless of opening or closing tag
           close_tag()
@@ -132,6 +130,10 @@ class HtmlRenderer(Widget):
           # TODO: reset to None if end tag?
           if is_start_tag:
             current_tag = tag
+
+        # increment after we add the content for the current tag
+        if tag == ElementType.UL:
+          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
       else:
         current_content.append(token)

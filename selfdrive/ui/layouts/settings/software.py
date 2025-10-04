@@ -86,7 +86,7 @@ class SoftwareLayout(Widget):
     current_desc = ui_state.params.get("UpdaterCurrentDescription") or ""
     current_release_notes = (ui_state.params.get("UpdaterCurrentReleaseNotes") or b"").decode("utf-8", "replace")
     self._version_item.action_item.set_text(current_desc)
-    self._version_item.description = current_release_notes
+    self._version_item.set_description(current_release_notes)
 
     # Update download button visibility and state
     self._download_btn.set_visible(ui_state.is_offroad())
@@ -131,7 +131,7 @@ class SoftwareLayout(Widget):
       new_release_notes = (ui_state.params.get("UpdaterNewReleaseNotes") or b"").decode("utf-8", "replace")
       self._install_btn.action_item.set_text("INSTALL")
       self._install_btn.action_item.set_value(new_desc)
-      self._install_btn.description = new_release_notes
+      self._install_btn.set_description(new_release_notes)
       # Enable install button for testing (like Qt showEvent)
       self._install_btn.action_item.set_enabled(True)
     else:
