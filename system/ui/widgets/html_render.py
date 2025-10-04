@@ -1,6 +1,4 @@
 import re
-import time
-
 import pyray as rl
 from dataclasses import dataclass
 from enum import Enum
@@ -193,7 +191,6 @@ class HtmlRenderer(Widget):
     return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
-    t = time.monotonic()
     total_height = 0.0
     padding = 20
     usable_width = content_width - (padding * 2)
@@ -214,7 +211,6 @@ class HtmlRenderer(Widget):
 
       total_height += element.margin_bottom
 
-    print(f"HtmlRenderer.get_total_height took {(time.monotonic() - t) * 1000:.4f}ms")
     return total_height
 
   def _get_font(self, weight: FontWeight):
