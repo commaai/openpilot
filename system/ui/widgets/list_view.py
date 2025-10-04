@@ -301,7 +301,7 @@ class ListItem(Widget):
 
     if self.description:
       self.description_visible = not self.description_visible
-      content_width = self.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
+      content_width = int(self._rect.width - ITEM_PADDING * 2)
       self._rect.height = self.get_item_height(self._font, content_width)
       print('toggled description_visible to', self.description_visible, 'new height', self._rect.height)
 
@@ -310,6 +310,7 @@ class ListItem(Widget):
     if new_description != self._prev_description:
       print('description changed!')
       self.set_description(new_description)
+      self._prev_description = new_description
 
   def _render(self, _):
     if not self.is_visible:
@@ -337,10 +338,8 @@ class ListItem(Widget):
 
     # Draw description if visible
     if self.description_visible:
-      # TODO: the height changes if no description avail
-      content_width = self.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
+      content_width = int(self._rect.width - ITEM_PADDING * 2)
       description_height = self._html_renderer.get_total_height(content_width)
-      print('content_width', content_width, 'description_height', description_height)
       description_rect = rl.Rectangle(
         self._rect.x + ITEM_PADDING,
         self._rect.y + ITEM_DESC_V_OFFSET,
@@ -371,7 +370,6 @@ class ListItem(Widget):
           self.callback()
 
   def set_description(self, description: str | Callable[[], str] | None):
-    print('got description', description)
     self._description = description
     self._html_renderer.parse_html_content(self.description)
 
@@ -384,36 +382,10 @@ class ListItem(Widget):
       return 0
 
     height = ITEM_BASE_HEIGHT
-    print('base height', height, 'desc visible', self.description_visible)
     if self.description_visible:
-      # TODO: we should use full width always here!
-      description_height = self._html_renderer.get_total_height(self.get_content_width(max_width))
-      print('desc height', description_height)
+      description_height = self._html_renderer.get_total_height(max_width)
       height += description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
-      print('new height', height)
     return height
-
-    # current_description = self.get_description()
-    # if self.description_visible and current_description:
-    #   if (
-    #     not self._wrapped_description
-    #     or current_description != self._prev_description
-    #     or max_width != self._prev_max_width
-    #   ):
-    #     self._prev_max_width = max_width
-    #     self._prev_description = current_description
-    #
-    #     wrapped_lines = wrap_text(font, current_description, ITEM_DESC_FONT_SIZE, max_width)
-    #     self._wrapped_description = "\n".join(wrapped_lines)
-    #     self._description_height = len(wrapped_lines) * ITEM_DESC_FONT_SIZE + 10
-    #   return ITEM_BASE_HEIGHT + self._description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
-    # return ITEM_BASE_HEIGHT
-
-  def get_content_width(self, total_width: int) -> int:
-    return total_width
-    if self.action_item and self.action_item.rect.width > 0:
-      return total_width - int(self.action_item.rect.width) - RIGHT_ITEM_PADDING
-    return total_width
 
   def get_right_item_rect(self, item_rect: rl.Rectangle) -> rl.Rectangle:
     if not self.action_item:
