@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+import numpy as np
 
 import pyray as rl
 from openpilot.common.watchdog import kick_watchdog
@@ -7,6 +8,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
 
+frame_times = []
 
 def main():
   # TODO: https://github.com/commaai/agnos-builder/pull/490
@@ -15,17 +17,24 @@ def main():
   gui_app.init_window("UI")
   main_layout = MainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-  t = time.monotonic()
   for showing_dialog in gui_app.render():
     ui_state.update()
 
     kick_watchdog()
 
+    t = time.monotonic()
     if not showing_dialog:
       main_layout.render()
-    print("UI loop time", f'{(time.monotonic() - t) * 1000:.3f}ms, theoretical fps: {1 / (time.monotonic() - t):.1f}')
-    t = time.monotonic()
+    frame_times.append(time.monotonic() - t)
+    print("UI loop time", f'{(frame_times[-1]) * 1000:.3f}ms, theoretical fps: {1 / (frame_times[-1]):.1f}')
 
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  finally:
+    _1percent_low = np.percentile(frame_times, 1) * 1000
+    average = np.mean(frame_times) * 1000
+    median = np.median(frame_times) * 1000
+    stddev = np.std(frame_times) * 1000
+    print(f"\nUI 1% low: {_1percent_low:.2f}ms, avg: {average:.2f}ms, median: {median:.2f}ms, stddev: {stddev:.2f}ms")
