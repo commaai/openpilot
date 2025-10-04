@@ -178,17 +178,7 @@ class GuiApplication:
       self._mouse.start()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
-    if self._modal_overlay.overlay is not None:
-      if hasattr(self._modal_overlay.overlay, 'hide_event'):
-        self._modal_overlay.overlay.hide_event()
-      if self._modal_overlay.callback is not None:
-        self._modal_overlay.callback(-1)
-
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
-
-    # Send show event to Widget
-    if hasattr(overlay, 'show_event'):
-      overlay.show_event()
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
@@ -288,11 +278,8 @@ class GuiApplication:
             self._modal_overlay = ModalOverlay()
             if original_modal.callback is not None:
               original_modal.callback(result)
-            if hasattr(original_modal.overlay, 'hide_event'):
-              original_modal.overlay.hide_event()
           yield True
         else:
-          self._modal_overlay_shown = False
           yield False
 
         if self._render_texture:
