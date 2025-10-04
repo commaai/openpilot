@@ -1,6 +1,7 @@
 import asyncio
 
 import av
+import time
 from teleoprtc.tracks import TiciVideoStreamTrack
 
 from cereal import messaging
@@ -32,10 +33,12 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
     packet = av.Packet(evta.header + evta.data)
     packet.time_base = self._time_base
-    packet.pts = self._pts
 
-    self.log_debug("track sending frame %s", self._pts)
-    self._pts += self._dt * self._clock_rate
+    if getattr(self,"_t0_ns", None) is None:
+      self._t0_ns = time.monotonic_ns()
+    self._pts =  ((time.monotonic_ns()-self._t0_ns) * self._clock_rate) // 1_000_000_000
+    packet.pts = self._pts
+    self.log_debug("track sending frame %d", self._pts)
 
     return packet
 
