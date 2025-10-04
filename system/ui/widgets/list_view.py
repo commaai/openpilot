@@ -44,6 +44,7 @@ class ItemAction(Widget, ABC):
     self._enabled_source = enabled
 
   def get_width_hint(self) -> float:
+    # Return's action ideal width, 0 means use full width
     return self._rect.width
 
   def set_enabled(self, enabled: bool | Callable[[], bool]):
@@ -376,12 +377,12 @@ class ListItem(Widget):
     if not self.action_item:
       return rl.Rectangle(0, 0, 0, 0)
 
-    # right_width = self.action_item.rect.width
     right_width = self.action_item.get_width_hint()
     if right_width == 0:  # Full width action (like DualButtonAction)
       return rl.Rectangle(item_rect.x + ITEM_PADDING, item_rect.y,
                           item_rect.width - (ITEM_PADDING * 2), ITEM_BASE_HEIGHT)
 
+    # Clip width to available space, never overlapping this Item's title
     content_width = item_rect.width - (ITEM_PADDING * 2)
     title_width = measure_text_cached(self._font, self.title, ITEM_TEXT_FONT_SIZE).x
     right_width = min(content_width - title_width, right_width)

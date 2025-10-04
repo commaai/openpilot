@@ -10,6 +10,8 @@ from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets import Widget
 
 HEADER_HEIGHT = 80
@@ -157,13 +159,12 @@ class HomeLayout(Widget):
       text_y = self.alert_notif_rect.y + (self.alert_notif_rect.height - HEAD_BUTTON_FONT_SIZE) // 2
       rl.draw_text_ex(font, alert_text, rl.Vector2(int(text_x), int(text_y)), HEAD_BUTTON_FONT_SIZE, 0, rl.WHITE)
 
-    # Draw version text (right-aligned)
+    # Version text (right aligned)
     if self.update_available or self.alert_count > 0:
       version_text_width -= SPACING * 1.5
 
     version_rect = rl.Rectangle(self.header_rect.x + self.header_rect.width - version_text_width, self.header_rect.y,
                                 version_text_width, self.header_rect.height)
-
     gui_label(version_rect, self._get_version_text(), 48, rl.WHITE, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT)
 
   def _render_home_content(self):
