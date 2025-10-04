@@ -4,12 +4,10 @@ from collections.abc import Callable
 from abc import ABC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
-
-from system.ui.widgets.html_render import HtmlRenderer, ElementType
+from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
 
 ITEM_BASE_WIDTH = 600
 ITEM_BASE_HEIGHT = 170
@@ -274,10 +272,7 @@ class ListItem(Widget):
     self.set_description(self.description)
 
     # Cached properties for performance
-    # self._prev_max_width: int = 0
-    # self._wrapped_description: str | None = None
     self._prev_description: str | None = self.description
-    # self._description_height: float = 0
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
