@@ -150,6 +150,7 @@ class HomeLayout(Widget):
       text_y = self.alert_notif_rect.y + (self.alert_notif_rect.height - HEAD_BUTTON_FONT_SIZE) // 2
       rl.draw_text_ex(font, alert_text, rl.Vector2(int(text_x), int(text_y)), HEAD_BUTTON_FONT_SIZE, 0, rl.WHITE)
 
+
     # Version text (right aligned)
     version_text = self._get_version_text()
     text_width = measure_text_cached(gui_app.font(FontWeight.NORMAL), version_text, 48).x
