@@ -10,8 +10,8 @@ from pynput import mouse
 print("Mouse coordinate printer - Press Ctrl+C to exit")
 print("Click to set the top left origin")
 
-origin = None
-clicks = []
+origin: tuple[int, int] | None = None
+clicks: list[tuple[int, int]] = []
 
 
 def on_click(x, y, button, pressed):
