@@ -316,7 +316,7 @@ class UpdateAlert(AbstractAlert):
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
     if update_available:
-      self.release_notes = (self.params.get("UpdaterCurrentReleaseNotes") or b"").decode("utf8").strip()
+      self.release_notes = (self.params.get("UpdaterNewReleaseNotes") or b"").decode("utf8").strip()
       # print("Release notes:", self.release_notes)
       # print()
       self._html_renderer.parse_html_content(self.release_notes or NO_RELEASE_NOTES)
