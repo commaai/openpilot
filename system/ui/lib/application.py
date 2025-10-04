@@ -178,6 +178,10 @@ class GuiApplication:
       self._mouse.start()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    if self._modal_overlay.overlay is not None:
+      if self._modal_overlay.callback is not None:
+        self._modal_overlay.callback(-1)
+
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
