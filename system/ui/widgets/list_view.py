@@ -156,20 +156,6 @@ class TextAction(ItemAction):
     return text_width + TEXT_PADDING
 
   def _render(self, rect: rl.Rectangle) -> bool:
-
-    """
-    def _render(self, rect: rl.Rectangle) -> bool:
-      current_text = self.text
-      text_size = measure_text_cached(self._font, current_text, ITEM_TEXT_FONT_SIZE)
-
-      text_x = rect.x + (rect.width - text_size.x) / 2
-      text_y = rect.y + (rect.height - text_size.y) / 2
-      rl.draw_text_ex(self._font, current_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, self.color)
-      return False
-    """
-
-    rl.draw_rectangle_lines_ex(rect, 1, rl.RED)
-
     gui_label(self._rect, self.text, font_size=ITEM_TEXT_FONT_SIZE, color=self.color,
               font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
@@ -344,7 +330,6 @@ class ListItem(Widget):
       text_size = measure_text_cached(self._font, self.title, ITEM_TEXT_FONT_SIZE)
       item_y = self._rect.y + (ITEM_BASE_HEIGHT - text_size.y) // 2
       rl.draw_text_ex(self._font, self.title, rl.Vector2(text_x, item_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_COLOR)
-      self._title_width = text_size.x
 
     # Draw description if visible
     if self.description_visible:
@@ -398,7 +383,8 @@ class ListItem(Widget):
                           item_rect.width - (ITEM_PADDING * 2), ITEM_BASE_HEIGHT)
 
     content_width = item_rect.width - (ITEM_PADDING * 2)
-    right_width = min(content_width - self._title_width, right_width)
+    title_width = measure_text_cached(self._font, self.title, ITEM_TEXT_FONT_SIZE).x
+    right_width = min(content_width - title_width, right_width)
 
     right_x = item_rect.x + item_rect.width - right_width
     right_y = item_rect.y
