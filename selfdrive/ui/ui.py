@@ -23,7 +23,7 @@ def main():
 
     if not showing_dialog:
       main_layout.render()
-    print("UI loop time", f'{(time.monotonic() - t) * 1000:.3f}ms')
+    print("UI loop time", f'{(time.monotonic() - t) * 1000:.3f}ms, theoretical fps: {1 / (time.monotonic() - t):.1f}')
     t = time.monotonic()
 
 
