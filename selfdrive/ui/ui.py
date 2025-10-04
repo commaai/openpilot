@@ -7,6 +7,7 @@ from openpilot.common.watchdog import kick_watchdog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
+import atexit
 
 frame_times = []
 
@@ -30,9 +31,7 @@ def main():
 
 
 if __name__ == "__main__":
-  try:
-    main()
-  finally:
+  def print_data():
     _1percent_high = np.percentile(frame_times, 99) * 1000
     _1percent_low_fps = 1 / np.percentile(frame_times, 99)
     average = np.mean(frame_times) * 1000
@@ -41,3 +40,7 @@ if __name__ == "__main__":
     _min = np.min(frame_times) * 1000
     _max = np.max(frame_times) * 1000
     print(f"\nUI 1% high: {_1percent_high:.2f}ms, avg: {average:.2f}ms, median: {median:.2f}ms, stddev: {stddev:.2f}ms, min: {_min:.2f}ms, max: {_max:.2f}ms, 1% low fps: {_1percent_low_fps:.1f}fps")
+
+  atexit.register(print_data)
+
+  main()
