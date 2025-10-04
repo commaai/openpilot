@@ -300,6 +300,7 @@ class ListItem(Widget):
       self._rect.height = self.get_item_height(self._font, content_width)
 
   def _update_state(self):
+    # Detect changes if description is callback
     new_description = self.description
     if new_description != self._prev_description:
       self.set_description(new_description)
