@@ -30,32 +30,32 @@ def setup_homescreen(click, pm: PubMaster):
   pass
 
 
-def setup_settings_device(click, pm: PubMaster):
+def setup_settings(click, pm: PubMaster):
   click(100, 100)
 
 
 def setup_settings_network(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 450)
 
 
 def setup_settings_toggles(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 600)
 
 
 def setup_settings_software(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 720)
 
 
 def setup_settings_firehose(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 845)
 
 
 def setup_settings_developer(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 950)
 
 
@@ -74,21 +74,28 @@ def setup_offroad_alert(click, pm: PubMaster):
   for alert in OFFROAD_ALERTS:
     set_offroad_alert(alert, True)
 
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(240, 216)
 
 
+def setup_confirmation_dialog(click, pm: PubMaster):
+  setup_settings(click, pm)
+  click(1985, 791)  # reset calibration
+
+
+
 CASES = {
-  "homescreen": setup_homescreen,
-  "settings_device": setup_settings_device,
-  "settings_network": setup_settings_network,
-  "settings_toggles": setup_settings_toggles,
-  "settings_software": setup_settings_software,
-  "settings_firehose": setup_settings_firehose,
-  "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
-  "pair_device": setup_pair_device,
-  "offroad_alert": setup_offroad_alert,
+  # "homescreen": setup_homescreen,
+  # "settings_device": setup_settings_device,
+  # "settings_network": setup_settings_network,
+  # "settings_toggles": setup_settings_toggles,
+  # "settings_software": setup_settings_software,
+  # "settings_firehose": setup_settings_firehose,
+  # "settings_developer": setup_settings_developer,
+  # "keyboard": setup_keyboard,
+  # "pair_device": setup_pair_device,
+  # "offroad_alert": setup_offroad_alert,
+  "confirmation_dialog": setup_confirmation_dialog,
 }
 
 
