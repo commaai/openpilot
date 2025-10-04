@@ -364,7 +364,7 @@ class ListItem(Widget):
     if not self.is_visible:
       return 0
 
-    height = ITEM_BASE_HEIGHT
+    height = float(ITEM_BASE_HEIGHT)
     if self.description_visible:
       description_height = self._html_renderer.get_total_height(max_width)
       height += description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
