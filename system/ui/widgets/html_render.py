@@ -120,7 +120,6 @@ class HtmlRenderer(Widget):
     for token in tokens:
       is_start_tag, is_end_tag, tag = is_tag(token)
       if tag is not None:
-
         if tag == ElementType.BR:
           self._add_element(ElementType.BR, "")
 

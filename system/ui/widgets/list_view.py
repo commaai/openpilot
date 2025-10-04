@@ -276,7 +276,7 @@ class ListItem(Widget):
     # Cached properties for performance
     # self._prev_max_width: int = 0
     # self._wrapped_description: str | None = None
-    self._prev_description: str | None = self.description  # TODO
+    self._prev_description: str | None = self.description
     # self._description_height: float = 0
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
@@ -303,14 +303,12 @@ class ListItem(Widget):
       self.description_visible = not self.description_visible
       content_width = int(self._rect.width - ITEM_PADDING * 2)
       self._rect.height = self.get_item_height(self._font, content_width)
-      print('toggled description_visible to', self.description_visible, 'new height', self._rect.height)
 
   def _update_state(self):
     new_description = self.description
     if new_description != self._prev_description:
       print('description changed!')
       self.set_description(new_description)
-      self._prev_description = new_description
 
   def _render(self, _):
     if not self.is_visible:
@@ -348,18 +346,6 @@ class ListItem(Widget):
       )
       self._html_renderer.render(description_rect)
 
-    # # Draw description if visible
-    # current_description = self.get_description()
-    # if self.description_visible and current_description and self._wrapped_description:
-    #   rl.draw_text_ex(
-    #     self._font,
-    #     self._wrapped_description,
-    #     rl.Vector2(text_x, self._rect.y + ITEM_DESC_V_OFFSET),
-    #     ITEM_DESC_FONT_SIZE,
-    #     0,
-    #     ITEM_DESC_TEXT_COLOR,
-    #   )
-
     # Draw right item if present
     if self.action_item:
       right_rect = self.get_right_item_rect(self._rect)
@@ -371,7 +357,9 @@ class ListItem(Widget):
 
   def set_description(self, description: str | Callable[[], str] | None):
     self._description = description
-    self._html_renderer.parse_html_content(self.description)
+    new_desc = self.description
+    self._html_renderer.parse_html_content(new_desc)
+    self._prev_description = new_desc
 
   @property
   def description(self):

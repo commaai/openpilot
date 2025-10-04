@@ -1,4 +1,3 @@
-import sys
 import pyray as rl
 from enum import IntEnum
 from abc import ABC, abstractmethod
@@ -317,10 +316,7 @@ class UpdateAlert(AbstractAlert):
     update_available: bool = self.params.get_bool("UpdateAvailable")
     if update_available:
       self.release_notes = (self.params.get("UpdaterNewReleaseNotes") or b"").decode("utf8").strip()
-      # print("Release notes:", self.release_notes)
-      # print()
       self._html_renderer.parse_html_content(self.release_notes or NO_RELEASE_NOTES)
-      # print('\n'.join(map(str, self._html_renderer.elements)))
       self._cached_content_height = 0
     else:
       self._html_renderer.parse_html_content(NO_RELEASE_NOTES)
