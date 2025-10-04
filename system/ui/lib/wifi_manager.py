@@ -27,6 +27,11 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NMDeviceState)
 
+try:
+  from openpilot.common.params import Params
+except Exception:
+  Params = None
+
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
@@ -120,7 +125,7 @@ class AccessPoint:
 
 
 class WifiManager:
-  def __init__(self, params=None):
+  def __init__(self):
     self._networks: list[Network] = []  # a network can be comprised of multiple APs
     self._active = True  # used to not run when not in settings
     self._exit = False
@@ -148,8 +153,8 @@ class WifiManager:
     self._callback_queue: list[Callable] = []
 
     self._tethering_ssid = "weedle"
-    if params is not None:
-      dongle_id = params.get("DongleId")
+    if Params is not None:
+      dongle_id = Params().get("DongleId")
       if dongle_id:
         self._tethering_ssid += "-" + dongle_id[:4]
 

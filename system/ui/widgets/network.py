@@ -18,7 +18,7 @@ from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, Multip
 try:
   from openpilot.selfdrive.ui.ui_state import ui_state
   from openpilot.selfdrive.ui.lib.prime_state import PrimeType
-except:
+except Exception:
   ui_state = None  # type: ignore
   PrimeType = None  # type: ignore
 
@@ -62,12 +62,12 @@ class NavButton(Widget):
 
 
 class NetworkUI(Widget):
-  def __init__(self, params, wifi_manager: WifiManager):
+  def __init__(self, wifi_manager: WifiManager):
     super().__init__()
     self._wifi_manager = wifi_manager
     self._current_panel: PanelType = PanelType.WIFI
     self._wifi_panel = WifiManagerUI(wifi_manager)
-    self._advanced_panel = AdvancedNetworkSettings(params, wifi_manager)
+    self._advanced_panel = AdvancedNetworkSettings(wifi_manager)
     self._nav_button = NavButton("Advanced")
     self._nav_button.set_click_callback(self._cycle_panel)
 
@@ -104,12 +104,12 @@ class NetworkUI(Widget):
 
 
 class AdvancedNetworkSettings(Widget):
-  def __init__(self, params, wifi_manager: WifiManager):
+  def __init__(self, wifi_manager: WifiManager):
     super().__init__()
 
     self._wifi_manager = wifi_manager
     self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
-    self._params = params
+    self._params = Params()  # type: ignore # noqa: F821
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
