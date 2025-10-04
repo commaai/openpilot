@@ -16,7 +16,6 @@ from jeepney.low_level import MessageType
 from jeepney.wrappers import Properties
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.params import Params
 from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
                                                     NM_802_11_AP_SEC_PAIR_WEP104, NM_802_11_AP_SEC_GROUP_WEP40,
                                                     NM_802_11_AP_SEC_GROUP_WEP104, NM_802_11_AP_SEC_KEY_MGMT_PSK,
@@ -121,7 +120,7 @@ class AccessPoint:
 
 
 class WifiManager:
-  def __init__(self):
+  def __init__(self, params=None):
     self._networks: list[Network] = []  # a network can be comprised of multiple APs
     self._active = True  # used to not run when not in settings
     self._exit = False
@@ -149,7 +148,9 @@ class WifiManager:
     self._callback_queue: list[Callable] = []
 
     self._tethering_ssid = "weedle"
-    dongle_id = Params().get("DongleId")
+    dongle_id = ''
+    if params is not None:
+      dongle_id = params.get("DongleId")
     if dongle_id:
       self._tethering_ssid += "-" + dongle_id[:4]
 
