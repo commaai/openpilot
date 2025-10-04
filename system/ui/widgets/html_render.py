@@ -9,6 +9,8 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 
+LIST_INDENT_PX = 40
+
 
 class ElementType(Enum):
   H1 = "h1"
@@ -18,7 +20,21 @@ class ElementType(Enum):
   H5 = "h5"
   H6 = "h6"
   P = "p"
+  UL = "ul"
+  LI = "li"
   BR = "br"
+
+
+TAG_NAMES = '|'.join([t.value for t in ElementType])
+START_TAG_RE = re.compile(f'<({TAG_NAMES})>')
+END_TAG_RE = re.compile(f'</({TAG_NAMES})>')
+
+
+def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
+  supported_tag = bool(START_TAG_RE.fullmatch(token))
+  supported_end_tag = bool(END_TAG_RE.fullmatch(token))
+  tag = ElementType(token[1:-1].strip('/')) if supported_tag or supported_end_tag else None
+  return supported_tag, supported_end_tag, tag
 
 
 @dataclass
@@ -27,30 +43,37 @@ class HtmlElement:
   content: str
   font_size: int
   font_weight: FontWeight
-  color: rl.Color
   margin_top: int
   margin_bottom: int
   line_height: float = 1.2
+  indent_level: int = 0
 
 
 class HtmlRenderer(Widget):
-  def __init__(self, file_path: str | None = None, text: str | None = None):
+  def __init__(self, file_path: str | None = None, text: str | None = None,
+               text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
-    self.elements: list[HtmlElement] = []
+    self._text_color = text_color
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
+    self._indent_level = 0
 
+    if text_size is None:
+      text_size = {}
+
+    # Untagged text defaults to <p>
     self.styles: dict[ElementType, dict[str, Any]] = {
-      ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 16},
-      ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 24, "margin_bottom": 12},
-      ElementType.H3: {"size": 52, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 20, "margin_bottom": 10},
-      ElementType.H4: {"size": 48, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 16, "margin_bottom": 8},
-      ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 12, "margin_bottom": 6},
-      ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "color": rl.BLACK, "margin_top": 10, "margin_bottom": 4},
-      ElementType.P: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 8, "margin_bottom": 12},
-      ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "color": rl.BLACK, "margin_top": 0, "margin_bottom": 12},
+      ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
+      ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "margin_top": 24, "margin_bottom": 12},
+      ElementType.H3: {"size": 52, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 10},
+      ElementType.H4: {"size": 48, "weight": FontWeight.BOLD, "margin_top": 16, "margin_bottom": 8},
+      ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
+      ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
+      ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
 
+    self.elements: list[HtmlElement] = []
     if file_path is not None:
       self.parse_html_file(file_path)
     elif text is not None:
@@ -73,25 +96,48 @@ class HtmlRenderer(Widget):
     html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
     html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
 
-    # Find all HTML elements
-    pattern = r'<(h[1-6]|p)(?:[^>]*)>(.*?)</\1>|<br\s*/?>'
-    matches = re.finditer(pattern, html_content, re.DOTALL | re.IGNORECASE)
+    # Parse HTML
+    tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
 
-    for match in matches:
-      if match.group(0).lower().startswith('<br'):
-        # Handle <br> tags
-        self._add_element(ElementType.BR, "")
+    def close_tag():
+      nonlocal current_content
+      nonlocal current_tag
+
+      # If no tag is set, default to paragraph so we don't lose text
+      if current_tag is None:
+        current_tag = ElementType.P
+
+      text = ' '.join(current_content).strip()
+      current_content = []
+      if text:
+        if current_tag == ElementType.LI:
+          text = '• ' + text
+        self._add_element(current_tag, text)
+
+    current_content: list[str] = []
+    current_tag: ElementType | None = None
+    for token in tokens:
+      is_start_tag, is_end_tag, tag = is_tag(token)
+      if tag is not None:
+        if tag == ElementType.BR:
+          self._add_element(ElementType.BR, "")
+
+        elif tag == ElementType.UL:
+          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
+
+        elif is_start_tag or is_end_tag:
+          # Always add content regardless of opening or closing tag
+          close_tag()
+
+          # TODO: reset to None if end tag?
+          if is_start_tag:
+            current_tag = tag
+
       else:
-        tag = match.group(1).lower()
-        content = match.group(2).strip()
+        current_content.append(token)
 
-        # Clean up content - remove extra whitespace
-        content = re.sub(r'\s+', ' ', content)
-        content = content.strip()
-
-        if content:  # Only add non-empty elements
-          element_type = ElementType(tag)
-          self._add_element(element_type, content)
+    if current_content:
+      close_tag()
 
   def _add_element(self, element_type: ElementType, content: str) -> None:
     style = self.styles[element_type]
@@ -101,14 +147,15 @@ class HtmlRenderer(Widget):
       content=content,
       font_size=style["size"],
       font_weight=style["weight"],
-      color=style["color"],
       margin_top=style["margin_top"],
       margin_bottom=style["margin_bottom"],
+      indent_level=self._indent_level,
     )
 
     self.elements.append(element)
 
   def _render(self, rect: rl.Rectangle):
+    # TODO: speed up by removing duplicate calculations across renders
     current_y = rect.y
     padding = 20
     content_width = rect.width - (padding * 2)
@@ -134,7 +181,8 @@ class HtmlRenderer(Widget):
           if current_y > rect.y + rect.height:
             break
 
-          rl.draw_text_ex(font, line, rl.Vector2(rect.x + padding, current_y), element.font_size, 0, rl.WHITE)
+          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
+          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
 
           current_y += element.font_size * element.line_height
 
