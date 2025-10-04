@@ -36,19 +36,22 @@ def main():
   gui_app.init_window("UI")
   main_layout = MainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+  t = time.monotonic()
   for showing_dialog in gui_app.render():
     ui_state.update()
 
     kick_watchdog()
 
-    t = time.monotonic()
     if not showing_dialog:
       main_layout.render()
+
     frame_times.append(time.monotonic() - t)
+
     i += 1
     if i % 100 == 0:
       print_data()
     print("UI loop time", f'{(frame_times[-1]) * 1000:.3f}ms, theoretical fps: {1 / (frame_times[-1]):.1f}')
+    t = time.monotonic()
 
 
 if __name__ == "__main__":
