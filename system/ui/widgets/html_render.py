@@ -210,7 +210,7 @@ class HtmlRenderer(Widget):
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
 
         for _ in wrapped_lines:
-          total_height += element.font_size * 1.2 * element.line_height
+          total_height += element.font_size * FONT_SCALE * element.line_height
 
       total_height += element.margin_bottom
 
