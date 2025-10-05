@@ -3,7 +3,7 @@ import pyray as rl
 import numpy as np
 from typing import Any
 
-MAX_GRADIENT_COLORS = 150
+MAX_GRADIENT_COLORS = 15
 
 VERSION = """
 #version 300 es
