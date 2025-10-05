@@ -409,6 +409,7 @@ class ModelRenderer(Widget):
 
     return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
 
+  # TODO: need this?
   def _map_line_to_strip(self, line: np.ndarray, y_off: float, z_off: float, max_idx: int) -> list[tuple[float, float]]:
     """Convert 3D line to a 2D triangle strip vertex list [L0, R0, L1, R1, ...]."""
     if line.shape[0] == 0:
