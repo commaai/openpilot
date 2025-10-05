@@ -36,6 +36,7 @@ NO_THROTTLE_COLORS = [
 class ModelPoints:
   raw_points: np.ndarray = field(default_factory=lambda: np.empty((0, 3), dtype=np.float32))
   projected_points: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.float32))
+  strip_points: list[tuple[float, float]] = field(default_factory=list)
 
 
 @dataclass
@@ -170,13 +171,14 @@ class ModelRenderer(Widget):
 
     # Update lane lines using raw points
     for i, lane_line in enumerate(self._lane_lines):
-      lane_line.projected_points = self._map_line_to_polygon(
-        lane_line.raw_points, 0.025 * self._lane_line_probs[i], 0.0, max_idx
-      )
+      y_off = 0.025 * self._lane_line_probs[i]
+      lane_line.projected_points = self._map_line_to_polygon(lane_line.raw_points, y_off, 0.0, max_idx)
+      lane_line.strip_points = self._map_line_to_strip(lane_line.raw_points, y_off, 0.0, max_idx)
 
     # Update road edges using raw points
     for road_edge in self._road_edges:
       road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, 0.025, 0.0, max_idx)
+      road_edge.strip_points = self._map_line_to_strip(road_edge.raw_points, 0.025, 0.0, max_idx)
 
     # Update path using raw points
     if lead and lead.status:
@@ -258,22 +260,28 @@ class ModelRenderer(Widget):
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
     t = time.monotonic()
-    # for _ in range(100):
-    for i, lane_line in enumerate(self._lane_lines):
-      if lane_line.projected_points.size == 0:
-        continue
+    for _ in range(100):
+      for i, lane_line in enumerate(self._lane_lines):
+        if lane_line.projected_points.size == 0:
+          continue
 
-      alpha = np.clip(self._lane_line_probs[i], 0.0, 0.7)
-      color = rl.Color(255, 255, 255, int(alpha * 255))
-      draw_polygon(self._rect, lane_line.projected_points, color, antialias=False)
+        alpha = np.clip(self._lane_line_probs[i], 0.0, 0.7)
+        color = rl.Color(255, 255, 255, int(alpha * 255))
+        if lane_line.strip_points:
+          rl.draw_triangle_strip(lane_line.strip_points, len(lane_line.strip_points), color)
+        else:
+          draw_polygon(self._rect, lane_line.projected_points, color, antialias=False)
 
-    for i, road_edge in enumerate(self._road_edges):
-      if road_edge.projected_points.size == 0:
-        continue
+      for i, road_edge in enumerate(self._road_edges):
+        if road_edge.projected_points.size == 0:
+          continue
 
-      alpha = np.clip(1.0 - self._road_edge_stds[i], 0.0, 1.0)
-      color = rl.Color(255, 0, 0, int(alpha * 255))
-      draw_polygon(self._rect, road_edge.projected_points, color, antialias=False)
+        alpha = np.clip(1.0 - self._road_edge_stds[i], 0.0, 1.0)
+        color = rl.Color(255, 0, 0, int(alpha * 255))
+        if road_edge.strip_points:
+          rl.draw_triangle_strip(road_edge.strip_points, len(road_edge.strip_points), color)
+        else:
+          draw_polygon(self._rect, road_edge.projected_points, color, antialias=False)
     print("Lane lines draw time:", (time.monotonic() - t) * 1000)
 
   def _draw_path(self, sm):
@@ -400,6 +408,67 @@ class ModelRenderer(Widget):
       right_screen = right_screen[:, keep]
 
     return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
+
+  def _map_line_to_strip(self, line: np.ndarray, y_off: float, z_off: float, max_idx: int) -> list[tuple[float, float]]:
+    """Convert 3D line to a 2D triangle strip vertex list [L0, R0, L1, R1, ...]."""
+    if line.shape[0] == 0:
+      return []
+
+    # Slice points and filter non-negative x-coordinates
+    points = line[:max_idx + 1]
+    points = points[points[:, 0] >= 0]
+    if points.shape[0] < 2:
+      return []
+
+    N = points.shape[0]
+    offsets = np.array([[0, -y_off, z_off], [0, y_off, z_off]], dtype=np.float32)
+    points_3d = points[None, :, :] + offsets[:, None, :]
+    points_3d = points_3d.reshape(2 * N, 3)
+
+    proj = self._car_space_transform @ points_3d.T
+    proj = proj.reshape(3, 2, N)
+    left_proj = proj[:, 0, :]
+    right_proj = proj[:, 1, :]
+
+    valid_proj = (np.abs(left_proj[2]) >= 1e-6) & (np.abs(right_proj[2]) >= 1e-6)
+    if not np.any(valid_proj):
+      return []
+
+    left_screen = left_proj[:2, valid_proj] / left_proj[2, valid_proj][None, :]
+    right_screen = right_proj[:2, valid_proj] / right_proj[2, valid_proj][None, :]
+
+    clip = self._clip_region
+    x_min, x_max = clip.x, clip.x + clip.width
+    y_min, y_max = clip.y, clip.y + clip.height
+
+    left_in_clip = (
+      (left_screen[0] >= x_min) & (left_screen[0] <= x_max) &
+      (left_screen[1] >= y_min) & (left_screen[1] <= y_max)
+    )
+    right_in_clip = (
+      (right_screen[0] >= x_min) & (right_screen[0] <= x_max) &
+      (right_screen[1] >= y_min) & (right_screen[1] <= y_max)
+    )
+    both_in_clip = left_in_clip & right_in_clip
+    if not np.any(both_in_clip):
+      return []
+
+    left_screen = left_screen[:, both_in_clip]
+    right_screen = right_screen[:, both_in_clip]
+
+    # Optional decimation to limit vertex count for speed
+    max_strip_vertices = 256
+    count = left_screen.shape[1]
+    if count > (max_strip_vertices // 2):
+      stride = int(np.ceil(count / (max_strip_vertices // 2)))
+      left_screen = left_screen[:, ::stride]
+      right_screen = right_screen[:, ::stride]
+
+    # Interleave into [L0, R0, L1, R1, ...]
+    interleaved = np.empty((left_screen.shape[1] * 2, 2), dtype=np.float32)
+    interleaved[0::2] = left_screen.T
+    interleaved[1::2] = right_screen.T
+    return [tuple(p) for p in interleaved]
 
   @staticmethod
   def _hsla_to_color(h, s, l, a):
