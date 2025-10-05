@@ -260,7 +260,7 @@ class ModelRenderer(Widget):
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
     t = time.monotonic()
-    for _ in range(100):
+    for _ in range(1):
       for i, lane_line in enumerate(self._lane_lines):
         if lane_line.projected_points.size == 0:
           continue
