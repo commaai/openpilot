@@ -3,11 +3,11 @@ import pyray as rl
 import numpy as np
 from typing import Any
 
-MAX_GRADIENT_COLORS = 15
+MAX_GRADIENT_COLORS = 150
 
 VERSION = """
 #version 300 es
-precision highp float;
+precision mediump float;
 """
 if platform.system() == "Darwin":
   VERSION = """
@@ -24,6 +24,7 @@ uniform vec4 fillColor;
 uniform vec2 resolution;
 
 uniform int useGradient;
+uniform int antialias;
 uniform vec2 gradientStart;
 uniform vec2 gradientEnd;
 uniform vec4 gradientColors[15];
@@ -100,17 +101,17 @@ void main() {
   vec2 pixel = fragTexCoord * resolution;
 
   bool inside = isPointInsidePolygon(pixel);
-  float sd = (inside ? 1.0 : -1.0) * distanceToEdge(pixel);
+  if (!inside) { discard; }
 
-  // ~1 pixel wide anti-aliasing
-  float w = max(0.75, fwidth(sd));
+  vec4 color = useGradient == 1 ? getGradientColor(pixel) : fillColor;
 
-  float alpha = smoothstep(-w, w, sd);
-  if (alpha > 0.0){
-    vec4 color = useGradient == 1 ? getGradientColor(pixel) : fillColor;
+  if (antialias == 1) {
+    float sd = distanceToEdge(pixel);
+    float w = max(0.75, fwidth(sd));
+    float alpha = smoothstep(0.0, w, sd);
     finalColor = vec4(color.rgb, color.a * alpha);
   } else {
-    discard;
+    finalColor = color;
   }
 }
 """
@@ -158,6 +159,7 @@ class ShaderState:
       'resolution': None,
       'points': None,
       'useGradient': None,
+      'antialias': None,
       'gradientStart': None,
       'gradientEnd': None,
       'gradientColors': None,
@@ -171,6 +173,7 @@ class ShaderState:
     self.resolution_ptr = rl.ffi.new("float[]", [0.0, 0.0])
     self.fill_color_ptr = rl.ffi.new("float[]", [0.0, 0.0, 0.0, 0.0])
     self.use_gradient_ptr = rl.ffi.new("int[]", [0])
+    self.antialias_ptr = rl.ffi.new("int[]", [1])
     self.gradient_start_ptr = rl.ffi.new("float[]", [0.0, 0.0])
     self.gradient_end_ptr = rl.ffi.new("float[]", [0.0, 0.0])
     self.color_count_ptr = rl.ffi.new("int[]", [0])
@@ -248,7 +251,10 @@ def _configure_shader_color(state, color, gradient, clipped_rect, original_rect)
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
 
 
-def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None):
+MAX_POINTS_UNIFORM = 100
+
+
+def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None, antialias: bool = True):
   """
   Draw a complex polygon using shader-based even-odd fill rule
 
@@ -288,6 +294,11 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
   # Transform points relative to the CLIPPED area
   transformed_points = points - np.array([clip_x, clip_y])
 
+  # Cap number of points to uniform array size to avoid heavy loops on GPU
+  if transformed_points.shape[0] > MAX_POINTS_UNIFORM:
+    stride = int(np.ceil(transformed_points.shape[0] / MAX_POINTS_UNIFORM))
+    transformed_points = transformed_points[::stride][:MAX_POINTS_UNIFORM]
+
   # Set shader values
   state.point_count_ptr[0] = len(transformed_points)
   rl.set_shader_value(state.shader, state.locations['pointCount'], state.point_count_ptr, UNIFORM_INT)
@@ -300,6 +311,10 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
   rl.set_shader_value_v(state.shader, state.locations['points'], points_ptr, UNIFORM_VEC2, len(transformed_points))
 
   _configure_shader_color(state, color, gradient, clipped_rect, origin_rect)
+
+  # Antialias toggle
+  state.antialias_ptr[0] = 1 if antialias else 0
+  rl.set_shader_value(state.shader, state.locations['antialias'], state.antialias_ptr, UNIFORM_INT)
 
   # Render
   rl.begin_shader_mode(state.shader)

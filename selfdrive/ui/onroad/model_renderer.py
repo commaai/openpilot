@@ -1,4 +1,6 @@
 import colorsys
+import time
+
 import numpy as np
 import pyray as rl
 from cereal import messaging, car
@@ -255,13 +257,15 @@ class ModelRenderer(Widget):
 
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
+    t = time.monotonic()
+    # for _ in range(100):
     for i, lane_line in enumerate(self._lane_lines):
       if lane_line.projected_points.size == 0:
         continue
 
       alpha = np.clip(self._lane_line_probs[i], 0.0, 0.7)
       color = rl.Color(255, 255, 255, int(alpha * 255))
-      draw_polygon(self._rect, lane_line.projected_points, color)
+      draw_polygon(self._rect, lane_line.projected_points, color, antialias=False)
 
     for i, road_edge in enumerate(self._road_edges):
       if road_edge.projected_points.size == 0:
@@ -269,7 +273,8 @@ class ModelRenderer(Widget):
 
       alpha = np.clip(1.0 - self._road_edge_stds[i], 0.0, 1.0)
       color = rl.Color(255, 0, 0, int(alpha * 255))
-      draw_polygon(self._rect, road_edge.projected_points, color)
+      draw_polygon(self._rect, road_edge.projected_points, color, antialias=False)
+    print("Lane lines draw time:", (time.monotonic() - t) * 1000)
 
   def _draw_path(self, sm):
     """Draw path with dynamic coloring based on mode and throttle state."""
@@ -282,9 +287,9 @@ class ModelRenderer(Widget):
     if self._experimental_mode:
       # Draw with acceleration coloring
       if len(self._exp_gradient['colors']) > 1:
-        draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
+        draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient, antialias=True)
       else:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
+        draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30), antialias=True)
     else:
       # Blend throttle/no throttle colors based on transition
       blend_factor = round(self._blend_filter.x * 100) / 100
@@ -295,7 +300,7 @@ class ModelRenderer(Widget):
         'colors': blended_colors,
         'stops': [0.0, 0.5, 1.0],
       }
-      draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
+      draw_polygon(self._rect, self._path.projected_points, gradient=gradient, antialias=True)
 
   def _draw_lead_indicator(self):
     # Draw lead vehicles if available
