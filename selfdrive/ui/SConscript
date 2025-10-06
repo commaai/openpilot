@@ -71,7 +71,7 @@ if GetOption('extras'):
 
     raylib_libs = common + ["raylib"]
     if arch == "larch64":
-      raylib_libs += ["GLESv2", "EGL", "gdb", "drm"]
+      raylib_libs += ["GLESv2", "EGL", "gbm", "drm"]
     else:
       raylib_libs += ["GL"]
 
