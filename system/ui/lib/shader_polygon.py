@@ -100,15 +100,18 @@ void main() {
   vec2 pixel = fragTexCoord * resolution;
 
   bool inside = isPointInsidePolygon(pixel);
-  float sd = (inside ? 1.0 : -1.0) * distanceToEdge(pixel);
+  //float sd = (inside ? 1.0 : -1.0) * distanceToEdge(pixel);
 
   // ~1 pixel wide anti-aliasing
-  float w = max(0.75, fwidth(sd));
+  //float w = max(0.75, fwidth(sd));
 
-  float alpha = smoothstep(-w, w, sd);
-  if (alpha > 0.0){
-    vec4 color = useGradient == 1 ? getGradientColor(pixel) : fillColor;
-    finalColor = vec4(color.rgb, color.a * alpha);
+  //float alpha = smoothstep(-w, w, sd);
+  // if (alpha > 0.0){
+  if (inside){
+    // vec4 color = useGradient == 1 ? getGradientColor(pixel) : fillColor;
+    vec4 color = fillColor;
+    //finalColor = vec4(color.rgb, color.a * alpha);
+    finalColor = vec4(color.rgb, color.a);
   } else {
     discard;
   }
@@ -301,16 +304,25 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
 
   _configure_shader_color(state, color, gradient, clipped_rect, origin_rect)
 
-  # Render
-  rl.begin_shader_mode(state.shader)
-  rl.draw_texture_pro(
-    state.white_texture,
-    rl.Rectangle(0, 0, 2, 2),
-    clipped_rect,
-    rl.Vector2(0, 0),
-    0.0,
-    rl.WHITE,
-  )
+  # print(clipped_rect.x, clipped_rect.y, clipped_rect.width, clipped_rect.height)
+
+  # print(points)
+
+  # # Render
+  # rl.begin_shader_mode(state.shader)
+
+  # rl.draw_triangle_fan(points.tolist()[::-1], len(points), rl.WHITE)
+  rl.draw_spline_linear(points.tolist()[::-1][len(points) // 2:], len(points) // 2, 300, rl.BLACK)
+
+
+  # rl.draw_texture_pro(
+  #   state.white_texture,
+  #   rl.Rectangle(0, 0, 2, 2),
+  #   clipped_rect,
+  #   rl.Vector2(0, 0),
+  #   0.0,
+  #   rl.WHITE,
+  # )
   rl.end_shader_mode()
 
 

@@ -1,4 +1,6 @@
 import colorsys
+import time
+
 import numpy as np
 import pyray as rl
 from cereal import messaging, car
@@ -8,7 +10,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.shader_polygon import draw_polygon
+from openpilot.system.ui.lib.shader_polygon2 import draw_polygon
 from openpilot.system.ui.widgets import Widget
 
 CLIP_MARGIN = 500
@@ -125,7 +127,10 @@ class ModelRenderer(Widget):
       self._transform_dirty = False
 
     # Draw elements
-    self._draw_lane_lines()
+    t = time.monotonic()
+    for _ in range(1):
+      self._draw_lane_lines()
+    print(f"ModelRenderer lane lines draw time: {(time.monotonic() - t) * 1000:.2f} ms")
     self._draw_path(sm)
 
     if render_lead_indicator and radar_state:
