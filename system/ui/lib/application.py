@@ -178,7 +178,6 @@ class GuiApplication:
     self._set_styles()
     self._load_fonts()
     self._patch_text_functions()
-    rl.rl_enable_smooth_lines()
 
     if not PC:
       self._mouse.start()
