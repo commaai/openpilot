@@ -239,6 +239,19 @@ async def get_schema(request: 'web.Request'):
   schema_dict = {s: generate_field(log.Event.schema.fields[s]) for s in services}
   return web.json_response(schema_dict)
 
+async def post_notify(request: 'web.Request'):
+  try:
+    payload = await request.json()
+  except Exception:
+    raise web.HTTPBadRequest(text="Invalid JSON")
+
+  for session in list(request.app.get('streams', {}).values()):
+    try:
+      ch = session.stream.get_messaging_channel()
+      ch.send(json.dumps(payload))
+    except Exception:
+      continue
+  return web.Response(status=200, text="OK")
 
 async def on_shutdown(app: 'web.Application'):
   for session in app['streams'].values():
@@ -258,6 +271,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)
+  app.router.add_post("/notify", post_notify)
   app.router.add_get("/schema", get_schema)
 
   web.run_app(app, host=host, port=port)
