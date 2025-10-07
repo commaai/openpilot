@@ -63,7 +63,8 @@ void main() {
     float len2 = max(dot(d, d), 1e-6);
     float t = clamp(dot(p - uGradStart, d) / len2, 0.0, 1.0);
 
-    vec4 col = getGradientColor(t);
+    // TODO: fix the flip
+    vec4 col = getGradientColor(1.0f - t);
 
     if (uUseFeather == 1) {
         // v_uv.y = 0 at inner edge, 1 at outer feather ring (~1 px)
