@@ -128,7 +128,7 @@ class ModelRenderer(Widget):
 
     # Draw elements
     t = time.monotonic()
-    for _ in range(1):
+    for _ in range(100):
       self._draw_lane_lines()
     print(f"ModelRenderer lane lines draw time: {(time.monotonic() - t) * 1000:.2f} ms")
     self._draw_path(sm)

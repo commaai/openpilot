@@ -5,7 +5,7 @@ from typing import Any
 from openpilot.system.ui.lib.application import gui_app
 import mapbox_earcut as earcut
 
-DEBUG = True
+DEBUG = False
 
 MAX_GRADIENT_COLORS = 15
 
