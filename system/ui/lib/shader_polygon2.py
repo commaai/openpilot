@@ -2,8 +2,10 @@ import platform
 import pyray as rl
 import numpy as np
 from typing import Any
-from system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app
 import mapbox_earcut as earcut
+
+DEBUG = True
 
 MAX_GRADIENT_COLORS = 15
 
@@ -12,7 +14,7 @@ VERSION = """
 precision highp float;
 """
 if platform.system() == "Darwin":
-    VERSION = """
+  VERSION = """
 #version 330 core
 """
 
@@ -91,7 +93,7 @@ void main() {
 }
 """
 
-UNIFORM_INT  = rl.ShaderUniformDataType.SHADER_UNIFORM_INT
+UNIFORM_INT = rl.ShaderUniformDataType.SHADER_UNIFORM_INT
 UNIFORM_VEC2 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2
 UNIFORM_VEC4 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4
 UNIFORM_FLOAT = rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT
@@ -129,7 +131,7 @@ class Shader2State:
     self._last_h = 0
     self._feather_ptr = rl.ffi.new("int[]", [0])
     self._grad_count_ptr = rl.ffi.new("int[]", [0])
-    self._grad_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS*4)
+    self._grad_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS * 4)
     self._grad_stops_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS)
 
   def initialize(self):
@@ -145,15 +147,15 @@ class Shader2State:
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAGMENT_SHADER)
 
     # Cache locations
-    self.locations['mvp']         = rl.get_shader_location(self.shader, "mvp")
-    self.locations['uColorTop']   = rl.get_shader_location(self.shader, "uColorTop")
-    self.locations['uColorBottom']= rl.get_shader_location(self.shader, "uColorBottom")
-    self.locations['uGradStart']  = rl.get_shader_location(self.shader, "uGradStart")
-    self.locations['uGradEnd']    = rl.get_shader_location(self.shader, "uGradEnd")
+    self.locations['mvp'] = rl.get_shader_location(self.shader, "mvp")
+    self.locations['uColorTop'] = rl.get_shader_location(self.shader, "uColorTop")
+    self.locations['uColorBottom'] = rl.get_shader_location(self.shader, "uColorBottom")
+    self.locations['uGradStart'] = rl.get_shader_location(self.shader, "uGradStart")
+    self.locations['uGradEnd'] = rl.get_shader_location(self.shader, "uGradEnd")
     self.locations['uUseFeather'] = rl.get_shader_location(self.shader, "uUseFeather")
     self.locations['uGradColors'] = rl.get_shader_location(self.shader, "uGradColors")
-    self.locations['uGradStops']  = rl.get_shader_location(self.shader, "uGradStops")
-    self.locations['uGradCount']  = rl.get_shader_location(self.shader, "uGradCount")
+    self.locations['uGradStops'] = rl.get_shader_location(self.shader, "uGradStops")
+    self.locations['uGradCount'] = rl.get_shader_location(self.shader, "uGradCount")
 
     # Orthographic MVP (origin top-left)
     proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
@@ -161,10 +163,10 @@ class Shader2State:
     self._last_w, self._last_h = gui_app.width, gui_app.height
 
     # Reasonable defaults
-    rl.set_shader_value(self.shader, self.locations['uColorTop'],    rl.Vector4(1,1,1,1), UNIFORM_VEC4)
-    rl.set_shader_value(self.shader, self.locations['uColorBottom'], rl.Vector4(0,0,0,1), UNIFORM_VEC4)
+    rl.set_shader_value(self.shader, self.locations['uColorTop'], rl.Vector4(1, 1, 1, 1), UNIFORM_VEC4)
+    rl.set_shader_value(self.shader, self.locations['uColorBottom'], rl.Vector4(0, 0, 0, 1), UNIFORM_VEC4)
     rl.set_shader_value(self.shader, self.locations['uGradStart'], rl.Vector2(0, 0), UNIFORM_VEC2)
-    rl.set_shader_value(self.shader, self.locations['uGradEnd'],   rl.Vector2(0, gui_app.height), UNIFORM_VEC2)
+    rl.set_shader_value(self.shader, self.locations['uGradEnd'], rl.Vector2(0, gui_app.height), UNIFORM_VEC2)
     rl.set_shader_value(self.shader, self.locations['uUseFeather'], self._feather_ptr, UNIFORM_INT)
     rl.set_shader_value(self.shader, self.locations['uGradCount'], self._grad_count_ptr, UNIFORM_INT)
 
@@ -199,7 +201,7 @@ def _configure_shader_color(state, color, gradient, clipped_rect, original_rect)
     state.color_count_ptr[0] = color_count
     for i, c in enumerate(colors[:color_count]):
       base_idx = i * 4
-      state.gradient_colors_ptr[base_idx:base_idx+4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
+      state.gradient_colors_ptr[base_idx:base_idx + 4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
     rl.set_shader_value_v(state.shader, state.locations['gradientColors'], state.gradient_colors_ptr, UNIFORM_VEC4, color_count)
 
     stops = gradient.get('stops', [i / max(1, color_count - 1) for i in range(color_count)])
@@ -211,6 +213,55 @@ def _configure_shader_color(state, color, gradient, clipped_rect, original_rect)
     color = color or rl.WHITE
     state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
+
+
+def triangulate(pts: np.ndarray, min_pair_px: float = 0.5, dedup_eps: float = 0.25) -> list[tuple[float, float]]:
+  """
+  Build an interleaved triangle strip from a ribbon polygon laid out as
+  [L0..Lk-1, Rk-1..R0]. Returns [L0, R0, L1, R1, ...].
+  Skips near-zero width pairs and removes adjacent duplicates to avoid
+  degenerate triangles.
+  """
+  n = len(pts)
+  if n < 4 or (n % 2) != 0:
+    return []
+
+  k = n // 2
+  left = pts[:k]
+  right_rev = pts[k:][::-1]
+
+  interleaved: list[tuple[float, float]] = []
+  min_pair_px2 = min_pair_px * min_pair_px
+  for i in range(min(len(left), len(right_rev))):
+    lx, ly = float(left[i, 0]), float(left[i, 1])
+    rx, ry = float(right_rev[i, 0]), float(right_rev[i, 1])
+    dx = lx - rx
+    dy = ly - ry
+    if dx * dx + dy * dy < min_pair_px2:
+      continue
+    interleaved.append((lx, ly))
+    interleaved.append((rx, ry))
+
+  # Deduplicate adjacent vertices (screen-space)
+  if len(interleaved) >= 2:
+    deduped: list[tuple[float, float]] = [interleaved[0]]
+    lastx, lasty = interleaved[0]
+    thr2 = dedup_eps * dedup_eps
+    for vx, vy in interleaved[1:]:
+      dx = vx - lastx
+      dy = vy - lasty
+      if dx * dx + dy * dy >= thr2:
+        deduped.append((vx, vy))
+        lastx, lasty = vx, vy
+    interleaved = deduped
+
+  # Ensure even count for pairs (optional: drop last if odd)
+  if len(interleaved) % 2 == 1:
+    interleaved = interleaved[:-1]
+
+  return interleaved
+
+  # points = np.ascontiguousarray(pts, dtype=np.float32).reshape((-1, 2))
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None):
@@ -227,12 +278,6 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
   if pts.ndim != 2 or pts.shape[1] != 2:
     return
 
-  # Triangulate: pass 2D (N,2) vertices and one ring size
-  rings = np.asarray([pts.shape[0]], dtype=np.int32)
-  idx = earcut.triangulate_float32(pts, rings)
-  if idx is None or len(idx) < 3:
-    return
-
   # Initialize shader on-demand (after window/context is ready)
   state = Shader2State.get_instance()
   state.initialize()
@@ -245,8 +290,8 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
     state._grad_count_ptr[0] = count
     for i in range(count):
       c = cols[i]
-      base = i*4
-      state._grad_colors_ptr[base:base+4] = [c.r/255.0, c.g/255.0, c.b/255.0, c.a/255.0]
+      base = i * 4
+      state._grad_colors_ptr[base:base + 4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
     rl.set_shader_value_v(state.shader, state.locations['uGradColors'], state._grad_colors_ptr, UNIFORM_VEC4, count)
 
     stops = np.clip(np.asarray(stops, dtype=np.float32)[:count], 0.0, 1.0)
@@ -256,15 +301,15 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
 
     # Gradient line is provided normalized to rect; convert to screen pixels
     start = np.array(gradient.get('start', (0.0, 1.0)), dtype=np.float32)
-    end   = np.array(gradient.get('end', (0.0, 0.0)), dtype=np.float32)
+    end = np.array(gradient.get('end', (0.0, 0.0)), dtype=np.float32)
     start_px = start * np.array([origin_rect.width, origin_rect.height], dtype=np.float32) + np.array([origin_rect.x, origin_rect.y], dtype=np.float32)
-    end_px   = end   * np.array([origin_rect.width, origin_rect.height], dtype=np.float32) + np.array([origin_rect.x, origin_rect.y], dtype=np.float32)
+    end_px = end * np.array([origin_rect.width, origin_rect.height], dtype=np.float32) + np.array([origin_rect.x, origin_rect.y], dtype=np.float32)
     rl.set_shader_value(state.shader, state.locations['uGradStart'], rl.Vector2(float(start_px[0]), float(start_px[1])), UNIFORM_VEC2)
-    rl.set_shader_value(state.shader, state.locations['uGradEnd'],   rl.Vector2(float(end_px[0]),   float(end_px[1])),   UNIFORM_VEC2)
+    rl.set_shader_value(state.shader, state.locations['uGradEnd'], rl.Vector2(float(end_px[0]), float(end_px[1])), UNIFORM_VEC2)
   else:
     # Solid color
     c = color or rl.WHITE
-    vec = rl.Vector4(c.r/255.0, c.g/255.0, c.b/255.0, c.a/255.0)
+    vec = rl.Vector4(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0)
     rl.set_shader_value(state.shader, state.locations['uColorTop'], vec, UNIFORM_VEC4)
     rl.set_shader_value(state.shader, state.locations['uColorBottom'], vec, UNIFORM_VEC4)
     state._grad_count_ptr[0] = 0
@@ -272,20 +317,72 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
 
   rl.set_shader_value(state.shader, state.locations['uUseFeather'], state._feather_ptr, UNIFORM_INT)
 
-  # Draw triangles with custom shader bound
-  rl.begin_shader_mode(state.shader)
-  # Iterate in triples
-  tri_count = (len(idx) // 3)
-  for t in range(tri_count):
-    a = int(idx[3*t + 0])
-    b = int(idx[3*t + 1])
-    c = int(idx[3*t + 2])
-    pa = rl.Vector2(float(pts[a, 0]), float(pts[a, 1]))
-    pb = rl.Vector2(float(pts[b, 0]), float(pts[b, 1]))
-    pc = rl.Vector2(float(pts[c, 0]), float(pts[c, 1]))
-    # Note: DrawTriangle fills CCW; earcut may output either order, but fill is fine
-    rl.draw_triangle(pc, pb, pa, rl.WHITE)
-  rl.end_shader_mode()
+  mode = 'simple'
+
+  if mode == 'earcut':
+    # Triangulate: pass 2D (N,2) vertices and one ring size
+    rings = np.asarray([pts.shape[0]], dtype=np.int32)
+    idx = earcut.triangulate_float32(pts, rings)
+    if idx is None or len(idx) < 3:
+      return
+
+    # Prebuild Vector2s once to avoid per-triangle allocations
+    verts = [rl.Vector2(float(x), float(y)) for x, y in pts.tolist()]
+    # Reshape indices to (tri_count, 3) to avoid 3*t indexing in Python
+    idx3 = np.asarray(idx, dtype=np.int32).reshape(-1, 3)
+
+    draw_tri = rl.draw_triangle
+    white = rl.WHITE
+
+    # Draw triangles with custom shader bound
+    rl.begin_shader_mode(state.shader)
+    for a, b, c in idx3:
+      # Note: DrawTriangle fills CCW; earcut may output either order, that's fine
+      draw_tri(verts[c], verts[b], verts[a], white)
+    rl.end_shader_mode()
+
+    if DEBUG:
+      # draw each triangle
+      for i in range(len(pts)):
+        rl.draw_circle_lines(int(pts[i,0]), int(pts[i,1]), 3, rl.RED)
+      for a, b, c in idx3:
+        pa = verts[a]
+        pb = verts[b]
+        pc = verts[c]
+        rl.draw_line_ex(pa, pb, 1, rl.RED)
+        rl.draw_line_ex(pb, pc, 1, rl.GREEN)
+        rl.draw_line_ex(pc, pa, 1, rl.BLUE)
+
+  else:
+    tri_strip = triangulate(pts)
+    if len(tri_strip) < 4:
+      return
+    # return
+
+
+    # Use custom shader (for gradient) if configured above; pass WHITE so shader drives color
+    rl.begin_shader_mode(state.shader)
+    rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
+    rl.end_shader_mode()
+
+    if DEBUG:
+      for i in range(len(pts)):
+        rl.draw_circle_lines(int(pts[i,0]), int(pts[i,1]), 3, rl.RED)
+
+      # draw each triangle, need to handle deduped tri_strip
+      tri_count = (len(tri_strip) // 3)
+      for t in range(tri_count):
+        a = 3*t + 0
+        b = 3*t + 1
+        c = 3*t + 2
+        if c >= len(tri_strip):
+          continue
+        pa = rl.Vector2(float(tri_strip[a][0]), float(tri_strip[a][1]))
+        pb = rl.Vector2(float(tri_strip[b][0]), float(tri_strip[b][1]))
+        pc = rl.Vector2(float(tri_strip[c][0]), float(tri_strip[c][1]))
+        rl.draw_line_ex(pa, pb, 1, rl.RED)
+        rl.draw_line_ex(pb, pc, 1, rl.GREEN)
+        rl.draw_line_ex(pc, pa, 1, rl.BLUE)
 
 
 def cleanup_shader_resources():
