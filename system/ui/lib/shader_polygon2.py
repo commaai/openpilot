@@ -5,7 +5,7 @@ from typing import Any
 from openpilot.system.ui.lib.application import gui_app
 import mapbox_earcut as earcut
 
-DEBUG = False
+DEBUG = True
 
 MAX_GRADIENT_COLORS = 15
 
@@ -371,18 +371,18 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
 
       # draw each triangle, need to handle deduped tri_strip
       tri_count = (len(tri_strip) // 3)
-      for t in range(tri_count):
-        a = 3*t + 0
-        b = 3*t + 1
-        c = 3*t + 2
-        if c >= len(tri_strip):
-          continue
-        pa = rl.Vector2(float(tri_strip[a][0]), float(tri_strip[a][1]))
-        pb = rl.Vector2(float(tri_strip[b][0]), float(tri_strip[b][1]))
-        pc = rl.Vector2(float(tri_strip[c][0]), float(tri_strip[c][1]))
-        rl.draw_line_ex(pa, pb, 1, rl.RED)
-        rl.draw_line_ex(pb, pc, 1, rl.GREEN)
-        rl.draw_line_ex(pc, pa, 1, rl.BLUE)
+      i = 0
+      while i + 2 < len(tri_strip):
+        color1 = rl.BLUE if (i) % 3 == 0 else rl.RED if (i) % 3 == 1 else rl.GREEN
+        color2 = rl.BLUE if (i) % 3 == 1 else rl.RED if (i) % 3 == 2 else rl.GREEN
+        color3 = rl.BLUE if (i) % 3 == 2 else rl.RED if (i) % 3 == 0 else rl.GREEN
+        a = rl.Vector2(tri_strip[i][0], tri_strip[i][1])
+        b = rl.Vector2(tri_strip[i+1][0], tri_strip[i+1][1])
+        c = rl.Vector2(tri_strip[i+2][0], tri_strip[i+2][1])
+        rl.draw_line_ex(a, b, 1, color1)
+        rl.draw_line_ex(b, c, 1, color2)
+        rl.draw_line_ex(c, a, 1, color3)
+        i += 1
 
 
 def cleanup_shader_resources():
