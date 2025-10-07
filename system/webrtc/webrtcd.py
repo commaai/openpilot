@@ -243,7 +243,7 @@ async def post_notify(request: 'web.Request'):
   try:
     payload = await request.json()
   except Exception:
-    raise web.HTTPBadRequest(text="Invalid JSON")
+    raise web.HTTPBadRequest(text="Invalid JSON") from None
 
   for session in list(request.app.get('streams', {}).values()):
     try:
@@ -251,6 +251,7 @@ async def post_notify(request: 'web.Request'):
       ch.send(json.dumps(payload))
     except Exception:
       continue
+
   return web.Response(status=200, text="OK")
 
 async def on_shutdown(app: 'web.Application'):
