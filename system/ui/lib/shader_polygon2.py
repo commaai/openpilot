@@ -332,7 +332,7 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
 
   if DEBUG:
     for i in range(len(pts)):
-      rl.draw_circle_lines(int(pts[i,0]), int(pts[i,1]), 3, rl.RED)
+      rl.draw_circle_lines(int(pts[i, 0]), int(pts[i, 1]), 3, rl.RED)
 
     # draw each triangle, need to handle deduped tri_strip
     i = 0
@@ -341,8 +341,8 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
       color2 = rl.BLUE if (i) % 3 == 1 else rl.RED if (i) % 3 == 2 else rl.GREEN
       color3 = rl.BLUE if (i) % 3 == 2 else rl.RED if (i) % 3 == 0 else rl.GREEN
       a = rl.Vector2(tri_strip[i][0], tri_strip[i][1])
-      b = rl.Vector2(tri_strip[i+1][0], tri_strip[i+1][1])
-      c = rl.Vector2(tri_strip[i+2][0], tri_strip[i+2][1])
+      b = rl.Vector2(tri_strip[i + 1][0], tri_strip[i + 1][1])
+      c = rl.Vector2(tri_strip[i + 2][0], tri_strip[i + 2][1])
       rl.draw_line_ex(a, b, 1, color1)
       rl.draw_line_ex(b, c, 1, color2)
       rl.draw_line_ex(c, a, 1, color3)
