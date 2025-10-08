@@ -19,7 +19,7 @@ if platform.system() == "Darwin":
 """
 
 FRAGMENT_SHADER = VERSION + """
-in vec2 v_uv;
+in vec2 fragTexCoord;
 out vec4 finalColor;
 
 // Two-color fallback gradient (top->bottom or arbitrary line)
@@ -71,8 +71,8 @@ void main() {
 
   if (uUseFeather == 1) {
     // TODO: needs more aliasing?
-    // v_uv.y = 0 at inner edge, 1 at outer feather ring (~1 px)
-    float alpha = smoothstep(1.0, 0.0, v_uv.y);
+    // fragTexCoord.y = 0 at inner edge, 1 at outer feather ring (~1 px)
+    float alpha = smoothstep(1.0, 0.0, fragTexCoord.y);
     col.a *= alpha;
   }
 
@@ -84,7 +84,7 @@ void main() {
 VERTEX_SHADER = VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
-out vec2 fragTexCoord
+out vec2 fragTexCoord;
 
 uniform mat4 mvp;
 
