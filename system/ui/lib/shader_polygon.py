@@ -1,12 +1,35 @@
 import platform
 import pyray as rl
 import numpy as np
+from dataclasses import dataclass
 from typing import Any, Optional
 from openpilot.system.ui.lib.application import gui_app
 
 DEBUG = False
 
-MAX_GRADIENT_COLORS = 15
+MAX_GRADIENT_COLORS = 15  # includes stops as well
+
+
+@dataclass
+class GradientState:
+  start: tuple[float, float]
+  end: tuple[float, float]
+  colors: list[rl.Color]
+  stops: list[float]
+
+  def __post_init__(self):
+    if len(self.colors) > MAX_GRADIENT_COLORS:
+      self.colors = self.colors[:MAX_GRADIENT_COLORS]
+      print(f"Warning: GradientState colors truncated to {MAX_GRADIENT_COLORS} entries")
+
+    if len(self.stops) > MAX_GRADIENT_COLORS:
+      self.stops = self.stops[:MAX_GRADIENT_COLORS]
+      print(f"Warning: GradientState stops truncated to {MAX_GRADIENT_COLORS} entries")
+
+    if not len(self.stops):
+      color_count = min(len(self.colors), MAX_GRADIENT_COLORS)
+      self.stops = [i / max(1, color_count - 1) for i in range(color_count)]
+
 
 VERSION = """
 #version 300 es
@@ -150,36 +173,32 @@ class ShaderState:
     self.initialized = False
 
 
-def _configure_shader_color(state: ShaderState, color: Optional[rl.Color], gradient: dict | None, origin_rect: rl.Rectangle):
+def _configure_shader_color(state: ShaderState, color: Optional[rl.Color], gradient: GradientState | None, origin_rect: rl.Rectangle):
   assert (color is not None) != (gradient is not None), "Either color or gradient must be provided"
 
-  use_gradient = 1 if (gradient and 'colors' in gradient and len(gradient['colors']) >= 1) else 0
+  use_gradient = 1 if (gradient and len(gradient.colors) >= 1) else 0
   state.use_gradient_ptr[0] = use_gradient
   rl.set_shader_value(state.shader, state.locations['useGradient'], state.use_gradient_ptr, UNIFORM_INT)
 
   if use_gradient:
-    cols = gradient['colors']
-    stops = gradient.get('stops', [i / max(1, len(cols) - 1) for i in range(len(cols))])
-    count = min(len(cols), MAX_GRADIENT_COLORS)
-    state.color_count_ptr[0] = count
-    for i in range(count):
-      c = cols[i]
+    state.color_count_ptr[0] = len(gradient.colors)
+    for i in range(len(gradient.colors)):
+      c = gradient.colors[i]
       base = i * 4
       state.gradient_colors_ptr[base:base + 4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
-    rl.set_shader_value_v(state.shader, state.locations['gradientColors'], state.gradient_colors_ptr, UNIFORM_VEC4, count)
+    rl.set_shader_value_v(state.shader, state.locations['gradientColors'], state.gradient_colors_ptr, UNIFORM_VEC4, len(gradient.colors))
 
-    stops = np.clip(np.asarray(stops, dtype=np.float32)[:count], 0.0, 1.0)
-    state.gradient_stops_ptr[0:count] = stops
-    rl.set_shader_value_v(state.shader, state.locations['gradientStops'], state.gradient_stops_ptr, UNIFORM_FLOAT, count)
+    for i in range(len(gradient.stops)):
+      s = float(gradient.stops[i])
+      state.gradient_stops_ptr[i] = 0.0 if s < 0.0 else 1.0 if s > 1.0 else s
+    rl.set_shader_value_v(state.shader, state.locations['gradientStops'], state.gradient_stops_ptr, UNIFORM_FLOAT, len(gradient.stops))
     rl.set_shader_value(state.shader, state.locations['gradientColorCount'], state.color_count_ptr, UNIFORM_INT)
 
-    # Gradient line is provided normalized to rect; convert to screen pixels
-    start = np.array(gradient.get('start', (0.0, 1.0)), dtype=np.float32)
-    end = np.array(gradient.get('end', (0.0, 0.0)), dtype=np.float32)
-    start_px = start * np.array([origin_rect.width, origin_rect.height], dtype=np.float32) + np.array([origin_rect.x, origin_rect.y], dtype=np.float32)
-    end_px = end * np.array([origin_rect.width, origin_rect.height], dtype=np.float32) + np.array([origin_rect.x, origin_rect.y], dtype=np.float32)
-    rl.set_shader_value(state.shader, state.locations['gradientStart'], rl.Vector2(float(start_px[0]), float(start_px[1])), UNIFORM_VEC2)
-    rl.set_shader_value(state.shader, state.locations['gradientEnd'], rl.Vector2(float(end_px[0]), float(end_px[1])), UNIFORM_VEC2)
+    # Map normalized start/end to screen pixels
+    start_vec = rl.Vector2(origin_rect.x + gradient.start[0] * origin_rect.width, origin_rect.y + gradient.start[1] * origin_rect.height)
+    end_vec = rl.Vector2(origin_rect.x + gradient.end[0] * origin_rect.width, origin_rect.y + gradient.end[1] * origin_rect.height)
+    rl.set_shader_value(state.shader, state.locations['gradientStart'], start_vec, UNIFORM_VEC2)
+    rl.set_shader_value(state.shader, state.locations['gradientEnd'], end_vec, UNIFORM_VEC2)
   else:
     state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
@@ -199,7 +218,7 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
-                 color: Optional[rl.Color] = None, gradient: dict | None = None):
+                 color: Optional[rl.Color] = None, gradient: GradientState | None = None):
   """
   Draw a simple filled polygon by triangulating to indexed triangles with earcut
   and rendering them under a lightweight shader. Supports solid color or
