@@ -65,6 +65,12 @@ void main() {
   // TODO: fix the flip
   vec4 col = getGradientColor(1.0f - t);
 
+  //TODO: with or without, the lls can cut off if super thin
+  // TODO: needs more aliasing?
+  // fragTexCoord.y = 0 at inner edge, 1 at outer feather ring (~1 px)
+  float alpha = smoothstep(1.0, 0.0, fragTexCoord.y);
+  col.a *= alpha;
+
   finalColor = col;
 }
 """
