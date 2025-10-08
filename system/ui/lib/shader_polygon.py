@@ -6,7 +6,6 @@ from openpilot.system.ui.lib.application import gui_app
 
 DEBUG = False
 
-# TODO: this match?
 MAX_GRADIENT_COLORS = 15
 
 VERSION = """
@@ -15,8 +14,8 @@ precision highp float;
 """
 if platform.system() == "Darwin":
   VERSION = """
-#version 330 core
-"""
+    #version 330 core
+  """
 
 FRAGMENT_SHADER = VERSION + """
 in vec2 fragTexCoord;
@@ -29,9 +28,6 @@ uniform vec4 uColorBottom;
 // Gradient line defined in *screen pixels*
 uniform vec2 uGradStart;   // e.g. vec2(0, 0)
 uniform vec2 uGradEnd;     // e.g. vec2(0, screenHeight)
-
-// TODO: remove since unused
-uniform int  uUseFeather;  // 0 or 1
 
 // Arbitrary-stop gradient support
 uniform vec4 uGradColors[15];
@@ -69,12 +65,10 @@ void main() {
   // TODO: fix the flip
   vec4 col = getGradientColor(1.0f - t);
 
-  if (uUseFeather == 1) {
-    // TODO: needs more aliasing?
-    // fragTexCoord.y = 0 at inner edge, 1 at outer feather ring (~1 px)
-    float alpha = smoothstep(1.0, 0.0, fragTexCoord.y);
-    col.a *= alpha;
-  }
+  // TODO: needs more aliasing?
+  // fragTexCoord.y = 0 at inner edge, 1 at outer feather ring (~1 px)
+  float alpha = smoothstep(1.0, 0.0, fragTexCoord.y);
+  col.a *= alpha;
 
   finalColor = col;
 }
@@ -127,7 +121,6 @@ class ShaderState:
     }
     self._last_w = 0
     self._last_h = 0
-    self._feather_ptr = rl.ffi.new("int[]", [0])
     self._grad_count_ptr = rl.ffi.new("int[]", [0])
     self._grad_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS * 4)  # TODO: wtf is this
     self._grad_stops_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS)
@@ -150,7 +143,6 @@ class ShaderState:
     self.locations['uColorBottom'] = rl.get_shader_location(self.shader, "uColorBottom")
     self.locations['uGradStart'] = rl.get_shader_location(self.shader, "uGradStart")
     self.locations['uGradEnd'] = rl.get_shader_location(self.shader, "uGradEnd")
-    self.locations['uUseFeather'] = rl.get_shader_location(self.shader, "uUseFeather")
     self.locations['uGradColors'] = rl.get_shader_location(self.shader, "uGradColors")
     self.locations['uGradStops'] = rl.get_shader_location(self.shader, "uGradStops")
     self.locations['uGradCount'] = rl.get_shader_location(self.shader, "uGradCount")
@@ -165,7 +157,6 @@ class ShaderState:
     rl.set_shader_value(self.shader, self.locations['uColorBottom'], rl.Vector4(0, 0, 0, 1), UNIFORM_VEC4)
     rl.set_shader_value(self.shader, self.locations['uGradStart'], rl.Vector2(0, 0), UNIFORM_VEC2)
     rl.set_shader_value(self.shader, self.locations['uGradEnd'], rl.Vector2(0, gui_app.height), UNIFORM_VEC2)
-    rl.set_shader_value(self.shader, self.locations['uUseFeather'], self._feather_ptr, UNIFORM_INT)
     rl.set_shader_value(self.shader, self.locations['uGradCount'], self._grad_count_ptr, UNIFORM_INT)
 
     self.initialized = True
@@ -316,8 +307,6 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
     rl.set_shader_value(state.shader, state.locations['uColorBottom'], vec, UNIFORM_VEC4)
     state._grad_count_ptr[0] = 0
     rl.set_shader_value(state.shader, state.locations['uGradCount'], state._grad_count_ptr, UNIFORM_INT)
-
-  rl.set_shader_value(state.shader, state.locations['uUseFeather'], state._feather_ptr, UNIFORM_INT)
 
   tri_strip = triangulate(pts)
   # TODO: check this
