@@ -56,10 +56,9 @@ uniform int gradientColorCount;
 
 vec4 getGradientColor(vec2 p) {
   // Compute t from screen-space position
-  vec2 d = gradientEnd - gradientStart;
+  vec2 d = gradientStart - gradientEnd;
   float len2 = max(dot(d, d), 1e-6);
-  float t = clamp(dot(p - gradientStart, d) / len2, 0.0, 1.0);
-  t = 1.0 - t; // flip to match original visual
+  float t = clamp(dot(p - gradientEnd, d) / len2, 0.0, 1.0);
   // Clamp to range
   float t0 = gradientStops[0];
   float tn = gradientStops[gradientColorCount-1];
