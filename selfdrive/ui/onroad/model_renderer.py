@@ -169,21 +169,23 @@ class ModelRenderer(Widget):
     # Update lane lines using raw points
     for i, lane_line in enumerate(self._lane_lines):
       lane_line.projected_points = self._map_line_to_polygon(
-        lane_line.raw_points, 0.025 * self._lane_line_probs[i], 0.0, max_idx
+        lane_line.raw_points, 0.025 * self._lane_line_probs[i], 0.0, max_idx, max_distance
       )
 
     # Update road edges using raw points
     for road_edge in self._road_edges:
-      road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, 0.025, 0.0, max_idx)
+      road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, 0.025, 0.0, max_idx, max_distance)
 
     # Update path using raw points
     if lead and lead.status:
       lead_d = lead.dRel * 2.0
       max_distance = np.clip(lead_d - min(lead_d * 0.35, 10.0), 0.0, max_distance)
+      # print("Lead distance:", lead.dRel, "Adjusted max distance:", max_distance)
 
     max_idx = self._get_path_length_idx(path_x_array, max_distance)
+    print('Max draw distance:', max_distance, 'Max index:', max_idx)
     self._path.projected_points = self._map_line_to_polygon(
-      self._path.raw_points, 0.9, self._path_offset_z, max_idx, allow_invert=False
+      self._path.raw_points, 0.9, self._path_offset_z, max_idx, max_distance, allow_invert=False
     )
 
     self._update_experimental_gradient()
@@ -330,13 +332,24 @@ class ModelRenderer(Widget):
 
     return (x, y)
 
-  def _map_line_to_polygon(self, line: np.ndarray, y_off: float, z_off: float, max_idx: int, allow_invert: bool = True) -> np.ndarray:
+  def _map_line_to_polygon(self, line: np.ndarray, y_off: float, z_off: float, max_idx: int, max_distance: float, allow_invert: bool = True) -> np.ndarray:
     """Convert 3D line to 2D polygon for rendering."""
     if line.shape[0] == 0:
       return np.empty((0, 2), dtype=np.float32)
 
     # Slice points and filter non-negative x-coordinates
     points = line[:max_idx + 1]
+
+    # interpolate around max_idx so path end is smooth:
+    if 0 < max_idx < line.shape[0] - 1:
+      next_point = line[max_idx + 1]
+      prev_point = line[max_idx - 1]
+      # np.interp(max_distance, [points[-1, 0], next_point[0]], [points[-1, 1], next_point[1]])
+      interp_y = np.interp(max_distance, [points[-1, 0], next_point[0]], [points[-1, 1], next_point[1]])
+      interp_z = np.interp(max_distance, [points[-1, 0], next_point[0]], [points[-1, 2], next_point[2]])
+      interp_point = np.array([[max_distance, interp_y, interp_z]], dtype=np.float32)
+      points = np.vstack((points, interp_point))
+
     points = points[points[:, 0] >= 0]
     if points.shape[0] == 0:
       return np.empty((0, 2), dtype=np.float32)
