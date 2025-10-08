@@ -59,6 +59,7 @@ vec4 getGradientColor(vec2 p) {
   vec2 d = gradientStart - gradientEnd;
   float len2 = max(dot(d, d), 1e-6);
   float t = clamp(dot(p - gradientEnd, d) / len2, 0.0, 1.0);
+
   // Clamp to range
   float t0 = gradientStops[0];
   float tn = gradientStops[gradientColorCount-1];
@@ -73,6 +74,7 @@ vec4 getGradientColor(vec2 p) {
       return mix(gradientColors[i], gradientColors[i+1], k);
     }
   }
+
   return gradientColors[gradientColorCount-1];
 }
 
@@ -124,7 +126,6 @@ class ShaderState:
     self.initialized = False
     self.shader = None
     self.locations = {
-      'mvp': None,
       'fillColor': None,
       'useGradient': None,
       'gradientStart': None,
@@ -132,6 +133,7 @@ class ShaderState:
       'gradientColors': None,
       'gradientStops': None,
       'gradientColorCount': None,
+      'mvp': None,
     }
 
     # Pre-allocated FFI objects
@@ -217,11 +219,10 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
                  color: Optional[rl.Color] = None, gradient: GradientState | None = None):  # noqa: UP045
   """
-  Draw a simple filled polygon by triangulating to indexed triangles with earcut
-  and rendering them under a lightweight shader. Supports solid color or
-  two-stop linear gradient in screen space.
+  Draw a ribbon polygon (two chains) with a triangle strip and gradient.
+  - Input must be [L0..Lk-1, Rk-1..R0], even count, no crossings/holes.
   """
-  if points is None or len(points) < 3:
+  if len(points) < 3:
     return
 
   # Ensure (N,2) float32 contiguous array
