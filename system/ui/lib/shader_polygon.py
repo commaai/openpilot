@@ -120,9 +120,9 @@ class ShaderState:
       'uGradStops': None,
       'uGradCount': None,
     }
-    self._grad_count_ptr = rl.ffi.new("int[]", [0])
-    self._grad_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS * 4)  # TODO: wtf is this
-    self._grad_stops_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS)
+    self.color_count_ptr = rl.ffi.new("int[]", [0])
+    self.gradient_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS * 4)
+    self.gradient_stops_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS)
 
   def initialize(self):
     if self.initialized:
@@ -151,7 +151,7 @@ class ShaderState:
     rl.set_shader_value(self.shader, self.locations['uColorBottom'], rl.Vector4(0, 0, 0, 1), UNIFORM_VEC4)
     rl.set_shader_value(self.shader, self.locations['uGradStart'], rl.Vector2(0, 0), UNIFORM_VEC2)
     rl.set_shader_value(self.shader, self.locations['uGradEnd'], rl.Vector2(0, gui_app.height), UNIFORM_VEC2)
-    rl.set_shader_value(self.shader, self.locations['uGradCount'], self._grad_count_ptr, UNIFORM_INT)
+    rl.set_shader_value(self.shader, self.locations['uGradCount'], self.color_count_ptr, UNIFORM_INT)
 
     self.initialized = True
 
@@ -234,17 +234,17 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
     cols = gradient['colors']
     stops = gradient.get('stops', [i / max(1, len(cols) - 1) for i in range(len(cols))])
     count = min(len(cols), MAX_GRADIENT_COLORS)
-    state._grad_count_ptr[0] = count
+    state.color_count_ptr[0] = count
     for i in range(count):
       c = cols[i]
       base = i * 4
-      state._grad_colors_ptr[base:base + 4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
-    rl.set_shader_value_v(state.shader, state.locations['uGradColors'], state._grad_colors_ptr, UNIFORM_VEC4, count)
+      state.gradient_colors_ptr[base:base + 4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
+    rl.set_shader_value_v(state.shader, state.locations['uGradColors'], state.gradient_colors_ptr, UNIFORM_VEC4, count)
 
     stops = np.clip(np.asarray(stops, dtype=np.float32)[:count], 0.0, 1.0)
-    state._grad_stops_ptr[0:count] = stops
-    rl.set_shader_value_v(state.shader, state.locations['uGradStops'], state._grad_stops_ptr, UNIFORM_FLOAT, count)
-    rl.set_shader_value(state.shader, state.locations['uGradCount'], state._grad_count_ptr, UNIFORM_INT)
+    state.gradient_stops_ptr[0:count] = stops
+    rl.set_shader_value_v(state.shader, state.locations['uGradStops'], state.gradient_stops_ptr, UNIFORM_FLOAT, count)
+    rl.set_shader_value(state.shader, state.locations['uGradCount'], state.color_count_ptr, UNIFORM_INT)
 
     # Gradient line is provided normalized to rect; convert to screen pixels
     start = np.array(gradient.get('start', (0.0, 1.0)), dtype=np.float32)
@@ -259,8 +259,8 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
     vec = rl.Vector4(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0)
     rl.set_shader_value(state.shader, state.locations['uColorTop'], vec, UNIFORM_VEC4)
     rl.set_shader_value(state.shader, state.locations['uColorBottom'], vec, UNIFORM_VEC4)
-    state._grad_count_ptr[0] = 0
-    rl.set_shader_value(state.shader, state.locations['uGradCount'], state._grad_count_ptr, UNIFORM_INT)
+    state.color_count_ptr[0] = 0
+    rl.set_shader_value(state.shader, state.locations['uGradCount'], state.color_count_ptr, UNIFORM_INT)
 
   tri_strip = triangulate(pts)
 
