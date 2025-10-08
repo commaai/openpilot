@@ -5,6 +5,7 @@ from collections import deque
 from cereal import log
 from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
+from openpilot.selfdrive.controls.lib.drive_helpers import clamp
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.common.pid import PIDController
 
@@ -33,8 +34,8 @@ class LatControlTorque(LatControl):
                              k_f=self.torque_params.kf, rate=1/self.dt)
     self.update_limits()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
-    self.lataccel_request_buffer_size = int(1 / self.dt)
-    self.requested_lateral_accel_buffer = deque([0.] * self.lataccel_request_buffer_size , maxlen=self.lataccel_request_buffer_size)
+    self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES = int(1 / self.dt)
+    self.requested_lateral_accel_buffer = deque([0.] * self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES , maxlen=self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES)
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -56,7 +57,7 @@ class LatControlTorque(LatControl):
       roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
 
-      delay_frames = max(1, min(int(lat_delay / self.dt), self.lataccel_request_buffer_size - 1))
+      delay_frames = int(clamp(lat_delay / self.dt), 1, self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES - 1)
       expected_lateral_accel = self.requested_lateral_accel_buffer[-delay_frames]
       # TODO factor out lateral jerk from error to later replace it with delay independent alternative
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
@@ -76,6 +77,7 @@ class LatControlTorque(LatControl):
       ff = gravity_adjusted_future_lateral_accel
       # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
       ff -= self.torque_params.latAccelOffset
+      # TODO jerk is weighted by lat_delay for legacy reasons, but should be made independent of it
       ff += get_friction(lat_delay * desired_lateral_jerk + expected_lateral_accel - actual_lateral_accel,
                          lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
