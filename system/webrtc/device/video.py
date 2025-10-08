@@ -2,7 +2,6 @@ import asyncio
 import time
 
 import av
-
 from teleoprtc.tracks import TiciVideoStreamTrack
 
 from cereal import messaging
