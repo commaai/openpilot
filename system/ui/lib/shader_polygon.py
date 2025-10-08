@@ -1,7 +1,7 @@
 import platform
 import pyray as rl
 import numpy as np
-from typing import Any
+from typing import Any, Optional
 from openpilot.system.ui.lib.application import gui_app
 
 DEBUG = False
@@ -21,13 +21,13 @@ FRAGMENT_SHADER = VERSION + """
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
-// Two-color fallback gradient (top->bottom or arbitrary line)
-uniform vec4 uColorTop;
-uniform vec4 uColorBottom;
-
 // Gradient line defined in *screen pixels*
+uniform int useGradient;
 uniform vec2 uGradStart;   // e.g. vec2(0, 0)
 uniform vec2 uGradEnd;     // e.g. vec2(0, screenHeight)
+
+// Or solid fill color
+uniform vec4 fillColor;
 
 // Arbitrary-stop gradient support
 uniform vec4 uGradColors[15];
@@ -35,9 +35,6 @@ uniform float uGradStops[15];
 uniform int uGradCount;
 
 vec4 getGradientColor(float t) {
-  if (uGradCount <= 0) return mix(uColorTop, uColorBottom, t);
-  if (uGradCount == 1) return uGradColors[0];
-
   // Clamp to range
   float t0 = uGradStops[0];
   float tn = uGradStops[uGradCount-1];
@@ -63,15 +60,15 @@ void main() {
   float t = clamp(dot(p - uGradStart, d) / len2, 0.0, 1.0);
 
   // TODO: fix the flip
-  vec4 col = getGradientColor(1.0f - t);
+  vec4 color = useGradient == 1 ? getGradientColor(1.0f - t) : fillColor;
 
   //TODO: with or without, the lls can cut off if super thin
   // TODO: needs more aliasing?
   // fragTexCoord.y = 0 at inner edge, 1 at outer feather ring (~1 px)
   float alpha = smoothstep(1.0, 0.0, fragTexCoord.y);
-  col.a *= alpha;
+  color.a *= alpha;
 
-  finalColor = col;
+  finalColor = color;
 }
 """
 
@@ -111,8 +108,8 @@ class ShaderState:
     self.shader = None
     self.locations = {
       'mvp': None,
-      'uColorTop': None,
-      'uColorBottom': None,
+      'fillColor': None,
+      'useGradient': None,
       'uGradStart': None,
       'uGradEnd': None,
       'uUseFeather': None,
@@ -120,6 +117,10 @@ class ShaderState:
       'uGradStops': None,
       'uGradCount': None,
     }
+
+    # Pre-allocated FFI objects
+    self.fill_color_ptr = rl.ffi.new("float[]", [0.0, 0.0, 0.0, 0.0])
+    self.use_gradient_ptr = rl.ffi.new("int[]", [0])
     self.color_count_ptr = rl.ffi.new("int[]", [0])
     self.gradient_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS * 4)
     self.gradient_stops_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS)
@@ -131,27 +132,20 @@ class ShaderState:
     # Safe to call only after window/context exists
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAGMENT_SHADER)
 
-    # Cache locations
-    self.locations['mvp'] = rl.get_shader_location(self.shader, "mvp")
-    self.locations['uColorTop'] = rl.get_shader_location(self.shader, "uColorTop")
-    self.locations['uColorBottom'] = rl.get_shader_location(self.shader, "uColorBottom")
-    self.locations['uGradStart'] = rl.get_shader_location(self.shader, "uGradStart")
-    self.locations['uGradEnd'] = rl.get_shader_location(self.shader, "uGradEnd")
-    self.locations['uGradColors'] = rl.get_shader_location(self.shader, "uGradColors")
-    self.locations['uGradStops'] = rl.get_shader_location(self.shader, "uGradStops")
-    self.locations['uGradCount'] = rl.get_shader_location(self.shader, "uGradCount")
+    # Cache all uniform locations
+    for uniform in self.locations.keys():
+      self.locations[uniform] = rl.get_shader_location(self.shader, uniform)
 
     # Orthographic MVP (origin top-left)
+    # TODO: why did this change from the original? any differences?
     proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
     rl.set_shader_value_matrix(self.shader, self.locations['mvp'], proj)
-    self._last_w, self._last_h = gui_app.width, gui_app.height
 
-    # Reasonable defaults
-    rl.set_shader_value(self.shader, self.locations['uColorTop'], rl.Vector4(1, 1, 1, 1), UNIFORM_VEC4)
-    rl.set_shader_value(self.shader, self.locations['uColorBottom'], rl.Vector4(0, 0, 0, 1), UNIFORM_VEC4)
-    rl.set_shader_value(self.shader, self.locations['uGradStart'], rl.Vector2(0, 0), UNIFORM_VEC2)
-    rl.set_shader_value(self.shader, self.locations['uGradEnd'], rl.Vector2(0, gui_app.height), UNIFORM_VEC2)
-    rl.set_shader_value(self.shader, self.locations['uGradCount'], self.color_count_ptr, UNIFORM_INT)
+    # TODO: wtf is this for?
+    # # Reasonable defaults
+    # rl.set_shader_value(self.shader, self.locations['uGradStart'], rl.Vector2(0, 0), UNIFORM_VEC2)
+    # rl.set_shader_value(self.shader, self.locations['uGradEnd'], rl.Vector2(0, gui_app.height), UNIFORM_VEC2)
+    # rl.set_shader_value(self.shader, self.locations['uGradCount'], self.color_count_ptr, UNIFORM_INT)
 
     self.initialized = True
 
@@ -164,9 +158,15 @@ class ShaderState:
     self.initialized = False
 
 
-def _configure_shader_color(state, color, gradient, origin_rect):
+def _configure_shader_color(state: ShaderState, color: Optional[rl.Color], gradient: dict | None, origin_rect: rl.Rectangle):
+  assert (color is not None) != (gradient is not None), "Either color or gradient must be provided"
+
+  use_gradient = 1 if (gradient and 'colors' in gradient and len(gradient['colors']) >= 1) else 0
+  state.use_gradient_ptr[0] = use_gradient
+  rl.set_shader_value(state.shader, state.locations['useGradient'], state.use_gradient_ptr, UNIFORM_INT)
+
   # Configure uniforms (arbitrary gradient stops if provided)
-  if gradient and 'colors' in gradient and len(gradient['colors']) >= 1:
+  if use_gradient:
     cols = gradient['colors']
     stops = gradient.get('stops', [i / max(1, len(cols) - 1) for i in range(len(cols))])
     count = min(len(cols), MAX_GRADIENT_COLORS)
@@ -190,13 +190,16 @@ def _configure_shader_color(state, color, gradient, origin_rect):
     rl.set_shader_value(state.shader, state.locations['uGradStart'], rl.Vector2(float(start_px[0]), float(start_px[1])), UNIFORM_VEC2)
     rl.set_shader_value(state.shader, state.locations['uGradEnd'], rl.Vector2(float(end_px[0]), float(end_px[1])), UNIFORM_VEC2)
   else:
-    # Solid color
-    c = color or rl.WHITE
-    vec = rl.Vector4(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0)
-    rl.set_shader_value(state.shader, state.locations['uColorTop'], vec, UNIFORM_VEC4)
-    rl.set_shader_value(state.shader, state.locations['uColorBottom'], vec, UNIFORM_VEC4)
-    state.color_count_ptr[0] = 0
-    rl.set_shader_value(state.shader, state.locations['uGradCount'], state.color_count_ptr, UNIFORM_INT)
+    state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
+    rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
+
+    # # Solid color
+    # c = color or rl.WHITE
+    # vec = rl.Vector4(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0)
+    # # rl.set_shader_value(state.shader, state.locations['uColorTop'], vec, UNIFORM_VEC4)
+    # # rl.set_shader_value(state.shader, state.locations['uColorBottom'], vec, UNIFORM_VEC4)
+    # state.color_count_ptr[0] = 0
+    # rl.set_shader_value(state.shader, state.locations['uGradCount'], state.color_count_ptr, UNIFORM_INT)
 
 
 def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
@@ -212,7 +215,8 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
   return np.array(tri_strip).tolist()
 
 
-def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None):
+def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
+                 color: Optional[rl.Color] = None, gradient: dict | None = None):
   """
   Draw a simple filled polygon by triangulating to indexed triangles with earcut
   and rendering them under a lightweight shader. Supports solid color or
