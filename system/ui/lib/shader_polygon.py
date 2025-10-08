@@ -120,19 +120,12 @@ class ShaderState:
       'uGradStops': None,
       'uGradCount': None,
     }
-    self._last_w = 0
-    self._last_h = 0
     self._grad_count_ptr = rl.ffi.new("int[]", [0])
     self._grad_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS * 4)  # TODO: wtf is this
     self._grad_stops_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS)
 
   def initialize(self):
     if self.initialized:
-      # Update MVP if size changed
-      if self._last_w != gui_app.width or self._last_h != gui_app.height:
-        proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
-        rl.set_shader_value_matrix(self.shader, self.locations['mvp'], proj)
-        self._last_w, self._last_h = gui_app.width, gui_app.height
       return
 
     # Safe to call only after window/context exists
