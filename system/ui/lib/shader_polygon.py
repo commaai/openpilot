@@ -2,7 +2,7 @@ import platform
 import pyray as rl
 import numpy as np
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Optional, cast
 from openpilot.system.ui.lib.application import gui_app
 
 DEBUG = False
@@ -173,14 +173,16 @@ class ShaderState:
     self.initialized = False
 
 
-def _configure_shader_color(state: ShaderState, color: Optional[rl.Color], gradient: GradientState | None, origin_rect: rl.Rectangle):
+def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # noqa: UP045
+                            gradient: GradientState | None, origin_rect: rl.Rectangle):
   assert (color is not None) != (gradient is not None), "Either color or gradient must be provided"
 
-  use_gradient = 1 if (gradient and len(gradient.colors) >= 1) else 0
+  use_gradient = 1 if (gradient is not None and len(gradient.colors) >= 1) else 0
   state.use_gradient_ptr[0] = use_gradient
   rl.set_shader_value(state.shader, state.locations['useGradient'], state.use_gradient_ptr, UNIFORM_INT)
 
   if use_gradient:
+    gradient = cast(GradientState, gradient)
     state.color_count_ptr[0] = len(gradient.colors)
     for i in range(len(gradient.colors)):
       c = gradient.colors[i]
@@ -200,6 +202,7 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color], gradi
     rl.set_shader_value(state.shader, state.locations['gradientStart'], start_vec, UNIFORM_VEC2)
     rl.set_shader_value(state.shader, state.locations['gradientEnd'], end_vec, UNIFORM_VEC2)
   else:
+    color = color or rl.WHITE
     state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
 
@@ -214,11 +217,11 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
     tri_strip.append(pts[i])
     tri_strip.append(pts[-i - 1])
 
-  return np.array(tri_strip).tolist()
+  return cast(list, np.array(tri_strip).tolist())
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
-                 color: Optional[rl.Color] = None, gradient: GradientState | None = None):
+                 color: Optional[rl.Color] = None, gradient: GradientState | None = None):  # noqa: UP045
   """
   Draw a simple filled polygon by triangulating to indexed triangles with earcut
   and rendering them under a lightweight shader. Supports solid color or
