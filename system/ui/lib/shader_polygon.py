@@ -23,8 +23,8 @@ out vec4 finalColor;
 
 // Gradient line defined in *screen pixels*
 uniform int useGradient;
-uniform vec2 gradientStart;   // e.g. vec2(0, 0)
-uniform vec2 gradientEnd;     // e.g. vec2(0, screenHeight)
+uniform vec2 gradientStart;  // e.g. vec2(0, 0)
+uniform vec2 gradientEnd;    // e.g. vec2(0, screenHeight)
 
 // Or solid fill color
 uniform vec4 fillColor;
@@ -128,7 +128,6 @@ class ShaderState:
     if self.initialized:
       return
 
-    # Safe to call only after window/context exists
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAGMENT_SHADER)
 
     # Cache all uniform locations
