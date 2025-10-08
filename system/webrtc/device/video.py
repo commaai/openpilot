@@ -35,7 +35,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     packet = av.Packet(evta.header + evta.data)
     packet.time_base = self._time_base
 
-    self._pts =  ((time.monotonic_ns()-self._t0_ns) * self._clock_rate) // 1_000_000_000
+    self._pts =  ((time.monotonic_ns() - self._t0_ns) * self._clock_rate) // 1_000_000_000
     packet.pts = self._pts
     self.log_debug("track sending frame %d", self._pts)
 
