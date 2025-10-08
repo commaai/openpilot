@@ -8,7 +8,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.shader_polygon import draw_polygon
+from openpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient
 from openpilot.system.ui.widgets import Widget
 
 CLIP_MARGIN = 500
@@ -66,12 +66,12 @@ class ModelRenderer(Widget):
     self._transform_dirty = True
     self._clip_region = None
 
-    self._exp_gradient = {
-      'start': (0.0, 1.0),  # Bottom of path
-      'end': (0.0, 0.0),  # Top of path
-      'colors': [],
-      'stops': [],
-    }
+    self._exp_gradient = Gradient(
+      start=(0.0, 1.0),  # Bottom of path
+      end=(0.0, 0.0),  # Top of path
+      colors=[],
+      stops=[],
+    )
 
     # Get longitudinal control setting from car parameters
     if car_params := Params().get("CarParams"):
@@ -226,8 +226,8 @@ class ModelRenderer(Widget):
       i += 1 + (1 if (i + 2) < max_len else 0)
 
     # Store the gradient in the path object
-    self._exp_gradient['colors'] = segment_colors
-    self._exp_gradient['stops'] = gradient_stops
+    self._exp_gradient.colors = segment_colors
+    self._exp_gradient.stops = gradient_stops
 
   def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
     speed_buff, lead_buff = 10.0, 40.0
@@ -281,7 +281,7 @@ class ModelRenderer(Widget):
 
     if self._experimental_mode:
       # Draw with acceleration coloring
-      if len(self._exp_gradient['colors']) > 1:
+      if len(self._exp_gradient.colors) > 1:
         draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
       else:
         draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
@@ -289,12 +289,12 @@ class ModelRenderer(Widget):
       # Blend throttle/no throttle colors based on transition
       blend_factor = round(self._blend_filter.x * 100) / 100
       blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, blend_factor)
-      gradient = {
-        'start': (0.0, 1.0),  # Bottom of path
-        'end': (0.0, 0.0),  # Top of path
-        'colors': blended_colors,
-        'stops': [0.0, 0.5, 1.0],
-      }
+      gradient = Gradient(
+        start=(0.0, 1.0),  # Bottom of path
+        end=(0.0, 0.0),  # Top of path
+        colors=blended_colors,
+        stops=[0.0, 0.5, 1.0],
+      )
       draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
 
   def _draw_lead_indicator(self):

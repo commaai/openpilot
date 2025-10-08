@@ -1,9 +1,33 @@
 import platform
 import pyray as rl
 import numpy as np
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Optional, cast
+from openpilot.system.ui.lib.application import gui_app
 
-MAX_GRADIENT_COLORS = 15
+MAX_GRADIENT_COLORS = 15  # includes stops as well
+
+
+@dataclass
+class Gradient:
+  start: tuple[float, float]
+  end: tuple[float, float]
+  colors: list[rl.Color]
+  stops: list[float]
+
+  def __post_init__(self):
+    if len(self.colors) > MAX_GRADIENT_COLORS:
+      self.colors = self.colors[:MAX_GRADIENT_COLORS]
+      print(f"Warning: Gradient colors truncated to {MAX_GRADIENT_COLORS} entries")
+
+    if len(self.stops) > MAX_GRADIENT_COLORS:
+      self.stops = self.stops[:MAX_GRADIENT_COLORS]
+      print(f"Warning: Gradient stops truncated to {MAX_GRADIENT_COLORS} entries")
+
+    if not len(self.stops):
+      color_count = min(len(self.colors), MAX_GRADIENT_COLORS)
+      self.stops = [i / max(1, color_count - 1) for i in range(color_count)]
+
 
 VERSION = """
 #version 300 es
@@ -18,100 +42,43 @@ FRAGMENT_SHADER = VERSION + """
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
-uniform vec2 points[100];
-uniform int pointCount;
 uniform vec4 fillColor;
-uniform vec2 resolution;
 
+// Gradient line defined in *screen pixels*
 uniform int useGradient;
-uniform vec2 gradientStart;
-uniform vec2 gradientEnd;
+uniform vec2 gradientStart;  // e.g. vec2(0, 0)
+uniform vec2 gradientEnd;    // e.g. vec2(0, screenHeight)
 uniform vec4 gradientColors[15];
 uniform float gradientStops[15];
 uniform int gradientColorCount;
 
-vec4 getGradientColor(vec2 pos) {
-  vec2 gradientDir = gradientEnd - gradientStart;
-  float gradientLength = length(gradientDir);
-  if (gradientLength < 0.001) return gradientColors[0];
+vec4 getGradientColor(vec2 p) {
+  // Compute t from screen-space position
+  vec2 d = gradientStart - gradientEnd;
+  float len2 = max(dot(d, d), 1e-6);
+  float t = clamp(dot(p - gradientEnd, d) / len2, 0.0, 1.0);
 
-  vec2 normalizedDir = gradientDir / gradientLength;
-  float t = clamp(dot(pos - gradientStart, normalizedDir) / gradientLength, 0.0, 1.0);
+  // Clamp to range
+  float t0 = gradientStops[0];
+  float tn = gradientStops[gradientColorCount-1];
+  if (t <= t0) return gradientColors[0];
+  if (t >= tn) return gradientColors[gradientColorCount-1];
 
-  if (gradientColorCount <= 1) return gradientColors[0];
-
-  // handle t before first / after last stop
-  if (t <= gradientStops[0]) return gradientColors[0];
-  if (t >= gradientStops[gradientColorCount-1]) return gradientColors[gradientColorCount-1];
   for (int i = 0; i < gradientColorCount - 1; i++) {
-    if (t >= gradientStops[i] && t <= gradientStops[i+1]) {
-      float segmentT = (t - gradientStops[i]) / (gradientStops[i+1] - gradientStops[i]);
-      return mix(gradientColors[i], gradientColors[i+1], segmentT);
+    float a = gradientStops[i];
+    float b = gradientStops[i+1];
+    if (t >= a && t <= b) {
+      float k = (t - a) / max(b - a, 1e-6);
+      return mix(gradientColors[i], gradientColors[i+1], k);
     }
   }
 
   return gradientColors[gradientColorCount-1];
 }
 
-bool isPointInsidePolygon(vec2 p) {
-  if (pointCount < 3) return false;
-  int crossings = 0;
-  for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
-    vec2 pi = points[i];
-    vec2 pj = points[j];
-    if (distance(pi, pj) < 0.001) continue;
-    if (((pi.y > p.y) != (pj.y > p.y)) &&
-        (p.x < (pj.x - pi.x) * (p.y - pi.y) / (pj.y - pi.y + 0.001) + pi.x)) {
-      crossings++;
-    }
-  }
-  return (crossings & 1) == 1;
-}
-
-float distanceToEdge(vec2 p) {
-  float minDist = 1000.0;
-
-  for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
-    vec2 edge0 = points[j];
-    vec2 edge1 = points[i];
-
-    if (distance(edge0, edge1) < 0.0001) continue;
-
-    vec2 v1 = p - edge0;
-    vec2 v2 = edge1 - edge0;
-    float l2 = dot(v2, v2);
-
-    if (l2 < 0.0001) {
-      float dist = length(v1);
-      minDist = min(minDist, dist);
-      continue;
-    }
-
-    float t = clamp(dot(v1, v2) / l2, 0.0, 1.0);
-    vec2 projection = edge0 + t * v2;
-    float dist = length(p - projection);
-    minDist = min(minDist, dist);
-  }
-
-  return minDist;
-}
-
 void main() {
-  vec2 pixel = fragTexCoord * resolution;
-
-  bool inside = isPointInsidePolygon(pixel);
-  float sd = (inside ? 1.0 : -1.0) * distanceToEdge(pixel);
-
-  // ~1 pixel wide anti-aliasing
-  float w = max(0.75, fwidth(sd));
-
-  float alpha = smoothstep(-w, w, sd);
-  if (alpha > 0.0){
-    vec4 color = useGradient == 1 ? getGradientColor(pixel) : fillColor;
-    finalColor = vec4(color.rgb, color.a * alpha);
-  } else {
-    discard;
-  }
+  // TODO: do proper antialiasing
+  finalColor = useGradient == 1 ? getGradientColor(gl_FragCoord.xy) : fillColor;
 }
 """
 
@@ -149,14 +116,10 @@ class ShaderState:
 
     self.initialized = False
     self.shader = None
-    self.white_texture = None
 
     # Shader uniform locations
     self.locations = {
-      'pointCount': None,
       'fillColor': None,
-      'resolution': None,
-      'points': None,
       'useGradient': None,
       'gradientStart': None,
       'gradientEnd': None,
@@ -167,12 +130,8 @@ class ShaderState:
     }
 
     # Pre-allocated FFI objects
-    self.point_count_ptr = rl.ffi.new("int[]", [0])
-    self.resolution_ptr = rl.ffi.new("float[]", [0.0, 0.0])
     self.fill_color_ptr = rl.ffi.new("float[]", [0.0, 0.0, 0.0, 0.0])
     self.use_gradient_ptr = rl.ffi.new("int[]", [0])
-    self.gradient_start_ptr = rl.ffi.new("float[]", [0.0, 0.0])
-    self.gradient_end_ptr = rl.ffi.new("float[]", [0.0, 0.0])
     self.color_count_ptr = rl.ffi.new("int[]", [0])
     self.gradient_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS * 4)
     self.gradient_stops_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS)
@@ -183,30 +142,19 @@ class ShaderState:
 
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAGMENT_SHADER)
 
-    # Create and cache white texture
-    white_img = rl.gen_image_color(2, 2, rl.WHITE)
-    self.white_texture = rl.load_texture_from_image(white_img)
-    rl.set_texture_filter(self.white_texture, rl.TEXTURE_FILTER_BILINEAR)
-    rl.unload_image(white_img)
-
     # Cache all uniform locations
     for uniform in self.locations.keys():
       self.locations[uniform] = rl.get_shader_location(self.shader, uniform)
 
-    # Setup default MVP matrix
-    mvp_ptr = rl.ffi.new("float[16]", [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
-    rl.set_shader_value_matrix(self.shader, self.locations['mvp'], rl.Matrix(*mvp_ptr))
+    # Orthographic MVP (origin top-left)
+    proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
+    rl.set_shader_value_matrix(self.shader, self.locations['mvp'], proj)
 
     self.initialized = True
 
   def cleanup(self):
     if not self.initialized:
       return
-
-    if self.white_texture:
-      rl.unload_texture(self.white_texture)
-      self.white_texture = None
-
     if self.shader:
       rl.unload_shader(self.shader)
       self.shader = None
@@ -214,103 +162,82 @@ class ShaderState:
     self.initialized = False
 
 
-def _configure_shader_color(state, color, gradient, clipped_rect, original_rect):
-  use_gradient = 1 if gradient else 0
+def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # noqa: UP045
+                            gradient: Gradient | None, origin_rect: rl.Rectangle):
+  assert (color is not None) != (gradient is not None), "Either color or gradient must be provided"
+
+  use_gradient = 1 if (gradient is not None and len(gradient.colors) >= 1) else 0
   state.use_gradient_ptr[0] = use_gradient
   rl.set_shader_value(state.shader, state.locations['useGradient'], state.use_gradient_ptr, UNIFORM_INT)
 
   if use_gradient:
-    start = np.array(gradient['start']) * np.array([original_rect.width, original_rect.height]) + np.array([original_rect.x, original_rect.y])
-    end = np.array(gradient['end']) * np.array([original_rect.width, original_rect.height]) + np.array([original_rect.x, original_rect.y])
-    start = start - np.array([clipped_rect.x, clipped_rect.y])
-    end = end - np.array([clipped_rect.x, clipped_rect.y])
-    state.gradient_start_ptr[0:2] = start.astype(np.float32)
-    state.gradient_end_ptr[0:2] = end.astype(np.float32)
-    rl.set_shader_value(state.shader, state.locations['gradientStart'], state.gradient_start_ptr, UNIFORM_VEC2)
-    rl.set_shader_value(state.shader, state.locations['gradientEnd'], state.gradient_end_ptr, UNIFORM_VEC2)
+    gradient = cast(Gradient, gradient)
+    state.color_count_ptr[0] = len(gradient.colors)
+    for i in range(len(gradient.colors)):
+      c = gradient.colors[i]
+      base = i * 4
+      state.gradient_colors_ptr[base:base + 4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
+    rl.set_shader_value_v(state.shader, state.locations['gradientColors'], state.gradient_colors_ptr, UNIFORM_VEC4, len(gradient.colors))
 
-    colors = gradient['colors']
-    color_count = min(len(colors), MAX_GRADIENT_COLORS)
-    state.color_count_ptr[0] = color_count
-    for i, c in enumerate(colors[:color_count]):
-      base_idx = i * 4
-      state.gradient_colors_ptr[base_idx:base_idx+4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
-    rl.set_shader_value_v(state.shader, state.locations['gradientColors'], state.gradient_colors_ptr, UNIFORM_VEC4, color_count)
-
-    stops = gradient.get('stops', [i / max(1, color_count - 1) for i in range(color_count)])
-    stops = np.clip(stops[:color_count], 0.0, 1.0)
-    state.gradient_stops_ptr[0:color_count] = stops
-    rl.set_shader_value_v(state.shader, state.locations['gradientStops'], state.gradient_stops_ptr, UNIFORM_FLOAT, color_count)
+    for i in range(len(gradient.stops)):
+      s = float(gradient.stops[i])
+      state.gradient_stops_ptr[i] = 0.0 if s < 0.0 else 1.0 if s > 1.0 else s
+    rl.set_shader_value_v(state.shader, state.locations['gradientStops'], state.gradient_stops_ptr, UNIFORM_FLOAT, len(gradient.stops))
     rl.set_shader_value(state.shader, state.locations['gradientColorCount'], state.color_count_ptr, UNIFORM_INT)
+
+    # Map normalized start/end to screen pixels
+    start_vec = rl.Vector2(origin_rect.x + gradient.start[0] * origin_rect.width, origin_rect.y + gradient.start[1] * origin_rect.height)
+    end_vec = rl.Vector2(origin_rect.x + gradient.end[0] * origin_rect.width, origin_rect.y + gradient.end[1] * origin_rect.height)
+    rl.set_shader_value(state.shader, state.locations['gradientStart'], start_vec, UNIFORM_VEC2)
+    rl.set_shader_value(state.shader, state.locations['gradientEnd'], end_vec, UNIFORM_VEC2)
   else:
     color = color or rl.WHITE
     state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
 
 
-def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None):
-  """
-  Draw a complex polygon using shader-based even-odd fill rule
+def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
+  """Only supports simple polygons with two chains (ribbon)."""
 
-  Args:
-      rect: Rectangle defining the drawing area
-      points: numpy array of (x,y) points defining the polygon
-      color: Solid fill color (rl.Color)
-      gradient: Dict with gradient parameters:
-          {
-              'start': (x1, y1),    # Start point (normalized 0-1)
-              'end': (x2, y2),      # End point (normalized 0-1)
-              'colors': [rl.Color], # List of colors at stops
-              'stops': [float]      # List of positions (0-1)
-          }
+  # TODO: consider deduping close screenspace points
+  # interleave points to produce a triangle strip
+  assert len(pts) % 2 == 0, "Interleaving expects even number of points"
+
+  tri_strip = []
+  for i in range(len(pts) // 2):
+    tri_strip.append(pts[i])
+    tri_strip.append(pts[-i - 1])
+
+  return cast(list, np.array(tri_strip).tolist())
+
+
+def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
+                 color: Optional[rl.Color] = None, gradient: Gradient | None = None):  # noqa: UP045
+
+  """
+  Draw a ribbon polygon (two chains) with a triangle strip and gradient.
+  - Input must be [L0..Lk-1, Rk-1..R0], even count, no crossings/holes.
   """
   if len(points) < 3:
     return
 
+  # Initialize shader on-demand
   state = ShaderState.get_instance()
-  if not state.initialized:
-    state.initialize()
+  state.initialize()
 
-  # Find bounding box
-  min_xy = np.min(points, axis=0)
-  max_xy = np.max(points, axis=0)
-  clip_x = max(origin_rect.x, min_xy[0])
-  clip_y = max(origin_rect.y, min_xy[1])
-  clip_right = min(origin_rect.x + origin_rect.width, max_xy[0])
-  clip_bottom = min(origin_rect.y + origin_rect.height, max_xy[1])
+  # Ensure (N,2) float32 contiguous array
+  pts = np.ascontiguousarray(points, dtype=np.float32)
+  assert pts.ndim == 2 and pts.shape[1] == 2, "points must be (N,2)"
 
-  # Check if polygon is completely off-screen
-  if clip_x >= clip_right or clip_y >= clip_bottom:
-    return
+  # Configure gradient shader
+  _configure_shader_color(state, color, gradient, origin_rect)
 
-  clipped_rect = rl.Rectangle(clip_x, clip_y, clip_right - clip_x, clip_bottom - clip_y)
+  # Triangulate via interleaving
+  tri_strip = triangulate(pts)
 
-  # Transform points relative to the CLIPPED area
-  transformed_points = points - np.array([clip_x, clip_y])
-
-  # Set shader values
-  state.point_count_ptr[0] = len(transformed_points)
-  rl.set_shader_value(state.shader, state.locations['pointCount'], state.point_count_ptr, UNIFORM_INT)
-
-  state.resolution_ptr[0:2] = [clipped_rect.width, clipped_rect.height]
-  rl.set_shader_value(state.shader, state.locations['resolution'], state.resolution_ptr, UNIFORM_VEC2)
-
-  flat_points = np.ascontiguousarray(transformed_points.flatten().astype(np.float32))
-  points_ptr = rl.ffi.cast("float *", flat_points.ctypes.data)
-  rl.set_shader_value_v(state.shader, state.locations['points'], points_ptr, UNIFORM_VEC2, len(transformed_points))
-
-  _configure_shader_color(state, color, gradient, clipped_rect, origin_rect)
-
-  # Render
+  # Draw strip, color here doesn't matter
   rl.begin_shader_mode(state.shader)
-  rl.draw_texture_pro(
-    state.white_texture,
-    rl.Rectangle(0, 0, 2, 2),
-    clipped_rect,
-    rl.Vector2(0, 0),
-    0.0,
-    rl.WHITE,
-  )
+  rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
   rl.end_shader_mode()
 
 
