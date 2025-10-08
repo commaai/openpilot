@@ -1,6 +1,4 @@
 import colorsys
-import time
-
 import numpy as np
 import pyray as rl
 from cereal import messaging, car
@@ -127,11 +125,8 @@ class ModelRenderer(Widget):
       self._transform_dirty = False
 
     # Draw elements
-    t = time.monotonic()
-    for _ in range(1):
-      self._draw_lane_lines()
+    self._draw_lane_lines()
     self._draw_path(sm)
-    print(f"ModelRenderer lane lines draw time: {(time.monotonic() - t) * 1000:.2f} ms")
 
     if render_lead_indicator and radar_state:
       self._draw_lead_indicator()
