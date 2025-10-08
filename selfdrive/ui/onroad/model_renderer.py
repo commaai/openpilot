@@ -340,15 +340,15 @@ class ModelRenderer(Widget):
     # Slice points and filter non-negative x-coordinates
     points = line[:max_idx + 1]
 
-    # interpolate around max_idx so path end is smooth:
+    # Interpolate around max_idx so path end is smooth
     if 0 < max_idx < line.shape[0] - 1:
-      next_point = line[max_idx + 1]
-      prev_point = line[max_idx - 1]
-      # np.interp(max_distance, [points[-1, 0], next_point[0]], [points[-1, 1], next_point[1]])
-      interp_y = np.interp(max_distance, [points[-1, 0], next_point[0]], [points[-1, 1], next_point[1]])
-      interp_z = np.interp(max_distance, [points[-1, 0], next_point[0]], [points[-1, 2], next_point[2]])
-      interp_point = np.array([[max_distance, interp_y, interp_z]], dtype=np.float32)
-      points = np.vstack((points, interp_point))
+      p0 = line[max_idx]
+      p1 = line[max_idx + 1]
+      x0, x1 = p0[0], p1[0]
+      interp_y = np.interp(max_distance, [x0, x1], [p0[1], p1[1]])
+      interp_z = np.interp(max_distance, [x0, x1], [p0[2], p1[2]])
+      interp_point = np.array([max_distance, interp_y, interp_z], dtype=points.dtype)
+      points = np.vstack((points, interp_point[None, :]))
 
     points = points[points[:, 0] >= 0]
     if points.shape[0] == 0:
