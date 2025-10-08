@@ -55,7 +55,12 @@ uniform vec4 gradientColors[15];
 uniform float gradientStops[15];
 uniform int gradientColorCount;
 
-vec4 getGradientColor(float t) {
+vec4 getGradientColor(vec2 p) {
+  // Compute t from screen-space position
+  vec2 d = gradientEnd - gradientStart;
+  float len2 = max(dot(d, d), 1e-6);
+  float t = clamp(dot(p - gradientStart, d) / len2, 0.0, 1.0);
+  t = 1.0 - t; // flip to match original visual
   // Clamp to range
   float t0 = gradientStops[0];
   float tn = gradientStops[gradientColorCount-1];
@@ -74,17 +79,10 @@ vec4 getGradientColor(float t) {
 }
 
 void main() {
-  // Compute t from screen-space position
   vec2 p = vec2(gl_FragCoord.x, gl_FragCoord.y);
-  vec2 d = gradientEnd - gradientStart;
-  float len2 = max(dot(d, d), 1e-6);
-  float t = clamp(dot(p - gradientStart, d) / len2, 0.0, 1.0);
+  vec4 color = useGradient == 1 ? getGradientColor(p) : fillColor;
 
-  // TODO: fix the flip
-  vec4 color = useGradient == 1 ? getGradientColor(1.0f - t) : fillColor;
-
-  //TODO: with or without, the lls can cut off if super thin
-  // TODO: needs more aliasing?
+  // TODO: does this do anything?
   // fragTexCoord.y = 0 at inner edge, 1 at outer feather ring (~1 px)
   float alpha = smoothstep(1.0, 0.0, fragTexCoord.y);
   color.a *= alpha;
