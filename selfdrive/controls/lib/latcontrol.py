@@ -1,12 +1,11 @@
 import numpy as np
 from abc import abstractmethod, ABC
 
-from openpilot.common.realtime import DT_CTRL
-
 
 class LatControl(ABC):
-  def __init__(self, CP, CI):
-    self.sat_count_rate = 1.0 * DT_CTRL
+  def __init__(self, CP, CI, dt):
+    self.dt = dt
+    self.sat_count_rate = 1.0 * self.dt
     self.sat_limit = CP.steerLimitTimer
     self.sat_count = 0.
     self.sat_check_min_speed = 10.
