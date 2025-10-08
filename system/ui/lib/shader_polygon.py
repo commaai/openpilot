@@ -116,6 +116,8 @@ class ShaderState:
 
     self.initialized = False
     self.shader = None
+
+    # Shader uniform locations
     self.locations = {
       'fillColor': None,
       'useGradient': None,
