@@ -205,61 +205,6 @@ def _configure_shader_color(state, color, gradient, clipped_rect, original_rect)
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
 
 
-# TODO: remove all this extra dedup junk unless necessary
-def triangulate_old(pts: np.ndarray, min_pair_px: float = 0.5, dedup_eps: float = 0.25) -> list[tuple[float, float]]:
-  """
-  Build an interleaved triangle strip from a ribbon polygon laid out as
-  [L0..Lk-1, Rk-1..R0]. Returns [L0, R0, L1, R1, ...].
-  Skips near-zero width pairs and removes adjacent duplicates to avoid
-  degenerate triangles.
-  """
-  # TODO: check this never happens
-  # TODO: surely we can simplify this. why are we converting to floats?
-  n = len(pts)
-  if n < 4 or (n % 2) != 0:
-    raise Exception("Need even number of points >= 4")
-    return []
-
-  k = n // 2
-  left = pts[:k]
-  right_rev = pts[k:][::-1]
-
-  interleaved: list[tuple[float, float]] = []
-  min_pair_px2 = min_pair_px * min_pair_px
-  for i in range(min(len(left), len(right_rev))):
-    lx, ly = float(left[i, 0]), float(left[i, 1])
-    rx, ry = float(right_rev[i, 0]), float(right_rev[i, 1])
-    dx = lx - rx
-    dy = ly - ry
-    # TODO: ?
-    if dx * dx + dy * dy < min_pair_px2:
-      continue
-    interleaved.append((lx, ly))
-    interleaved.append((rx, ry))
-
-  # ??
-  # Deduplicate adjacent vertices (screen-space)
-  if len(interleaved) >= 2:
-    deduped: list[tuple[float, float]] = [interleaved[0]]
-    lastx, lasty = interleaved[0]
-    thr2 = dedup_eps * dedup_eps
-    for vx, vy in interleaved[1:]:
-      dx = vx - lastx
-      dy = vy - lasty
-      if dx * dx + dy * dy >= thr2:
-        deduped.append((vx, vy))
-        lastx, lasty = vx, vy
-    interleaved = deduped
-
-  # TODO: no! check this never happens and remove?
-  # Ensure even count for pairs (optional: drop last if odd)
-  if len(interleaved) % 2 == 1:
-    raise Exception("Odd number of interleaved points")
-    interleaved = interleaved[:-1]
-
-  return interleaved
-
-
 def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
   # TODO: consider deduping close screenspace points
   # interleave points to produce a triangle strip
@@ -267,17 +212,18 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
 
   # TODO: why
   # if len(pts) < 4:
-  if len(pts) < 20:
+  if len(pts) < 4:
     return []
 
-  # print('pts', pts)
+  print('pts', len(pts))
+  print(pts)
 
   left_side = pts[:len(pts) // 2]
   right_side = pts[len(pts) // 2:][::-1]
 
-  # print('left', left_side)
-  # print('right', right_side)
-  # print("----")
+  print('left', left_side)
+  print('right', right_side)
+  print()
 
   tri_strip = []
 
@@ -300,7 +246,16 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
 
   # tri_strip = np.array([pt for pts in tri_strip for pt in pts]).tolist()
   tri_strip = np.array(tri_strip).tolist()
+  print('tri_strip', len(tri_strip))
+  print(np.array(tri_strip, dtype=np.float32))
+  print('-----')
   # print(tri_strip)
+
+  # check every pt in tri_strip
+  for pt in pts:
+    if pt.tolist() not in tri_strip:
+      print('missing pt', pt)
+      assert False
 
   return tri_strip
 
