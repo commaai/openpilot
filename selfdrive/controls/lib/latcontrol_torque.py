@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from collections import deque
 
 from cereal import log
 from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
@@ -29,9 +30,11 @@ class LatControlTorque(LatControl):
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.lateral_accel_from_torque = CI.lateral_accel_from_torque()
     self.pid = PIDController(self.torque_params.kp, self.torque_params.ki,
-                             k_f=self.torque_params.kf)
+                             k_f=self.torque_params.kf, rate=1/self.dt)
     self.update_limits()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
+    self.lataccel_request_buffer_size = int(1 / self.dt)
+    self.requested_lateral_accel_buffer = deque([0.] * self.lataccel_request_buffer_size , maxlen=self.lataccel_request_buffer_size)
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -43,7 +46,7 @@ class LatControlTorque(LatControl):
     self.pid.set_limits(self.lateral_accel_from_torque(self.steer_max, self.torque_params),
                         self.lateral_accel_from_torque(-self.steer_max, self.torque_params))
 
-  def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited):
+  def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited, lat_delay: float):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
       output_torque = 0.0
@@ -53,21 +56,27 @@ class LatControlTorque(LatControl):
       roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
 
-      desired_lateral_accel = desired_curvature * CS.vEgo ** 2
+      delay_frames = max(1, min(int(lat_delay / self.dt), self.lataccel_request_buffer_size - 1))
+      expected_lateral_accel = self.requested_lateral_accel_buffer[-delay_frames]
+      # TODO factor out lateral jerk from error to later replace it with delay independent alternative
+      future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
+      self.requested_lateral_accel_buffer.append(future_desired_lateral_accel)
+      expected_curvature = expected_lateral_accel / (CS.vEgo ** 2) # TODO - should replace desired curvature for low speed compensation
+      desired_lateral_jerk = (future_desired_lateral_accel - expected_lateral_accel) / lat_delay
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
       low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
-      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
+      setpoint = lat_delay * desired_lateral_jerk + expected_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
-      gravity_adjusted_lateral_accel = desired_lateral_accel - roll_compensation
+      gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
       pid_log.error = float(setpoint - measurement)
-      ff = gravity_adjusted_lateral_accel
+      ff = gravity_adjusted_future_lateral_accel
       # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
       ff -= self.torque_params.latAccelOffset
-      ff += get_friction(desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
+      ff += get_friction(lat_delay * desired_lateral_jerk + expected_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
       output_lataccel = self.pid.update(pid_log.error,
@@ -83,7 +92,7 @@ class LatControlTorque(LatControl):
       pid_log.f = float(self.pid.f)
       pid_log.output = float(-output_torque)  # TODO: log lat accel?
       pid_log.actualLateralAccel = float(actual_lateral_accel)
-      pid_log.desiredLateralAccel = float(desired_lateral_accel)
+      pid_log.desiredLateralAccel = float(expected_lateral_accel)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
