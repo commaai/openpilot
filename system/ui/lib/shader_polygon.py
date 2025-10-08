@@ -44,15 +44,13 @@ FRAGMENT_SHADER = VERSION + """
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
+uniform vec4 fillColor;
+
 // Gradient line defined in *screen pixels*
 uniform int useGradient;
 uniform vec2 gradientStart;  // e.g. vec2(0, 0)
 uniform vec2 gradientEnd;    // e.g. vec2(0, screenHeight)
 
-// Or solid fill color
-uniform vec4 fillColor;
-
-// Arbitrary-stop gradient support
 uniform vec4 gradientColors[15];
 uniform float gradientStops[15];
 uniform int gradientColorCount;
