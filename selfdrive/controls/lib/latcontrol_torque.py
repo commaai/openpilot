@@ -88,7 +88,7 @@ class LatControlTorque(LatControl):
       ff = gravity_adjusted_lateral_accel
       # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
       ff -= self.torque_params.latAccelOffset
-      ff += self.torque_params.friction * np.tanh(3.0 * jerk_ff_filtered) # get_friction(jerk_ff_filtered, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
+      ff += self.torque_params.friction * np.tanh(2.5 * jerk_ff_filtered + 0.5*error) # get_friction(jerk_ff_filtered, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
       output_lataccel = self.pid.update(pid_log.error,
