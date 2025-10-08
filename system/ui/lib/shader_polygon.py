@@ -208,57 +208,14 @@ def _configure_shader_color(state, color, gradient, clipped_rect, original_rect)
 def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
   # TODO: consider deduping close screenspace points
   # interleave points to produce a triangle strip
-  assert len(pts) % 2 == 0, "Need even number of points"
-
-  # TODO: why
-  # if len(pts) < 4:
-  if len(pts) < 4:
-    return []
-
-  print('pts', len(pts))
-  print(pts)
-
-  left_side = pts[:len(pts) // 2]
-  right_side = pts[len(pts) // 2:][::-1]
-
-  print('left', left_side)
-  print('right', right_side)
-  print()
+  assert len(pts) % 2 == 0, "Interleaving expects even number of points"
 
   tri_strip = []
+  for i in range(len(pts) // 2):
+    tri_strip.append(pts[i])
+    tri_strip.append(pts[-i - 1])
 
-  # for l, r in zip(left_side, right_side):
-  #   print(l, r)
-
-  # TODO: make this as a loop
-  # tri_strip = [left_side[0], right_side[0], left_side[1], right_side[1], left_side[2], right_side[2], left_side[3], right_side[3], left_side[4], right_side[4], left_side[5]]
-
-  # for i in range(0, len(left_side), 2):
-  #   print('left', i, 'right', i, 'left', i + 1, 'right', i + 1)
-  #   # tri_strip.append(left_side[i])
-  #   # tri_strip.append(right_side[i])
-  #   # tri_strip.append(left_side[i + 1])
-
-  for i in range(len(left_side)):
-    # print('left', i, 'right', i)
-    tri_strip.append(left_side[i])
-    tri_strip.append(right_side[i])
-
-  # tri_strip = np.array([pt for pts in tri_strip for pt in pts]).tolist()
-  tri_strip = np.array(tri_strip).tolist()
-  print('tri_strip', len(tri_strip))
-  print(np.array(tri_strip, dtype=np.float32))
-  print('-----')
-  # print(tri_strip)
-
-  # check every pt in tri_strip
-  for pt in pts:
-    if pt.tolist() not in tri_strip:
-      print('missing pt', pt)
-      assert False
-
-  return tri_strip
-
+  return np.array(tri_strip).tolist()
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None):
@@ -313,11 +270,8 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
     rl.set_shader_value(state.shader, state.locations['uGradCount'], state._grad_count_ptr, UNIFORM_INT)
 
   tri_strip = triangulate(pts)
-  # TODO: check this
-  if len(tri_strip) < 4:
-    return
 
-  # Use custom shader (for gradient) if configured above; pass WHITE so shader drives color
+  # Use custom shader for gradient, color here doesn't matter
   rl.begin_shader_mode(state.shader)
   rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
   rl.end_shader_mode()
