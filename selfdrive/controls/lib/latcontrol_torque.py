@@ -62,24 +62,24 @@ class LatControlTorque(LatControl):
       # TODO factor out lateral jerk from error to later replace it with delay independent alternative
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       self.requested_lateral_accel_buffer.append(future_desired_lateral_accel)
-      # expected_curvature = expected_lateral_accel / (CS.vEgo ** 2) # TODO - should replace desired curvature for low speed compensation
+      gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
       desired_lateral_jerk = (future_desired_lateral_accel - expected_lateral_accel) / lat_delay
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
-      low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
-      setpoint = lat_delay * desired_lateral_jerk + expected_lateral_accel + low_speed_factor * desired_curvature
-      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
-      gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
+      low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2 / (CS.vEgo ** 2 + 1e-3)
+      setpoint = lat_delay * desired_lateral_jerk + expected_lateral_accel
+      measurement = actual_lateral_accel
+      error = setpoint - measurement
+      error_lsf = error + low_speed_factor * error
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
-      pid_log.error = float(setpoint - measurement)
+      pid_log.error = float(error_lsf)
       ff = gravity_adjusted_future_lateral_accel
       # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
       ff -= self.torque_params.latAccelOffset
       # TODO jerk is weighted by lat_delay for legacy reasons, but should be made independent of it
-      ff += get_friction(lat_delay * desired_lateral_jerk + expected_lateral_accel - actual_lateral_accel,
-                         lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
+      ff += get_friction(error, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
       output_lataccel = self.pid.update(pid_log.error,
