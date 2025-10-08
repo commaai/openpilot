@@ -50,7 +50,6 @@ uniform vec4 fillColor;
 uniform int useGradient;
 uniform vec2 gradientStart;  // e.g. vec2(0, 0)
 uniform vec2 gradientEnd;    // e.g. vec2(0, screenHeight)
-
 uniform vec4 gradientColors[15];
 uniform float gradientStops[15];
 uniform int gradientColorCount;
