@@ -154,7 +154,6 @@ class ShaderState:
       self.locations[uniform] = rl.get_shader_location(self.shader, uniform)
 
     # Orthographic MVP (origin top-left)
-    # TODO: why did this change from the original? any differences?
     proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
     rl.set_shader_value_matrix(self.shader, self.locations['mvp'], proj)
 
@@ -166,6 +165,7 @@ class ShaderState:
     if self.shader:
       rl.unload_shader(self.shader)
       self.shader = None
+
     self.initialized = False
 
 
@@ -204,6 +204,8 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # no
 
 
 def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
+  """Only supports simple polygons with two chains (ribbon)."""
+
   # TODO: consider deduping close screenspace points
   # interleave points to produce a triangle strip
   assert len(pts) % 2 == 0, "Interleaving expects even number of points"
