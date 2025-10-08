@@ -227,14 +227,13 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   if len(points) < 3:
     return
 
-  # Ensure (N,2) float32 contiguous array
-  pts = np.ascontiguousarray(points, dtype=np.float32)
-  if pts.ndim != 2 or pts.shape[1] != 2:
-    return
-
-  # Initialize shader on-demand (after window/context is ready)
+  # Initialize shader on-demand
   state = ShaderState.get_instance()
   state.initialize()
+
+  # Ensure (N,2) float32 contiguous array
+  pts = np.ascontiguousarray(points, dtype=np.float32)
+  assert pts.ndim == 2 and pts.shape[1] == 2, "points must be (N,2)"
 
   _configure_shader_color(state, color, gradient, origin_rect)
 
