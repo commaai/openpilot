@@ -1,5 +1,4 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import FONT_SCALE
 
 _cache: dict[int, rl.Vector2] = {}
 
@@ -10,6 +9,6 @@ def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: int =
   if key in _cache:
     return _cache[key]
 
-  result = rl.measure_text_ex(font, text, font_size * FONT_SCALE, spacing)  # noqa: TID251
+  result = rl.measure_text_ex(font, text, font_size, spacing)  # noqa: TID251
   _cache[key] = result
   return result
