@@ -85,7 +85,6 @@ VERTEX_SHADER = VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 out vec2 fragTexCoord;
-
 uniform mat4 mvp;
 
 void main() {
@@ -112,6 +111,7 @@ class ShaderState:
   def __init__(self):
     if ShaderState._instance is not None:
       raise Exception("This class is a singleton. Use get_instance() instead.")
+
     self.initialized = False
     self.shader = None
     self.locations = {
