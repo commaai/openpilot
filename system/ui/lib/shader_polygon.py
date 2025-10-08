@@ -77,8 +77,7 @@ vec4 getGradientColor(vec2 p) {
 }
 
 void main() {
-  vec2 p = vec2(gl_FragCoord.x, gl_FragCoord.y);
-  vec4 color = useGradient == 1 ? getGradientColor(p) : fillColor;
+  vec4 color = useGradient == 1 ? getGradientColor(gl_FragCoord.xy) : fillColor;
 
   // TODO: does this do anything?
   // fragTexCoord.y = 0 at inner edge, 1 at outer feather ring (~1 px)
