@@ -61,7 +61,7 @@ class LatControlTorque(LatControl):
       # TODO factor out lateral jerk from error to later replace it with delay independent alternative
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       self.requested_lateral_accel_buffer.append(future_desired_lateral_accel)
-      expected_curvature = expected_lateral_accel / (CS.vEgo ** 2) # TODO - should replace desired curvature for low speed compensation
+      # expected_curvature = expected_lateral_accel / (CS.vEgo ** 2) # TODO - should replace desired curvature for low speed compensation
       desired_lateral_jerk = (future_desired_lateral_accel - expected_lateral_accel) / lat_delay
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
