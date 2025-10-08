@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, cast
 from openpilot.system.ui.lib.application import gui_app
 
-DEBUG = False
-
 MAX_GRADIENT_COLORS = 15  # includes stops as well
 
 
@@ -235,32 +233,16 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   pts = np.ascontiguousarray(points, dtype=np.float32)
   assert pts.ndim == 2 and pts.shape[1] == 2, "points must be (N,2)"
 
+  # Configure gradient shader
   _configure_shader_color(state, color, gradient, origin_rect)
 
+  # Triangulate via interleaving
   tri_strip = triangulate(pts)
 
-  # Use custom shader for gradient, color here doesn't matter
+  # Draw strip, color here doesn't matter
   rl.begin_shader_mode(state.shader)
   rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
   rl.end_shader_mode()
-
-  if DEBUG:
-    for i in range(len(pts)):
-      rl.draw_circle_lines(int(pts[i, 0]), int(pts[i, 1]), 3, rl.RED)
-
-    # draw each triangle, need to handle deduped tri_strip
-    i = 0
-    while i + 2 < len(tri_strip):
-      color1 = rl.BLUE if (i) % 3 == 0 else rl.RED if (i) % 3 == 1 else rl.GREEN
-      color2 = rl.BLUE if (i) % 3 == 1 else rl.RED if (i) % 3 == 2 else rl.GREEN
-      color3 = rl.BLUE if (i) % 3 == 2 else rl.RED if (i) % 3 == 0 else rl.GREEN
-      a = rl.Vector2(tri_strip[i][0], tri_strip[i][1])
-      b = rl.Vector2(tri_strip[i + 1][0], tri_strip[i + 1][1])
-      c = rl.Vector2(tri_strip[i + 2][0], tri_strip[i + 2][1])
-      rl.draw_line_ex(a, b, 1, color1)
-      rl.draw_line_ex(b, c, 1, color2)
-      rl.draw_line_ex(c, a, 1, color3)
-      i += 1
 
 
 def cleanup_shader_resources():
