@@ -84,24 +84,23 @@ void main() {
 VERTEX_SHADER = VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
-
-out vec2 v_uv;
+out vec2 fragTexCoord
 
 uniform mat4 mvp;
 
 void main() {
-    v_uv = vertexTexCoord;          // x: (unused or custom), y: edge_t for feather (0..1)
-    gl_Position = mvp * vec4(vertexPosition, 1.0);
+  fragTexCoord = vertexTexCoord;
+  gl_Position = mvp * vec4(vertexPosition, 1.0);
 }
 """
 
 UNIFORM_INT = rl.ShaderUniformDataType.SHADER_UNIFORM_INT
+UNIFORM_FLOAT = rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT
 UNIFORM_VEC2 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2
 UNIFORM_VEC4 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4
-UNIFORM_FLOAT = rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT
 
 
-class Shader2State:
+class ShaderState:
   _instance: Any = None
 
   @classmethod
@@ -111,7 +110,7 @@ class Shader2State:
     return cls._instance
 
   def __init__(self):
-    if Shader2State._instance is not None:
+    if ShaderState._instance is not None:
       raise Exception("This class is a singleton. Use get_instance() instead.")
     self.initialized = False
     self.shader = None
@@ -282,7 +281,7 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
     return
 
   # Initialize shader on-demand (after window/context is ready)
-  state = Shader2State.get_instance()
+  state = ShaderState.get_instance()
   state.initialize()
 
   # Configure uniforms (arbitrary gradient stops if provided)
@@ -350,4 +349,5 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, grad
 
 
 def cleanup_shader_resources():
-  Shader2State.get_instance().cleanup()
+  state = ShaderState.get_instance()
+  state.cleanup()
