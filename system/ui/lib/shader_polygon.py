@@ -23,41 +23,41 @@ out vec4 finalColor;
 
 // Gradient line defined in *screen pixels*
 uniform int useGradient;
-uniform vec2 uGradStart;   // e.g. vec2(0, 0)
-uniform vec2 uGradEnd;     // e.g. vec2(0, screenHeight)
+uniform vec2 gradientStart;   // e.g. vec2(0, 0)
+uniform vec2 gradientEnd;     // e.g. vec2(0, screenHeight)
 
 // Or solid fill color
 uniform vec4 fillColor;
 
 // Arbitrary-stop gradient support
-uniform vec4 uGradColors[15];
-uniform float uGradStops[15];
-uniform int uGradCount;
+uniform vec4 gradientColors[15];
+uniform float gradientStops[15];
+uniform int gradientColorCount;
 
 vec4 getGradientColor(float t) {
   // Clamp to range
-  float t0 = uGradStops[0];
-  float tn = uGradStops[uGradCount-1];
-  if (t <= t0) return uGradColors[0];
-  if (t >= tn) return uGradColors[uGradCount-1];
+  float t0 = gradientStops[0];
+  float tn = gradientStops[gradientColorCount-1];
+  if (t <= t0) return gradientColors[0];
+  if (t >= tn) return gradientColors[gradientColorCount-1];
 
-  for (int i = 0; i < uGradCount - 1; i++) {
-    float a = uGradStops[i];
-    float b = uGradStops[i+1];
+  for (int i = 0; i < gradientColorCount - 1; i++) {
+    float a = gradientStops[i];
+    float b = gradientStops[i+1];
     if (t >= a && t <= b) {
       float k = (t - a) / max(b - a, 1e-6);
-      return mix(uGradColors[i], uGradColors[i+1], k);
+      return mix(gradientColors[i], gradientColors[i+1], k);
     }
   }
-  return uGradColors[uGradCount-1];
+  return gradientColors[gradientColorCount-1];
 }
 
 void main() {
   // Compute t from screen-space position
   vec2 p = vec2(gl_FragCoord.x, gl_FragCoord.y);
-  vec2 d = uGradEnd - uGradStart;
+  vec2 d = gradientEnd - gradientStart;
   float len2 = max(dot(d, d), 1e-6);
-  float t = clamp(dot(p - uGradStart, d) / len2, 0.0, 1.0);
+  float t = clamp(dot(p - gradientStart, d) / len2, 0.0, 1.0);
 
   // TODO: fix the flip
   vec4 color = useGradient == 1 ? getGradientColor(1.0f - t) : fillColor;
@@ -110,12 +110,11 @@ class ShaderState:
       'mvp': None,
       'fillColor': None,
       'useGradient': None,
-      'uGradStart': None,
-      'uGradEnd': None,
-      'uUseFeather': None,
-      'uGradColors': None,
-      'uGradStops': None,
-      'uGradCount': None,
+      'gradientStart': None,
+      'gradientEnd': None,
+      'gradientColors': None,
+      'gradientStops': None,
+      'gradientColorCount': None,
     }
 
     # Pre-allocated FFI objects
@@ -140,12 +139,6 @@ class ShaderState:
     # TODO: why did this change from the original? any differences?
     proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
     rl.set_shader_value_matrix(self.shader, self.locations['mvp'], proj)
-
-    # TODO: wtf is this for?
-    # # Reasonable defaults
-    # rl.set_shader_value(self.shader, self.locations['uGradStart'], rl.Vector2(0, 0), UNIFORM_VEC2)
-    # rl.set_shader_value(self.shader, self.locations['uGradEnd'], rl.Vector2(0, gui_app.height), UNIFORM_VEC2)
-    # rl.set_shader_value(self.shader, self.locations['uGradCount'], self.color_count_ptr, UNIFORM_INT)
 
     self.initialized = True
 
@@ -175,31 +168,23 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color], gradi
       c = cols[i]
       base = i * 4
       state.gradient_colors_ptr[base:base + 4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
-    rl.set_shader_value_v(state.shader, state.locations['uGradColors'], state.gradient_colors_ptr, UNIFORM_VEC4, count)
+    rl.set_shader_value_v(state.shader, state.locations['gradientColors'], state.gradient_colors_ptr, UNIFORM_VEC4, count)
 
     stops = np.clip(np.asarray(stops, dtype=np.float32)[:count], 0.0, 1.0)
     state.gradient_stops_ptr[0:count] = stops
-    rl.set_shader_value_v(state.shader, state.locations['uGradStops'], state.gradient_stops_ptr, UNIFORM_FLOAT, count)
-    rl.set_shader_value(state.shader, state.locations['uGradCount'], state.color_count_ptr, UNIFORM_INT)
+    rl.set_shader_value_v(state.shader, state.locations['gradientStops'], state.gradient_stops_ptr, UNIFORM_FLOAT, count)
+    rl.set_shader_value(state.shader, state.locations['gradientColorCount'], state.color_count_ptr, UNIFORM_INT)
 
     # Gradient line is provided normalized to rect; convert to screen pixels
     start = np.array(gradient.get('start', (0.0, 1.0)), dtype=np.float32)
     end = np.array(gradient.get('end', (0.0, 0.0)), dtype=np.float32)
     start_px = start * np.array([origin_rect.width, origin_rect.height], dtype=np.float32) + np.array([origin_rect.x, origin_rect.y], dtype=np.float32)
     end_px = end * np.array([origin_rect.width, origin_rect.height], dtype=np.float32) + np.array([origin_rect.x, origin_rect.y], dtype=np.float32)
-    rl.set_shader_value(state.shader, state.locations['uGradStart'], rl.Vector2(float(start_px[0]), float(start_px[1])), UNIFORM_VEC2)
-    rl.set_shader_value(state.shader, state.locations['uGradEnd'], rl.Vector2(float(end_px[0]), float(end_px[1])), UNIFORM_VEC2)
+    rl.set_shader_value(state.shader, state.locations['gradientStart'], rl.Vector2(float(start_px[0]), float(start_px[1])), UNIFORM_VEC2)
+    rl.set_shader_value(state.shader, state.locations['gradientEnd'], rl.Vector2(float(end_px[0]), float(end_px[1])), UNIFORM_VEC2)
   else:
     state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
-
-    # # Solid color
-    # c = color or rl.WHITE
-    # vec = rl.Vector4(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0)
-    # # rl.set_shader_value(state.shader, state.locations['uColorTop'], vec, UNIFORM_VEC4)
-    # # rl.set_shader_value(state.shader, state.locations['uColorBottom'], vec, UNIFORM_VEC4)
-    # state.color_count_ptr[0] = 0
-    # rl.set_shader_value(state.shader, state.locations['uGradCount'], state.color_count_ptr, UNIFORM_INT)
 
 
 def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
