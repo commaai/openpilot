@@ -9,7 +9,7 @@ MAX_GRADIENT_COLORS = 15  # includes stops as well
 
 
 @dataclass
-class GradientState:
+class Gradient:
   start: tuple[float, float]
   end: tuple[float, float]
   colors: list[rl.Color]
@@ -18,11 +18,11 @@ class GradientState:
   def __post_init__(self):
     if len(self.colors) > MAX_GRADIENT_COLORS:
       self.colors = self.colors[:MAX_GRADIENT_COLORS]
-      print(f"Warning: GradientState colors truncated to {MAX_GRADIENT_COLORS} entries")
+      print(f"Warning: Gradient colors truncated to {MAX_GRADIENT_COLORS} entries")
 
     if len(self.stops) > MAX_GRADIENT_COLORS:
       self.stops = self.stops[:MAX_GRADIENT_COLORS]
-      print(f"Warning: GradientState stops truncated to {MAX_GRADIENT_COLORS} entries")
+      print(f"Warning: Gradient stops truncated to {MAX_GRADIENT_COLORS} entries")
 
     if not len(self.stops):
       color_count = min(len(self.colors), MAX_GRADIENT_COLORS)
@@ -168,7 +168,7 @@ class ShaderState:
 
 
 def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # noqa: UP045
-                            gradient: GradientState | None, origin_rect: rl.Rectangle):
+                            gradient: Gradient | None, origin_rect: rl.Rectangle):
   assert (color is not None) != (gradient is not None), "Either color or gradient must be provided"
 
   use_gradient = 1 if (gradient is not None and len(gradient.colors) >= 1) else 0
@@ -176,7 +176,7 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # no
   rl.set_shader_value(state.shader, state.locations['useGradient'], state.use_gradient_ptr, UNIFORM_INT)
 
   if use_gradient:
-    gradient = cast(GradientState, gradient)
+    gradient = cast(Gradient, gradient)
     state.color_count_ptr[0] = len(gradient.colors)
     for i in range(len(gradient.colors)):
       c = gradient.colors[i]
@@ -217,7 +217,8 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
-                 color: Optional[rl.Color] = None, gradient: GradientState | None = None):  # noqa: UP045
+                 color: Optional[rl.Color] = None, gradient: Gradient | None = None):  # noqa: UP045
+
   """
   Draw a ribbon polygon (two chains) with a triangle strip and gradient.
   - Input must be [L0..Lk-1, Rk-1..R0], even count, no crossings/holes.
