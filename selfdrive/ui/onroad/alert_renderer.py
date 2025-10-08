@@ -21,6 +21,16 @@ ALERT_FONT_SMALL = 66
 ALERT_FONT_MEDIUM = 74
 ALERT_FONT_BIG = 88
 
+#    {cereal::SelfdriveState::AlertSize::SMALL, 271},
+#    {cereal::SelfdriveState::AlertSize::MID, 420},
+#    {cereal::SelfdriveState::AlertSize::FULL, height()},
+
+ALERT_HEIGHTS = {
+  AlertSize.small: 271,
+  AlertSize.mid: 420,
+}
+
+
 SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
 SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
@@ -119,15 +129,26 @@ class AlertRenderer(Widget):
     if size == AlertSize.full:
       return rect
 
-    height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == AlertSize.small else
-              ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
+    # height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == AlertSize.small else
+    #           ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
 
-    return rl.Rectangle(
-      rect.x + ALERT_MARGIN,
-      rect.y + rect.height - ALERT_MARGIN - height,
-      rect.width - 2 * ALERT_MARGIN,
-      height
-    )
+    h = ALERT_HEIGHTS.get(size, rect.height)
+
+    # QRect r = QRect(0 + margin, height() - h + margin, width() - margin*2, h - margin*2);
+
+    margin, radius = ALERT_MARGIN, ALERT_BORDER_RADIUS
+    if size == AlertSize.full:
+      margin, radius = 0, 0
+
+    return rl.Rectangle(margin, rect.height - h,
+                        rect.x + rect.width - margin * 2, h - margin * 2)
+
+    # return rl.Rectangle(
+    #   rect.x + ALERT_MARGIN,
+    #   rect.y + rect.height - ALERT_MARGIN - height,
+    #   rect.width - 2 * ALERT_MARGIN,
+    #   height
+    # )
 
   def _draw_background(self, rect: rl.Rectangle, alert: Alert) -> None:
     color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
