@@ -157,7 +157,6 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color], gradi
   state.use_gradient_ptr[0] = use_gradient
   rl.set_shader_value(state.shader, state.locations['useGradient'], state.use_gradient_ptr, UNIFORM_INT)
 
-  # Configure uniforms (arbitrary gradient stops if provided)
   if use_gradient:
     cols = gradient['colors']
     stops = gradient.get('stops', [i / max(1, len(cols) - 1) for i in range(len(cols))])
