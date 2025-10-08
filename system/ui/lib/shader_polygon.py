@@ -206,7 +206,7 @@ def _configure_shader_color(state, color, gradient, clipped_rect, original_rect)
 
 
 # TODO: remove all this extra dedup junk unless necessary
-def triangulate(pts: np.ndarray, min_pair_px: float = 0.5, dedup_eps: float = 0.25) -> list[tuple[float, float]]:
+def triangulate_old(pts: np.ndarray, min_pair_px: float = 0.5, dedup_eps: float = 0.25) -> list[tuple[float, float]]:
   """
   Build an interleaved triangle strip from a ribbon polygon laid out as
   [L0..Lk-1, Rk-1..R0]. Returns [L0, R0, L1, R1, ...].
@@ -217,6 +217,7 @@ def triangulate(pts: np.ndarray, min_pair_px: float = 0.5, dedup_eps: float = 0.
   # TODO: surely we can simplify this. why are we converting to floats?
   n = len(pts)
   if n < 4 or (n % 2) != 0:
+    raise Exception("Need even number of points >= 4")
     return []
 
   k = n // 2
@@ -253,9 +254,56 @@ def triangulate(pts: np.ndarray, min_pair_px: float = 0.5, dedup_eps: float = 0.
   # TODO: no! check this never happens and remove?
   # Ensure even count for pairs (optional: drop last if odd)
   if len(interleaved) % 2 == 1:
+    raise Exception("Odd number of interleaved points")
     interleaved = interleaved[:-1]
 
   return interleaved
+
+
+def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
+  # TODO: consider deduping close screenspace points
+  # interleave points to produce a triangle strip
+  assert len(pts) % 2 == 0, "Need even number of points"
+
+  # TODO: why
+  # if len(pts) < 4:
+  if len(pts) < 20:
+    return []
+
+  # print('pts', pts)
+
+  left_side = pts[:len(pts) // 2]
+  right_side = pts[len(pts) // 2:][::-1]
+
+  # print('left', left_side)
+  # print('right', right_side)
+  # print("----")
+
+  tri_strip = []
+
+  # for l, r in zip(left_side, right_side):
+  #   print(l, r)
+
+  # TODO: make this as a loop
+  # tri_strip = [left_side[0], right_side[0], left_side[1], right_side[1], left_side[2], right_side[2], left_side[3], right_side[3], left_side[4], right_side[4], left_side[5]]
+
+  # for i in range(0, len(left_side), 2):
+  #   print('left', i, 'right', i, 'left', i + 1, 'right', i + 1)
+  #   # tri_strip.append(left_side[i])
+  #   # tri_strip.append(right_side[i])
+  #   # tri_strip.append(left_side[i + 1])
+
+  for i in range(len(left_side)):
+    # print('left', i, 'right', i)
+    tri_strip.append(left_side[i])
+    tri_strip.append(right_side[i])
+
+  # tri_strip = np.array([pt for pts in tri_strip for pt in pts]).tolist()
+  tri_strip = np.array(tri_strip).tolist()
+  # print(tri_strip)
+
+  return tri_strip
+
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None):
