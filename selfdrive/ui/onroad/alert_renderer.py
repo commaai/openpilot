@@ -21,10 +21,6 @@ ALERT_FONT_SMALL = 66
 ALERT_FONT_MEDIUM = 74
 ALERT_FONT_BIG = 88
 
-#    {cereal::SelfdriveState::AlertSize::SMALL, 271},
-#    {cereal::SelfdriveState::AlertSize::MID, 420},
-#    {cereal::SelfdriveState::AlertSize::FULL, height()},
-
 ALERT_HEIGHTS = {
   AlertSize.small: 271,
   AlertSize.mid: 420,
@@ -35,9 +31,9 @@ SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
 # Constants
 ALERT_COLORS = {
-  AlertStatus.normal: rl.Color(0x15, 0x15, 0x15, 0xF1),      # #151515 with alpha 0xF1
+  AlertStatus.normal: rl.Color(0x15, 0x15, 0x15, 0xF1),  # #151515 with alpha 0xF1
   AlertStatus.userPrompt: rl.Color(0xDA, 0x6F, 0x25, 0xF1),  # #DA6F25 with alpha 0xF1
-  AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 0xF1),    # #C92231 with alpha 0xF1
+  AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 0xF1),  # #C92231 with alpha 0xF1
 }
 
 
@@ -129,13 +125,8 @@ class AlertRenderer(Widget):
       return rect
 
     h = ALERT_HEIGHTS.get(size, rect.height)
-
-    margin = ALERT_MARGIN
-    if size == AlertSize.full:
-      margin = 0
-
-    return rl.Rectangle(rect.x + margin, rect.y + rect.height - h + margin,
-                        rect.width - margin * 2, h - margin * 2)
+    return rl.Rectangle(rect.x + ALERT_MARGIN, rect.y + rect.height - h + ALERT_MARGIN,
+                        rect.width - ALERT_MARGIN * 2, h - ALERT_MARGIN * 2)
 
   def _draw_background(self, rect: rl.Rectangle, alert: Alert) -> None:
     color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
