@@ -301,6 +301,7 @@ class HtmlRenderer(Widget):
 
           current_y += element.font_size * element.line_height
 
+      # Apply bottom margin
       current_y += element.margin_bottom
 
     return current_y - rect.y
