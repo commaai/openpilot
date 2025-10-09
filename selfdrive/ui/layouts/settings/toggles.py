@@ -34,12 +34,12 @@ class TogglesLayout(Widget):
     self._params = Params()
 
     self._enable_openpilot_toggle = toggle_item(
-        "Enable openpilot",
-        DESCRIPTIONS["OpenpilotEnabledToggle"],
-        self._params.get_bool("OpenpilotEnabledToggle"),
-        callback=self._openpilot_enabled_toggled,
-        icon="chffr_wheel.png",
-      )
+      "Enable openpilot",
+      DESCRIPTIONS["OpenpilotEnabledToggle"],
+      self._params.get_bool("OpenpilotEnabledToggle"),
+      callback=self._openpilot_enabled_toggled,
+      icon="chffr_wheel.png",
+    )
 
     self._experimental_mode_toggle = toggle_item(
       "Experimental Mode",
@@ -49,20 +49,20 @@ class TogglesLayout(Widget):
     )
 
     self._record_front_toggle = toggle_item(
-        "Record and Upload Driver Camera",
-        DESCRIPTIONS["RecordFront"],
-        self._params.get_bool("RecordFront"),
-        callback=self._record_front_toggled,
-        icon="monitoring.png",
-      )
+      "Record and Upload Driver Camera",
+      DESCRIPTIONS["RecordFront"],
+      self._params.get_bool("RecordFront"),
+      callback=self._record_front_toggled,
+      icon="monitoring.png",
+    )
 
     self._record_audio_toggle = toggle_item(
-        "Record and Upload Microphone Audio",
-        DESCRIPTIONS["RecordAudio"],
-        self._params.get_bool("RecordAudio"),
-        callback=self._record_audio_toggled,
-        icon="microphone.png",
-      )
+      "Record and Upload Microphone Audio",
+      DESCRIPTIONS["RecordAudio"],
+      self._params.get_bool("RecordAudio"),
+      callback=self._record_audio_toggled,
+      icon="microphone.png",
+    )
 
     items = [
       self._enable_openpilot_toggle,
