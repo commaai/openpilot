@@ -57,7 +57,7 @@ class LatControlTorque(LatControl):
       output_torque = 0.0
       pid_log.active = False
     else:
-      actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+      measured_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
       roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
@@ -70,7 +70,7 @@ class LatControlTorque(LatControl):
       gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
       desired_lateral_jerk = (future_desired_lateral_accel - expected_lateral_accel) / lat_delay
       
-      measurement = actual_curvature * CS.vEgo ** 2
+      measurement = measured_curvature * CS.vEgo ** 2
       measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt)
       self.previous_measurement = measurement
 
@@ -101,8 +101,8 @@ class LatControlTorque(LatControl):
       pid_log.d = float(self.pid.d)
       pid_log.f = float(self.pid.f)
       pid_log.output = float(-output_torque)  # TODO: log lat accel?
-      pid_log.actualLateralAccel = float(setpoint)
-      pid_log.desiredLateralAccel = float(expected_lateral_accel)
+      pid_log.actualLateralAccel = float(measurement)
+      pid_log.desiredLateralAccel = float(setpoint)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
