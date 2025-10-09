@@ -3,6 +3,11 @@ import pyray as rl
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+from openpilot.system.ui.lib.text_measure import measure_text_cached
+
+# Inline bold markers used inside paragraph text
+_B_START = "\x01"
+_B_END = "\x02"
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -103,27 +108,32 @@ class HtmlRenderer(Widget):
     tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
 
     def close_tag():
-      nonlocal current_content
+      nonlocal current_text
       nonlocal current_tag
 
-      # If no tag is set, default to paragraph so we don't lose text
       if current_tag is None:
         current_tag = ElementType.P
 
-      text = ' '.join(current_content).strip()
-      current_content = []
+      text = current_text.strip()
       if text:
         if current_tag == ElementType.LI:
           text = '• ' + text
         self._add_element(current_tag, text)
 
-    current_content: list[str] = []
+      current_text = ""
+
+    current_text = ""
     current_tag: ElementType | None = None
+    # inline bold handled via in-text markers, no block splits
     for token in tokens:
       is_start_tag, is_end_tag, tag = is_tag(token)
       if tag is not None:
         if tag == ElementType.BR:
           self._add_element(ElementType.BR, "")
+
+        elif tag == ElementType.B:
+          current_text += (_B_START if is_start_tag else _B_END)
+          continue
 
         elif is_start_tag or is_end_tag:
           # Always add content regardless of opening or closing tag
@@ -139,9 +149,12 @@ class HtmlRenderer(Widget):
           self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
       else:
-        current_content.append(token)
+        if current_text:
+          current_text += " " + token
+        else:
+          current_text = token
 
-    if current_content:
+    if current_text:
       close_tag()
 
   def _add_element(self, element_type: ElementType, content: str) -> None:
@@ -175,21 +188,46 @@ class HtmlRenderer(Widget):
         break
 
       if element.content:
-        font = self._get_font(element.font_weight)
-        wrapped_lines = wrap_text(font, element.content, element.font_size, int(content_width))
+        base_font = self._get_font(element.font_weight)
+        visible_text = element.content.replace(_B_START, "").replace(_B_END, "")
+        wrapped_lines = wrap_text(base_font, visible_text, element.font_size, int(content_width))
 
+        raw_pos = 0
         for line in wrapped_lines:
           if current_y < rect.y - element.font_size:
             current_y += element.font_size * element.line_height
+            raw_pos += len(line)
             continue
 
           if current_y > rect.y + rect.height:
             break
 
-          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
-          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
+          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX) + padding
+          x_cursor = text_x
+          consumed = 0
+          bold = False
+          content = element.content
+          while consumed < len(line) and raw_pos < len(content):
+            ch = content[raw_pos]
+            if ch == _B_START:
+              bold = True
+              raw_pos += 1
+              continue
+            if ch == _B_END:
+              bold = False
+              raw_pos += 1
+              continue
+            seg_start = raw_pos
+            while consumed < len(line) and raw_pos < len(content) and content[raw_pos] not in (_B_START, _B_END):
+              raw_pos += 1
+              consumed += 1
+            seg_text = content[seg_start:raw_pos]
+            font = self._get_font(FontWeight.BOLD if bold else element.font_weight)
+            rl.draw_text_ex(font, seg_text, rl.Vector2(x_cursor, current_y), element.font_size, 0, self._text_color)
+            x_cursor += int(measure_text_cached(font, seg_text, element.font_size).x)
 
           current_y += element.font_size * element.line_height
+          # raw_pos already advanced by len(line) visible chars (markers skipped)
 
       # Apply bottom margin
       current_y += element.margin_bottom

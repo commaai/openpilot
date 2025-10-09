@@ -56,9 +56,10 @@ class ItemAction(Widget, ABC):
 
 
 class ToggleAction(ItemAction):
-  def __init__(self, initial_state: bool = False, width: int = TOGGLE_WIDTH, enabled: bool | Callable[[], bool] = True):
+  def __init__(self, initial_state: bool = False, width: int = TOGGLE_WIDTH, enabled: bool | Callable[[], bool] = True,
+               callback: Callable[[bool], None] | None = None):
     super().__init__(width, enabled)
-    self.toggle = Toggle(initial_state=initial_state)
+    self.toggle = Toggle(initial_state=initial_state, callback=callback)
     self.state = initial_state
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
@@ -398,8 +399,8 @@ def simple_item(title: str, callback: Callable | None = None) -> ListItem:
 
 def toggle_item(title: str, description: str | Callable[[], str] | None = None, initial_state: bool = False,
                 callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True) -> ListItem:
-  action = ToggleAction(initial_state=initial_state, enabled=enabled)
-  return ListItem(title=title, description=description, action_item=action, icon=icon, callback=callback)
+  action = ToggleAction(initial_state=initial_state, enabled=enabled, callback=callback)
+  return ListItem(title=title, description=description, action_item=action, icon=icon)
 
 
 def button_item(title: str, button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
