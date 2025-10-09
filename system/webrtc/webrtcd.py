@@ -242,7 +242,7 @@ async def get_schema(request: 'web.Request'):
 async def post_notify(request: 'web.Request'):
   try:
     payload = await request.json()
-  except e:
+  except Exception as e:
     raise web.HTTPBadRequest(text="Invalid JSON") from e
 
   for session in list(request.app.get('streams', {}).values()):
