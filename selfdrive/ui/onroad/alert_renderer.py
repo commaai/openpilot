@@ -21,6 +21,11 @@ ALERT_FONT_SMALL = 66
 ALERT_FONT_MEDIUM = 74
 ALERT_FONT_BIG = 88
 
+ALERT_HEIGHTS = {
+  AlertSize.small: 271,
+  AlertSize.mid: 420,
+}
+
 SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
 SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
@@ -119,15 +124,9 @@ class AlertRenderer(Widget):
     if size == AlertSize.full:
       return rect
 
-    height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == AlertSize.small else
-              ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
-
-    return rl.Rectangle(
-      rect.x + ALERT_MARGIN,
-      rect.y + rect.height - ALERT_MARGIN - height,
-      rect.width - 2 * ALERT_MARGIN,
-      height
-    )
+    h = ALERT_HEIGHTS.get(size, rect.height)
+    return rl.Rectangle(rect.x + ALERT_MARGIN, rect.y + rect.height - h + ALERT_MARGIN,
+                        rect.width - ALERT_MARGIN * 2, h - ALERT_MARGIN * 2)
 
   def _draw_background(self, rect: rl.Rectangle, alert: Alert) -> None:
     color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
@@ -152,7 +151,7 @@ class AlertRenderer(Widget):
       font_size1 = 132 if is_long else 177
       align_ment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
       vertical_align = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
-      text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height // 2)
+      text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height)
 
       gui_text_box(text_rect, alert.text1, font_size1, alignment=align_ment, alignment_vertical=vertical_align, font_weight=FontWeight.BOLD)
       text_rect.y = rect.y + rect.height // 2

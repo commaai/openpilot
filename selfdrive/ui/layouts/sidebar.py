@@ -40,13 +40,13 @@ class Colors:
 
 
 NETWORK_TYPES = {
-  NetworkType.none: "Offline",
-  NetworkType.wifi: "WiFi",
+  NetworkType.none: "--",
+  NetworkType.wifi: "Wi-Fi",
+  NetworkType.ethernet: "ETH",
   NetworkType.cell2G: "2G",
   NetworkType.cell3G: "3G",
   NetworkType.cell4G: "LTE",
   NetworkType.cell5G: "5G",
-  NetworkType.ethernet: "Ethernet",
 }
 
 
@@ -172,7 +172,7 @@ class Sidebar(Widget):
 
     # Microphone button
     if self._recording_audio:
-      self._mic_indicator_rect = rl.Rectangle(rect.x + rect.width - 138, rect.y + 245, 75, 40)
+      self._mic_indicator_rect = rl.Rectangle(rect.x + rect.width - 130, rect.y + 245, 75, 40)
 
       mic_pressed = mouse_down and rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect)
       bg_color = rl.Color(Colors.DANGER.r, Colors.DANGER.g, Colors.DANGER.b, int(255 * 0.65)) if mic_pressed else Colors.DANGER
