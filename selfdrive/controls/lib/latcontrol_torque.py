@@ -4,7 +4,9 @@ from collections import deque
 
 from cereal import log
 from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
+from opendbc.car.tests.test_lateral_limits import MAX_LAT_JERK_UP
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.controls.lib.drive_helpers import MIN_SPEED
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.common.pid import PIDController
@@ -36,6 +38,8 @@ class LatControlTorque(LatControl):
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
     self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES = int(1 / self.dt)
     self.requested_lateral_accel_buffer = deque([0.] * self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES , maxlen=self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES)
+    self.previous_error = 0.0
+    self.error_rate_filter = FirstOrderFilter(0.0, 1 / (2 * np.pi * MAX_LAT_JERK_UP), self.dt)
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -71,6 +75,8 @@ class LatControlTorque(LatControl):
       setpoint = lat_delay * desired_lateral_jerk + expected_lateral_accel
       measurement = actual_lateral_accel
       error = setpoint - measurement
+      error_rate = self.error_rate_filter.update((error - self.previous_error) / self.dt)
+      self.previous_error = error
       error_lsf = error + low_speed_factor * error
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
@@ -83,9 +89,10 @@ class LatControlTorque(LatControl):
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
       output_lataccel = self.pid.update(pid_log.error,
-                                      feedforward=ff,
-                                      speed=CS.vEgo,
-                                      freeze_integrator=freeze_integrator)
+                                        error_rate,
+                                        feedforward=ff,
+                                        speed=CS.vEgo,
+                                        freeze_integrator=freeze_integrator)
       output_torque = self.torque_from_lateral_accel(output_lataccel, self.torque_params)
 
       pid_log.active = True
