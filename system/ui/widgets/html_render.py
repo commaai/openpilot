@@ -23,6 +23,7 @@ class ElementType(Enum):
   UL = "ul"
   LI = "li"
   BR = "br"
+  B = "b"
 
 
 TAG_NAMES = '|'.join([t.value for t in ElementType])
@@ -70,6 +71,7 @@ class HtmlRenderer(Widget):
       ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
       ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
       ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.B: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.BOLD, "margin_top": 8, "margin_bottom": 12},
       ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
@@ -127,9 +129,10 @@ class HtmlRenderer(Widget):
           # Always add content regardless of opening or closing tag
           close_tag()
 
-          # TODO: reset to None if end tag?
           if is_start_tag:
             current_tag = tag
+          else:
+            current_tag = None
 
         # increment after we add the content for the current tag
         if tag == ElementType.UL:
@@ -208,7 +211,6 @@ class HtmlRenderer(Widget):
       if element.content:
         font = self._get_font(element.font_weight)
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
-
         for _ in wrapped_lines:
           total_height += element.font_size * element.line_height
 
@@ -220,6 +222,7 @@ class HtmlRenderer(Widget):
     if weight == FontWeight.BOLD:
       return self._bold_font
     return self._normal_font
+
 
 
 class HtmlModal(Widget):

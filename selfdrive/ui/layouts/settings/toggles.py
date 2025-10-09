@@ -3,6 +3,8 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller import Scroller
 
+from openpilot.selfdrive.ui.ui_state import ui_state
+
 # Description constants
 DESCRIPTIONS = {
   "OpenpilotEnabledToggle": (
@@ -30,6 +32,13 @@ class TogglesLayout(Widget):
   def __init__(self):
     super().__init__()
     self._params = Params()
+
+    self._experimental_mode_toggle = toggle_item(
+      "Experimental Mode",
+      initial_state=self._params.get_bool("ExperimentalMode"),
+      icon="experimental_white.png",
+    )
+
     items = [
       toggle_item(
         "Enable openpilot",
@@ -37,11 +46,7 @@ class TogglesLayout(Widget):
         self._params.get_bool("OpenpilotEnabledToggle"),
         icon="chffr_wheel.png",
       ),
-      toggle_item(
-        "Experimental Mode",
-        initial_state=self._params.get_bool("ExperimentalMode"),
-        icon="experimental_white.png",
-      ),
+      self._experimental_mode_toggle,
       toggle_item(
         "Disengage on Accelerator Pedal",
         DESCRIPTIONS["DisengageOnAccelerator"],
@@ -87,6 +92,99 @@ class TogglesLayout(Widget):
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
+
+  def show_event(self):
+    self._update_toggles()
+
+  def _update_toggles(self):
+    """
+    const QString e2e_description = QString("%1<br>"
+                                            "<h4>%2</h4><br>"
+                                            "%3<br>"
+                                            "<h4>%4</h4><br>"
+                                            "%5<br>")
+                                    .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
+                                    .arg(tr("End-to-End Longitudinal Control"))
+                                    .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
+                                            "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; "
+                                            "mistakes should be expected."))
+                                    .arg(tr("New Driving Visualization"))
+                                    .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
+
+    const bool is_release = params.getBool("IsReleaseBranch");
+    auto cp_bytes = params.get("CarParamsPersistent");
+    if (!cp_bytes.empty()) {
+      AlignedBuffer aligned_buf;
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
+      cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+
+      if (hasLongitudinalControl(CP)) {
+        // normal description and toggle
+        experimental_mode_toggle->setEnabled(true);
+        experimental_mode_toggle->setDescription(e2e_description);
+        long_personality_setting->setEnabled(true);
+      } else {
+        // no long for now
+        experimental_mode_toggle->setEnabled(false);
+        long_personality_setting->setEnabled(false);
+        params.remove("ExperimentalMode");
+
+        const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
+
+        QString long_desc = unavailable + " " + \
+                            tr("openpilot longitudinal control may come in a future update.");
+        if (CP.getAlphaLongitudinalAvailable()) {
+          if (is_release) {
+            long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
+          } else {
+            long_desc = tr("Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.");
+          }
+        }
+        experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
+      }
+
+      experimental_mode_toggle->refresh();
+    } else {
+      experimental_mode_toggle->setDescription(e2e_description);
+    }
+    """
+
+    e2e_description = (
+      "openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. " +
+      "Experimental features are listed below:<br>" +
+      "<h4>End-to-End Longitudinal Control</h4><br>" +
+      "Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. " +
+      "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; " +
+      "mistakes should be expected.<br>" +
+      "<h4>New Driving Visualization</h4><br>" +
+      "The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. " +
+      "The Experimental mode logo will also be shown in the top right corner."
+    )
+
+    is_release = self._params.get_bool("IsReleaseBranch")
+
+    if ui_state.CP is not None:
+      if ui_state.has_longitudinal_control:
+        self._experimental_mode_toggle.action_item.set_enabled(True)
+        self._experimental_mode_toggle.set_description(e2e_description)
+        # long_personality_setting->setEnabled(true);
+      else:
+        # no long for now
+        self._experimental_mode_toggle.action_item.set_enabled(False)
+        self._experimental_mode_toggle.action_item.set_state(False)
+        # long_personality_setting->setEnabled(false);
+        self._params.remove("ExperimentalMode")
+
+        unavailable = "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
+
+        long_desc = unavailable + " openpilot longitudinal control may come in a future update."
+        if ui_state.CP.getAlphaLongitudinalAvailable():
+          if is_release:
+            long_desc = unavailable + " " + "An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches."
+          else:
+            long_desc = "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
+
+        self._experimental_mode_toggle.set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
 
   def _render(self, rect):
     self._scroller.render(rect)

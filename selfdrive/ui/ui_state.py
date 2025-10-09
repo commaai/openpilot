@@ -4,7 +4,7 @@ import time
 import threading
 from collections.abc import Callable
 from enum import Enum
-from cereal import messaging, log
+from cereal import messaging, car, log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.swaglog import cloudlog
@@ -69,7 +69,10 @@ class UIState:
     self.ignition: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
+    self.has_longitudinal_control: bool = False
+    self.CP: car.CarParams | None = None
     self.light_sensor: float = -1.0
+    self._param_update_time: float = 0.0
 
     self._update_params()
 
@@ -87,6 +90,9 @@ class UIState:
     self.sm.update(0)
     self._update_state()
     self._update_status()
+    if time.monotonic() - self._param_update_time > 5.0:
+      self._update_params()
+      self._param_update_time = time.monotonic()
     device.update()
 
   def _update_state(self) -> None:
@@ -141,6 +147,15 @@ class UIState:
       self.is_metric = self.params.get_bool("IsMetric")
     except UnknownKeyName:
       self.is_metric = False
+
+    # Update longitudinal control state
+    CP_bytes = self.params.get("CarParams")
+    if CP_bytes is not None:
+      self.CP = messaging.log_from_bytes(CP_bytes, car.CarParams)
+      if self.CP.alphaLongitudinalAvailable:
+        self.has_longitudinal_control = self.params.get_bool("AlphaLongitudinalEnabled")
+      else:
+        self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
 
 
 class Device:
