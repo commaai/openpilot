@@ -67,7 +67,7 @@ class LatControlTorque(LatControl):
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
-      low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2 / (np.clip(CS.vEgo, MIN_SPEED, np.inf) ** 2)
+      low_speed_factor = (np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y) / max(CS.vEgo, MIN_SPEED)) ** 2
       setpoint = lat_delay * desired_lateral_jerk + expected_lateral_accel
       measurement = actual_lateral_accel
       error = setpoint - measurement
