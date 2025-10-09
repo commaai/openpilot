@@ -30,7 +30,6 @@ ALERT_HEIGHTS = {
   AlertSize.mid: 420,
 }
 
-
 SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
 SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
@@ -129,26 +128,14 @@ class AlertRenderer(Widget):
     if size == AlertSize.full:
       return rect
 
-    # height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == AlertSize.small else
-    #           ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
-
     h = ALERT_HEIGHTS.get(size, rect.height)
 
-    # QRect r = QRect(0 + margin, height() - h + margin, width() - margin*2, h - margin*2);
-
-    margin, radius = ALERT_MARGIN, ALERT_BORDER_RADIUS
+    margin = ALERT_MARGIN
     if size == AlertSize.full:
-      margin, radius = 0, 0
+      margin = 0
 
-    return rl.Rectangle(margin, rect.height - h,
-                        rect.x + rect.width - margin * 2, h - margin * 2)
-
-    # return rl.Rectangle(
-    #   rect.x + ALERT_MARGIN,
-    #   rect.y + rect.height - ALERT_MARGIN - height,
-    #   rect.width - 2 * ALERT_MARGIN,
-    #   height
-    # )
+    return rl.Rectangle(rect.x + margin, rect.y + rect.height - h + margin,
+                        rect.width - margin * 2, h - margin * 2)
 
   def _draw_background(self, rect: rl.Rectangle, alert: Alert) -> None:
     color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
@@ -173,7 +160,7 @@ class AlertRenderer(Widget):
       font_size1 = 132 if is_long else 177
       align_ment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
       vertical_align = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
-      text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height // 2)
+      text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height)
 
       gui_text_box(text_rect, alert.text1, font_size1, alignment=align_ment, alignment_vertical=vertical_align, font_weight=FontWeight.BOLD)
       text_rect.y = rect.y + rect.height // 2
