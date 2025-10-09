@@ -77,18 +77,9 @@ class _Parser(HTMLParser):
       self._current_segments = []
       return
 
-    # Inline styles: b, strong, span with style "font-weight"
+    # Inline styles: b, strong
     if tag in ("b", "strong"):
       self._inline_weight_stack.append(FontWeight.BOLD)
-      return
-
-    if tag == "span":
-      style = attrs.get("style", "")
-      # quick parse for font-weight: bold
-      if "font-weight" in style and "bold" in style:
-        self._inline_weight_stack.append(FontWeight.BOLD)
-      else:
-        self._inline_weight_stack.append(self._inline_weight_stack[-1])
       return
 
   def handle_endtag(self, tag):
@@ -107,7 +98,7 @@ class _Parser(HTMLParser):
       self._current_block = None
       return
 
-    if tag in ("b", "strong", "span"):
+    if tag in ("b", "strong"):
       if len(self._inline_weight_stack) > 1:
         self._inline_weight_stack.pop()
       return
