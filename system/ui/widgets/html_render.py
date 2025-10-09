@@ -1,11 +1,12 @@
-import re
-import pyray as rl
+from html.parser import HTMLParser
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+import pyray as rl
+
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.wrap_text import wrap_text
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 
@@ -25,22 +26,11 @@ class ElementType(Enum):
   BR = "br"
 
 
-TAG_NAMES = '|'.join([t.value for t in ElementType])
-START_TAG_RE = re.compile(f'<({TAG_NAMES})>')
-END_TAG_RE = re.compile(f'</({TAG_NAMES})>')
-
-
-def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
-  supported_tag = bool(START_TAG_RE.fullmatch(token))
-  supported_end_tag = bool(END_TAG_RE.fullmatch(token))
-  tag = ElementType(token[1:-1].strip('/')) if supported_tag or supported_end_tag else None
-  return supported_tag, supported_end_tag, tag
-
-
 @dataclass
 class HtmlElement:
   type: ElementType
-  content: str
+  # content is a list of (text, FontWeight) segments for inline styling
+  content: list[tuple[str, FontWeight]]
   font_size: int
   font_weight: FontWeight
   margin_top: int
@@ -49,9 +39,134 @@ class HtmlElement:
   indent_level: int = 0
 
 
+class _Parser(HTMLParser):
+  def __init__(self, styles: dict[ElementType, dict[str, Any]]):
+    super().__init__(convert_charrefs=True)
+    self.styles = styles
+    self.elements: list[HtmlElement] = []
+    self._indent = 0
+
+    # Current block being built
+    self._current_block: ElementType | None = None
+    self._current_segments: list[tuple[str, FontWeight]] = []
+    self._inline_weight_stack: list[FontWeight] = [FontWeight.NORMAL]
+
+  def handle_starttag(self, tag, attrs):
+    tag = tag.lower()
+    attrs = dict(attrs or [])
+
+    if tag == "br":
+      self._flush_current_block()
+      self._add_element(ElementType.BR, [])
+      return
+
+    if tag == "ul":
+      self._indent += 1
+      return
+
+    if tag == "li":
+      self._flush_current_block()
+      self._current_block = ElementType.LI
+      # Prepend bullet as a segment with current inline weight
+      self._current_segments = [("• ", self._inline_weight_stack[-1])]
+      return
+
+    if tag in ("p", "h1", "h2", "h3", "h4", "h5", "h6"):
+      self._flush_current_block()
+      self._current_block = ElementType(tag)
+      self._current_segments = []
+      return
+
+    # Inline styles: b, strong, span with style "font-weight"
+    if tag in ("b", "strong"):
+      self._inline_weight_stack.append(FontWeight.BOLD)
+      return
+
+    if tag == "span":
+      style = attrs.get("style", "")
+      # quick parse for font-weight: bold
+      if "font-weight" in style and "bold" in style:
+        self._inline_weight_stack.append(FontWeight.BOLD)
+      else:
+        self._inline_weight_stack.append(self._inline_weight_stack[-1])
+      return
+
+  def handle_endtag(self, tag):
+    tag = tag.lower()
+    if tag == "ul":
+      self._indent = max(0, self._indent - 1)
+      return
+
+    if tag == "li":
+      self._flush_current_block()
+      self._current_block = None
+      return
+
+    if tag in ("p", "h1", "h2", "h3", "h4", "h5", "h6"):
+      self._flush_current_block()
+      self._current_block = None
+      return
+
+    if tag in ("b", "strong", "span"):
+      if len(self._inline_weight_stack) > 1:
+        self._inline_weight_stack.pop()
+      return
+
+  def handle_data(self, data):
+    if not data:
+      return
+    # Ensure there's a block to append into; default to paragraph if none
+    if self._current_block is None:
+      self._current_block = ElementType.P
+      self._current_segments = []
+
+    current_weight = self._inline_weight_stack[-1]
+    # Collapse multiple spaces similarly to HTML: keep single spaces
+    # But preserve trailing spaces for splitting/word boundaries
+    self._current_segments.append((data, current_weight))
+
+  def _flush_current_block(self):
+    if self._current_block is None and not self._current_segments:
+      return
+
+    if self._current_block is None:
+      block = ElementType.P
+    else:
+      block = self._current_block
+
+    # Copy segments
+    segments = [(t, w) for (t, w) in self._current_segments if t.strip() != "" or t == " "]
+    self._current_segments = []
+
+    if block == ElementType.BR:
+      self._add_element(ElementType.BR, [])
+      return
+
+    # Prepend bullet already handled in starttag for LI
+    self._add_element(block, segments)
+
+  def _add_element(self, etype: ElementType, segments: list[tuple[str, FontWeight]]):
+    style = self.styles.get(etype, self.styles[ElementType.P])
+    # Apply block-level bold to segments that are not already bold
+    if style.get("weight") == FontWeight.BOLD:
+      applied_segments: list[tuple[str, FontWeight]] = [(t, w if w == FontWeight.BOLD else FontWeight.BOLD) for (t, w) in segments]
+    else:
+      applied_segments = segments
+
+    element = HtmlElement(
+      type=etype,
+      content=applied_segments,
+      font_size=style["size"],
+      font_weight=style["weight"],
+      margin_top=style["margin_top"],
+      margin_bottom=style["margin_bottom"],
+      indent_level=self._indent,
+    )
+    self.elements.append(element)
+
+
 class HtmlRenderer(Widget):
-  def __init__(self, file_path: str | None = None, text: str | None = None,
-               text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
+  def __init__(self, file_path: str | None = None, text: str | None = None, text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
     self._text_color = text_color
     self._normal_font = gui_app.font(FontWeight.NORMAL)
@@ -88,7 +203,8 @@ class HtmlRenderer(Widget):
     self.parse_html_content(content)
 
   def parse_html_content(self, html_content: str) -> None:
-    self.elements.clear()
+    # Remove HTML comments and strip doctype/head/body tags (operate on the passed-in content)
+    import re
 
     # Remove HTML comments
     html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
@@ -97,64 +213,57 @@ class HtmlRenderer(Widget):
     html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
     html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
 
-    # Parse HTML
-    tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
+    parser = _Parser(self.styles)
+    parser.feed(html_content)
+    parser._flush_current_block()
+    self.elements = parser.elements
 
-    def close_tag():
-      nonlocal current_content
-      nonlocal current_tag
+  def _get_font(self, weight: FontWeight):
+    if weight == FontWeight.BOLD:
+      return self._bold_font
+    return self._normal_font
 
-      # If no tag is set, default to paragraph so we don't lose text
-      if current_tag is None:
-        current_tag = ElementType.P
+  def _wrap_segments(self, segments: list[tuple[str, FontWeight]], font_size: int, content_width: int) -> list[list[tuple[str, FontWeight]]]:
+    """
+    Wrap segments into lines. Each line is a list of (text_piece, FontWeight).
+    Splits by whitespace but preserves spacing using regex.
+    """
+    import re
 
-      text = ' '.join(current_content).strip()
-      current_content = []
-      if text:
-        if current_tag == ElementType.LI:
-          text = '• ' + text
-        self._add_element(current_tag, text)
+    # Split each segment into words with trailing spaces preserved
+    pieces: list[tuple[str, FontWeight]] = []
+    for text, weight in segments:
+      if not text:
+        continue
+      tokens = re.findall(r'\S+\s*', text)
+      if not tokens and text.strip() == "":
+        tokens = [text]
+      for t in tokens:
+        pieces.append((t, weight))
 
-    current_content: list[str] = []
-    current_tag: ElementType | None = None
-    for token in tokens:
-      is_start_tag, is_end_tag, tag = is_tag(token)
-      if tag is not None:
-        if tag == ElementType.BR:
-          self._add_element(ElementType.BR, "")
+    lines: list[list[tuple[str, FontWeight]]] = []
+    current_line: list[tuple[str, FontWeight]] = []
+    current_width = 0.0
 
-        elif is_start_tag or is_end_tag:
-          # Always add content regardless of opening or closing tag
-          close_tag()
+    for piece, weight in pieces:
+      font = self._get_font(weight)
+      size_vec = measure_text_cached(font, piece, font_size, 0)
+      piece_w = getattr(size_vec, 'x', size_vec[0] if isinstance(size_vec, (list, tuple)) else 0)
 
-          # TODO: reset to None if end tag?
-          if is_start_tag:
-            current_tag = tag
+      if current_line and (current_width + piece_w) > content_width:
+        # commit current line
+        lines.append(current_line)
+        current_line = []
+        current_width = 0.0
 
-        # increment after we add the content for the current tag
-        if tag == ElementType.UL:
-          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
+      current_line.append((piece, weight))
+      current_width += piece_w
 
-      else:
-        current_content.append(token)
+    if current_line:
+      lines.append(current_line)
 
-    if current_content:
-      close_tag()
-
-  def _add_element(self, element_type: ElementType, content: str) -> None:
-    style = self.styles[element_type]
-
-    element = HtmlElement(
-      type=element_type,
-      content=content,
-      font_size=style["size"],
-      font_weight=style["weight"],
-      margin_top=style["margin_top"],
-      margin_bottom=style["margin_bottom"],
-      indent_level=self._indent_level,
-    )
-
-    self.elements.append(element)
+    # If nothing produced, return empty list (so caller can skip drawing)
+    return lines
 
   def _render(self, rect: rl.Rectangle):
     # TODO: speed up by removing duplicate calculations across renders
@@ -172,23 +281,26 @@ class HtmlRenderer(Widget):
         break
 
       if element.content:
-        font = self._get_font(element.font_weight)
-        wrapped_lines = wrap_text(font, element.content, element.font_size, int(content_width))
-
+        # element.content is list of (text, weight)
+        wrapped_lines = self._wrap_segments(element.content, element.font_size, int(content_width))
         for line in wrapped_lines:
           if current_y < rect.y - element.font_size:
             current_y += element.font_size * element.line_height
             continue
-
           if current_y > rect.y + rect.height:
             break
 
           text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
-          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
+          draw_x = text_x + padding
+          for seg_text, seg_weight in line:
+            font = self._get_font(seg_weight)
+            rl.draw_text_ex(font, seg_text, rl.Vector2(draw_x, current_y), element.font_size, 0, self._text_color)
+            size_vec = measure_text_cached(font, seg_text, element.font_size, 0)
+            seg_w = getattr(size_vec, 'x', size_vec[0] if isinstance(size_vec, (list, tuple)) else 0)
+            draw_x += seg_w
 
           current_y += element.font_size * element.line_height
 
-      # Apply bottom margin
       current_y += element.margin_bottom
 
     return current_y - rect.y
@@ -206,20 +318,13 @@ class HtmlRenderer(Widget):
       total_height += element.margin_top
 
       if element.content:
-        font = self._get_font(element.font_weight)
-        wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
-
+        wrapped_lines = self._wrap_segments(element.content, element.font_size, int(usable_width))
         for _ in wrapped_lines:
           total_height += element.font_size * element.line_height
 
       total_height += element.margin_bottom
 
     return total_height
-
-  def _get_font(self, weight: FontWeight):
-    if weight == FontWeight.BOLD:
-      return self._bold_font
-    return self._normal_font
 
 
 class HtmlModal(Widget):
