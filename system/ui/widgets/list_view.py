@@ -60,7 +60,6 @@ class ToggleAction(ItemAction):
                callback: Callable[[bool], None] | None = None):
     super().__init__(width, enabled)
     self.toggle = Toggle(initial_state=initial_state, callback=callback)
-    self.state = initial_state
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -69,15 +68,13 @@ class ToggleAction(ItemAction):
   def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
     clicked = self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
-    self.state = self.toggle.get_state()
     return bool(clicked)
 
   def set_state(self, state: bool):
-    self.state = state
     self.toggle.set_state(state)
 
   def get_state(self) -> bool:
-    return self.state
+    return self.toggle.get_state()
 
 
 class ButtonAction(ItemAction):

@@ -119,7 +119,11 @@ class TogglesLayout(Widget):
       if param == "DisengageOnAccelerator":
         self._toggles["LongitudinalPersonality"] = self._long_personality_setting
 
+    # self._toggles["ExperimentalMode"].set_active_icon("experimental.png")
+
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
+
+    self._update_experimental_mode_icon()
 
   def _update_state(self):
     """
@@ -258,11 +262,14 @@ class TogglesLayout(Widget):
   def _render(self, rect):
     self._scroller.render(rect)
 
+  def _update_experimental_mode_icon(self):
+    icon = "experimental.png" if self._toggles["ExperimentalMode"].action_item.get_state() else "experimental_white.png"
+    self._toggles["ExperimentalMode"].set_icon(icon)
+
   def _toggle_callback(self, state: bool, param: str):
     print(f"Toggled {param} to {state}")
     if param == "ExperimentalMode":
-      icon = "experimental.png" if state else "experimental_white.png"
-      self._toggles[param].set_icon(icon)
+      self._update_experimental_mode_icon()
 
     self._params.put_bool(param, state)
     if self._toggle_defs[param][3]:
