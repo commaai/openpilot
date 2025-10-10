@@ -64,7 +64,8 @@ class ConfirmDialog(Widget):
     if not self._rich:
       self._label.render(text_rect)
     else:
-      self._html_renderer.set_rect(text_rect)
+      html_rect = rl.Rectangle(text_rect.x, text_rect.y, text_rect.width, self._html_renderer.get_total_height(int(text_rect.width)))
+      self._html_renderer.set_rect(html_rect)
       self._scroller.render(text_rect)
 
     if rl.is_key_pressed(rl.KeyboardKey.KEY_ENTER):
