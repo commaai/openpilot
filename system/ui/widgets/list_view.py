@@ -260,7 +260,8 @@ class MultipleButtonAction(ItemAction):
 
 class ListItem(Widget):
   def __init__(self, title: str = "", icon: str | None = None, description: str | Callable[[], str] | None = None,
-               description_visible: bool = False, callback: Callable | None = None, action_item: ItemAction | None = None):
+               description_visible: bool = False, callback: Callable | None = None,
+               action_item: ItemAction | None = None):
     super().__init__()
     self.title = title
     self.set_icon(icon)
