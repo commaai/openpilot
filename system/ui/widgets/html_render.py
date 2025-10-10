@@ -40,15 +40,15 @@ TEXT_BLOCK_TAGS = [
   'h6',
 ]
 BOLD_TAGS = ['b', 'strong']
-ITALIC_TAGS = ['i', 'em']
+# TODO: Add support for italic tags
 # TODO: Add support for underline and strikethrough tags
 
 
 @dataclass
 class HtmlElement:
   type: ElementType
-  # content is a list of (text, FontWeight, is_italics) segments for inline styling
-  content: list[tuple[str, FontWeight, bool]]
+  # content is a list of (text, FontWeight) segments for inline styling
+  content: list[tuple[str, FontWeight]]
   font_size: int
   font_weight: FontWeight
   text_color: rl.Color = rl.WHITE
@@ -69,9 +69,8 @@ class _Parser(HTMLParser):
 
     # Current block being built
     self._current_block: ElementType | None = None
-    self._current_segments: list[tuple[str, FontWeight, bool]] = []  # (text, font_weight, is_italicized)
+    self._current_segments: list[tuple[str, FontWeight]] = []  # (text, font_weight)
     self._inline_weight_stack: list[FontWeight] = [FontWeight.NORMAL]
-    self._inline_italic_stack: list[bool] = [False]
 
   def handle_starttag(self, tag, attrs):
     tag = tag.lower()
@@ -89,8 +88,8 @@ class _Parser(HTMLParser):
     if tag == LIST_ITEM_TAG:
       self._flush_current_block()
       self._current_block = ElementType.LI
-      # Prepend bullet as a segment with current inline weight and italic state
-      self._current_segments = [("• ", self._inline_weight_stack[-1], self._inline_italic_stack[-1])]
+      # Prepend bullet as a segment with current inline weight
+      self._current_segments = [("• ", self._inline_weight_stack[-1])]
       return
 
     if tag in TEXT_BLOCK_TAGS:
@@ -101,10 +100,6 @@ class _Parser(HTMLParser):
 
     if tag in BOLD_TAGS:
       self._inline_weight_stack.append(FontWeight.BOLD)
-      return
-
-    if tag in ITALIC_TAGS:
-      self._inline_italic_stack.append(True)
       return
 
   def handle_endtag(self, tag):
@@ -128,11 +123,6 @@ class _Parser(HTMLParser):
         self._inline_weight_stack.pop()
       return
 
-    if tag in ITALIC_TAGS:
-      if len(self._inline_italic_stack) > 1:
-        self._inline_italic_stack.pop()
-      return
-
   def handle_data(self, data):
     if not data:
       return
@@ -148,8 +138,7 @@ class _Parser(HTMLParser):
           self._current_block = ElementType.P
           self._current_segments = []
         current_weight = self._inline_weight_stack[-1]
-        current_italic = self._inline_italic_stack[-1]
-        self._current_segments.append((line, current_weight, current_italic))
+        self._current_segments.append((line, current_weight))
       # Flush after each line except the last one to create separate elements
       if i < len(lines) - 1:
         self._flush_current_block()
@@ -165,7 +154,7 @@ class _Parser(HTMLParser):
       block = self._current_block
 
     # Copy segments
-    segments = [(t, w, it) for (t, w, it) in self._current_segments if t.strip() != "" or t == " "]  # Ignore empty segments except single spaces
+    segments = [(t, w) for (t, w) in self._current_segments if t.strip() != "" or t == " "]  # Ignore empty segments except single spaces
     self._current_segments = []
 
     if block == ElementType.BR:
@@ -174,12 +163,12 @@ class _Parser(HTMLParser):
 
     self._add_element(block, segments)
 
-  def _add_element(self, etype: ElementType, segments: list[tuple[str, FontWeight, bool]]):
+  def _add_element(self, etype: ElementType, segments: list[tuple[str, FontWeight]]):
     style = self.styles.get(etype, self.styles[ElementType.P])
     # Apply any block-level weight to segments that are not already bold
     if etype in self.styles:
       weight: FontWeight = style["weight"]
-      applied_segments: list[tuple[str, FontWeight, bool]] = [(t, FontWeight.BOLD if w == FontWeight.BOLD else weight, it) for (t, w, it) in segments]
+      applied_segments: list[tuple[str, FontWeight]] = [(t, FontWeight.BOLD if w == FontWeight.BOLD else weight) for (t, w) in segments]
     else:
       applied_segments = segments
 
@@ -200,11 +189,9 @@ class HtmlRenderer(Widget):
   def __init__(self, file_path: str | None = None, text: str | None = None, text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
     self._text_color = text_color
-    self._fonts: dict[tuple[FontWeight, bool], Any] = {
-      (FontWeight.NORMAL, False): gui_app.font(FontWeight.NORMAL),
-      (FontWeight.BOLD, False): gui_app.font(FontWeight.BOLD),
-      (FontWeight.NORMAL, True): gui_app.font(FontWeight.NORMAL, italic=True),
-      (FontWeight.BOLD, True): gui_app.font(FontWeight.BOLD, italic=True),
+    self._fonts: dict[FontWeight, Any] = {
+      FontWeight.NORMAL: gui_app.font(FontWeight.NORMAL),
+      FontWeight.BOLD: gui_app.font(FontWeight.BOLD),
     }
     self._indent_level = 0
 
@@ -226,7 +213,7 @@ class HtmlRenderer(Widget):
 
     self.elements: list[HtmlElement] = []
     self._wrap_cache_width: int | None = None
-    self._wrapped_elements: list[list[list[tuple[str, FontWeight, bool]]]] = []  # Wrapped lines per element
+    self._wrapped_elements: list[list[list[tuple[str, FontWeight]]]] = []  # Wrapped lines per element
     self._cached_total_height: float = 0.0
 
     if file_path is not None:
@@ -251,51 +238,51 @@ class HtmlRenderer(Widget):
     self._wrapped_elements = []
     self._cached_total_height = 0.0
 
-  def _get_font(self, weight: FontWeight, italic: bool = False):
-    return self._fonts[(weight, bool(italic))]
+  def _get_font(self, weight: FontWeight):
+    return self._fonts[weight]
 
-  def _merge_adjacent_segments(self, line: list[tuple[str, FontWeight, bool]]) -> list[tuple[str, FontWeight, bool]]:
+  def _merge_adjacent_segments(self, line: list[tuple[str, FontWeight]]) -> list[tuple[str, FontWeight]]:
     """
-    Merge adjacent segments that have the same (weight, italic) into a single segment.
+    Merge adjacent segments that have the same weight into a single segment.
     This reduces draw/measure calls for pieces that can be drawn together.
     """
     if not line:
       return []
-    merged: list[tuple[str, FontWeight, bool]] = []
-    cur_text, cur_weight, cur_italic = line[0]
-    for text, weight, italic in line[1:]:
-      if weight == cur_weight and bool(italic) == bool(cur_italic):
+    merged: list[tuple[str, FontWeight]] = []
+    cur_text, cur_weight = line[0]
+    for text, weight in line[1:]:
+      if weight == cur_weight:
         cur_text += text
       else:
-        merged.append((cur_text, cur_weight, cur_italic))
-        cur_text, cur_weight, cur_italic = text, weight, italic
-    merged.append((cur_text, cur_weight, cur_italic))
+        merged.append((cur_text, cur_weight))
+        cur_text, cur_weight = text, weight
+    merged.append((cur_text, cur_weight))
     return merged
 
-  def _wrap_segments(self, segments: list[tuple[str, FontWeight, bool]], font_size: int, content_width: int) -> list[list[tuple[str, FontWeight, bool]]]:
+  def _wrap_segments(self, segments: list[tuple[str, FontWeight]], font_size: int, content_width: int) -> list[list[tuple[str, FontWeight]]]:
     """
-    Wrap segments into lines. Each line is a list of (text_piece, FontWeight, is_italic).
+    Wrap segments into lines. Each line is a list of (text_piece, FontWeight).
     Splits by whitespace but preserves spacing using regex.
     """
     import re
 
     # Split each segment into words with trailing spaces preserved
-    pieces: list[tuple[str, FontWeight, bool]] = []
-    for text, weight, italic in segments:
+    pieces: list[tuple[str, FontWeight]] = []
+    for text, weight in segments:
       if not text:
         continue
       tokens = re.findall(r'\s*\S+\s*', text)  # Preserve leading and trailing spaces
       if not tokens and text.strip() == "":
         tokens = [text]
       for t in tokens:
-        pieces.append((t, weight, italic))
+        pieces.append((t, weight))
 
-    lines: list[list[tuple[str, FontWeight, bool]]] = []
-    current_line: list[tuple[str, FontWeight, bool]] = []
+    lines: list[list[tuple[str, FontWeight]]] = []
+    current_line: list[tuple[str, FontWeight]] = []
     current_width = 0.0
 
-    for piece, weight, italic in pieces:
-      font = self._get_font(weight, italic)
+    for piece, weight in pieces:
+      font = self._get_font(weight)
       size_vec = measure_text_cached(font, piece, font_size, 0)
       piece_w = size_vec.x
 
@@ -304,7 +291,7 @@ class HtmlRenderer(Widget):
         current_line = []
         current_width = 0.0
 
-      current_line.append((piece, weight, italic))
+      current_line.append((piece, weight))
       current_width += piece_w
 
     if current_line:
@@ -322,7 +309,7 @@ class HtmlRenderer(Widget):
     if self._wrap_cache_width == usable_width and self._wrapped_elements:
       return  # Already cached for this width
 
-    wrapped_per_element: list[list[list[tuple[str, FontWeight, bool]]]] = []
+    wrapped_per_element: list[list[list[tuple[str, FontWeight]]]] = []
     total_height = 0.0
 
     for element in self.elements:
@@ -371,8 +358,8 @@ class HtmlRenderer(Widget):
         text_x = rect.x + max(element.indent_level - 1, 0) * LIST_INDENT_PX  # First level has no indent
         draw_x = text_x + PADDING
         # Draw each segment in the line with the proper font style
-        for seg_text, seg_weight, seg_italic in line:
-          font = self._get_font(seg_weight, seg_italic)
+        for seg_text, seg_weight in line:
+          font = self._get_font(seg_weight)
           rl.draw_text_ex(font, seg_text, rl.Vector2(draw_x, current_y), element.font_size, 0, element.text_color)
           size_vec = measure_text_cached(font, seg_text, element.font_size, 0)
           draw_x += size_vec.x
