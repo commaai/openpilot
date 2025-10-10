@@ -213,7 +213,7 @@ class TogglesLayout(Widget):
             self._toggles["ExperimentalMode"].action_item.set_state(False)
 
         # confirmation with desc
-        dlg = ConfirmDialog(self._toggles["ExperimentalMode"].description, "Enable")
+        dlg = ConfirmDialog(self._toggles["ExperimentalMode"].description, "Enable", rich=True)
         gui_app.set_modal_overlay(dlg, callback=confirm_callback)
 
     if param == "ExperimentalMode":
