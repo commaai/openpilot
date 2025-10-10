@@ -127,9 +127,10 @@ class HtmlRenderer(Widget):
           # Always add content regardless of opening or closing tag
           close_tag()
 
-          # TODO: reset to None if end tag?
           if is_start_tag:
             current_tag = tag
+          else:
+            current_tag = None
 
         # increment after we add the content for the current tag
         if tag == ElementType.UL:
