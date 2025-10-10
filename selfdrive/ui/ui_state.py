@@ -6,7 +6,7 @@ from collections.abc import Callable
 from enum import Enum
 from cereal import messaging, car, log
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.params import Params, UnknownKeyName
+from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
@@ -143,10 +143,7 @@ class UIState:
       self._started_prev = self.started
 
   def _update_params(self) -> None:
-    try:
-      self.is_metric = self.params.get_bool("IsMetric")
-    except UnknownKeyName:
-      self.is_metric = False
+    self.is_metric = self.params.get_bool("IsMetric")
 
     # Update longitudinal control state
     CP_bytes = self.params.get("CarParams")
