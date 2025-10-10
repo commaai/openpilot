@@ -1,5 +1,5 @@
 import pyray as rl
-from typing import Callable
+from collections.abc import Callable
 from openpilot.system.ui.lib.application import MousePos
 from openpilot.system.ui.widgets import Widget
 
