@@ -158,7 +158,9 @@ def main():
   try:
     gui_app.init_window("System Update")
     updater = Updater(updater_path, manifest_path)
-    for _ in gui_app.render():
+    for showing_dialog in gui_app.render():
+      if showing_dialog:
+        continue
       updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     # Make sure we clean up even if there's an error
