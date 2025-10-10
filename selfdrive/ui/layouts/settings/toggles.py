@@ -119,11 +119,8 @@ class TogglesLayout(Widget):
       if param == "DisengageOnAccelerator":
         self._toggles["LongitudinalPersonality"] = self._long_personality_setting
 
-    # self._toggles["ExperimentalMode"].set_active_icon("experimental.png")
-
-    self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
-
     self._update_experimental_mode_icon()
+    self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
   def _update_state(self):
     """
@@ -258,6 +255,8 @@ class TogglesLayout(Widget):
             long_desc = "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 
         self._toggles["ExperimentalMode"].set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
+
+    self._update_experimental_mode_icon()
 
   def _render(self, rect):
     self._scroller.render(rect)
