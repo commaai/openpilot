@@ -61,7 +61,6 @@ class ConfirmDialog(Widget):
 
     text_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y + TEXT_PADDING,
                              dialog_rect.width - 2 * MARGIN, dialog_rect.height - BUTTON_HEIGHT - MARGIN - TEXT_PADDING * 2)
-
     if not self._rich:
       self._label.render(text_rect)
     else:
