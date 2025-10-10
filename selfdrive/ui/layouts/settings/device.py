@@ -115,69 +115,6 @@ class DeviceLayout(Widget):
     gui_app.set_modal_overlay(dialog, callback=reset_calibration)
 
   def _update_calib_description(self):
-    """
-    QString desc = tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
-    std::string calib_bytes = params.get("CalibrationParams");
-    if (!calib_bytes.empty()) {
-      try {
-        AlignedBuffer aligned_buf;
-        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(calib_bytes.data(), calib_bytes.size()));
-        auto calib = cmsg.getRoot<cereal::Event>().getLiveCalibration();
-        if (calib.getCalStatus() != cereal::LiveCalibrationData::Status::UNCALIBRATED) {
-          double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
-          double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
-          desc += tr(" Your device is pointed %1° %2 and %3° %4.")
-                      .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? tr("down") : tr("up"),
-                           QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? tr("left") : tr("right"));
-        }
-      } catch (kj::Exception) {
-        qInfo() << "invalid CalibrationParams";
-      }
-    }
-
-    int lag_perc = 0;
-    std::string lag_bytes = params.get("LiveDelay");
-    if (!lag_bytes.empty()) {
-      try {
-        AlignedBuffer aligned_buf;
-        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(lag_bytes.data(), lag_bytes.size()));
-        lag_perc = cmsg.getRoot<cereal::Event>().getLiveDelay().getCalPerc();
-      } catch (kj::Exception) {
-        qInfo() << "invalid LiveDelay";
-      }
-    }
-    if (lag_perc < 100) {
-      desc += tr("\n\nSteering lag calibration is %1% complete.").arg(lag_perc);
-    } else {
-      desc += tr("\n\nSteering lag calibration is complete.");
-    }
-
-    std::string torque_bytes = params.get("LiveTorqueParameters");
-    if (!torque_bytes.empty()) {
-      try {
-        AlignedBuffer aligned_buf;
-        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(torque_bytes.data(), torque_bytes.size()));
-        auto torque = cmsg.getRoot<cereal::Event>().getLiveTorqueParameters();
-        // don't add for non-torque cars
-        if (torque.getUseParams()) {
-          int torque_perc = torque.getCalPerc();
-          if (torque_perc < 100) {
-            desc += tr(" Steering torque response calibration is %1% complete.").arg(torque_perc);
-          } else {
-            desc += tr(" Steering torque response calibration is complete.");
-          }
-        }
-      } catch (kj::Exception) {
-        qInfo() << "invalid LiveTorqueParameters";
-      }
-    }
-
-    desc += "\n\n";
-    desc += tr("openpilot is continuously calibrating, resetting is rarely required. "
-               "Resetting calibration will restart openpilot if the car is powered on.");
-    resetCalibBtn->setDescription(desc);
-    """
-
     desc = DESCRIPTIONS['reset_calibration']
 
     calib_bytes = self._params.get("CalibrationParams")
