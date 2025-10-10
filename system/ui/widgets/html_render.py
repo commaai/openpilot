@@ -349,23 +349,21 @@ class HtmlRenderer(Widget):
     self._ensure_wrap_and_height_cache(int(content_width))
 
     for idx, element in enumerate(self.elements):
-      if element.type == ElementType.BR:
-        current_y += element.margin_bottom
-        continue
-
+      # Apply top margin
       current_y += element.margin_top
       if current_y > rect.y + rect.height:
-        break
+        break  # Stop if below visible area
 
+      # Draw content lines, if any
       wrapped_lines = self._wrapped_elements[idx] if idx < len(self._wrapped_elements) else []
       for line in wrapped_lines:
         if current_y < rect.y - element.font_size:
           current_y += element.font_size * element.line_height
-          continue
+          continue  # Skip lines above the visible area
         if current_y > rect.y + rect.height:
-          break
+          break  # Stop if below visible area
 
-        text_x = rect.x + max(element.indent_level - 1, 0) * LIST_INDENT_PX
+        text_x = rect.x + max(element.indent_level - 1, 0) * LIST_INDENT_PX  # First level has no indent
         draw_x = text_x + PADDING
         # Draw each segment in the line with the proper font style
         for seg_text, seg_weight, seg_italic in line:
