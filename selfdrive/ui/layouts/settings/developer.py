@@ -70,8 +70,6 @@ class DeveloperLayout(Widget):
       callback=self._on_alpha_long_enabled,
     )
 
-    self._alpha_long_toggle.set_description(self._alpha_long_toggle.description + " Changing this setting will restart openpilot if the car is powered on.")
-
     items = [
       self._adb_toggle,
       self._ssh_toggle,

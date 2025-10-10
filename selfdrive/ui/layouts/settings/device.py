@@ -22,7 +22,8 @@ DESCRIPTIONS = {
   'driver_camera': "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)",
   'reset_calibration': (
       "openpilot requires the device to be mounted within 4° left or right and within 5° " +
-      "up or 9° down. openpilot is continuously calibrating, resetting is rarely required."
+      "up or 9° down. openpilot is continuously calibrating, resetting is rarely required. " +
+      "Resetting calibration will restart openpilot if the car is powered on."
   ),
   'review_guide': "Review the rules, features, and limitations of openpilot",
 }
