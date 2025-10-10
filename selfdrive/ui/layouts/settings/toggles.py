@@ -98,6 +98,7 @@ class TogglesLayout(Widget):
     )
 
     self._toggles = {}
+    self._locked_toggles = set()
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
       toggle = toggle_item(
         title,
@@ -115,6 +116,10 @@ class TogglesLayout(Widget):
 
       if needs_restart and not locked:
         toggle.set_description(toggle.description + " Changing this setting will restart openpilot if the car is powered on.")
+
+      # track for engaged state updates
+      if locked:
+        self._locked_toggles.add(param)
 
       self._toggles[param] = toggle
 
@@ -134,7 +139,7 @@ class TogglesLayout(Widget):
 
     # these toggles need restart, block while engaged
     for toggle_def in self._toggle_defs:
-      if self._toggle_defs[toggle_def][3]:
+      if self._toggle_defs[toggle_def][3] and toggle_def not in self._locked_toggles:
         self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
 
   def show_event(self):
