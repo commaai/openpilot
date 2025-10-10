@@ -140,8 +140,7 @@ class _Parser(HTMLParser):
 
     current_weight = self._inline_weight_stack[-1]
     current_italic = self._inline_italic_stack[-1]
-    # Collapse multiple spaces similarly to HTML: keep single spaces
-    # But preserve trailing spaces for splitting/word boundaries
+
     self._current_segments.append((data, current_weight, current_italic))
 
   def _flush_current_block(self):
@@ -335,7 +334,7 @@ class HtmlRenderer(Widget):
     self._wrap_cache_width = usable_width
 
   def _render(self, rect: rl.Rectangle):
-    # TODO: speed up by removing duplicate calculations across renders
+    # TODO: can we speed up further by caching more calculations across renders?
     current_y = rect.y
     content_width = rect.width - (PADDING * 2)
     # Ensure wrapped lines are computed once for this usable width
