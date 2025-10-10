@@ -248,7 +248,8 @@ class TogglesLayout(Widget):
         long_desc = unavailable + " openpilot longitudinal control may come in a future update."
         if ui_state.CP.getAlphaLongitudinalAvailable():
           if is_release:
-            long_desc = unavailable + " " + "An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches."
+            long_desc = unavailable + " " + ("An alpha version of openpilot longitudinal control can be tested, along with " +
+                                             "Experimental mode, on non-release branches.")
           else:
             long_desc = "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 
@@ -259,36 +260,9 @@ class TogglesLayout(Widget):
 
   def _toggle_callback(self, state: bool, param: str):
     print(f"Toggled {param} to {state}")
+    self._params.put_bool(param, state)
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True)
-    self._params.put_bool(param, state)
-
-  def _experimental_mode_toggled(self, state: bool):
-    self._params.put_bool("ExperimentalMode", state)
-
-  def _openpilot_enabled_toggled(self, state: bool):
-    self._params.put_bool("OpenpilotEnabledToggle", state)
-    self._params.put_bool("OnroadCycleRequested", True)
-
-  def _disengage_on_accel_toggled(self, state: bool):
-    self._params.put_bool("DisengageOnAccelerator", state)
-
-  def _ldw_toggled(self, state: bool):
-    self._params.put_bool("IsLdwEnabled", state)
-
-  def _always_on_dm_toggled(self, state: bool):
-    self._params.put_bool("AlwaysOnDM", state)
-
-  def _record_front_toggled(self, state: bool):
-    self._params.put_bool("RecordFront", state)
-    self._params.put_bool("OnroadCycleRequested", True)
-
-  def _record_audio_toggled(self, state: bool):
-    self._params.put_bool("RecordAudio", state)
-    self._params.put_bool("OnroadCycleRequested", True)
-
-  def _is_metric_toggled(self, state: bool):
-    self._params.put_bool("IsMetric", state)
 
   def _set_longitudinal_personality(self, button_index: int):
     self._params.put("LongitudinalPersonality", button_index)
