@@ -357,7 +357,7 @@ class HtmlRenderer(Widget):
         if current_y > rect.y + rect.height:
           break
 
-        text_x = rect.x + element.indent_level * LIST_INDENT_PX
+        text_x = rect.x + max(element.indent_level - 1, 0) * LIST_INDENT_PX
         draw_x = text_x + PADDING
         # Draw each segment in the line with the proper font style
         for seg_text, seg_weight, seg_italic in line:
