@@ -113,8 +113,11 @@ class Updater(Widget):
 
   def render_wifi_screen(self, rect: rl.Rectangle):
     # Draw the Wi-Fi manager UI
-    wifi_rect = rl.Rectangle(MARGIN + 50, MARGIN, rect.width - MARGIN * 2 - 100, rect.height - MARGIN * 2 - BUTTON_HEIGHT - 20)
-    self.wifi_manager_ui.render(wifi_rect)
+    wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2,
+                             rect.height - BUTTON_HEIGHT - MARGIN * 3)
+    rl.draw_rectangle_rounded(wifi_rect, 0.035, 10, rl.Color(51, 51, 51, 255))
+    wifi_content_rect = rl.Rectangle(wifi_rect.x + 50, wifi_rect.y, wifi_rect.width - 100, wifi_rect.height)
+    self.wifi_manager_ui.render(wifi_content_rect)
 
     back_button_rect = rl.Rectangle(MARGIN, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._back_button.render(back_button_rect)
@@ -158,7 +161,9 @@ def main():
   try:
     gui_app.init_window("System Update")
     updater = Updater(updater_path, manifest_path)
-    for _ in gui_app.render():
+    for showing_dialog in gui_app.render():
+      if showing_dialog:
+        continue
       updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     # Make sure we clean up even if there's an error
