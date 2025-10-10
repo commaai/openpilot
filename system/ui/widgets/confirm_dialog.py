@@ -3,6 +3,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.system.ui.widgets import Widget
 
 DIALOG_WIDTH = 1748
