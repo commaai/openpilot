@@ -51,16 +51,18 @@ class HtmlElement:
   content: list[tuple[str, FontWeight, bool]]
   font_size: int
   font_weight: FontWeight
-  margin_top: int
-  margin_bottom: int
+  text_color: rl.Color = rl.WHITE
+  margin_top: int = 0
+  margin_bottom: int = 0
   line_height: float = 1.2
   indent_level: int = 0
 
 
 class _Parser(HTMLParser):
-  def __init__(self, styles: dict[ElementType, dict[str, Any]]):
+  def __init__(self, styles: dict[ElementType, dict[str, Any]], default_text_color: rl.Color = rl.WHITE):
     super().__init__(convert_charrefs=True)
     self.styles = styles
+    self.default_text_color = default_text_color
     self.elements: list[HtmlElement] = []
     self._indent = 0
     self.preserve_empty_lines = True
@@ -184,6 +186,7 @@ class _Parser(HTMLParser):
       content=applied_segments,
       font_size=style["size"],
       font_weight=style["weight"],
+      text_color=style.get("color", self.default_text_color),
       margin_top=style["margin_top"],
       margin_bottom=style["margin_bottom"],
       indent_level=self._indent,
@@ -237,7 +240,7 @@ class HtmlRenderer(Widget):
     self.parse_html_content(content)
 
   def parse_html_content(self, html_content: str) -> None:
-    parser = _Parser(self.styles)
+    parser = _Parser(self.styles, default_text_color=self._text_color)
     parser.feed(html_content)
     parser._flush_current_block()
     self.elements = parser.elements
@@ -368,7 +371,7 @@ class HtmlRenderer(Widget):
         # Draw each segment in the line with the proper font style
         for seg_text, seg_weight, seg_italic in line:
           font = self._get_font(seg_weight, seg_italic)
-          rl.draw_text_ex(font, seg_text, rl.Vector2(draw_x, current_y), element.font_size, 0, self._text_color)
+          rl.draw_text_ex(font, seg_text, rl.Vector2(draw_x, current_y), element.font_size, 0, element.text_color)
           size_vec = measure_text_cached(font, seg_text, element.font_size, 0)
           draw_x += size_vec.x
 
