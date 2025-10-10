@@ -133,15 +133,21 @@ class _Parser(HTMLParser):
   def handle_data(self, data):
     if not data:
       return
-    # Ensure there's a block to append into; default to paragraph if none
-    if self._current_block is None:
-      self._current_block = ElementType.P
-      self._current_segments = []
-
-    current_weight = self._inline_weight_stack[-1]
-    current_italic = self._inline_italic_stack[-1]
-
-    self._current_segments.append((data, current_weight, current_italic))
+    # Split by newlines first so each line becomes its own block
+    lines = data.split('\n')
+    for i, line in enumerate(lines):
+      if line:
+        # Default to <p>
+        if self._current_block is None:
+          self._current_block = ElementType.P
+          self._current_segments = []
+        current_weight = self._inline_weight_stack[-1]
+        current_italic = self._inline_italic_stack[-1]
+        self._current_segments.append((line, current_weight, current_italic))
+      # Flush after each line except the last one to create separate elements
+      if i < len(lines) - 1:
+        self._flush_current_block()
+        self._current_block = None
 
   def _flush_current_block(self):
     if self._current_block is None and not self._current_segments:
