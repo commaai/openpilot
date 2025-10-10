@@ -172,9 +172,10 @@ class _Parser(HTMLParser):
 
   def _add_element(self, etype: ElementType, segments: list[tuple[str, FontWeight, bool]]):
     style = self.styles.get(etype, self.styles[ElementType.P])
-    # Apply block-level bold to segments that are not already bold
-    if style.get("weight") == FontWeight.BOLD:
-      applied_segments: list[tuple[str, FontWeight, bool]] = [(t, w if w == FontWeight.BOLD else FontWeight.BOLD, it) for (t, w, it) in segments]
+    # Apply any block-level weight to segments that are not already bold
+    if etype in self.styles:
+      weight: FontWeight = style["weight"]
+      applied_segments: list[tuple[str, FontWeight, bool]] = [(t, FontWeight.BOLD if w == FontWeight.BOLD else weight, it) for (t, w, it) in segments]
     else:
       applied_segments = segments
 
