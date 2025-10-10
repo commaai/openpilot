@@ -74,7 +74,17 @@ class UIState:
     self.light_sensor: float = -1.0
     self._param_update_time: float = 0.0
 
-    self._update_params()
+    # Callbacks
+    self._offroad_transition_callbacks: list[Callable[[], None]] = []
+    self._engaged_transition_callbacks: list[Callable[[], None]] = []
+
+    self.update_params()
+
+  def add_offroad_transition_callback(self, callback: Callable[[], None]):
+    self._offroad_transition_callbacks.append(callback)
+
+  def add_engaged_transition_callback(self, callback: Callable[[], None]):
+    self._engaged_transition_callbacks.append(callback)
 
   @property
   def engaged(self) -> bool:
@@ -91,8 +101,7 @@ class UIState:
     self._update_state()
     self._update_status()
     if time.monotonic() - self._param_update_time > 5.0:
-      self._update_params()
-      self._param_update_time = time.monotonic()
+      self.update_params()
     device.update()
 
   def _update_state(self) -> None:
@@ -131,6 +140,8 @@ class UIState:
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:
+      for callback in self._engaged_transition_callbacks:
+        callback()
       self._engaged_prev = self.engaged
 
     # Handle onroad/offroad transition
@@ -140,19 +151,23 @@ class UIState:
         self.started_frame = self.sm.frame
         self.started_time = time.monotonic()
 
+      for callback in self._offroad_transition_callbacks:
+        callback()
+
       self._started_prev = self.started
 
-  def _update_params(self) -> None:
+  def update_params(self) -> None:
     self.is_metric = self.params.get_bool("IsMetric")
 
     # Update longitudinal control state
-    CP_bytes = self.params.get("CarParams")
+    CP_bytes = self.params.get("CarParamsPersistent")
     if CP_bytes is not None:
       self.CP = messaging.log_from_bytes(CP_bytes, car.CarParams)
       if self.CP.alphaLongitudinalAvailable:
         self.has_longitudinal_control = self.params.get_bool("AlphaLongitudinalEnabled")
       else:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
+    self._param_update_time = time.monotonic()
 
 
 class Device:

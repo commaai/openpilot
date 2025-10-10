@@ -3,6 +3,9 @@ from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets import DialogResult
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
@@ -131,6 +134,8 @@ class TogglesLayout(Widget):
     self._update_experimental_mode_icon()
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
+    ui_state.add_engaged_transition_callback(self._update_toggles)
+
   def _update_state(self):
     if ui_state.sm.updated["selfdriveState"]:
       personality = PERSONALITY_TO_INT[ui_state.sm["selfdriveState"].personality]
@@ -138,15 +143,12 @@ class TogglesLayout(Widget):
         self._long_personality_setting.action_item.set_selected_button(personality)
       ui_state.personality = personality
 
-    # these toggles need restart, block while engaged
-    for toggle_def in self._toggle_defs:
-      if self._toggle_defs[toggle_def][3] and toggle_def not in self._locked_toggles:
-        self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
-
   def show_event(self):
     self._update_toggles()
 
   def _update_toggles(self):
+    ui_state.update_params()
+
     e2e_description = (
       "openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. " +
       "Experimental features are listed below:<br>" +
@@ -174,7 +176,7 @@ class TogglesLayout(Widget):
         unavailable = "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
 
         long_desc = unavailable + " openpilot longitudinal control may come in a future update."
-        if ui_state.CP.getAlphaLongitudinalAvailable():
+        if ui_state.CP.alphaLongitudinalAvailable:
           if self._is_release:
             long_desc = unavailable + " " + ("An alpha version of openpilot longitudinal control can be tested, along with " +
                                              "Experimental mode, on non-release branches.")
@@ -192,6 +194,11 @@ class TogglesLayout(Widget):
     for param in self._toggle_defs:
       self._toggles[param].action_item.set_state(self._params.get_bool(param))
 
+    # these toggles need restart, block while engaged
+    for toggle_def in self._toggle_defs:
+      if self._toggle_defs[toggle_def][3] and toggle_def not in self._locked_toggles:
+        self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
+
   def _render(self, rect):
     self._scroller.render(rect)
 
@@ -199,9 +206,30 @@ class TogglesLayout(Widget):
     icon = "experimental.png" if self._toggles["ExperimentalMode"].action_item.get_state() else "experimental_white.png"
     self._toggles["ExperimentalMode"].set_icon(icon)
 
+  def _handle_experimental_mode_toggle(self, state: bool):
+    confirmed = self._params.get_bool("ExperimentalModeConfirmed")
+    if state and not confirmed:
+      def confirm_callback(result: int):
+        if result == DialogResult.CONFIRM:
+          self._params.put_bool("ExperimentalMode", True)
+          self._params.put_bool("ExperimentalModeConfirmed", True)
+        else:
+          self._toggles["ExperimentalMode"].action_item.set_state(False)
+        self._update_experimental_mode_icon()
+
+      # show confirmation dialog
+      content = (f"<h2>{self._toggles['ExperimentalMode'].title}</h2><br>" +
+                 f"<p>{self._toggles['ExperimentalMode'].description}</p>")
+      dlg = ConfirmDialog(content, "Enable", rich=True)
+      gui_app.set_modal_overlay(dlg, callback=confirm_callback)
+    else:
+      self._update_experimental_mode_icon()
+      self._params.put_bool("ExperimentalMode", state)
+
   def _toggle_callback(self, state: bool, param: str):
     if param == "ExperimentalMode":
-      self._update_experimental_mode_icon()
+      self._handle_experimental_mode_toggle(state)
+      return
 
     self._params.put_bool(param, state)
     if self._toggle_defs[param][3]:

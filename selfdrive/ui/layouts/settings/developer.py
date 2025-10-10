@@ -4,6 +4,9 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import toggle_item
 from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets import DialogResult
 
 # Description constants
 DESCRIPTIONS = {
@@ -80,6 +83,9 @@ class DeveloperLayout(Widget):
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
+    # Toggles should be not available to change in onroad state
+    ui_state.add_offroad_transition_callback(self._update_toggles)
+
   def _render(self, rect):
     self._scroller.render(rect)
 
@@ -87,7 +93,10 @@ class DeveloperLayout(Widget):
     self._update_toggles()
 
   def _update_toggles(self):
+    ui_state.update_params()
+
     # Hide non-release toggles on release builds
+    # TODO: we can do an onroad cycle, but alpha long toggle requires a deinit function to re-enable radar and not fault
     for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle, self._alpha_long_toggle):
       item.set_visible(not self._is_release)
 
@@ -100,7 +109,11 @@ class DeveloperLayout(Widget):
       else:
         self._alpha_long_toggle.set_visible(True)
 
-      self._long_maneuver_toggle.action_item.set_enabled(ui_state.has_longitudinal_control and ui_state.is_offroad)
+      long_man_enabled = ui_state.has_longitudinal_control and ui_state.is_offroad()
+      self._long_maneuver_toggle.action_item.set_enabled(long_man_enabled)
+      if not long_man_enabled:
+        self._long_maneuver_toggle.action_item.set_state(False)
+        self._params.put_bool("LongitudinalManeuverMode", False)
     else:
       self._long_maneuver_toggle.action_item.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
@@ -115,12 +128,6 @@ class DeveloperLayout(Widget):
       ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
     ):
       item.action_item.set_state(self._params.get_bool(key))
-
-  def _update_state(self):
-    # Disable toggles that require onroad restart
-    # TODO: we can do an onroad cycle, but alpha long toggle requires a deinit function to re-enable radar and not fault
-    for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle, self._alpha_long_toggle):
-      item.action_item.set_enabled(ui_state.is_offroad)
 
   def _on_enable_adb(self, state: bool):
     self._params.put_bool("AdbEnabled", state)
@@ -139,5 +146,21 @@ class DeveloperLayout(Widget):
     self._joystick_toggle.action_item.set_state(False)
 
   def _on_alpha_long_enabled(self, state: bool):
+    if state:
+      def confirm_callback(result: int):
+        if result == DialogResult.CONFIRM:
+          self._params.put_bool("AlphaLongitudinalEnabled", True)
+          self._update_toggles()
+        else:
+          self._alpha_long_toggle.action_item.set_state(False)
+
+      # show confirmation dialog
+      content = (f"<h2>{self._alpha_long_toggle.title}</h2><br>" +
+                 f"<p>{self._alpha_long_toggle.description}</p>")
+
+      dlg = ConfirmDialog(content, "Enable", rich=True)
+      gui_app.set_modal_overlay(dlg, callback=confirm_callback)
+      return
+
     self._params.put_bool("AlphaLongitudinalEnabled", state)
     self._update_toggles()
