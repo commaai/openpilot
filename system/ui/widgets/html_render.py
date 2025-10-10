@@ -29,6 +29,7 @@ class ElementType(Enum):
 
 
 INDENT_TAGS = ['ul']  # TODO: add ol support
+LIST_ITEM_TAG = 'li'
 TEXT_BLOCK_TAGS = [
   'p',
   'h1',
@@ -82,7 +83,7 @@ class _Parser(HTMLParser):
       self._indent += 1
       return
 
-    if tag == "li":
+    if tag == LIST_ITEM_TAG:
       self._flush_current_block()
       self._current_block = ElementType.LI
       # Prepend bullet as a segment with current inline weight and italic state
@@ -109,7 +110,7 @@ class _Parser(HTMLParser):
       self._indent = max(0, self._indent - 1)
       return
 
-    if tag == "li":
+    if tag == LIST_ITEM_TAG:
       self._flush_current_block()
       self._current_block = None
       return
