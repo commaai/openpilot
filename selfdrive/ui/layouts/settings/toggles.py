@@ -85,6 +85,16 @@ class TogglesLayout(Widget):
       ),
     }
 
+    self._long_personality_setting = multiple_button_item(
+      "Driving Personality",
+      DESCRIPTIONS["LongitudinalPersonality"],
+      buttons=["Aggressive", "Standard", "Relaxed"],
+      button_width=255,
+      callback=self._set_longitudinal_personality,
+      selected_index=self._params.get("LongitudinalPersonality", return_default=True),
+      icon="speed_limit.png"
+    )
+
     self._toggles = {}
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
       toggle = toggle_item(
@@ -107,16 +117,7 @@ class TogglesLayout(Widget):
       self._toggles[param] = toggle
 
       if param == "DisengageOnAccelerator":
-        long_personality_setting = multiple_button_item(
-          "Driving Personality",
-          DESCRIPTIONS["LongitudinalPersonality"],
-          buttons=["Aggressive", "Standard", "Relaxed"],
-          button_width=255,
-          callback=self._set_longitudinal_personality,
-          selected_index=self._params.get("LongitudinalPersonality", return_default=True),
-          icon="speed_limit.png"
-        )
-        self._toggles["LongitudinalPersonality"] = long_personality_setting
+        self._toggles["LongitudinalPersonality"] = self._long_personality_setting
 
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
@@ -234,12 +235,12 @@ class TogglesLayout(Widget):
       if ui_state.has_longitudinal_control:
         self._toggles["ExperimentalMode"].action_item.set_enabled(True)
         self._toggles["ExperimentalMode"].set_description(e2e_description)
-        # long_personality_setting->setEnabled(true);
+        self._long_personality_setting.action_item.set_enabled(True)
       else:
         # no long for now
         self._toggles["ExperimentalMode"].action_item.set_enabled(False)
         self._toggles["ExperimentalMode"].action_item.set_state(False)
-        # long_personality_setting->setEnabled(false);
+        self._long_personality_setting.action_item.set_enabled(False)
         self._params.remove("ExperimentalMode")
 
         unavailable = "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
