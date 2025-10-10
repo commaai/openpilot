@@ -3,6 +3,9 @@ from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets import DialogResult
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
@@ -200,6 +203,19 @@ class TogglesLayout(Widget):
     self._toggles["ExperimentalMode"].set_icon(icon)
 
   def _toggle_callback(self, state: bool, param: str):
+    if param == "ExperimentalMode" and state:
+      confirmed = self._params.get_bool("ExperimentalModeConfirmed")
+      if not confirmed:
+        def confirm_callback(result: int):
+          if result == DialogResult.CONFIRM:
+            self._params.put_bool("ExperimentalMode", True)
+          else:
+            self._toggles["ExperimentalMode"].action_item.set_state(False)
+
+        # confirmation with desc
+        dlg = ConfirmDialog(self._toggles["ExperimentalMode"].description, "Enable")
+        gui_app.set_modal_overlay(dlg, callback=confirm_callback)
+
     if param == "ExperimentalMode":
       self._update_experimental_mode_icon()
 
