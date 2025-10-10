@@ -302,8 +302,7 @@ class HtmlRenderer(Widget):
             font = self._get_font(seg_weight, seg_italic)
             rl.draw_text_ex(font, seg_text, rl.Vector2(draw_x, current_y), element.font_size, 0, self._text_color)
             size_vec = measure_text_cached(font, seg_text, element.font_size, 0)
-            seg_w = getattr(size_vec, 'x', size_vec[0] if isinstance(size_vec, (list, tuple)) else 0)
-            draw_x += seg_w
+            draw_x += size_vec.x
 
           # Move to next line
           current_y += element.font_size * element.line_height
