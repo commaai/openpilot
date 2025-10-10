@@ -4,6 +4,9 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import toggle_item
 from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets import DialogResult
 
 # Description constants
 DESCRIPTIONS = {
@@ -93,7 +96,7 @@ class DeveloperLayout(Widget):
 
     # CP gating
     if ui_state.CP is not None:
-      alpha_avail = ui_state.CP.alphaLongitudinalAvailable
+      alpha_avail = True  # ui_state.CP.alphaLongitudinalAvailable
       if not alpha_avail or self._is_release:
         self._alpha_long_toggle.set_visible(False)
         self._params.remove("AlphaLongitudinalEnabled")
@@ -139,5 +142,22 @@ class DeveloperLayout(Widget):
     self._joystick_toggle.action_item.set_state(False)
 
   def _on_alpha_long_enabled(self, state: bool):
+    if state:
+      def confirm_callback(result: int):
+        print('got result', result)
+        if result == DialogResult.CONFIRM:
+          self._params.put_bool("AlphaLongitudinalEnabled", True)
+        else:
+          self._alpha_long_toggle.action_item.set_state(False)
+
+      # confirmation with desc
+
+      content = (f"<h2 style=\"text-align: center;\">{self._alpha_long_toggle.title}</h2><br>"
+                 f"<p style=\"text-align: center; font-size: 50px\">{self._alpha_long_toggle.description}</p>")
+
+      # dlg = ConfirmDialog(self._alpha_long_toggle.description, "Enable")
+      dlg = ConfirmDialog(content, "Enable", rich=True)
+      gui_app.set_modal_overlay(dlg, callback=confirm_callback)
+
     self._params.put_bool("AlphaLongitudinalEnabled", state)
     self._update_toggles()
