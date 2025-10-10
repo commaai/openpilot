@@ -11,6 +11,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 
 LIST_INDENT_PX = 40
+PADDING = 20
 
 
 # Block elements only (inline tags like <b> are handled as segments within blocks)
@@ -209,6 +210,10 @@ class HtmlRenderer(Widget):
     }
 
     self.elements: list[HtmlElement] = []
+    self._wrap_cache_width: int | None = None
+    self._wrapped_elements: list[list[list[tuple[str, FontWeight, bool]]]] = []  # Wrapped lines per element
+    self._cached_total_height: float = 0.0
+
     if file_path is not None:
       self.parse_html_file(file_path)
     elif text is not None:
@@ -226,6 +231,10 @@ class HtmlRenderer(Widget):
     parser.feed(html_content)
     parser._flush_current_block()
     self.elements = parser.elements
+    # Invalidate wrap/height cache when content changes
+    self._wrap_cache_width = None
+    self._wrapped_elements = []
+    self._cached_total_height = 0.0
 
   def _get_font(self, weight: FontWeight, italic: bool = False):
     return self._fonts[(weight, bool(italic))]
@@ -290,13 +299,44 @@ class HtmlRenderer(Widget):
     merged_lines = [self._merge_adjacent_segments(l) for l in lines]
     return merged_lines
 
+  def _ensure_wrap_and_height_cache(self, usable_width: int) -> None:
+    """
+    Ensure wrapped lines and total height are computed for the given usable_width
+    (content width after horizontal padding). If cached, do nothing.
+    """
+    if self._wrap_cache_width == usable_width and self._wrapped_elements:
+      return  # Already cached for this width
+
+    wrapped_per_element: list[list[list[tuple[str, FontWeight, bool]]]] = []
+    total_height = 0.0
+
+    for element in self.elements:
+      # Add top margin
+      total_height += element.margin_top
+      # Add wrapped lines height
+      if element.content:
+        wrapped_lines = self._wrap_segments(element.content, element.font_size, int(usable_width))
+        wrapped_per_element.append(wrapped_lines)
+        for _ in wrapped_lines:
+          total_height += element.font_size * element.line_height
+      else:
+        wrapped_per_element.append([])
+      # Add bottom margin
+      total_height += element.margin_bottom
+
+    # Cache results
+    self._wrapped_elements = wrapped_per_element
+    self._cached_total_height = total_height
+    self._wrap_cache_width = usable_width
+
   def _render(self, rect: rl.Rectangle):
     # TODO: speed up by removing duplicate calculations across renders
     current_y = rect.y
-    padding = 20
-    content_width = rect.width - (padding * 2)
+    content_width = rect.width - (PADDING * 2)
+    # Ensure wrapped lines are computed once for this usable width
+    self._ensure_wrap_and_height_cache(int(content_width))
 
-    for element in self.elements:
+    for idx, element in enumerate(self.elements):
       if element.type == ElementType.BR:
         current_y += element.margin_bottom
         continue
@@ -305,26 +345,25 @@ class HtmlRenderer(Widget):
       if current_y > rect.y + rect.height:
         break
 
-      if element.content:
-        wrapped_lines = self._wrap_segments(element.content, element.font_size, int(content_width))
-        for line in wrapped_lines:
-          if current_y < rect.y - element.font_size:
-            current_y += element.font_size * element.line_height
-            continue
-          if current_y > rect.y + rect.height:
-            break
-
-          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
-          draw_x = text_x + padding
-          # Draw each segment in the line with the proper font style
-          for seg_text, seg_weight, seg_italic in line:
-            font = self._get_font(seg_weight, seg_italic)
-            rl.draw_text_ex(font, seg_text, rl.Vector2(draw_x, current_y), element.font_size, 0, self._text_color)
-            size_vec = measure_text_cached(font, seg_text, element.font_size, 0)
-            draw_x += size_vec.x
-
-          # Move to next line
+      wrapped_lines = self._wrapped_elements[idx] if idx < len(self._wrapped_elements) else []
+      for line in wrapped_lines:
+        if current_y < rect.y - element.font_size:
           current_y += element.font_size * element.line_height
+          continue
+        if current_y > rect.y + rect.height:
+          break
+
+        text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
+        draw_x = text_x + PADDING
+        # Draw each segment in the line with the proper font style
+        for seg_text, seg_weight, seg_italic in line:
+          font = self._get_font(seg_weight, seg_italic)
+          rl.draw_text_ex(font, seg_text, rl.Vector2(draw_x, current_y), element.font_size, 0, self._text_color)
+          size_vec = measure_text_cached(font, seg_text, element.font_size, 0)
+          draw_x += size_vec.x
+
+        # Move to next line
+        current_y += element.font_size * element.line_height
 
       # Apply bottom margin
       current_y += element.margin_bottom
@@ -332,25 +371,9 @@ class HtmlRenderer(Widget):
     return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
-    total_height = 0.0
-    padding = 20
-    usable_width = content_width - (padding * 2)
-
-    for element in self.elements:
-      if element.type == ElementType.BR:
-        total_height += element.margin_bottom
-        continue
-
-      total_height += element.margin_top
-
-      if element.content:
-        wrapped_lines = self._wrap_segments(element.content, element.font_size, int(usable_width))
-        for _ in wrapped_lines:
-          total_height += element.font_size * element.line_height
-
-      total_height += element.margin_bottom
-
-    return total_height
+    usable_width = max(0, content_width - (PADDING * 2))
+    self._ensure_wrap_and_height_cache(int(usable_width))
+    return self._cached_total_height
 
 
 class HtmlModal(Widget):
