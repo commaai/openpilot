@@ -172,15 +172,11 @@ class HtmlRenderer(Widget):
   def __init__(self, file_path: str | None = None, text: str | None = None, text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
     super().__init__()
     self._text_color = text_color
-    self._normal_font = gui_app.font(FontWeight.NORMAL)
-    self._bold_font = gui_app.font(FontWeight.BOLD)
-    self._italic_font = gui_app.font(FontWeight.NORMAL, italic=True)
-    self._bold_italic_font = gui_app.font(FontWeight.BOLD, italic=True)
     self._fonts: dict[tuple[FontWeight, bool], Any] = {
-      (FontWeight.NORMAL, False): self._normal_font,
-      (FontWeight.BOLD, False): self._bold_font,
-      (FontWeight.NORMAL, True): self._italic_font,
-      (FontWeight.BOLD, True): self._bold_italic_font,
+      (FontWeight.NORMAL, False): gui_app.font(FontWeight.NORMAL),
+      (FontWeight.BOLD, False): gui_app.font(FontWeight.BOLD),
+      (FontWeight.NORMAL, True): gui_app.font(FontWeight.NORMAL, italic=True),
+      (FontWeight.BOLD, True): gui_app.font(FontWeight.BOLD, italic=True),
     }
     self._indent_level = 0
 
@@ -214,16 +210,6 @@ class HtmlRenderer(Widget):
     self.parse_html_content(content)
 
   def parse_html_content(self, html_content: str) -> None:
-    # Remove HTML comments and strip doctype/head/body tags (operate on the passed-in content)
-    import re
-
-    # Remove HTML comments
-    html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
-
-    # Remove DOCTYPE, html, head, body tags but keep their content
-    html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
-    html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
-
     parser = _Parser(self.styles)
     parser.feed(html_content)
     parser._flush_current_block()
