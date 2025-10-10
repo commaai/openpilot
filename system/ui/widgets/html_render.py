@@ -43,7 +43,7 @@ ITALIC_TAGS = ('i', 'em')
 @dataclass
 class HtmlElement:
   type: ElementType
-  # content is a list of (text, FontWeight, is_italic) segments for inline styling
+  # content is a list of (text, FontWeight, is_italics) segments for inline styling
   content: list[tuple[str, FontWeight, bool]]
   font_size: int
   font_weight: FontWeight
@@ -230,6 +230,24 @@ class HtmlRenderer(Widget):
   def _get_font(self, weight: FontWeight, italic: bool = False):
     return self._fonts[(weight, bool(italic))]
 
+  def _merge_adjacent_segments(self, line: list[tuple[str, FontWeight, bool]]) -> list[tuple[str, FontWeight, bool]]:
+    """
+    Merge adjacent segments that have the same (weight, italic) into a single segment.
+    This reduces draw/measure calls for pieces that can be drawn together.
+    """
+    if not line:
+      return []
+    merged: list[tuple[str, FontWeight, bool]] = []
+    cur_text, cur_weight, cur_italic = line[0]
+    for text, weight, italic in line[1:]:
+      if weight == cur_weight and bool(italic) == bool(cur_italic):
+        cur_text += text
+      else:
+        merged.append((cur_text, cur_weight, cur_italic))
+        cur_text, cur_weight, cur_italic = text, weight, italic
+    merged.append((cur_text, cur_weight, cur_italic))
+    return merged
+
   def _wrap_segments(self, segments: list[tuple[str, FontWeight, bool]], font_size: int, content_width: int) -> list[list[tuple[str, FontWeight, bool]]]:
     """
     Wrap segments into lines. Each line is a list of (text_piece, FontWeight, is_italic).
@@ -258,7 +276,6 @@ class HtmlRenderer(Widget):
       piece_w = size_vec.x
 
       if current_line and (current_width + piece_w) > content_width:
-        # commit current line
         lines.append(current_line)
         current_line = []
         current_width = 0.0
@@ -269,7 +286,9 @@ class HtmlRenderer(Widget):
     if current_line:
       lines.append(current_line)
 
-    return lines
+    # Merge adjacent segments on each line that share the same font style
+    merged_lines = [self._merge_adjacent_segments(l) for l in lines]
+    return merged_lines
 
   def _render(self, rect: rl.Rectangle):
     # TODO: speed up by removing duplicate calculations across renders
