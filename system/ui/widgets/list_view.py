@@ -260,7 +260,7 @@ class ListItem(Widget):
                action_item: ItemAction | None = None):
     super().__init__()
     self.title = title
-    self.icon = icon
+    self.set_icon(icon)
     self._description = description
     self.description_visible = description_visible
     self.callback = callback
@@ -268,7 +268,6 @@ class ListItem(Widget):
 
     self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
     self._font = gui_app.font(FontWeight.NORMAL)
-    self._icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE) if self.icon else None
 
     self._html_renderer = HtmlRenderer(text="", text_size={ElementType.P: ITEM_DESC_FONT_SIZE},
                                        text_color=ITEM_DESC_TEXT_COLOR)
@@ -352,6 +351,10 @@ class ListItem(Widget):
         # Right item was clicked/activated
         if self.callback:
           self.callback()
+
+  def set_icon(self, icon: str | None):
+    self.icon = icon
+    self._icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE) if self.icon else None
 
   def set_description(self, description: str | Callable[[], str] | None):
     self._description = description

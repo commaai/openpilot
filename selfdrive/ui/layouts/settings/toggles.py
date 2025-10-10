@@ -260,6 +260,10 @@ class TogglesLayout(Widget):
 
   def _toggle_callback(self, state: bool, param: str):
     print(f"Toggled {param} to {state}")
+    if param == "ExperimentalMode":
+      icon = "experimental.png" if state else "experimental_white.png"
+      self._toggles[param].set_icon(icon)
+
     self._params.put_bool(param, state)
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True)
