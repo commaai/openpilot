@@ -78,6 +78,29 @@ class DeveloperLayout(Widget):
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
+    # Restart-needed semantics: engaged lock + restart warning + onroad cycle
+    self._restart_items = {
+      "JoystickDebugMode": self._joystick_toggle,
+      "LongitudinalManeuverMode": self._long_maneuver_toggle,
+      "AlphaLongitudinalEnabled": self._alpha_long_toggle,
+    }
+    self._locked_restart: set[str] = set()
+    for key, item in self._restart_items.items():
+      try:
+        locked = self._params.get_bool(key + "Lock")
+      except Exception:
+        locked = False
+      if locked:
+        self._locked_restart.add(key)
+        item.action_item.set_enabled(False)
+      else:
+        # append restart warning to descriptions
+        desc = item.description or ""
+        if desc:
+          item.set_description(desc + " Changing this setting will restart openpilot if the car is powered on.")
+        else:
+          item.set_description("Changing this setting will restart openpilot if the car is powered on.")
+
   def _render(self, rect):
     self._scroller.render(rect)
 
@@ -85,31 +108,45 @@ class DeveloperLayout(Widget):
     self._update_toggles()
 
   def _update_toggles(self):
-    offroad = not ui_state.started
-
-    # Hide Param-like toggles on release branches (SSH key mgmt remains)
+    # Hide non-release toggles on release builds
     for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle, self._alpha_long_toggle):
       item.set_visible(not self._is_release)
 
     # Enable/disable on offroad (alpha toggle stays enabled; CP gating below may override)
+    # TODO: we can do a cycle to offroad on toggle change instead of disabling toggles
     for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle):
-      item.action_item.set_enabled(offroad)
+      item.action_item.set_enabled(ui_state.is_offroad)
 
     # CP gating
     if ui_state.CP is not None:
       alpha_avail = ui_state.CP.alphaLongitudinalAvailable
-      if (not alpha_avail) or self._is_release:
+      if not alpha_avail or self._is_release:
         self._params.remove("AlphaLongitudinalEnabled")
         self._alpha_long_toggle.action_item.set_enabled(False)
-      self._alpha_long_toggle.set_visible(alpha_avail and (not self._is_release))
 
-      self._long_maneuver_toggle.action_item.set_enabled(ui_state.has_longitudinal_control and offroad)
+      self._alpha_long_toggle.set_visible(alpha_avail and not self._is_release)
+
+      self._long_maneuver_toggle.action_item.set_enabled(ui_state.has_longitudinal_control and ui_state.is_offroad)
     else:
       self._long_maneuver_toggle.action_item.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
 
-    # Sync alpha toggle state from params (Qt refresh equivalent)
-    self._alpha_long_toggle.action_item.set_state(self._params.get_bool("AlphaLongitudinalEnabled"))
+    # TODO: make a param control list item so we don't need to manage internal state as much here
+    # refresh toggles from params to mirror external changes
+    for key, item in (
+      ("AdbEnabled", self._adb_toggle),
+      ("SshEnabled", self._ssh_toggle),
+      ("JoystickDebugMode", self._joystick_toggle),
+      ("LongitudinalManeuverMode", self._long_maneuver_toggle),
+      ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
+    ):
+      item.action_item.set_state(self._params.get_bool(key))
+
+  def _update_state(self):
+    # Match toggles.py: restart-needed toggles disabled while engaged (unless locked)
+    for key, item in self._restart_items.items():
+      if key not in self._locked_restart:
+        item.action_item.set_enabled(not ui_state.engaged)
 
   def _on_enable_adb(self, state: bool):
     self._params.put_bool("AdbEnabled", state)
@@ -119,16 +156,17 @@ class DeveloperLayout(Widget):
 
   def _on_joystick_debug_mode(self, state: bool):
     self._params.put_bool("JoystickDebugMode", state)
-    if state:
-      self._params.put_bool("LongitudinalManeuverMode", False)
-      self._long_maneuver_toggle.action_item.set_state(False)
+    self._params.put_bool("LongitudinalManeuverMode", False)
+    self._long_maneuver_toggle.action_item.set_state(False)
+    self._params.put_bool("OnroadCycleRequested", True)
 
   def _on_long_maneuver_mode(self, state: bool):
     self._params.put_bool("LongitudinalManeuverMode", state)
-    if state:
-      self._params.put_bool("JoystickDebugMode", False)
-      self._joystick_toggle.action_item.set_state(False)
+    self._params.put_bool("JoystickDebugMode", False)
+    self._joystick_toggle.action_item.set_state(False)
+    self._params.put_bool("OnroadCycleRequested", True)
 
   def _on_alpha_long_enabled(self, state: bool):
     self._params.put_bool("AlphaLongitudinalEnabled", state)
+    self._params.put_bool("OnroadCycleRequested", True)
     self._update_toggles()
