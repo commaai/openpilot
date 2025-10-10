@@ -206,7 +206,7 @@ class HtmlRenderer(Widget):
     if text_size is None:
       text_size = {}
 
-    # Untagged text defaults to <p>
+    # Block styles; Untagged text defaults to <p>
     self.styles: dict[ElementType, dict[str, Any]] = {
       ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
       ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "margin_top": 24, "margin_bottom": 12},
@@ -321,10 +321,10 @@ class HtmlRenderer(Widget):
     total_height = 0.0
 
     for element in self.elements:
-      # Add top margin
+      # Include top margin
       total_height += element.margin_top
 
-      # Add wrapped lines height
+      # Include wrapped lines height
       if element.content:
         wrapped_lines = self._wrap_segments(element.content, element.font_size, int(usable_width))
         wrapped_per_element.append(wrapped_lines)
@@ -333,7 +333,7 @@ class HtmlRenderer(Widget):
       else:
         wrapped_per_element.append([])
 
-      # Add bottom margin
+      # Include bottom margin
       total_height += element.margin_bottom
 
     # Cache results
