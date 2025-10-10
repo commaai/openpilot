@@ -1,4 +1,4 @@
-from openpilot.common.params import Params
+from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller import Scroller
@@ -33,82 +33,160 @@ class TogglesLayout(Widget):
     super().__init__()
     self._params = Params()
 
-    self._enable_openpilot_toggle = toggle_item(
-      "Enable openpilot",
-      DESCRIPTIONS["OpenpilotEnabledToggle"],
-      self._params.get_bool("OpenpilotEnabledToggle"),
-      callback=self._openpilot_enabled_toggled,
-      icon="chffr_wheel.png",
-    )
-
-    self._experimental_mode_toggle = toggle_item(
-      "Experimental Mode",
-      initial_state=self._params.get_bool("ExperimentalMode"),
-      callback=self._experimental_mode_toggled,
-      icon="experimental_white.png",
-    )
-
-    self._record_front_toggle = toggle_item(
-      "Record and Upload Driver Camera",
-      DESCRIPTIONS["RecordFront"],
-      self._params.get_bool("RecordFront"),
-      callback=self._record_front_toggled,
-      icon="monitoring.png",
-    )
-
-    self._record_audio_toggle = toggle_item(
-      "Record and Upload Microphone Audio",
-      DESCRIPTIONS["RecordAudio"],
-      self._params.get_bool("RecordAudio"),
-      callback=self._record_audio_toggled,
-      icon="microphone.png",
-    )
-
-    items = [
-      self._enable_openpilot_toggle,
-      self._experimental_mode_toggle,
-      toggle_item(
+    # param, title, desc, icon, needs_restart
+    self._toggle_defs = {
+      "OpenpilotEnabledToggle": (
+        "Enable openpilot",
+        DESCRIPTIONS["OpenpilotEnabledToggle"],
+        "chffr_wheel.png",
+        True,
+      ),
+      "ExperimentalMode": (
+        "Experimental Mode",
+        "",
+        "experimental_white.png",
+        False,
+      ),
+      "DisengageOnAccelerator": (
         "Disengage on Accelerator Pedal",
         DESCRIPTIONS["DisengageOnAccelerator"],
-        self._params.get_bool("DisengageOnAccelerator"),
-        callback=self._disengage_on_accel_toggled,
-        icon="disengage_on_accelerator.png",
+        "disengage_on_accelerator.png",
+        False,
       ),
-      multiple_button_item(
-        "Driving Personality",
-        DESCRIPTIONS["LongitudinalPersonality"],
-        buttons=["Aggressive", "Standard", "Relaxed"],
-        button_width=255,
-        callback=self._set_longitudinal_personality,
-        selected_index=self._params.get("LongitudinalPersonality", return_default=True),
-        icon="speed_limit.png"
-      ),
-      toggle_item(
+      "IsLdwEnabled":(
         "Enable Lane Departure Warnings",
         DESCRIPTIONS["IsLdwEnabled"],
-        self._params.get_bool("IsLdwEnabled"),
-        callback=self._ldw_toggled,
-        icon="warning.png",
+        "warning.png",
+        False,
       ),
-      toggle_item(
+      "AlwaysOnDM": (
         "Always-On Driver Monitoring",
         DESCRIPTIONS["AlwaysOnDM"],
-        self._params.get_bool("AlwaysOnDM"),
-        callback=self._always_on_dm_toggled,
-        icon="monitoring.png",
+        "monitoring.png",
+        False,
       ),
-      self._record_front_toggle,
-      self._record_audio_toggle,
-      toggle_item(
+      "RecordFront": (
+        "Record and Upload Driver Camera",
+        DESCRIPTIONS["RecordFront"],
+        "monitoring.png",
+        True,
+      ),
+      "RecordAudio": (
+        "Record and Upload Microphone Audio",
+        DESCRIPTIONS["RecordAudio"],
+        "microphone.png",
+        True,
+      ),
+      "IsMetric": (
         "Use Metric System",
         DESCRIPTIONS["IsMetric"],
-        self._params.get_bool("IsMetric"),
-        callback=self._is_metric_toggled,
-        icon="metric.png"
+        "metric.png",
+        False,
       ),
-    ]
+    }
 
-    self._scroller = Scroller(items, line_separator=True, spacing=0)
+    self._toggles = {}
+    # items = []
+
+    for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
+      print(icon)
+      toggle = toggle_item(
+        title,
+        desc,
+        self._params.get_bool(param),
+        callback=lambda state, p=param: self._toggle_callback(state, p),
+        icon=icon,
+      )
+
+      try:
+        locked = self._params.get_bool(param + "Lock")
+      except UnknownKeyName:
+        locked = False
+      toggle.action_item.set_enabled(not locked)
+
+      if needs_restart and not locked:
+        toggle.set_description(toggle.description + " Changing this setting will restart openpilot if the car is powered on.")
+
+        # TODO engaged changed
+
+      self._toggles[param] = toggle
+
+    # self._enable_openpilot_toggle = toggle_item(
+    #   "Enable openpilot",
+    #   DESCRIPTIONS["OpenpilotEnabledToggle"],
+    #   self._params.get_bool("OpenpilotEnabledToggle"),
+    #   callback=self._openpilot_enabled_toggled,
+    #   icon="chffr_wheel.png",
+    # )
+    #
+    # self._experimental_mode_toggle = toggle_item(
+    #   "Experimental Mode",
+    #   initial_state=self._params.get_bool("ExperimentalMode"),
+    #   callback=self._experimental_mode_toggled,
+    #   icon="experimental_white.png",
+    # )
+    #
+    # self._record_front_toggle = toggle_item(
+    #   "Record and Upload Driver Camera",
+    #   DESCRIPTIONS["RecordFront"],
+    #   self._params.get_bool("RecordFront"),
+    #   callback=self._record_front_toggled,
+    #   icon="monitoring.png",
+    # )
+    #
+    # self._record_audio_toggle = toggle_item(
+    #   "Record and Upload Microphone Audio",
+    #   DESCRIPTIONS["RecordAudio"],
+    #   self._params.get_bool("RecordAudio"),
+    #   callback=self._record_audio_toggled,
+    #   icon="microphone.png",
+    # )
+    #
+    # items = [
+    #   self._enable_openpilot_toggle,
+    #   self._experimental_mode_toggle,
+    #   toggle_item(
+    #     "Disengage on Accelerator Pedal",
+    #     DESCRIPTIONS["DisengageOnAccelerator"],
+    #     self._params.get_bool("DisengageOnAccelerator"),
+    #     callback=self._disengage_on_accel_toggled,
+    #     icon="disengage_on_accelerator.png",
+    #   ),
+    #   multiple_button_item(
+    #     "Driving Personality",
+    #     DESCRIPTIONS["LongitudinalPersonality"],
+    #     buttons=["Aggressive", "Standard", "Relaxed"],
+    #     button_width=255,
+    #     callback=self._set_longitudinal_personality,
+    #     selected_index=self._params.get("LongitudinalPersonality", return_default=True),
+    #     icon="speed_limit.png"
+    #   ),
+    #   toggle_item(
+    #     "Enable Lane Departure Warnings",
+    #     DESCRIPTIONS["IsLdwEnabled"],
+    #     self._params.get_bool("IsLdwEnabled"),
+    #     callback=self._ldw_toggled,
+    #     icon="warning.png",
+    #   ),
+    #   toggle_item(
+    #     "Always-On Driver Monitoring",
+    #     DESCRIPTIONS["AlwaysOnDM"],
+    #     self._params.get_bool("AlwaysOnDM"),
+    #     callback=self._always_on_dm_toggled,
+    #     icon="monitoring.png",
+    #   ),
+    #   self._record_front_toggle,
+    #   self._record_audio_toggle,
+    #   toggle_item(
+    #     "Use Metric System",
+    #     DESCRIPTIONS["IsMetric"],
+    #     self._params.get_bool("IsMetric"),
+    #     callback=self._is_metric_toggled,
+    #     icon="metric.png"
+    #   ),
+    # ]
+
+    self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
   def _update_state(self):
     """
@@ -144,9 +222,15 @@ class TogglesLayout(Widget):
       toggles["ExperimentalMode"]->setConfirmation(true, true);
     }
     """
-    self._enable_openpilot_toggle.action_item.set_enabled(not ui_state.engaged)
-    self._record_front_toggle.action_item.set_enabled(not ui_state.engaged)
-    self._record_audio_toggle.action_item.set_enabled(not ui_state.engaged)
+    # self._enable_openpilot_toggle.action_item.set_enabled(not ui_state.engaged)
+    # self._record_front_toggle.action_item.set_enabled(not ui_state.engaged)
+    # self._record_audio_toggle.action_item.set_enabled(not ui_state.engaged)
+    # TODO: do programatically
+
+    for toggle_def in self._toggle_defs:
+      print(toggle_def, self._toggle_defs[toggle_def][3])
+      if self._toggle_defs[toggle_def][3]:  # needs_restart, block while engaged
+        self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
 
   def show_event(self):
     self._update_toggles()
@@ -220,13 +304,13 @@ class TogglesLayout(Widget):
 
     if ui_state.CP is not None:
       if ui_state.has_longitudinal_control:
-        self._experimental_mode_toggle.action_item.set_enabled(True)
-        self._experimental_mode_toggle.set_description(e2e_description)
+        self._toggles["ExperimentalMode"].action_item.set_enabled(True)
+        self._toggles["ExperimentalMode"].set_description(e2e_description)
         # long_personality_setting->setEnabled(true);
       else:
         # no long for now
-        self._experimental_mode_toggle.action_item.set_enabled(False)
-        self._experimental_mode_toggle.action_item.set_state(False)
+        self._toggles["ExperimentalMode"].action_item.set_enabled(False)
+        self._toggles["ExperimentalMode"].action_item.set_state(False)
         # long_personality_setting->setEnabled(false);
         self._params.remove("ExperimentalMode")
 
@@ -239,10 +323,16 @@ class TogglesLayout(Widget):
           else:
             long_desc = "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 
-        self._experimental_mode_toggle.set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
+        self._toggles["ExperimentalMode"].set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
 
   def _render(self, rect):
     self._scroller.render(rect)
+
+  def _toggle_callback(self, state: bool, param: str):
+    print(f"Toggled {param} to {state}")
+    if self._toggle_defs[param][3]:
+      self._params.put_bool("OnroadCycleRequested", True)
+    self._params.put_bool(param, state)
 
   def _experimental_mode_toggled(self, state: bool):
     self._params.put_bool("ExperimentalMode", state)
