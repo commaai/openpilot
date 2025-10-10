@@ -19,6 +19,7 @@ if __name__ == "__main__":
   t = 10 if len(sys.argv) < 2 else int(sys.argv[1])
   while True:
     print("setting alert update")
+    params.put_bool("UpdateAvailable", True)
     params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
 
     time.sleep(t)
