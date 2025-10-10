@@ -1,6 +1,6 @@
 import re
 import pyray as rl
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -8,7 +8,6 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 LIST_INDENT_PX = 40
 
@@ -26,68 +25,16 @@ class ElementType(Enum):
   BR = "br"
 
 
-@dataclass
-class ElementInfo:
-  type: ElementType
-  is_start_tag: bool = False
-  is_end_tag: bool = False
-  style_override: dict[str, Any] = field(default_factory=dict)
-
-  @classmethod
-  def from_token(cls, token: str) -> 'ElementInfo | None':
-    is_start_tag, is_end_tag, tag = cls.is_tag(token)
-    # print('is_start_tag, is_end_tag, tag', is_start_tag, is_end_tag, tag)
-    if tag is not None:
-      return cls(tag, is_start_tag, is_end_tag, cls.parse_style(token))
-    return None
-
-  @staticmethod
-  def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
-    m_start = START_TAG_RE.fullmatch(token)
-    m_end = END_TAG_RE.fullmatch(token)
-    tag_name = m_start.group(1) if m_start else (m_end.group(1) if m_end else None)
-    tag = ElementType(tag_name) if tag_name else None
-    return bool(m_start), bool(m_end), tag
-
-  @staticmethod
-  def parse_style(token: str) -> dict[str, int | str]:
-    """
-    Parses style attributes from an HTML tag.
-    Input: <h2 style="text-align: center; font-size: 50px;">
-    Output: {'text-align': 'center', 'font-size': 50}
-    """
-
-    style_match = STYLE_RE.search(token)
-    styles = {}
-    if style_match:
-      style_str = style_match.group(1)
-      for item in style_str.split(';'):
-        item = item.strip()
-        if not len(item):
-          continue
-
-        key, value = item.split(':')
-        px_match = PX_RE.fullmatch(value.strip())
-        styles[key.strip()] = int(px_match.group(1)) if px_match else value.strip()
-    return styles
-
-  def __post_init__(self):
-    # assert no unsupported styles
-    unsupported_styles = set(self.style_override) - set(SUPPORTED_STYLES)
-    assert not unsupported_styles, f"Unsupported styles: {unsupported_styles}"
-
-
-SUPPORTED_STYLES = {"font-size", "text-align", "font-weight"}
-
-
 TAG_NAMES = '|'.join([t.value for t in ElementType])
-START_TAG_RE = re.compile(f'<({TAG_NAMES})(?:\\s+[^>]*)?>')
-END_TAG_RE = re.compile(f'</({TAG_NAMES})\\s*>')
-
-STYLE_RE = re.compile(r'style="([^"]+)"')
-PX_RE = re.compile(r'(\d+)px')
+START_TAG_RE = re.compile(f'<({TAG_NAMES})>')
+END_TAG_RE = re.compile(f'</({TAG_NAMES})>')
 
 
+def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
+  supported_tag = bool(START_TAG_RE.fullmatch(token))
+  supported_end_tag = bool(END_TAG_RE.fullmatch(token))
+  tag = ElementType(token[1:-1].strip('/')) if supported_tag or supported_end_tag else None
+  return supported_tag, supported_end_tag, tag
 
 
 @dataclass
@@ -96,7 +43,6 @@ class HtmlElement:
   content: str
   font_size: int
   font_weight: FontWeight
-  text_align: str
   margin_top: int
   margin_bottom: int
   line_height: float = 1.2
@@ -112,21 +58,20 @@ class HtmlRenderer(Widget):
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._indent_level = 0
 
-    # TODO: remove this and use new style support
     if text_size is None:
       text_size = {}
 
     # Untagged text defaults to <p>
     self.styles: dict[ElementType, dict[str, Any]] = {
-      ElementType.H1: {"font-size": 68, "font-weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
-      ElementType.H2: {"font-size": 60, "font-weight": FontWeight.BOLD, "margin_top": 24, "margin_bottom": 12},
-      ElementType.H3: {"font-size": 52, "font-weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 10},
-      ElementType.H4: {"font-size": 48, "font-weight": FontWeight.BOLD, "margin_top": 16, "margin_bottom": 8},
-      ElementType.H5: {"font-size": 44, "font-weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
-      ElementType.H6: {"font-size": 40, "font-weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
-      ElementType.P: {"font-size": text_size.get(ElementType.P, 38), "font-weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
-      ElementType.LI: {"font-size": 38, "font-weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
-      ElementType.BR: {"font-size": 0, "font-weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
+      ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
+      ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "margin_top": 24, "margin_bottom": 12},
+      ElementType.H3: {"size": 52, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 10},
+      ElementType.H4: {"size": 48, "weight": FontWeight.BOLD, "margin_top": 16, "margin_bottom": 8},
+      ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
+      ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
+      ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
+      ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
 
     self.elements: list[HtmlElement] = []
@@ -159,43 +104,37 @@ class HtmlRenderer(Widget):
       nonlocal current_content
       nonlocal current_tag
 
-      # If no tag is set, default to closing paragraph so we don't lose text
+      # If no tag is set, default to paragraph so we don't lose text
       if current_tag is None:
-        current_tag = ElementInfo(ElementType.P)
+        current_tag = ElementType.P
 
       text = ' '.join(current_content).strip()
       current_content = []
       if text:
-        if current_tag.type == ElementType.LI:
+        if current_tag == ElementType.LI:
           text = '• ' + text
         self._add_element(current_tag, text)
 
     current_content: list[str] = []
-    current_tag: ElementInfo | None = None
+    current_tag: ElementType | None = None
     for token in tokens:
-      tag = ElementInfo.from_token(token)
-      print('token:', token, 'tag:', tag)
+      is_start_tag, is_end_tag, tag = is_tag(token)
       if tag is not None:
-        if tag.type == ElementType.BR:
-          # Close current tag and add a line break
-          close_tag()
-          # self._add_element(ElementInfo(ElementType.BR, False, False), "")
-          self._add_element(tag, "")
+        if tag == ElementType.BR:
+          self._add_element(ElementType.BR, "")
 
-        elif tag.is_start_tag or tag.is_end_tag:
+        elif is_start_tag or is_end_tag:
           # Always add content regardless of opening or closing tag
           close_tag()
 
-          print(token)
-          if tag.is_start_tag:
-            # current_tag = ElementInfo(tag, parse_style(token))
+          if is_start_tag:
             current_tag = tag
           else:
             current_tag = None
 
         # increment after we add the content for the current tag
-        if tag.type == ElementType.UL:
-          self._indent_level = self._indent_level + 1 if tag.is_start_tag else max(0, self._indent_level - 1)
+        if tag == ElementType.UL:
+          self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
       else:
         current_content.append(token)
@@ -203,28 +142,20 @@ class HtmlRenderer(Widget):
     if current_content:
       close_tag()
 
-  def _add_element(self, element_info: ElementInfo, content: str) -> None:
-    style = self.styles[element_info.type].copy()
-    style.update(element_info.style_override)
-
-    print('  adding element:', element_info.type, 'content:', content, 'style:', style, 'indent_level:', self._indent_level)
+  def _add_element(self, element_type: ElementType, content: str) -> None:
+    style = self.styles[element_type]
 
     element = HtmlElement(
-      type=element_info.type,
+      type=element_type,
       content=content,
-      font_size=style["font-size"],
-      font_weight=style["font-weight"],
-      text_align=style.get("text-align", "left"),
+      font_size=style["size"],
+      font_weight=style["weight"],
       margin_top=style["margin_top"],
       margin_bottom=style["margin_bottom"],
       indent_level=self._indent_level,
     )
 
-    assert element.text_align == "left" or element.indent_level == 0, "Indentation only supported for left-aligned text"
-
     self.elements.append(element)
-
-    # print('   elements now:', self.elements)
 
   def _render(self, rect: rl.Rectangle):
     # TODO: speed up by removing duplicate calculations across renders
@@ -232,15 +163,9 @@ class HtmlRenderer(Widget):
     padding = 20
     content_width = rect.width - (padding * 2)
 
-    # print('rendering!')
-
     for element in self.elements:
-      # print(' rendering element:', element.type, 'content:', element.content)
       if element.type == ElementType.BR:
-
-        # print('  br, old y:', current_y)
         current_y += element.margin_bottom
-        # print('  br, new y:', current_y)
         continue
 
       current_y += element.margin_top
@@ -259,15 +184,7 @@ class HtmlRenderer(Widget):
           if current_y > rect.y + rect.height:
             break
 
-          if element.text_align == "center":
-            text_width = measure_text_cached(font, line, element.font_size, 0).x
-            text_x = rect.x + (rect.width - text_width) / 2
-          elif element.text_align == "right":
-            text_width = measure_text_cached(font, line, element.font_size, 0).x
-            text_x = rect.x + rect.width - text_width - padding
-          else:  # left align
-            text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
-
+          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
           rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
 
           current_y += element.font_size * element.line_height

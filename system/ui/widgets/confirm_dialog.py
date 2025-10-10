@@ -3,33 +3,27 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.label import Label
-from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.scroller import Scroller
 
-OUTER_MARGIN = 200
-RICH_OUTER_MARGIN = 100
+DIALOG_WIDTH = 1748
+DIALOG_HEIGHT = 690
 BUTTON_HEIGHT = 160
 MARGIN = 50
-TEXT_PADDING = 10
+TEXT_AREA_HEIGHT_REDUCTION = 200
 BACKGROUND_COLOR = rl.Color(27, 27, 27, 255)
 
 
 class ConfirmDialog(Widget):
-  def __init__(self, text: str, confirm_text: str, cancel_text: str = "Cancel", rich: bool = False):
+  def __init__(self, text: str, confirm_text: str, cancel_text: str = "Cancel"):
     super().__init__()
-    # self._label = Label(text, 70, FontWeight.BOLD, text_color=rl.Color(201, 201, 201, 255))
-    self._html_renderer = HtmlRenderer(text=text)
+    self._label = Label(text, 70, FontWeight.BOLD, text_color=rl.Color(201, 201, 201, 255))
     self._cancel_button = Button(cancel_text, self._cancel_button_callback)
     self._confirm_button = Button(confirm_text, self._confirm_button_callback, button_style=ButtonStyle.PRIMARY)
-    self._rich = rich
     self._dialog_result = DialogResult.NO_ACTION
     self._cancel_text = cancel_text
-    self._scroller = Scroller([self._html_renderer], line_separator=False, spacing=0)
 
   def set_text(self, text):
-    # self._label.set_text(text)
-    self._html_renderer.parse_html_content(text)
+    self._label.set_text(text)
 
   def reset(self):
     self._dialog_result = DialogResult.NO_ACTION
@@ -41,11 +35,9 @@ class ConfirmDialog(Widget):
     self._dialog_result = DialogResult.CONFIRM
 
   def _render(self, rect: rl.Rectangle):
-    dialog_x = OUTER_MARGIN if not self._rich else RICH_OUTER_MARGIN
-    dialog_y = OUTER_MARGIN if not self._rich else RICH_OUTER_MARGIN
-    dialog_width = gui_app.width - 2 * dialog_x
-    dialog_height = gui_app.height - 2 * dialog_y
-    dialog_rect = rl.Rectangle(dialog_x, dialog_y, dialog_width, dialog_height)
+    dialog_x = (gui_app.width - DIALOG_WIDTH) / 2
+    dialog_y = (gui_app.height - DIALOG_HEIGHT) / 2
+    dialog_rect = rl.Rectangle(dialog_x, dialog_y, DIALOG_WIDTH, DIALOG_HEIGHT)
 
     bottom = dialog_rect.y + dialog_rect.height
     button_width = (dialog_rect.width - 3 * MARGIN) // 2
@@ -57,10 +49,8 @@ class ConfirmDialog(Widget):
 
     rl.draw_rectangle_rec(dialog_rect, BACKGROUND_COLOR)
 
-    text_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y + TEXT_PADDING,
-                             dialog_rect.width - 2 * MARGIN, dialog_rect.height - BUTTON_HEIGHT - MARGIN - TEXT_PADDING * 2)
-    self._html_renderer.set_rect(text_rect)
-    self._scroller.render(text_rect)
+    text_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y, dialog_rect.width - 2 * MARGIN, dialog_rect.height - TEXT_AREA_HEIGHT_REDUCTION)
+    self._label.render(text_rect)
 
     if rl.is_key_pressed(rl.KeyboardKey.KEY_ENTER):
       self._dialog_result = DialogResult.CONFIRM
