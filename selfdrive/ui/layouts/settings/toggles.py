@@ -209,8 +209,7 @@ class TogglesLayout(Widget):
       def confirm_callback(result: int):
         if result == DialogResult.CONFIRM:
           self._params.put_bool("ExperimentalMode", True)
-          # TODO: uncomment
-          # self._params.put_bool("ExperimentalModeConfirmed", True)
+          self._params.put_bool("ExperimentalModeConfirmed", True)
         else:
           self._toggles["ExperimentalMode"].action_item.set_state(False)
         self._update_experimental_mode_icon()

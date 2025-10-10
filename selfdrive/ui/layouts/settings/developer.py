@@ -96,7 +96,7 @@ class DeveloperLayout(Widget):
 
     # CP gating
     if ui_state.CP is not None:
-      alpha_avail = True  # ui_state.CP.alphaLongitudinalAvailable
+      alpha_avail = ui_state.CP.alphaLongitudinalAvailable
       if not alpha_avail or self._is_release:
         self._alpha_long_toggle.set_visible(False)
         self._params.remove("AlphaLongitudinalEnabled")
@@ -144,7 +144,6 @@ class DeveloperLayout(Widget):
   def _on_alpha_long_enabled(self, state: bool):
     if state:
       def confirm_callback(result: int):
-        print('got result', result)
         if result == DialogResult.CONFIRM:
           self._params.put_bool("AlphaLongitudinalEnabled", True)
           self._update_toggles()
@@ -152,9 +151,6 @@ class DeveloperLayout(Widget):
           self._alpha_long_toggle.action_item.set_state(False)
 
       # show confirmation dialog
-      content = (f"<h2 style=\"text-align: center;\">{self._alpha_long_toggle.title}</h2><br>"
-                 f"<p style=\"text-align: center; font-size: 50px\">{self._alpha_long_toggle.description}</p>")
-
       content = (f"<h2>{self._alpha_long_toggle.title}</h2><br>"
                  f"<p>{self._alpha_long_toggle.description}</p>")
 
