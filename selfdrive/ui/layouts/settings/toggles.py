@@ -1,9 +1,12 @@
+from cereal import log
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller import Scroller
 
 from openpilot.selfdrive.ui.ui_state import ui_state
+
+PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
 # Description constants
 DESCRIPTIONS = {
@@ -116,6 +119,7 @@ class TogglesLayout(Widget):
 
       self._toggles[param] = toggle
 
+      # insert longitudinal personality after NDOG toggle
       if param == "DisengageOnAccelerator":
         self._toggles["LongitudinalPersonality"] = self._long_personality_setting
 
@@ -157,8 +161,28 @@ class TogglesLayout(Widget):
     }
     """
 
+    """
+    void TogglesPanel::updateState(const UIState &s) {
+      const SubMaster &sm = *(s.sm);
+
+      if (sm.updated("selfdriveState")) {
+        auto personality = sm["selfdriveState"].getSelfdriveState().getPersonality();
+        if (personality != s.scene.personality && s.scene.started && isVisible()) {
+          long_personality_setting->setCheckedButton(static_cast<int>(personality));
+        }
+        uiState()->scene.personality = personality;
+      }
+    }
+    """
+
+    if ui_state.sm.updated["selfdriveState"]:
+      personality = PERSONALITY_TO_INT[ui_state.sm["selfdriveState"].personality]
+      if personality != ui_state.personality and ui_state.started:
+        self._long_personality_setting.action_item.set_selected_button(personality)
+      ui_state.personality = personality
+
+    # these toggles need restart, block while engaged
     for toggle_def in self._toggle_defs:
-      # needs_restart, block while engaged
       if self._toggle_defs[toggle_def][3]:
         self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
 
