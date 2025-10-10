@@ -140,10 +140,11 @@ class _Parser(HTMLParser):
     lines = data.split('\n')
     for i, line in enumerate(lines):
       if line or self.preserve_empty_lines:
-        # Default to <p>
         if self._current_block is None:
+          # Ignore whitespace only lines that are outside of blocks (between tags), regardless of preserve_empty_lines (fixes extra newlines between blocks)
           if not line.strip():
-            continue  # Ignore whitespace only lines that are outside of blocks (between tags), regardless of preserve_empty_lines (fixes extra newlines between blocks)
+            continue
+          # Default to <p>
           self._current_block = ElementType.P
           self._current_segments = []
         current_weight = self._inline_weight_stack[-1]
