@@ -423,7 +423,9 @@ def main():
   try:
     gui_app.init_window("Setup", 20)
     setup = Setup()
-    for _ in gui_app.render():
+    for showing_dialog in gui_app.render():
+      if showing_dialog:
+        continue
       setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     setup.close()
   except Exception as e:

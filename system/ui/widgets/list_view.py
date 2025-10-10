@@ -268,6 +268,7 @@ class ListItem(Widget):
     self._description = description
     self.description_visible = description_visible
     self.callback = callback
+    self.description_opened_callback: Callable | None = None
     self.action_item = action_item
 
     self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
@@ -279,6 +280,9 @@ class ListItem(Widget):
 
     # Cached properties for performance
     self._prev_description: str | None = self.description
+
+  def set_description_opened_callback(self, callback: Callable) -> None:
+    self.description_opened_callback = callback
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -302,6 +306,10 @@ class ListItem(Widget):
 
     if self.description:
       self.description_visible = not self.description_visible
+      # do callback first in case receiver changes description
+      if self.description_visible and self.description_opened_callback is not None:
+        self.description_opened_callback()
+
       content_width = int(self._rect.width - ITEM_PADDING * 2)
       self._rect.height = self.get_item_height(self._font, content_width)
 
