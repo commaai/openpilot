@@ -353,7 +353,7 @@ class GuiApplication:
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[(font_weight_file, False)] = font
 
-      # Load italic font if available
+      # Load italic font
       (base_name, font_ext) = os.path.splitext(str(font_weight_file))
       italic_file_name = f"{base_name.replace('Regular', '')}Italic{font_ext}"
       with as_file(FONT_DIR.joinpath(italic_file_name)) as fspath:
