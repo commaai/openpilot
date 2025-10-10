@@ -44,7 +44,7 @@ class DeveloperLayout(Widget):
       initial_state=self._params.get_bool("SshEnabled"),
       callback=lambda state: self._on_enable_ssh(state),
     )
-    self._ssh_keys = ssh_key_item("SSH Key", description=DESCRIPTIONS["ssh_key"])
+    self._ssh_keys = ssh_key_item("SSH Keys", description=DESCRIPTIONS["ssh_key"])
 
     self._joystick_toggle = toggle_item(
       "Joystick Debug Mode",
@@ -97,7 +97,7 @@ class DeveloperLayout(Widget):
 
     # CP gating
     if ui_state.CP is not None:
-      alpha_avail = ui_state.CP.getAlphaLongitudinalAvailable()
+      alpha_avail = ui_state.CP.alphaLongitudinalAvailable
       if (not alpha_avail) or self._is_release:
         self._params.remove("AlphaLongitudinalEnabled")
         self._alpha_long_toggle.action_item.set_enabled(False)
