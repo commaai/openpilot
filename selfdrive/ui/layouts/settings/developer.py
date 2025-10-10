@@ -34,7 +34,7 @@ class DeveloperLayout(Widget):
       "Enable ADB",
       description=DESCRIPTIONS["enable_adb"],
       initial_state=self._params.get_bool("AdbEnabled"),
-      callback=lambda state: self._on_enable_adb(state),
+      callback=self._on_enable_adb,
     )
 
     # SSH enable toggle + SSH key management
@@ -42,7 +42,7 @@ class DeveloperLayout(Widget):
       "Enable SSH",
       description="",
       initial_state=self._params.get_bool("SshEnabled"),
-      callback=lambda state: self._on_enable_ssh(state),
+      callback=self._on_enable_ssh,
     )
     self._ssh_keys = ssh_key_item("SSH Keys", description=DESCRIPTIONS["ssh_key"])
 
@@ -50,21 +50,21 @@ class DeveloperLayout(Widget):
       "Joystick Debug Mode",
       description="",
       initial_state=self._params.get_bool("JoystickDebugMode"),
-      callback=lambda state: self._on_joystick_debug_mode(state),
+      callback=self._on_joystick_debug_mode,
     )
 
     self._long_maneuver_toggle = toggle_item(
       "Longitudinal Maneuver Mode",
       description="",
       initial_state=self._params.get_bool("LongitudinalManeuverMode"),
-      callback=lambda state: self._on_long_maneuver_mode(state),
+      callback=self._on_long_maneuver_mode,
     )
 
     self._alpha_long_toggle = toggle_item(
       "openpilot Longitudinal Control (Alpha)",
       description=DESCRIPTIONS["alpha_longitudinal"],
       initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
-      callback=lambda state: self._on_alpha_long_enabled(state),
+      callback=self._on_alpha_long_enabled,
     )
 
     items = [
