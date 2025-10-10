@@ -63,6 +63,7 @@ class _Parser(HTMLParser):
     self.styles = styles
     self.elements: list[HtmlElement] = []
     self._indent = 0
+    self.preserve_empty_lines = True
 
     # Current block being built
     self._current_block: ElementType | None = None
@@ -136,7 +137,7 @@ class _Parser(HTMLParser):
     # Split by newlines first so each line becomes its own block
     lines = data.split('\n')
     for i, line in enumerate(lines):
-      if line:
+      if line or self.preserve_empty_lines:
         # Default to <p>
         if self._current_block is None:
           self._current_block = ElementType.P
