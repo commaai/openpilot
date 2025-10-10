@@ -28,8 +28,8 @@ class ElementType(Enum):
   BR = "br"
 
 
-INDENT_TAGS = ('ul', 'ol')
-TEXT_BLOCK_TAGS = (
+INDENT_TAGS = ['ul']  # TODO: add ol support
+TEXT_BLOCK_TAGS = [
   'p',
   'h1',
   'h2',
@@ -37,9 +37,9 @@ TEXT_BLOCK_TAGS = (
   'h4',
   'h5',
   'h6',
-)
-BOLD_TAGS = ('b', 'strong')
-ITALIC_TAGS = ('i', 'em')
+]
+BOLD_TAGS = ['b', 'strong']
+ITALIC_TAGS = ['i', 'em']
 
 
 @dataclass
