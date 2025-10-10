@@ -26,6 +26,7 @@ class ElementType(Enum):
   LI = "li"
   BR = "br"
 
+
 TEXT_BLOCK_TAGS = (
   'p',
   'h1',
@@ -37,6 +38,7 @@ TEXT_BLOCK_TAGS = (
 )
 BOLD_TAGS = ('b', 'strong')
 ITALIC_TAGS = ('i', 'em')
+
 
 @dataclass
 class HtmlElement:
@@ -240,7 +242,7 @@ class HtmlRenderer(Widget):
     for text, weight, italic in segments:
       if not text:
         continue
-      tokens = re.findall(r'\S+\s*', text)
+      tokens = re.findall(r'\s*\S+\s*', text)  # Preserve leading and trailing spaces
       if not tokens and text.strip() == "":
         tokens = [text]
       for t in tokens:
