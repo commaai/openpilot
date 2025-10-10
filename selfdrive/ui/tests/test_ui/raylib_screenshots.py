@@ -12,50 +12,65 @@ import pywinctl
 from cereal import log
 from cereal import messaging
 from cereal.messaging import PubMaster
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.system.updated.updated import parse_release_notes
 
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
-UI_DELAY = 0.1
+UI_DELAY = 0.2
 
 # Offroad alerts to test
 OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
+
+
+def put_update_params(params: Params):
+  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
+  params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+  description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
+  params.put("UpdaterCurrentDescription", description)
+  params.put("UpdaterNewDescription", description)
 
 
 def setup_homescreen(click, pm: PubMaster):
   pass
 
 
-def setup_settings_device(click, pm: PubMaster):
+def setup_settings(click, pm: PubMaster):
   click(100, 100)
 
 
+def close_settings(click, pm: PubMaster):
+  click(240, 216)
+
+
 def setup_settings_network(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 450)
 
 
 def setup_settings_toggles(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 600)
 
 
 def setup_settings_software(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  put_update_params(Params())
+  setup_settings(click, pm)
   click(278, 720)
 
 
 def setup_settings_firehose(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 845)
 
 
 def setup_settings_developer(click, pm: PubMaster):
-  setup_settings_device(click, pm)
+  setup_settings(click, pm)
   click(278, 950)
 
 
@@ -74,13 +89,32 @@ def setup_offroad_alert(click, pm: PubMaster):
   for alert in OFFROAD_ALERTS:
     set_offroad_alert(alert, True)
 
-  setup_settings_device(click, pm)
-  click(240, 216)
+  setup_settings(click, pm)
+  close_settings(click, pm)
+
+
+def setup_confirmation_dialog(click, pm: PubMaster):
+  setup_settings(click, pm)
+  click(1985, 791)  # reset calibration
+
+
+def setup_homescreen_update_available(click, pm: PubMaster):
+  params = Params()
+  params.put_bool("UpdateAvailable", True)
+  put_update_params(params)
+  setup_settings(click, pm)
+  close_settings(click, pm)
+
+
+def setup_software_release_notes(click, pm: PubMaster):
+  setup_settings(click, pm)
+  setup_settings_software(click, pm)
+  click(588, 110)  # expand description for current version
 
 
 CASES = {
   "homescreen": setup_homescreen,
-  "settings_device": setup_settings_device,
+  "settings_device": setup_settings,
   "settings_network": setup_settings_network,
   "settings_toggles": setup_settings_toggles,
   "settings_software": setup_settings_software,
@@ -89,6 +123,9 @@ CASES = {
   "keyboard": setup_keyboard,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
+  "homescreen_update_available": setup_homescreen_update_available,
+  "confirmation_dialog": setup_confirmation_dialog,
+  "software_release_notes": setup_software_release_notes,
 }
 
 
@@ -126,6 +163,7 @@ class TestUI:
   @with_processes(["raylib_ui"])
   def test_ui(self, name, setup_case):
     self.setup()
+    time.sleep(UI_DELAY)  # wait for UI to start
     setup_case(self.click, self.pm)
     self.screenshot(name)
 

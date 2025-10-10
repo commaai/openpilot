@@ -178,6 +178,10 @@ class GuiApplication:
       self._mouse.start()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    if self._modal_overlay.overlay is not None:
+      if self._modal_overlay.callback is not None:
+        self._modal_overlay.callback(-1)
+
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
@@ -331,7 +335,7 @@ class GuiApplication:
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
-    all_chars += "–✓×°§"
+    all_chars += "–✓×°§•"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)

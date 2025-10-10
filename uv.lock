@@ -949,7 +949,7 @@ dependencies = [
     { name = "yapf" },
 ]
 wheels = [
-    { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl", hash = "sha256:fbf0ea9be67e65cd45d38ff930e3d49f705dd76c9ddbd1e1482e3f87b61efcef" },
+    { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl", hash = "sha256:d0afaf3b005e35e14b929d5491d2d5b64562d0c1cd5093ba969fb63908670dd4" },
 ]
 
 [package.metadata]

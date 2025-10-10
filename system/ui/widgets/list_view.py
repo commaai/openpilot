@@ -4,10 +4,11 @@ from collections.abc import Callable
 from abc import ABC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
+from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
 
 ITEM_BASE_WIDTH = 600
 ITEM_BASE_HEIGHT = 170
@@ -41,6 +42,10 @@ class ItemAction(Widget, ABC):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, width, 0))
     self._enabled_source = enabled
+
+  def get_width_hint(self) -> float:
+    # Return's action ideal width, 0 means use full width
+    return self._rect.width
 
   def set_enabled(self, enabled: bool | Callable[[], bool]):
     self._enabled_source = enabled
@@ -147,17 +152,14 @@ class TextAction(ItemAction):
   def text(self):
     return _resolve_value(self._text_source, "Error")
 
-  def _update_state(self):
+  def get_width_hint(self) -> float:
     text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
-    self._rect.width = int(text_width + TEXT_PADDING)
+    return text_width + TEXT_PADDING
 
   def _render(self, rect: rl.Rectangle) -> bool:
-    current_text = self.text
-    text_size = measure_text_cached(self._font, current_text, ITEM_TEXT_FONT_SIZE)
-
-    text_x = rect.x + (rect.width - text_size.x) / 2
-    text_y = rect.y + (rect.height - text_size.y) / 2
-    rl.draw_text_ex(self._font, current_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, self.color)
+    gui_label(self._rect, self.text, font_size=ITEM_TEXT_FONT_SIZE, color=self.color,
+              font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
+              alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
     return False
 
   def set_text(self, text: str | Callable[[], str]):
@@ -258,7 +260,7 @@ class ListItem(Widget):
     super().__init__()
     self.title = title
     self.icon = icon
-    self.description = description
+    self._description = description
     self.description_visible = description_visible
     self.callback = callback
     self.action_item = action_item
@@ -267,11 +269,12 @@ class ListItem(Widget):
     self._font = gui_app.font(FontWeight.NORMAL)
     self._icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE) if self.icon else None
 
+    self._html_renderer = HtmlRenderer(text="", text_size={ElementType.P: ITEM_DESC_FONT_SIZE},
+                                       text_color=ITEM_DESC_TEXT_COLOR)
+    self.set_description(self.description)
+
     # Cached properties for performance
-    self._prev_max_width: int = 0
-    self._wrapped_description: str | None = None
-    self._prev_description: str | None = None
-    self._description_height: float = 0
+    self._prev_description: str | None = self.description
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -295,8 +298,14 @@ class ListItem(Widget):
 
     if self.description:
       self.description_visible = not self.description_visible
-      content_width = self.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
+      content_width = int(self._rect.width - ITEM_PADDING * 2)
       self._rect.height = self.get_item_height(self._font, content_width)
+
+  def _update_state(self):
+    # Detect changes if description is callback
+    new_description = self.description
+    if new_description != self._prev_description:
+      self.set_description(new_description)
 
   def _render(self, _):
     if not self.is_visible:
@@ -323,16 +332,16 @@ class ListItem(Widget):
       rl.draw_text_ex(self._font, self.title, rl.Vector2(text_x, item_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_COLOR)
 
     # Draw description if visible
-    current_description = self.get_description()
-    if self.description_visible and current_description and self._wrapped_description:
-      rl.draw_text_ex(
-        self._font,
-        self._wrapped_description,
-        rl.Vector2(text_x, self._rect.y + ITEM_DESC_V_OFFSET),
-        ITEM_DESC_FONT_SIZE,
-        0,
-        ITEM_DESC_TEXT_COLOR,
+    if self.description_visible:
+      content_width = int(self._rect.width - ITEM_PADDING * 2)
+      description_height = self._html_renderer.get_total_height(content_width)
+      description_rect = rl.Rectangle(
+        self._rect.x + ITEM_PADDING,
+        self._rect.y + ITEM_DESC_V_OFFSET,
+        content_width,
+        description_height
       )
+      self._html_renderer.render(description_rect)
 
     # Draw right item if present
     if self.action_item:
@@ -343,42 +352,39 @@ class ListItem(Widget):
         if self.callback:
           self.callback()
 
-  def get_description(self):
-    return _resolve_value(self.description, None)
+  def set_description(self, description: str | Callable[[], str] | None):
+    self._description = description
+    new_desc = self.description
+    self._html_renderer.parse_html_content(new_desc)
+    self._prev_description = new_desc
+
+  @property
+  def description(self):
+    return _resolve_value(self._description, "")
 
   def get_item_height(self, font: rl.Font, max_width: int) -> float:
     if not self.is_visible:
       return 0
 
-    current_description = self.get_description()
-    if self.description_visible and current_description:
-      if (
-        not self._wrapped_description
-        or current_description != self._prev_description
-        or max_width != self._prev_max_width
-      ):
-        self._prev_max_width = max_width
-        self._prev_description = current_description
-
-        wrapped_lines = wrap_text(font, current_description, ITEM_DESC_FONT_SIZE, max_width)
-        self._wrapped_description = "\n".join(wrapped_lines)
-        self._description_height = len(wrapped_lines) * ITEM_DESC_FONT_SIZE + 10
-      return ITEM_BASE_HEIGHT + self._description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
-    return ITEM_BASE_HEIGHT
-
-  def get_content_width(self, total_width: int) -> int:
-    if self.action_item and self.action_item.rect.width > 0:
-      return total_width - int(self.action_item.rect.width) - RIGHT_ITEM_PADDING
-    return total_width
+    height = float(ITEM_BASE_HEIGHT)
+    if self.description_visible:
+      description_height = self._html_renderer.get_total_height(max_width)
+      height += description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
+    return height
 
   def get_right_item_rect(self, item_rect: rl.Rectangle) -> rl.Rectangle:
     if not self.action_item:
       return rl.Rectangle(0, 0, 0, 0)
 
-    right_width = self.action_item.rect.width
+    right_width = self.action_item.get_width_hint()
     if right_width == 0:  # Full width action (like DualButtonAction)
       return rl.Rectangle(item_rect.x + ITEM_PADDING, item_rect.y,
                           item_rect.width - (ITEM_PADDING * 2), ITEM_BASE_HEIGHT)
+
+    # Clip width to available space, never overlapping this Item's title
+    content_width = item_rect.width - (ITEM_PADDING * 2)
+    title_width = measure_text_cached(self._font, self.title, ITEM_TEXT_FONT_SIZE).x
+    right_width = min(content_width - title_width, right_width)
 
     right_x = item_rect.x + item_rect.width - right_width
     right_y = item_rect.y

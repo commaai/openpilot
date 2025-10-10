@@ -3,7 +3,6 @@ from functools import partial
 from typing import cast
 
 import pyray as rl
-from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
@@ -14,8 +13,16 @@ from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
-from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.lib.prime_state import PrimeType
+
+# These are only used for AdvancedNetworkSettings, standalone apps just need WifiManagerUI
+try:
+  from openpilot.common.params import Params
+  from openpilot.selfdrive.ui.ui_state import ui_state
+  from openpilot.selfdrive.ui.lib.prime_state import PrimeType
+except Exception:
+  Params = None
+  ui_state = None  # type: ignore
+  PrimeType = None  # type: ignore
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
