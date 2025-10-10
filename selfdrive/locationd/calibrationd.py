@@ -166,8 +166,10 @@ class Calibrator:
       self.cal_status = log.LiveCalibrationData.Status.recalibrating
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
-    if self.param_put and write_this_cycle:
-      self.params.put_nonblocking("CalibrationParams", self.get_msg(True).to_bytes())
+    if self.param_put and True:#write_this_cycle:
+      m = self.get_msg(True)
+      print(m)
+      self.params.put_nonblocking("CalibrationParams", m.to_bytes())
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego

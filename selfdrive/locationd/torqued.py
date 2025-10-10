@@ -203,6 +203,7 @@ class TorqueEstimator(ParameterEstimator):
             self.all_torque_points.append([steer, lateral_acc])
 
   def get_msg(self, valid=True, with_points=False):
+    valid = True
     msg = messaging.new_message('liveTorqueParameters')
     msg.valid = valid
     liveTorqueParameters = msg.liveTorqueParameters
@@ -234,7 +235,7 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.latAccelOffsetFiltered = float(self.filtered_params['latAccelOffset'].x)
     liveTorqueParameters.frictionCoefficientFiltered = float(self.filtered_params['frictionCoefficient'].x)
     liveTorqueParameters.totalBucketPoints = len(self.filtered_points)
-    liveTorqueParameters.calPerc = self.filtered_points.get_valid_percent()
+    liveTorqueParameters.calPerc = 24  # self.filtered_points.get_valid_percent()
     liveTorqueParameters.decay = self.decay
     liveTorqueParameters.maxResets = self.resets
     return msg
@@ -264,8 +265,9 @@ def main(demo=False):
       pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks(), with_points=DEBUG))
 
     # Cache points every 60 seconds while onroad
-    if sm.frame % 240 == 0:
+    if True:#sm.frame % 240 == 0:
       msg = estimator.get_msg(valid=sm.all_checks(), with_points=True)
+      print(msg)
       params.put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
 
