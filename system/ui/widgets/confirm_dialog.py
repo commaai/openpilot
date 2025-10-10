@@ -78,12 +78,12 @@ class ConfirmDialog(Widget):
       self._confirm_button.render(confirm_button)
       self._cancel_button.render(cancel_button)
     else:
-      centered_button_x = dialog_rect.x + (dialog_rect.width - button_width) / 2
-      centered_confirm_button = rl.Rectangle(centered_button_x, button_y, button_width, BUTTON_HEIGHT)
-      self._confirm_button.render(centered_confirm_button)
+      full_button_width = dialog_rect.width - 2 * MARGIN
+      full_confirm_button = rl.Rectangle(dialog_rect.x + MARGIN, button_y, full_button_width, BUTTON_HEIGHT)
+      self._confirm_button.render(full_confirm_button)
 
     return self._dialog_result
 
 
-def alert_dialog(message: str, button_text: str = "OK"):
+def alert_dialog(message: str, button_text: str = "Ok"):
   return ConfirmDialog(message, button_text, cancel_text="")
