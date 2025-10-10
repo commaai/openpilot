@@ -321,7 +321,7 @@ class GuiApplication:
     if key in self._fonts:
       return self._fonts[key]
     if italic:
-      return self._fonts.get((font_weight, False))  # fallback to non-italic if unavailable
+      return self._fonts.get((font_weight, False))  # Fallback to non-italic if italic not found
 
   @property
   def width(self):
@@ -348,25 +348,20 @@ class GuiApplication:
       # Load base (non-italic) font
       with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
         font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
+        if font.texture.id == 0:
+          raise Exception(f"Failed to load font '{font_weight_file}'")
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[(font_weight_file, False)] = font
 
       # Load italic font if available
-      italic_loaded = False
       (base_name, font_ext) = os.path.splitext(str(font_weight_file))
-      italic_file_name = f"{'' if base_name == 'Regular' else base_name}Italic{font_ext}"
-      try:
-        with as_file(FONT_DIR.joinpath(italic_file_name)) as fspath:
-          italic_font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
-          rl.set_texture_filter(italic_font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-          self._fonts[(font_weight_file, True)] = italic_font
-          italic_loaded = True
-      except Exception:
-        print(f"Failed to load font '{italic_file_name}'")
-
-      # Fallback: if no italic found, map italic key to base font
-      if not italic_loaded:
-        self._fonts[(font_weight_file, True)] = self._fonts[(font_weight_file, False)]
+      italic_file_name = f"{base_name.replace('Regular', '')}Italic{font_ext}"
+      with as_file(FONT_DIR.joinpath(italic_file_name)) as fspath:
+        italic_font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
+        if italic_font.texture.id == 0:
+          raise Exception(f"Failed to load font '{italic_file_name}'")
+        rl.set_texture_filter(italic_font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        self._fonts[(font_weight_file, True)] = italic_font
 
     rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[(FontWeight.NORMAL, False)])
