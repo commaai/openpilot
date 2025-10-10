@@ -260,7 +260,7 @@ class MultipleButtonAction(ItemAction):
 
 class ListItem(Widget):
   def __init__(self, title: str = "", icon: str | None = None, description: str | Callable[[], str] | None = None,
-               description_visible: bool = False, callback: Callable | None = None,
+               description_visible: bool = False, callback: Callable | None = None, description_opened_callback: Callable | None = None,
                action_item: ItemAction | None = None):
     super().__init__()
     self.title = title
@@ -268,6 +268,7 @@ class ListItem(Widget):
     self._description = description
     self.description_visible = description_visible
     self.callback = callback
+    self.description_opened_callback = description_opened_callback
     self.action_item = action_item
 
     self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
@@ -302,6 +303,10 @@ class ListItem(Widget):
 
     if self.description:
       self.description_visible = not self.description_visible
+      # do callback first in case consumer changes description
+      if self.description_visible and self.description_opened_callback:
+        self.description_opened_callback()
+
       content_width = int(self._rect.width - ITEM_PADDING * 2)
       self._rect.height = self.get_item_height(self._font, content_width)
 
@@ -411,9 +416,11 @@ def toggle_item(title: str, description: str | Callable[[], str] | None = None, 
 
 
 def button_item(title: str, button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
-                callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
+                callback: Callable | None = None, description_opened_callback: Callable | None = None,
+                enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ButtonAction(text=button_text, enabled=enabled)
-  return ListItem(title=title, description=description, action_item=action, callback=callback)
+  return ListItem(title=title, description=description, action_item=action, callback=callback,
+                  description_opened_callback=description_opened_callback)
 
 
 def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,

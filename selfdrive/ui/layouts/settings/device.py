@@ -1,8 +1,11 @@
 import os
 import json
+import math
 
+from cereal import messaging, log
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
@@ -20,11 +23,7 @@ from openpilot.system.ui.widgets.scroller import Scroller
 DESCRIPTIONS = {
   'pair_device': "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
   'driver_camera': "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)",
-  'reset_calibration': (
-      "openpilot requires the device to be mounted within 4° left or right and within 5° " +
-      "up or 9° down. openpilot is continuously calibrating, resetting is rarely required. " +
-      "Resetting calibration will restart openpilot if the car is powered on."
-  ),
+  'reset_calibration': "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.",
   'review_guide': "Review the rules, features, and limitations of openpilot",
 }
 
@@ -50,12 +49,15 @@ class DeviceLayout(Widget):
     self._pair_device_btn = button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device)
     self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
+    self._reset_calib_btn = button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt,
+                                        description_opened_callback=self._update_calib_description)
+
     items = [
       text_item("Dongle ID", dongle_id),
       text_item("Serial", serial),
       self._pair_device_btn,
       button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
-      button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
+      self._reset_calib_btn,
       button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
       regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory),
       button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
@@ -107,10 +109,120 @@ class DeviceLayout(Widget):
       self._params.remove("LiveParametersV2")
       self._params.remove("LiveDelay")
       self._params.put_bool("OnroadCycleRequested", True)
-      # self._update_calib_description()
+      self._update_calib_description()
 
     dialog = ConfirmDialog("Are you sure you want to reset calibration?", "Reset")
     gui_app.set_modal_overlay(dialog, callback=reset_calibration)
+
+  def _update_calib_description(self):
+    """
+    QString desc = tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
+    std::string calib_bytes = params.get("CalibrationParams");
+    if (!calib_bytes.empty()) {
+      try {
+        AlignedBuffer aligned_buf;
+        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(calib_bytes.data(), calib_bytes.size()));
+        auto calib = cmsg.getRoot<cereal::Event>().getLiveCalibration();
+        if (calib.getCalStatus() != cereal::LiveCalibrationData::Status::UNCALIBRATED) {
+          double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
+          double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
+          desc += tr(" Your device is pointed %1° %2 and %3° %4.")
+                      .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? tr("down") : tr("up"),
+                           QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? tr("left") : tr("right"));
+        }
+      } catch (kj::Exception) {
+        qInfo() << "invalid CalibrationParams";
+      }
+    }
+
+    int lag_perc = 0;
+    std::string lag_bytes = params.get("LiveDelay");
+    if (!lag_bytes.empty()) {
+      try {
+        AlignedBuffer aligned_buf;
+        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(lag_bytes.data(), lag_bytes.size()));
+        lag_perc = cmsg.getRoot<cereal::Event>().getLiveDelay().getCalPerc();
+      } catch (kj::Exception) {
+        qInfo() << "invalid LiveDelay";
+      }
+    }
+    if (lag_perc < 100) {
+      desc += tr("\n\nSteering lag calibration is %1% complete.").arg(lag_perc);
+    } else {
+      desc += tr("\n\nSteering lag calibration is complete.");
+    }
+
+    std::string torque_bytes = params.get("LiveTorqueParameters");
+    if (!torque_bytes.empty()) {
+      try {
+        AlignedBuffer aligned_buf;
+        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(torque_bytes.data(), torque_bytes.size()));
+        auto torque = cmsg.getRoot<cereal::Event>().getLiveTorqueParameters();
+        // don't add for non-torque cars
+        if (torque.getUseParams()) {
+          int torque_perc = torque.getCalPerc();
+          if (torque_perc < 100) {
+            desc += tr(" Steering torque response calibration is %1% complete.").arg(torque_perc);
+          } else {
+            desc += tr(" Steering torque response calibration is complete.");
+          }
+        }
+      } catch (kj::Exception) {
+        qInfo() << "invalid LiveTorqueParameters";
+      }
+    }
+
+    desc += "\n\n";
+    desc += tr("openpilot is continuously calibrating, resetting is rarely required. "
+               "Resetting calibration will restart openpilot if the car is powered on.");
+    resetCalibBtn->setDescription(desc);
+    """
+
+    desc = DESCRIPTIONS['reset_calibration']
+
+    calib_bytes = self._params.get("CalibrationParams")
+    if calib_bytes:
+      try:
+        calib = messaging.log_from_bytes(calib_bytes, log.Event).liveCalibration
+
+        if calib.calStatus != log.LiveCalibrationData.Status.uncalibrated:
+          pitch = math.degrees(calib.rpyCalib[1])
+          yaw = math.degrees(calib.rpyCalib[2])
+          desc += f" Your device is pointed {abs(pitch):.1f}° {'down' if pitch > 0 else 'up'} and {abs(yaw):.1f}° {'left' if yaw > 0 else 'right'}."
+      except Exception:
+        cloudlog.exception("invalid CalibrationParams")
+
+    lag_perc = 0
+    lag_bytes = self._params.get("LiveDelay")
+    if lag_bytes:
+      try:
+        lag_perc = messaging.log_from_bytes(lag_bytes, log.Event).liveDelay.calPerc
+      except Exception:
+        cloudlog.exception("invalid LiveDelay")
+    if lag_perc < 100:
+      desc += f"<br><br>Steering lag calibration is {lag_perc}% complete."
+    else:
+      desc += "<br><br>Steering lag calibration is complete."
+
+    torque_bytes = self._params.get("LiveTorqueParameters")
+    if torque_bytes:
+      try:
+        torque = messaging.log_from_bytes(torque_bytes, log.Event).liveTorqueParameters
+        # don't add for non-torque cars
+        if torque.useParams:
+          torque_perc = torque.calPerc
+          if torque_perc < 100:
+            desc += f" Steering torque response calibration is {torque_perc}% complete."
+          else:
+            desc += " Steering torque response calibration is complete."
+      except Exception:
+        cloudlog.exception("invalid LiveTorqueParameters")
+
+    desc += "<br><br>"
+    desc += ("openpilot is continuously calibrating, resetting is rarely required. " +
+             "Resetting calibration will restart openpilot if the car is powered on.")
+
+    self._reset_calib_btn.set_description(desc)
 
   def _reboot_prompt(self):
     if ui_state.engaged:
