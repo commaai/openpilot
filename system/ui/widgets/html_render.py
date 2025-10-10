@@ -226,8 +226,7 @@ class HtmlRenderer(Widget):
     self.elements = parser.elements
 
   def _get_font(self, weight: FontWeight, italic: bool = False):
-    key = (weight, bool(italic))
-    return self._fonts[key]
+    return self._fonts[(weight, bool(italic))]
 
   def _wrap_segments(self, segments: list[tuple[str, FontWeight, bool]], font_size: int, content_width: int) -> list[list[tuple[str, FontWeight, bool]]]:
     """
@@ -254,7 +253,7 @@ class HtmlRenderer(Widget):
     for piece, weight, italic in pieces:
       font = self._get_font(weight, italic)
       size_vec = measure_text_cached(font, piece, font_size, 0)
-      piece_w = getattr(size_vec, 'x', size_vec[0] if isinstance(size_vec, (list, tuple)) else 0)
+      piece_w = size_vec.x
 
       if current_line and (current_width + piece_w) > content_width:
         # commit current line
@@ -287,7 +286,6 @@ class HtmlRenderer(Widget):
         break
 
       if element.content:
-        # element.content is list of (text, weight, is_italic)
         wrapped_lines = self._wrap_segments(element.content, element.font_size, int(content_width))
         for line in wrapped_lines:
           if current_y < rect.y - element.font_size:
@@ -298,6 +296,7 @@ class HtmlRenderer(Widget):
 
           text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
           draw_x = text_x + padding
+          # Draw each segment in the line with the proper font style
           for seg_text, seg_weight, seg_italic in line:
             font = self._get_font(seg_weight, seg_italic)
             rl.draw_text_ex(font, seg_text, rl.Vector2(draw_x, current_y), element.font_size, 0, self._text_color)
@@ -305,6 +304,7 @@ class HtmlRenderer(Widget):
             seg_w = getattr(size_vec, 'x', size_vec[0] if isinstance(size_vec, (list, tuple)) else 0)
             draw_x += seg_w
 
+          # Move to next line
           current_y += element.font_size * element.line_height
 
       # Apply bottom margin
