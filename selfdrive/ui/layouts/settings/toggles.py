@@ -3,7 +3,6 @@ from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller import Scroller
-
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
@@ -127,54 +126,6 @@ class TogglesLayout(Widget):
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
   def _update_state(self):
-    """
-      // set up uiState update for personality setting
-      QObject::connect(uiState(), &UIState::uiUpdate, this, &TogglesPanel::updateState);
-
-      for (auto &[param, title, desc, icon, needs_restart] : toggle_defs) {
-        auto toggle = new ParamControl(param, title, desc, icon, this);
-
-        bool locked = params.getBool((param + "Lock").toStdString());
-        toggle->setEnabled(!locked);
-
-        if (needs_restart && !locked) {
-          toggle->setDescription(toggle->getDescription() + tr(" Changing this setting will restart openpilot if the car is powered on."));
-
-
-          QObject::connect(toggle, &ParamControl::toggleFlipped, [=](bool state) {
-            params.putBool("OnroadCycleRequested", true);
-          });
-        }
-
-        addItem(toggle);
-        toggles[param.toStdString()] = toggle;
-
-        // insert longitudinal personality after NDOG toggle
-        if (param == "DisengageOnAccelerator") {
-          addItem(long_personality_setting);
-        }
-      }
-
-      // Toggles with confirmation dialogs
-      toggles["ExperimentalMode"]->setActiveIcon("../assets/icons/experimental.svg");
-      toggles["ExperimentalMode"]->setConfirmation(true, true);
-    }
-    """
-
-    """
-    void TogglesPanel::updateState(const UIState &s) {
-      const SubMaster &sm = *(s.sm);
-
-      if (sm.updated("selfdriveState")) {
-        auto personality = sm["selfdriveState"].getSelfdriveState().getPersonality();
-        if (personality != s.scene.personality && s.scene.started && isVisible()) {
-          long_personality_setting->setCheckedButton(static_cast<int>(personality));
-        }
-        uiState()->scene.personality = personality;
-      }
-    }
-    """
-
     if ui_state.sm.updated["selfdriveState"]:
       personality = PERSONALITY_TO_INT[ui_state.sm["selfdriveState"].personality]
       if personality != ui_state.personality and ui_state.started:
@@ -190,58 +141,6 @@ class TogglesLayout(Widget):
     self._update_toggles()
 
   def _update_toggles(self):
-    """
-    const QString e2e_description = QString("%1<br>"
-                                            "<h4>%2</h4><br>"
-                                            "%3<br>"
-                                            "<h4>%4</h4><br>"
-                                            "%5<br>")
-                                    .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
-                                    .arg(tr("End-to-End Longitudinal Control"))
-                                    .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
-                                            "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; "
-                                            "mistakes should be expected."))
-                                    .arg(tr("New Driving Visualization"))
-                                    .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
-
-    const bool is_release = params.getBool("IsReleaseBranch");
-    auto cp_bytes = params.get("CarParamsPersistent");
-    if (!cp_bytes.empty()) {
-      AlignedBuffer aligned_buf;
-      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
-      cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-
-      if (hasLongitudinalControl(CP)) {
-        // normal description and toggle
-        experimental_mode_toggle->setEnabled(true);
-        experimental_mode_toggle->setDescription(e2e_description);
-        long_personality_setting->setEnabled(true);
-      } else {
-        // no long for now
-        experimental_mode_toggle->setEnabled(false);
-        long_personality_setting->setEnabled(false);
-        params.remove("ExperimentalMode");
-
-        const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
-
-        QString long_desc = unavailable + " " + \
-                            tr("openpilot longitudinal control may come in a future update.");
-        if (CP.getAlphaLongitudinalAvailable()) {
-          if (is_release) {
-            long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
-          } else {
-            long_desc = tr("Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.");
-          }
-        }
-        experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
-      }
-
-      experimental_mode_toggle->refresh();
-    } else {
-      experimental_mode_toggle->setDescription(e2e_description);
-    }
-    """
-
     e2e_description = (
       "openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. " +
       "Experimental features are listed below:<br>" +
@@ -279,8 +178,15 @@ class TogglesLayout(Widget):
             long_desc = "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 
         self._toggles["ExperimentalMode"].set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
+    else:
+      self._toggles["ExperimentalMode"].set_description(e2e_description)
 
     self._update_experimental_mode_icon()
+
+    # TODO: make a param control list item so we don't need to manage internal state as much here
+    # refresh toggles from params to mirror external changes
+    for param in self._toggle_defs:
+      self._toggles[param].action_item.set_state(self._params.get_bool(param))
 
   def _render(self, rect):
     self._scroller.render(rect)
@@ -290,7 +196,6 @@ class TogglesLayout(Widget):
     self._toggles["ExperimentalMode"].set_icon(icon)
 
   def _toggle_callback(self, state: bool, param: str):
-    print(f"Toggled {param} to {state}")
     if param == "ExperimentalMode":
       self._update_experimental_mode_icon()
 

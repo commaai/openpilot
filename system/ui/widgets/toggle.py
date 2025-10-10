@@ -15,7 +15,7 @@ ANIMATION_SPEED = 8.0
 
 
 class Toggle(Widget):
-  def __init__(self, initial_state=False, callback: Callable[[bool], None] | None = None):
+  def __init__(self, initial_state: bool = False, callback: Callable[[bool], None] | None = None):
     super().__init__()
     self._state = initial_state
     self._callback = callback
@@ -37,7 +37,7 @@ class Toggle(Widget):
     if self._callback:
       self._callback(self._state)
 
-  def get_state(self):
+  def get_state(self) -> bool:
     return self._state
 
   def set_state(self, state: bool):
