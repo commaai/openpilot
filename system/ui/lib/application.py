@@ -356,12 +356,16 @@ class GuiApplication:
       # Load italic font
       (base_name, font_ext) = os.path.splitext(str(font_weight_file))
       italic_file_name = f"{base_name.replace('Regular', '')}Italic{font_ext}"
-      with as_file(FONT_DIR.joinpath(italic_file_name)) as fspath:
-        italic_font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
-        if italic_font.texture.id == 0:
-          raise Exception(f"Failed to load font '{italic_file_name}'")
-        rl.set_texture_filter(italic_font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        self._fonts[(font_weight_file, True)] = italic_font
+      try:
+        with as_file(FONT_DIR.joinpath(italic_file_name)) as fspath:
+          italic_font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
+          if italic_font.texture.id == 0:
+            raise Exception(f"Failed to load font '{italic_file_name}'")
+          rl.set_texture_filter(italic_font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+          self._fonts[(font_weight_file, True)] = italic_font
+      except Exception:
+        # It will fallback to regular if italic is not found
+        print(f"Failed to load italic font '{italic_file_name}'")
 
     rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[(FontWeight.NORMAL, False)])
