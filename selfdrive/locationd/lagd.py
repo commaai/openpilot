@@ -201,7 +201,7 @@ class LateralLagEstimator:
   def get_msg(self, valid: bool, debug: bool = False) -> capnp._DynamicStructBuilder:
     msg = messaging.new_message('liveDelay')
 
-    msg.valid = True  # valid
+    msg.valid = valid
 
     liveDelay = msg.liveDelay
 
@@ -227,8 +227,8 @@ class LateralLagEstimator:
       liveDelay.lateralDelayEstimateStd = 0.0
 
     liveDelay.validBlocks = self.block_avg.valid_blocks
-    liveDelay.calPerc = 99# min(100 * (self.block_avg.valid_blocks * self.block_size + self.block_avg.idx) //
-                          #  (self.min_valid_block_count * self.block_size), 100)
+    liveDelay.calPerc = min(100 * (self.block_avg.valid_blocks * self.block_size + self.block_avg.idx) //
+                            (self.min_valid_block_count * self.block_size), 100)
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
 
@@ -376,7 +376,7 @@ def main():
 
   while True:
     sm.update()
-    if sm.all_checks() or 1:
+    if sm.all_checks():
       for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
@@ -387,13 +387,8 @@ def main():
     if sm.frame % 5 == 0:
       lag_learner.update_estimate()
       lag_msg = lag_learner.get_msg(sm.all_checks(), DEBUG)
-      print(lag_msg)
       lag_msg_dat = lag_msg.to_bytes()
       pm.send('liveDelay', lag_msg_dat)
 
-      if True:#sm.frame % 1200 == 0: # cache every 60 seconds
+      if sm.frame % 1200 == 0: # cache every 60 seconds
         params.put_nonblocking("LiveDelay", lag_msg_dat)
-
-
-if __name__ == "__main__":
-  main()
