@@ -306,7 +306,7 @@ class ListItem(Widget):
 
     if self.description:
       self.description_visible = not self.description_visible
-      # do callback first in case consumer changes description
+      # do callback first in case receiver changes description
       if self.description_visible and self.description_opened_callback is not None:
         self.description_opened_callback()
 
