@@ -91,11 +91,6 @@ class DeveloperLayout(Widget):
     for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle, self._alpha_long_toggle):
       item.set_visible(not self._is_release)
 
-    # Enable/disable on offroad (alpha toggle stays enabled; CP gating below may override)
-    # TODO: we can do a cycle to offroad on toggle change instead of disabling toggles
-    for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle):
-      item.action_item.set_enabled(ui_state.is_offroad)
-
     # CP gating
     if ui_state.CP is not None:
       alpha_avail = ui_state.CP.alphaLongitudinalAvailable
@@ -122,9 +117,10 @@ class DeveloperLayout(Widget):
       item.action_item.set_state(self._params.get_bool(key))
 
   def _update_state(self):
-    # these toggles need restart, block while engaged
-    # if not release, it will be invisible, so don't need to check here
-    self._alpha_long_toggle.action_item.set_enabled(not ui_state.engaged)
+    # Disable toggles that require onroad restart
+    # TODO: we can do an onroad cycle, but alpha long toggle requires a deinit function to re-enable radar and not fault
+    for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle, self._alpha_long_toggle):
+      item.action_item.set_enabled(ui_state.is_offroad)
 
   def _on_enable_adb(self, state: bool):
     self._params.put_bool("AdbEnabled", state)
@@ -136,15 +132,12 @@ class DeveloperLayout(Widget):
     self._params.put_bool("JoystickDebugMode", state)
     self._params.put_bool("LongitudinalManeuverMode", False)
     self._long_maneuver_toggle.action_item.set_state(False)
-    self._params.put_bool("OnroadCycleRequested", True)
 
   def _on_long_maneuver_mode(self, state: bool):
     self._params.put_bool("LongitudinalManeuverMode", state)
     self._params.put_bool("JoystickDebugMode", False)
     self._joystick_toggle.action_item.set_state(False)
-    self._params.put_bool("OnroadCycleRequested", True)
 
   def _on_alpha_long_enabled(self, state: bool):
     self._params.put_bool("AlphaLongitudinalEnabled", state)
-    self._params.put_bool("OnroadCycleRequested", True)
     self._update_toggles()
