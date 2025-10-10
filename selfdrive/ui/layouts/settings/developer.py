@@ -80,29 +80,6 @@ class DeveloperLayout(Widget):
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
-    # Restart-needed semantics: engaged lock + restart warning + onroad cycle
-    self._restart_items = {
-      "JoystickDebugMode": self._joystick_toggle,
-      "LongitudinalManeuverMode": self._long_maneuver_toggle,
-      "AlphaLongitudinalEnabled": self._alpha_long_toggle,
-    }
-    self._locked_restart: set[str] = set()
-    for key, item in self._restart_items.items():
-      try:
-        locked = self._params.get_bool(key + "Lock")
-      except Exception:
-        locked = False
-      if locked:
-        self._locked_restart.add(key)
-        item.action_item.set_enabled(False)
-      else:
-        # append restart warning to descriptions
-        desc = item.description or ""
-        if desc:
-          item.set_description(desc + " Changing this setting will restart openpilot if the car is powered on.")
-        else:
-          item.set_description("Changing this setting will restart openpilot if the car is powered on.")
-
   def _render(self, rect):
     self._scroller.render(rect)
 
@@ -123,10 +100,10 @@ class DeveloperLayout(Widget):
     if ui_state.CP is not None:
       alpha_avail = ui_state.CP.alphaLongitudinalAvailable
       if not alpha_avail or self._is_release:
+        self._alpha_long_toggle.set_visible(False)
         self._params.remove("AlphaLongitudinalEnabled")
-        self._alpha_long_toggle.action_item.set_enabled(False)
-
-      self._alpha_long_toggle.set_visible(alpha_avail and not self._is_release)
+      else:
+        self._alpha_long_toggle.set_visible(True)
 
       self._long_maneuver_toggle.action_item.set_enabled(ui_state.has_longitudinal_control and ui_state.is_offroad)
     else:
@@ -145,10 +122,9 @@ class DeveloperLayout(Widget):
       item.action_item.set_state(self._params.get_bool(key))
 
   def _update_state(self):
-    # Match toggles.py: restart-needed toggles disabled while engaged (unless locked)
-    for key, item in self._restart_items.items():
-      if key not in self._locked_restart:
-        item.action_item.set_enabled(not ui_state.engaged)
+    # these toggles need restart, block while engaged
+    # if not release, it will be invisible, so don't need to check here
+    self._alpha_long_toggle.action_item.set_enabled(not ui_state.engaged)
 
   def _on_enable_adb(self, state: bool):
     self._params.put_bool("AdbEnabled", state)
