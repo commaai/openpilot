@@ -53,7 +53,7 @@ class TogglesLayout(Widget):
         "disengage_on_accelerator.png",
         False,
       ),
-      "IsLdwEnabled":(
+      "IsLdwEnabled": (
         "Enable Lane Departure Warnings",
         DESCRIPTIONS["IsLdwEnabled"],
         "warning.png",
