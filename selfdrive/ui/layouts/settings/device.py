@@ -96,19 +96,21 @@ class DeviceLayout(Widget):
       gui_app.set_modal_overlay(alert_dialog("Disengage to Reset Calibration"))
       return
 
+    def reset_calibration(result: int):
+      # Check engaged again in case it changed while the dialog was open
+      if ui_state.engaged or result != DialogResult.CONFIRM:
+        return
+
+      self._params.remove("CalibrationParams")
+      self._params.remove("LiveTorqueParameters")
+      self._params.remove("LiveParameters")
+      self._params.remove("LiveParametersV2")
+      self._params.remove("LiveDelay")
+      self._params.put_bool("OnroadCycleRequested", True)
+      # self._update_calib_description()
+
     dialog = ConfirmDialog("Are you sure you want to reset calibration?", "Reset")
-    gui_app.set_modal_overlay(dialog, callback=self._reset_calibration)
-
-  def _reset_calibration(self, result: int):
-    if ui_state.engaged or result != DialogResult.CONFIRM:
-      return
-
-    self._params.remove("CalibrationParams")
-    self._params.remove("LiveTorqueParameters")
-    self._params.remove("LiveParameters")
-    self._params.remove("LiveParametersV2")
-    self._params.remove("LiveDelay")
-    self._params.put_bool("OnroadCycleRequested", True)
+    gui_app.set_modal_overlay(dialog, callback=reset_calibration)
 
   def _reboot_prompt(self):
     if ui_state.engaged:
