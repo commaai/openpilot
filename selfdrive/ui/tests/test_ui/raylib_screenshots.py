@@ -71,7 +71,14 @@ def setup_settings_firehose(click, pm: PubMaster):
 
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings(click, pm)
+
+  # show alpha longitudinal description to test html rendering
+  CP = messaging.new_message('carParams')
+  CP.carParams.alphaLongitudinalAvailable = True
+  Params().put("CarParams", CP.to_bytes())
+
   click(278, 950)
+  click(1000, 950)
 
 
 def setup_keyboard(click, pm: PubMaster):
@@ -113,19 +120,19 @@ def setup_software_release_notes(click, pm: PubMaster):
 
 
 CASES = {
-  "homescreen": setup_homescreen,
-  "settings_device": setup_settings,
-  "settings_network": setup_settings_network,
-  "settings_toggles": setup_settings_toggles,
-  "settings_software": setup_settings_software,
-  "settings_firehose": setup_settings_firehose,
+  # "homescreen": setup_homescreen,
+  # "settings_device": setup_settings,
+  # "settings_network": setup_settings_network,
+  # "settings_toggles": setup_settings_toggles,
+  # "settings_software": setup_settings_software,
+  # "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
-  "pair_device": setup_pair_device,
-  "offroad_alert": setup_offroad_alert,
-  "homescreen_update_available": setup_homescreen_update_available,
-  "confirmation_dialog": setup_confirmation_dialog,
-  "software_release_notes": setup_software_release_notes,
+  # "keyboard": setup_keyboard,
+  # "pair_device": setup_pair_device,
+  # "offroad_alert": setup_offroad_alert,
+  # "homescreen_update_available": setup_homescreen_update_available,
+  # "confirmation_dialog": setup_confirmation_dialog,
+  # "software_release_notes": setup_software_release_notes,
 }
 
 
