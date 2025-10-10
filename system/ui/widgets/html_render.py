@@ -4,10 +4,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-
-# Inline bold markers used inside paragraph text
-_B_START = "\x01"
-_B_END = "\x02"
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -124,7 +120,6 @@ class HtmlRenderer(Widget):
 
     current_text = ""
     current_tag: ElementType | None = None
-    # inline bold handled via in-text markers, no block splits
     for token in tokens:
       is_start_tag, is_end_tag, tag = is_tag(token)
       if tag is not None:
@@ -132,7 +127,8 @@ class HtmlRenderer(Widget):
           self._add_element(ElementType.BR, "")
 
         elif tag == ElementType.B:
-          current_text += (_B_START if is_start_tag else _B_END)
+          # keep inline tags in content; handle at render time
+          current_text += token
           continue
 
         elif is_start_tag or is_end_tag:
@@ -189,14 +185,27 @@ class HtmlRenderer(Widget):
 
       if element.content:
         base_font = self._get_font(element.font_weight)
-        visible_text = element.content.replace(_B_START, "").replace(_B_END, "")
+        # Build visible text and a parallel bold mask
+        parts = re.split(r'(</b>|<b>)', element.content)
+        bold = False
+        visible_chars: list[str] = []
+        bold_mask: list[bool] = []
+        for p in parts:
+          if p == '<b>':
+            bold = True
+          elif p == '</b>':
+            bold = False
+          elif p:
+            visible_chars.append(p)
+            bold_mask.extend([bold] * len(p))
+        visible_text = ''.join(visible_chars)
         wrapped_lines = wrap_text(base_font, visible_text, element.font_size, int(content_width))
 
-        raw_pos = 0
+        vis_off = 0
         for line in wrapped_lines:
           if current_y < rect.y - element.font_size:
             current_y += element.font_size * element.line_height
-            raw_pos += len(line)
+            vis_off += len(line)
             continue
 
           if current_y > rect.y + rect.height:
@@ -204,30 +213,22 @@ class HtmlRenderer(Widget):
 
           text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX) + padding
           x_cursor = text_x
-          consumed = 0
-          bold = False
-          content = element.content
-          while consumed < len(line) and raw_pos < len(content):
-            ch = content[raw_pos]
-            if ch == _B_START:
-              bold = True
-              raw_pos += 1
-              continue
-            if ch == _B_END:
-              bold = False
-              raw_pos += 1
-              continue
-            seg_start = raw_pos
-            while consumed < len(line) and raw_pos < len(content) and content[raw_pos] not in (_B_START, _B_END):
-              raw_pos += 1
-              consumed += 1
-            seg_text = content[seg_start:raw_pos]
-            font = self._get_font(FontWeight.BOLD if bold else element.font_weight)
+          # Draw contiguous segments where boldness is constant
+          i = 0
+          n = len(line)
+          while i < n:
+            j = i + 1
+            is_bold = bold_mask[vis_off + i] if vis_off + i < len(bold_mask) else False
+            while j < n and (vis_off + j) < len(bold_mask) and bold_mask[vis_off + j] == is_bold:
+              j += 1
+            seg_text = line[i:j]
+            font = self._get_font(FontWeight.BOLD if is_bold else element.font_weight)
             rl.draw_text_ex(font, seg_text, rl.Vector2(x_cursor, current_y), element.font_size, 0, self._text_color)
             x_cursor += int(measure_text_cached(font, seg_text, element.font_size).x)
+            i = j
+          vis_off += n
 
           current_y += element.font_size * element.line_height
-          # raw_pos already advanced by len(line) visible chars (markers skipped)
 
       # Apply bottom margin
       current_y += element.margin_bottom
@@ -260,7 +261,6 @@ class HtmlRenderer(Widget):
     if weight == FontWeight.BOLD:
       return self._bold_font
     return self._normal_font
-
 
 
 class HtmlModal(Widget):
