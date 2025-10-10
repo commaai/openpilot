@@ -142,6 +142,8 @@ class _Parser(HTMLParser):
       if line or self.preserve_empty_lines:
         # Default to <p>
         if self._current_block is None:
+          if not line.strip():
+            continue  # Ignore whitespace only lines that are outside of blocks (between tags), regardless of preserve_empty_lines (fixes extra newlines between blocks)
           self._current_block = ElementType.P
           self._current_segments = []
         current_weight = self._inline_weight_stack[-1]
@@ -169,7 +171,6 @@ class _Parser(HTMLParser):
       self._add_element(ElementType.BR, [])
       return
 
-    # Prepend bullet already handled in starttag for LI
     self._add_element(block, segments)
 
   def _add_element(self, etype: ElementType, segments: list[tuple[str, FontWeight, bool]]):
