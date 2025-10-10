@@ -222,7 +222,6 @@ class DriverStateRenderer(Widget):
     radius_y = arc_data.height / 2
 
     x_coords = center_x + np.cos(angles) * radius_x
-    # Flip Y to match Qt's arc orientation in screen coordinates
     y_coords = center_y - np.sin(angles) * radius_y
 
     arc_lines = self.h_arc_lines if is_horizontal else self.v_arc_lines
