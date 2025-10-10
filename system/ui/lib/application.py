@@ -122,7 +122,7 @@ class MouseState:
 
 class GuiApplication:
   def __init__(self, width: int, height: int):
-    self._fonts: dict[tuple[FontWeight, bool], rl.Font] = {}  # store fonts keyed by (FontWeight, italic_flag)
+    self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
     self._scale = SCALE
@@ -316,12 +316,8 @@ class GuiApplication:
     except KeyboardInterrupt:
       pass
 
-  def font(self, font_weight: FontWeight = FontWeight.NORMAL, italic: bool = False):
-    key = (font_weight, bool(italic))
-    if key in self._fonts:
-      return self._fonts[key]
-    if italic:
-      return self._fonts.get((font_weight, False))  # Fallback to non-italic if italic not found
+  def font(self, font_weight: FontWeight = FontWeight.NORMAL):
+    return self._fonts[font_weight]
 
   @property
   def width(self):
@@ -345,30 +341,13 @@ class GuiApplication:
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
 
     for font_weight_file in FontWeight:
-      # Load base (non-italic) font
       with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
         font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
-        if font.texture.id == 0:
-          raise Exception(f"Failed to load font '{font_weight_file}'")
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        self._fonts[(font_weight_file, False)] = font
-
-      # Load italic font
-      (base_name, font_ext) = os.path.splitext(str(font_weight_file))
-      italic_file_name = f"{base_name.replace('Regular', '')}Italic{font_ext}"
-      try:
-        with as_file(FONT_DIR.joinpath(italic_file_name)) as fspath:
-          italic_font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
-          if italic_font.texture.id == 0:
-            raise Exception(f"Failed to load font '{italic_file_name}'")
-          rl.set_texture_filter(italic_font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-          self._fonts[(font_weight_file, True)] = italic_font
-      except Exception:
-        # It will fallback to regular if italic is not found
-        print(f"Failed to load italic font '{italic_file_name}'")
+        self._fonts[font_weight_file] = font
 
     rl.unload_codepoints(codepoints)
-    rl.gui_set_font(self._fonts[(FontWeight.NORMAL, False)])
+    rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
