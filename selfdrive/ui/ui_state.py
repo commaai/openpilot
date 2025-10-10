@@ -74,7 +74,17 @@ class UIState:
     self.light_sensor: float = -1.0
     self._param_update_time: float = 0.0
 
+    # Callbacks
+    self._offroad_transition_callbacks: list[Callable[[], None]] = []
+    self._engaged_transition_callbacks: list[Callable[[], None]] = []
+
     self.update_params()
+
+  def add_offroad_transition_callback(self, callback: Callable[[], None]):
+    self._offroad_transition_callbacks.append(callback)
+
+  def add_engaged_transition_callback(self, callback: Callable[[], None]):
+    self._engaged_transition_callbacks.append(callback)
 
   @property
   def engaged(self) -> bool:
@@ -130,6 +140,8 @@ class UIState:
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:
+      for callback in self._engaged_transition_callbacks:
+        callback()
       self._engaged_prev = self.engaged
 
     # Handle onroad/offroad transition
@@ -138,6 +150,9 @@ class UIState:
         self.status = UIStatus.DISENGAGED
         self.started_frame = self.sm.frame
         self.started_time = time.monotonic()
+
+      for callback in self._offroad_transition_callbacks:
+        callback()
 
       self._started_prev = self.started
 

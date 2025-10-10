@@ -83,6 +83,9 @@ class DeveloperLayout(Widget):
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
+    # Toggles should be not available to change in onroad state
+    ui_state.add_offroad_transition_callback(self._update_toggles)
+
   def _render(self, rect):
     self._scroller.render(rect)
 
@@ -90,7 +93,10 @@ class DeveloperLayout(Widget):
     self._update_toggles()
 
   def _update_toggles(self):
+    ui_state.update_params()
+
     # Hide non-release toggles on release builds
+    # TODO: we can do an onroad cycle, but alpha long toggle requires a deinit function to re-enable radar and not fault
     for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle, self._alpha_long_toggle):
       item.set_visible(not self._is_release)
 
@@ -103,7 +109,11 @@ class DeveloperLayout(Widget):
       else:
         self._alpha_long_toggle.set_visible(True)
 
-      self._long_maneuver_toggle.action_item.set_enabled(ui_state.has_longitudinal_control and ui_state.is_offroad)
+      long_man_enabled = ui_state.has_longitudinal_control and ui_state.is_offroad()
+      self._long_maneuver_toggle.action_item.set_enabled(long_man_enabled)
+      if not long_man_enabled:
+        self._long_maneuver_toggle.action_item.set_state(False)
+        self._params.put_bool("LongitudinalManeuverMode", False)
     else:
       self._long_maneuver_toggle.action_item.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
@@ -118,12 +128,6 @@ class DeveloperLayout(Widget):
       ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
     ):
       item.action_item.set_state(self._params.get_bool(key))
-
-  def _update_state(self):
-    # Disable toggles that require onroad restart
-    # TODO: we can do an onroad cycle, but alpha long toggle requires a deinit function to re-enable radar and not fault
-    for item in (self._adb_toggle, self._joystick_toggle, self._long_maneuver_toggle, self._alpha_long_toggle):
-      item.action_item.set_enabled(ui_state.is_offroad)
 
   def _on_enable_adb(self, state: bool):
     self._params.put_bool("AdbEnabled", state)

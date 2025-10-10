@@ -134,6 +134,8 @@ class TogglesLayout(Widget):
     self._update_experimental_mode_icon()
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
+    ui_state.add_engaged_transition_callback(self._update_toggles)
+
   def _update_state(self):
     if ui_state.sm.updated["selfdriveState"]:
       personality = PERSONALITY_TO_INT[ui_state.sm["selfdriveState"].personality]
@@ -141,16 +143,12 @@ class TogglesLayout(Widget):
         self._long_personality_setting.action_item.set_selected_button(personality)
       ui_state.personality = personality
 
-    # these toggles need restart, block while engaged
-    for toggle_def in self._toggle_defs:
-      if self._toggle_defs[toggle_def][3] and toggle_def not in self._locked_toggles:
-        self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
-
   def show_event(self):
-    ui_state.update_params()
     self._update_toggles()
 
   def _update_toggles(self):
+    ui_state.update_params()
+
     e2e_description = (
       "openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. " +
       "Experimental features are listed below:<br>" +
@@ -195,6 +193,11 @@ class TogglesLayout(Widget):
     # refresh toggles from params to mirror external changes
     for param in self._toggle_defs:
       self._toggles[param].action_item.set_state(self._params.get_bool(param))
+
+    # these toggles need restart, block while engaged
+    for toggle_def in self._toggle_defs:
+      if self._toggle_defs[toggle_def][3] and toggle_def not in self._locked_toggles:
+        self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
 
   def _render(self, rect):
     self._scroller.render(rect)
