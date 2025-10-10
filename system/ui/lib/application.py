@@ -354,7 +354,7 @@ class GuiApplication:
       # Load italic font if available
       italic_loaded = False
       (base_name, font_ext) = os.path.splitext(str(font_weight_file))
-      italic_file_name = f"{base_name}Italic.{font_ext}"
+      italic_file_name = f"{base_name}Italic{font_ext}"
       try:
         with as_file(FONT_DIR.joinpath(italic_file_name)) as fspath:
           italic_font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
