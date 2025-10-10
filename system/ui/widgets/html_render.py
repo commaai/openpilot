@@ -13,6 +13,7 @@ from openpilot.system.ui.widgets.button import Button, ButtonStyle
 LIST_INDENT_PX = 40
 
 
+# Block elements only (inline tags like <b> are handled as segments within blocks)
 class ElementType(Enum):
   H1 = "h1"
   H2 = "h2"
@@ -25,6 +26,17 @@ class ElementType(Enum):
   LI = "li"
   BR = "br"
 
+TEXT_BLOCK_TAGS = (
+  'p',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+)
+BOLD_TAGS = ('b', 'strong')
+ITALIC_TAGS = ('i', 'em')
 
 @dataclass
 class HtmlElement:
@@ -72,19 +84,17 @@ class _Parser(HTMLParser):
       self._current_segments = [("• ", self._inline_weight_stack[-1], self._inline_italic_stack[-1])]
       return
 
-    if tag in ("p", "h1", "h2", "h3", "h4", "h5", "h6"):
+    if tag in TEXT_BLOCK_TAGS:
       self._flush_current_block()
       self._current_block = ElementType(tag)
       self._current_segments = []
       return
 
-    # Inline styles: b, strong
-    if tag in ("b", "strong"):
+    if tag in BOLD_TAGS:
       self._inline_weight_stack.append(FontWeight.BOLD)
       return
 
-    # Inline italics: i, em
-    if tag in ("i", "em"):
+    if tag in ITALIC_TAGS:
       self._inline_italic_stack.append(True)
       return
 
@@ -99,17 +109,17 @@ class _Parser(HTMLParser):
       self._current_block = None
       return
 
-    if tag in ("p", "h1", "h2", "h3", "h4", "h5", "h6"):
+    if tag in TEXT_BLOCK_TAGS:
       self._flush_current_block()
       self._current_block = None
       return
 
-    if tag in ("b", "strong"):
+    if tag in BOLD_TAGS:
       if len(self._inline_weight_stack) > 1:
         self._inline_weight_stack.pop()
       return
 
-    if tag in ("i", "em"):
+    if tag in ITALIC_TAGS:
       if len(self._inline_italic_stack) > 1:
         self._inline_italic_stack.pop()
       return
