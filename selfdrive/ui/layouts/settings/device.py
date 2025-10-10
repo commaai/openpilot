@@ -49,8 +49,8 @@ class DeviceLayout(Widget):
     self._pair_device_btn = button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device)
     self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
-    self._reset_calib_btn = button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt,
-                                        description_opened_callback=self._update_calib_description)
+    self._reset_calib_btn = button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt)
+    self._reset_calib_btn.set_description_opened_callback(self._update_calib_description)
 
     items = [
       text_item("Dongle ID", dongle_id),
