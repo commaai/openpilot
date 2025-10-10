@@ -16,8 +16,8 @@ DESCRIPTIONS = {
     "other than your own. A comma employee will NEVER ask you to add their GitHub username."
   ),
   'alpha_longitudinal': (
-    "<b>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</b><br><br>"
-    "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. "
+    "<b>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</b><br><br>" +
+    "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. " +
     "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha."
   ),
 }
