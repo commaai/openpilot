@@ -74,7 +74,7 @@ class UIState:
     self.light_sensor: float = -1.0
     self._param_update_time: float = 0.0
 
-    self._update_params()
+    self.update_params()
 
   @property
   def engaged(self) -> bool:
@@ -91,8 +91,7 @@ class UIState:
     self._update_state()
     self._update_status()
     if time.monotonic() - self._param_update_time > 5.0:
-      self._update_params()
-      self._param_update_time = time.monotonic()
+      self.update_params()
     device.update()
 
   def _update_state(self) -> None:
@@ -142,7 +141,7 @@ class UIState:
 
       self._started_prev = self.started
 
-  def _update_params(self) -> None:
+  def update_params(self) -> None:
     self.is_metric = self.params.get_bool("IsMetric")
 
     # Update longitudinal control state
@@ -153,6 +152,7 @@ class UIState:
         self.has_longitudinal_control = self.params.get_bool("AlphaLongitudinalEnabled")
       else:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
+    self._param_update_time = time.monotonic()
 
 
 class Device:

@@ -147,6 +147,7 @@ class TogglesLayout(Widget):
         self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
 
   def show_event(self):
+    ui_state.update_params()
     self._update_toggles()
 
   def _update_toggles(self):
