@@ -3,7 +3,6 @@ import pyray as rl
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -24,7 +23,6 @@ class ElementType(Enum):
   UL = "ul"
   LI = "li"
   BR = "br"
-  B = "b"
 
 
 TAG_NAMES = '|'.join([t.value for t in ElementType])
@@ -72,7 +70,6 @@ class HtmlRenderer(Widget):
       ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
       ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
       ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
-      ElementType.B: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.BOLD, "margin_top": 8, "margin_bottom": 12},
       ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
@@ -104,21 +101,21 @@ class HtmlRenderer(Widget):
     tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
 
     def close_tag():
-      nonlocal current_text
+      nonlocal current_content
       nonlocal current_tag
 
+      # If no tag is set, default to paragraph so we don't lose text
       if current_tag is None:
         current_tag = ElementType.P
 
-      text = current_text.strip()
+      text = ' '.join(current_content).strip()
+      current_content = []
       if text:
         if current_tag == ElementType.LI:
           text = '• ' + text
         self._add_element(current_tag, text)
 
-      current_text = ""
-
-    current_text = ""
+    current_content: list[str] = []
     current_tag: ElementType | None = None
     for token in tokens:
       is_start_tag, is_end_tag, tag = is_tag(token)
@@ -126,31 +123,22 @@ class HtmlRenderer(Widget):
         if tag == ElementType.BR:
           self._add_element(ElementType.BR, "")
 
-        elif tag == ElementType.B:
-          # keep inline tags in content; handle at render time
-          current_text += token
-          continue
-
         elif is_start_tag or is_end_tag:
           # Always add content regardless of opening or closing tag
           close_tag()
 
+          # TODO: reset to None if end tag?
           if is_start_tag:
             current_tag = tag
-          else:
-            current_tag = None
 
         # increment after we add the content for the current tag
         if tag == ElementType.UL:
           self._indent_level = self._indent_level + 1 if is_start_tag else max(0, self._indent_level - 1)
 
       else:
-        if current_text:
-          current_text += " " + token
-        else:
-          current_text = token
+        current_content.append(token)
 
-    if current_text:
+    if current_content:
       close_tag()
 
   def _add_element(self, element_type: ElementType, content: str) -> None:
@@ -184,49 +172,19 @@ class HtmlRenderer(Widget):
         break
 
       if element.content:
-        base_font = self._get_font(element.font_weight)
-        # Build visible text and a parallel bold mask
-        parts = re.split(r'(</b>|<b>)', element.content)
-        bold = False
-        visible_chars: list[str] = []
-        bold_mask: list[bool] = []
-        for p in parts:
-          if p == '<b>':
-            bold = True
-          elif p == '</b>':
-            bold = False
-          elif p:
-            visible_chars.append(p)
-            bold_mask.extend([bold] * len(p))
-        visible_text = ''.join(visible_chars)
-        wrapped_lines = wrap_text(base_font, visible_text, element.font_size, int(content_width))
+        font = self._get_font(element.font_weight)
+        wrapped_lines = wrap_text(font, element.content, element.font_size, int(content_width))
 
-        vis_off = 0
         for line in wrapped_lines:
           if current_y < rect.y - element.font_size:
             current_y += element.font_size * element.line_height
-            vis_off += len(line)
             continue
 
           if current_y > rect.y + rect.height:
             break
 
-          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX) + padding
-          x_cursor = text_x
-          # Draw contiguous segments where boldness is constant
-          i = 0
-          n = len(line)
-          while i < n:
-            j = i + 1
-            is_bold = bold_mask[vis_off + i] if vis_off + i < len(bold_mask) else False
-            while j < n and (vis_off + j) < len(bold_mask) and bold_mask[vis_off + j] == is_bold:
-              j += 1
-            seg_text = line[i:j]
-            font = self._get_font(FontWeight.BOLD if is_bold else element.font_weight)
-            rl.draw_text_ex(font, seg_text, rl.Vector2(x_cursor, current_y), element.font_size, 0, self._text_color)
-            x_cursor += int(measure_text_cached(font, seg_text, element.font_size).x)
-            i = j
-          vis_off += n
+          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
+          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
 
           current_y += element.font_size * element.line_height
 
@@ -250,6 +208,7 @@ class HtmlRenderer(Widget):
       if element.content:
         font = self._get_font(element.font_weight)
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
+
         for _ in wrapped_lines:
           total_height += element.font_size * element.line_height
 
