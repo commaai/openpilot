@@ -269,7 +269,6 @@ class HtmlRenderer(Widget):
     if current_line:
       lines.append(current_line)
 
-    # If nothing produced, return empty list (so caller can skip drawing)
     return lines
 
   def _render(self, rect: rl.Rectangle):
