@@ -66,7 +66,7 @@ class _Parser(HTMLParser):
 
     # Current block being built
     self._current_block: ElementType | None = None
-    self._current_segments: list[tuple[str, FontWeight, bool]] = []  # (text, font_weight, is_italized)
+    self._current_segments: list[tuple[str, FontWeight, bool]] = []  # (text, font_weight, is_italicized)
     self._inline_weight_stack: list[FontWeight] = [FontWeight.NORMAL]
     self._inline_italic_stack: list[bool] = [False]
 
