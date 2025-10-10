@@ -177,7 +177,7 @@ class TogglesLayout(Widget):
         unavailable = "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
 
         long_desc = unavailable + " openpilot longitudinal control may come in a future update."
-        if ui_state.CP.getAlphaLongitudinalAvailable():
+        if ui_state.CP.alphaLongitudinalAvailable:
           if self._is_release:
             long_desc = unavailable + " " + ("An alpha version of openpilot longitudinal control can be tested, along with " +
                                              "Experimental mode, on non-release branches.")

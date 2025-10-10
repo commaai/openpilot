@@ -3,7 +3,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.label import Label
-from openpilot.system.ui.widgets.html_render import HtmlRenderer
+from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
 
@@ -19,7 +19,7 @@ class ConfirmDialog(Widget):
   def __init__(self, text: str, confirm_text: str, cancel_text: str = "Cancel", rich: bool = False):
     super().__init__()
     self._label = Label(text, 70, FontWeight.BOLD, text_color=rl.Color(201, 201, 201, 255))
-    self._html_renderer = HtmlRenderer(text=text)
+    self._html_renderer = HtmlRenderer(text=text, text_size={ElementType.P: 50})
     self._cancel_button = Button(cancel_text, self._cancel_button_callback)
     self._confirm_button = Button(confirm_text, self._confirm_button_callback, button_style=ButtonStyle.PRIMARY)
     self._rich = rich
