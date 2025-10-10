@@ -76,7 +76,7 @@ def setup_settings_developer(click, pm: PubMaster):
 
 def setup_keyboard(click, pm: PubMaster):
   setup_settings_developer(click, pm)
-  click(1930, 270)
+  click(1930, 470)
 
 
 def setup_pair_device(click, pm: PubMaster):
