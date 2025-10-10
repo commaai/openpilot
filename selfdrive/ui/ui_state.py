@@ -145,7 +145,7 @@ class UIState:
     self.is_metric = self.params.get_bool("IsMetric")
 
     # Update longitudinal control state
-    CP_bytes = self.params.get("CarParams")
+    CP_bytes = self.params.get("CarParamsPersistent")
     if CP_bytes is not None:
       self.CP = messaging.log_from_bytes(CP_bytes, car.CarParams)
       if self.CP.alphaLongitudinalAvailable:
