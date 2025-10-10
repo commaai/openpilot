@@ -218,7 +218,7 @@ class TogglesLayout(Widget):
         self._update_experimental_mode_icon()
 
       # show confirmation dialog
-      content = (f"<h2>{self._toggles['ExperimentalMode'].title}</h2><br>"
+      content = (f"<h2>{self._toggles['ExperimentalMode'].title}</h2><br>" +
                  f"<p>{self._toggles['ExperimentalMode'].description}</p>")
       dlg = ConfirmDialog(content, "Enable", rich=True)
       gui_app.set_modal_overlay(dlg, callback=confirm_callback)
