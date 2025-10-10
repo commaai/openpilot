@@ -147,15 +147,20 @@ class DeveloperLayout(Widget):
         print('got result', result)
         if result == DialogResult.CONFIRM:
           self._params.put_bool("AlphaLongitudinalEnabled", True)
+          self._update_toggles()
         else:
           self._alpha_long_toggle.action_item.set_state(False)
 
-      # confirmation with desc
+      # show confirmation dialog
       content = (f"<h2 style=\"text-align: center;\">{self._alpha_long_toggle.title}</h2><br>"
                  f"<p style=\"text-align: center; font-size: 50px\">{self._alpha_long_toggle.description}</p>")
 
+      content = (f"<h2>{self._alpha_long_toggle.title}</h2><br>"
+                 f"<p>{self._alpha_long_toggle.description}</p>")
+
       dlg = ConfirmDialog(content, "Enable", rich=True)
       gui_app.set_modal_overlay(dlg, callback=confirm_callback)
+      return
 
     self._params.put_bool("AlphaLongitudinalEnabled", state)
     self._update_toggles()

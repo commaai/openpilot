@@ -202,22 +202,31 @@ class TogglesLayout(Widget):
     icon = "experimental.png" if self._toggles["ExperimentalMode"].action_item.get_state() else "experimental_white.png"
     self._toggles["ExperimentalMode"].set_icon(icon)
 
-  def _toggle_callback(self, state: bool, param: str):
-    if param == "ExperimentalMode" and state:
-      confirmed = self._params.get_bool("ExperimentalModeConfirmed")
-      if not confirmed:
-        def confirm_callback(result: int):
-          if result == DialogResult.CONFIRM:
-            self._params.put_bool("ExperimentalMode", True)
-          else:
-            self._toggles["ExperimentalMode"].action_item.set_state(False)
+  def _handle_experimental_mode_toggle(self, state: bool):
+    confirmed = self._params.get_bool("ExperimentalModeConfirmed")
+    if state and not confirmed:
+      def confirm_callback(result: int):
+        if result == DialogResult.CONFIRM:
+          self._params.put_bool("ExperimentalMode", True)
+          # TODO: uncomment
+          # self._params.put_bool("ExperimentalModeConfirmed", True)
+        else:
+          self._toggles["ExperimentalMode"].action_item.set_state(False)
+        self._update_experimental_mode_icon()
 
-        # confirmation with desc
-        dlg = ConfirmDialog(self._toggles["ExperimentalMode"].description, "Enable", rich=True)
-        gui_app.set_modal_overlay(dlg, callback=confirm_callback)
-
-    if param == "ExperimentalMode":
+      # show confirmation dialog
+      content = (f"<h2>{self._toggles['ExperimentalMode'].title}</h2><br>"
+                 f"<p>{self._toggles['ExperimentalMode'].description}</p>")
+      dlg = ConfirmDialog(content, "Enable", rich=True)
+      gui_app.set_modal_overlay(dlg, callback=confirm_callback)
+    else:
       self._update_experimental_mode_icon()
+      self._params.put_bool("ExperimentalMode", state)
+
+  def _toggle_callback(self, state: bool, param: str):
+    if param == "ExperimentalMode":
+      self._handle_experimental_mode_toggle(state)
+      return
 
     self._params.put_bool(param, state)
     if self._toggle_defs[param][3]:
