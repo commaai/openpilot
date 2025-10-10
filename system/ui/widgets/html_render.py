@@ -28,6 +28,7 @@ class ElementType(Enum):
   BR = "br"
 
 
+INDENT_TAGS = ('ul', 'ol')
 TEXT_BLOCK_TAGS = (
   'p',
   'h1',
@@ -76,7 +77,7 @@ class _Parser(HTMLParser):
       self._add_element(ElementType.BR, [])
       return
 
-    if tag == "ul":
+    if tag in INDENT_TAGS:
       self._indent += 1
       return
 
@@ -103,7 +104,7 @@ class _Parser(HTMLParser):
 
   def handle_endtag(self, tag):
     tag = tag.lower()
-    if tag == "ul":
+    if tag in INDENT_TAGS:
       self._indent = max(0, self._indent - 1)
       return
 
@@ -151,7 +152,7 @@ class _Parser(HTMLParser):
       block = self._current_block
 
     # Copy segments
-    segments = [(t, w, it) for (t, w, it) in self._current_segments if t.strip() != "" or t == " "]
+    segments = [(t, w, it) for (t, w, it) in self._current_segments if t.strip() != "" or t == " "]  # Ignore empty segments except single spaces
     self._current_segments = []
 
     if block == ElementType.BR:
@@ -313,6 +314,7 @@ class HtmlRenderer(Widget):
     for element in self.elements:
       # Add top margin
       total_height += element.margin_top
+
       # Add wrapped lines height
       if element.content:
         wrapped_lines = self._wrap_segments(element.content, element.font_size, int(usable_width))
@@ -321,6 +323,7 @@ class HtmlRenderer(Widget):
           total_height += element.font_size * element.line_height
       else:
         wrapped_per_element.append([])
+
       # Add bottom margin
       total_height += element.margin_bottom
 
