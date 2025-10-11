@@ -72,7 +72,6 @@ class AlertRenderer(Widget):
   def __init__(self):
     super().__init__()
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
-    self.font_semibold: rl.Font = gui_app.font(FontWeight.SEMI_BOLD)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
 
   def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
@@ -90,7 +89,7 @@ class AlertRenderer(Widget):
         return ALERT_STARTUP_PENDING
 
       # 2. Lost communication with selfdriveState after receiving it
-      if not waiting_for_startup:
+      if TICI and not waiting_for_startup:
         ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
         if ss_missing > SELFDRIVE_STATE_TIMEOUT:
           if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
@@ -140,8 +139,7 @@ class AlertRenderer(Widget):
 
   def _draw_text(self, rect: rl.Rectangle, alert: Alert) -> None:
     if alert.size == AlertSize.small:
-      # Qt uses DemiBold for small alerts; match with SemiBold in raylib
-      self._draw_centered(alert.text1, rect, self.font_semibold, ALERT_FONT_MEDIUM)
+      self._draw_centered(alert.text1, rect, self.font_bold, ALERT_FONT_MEDIUM)
 
     elif alert.size == AlertSize.mid:
       self._draw_centered(alert.text1, rect, self.font_bold, ALERT_FONT_BIG, center_y=False)
@@ -149,22 +147,15 @@ class AlertRenderer(Widget):
       self._draw_centered(alert.text2, rect, self.font_regular, ALERT_FONT_SMALL, center_y=False)
 
     else:
-      # Match Qt placement for full-screen alerts: title near top, subtitle near bottom.
       is_long = len(alert.text1) > 15
       font_size1 = 132 if is_long else 177
+      align_ment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
+      vertical_align = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
+      text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height)
 
-      align_center = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
-      align_top = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP
-
-      # Title rectangle near the top of the alert
-      top_offset = 240 if is_long else 270
-      title_rect = rl.Rectangle(rect.x, rect.y + top_offset, rect.width, 600)
-      gui_text_box(title_rect, alert.text1, font_size1, alignment=align_center, alignment_vertical=align_top, font_weight=FontWeight.BOLD)
-
-      # Subtitle rectangle anchored near the bottom of the alert
-      bottom_offset = 361 if is_long else 420
-      subtitle_rect = rl.Rectangle(rect.x, rect.y + rect.height - bottom_offset, rect.width, 300)
-      gui_text_box(subtitle_rect, alert.text2, ALERT_FONT_BIG, alignment=align_center, alignment_vertical=align_top)
+      gui_text_box(text_rect, alert.text1, font_size1, alignment=align_ment, alignment_vertical=vertical_align, font_weight=FontWeight.BOLD)
+      text_rect.y = rect.y + rect.height // 2
+      gui_text_box(text_rect, alert.text2, ALERT_FONT_BIG, alignment=align_ment)
 
   def _draw_centered(self, text, rect, font, font_size, center_y=True, color=rl.WHITE) -> None:
     text_size = measure_text_cached(font, text, font_size)
