@@ -38,6 +38,7 @@ class DeveloperLayout(Widget):
       description=DESCRIPTIONS["enable_adb"],
       initial_state=self._params.get_bool("AdbEnabled"),
       callback=self._on_enable_adb,
+      enabled=ui_state.is_offroad,
     )
 
     # SSH enable toggle + SSH key management
@@ -54,6 +55,7 @@ class DeveloperLayout(Widget):
       description="",
       initial_state=self._params.get_bool("JoystickDebugMode"),
       callback=self._on_joystick_debug_mode,
+      enabled=ui_state.is_offroad,
     )
 
     self._long_maneuver_toggle = toggle_item(
@@ -68,6 +70,7 @@ class DeveloperLayout(Widget):
       description=DESCRIPTIONS["alpha_longitudinal"],
       initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
       callback=self._on_alpha_long_enabled,
+      enabled=ui_state.is_offroad,
     )
 
     items = [
