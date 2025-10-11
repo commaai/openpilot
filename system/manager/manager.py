@@ -221,7 +221,7 @@ if __name__ == "__main__":
     cloudlog.exception("Manager failed to start")
 
     try:
-      managed_processes['raylib_ui'].stop()
+      managed_processes['ui'].stop()
     except Exception:
       pass
 
