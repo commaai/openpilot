@@ -49,7 +49,7 @@ class FirehoseLayout(Widget):
     self.update_thread.start()
     self.last_update_time = 0
 
-  def hide_event(self):
+  def show_event(self):
     self.scroll_panel.set_offset(0)
 
   def _get_segment_count(self) -> int:

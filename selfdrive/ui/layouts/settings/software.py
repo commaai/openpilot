@@ -69,8 +69,8 @@ class SoftwareLayout(Widget):
     ]
     return items
 
-  def hide_event(self):
-    self._scroller.hide_event()
+  def show_event(self):
+    self._scroller.show_event()
 
   def _render(self, rect):
     self._scroller.render(rect)
