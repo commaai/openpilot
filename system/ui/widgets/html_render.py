@@ -8,6 +8,7 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 LIST_INDENT_PX = 40
 
@@ -20,6 +21,7 @@ class ElementType(Enum):
   H5 = "h5"
   H6 = "h6"
   P = "p"
+  B = "b"
   UL = "ul"
   LI = "li"
   BR = "br"
@@ -51,9 +53,10 @@ class HtmlElement:
 
 class HtmlRenderer(Widget):
   def __init__(self, file_path: str | None = None, text: str | None = None,
-               text_size: dict | None = None, text_color: rl.Color = rl.WHITE):
+               text_size: dict | None = None, text_color: rl.Color = rl.WHITE, center_text: bool = False):
     super().__init__()
     self._text_color = text_color
+    self._center_text = center_text
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._indent_level = 0
@@ -73,6 +76,7 @@ class HtmlRenderer(Widget):
       ElementType.H5: {"size": round(base_p_size * 0.83), "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
       ElementType.H6: {"size": round(base_p_size * 0.67), "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
       ElementType.P: {"size": base_p_size, "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.B: {"size": base_p_size, "weight": FontWeight.BOLD, "margin_top": 8, "margin_bottom": 12},
       ElementType.LI: {"size": base_p_size, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
@@ -190,7 +194,12 @@ class HtmlRenderer(Widget):
           if current_y > rect.y + rect.height:
             break
 
-          text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
+          if self._center_text:
+            text_width = measure_text_cached(font, line, element.font_size).x
+            text_x = rect.x + (rect.width - text_width) / 2
+          else:  # left align
+            text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
+
           rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
 
           current_y += element.font_size * FONT_SCALE * element.line_height

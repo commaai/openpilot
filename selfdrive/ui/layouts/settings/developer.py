@@ -154,7 +154,7 @@ class DeveloperLayout(Widget):
           self._alpha_long_toggle.action_item.set_state(False)
 
       # show confirmation dialog
-      content = (f"<h2>{self._alpha_long_toggle.title}</h2><br>" +
+      content = (f"<h1>{self._alpha_long_toggle.title}</h1><br>" +
                  f"<p>{self._alpha_long_toggle.description}</p>")
 
       dlg = ConfirmDialog(content, "Enable", rich=True)
