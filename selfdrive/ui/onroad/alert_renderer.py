@@ -149,13 +149,17 @@ class AlertRenderer(Widget):
     else:
       is_long = len(alert.text1) > 15
       font_size1 = 132 if is_long else 177
-      align_ment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
-      vertical_align = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
-      text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height)
 
-      gui_text_box(text_rect, alert.text1, font_size1, alignment=align_ment, alignment_vertical=vertical_align, font_weight=FontWeight.BOLD)
-      text_rect.y = rect.y + rect.height // 2
-      gui_text_box(text_rect, alert.text2, ALERT_FONT_BIG, alignment=align_ment)
+      align_center = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
+      align_top = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP
+
+      top_offset = 240 if is_long else 270
+      title_rect = rl.Rectangle(rect.x, rect.y + top_offset, rect.width, 600)
+      gui_text_box(title_rect, alert.text1, font_size1, alignment=align_center, alignment_vertical=align_top, font_weight=FontWeight.BOLD)
+
+      bottom_offset = 361 if is_long else 420
+      subtitle_rect = rl.Rectangle(rect.x, rect.y + rect.height - bottom_offset, rect.width, 300)
+      gui_text_box(subtitle_rect, alert.text2, ALERT_FONT_BIG, alignment=align_center, alignment_vertical=align_top)
 
   def _draw_centered(self, text, rect, font, font_size, center_y=True, color=rl.WHITE) -> None:
     text_size = measure_text_cached(font, text, font_size)
