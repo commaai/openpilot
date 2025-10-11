@@ -72,6 +72,7 @@ class AlertRenderer(Widget):
   def __init__(self):
     super().__init__()
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
+    self.font_semibold: rl.Font = gui_app.font(FontWeight.SEMI_BOLD)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
 
   def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
@@ -89,7 +90,7 @@ class AlertRenderer(Widget):
         return ALERT_STARTUP_PENDING
 
       # 2. Lost communication with selfdriveState after receiving it
-      if TICI and not waiting_for_startup:
+      if not waiting_for_startup:
         ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
         if ss_missing > SELFDRIVE_STATE_TIMEOUT:
           if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
@@ -139,7 +140,8 @@ class AlertRenderer(Widget):
 
   def _draw_text(self, rect: rl.Rectangle, alert: Alert) -> None:
     if alert.size == AlertSize.small:
-      self._draw_centered(alert.text1, rect, self.font_bold, ALERT_FONT_MEDIUM)
+      # Qt uses DemiBold for small alerts; match with SemiBold in raylib
+      self._draw_centered(alert.text1, rect, self.font_semibold, ALERT_FONT_MEDIUM)
 
     elif alert.size == AlertSize.mid:
       self._draw_centered(alert.text1, rect, self.font_bold, ALERT_FONT_BIG, center_y=False)
