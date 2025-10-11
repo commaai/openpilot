@@ -107,7 +107,7 @@ class Sidebar(Widget):
 
     device_state = sm['deviceState']
 
-    self._recording_audio = sm.alive['rawAudioData']
+    self._recording_audio = ui_state.recording_audio
     self._update_network_status(device_state)
     self._update_temperature_status(device_state)
     self._update_connection_status(device_state)

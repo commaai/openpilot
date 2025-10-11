@@ -67,6 +67,7 @@ class UIState:
     self.is_metric: bool = self.params.get_bool("IsMetric")
     self.started: bool = False
     self.ignition: bool = False
+    self.recording_audio: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
@@ -127,6 +128,9 @@ class UIState:
 
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
+
+    # Update recording audio state
+    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
 
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:
