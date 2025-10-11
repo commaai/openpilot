@@ -76,7 +76,7 @@ class MouseState:
     self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
     self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
 
-    self._rk = Ratekeeper(MOUSE_THREAD_RATE)
+    self._rk = Ratekeeper(MOUSE_THREAD_RATE, print_delay_threshold=None)
     self._lock = threading.Lock()
     self._exit_event = threading.Event()
     self._thread = None
