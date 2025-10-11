@@ -65,8 +65,8 @@ class ActionButton(Widget):
 
   def set_text(self, text: str):
     self._text = text
-    self._text_width = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self._text, AlertConstants.FONT_SIZE).x
-    self._rect.width = max(self._text_width + 60 * 2, self._min_width)
+    self._text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self._text, AlertConstants.FONT_SIZE)
+    self._rect.width = max(self._text_size.x + 60 * 2, self._min_width)
     self._rect.height = AlertConstants.BUTTON_HEIGHT
 
   def _render(self, _):
@@ -79,8 +79,8 @@ class ActionButton(Widget):
 
     # center text
     color = rl.WHITE if self._style == ButtonStyle.DARK else rl.BLACK
-    text_x = int(self._rect.x + (self._rect.width - self._text_width) // 2)
-    text_y = int(self._rect.y + (self._rect.height - AlertConstants.FONT_SIZE) // 2)
+    text_x = int(self._rect.x + (self._rect.width - self._text_size.x) // 2)
+    text_y = int(self._rect.y + (self._rect.height - self._text_size.y) // 2)
     rl.draw_text_ex(self._font, self._text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
 
 
