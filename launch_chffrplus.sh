@@ -23,7 +23,11 @@ function agnos_init {
     if $AGNOS_PY --verify $MANIFEST; then
       sudo reboot
     fi
-    $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
+    if systemctl is-active --quiet magic; then
+      /usr/comma/updater $AGNOS_PY $MANIFEST
+    else
+      $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
+    fi
   fi
 }
 
