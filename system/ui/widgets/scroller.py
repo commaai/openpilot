@@ -79,6 +79,7 @@ class Scroller(Widget):
 
   def show_event(self):
     super().show_event()
+    # Reset to top
     self.scroll_panel.set_offset(0)
     for item in self._items:
       item.show_event()

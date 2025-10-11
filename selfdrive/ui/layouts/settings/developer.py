@@ -88,9 +88,8 @@ class DeveloperLayout(Widget):
     self._scroller.render(rect)
 
   def show_event(self):
+    self._scroller.show_event()
     self._update_toggles()
-    # TODO: which first?
-    self._scroller.hide_event()
 
   def _update_toggles(self):
     ui_state.update_params()
