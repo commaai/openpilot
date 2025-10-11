@@ -60,6 +60,7 @@ class HudRenderer(Widget):
     super().__init__()
     """Initialize the HUD renderer."""
     self.is_cruise_set: bool = False
+    self.is_cruise_available: bool = True
     self.set_speed: float = SET_SPEED_NA
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
@@ -87,6 +88,7 @@ class HudRenderer(Widget):
       controls_state.vCruiseDEPRECATED if v_cruise_cluster == 0.0 else v_cruise_cluster
     )
     self.is_cruise_set = 0 < self.set_speed < SET_SPEED_NA
+    self.is_cruise_available = self.set_speed != -1
 
     if self.is_cruise_set and not ui_state.is_metric:
       self.set_speed *= KM_TO_MILE
@@ -109,7 +111,9 @@ class HudRenderer(Widget):
       COLORS.header_gradient_end,
     )
 
-    self._draw_set_speed(rect)
+    if self.is_cruise_available:
+      self._draw_set_speed(rect)
+
     self._draw_current_speed(rect)
 
     button_x = rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
