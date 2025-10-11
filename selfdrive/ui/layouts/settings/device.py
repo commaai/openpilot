@@ -60,7 +60,8 @@ class DeviceLayout(Widget):
       self._reset_calib_btn,
       button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
       regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory),
-      button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
+      # TODO: implement multilang
+      # button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
       dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
     ]
     regulatory_btn.set_visible(TICI)
