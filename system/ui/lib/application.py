@@ -103,7 +103,8 @@ class MouseState:
       self._handle_mouse_event()
       dt = time.monotonic() - t
       self.times.append(dt)
-      print(f"mouse dt: {dt*1000:.2f}ms, avg: {sum(self.times)/len(self.times)*1000:.3f}ms")
+      if dt > 1 / MOUSE_THREAD_RATE * 1000:
+        print(f"mouse dt: {dt*1000:.2f}ms, avg: {sum(self.times)/len(self.times)*1000:.3f}ms")
       self._rk.keep_time()
 
   def _handle_mouse_event(self):
