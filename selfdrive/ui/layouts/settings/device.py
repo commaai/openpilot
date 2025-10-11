@@ -42,6 +42,8 @@ class DeviceLayout(Widget):
     items = self._initialize_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
+    ui_state.add_offroad_transition_callback(self._offroad_transition)
+
   def _initialize_items(self):
     dongle_id = self._params.get("DongleId") or "N/A"
     serial = self._params.get("HardwareSerial") or "N/A"
@@ -52,19 +54,25 @@ class DeviceLayout(Widget):
     self._reset_calib_btn = button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt)
     self._reset_calib_btn.set_description_opened_callback(self._update_calib_description)
 
+    self._power_off_btn = dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt)
+
     items = [
       text_item("Dongle ID", dongle_id),
       text_item("Serial", serial),
       self._pair_device_btn,
       button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
       self._reset_calib_btn,
-      button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
-      regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory),
-      button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
-      dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
+      button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide, enabled=ui_state.is_offroad),
+      regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory, enabled=ui_state.is_offroad),
+      # TODO: implement multilang
+      # button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
+      self._power_off_btn,
     ]
     regulatory_btn.set_visible(TICI)
     return items
+
+  def _offroad_transition(self):
+    self._power_off_btn.action_item.right_button.set_visible(ui_state.is_offroad())
 
   def show_event(self):
     self._scroller.show_event()

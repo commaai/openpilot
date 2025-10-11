@@ -1,10 +1,11 @@
 import pyray as rl
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
+from openpilot.system.ui.widgets.label import Label
 
 
 class SetupWidget(Widget):
@@ -15,6 +16,7 @@ class SetupWidget(Widget):
     self._pair_device_btn = Button("Pair device", self._show_pairing, button_style=ButtonStyle.PRIMARY)
     self._open_settings_btn = Button("Open", lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
+    self._firehose_label = Label("🔥Firehose Mode 🔥", font_weight=FontWeight.MEDIUM, font_size=64)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
@@ -28,7 +30,7 @@ class SetupWidget(Widget):
   def _render_registration(self, rect: rl.Rectangle):
     """Render registration prompt."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 630), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, rect.height), 0.02, 20, rl.Color(51, 51, 51, 255))
 
     x = rect.x + 64
     y = rect.y + 48
@@ -45,15 +47,15 @@ class SetupWidget(Widget):
     wrapped = wrap_text(light_font, desc, 50, int(w))
     for line in wrapped:
       rl.draw_text_ex(light_font, line, rl.Vector2(x, y), 50, 0, rl.WHITE)
-      y += 50
+      y += 50 * FONT_SCALE
 
-    button_rect = rl.Rectangle(x, y + 50, w, 128)
+    button_rect = rl.Rectangle(x, y + 30, w, 200)
     self._pair_device_btn.render(button_rect)
 
   def _render_firehose_prompt(self, rect: rl.Rectangle):
     """Render firehose prompt widget."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 450), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 500), 0.02, 20, rl.Color(51, 51, 51, 255))
 
     # Content margins (56, 40, 56, 40)
     x = rect.x + 56
@@ -62,9 +64,8 @@ class SetupWidget(Widget):
     spacing = 42
 
     # Title with fire emojis
-    title_font = gui_app.font(FontWeight.MEDIUM)
-    title_text = "Firehose Mode"
-    rl.draw_text_ex(title_font, title_text, rl.Vector2(x, y), 64, 0, rl.WHITE)
+    # TODO: fix Label centering with emojis
+    self._firehose_label.render(rl.Rectangle(x - 40, y, w, 64))
     y += 64 + spacing
 
     # Description
@@ -74,7 +75,7 @@ class SetupWidget(Widget):
 
     for line in wrapped_desc:
       rl.draw_text_ex(desc_font, line, rl.Vector2(x, y), 40, 0, rl.WHITE)
-      y += 40
+      y += 40 * FONT_SCALE
 
     y += spacing
 
