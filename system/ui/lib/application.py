@@ -48,6 +48,8 @@ class FontWeight(StrEnum):
   BOLD = "Inter-Bold.ttf"
   EXTRA_BOLD = "Inter-ExtraBold.ttf"
   BLACK = "Inter-Black.ttf"
+  NOTO = "NotoColorEmoji-Regular.ttf"
+  JETBRAINS_MONO = "JetBrainsMono-Regular.ttf"
 
 
 @dataclass

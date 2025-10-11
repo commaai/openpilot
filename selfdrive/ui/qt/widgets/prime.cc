@@ -255,7 +255,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   setSizePolicy(sp_retain);
 
   QObject::connect(uiState()->prime_state, &PrimeState::changed, [this](PrimeState::Type type) {
-    if (type == PrimeState::PRIME_TYPE_UNPAIRED) {
+    if (type == PrimeState::PRIME_TYPE_UNPAIRED && !Hardware::PC()) {
       mainLayout->setCurrentIndex(0);  // Display "Pair your device" widget
     } else {
       popup->reject();
