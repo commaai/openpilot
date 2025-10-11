@@ -188,9 +188,10 @@ class DualButtonAction(ItemAction):
     button_width = (rect.width - button_spacing) / 2
     button_y = rect.y + (rect.height - button_height) / 2
 
-    # expand one to full width if other is not visible
     left_rect = rl.Rectangle(rect.x, button_y, button_width, button_height)
     right_rect = rl.Rectangle(rect.x + button_width + button_spacing, button_y, button_width, button_height)
+
+    # expand one to full width if other is not visible
     if not self.left_button.is_visible:
       right_rect.x = rect.x
       right_rect.width = rect.width

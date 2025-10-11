@@ -72,9 +72,7 @@ class DeviceLayout(Widget):
     return items
 
   def _offroad_transition(self):
-    # set power off invisible if onroad, keep reboot
     self._power_off_btn.action_item.right_button.set_visible(ui_state.is_offroad())
-
 
   def show_event(self):
     self._scroller.show_event()
