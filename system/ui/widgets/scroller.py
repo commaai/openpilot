@@ -77,5 +77,5 @@ class Scroller(Widget):
 
     rl.end_scissor_mode()
 
-  def hide_event(self):
+  def show_event(self):
     self.scroll_panel.set_offset(0)
