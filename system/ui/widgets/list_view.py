@@ -281,6 +281,9 @@ class ListItem(Widget):
     # Cached properties for performance
     self._prev_description: str | None = self.description
 
+  def show_event(self):
+    self._set_description_visible(False)
+
   def set_description_opened_callback(self, callback: Callable) -> None:
     self.description_opened_callback = callback
 
@@ -304,8 +307,11 @@ class ListItem(Widget):
         # Click was on right item, don't toggle description
         return
 
-    if self.description:
-      self.description_visible = not self.description_visible
+    self._set_description_visible(not self.description_visible)
+
+  def _set_description_visible(self, visible: bool):
+    if self.description and self.description_visible != visible:
+      self.description_visible = visible
       # do callback first in case receiver changes description
       if self.description_visible and self.description_opened_callback is not None:
         self.description_opened_callback()
