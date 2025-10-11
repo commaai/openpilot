@@ -103,7 +103,7 @@ class MouseState:
       self._handle_mouse_event()
       dt = time.monotonic() - t
       self.times.append(dt)
-      print(f"mouse dt avg: {sum(self.times)/len(self.times)*1000:.2f}ms")
+      print(f"mouse dt: {dt*1000:.2f}ms, avg: {sum(self.times)/len(self.times)*1000:.2f}ms")
       self._rk.keep_time()
 
   def _handle_mouse_event(self):
