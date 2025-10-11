@@ -36,7 +36,7 @@ class HomeLayout(Widget):
     self.update_alert = UpdateAlert()
     self.offroad_alert = OffroadAlert()
 
-    self._layouts = {HomeLayoutState.UPDATE: self.update_alert, HomeLayoutState.ALERTS: self.offroad_alert}
+    self._layout_widgets = {HomeLayoutState.UPDATE: self.update_alert, HomeLayoutState.ALERTS: self.offroad_alert}
 
     self.current_state = HomeLayoutState.HOME
     self.last_refresh = 0
@@ -75,10 +75,10 @@ class HomeLayout(Widget):
   def _set_state(self, state: HomeLayoutState):
     # propagate show/hide events
     if state != self.current_state:
-      if state in self._layouts:
-        self._layouts[state].show_event()
-      if self.current_state in self._layouts:
-        self._layouts[self.current_state].hide_event()
+      if state in self._layout_widgets:
+        self._layout_widgets[state].show_event()
+      if self.current_state in self._layout_widgets:
+        self._layout_widgets[self.current_state].hide_event()
 
     self.current_state = state
 
