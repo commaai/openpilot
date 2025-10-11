@@ -78,18 +78,19 @@ class AlertRenderer(Widget):
     """Generate the current alert based on selfdrive state."""
     ss = sm['selfdriveState']
 
+    # Guard against showing stale alerts across offroad->onroad transitions.
+    # Match Qt behavior: ignore any selfdriveState received before started_frame.
+    recv_frame = sm.recv_frame['selfdriveState']
+    time_since_onroad = time.monotonic() - ui_state.started_time
+    waiting_for_startup = recv_frame < ui_state.started_frame
+    if waiting_for_startup:
+      # After a brief delay, show a pending startup alert; otherwise show nothing.
+      return ALERT_STARTUP_PENDING if time_since_onroad > 5 else None
+
     # Check if selfdriveState messages have stopped arriving
     if not sm.updated['selfdriveState']:
-      recv_frame = sm.recv_frame['selfdriveState']
-      time_since_onroad = time.monotonic() - ui_state.started_time
-
-      # 1. Never received selfdriveState since going onroad
-      waiting_for_startup = recv_frame < ui_state.started_frame
-      if waiting_for_startup and time_since_onroad > 5:
-        return ALERT_STARTUP_PENDING
-
-      # 2. Lost communication with selfdriveState after receiving it
-      if TICI and not waiting_for_startup:
+      # Lost communication with selfdriveState after receiving it
+      if TICI:
         ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
         if ss_missing > SELFDRIVE_STATE_TIMEOUT:
           if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
