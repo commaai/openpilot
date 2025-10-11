@@ -72,6 +72,7 @@ dependencies = [
   "zstandard",
 
   # ui
+  "raylib < 5.5.0.3", # TODO: unpin when they fix https://github.com/electronstudio/raylib-python-cffi/issues/186
   "qrcode",
 ]
 
@@ -119,7 +120,6 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
-  "raylib < 5.5.0.3", # TODO: unpin when they fix https://github.com/electronstudio/raylib-python-cffi/issues/186
 ]
 
 tools = [
