@@ -100,7 +100,7 @@ class MouseState:
       self._thread.join()
 
   def _run_thread(self):
-    while not self._do_exit:
+    while not self._exit_event.is_set():
       t = time.monotonic()
       rl.poll_input_events()
       self._handle_mouse_event()
