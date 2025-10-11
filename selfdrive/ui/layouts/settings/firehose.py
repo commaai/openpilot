@@ -118,7 +118,7 @@ class FirehoseLayout(Widget):
     y = self._draw_wrapped_text(x, y, w, INSTRUCTIONS, gui_app.font(FontWeight.NORMAL), 40, self.LIGHT_GRAY)
 
     # bottom margin + remove effect of scroll offset
-    return round(y - self.scroll_panel.offset + 40)
+    return int(round(y - self.scroll_panel.offset + 40))
 
   def _draw_wrapped_text(self, x, y, width, text, font, font_size, color):
     wrapped = wrap_text(font, text, font_size, width)
