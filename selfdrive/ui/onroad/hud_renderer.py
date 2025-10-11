@@ -130,8 +130,9 @@ class HudRenderer(Widget):
     y = rect.y + 45
 
     set_speed_rect = rl.Rectangle(x, y, set_speed_width, UI_CONFIG.set_speed_height)
-    rl.draw_rectangle_rounded(set_speed_rect, 0.2, 30, COLORS.black_translucent)
-    rl.draw_rectangle_rounded_lines_ex(set_speed_rect, 0.2, 30, 6, COLORS.border_translucent)
+    print(set_speed_rect.x, set_speed_rect.y, set_speed_rect.width, set_speed_rect.height)
+    rl.draw_rectangle_rounded(set_speed_rect, 0.35, 10, COLORS.black_translucent)
+    rl.draw_rectangle_rounded_lines_ex(set_speed_rect, 0.35, 10, 6, COLORS.border_translucent)
 
     max_color = COLORS.grey
     set_speed_color = COLORS.dark_grey
