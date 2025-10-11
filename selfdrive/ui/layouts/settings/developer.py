@@ -90,6 +90,9 @@ class DeveloperLayout(Widget):
   def show_event(self):
     self._update_toggles()
 
+  def hide_event(self):
+    self._scroller.hide_event()
+
   def _update_toggles(self):
     ui_state.update_params()
 
