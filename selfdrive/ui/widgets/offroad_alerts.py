@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -298,7 +298,7 @@ class OffroadAlert(AbstractAlert):
         rl.draw_text_ex(
           font,
           line,
-          rl.Vector2(text_x, text_y + i * (AlertConstants.FONT_SIZE + 5)),
+          rl.Vector2(text_x, text_y + i * AlertConstants.FONT_SIZE * FONT_SCALE),
           AlertConstants.FONT_SIZE,
           0,
           AlertColors.TEXT,
