@@ -48,10 +48,24 @@ class AugmentedRoadView(CameraView):
     self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
 
+    # Ensure background shows on each onroad entry until fresh frames arrive
+    ui_state.add_offroad_transition_callback(self._on_offroad_transition)
+
+  def _on_offroad_transition(self):
+    # Clear any cached frame so placeholder/background is shown immediately
+    self.frame = None
+    # On entering onroad, default to disengaged blue background
+    if ui_state.started:
+      self._set_placeholder_color(BORDER_COLORS[UIStatus.DISENGAGED])
+
   def _render(self, rect):
     # Only render when system is started to avoid invalid data access
     if not ui_state.started:
       return
+
+    # Fill background every frame with status color (matches Qt behavior)
+    bg_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
+    rl.draw_rectangle_rec(rect, bg_color)
 
     self._switch_stream_if_needed(ui_state.sm)
 
