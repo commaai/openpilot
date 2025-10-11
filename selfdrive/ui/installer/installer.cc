@@ -44,7 +44,7 @@ std::string migrated_branch;
 
 void branchMigration() {
   migrated_branch = BRANCH_STR;
-  if (Hardware::get_device_type() == cereal::InitData::DeviceType::PC) {
+  if (Hardware::get_device_type() == cereal::InitData::DeviceType::TICI) {
     if (std::find(tici_prebuilt_branches.begin(), tici_prebuilt_branches.end(), BRANCH_STR) != tici_prebuilt_branches.end()) {
       migrated_branch = "release-tici";
     } else if (BRANCH_STR == "master") {
