@@ -22,7 +22,7 @@ DESCRIPTION = (
 )
 INSTRUCTIONS = (
   "For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.\n\n"
-  + "Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card.\n\n"
+  + "Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card.\n\n\n"
   + "Frequently Asked Questions\n\n"
   + "Does it matter how or where I drive? Nope, just drive as you normally would.\n\n"
   + "Do all of my segments get pulled in Firehose Mode? No, we selectively pull a subset of your segments.\n\n"
@@ -93,26 +93,26 @@ class FirehoseLayout(Widget):
 
     # Description
     y = self._draw_wrapped_text(x, y, w, DESCRIPTION, gui_app.font(FontWeight.NORMAL), 45, rl.WHITE)
-    y += 40
+    y += 40 + 20
 
     # Separator
     rl.draw_rectangle(x, y, w, 2, self.GRAY)
-    y += 30
+    y += 30 + 20
 
     # Status
     status_text, status_color = self._get_status()
     y = self._draw_wrapped_text(x, y, w, status_text, gui_app.font(FontWeight.BOLD), 60, status_color)
-    y += 20
+    y += 20 + 20
 
     # Contribution count (if available)
     if self.segment_count > 0:
       contrib_text = f"{self.segment_count} segment(s) of your driving is in the training dataset so far."
       y = self._draw_wrapped_text(x, y, w, contrib_text, gui_app.font(FontWeight.BOLD), 52, rl.WHITE)
-      y += 20
+      y += 20 + 20
 
     # Separator
     rl.draw_rectangle(x, y, w, 2, self.GRAY)
-    y += 30
+    y += 30 + 20
 
     # Instructions
     y = self._draw_wrapped_text(x, y, w, INSTRUCTIONS, gui_app.font(FontWeight.NORMAL), 40, self.LIGHT_GRAY)
