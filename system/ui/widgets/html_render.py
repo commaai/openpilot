@@ -20,6 +20,7 @@ class ElementType(Enum):
   H5 = "h5"
   H6 = "h6"
   P = "p"
+  B = "b"
   UL = "ul"
   LI = "li"
   BR = "br"
@@ -70,6 +71,7 @@ class HtmlRenderer(Widget):
       ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
       ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
       ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.B: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.BOLD, "margin_top": 8, "margin_bottom": 12},
       ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }

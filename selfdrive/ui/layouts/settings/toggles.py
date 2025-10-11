@@ -151,7 +151,7 @@ class TogglesLayout(Widget):
     ui_state.update_params()
 
     e2e_description = (
-      "openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. " +
+      "openpilot defaults to driving in chill mode. Experimental mode enables alpha-level features that aren't ready for chill mode. " +
       "Experimental features are listed below:<br>" +
       "<h4>End-to-End Longitudinal Control</h4><br>" +
       "Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. " +
@@ -184,7 +184,7 @@ class TogglesLayout(Widget):
           else:
             long_desc = "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 
-        self._toggles["ExperimentalMode"].set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
+        self._toggles["ExperimentalMode"].set_description(long_desc + "<br><br>" + e2e_description)
     else:
       self._toggles["ExperimentalMode"].set_description(e2e_description)
 
