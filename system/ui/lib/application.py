@@ -30,6 +30,10 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
 
+# Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
+# The real scales for the fonts below range from 1.212 to 1.266
+FONT_SCALE = 1.242
+
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
@@ -173,6 +177,7 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+    self._patch_text_functions()
 
     if not PC:
       self._mouse.start()
@@ -355,6 +360,16 @@ class GuiApplication:
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.BACKGROUND_COLOR, rl.color_to_int(rl.BLACK))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(DEFAULT_TEXT_COLOR))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
+
+  def _patch_text_functions(self):
+    # Wrap pyray text APIs to apply a global text size scale so our px sizes match Qt
+    if not hasattr(rl, "_orig_draw_text_ex"):
+      rl._orig_draw_text_ex = rl.draw_text_ex
+
+    def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
+      return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
+
+    rl.draw_text_ex = _draw_text_ex_scaled
 
   def _set_log_callback(self):
     ffi_libc = cffi.FFI()
