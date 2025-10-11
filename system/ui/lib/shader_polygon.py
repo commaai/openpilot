@@ -1,9 +1,12 @@
 import platform
+import time
+
 import pyray as rl
 import numpy as np
 from dataclasses import dataclass
 from typing import Any, Optional, cast
 from openpilot.system.ui.lib.application import gui_app
+import mapbox_earcut as earcut
 
 MAX_GRADIENT_COLORS = 15  # includes stops as well
 
@@ -232,12 +235,33 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   # Configure gradient shader
   _configure_shader_color(state, color, gradient, origin_rect)
 
-  # Triangulate via interleaving
-  tri_strip = triangulate(pts)
-
-  # Draw strip, color here doesn't matter
   rl.begin_shader_mode(state.shader)
-  rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
+
+  if INTERLEAVE := False:
+    t = time.monotonic()
+    # Triangulate via interleaving
+    tri_strip = triangulate(pts)
+    print(f"triangulate time: {1000*(time.monotonic()-t):.4f} ms")
+
+    rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
+
+  else:
+    t = time.monotonic()
+    rings = np.asarray([pts.shape[0]], dtype=np.int32)
+    print('rings', rings)
+    indices = earcut.triangulate_float32(pts, rings)
+
+    verts = [rl.Vector2(float(x), float(y)) for x, y in pts.tolist()]
+    # Reshape indices to (tri_count, 3) to avoid 3*t indexing in Python
+    indices3 = np.asarray(indices, dtype=np.int32).reshape(-1, 3)
+
+    print(f"earcut time: {1000*(time.monotonic()-t):.4f} ms")
+
+    # Render individual triangles from earcut indices
+    for a, b, c in indices3:
+      # Note: DrawTriangle fills CCW; earcut may output either order, that's fine
+      rl.draw_triangle(verts[c], verts[b], verts[a], rl.WHITE)
+
   rl.end_shader_mode()
 
 
