@@ -79,6 +79,7 @@ class MouseState:
     self._rk = Ratekeeper(MOUSE_THREAD_RATE)
     self._do_exit = False
     self._thread = None
+    self.times = []
 
   def get_events(self) -> list[MouseEvent]:
     events, self._events = self._events, []
@@ -97,8 +98,12 @@ class MouseState:
 
   def _run_thread(self):
     while not self._do_exit:
+      t = time.monotonic()
       rl.poll_input_events()
       self._handle_mouse_event()
+      dt = time.monotonic() - t
+      self.times.append(dt)
+      print(f"mouse dt avg: {sum(self.times)/len(self.times)*1000:.2f}ms")
       self._rk.keep_time()
 
   def _handle_mouse_event(self):
