@@ -369,7 +369,9 @@ class Setup(Widget):
 
       fd, tmpfile = tempfile.mkstemp(prefix="installer_")
 
-      headers = {"User-Agent": USER_AGENT, "X-openpilot-serial": HARDWARE.get_serial()}
+      headers = {"User-Agent": USER_AGENT,
+                 "X-openpilot-serial": HARDWARE.get_serial(),
+                 "X-openpilot-device-type": HARDWARE.get_device_type()}
       req = urllib.request.Request(self.download_url, headers=headers)
 
       with open(tmpfile, 'wb') as f, urllib.request.urlopen(req, timeout=30) as response:

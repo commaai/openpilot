@@ -5,6 +5,7 @@
 
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "system/hardware/hw.h"
 #include "third_party/raylib/include/raylib.h"
 
 int freshClone();
@@ -37,6 +38,20 @@ extern const uint8_t inter_ttf[] asm("_binary_selfdrive_ui_installer_inter_ascii
 extern const uint8_t inter_ttf_end[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_end");
 
 Font font;
+
+std::vector<std::string> tici_prebuilt_branches = {"release3", "release-tizi", "release3-staging", "nightly", "nightly-dev"};
+std::string migrated_branch;
+
+void branchMigration() {
+  migrated_branch = BRANCH_STR;
+  if (Hardware::get_device_type() == cereal::InitData::DeviceType::PC) {
+    if (std::find(tici_prebuilt_branches.begin(), tici_prebuilt_branches.end(), BRANCH_STR) != tici_prebuilt_branches.end()) {
+      migrated_branch = "release-tici";
+    } else if (BRANCH_STR == "master") {
+      migrated_branch = "master-tici";
+    }
+  }
+}
 
 void run(const char* cmd) {
   int err = std::system(cmd);
@@ -87,7 +102,7 @@ int doInstall() {
 int freshClone() {
   LOGD("Doing fresh clone");
   std::string cmd = util::string_format("git clone --progress %s -b %s --depth=1 --recurse-submodules %s 2>&1",
-                                        GIT_URL.c_str(), BRANCH_STR.c_str(), TMP_INSTALL_PATH);
+                                        GIT_URL.c_str(), migrated_branch.c_str(), TMP_INSTALL_PATH);
   return executeGitCommand(cmd);
 }
 
@@ -95,11 +110,11 @@ int cachedFetch(const std::string &cache) {
   LOGD("Fetching with cache: %s", cache.c_str());
 
   run(util::string_format("cp -rp %s %s", cache.c_str(), TMP_INSTALL_PATH).c_str());
-  run(util::string_format("cd %s && git remote set-branches --add origin %s", TMP_INSTALL_PATH, BRANCH_STR.c_str()).c_str());
+  run(util::string_format("cd %s && git remote set-branches --add origin %s", TMP_INSTALL_PATH, migrated_branch.c_str()).c_str());
 
   renderProgress(10);
 
-  return executeGitCommand(util::string_format("cd %s && git fetch --progress origin %s 2>&1", TMP_INSTALL_PATH, BRANCH_STR.c_str()));
+  return executeGitCommand(util::string_format("cd %s && git fetch --progress origin %s 2>&1", TMP_INSTALL_PATH, migrated_branch.c_str()));
 }
 
 int executeGitCommand(const std::string &cmd) {
@@ -142,8 +157,8 @@ void cloneFinished(int exitCode) {
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
-  run(("git checkout " + BRANCH_STR).c_str());
-  run(("git reset --hard origin/" + BRANCH_STR).c_str());
+  run(("git checkout " + migrated_branch).c_str());
+  run(("git reset --hard origin/" + migrated_branch).c_str());
   run("git submodule update --init");
 
   // move into place
@@ -192,6 +207,9 @@ int main(int argc, char *argv[]) {
   InitWindow(2160, 1080, "Installer");
   font = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, FONT_SIZE, NULL, 0);
   SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
+
+  branchMigration();
+  finishInstall();
 
   if (util::file_exists(CONTINUE_PATH)) {
     finishInstall();
