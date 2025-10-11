@@ -101,7 +101,7 @@ class DeveloperLayout(Widget):
 
     # CP gating
     if ui_state.CP is not None:
-      alpha_avail = ui_state.CP.alphaLongitudinalAvailable
+      alpha_avail = True  # ui_state.CP.alphaLongitudinalAvailable
       if not alpha_avail or self._is_release:
         self._alpha_long_toggle.set_visible(False)
         self._params.remove("AlphaLongitudinalEnabled")
@@ -154,7 +154,7 @@ class DeveloperLayout(Widget):
           self._alpha_long_toggle.action_item.set_state(False)
 
       # show confirmation dialog
-      content = (f"<h2>{self._alpha_long_toggle.title}</h2><br>" +
+      content = (f"<h1>{self._alpha_long_toggle.title}</h1><br>" +
                  f"<p>{self._alpha_long_toggle.description}</p>")
 
       dlg = ConfirmDialog(content, "Enable", rich=True)
