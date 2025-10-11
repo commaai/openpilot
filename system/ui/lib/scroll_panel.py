@@ -127,3 +127,4 @@ class GuiScrollPanel:
   def set_offset(self, position: float) -> None:
     self._offset_filter_y.x = position
     self._velocity_filter_y.x = 0.0
+    self._scroll_state = ScrollState.IDLE
