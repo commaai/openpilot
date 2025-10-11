@@ -30,7 +30,7 @@ class SetupWidget(Widget):
   def _render_registration(self, rect: rl.Rectangle):
     """Render registration prompt."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 630), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, rect.height), 0.02, 20, rl.Color(51, 51, 51, 255))
 
     x = rect.x + 64
     y = rect.y + 48
