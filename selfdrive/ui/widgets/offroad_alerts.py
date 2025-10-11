@@ -252,7 +252,7 @@ class OffroadAlert(AbstractAlert):
       line_count = len(wrapped_lines)
       text_height = line_count * (AlertConstants.FONT_SIZE * FONT_SCALE)
       alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
-      total_height += alert_item_height + AlertConstants.ALERT_SPACING
+      total_height += round(alert_item_height + AlertConstants.ALERT_SPACING)
 
     if total_height > 20:
       total_height = total_height - AlertConstants.ALERT_SPACING + 20
@@ -304,7 +304,7 @@ class OffroadAlert(AbstractAlert):
           AlertColors.TEXT,
         )
 
-      y_offset += alert_item_height + AlertConstants.ALERT_SPACING
+      y_offset += round(alert_item_height + AlertConstants.ALERT_SPACING)
 
 
 class UpdateAlert(AbstractAlert):
