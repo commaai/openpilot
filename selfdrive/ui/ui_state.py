@@ -132,6 +132,8 @@ class UIState:
     # Update recording audio state
     self.recording_audio = self.params.get_bool("RecordAudio") and self.started
 
+    self.is_metric = self.params.get_bool("IsMetric")
+
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:
       ss = self.sm["selfdriveState"]
@@ -161,8 +163,7 @@ class UIState:
       self._started_prev = self.started
 
   def update_params(self) -> None:
-    self.is_metric = self.params.get_bool("IsMetric")
-
+    # For slower operations
     # Update longitudinal control state
     CP_bytes = self.params.get("CarParamsPersistent")
     if CP_bytes is not None:
