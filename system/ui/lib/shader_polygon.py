@@ -214,6 +214,43 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
   return cast(list, np.array(tri_strip).tolist())
 
 
+def _orientation(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
+  abx, aby = b[0] - a[0], b[1] - a[1]
+  acx, acy = c[0] - a[0], c[1] - a[1]
+  return abx * acy - aby * acx
+
+
+def _segments_properly_intersect(a: np.ndarray, b: np.ndarray, c: np.ndarray, d: np.ndarray) -> bool:
+  # Proper intersection (no colinear handling needed for our ribbon check)
+  o1 = _orientation(a, b, c)
+  o2 = _orientation(a, b, d)
+  o3 = _orientation(c, d, a)
+  o4 = _orientation(c, d, b)
+  return (o1 * o2 < 0) and (o3 * o4 < 0)
+
+
+def _untangle_ribbon(ring_pts: np.ndarray) -> np.ndarray:
+  """Fix self-intersections in a ribbon ring [L0..Lk-1, Rk-1..R0] by swapping sides
+  after the first detected crossover. Returns contiguous float32 array.
+  """
+  n = ring_pts.shape[0]
+  if n < 4 or (n % 2) != 0:
+    return ring_pts
+
+  k = n // 2
+  left = ring_pts[:k].copy()
+  right = ring_pts[k:][::-1].copy()  # R0..Rk-1
+
+  for i in range(k - 1):
+    if _segments_properly_intersect(left[i], right[i], left[i + 1], right[i + 1]):
+      li = left[i + 1:].copy()
+      ri = right[i + 1:].copy()
+      left[i + 1:], right[i + 1:] = ri, li
+
+  fixed = np.vstack([left, right[::-1]])  # back to L0..Lk-1, Rk-1..R0
+  return np.ascontiguousarray(fixed, dtype=np.float32)
+
+
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
                  color: Optional[rl.Color] = None, gradient: Gradient | None = None):  # noqa: UP045
 
@@ -235,34 +272,24 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   # Configure gradient shader
   _configure_shader_color(state, color, gradient, origin_rect)
 
-  rl.begin_shader_mode(state.shader)
-
-  if INTERLEAVE := False:
-    t = time.monotonic()
-    # Triangulate via interleaving
+  # Use a triangle strip for solid color ribbons (lane lines/edges),
+  # and use earcut for gradient fills (path with gradient).
+  if gradient is None:
     tri_strip = triangulate(pts)
-    print(f"triangulate time: {1000*(time.monotonic()-t):.4f} ms")
-
+    rl.begin_shader_mode(state.shader)
     rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
-
+    rl.end_shader_mode()
   else:
-    t = time.monotonic()
     rings = np.asarray([pts.shape[0]], dtype=np.int32)
-    print('rings', rings)
     indices = earcut.triangulate_float32(pts, rings)
 
     verts = [rl.Vector2(float(x), float(y)) for x, y in pts.tolist()]
-    # Reshape indices to (tri_count, 3) to avoid 3*t indexing in Python
     indices3 = np.asarray(indices, dtype=np.int32).reshape(-1, 3)
 
-    print(f"earcut time: {1000*(time.monotonic()-t):.4f} ms")
-
-    # Render individual triangles from earcut indices
+    rl.begin_shader_mode(state.shader)
     for a, b, c in indices3:
-      # Note: DrawTriangle fills CCW; earcut may output either order, that's fine
       rl.draw_triangle(verts[c], verts[b], verts[a], rl.WHITE)
-
-  rl.end_shader_mode()
+    rl.end_shader_mode()
 
 
 def cleanup_shader_resources():
