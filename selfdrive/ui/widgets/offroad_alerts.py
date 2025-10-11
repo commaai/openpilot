@@ -250,7 +250,7 @@ class OffroadAlert(AbstractAlert):
       text_width = int(self.content_rect.width - (AlertConstants.ALERT_INSET * 2))
       wrapped_lines = wrap_text(font, alert_data.text, AlertConstants.FONT_SIZE, text_width)
       line_count = len(wrapped_lines)
-      text_height = line_count * (AlertConstants.FONT_SIZE + 5)
+      text_height = line_count * (AlertConstants.FONT_SIZE * FONT_SCALE)
       alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
       total_height += alert_item_height + AlertConstants.ALERT_SPACING
 
@@ -278,7 +278,7 @@ class OffroadAlert(AbstractAlert):
       text_width = int(content_rect.width - (AlertConstants.ALERT_INSET * 2))
       wrapped_lines = wrap_text(font, alert_data.text, AlertConstants.FONT_SIZE, text_width)
       line_count = len(wrapped_lines)
-      text_height = line_count * (AlertConstants.FONT_SIZE + 5)
+      text_height = line_count * (AlertConstants.FONT_SIZE * FONT_SCALE)
       alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
 
       alert_rect = rl.Rectangle(
