@@ -63,8 +63,8 @@ ALERT_CRITICAL_TIMEOUT = Alert(
 ALERT_CRITICAL_REBOOT = Alert(
   text1="System Unresponsive",
   text2="Reboot Device",
-  size=AlertSize.full,
-  status=AlertStatus.critical,
+  size=AlertSize.mid,
+  status=AlertStatus.normal,
 )
 
 
