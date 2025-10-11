@@ -73,26 +73,29 @@ class MouseEvent(NamedTuple):
 class MouseState:
   def __init__(self, scale: float = 1.0):
     self._scale = scale
-    self._events: list[MouseEvent] = []
+    self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
     self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
 
     self._rk = Ratekeeper(MOUSE_THREAD_RATE)
-    self._do_exit = False
+    self._lock = threading.Lock()
+    self._exit_event = threading.Event()
     self._thread = None
     self.times = []
 
   def get_events(self) -> list[MouseEvent]:
-    events, self._events = self._events, []
+    with self._lock:
+      events = list(self._events)
+      self._events.clear()
     return events
 
   def start(self):
-    self._do_exit = False
+    self._exit_event.clear()
     if self._thread is None or not self._thread.is_alive():
       self._thread = threading.Thread(target=self._run_thread, daemon=True)
       self._thread.start()
 
   def stop(self):
-    self._do_exit = True
+    self._exit_event.set()
     if self._thread is not None and self._thread.is_alive():
       self._thread.join()
 
@@ -103,8 +106,7 @@ class MouseState:
       self._handle_mouse_event()
       dt = time.monotonic() - t
       self.times.append(dt)
-      if dt > 1 / MOUSE_THREAD_RATE * 1000:
-        print(f"mouse dt: {dt*1000:.2f}ms, avg: {sum(self.times)/len(self.times)*1000:.3f}ms")
+      print(f"mouse dt: {dt*1000:.2f}ms, avg: {sum(self.times)/len(self.times)*1000:.3f}ms")
       self._rk.keep_time()
 
   def _handle_mouse_event(self):
@@ -122,8 +124,7 @@ class MouseState:
       )
       # Only add changes
       if self._prev_mouse_event[slot] is None or ev[:-1] != self._prev_mouse_event[slot][:-1]:
-        # Drop new events if we have too many queued
-        if len(self._events) < MOUSE_THREAD_RATE:
+        with self._lock:
           self._events.append(ev)
         self._prev_mouse_event[slot] = ev
 
