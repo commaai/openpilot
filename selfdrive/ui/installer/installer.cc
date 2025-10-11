@@ -209,7 +209,6 @@ int main(int argc, char *argv[]) {
   SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
 
   branchMigration();
-  finishInstall();
 
   if (util::file_exists(CONTINUE_PATH)) {
     finishInstall();
