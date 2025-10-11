@@ -3,7 +3,7 @@ import pyray as rl
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
@@ -45,7 +45,7 @@ class HtmlElement:
   font_weight: FontWeight
   margin_top: int
   margin_bottom: int
-  line_height: float = 1.2
+  line_height: float = 0.9  # matches Qt visually, unsure why not default 1.2
   indent_level: int = 0
 
 
@@ -61,16 +61,19 @@ class HtmlRenderer(Widget):
     if text_size is None:
       text_size = {}
 
+    # Base paragraph size (Qt stylesheet default is 48px in offroad alerts)
+    base_p_size = int(text_size.get(ElementType.P, 48))
+
     # Untagged text defaults to <p>
     self.styles: dict[ElementType, dict[str, Any]] = {
-      ElementType.H1: {"size": 68, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
-      ElementType.H2: {"size": 60, "weight": FontWeight.BOLD, "margin_top": 24, "margin_bottom": 12},
-      ElementType.H3: {"size": 52, "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 10},
-      ElementType.H4: {"size": 48, "weight": FontWeight.BOLD, "margin_top": 16, "margin_bottom": 8},
-      ElementType.H5: {"size": 44, "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
-      ElementType.H6: {"size": 40, "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
-      ElementType.P: {"size": text_size.get(ElementType.P, 38), "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
-      ElementType.LI: {"size": 38, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
+      ElementType.H1: {"size": round(base_p_size * 2), "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 16},
+      ElementType.H2: {"size": round(base_p_size * 1.50), "weight": FontWeight.BOLD, "margin_top": 24, "margin_bottom": 12},
+      ElementType.H3: {"size": round(base_p_size * 1.17), "weight": FontWeight.BOLD, "margin_top": 20, "margin_bottom": 10},
+      ElementType.H4: {"size": round(base_p_size * 1.00), "weight": FontWeight.BOLD, "margin_top": 16, "margin_bottom": 8},
+      ElementType.H5: {"size": round(base_p_size * 0.83), "weight": FontWeight.BOLD, "margin_top": 12, "margin_bottom": 6},
+      ElementType.H6: {"size": round(base_p_size * 0.67), "weight": FontWeight.BOLD, "margin_top": 10, "margin_bottom": 4},
+      ElementType.P: {"size": base_p_size, "weight": FontWeight.NORMAL, "margin_top": 8, "margin_bottom": 12},
+      ElementType.LI: {"size": base_p_size, "weight": FontWeight.NORMAL, "color": rl.Color(40, 40, 40, 255), "margin_top": 6, "margin_bottom": 6},
       ElementType.BR: {"size": 0, "weight": FontWeight.NORMAL, "margin_top": 0, "margin_bottom": 12},
     }
 
@@ -179,8 +182,9 @@ class HtmlRenderer(Widget):
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(content_width))
 
         for line in wrapped_lines:
-          if current_y < rect.y - element.font_size:
-            current_y += element.font_size * element.line_height
+          # Use FONT_SCALE from wrapped raylib text functions to match what is drawn
+          if current_y < rect.y - element.font_size * FONT_SCALE:
+            current_y += element.font_size * FONT_SCALE * element.line_height
             continue
 
           if current_y > rect.y + rect.height:
@@ -189,7 +193,7 @@ class HtmlRenderer(Widget):
           text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
           rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
 
-          current_y += element.font_size * element.line_height
+          current_y += element.font_size * FONT_SCALE * element.line_height
 
       # Apply bottom margin
       current_y += element.margin_bottom
@@ -213,7 +217,7 @@ class HtmlRenderer(Widget):
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
 
         for _ in wrapped_lines:
-          total_height += element.font_size * element.line_height
+          total_height += element.font_size * FONT_SCALE * element.line_height
 
       total_height += element.margin_bottom
 
