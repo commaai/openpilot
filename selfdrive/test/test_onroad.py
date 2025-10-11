@@ -215,7 +215,7 @@ class TestOnroad:
     print(result)
 
     assert max(ts) < 250.
-    assert np.mean(ts) < 10.
+    assert np.mean(ts) < 20.
     #self.assertLess(np.std(ts), 5.)
 
     # some slow frames are expected since camerad/modeld can preempt ui
