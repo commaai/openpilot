@@ -47,9 +47,9 @@ class SetupWidget(Widget):
     wrapped = wrap_text(light_font, desc, 50, int(w))
     for line in wrapped:
       rl.draw_text_ex(light_font, line, rl.Vector2(x, y), 50, 0, rl.WHITE)
-      y += 50
+      y += 50 * FONT_SCALE
 
-    button_rect = rl.Rectangle(x, y + 50, w, 128)
+    button_rect = rl.Rectangle(x, y + 30, w, 200)
     self._pair_device_btn.render(button_rect)
 
   def _render_firehose_prompt(self, rect: rl.Rectangle):
