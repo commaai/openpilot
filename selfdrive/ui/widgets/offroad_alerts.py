@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -65,8 +65,8 @@ class ActionButton(Widget):
 
   def set_text(self, text: str):
     self._text = text
-    self._text_width = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self._text, AlertConstants.FONT_SIZE).x
-    self._rect.width = max(self._text_width + 60 * 2, self._min_width)
+    self._text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self._text, AlertConstants.FONT_SIZE)
+    self._rect.width = max(self._text_size.x + 60 * 2, self._min_width)
     self._rect.height = AlertConstants.BUTTON_HEIGHT
 
   def _render(self, _):
@@ -79,8 +79,8 @@ class ActionButton(Widget):
 
     # center text
     color = rl.WHITE if self._style == ButtonStyle.DARK else rl.BLACK
-    text_x = int(self._rect.x + (self._rect.width - self._text_width) // 2)
-    text_y = int(self._rect.y + (self._rect.height - AlertConstants.FONT_SIZE) // 2)
+    text_x = int(self._rect.x + (self._rect.width - self._text_size.x) // 2)
+    text_y = int(self._rect.y + (self._rect.height - self._text_size.y) // 2)
     rl.draw_text_ex(self._font, self._text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
 
 
@@ -250,9 +250,9 @@ class OffroadAlert(AbstractAlert):
       text_width = int(self.content_rect.width - (AlertConstants.ALERT_INSET * 2))
       wrapped_lines = wrap_text(font, alert_data.text, AlertConstants.FONT_SIZE, text_width)
       line_count = len(wrapped_lines)
-      text_height = line_count * (AlertConstants.FONT_SIZE + 5)
+      text_height = line_count * (AlertConstants.FONT_SIZE * FONT_SCALE)
       alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
-      total_height += alert_item_height + AlertConstants.ALERT_SPACING
+      total_height += round(alert_item_height + AlertConstants.ALERT_SPACING)
 
     if total_height > 20:
       total_height = total_height - AlertConstants.ALERT_SPACING + 20
@@ -278,7 +278,7 @@ class OffroadAlert(AbstractAlert):
       text_width = int(content_rect.width - (AlertConstants.ALERT_INSET * 2))
       wrapped_lines = wrap_text(font, alert_data.text, AlertConstants.FONT_SIZE, text_width)
       line_count = len(wrapped_lines)
-      text_height = line_count * (AlertConstants.FONT_SIZE + 5)
+      text_height = line_count * (AlertConstants.FONT_SIZE * FONT_SCALE)
       alert_item_height = max(text_height + (AlertConstants.ALERT_INSET * 2), AlertConstants.ALERT_HEIGHT)
 
       alert_rect = rl.Rectangle(
@@ -298,13 +298,13 @@ class OffroadAlert(AbstractAlert):
         rl.draw_text_ex(
           font,
           line,
-          rl.Vector2(text_x, text_y + i * (AlertConstants.FONT_SIZE + 5)),
+          rl.Vector2(text_x, text_y + i * AlertConstants.FONT_SIZE * FONT_SCALE),
           AlertConstants.FONT_SIZE,
           0,
           AlertColors.TEXT,
         )
 
-      y_offset += alert_item_height + AlertConstants.ALERT_SPACING
+      y_offset += round(alert_item_height + AlertConstants.ALERT_SPACING)
 
 
 class UpdateAlert(AbstractAlert):
