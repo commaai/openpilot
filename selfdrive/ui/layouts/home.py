@@ -36,6 +36,8 @@ class HomeLayout(Widget):
     self.update_alert = UpdateAlert()
     self.offroad_alert = OffroadAlert()
 
+    self._layout_widgets = {HomeLayoutState.UPDATE: self.update_alert, HomeLayoutState.ALERTS: self.offroad_alert}
+
     self.current_state = HomeLayoutState.HOME
     self.last_refresh = 0
     self.settings_callback: callable | None = None
@@ -71,6 +73,13 @@ class HomeLayout(Widget):
     self.settings_callback = callback
 
   def _set_state(self, state: HomeLayoutState):
+    # propagate show/hide events
+    if state != self.current_state:
+      if state in self._layout_widgets:
+        self._layout_widgets[state].show_event()
+      if self.current_state in self._layout_widgets:
+        self._layout_widgets[self.current_state].hide_event()
+
     self.current_state = state
 
   def _render(self, rect: rl.Rectangle):
@@ -201,11 +210,11 @@ class HomeLayout(Widget):
 
     # Show panels on transition from no alert/update to any alerts/update
     if not update_available and not alerts_present:
-      self.current_state = HomeLayoutState.HOME
+      self._set_state(HomeLayoutState.HOME)
     elif update_available and ((not self._prev_update_available) or (not alerts_present and self.current_state == HomeLayoutState.ALERTS)):
-      self.current_state = HomeLayoutState.UPDATE
+      self._set_state(HomeLayoutState.UPDATE)
     elif alerts_present and ((not self._prev_alerts_present) or (not update_available and self.current_state == HomeLayoutState.UPDATE)):
-      self.current_state = HomeLayoutState.ALERTS
+      self._set_state(HomeLayoutState.ALERTS)
 
     self.update_available = update_available
     self.alert_count = alert_count

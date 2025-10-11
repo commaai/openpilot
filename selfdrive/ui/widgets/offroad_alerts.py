@@ -117,6 +117,9 @@ class AbstractAlert(Widget, ABC):
     self.scroll_panel_rect = rl.Rectangle(0, 0, 0, 0)
     self.scroll_panel = GuiScrollPanel()
 
+  def show_event(self):
+    self.scroll_panel.set_offset(0)
+
   def set_dismiss_callback(self, callback: Callable):
     self.dismiss_callback = callback
     self.dismiss_btn.set_click_callback(self.dismiss_callback)
