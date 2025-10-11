@@ -184,7 +184,7 @@ class TogglesLayout(Widget):
           else:
             long_desc = "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
 
-        self._toggles["ExperimentalMode"].set_description(long_desc + "<br><br>" + e2e_description)
+        self._toggles["ExperimentalMode"].set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
     else:
       self._toggles["ExperimentalMode"].set_description(e2e_description)
 
