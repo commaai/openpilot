@@ -343,7 +343,7 @@ class Setup(Widget):
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
 
       # give time for installer UI to take over
-      time.sleep(1)
+      time.sleep(0.1)
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
@@ -406,7 +406,7 @@ class Setup(Widget):
         f.write(self.download_url)
 
       # give time for installer UI to take over
-      time.sleep(5)
+      time.sleep(0.1)
       gui_app.request_close()
 
     except Exception:
