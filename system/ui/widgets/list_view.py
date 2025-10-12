@@ -191,6 +191,13 @@ class DualButtonAction(ItemAction):
     left_rect = rl.Rectangle(rect.x, button_y, button_width, button_height)
     right_rect = rl.Rectangle(rect.x + button_width + button_spacing, button_y, button_width, button_height)
 
+    # expand one to full width if other is not visible
+    if not self.left_button.is_visible:
+      right_rect.x = rect.x
+      right_rect.width = rect.width
+    elif not self.right_button.is_visible:
+      left_rect.width = rect.width
+
     # Render buttons
     self.left_button.render(left_rect)
     self.right_button.render(right_rect)

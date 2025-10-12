@@ -160,7 +160,7 @@ class TestUI:
     time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
-  @with_processes(["raylib_ui"])
+  @with_processes(["ui"])
   def test_ui(self, name, setup_case):
     self.setup()
     time.sleep(UI_DELAY)  # wait for UI to start
