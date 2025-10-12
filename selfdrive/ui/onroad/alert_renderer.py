@@ -79,8 +79,8 @@ class AlertRenderer(Widget):
     ss = sm['selfdriveState']
 
     # Check if selfdriveState messages have stopped arriving
+    recv_frame = sm.recv_frame['selfdriveState']
     if not sm.updated['selfdriveState']:
-      recv_frame = sm.recv_frame['selfdriveState']
       time_since_onroad = time.monotonic() - ui_state.started_time
 
       # 1. Never received selfdriveState since going onroad
@@ -98,6 +98,10 @@ class AlertRenderer(Widget):
 
     # No alert if size is none
     if ss.alertSize == 0:
+      return None
+
+    # Don't get old alert
+    if recv_frame < ui_state.started_frame:
       return None
 
     # Return current alert
