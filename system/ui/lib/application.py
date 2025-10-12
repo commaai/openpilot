@@ -160,7 +160,7 @@ class GuiApplication:
     HARDWARE.set_screen_brightness(65)
 
     self._set_log_callback()
-    rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
+    rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
 
     flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
     if ENABLE_VSYNC:
@@ -401,8 +401,7 @@ class GuiApplication:
       elif log_level == rl.TraceLogLevel.LOG_WARNING:
         cloudlog.warning(f"raylib: {text_str}")
       elif log_level == rl.TraceLogLevel.LOG_INFO:
-        #cloudlog.info(f"raylib: {text_str}")
-        pass
+        cloudlog.info(f"raylib: {text_str}")
       elif log_level == rl.TraceLogLevel.LOG_DEBUG:
         cloudlog.debug(f"raylib: {text_str}")
       else:
