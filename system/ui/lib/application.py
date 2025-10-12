@@ -401,7 +401,8 @@ class GuiApplication:
       elif log_level == rl.TraceLogLevel.LOG_WARNING:
         cloudlog.warning(f"raylib: {text_str}")
       elif log_level == rl.TraceLogLevel.LOG_INFO:
-        cloudlog.info(f"raylib: {text_str}")
+        #cloudlog.info(f"raylib: {text_str}")
+        pass
       elif log_level == rl.TraceLogLevel.LOG_DEBUG:
         cloudlog.debug(f"raylib: {text_str}")
       else:
