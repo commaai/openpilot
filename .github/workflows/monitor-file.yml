@@ -4,8 +4,8 @@ on:
   schedule:
     # Every 5 minutes from 10am-midnight PST (6pm-8am UTC)
     # PST is UTC-8, so 10am PST = 6pm UTC, midnight PST = 8am UTC
-    - cron: '*/5 17-23 * * *'  # 10am-midnight PST (6pm-11:59pm UTC)
-    - cron: '*/5 0-6 * * *'    # midnight-8am PST (midnight-7:59am UTC)
+    - cron: '*/5 18-23 * * *'  # 10am-midnight PST (6pm-11:59pm UTC)
+    - cron: '*/5 0-7 * * *'    # midnight-8am PST (midnight-7:59am UTC)
   workflow_dispatch:  # Allows manual triggering for testing
 
 jobs:
@@ -92,123 +92,6 @@ jobs:
         with:
           path: .last-check-time
           key: file-monitor-timestamp-${{ github.run_id }}
-          
-      - name: Send notification (Email via GitHub)
-        if: steps.check.outputs.changed == 'true'
-        run: |
-          echo "File has changed! Check the Actions tab for details."
-          # This will show up in the GitHub Actions UI
-          
-      # Optional: Add other notification methods below
-      # - name: Send Slack notification
-      #   if: steps.check.outputs.changed == 'true'
-      #   uses: slackapi/slack-github-action@v1
-      #   with:
-      #     webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-      #     payload: |
-      #       {
-      #         "text": "File changed in upstream repo!"
-      #       }
-      
-      # - name: Send Discord notification
-      #   if: steps.check.outputs.changed == 'true'
-      #   uses: sarisia/actions-status-discord@v1
-      #   with:
-      #     webhook: ${{ secrets.DISCORD_WEBHOOK }}
-      #     title: "File Monitor Alert"
-      #     description: "Target file has changed in upstream repo"name: Monitor File Changes
-
-on:
-  schedule:
-    # Every 5 minutes from 10am-midnight PST (6pm-8am UTC)
-    # PST is UTC-8, so 10am PST = 6pm UTC, midnight PST = 8am UTC
-    - cron: '*/5 18-23 * * *'  # 10am-midnight PST (6pm-11:59pm UTC)
-    - cron: '*/5 0-7 * * *'    # midnight-8am PST (midnight-7:59am UTC)
-  workflow_dispatch:  # Allows manual triggering for testing
-
-jobs:
-  check-file:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout your fork
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch all history
-          
-      - name: Add upstream remote
-        run: |
-          git remote add upstream https://github.com/OWNER/REPO.git
-          git fetch upstream
-          
-      - name: Check for file changes across all branches
-        id: check
-        run: |
-          # Define the file you want to monitor
-          TARGET_FILE="path/to/your/file.txt"
-          
-          # Get timestamp of last check
-          if [ -f .last-check-time ]; then
-            LAST_CHECK=$(cat .last-check-time)
-          else
-            # First run - set to 5 minutes ago
-            LAST_CHECK=$(date -u -d '5 minutes ago' '+%Y-%m-%dT%H:%M:%SZ')
-            echo $LAST_CHECK > .last-check-time
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add .last-check-time
-            git commit -m "Initialize file monitor"
-            git push
-            echo "changed=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          echo "Checking all branches since: $LAST_CHECK"
-          
-          # Get all remote branches
-          BRANCHES=$(git branch -r | grep 'upstream/' | grep -v 'HEAD' | sed 's/.*upstream\///')
-          
-          FOUND_CHANGES=false
-          echo "## Changes detected:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Check each branch for recent changes to the target file
-          for BRANCH in $BRANCHES; do
-            echo "Checking branch: $BRANCH"
-            
-            # Get commits on this branch since last check that modified the target file
-            COMMITS=$(git log upstream/$BRANCH --since="$LAST_CHECK" --oneline -- "$TARGET_FILE" 2>/dev/null || true)
-            
-            if [ ! -z "$COMMITS" ]; then
-              FOUND_CHANGES=true
-              echo "### Branch: \`$BRANCH\`" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-              echo "$COMMITS" >> $GITHUB_STEP_SUMMARY
-              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              
-              echo "Found changes in branch $BRANCH:"
-              echo "$COMMITS"
-            fi
-          done
-          
-          if [ "$FOUND_CHANGES" = true ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "**File:** \`$TARGET_FILE\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No changes to $TARGET_FILE across any branch" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          # Update last check time to now
-          CURRENT_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-          echo $CURRENT_TIME > .last-check-time
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .last-check-time
-          git commit -m "Update last check: $CURRENT_TIME" || true
-          git push || true
           
       - name: Send notification (Email via GitHub)
         if: steps.check.outputs.changed == 'true'
