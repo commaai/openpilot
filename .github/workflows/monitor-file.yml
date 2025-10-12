@@ -4,8 +4,8 @@ on:
   schedule:
     # Every 5 minutes from 10am-midnight PST (6pm-8am UTC)
     # PST is UTC-8, so 10am PST = 6pm UTC, midnight PST = 8am UTC
-    - cron: '*/5 18-23 * * *'  # 10am-midnight PST (6pm-11:59pm UTC)
-    - cron: '*/5 0-7 * * *'    # midnight-8am PST (midnight-7:59am UTC)
+    - cron: '*/5 17-23 * * *'  # 10am-midnight PST (6pm-11:59pm UTC)
+    - cron: '*/5 0-6 * * *'    # midnight-8am PST (midnight-7:59am UTC)
   workflow_dispatch:  # Allows manual triggering for testing
 
 jobs:
@@ -27,14 +27,14 @@ jobs:
           
       - name: Add upstream remote
         run: |
-          git remote add upstream https://github.com/OWNER/REPO.git
+          git remote add upstream https://github.com/commaai/openpilot.git
           git fetch upstream
           
       - name: Check for file changes across all branches
         id: check
         run: |
           # Define the file you want to monitor
-          TARGET_FILE="path/to/your/file.txt"
+          TARGET_FILE="selfdrive/modeld/models/driving_policy.onnx"
           
           # Get timestamp of last check
           if [ -f .last-check-time ]; then
