@@ -201,7 +201,8 @@ class Setup(Widget):
 
   def render_getting_started(self, rect: rl.Rectangle):
     self._getting_started_title_label.render(rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
-    self._getting_started_body_label.render(rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE * FONT_SCALE, rect.width - 500, BODY_FONT_SIZE * FONT_SCALE * 3))
+    self._getting_started_body_label.render(rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE * FONT_SCALE, rect.width - 500,
+                                                         BODY_FONT_SIZE * FONT_SCALE * 3))
 
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
     self._getting_started_button.render(btn_rect)
@@ -268,7 +269,8 @@ class Setup(Widget):
       self._software_selection_continue_button.set_enabled(True)
       self._software_selection_custom_software_button.selected = False
 
-    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE * FONT_SCALE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
+    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE * FONT_SCALE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2,
+                               radio_height)
     self._software_selection_custom_software_button.render(custom_rect)
 
     if self._software_selection_custom_software_button.selected:
@@ -282,7 +284,8 @@ class Setup(Widget):
     self._software_selection_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_downloading(self, rect: rl.Rectangle):
-    self._downloading_body_label.render(rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE * FONT_SCALE / 2, rect.width, TITLE_FONT_SIZE * FONT_SCALE))
+    self._downloading_body_label.render(rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE * FONT_SCALE / 2, rect.width,
+                                                     TITLE_FONT_SIZE * FONT_SCALE))
 
   def render_download_failed(self, rect: rl.Rectangle):
     self._download_failed_title_label.render(rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, TITLE_FONT_SIZE * FONT_SCALE))
