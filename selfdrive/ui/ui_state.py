@@ -228,7 +228,9 @@ class Device:
 
     if brightness != self._last_brightness:
       if self._brightness_thread is None or not self._brightness_thread.is_alive():
-        #cloudlog.debug(f"setting display brightness {brightness}")
+
+        cloudlog.debug(f"setting display brightness {brightness}")
+
         self._brightness_thread = threading.Thread(target=HARDWARE.set_screen_brightness, args=(brightness,))
         self._brightness_thread.start()
         self._last_brightness = brightness
