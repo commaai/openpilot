@@ -60,7 +60,7 @@ class HudRenderer(Widget):
     super().__init__()
     """Initialize the HUD renderer."""
     self.is_cruise_set: bool = False
-    self.is_cruise_available: bool = False
+    self.is_cruise_available: bool = True
     self.set_speed: float = SET_SPEED_NA
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
@@ -130,8 +130,8 @@ class HudRenderer(Widget):
     y = rect.y + 45
 
     set_speed_rect = rl.Rectangle(x, y, set_speed_width, UI_CONFIG.set_speed_height)
-    rl.draw_rectangle_rounded(set_speed_rect, 0.2, 30, COLORS.black_translucent)
-    rl.draw_rectangle_rounded_lines_ex(set_speed_rect, 0.2, 30, 6, COLORS.border_translucent)
+    rl.draw_rectangle_rounded(set_speed_rect, 0.35, 10, COLORS.black_translucent)
+    rl.draw_rectangle_rounded_lines_ex(set_speed_rect, 0.35, 10, 6, COLORS.border_translucent)
 
     max_color = COLORS.grey
     set_speed_color = COLORS.dark_grey

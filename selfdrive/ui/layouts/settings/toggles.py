@@ -144,13 +144,14 @@ class TogglesLayout(Widget):
       ui_state.personality = personality
 
   def show_event(self):
+    self._scroller.show_event()
     self._update_toggles()
 
   def _update_toggles(self):
     ui_state.update_params()
 
     e2e_description = (
-      "openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. " +
+      "openpilot defaults to driving in chill mode. Experimental mode enables alpha-level features that aren't ready for chill mode. " +
       "Experimental features are listed below:<br>" +
       "<h4>End-to-End Longitudinal Control</h4><br>" +
       "Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. " +
@@ -218,7 +219,7 @@ class TogglesLayout(Widget):
         self._update_experimental_mode_icon()
 
       # show confirmation dialog
-      content = (f"<h2>{self._toggles['ExperimentalMode'].title}</h2><br>" +
+      content = (f"<h1>{self._toggles['ExperimentalMode'].title}</h1><br>" +
                  f"<p>{self._toggles['ExperimentalMode'].description}</p>")
       dlg = ConfirmDialog(content, "Enable", rich=True)
       gui_app.set_modal_overlay(dlg, callback=confirm_callback)

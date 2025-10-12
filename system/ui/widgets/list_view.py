@@ -191,6 +191,13 @@ class DualButtonAction(ItemAction):
     left_rect = rl.Rectangle(rect.x, button_y, button_width, button_height)
     right_rect = rl.Rectangle(rect.x + button_width + button_spacing, button_y, button_width, button_height)
 
+    # expand one to full width if other is not visible
+    if not self.left_button.is_visible:
+      right_rect.x = rect.x
+      right_rect.width = rect.width
+    elif not self.right_button.is_visible:
+      left_rect.width = rect.width
+
     # Render buttons
     self.left_button.render(left_rect)
     self.right_button.render(right_rect)
@@ -281,6 +288,9 @@ class ListItem(Widget):
     # Cached properties for performance
     self._prev_description: str | None = self.description
 
+  def show_event(self):
+    self._set_description_visible(False)
+
   def set_description_opened_callback(self, callback: Callable) -> None:
     self.description_opened_callback = callback
 
@@ -304,8 +314,11 @@ class ListItem(Widget):
         # Click was on right item, don't toggle description
         return
 
-    if self.description:
-      self.description_visible = not self.description_visible
+    self._set_description_visible(not self.description_visible)
+
+  def _set_description_visible(self, visible: bool):
+    if self.description and self.description_visible != visible:
+      self.description_visible = visible
       # do callback first in case receiver changes description
       if self.description_visible and self.description_opened_callback is not None:
         self.description_opened_callback()

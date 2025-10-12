@@ -639,10 +639,10 @@ name = "gymnasium"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cloudpickle" },
-    { name = "farama-notifications" },
-    { name = "numpy" },
-    { name = "typing-extensions" },
+    { name = "cloudpickle", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "farama-notifications", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fd/17/c2a0e15c2cd5a8e788389b280996db927b923410de676ec5c7b2695e9261/gymnasium-1.2.0.tar.gz", hash = "sha256:344e87561012558f603880baf264ebc97f8a5c997a957b0c9f910281145534b0", size = 821142, upload-time = "2025-06-27T08:21:20.262Z" }
 wheels = [
@@ -845,6 +845,29 @@ wheels = [
 ]
 
 [[package]]
+name = "mapbox-earcut"
+version = "1.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8d/70/0a322197c1178f47941e5e6e13b0a4adeaaa7c465c18e3b4ead3eba49860/mapbox_earcut-1.0.3.tar.gz", hash = "sha256:b6bac5d519d9947a6321a699c15d58e0b5740da61b9210ed229e05ad207c1c04", size = 24029, upload-time = "2024-12-25T12:49:09.119Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/d7/b37a45c248100e7285a40de87a8b1808ca4ca10228e265f2d0c320702d96/mapbox_earcut-1.0.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:bbf24029e7447eb0351000f4fd3185327a00dac5ed756b07330b0bdaed6932db", size = 71057, upload-time = "2024-12-25T12:48:09.131Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/df/2b63eb0d3a24e14f67adc816de18c2e09f3eb0997c512ace84dd59c3ed96/mapbox_earcut-1.0.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:998e2f1e3769538f7656a34296d08a37cb71ce57aa8cf4387572bc00029b52ce", size = 65300, upload-time = "2024-12-25T12:48:11.677Z" },
+    { url = "https://files.pythonhosted.org/packages/87/37/9dd9575f5c00e35d480e7150e5bb315a35d9cf5642bfb75ca628a31e1341/mapbox_earcut-1.0.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:df2382d84d6d168f73479673d297753e37440772f233cc03ebb54d150e37b174", size = 96965, upload-time = "2024-12-25T12:48:12.968Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/91/5708233941b5bf73149ba35f7aa32c6ee2cf4a33cd33069e7dba69d4129f/mapbox_earcut-1.0.3-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:3ccddb4bb04f11beab62943eb5a1bcd52c5a71d236bfce0ecc03e45e97fdb24b", size = 1070953, upload-time = "2024-12-25T12:48:15.495Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/fe/b35b999ba786aa17ddc47bc04231de076665eb511e1cd58cf6fef3581172/mapbox_earcut-1.0.3-cp311-cp311-win32.whl", hash = "sha256:f19b2bcf6475bc591f48437d3214691a6730f39b1f6dfd7505b69c4345485b0c", size = 65245, upload-time = "2024-12-25T12:48:17.826Z" },
+    { url = "https://files.pythonhosted.org/packages/11/81/18ac08b0bb0c22dd9028c7ecb31ae4086d31128b13fb3903e717331072ac/mapbox_earcut-1.0.3-cp311-cp311-win_amd64.whl", hash = "sha256:811a64ad5e6ecf09b96af533e5c169299ba173e53eb4ff0209de1adcfae314be", size = 72356, upload-time = "2024-12-25T12:48:20.164Z" },
+    { url = "https://files.pythonhosted.org/packages/96/7c/707a4ce96e078f7d382cc32b4a6c2326eca68d77ead5e990f5f940d16140/mapbox_earcut-1.0.3-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:5be71b7ec2180a27ce1178d53933430a3292b6ac3f94f2144513ee51d9034007", size = 70333, upload-time = "2024-12-25T12:48:22.565Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/47/ba2a14732f6e197b0ed879a1992b4d85054294b23627ad681b4fb1251d16/mapbox_earcut-1.0.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:eb874f7562a49ae0fb7bd47bcc9b4854cc53e3e4f7f26674f02f3cadb006ce16", size = 64697, upload-time = "2024-12-25T12:48:25.025Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/68/59a514811da76c3c801207bd6d7094ea5ba75648c2e7f15d4cb98b08216f/mapbox_earcut-1.0.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:73b9f06f2f8a795d835342aa80e021cfceda78fdca7bc07dc1a0b4aca90239f3", size = 96182, upload-time = "2024-12-25T12:48:26.316Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/79/97bf509ade0f9aeb5b5f94b1aff86393c2f584379a80e392fdfcbea434ae/mapbox_earcut-1.0.3-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:fdc55574ef7b613004874a459d2d59c07e1ef45cebb83f86c4958f7d3e2d6069", size = 1070584, upload-time = "2024-12-25T12:48:29.065Z" },
+    { url = "https://files.pythonhosted.org/packages/de/7a/5a6e205bab9ff49d1dae392f6179a444f820880d8985f26080816fa6c7ba/mapbox_earcut-1.0.3-cp312-cp312-win32.whl", hash = "sha256:790f52c67a0bd81032eaf61ebc181b1825b8b6daf01cb69e9eaa38521dd07aeb", size = 65375, upload-time = "2024-12-25T12:48:30.618Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/59/674a67f92772563d5a943ce2c4ed834ed341e3a0fd77b8eb4b79057f5193/mapbox_earcut-1.0.3-cp312-cp312-win_amd64.whl", hash = "sha256:cc1bbf35be0d9853dd448374330684ddbd0112497dee7d21b7417b0ab6236ac7", size = 72575, upload-time = "2024-12-25T12:48:33.544Z" },
+]
+
+[[package]]
 name = "markdown"
 version = "3.9"
 source = { registry = "https://pypi.org/simple" }
@@ -931,22 +954,22 @@ name = "metadrive-simulator"
 version = "0.4.2.4"
 source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" }
 dependencies = [
-    { name = "filelock" },
-    { name = "gymnasium" },
-    { name = "lxml" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "opencv-python-headless" },
-    { name = "panda3d" },
-    { name = "panda3d-gltf" },
-    { name = "pillow" },
-    { name = "progressbar" },
-    { name = "psutil" },
-    { name = "pygments" },
-    { name = "requests" },
-    { name = "shapely" },
-    { name = "tqdm" },
-    { name = "yapf" },
+    { name = "filelock", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "gymnasium", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "lxml", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "matplotlib", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "opencv-python-headless", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d-gltf", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "pillow", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "progressbar", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "psutil", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "pygments", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "requests", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "shapely", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "tqdm", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "yapf", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 wheels = [
     { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl", hash = "sha256:d0afaf3b005e35e14b929d5491d2d5b64562d0c1cd5093ba969fb63908670dd4" },
@@ -1270,6 +1293,7 @@ dependencies = [
     { name = "json-rpc" },
     { name = "kaitaistruct" },
     { name = "libusb1" },
+    { name = "mapbox-earcut" },
     { name = "numpy" },
     { name = "onnx" },
     { name = "psutil" },
@@ -1281,6 +1305,7 @@ dependencies = [
     { name = "pyserial" },
     { name = "pyzmq" },
     { name = "qrcode" },
+    { name = "raylib" },
     { name = "requests" },
     { name = "scons" },
     { name = "sentry-sdk" },
@@ -1313,7 +1338,6 @@ dev = [
     { name = "pyprof2calltree" },
     { name = "pytools", marker = "platform_machine != 'aarch64'" },
     { name = "pywinctl" },
-    { name = "raylib" },
     { name = "tabulate" },
     { name = "types-requests" },
     { name = "types-tabulate" },
@@ -1367,6 +1391,7 @@ requires-dist = [
     { name = "json-rpc" },
     { name = "kaitaistruct" },
     { name = "libusb1" },
+    { name = "mapbox-earcut" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" },
     { name = "mkdocs", marker = "extra == 'docs'" },
@@ -1401,7 +1426,7 @@ requires-dist = [
     { name = "pywinctl", marker = "extra == 'dev'" },
     { name = "pyzmq" },
     { name = "qrcode" },
-    { name = "raylib", marker = "extra == 'dev'", specifier = "<5.5.0.3" },
+    { name = "raylib", specifier = "<5.5.0.3" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
     { name = "scons" },
@@ -1454,8 +1479,8 @@ name = "panda3d-gltf"
 version = "0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d" },
-    { name = "panda3d-simplepbr" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d-simplepbr", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/07/7f/9f18fc3fa843a080acb891af6bcc12262e7bdf1d194a530f7042bebfc81f/panda3d-gltf-0.13.tar.gz", hash = "sha256:d06d373bdd91cf530909b669f43080e599463bbf6d3ef00c3558bad6c6b19675", size = 25573, upload-time = "2021-05-21T05:46:32.738Z" }
 wheels = [
@@ -1467,8 +1492,8 @@ name = "panda3d-simplepbr"
 version = "0.13.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d" },
-    { name = "typing-extensions" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0d/be/c4d1ded04c22b357277cf6e6a44c1ab4abb285a700bd1991460460e05b99/panda3d_simplepbr-0.13.1.tar.gz", hash = "sha256:c83766d7c8f47499f365a07fe1dff078fc8b3054c2689bdc8dceabddfe7f1a35", size = 6216055, upload-time = "2025-03-30T16:57:41.087Z" }
 wheels = [
@@ -4205,9 +4230,9 @@ name = "pyopencl"
 version = "2025.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
-    { name = "platformdirs" },
-    { name = "pytools" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "pytools", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/28/88/0ac460d3e2def08b2ad6345db6a13613815f616bbbd60c6f4bdf774f4c41/pyopencl-2025.1.tar.gz", hash = "sha256:0116736d7f7920f87b8db4b66a03f27b1d930d2e37ddd14518407cc22dd24779", size = 422510, upload-time = "2025-01-22T00:16:58.421Z" }
 wheels = [
@@ -4429,9 +4454,9 @@ name = "pytools"
 version = "2024.1.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs" },
-    { name = "siphash24" },
-    { name = "typing-extensions" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "siphash24", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ee/0f/56e109c0307f831b5d598ad73976aaaa84b4d0e98da29a642e797eaa940c/pytools-2024.1.10.tar.gz", hash = "sha256:9af6f4b045212c49be32bb31fe19606c478ee4b09631886d05a32459f4ce0a12", size = 81741, upload-time = "2024-07-17T18:47:38.287Z" }
 wheels = [
@@ -4754,7 +4779,7 @@ name = "shapely"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ca/3c/2da625233f4e605155926566c0e7ea8dda361877f48e8b1655e53456f252/shapely-2.1.1.tar.gz", hash = "sha256:500621967f2ffe9642454808009044c21e5b35db89ce69f8a2042c2ffd0e2772", size = 315422, upload-time = "2025-05-19T11:04:41.265Z" }
 wheels = [
@@ -4983,7 +5008,7 @@ name = "yapf"
 version = "0.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/23/97/b6f296d1e9cc1ec25c7604178b48532fa5901f721bcf1b8d8148b13e5588/yapf-0.43.0.tar.gz", hash = "sha256:00d3aa24bfedff9420b2e0d5d9f5ab6d9d4268e72afbf59bb3fa542781d5218e", size = 254907, upload-time = "2024-11-14T00:11:41.584Z" }
 wheels = [

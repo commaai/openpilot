@@ -52,7 +52,7 @@ class PrimeWidget(Widget):
   def _render_for_prime_user(self, rect: rl.Rectangle):
     """Renders the prime user widget with subscription status."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 230), 0.02, 10, self.PRIME_BG_COLOR)
+    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 230), 0.05, 10, self.PRIME_BG_COLOR)
 
     x = rect.x + 56
     y = rect.y + 40

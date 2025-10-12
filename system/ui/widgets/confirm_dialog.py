@@ -19,7 +19,7 @@ class ConfirmDialog(Widget):
   def __init__(self, text: str, confirm_text: str, cancel_text: str = "Cancel", rich: bool = False):
     super().__init__()
     self._label = Label(text, 70, FontWeight.BOLD, text_color=rl.Color(201, 201, 201, 255))
-    self._html_renderer = HtmlRenderer(text=text, text_size={ElementType.P: 50})
+    self._html_renderer = HtmlRenderer(text=text, text_size={ElementType.P: 50}, center_text=True)
     self._cancel_button = Button(cancel_text, self._cancel_button_callback)
     self._confirm_button = Button(confirm_text, self._confirm_button_callback, button_style=ButtonStyle.PRIMARY)
     self._rich = rich
