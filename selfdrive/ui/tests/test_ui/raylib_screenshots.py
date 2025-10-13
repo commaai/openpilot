@@ -119,6 +119,11 @@ def setup_homescreen_update_available(click, pm: PubMaster):
   close_settings(click, pm)
 
 
+def setup_experimental_mode_description(click, pm: PubMaster):
+  setup_settings_toggles(click, pm)
+  click(1200, 280)  # expand description for experimental mode
+
+
 CASES = {
   "homescreen": setup_homescreen,
   "settings_device": setup_settings,
@@ -134,6 +139,7 @@ CASES = {
   "offroad_alert": setup_offroad_alert,
   "homescreen_update_available": setup_homescreen_update_available,
   "confirmation_dialog": setup_confirmation_dialog,
+  "experimental_mode_description": setup_experimental_mode_description,
 }
 
 
