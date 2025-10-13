@@ -72,10 +72,11 @@ class LatControlTorque(LatControl):
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       self.lat_accel_request_buffer.append(future_desired_lateral_accel)
       gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
-      desired_lateral_jerk = (future_desired_lateral_accel - expected_lateral_accel) / lat_delay
+      desired_lateral_jerk = (jerk_frame_lateral_accel - expected_lateral_accel) / JERK_DT
 
       measurement = measured_curvature * CS.vEgo ** 2
       measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt)
+      self.requested_lateral_accel_buffer.append(future_desired_lateral_accel)
       self.previous_measurement = measurement
 
       setpoint = lat_delay * desired_lateral_jerk + expected_lateral_accel
@@ -86,7 +87,6 @@ class LatControlTorque(LatControl):
       ff = gravity_adjusted_future_lateral_accel
       # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
       ff -= self.torque_params.latAccelOffset
-      # TODO jerk is weighted by lat_delay for legacy reasons, but should be made independent of it
       ff += get_friction(error, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
