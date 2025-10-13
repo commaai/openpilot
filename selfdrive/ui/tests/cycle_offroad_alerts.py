@@ -9,7 +9,6 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.updated.updated import parse_release_notes
 
-
 if __name__ == "__main__":
   params = Params()
 
