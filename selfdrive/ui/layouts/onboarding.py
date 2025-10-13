@@ -1,7 +1,5 @@
-import asyncio
 import os
 import re
-import threading
 from enum import IntEnum
 
 import pyray as rl
@@ -40,31 +38,21 @@ class TrainingGuide(Widget):
     self._completed_callback = completed_callback
 
     self._step = 0
-    self.__images = []
     self._images = []
-    t = time.monotonic()
-    t = threading.Thread(target=self._load_images)
-    t.start()
-    t.join()
-    self._load_textures()
-    # self._load_images()
+    self._load_images()
+
+  def _load_image(self, path):
+    # path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
+    self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
 
   def _load_images(self):
-    self._images = []
+    # self._images = []
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
-    for fn in paths:
-      print('loading fn', fn)
-      path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-      self.__images.append(gui_app._load_image(path, gui_app.width, gui_app.height))
-      # self._images.append(gui_app._load_texture_from_image(img))
-      # print(img)
-      # self._images.append(asyncio.run(gui_app.texture_async(path, gui_app.width, gui_app.height)))
-      # self._images.append(await gui_app.texture_async(path, gui_app.width, gui_app.height))
-
-  def _load_textures(self):
-    for img in self.__images:
-      self._images.append(gui_app._load_texture_from_image(img))
+    self._image_paths = [os.path.join(BASEDIR, "selfdrive/assets/training", fn) for fn in paths]
+    # for fn in self._image_paths:
+    #   path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
+    #   self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
@@ -75,19 +63,22 @@ class TrainingGuide(Widget):
         ui_state.params.put_bool("RecordFront", yes)
 
       # Restart training?
-      elif self._step == len(self._images) - 1:
+      elif self._step == len(self._image_paths) - 1:
         if rl.check_collision_point_rec(mouse_pos, RESTART_TRAINING_RECT):
           self._step = -1
 
       self._step += 1
 
       # Finished?
-      if self._step >= len(self._images):
+      if self._step >= len(self._image_paths):
         self._step = 0
         if self._completed_callback:
           self._completed_callback()
 
   def _render(self, _):
+    if self._step >= len(self._images):
+      self._load_image(self._image_paths[self._step])
+
     rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
 
     # progress bar
