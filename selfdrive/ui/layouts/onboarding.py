@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import threading
 from enum import IntEnum
 
 import pyray as rl
@@ -42,6 +43,7 @@ class TrainingGuide(Widget):
     self._image = None
     self._images = []
     self._load_images()
+    self._loading = True
     self._preload_image(0)
 
   def _load_image(self, path):
@@ -56,6 +58,7 @@ class TrainingGuide(Widget):
     print('preloading next image', step)
     if step < len(self._image_paths):
       self._image = gui_app._load_image_from_path(self._image_paths[step])
+    self._loading = False
 
   def _load_images(self):
     # self._images = []
@@ -89,7 +92,7 @@ class TrainingGuide(Widget):
 
   def _render(self, _):
     preload = False
-    if self._step >= len(self._images):
+    if self._step >= len(self._images) and not self._loading:
       preload = True
       print()
       print('self._step', self._step, len(self._images))
@@ -112,7 +115,9 @@ class TrainingGuide(Widget):
       rl.draw_rectangle_lines_ex(STEP_RECTS[self._step], 3, rl.RED)
 
     if preload:
-      self._preload_image(self._step + 1)
+      self._loading = True
+      threading.Thread(target=self._preload_image, args=(self._step + 1,)).start()
+      # self._preload_image(self._step + 1)
 
     return -1
 
