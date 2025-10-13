@@ -9,7 +9,7 @@ from collections import namedtuple
 import pyautogui
 import pywinctl
 
-from cereal import log
+from cereal import car, log
 from cereal import messaging
 from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
@@ -54,6 +54,10 @@ def setup_settings_network(click, pm: PubMaster):
 
 
 def setup_settings_toggles(click, pm: PubMaster):
+  CP = car.CarParams()
+  CP.alphaLongitudinalAvailable = True  # show alpha long control toggle
+  Params().put("CarParamsPersistent", CP.to_bytes())
+
   setup_settings(click, pm)
   click(278, 600)
 
