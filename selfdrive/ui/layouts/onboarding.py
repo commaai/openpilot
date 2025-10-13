@@ -48,7 +48,7 @@ class TrainingGuide(Widget):
     t = time.monotonic()
     for fn in paths:
       path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-      self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
+      self._images.append(gui_app.texture(path))
     print(f"loaded training images in {time.monotonic() - t:.3f}s")
 
   def _handle_mouse_release(self, mouse_pos):
