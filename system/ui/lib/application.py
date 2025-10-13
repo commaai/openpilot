@@ -195,11 +195,20 @@ class GuiApplication:
       return self._textures[cache_key]
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-      texture_obj = self._load_texture_from_image(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      texture_obj = self._load_texture_from_image(image_obj)
     self._textures[cache_key] = texture_obj
     return texture_obj
 
-  def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
+  def _load_texture_from_image(self, image: rl.Image):
+    texture = rl.load_texture_from_image(image)
+    # Set texture filtering to smooth the result
+    rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+
+    rl.unload_image(image)
+    return texture
+
+  def _load_image_from_path(self, image_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     """Load and resize a texture, storing it for later automatic unloading."""
     image = rl.load_image(image_path)
 
@@ -223,12 +232,9 @@ class GuiApplication:
     else:
       rl.image_resize(image, width, height)
 
-    texture = rl.load_texture_from_image(image)
-    # Set texture filtering to smooth the result
-    rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+    return image
 
-    rl.unload_image(image)
-    return texture
+    # return self._load_texture_from_image(image)
 
   def close(self):
     if not rl.is_window_ready():

@@ -38,12 +38,23 @@ class TrainingGuide(Widget):
     self._completed_callback = completed_callback
 
     self._step = 0
+    self._image = None
     self._images = []
     self._load_images()
+    self._preload_image(0)
 
   def _load_image(self, path):
     # path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-    self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
+    # self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
+    print('loading image!')
+    self._images.append(gui_app._load_texture_from_image(self._image))
+    self._image = None
+
+  def _preload_image(self, step):
+    # next_step = self._step + 1
+    print('preloading next image', step)
+    if step < len(self._image_paths):
+      self._image = gui_app._load_image_from_path(self._image_paths[step], gui_app.width, gui_app.height)
 
   def _load_images(self):
     # self._images = []
@@ -77,7 +88,9 @@ class TrainingGuide(Widget):
 
   def _render(self, _):
     if self._step >= len(self._images):
+      print('self._step', self._step, len(self._images))
       self._load_image(self._image_paths[self._step])
+      self._preload_image(self._step + 1)
 
     rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
 
