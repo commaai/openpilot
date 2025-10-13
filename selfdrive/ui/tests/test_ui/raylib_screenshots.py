@@ -92,6 +92,25 @@ def setup_keyboard(click, pm: PubMaster):
   click(1930, 470)
 
 
+def keyboard_click_shift(click):
+  click(200, 800)  # shift key
+
+
+def setup_keyboard_uppercase(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_click_shift(click)
+
+
+def setup_keyboard_numbers(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  click(200, 900)  # number key
+
+
+def setup_keyboard_symbols(click, pm: PubMaster):
+  setup_keyboard_numbers(click, pm)
+  keyboard_click_shift(click)  # symbols key is same as shift in number mode
+
+
 def setup_pair_device(click, pm: PubMaster):
   click(1950, 800)
 
@@ -135,6 +154,9 @@ CASES = {
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard,
+  "keyboard_uppercase": setup_keyboard_uppercase,
+  "keyboard_numbers": setup_keyboard_numbers,
+  "keyboard_symbols": setup_keyboard_symbols,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
   "homescreen_update_available": setup_homescreen_update_available,
