@@ -1,5 +1,7 @@
+import asyncio
 import os
 import re
+import threading
 from enum import IntEnum
 
 import pyray as rl
@@ -38,15 +40,31 @@ class TrainingGuide(Widget):
     self._completed_callback = completed_callback
 
     self._step = 0
-    self._load_images()
+    self.__images = []
+    self._images = []
+    t = time.monotonic()
+    t = threading.Thread(target=self._load_images)
+    t.start()
+    t.join()
+    self._load_textures()
+    # self._load_images()
 
   def _load_images(self):
     self._images = []
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
     for fn in paths:
+      print('loading fn', fn)
       path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-      self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
+      self.__images.append(gui_app._load_image(path, gui_app.width, gui_app.height))
+      # self._images.append(gui_app._load_texture_from_image(img))
+      # print(img)
+      # self._images.append(asyncio.run(gui_app.texture_async(path, gui_app.width, gui_app.height)))
+      # self._images.append(await gui_app.texture_async(path, gui_app.width, gui_app.height))
+
+  def _load_textures(self):
+    for img in self.__images:
+      self._images.append(gui_app._load_texture_from_image(img))
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
