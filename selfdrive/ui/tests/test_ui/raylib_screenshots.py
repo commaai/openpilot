@@ -113,7 +113,6 @@ def setup_software_release_notes(click, pm: PubMaster):
 
 
 def setup_experimental_mode_description(click, pm: PubMaster):
-  setup_settings(click, pm)
   setup_settings_toggles(click, pm)
   click(1200, 280)  # expand description for experimental mode
 
