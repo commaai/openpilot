@@ -295,8 +295,7 @@ jobs:
         run: ${{ env.RUN }} "scons -j$(nproc)"
       - name: Create raylib UI Report
         run: >
-          ${{ env.RUN }} "apt-get update && apt-get install -y xdotool &&
-                          PYTHONWARNINGS=ignore &&
+          ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                           source selfdrive/test/setup_xvfb.sh &&
                           python3 selfdrive/ui/tests/test_ui/raylib_screenshots.py"
       - name: Upload Raylib UI Report
