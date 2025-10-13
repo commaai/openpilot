@@ -9,6 +9,7 @@ from collections.abc import Callable
 from typing import NotRequired, TypedDict
 
 import pyautogui
+import pywinctl
 from PIL import ImageChops
 
 from cereal import log
@@ -159,7 +160,11 @@ class TestUI:
       ds.clear_write_flag()
       time.sleep(0.05)
     time.sleep(0.5)
-    self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
+    try:
+      self.ui = pywinctl.getWindowsWithTitle("UI")[0]
+    except Exception as e:
+      print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
+      self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
 
   def screenshot(self):
     full_screenshot = pyautogui.screenshot()
