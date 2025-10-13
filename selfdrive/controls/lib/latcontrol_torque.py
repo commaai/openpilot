@@ -20,6 +20,11 @@ from openpilot.common.pid import PIDController
 # Additionally, there is friction in the steering wheel that needs
 # to be overcome to move it at all, this is compensated for too.
 
+LOW_SPEED_X = [0, 10, 20, 30]
+LOW_SPEED_Y = [15, 13, 10, 5]
+
+JERK_DT = 0.1 # [s] - assumes that all cars have a lag > 0.1 s 
+K_JERK = 0.1
 KP = 1.0
 KI = 0.3
 KD = 0.0
@@ -66,20 +71,22 @@ class LatControlTorque(LatControl):
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
-      delay_frames = int(np.clip(lat_delay / self.dt, 1, self.lat_accel_request_buffer_len))
-      expected_lateral_accel = self.lat_accel_request_buffer[-delay_frames]
+      delay_frames = int(np.clip(lat_delay / self.dt, 1, self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES))
+      expected_lateral_accel = self.requested_lateral_accel_buffer[-delay_frames]
+      raw_lateral_jerk = (self.requested_lateral_accel_buffer[-self.jerk_frames] - expected_lateral_accel) / JERK_DT
       # TODO factor out lateral jerk from error to later replace it with delay independent alternative
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       self.lat_accel_request_buffer.append(future_desired_lateral_accel)
       gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
-      desired_lateral_jerk = (jerk_frame_lateral_accel - expected_lateral_accel) / JERK_DT
+      desired_lateral_jerk = self.jerk_filter.update(raw_lateral_jerk)
 
       measurement = measured_curvature * CS.vEgo ** 2
       measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt)
       self.requested_lateral_accel_buffer.append(future_desired_lateral_accel)
       self.previous_measurement = measurement
 
-      setpoint = lat_delay * desired_lateral_jerk + expected_lateral_accel
+      low_speed_factor = (np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y) / max(CS.vEgo, MIN_SPEED)) ** 2
+      setpoint = K_JERK * desired_lateral_jerk + expected_lateral_accel
       error = setpoint - measurement
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
