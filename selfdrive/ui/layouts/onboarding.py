@@ -1,6 +1,5 @@
 import os
 import re
-import time
 from enum import IntEnum
 
 import pyray as rl
@@ -45,11 +44,9 @@ class TrainingGuide(Widget):
     self._images = []
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
-    t = time.monotonic()
     for fn in paths:
       path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
       self._images.append(gui_app.texture(path))
-    print(f"loaded training images in {time.monotonic() - t:.3f}s")
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
