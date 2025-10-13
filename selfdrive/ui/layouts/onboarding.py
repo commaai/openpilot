@@ -38,44 +38,15 @@ class TrainingGuide(Widget):
     self._completed_callback = completed_callback
 
     self._step = 0
-    self._images = {}  # Cache for loaded images
-    self._image_paths = self._get_image_paths()
+    self._load_images()
 
-    # Load first image immediately for instant display
-    self._load_image(0)
-
-  def _get_image_paths(self):
-    """Get sorted list of image paths without loading them."""
+  def _load_images(self):
+    self._images = []
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
-    return sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
-
-  def _load_image(self, step):
-    """Load image for specific step if not already loaded."""
-    if step not in self._images:
-      fn = self._image_paths[step]
+    paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
+    for fn in paths:
       path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-      self._images[step] = gui_app.texture(path, gui_app.width, gui_app.height)
-    return self._images[step]
-
-  def _preload_next_image(self):
-    """Preload the next image for smoother transitions."""
-    next_step = (self._step + 1) % len(self._image_paths)
-    if next_step not in self._images:
-      self._load_image(next_step)
-
-  def _cleanup_old_images(self):
-    """Remove images that are no longer needed to save memory."""
-    # Keep current, previous, and next images in memory
-    steps_to_keep = set()
-    if len(self._image_paths) > 0:
-      steps_to_keep.add(self._step)
-      steps_to_keep.add((self._step - 1) % len(self._image_paths))
-      steps_to_keep.add((self._step + 1) % len(self._image_paths))
-
-    # Remove images not in the keep set
-    keys_to_remove = [key for key in self._images.keys() if key not in steps_to_keep]
-    for key in keys_to_remove:
-      del self._images[key]
+      self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
@@ -86,28 +57,20 @@ class TrainingGuide(Widget):
         ui_state.params.put_bool("RecordFront", yes)
 
       # Restart training?
-      elif self._step == len(self._image_paths) - 1:
+      elif self._step == len(self._images) - 1:
         if rl.check_collision_point_rec(mouse_pos, RESTART_TRAINING_RECT):
           self._step = -1
 
       self._step += 1
 
-      # Clean up old images to save memory
-      self._cleanup_old_images()
-
       # Finished?
-      if self._step >= len(self._image_paths):
+      if self._step >= len(self._images):
         self._step = 0
         if self._completed_callback:
           self._completed_callback()
 
   def _render(self, _):
-    # Load current step image on demand
-    current_image = self._load_image(self._step)
-    rl.draw_texture(current_image, 0, 0, rl.WHITE)
-
-    # Preload next image for smoother transitions
-    self._preload_next_image()
+    rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
 
     # progress bar
     if 0 < self._step < len(STEP_RECTS) - 1:

@@ -194,8 +194,12 @@ class GuiApplication:
     if cache_key in self._textures:
       return self._textures[cache_key]
 
-    with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-      texture_obj = self._load_texture_from_image(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+    # Fast-path: if an absolute on-disk path is provided, bypass importlib.resources
+    if os.path.isabs(asset_path) and os.path.exists(asset_path):
+      texture_obj = self._load_texture_from_image(asset_path, width, height, alpha_premultiply, keep_aspect_ratio)
+    else:
+      with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
+        texture_obj = self._load_texture_from_image(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
     self._textures[cache_key] = texture_obj
     return texture_obj
 
@@ -205,6 +209,23 @@ class GuiApplication:
 
     if alpha_premultiply:
       rl.image_alpha_premultiply(image)
+
+    # Reduce upload bandwidth on device by converting to 16-bit where possible.
+    # This targets the slow rl.load_texture_from_image step (GPU upload) by halving bytes per pixel.
+    # Prefer RGB565 when no alpha is needed, otherwise use RGBA4444.
+    if TICI:
+      try:
+        # pyray may expose PixelFormat members; guard if not available
+        pf = getattr(rl, "PixelFormat", None)
+        image_format_fn = getattr(rl, "image_format", None)
+        if pf is not None and image_format_fn is not None:
+          if not alpha_premultiply and hasattr(pf, "PIXELFORMAT_UNCOMPRESSED_R5G6B5"):
+            image_format_fn(image, pf.PIXELFORMAT_UNCOMPRESSED_R5G6B5)
+          elif hasattr(pf, "PIXELFORMAT_UNCOMPRESSED_R4G4B4A4"):
+            image_format_fn(image, pf.PIXELFORMAT_UNCOMPRESSED_R4G4B4A4)
+      except Exception:
+        # If format conversion fails, continue with default format
+        pass
 
     # Resize with aspect ratio preservation if requested
     if keep_aspect_ratio:
