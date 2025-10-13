@@ -126,7 +126,7 @@ CASES = {
   "settings_toggles": setup_settings_toggles,
   "settings_software": setup_settings_software,
   "settings_software_download": setup_settings_software_download,
-  "software_release_notes": setup_settings_software_release_notes,
+  "settings_software_release_notes": setup_settings_software_release_notes,
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard,
