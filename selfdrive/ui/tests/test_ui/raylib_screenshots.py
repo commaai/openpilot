@@ -124,6 +124,11 @@ def setup_experimental_mode_description(click, pm: PubMaster):
   click(1200, 280)  # expand description for experimental mode
 
 
+def setup_openpilot_long_control_confirmation_dialog(click, pm: PubMaster):
+  setup_settings_developer(click, pm)
+  click(2000, 960)  # toggle openpilot longitudinal control
+
+
 CASES = {
   "homescreen": setup_homescreen,
   "settings_device": setup_settings,
@@ -140,6 +145,7 @@ CASES = {
   "homescreen_update_available": setup_homescreen_update_available,
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
+  "openpilot_long_control_confirmation_dialog": setup_openpilot_long_control_confirmation_dialog,
 }
 
 
