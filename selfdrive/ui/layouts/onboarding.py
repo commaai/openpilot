@@ -88,14 +88,15 @@ class TrainingGuide(Widget):
           self._completed_callback()
 
   def _render(self, _):
+    preload = False
     if self._step >= len(self._images):
+      preload = True
       print()
       print('self._step', self._step, len(self._images))
       t = time.monotonic()
       self._load_image(self._image_paths[self._step])
       print('loaded image', time.monotonic() - t)
       t = time.monotonic()
-      self._preload_image(self._step + 1)
       print('preloaded next image', time.monotonic() - t)
 
     rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
@@ -109,6 +110,9 @@ class TrainingGuide(Widget):
 
     if DEBUG:
       rl.draw_rectangle_lines_ex(STEP_RECTS[self._step], 3, rl.RED)
+
+    if preload:
+      self._preload_image(self._step + 1)
 
     return -1
 
