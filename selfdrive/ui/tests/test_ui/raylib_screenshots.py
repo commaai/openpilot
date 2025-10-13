@@ -92,13 +92,22 @@ def setup_keyboard(click, pm: PubMaster):
   click(1930, 470)
 
 
-def keyboard_click_shift(click):
+def keyboard_toggle_shift(click):
   click(200, 800)  # shift key
+
+
+def keyboard_toggle_numbers(click):
+  click(200, 900)  # toggle numbers key
+
+
+def keyboard_click_top_two(click):
+  click(140, 430)  # q, Q, 1, [
+  click(350, 440)  # w, W, 2, ]
 
 
 def setup_keyboard_uppercase(click, pm: PubMaster):
   setup_keyboard(click, pm)
-  keyboard_click_shift(click)
+  keyboard_toggle_shift(click)
 
 
 def setup_keyboard_numbers(click, pm: PubMaster):
@@ -108,7 +117,17 @@ def setup_keyboard_numbers(click, pm: PubMaster):
 
 def setup_keyboard_symbols(click, pm: PubMaster):
   setup_keyboard_numbers(click, pm)
-  keyboard_click_shift(click)  # symbols key is same as shift in number mode
+  keyboard_toggle_shift(click)  # symbols key is same as shift in number mode
+
+
+def setup_keyboard_text(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_shift(click)
+  keyboard_click_top_two(click)  # type "Qw" (shift turns off after first letter)
+  keyboard_toggle_numbers(click)
+  keyboard_click_top_two(click)  # type "12"
+  keyboard_toggle_shift(click)
+  keyboard_click_top_two(click)  # type "[]"
 
 
 def setup_pair_device(click, pm: PubMaster):
