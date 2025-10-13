@@ -73,7 +73,6 @@ def setup_settings_software_download(click, pm: PubMaster):
 
 
 def setup_settings_software_release_notes(click, pm: PubMaster):
-  setup_settings(click, pm)
   setup_settings_software(click, pm)
   click(588, 110)  # expand description for current version
 
