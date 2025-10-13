@@ -66,14 +66,16 @@ def setup_settings_software(click, pm: PubMaster):
 
 def setup_settings_software_download(click, pm: PubMaster):
   params = Params()
-  # put_update_params(Params())
-  # setup_settings(click, pm)
-  # click(278, 720)
   # setup_settings_software but with "DOWNLOAD" button to test long text
   params.put("UpdaterState", "idle")
   params.put_bool("UpdaterFetchAvailable", True)
-
   setup_settings_software(click, pm)
+
+
+def setup_settings_software_release_notes(click, pm: PubMaster):
+  setup_settings(click, pm)
+  setup_settings_software(click, pm)
+  click(588, 110)  # expand description for current version
 
 
 def setup_settings_firehose(click, pm: PubMaster):
@@ -118,27 +120,21 @@ def setup_homescreen_update_available(click, pm: PubMaster):
   close_settings(click, pm)
 
 
-def setup_software_release_notes(click, pm: PubMaster):
-  setup_settings(click, pm)
-  setup_settings_software(click, pm)
-  click(588, 110)  # expand description for current version
-
-
 CASES = {
-  # "homescreen": setup_homescreen,
-  # "settings_device": setup_settings,
-  # "settings_network": setup_settings_network,
-  # "settings_toggles": setup_settings_toggles,
-  # "settings_software": setup_settings_software,
+  "homescreen": setup_homescreen,
+  "settings_device": setup_settings,
+  "settings_network": setup_settings_network,
+  "settings_toggles": setup_settings_toggles,
+  "settings_software": setup_settings_software,
   "settings_software_download": setup_settings_software_download,
-  # "settings_firehose": setup_settings_firehose,
-  # "settings_developer": setup_settings_developer,
-  # "keyboard": setup_keyboard,
-  # "pair_device": setup_pair_device,
-  # "offroad_alert": setup_offroad_alert,
-  # "homescreen_update_available": setup_homescreen_update_available,
-  # "confirmation_dialog": setup_confirmation_dialog,
-  # "software_release_notes": setup_software_release_notes,
+  "software_release_notes": setup_settings_software_release_notes,
+  "settings_firehose": setup_settings_firehose,
+  "settings_developer": setup_settings_developer,
+  "keyboard": setup_keyboard,
+  "pair_device": setup_pair_device,
+  "offroad_alert": setup_offroad_alert,
+  "homescreen_update_available": setup_homescreen_update_available,
+  "confirmation_dialog": setup_confirmation_dialog,
 }
 
 
