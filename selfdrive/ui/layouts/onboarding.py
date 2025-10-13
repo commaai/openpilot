@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from enum import IntEnum
 
 import pyray as rl
@@ -54,7 +55,7 @@ class TrainingGuide(Widget):
     # next_step = self._step + 1
     print('preloading next image', step)
     if step < len(self._image_paths):
-      self._image = gui_app._load_image_from_path(self._image_paths[step], gui_app.width, gui_app.height)
+      self._image = gui_app._load_image_from_path(self._image_paths[step])
 
   def _load_images(self):
     # self._images = []
@@ -88,9 +89,14 @@ class TrainingGuide(Widget):
 
   def _render(self, _):
     if self._step >= len(self._images):
+      print()
       print('self._step', self._step, len(self._images))
+      t = time.monotonic()
       self._load_image(self._image_paths[self._step])
+      print('loaded image', time.monotonic() - t)
+      t = time.monotonic()
       self._preload_image(self._step + 1)
+      print('preloaded next image', time.monotonic() - t)
 
     rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
 

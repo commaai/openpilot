@@ -208,29 +208,34 @@ class GuiApplication:
     rl.unload_image(image)
     return texture
 
-  def _load_image_from_path(self, image_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
+  def _load_image_from_path(self, image_path: str, width: int | None = None, height: int | None = None,
+                            alpha_premultiply=False, keep_aspect_ratio=True):
     """Load and resize a texture, storing it for later automatic unloading."""
+    t = time.monotonic()
     image = rl.load_image(image_path)
+    print(f'  GUI_APP: loaded image in {time.monotonic() - t:.3f}s')
 
     if alpha_premultiply:
       rl.image_alpha_premultiply(image)
 
-    # Resize with aspect ratio preservation if requested
-    if keep_aspect_ratio:
-      orig_width = image.width
-      orig_height = image.height
+    if width is not None and height is not None:
+      # Resize with aspect ratio preservation if requested
+      if keep_aspect_ratio:
+        orig_width = image.width
+        orig_height = image.height
 
-      scale_width = width / orig_width
-      scale_height = height / orig_height
+        scale_width = width / orig_width
+        scale_height = height / orig_height
 
-      # Calculate new dimensions
-      scale = min(scale_width, scale_height)
-      new_width = int(orig_width * scale)
-      new_height = int(orig_height * scale)
+        # Calculate new dimensions
+        scale = min(scale_width, scale_height)
+        new_width = int(orig_width * scale)
+        new_height = int(orig_height * scale)
 
-      rl.image_resize(image, new_width, new_height)
-    else:
-      rl.image_resize(image, width, height)
+        rl.image_resize(image, new_width, new_height)
+      else:
+        rl.image_resize(image, width, height)
+    print(f'  GUI_APP: resized image in {time.monotonic() - t:.3f}s')
 
     return image
 
