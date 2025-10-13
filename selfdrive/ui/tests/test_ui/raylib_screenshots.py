@@ -177,7 +177,7 @@ class TestUI:
 
     # Scroll until there are no more changes or we reach the limit
     for i in range(1, max_screenshots):
-      self.vscroll(scroll_clicks, delay=50)  # 50ms between scroll clicks; 20ms didn't work well for larger scrolls
+      self.scroll(scroll_clicks)
       time.sleep(SCROLL_DELAY)
       curr = self.screenshot()
 
@@ -202,21 +202,13 @@ class TestUI:
     time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
-  def vscroll(self, clicks: int, delay=100):
-    """Perform vertical scroll using xdotool.
-
-    clicks: number of scroll clicks to perform (negative means scroll down)
-
-    delay: delay between scroll clicks in milliseconds
-    """
-    clicks = int(clicks)
+  def scroll(self, clicks: int, *args, **kwargs):
     if clicks == 0:
       return
-    button = 4 if clicks > 0 else 5  # 4=up, 5=down
-    # Run xdotool command to scroll
-    result = os.system(f"xdotool click --repeat {abs(clicks)} --delay {delay} {button}")
-    if result != 0:
-      raise Exception("xdotool command failed (ensure xdotool is installed)")
+    click = -1 if clicks < 0 else 1  # -1 = down, 1 = up
+    for _ in range(abs(clicks)):
+      pyautogui.scroll(click, *args, **kwargs)  # scroll for individual clicks since we need to delay between clicks
+      time.sleep(0.01)  # small delay between scroll clicks to work properly
 
   @with_processes(["ui"])
   def test_ui(self, name: str, setup_case: SetupFunction, config: CaseConfig | None = None):
