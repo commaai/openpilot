@@ -107,7 +107,8 @@ class CameraView(Widget):
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _offroad_transition(self):
-    if ui_state.is_onroad():
+    # Reconnect if not first time going onroad
+    if ui_state.is_onroad() and self.frame is not None:
       # Prevent old frames from showing when going onroad. Qt has a separate thread
       # which drains the VisionIpcClient SubSocket for us. Re-connecting is not enough
       # and only clears internal buffers, not the message queue.

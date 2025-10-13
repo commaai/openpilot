@@ -70,8 +70,10 @@ class DeveloperLayout(Widget):
       description=DESCRIPTIONS["alpha_longitudinal"],
       initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
       callback=self._on_alpha_long_enabled,
-      enabled=ui_state.is_offroad,
+      enabled=lambda: not ui_state.engaged,
     )
+
+    self._alpha_long_toggle.set_description(self._alpha_long_toggle.description + " Changing this setting will restart openpilot if the car is powered on.")
 
     items = [
       self._adb_toggle,
@@ -152,6 +154,7 @@ class DeveloperLayout(Widget):
       def confirm_callback(result: int):
         if result == DialogResult.CONFIRM:
           self._params.put_bool("AlphaLongitudinalEnabled", True)
+          self._params.put_bool("OnroadCycleRequested", True)
           self._update_toggles()
         else:
           self._alpha_long_toggle.action_item.set_state(False)
@@ -162,7 +165,8 @@ class DeveloperLayout(Widget):
 
       dlg = ConfirmDialog(content, "Enable", rich=True)
       gui_app.set_modal_overlay(dlg, callback=confirm_callback)
-      return
 
-    self._params.put_bool("AlphaLongitudinalEnabled", state)
-    self._update_toggles()
+    else:
+      self._params.put_bool("AlphaLongitudinalEnabled", False)
+      self._params.put_bool("OnroadCycleRequested", True)
+      self._update_toggles()
