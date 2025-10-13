@@ -11,6 +11,7 @@ blacklist = [
   ".github/workflows/",
 
   "matlab.*.md",
+  "selfdrive/assets/training/.*.png",  # we use the qoi files
 
   # no LFS or submodules in release
   ".lfsconfig",
