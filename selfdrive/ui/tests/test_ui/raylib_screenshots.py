@@ -303,7 +303,7 @@ def get_cached_frames(route: Route, segnum: int):
       # No cached frames, read from route and cache them
       print("no cached frames, reading from route")
       road_path = route.camera_paths()[segnum]
-      road_img =get_frame(road_path)
+      road_img = get_frame(road_path)
       wide_road_path = route.ecamera_paths()[segnum]
       wide_road_img = get_frame(wide_road_path)
       driver_path = route.dcamera_paths()[segnum]
