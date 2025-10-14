@@ -150,7 +150,7 @@ CASES = {
   "homescreen_update_available": setup_homescreen_update_available,
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
-  "onboarding": setup_onboarding,
+  "onboarding_completion": setup_onboarding,
 }
 
 
