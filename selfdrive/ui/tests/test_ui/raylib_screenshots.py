@@ -93,7 +93,7 @@ def setup_keyboard(click, pm: PubMaster):
 
 
 def setup_pair_device(click, pm: PubMaster):
-  click(1950, 800)
+  click(1750, 900)
 
 
 def setup_offroad_alert(click, pm: PubMaster):
