@@ -73,7 +73,8 @@ class LatControlTorque(LatControl):
 
       delay_frames = int(np.clip(lat_delay / self.dt, 1, self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES))
       expected_lateral_accel = self.requested_lateral_accel_buffer[-delay_frames]
-      raw_lateral_jerk = (self.requested_lateral_accel_buffer[-delay_frames+self.jerk_frames+1] - self.requested_lateral_accel_buffer[-delay_frames+self.jerk_frames-1]) / (2 * self.dt )# - expected_lateral_accel) / JERK_DT
+      jerk_idx = -delay_frames + self.jerk_frames
+      raw_lateral_jerk = (self.requested_lateral_accel_buffer[jerk_idx+1] - self.requested_lateral_accel_buffer[jerk_idx-1]) / (2 * self.dt)
       # TODO factor out lateral jerk from error
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       self.lat_accel_request_buffer.append(future_desired_lateral_accel)
@@ -82,7 +83,6 @@ class LatControlTorque(LatControl):
 
       measurement = measured_curvature * CS.vEgo ** 2
       measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt)
-      self.requested_lateral_accel_buffer.append(future_desired_lateral_accel)
       self.previous_measurement = measurement
 
       low_speed_factor = (np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y) / max(CS.vEgo, MIN_SPEED)) ** 2
