@@ -226,7 +226,7 @@ def setup_onroad_wide_sidebar(click, pm: PubMaster):
 
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings(click, pm)
-  click(1980, 620)
+  click(1980, 620)  # preview driver camera button
   if DATA['deviceState']:
     DATA['deviceState'].deviceState.started = False
   setup_onroad(click, pm)
