@@ -76,6 +76,7 @@ class TrainingGuide(Widget):
       self._image_objs.append(self._preload_image(path))
 
   def _handle_mouse_release(self, mouse_pos):
+    print('mouse released', mouse_pos, self._step)
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
       # Record DM camera?
       if self._step == DM_RECORD_STEP:
@@ -88,6 +89,7 @@ class TrainingGuide(Widget):
         if rl.check_collision_point_rec(mouse_pos, RESTART_TRAINING_RECT):
           self._step = -1
 
+      print('INCREMENTING!')
       self._step += 1
 
       # Finished?
