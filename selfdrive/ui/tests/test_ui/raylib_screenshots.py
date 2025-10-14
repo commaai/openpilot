@@ -127,7 +127,7 @@ def setup_experimental_mode_description(click, pm: PubMaster):
 def setup_onboarding(click, pm: PubMaster):
   setup_settings(click, pm)
   click(2000, 960)  # review training guide
-  # Go through the entire training guide and take a screenshot on the last page to ensure everything works
+  # Go through the entire training guide and stop on the final step
   clicks = [(390, 880), (2010, 550), (2010, 560), (1760, 730), (1750, 580), (2000, 560), (1900, 700), (1630, 390), (1780, 570),
             (360, 890), (1740, 390), (2010, 670), (1980, 640), (1980, 640), (1760, 330), (1670, 650), (1960, 570), (1960, 580)]
   for x, y in clicks:
