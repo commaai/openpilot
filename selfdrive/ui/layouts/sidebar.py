@@ -23,8 +23,7 @@ NetworkType = log.DeviceState.NetworkType
 
 # Color scheme
 class Colors:
-  # SIDEBAR_BG = rl.Color(57, 57, 57, 255)
-  SIDEBAR_BG = rl.BLACK
+  SIDEBAR_BG = rl.Color(57, 57, 57, 255)
   WHITE = rl.WHITE
   WHITE_DIM = rl.Color(255, 255, 255, 85)
   GRAY = rl.Color(84, 84, 84, 255)

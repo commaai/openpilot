@@ -11,13 +11,12 @@ from openpilot.system.ui.widgets.label import gui_label
 class PrimeWidget(Widget):
   """Widget for displaying comma prime subscription status"""
 
-  # PRIME_BG_COLOR = rl.Color(51, 51, 51, 255)
-  PRIME_BG_COLOR = rl.Color(44, 44, 46, 255)
+  PRIME_BG_COLOR = rl.Color(51, 51, 51, 255)
 
   def _render(self, rect):
-    # if ui_state.prime_state.is_prime():
-    # self._render_for_prime_user(rect)
-    # else:
+    if ui_state.prime_state.is_prime():
+      self._render_for_prime_user(rect)
+    else:
       self._render_for_non_prime_users(rect)
 
   def _render_for_non_prime_users(self, rect: rl.Rectangle):
