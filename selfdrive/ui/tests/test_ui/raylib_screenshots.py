@@ -11,7 +11,7 @@ import pywinctl
 
 from cereal import log
 from cereal import messaging
-from cereal.messaging import PubMaster, sub_sock
+from cereal.messaging import PubMaster, log_from_bytes, sub_sock
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -25,6 +25,9 @@ from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route
+
+AlertSize = log.SelfdriveState.AlertSize
+AlertStatus = log.SelfdriveState.AlertStatus
 
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
@@ -174,6 +177,28 @@ def setup_onroad(click, pm: PubMaster):
     time.sleep(0.05)
 
 
+def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=AlertStatus.normal):
+  state = DATA["selfdriveState"]
+  origin_state_bytes = state.to_bytes()
+  cs = state.selfdriveState
+  cs.alertText1 = text1
+  cs.alertText2 = text2
+  cs.alertSize = size
+  cs.alertStatus = status
+  cs.alertType = "test_onroad_alert"
+  setup_onroad(click, pm)
+  DATA["selfdriveState"] = log_from_bytes(origin_state_bytes).as_builder()
+
+def setup_onroad_alert_small(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, "This is a small alert message", "", AlertSize.small)
+
+def setup_onroad_alert_mid_warning(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, "Medium Alert", "This is a medium warning alert message", AlertSize.mid, AlertStatus.userPrompt)
+
+def setup_onroad_alert_full_critical(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, "Full Alert", "This is a full critical alert message", AlertSize.full, AlertStatus.critical)
+
+
 def setup_onroad_disengaged(click, pm: PubMaster):
   DATA["selfdriveState"].selfdriveState.enabled = False
   setup_onroad(click, pm)
@@ -230,6 +255,9 @@ CASES = {
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
   "onroad": setup_onroad,
+  "onroad_alert_small_normal": setup_onroad_alert_small,
+  "onroad_alert_mid_warning": setup_onroad_alert_mid_warning,
+  "onroad_alert_full_critical": setup_onroad_alert_full_critical,
   "onroad_disengaged": setup_onroad_disengaged,
   "onroad_override": setup_onroad_override,
   "onroad_sidebar": setup_onroad_sidebar,
