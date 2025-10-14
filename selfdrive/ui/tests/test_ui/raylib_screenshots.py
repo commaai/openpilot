@@ -278,6 +278,12 @@ class TestUI:
     self.screenshot(name)
 
 
+def get_frame(path: str | None):
+  if path is None:
+    raise ValueError("Missing camra frame path")
+  return FrameReader(path, pix_fmt="nv12").get(0)
+
+
 def get_cached_frames(route: Route, segnum: int):
   import pickle
 
@@ -296,9 +302,12 @@ def get_cached_frames(route: Route, segnum: int):
     with open(frames_cache, "wb") as f:
       # No cached frames, read from route and cache them
       print("no cached frames, reading from route")
-      road_img = FrameReader(route.camera_paths()[segnum], pix_fmt="nv12").get(0)
-      wide_road_img = FrameReader(route.ecamera_paths()[segnum], pix_fmt="nv12").get(0)
-      driver_img = FrameReader(route.dcamera_paths()[segnum], pix_fmt="nv12").get(0)
+      road_path = route.camera_paths()[segnum]
+      road_img =get_frame(road_path)
+      wide_road_path = route.ecamera_paths()[segnum]
+      wide_road_img = get_frame(wide_road_path)
+      driver_path = route.dcamera_paths()[segnum]
+      driver_img = get_frame(driver_path)
       pickle.dump([road_img, wide_road_img, driver_img], f)
   return road_img, wide_road_img, driver_img
 
