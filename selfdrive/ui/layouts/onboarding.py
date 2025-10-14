@@ -39,15 +39,12 @@ class TrainingGuide(Widget):
     super().__init__()
     self._completed_callback = completed_callback
 
+    self._step = 0
     self._load_image_paths()
 
-    self._step = 0
     # Load first image now so we show something immediately
     self._textures = [gui_app.texture(self._image_paths[0])]
     self._image_objs = []
-
-    # self._preload_image(self._image_paths[0])
-    # self._load_image(self._preload_image(self._image_paths[0]))
 
     threading.Thread(target=self._preload_thread, daemon=True).start()
 
@@ -56,24 +53,13 @@ class TrainingGuide(Widget):
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
     self._image_paths = [os.path.join(BASEDIR, "selfdrive/assets/training", fn) for fn in paths]
 
-  def _load_image(self, image):
-    t = time.monotonic()
-    self._textures.append(gui_app._load_texture_from_image(image))
-    print(f'load_image took {time.monotonic() - t:.3f}s')
-
-  def _preload_image(self, path):
-    t = time.monotonic()
-    ret = gui_app._load_image_from_path(path)
-    print(f'preload_image {path} took {time.monotonic() - t:.3f}s')
-    return ret
-
   def _preload_thread(self):
-    print('hello')
+    # PNG loading is slow in raylib, so we preload in a thread and upload to GPU in main thread
     # We've already loaded the first image on init
     for path in self._image_paths[1:]:
-      print(f'preloading {path}')
-      time.sleep(2)
-      self._image_objs.append(self._preload_image(path))
+      t = time.monotonic()
+      self._image_objs.append(gui_app._load_image_from_path(path))
+      print(f'preload_image {path} took {time.monotonic() - t:.3f}s')
 
   def _handle_mouse_release(self, mouse_pos):
     print('mouse released', mouse_pos, self._step)
@@ -101,9 +87,9 @@ class TrainingGuide(Widget):
   def _update_state(self):
     if len(self._image_objs):
       print('loading image from obj')
-      # t = time.monotonic()
-      self._load_image(self._image_objs.pop(0))
-      # print(f'loaded image in {time.monotonic() - t:.3f}s')
+      t = time.monotonic()
+      self._textures.append(gui_app._load_texture_from_image(self._image_objs.pop(0)))
+      print(f'load_image took {time.monotonic() - t:.3f}s')
 
   def _render(self, _):
     # # if current step greater than loaded images, load next image
