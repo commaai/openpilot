@@ -115,18 +115,13 @@ def setup_keyboard_numbers(click, pm: PubMaster):
   click(200, 900)  # number key
 
 
-def setup_keyboard_symbols(click, pm: PubMaster):
-  setup_keyboard_numbers(click, pm)
-  keyboard_toggle_shift(click)  # symbols key is same as shift in number mode
-
-
-def setup_keyboard_text(click, pm: PubMaster):
+def setup_keyboard_text_and_symbols(click, pm: PubMaster):
   setup_keyboard(click, pm)
-  keyboard_toggle_shift(click)
+  keyboard_toggle_shift(click)  # uppercase
   keyboard_click_top_two(click)  # type "Qw" (shift turns off after first letter)
-  keyboard_toggle_numbers(click)
+  keyboard_toggle_numbers(click)  # numbers
   keyboard_click_top_two(click)  # type "12"
-  keyboard_toggle_shift(click)
+  keyboard_toggle_shift(click)  # symbols
   keyboard_click_top_two(click)  # type "[]"
 
 
@@ -175,7 +170,7 @@ CASES = {
   "keyboard": setup_keyboard,
   "keyboard_uppercase": setup_keyboard_uppercase,
   "keyboard_numbers": setup_keyboard_numbers,
-  "keyboard_symbols": setup_keyboard_symbols,
+  "keyboard_text_and_symbols": setup_keyboard_text_and_symbols,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
   "homescreen_update_available": setup_homescreen_update_available,
