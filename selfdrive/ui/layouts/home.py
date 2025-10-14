@@ -77,6 +77,9 @@ class HomeLayout(Widget):
   def _set_state(self, state: HomeLayoutState):
     # propagate show/hide events
     if state != self.current_state:
+      if state == HomeLayoutState.HOME:
+        self._exp_mode_button.show_event()
+
       if state in self._layout_widgets:
         self._layout_widgets[state].show_event()
       if self.current_state in self._layout_widgets:
