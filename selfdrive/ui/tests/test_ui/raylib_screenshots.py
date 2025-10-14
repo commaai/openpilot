@@ -191,11 +191,9 @@ def setup_onroad(click, pm: PubMaster):
 
 
 def setup_onroad_disengaged(click, pm: PubMaster):
-  if DATA['selfdriveState']:
-    DATA['selfdriveState'].selfdriveState.enabled = False
+  DATA['selfdriveState'].selfdriveState.enabled = False
   setup_onroad(click, pm)
-  if DATA['selfdriveState']:
-    DATA['selfdriveState'].selfdriveState.enabled = True
+  DATA['selfdriveState'].selfdriveState.enabled = True
 
 
 def setup_onroad_override(click, pm: PubMaster):
@@ -205,10 +203,8 @@ def setup_onroad_override(click, pm: PubMaster):
 
 
 def setup_onroad_wide(click, pm: PubMaster):
-  if DATA['selfdriveState']:
-    DATA['selfdriveState'].selfdriveState.experimentalMode = True
-  if DATA.get("carState"):
-    DATA["carState"].carState.vEgo = 1
+  DATA['selfdriveState'].selfdriveState.experimentalMode = True
+  DATA["carState"].carState.vEgo = 1
   setup_onroad(click, pm)
 
 
@@ -226,12 +222,10 @@ def setup_onroad_wide_sidebar(click, pm: PubMaster):
 
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings(click, pm)
-  click(1980, 620)
-  if DATA['deviceState']:
-    DATA['deviceState'].deviceState.started = False
+  click(1980, 620)  # preview driver camera button
+  DATA['deviceState'].deviceState.started = False
   setup_onroad(click, pm)
-  if DATA['deviceState']:
-    DATA['deviceState'].deviceState.started = True
+  DATA['deviceState'].deviceState.started = True
 
 
 CASES = {
