@@ -18,6 +18,9 @@ class ExperimentalModeButton(Widget):
     self.chill_pixmap = gui_app.texture("icons/couch.png", self.img_width, self.img_width)
     self.experimental_pixmap = gui_app.texture("icons/experimental_grey.png", self.img_width, self.img_width)
 
+  def show_event(self):
+    self.experimental_mode = self.params.get_bool("ExperimentalMode")
+
   def _get_gradient_colors(self):
     alpha = 0xCC if self.is_pressed else 0xFF
 
