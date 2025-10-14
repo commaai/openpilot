@@ -112,7 +112,7 @@ def setup_keyboard_uppercase(click, pm: PubMaster):
 
 def setup_keyboard_numbers(click, pm: PubMaster):
   setup_keyboard(click, pm)
-  click(200, 900)  # number key
+  keyboard_toggle_numbers(click)
 
 
 def setup_keyboard_text_and_symbols(click, pm: PubMaster):
