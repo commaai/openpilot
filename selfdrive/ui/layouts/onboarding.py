@@ -38,15 +38,18 @@ class TrainingGuide(Widget):
     self._completed_callback = completed_callback
 
     self._step = 0
+    self._images = []
+    self._image_paths = []
     self._load_images()
 
   def _load_images(self):
-    self._images = []
+    # self._images = []
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
-    for fn in paths:
-      path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-      self._images.append(gui_app.texture(path))
+    self._image_paths = [os.path.join(BASEDIR, "selfdrive/assets/training", fn) for fn in paths]
+    # for fn in paths:
+    #   path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
+    #   self._images.append(gui_app.texture(path))
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
@@ -68,6 +71,11 @@ class TrainingGuide(Widget):
         self._step = 0
         if self._completed_callback:
           self._completed_callback()
+
+  def _update_state(self):
+    if len(self._image_paths) != len(self._images):
+      print('loading image', self._image_paths[len(self._images)])
+      self._images.append(gui_app.texture(self._image_paths[len(self._images)]))
 
   def _render(self, _):
     rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
