@@ -20,9 +20,9 @@ WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
 
 BORDER_COLORS = {
-  UIStatus.DISENGAGED: rl.Color(0x12, 0x28, 0x39, 0xFF),
-  UIStatus.OVERRIDE: rl.Color(0x89, 0x92, 0x8D, 0xFF),
-  UIStatus.ENGAGED: rl.Color(0x16, 0x7F, 0x40, 0xFF),
+  UIStatus.DISENGAGED: rl.Color(0x12, 0x28, 0x39, 0xFF),   # Blue for disengaged state
+  UIStatus.OVERRIDE: rl.Color(0x89, 0x92, 0x8D, 0xFF),     # Gray for override state
+  UIStatus.ENGAGED: rl.Color(0x16, 0x7F, 0x40, 0xFF),      # Green for engaged state
 }
 
 WIDE_CAM_MAX_SPEED = 10.0  # m/s (22 mph)
@@ -98,16 +98,6 @@ class AugmentedRoadView(CameraView):
     # Draw colored border based on driving state
     self._draw_border(rect)
 
-    # black_bg_thickness = 250
-    # # black_bg_rect = rl.Rectangle(
-    # #   rect.x + black_bg_thickness,
-    # #   rect.y + black_bg_thickness,
-    # #   rect.width - 2 * black_bg_thickness,
-    # #   rect.height - 2 * black_bg_thickness,
-    # # )
-    # black_bg_rect = self._rect
-    # rl.draw_rectangle_rounded_lines_ex(black_bg_rect, (1020*0.2)/1280, 10, black_bg_thickness, rl.RED)
-
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
     msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
@@ -123,7 +113,7 @@ class AugmentedRoadView(CameraView):
 
   def _draw_border(self, rect: rl.Rectangle):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-    border_roundness = 0.125
+    border_roundness = 0.15
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
     # rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, border_color)
     border_rect = rl.Rectangle(rect.x + UI_BORDER_SIZE, rect.y + UI_BORDER_SIZE,
