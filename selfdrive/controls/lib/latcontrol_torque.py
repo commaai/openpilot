@@ -23,7 +23,7 @@ from openpilot.common.pid import PIDController
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
 
-JERK_DT = 0.1 # [s] - assumes that all cars have a lag > 0.1 s 
+JERK_DT = 0.1 # [s] - assumes that all cars have a lag > 0.1 s
 K_JERK = 0.1
 KP = 1.0
 KI = 0.3
