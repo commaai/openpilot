@@ -20,7 +20,7 @@ NO_RELEASE_NOTES = "<h2>No release notes available.</h2>"
 class AlertColors:
   HIGH_SEVERITY = rl.Color(226, 44, 44, 255)
   LOW_SEVERITY = rl.Color(41, 41, 41, 255)
-  BACKGROUND = rl.Color(57, 57, 57, 255)
+  BACKGROUND = rl.Color(44, 44, 46, 255)
   BUTTON = rl.WHITE
   BUTTON_PRESSED = rl.Color(200, 200, 200, 255)
   BUTTON_TEXT = rl.BLACK
