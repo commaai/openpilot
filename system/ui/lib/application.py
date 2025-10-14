@@ -196,7 +196,7 @@ class GuiApplication:
       return self._textures[cache_key]
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-      image_bj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
       texture_obj = self._load_texture_from_image(image_obj)
     self._textures[cache_key] = texture_obj
     return texture_obj
