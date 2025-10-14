@@ -196,10 +196,7 @@ def create_screenshots():
       if name == "homescreen_prime":
         params.put("PrimeType", 1)  # set before starting UI
 
-      try:
-        t.test_ui(name, setup)
-      except Exception as e:
-        print(f"failed to capture {name}: {e}")
+      t.test_ui(name, setup)
 
 
 if __name__ == "__main__":
