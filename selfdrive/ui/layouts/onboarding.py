@@ -72,7 +72,7 @@ class TrainingGuide(Widget):
     # We've already loaded the first image on init
     for path in self._image_paths[1:]:
       print(f'preloading {path}')
-      # time.sleep(2)
+      time.sleep(2)
       self._image_objs.append(self._preload_image(path))
 
   def _handle_mouse_release(self, mouse_pos):
