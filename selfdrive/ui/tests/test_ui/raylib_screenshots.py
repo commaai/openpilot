@@ -39,24 +39,9 @@ TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 TEST_ROUTE_SEGMENT = 2
 STREAMS: list[tuple] = []
 DATA: dict[str, messaging.capnp._DynamicStructBuilder] = dict.fromkeys(
-  [
-    "carParams",
-    "deviceState",
-    "pandaStates",
-    "controlsState",
-    "selfdriveState",
-    "liveCalibration",
-    "modelV2",
-    "radarState",
-    "driverMonitoringState",
-    "carState",
-    "driverStateV2",
-    "roadCameraState",
-    "wideRoadCameraState",
-    "driverCameraState",
-  ],
-  None,
-)
+  ["carParams", "deviceState", "pandaStates", "controlsState", "selfdriveState",
+  "liveCalibration", "modelV2", "radarState", "driverMonitoringState", "carState",
+  "driverStateV2", "roadCameraState", "wideRoadCameraState", "driverCameraState"], None)
 
 
 def put_update_params(params: Params):
