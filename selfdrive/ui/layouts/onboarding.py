@@ -46,7 +46,7 @@ class TrainingGuide(Widget):
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
     for fn in paths:
       path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-      self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
+      self._images.append(gui_app.texture(path))
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
