@@ -126,6 +126,7 @@ def setup_experimental_mode_description(click, pm: PubMaster):
 
 CASES = {
   "homescreen": setup_homescreen,
+  "homescreen_prime": setup_homescreen,
   "settings_device": setup_settings,
   "settings_network": setup_settings_network,
   "settings_toggles": setup_settings_toggles,
@@ -192,7 +193,13 @@ def create_screenshots():
     params = Params()
     params.put("DongleId", "123456789012345")
     for name, setup in CASES.items():
-      t.test_ui(name, setup)
+      if name == "homescreen_prime":
+        params.put("PrimeType", 1)  # set before starting UI
+
+      try:
+        t.test_ui(name, setup)
+      except Exception as e:
+        print(f"failed to capture {name}: {e}")
 
 
 if __name__ == "__main__":
