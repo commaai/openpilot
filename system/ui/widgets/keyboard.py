@@ -242,7 +242,7 @@ class Keyboard(Widget):
     elif key == BACKSPACE_KEY:
       self._input_box.delete_char_before_cursor()
     else:
-      self._input_box.add_char_at_cursor(key)
+      self._input_box.add_text_at_cursor(key)
       if not self._caps_lock and self._layout_name == "uppercase":
         self._layout_name = "lowercase"
 
