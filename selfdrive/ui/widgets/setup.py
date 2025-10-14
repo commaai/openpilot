@@ -22,10 +22,10 @@ class SetupWidget(Widget):
     self._open_settings_callback = callback
 
   def _render(self, rect: rl.Rectangle):
-    # if not ui_state.prime_state.is_paired():
-    # self._render_registration(rect)
-    # else:
-    self._render_firehose_prompt(rect)
+    if not ui_state.prime_state.is_paired():
+      self._render_registration(rect)
+    else:
+      self._render_firehose_prompt(rect)
 
   def _render_registration(self, rect: rl.Rectangle):
     """Render registration prompt."""
