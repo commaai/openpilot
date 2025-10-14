@@ -51,19 +51,22 @@ class TrainingGuide(Widget):
     threading.Thread(target=self._preload_thread, daemon=True).start()
 
   def _load_image(self, image):
+    t = time.monotonic()
     self._textures.append(gui_app._load_texture_from_image(image))
+    print(f'load_image took {time.monotonic() - t:.3f}s')
 
   def _preload_image(self, path):
-    return gui_app._load_image_from_path(path)
+    t = time.monotonic()
+    ret = gui_app._load_image_from_path(path)
+    print(f'preload_image {path} took {time.monotonic() - t:.3f}s')
+    return ret
 
   def _preload_thread(self):
     print('hello')
     for path in self._image_paths[1:]:
       print(f'preloading {path}')
       # time.sleep(2)
-      t = time.monotonic()
       self._image_objs.append(self._preload_image(path))
-      print(f'preloaded {path} in {time.monotonic() - t:.3f}s')
 
   def _load_images(self):
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
@@ -97,9 +100,9 @@ class TrainingGuide(Widget):
   def _update_state(self):
     if len(self._image_objs):
       print('loading image from obj')
-      t = time.monotonic()
+      # t = time.monotonic()
       self._load_image(self._image_objs.pop(0))
-      print(f'loaded image in {time.monotonic() - t:.3f}s')
+      # print(f'loaded image in {time.monotonic() - t:.3f}s')
 
   def _render(self, _):
     # # if current step greater than loaded images, load next image
