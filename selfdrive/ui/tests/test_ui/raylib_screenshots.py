@@ -95,10 +95,11 @@ def setup_keyboard(click, pm: PubMaster):
 def keyboard_toggle_shift(click):
   click(200, 800)  # shift key
 
-
 def keyboard_toggle_numbers(click):
   click(200, 900)  # toggle numbers key
 
+def keyboard_press_back(click):
+  click(2000, 760) # backspace key
 
 def keyboard_click_top_two(click):
   click(140, 430)  # q, Q, 1, [
@@ -123,6 +124,10 @@ def setup_keyboard_text_and_symbols(click, pm: PubMaster):
   keyboard_click_top_two(click)  # type "12"
   keyboard_toggle_shift(click)  # symbols
   keyboard_click_top_two(click)  # type "[]"
+  # type again and test backspace
+  keyboard_click_top_two(click)
+  keyboard_press_back(click)
+  keyboard_press_back(click)
 
 
 def setup_pair_device(click, pm: PubMaster):
