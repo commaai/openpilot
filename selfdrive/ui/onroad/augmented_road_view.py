@@ -20,9 +20,10 @@ WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
 
 BORDER_COLORS = {
-  UIStatus.DISENGAGED: rl.Color(0x17, 0x33, 0x49, 0xC8),   # Blue for disengaged state
-  UIStatus.OVERRIDE: rl.Color(0x91, 0x9B, 0x95, 0xF1),     # Gray for override state
-  UIStatus.ENGAGED: rl.Color(0x17, 0x86, 0x44, 0xF1),      # Green for engaged state
+  # Converted to fully opaque while preserving perceived color on black background
+  UIStatus.DISENGAGED: rl.Color(0x12, 0x28, 0x39, 0xFF),   # from (0x17,0x33,0x49,0xC8)
+  UIStatus.OVERRIDE: rl.Color(0x8A, 0x93, 0x8C, 0xFF),     # from (0x91,0x9B,0x95,0xF1)
+  UIStatus.ENGAGED: rl.Color(0x16, 0x7F, 0x40, 0xFF),      # from (0x17,0x86,0x44,0xF1)
 }
 
 WIDE_CAM_MAX_SPEED = 10.0  # m/s (22 mph)
@@ -71,9 +72,6 @@ class AugmentedRoadView(CameraView):
       rect.height - 2 * UI_BORDER_SIZE,
     )
 
-    # Draw colored border based on driving state
-    self._draw_border(rect)
-
     # Enable scissor mode to clip all rendering within content rectangle boundaries
     # This creates a rendering viewport that prevents graphics from drawing outside the border
     rl.begin_scissor_mode(
@@ -98,6 +96,19 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
+    # Draw colored border based on driving state
+    self._draw_border(rect)
+
+    # black_bg_thickness = 250
+    # # black_bg_rect = rl.Rectangle(
+    # #   rect.x + black_bg_thickness,
+    # #   rect.y + black_bg_thickness,
+    # #   rect.width - 2 * black_bg_thickness,
+    # #   rect.height - 2 * black_bg_thickness,
+    # # )
+    # black_bg_rect = self._rect
+    # rl.draw_rectangle_rounded_lines_ex(black_bg_rect, (1020*0.2)/1280, 10, black_bg_thickness, rl.RED)
+
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
     msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
@@ -113,7 +124,32 @@ class AugmentedRoadView(CameraView):
 
   def _draw_border(self, rect: rl.Rectangle):
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
-    rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, border_color)
+    # rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, border_color)
+    border_rect = rl.Rectangle(rect.x + UI_BORDER_SIZE, rect.y + UI_BORDER_SIZE,
+                              rect.width - 2 * UI_BORDER_SIZE, rect.height - 2 * UI_BORDER_SIZE)
+    print(border_rect.height)
+    rl.draw_rectangle_rounded_lines_ex(border_rect, 0.15, 10, UI_BORDER_SIZE, border_color)
+
+    print('border_rect', border_rect.height)
+
+    # black bg around colored border:
+    black_bg_thickness = UI_BORDER_SIZE
+    black_bg_rect = rl.Rectangle(
+      border_rect.x - UI_BORDER_SIZE,
+      border_rect.y - UI_BORDER_SIZE,
+      border_rect.width + 2 * UI_BORDER_SIZE,
+      border_rect.height + 2 * UI_BORDER_SIZE,
+    )
+    print('black_bg_rect', black_bg_rect.height)
+    # black_bg_rect = border_rect
+    # calculate roundness using height as limiting side
+    height_in = border_rect.height
+    height_out = black_bg_rect.height
+    edge_offset = (height_out - height_in) / 2  # distance between rect edges
+    roundness_out = (0.15 * height_in + 2 * edge_offset) / max(1.0, height_out)
+    # clamp to [0, 1]
+    roundness_out = max(0.0, min(1.0, roundness_out))
+    rl.draw_rectangle_rounded_lines_ex(black_bg_rect, roundness_out, 10, black_bg_thickness, rl.BLACK)
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
