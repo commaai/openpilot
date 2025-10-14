@@ -33,7 +33,7 @@ SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 UI_DELAY = 0.2
 
 # Offroad alerts to test
-OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
+OFFROAD_ALERTS = ["Offroad_IsTakingSnapshot"]
 
 # Onroad test data
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
@@ -129,8 +129,8 @@ def setup_pair_device(click, pm: PubMaster):
 
 
 def setup_offroad_alert(click, pm: PubMaster):
-  set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
-  set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
+  set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text="99C")
+  set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
   for alert in OFFROAD_ALERTS:
     set_offroad_alert(alert, True)
 
@@ -165,10 +165,10 @@ def setup_onroad(click, pm: PubMaster):
 
   uidebug_received_cnt = 0
   packet_id = 0
-  uidebug_sock = sub_sock('uiDebug')
+  uidebug_sock = sub_sock("uiDebug")
 
   # Condition check for uiDebug processing
-  check_uidebug = DATA['deviceState'].deviceState.started and not DATA['carParams'].carParams.notCar
+  check_uidebug = DATA["deviceState"].deviceState.started and not DATA["carParams"].carParams.notCar
 
   # Loop until some uiDebug messages or a few cycles
   while uidebug_received_cnt <= 20:
@@ -191,19 +191,19 @@ def setup_onroad(click, pm: PubMaster):
 
 
 def setup_onroad_disengaged(click, pm: PubMaster):
-  DATA['selfdriveState'].selfdriveState.enabled = False
+  DATA["selfdriveState"].selfdriveState.enabled = False
   setup_onroad(click, pm)
-  DATA['selfdriveState'].selfdriveState.enabled = True
+  DATA["selfdriveState"].selfdriveState.enabled = True
 
 
 def setup_onroad_override(click, pm: PubMaster):
-  DATA['selfdriveState'].selfdriveState.state = log.SelfdriveState.OpenpilotState.overriding
+  DATA["selfdriveState"].selfdriveState.state = log.SelfdriveState.OpenpilotState.overriding
   setup_onroad(click, pm)
-  DATA['selfdriveState'].selfdriveState.state = log.SelfdriveState.OpenpilotState.enabled
+  DATA["selfdriveState"].selfdriveState.state = log.SelfdriveState.OpenpilotState.enabled
 
 
 def setup_onroad_wide(click, pm: PubMaster):
-  DATA['selfdriveState'].selfdriveState.experimentalMode = True
+  DATA["selfdriveState"].selfdriveState.experimentalMode = True
   DATA["carState"].carState.vEgo = 1
   setup_onroad(click, pm)
 
@@ -223,9 +223,9 @@ def setup_onroad_wide_sidebar(click, pm: PubMaster):
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings(click, pm)
   click(1980, 620)  # preview driver camera button
-  DATA['deviceState'].deviceState.started = False
+  DATA["deviceState"].deviceState.started = False
   setup_onroad(click, pm)
-  DATA['deviceState'].deviceState.started = True
+  DATA["deviceState"].deviceState.started = True
 
 
 CASES = {
@@ -265,7 +265,7 @@ class TestUI:
     ds.deviceState.lastAthenaPingTime = 0  # show "connect offline" instead of "connect error"
     self.pm = PubMaster(list(DATA.keys()))
     for _ in range(5):
-      self.pm.send('deviceState', ds)
+      self.pm.send("deviceState", ds)
       ds.clear_write_flag()
       time.sleep(0.05)
     time.sleep(0.5)
@@ -296,17 +296,17 @@ class TestUI:
 def get_cached_frames(route: Route, segnum: int):
   # Ensure cache directory exists
   os.makedirs(DEFAULT_CACHE_DIR, exist_ok=True)
-  frames_cache = f'{DEFAULT_CACHE_DIR}/test_ui_frames'
+  frames_cache = f"{DEFAULT_CACHE_DIR}/test_ui_frames"
   # Load frames from cache if available
   if os.path.isfile(frames_cache):
-    with open(frames_cache, 'rb') as f:
+    with open(frames_cache, "rb") as f:
       # Read frames from cache
       frames = pickle.load(f)
       road_img = frames[0]
       wide_road_img = frames[1]
       driver_img = frames[2]
   else:
-    with open(frames_cache, 'wb') as f:
+    with open(frames_cache, "wb") as f:
       # No cached frames, read from route and cache them
       print("no cached frames, reading from route")
       road_img = FrameReader(route.camera_paths()[segnum], pix_fmt="nv12").get(0)
@@ -322,7 +322,7 @@ def prepare_onroad_data():
   # Prepare route data
   qpaths = route.qlog_paths()
   lr = LogReader(qpaths[TEST_ROUTE_SEGMENT])
-  DATA['carParams'] = next((event.as_builder() for event in lr if event.which() == 'carParams'), None)
+  DATA["carParams"] = next((event.as_builder() for event in lr if event.which() == "carParams"), None)
   for event in migrate(lr, [migrate_controlsState, migrate_carState]):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
