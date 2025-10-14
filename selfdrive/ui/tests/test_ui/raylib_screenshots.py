@@ -280,7 +280,7 @@ class TestUI:
 
 def get_frame(path: str | None, index: int = 0):
   if path is None:
-    raise ValueError("Missing camra frame path")
+    raise ValueError("Missing camera frame path")
   return FrameReader(path, pix_fmt="nv12").get(index)
 
 
