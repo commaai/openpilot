@@ -30,7 +30,7 @@ class SetupWidget(Widget):
   def _render_registration(self, rect: rl.Rectangle):
     """Render registration prompt."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, rect.height), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, rect.height), 0.03, 20, rl.Color(51, 51, 51, 255))
 
     x = rect.x + 64
     y = rect.y + 48
@@ -55,7 +55,7 @@ class SetupWidget(Widget):
   def _render_firehose_prompt(self, rect: rl.Rectangle):
     """Render firehose prompt widget."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 500), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 500), 0.04, 20, rl.Color(51, 51, 51, 255))
 
     # Content margins (56, 40, 56, 40)
     x = rect.x + 56
