@@ -262,7 +262,7 @@ class TestUI:
   def setup(self):
     ds = DATA["deviceState"]
     ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
-    # ds.deviceState.lastAthenaPingTime = 0
+    ds.deviceState.lastAthenaPingTime = 0  # show "connect offline" instead of "connect error"
     self.pm = PubMaster(list(DATA.keys()))
     for _ in range(5):
       self.pm.send('deviceState', ds)
