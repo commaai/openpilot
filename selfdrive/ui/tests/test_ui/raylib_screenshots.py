@@ -193,8 +193,9 @@ def create_screenshots():
     params = Params()
     params.put("DongleId", "123456789012345")
     for name, setup in CASES.items():
-      if name == "homescreen_prime":
-        params.put("PrimeType", 1)  # set before starting UI
+      match name:
+        case "homescreen_prime":
+          params.put("PrimeType", 1)  # set before starting UI
 
       t.test_ui(name, setup)
 
