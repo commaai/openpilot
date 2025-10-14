@@ -39,16 +39,22 @@ class TrainingGuide(Widget):
     super().__init__()
     self._completed_callback = completed_callback
 
-    self._step = 0
-    self._textures = []
-    self._image_objs = []
-    self._image_paths = []
-    self._load_images()
+    self._load_image_paths()
 
-    self._preload_image(self._image_paths[0])
-    self._load_image(self._preload_image(self._image_paths[0]))
+    self._step = 0
+    # Load first image now so we show something immediately
+    self._textures = [gui_app.texture(self._image_paths[0])]
+    self._image_objs = []
+
+    # self._preload_image(self._image_paths[0])
+    # self._load_image(self._preload_image(self._image_paths[0]))
 
     threading.Thread(target=self._preload_thread, daemon=True).start()
+
+  def _load_image_paths(self):
+    paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
+    paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
+    self._image_paths = [os.path.join(BASEDIR, "selfdrive/assets/training", fn) for fn in paths]
 
   def _load_image(self, image):
     t = time.monotonic()
@@ -63,18 +69,11 @@ class TrainingGuide(Widget):
 
   def _preload_thread(self):
     print('hello')
+    # We've already loaded the first image on init
     for path in self._image_paths[1:]:
       print(f'preloading {path}')
       # time.sleep(2)
       self._image_objs.append(self._preload_image(path))
-
-  def _load_images(self):
-    paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
-    paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
-    self._image_paths = [os.path.join(BASEDIR, "selfdrive/assets/training", fn) for fn in paths]
-    # for fn in paths:
-    #   path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-    #   self._textures.append(gui_app.texture(path))
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
