@@ -43,21 +43,35 @@ class TrainingGuide(Widget):
     self._image = None
     self._images = []
     self._load_images()
-    self._loading = True
-    self._preload_image(0)
+    # self._loading = True
+    self._preload_image(self._step)
+    self._load_image(self._image_paths[self._step])
 
   def _load_image(self, path):
     # path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
     # self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
     print('loading image!')
+    t = time.monotonic()
     self._images.append(gui_app._load_texture_from_image(self._image))
     self._image = None
+    print('loaded image', time.monotonic() - t)
+
+  def _preload_thread(self):
+    while 1:
+      print(self._step, len(self._images), self._loading)
+      if self._step >= len(self._images) - 1 and not self._loading:
+        print('preloading next image for step', self._step + 1)
+        self._loading = True
+        threading.Thread(target=self._preload_image, args=(self._step + 1,)).start()
+        # self._preload_image(self._step + 1)
 
   def _preload_image(self, step):
     # next_step = self._step + 1
+    time.sleep(1)
     print('preloading next image', step)
     if step < len(self._image_paths):
       self._image = gui_app._load_image_from_path(self._image_paths[step])
+    print('preloaded next image', step)
     self._loading = False
 
   def _load_images(self):
@@ -65,6 +79,7 @@ class TrainingGuide(Widget):
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
     self._image_paths = [os.path.join(BASEDIR, "selfdrive/assets/training", fn) for fn in paths]
+    self._image = None
     # for fn in self._image_paths:
     #   path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
     #   self._images.append(gui_app.texture(path, gui_app.width, gui_app.height))
@@ -90,17 +105,42 @@ class TrainingGuide(Widget):
         if self._completed_callback:
           self._completed_callback()
 
-  def _render(self, _):
-    preload = False
-    if self._step >= len(self._images) and not self._loading:
-      preload = True
-      print()
-      print('self._step', self._step, len(self._images))
-      t = time.monotonic()
+      # else:
+      #   self._load_image(self._image_paths[self._step])
+      #
+      #   self._loading = True
+      #   threading.Thread(target=self._preload_image, args=(self._step + 1,)).start()
+      #   # self._preload_image(self._step + 1)
+
+  def _update_state(self):
+    # print(self._image is not None, self._loading, self._step, len(self._images))
+    # if self._step >= len(self._images) and self._image is not None:
+    if self._step >= len(self._images) - 1 and self._image is not None:
+      print('loading image for step', self._step)
       self._load_image(self._image_paths[self._step])
-      print('loaded image', time.monotonic() - t)
-      t = time.monotonic()
-      print('preloaded next image', time.monotonic() - t)
+      # self._loading = True
+      # self._image = None
+
+    # print(self._step, len(self._images), self._loading)
+    # if self._step >= len(self._images) - 1 and not self._loading:
+    #   print('preloading next image for step', self._step + 1)
+    #   self._loading = True
+    #   threading.Thread(target=self._preload_image, args=(self._step + 1,)).start()
+    #   # self._preload_image(self._step + 1)
+
+  def _render(self, _):
+    # preload = False
+    # if self._step >= len(self._images) and not self._loading:
+    #   # preload = True
+    #   print()
+    #   print('self._step', self._step, len(self._images))
+    #   t = time.monotonic()
+    #   self._load_image(self._image_paths[self._step])
+    #   print('loaded image', time.monotonic() - t)
+    #   t = time.monotonic()
+    #   print('preloaded next image', time.monotonic() - t)
+
+    # print(self._step, len(self._images))
 
     step = min(self._step, len(self._images) - 1)
     rl.draw_texture(self._images[step], 0, 0, rl.WHITE)
@@ -115,10 +155,10 @@ class TrainingGuide(Widget):
     if DEBUG:
       rl.draw_rectangle_lines_ex(STEP_RECTS[step], 3, rl.RED)
 
-    if preload:
-      self._loading = True
-      threading.Thread(target=self._preload_image, args=(self._step + 1,)).start()
-      # self._preload_image(self._step + 1)
+    # if preload:
+    #   self._loading = True
+    #   threading.Thread(target=self._preload_image, args=(self._step + 1,)).start()
+    #   # self._preload_image(self._step + 1)
 
     return -1
 
