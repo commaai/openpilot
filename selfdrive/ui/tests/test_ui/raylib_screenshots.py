@@ -278,10 +278,10 @@ class TestUI:
     self.screenshot(name)
 
 
-def get_frame(path: str | None):
+def get_frame(path: str | None, index: int = 0):
   if path is None:
     raise ValueError("Missing camra frame path")
-  return FrameReader(path, pix_fmt="nv12").get(0)
+  return FrameReader(path, pix_fmt="nv12").get(index)
 
 
 def get_cached_frames(route: Route, segnum: int):
