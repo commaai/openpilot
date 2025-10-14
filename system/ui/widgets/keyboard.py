@@ -91,17 +91,32 @@ class Keyboard(Widget):
       ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
 
-    self._all_keys = {}
+    self._row_layout_keys: dict[str, list[dict[str, Button]]] = {}  # layout name -> list of rows -> dict of key to Button
+    self._special_keys: dict[str, Button] = {}  # special keys that can be accessed without knowing the row index
+
     for l in KEYBOARD_LAYOUTS:
-      for _, keys in enumerate(KEYBOARD_LAYOUTS[l]):
+      self._row_layout_keys[l] = []
+      for row, keys in enumerate(KEYBOARD_LAYOUTS[l]):
+        row_keys_dict: dict[str, Button] = {}
         for _, key in enumerate(keys):
-          if key in self._key_icons:
+          if key in row_keys_dict:
+            raise ValueError(f"Duplicate key '{key}' found in layout '{l}' (row {row})")
+          if key in self._special_keys:
+            button = self._special_keys[key]  # it's important to reuse existing button instance
+          elif key in self._key_icons:
             texture = self._key_icons[key]
-            self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
+            button = Button("", partial(self._key_callback, key), icon=texture,
                                         button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
           else:
-            self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
-    self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
+            button = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
+          # add button to keys dict (and special keys if needed)
+          row_keys_dict[key] = button
+          if key == BACKSPACE_KEY:
+            self._special_keys[key] = button
+
+        self._row_layout_keys[l].append(row_keys_dict)
+
+    self._special_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
                                            button_style=ButtonStyle.KEYBOARD, multi_touch=True)
 
   def set_text(self, text: str):
@@ -146,7 +161,7 @@ class Keyboard(Widget):
     self._render_input_area(input_box_rect)
 
     # Process backspace key repeat if it's held down
-    if not self._all_keys[BACKSPACE_KEY].is_pressed:
+    if not self._special_keys[BACKSPACE_KEY].is_pressed:
       self._backspace_pressed = False
 
     if self._backspace_pressed:
@@ -160,7 +175,8 @@ class Keyboard(Widget):
           self._input_box.delete_char_before_cursor()
           self._backspace_last_repeat = current_time
 
-    layout = KEYBOARD_LAYOUTS[self._layout_name]
+    layout_name = self._layout_name  # avoid flicker and other issues if layout changes during rendering
+    layout = KEYBOARD_LAYOUTS[layout_name]
 
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
@@ -173,6 +189,8 @@ class Keyboard(Widget):
       start_x = rect.x + (90 if row == 1 else 0)
 
       for i, key in enumerate(keys):
+        button = self._row_layout_keys[layout_name][row][key]
+
         if i > 0:
           start_x += h_space
 
@@ -182,19 +200,16 @@ class Keyboard(Widget):
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
 
-        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY].is_pressed and not self._backspace_pressed:
+        if key == BACKSPACE_KEY and button.is_pressed and not self._backspace_pressed:
           self._backspace_pressed = True
           self._backspace_press_time = time.monotonic()
           self._backspace_last_repeat = time.monotonic()
 
-        if key in self._key_icons:
-          if key == SHIFT_ACTIVE_KEY and self._caps_lock:
-            key = CAPS_LOCK_KEY
-          self._all_keys[key].set_enabled(is_enabled)
-          self._all_keys[key].render(key_rect)
-        else:
-          self._all_keys[key].set_enabled(is_enabled)
-          self._all_keys[key].render(key_rect)
+        if key == SHIFT_ACTIVE_KEY and self._caps_lock:
+          button = self._special_keys[CAPS_LOCK_KEY]
+
+        button.set_enabled(is_enabled)
+        button.render(key_rect)
 
     return self._render_return_status
 
