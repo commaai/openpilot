@@ -207,7 +207,6 @@ class Keyboard(Widget):
 
         if key == SHIFT_ACTIVE_KEY and self._caps_lock:
           button = self._special_keys[CAPS_LOCK_KEY]
-
         button.set_enabled(is_enabled)
         button.render(key_rect)
 
