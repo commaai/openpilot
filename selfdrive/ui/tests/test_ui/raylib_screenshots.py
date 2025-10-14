@@ -4,7 +4,6 @@ import sys
 import shutil
 import time
 import pathlib
-import pickle
 from collections import namedtuple
 
 import pyautogui
@@ -295,6 +294,8 @@ class TestUI:
 
 
 def get_cached_frames(route: Route, segnum: int):
+  import pickle
+
   # Ensure cache directory exists
   os.makedirs(DEFAULT_CACHE_DIR, exist_ok=True)
   frames_cache = f"{DEFAULT_CACHE_DIR}/test_ui_frames"
