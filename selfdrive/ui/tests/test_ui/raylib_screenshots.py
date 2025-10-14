@@ -203,9 +203,9 @@ def setup_onroad_override(click, pm: PubMaster):
 
 
 def setup_onroad_wide(click, pm: PubMaster):
-  # widecam only show in experimental mode when going slow
+  # widecam show in when in experimental mode and going slow
   DATA["selfdriveState"].selfdriveState.experimentalMode = True
-  DATA["carState"].carState.vEgo = 1
+  DATA["carState"].carState.vEgo = 5
   setup_onroad(click, pm)
 
 
@@ -230,25 +230,25 @@ def setup_driver_camera(click, pm: PubMaster):
 
 
 CASES = {
-  "homescreen": setup_homescreen,
-  "settings_device": setup_settings,
-  "settings_network": setup_settings_network,
-  "settings_toggles": setup_settings_toggles,
-  "settings_software": setup_settings_software,
-  "settings_software_download": setup_settings_software_download,
-  "settings_software_release_notes": setup_settings_software_release_notes,
-  "settings_firehose": setup_settings_firehose,
-  "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
-  "pair_device": setup_pair_device,
-  "offroad_alert": setup_offroad_alert,
-  "homescreen_update_available": setup_homescreen_update_available,
-  "confirmation_dialog": setup_confirmation_dialog,
-  "experimental_mode_description": setup_experimental_mode_description,
-  "onroad": setup_onroad,
-  "onroad_disengaged": setup_onroad_disengaged,
-  "onroad_override": setup_onroad_override,
-  "onroad_sidebar": setup_onroad_sidebar,
+  # "homescreen": setup_homescreen,
+  # "settings_device": setup_settings,
+  # "settings_network": setup_settings_network,
+  # "settings_toggles": setup_settings_toggles,
+  # "settings_software": setup_settings_software,
+  # "settings_software_download": setup_settings_software_download,
+  # "settings_software_release_notes": setup_settings_software_release_notes,
+  # "settings_firehose": setup_settings_firehose,
+  # "settings_developer": setup_settings_developer,
+  # "keyboard": setup_keyboard,
+  # "pair_device": setup_pair_device,
+  # "offroad_alert": setup_offroad_alert,
+  # "homescreen_update_available": setup_homescreen_update_available,
+  # "confirmation_dialog": setup_confirmation_dialog,
+  # "experimental_mode_description": setup_experimental_mode_description,
+  # "onroad": setup_onroad,
+  # "onroad_disengaged": setup_onroad_disengaged,
+  # "onroad_override": setup_onroad_override,
+  # "onroad_sidebar": setup_onroad_sidebar,
   "onroad_wide": setup_onroad_wide,
   "onroad_wide_sidebar": setup_onroad_wide_sidebar,
   "driver_camera": setup_driver_camera,
