@@ -1,7 +1,6 @@
 import os
 import re
 import threading
-import time
 from enum import IntEnum
 
 import pyray as rl
@@ -57,12 +56,9 @@ class TrainingGuide(Widget):
     # PNG loading is slow in raylib, so we preload in a thread and upload to GPU in main thread
     # We've already loaded the first image on init
     for path in self._image_paths[1:]:
-      t = time.monotonic()
       self._image_objs.append(gui_app._load_image_from_path(path))
-      print(f'preload_image {path} took {time.monotonic() - t:.3f}s')
 
   def _handle_mouse_release(self, mouse_pos):
-    print('mouse released', mouse_pos, self._step)
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
       # Record DM camera?
       if self._step == DM_RECORD_STEP:
@@ -75,7 +71,6 @@ class TrainingGuide(Widget):
         if rl.check_collision_point_rec(mouse_pos, RESTART_TRAINING_RECT):
           self._step = -1
 
-      print('INCREMENTING!')
       self._step += 1
 
       # Finished?
@@ -86,18 +81,11 @@ class TrainingGuide(Widget):
 
   def _update_state(self):
     if len(self._image_objs):
-      print('loading image from obj')
-      t = time.monotonic()
       self._textures.append(gui_app._load_texture_from_image(self._image_objs.pop(0)))
-      print(f'load_image took {time.monotonic() - t:.3f}s')
 
   def _render(self, _):
-    # # if current step greater than loaded images, load next image
-    # if self._step >= len(self._textures) and len(self._image_objs) > 0:
-    #   self._load_image(self._image_objs.pop(0))
-
+    # Safeguard against fast tapping
     step = min(self._step, len(self._textures) - 1)
-    # print(step, len(self._textures))
     rl.draw_texture(self._textures[step], 0, 0, rl.WHITE)
 
     # progress bar
