@@ -170,8 +170,13 @@ class SoftwareLayout(Widget):
   def _on_select_branch(self):
     # Get available branches and reorder to match Qt behavior
     current_git_branch = ui_state.params.get("GitBranch") or ""
-    branches_csv = ui_state.params.get("UpdaterAvailableBranches") or ""
-    branches = [b for b in branches_csv.split(",") if b]
+    branches_str = ui_state.params.get("UpdaterAvailableBranches") or ""
+    branches = [b for b in branches_str.split(",") if b]
+
+    # sorted_branches = ["devel-staging", "devel", "nightly", "nightly-dev", "master"]
+    # sorted_branches = [current_git_branch] + [b for b in sorted_branches if b != current_git_branch]
+    # print("sorted_branches", sorted_branches)
+    # branches = sorted(branches, key=lambda b: sorted_branches.index(b) if b in sorted_branches else float('inf'), reverse=False)
 
     def promote_branch(bname: str):
       if bname in branches:
