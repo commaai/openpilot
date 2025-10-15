@@ -40,18 +40,6 @@ def setup_homescreen(click, pm: PubMaster):
   pass
 
 
-def setup_homescreen_firehose(click, pm: PubMaster):
-  Params().put("PrimeType", 1)
-  yield
-
-
-def setup_homescreen_update_available(click, pm: PubMaster):
-  params = Params()
-  params.put_bool("UpdateAvailable", True)
-  put_update_params(params)
-  yield
-
-
 def setup_settings(click, pm: PubMaster):
   click(100, 100)
 
@@ -128,6 +116,14 @@ def setup_confirmation_dialog(click, pm: PubMaster):
   click(1985, 791)  # reset calibration
 
 
+def setup_homescreen_update_available(click, pm: PubMaster):
+  params = Params()
+  params.put_bool("UpdateAvailable", True)
+  put_update_params(params)
+  setup_settings(click, pm)
+  close_settings(click, pm)
+
+
 def setup_experimental_mode_description(click, pm: PubMaster):
   setup_settings_toggles(click, pm)
   click(1200, 280)  # expand description for experimental mode
@@ -135,8 +131,6 @@ def setup_experimental_mode_description(click, pm: PubMaster):
 
 CASES = {
   "homescreen": setup_homescreen,
-  "homescreen_firehose": setup_homescreen_firehose,
-  "homescreen_update_available": setup_homescreen_update_available,
   "settings_device": setup_settings,
   "settings_network": setup_settings_network,
   "settings_network_advanced": setup_settings_network_advanced,
@@ -149,6 +143,7 @@ CASES = {
   "keyboard": setup_keyboard,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
+  "homescreen_update_available": setup_homescreen_update_available,
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
 }
@@ -185,21 +180,12 @@ class TestUI:
     time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
+  @with_processes(["ui"])
   def test_ui(self, name, setup_case):
-    steps = setup_case(self.click, None)
-    # set params before launching ui
-    if steps is not None:
-      next(steps)
-
-    @with_processes(["ui"])
-    def run():
-      self.setup()
-      time.sleep(UI_DELAY)  # wait for UI to start
-      if steps is not None:
-        next(steps, None)
-      self.screenshot(name)
-
-    run()
+    self.setup()
+    time.sleep(UI_DELAY)  # wait for UI to start
+    setup_case(self.click, self.pm)
+    self.screenshot(name)
 
 
 def create_screenshots():
@@ -208,10 +194,10 @@ def create_screenshots():
   SCREENSHOTS_DIR.mkdir(parents=True)
 
   t = TestUI()
-  with OpenpilotPrefix():
-    params = Params()
-    params.put("DongleId", "123456789012345")
-    for name, setup in CASES.items():
+  for name, setup in CASES.items():
+    with OpenpilotPrefix():
+      params = Params()
+      params.put("DongleId", "123456789012345")
       t.test_ui(name, setup)
 
 
