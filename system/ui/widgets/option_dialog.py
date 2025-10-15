@@ -1,6 +1,6 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, TextAlignment
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
@@ -22,7 +22,7 @@ class MultiOptionDialog(Widget):
     self.options = options
     self.current = current
     self.selection = current
-    self._result: int = -1
+    self._result: DialogResult = DialogResult.NO_ACTION
 
     # Create scroller with option buttons
     self.option_buttons = [Button(option, click_callback=lambda opt=option: self._on_option_clicked(opt),
@@ -30,10 +30,10 @@ class MultiOptionDialog(Widget):
     self.scroller = Scroller(self.option_buttons, spacing=LIST_ITEM_SPACING)
 
     # Buttons set a result; the application loop will clear the overlay and invoke the callback
-    self.cancel_button = Button("Cancel", click_callback=lambda: self._set_result(0))
-    self.select_button = Button("Select", click_callback=lambda: self._set_result(1), button_style=ButtonStyle.PRIMARY)
+    self.cancel_button = Button("Cancel", click_callback=lambda: self._set_result(DialogResult.CANCEL))
+    self.select_button = Button("Select", click_callback=lambda: self._set_result(DialogResult.CONFIRM), button_style=ButtonStyle.PRIMARY)
 
-  def _set_result(self, result: int):
+  def _set_result(self, result: DialogResult):
     self._result = result
 
   def _on_option_clicked(self, option):
@@ -76,8 +76,8 @@ class MultiOptionDialog(Widget):
     # Keyboard shortcuts
     if rl.is_key_pressed(rl.KeyboardKey.KEY_ENTER):
       if self.selection != self.current:
-        self._result = 1
+        self._result = DialogResult.CONFIRM
     elif rl.is_key_pressed(rl.KeyboardKey.KEY_ESCAPE):
-      self._result = 0
+      self._result = DialogResult.CANCEL
 
     return self._result
