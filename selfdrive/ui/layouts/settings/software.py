@@ -173,18 +173,10 @@ class SoftwareLayout(Widget):
     branches_str = ui_state.params.get("UpdaterAvailableBranches") or ""
     branches = [b for b in branches_str.split(",") if b]
 
-    # sorted_branches = ["devel-staging", "devel", "nightly", "nightly-dev", "master"]
-    # sorted_branches = [current_git_branch] + [b for b in sorted_branches if b != current_git_branch]
-    # print("sorted_branches", sorted_branches)
-    # branches = sorted(branches, key=lambda b: sorted_branches.index(b) if b in sorted_branches else float('inf'), reverse=False)
-
-    def promote_branch(bname: str):
-      if bname in branches:
-        branches.remove(bname)
-        branches.insert(0, bname)
-
     for b in [current_git_branch, "devel-staging", "devel", "nightly", "nightly-dev", "master"]:
-      promote_branch(b)
+      if b in branches:
+        branches.remove(b)
+        branches.insert(0, b)
 
     current_target = ui_state.params.get("UpdaterTargetBranch") or ""
     self._branch_dialog = MultiOptionDialog("Select a branch", branches, current_target)
