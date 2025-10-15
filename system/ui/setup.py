@@ -48,6 +48,7 @@ cd /data/openpilot
 exec ./launch_openpilot.sh
 """
 
+
 class SetupState(IntEnum):
   LOW_VOLTAGE = 0
   GETTING_STARTED = 1
@@ -100,7 +101,7 @@ class Setup(Widget):
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
     self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT)
-    self._download_failed_url_label = Label("", 64, FontWeight.NORMAL, TextAlignment.LEFT)
+    self._download_failed_url_label = Label("", round(64 / FONT_SCALE), FontWeight.NORMAL, TextAlignment.LEFT)
     self._download_failed_body_label = Label("", BODY_FONT_SIZE, text_alignment=TextAlignment.LEFT)
 
     self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
@@ -113,15 +114,16 @@ class Setup(Widget):
                                                            button_style=ButtonStyle.PRIMARY)
     self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
-    self._custom_software_warning_title_label = Label("WARNING: Custom Software", 100, FontWeight.BOLD, TextAlignment.LEFT, text_color=rl.Color(255,89,79,255),
+    self._custom_software_warning_title_label = Label("WARNING: Custom Software", round(100 / FONT_SCALE), FontWeight.BOLD, TextAlignment.LEFT,
+                                                      text_color=rl.Color(255, 89, 79, 255),
                                                       text_padding=60)
     self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
-                                              + "⚠️ It has not been tested by comma.\n\n"
-                                              + "⚠️ It may not comply with relevant safety standards.\n\n"
-                                              + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
-                                              + "If you'd like to proceed, use https://flash.comma.ai "
-                                              + "to restore your device to a factory state later.",
-                                             85, text_alignment=TextAlignment.LEFT, text_padding=60)
+                                                     + "⚠️ It has not been tested by comma.\n\n"
+                                                     + "⚠️ It may not comply with relevant safety standards.\n\n"
+                                                     + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
+                                                     + "If you'd like to proceed, use https://flash.comma.ai "
+                                                     + "to restore your device to a factory state later.",
+                                                     68, text_alignment=TextAlignment.LEFT, text_padding=60)
     self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
 
     self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM)
@@ -301,7 +303,7 @@ class Setup(Widget):
     self._download_failed_startover_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_custom_software_warning(self, rect: rl.Rectangle):
-    warn_rect = rl.Rectangle(rect.x, rect.y, rect.width, 2150)
+    warn_rect = rl.Rectangle(rect.x, rect.y, rect.width, 1500)
     offset = self._custom_software_warning_body_scroll_panel.update(rect, warn_rect)
 
     button_width = (rect.width - MARGIN * 3) / 2
@@ -310,7 +312,7 @@ class Setup(Widget):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(button_y - BODY_FONT_SIZE * FONT_SCALE))
     y_offset = rect.y + offset
     self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
-    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, y_offset + 200 , rect.width - 50, BODY_FONT_SIZE * FONT_SCALE * 3))
+    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, y_offset + 200, rect.width - 50, BODY_FONT_SIZE * FONT_SCALE * 3))
     rl.end_scissor_mode()
 
     self._custom_software_warning_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
