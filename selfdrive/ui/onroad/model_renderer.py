@@ -183,7 +183,7 @@ class ModelRenderer(Widget):
       # print("Lead distance:", lead.dRel, "Adjusted max distance:", max_distance)
 
     max_idx = self._get_path_length_idx(path_x_array, max_distance)
-    print('Max draw distance:', max_distance, 'Max index:', max_idx)
+    # print('Max draw distance:', max_distance, 'Max index:', max_idx)
     self._path.projected_points = self._map_line_to_polygon(
       self._path.raw_points, 0.9, self._path_offset_z, max_idx, max_distance, allow_invert=False
     )
@@ -309,11 +309,11 @@ class ModelRenderer(Widget):
       rl.draw_triangle_fan(lead.chevron, len(lead.chevron), rl.Color(201, 34, 49, lead.fill_alpha))
 
   @staticmethod
-  def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:
+  def _get_path_length_idx(pos_x_array: np.ndarray, path_distance: float) -> int:
     """Get the index corresponding to the given path height"""
     if len(pos_x_array) == 0:
       return 0
-    indices = np.where(pos_x_array <= path_height)[0]
+    indices = np.where(pos_x_array <= path_distance)[0]
     return indices[-1] if indices.size > 0 else 0
 
   def _map_to_screen(self, in_x, in_y, in_z):
@@ -339,8 +339,11 @@ class ModelRenderer(Widget):
 
     # Slice points and filter non-negative x-coordinates
     points = line[:max_idx + 1]
+    print('Sliced points:', points.shape)
+    print('Max idx:', max_idx, 'Max distance:', max_distance)
 
     # Interpolate around max_idx so path end is smooth
+    # max_idx is the last point where x <= max_distance, so we need the next point to interp
     if 0 < max_idx < line.shape[0] - 1:
       p0 = line[max_idx]
       p1 = line[max_idx + 1]
