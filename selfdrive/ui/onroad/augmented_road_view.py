@@ -20,9 +20,9 @@ WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
 
 BORDER_COLORS = {
-  UIStatus.DISENGAGED: rl.Color(0x12, 0x28, 0x39, 0xFF),   # Blue for disengaged state
-  UIStatus.OVERRIDE: rl.Color(0x89, 0x92, 0x8D, 0xFF),     # Gray for override state
-  UIStatus.ENGAGED: rl.Color(0x16, 0x7F, 0x40, 0xFF),      # Green for engaged state
+  UIStatus.DISENGAGED: rl.Color(0x12, 0x28, 0x39, 0xFF),  # Blue for disengaged state
+  UIStatus.OVERRIDE: rl.Color(0x89, 0x92, 0x8D, 0xFF),  # Gray for override state
+  UIStatus.ENGAGED: rl.Color(0x16, 0x7F, 0x40, 0xFF),  # Green for engaged state
 }
 
 WIDE_CAM_MAX_SPEED = 10.0  # m/s (22 mph)
@@ -116,10 +116,10 @@ class AugmentedRoadView(CameraView):
     border_roundness = 0.15
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
     border_rect = rl.Rectangle(rect.x + UI_BORDER_SIZE, rect.y + UI_BORDER_SIZE,
-                              rect.width - 2 * UI_BORDER_SIZE, rect.height - 2 * UI_BORDER_SIZE)
+                               rect.width - 2 * UI_BORDER_SIZE, rect.height - 2 * UI_BORDER_SIZE)
     rl.draw_rectangle_rounded_lines_ex(border_rect, border_roundness, 10, UI_BORDER_SIZE, border_color)
 
-    # black bg around colored border:
+    # black bg around colored border
     black_bg_thickness = UI_BORDER_SIZE
     black_bg_rect = rl.Rectangle(
       border_rect.x - UI_BORDER_SIZE,
@@ -176,9 +176,9 @@ class AugmentedRoadView(CameraView):
     calib_time = ui_state.sm.recv_frame['liveCalibration']
     current_dims = (self._content_rect.width, self._content_rect.height)
     if (self._last_calib_time == calib_time and
-        self._last_rect_dims == current_dims and
-        self._last_stream_type == self.stream_type and
-        self._cached_matrix is not None):
+      self._last_rect_dims == current_dims and
+      self._last_stream_type == self.stream_type and
+      self._cached_matrix is not None):
       return self._cached_matrix
 
     # Get camera configuration
