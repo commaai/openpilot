@@ -376,9 +376,8 @@ Modul Firehose îți permite să maximizezi încărcările de date de antrenamen
     <message numerus="yes">
       <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
       <translation>
-        <numerusform>&lt;b&gt;%n segment(uri)&lt;/b&gt; din experiența ta de condus se află până acum în setul de date de antrenament.</numerusform>
-        <numerusform></numerusform>
-        <numerusform></numerusform>
+        <numerusform>&lt;b&gt;%n segment&lt;/b&gt; din experiența ta de condus se află până acum în setul de date de antrenament.</numerusform>
+        <numerusform>&lt;b&gt;%n segmente&lt;/b&gt; din experiența ta de condus se află până acum în setul de date de antrenament.</numerusform>
       </translation>
     </message>
     <message>
@@ -414,9 +413,8 @@ Modul Firehose îți permite să maximizezi încărcările de date de antrenamen
     <message numerus="yes">
       <source>Need at least %n character(s)!</source>
       <translation>
-        <numerusform>Este nevoie de cel puțin %n caracter(e)!</numerusform>
-        <numerusform></numerusform>
-        <numerusform></numerusform>
+        <numerusform>Este nevoie de cel puțin %n caracter!</numerusform>
+        <numerusform>Este nevoie de cel puțin %n caractere!</numerusform>
       </translation>
     </message>
   </context>
@@ -628,29 +626,26 @@ Modul Firehose îți permite să maximizezi încărcările de date de antrenamen
       <translation>acum</translation>
     </message>
     <message numerus="yes">
-      <source>%n minute(s) ago</source>
-      <translation>
-        <numerusform>Acum %n minute</numerusform>
-        <numerusform></numerusform>
-        <numerusform></numerusform>
-      </translation>
-    </message>
-    <message numerus="yes">
-      <source>%n hour(s) ago</source>
-      <translation>
-        <numerusform>Acum %n oră(e)</numerusform>
-        <numerusform></numerusform>
-        <numerusform></numerusform>
-      </translation>
-    </message>
-    <message numerus="yes">
-      <source>%n day(s) ago</source>
-      <translation>
-        <numerusform>Acum %n zile</numerusform>
-        <numerusform></numerusform>
-        <numerusform></numerusform>
-      </translation>
-    </message>
+    <source>%n minute(s) ago</source>
+    <translation>
+      <numerusform>Acum %n minut</numerusform>
+      <numerusform>Acum %n minute</numerusform>
+    </translation>
+  </message>
+  <message numerus="yes">
+    <source>%n hour(s) ago</source>
+    <translation>
+      <numerusform>Acum %n oră</numerusform>
+      <numerusform>Acum %n ore</numerusform>
+    </translation>
+  </message>
+  <message numerus="yes">
+    <source>%n day(s) ago</source>
+    <translation>
+      <numerusform>Acum %n zi</numerusform>
+      <numerusform>Acum %n zile</numerusform>
+    </translation>
+  </message>  
   </context>
   <context>
     <name>SettingsWindow</name>
