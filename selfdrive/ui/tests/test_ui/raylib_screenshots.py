@@ -134,7 +134,6 @@ def setup_onboarding(click, pm: PubMaster):
     cx = int(rect.x + rect.width / 2)
     cy = int(rect.y + rect.height / 2)
     click(cx, cy)
-    time.sleep(0.05)
 
   for i, rect in enumerate(STEP_RECTS):
     if i == len(STEP_RECTS) - 1:
