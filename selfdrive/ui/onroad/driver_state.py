@@ -1,9 +1,12 @@
 import numpy as np
 import pyray as rl
+from cereal import log
 from dataclasses import dataclass
 from openpilot.selfdrive.ui.ui_state import ui_state, UI_BORDER_SIZE
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
+
+AlertSize = log.SelfdriveState.AlertSize
 
 # Default 3D coordinates for face keypoints as a NumPy array
 DEFAULT_FACE_KPTS_3D = np.array([
@@ -50,7 +53,6 @@ class DriverStateRenderer(Widget):
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
-    self.last_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
     self.driver_pose_sins = np.zeros(3, dtype=np.float32)
@@ -76,7 +78,7 @@ class DriverStateRenderer(Widget):
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
     self.set_visible(lambda: (ui_state.sm.recv_frame['driverStateV2'] > ui_state.started_frame and
-                              ui_state.sm.seen['driverMonitoringState']))
+                              ui_state.sm["selfdriveState"].alertSize == AlertSize.none))
 
   def _render(self, rect):
     # Set opacity based on active state
@@ -106,11 +108,11 @@ class DriverStateRenderer(Widget):
   def _update_state(self):
     """Update the driver monitoring state based on model data"""
     sm = ui_state.sm
-    if not sm.updated["driverMonitoringState"]:
-      if (self._rect.x != self.last_rect.x or self._rect.y != self.last_rect.y or
-          self._rect.width != self.last_rect.width or self._rect.height != self.last_rect.height):
-        self._pre_calculate_drawing_elements()
-        self.last_rect = self._rect
+
+    # is_visible = sm.recv_frame["driverStateV2"] > ui_state.started_frame
+    # alert = sm["selfdriveState"].alertSize == AlertSize.none
+    # self.set_visible(sm.recv_frame["driverStateV2"] > ui_state.started_frame)
+    if not self.is_visible:
       return
 
     # Get monitoring state
@@ -129,10 +131,6 @@ class DriverStateRenderer(Widget):
 
     # Update pose values with scaling and smoothing
     driver_orient = np.asarray(driver_orient, dtype=np.float32)
-    if driver_orient.size != 3:
-      # When face orientation is unavailable (e.g., face not detected), fall back to zeros
-      # to avoid shape/broadcast errors while maintaining stable rendering.
-      driver_orient = np.zeros(3, dtype=np.float32)
     scales = np.where(driver_orient < 0, SCALES_NEG, SCALES_POS)
     v_this = driver_orient * scales
     self.driver_pose_diff = np.abs(self.driver_pose_vals - v_this)
