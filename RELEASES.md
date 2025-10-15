@@ -1,10 +1,12 @@
 Version 0.10.1 (2025-09-08)
 ========================
-* New driving model #36087
+* New driving model #36114
   * World Model: removed global localization inputs
   * World Model: 2x the number of parameters
   * World Model: trained on 4x the number of segments
+  * VAE Compression Model: new architecture and training objective
   * Driving Vision Model: trained on 4x the number of segments
+* New Driver Monitoring model #36198
 * Acura TLX 2021 support thanks to MVL!
 * Honda City 2023 support thanks to vanillagorillaa and drFritz!
 * Honda N-Box 2018 support thanks to miettal!

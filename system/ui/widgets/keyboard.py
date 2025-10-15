@@ -19,7 +19,7 @@ DELETE_REPEAT_INTERVAL = 0.07
 CONTENT_MARGIN = 50
 BACKSPACE_KEY = "<-"
 ENTER_KEY = "->"
-SPACE_KEY = "  "
+SPACE_KEY = " "
 SHIFT_INACTIVE_KEY = "SHIFT_OFF"
 SHIFT_ACTIVE_KEY = "SHIFT_ON"
 CAPS_LOCK_KEY = "CAPS"
@@ -103,6 +103,9 @@ class Keyboard(Widget):
             self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
     self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
                                            button_style=ButtonStyle.KEYBOARD, multi_touch=True)
+
+  def set_text(self, text: str):
+    self._input_box.text = text
 
   @property
   def text(self):
@@ -243,7 +246,9 @@ class Keyboard(Widget):
       if not self._caps_lock and self._layout_name == "uppercase":
         self._layout_name = "lowercase"
 
-  def reset(self):
+  def reset(self, min_text_size: int | None = None):
+    if min_text_size is not None:
+      self._min_text_size = min_text_size
     self._render_return_status = -1
     self.clear()
 

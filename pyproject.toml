@@ -72,7 +72,9 @@ dependencies = [
   "zstandard",
 
   # ui
+  "raylib < 5.5.0.3", # TODO: unpin when they fix https://github.com/electronstudio/raylib-python-cffi/issues/186
   "qrcode",
+  "mapbox-earcut",
 ]
 
 [project.optional-dependencies]
@@ -119,7 +121,6 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
-  "raylib < 5.5.0.3", # TODO: unpin when they fix https://github.com/electronstudio/raylib-python-cffi/issues/186
 ]
 
 tools = [
@@ -262,8 +263,13 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "tools".msg = "Use openpilot.tools"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
-"pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
 "time.time".msg = "Use time.monotonic"
+
+# raylib banned APIs
+"pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
+"pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
+"pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
+"pyray.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
 
 [tool.ruff.format]
 quote-style = "preserve"

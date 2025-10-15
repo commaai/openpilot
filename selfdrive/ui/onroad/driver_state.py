@@ -1,9 +1,12 @@
 import numpy as np
 import pyray as rl
+from cereal import log
 from dataclasses import dataclass
 from openpilot.selfdrive.ui.ui_state import ui_state, UI_BORDER_SIZE
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
+
+AlertSize = log.SelfdriveState.AlertSize
 
 # Default 3D coordinates for face keypoints as a NumPy array
 DEFAULT_FACE_KPTS_3D = np.array([
@@ -50,7 +53,6 @@ class DriverStateRenderer(Widget):
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
-    self.last_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
     self.driver_pose_sins = np.zeros(3, dtype=np.float32)
@@ -75,8 +77,8 @@ class DriverStateRenderer(Widget):
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-    self.set_visible(lambda: (ui_state.sm.recv_frame['driverStateV2'] > ui_state.started_frame and
-                              ui_state.sm.seen['driverMonitoringState']))
+    self.set_visible(lambda: (ui_state.sm["selfdriveState"].alertSize == AlertSize.none and
+                              ui_state.sm.recv_frame["driverStateV2"] > ui_state.started_frame))
 
   def _render(self, rect):
     # Set opacity based on active state
@@ -106,11 +108,7 @@ class DriverStateRenderer(Widget):
   def _update_state(self):
     """Update the driver monitoring state based on model data"""
     sm = ui_state.sm
-    if not sm.updated["driverMonitoringState"]:
-      if (self._rect.x != self.last_rect.x or self._rect.y != self.last_rect.y or
-          self._rect.width != self.last_rect.width or self._rect.height != self.last_rect.height):
-        self._pre_calculate_drawing_elements()
-        self.last_rect = self._rect
+    if not self.is_visible:
       return
 
     # Get monitoring state
@@ -222,7 +220,7 @@ class DriverStateRenderer(Widget):
     radius_y = arc_data.height / 2
 
     x_coords = center_x + np.cos(angles) * radius_x
-    y_coords = center_y + np.sin(angles) * radius_y
+    y_coords = center_y - np.sin(angles) * radius_y
 
     arc_lines = self.h_arc_lines if is_horizontal else self.v_arc_lines
     for i, (x_coord, y_coord) in enumerate(zip(x_coords, y_coords, strict=True)):

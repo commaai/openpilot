@@ -7,6 +7,7 @@ import json
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.system.updated.updated import parse_release_notes
 
 if __name__ == "__main__":
   params = Params()
@@ -18,9 +19,7 @@ if __name__ == "__main__":
   while True:
     print("setting alert update")
     params.put_bool("UpdateAvailable", True)
-    r = open(os.path.join(BASEDIR, "RELEASES.md")).read()
-    r = r[:r.find('\n\n')]  # Slice latest release notes
-    params.put("UpdaterNewReleaseNotes", r + "\n")
+    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
 
     time.sleep(t)
     params.put_bool("UpdateAvailable", False)

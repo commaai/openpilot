@@ -8,7 +8,7 @@ from enum import IntEnum
 import pyray as rl
 
 from openpilot.system.hardware import PC
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label, gui_text_box
@@ -70,10 +70,10 @@ class Reset(Widget):
       exit(0)
 
   def _render(self, rect: rl.Rectangle):
-    label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100)
+    label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100 * FONT_SCALE)
     gui_label(label_rect, "System Reset", 100, font_weight=FontWeight.BOLD)
 
-    text_rect = rl.Rectangle(rect.x + 140, rect.y + 140, rect.width - 280, rect.height - 90 - 100)
+    text_rect = rl.Rectangle(rect.x + 140, rect.y + 140, rect.width - 280, rect.height - 90 - 100 * FONT_SCALE)
     gui_text_box(text_rect, self._get_body_text(), 90)
 
     button_height = 160
@@ -126,7 +126,9 @@ def main():
   if mode == ResetMode.FORMAT:
     reset.start_reset()
 
-  for _ in gui_app.render():
+  for showing_dialog in gui_app.render():
+    if showing_dialog:
+      continue
     if not reset.render(rl.Rectangle(45, 200, gui_app.width - 90, gui_app.height - 245)):
       break
 

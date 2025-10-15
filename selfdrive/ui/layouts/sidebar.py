@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, FONT_SCALE
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -23,7 +23,6 @@ NetworkType = log.DeviceState.NetworkType
 
 # Color scheme
 class Colors:
-  SIDEBAR_BG = rl.Color(57, 57, 57, 255)
   WHITE = rl.WHITE
   WHITE_DIM = rl.Color(255, 255, 255, 85)
   GRAY = rl.Color(84, 84, 84, 255)
@@ -40,13 +39,13 @@ class Colors:
 
 
 NETWORK_TYPES = {
-  NetworkType.none: "Offline",
-  NetworkType.wifi: "WiFi",
+  NetworkType.none: "--",
+  NetworkType.wifi: "Wi-Fi",
+  NetworkType.ethernet: "ETH",
   NetworkType.cell2G: "2G",
   NetworkType.cell3G: "3G",
   NetworkType.cell4G: "LTE",
   NetworkType.cell5G: "5G",
-  NetworkType.ethernet: "Ethernet",
 }
 
 
@@ -71,24 +70,30 @@ class Sidebar(Widget):
     self._temp_status = MetricData("TEMP", "GOOD", Colors.GOOD)
     self._panda_status = MetricData("VEHICLE", "ONLINE", Colors.GOOD)
     self._connect_status = MetricData("CONNECT", "OFFLINE", Colors.WARNING)
+    self._recording_audio = False
 
     self._home_img = gui_app.texture("images/button_home.png", HOME_BTN.width, HOME_BTN.height)
     self._flag_img = gui_app.texture("images/button_flag.png", HOME_BTN.width, HOME_BTN.height)
     self._settings_img = gui_app.texture("images/button_settings.png", SETTINGS_BTN.width, SETTINGS_BTN.height)
+    self._mic_img = gui_app.texture("icons/microphone.png", 30, 30)
+    self._mic_indicator_rect = rl.Rectangle(0, 0, 0, 0)
     self._font_regular = gui_app.font(FontWeight.NORMAL)
     self._font_bold = gui_app.font(FontWeight.SEMI_BOLD)
 
     # Callbacks
     self._on_settings_click: Callable | None = None
     self._on_flag_click: Callable | None = None
+    self._open_settings_callback: Callable | None = None
 
-  def set_callbacks(self, on_settings: Callable | None = None, on_flag: Callable | None = None):
+  def set_callbacks(self, on_settings: Callable | None = None, on_flag: Callable | None = None,
+                    open_settings: Callable | None = None):
     self._on_settings_click = on_settings
     self._on_flag_click = on_flag
+    self._open_settings_callback = open_settings
 
   def _render(self, rect: rl.Rectangle):
     # Background
-    rl.draw_rectangle_rec(rect, Colors.SIDEBAR_BG)
+    rl.draw_rectangle_rec(rect, rl.BLACK)
 
     self._draw_buttons(rect)
     self._draw_network_indicator(rect)
@@ -101,6 +106,7 @@ class Sidebar(Widget):
 
     device_state = sm['deviceState']
 
+    self._recording_audio = ui_state.recording_audio
     self._update_network_status(device_state)
     self._update_temperature_status(device_state)
     self._update_connection_status(device_state)
@@ -143,6 +149,9 @@ class Sidebar(Widget):
     elif rl.check_collision_point_rec(mouse_pos, HOME_BTN) and ui_state.started:
       if self._on_flag_click:
         self._on_flag_click()
+    elif self._recording_audio and rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect):
+      if self._open_settings_callback:
+        self._open_settings_callback()
 
   def _draw_buttons(self, rect: rl.Rectangle):
     mouse_pos = rl.get_mouse_position()
@@ -159,6 +168,17 @@ class Sidebar(Widget):
 
     tint = Colors.BUTTON_PRESSED if (ui_state.started and flag_pressed) else Colors.BUTTON_NORMAL
     rl.draw_texture(button_img, int(HOME_BTN.x), int(HOME_BTN.y), tint)
+
+    # Microphone button
+    if self._recording_audio:
+      self._mic_indicator_rect = rl.Rectangle(rect.x + rect.width - 130, rect.y + 245, 75, 40)
+
+      mic_pressed = mouse_down and rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect)
+      bg_color = rl.Color(Colors.DANGER.r, Colors.DANGER.g, Colors.DANGER.b, int(255 * 0.65)) if mic_pressed else Colors.DANGER
+
+      rl.draw_rectangle_rounded(self._mic_indicator_rect, 1, 10, bg_color)
+      rl.draw_texture(self._mic_img, int(self._mic_indicator_rect.x + (self._mic_indicator_rect.width - self._mic_img.width) / 2),
+                      int(self._mic_indicator_rect.y + (self._mic_indicator_rect.height - self._mic_img.height) / 2), Colors.WHITE)
 
   def _draw_network_indicator(self, rect: rl.Rectangle):
     # Signal strength dots
@@ -189,15 +209,15 @@ class Sidebar(Widget):
     # Draw colored left edge (clipped rounded rectangle)
     edge_rect = rl.Rectangle(metric_rect.x + 4, metric_rect.y + 4, 100, 118)
     rl.begin_scissor_mode(int(metric_rect.x + 4), int(metric_rect.y), 18, int(metric_rect.height))
-    rl.draw_rectangle_rounded(edge_rect, 0.18, 10, metric.color)
+    rl.draw_rectangle_rounded(edge_rect, 0.3, 10, metric.color)
     rl.end_scissor_mode()
 
     # Draw border
-    rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.15, 10, 2, Colors.METRIC_BORDER)
+    rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.3, 10, 2, Colors.METRIC_BORDER)
 
     # Draw label and value
     labels = [metric.label, metric.value]
-    text_y = metric_rect.y + (metric_rect.height / 2 - len(labels) * FONT_SIZE)
+    text_y = metric_rect.y + (metric_rect.height / 2 - len(labels) * FONT_SIZE * FONT_SCALE)
     for text in labels:
       text_size = measure_text_cached(self._font_bold, text, FONT_SIZE)
       text_y += text_size.y
