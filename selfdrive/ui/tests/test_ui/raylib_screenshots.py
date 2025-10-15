@@ -24,6 +24,9 @@ TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 UI_DELAY = 0.2
 
+BRANCH_NAME = "this-is-a-really-super-mega-ultra-max-extreme-ultimate-long-branch-name"
+VERSION = f"0.10.1 / {BRANCH_NAME} / 7864838 / Oct 03"
+
 # Offroad alerts to test
 OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
 
@@ -89,9 +92,8 @@ def setup_settings_software_release_notes(click, pm: PubMaster):
 def setup_settings_software_branch_switcher(click, pm: PubMaster):
   setup_settings_software(click, pm)
   params = Params()
-  long_branch = "really-super-mega-long-branch-name"
-  params.put("UpdaterAvailableBranches", "master,nightly,release," + long_branch)
-  params.put("GitBranch", long_branch)  # should be on top
+  params.put("UpdaterAvailableBranches", f"master,nightly,release,{BRANCH_NAME}")
+  params.put("GitBranch", BRANCH_NAME)  # should be on top
   params.put("UpdaterTargetBranch", "nightly")  # should be selected
   click(1984, 449)
 
@@ -210,9 +212,8 @@ def create_screenshots():
       params.put("DongleId", "123456789012345")
 
       # Set branch name
-      description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
-      params.put("UpdaterCurrentDescription", description)
-      params.put("UpdaterNewDescription", description)
+      params.put("UpdaterCurrentDescription", VERSION)
+      params.put("UpdaterNewDescription", VERSION)
 
       if name == "homescreen_paired":
         params.put("PrimeType", 0)  # NONE
