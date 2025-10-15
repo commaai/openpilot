@@ -17,6 +17,7 @@ from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS, DM_RECORD_STEP, DM_RECORD_YES_RECT
 from openpilot.system.updated.updated import parse_release_notes
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -127,11 +128,21 @@ def setup_experimental_mode_description(click, pm: PubMaster):
 def setup_onboarding(click, pm: PubMaster):
   setup_settings(click, pm)
   click(2000, 960)  # review training guide
-  # Go through the entire training guide and stop on the final step
-  clicks = [(390, 880), (2010, 550), (2010, 560), (1760, 730), (1750, 580), (2000, 560), (1900, 700), (1630, 390), (1780, 570),
-            (360, 890), (1740, 390), (2010, 670), (1980, 640), (1980, 640), (1760, 330), (1670, 650), (1960, 570), (1960, 580)]
-  for x, y in clicks:
-    click(x, y)
+
+  # Click the center of each onboarding step rect
+  def click_center(rect):
+    cx = int(rect.x + rect.width / 2)
+    cy = int(rect.y + rect.height / 2)
+    click(cx, cy)
+    time.sleep(0.05)
+
+  for i, rect in enumerate(STEP_RECTS):
+    if i == len(STEP_RECTS) - 1:
+      break # we want to take a screenshot of the last step
+    if i == DM_RECORD_STEP:
+      click_center(DM_RECORD_YES_RECT) # click "yes" for driver monitoring upload
+    else:
+      click_center(rect)
 
 
 CASES = {
