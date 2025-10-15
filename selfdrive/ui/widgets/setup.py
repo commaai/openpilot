@@ -16,7 +16,7 @@ class SetupWidget(Widget):
     self._pair_device_btn = Button("Pair device", self._show_pairing, button_style=ButtonStyle.PRIMARY)
     self._open_settings_btn = Button("Open", lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
-    self._firehose_label = Label("🔥Firehose Mode 🔥", font_weight=FontWeight.MEDIUM, font_size=64)
+    self._firehose_label = Label("🔥 Firehose Mode 🔥", font_weight=FontWeight.MEDIUM, font_size=64)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
@@ -30,7 +30,7 @@ class SetupWidget(Widget):
   def _render_registration(self, rect: rl.Rectangle):
     """Render registration prompt."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, rect.height), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, rect.height), 0.03, 20, rl.Color(51, 51, 51, 255))
 
     x = rect.x + 64
     y = rect.y + 48
@@ -55,7 +55,7 @@ class SetupWidget(Widget):
   def _render_firehose_prompt(self, rect: rl.Rectangle):
     """Render firehose prompt widget."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 500), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 500), 0.04, 20, rl.Color(51, 51, 51, 255))
 
     # Content margins (56, 40, 56, 40)
     x = rect.x + 56
@@ -65,7 +65,7 @@ class SetupWidget(Widget):
 
     # Title with fire emojis
     # TODO: fix Label centering with emojis
-    self._firehose_label.render(rl.Rectangle(x - 40, y, w, 64))
+    self._firehose_label.render(rl.Rectangle(x - 48, y, w, 64))
     y += 64 + spacing
 
     # Description
