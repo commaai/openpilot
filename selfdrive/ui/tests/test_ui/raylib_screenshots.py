@@ -44,8 +44,9 @@ def setup_homescreen_update_available(click, pm: PubMaster):
   params = Params()
   params.put_bool("UpdateAvailable", True)
   put_update_params(params)
-  setup_settings(click, pm)
-  close_settings(click, pm)
+  setup_offroad_alert(click, pm)
+  # setup_settings(click, pm)
+  # close_settings(click, pm)
 
 
 def setup_settings(click, pm: PubMaster):
