@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 from enum import IntEnum
 
 import pyray as rl
@@ -38,15 +39,24 @@ class TrainingGuide(Widget):
     self._completed_callback = completed_callback
 
     self._step = 0
-    self._load_images()
+    self._load_image_paths()
 
-  def _load_images(self):
-    self._images = []
+    # Load first image now so we show something immediately
+    self._textures = [gui_app.texture(self._image_paths[0])]
+    self._image_objs = []
+
+    threading.Thread(target=self._preload_thread, daemon=True).start()
+
+  def _load_image_paths(self):
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))
-    for fn in paths:
-      path = os.path.join(BASEDIR, "selfdrive/assets/training", fn)
-      self._images.append(gui_app.texture(path))
+    self._image_paths = [os.path.join(BASEDIR, "selfdrive/assets/training", fn) for fn in paths]
+
+  def _preload_thread(self):
+    # PNG loading is slow in raylib, so we preload in a thread and upload to GPU in main thread
+    # We've already loaded the first image on init
+    for path in self._image_paths[1:]:
+      self._image_objs.append(gui_app._load_image_from_path(path))
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
@@ -57,30 +67,36 @@ class TrainingGuide(Widget):
         ui_state.params.put_bool("RecordFront", yes)
 
       # Restart training?
-      elif self._step == len(self._images) - 1:
+      elif self._step == len(self._image_paths) - 1:
         if rl.check_collision_point_rec(mouse_pos, RESTART_TRAINING_RECT):
           self._step = -1
 
       self._step += 1
 
       # Finished?
-      if self._step >= len(self._images):
+      if self._step >= len(self._image_paths):
         self._step = 0
         if self._completed_callback:
           self._completed_callback()
 
+  def _update_state(self):
+    if len(self._image_objs):
+      self._textures.append(gui_app._load_texture_from_image(self._image_objs.pop(0)))
+
   def _render(self, _):
-    rl.draw_texture(self._images[self._step], 0, 0, rl.WHITE)
+    # Safeguard against fast tapping
+    step = min(self._step, len(self._textures) - 1)
+    rl.draw_texture(self._textures[step], 0, 0, rl.WHITE)
 
     # progress bar
-    if 0 < self._step < len(STEP_RECTS) - 1:
+    if 0 < step < len(STEP_RECTS) - 1:
       h = 20
-      w = int((self._step / (len(STEP_RECTS) - 1)) * self._rect.width)
+      w = int((step / (len(STEP_RECTS) - 1)) * self._rect.width)
       rl.draw_rectangle(int(self._rect.x), int(self._rect.y + self._rect.height - h),
                         w, h, rl.Color(70, 91, 234, 255))
 
     if DEBUG:
-      rl.draw_rectangle_lines_ex(STEP_RECTS[self._step], 3, rl.RED)
+      rl.draw_rectangle_lines_ex(STEP_RECTS[step], 3, rl.RED)
 
     return -1
 

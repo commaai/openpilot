@@ -18,6 +18,9 @@ class ExperimentalModeButton(Widget):
     self.chill_pixmap = gui_app.texture("icons/couch.png", self.img_width, self.img_width)
     self.experimental_pixmap = gui_app.texture("icons/experimental_grey.png", self.img_width, self.img_width)
 
+  def show_event(self):
+    self.experimental_mode = self.params.get_bool("ExperimentalMode")
+
   def _get_gradient_colors(self):
     alpha = 0xCC if self.is_pressed else 0xFF
 
@@ -32,10 +35,9 @@ class ExperimentalModeButton(Widget):
                                  start_color, end_color)
 
   def _render(self, rect):
-    rl.draw_rectangle_rounded(rect, 0.08, 20, rl.WHITE)
-
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._draw_gradient_background(rect)
+    rl.draw_rectangle_rounded_lines_ex(self._rect, 0.19, 10, 5, rl.BLACK)
     rl.end_scissor_mode()
 
     # Draw vertical separator line
