@@ -44,13 +44,13 @@ KEYBOARD_LAYOUTS = {
   "numbers": [
     ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
     ["-", "/", ":", ";", "(", ")", "$", "&", "@", "\""],
-    [SYMBOL_KEY, ".", ",", "?", "!", "`", BACKSPACE_KEY],
+    [SYMBOL_KEY, ".", ",", "?", "!", "'", BACKSPACE_KEY],
     [ABC_KEY, SPACE_KEY, ".", ENTER_KEY],
   ],
   "specials": [
     ["[", "]", "{", "}", "#", "%", "^", "*", "+", "="],
     ["_", "\\", "|", "~", "<", ">", "€", "£", "¥", "•"],
-    [NUMERIC_KEY, ".", ",", "?", "!", "'", BACKSPACE_KEY],
+    [NUMERIC_KEY, ".", ",", "?", "!", "`", BACKSPACE_KEY],
     [ABC_KEY, SPACE_KEY, ".", ENTER_KEY],
   ],
 }
