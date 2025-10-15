@@ -176,9 +176,9 @@ class AugmentedRoadView(CameraView):
     calib_time = ui_state.sm.recv_frame['liveCalibration']
     current_dims = (self._content_rect.width, self._content_rect.height)
     if (self._last_calib_time == calib_time and
-      self._last_rect_dims == current_dims and
-      self._last_stream_type == self.stream_type and
-      self._cached_matrix is not None):
+        self._last_rect_dims == current_dims and
+        self._last_stream_type == self.stream_type and
+        self._cached_matrix is not None):
       return self._cached_matrix
 
     # Get camera configuration
