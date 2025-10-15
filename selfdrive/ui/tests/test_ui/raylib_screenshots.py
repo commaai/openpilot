@@ -17,7 +17,6 @@ from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS
 from openpilot.system.updated.updated import parse_release_notes
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -131,6 +130,7 @@ def setup_onboarding(click, pm: PubMaster):
   setup_settings(click, pm)
   click(2000, 960)  # review training guide
   # Click the center of each onboarding step rect
+  from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS
   for _, rect in enumerate(STEP_RECTS[:-1]):
     click(int(rect.x + rect.width / 2), int(rect.y + rect.height / 2))
 
