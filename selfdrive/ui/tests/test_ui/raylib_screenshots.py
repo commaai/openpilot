@@ -191,6 +191,7 @@ def create_screenshots():
   with OpenpilotPrefix():
     params = Params()
     params.put("DongleId", "123456789012345")
+    params.put("PrimeType", 1)
     for name, setup in CASES.items():
       t.test_ui(name, setup)
 
