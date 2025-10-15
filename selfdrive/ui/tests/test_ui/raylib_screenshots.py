@@ -17,7 +17,7 @@ from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS, DM_RECORD_STEP, DM_RECORD_YES_RECT
+from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS
 from openpilot.system.updated.updated import parse_release_notes
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -133,13 +133,8 @@ def setup_onboarding(click, pm: PubMaster):
   def click_center(rect):
     click(int(rect.x + rect.width / 2), int(rect.y + rect.height / 2))
 
-  for i, rect in enumerate(STEP_RECTS):
-    if i == len(STEP_RECTS) - 1:
-      break # we want to take a screenshot of the last step
-    if i == DM_RECORD_STEP:
-      click_center(DM_RECORD_YES_RECT) # click "yes" for driver monitoring upload
-    else:
-      click_center(rect)
+  for _, rect in enumerate(STEP_RECTS[:-1]):
+    click_center(rect)
 
 
 CASES = {
