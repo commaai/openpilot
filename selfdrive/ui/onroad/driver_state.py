@@ -125,10 +125,14 @@ class DriverStateRenderer(Widget):
     # Get driver orientation data from appropriate camera
     driverstate = sm["driverStateV2"]
     driver_data = driverstate.rightDriverData if self.is_rhd else driverstate.leftDriverData
-    driver_orient = driver_data.faceOrientation
+    driver_orient = getattr(driver_data, 'faceOrientation', [])
 
     # Update pose values with scaling and smoothing
-    driver_orient = np.array(driver_orient)
+    driver_orient = np.asarray(driver_orient, dtype=np.float32)
+    if driver_orient.size != 3:
+      # When face orientation is unavailable (e.g., face not detected), fall back to zeros
+      # to avoid shape/broadcast errors while maintaining stable rendering.
+      driver_orient = np.zeros(3, dtype=np.float32)
     scales = np.where(driver_orient < 0, SCALES_NEG, SCALES_POS)
     v_this = driver_orient * scales
     self.driver_pose_diff = np.abs(self.driver_pose_vals - v_this)
