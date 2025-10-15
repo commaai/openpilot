@@ -394,6 +394,34 @@ class ModelRenderer(Widget):
       left_screen = left_screen[:, keep]
       right_screen = right_screen[:, keep]
 
+    # Untangle possible self-intersections when perspective flips sides
+    if left_screen.shape[1] >= 2:
+      # Convert to (N,2) for simpler math
+      left_pts = left_screen.T.copy()
+      right_pts = right_screen.T.copy()
+
+      def orientation(a, b, c):
+        abx, aby = b[0] - a[0], b[1] - a[1]
+        acx, acy = c[0] - a[0], c[1] - a[1]
+        return abx * acy - aby * acx
+
+      def segments_intersect(a, b, c, d):
+        o1 = orientation(a, b, c)
+        o2 = orientation(a, b, d)
+        o3 = orientation(c, d, a)
+        o4 = orientation(c, d, b)
+        return (o1 * o2 < 0) and (o3 * o4 < 0)
+
+      k = left_pts.shape[0]
+      for i in range(k - 1):
+        if segments_intersect(left_pts[i], right_pts[i], left_pts[i + 1], right_pts[i + 1]):
+          li = left_pts[i + 1:].copy()
+          ri = right_pts[i + 1:].copy()
+          left_pts[i + 1:], right_pts[i + 1:] = ri, li
+
+      left_screen = left_pts.T
+      right_screen = right_pts.T
+
     return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
 
   @staticmethod
