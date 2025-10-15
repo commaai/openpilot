@@ -4,9 +4,9 @@ import time
 import threading
 from collections.abc import Callable
 from enum import Enum
-from cereal import messaging, log
+from cereal import messaging, car, log
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.params import Params, UnknownKeyName
+from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
@@ -67,11 +67,25 @@ class UIState:
     self.is_metric: bool = self.params.get_bool("IsMetric")
     self.started: bool = False
     self.ignition: bool = False
+    self.recording_audio: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
+    self.has_longitudinal_control: bool = False
+    self.CP: car.CarParams | None = None
     self.light_sensor: float = -1.0
+    self._param_update_time: float = 0.0
 
-    self._update_params()
+    # Callbacks
+    self._offroad_transition_callbacks: list[Callable[[], None]] = []
+    self._engaged_transition_callbacks: list[Callable[[], None]] = []
+
+    self.update_params()
+
+  def add_offroad_transition_callback(self, callback: Callable[[], None]):
+    self._offroad_transition_callbacks.append(callback)
+
+  def add_engaged_transition_callback(self, callback: Callable[[], None]):
+    self._engaged_transition_callbacks.append(callback)
 
   @property
   def engaged(self) -> bool:
@@ -87,6 +101,8 @@ class UIState:
     self.sm.update(0)
     self._update_state()
     self._update_status()
+    if time.monotonic() - self._param_update_time > 5.0:
+      self.update_params()
     device.update()
 
   def _update_state(self) -> None:
@@ -113,6 +129,11 @@ class UIState:
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
 
+    # Update recording audio state
+    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
+
+    self.is_metric = self.params.get_bool("IsMetric")
+
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:
       ss = self.sm["selfdriveState"]
@@ -125,6 +146,8 @@ class UIState:
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:
+      for callback in self._engaged_transition_callbacks:
+        callback()
       self._engaged_prev = self.engaged
 
     # Handle onroad/offroad transition
@@ -134,13 +157,22 @@ class UIState:
         self.started_frame = self.sm.frame
         self.started_time = time.monotonic()
 
+      for callback in self._offroad_transition_callbacks:
+        callback()
+
       self._started_prev = self.started
 
-  def _update_params(self) -> None:
-    try:
-      self.is_metric = self.params.get_bool("IsMetric")
-    except UnknownKeyName:
-      self.is_metric = False
+  def update_params(self) -> None:
+    # For slower operations
+    # Update longitudinal control state
+    CP_bytes = self.params.get("CarParamsPersistent")
+    if CP_bytes is not None:
+      self.CP = messaging.log_from_bytes(CP_bytes, car.CarParams)
+      if self.CP.alphaLongitudinalAvailable:
+        self.has_longitudinal_control = self.params.get_bool("AlphaLongitudinalEnabled")
+      else:
+        self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
+    self._param_update_time = time.monotonic()
 
 
 class Device:
@@ -196,7 +228,6 @@ class Device:
 
     if brightness != self._last_brightness:
       if self._brightness_thread is None or not self._brightness_thread.is_alive():
-        cloudlog.debug(f"setting display brightness {brightness}")
         self._brightness_thread = threading.Thread(target=HARDWARE.set_screen_brightness, args=(brightness,))
         self._brightness_thread.start()
         self._last_brightness = brightness

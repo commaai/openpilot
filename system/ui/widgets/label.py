@@ -3,7 +3,7 @@ from itertools import zip_longest
 
 import pyray as rl
 
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.utils import GuiStyleContext
 from openpilot.system.ui.lib.emoji import find_emoji, emoji_tex
@@ -76,8 +76,8 @@ def gui_text_box(
 ):
   styles = [
     (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(color)),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, font_size),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_LINE_SPACING, font_size),
+    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, round(font_size * FONT_SCALE)),
+    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_LINE_SPACING, round(font_size * FONT_SCALE)),
     (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_ALIGNMENT, alignment),
     (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_ALIGNMENT_VERTICAL, alignment_vertical),
     (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD)
@@ -170,8 +170,8 @@ class Label(Widget):
         line_pos.x += width_before.x
 
         tex = emoji_tex(emoji)
-        rl.draw_texture_ex(tex, line_pos, 0.0, self._font_size / tex.height, self._text_color)
-        line_pos.x += self._font_size
+        rl.draw_texture_ex(tex, line_pos, 0.0, self._font_size / tex.height * FONT_SCALE, self._text_color)
+        line_pos.x += self._font_size * FONT_SCALE
         prev_index = end
       rl.draw_text_ex(self._font, text[prev_index:], line_pos, self._font_size, 0, self._text_color)
-      text_pos.y += text_size.y or self._font_size
+      text_pos.y += text_size.y or self._font_size * FONT_SCALE

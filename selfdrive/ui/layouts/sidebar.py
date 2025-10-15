@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, FONT_SCALE
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -23,7 +23,6 @@ NetworkType = log.DeviceState.NetworkType
 
 # Color scheme
 class Colors:
-  SIDEBAR_BG = rl.Color(57, 57, 57, 255)
   WHITE = rl.WHITE
   WHITE_DIM = rl.Color(255, 255, 255, 85)
   GRAY = rl.Color(84, 84, 84, 255)
@@ -40,13 +39,13 @@ class Colors:
 
 
 NETWORK_TYPES = {
-  NetworkType.none: "Offline",
-  NetworkType.wifi: "WiFi",
+  NetworkType.none: "--",
+  NetworkType.wifi: "Wi-Fi",
+  NetworkType.ethernet: "ETH",
   NetworkType.cell2G: "2G",
   NetworkType.cell3G: "3G",
   NetworkType.cell4G: "LTE",
   NetworkType.cell5G: "5G",
-  NetworkType.ethernet: "Ethernet",
 }
 
 
@@ -94,7 +93,7 @@ class Sidebar(Widget):
 
   def _render(self, rect: rl.Rectangle):
     # Background
-    rl.draw_rectangle_rec(rect, Colors.SIDEBAR_BG)
+    rl.draw_rectangle_rec(rect, rl.BLACK)
 
     self._draw_buttons(rect)
     self._draw_network_indicator(rect)
@@ -107,7 +106,7 @@ class Sidebar(Widget):
 
     device_state = sm['deviceState']
 
-    self._recording_audio = sm.alive['rawAudioData']
+    self._recording_audio = ui_state.recording_audio
     self._update_network_status(device_state)
     self._update_temperature_status(device_state)
     self._update_connection_status(device_state)
@@ -172,7 +171,7 @@ class Sidebar(Widget):
 
     # Microphone button
     if self._recording_audio:
-      self._mic_indicator_rect = rl.Rectangle(rect.x + rect.width - 138, rect.y + 245, 75, 40)
+      self._mic_indicator_rect = rl.Rectangle(rect.x + rect.width - 130, rect.y + 245, 75, 40)
 
       mic_pressed = mouse_down and rl.check_collision_point_rec(mouse_pos, self._mic_indicator_rect)
       bg_color = rl.Color(Colors.DANGER.r, Colors.DANGER.g, Colors.DANGER.b, int(255 * 0.65)) if mic_pressed else Colors.DANGER
@@ -216,21 +215,14 @@ class Sidebar(Widget):
     # Draw border
     rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.3, 10, 2, Colors.METRIC_BORDER)
 
-    label_size = measure_text_cached(self._font_bold, metric.label, FONT_SIZE)
-    value_size = measure_text_cached(self._font_bold, metric.value, FONT_SIZE)
-    text_height = label_size.y + value_size.y
-
-    label_y = metric_rect.y + (metric_rect.height - text_height) / 2
-    value_y = label_y + label_size.y
-
-    # label
-    rl.draw_text_ex(self._font_bold, metric.label, rl.Vector2(
-      metric_rect.x + 22 + (metric_rect.width - 22 - label_size.x) / 2,
-      label_y
-    ), FONT_SIZE, 0, Colors.WHITE)
-
-    # value
-    rl.draw_text_ex(self._font_bold, metric.value, rl.Vector2(
-      metric_rect.x + 22 + (metric_rect.width - 22 - value_size.x) / 2,
-      value_y
-    ), FONT_SIZE, 0, Colors.WHITE)
+    # Draw label and value
+    labels = [metric.label, metric.value]
+    text_y = metric_rect.y + (metric_rect.height / 2 - len(labels) * FONT_SIZE * FONT_SCALE)
+    for text in labels:
+      text_size = measure_text_cached(self._font_bold, text, FONT_SIZE)
+      text_y += text_size.y
+      text_pos = rl.Vector2(
+        metric_rect.x + 22 + (metric_rect.width - 22 - text_size.x) / 2,
+        text_y
+      )
+      rl.draw_text_ex(self._font_bold, text, text_pos, FONT_SIZE, 0, Colors.WHITE)

@@ -14,7 +14,7 @@ from cereal import log
 from openpilot.common.run import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
@@ -24,10 +24,10 @@ from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManager
 NetworkType = log.DeviceState.NetworkType
 
 MARGIN = 50
-TITLE_FONT_SIZE = 116
+TITLE_FONT_SIZE = 90
 TITLE_FONT_WEIGHT = FontWeight.MEDIUM
 NEXT_BUTTON_WIDTH = 310
-BODY_FONT_SIZE = 96
+BODY_FONT_SIZE = 80
 BUTTON_HEIGHT = 160
 BUTTON_SPACING = 50
 
@@ -47,6 +47,7 @@ CONTINUE = """#!/usr/bin/env bash
 cd /data/openpilot
 exec ./launch_openpilot.sh
 """
+
 
 class SetupState(IntEnum):
   LOW_VOLTAGE = 0
@@ -100,7 +101,7 @@ class Setup(Widget):
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
     self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT)
-    self._download_failed_url_label = Label("", 64, FontWeight.NORMAL, TextAlignment.LEFT)
+    self._download_failed_url_label = Label("", 52, FontWeight.NORMAL, TextAlignment.LEFT)
     self._download_failed_body_label = Label("", BODY_FONT_SIZE, text_alignment=TextAlignment.LEFT)
 
     self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
@@ -113,15 +114,16 @@ class Setup(Widget):
                                                            button_style=ButtonStyle.PRIMARY)
     self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
-    self._custom_software_warning_title_label = Label("WARNING: Custom Software", 100, FontWeight.BOLD, TextAlignment.LEFT, text_color=rl.Color(255,89,79,255),
+    self._custom_software_warning_title_label = Label("WARNING: Custom Software", 81, FontWeight.BOLD, TextAlignment.LEFT,
+                                                      text_color=rl.Color(255, 89, 79, 255),
                                                       text_padding=60)
     self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
-                                              + "⚠️ It has not been tested by comma.\n\n"
-                                              + "⚠️ It may not comply with relevant safety standards.\n\n"
-                                              + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
-                                              + "If you'd like to proceed, use https://flash.comma.ai "
-                                              + "to restore your device to a factory state later.",
-                                             85, text_alignment=TextAlignment.LEFT, text_padding=60)
+                                                     + "⚠️ It has not been tested by comma.\n\n"
+                                                     + "⚠️ It may not comply with relevant safety standards.\n\n"
+                                                     + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
+                                                     + "If you'd like to proceed, use https://flash.comma.ai "
+                                                     + "to restore your device to a factory state later.",
+                                                     68, text_alignment=TextAlignment.LEFT, text_padding=60)
     self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
 
     self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM)
@@ -191,8 +193,8 @@ class Setup(Widget):
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
 
-    self._low_voltage_title_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE))
-    self._low_voltage_body_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 150, rect.width - 500, BODY_FONT_SIZE * 3))
+    self._low_voltage_title_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE * FONT_SCALE))
+    self._low_voltage_body_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 150, rect.width - 500, BODY_FONT_SIZE * FONT_SCALE * 3))
 
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
@@ -200,8 +202,9 @@ class Setup(Widget):
     self._low_voltage_continue_button.render(rl.Rectangle(rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT))
 
   def render_getting_started(self, rect: rl.Rectangle):
-    self._getting_started_title_label.render(rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE))
-    self._getting_started_body_label.render(rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE, rect.width - 500, BODY_FONT_SIZE * 3))
+    self._getting_started_title_label.render(rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
+    self._getting_started_body_label.render(rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE * FONT_SCALE, rect.width - 500,
+                                                         BODY_FONT_SIZE * FONT_SCALE * 3))
 
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
     self._getting_started_button.render(btn_rect)
@@ -233,10 +236,10 @@ class Setup(Widget):
       self.network_check_thread.join()
 
   def render_network_setup(self, rect: rl.Rectangle):
-    self._network_setup_title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE))
+    self._network_setup_title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE * FONT_SCALE))
 
-    wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN + 25, rect.width - MARGIN * 2,
-                             rect.height - TITLE_FONT_SIZE - 25 - BUTTON_HEIGHT - MARGIN * 3)
+    wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE * FONT_SCALE + MARGIN + 25, rect.width - MARGIN * 2,
+                             rect.height - TITLE_FONT_SIZE * FONT_SCALE - 25 - BUTTON_HEIGHT - MARGIN * 3)
     rl.draw_rectangle_rounded(wifi_rect, 0.05, 10, rl.Color(51, 51, 51, 255))
     wifi_content_rect = rl.Rectangle(wifi_rect.x + MARGIN, wifi_rect.y, wifi_rect.width - MARGIN * 2, wifi_rect.height)
     self.wifi_ui.render(wifi_content_rect)
@@ -254,21 +257,22 @@ class Setup(Widget):
     self._network_setup_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_software_selection(self, rect: rl.Rectangle):
-    self._software_selection_title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE))
+    self._software_selection_title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE * FONT_SCALE))
 
     radio_height = 230
     radio_spacing = 30
 
     self._software_selection_continue_button.set_enabled(False)
 
-    openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
+    openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE * FONT_SCALE + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
     self._software_selection_openpilot_button.render(openpilot_rect)
 
     if self._software_selection_openpilot_button.selected:
       self._software_selection_continue_button.set_enabled(True)
       self._software_selection_custom_software_button.selected = False
 
-    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
+    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE * FONT_SCALE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2,
+                               radio_height)
     self._software_selection_custom_software_button.render(custom_rect)
 
     if self._software_selection_custom_software_button.selected:
@@ -282,12 +286,13 @@ class Setup(Widget):
     self._software_selection_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_downloading(self, rect: rl.Rectangle):
-    self._downloading_body_label.render(rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE))
+    self._downloading_body_label.render(rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE * FONT_SCALE / 2, rect.width,
+                                                     TITLE_FONT_SIZE * FONT_SCALE))
 
   def render_download_failed(self, rect: rl.Rectangle):
-    self._download_failed_title_label.render(rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, TITLE_FONT_SIZE))
+    self._download_failed_title_label.render(rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, TITLE_FONT_SIZE * FONT_SCALE))
     self._download_failed_url_label.set_text(self.failed_url)
-    self._download_failed_url_label.render(rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67, rect.width - 117 - 100, 64))
+    self._download_failed_url_label.render(rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE * FONT_SCALE + 67, rect.width - 117 - 100, 64))
 
     self._download_failed_body_label.set_text(self.failed_reason)
     self._download_failed_body_label.render(rl.Rectangle(rect.x + 117, rect.y, rect.width - 117 - 100, rect.height))
@@ -304,10 +309,10 @@ class Setup(Widget):
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
 
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(button_y - BODY_FONT_SIZE))
+    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(button_y - BODY_FONT_SIZE * FONT_SCALE))
     y_offset = rect.y + offset
-    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE))
-    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, y_offset + 200 , rect.width - 50, BODY_FONT_SIZE * 3))
+    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
+    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, y_offset + 200, rect.width - 50, BODY_FONT_SIZE * FONT_SCALE * 3))
     rl.end_scissor_mode()
 
     self._custom_software_warning_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
@@ -343,7 +348,7 @@ class Setup(Widget):
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
 
       # give time for installer UI to take over
-      time.sleep(1)
+      time.sleep(0.1)
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
@@ -406,7 +411,7 @@ class Setup(Widget):
         f.write(self.download_url)
 
       # give time for installer UI to take over
-      time.sleep(5)
+      time.sleep(0.1)
       gui_app.request_close()
 
     except Exception:
@@ -423,7 +428,9 @@ def main():
   try:
     gui_app.init_window("Setup", 20)
     setup = Setup()
-    for _ in gui_app.render():
+    for showing_dialog in gui_app.render():
+      if showing_dialog:
+        continue
       setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     setup.close()
   except Exception as e:

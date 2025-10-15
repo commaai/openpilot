@@ -21,6 +21,11 @@ ALERT_FONT_SMALL = 66
 ALERT_FONT_MEDIUM = 74
 ALERT_FONT_BIG = 88
 
+ALERT_HEIGHTS = {
+  AlertSize.small: 271,
+  AlertSize.mid: 420,
+}
+
 SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
 SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
@@ -58,8 +63,8 @@ ALERT_CRITICAL_TIMEOUT = Alert(
 ALERT_CRITICAL_REBOOT = Alert(
   text1="System Unresponsive",
   text2="Reboot Device",
-  size=AlertSize.full,
-  status=AlertStatus.critical,
+  size=AlertSize.mid,
+  status=AlertStatus.normal,
 )
 
 
@@ -74,8 +79,8 @@ class AlertRenderer(Widget):
     ss = sm['selfdriveState']
 
     # Check if selfdriveState messages have stopped arriving
+    recv_frame = sm.recv_frame['selfdriveState']
     if not sm.updated['selfdriveState']:
-      recv_frame = sm.recv_frame['selfdriveState']
       time_since_onroad = time.monotonic() - ui_state.started_time
 
       # 1. Never received selfdriveState since going onroad
@@ -95,13 +100,17 @@ class AlertRenderer(Widget):
     if ss.alertSize == 0:
       return None
 
+    # Don't get old alert
+    if recv_frame < ui_state.started_frame:
+      return None
+
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle):
     alert = self.get_alert(ui_state.sm)
     if not alert:
-      return False
+      return
 
     alert_rect = self._get_alert_rect(rect, alert.size)
     self._draw_background(alert_rect, alert)
@@ -113,21 +122,14 @@ class AlertRenderer(Widget):
       alert_rect.height - 2 * ALERT_PADDING
     )
     self._draw_text(text_rect, alert)
-    return True
 
   def _get_alert_rect(self, rect: rl.Rectangle, size: int) -> rl.Rectangle:
     if size == AlertSize.full:
       return rect
 
-    height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == AlertSize.small else
-              ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
-
-    return rl.Rectangle(
-      rect.x + ALERT_MARGIN,
-      rect.y + rect.height - ALERT_MARGIN - height,
-      rect.width - 2 * ALERT_MARGIN,
-      height
-    )
+    h = ALERT_HEIGHTS.get(size, rect.height)
+    return rl.Rectangle(rect.x + ALERT_MARGIN, rect.y + rect.height - h + ALERT_MARGIN,
+                        rect.width - ALERT_MARGIN * 2, h - ALERT_MARGIN * 2)
 
   def _draw_background(self, rect: rl.Rectangle, alert: Alert) -> None:
     color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
@@ -150,13 +152,17 @@ class AlertRenderer(Widget):
     else:
       is_long = len(alert.text1) > 15
       font_size1 = 132 if is_long else 177
-      align_ment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
-      vertical_align = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
-      text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height // 2)
 
-      gui_text_box(text_rect, alert.text1, font_size1, alignment=align_ment, alignment_vertical=vertical_align, font_weight=FontWeight.BOLD)
-      text_rect.y = rect.y + rect.height // 2
-      gui_text_box(text_rect, alert.text2, ALERT_FONT_BIG, alignment=align_ment)
+      align_center = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
+      align_top = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP
+
+      top_offset = 240 if is_long else 270
+      title_rect = rl.Rectangle(rect.x, rect.y + top_offset, rect.width, 600)
+      gui_text_box(title_rect, alert.text1, font_size1, alignment=align_center, alignment_vertical=align_top, font_weight=FontWeight.BOLD)
+
+      bottom_offset = 361 if is_long else 420
+      subtitle_rect = rl.Rectangle(rect.x, rect.y + rect.height - bottom_offset, rect.width, 300)
+      gui_text_box(subtitle_rect, alert.text2, ALERT_FONT_BIG, alignment=align_center, alignment_vertical=align_top)
 
   def _draw_centered(self, text, rect, font, font_size, center_y=True, color=rl.WHITE) -> None:
     text_size = measure_text_cached(font, text, font_size)
