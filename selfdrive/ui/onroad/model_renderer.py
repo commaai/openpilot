@@ -180,10 +180,8 @@ class ModelRenderer(Widget):
     if lead and lead.status:
       lead_d = lead.dRel * 2.0
       max_distance = np.clip(lead_d - min(lead_d * 0.35, 10.0), 0.0, max_distance)
-      # print("Lead distance:", lead.dRel, "Adjusted max distance:", max_distance)
 
     max_idx = self._get_path_length_idx(path_x_array, max_distance)
-    # print('Max draw distance:', max_distance, 'Max index:', max_idx)
     self._path.projected_points = self._map_line_to_polygon(
       self._path.raw_points, 0.9, self._path_offset_z, max_idx, max_distance, allow_invert=False
     )
@@ -339,8 +337,6 @@ class ModelRenderer(Widget):
 
     # Slice points and filter non-negative x-coordinates
     points = line[:max_idx + 1]
-    print('Sliced points:', points.shape)
-    print('Max idx:', max_idx, 'Max distance:', max_distance)
 
     # Interpolate around max_idx so path end is smooth
     # max_idx is the last point where x <= max_distance, so we need the next point to interp
