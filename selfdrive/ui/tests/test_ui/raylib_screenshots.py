@@ -131,6 +131,9 @@ def setup_experimental_mode_description(click, pm: PubMaster):
 
 CASES = {
   "homescreen": setup_homescreen,
+  "homescreen_paired": setup_homescreen,
+  "homescreen_prime": setup_homescreen,
+  "homescreen_update_available": setup_homescreen_update_available,
   "settings_device": setup_settings,
   "settings_network": setup_settings_network,
   "settings_network_advanced": setup_settings_network_advanced,
@@ -143,7 +146,6 @@ CASES = {
   "keyboard": setup_keyboard,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
-  "homescreen_update_available": setup_homescreen_update_available,
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
 }
@@ -198,6 +200,12 @@ def create_screenshots():
     with OpenpilotPrefix():
       params = Params()
       params.put("DongleId", "123456789012345")
+
+      if name == "homescreen_paired":
+        params.put("PrimeType", 0)  # NONE
+      elif name == "homescreen_prime":
+        params.put("PrimeType", 2)  # LITE
+
       t.test_ui(name, setup)
 
 
