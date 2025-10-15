@@ -130,13 +130,9 @@ def setup_experimental_mode_description(click, pm: PubMaster):
 def setup_onboarding(click, pm: PubMaster):
   setup_settings(click, pm)
   click(2000, 960)  # review training guide
-
   # Click the center of each onboarding step rect
-  def click_center(rect):
-    click(int(rect.x + rect.width / 2), int(rect.y + rect.height / 2))
-
   for _, rect in enumerate(STEP_RECTS[:-1]):
-    click_center(rect)
+    click(int(rect.x + rect.width / 2), int(rect.y + rect.height / 2))
 
 
 CASES = {
