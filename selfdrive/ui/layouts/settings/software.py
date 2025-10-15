@@ -168,7 +168,7 @@ class SoftwareLayout(Widget):
     ui_state.params.put_bool("DoReboot", True)
 
   def _on_select_branch(self):
-    # Get available branches and reorder to match Qt behavior
+    # Get available branches and order
     current_git_branch = ui_state.params.get("GitBranch") or ""
     branches_str = ui_state.params.get("UpdaterAvailableBranches") or ""
     branches = [b for b in branches_str.split(",") if b]
