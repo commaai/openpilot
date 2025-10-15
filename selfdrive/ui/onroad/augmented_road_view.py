@@ -115,13 +115,9 @@ class AugmentedRoadView(CameraView):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     border_roundness = 0.15
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
-    # rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, border_color)
     border_rect = rl.Rectangle(rect.x + UI_BORDER_SIZE, rect.y + UI_BORDER_SIZE,
                               rect.width - 2 * UI_BORDER_SIZE, rect.height - 2 * UI_BORDER_SIZE)
-    print(border_rect.height)
     rl.draw_rectangle_rounded_lines_ex(border_rect, border_roundness, 10, UI_BORDER_SIZE, border_color)
-
-    print('border_rect', border_rect.height)
 
     # black bg around colored border:
     black_bg_thickness = UI_BORDER_SIZE
@@ -131,15 +127,8 @@ class AugmentedRoadView(CameraView):
       border_rect.width + 2 * UI_BORDER_SIZE,
       border_rect.height + 2 * UI_BORDER_SIZE,
     )
-    print('black_bg_rect', black_bg_rect.height)
-    # black_bg_rect = border_rect
-    # calculate roundness using height as limiting side
-    height_in = border_rect.height
-    height_out = black_bg_rect.height
-    edge_offset = (height_out - height_in) / 2  # distance between rect edges
-    roundness_out = (border_roundness * height_in + 2 * edge_offset) / max(1.0, height_out)
-    # clamp to [0, 1]
-    roundness_out = max(0.0, min(1.0, roundness_out))
+    edge_offset = (black_bg_rect.height - border_rect.height) / 2  # distance between rect edges
+    roundness_out = (border_roundness * border_rect.height + 2 * edge_offset) / max(1.0, black_bg_rect.height)
     rl.draw_rectangle_rounded_lines_ex(black_bg_rect, roundness_out, 10, black_bg_thickness, rl.BLACK)
     rl.end_scissor_mode()
 
