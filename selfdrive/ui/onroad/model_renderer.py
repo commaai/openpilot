@@ -346,7 +346,7 @@ class ModelRenderer(Widget):
       interp_y = np.interp(max_distance, [x0, x1], [p0[1], p1[1]])
       interp_z = np.interp(max_distance, [x0, x1], [p0[2], p1[2]])
       interp_point = np.array([max_distance, interp_y, interp_z], dtype=points.dtype)
-      points = np.vstack((points, interp_point[None, :]))
+      points = np.concatenate((points, interp_point[None, :]), axis=0)
 
     points = points[points[:, 0] >= 0]
     if points.shape[0] == 0:
