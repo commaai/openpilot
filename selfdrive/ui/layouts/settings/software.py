@@ -7,6 +7,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
+from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.scroller import Scroller
 
 # TODO: remove this. updater fails to respond on startup if time is not correct
@@ -64,8 +65,7 @@ class SoftwareLayout(Widget):
       self._version_item,
       self._download_btn,
       self._install_btn,
-      # TODO: implement branch switching
-      # button_item("Target Branch", "SELECT", callback=self._on_select_branch),
+      self._init_branch_switcher(),
       button_item("Uninstall", "UNINSTALL", callback=self._on_uninstall),
     ]
     return items
@@ -122,6 +122,11 @@ class SoftwareLayout(Widget):
       # Only enable if we're not waiting for updater to flip out of idle
       self._download_btn.action_item.set_enabled(not self._waiting_for_updater)
 
+    # Update target branch button value
+    if hasattr(self, '_branch_btn'):
+      current_branch = ui_state.params.get("UpdaterTargetBranch") or ""
+      self._branch_btn.action_item.set_value(current_branch)
+
     # Update install button
     self._install_btn.set_visible(ui_state.is_offroad() and update_available)
     if update_available:
@@ -162,4 +167,41 @@ class SoftwareLayout(Widget):
     self._install_btn.action_item.set_enabled(False)
     ui_state.params.put_bool("DoReboot", True)
 
-  def _on_select_branch(self): pass
+  def _init_branch_switcher(self):
+    self._branch_btn = button_item("Target Branch", "SELECT", callback=self._on_select_branch)
+    # Hide branch switcher on tested branches to mirror Qt
+    self._branch_btn.set_visible(lambda: not ui_state.params.get_bool("IsTestedBranch"))
+    # Initialize value
+    self._branch_btn.action_item.set_value(ui_state.params.get("UpdaterTargetBranch") or "")
+    return self._branch_btn
+
+  def _on_select_branch(self):
+    # Get available branches and reorder to match Qt behavior
+    current_git_branch = ui_state.params.get("GitBranch") or ""
+    branches_csv = ui_state.params.get("UpdaterAvailableBranches") or ""
+    branches = [b for b in branches_csv.split(",") if b]
+
+    def promote_branch(bname: str):
+      if bname in branches:
+        branches.remove(bname)
+        branches.insert(0, bname)
+
+    for b in [current_git_branch, "devel-staging", "devel", "nightly", "nightly-dev", "master"]:
+      promote_branch(b)
+
+    current_target = ui_state.params.get("UpdaterTargetBranch") or ""
+    self._branch_dialog = MultiOptionDialog("Select a branch", branches, current_target)
+
+    def handle_selection(result: int):
+      # 1 means Select; 0 or others mean cancel/no action
+      if result == 1 and hasattr(self, '_branch_dialog') and self._branch_dialog.selection:
+        selection = self._branch_dialog.selection
+        ui_state.params.put("UpdaterTargetBranch", selection)
+        # Reflect immediately in UI
+        self._branch_btn.action_item.set_value(selection)
+        # Trigger update check
+        os.system("pkill -SIGUSR1 -f system.updated.updated")
+      # Clear dialog reference either way
+      self._branch_dialog = None
+
+    gui_app.set_modal_overlay(self._branch_dialog, callback=handle_selection)
