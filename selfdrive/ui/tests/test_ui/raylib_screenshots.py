@@ -54,6 +54,11 @@ def setup_settings_network(click, pm: PubMaster):
   click(278, 450)
 
 
+def setup_settings_network_advanced(click, pm: PubMaster):
+  setup_settings_network(click, pm)
+  click(1880, 100)
+
+
 def setup_settings_toggles(click, pm: PubMaster):
   setup_settings(click, pm)
   click(278, 600)
@@ -141,6 +146,7 @@ CASES = {
   "homescreen": setup_homescreen,
   "settings_device": setup_settings,
   "settings_network": setup_settings_network,
+  "settings_network_advanced": setup_settings_network_advanced,
   "settings_toggles": setup_settings_toggles,
   "settings_software": setup_settings_software,
   "settings_software_download": setup_settings_software_download,
