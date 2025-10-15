@@ -74,11 +74,11 @@ class InputBox(Widget):
     elif cursor_x > self._text_offset + visible_width:
       self._text_offset = cursor_x - visible_width + padding
 
-  def add_text_at_cursor(self, text):
-    """Add text at the current cursor position."""
+  def add_char_at_cursor(self, char):
+    """Add a character at the current cursor position."""
     if len(self._input_text) < self._max_text_size:
-      self._input_text = self._input_text[: self._cursor_position] + text + self._input_text[self._cursor_position:]
-      self.set_cursor_position(self._cursor_position + len(text))
+      self._input_text = self._input_text[: self._cursor_position] + char + self._input_text[self._cursor_position:]
+      self.set_cursor_position(self._cursor_position + 1)
 
       if self._password_mode:
         self._last_char_time = time.monotonic()
@@ -209,7 +209,7 @@ class InputBox(Widget):
     # Handle text input
     char = rl.get_char_pressed()
     if char != 0 and char >= 32:  # Filter out control characters
-      self.add_text_at_cursor(chr(char))
+      self.add_char_at_cursor(chr(char))
 
   def _process_key(self, key):
     if key == rl.KEY_LEFT:
