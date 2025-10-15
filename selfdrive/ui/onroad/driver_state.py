@@ -107,10 +107,9 @@ class DriverStateRenderer(Widget):
 
   def _update_state(self):
     """Update the driver monitoring state based on model data"""
+    sm = ui_state.sm
     if not self.is_visible:
       return
-
-    sm = ui_state.sm
 
     # Get monitoring state
     dm_state = sm["driverMonitoringState"]
@@ -127,7 +126,7 @@ class DriverStateRenderer(Widget):
     driver_orient = driver_data.faceOrientation
 
     # Update pose values with scaling and smoothing
-    driver_orient = np.asarray(driver_orient, dtype=np.float32)
+    driver_orient = np.array(driver_orient)
     scales = np.where(driver_orient < 0, SCALES_NEG, SCALES_POS)
     v_this = driver_orient * scales
     self.driver_pose_diff = np.abs(self.driver_pose_vals - v_this)
