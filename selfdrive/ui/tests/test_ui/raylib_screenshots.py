@@ -202,12 +202,6 @@ class TestUI:
     run()
 
 
-    # while next(steps, None) is not None:
-    #   time.sleep(UI_DELAY)
-    #   self.screenshot(name)
-    # self.screenshot(name)
-
-
 def create_screenshots():
   if TEST_OUTPUT_DIR.exists():
     shutil.rmtree(TEST_OUTPUT_DIR)
