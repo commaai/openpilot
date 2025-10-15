@@ -23,8 +23,7 @@ from openpilot.common.pid import PIDController
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
 
-JERK_DT = 0.1 # [s] - assumes that all cars have a lag > 0.1 s
-K_JERK = 0.1
+
 KP = 1.0
 KI = 0.3
 KD = 0.0
@@ -32,6 +31,8 @@ INTERP_SPEEDS = [1, 1.5, 2.0, 3.0, 5, 7.5, 10, 15, 30]
 KP_INTERP = [250, 120, 65, 30, 11.5, 5.5, 3.5, 2.0, KP]
 
 LP_FILTER_CUTOFF_HZ = 1.2
+JERK_LOOKAHEAD_SECONDS = 0.19
+JERK_GAIN = 0.1
 LAT_ACCEL_REQUEST_BUFFER_SECONDS = 1.0
 VERSION = 0
 
@@ -73,7 +74,7 @@ class LatControlTorque(LatControl):
 
       delay_frames = int(np.clip(lat_delay / self.dt, 1, self.lat_accel_request_buffer_len))
       expected_lateral_accel = self.lat_accel_request_buffer[-delay_frames]
-      lookahead_idx = -delay_frames + self.lookahead_frames
+      lookahead_idx = int(np.clip(-delay_frames + self.lookahead_frames, -self.lat_accel_request_buffer_len+1, -2))
       raw_lateral_jerk = (self.lat_accel_request_buffer[lookahead_idx+1] - self.lat_accel_request_buffer[lookahead_idx-1]) / (2 * self.dt) 
       desired_lateral_jerk = self.jerk_filter.update(raw_lateral_jerk)
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
