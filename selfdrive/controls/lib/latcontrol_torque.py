@@ -82,7 +82,7 @@ class LatControlTorque(LatControl):
       setpoint = expected_lateral_accel
 
       measurement = measured_curvature * CS.vEgo ** 2
-      measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt) 
+      measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt)
       self.previous_measurement = measurement
 
       error = setpoint - measurement + JERK_GAIN * desired_lateral_jerk
