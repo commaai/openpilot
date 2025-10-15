@@ -101,7 +101,7 @@ class Setup(Widget):
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
     self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT)
-    self._download_failed_url_label = Label("", round(64 / FONT_SCALE), FontWeight.NORMAL, TextAlignment.LEFT)
+    self._download_failed_url_label = Label("", 52, FontWeight.NORMAL, TextAlignment.LEFT)
     self._download_failed_body_label = Label("", BODY_FONT_SIZE, text_alignment=TextAlignment.LEFT)
 
     self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
@@ -114,7 +114,7 @@ class Setup(Widget):
                                                            button_style=ButtonStyle.PRIMARY)
     self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
-    self._custom_software_warning_title_label = Label("WARNING: Custom Software", round(100 / FONT_SCALE), FontWeight.BOLD, TextAlignment.LEFT,
+    self._custom_software_warning_title_label = Label("WARNING: Custom Software", 81, FontWeight.BOLD, TextAlignment.LEFT,
                                                       text_color=rl.Color(255, 89, 79, 255),
                                                       text_padding=60)
     self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
