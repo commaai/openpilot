@@ -58,7 +58,7 @@ class SoftwareLayout(Widget):
 
     # Branch switcher
     self._branch_btn = button_item("Target Branch", "SELECT", callback=self._on_select_branch)
-    self._branch_btn.set_visible(lambda: not ui_state.params.get_bool("IsTestedBranch"))
+    self._branch_btn.set_visible(lambda: not ui_state.params.get_bool("IsTestedBranch"))  # TODO: evaluate once like qt
     self._branch_btn.action_item.set_value(ui_state.params.get("UpdaterTargetBranch") or "")
     self._branch_dialog: MultiOptionDialog | None = None
 
