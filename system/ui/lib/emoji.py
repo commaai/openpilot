@@ -33,21 +33,17 @@ EMOJI_REGEX = re.compile(
 )
 
 FONT_PATH = FONT_DIR.joinpath("NotoColorEmoji-Regular.ttf")
-FONT_SIZE = 109
 
 
 def find_emoji(text):
   return [(m.start(), m.end(), m.group()) for m in EMOJI_REGEX.finditer(text)]
 
+
 def emoji_tex(emoji):
   if emoji not in _cache:
     img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    try:
-      font = ImageFont.truetype(FONT_PATH, size=FONT_SIZE)
-    except OSError as e:
-      print(f"Error loading font for emoji '${emoji}': {e}")
-      font = ImageFont.load_default(size=FONT_SIZE)
+    font = ImageFont.truetype(FONT_PATH, 109)
     draw.text((0, 0), emoji, font=font, embedded_color=True)
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
