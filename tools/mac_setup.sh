@@ -34,7 +34,6 @@ fi
 
 brew bundle --file=- <<-EOS
 brew "git-lfs"
-brew "capnp"
 brew "coreutils"
 brew "eigen"
 brew "ffmpeg"
