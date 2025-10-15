@@ -89,8 +89,9 @@ def setup_settings_software_release_notes(click, pm: PubMaster):
 def setup_settings_software_branch_switcher(click, pm: PubMaster):
   setup_settings_software(click, pm)
   params = Params()
-  params.put("UpdaterAvailableBranches", "master,nightly,release,nightly-dev,master-ci")
-  params.put("GitBranch", "really-super-mega-long-branch-name")  # should be on top
+  long_branch = "really-super-mega-long-branch-name"
+  params.put("UpdaterAvailableBranches", "master,nightly,release," + long_branch)
+  params.put("GitBranch", long_branch)  # should be on top
   params.put("UpdaterTargetBranch", "nightly")  # should be selected
   click(1984, 449)
 
