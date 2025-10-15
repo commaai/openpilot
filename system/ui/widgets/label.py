@@ -170,7 +170,7 @@ class Label(Widget):
         line_pos.x += width_before.x
 
         tex = emoji_tex(emoji)
-        rl.draw_texture_ex(tex, line_pos, 0.0, self._font_size / tex.height, self._text_color)
+        rl.draw_texture_ex(tex, line_pos, 0.0, self._font_size * FONT_SCALE / tex.height, self._text_color)
         line_pos.x += self._font_size * FONT_SCALE
         prev_index = end
       rl.draw_text_ex(self._font, text[prev_index:], line_pos, self._font_size, 0, self._text_color)
