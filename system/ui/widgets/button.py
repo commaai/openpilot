@@ -86,7 +86,7 @@ class Button(Widget):
                button_style: ButtonStyle = ButtonStyle.NORMAL,
                border_radius: int = 10,
                text_alignment: TextAlignment = TextAlignment.CENTER,
-               text_padding: int = 20,
+               text_padding: int = 0,
                icon=None,
                multi_touch: bool = False,
                ):
