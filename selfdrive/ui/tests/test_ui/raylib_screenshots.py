@@ -100,43 +100,24 @@ def setup_keyboard(click, pm: PubMaster):
   setup_settings_developer(click, pm)
   click(1930, 470)
 
-
 def keyboard_toggle_shift(click):
-  click(200, 800)  # shift key
+  click(200, 800)
 
 def keyboard_toggle_numbers(click):
-  click(200, 900)  # toggle numbers key
-
-def keyboard_press_back(click):
-  click(2000, 760) # backspace key
-
-def keyboard_click_top_two(click):
-  click(140, 430)  # q, Q, 1, [
-  click(350, 440)  # w, W, 2, ]
-
+  click(200, 900)
 
 def setup_keyboard_uppercase(click, pm: PubMaster):
   setup_keyboard(click, pm)
   keyboard_toggle_shift(click)
 
-
 def setup_keyboard_numbers(click, pm: PubMaster):
   setup_keyboard(click, pm)
   keyboard_toggle_numbers(click)
 
-
-def setup_keyboard_text_and_symbols(click, pm: PubMaster):
+def setup_keyboard_symbols(click, pm: PubMaster):
   setup_keyboard(click, pm)
-  keyboard_toggle_shift(click)  # uppercase
-  keyboard_click_top_two(click)  # type "Qw" (shift turns off after first letter)
-  keyboard_toggle_numbers(click)  # numbers
-  keyboard_click_top_two(click)  # type "12"
+  keyboard_toggle_numbers(click)
   keyboard_toggle_shift(click)  # symbols
-  keyboard_click_top_two(click)  # type "[]"
-  # type again and test backspace
-  keyboard_click_top_two(click)
-  keyboard_press_back(click)
-  keyboard_press_back(click)
 
 
 def setup_pair_device(click, pm: PubMaster):
@@ -181,7 +162,7 @@ CASES = {
   "keyboard": setup_keyboard,
   "keyboard_uppercase": setup_keyboard_uppercase,
   "keyboard_numbers": setup_keyboard_numbers,
-  "keyboard_text_and_symbols": setup_keyboard_text_and_symbols,
+  "keyboard_symbols": setup_keyboard_symbols,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
   "confirmation_dialog": setup_confirmation_dialog,
