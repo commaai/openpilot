@@ -89,14 +89,14 @@ class Updater(Widget):
 
   def render_prompt_screen(self, rect: rl.Rectangle):
     # Title
-    title_rect = rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE * FONT_SCALE)
     gui_label(title_rect, "Update Required", TITLE_FONT_SIZE, font_weight=FontWeight.BOLD)
 
     # Description
     desc_text = ("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
                  "The download size is approximately 1GB.")
 
-    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE * FONT_SCALE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * FONT_SCALE * 3)
+    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE * FONT_SCALE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * FONT_SCALE * 4)
     gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)
 
     # Buttons at the bottom
