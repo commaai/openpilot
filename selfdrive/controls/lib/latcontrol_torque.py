@@ -71,18 +71,17 @@ class LatControlTorque(LatControl):
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
-      delay_frames = int(np.clip(lat_delay / self.dt, 1, self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES))
-      expected_lateral_accel = self.requested_lateral_accel_buffer[-delay_frames]
-      jerk_idx = -delay_frames + self.jerk_frames
-      raw_lateral_jerk = (self.requested_lateral_accel_buffer[jerk_idx+1] - self.requested_lateral_accel_buffer[jerk_idx-1]) / (2 * self.dt)
-      # TODO factor out lateral jerk from error
+      delay_frames = int(np.clip(lat_delay / self.dt, 1, self.lat_accel_request_buffer_len))
+      expected_lateral_accel = self.lat_accel_request_buffer[-delay_frames]
+      lookahead_idx = -delay_frames + self.lookahead_frames
+      raw_lateral_jerk = (self.lat_accel_request_buffer[lookahead_idx+1] - self.lat_accel_request_buffer[lookahead_idx-1]) / (2 * self.dt) 
+      desired_lateral_jerk = self.jerk_filter.update(raw_lateral_jerk)
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       self.lat_accel_request_buffer.append(future_desired_lateral_accel)
       gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
-      desired_lateral_jerk = self.jerk_filter.update(raw_lateral_jerk)
 
       measurement = measured_curvature * CS.vEgo ** 2
-      measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt)
+      measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt) 
       self.previous_measurement = measurement
 
       low_speed_factor = (np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y) / max(CS.vEgo, MIN_SPEED)) ** 2
@@ -94,8 +93,9 @@ class LatControlTorque(LatControl):
       ff = gravity_adjusted_future_lateral_accel
       # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
       ff -= self.torque_params.latAccelOffset
-      ff += K_JERK * desired_lateral_jerk
-      ff += get_friction(error+K_JERK*desired_lateral_jerk, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
+      # TODO remove lateral jerk from feed forward - moving it from error means jerk is not scaled by low speed factor
+      ff += JERK_GAIN * desired_lateral_jerk
+      ff += get_friction(error+JERK_GAIN*desired_lateral_jerk, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
       output_lataccel = self.pid.update(pid_log.error,
