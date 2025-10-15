@@ -169,12 +169,12 @@ class ModelRenderer(Widget):
     # Update lane lines using raw points
     for i, lane_line in enumerate(self._lane_lines):
       lane_line.projected_points = self._map_line_to_polygon(
-        lane_line.raw_points, 0.025 * self._lane_line_probs[i], 0.0, max_idx
+        lane_line.raw_points, 0.025 * self._lane_line_probs[i], 0.0, max_idx, max_distance
       )
 
     # Update road edges using raw points
     for road_edge in self._road_edges:
-      road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, 0.025, 0.0, max_idx)
+      road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, 0.025, 0.0, max_idx, max_distance)
 
     # Update path using raw points
     if lead and lead.status:
@@ -183,7 +183,7 @@ class ModelRenderer(Widget):
 
     max_idx = self._get_path_length_idx(path_x_array, max_distance)
     self._path.projected_points = self._map_line_to_polygon(
-      self._path.raw_points, 0.9, self._path_offset_z, max_idx, allow_invert=False
+      self._path.raw_points, 0.9, self._path_offset_z, max_idx, max_distance, allow_invert=False
     )
 
     self._update_experimental_gradient()
@@ -307,11 +307,11 @@ class ModelRenderer(Widget):
       rl.draw_triangle_fan(lead.chevron, len(lead.chevron), rl.Color(201, 34, 49, lead.fill_alpha))
 
   @staticmethod
-  def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:
-    """Get the index corresponding to the given path height"""
+  def _get_path_length_idx(pos_x_array: np.ndarray, path_distance: float) -> int:
+    """Get the index corresponding to the given path distance"""
     if len(pos_x_array) == 0:
       return 0
-    indices = np.where(pos_x_array <= path_height)[0]
+    indices = np.where(pos_x_array <= path_distance)[0]
     return indices[-1] if indices.size > 0 else 0
 
   def _map_to_screen(self, in_x, in_y, in_z):
@@ -330,13 +330,24 @@ class ModelRenderer(Widget):
 
     return (x, y)
 
-  def _map_line_to_polygon(self, line: np.ndarray, y_off: float, z_off: float, max_idx: int, allow_invert: bool = True) -> np.ndarray:
+  def _map_line_to_polygon(self, line: np.ndarray, y_off: float, z_off: float, max_idx: int, max_distance: float, allow_invert: bool = True) -> np.ndarray:
     """Convert 3D line to 2D polygon for rendering."""
     if line.shape[0] == 0:
       return np.empty((0, 2), dtype=np.float32)
 
     # Slice points and filter non-negative x-coordinates
     points = line[:max_idx + 1]
+
+    # Interpolate around max_idx so path end is smooth (max_distance is always >= p0.x)
+    if 0 < max_idx < line.shape[0] - 1:
+      p0 = line[max_idx]
+      p1 = line[max_idx + 1]
+      x0, x1 = p0[0], p1[0]
+      interp_y = np.interp(max_distance, [x0, x1], [p0[1], p1[1]])
+      interp_z = np.interp(max_distance, [x0, x1], [p0[2], p1[2]])
+      interp_point = np.array([max_distance, interp_y, interp_z], dtype=points.dtype)
+      points = np.concatenate((points, interp_point[None, :]), axis=0)
+
     points = points[points[:, 0] >= 0]
     if points.shape[0] == 0:
       return np.empty((0, 2), dtype=np.float32)
