@@ -131,9 +131,7 @@ def setup_onboarding(click, pm: PubMaster):
 
   # Click the center of each onboarding step rect
   def click_center(rect):
-    cx = int(rect.x + rect.width / 2)
-    cy = int(rect.y + rect.height / 2)
-    click(cx, cy)
+    click(int(rect.x + rect.width / 2), int(rect.y + rect.height / 2))
 
   for i, rect in enumerate(STEP_RECTS):
     if i == len(STEP_RECTS) - 1:
