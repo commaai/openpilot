@@ -31,13 +31,17 @@ OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
 def put_update_params(params: Params):
   params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
   params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
-  description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
-  params.put("UpdaterCurrentDescription", description)
-  params.put("UpdaterNewDescription", description)
 
 
 def setup_homescreen(click, pm: PubMaster):
   pass
+
+
+def setup_homescreen_update_available(click, pm: PubMaster):
+  params = Params()
+  params.put_bool("UpdateAvailable", True)
+  put_update_params(params)
+  setup_offroad_alert(click, pm)
 
 
 def setup_settings(click, pm: PubMaster):
@@ -51,6 +55,11 @@ def close_settings(click, pm: PubMaster):
 def setup_settings_network(click, pm: PubMaster):
   setup_settings(click, pm)
   click(278, 450)
+
+
+def setup_settings_network_advanced(click, pm: PubMaster):
+  setup_settings_network(click, pm)
+  click(1880, 100)
 
 
 def setup_settings_toggles(click, pm: PubMaster):
@@ -101,6 +110,7 @@ def setup_pair_device(click, pm: PubMaster):
 
 
 def setup_offroad_alert(click, pm: PubMaster):
+  put_update_params(Params())
   set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
   set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
   for alert in OFFROAD_ALERTS:
@@ -115,14 +125,6 @@ def setup_confirmation_dialog(click, pm: PubMaster):
   click(1985, 791)  # reset calibration
 
 
-def setup_homescreen_update_available(click, pm: PubMaster):
-  params = Params()
-  params.put_bool("UpdateAvailable", True)
-  put_update_params(params)
-  setup_settings(click, pm)
-  close_settings(click, pm)
-
-
 def setup_experimental_mode_description(click, pm: PubMaster):
   setup_settings_toggles(click, pm)
   click(1200, 280)  # expand description for experimental mode
@@ -135,8 +137,12 @@ def setup_openpilot_long_confirmation_dialog(click, pm: PubMaster):
 
 CASES = {
   "homescreen": setup_homescreen,
+  "homescreen_paired": setup_homescreen,
+  "homescreen_prime": setup_homescreen,
+  "homescreen_update_available": setup_homescreen_update_available,
   "settings_device": setup_settings,
   "settings_network": setup_settings_network,
+  "settings_network_advanced": setup_settings_network_advanced,
   "settings_toggles": setup_settings_toggles,
   "settings_software": setup_settings_software,
   "settings_software_download": setup_settings_software_download,
@@ -146,7 +152,6 @@ CASES = {
   "keyboard": setup_keyboard,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
-  "homescreen_update_available": setup_homescreen_update_available,
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
   "openpilot_long_confirmation_dialog": setup_openpilot_long_confirmation_dialog,
@@ -198,10 +203,21 @@ def create_screenshots():
   SCREENSHOTS_DIR.mkdir(parents=True)
 
   t = TestUI()
-  with OpenpilotPrefix():
-    params = Params()
-    params.put("DongleId", "123456789012345")
-    for name, setup in CASES.items():
+  for name, setup in CASES.items():
+    with OpenpilotPrefix():
+      params = Params()
+      params.put("DongleId", "123456789012345")
+
+      # Set branch name
+      description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
+      params.put("UpdaterCurrentDescription", description)
+      params.put("UpdaterNewDescription", description)
+
+      if name == "homescreen_paired":
+        params.put("PrimeType", 0)  # NONE
+      elif name == "homescreen_prime":
+        params.put("PrimeType", 2)  # LITE
+
       t.test_ui(name, setup)
 
 
