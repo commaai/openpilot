@@ -113,7 +113,7 @@ class AugmentedRoadView(CameraView):
 
   def _draw_border(self, rect: rl.Rectangle):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-    border_roundness = 0.15
+    border_roundness = 0.12
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
     border_rect = rl.Rectangle(rect.x + UI_BORDER_SIZE, rect.y + UI_BORDER_SIZE,
                                rect.width - 2 * UI_BORDER_SIZE, rect.height - 2 * UI_BORDER_SIZE)
