@@ -107,10 +107,10 @@ class AlertRenderer(Widget):
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle):
     alert = self.get_alert(ui_state.sm)
     if not alert:
-      return False
+      return
 
     alert_rect = self._get_alert_rect(rect, alert.size)
     self._draw_background(alert_rect, alert)
@@ -122,7 +122,6 @@ class AlertRenderer(Widget):
       alert_rect.height - 2 * ALERT_PADDING
     )
     self._draw_text(text_rect, alert)
-    return True
 
   def _get_alert_rect(self, rect: rl.Rectangle, size: int) -> rl.Rectangle:
     if size == AlertSize.full:
