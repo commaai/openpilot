@@ -86,6 +86,15 @@ def setup_settings_software_release_notes(click, pm: PubMaster):
   click(588, 110)  # expand description for current version
 
 
+def setup_settings_software_branch_switcher(click, pm: PubMaster):
+  setup_settings_software(click, pm)
+  params = Params()
+  params.put("UpdaterAvailableBranches", "master,nightly,release,nightly-dev,master-ci")
+  params.put("GitBranch", "really-super-mega-long-branch-name")  # should be on top
+  params.put("UpdaterTargetBranch", "nightly")  # should be selected
+  click(1984, 449)
+
+
 def setup_settings_firehose(click, pm: PubMaster):
   setup_settings(click, pm)
   click(278, 845)
@@ -138,6 +147,7 @@ CASES = {
   "settings_software": setup_settings_software,
   "settings_software_download": setup_settings_software_download,
   "settings_software_release_notes": setup_settings_software_release_notes,
+  "settings_software_branch_switcher": setup_settings_software_branch_switcher,
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard,
