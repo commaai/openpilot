@@ -263,7 +263,6 @@ class GuiApplication:
       self._mouse.stop()
 
     rl.close_window()
-    sys.exit(0)
 
   @property
   def mouse_events(self) -> list[MouseEvent]:
