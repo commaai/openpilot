@@ -1,3 +1,4 @@
+import atexit
 import cffi
 import os
 import time
@@ -155,7 +156,11 @@ class GuiApplication:
     self._window_close_requested = True
 
   def init_window(self, title: str, fps: int = _DEFAULT_FPS):
-    signal.signal(signal.SIGINT, self.close)
+    def _close(sig, frame):
+      self.close()
+      sys.exit(0)
+    signal.signal(signal.SIGINT, _close)
+    atexit.register(self.close)
 
     HARDWARE.set_display_power(True)
     HARDWARE.set_screen_brightness(65)
@@ -238,7 +243,7 @@ class GuiApplication:
     rl.unload_image(image)
     return texture
 
-  def close(self, sig, frame):
+  def close(self):
     if not rl.is_window_ready():
       return
 
