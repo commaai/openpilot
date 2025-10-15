@@ -32,6 +32,10 @@ else
     brew up
 fi
 
+# Relink openssl
+brew unlink openssl@3 || true
+brew link overwrite openssl@3
+
 brew bundle --file=- <<-EOS
 brew "git-lfs"
 brew "capnp"
