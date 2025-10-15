@@ -187,7 +187,7 @@ def setup_onroad_override(click, pm: PubMaster):
 
 
 def setup_onroad_wide(click, pm: PubMaster):
-  # widecam show in when in experimental mode and going slow
+  # widecam only shows when in experimental mode and going slow
   DATA["selfdriveState"].selfdriveState.experimentalMode = True
   DATA["carState"].carState.vEgo = 5
   setup_onroad(click, pm)
