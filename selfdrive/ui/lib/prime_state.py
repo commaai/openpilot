@@ -37,6 +37,7 @@ class PrimeState:
 
   def _load_initial_state(self) -> PrimeType:
     prime_type_str = os.getenv("PRIME_TYPE") or self._params.get("PrimeType")
+    print(f"Initial PRIME_TYPE: {prime_type_str}")
     try:
       if prime_type_str is not None:
         return PrimeType(int(prime_type_str))

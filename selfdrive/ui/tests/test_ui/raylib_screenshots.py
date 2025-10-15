@@ -37,7 +37,19 @@ def put_update_params(params: Params):
 
 
 def setup_homescreen(click, pm: PubMaster):
-  pass
+  yield
+
+
+def setup_homescreen_firehose(click, pm: PubMaster):
+  Params().put("PrimeType", 1)
+  yield
+
+
+def setup_homescreen_update_available(click, pm: PubMaster):
+  params = Params()
+  params.put_bool("UpdateAvailable", True)
+  put_update_params(params)
+  yield
 
 
 def setup_settings(click, pm: PubMaster):
@@ -116,14 +128,6 @@ def setup_confirmation_dialog(click, pm: PubMaster):
   click(1985, 791)  # reset calibration
 
 
-def setup_homescreen_update_available(click, pm: PubMaster):
-  params = Params()
-  params.put_bool("UpdateAvailable", True)
-  put_update_params(params)
-  setup_settings(click, pm)
-  close_settings(click, pm)
-
-
 def setup_experimental_mode_description(click, pm: PubMaster):
   setup_settings_toggles(click, pm)
   click(1200, 280)  # expand description for experimental mode
@@ -131,21 +135,22 @@ def setup_experimental_mode_description(click, pm: PubMaster):
 
 CASES = {
   "homescreen": setup_homescreen,
-  "settings_device": setup_settings,
-  "settings_network": setup_settings_network,
-  "settings_network_advanced": setup_settings_network_advanced,
-  "settings_toggles": setup_settings_toggles,
-  "settings_software": setup_settings_software,
-  "settings_software_download": setup_settings_software_download,
-  "settings_software_release_notes": setup_settings_software_release_notes,
-  "settings_firehose": setup_settings_firehose,
-  "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
-  "pair_device": setup_pair_device,
-  "offroad_alert": setup_offroad_alert,
+  "homescreen_firehose": setup_homescreen_firehose,
   "homescreen_update_available": setup_homescreen_update_available,
-  "confirmation_dialog": setup_confirmation_dialog,
-  "experimental_mode_description": setup_experimental_mode_description,
+  # "settings_device": setup_settings,
+  # "settings_network": setup_settings_network,
+  # "settings_network_advanced": setup_settings_network_advanced,
+  # "settings_toggles": setup_settings_toggles,
+  # "settings_software": setup_settings_software,
+  # "settings_software_download": setup_settings_software_download,
+  # "settings_software_release_notes": setup_settings_software_release_notes,
+  # "settings_firehose": setup_settings_firehose,
+  # "settings_developer": setup_settings_developer,
+  # "keyboard": setup_keyboard,
+  # "pair_device": setup_pair_device,
+  # "offroad_alert": setup_offroad_alert,
+  # "confirmation_dialog": setup_confirmation_dialog,
+  # "experimental_mode_description": setup_experimental_mode_description,
 }
 
 
@@ -180,12 +185,26 @@ class TestUI:
     time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
-  @with_processes(["ui"])
+  # @with_processes(["ui"])
   def test_ui(self, name, setup_case):
-    self.setup()
-    time.sleep(UI_DELAY)  # wait for UI to start
-    setup_case(self.click, self.pm)
-    self.screenshot(name)
+    steps = setup_case(self.click, None)
+    # set params before launching ui
+    next(steps)
+
+    @with_processes(["ui"])
+    def run():
+      self.setup()
+      time.sleep(UI_DELAY)  # wait for UI to start
+      next(steps, None)
+      self.screenshot(name)
+
+    run()
+
+
+    # while next(steps, None) is not None:
+    #   time.sleep(UI_DELAY)
+    #   self.screenshot(name)
+    # self.screenshot(name)
 
 
 def create_screenshots():
