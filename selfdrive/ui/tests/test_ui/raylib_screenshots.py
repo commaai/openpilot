@@ -40,6 +40,14 @@ def setup_homescreen(click, pm: PubMaster):
   pass
 
 
+def setup_homescreen_update_available(click, pm: PubMaster):
+  params = Params()
+  params.put_bool("UpdateAvailable", True)
+  put_update_params(params)
+  setup_settings(click, pm)
+  close_settings(click, pm)
+
+
 def setup_settings(click, pm: PubMaster):
   click(100, 100)
 
@@ -102,6 +110,7 @@ def setup_pair_device(click, pm: PubMaster):
 
 
 def setup_offroad_alert(click, pm: PubMaster):
+  put_update_params(Params())
   set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
   set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
   for alert in OFFROAD_ALERTS:
@@ -114,14 +123,6 @@ def setup_offroad_alert(click, pm: PubMaster):
 def setup_confirmation_dialog(click, pm: PubMaster):
   setup_settings(click, pm)
   click(1985, 791)  # reset calibration
-
-
-def setup_homescreen_update_available(click, pm: PubMaster):
-  params = Params()
-  params.put_bool("UpdateAvailable", True)
-  put_update_params(params)
-  setup_settings(click, pm)
-  close_settings(click, pm)
 
 
 def setup_experimental_mode_description(click, pm: PubMaster):
