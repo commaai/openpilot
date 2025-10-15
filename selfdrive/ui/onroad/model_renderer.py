@@ -338,7 +338,7 @@ class ModelRenderer(Widget):
     # Slice points and filter non-negative x-coordinates
     points = line[:max_idx + 1]
 
-    # Interpolate around max_idx so path end is smooth (max_distance should lie between these points)
+    # Interpolate around max_idx so path end is smooth (max_distance is always > p0.x)
     if 0 < max_idx < line.shape[0] - 1:
       p0 = line[max_idx]
       p1 = line[max_idx + 1]
