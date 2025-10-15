@@ -1,7 +1,8 @@
-import atexit
 import cffi
 import os
 import time
+import signal
+import sys
 import pyray as rl
 import threading
 from collections.abc import Callable
@@ -154,7 +155,7 @@ class GuiApplication:
     self._window_close_requested = True
 
   def init_window(self, title: str, fps: int = _DEFAULT_FPS):
-    atexit.register(self.close)  # Automatically call close() on exit
+    signal.signal(signal.SIGINT, self.close)
 
     HARDWARE.set_display_power(True)
     HARDWARE.set_screen_brightness(65)
@@ -237,7 +238,7 @@ class GuiApplication:
     rl.unload_image(image)
     return texture
 
-  def close(self):
+  def close(self, sig, frame):
     if not rl.is_window_ready():
       return
 
@@ -257,6 +258,7 @@ class GuiApplication:
       self._mouse.stop()
 
     rl.close_window()
+    sys.exit(0)
 
   @property
   def mouse_events(self) -> list[MouseEvent]:
