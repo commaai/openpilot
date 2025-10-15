@@ -308,7 +308,7 @@ class ModelRenderer(Widget):
 
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_distance: float) -> int:
-    """Get the index corresponding to the given path height"""
+    """Get the index corresponding to the given path distance"""
     if len(pos_x_array) == 0:
       return 0
     indices = np.where(pos_x_array <= path_distance)[0]
@@ -338,8 +338,7 @@ class ModelRenderer(Widget):
     # Slice points and filter non-negative x-coordinates
     points = line[:max_idx + 1]
 
-    # Interpolate around max_idx so path end is smooth
-    # max_idx is the last point where x <= max_distance, so we need the next point to interp
+    # Interpolate around max_idx so path end is smooth (max_distance should lie between these points)
     if 0 < max_idx < line.shape[0] - 1:
       p0 = line[max_idx]
       p1 = line[max_idx + 1]
