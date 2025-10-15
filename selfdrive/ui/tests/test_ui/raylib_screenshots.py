@@ -31,9 +31,6 @@ OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
 def put_update_params(params: Params):
   params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
   params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
-  description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
-  params.put("UpdaterCurrentDescription", description)
-  params.put("UpdaterNewDescription", description)
 
 
 def setup_homescreen(click, pm: PubMaster):
@@ -202,6 +199,11 @@ def create_screenshots():
     with OpenpilotPrefix():
       params = Params()
       params.put("DongleId", "123456789012345")
+
+      # Set branch name
+      description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
+      params.put("UpdaterCurrentDescription", description)
+      params.put("UpdaterNewDescription", description)
 
       if name == "homescreen_paired":
         params.put("PrimeType", 0)  # NONE
