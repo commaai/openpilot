@@ -77,8 +77,8 @@ class DriverStateRenderer(Widget):
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-    self.set_visible(lambda: (ui_state.sm.recv_frame['driverStateV2'] > ui_state.started_frame and
-                              ui_state.sm["selfdriveState"].alertSize == AlertSize.none))
+    self.set_visible(lambda: (ui_state.sm["selfdriveState"].alertSize == AlertSize.none and
+                              ui_state.sm.recv_frame["driverStateV2"] > ui_state.started_frame))
 
   def _render(self, rect):
     # Set opacity based on active state
@@ -107,13 +107,10 @@ class DriverStateRenderer(Widget):
 
   def _update_state(self):
     """Update the driver monitoring state based on model data"""
-    sm = ui_state.sm
-
-    # is_visible = sm.recv_frame["driverStateV2"] > ui_state.started_frame
-    # alert = sm["selfdriveState"].alertSize == AlertSize.none
-    # self.set_visible(sm.recv_frame["driverStateV2"] > ui_state.started_frame)
     if not self.is_visible:
       return
+
+    sm = ui_state.sm
 
     # Get monitoring state
     dm_state = sm["driverMonitoringState"]
