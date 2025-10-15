@@ -4,6 +4,8 @@ import re
 from PIL import Image, ImageDraw, ImageFont
 import pyray as rl
 
+from openpilot.system.ui.lib.application import FONT_DIR
+
 _cache: dict[str, rl.Texture] = {}
 
 EMOJI_REGEX = re.compile(
@@ -37,7 +39,7 @@ def emoji_tex(emoji):
   if emoji not in _cache:
     img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype("NotoColorEmoji", 109)
+    font = ImageFont.truetype(FONT_DIR.joinpath("NotoColorEmoji.ttf"), 109)
     draw.text((0, 0), emoji, font=font, embedded_color=True)
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
