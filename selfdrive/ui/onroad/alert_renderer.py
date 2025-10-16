@@ -76,9 +76,9 @@ class AlertRenderer(Widget):
 
     # font size is set dynamically
     self._full_text1_label = Label("", font_size=0, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                                   text_alignment_vertical=rl.GuiTextAlignment.TEXT_ALIGN_TOP)
+                                   text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
     self._full_text2_label = Label("", font_size=ALERT_FONT_BIG, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                                   text_alignment_vertical=rl.GuiTextAlignment.TEXT_ALIGN_TOP)
+                                   text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
 
   def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
     """Generate the current alert based on selfdrive state."""
