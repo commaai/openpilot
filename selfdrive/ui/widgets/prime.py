@@ -5,7 +5,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.label import Label, gui_label
 
 
 class PrimeWidget(Widget):
@@ -29,7 +29,9 @@ class PrimeWidget(Widget):
     w = rect.width - 160
 
     # Title
-    gui_label(rl.Rectangle(x, y, w, 90), "Upgrade Now", 75, font_weight=FontWeight.BOLD)
+    # gui_label(rl.Rectangle(x, y, w, 90), "Upgrade Now", 75, font_weight=FontWeight.BOLD)
+    lbl = Label("Upgrade Now", 75, font_weight=FontWeight.BOLD)
+    lbl.render(rl.Rectangle(x, y, w, 90))
 
     # Description with wrapping
     desc_y = y + 140
