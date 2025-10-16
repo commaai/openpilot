@@ -148,6 +148,11 @@ def setup_onroad(click, pm: PubMaster):
   # time.sleep(1.0)  # wait for onroad transition
 
 
+def setup_onroad_sidebar(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  click(100, 100)  # open sidebar
+
+
 def setup_onroad_small_alert(click, pm: PubMaster):
   setup_onroad(click, pm)
   alert = messaging.new_message('selfdriveState')
@@ -209,7 +214,8 @@ CASES = {
   # "offroad_alert": setup_offroad_alert,
   # "confirmation_dialog": setup_confirmation_dialog,
   # "experimental_mode_description": setup_experimental_mode_description,
-  # "onroad": setup_onroad,
+  "onroad": setup_onroad,
+  "onroad_sidebar": setup_onroad_sidebar,
   "onroad_small_alert": setup_onroad_small_alert,
   "onroad_medium_alert": setup_onroad_medium_alert,
   "onroad_full_alert": setup_onroad_full_alert,
