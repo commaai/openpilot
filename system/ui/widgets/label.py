@@ -96,10 +96,12 @@ class Label(Widget):
                text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                text_padding: int = 20,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
+               width: int | None = None,
                icon: Union[rl.Texture, None] = None,  # noqa: UP007
                ):
 
     super().__init__()
+    self._text = text
     self._font_weight = font_weight
     self._font = gui_app.font(self._font_weight)
     self._font_size = font_size
@@ -107,34 +109,61 @@ class Label(Widget):
     self._text_padding = text_padding
     self._text_color = text_color
     self._icon = icon
+    # If None, rect is auto-sized to text content. Otherwise, we wrap content
+    self._width = width
+
     self.set_text(text)
 
   def set_text(self, text):
-    self._text_raw = text
-    self._update_text(self._text_raw)
+    self._text = text
+    self._update_text(self._text)
+
+  def set_width(self, width: int):
+    self._width = width
+    self._rect.width = width
+    self.set_text(self._text)
 
   def set_text_color(self, color):
     self._text_color = color
 
   def _update_layout_rects(self):
-    self._update_text(self._text_raw)
+    self._update_text(self._text)
 
   def _update_text(self, text):
     self._emojis = []
     self._text_size = []
-    self._text = wrap_text(self._font, text, self._font_size, self._rect.width - (self._text_padding * 2))
-    for t in self._text:
-      self._emojis.append(find_emoji(t))
-      self._text_size.append(measure_text_cached(self._font, t, self._font_size))
+
+    if self._width is not None:
+      self._text_wrapped = [text]
+      self._rect.width = self._width
+    else:
+      self._text_wrapped = wrap_text(self._font, text, self._font_size, round(self._rect.width - self._text_padding * 2))
+
+    for line in self._text_wrapped:
+      self._emojis.append(find_emoji(line))
+      self._text_size.append(measure_text_cached(self._font, line, self._font_size))
+
+    if self._width is None:
+      self._rect.width = max((size.x for size in self._text_size), default=0) + self._text_padding * 2
+    else:
+      # set height from lines
+      self._rect.height = sum((size.y for size in self._text_size), 0) or self._font_size * FONT_SCALE
+    # else:
+    #   self._rect.width = self._width
+    print('rect width', self._rect.width, '_width', self._width, 'text size', self._text_size)
+
+  @property
+  def content_width(self):
+    # if width is set, return that, otherwise return the calculated content width
+    return self._width if self._width is not None else self._rect.width
 
   def _render(self, _):
-    text = self._text[0] if self._text else None
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
     text_pos = rl.Vector2(0, (self._rect.y + (self._rect.height - (text_size.y)) // 2))
 
     if self._icon:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
-      if text:
+      if len(self._text_wrapped) > 0:
         if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
           icon_x = self._rect.x + self._text_padding
           text_pos.x = self._icon.width + ICON_PADDING
@@ -148,7 +177,7 @@ class Label(Widget):
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
 
-    for text, text_size, emojis in zip_longest(self._text, self._text_size, self._emojis, fillvalue=[]):
+    for text, text_size, emojis in zip_longest(self._text_wrapped, self._text_size, self._emojis, fillvalue=[]):
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
       if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
         line_pos.x += self._rect.x + self._text_padding
