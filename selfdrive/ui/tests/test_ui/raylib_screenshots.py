@@ -20,6 +20,7 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.updated.updated import parse_release_notes
 
 AlertSize = log.SelfdriveState.AlertSize
+AlertStatus = log.SelfdriveState.AlertStatus
 
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
@@ -155,67 +156,41 @@ def setup_onroad_sidebar(click, pm: PubMaster):
   click(100, 100)  # open sidebar
 
 
-def setup_onroad_alert(click, pm: PubMaster, size: AlertSize):
+def setup_onroad_small_alert(click, pm: PubMaster):
   setup_onroad(click, pm)
   alert = messaging.new_message('selfdriveState')
-  if size == AlertSize.small:
-    alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.small
-    alert.selfdriveState.alertText1 = "Small Alert"
-    alert.selfdriveState.alertText2 = "This is a small alert"
-    alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.normal
-  elif size == AlertSize.mid:
-    alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.mid
-    alert.selfdriveState.alertText1 = "Medium Alert"
-    alert.selfdriveState.alertText2 = "This is a medium alert"
-    alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.userPrompt
-  elif size == AlertSize.full:
-    alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.full
-    alert.selfdriveState.alertText1 = "Full Alert"
-    alert.selfdriveState.alertText2 = "This is a full alert"
-    alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.critical
+  alert.selfdriveState.alertSize = AlertSize.small
+  alert.selfdriveState.alertText1 = "Small Alert"
+  alert.selfdriveState.alertText2 = "This is a small alert"
+  alert.selfdriveState.alertStatus = AlertStatus.normal
   for _ in range(5):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
     time.sleep(0.05)
-
-
-def setup_onroad_small_alert(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, AlertSize.small)
-  # setup_onroad(click, pm)
-  # alert = messaging.new_message('selfdriveState')
-  # alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.small
-  # alert.selfdriveState.alertText1 = "Small Alert"
-  # alert.selfdriveState.alertText2 = "This is a small alert"
-  # alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.normal
-  # for _ in range(5):
-  #   pm.send('selfdriveState', alert)
-  #   alert.clear_write_flag()
-  #   time.sleep(0.05)
   # time.sleep(0.5)
 
 
 def setup_onroad_medium_alert(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, AlertSize.mid)
-  # setup_onroad(click, pm)
-  # alert = messaging.new_message('selfdriveState')
-  # alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.mid
-  # alert.selfdriveState.alertText1 = "Medium Alert"
-  # alert.selfdriveState.alertText2 = "This is a medium alert"
-  # alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.userPrompt
-  # for _ in range(5):
-  #   pm.send('selfdriveState', alert)
-  #   alert.clear_write_flag()
-  #   time.sleep(0.05)
-  # # time.sleep(0.5)
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = AlertSize.mid
+  alert.selfdriveState.alertText1 = "Medium Alert"
+  alert.selfdriveState.alertText2 = "This is a medium alert"
+  alert.selfdriveState.alertStatus = AlertStatus.userPrompt
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+  # time.sleep(0.5)
 
 
 def setup_onroad_full_alert(click, pm: PubMaster):
   setup_onroad(click, pm)
   alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.full
-  alert.selfdriveState.alertText1 = "Full Alert"
-  alert.selfdriveState.alertText2 = "This is a full alert"
-  alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.critical
+  alert.selfdriveState.alertSize = AlertSize.full
+  alert.selfdriveState.alertText1 = "TAKE CONTROL IMMEDIATELY"
+  alert.selfdriveState.alertText2 = "Calibration Invalid: Remount Device & Recalibrate"
+  alert.selfdriveState.alertStatus = AlertStatus.critical
   for _ in range(5):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
