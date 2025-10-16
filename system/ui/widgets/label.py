@@ -110,29 +110,35 @@ class Label(Widget):
     self._text_color = text_color
     self._icon = icon
 
+    self._text = ""
+    self._text_wrapped: list[str] = []
+    self._emojis: list[tuple[int, int, str]] = []
+    self._text_size: list[int] = []
     self.set_text(text)
 
   def set_text(self, text):
-    self._text_raw = text
-    self._update_text(self._text_raw)
+    self._text = text
+    self._update_text(self._text)
 
   def set_text_color(self, color):
     self._text_color = color
 
   def _update_layout_rects(self):
-    self._update_text(self._text_raw)
+    self._update_text(self._text)
 
   def _update_text(self, text):
     self._emojis = []
     self._text_size = []
     # TODO: ?!?! this doesn't support icons and probably not emoji either
-    self._text = wrap_text(self._font, text, self._font_size, self._rect.width - (self._text_padding * 2))
-    for t in self._text:
+    self._text_wrapped = wrap_text(self._font, text, self._font_size, self._rect.width - (self._text_padding * 2))
+    for t in self._text_wrapped:
       self._emojis.append(find_emoji(t))
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
   def _render(self, _):
-    text = self._text[0] if self._text else None
+    rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
+
+    text = self._text_wrapped[0] if self._text_wrapped else None
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
     text_pos = rl.Vector2(0, (self._rect.y + (self._rect.height - (text_size.y)) // 2))
 
@@ -152,7 +158,10 @@ class Label(Widget):
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
 
-    for text, text_size, emojis in zip_longest(self._text, self._text_size, self._emojis, fillvalue=[]):
+    print(self._text, self._text_size, self._emojis)
+    print(list(zip_longest(self._text, self._text_size, self._emojis, fillvalue=[])))
+    print()
+    for text, text_size, emojis in zip_longest(self._text_wrapped, self._text_size, self._emojis, fillvalue=[]):
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
       if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
         line_pos.x += self._rect.x + self._text_padding
