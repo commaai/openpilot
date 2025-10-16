@@ -199,7 +199,7 @@ def setup_onroad_full_alert_multiline(click, pm: PubMaster):
   alert = messaging.new_message('selfdriveState')
   alert.selfdriveState.alertSize = AlertSize.full
   alert.selfdriveState.alertText1 = "Reverse\nGear"
-  alert.selfdriveState.alertStatus = AlertStatus.critical
+  alert.selfdriveState.alertStatus = AlertStatus.normal
   for _ in range(5):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
@@ -212,7 +212,7 @@ def setup_onroad_full_alert_long_text(click, pm: PubMaster):
   alert.selfdriveState.alertSize = AlertSize.full
   alert.selfdriveState.alertText1 = "TAKE CONTROL IMMEDIATELY"
   alert.selfdriveState.alertText2 = "Calibration Invalid: Remount Device & Recalibrate"
-  alert.selfdriveState.alertStatus = AlertStatus.critical
+  alert.selfdriveState.alertStatus = AlertStatus.userPrompt
   for _ in range(5):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
@@ -220,28 +220,28 @@ def setup_onroad_full_alert_long_text(click, pm: PubMaster):
 
 
 CASES = {
-  # "homescreen": setup_homescreen,
-  # "homescreen_paired": setup_homescreen,
-  # "homescreen_prime": setup_homescreen,
-  # "homescreen_update_available": setup_homescreen_update_available,
-  # "settings_device": setup_settings,
-  # "settings_network": setup_settings_network,
-  # "settings_network_advanced": setup_settings_network_advanced,
-  # "settings_toggles": setup_settings_toggles,
-  # "settings_software": setup_settings_software,
-  # "settings_software_download": setup_settings_software_download,
-  # "settings_software_release_notes": setup_settings_software_release_notes,
-  # "settings_firehose": setup_settings_firehose,
-  # "settings_developer": setup_settings_developer,
-  # "keyboard": setup_keyboard,
-  # "pair_device": setup_pair_device,
-  # "offroad_alert": setup_offroad_alert,
-  # "confirmation_dialog": setup_confirmation_dialog,
-  # "experimental_mode_description": setup_experimental_mode_description,
-  # "onroad": setup_onroad,
-  # "onroad_sidebar": setup_onroad_sidebar,
-  # "onroad_small_alert": setup_onroad_small_alert,
-  # "onroad_medium_alert": setup_onroad_medium_alert,
+  "homescreen": setup_homescreen,
+  "homescreen_paired": setup_homescreen,
+  "homescreen_prime": setup_homescreen,
+  "homescreen_update_available": setup_homescreen_update_available,
+  "settings_device": setup_settings,
+  "settings_network": setup_settings_network,
+  "settings_network_advanced": setup_settings_network_advanced,
+  "settings_toggles": setup_settings_toggles,
+  "settings_software": setup_settings_software,
+  "settings_software_download": setup_settings_software_download,
+  "settings_software_release_notes": setup_settings_software_release_notes,
+  "settings_firehose": setup_settings_firehose,
+  "settings_developer": setup_settings_developer,
+  "keyboard": setup_keyboard,
+  "pair_device": setup_pair_device,
+  "offroad_alert": setup_offroad_alert,
+  "confirmation_dialog": setup_confirmation_dialog,
+  "experimental_mode_description": setup_experimental_mode_description,
+  "onroad": setup_onroad,
+  "onroad_sidebar": setup_onroad_sidebar,
+  "onroad_small_alert": setup_onroad_small_alert,
+  "onroad_medium_alert": setup_onroad_medium_alert,
   "onroad_full_alert": setup_onroad_full_alert,
   "onroad_full_alert_multiline": setup_onroad_full_alert_multiline,
   "onroad_full_alert_long_text": setup_onroad_full_alert_long_text,
