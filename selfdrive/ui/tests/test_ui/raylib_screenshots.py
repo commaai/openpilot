@@ -146,14 +146,18 @@ def setup_onroad(click, pm: PubMaster):
   ps.pandaStates[0].pandaType = log.PandaState.PandaType.dos
   ps.pandaStates[0].ignitionLine = True
 
+  driverState = messaging.new_message('driverStateV2')
+  driverState.driverStateV2.leftDriverData.faceOrientation = [0, 0, 0]
+
   for _ in range(5):
     pm.send('deviceState', ds)
     pm.send('pandaStates', ps)
+    pm.send('driverStateV2', driverState)
     ds.clear_write_flag()
     ps.clear_write_flag()
+    driverState.clear_write_flag()
     time.sleep(0.05)
   time.sleep(1.0)  # wait for onroad transition
-
 
 
 
@@ -187,7 +191,7 @@ class TestUI:
 
   def setup(self):
     # Seed minimal offroad state
-    self.pm = PubMaster(["deviceState", "pandaStates"])
+    self.pm = PubMaster(["deviceState", "pandaStates", "driverStateV2"])
     ds = messaging.new_message('deviceState')
     ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
     for _ in range(5):
