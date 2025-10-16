@@ -1,4 +1,5 @@
 import time
+import threading
 import platform
 import numpy as np
 import pyray as rl
@@ -107,6 +108,17 @@ class CameraView(Widget):
 
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
+    # Background VIPC handling to avoid blocking render thread
+    self._vipc_thread: threading.Thread | None = None
+    self._vipc_stop: bool = False
+    self._needs_texture_init: bool = False
+    self._background_connect: bool = True
+    self._background_recv: bool = True
+
+    # Start background thread
+    self._vipc_thread = threading.Thread(target=self._vipc_loop, name=f"vipc-{name}", daemon=True)
+    self._vipc_thread.start()
+
   def _offroad_transition(self):
     # Reconnect if not first time going onroad
     if ui_state.is_onroad() and self.frame is not None:
@@ -143,6 +155,12 @@ class CameraView(Widget):
     return self._stream_type
 
   def close(self) -> None:
+    # Stop background VIPC thread first
+    if self._vipc_thread is not None:
+      self._vipc_stop = True
+      self._vipc_thread.join(timeout=1.0)
+      self._vipc_thread = None
+
     self._clear_textures()
 
     # Clean up EGL texture
@@ -197,11 +215,12 @@ class CameraView(Widget):
     if dt > 10:
       print('after ensure connection', (time.monotonic() - start_time)* 1000)
 
-    # Try to get a new buffer without blocking
-    buffer = self.client.recv(timeout_ms=0)
-    if buffer:
-      self._texture_needs_update = True
-      self.frame = buffer
+    # Try to get a new buffer without blocking (handled by background thread when enabled)
+    if not self._background_recv:
+      buffer = self.client.recv(timeout_ms=0)
+      if buffer:
+        self._texture_needs_update = True
+        self.frame = buffer
 
     dt = (time.monotonic() - start_time) * 1000
     if dt > 10:
@@ -314,15 +333,32 @@ class CameraView(Widget):
       if current_time - self.last_connection_attempt < CONNECTION_RETRY_INTERVAL:
         return False
       self.last_connection_attempt = current_time
+      # Connection is handled by background thread when enabled
+      if not self._background_connect:
+        connected = self.client.connect(False)
+        dt = (time.monotonic() - start_time) * 1000
+        if dt > 10:
+          print('__cameraview_timings connect', dt)
 
-      connected = self.client.connect(False)
-      dt = (time.monotonic() - start_time) * 1000
-      if dt > 10:
-        print('__cameraview_timings connect', dt)
+        if not connected or not self.client.num_buffers:
+          return False
 
-      if not connected or not self.client.num_buffers:
-        return False
+        cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
+        self._initialize_textures()
 
+        dt = (time.monotonic() - start_time) * 1000
+        if dt > 10:
+          print('__cameraview_timings initialize textures', dt)
+
+        self.available_streams = self.client.available_streams(self._name, block=False)
+
+        dt = (time.monotonic() - start_time) * 1000
+        if dt > 10:
+          print('__cameraview_timings available_streams', dt)
+      return False
+
+    # Connected: perform one-time GL texture init when background connect finished
+    if self._needs_texture_init:
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
       self._initialize_textures()
 
@@ -335,6 +371,8 @@ class CameraView(Widget):
       dt = (time.monotonic() - start_time) * 1000
       if dt > 10:
         print('__cameraview_timings available_streams', dt)
+
+      self._needs_texture_init = False
 
     return True
 
@@ -387,6 +425,50 @@ class CameraView(Widget):
                                                            int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
       self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
                                                             int(self.client.height // 2), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
+
+  def _vipc_loop(self) -> None:
+    # Background loop to handle connect and recv so render thread stays under 10ms
+    while not self._vipc_stop:
+      try:
+        if not self.client:
+          time.sleep(0.05)
+          continue
+
+        if not self.client.is_connected():
+          # Throttle connection attempts similar to UI path
+          now = rl.get_time()
+          if now - self.last_connection_attempt < CONNECTION_RETRY_INTERVAL:
+            time.sleep(0.05)
+            continue
+          self.last_connection_attempt = now
+
+          start_time = time.monotonic()
+          ok = self.client.connect(False)
+          dt = (time.monotonic() - start_time) * 1000
+          if dt > 10:
+            print('__cameraview_timings connect', dt)
+          if not ok or not self.client.num_buffers:
+            time.sleep(0.1)
+            continue
+
+          # Signal to render thread to initialize GL textures
+          self._needs_texture_init = True
+
+          start_time2 = time.monotonic()
+          self.available_streams = self.client.available_streams(self._name, block=False)
+          dt2 = (time.monotonic() - start_time2) * 1000
+          if dt2 > 10:
+            print('__cameraview_timings available_streams', dt2)
+
+        if self.client.is_connected() and self._background_recv:
+          buf = self.client.recv(timeout_ms=100)
+          if buf:
+            self.frame = buf
+            self._texture_needs_update = True
+        else:
+          time.sleep(0.05)
+      except Exception:
+        time.sleep(0.1)
 
   def _clear_textures(self):
     if self.texture_y and self.texture_y.id:
