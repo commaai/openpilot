@@ -147,6 +147,10 @@ class CameraView(Widget):
     return self._stream_type
 
   def close(self) -> None:
+    if self._connect_thread is not None and self._connect_thread.is_alive():
+      self._connect_thread.join()
+      self._connect_thread = None
+
     self._clear_textures()
 
     # Clean up EGL texture
@@ -189,8 +193,6 @@ class CameraView(Widget):
       self._draw_placeholder(rect)
       return
 
-    # self._vipc_connected.set()
-    #       self._initialize_textures()
     if self._vipc_connected.is_set():
       self._initialize_textures()
       self._vipc_connected.clear()
