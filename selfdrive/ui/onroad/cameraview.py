@@ -209,20 +209,6 @@ class CameraView(Widget):
       if self.client.is_connected():
         time.sleep(0.1)
 
-      # buffer = self.client.recv(timeout_ms=1000)
-      # if buffer:
-      #   self._frames.append((self.client.frame_id, buffer))
-      #   while len(self._frames) > 5:
-      #     self._frames.pop(0)
-      #
-      #   # TODO: qt calls update() from here? do we need to?
-      # else:
-      #   if ui_state.is_offroad():
-      #     # TODO: need to del or does = None clean it up?
-      #     del self.client
-      #     self.client = None
-      #     self._is_vipc_thread_connected.clear()
-
   def _offroad_transition(self):
     # Reconnect if not first time going onroad
     if ui_state.is_onroad() and self.frame is not None:
