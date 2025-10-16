@@ -23,11 +23,7 @@ function agnos_init {
     if $AGNOS_PY --verify $MANIFEST; then
       sudo reboot
     fi
-    if systemctl is-active --quiet weston-ready; then
-      $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
-    else
-      /usr/comma/updater $AGNOS_PY $MANIFEST
-    fi
+    $DIR/system/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 
