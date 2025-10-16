@@ -9,7 +9,7 @@ from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import Label
-from openpilot.selfdrive.ui.layouts.onboarding_steps import STEP_RECTS
+from openpilot.selfdrive.ui.lib.onboarding_steps import STEP_RECTS
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 DEBUG = False

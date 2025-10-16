@@ -17,7 +17,7 @@ from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.ui.layouts.onboarding_steps import STEP_RECTS
+from openpilot.selfdrive.ui.lib.onboarding_steps import STEP_RECTS
 from openpilot.system.updated.updated import parse_release_notes
 
 AlertSize = log.SelfdriveState.AlertSize
