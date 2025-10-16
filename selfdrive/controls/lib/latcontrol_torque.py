@@ -75,6 +75,7 @@ class LatControlTorque(LatControl):
       lookahead_idx = int(np.clip(-delay_frames + self.lookahead_frames, -self.lat_accel_request_buffer_len+1, -2))
       raw_lateral_jerk = (self.lat_accel_request_buffer[lookahead_idx+1] - self.lat_accel_request_buffer[lookahead_idx-1]) / (2 * self.dt)
       desired_lateral_jerk = self.jerk_filter.update(raw_lateral_jerk)
+      desired_lateral_jerk_old = desired_lateral_jerk = (future_desired_lateral_accel - expected_lateral_accel) / lat_delay
       future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       self.lat_accel_request_buffer.append(future_desired_lateral_accel)
       self.lat_accel_request_buffer.append(future_desired_lateral_accel)
@@ -112,6 +113,7 @@ class LatControlTorque(LatControl):
       pid_log.actualLateralAccel = float(measurement)
       pid_log.desiredLateralAccel = float(setpoint)
       pid_log.desiredLateralJerk = float(desired_lateral_jerk)
+      pid_log.desiredLateralJerkOld = float(desired_lateral_jerk_old)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
