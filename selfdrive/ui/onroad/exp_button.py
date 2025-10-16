@@ -4,8 +4,6 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
-from openpilot.system.ui.widgets import DialogResult
 
 
 class ExpButton(Widget):
@@ -27,8 +25,7 @@ class ExpButton(Widget):
     self._rect = rl.Rectangle(0, 0, button_size, button_size)
 
   def set_rect(self, rect: rl.Rectangle) -> None:
-    # Use base implementation to ensure width/height are applied and layout is updated
-    super().set_rect(rect)
+    self._rect.x, self._rect.y = rect.x, rect.y
 
   def _update_state(self) -> None:
     selfdrive_state = ui_state.sm["selfdriveState"]
@@ -44,17 +41,6 @@ class ExpButton(Widget):
       # Hold new state temporarily
       self._held_mode = new_mode
       self._hold_end_time = time.monotonic() + self._hold_duration
-    else:
-      # Provide feedback if toggle is blocked due to longitudinal requirements
-      if self._params.get_bool("ExperimentalModeConfirmed") and not ui_state.has_longitudinal_control:
-        if ui_state.CP and ui_state.CP.alphaLongitudinalAvailable:
-          content = ("<h1>Experimental Mode</h1><br>"
-                     "<p>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</p>")
-        else:
-          content = ("<h1>Experimental Mode</h1><br>"
-                     "<p>Experimental mode is unavailable on this car because stock ACC is used for longitudinal control.</p>")
-        dlg = ConfirmDialog(content, "OK", rich=True)
-        gui_app.set_modal_overlay(dlg, callback=lambda result: gui_app.set_modal_overlay(None))
 
   def _render(self, rect: rl.Rectangle) -> None:
     center_x = int(self._rect.x + self._rect.width // 2)
@@ -80,5 +66,5 @@ class ExpButton(Widget):
     if not self._params.get_bool("ExperimentalModeConfirmed"):
       return False
 
-    # Mirror settings logic using computed flag from UI state
+    # Mirror exp mode toggle using persistent car params
     return ui_state.has_longitudinal_control
