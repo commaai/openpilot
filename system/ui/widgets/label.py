@@ -133,9 +133,11 @@ class Label(Widget):
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
   def _render(self, _):
+    rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
+
     text = self._text[0] if self._text else None
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
-    text_pos = rl.Vector2(0, (self._rect.y + (self._rect.height - (text_size.y)) // 2))
+    text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - text_size.y) // 2))
 
     if self._icon:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
@@ -153,14 +155,19 @@ class Label(Widget):
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
 
+    print(self._text, self._text_size, self._emojis)
+    print(list(zip_longest(self._text, self._text_size, self._emojis, fillvalue=[])))
+    print()
+    rl.draw_circle(int(text_pos.x), int(text_pos.y), 5, rl.GREEN)
+
     for text, text_size, emojis in zip_longest(self._text, self._text_size, self._emojis, fillvalue=[]):
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
       if self._text_alignment == TextAlignment.LEFT:
-        line_pos.x += self._rect.x + self._text_padding
+        line_pos.x += self._text_padding
       elif self._text_alignment == TextAlignment.CENTER:
-        line_pos.x += self._rect.x + (self._rect.width - text_size.x) // 2
+        line_pos.x += (self._rect.width - text_size.x) // 2
       elif self._text_alignment == TextAlignment.RIGHT:
-        line_pos.x += self._rect.x + self._rect.width - text_size.x - self._text_padding
+        line_pos.x += self._rect.width - text_size.x - self._text_padding
 
       prev_index = 0
       for start, end, emoji in emojis:
