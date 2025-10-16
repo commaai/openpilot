@@ -1,4 +1,6 @@
+import time
 import platform
+import threading
 import numpy as np
 import pyray as rl
 
@@ -94,6 +96,9 @@ class CameraView(Widget):
 
     self._placeholder_color: rl.Color | None = None
 
+    self._connect_thread: threading.Thread | None = None
+    self._vipc_connected = threading.Event()
+
     # Initialize EGL for zero-copy rendering on TICI
     if TICI:
       if not init_egl():
@@ -180,9 +185,15 @@ class CameraView(Widget):
     if self._switching:
       self._handle_switch()
 
-    if not self._ensure_connection():
+    if not self._ensure_connection() and self.frame is None:
       self._draw_placeholder(rect)
       return
+
+    # self._vipc_connected.set()
+    #       self._initialize_textures()
+    if self._vipc_connected.is_set():
+      self._initialize_textures()
+      self._vipc_connected.clear()
 
     # Try to get a new buffer without blocking
     buffer = self.client.recv(timeout_ms=0)
@@ -271,11 +282,14 @@ class CameraView(Widget):
     rl.draw_texture_pro(self.texture_y, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
     rl.end_shader_mode()
 
-  def _ensure_connection(self) -> bool:
-    if not self.client.is_connected():
-      self.frame = None
-      self.available_streams.clear()
+  def _connect_loop(self):
+    self.frame = None
+    self.available_streams.clear()
 
+    i = 0
+    while True:
+      print('trying to connect!', i)
+      i += 1
       # Throttle connection attempts
       current_time = rl.get_time()
       if current_time - self.last_connection_attempt < CONNECTION_RETRY_INTERVAL:
@@ -283,11 +297,22 @@ class CameraView(Widget):
       self.last_connection_attempt = current_time
 
       if not self.client.connect(False) or not self.client.num_buffers:
-        return False
+        time.sleep(0.1)
+        continue
 
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
-      self._initialize_textures()
+
+      self._vipc_connected.set()
+      # self._initialize_textures()
       self.available_streams = self.client.available_streams(self._name, block=False)
+      break
+
+  def _ensure_connection(self) -> bool:
+    if not self.client.is_connected():
+      if self._connect_thread is None or not self._connect_thread.is_alive():
+        self._connect_thread = threading.Thread(target=self._connect_loop, daemon=True)
+        self._connect_thread.start()
+      return False
 
     return True
 
