@@ -62,14 +62,14 @@ class AugmentedRoadView(CameraView):
 
     dt = time.monotonic() - start_draw
     if dt > 10:
-      print('switch streams', dt)
+      print('__timings switch streams', dt)
 
     # Update calibration before rendering
     self._update_calibration()
 
     dt = time.monotonic() - start_draw
     if dt > 10:
-      print('update calib', dt)
+      print('__timings update calib', dt)
 
     # Create inner content area with border padding
     self._content_rect = rl.Rectangle(
@@ -93,7 +93,7 @@ class AugmentedRoadView(CameraView):
 
     dt = time.monotonic() - start_draw
     if dt > 10:
-      print('base render', dt)
+      print('__timings base render', dt)
 
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
@@ -103,7 +103,7 @@ class AugmentedRoadView(CameraView):
 
     dt = time.monotonic() - start_draw
     if dt > 10:
-      print('ui overlays', dt)
+      print('__timings ui overlays', dt)
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
@@ -116,7 +116,7 @@ class AugmentedRoadView(CameraView):
 
     dt = time.monotonic() - start_draw
     if dt > 10:
-      print('total', dt)
+      print('__timings border', dt)
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
