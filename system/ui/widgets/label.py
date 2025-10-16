@@ -1,5 +1,5 @@
 from itertools import zip_longest
-
+from typing import Union
 import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE
@@ -96,7 +96,7 @@ class Label(Widget):
                text_alignment: rl.GuiTextAlignment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                text_padding: int = 20,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
-               icon=None,
+               icon: Union[rl.Texture, None] = None,
                ):
 
     super().__init__()
