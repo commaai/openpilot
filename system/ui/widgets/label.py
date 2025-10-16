@@ -134,10 +134,8 @@ class Label(Widget):
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
   def _render(self, _):
-    # rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
-    # text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - text_size.y) // 2))
     text_pos = rl.Vector2(self._rect.x, self._rect.y)
 
     if self._icon:
