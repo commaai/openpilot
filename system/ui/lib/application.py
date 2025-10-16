@@ -2,6 +2,8 @@ import atexit
 import cffi
 import os
 import time
+import signal
+import sys
 import pyray as rl
 import threading
 from collections.abc import Callable
@@ -154,7 +156,11 @@ class GuiApplication:
     self._window_close_requested = True
 
   def init_window(self, title: str, fps: int = _DEFAULT_FPS):
-    atexit.register(self.close)  # Automatically call close() on exit
+    def _close(sig, frame):
+      self.close()
+      sys.exit(0)
+    signal.signal(signal.SIGINT, _close)
+    atexit.register(self.close)
 
     HARDWARE.set_display_power(True)
     HARDWARE.set_screen_brightness(65)
@@ -189,40 +195,47 @@ class GuiApplication:
 
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
-  def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
+  def texture(self, asset_path: str, width: int | None = None, height: int | None = None,
+              alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
     if cache_key in self._textures:
       return self._textures[cache_key]
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-      texture_obj = self._load_texture_from_image(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      texture_obj = self._load_texture_from_image(image_obj)
     self._textures[cache_key] = texture_obj
     return texture_obj
 
-  def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
-    """Load and resize a texture, storing it for later automatic unloading."""
+  def _load_image_from_path(self, image_path: str, width: int | None = None, height: int | None = None,
+                            alpha_premultiply: bool = False, keep_aspect_ratio: bool = True) -> rl.Image:
+    """Load and resize an image, storing it for later automatic unloading."""
     image = rl.load_image(image_path)
 
     if alpha_premultiply:
       rl.image_alpha_premultiply(image)
 
-    # Resize with aspect ratio preservation if requested
-    if keep_aspect_ratio:
-      orig_width = image.width
-      orig_height = image.height
+    if width is not None and height is not None:
+      # Resize with aspect ratio preservation if requested
+      if keep_aspect_ratio:
+        orig_width = image.width
+        orig_height = image.height
 
-      scale_width = width / orig_width
-      scale_height = height / orig_height
+        scale_width = width / orig_width
+        scale_height = height / orig_height
 
-      # Calculate new dimensions
-      scale = min(scale_width, scale_height)
-      new_width = int(orig_width * scale)
-      new_height = int(orig_height * scale)
+        # Calculate new dimensions
+        scale = min(scale_width, scale_height)
+        new_width = int(orig_width * scale)
+        new_height = int(orig_height * scale)
 
-      rl.image_resize(image, new_width, new_height)
-    else:
-      rl.image_resize(image, width, height)
+        rl.image_resize(image, new_width, new_height)
+      else:
+        rl.image_resize(image, width, height)
+    return image
 
+  def _load_texture_from_image(self, image: rl.Image) -> rl.Texture:
+    """Send image to GPU and unload original image."""
     texture = rl.load_texture_from_image(image)
     # Set texture filtering to smooth the result
     rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
