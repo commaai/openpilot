@@ -95,9 +95,8 @@ class Button(Widget):
     self._button_style = button_style
     self._border_radius = border_radius
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
-    self._text_padding = text_padding
 
-    self._label = Label(text, font_size, font_weight, text_alignment,
+    self._label = Label(text, font_size, font_weight, text_alignment, text_padding,
                         BUTTON_TEXT_COLOR[self._button_style], icon=icon)
 
     self._click_callback = click_callback
@@ -129,10 +128,7 @@ class Button(Widget):
       rl.draw_rectangle_rounded_lines_ex(self._rect, roundness, 10, 2, rl.WHITE)
     else:
       rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
-    self._label.render(rl.Rectangle(self._rect.x + self._text_padding,
-                                    self._rect.y,
-                                    self._rect.width - 2 * self._text_padding,
-                                    self._rect.height))
+    self._label.render(self._rect)
 
 
 class ButtonRadio(Button):
@@ -166,10 +162,7 @@ class ButtonRadio(Button):
   def _render(self, _):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
     rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
-    self._label.render(rl.Rectangle(self._rect.x + self._text_padding,
-                                    self._rect.y,
-                                    self._rect.width - 2 * self._text_padding,
-                                    self._rect.height))
+    self._label.render(self._rect)
 
     if self._icon and self.selected:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2

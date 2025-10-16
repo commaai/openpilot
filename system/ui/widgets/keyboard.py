@@ -62,8 +62,8 @@ class Keyboard(Widget):
     self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False
     self._last_shift_press_time = 0
-    self._title = Label("", 90, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
-    self._sub_title = Label("", 55, FontWeight.NORMAL, rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+    self._title = Label("", 90, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._sub_title = Label("", 55, FontWeight.NORMAL, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
 
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
@@ -136,8 +136,8 @@ class Keyboard(Widget):
 
   def _render(self, rect: rl.Rectangle):
     rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
-    self._title.render(rl.Rectangle(rect.x + 20, rect.y, rect.width - 20, 95))
-    self._sub_title.render(rl.Rectangle(rect.x + 20, rect.y + 95, rect.width - 20, 60))
+    self._title.render(rl.Rectangle(rect.x, rect.y, rect.width, 95))
+    self._sub_title.render(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60))
     self._cancel_button.render(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125))
 
     # Draw input box and password toggle

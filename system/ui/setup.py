@@ -80,16 +80,16 @@ class Setup(Widget):
     self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
 
     self._low_voltage_title_label = Label("WARNING: Low Voltage", TITLE_FONT_SIZE, FontWeight.MEDIUM, rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                          text_color=rl.Color(255, 89, 79, 255))
+                                          text_color=rl.Color(255, 89, 79, 255), text_padding=20)
     self._low_voltage_body_label = Label("Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE,
-                                         text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+                                         text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
     self._low_voltage_continue_button = Button("Continue", self._low_voltage_continue_button_callback)
     self._low_voltage_poweroff_button = Button("Power Off", HARDWARE.shutdown)
 
     self._getting_started_button = Button("", self._getting_started_button_callback, button_style=ButtonStyle.PRIMARY, border_radius=0)
-    self._getting_started_title_label = Label("Getting Started", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+    self._getting_started_title_label = Label("Getting Started", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
     self._getting_started_body_label = Label("Before we get on the road, let's finish installation and cover some details.",
-                                             BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+                                             BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
 
     self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
     self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
@@ -97,36 +97,37 @@ class Setup(Widget):
                                                       button_style=ButtonStyle.PRIMARY)
     self._software_selection_continue_button.set_enabled(False)
     self._software_selection_back_button = Button("Back", self._software_selection_back_button_callback)
-    self._software_selection_title_label = Label("Choose Software to Use", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+    self._software_selection_title_label = Label("Choose Software to Use", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
 
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
-    self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
-    self._download_failed_url_label = Label("", 52, FontWeight.NORMAL, rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
-    self._download_failed_body_label = Label("", BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+    self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._download_failed_url_label = Label("", 52, FontWeight.NORMAL, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._download_failed_body_label = Label("", BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
 
     self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
     self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback,
                                                  button_style=ButtonStyle.PRIMARY)
     self._network_setup_continue_button.set_enabled(False)
-    self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+    self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
 
     self._custom_software_warning_continue_button = Button("Scroll to continue", self._custom_software_warning_continue_button_callback,
                                                            button_style=ButtonStyle.PRIMARY)
     self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
     self._custom_software_warning_title_label = Label("WARNING: Custom Software", 81, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                                      text_color=rl.Color(255, 89, 79, 255))
+                                                      text_color=rl.Color(255, 89, 79, 255),
+                                                      text_padding=60)
     self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
                                                      + "⚠️ It has not been tested by comma.\n\n"
                                                      + "⚠️ It may not comply with relevant safety standards.\n\n"
                                                      + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
                                                      + "If you'd like to proceed, use https://flash.comma.ai "
                                                      + "to restore your device to a factory state later.",
-                                                     68, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+                                                     68, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=60)
     self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
 
-    self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM)
+    self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM, text_padding=20)
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -236,7 +237,7 @@ class Setup(Widget):
       self.network_check_thread.join()
 
   def render_network_setup(self, rect: rl.Rectangle):
-    self._network_setup_title_label.render(rl.Rectangle(rect.x + MARGIN + 20, rect.y + MARGIN, rect.width - MARGIN * 2 - 20, TITLE_FONT_SIZE * FONT_SCALE))
+    self._network_setup_title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE * FONT_SCALE))
 
     wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE * FONT_SCALE + MARGIN + 25, rect.width - MARGIN * 2,
                              rect.height - TITLE_FONT_SIZE * FONT_SCALE - 25 - BUTTON_HEIGHT - MARGIN * 3)
@@ -257,7 +258,7 @@ class Setup(Widget):
     self._network_setup_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_software_selection(self, rect: rl.Rectangle):
-    self._software_selection_title_label.render(rl.Rectangle(rect.x + MARGIN + 20, rect.y + MARGIN, rect.width - MARGIN * 2 - 20, TITLE_FONT_SIZE * FONT_SCALE))
+    self._software_selection_title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE * FONT_SCALE))
 
     radio_height = 230
     radio_spacing = 30
@@ -311,8 +312,8 @@ class Setup(Widget):
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(button_y - BODY_FONT_SIZE * FONT_SCALE))
     y_offset = rect.y + offset
-    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50 + 60, y_offset + 150, rect.width - 265 - 60, TITLE_FONT_SIZE * FONT_SCALE))
-    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50 + 60, y_offset + 200, rect.width - 50 - 60, BODY_FONT_SIZE * FONT_SCALE * 3))
+    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
+    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, y_offset + 200, rect.width - 50, BODY_FONT_SIZE * FONT_SCALE * 3))
     rl.end_scissor_mode()
 
     self._custom_software_warning_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))

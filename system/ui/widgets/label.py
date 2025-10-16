@@ -94,6 +94,7 @@ class Label(Widget):
                font_size: int = DEFAULT_TEXT_SIZE,
                font_weight: FontWeight = FontWeight.NORMAL,
                text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+               text_padding: int = 0,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
                icon: Union[rl.Texture, None] = None,  # noqa: UP007
                ):
@@ -103,6 +104,7 @@ class Label(Widget):
     self._font = gui_app.font(self._font_weight)
     self._font_size = font_size
     self._text_alignment = text_alignment
+    self._text_padding = text_padding
     self._text_color = text_color
     self._icon = icon
     self.set_text(text)
@@ -120,7 +122,7 @@ class Label(Widget):
   def _update_text(self, text):
     self._emojis = []
     self._text_size = []
-    self._text = wrap_text(self._font, text, self._font_size, self._rect.width)
+    self._text = wrap_text(self._font, text, self._font_size, self._rect.width - (self._text_padding * 2))
     for t in self._text:
       self._emojis.append(find_emoji(t))
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
@@ -134,14 +136,14 @@ class Label(Widget):
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
       if text:
         if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
-          icon_x = self._rect.x
+          icon_x = self._rect.x + self._text_padding
           text_pos.x = self._icon.width + ICON_PADDING
         elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
           total_width = self._icon.width + ICON_PADDING + text_size.x
           icon_x = self._rect.x + (self._rect.width - total_width) / 2
           text_pos.x = self._icon.width + ICON_PADDING
         else:
-          icon_x = (self._rect.x + self._rect.width - text_size.x) - ICON_PADDING - self._icon.width
+          icon_x = (self._rect.x + self._rect.width - text_size.x - self._text_padding) - ICON_PADDING - self._icon.width
       else:
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
@@ -149,11 +151,11 @@ class Label(Widget):
     for text, text_size, emojis in zip_longest(self._text, self._text_size, self._emojis, fillvalue=[]):
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
       if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
-        line_pos.x += self._rect.x
+        line_pos.x += self._rect.x + self._text_padding
       elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
         line_pos.x += self._rect.x + (self._rect.width - text_size.x) // 2
       elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
-        line_pos.x += self._rect.x + self._rect.width - text_size.x
+        line_pos.x += self._rect.x + self._rect.width - text_size.x - self._text_padding
 
       prev_index = 0
       for start, end, emoji in emojis:
