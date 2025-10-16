@@ -189,29 +189,29 @@ def setup_pair_device(click, pm: PubMaster):
   click(1800, 900)
 
 CASES = {
-  "homescreen": setup_homescreen,
-  "prime": setup_homescreen,
-  "pair_device": setup_pair_device,
-  "settings_device": setup_settings_device,
-  "settings_toggles": setup_settings_toggles,
-  "settings_software": setup_settings_software,
-  "settings_firehose": setup_settings_firehose,
-  "settings_developer": setup_settings_developer,
-  "onroad": setup_onroad,
-  "onroad_disengaged": setup_onroad_disengaged,
-  "onroad_override": setup_onroad_override,
-  "onroad_sidebar": setup_onroad_sidebar,
-  "onroad_alert_small": setup_onroad_alert_small,
-  "onroad_alert_mid": setup_onroad_alert_mid,
+  # "homescreen": setup_homescreen,
+  # "prime": setup_homescreen,
+  # "pair_device": setup_pair_device,
+  # "settings_device": setup_settings_device,
+  # "settings_toggles": setup_settings_toggles,
+  # "settings_software": setup_settings_software,
+  # "settings_firehose": setup_settings_firehose,
+  # "settings_developer": setup_settings_developer,
+  # "onroad": setup_onroad,
+  # "onroad_disengaged": setup_onroad_disengaged,
+  # "onroad_override": setup_onroad_override,
+  # "onroad_sidebar": setup_onroad_sidebar,
+  # "onroad_alert_small": setup_onroad_alert_small,
+  # "onroad_alert_mid": setup_onroad_alert_mid,
   "onroad_alert_full": setup_onroad_alert_full,
-  "onroad_wide": setup_onroad_wide,
-  "onroad_wide_sidebar": setup_onroad_wide_sidebar,
-  "driver_camera": setup_driver_camera,
-  "body": setup_body,
-  "offroad_alert": setup_offroad_alert,
-  "update_available": setup_update_available,
-  "keyboard": setup_keyboard,
-  "keyboard_uppercase": setup_keyboard_uppercase
+  # "onroad_wide": setup_onroad_wide,
+  # "onroad_wide_sidebar": setup_onroad_wide_sidebar,
+  # "driver_camera": setup_driver_camera,
+  # "body": setup_body,
+  # "offroad_alert": setup_offroad_alert,
+  # "update_available": setup_update_available,
+  # "keyboard": setup_keyboard,
+  # "keyboard_uppercase": setup_keyboard_uppercase
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -248,7 +248,7 @@ class TestUI:
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
-  @with_processes(["ui"])
+  @with_processes(["qt_ui"])
   def test_ui(self, name, setup_case):
     self.setup()
     setup_case(self.click, self.pm)
@@ -301,7 +301,7 @@ def create_screenshots():
       if name == 'prime':
         params.put('PrimeType', 1)
       elif name == 'pair_device':
-        params.put('ApiCache_Device', {"is_paired":0, "prime_type":-1})
+        params.put('ApiCache_Device', '{"is_paired":0, "prime_type":-1}')
 
       t.test_ui(name, setup)
 

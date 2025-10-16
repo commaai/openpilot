@@ -7,7 +7,7 @@ from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_text_box
+from openpilot.system.ui.widgets.label import gui_text_box, Label
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -158,11 +158,16 @@ class AlertRenderer(Widget):
 
       top_offset = 240 if is_long else 270
       title_rect = rl.Rectangle(rect.x, rect.y + top_offset, rect.width, 600)
-      gui_text_box(title_rect, alert.text1, font_size1, alignment=align_center, alignment_vertical=align_top, font_weight=FontWeight.BOLD)
+      # gui_text_box(title_rect, alert.text1, font_size1, alignment=align_center, alignment_vertical=align_top, font_weight=FontWeight.BOLD)
+      # use Label
+      lbl = Label(alert.text1, font_size=font_size1, font_weight=FontWeight.BOLD, text_alignment=align_center)
+      lbl.render(title_rect)
 
       bottom_offset = 361 if is_long else 420
       subtitle_rect = rl.Rectangle(rect.x, rect.y + rect.height - bottom_offset, rect.width, 300)
-      gui_text_box(subtitle_rect, alert.text2, ALERT_FONT_BIG, alignment=align_center, alignment_vertical=align_top)
+      # gui_text_box(subtitle_rect, alert.text2, ALERT_FONT_BIG, alignment=align_center, alignment_vertical=align_top)
+      lbl2 = Label(alert.text2, font_size=ALERT_FONT_BIG, text_alignment=align_center)
+      lbl2.render(subtitle_rect)
 
   def _draw_centered(self, text, rect, font, font_size, center_y=True, color=rl.WHITE) -> None:
     text_size = measure_text_cached(font, text, font_size)
