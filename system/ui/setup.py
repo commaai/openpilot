@@ -91,8 +91,8 @@ class Setup(Widget):
     self._getting_started_body_label = Label("Before we get on the road, let's finish installation and cover some details.",
                                              BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
 
-    self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
-    self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
+    self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE)
+    self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE)
     self._software_selection_continue_button = Button("Continue", self._software_selection_continue_button_callback,
                                                       button_style=ButtonStyle.PRIMARY)
     self._software_selection_continue_button.set_enabled(False)
@@ -117,14 +117,14 @@ class Setup(Widget):
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
     self._custom_software_warning_title_label = Label("WARNING: Custom Software", 81, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
                                                       text_color=rl.Color(255, 89, 79, 255),
-                                                      text_padding=60)
+                                                      )
     self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
                                                      + "⚠️ It has not been tested by comma.\n\n"
                                                      + "⚠️ It may not comply with relevant safety standards.\n\n"
                                                      + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
                                                      + "If you'd like to proceed, use https://flash.comma.ai "
                                                      + "to restore your device to a factory state later.",
-                                                     68, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=60)
+                                                     68, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
     self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
 
     self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM)

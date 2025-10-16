@@ -142,7 +142,7 @@ class ButtonRadio(Button):
                ):
 
     super().__init__(text, click_callback=click_callback, font_size=font_size,
-                     border_radius=border_radius, text_padding=text_padding,
+                     border_radius=border_radius,
                      text_alignment=text_alignment)
     self._text_padding = text_padding
     self._icon = icon

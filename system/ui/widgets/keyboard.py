@@ -136,8 +136,8 @@ class Keyboard(Widget):
 
   def _render(self, rect: rl.Rectangle):
     rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
-    self._title.render(rl.Rectangle(rect.x, rect.y, rect.width, 95))
-    self._sub_title.render(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60))
+    self._title.render(rl.Rectangle(rect.x + 20, rect.y, rect.width - 20, 95))
+    self._sub_title.render(rl.Rectangle(rect.x + 20, rect.y + 95, rect.width - 20, 60))
     self._cancel_button.render(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125))
 
     # Draw input box and password toggle
