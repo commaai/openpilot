@@ -46,7 +46,7 @@ class PrimeWidget(Widget):
     features = ["Remote access", "24/7 LTE connectivity", "1 year of drive storage", "Remote snapshots"]
     for i, feature in enumerate(features):
       item_y = features_y + 80 + i * 65
-      gui_label(rl.Rectangle(x, item_y, 50, 60), "✓", 50, color=rl.Color(70, 91, 234, 255))
+      gui_label(rl.Rectangle(x, item_y - 30, 100, 60), "✓", 50, color=rl.Color(70, 91, 234, 255))
       gui_label(rl.Rectangle(x + 60, item_y, w - 60, 60), feature, 50)
 
   def _render_for_prime_user(self, rect: rl.Rectangle):
