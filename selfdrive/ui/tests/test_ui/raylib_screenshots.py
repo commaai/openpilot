@@ -162,6 +162,34 @@ def setup_onroad_small_alert(click, pm: PubMaster):
   # time.sleep(0.5)
 
 
+def setup_onroad_medium_alert(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.mid
+  alert.selfdriveState.alertText1 = "Medium Alert"
+  alert.selfdriveState.alertText2 = "This is a medium alert"
+  alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.userPrompt
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+  # time.sleep(0.5)
+
+
+def setup_onroad_full_alert(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.full
+  alert.selfdriveState.alertText1 = "Full Alert"
+  alert.selfdriveState.alertText2 = "This is a full alert"
+  alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.critical
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+  # time.sleep(0.5)
+
+
 CASES = {
   # "homescreen": setup_homescreen,
   # "homescreen_paired": setup_homescreen,
@@ -181,8 +209,10 @@ CASES = {
   # "offroad_alert": setup_offroad_alert,
   # "confirmation_dialog": setup_confirmation_dialog,
   # "experimental_mode_description": setup_experimental_mode_description,
-  "onroad": setup_onroad,
+  # "onroad": setup_onroad,
   "onroad_small_alert": setup_onroad_small_alert,
+  "onroad_medium_alert": setup_onroad_medium_alert,
+  "onroad_full_alert": setup_onroad_full_alert,
 }
 
 
