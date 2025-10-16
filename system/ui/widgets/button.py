@@ -5,7 +5,7 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import FontWeight, MousePos
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import TextAlignment, Label
+from openpilot.system.ui.widgets.label import Label
 
 
 class ButtonStyle(IntEnum):
@@ -85,7 +85,7 @@ class Button(Widget):
                font_weight: FontWeight = FontWeight.MEDIUM,
                button_style: ButtonStyle = ButtonStyle.NORMAL,
                border_radius: int = 10,
-               text_alignment: TextAlignment = TextAlignment.CENTER,
+               text_alignment: rl.GuiTextAlignment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                text_padding: int = 20,
                icon=None,
                multi_touch: bool = False,
@@ -137,7 +137,7 @@ class ButtonRadio(Button):
                icon,
                click_callback: Callable[[], None] | None = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
-               text_alignment: TextAlignment = TextAlignment.LEFT,
+               text_alignment: rl.GuiTextAlignment = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
                border_radius: int = 10,
                text_padding: int = 20,
                ):
