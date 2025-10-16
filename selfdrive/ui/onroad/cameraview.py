@@ -12,8 +12,6 @@ from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
 
-CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
-
 VERSION = """
 #version 300 es
 precision mediump float;
@@ -189,10 +187,11 @@ class CameraView(Widget):
     if self._switching:
       self._handle_switch()
 
-    if not self._ensure_connection() and self.frame is None:
+    if not self._ensure_connection():
       self._draw_placeholder(rect)
       return
 
+    # Initialize textures on new connection
     if self._vipc_connected.is_set():
       self._initialize_textures()
       self._vipc_connected.clear()
@@ -288,16 +287,8 @@ class CameraView(Widget):
     self.frame = None
     self.available_streams.clear()
 
-    i = 0
     while True:
-      print('trying to connect!', i)
-      i += 1
       # Throttle connection attempts
-      current_time = rl.get_time()
-      if current_time - self.last_connection_attempt < CONNECTION_RETRY_INTERVAL:
-        return False
-      self.last_connection_attempt = current_time
-
       if not self.client.connect(False) or not self.client.num_buffers:
         time.sleep(0.1)
         continue
@@ -305,7 +296,6 @@ class CameraView(Widget):
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
 
       self._vipc_connected.set()
-      # self._initialize_textures()
       self.available_streams = self.client.available_streams(self._name, block=False)
       break
 
