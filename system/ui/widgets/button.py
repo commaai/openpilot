@@ -86,6 +86,7 @@ class Button(Widget):
                button_style: ButtonStyle = ButtonStyle.NORMAL,
                border_radius: int = 10,
                text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+               text_padding: int = 20,
                icon=None,
                multi_touch: bool = False,
                ):
@@ -94,6 +95,7 @@ class Button(Widget):
     self._button_style = button_style
     self._border_radius = border_radius
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
+    self._text_padding = text_padding
 
     self._label = Label(text, font_size, font_weight, text_alignment,
                         BUTTON_TEXT_COLOR[self._button_style], icon=icon)
@@ -127,7 +129,10 @@ class Button(Widget):
       rl.draw_rectangle_rounded_lines_ex(self._rect, roundness, 10, 2, rl.WHITE)
     else:
       rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
-    self._label.render(self._rect)
+    self._label.render(rl.Rectangle(self._rect.x + self._text_padding,
+                                    self._rect.y,
+                                    self._rect.width - 2 * self._text_padding,
+                                    self._rect.height))
 
 
 class ButtonRadio(Button):
@@ -142,7 +147,7 @@ class ButtonRadio(Button):
                ):
 
     super().__init__(text, click_callback=click_callback, font_size=font_size,
-                     border_radius=border_radius,
+                     border_radius=border_radius, text_padding=text_padding,
                      text_alignment=text_alignment)
     self._text_padding = text_padding
     self._icon = icon
@@ -161,7 +166,10 @@ class ButtonRadio(Button):
   def _render(self, _):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
     rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
-    self._label.render(self._rect)
+    self._label.render(rl.Rectangle(self._rect.x + self._text_padding,
+                                    self._rect.y,
+                                    self._rect.width - 2 * self._text_padding,
+                                    self._rect.height))
 
     if self._icon and self.selected:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2

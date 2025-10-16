@@ -91,8 +91,8 @@ class Setup(Widget):
     self._getting_started_body_label = Label("Before we get on the road, let's finish installation and cover some details.",
                                              BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
 
-    self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE)
-    self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE)
+    self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
+    self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
     self._software_selection_continue_button = Button("Continue", self._software_selection_continue_button_callback,
                                                       button_style=ButtonStyle.PRIMARY)
     self._software_selection_continue_button.set_enabled(False)
@@ -116,8 +116,7 @@ class Setup(Widget):
     self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
     self._custom_software_warning_title_label = Label("WARNING: Custom Software", 81, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                                      text_color=rl.Color(255, 89, 79, 255),
-                                                      )
+                                                      text_color=rl.Color(255, 89, 79, 255))
     self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
                                                      + "⚠️ It has not been tested by comma.\n\n"
                                                      + "⚠️ It may not comply with relevant safety standards.\n\n"
@@ -237,7 +236,7 @@ class Setup(Widget):
       self.network_check_thread.join()
 
   def render_network_setup(self, rect: rl.Rectangle):
-    self._network_setup_title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE * FONT_SCALE))
+    self._network_setup_title_label.render(rl.Rectangle(rect.x + MARGIN + 20, rect.y + MARGIN, rect.width - MARGIN * 2 - 20, TITLE_FONT_SIZE * FONT_SCALE))
 
     wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE * FONT_SCALE + MARGIN + 25, rect.width - MARGIN * 2,
                              rect.height - TITLE_FONT_SIZE * FONT_SCALE - 25 - BUTTON_HEIGHT - MARGIN * 3)
@@ -258,7 +257,7 @@ class Setup(Widget):
     self._network_setup_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_software_selection(self, rect: rl.Rectangle):
-    self._software_selection_title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE * FONT_SCALE))
+    self._software_selection_title_label.render(rl.Rectangle(rect.x + MARGIN + 20, rect.y + MARGIN, rect.width - MARGIN * 2 - 20, TITLE_FONT_SIZE * FONT_SCALE))
 
     radio_height = 230
     radio_spacing = 30
@@ -312,8 +311,8 @@ class Setup(Widget):
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(button_y - BODY_FONT_SIZE * FONT_SCALE))
     y_offset = rect.y + offset
-    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE * FONT_SCALE))
-    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, y_offset + 200, rect.width - 50, BODY_FONT_SIZE * FONT_SCALE * 3))
+    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50 + 60, y_offset + 150, rect.width - 265 - 60, TITLE_FONT_SIZE * FONT_SCALE))
+    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50 + 60, y_offset + 200, rect.width - 50 - 60, BODY_FONT_SIZE * FONT_SCALE * 3))
     rl.end_scissor_mode()
 
     self._custom_software_warning_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
@@ -335,7 +334,7 @@ class Setup(Widget):
       elif result == 0:
         self.state = SetupState.SOFTWARE_SELECTION
 
-    self.keyboard.reset()
+    self.keyboard.reset(min_text_size=1)
     self.keyboard.set_title("Enter URL", "for Custom Software")
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
