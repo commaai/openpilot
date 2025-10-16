@@ -223,6 +223,8 @@ def setup_onroad_full_alert_long_text(click, pm: PubMaster):
 CASES = {
   "homescreen": setup_homescreen,
   "setup": setup_homescreen,
+  "updater": setup_homescreen_update_available,
+  "reset": setup_homescreen,
   # "homescreen_paired": setup_homescreen,
   # "homescreen_prime": setup_homescreen,
   # "homescreen_update_available": setup_homescreen_update_available,
@@ -338,8 +340,8 @@ def create_screenshots():
       elif name == "homescreen_prime":
         params.put("PrimeType", 2)  # LITE
 
-      if name == "setup":
-        with TestScriptUI("system/ui/setup.py", "Setup") as launcher:
+      if name == "setup" or name == "updater" or name == "reset":
+        with TestScriptUI(f"system/ui/{name}.py", name.capitalize()) as launcher:
           launcher.test_ui(name, setup)
         continue
 
