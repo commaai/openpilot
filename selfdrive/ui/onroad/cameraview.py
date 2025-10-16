@@ -308,7 +308,6 @@ class CameraView(Widget):
       print('   INITIALIZING TEXTURES!!!!')
       self._initialize_textures()
       self._vipc_thread_connected_event.clear()
-      # return
 
     if buffer:
       self._texture_needs_update = True
