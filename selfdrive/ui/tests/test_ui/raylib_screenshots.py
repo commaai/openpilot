@@ -5,6 +5,7 @@ import shutil
 import time
 import pathlib
 from collections import namedtuple
+import subprocess
 
 import pyautogui
 import pywinctl
@@ -221,30 +222,31 @@ def setup_onroad_full_alert_long_text(click, pm: PubMaster):
 
 CASES = {
   "homescreen": setup_homescreen,
-  "homescreen_paired": setup_homescreen,
-  "homescreen_prime": setup_homescreen,
-  "homescreen_update_available": setup_homescreen_update_available,
-  "settings_device": setup_settings,
-  "settings_network": setup_settings_network,
-  "settings_network_advanced": setup_settings_network_advanced,
-  "settings_toggles": setup_settings_toggles,
-  "settings_software": setup_settings_software,
-  "settings_software_download": setup_settings_software_download,
-  "settings_software_release_notes": setup_settings_software_release_notes,
-  "settings_firehose": setup_settings_firehose,
-  "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
-  "pair_device": setup_pair_device,
-  "offroad_alert": setup_offroad_alert,
-  "confirmation_dialog": setup_confirmation_dialog,
-  "experimental_mode_description": setup_experimental_mode_description,
-  "onroad": setup_onroad,
-  "onroad_sidebar": setup_onroad_sidebar,
-  "onroad_small_alert": setup_onroad_small_alert,
-  "onroad_medium_alert": setup_onroad_medium_alert,
-  "onroad_full_alert": setup_onroad_full_alert,
-  "onroad_full_alert_multiline": setup_onroad_full_alert_multiline,
-  "onroad_full_alert_long_text": setup_onroad_full_alert_long_text,
+  "setup": setup_homescreen,
+  # "homescreen_paired": setup_homescreen,
+  # "homescreen_prime": setup_homescreen,
+  # "homescreen_update_available": setup_homescreen_update_available,
+  # "settings_device": setup_settings,
+  # "settings_network": setup_settings_network,
+  # "settings_network_advanced": setup_settings_network_advanced,
+  # "settings_toggles": setup_settings_toggles,
+  # "settings_software": setup_settings_software,
+  # "settings_software_download": setup_settings_software_download,
+  # "settings_software_release_notes": setup_settings_software_release_notes,
+  # "settings_firehose": setup_settings_firehose,
+  # "settings_developer": setup_settings_developer,
+  # "keyboard": setup_keyboard,
+  # "pair_device": setup_pair_device,
+  # "offroad_alert": setup_offroad_alert,
+  # "confirmation_dialog": setup_confirmation_dialog,
+  # "experimental_mode_description": setup_experimental_mode_description,
+  # "onroad": setup_onroad,
+  # "onroad_sidebar": setup_onroad_sidebar,
+  # "onroad_small_alert": setup_onroad_small_alert,
+  # "onroad_medium_alert": setup_onroad_medium_alert,
+  # "onroad_full_alert": setup_onroad_full_alert,
+  # "onroad_full_alert_multiline": setup_onroad_full_alert_multiline,
+  # "onroad_full_alert_long_text": setup_onroad_full_alert_long_text,
 }
 
 
@@ -253,7 +255,7 @@ class TestUI:
     os.environ["SCALE"] = os.getenv("SCALE", "1")
     sys.modules["mouseinfo"] = False
 
-  def setup(self):
+  def setup(self, window_title: str):
     # Seed minimal offroad state
     self.pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
     ds = messaging.new_message('deviceState')
@@ -264,7 +266,7 @@ class TestUI:
       time.sleep(0.05)
     time.sleep(0.5)
     try:
-      self.ui = pywinctl.getWindowsWithTitle("UI")[0]
+      self.ui = pywinctl.getWindowsWithTitle(window_title)[0]
     except Exception as e:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
@@ -279,12 +281,40 @@ class TestUI:
     time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
+  def run_test(self, name: str, setup_case, window_title = "UI"):
+    self.setup(window_title)  # setup UI
+    time.sleep(UI_DELAY)  # wait for UI to start
+    setup_case(self.click, self.pm)  # setup case
+    self.screenshot(name)  # take screenshot
+
   @with_processes(["ui"])
   def test_ui(self, name, setup_case):
-    self.setup()
-    time.sleep(UI_DELAY)  # wait for UI to start
-    setup_case(self.click, self.pm)
-    self.screenshot(name)
+    self.run_test(name, setup_case)
+
+
+class TestScriptUI(TestUI):
+  def __init__(self, script_path: str, window_title: str):
+    super().__init__()
+    self._script_path = script_path
+    self._window_title = window_title
+    self._process = None
+
+  def __enter__(self):
+    self._process = subprocess.Popen([sys.executable, self._script_path])
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    if self._process:
+      self._process.terminate()
+      try:
+        self._process.wait(timeout=5)
+      except subprocess.TimeoutExpired:
+        self._process.kill()
+      self._process = None
+
+  # override the TestUI method to not start another UI process
+  def test_ui(self, name, setup_case):
+    self.run_test(name, setup_case, self._window_title)
 
 
 def create_screenshots():
@@ -307,6 +337,11 @@ def create_screenshots():
         params.put("PrimeType", 0)  # NONE
       elif name == "homescreen_prime":
         params.put("PrimeType", 2)  # LITE
+
+      if name == "setup":
+        with TestScriptUI("system/ui/setup.py", "Setup") as launcher:
+          launcher.test_ui(name, setup)
+        continue
 
       t.test_ui(name, setup)
 
