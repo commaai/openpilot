@@ -5,13 +5,18 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.label import gui_label, Label
 
 
 class PrimeWidget(Widget):
   """Widget for displaying comma prime subscription status"""
 
   PRIME_BG_COLOR = rl.Color(51, 51, 51, 255)
+
+  def __init__(self):
+    super().__init__()
+    self._upgrade_label = Label("Upgrade Now", 75, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+                                text_color=rl.RED, text_padding=0)
 
   def _render(self, rect):
     if ui_state.prime_state.is_prime():
@@ -30,6 +35,7 @@ class PrimeWidget(Widget):
 
     # Title
     gui_label(rl.Rectangle(x, y, w, 90), "Upgrade Now", 75, font_weight=FontWeight.BOLD)
+    self._upgrade_label.render(rl.Rectangle(x, y, w, 90))
 
     # Description with wrapping
     desc_y = y + 140
