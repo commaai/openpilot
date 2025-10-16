@@ -155,7 +155,7 @@ class AlertRenderer(Widget):
 
       align_center = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
 
-      top_offset = 220 if is_long or '\n' in alert.text1 else 270
+      top_offset = 200 if is_long or '\n' in alert.text1 else 270
       title_rect = rl.Rectangle(rect.x, rect.y + top_offset, rect.width, 600)
       # gui_text_box(title_rect, alert.text1, font_size1, alignment=align_center, alignment_vertical=align_top, font_weight=FontWeight.BOLD)
       # use Label
