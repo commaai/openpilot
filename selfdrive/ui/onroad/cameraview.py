@@ -193,7 +193,9 @@ class CameraView(Widget):
         print('__cameraview_timings ensure connnection', dt)
       return
 
-    print('after ensure connection', (time.monotonic() - start_time)* 1000)
+    dt = (time.monotonic() - start_time) * 1000
+    if dt > 10:
+      print('after ensure connection', (time.monotonic() - start_time)* 1000)
 
     # Try to get a new buffer without blocking
     buffer = self.client.recv(timeout_ms=0)
