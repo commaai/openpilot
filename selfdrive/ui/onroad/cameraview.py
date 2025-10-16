@@ -78,11 +78,6 @@ class CameraView(Widget):
     self._requested_stream_type = stream_type
     self.available_streams: list[VisionStreamType] = []
 
-    # Target stream for switching
-    # self._target_client: VisionIpcClient | None = None
-    # self._target_stream_type: VisionStreamType | None = None
-    # self._switching: bool = False
-
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
@@ -283,26 +278,11 @@ class CameraView(Widget):
     #   self._vipc_thread_connected_event.clear()
     #   # return
 
-    start_time = time.monotonic()
-    # if self._switching:
-    #   self._handle_switch()
-
-    dt = (time.monotonic() - start_time) * 1000
-    if dt > 10:
-      print('__cameraview_timings switching', dt)
-
     # if not self._ensure_connection():
     if not self._is_vipc_thread_connected.is_set():
       print('DRAWING PLACEHOLDER!!')
       self._draw_placeholder(rect)
-      dt = (time.monotonic() - start_time) * 1000
-      if dt > 10:
-        print('__cameraview_timings ensure connnection', dt)
       return
-
-    dt = (time.monotonic() - start_time) * 1000
-    if dt > 10:
-      print('after ensure connection', (time.monotonic() - start_time) * 1000)
 
     # Try to get a new buffer without blocking
     with self._vipc_thread_lock:
@@ -317,16 +297,9 @@ class CameraView(Widget):
       self._texture_needs_update = True
       self.frame = buffer
 
-    dt = (time.monotonic() - start_time) * 1000
-    if dt > 10:
-      print('__cameraview_timings recv', dt)
-
     if not self.frame:
       self._draw_placeholder(rect)
       print('DRAWING PLACEHOLDER NO FRAME!!')
-      dt = (time.monotonic() - start_time) * 1000
-      if dt > 10:
-        print('__cameraview_timings no frame', dt)
       return
 
     transform = self._calc_frame_matrix(rect)
@@ -334,10 +307,6 @@ class CameraView(Widget):
     # Flip driver camera horizontally
     if self._stream_type == VisionStreamType.VISION_STREAM_DRIVER:
       src_rect.width = -src_rect.width
-
-    dt = (time.monotonic() - start_time) * 1000
-    if dt > 10:
-      print('__cameraview_timings calc matrix', dt)
 
     # Calculate scale
     scale_x = rect.width * transform[0, 0]  # zx
@@ -357,10 +326,6 @@ class CameraView(Widget):
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
-
-    dt = (time.monotonic() - start_time) * 1000
-    if dt > 10:
-      print('__cameraview_timings render textures', dt)
 
   def _draw_placeholder(self, rect: rl.Rectangle):
     if self._placeholder_color:
@@ -416,11 +381,7 @@ class CameraView(Widget):
     rl.end_shader_mode()
 
   def _initialize_textures(self):
-    start_time = time.monotonic()
     self._clear_textures()
-    dt = (time.monotonic() - start_time) * 1000
-    if dt > 10:
-      print('__cameraview_timings clear textures', dt)
     print('stride', self.client.stride, 'height', self.client.height)
     if not TICI:
       self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
