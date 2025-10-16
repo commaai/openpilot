@@ -23,7 +23,6 @@ NetworkType = log.DeviceState.NetworkType
 
 # Color scheme
 class Colors:
-  SIDEBAR_BG = rl.Color(57, 57, 57, 255)
   WHITE = rl.WHITE
   WHITE_DIM = rl.Color(255, 255, 255, 85)
   GRAY = rl.Color(84, 84, 84, 255)
@@ -94,7 +93,7 @@ class Sidebar(Widget):
 
   def _render(self, rect: rl.Rectangle):
     # Background
-    rl.draw_rectangle_rec(rect, Colors.SIDEBAR_BG)
+    rl.draw_rectangle_rec(rect, rl.BLACK)
 
     self._draw_buttons(rect)
     self._draw_network_indicator(rect)

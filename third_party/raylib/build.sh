@@ -30,7 +30,7 @@ fi
 
 cd raylib_repo
 
-COMMIT=${1:-63ea627abb4488adc9c7b5e2f8dcc77a7d6bfa3b}
+COMMIT=${1:-4ee3b8ce4ee5a1604a7c055a417178c65fb795ef}
 git fetch origin $COMMIT
 git reset --hard $COMMIT
 git clean -xdff .

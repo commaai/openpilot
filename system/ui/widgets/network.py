@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label import TextAlignment, gui_label
+from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
 
@@ -88,15 +88,15 @@ class NetworkUI(Widget):
 
   def _render(self, _):
     # subtract button
-    content_rect = rl.Rectangle(self._rect.x, self._rect.y + self._nav_button.rect.height + 20,
-                                self._rect.width, self._rect.height - self._nav_button.rect.height - 20)
+    content_rect = rl.Rectangle(self._rect.x, self._rect.y + self._nav_button.rect.height + 40,
+                                self._rect.width, self._rect.height - self._nav_button.rect.height - 40)
     if self._current_panel == PanelType.WIFI:
       self._nav_button.text = "Advanced"
-      self._nav_button.set_position(self._rect.x + self._rect.width - self._nav_button.rect.width, self._rect.y + 10)
+      self._nav_button.set_position(self._rect.x + self._rect.width - self._nav_button.rect.width, self._rect.y + 20)
       self._wifi_panel.render(content_rect)
     else:
       self._nav_button.text = "Back"
-      self._nav_button.set_position(self._rect.x, self._rect.y + 10)
+      self._nav_button.set_position(self._rect.x, self._rect.y + 20)
       self._advanced_panel.render(content_rect)
 
     self._nav_button.render()
@@ -442,8 +442,8 @@ class WifiManagerUI(Widget):
   def _on_network_updated(self, networks: list[Network]):
     self._networks = networks
     for n in self._networks:
-      self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
-                                              button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
+      self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55,
+                                              text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
       self._networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
       self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                      font_size=45)
