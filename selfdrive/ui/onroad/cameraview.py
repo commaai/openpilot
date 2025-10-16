@@ -94,7 +94,6 @@ class CameraView(Widget):
     # VIPC thread
     self._vipc_thread_running = True
     self._vipc_thread: threading.Thread | None = None
-    self._is_vipc_thread_connected = threading.Event()  # current connection state
     self._vipc_thread_connected_event = threading.Event()  # rising edge of connection
     self._vipc_thread_lock = threading.Lock()
 
@@ -122,7 +121,8 @@ class CameraView(Widget):
         self._stream_type = self._requested_stream_type
         with self._vipc_thread_lock:
           print('CREATING NEW CLIENT')
-          # TODO: need to delete old client?
+          if self.client:
+            del self.client
           self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
 
       # TODO: need to in lock?
@@ -141,7 +141,6 @@ class CameraView(Widget):
             continue
 
         print('CONNECTED TO NEW VIPC!')
-        self._is_vipc_thread_connected.set()  # to draw placeholder
         self._vipc_thread_connected_event.set()  # to set up textures
 
       # TODO: need to lock?
@@ -172,7 +171,6 @@ class CameraView(Widget):
     return self._stream_type
 
   def close(self) -> None:
-    # TODO: decide which order
     self._vipc_thread_running = False
     if self._vipc_thread is not None and self._vipc_thread.is_alive():
       self._vipc_thread.join()
@@ -188,7 +186,8 @@ class CameraView(Widget):
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
 
-    # TODO: need to del and then set to None?
+    if self.client:
+      del self.client
     self.client = None
 
   def __del__(self):
@@ -213,26 +212,22 @@ class CameraView(Widget):
     ])
 
   def _render(self, rect: rl.Rectangle):
-    # if self._vipc_thread_connected_event.is_set():
-    #   print('   INITIALIZING TEXTURES!!!!')
-    #   self._initialize_textures()
-    #   self._vipc_thread_connected_event.clear()
-    #   # return
-
-    # if not self._ensure_connection():
-    if not self._is_vipc_thread_connected.is_set():
+    # check connection state under lock; draw placeholder until connected
+    with self._vipc_thread_lock:
+      is_connected = bool(self.client and self.client.is_connected())
+    if not is_connected:
       print('DRAWING PLACEHOLDER!!')
       self._draw_placeholder(rect)
       return
 
     # Try to get a new buffer without blocking
     with self._vipc_thread_lock:
-      buffer = self.client.recv(timeout_ms=0)
+      buffer = self.client.recv(timeout_ms=0)# if (self.client and self.client.is_connected()) else None
 
     if self._vipc_thread_connected_event.is_set() and (buffer or self.frame is None):
       print('   INITIALIZING TEXTURES!!!!')
-      # TODO: need to lock?
-      self._initialize_textures()
+      with self._vipc_thread_lock:
+        self._initialize_textures()
       self._vipc_thread_connected_event.clear()
 
     if buffer:
