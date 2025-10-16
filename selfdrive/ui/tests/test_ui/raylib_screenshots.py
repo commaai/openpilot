@@ -127,22 +127,10 @@ def setup_experimental_mode_description(click, pm: PubMaster):
 
 
 def setup_onroad(click, pm: PubMaster):
-  # self.started = self.sm["deviceState"].started and self.ignition
-  # if self.sm.updated["pandaStates"]:
-  #   panda_states = self.sm["pandaStates"]
-  #
-  #   if len(panda_states) > 0:
-  #     # Get panda type from first panda
-  #     self.panda_type = panda_states[0].pandaType
-  #     # Check ignition status across all pandas
-  #     if self.panda_type != log.PandaState.PandaType.unknown:
-  #       self.ignition = any(state.ignitionLine or state.ignitionCan for state in panda_states)
   ds = messaging.new_message('deviceState')
   ds.deviceState.started = True
-  # ds.deviceState.ignitionLine = True
 
   ps = messaging.new_message('pandaStates', 1)
-  # ps.pandaStates = [log.PandaState.new_message()]
   ps.pandaStates[0].pandaType = log.PandaState.PandaType.dos
   ps.pandaStates[0].ignitionLine = True
 
@@ -157,8 +145,21 @@ def setup_onroad(click, pm: PubMaster):
     ps.clear_write_flag()
     driverState.clear_write_flag()
     time.sleep(0.05)
-  time.sleep(1.0)  # wait for onroad transition
+  # time.sleep(1.0)  # wait for onroad transition
 
+
+def setup_onroad_small_alert(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = log.SelfdriveState.AlertSize.small
+  alert.selfdriveState.alertText1 = "Small Alert"
+  alert.selfdriveState.alertText2 = "This is a small alert"
+  alert.selfdriveState.alertStatus = log.SelfdriveState.AlertStatus.normal
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+  # time.sleep(0.5)
 
 
 CASES = {
@@ -181,6 +182,7 @@ CASES = {
   # "confirmation_dialog": setup_confirmation_dialog,
   # "experimental_mode_description": setup_experimental_mode_description,
   "onroad": setup_onroad,
+  "onroad_small_alert": setup_onroad_small_alert,
 }
 
 
@@ -191,7 +193,7 @@ class TestUI:
 
   def setup(self):
     # Seed minimal offroad state
-    self.pm = PubMaster(["deviceState", "pandaStates", "driverStateV2"])
+    self.pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
     ds = messaging.new_message('deviceState')
     ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
     for _ in range(5):
