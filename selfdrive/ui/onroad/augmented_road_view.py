@@ -67,7 +67,7 @@ class AugmentedRoadView(CameraView):
     # Update calibration before rendering
     self._update_calibration()
 
-    dt = time.monotonic() - start_draw
+    dt = (time.monotonic() - start_draw) * 1000
     if dt > 10:
       print('__timings update calib', dt)
 
@@ -91,7 +91,7 @@ class AugmentedRoadView(CameraView):
     # Render the base camera view
     super()._render(rect)
 
-    dt = time.monotonic() - start_draw
+    dt = (time.monotonic() - start_draw) * 1000
     if dt > 10:
       print('__timings base render', dt)
 
@@ -101,7 +101,7 @@ class AugmentedRoadView(CameraView):
     self.alert_renderer.render(self._content_rect)
     self.driver_state_renderer.render(self._content_rect)
 
-    dt = time.monotonic() - start_draw
+    dt = (time.monotonic() - start_draw) * 1000
     if dt > 10:
       print('__timings ui overlays', dt)
 
@@ -114,7 +114,7 @@ class AugmentedRoadView(CameraView):
     # Draw colored border based on driving state
     self._draw_border(rect)
 
-    dt = time.monotonic() - start_draw
+    dt = (time.monotonic() - start_draw) * 1000
     if dt > 10:
       print('__timings border', dt)
 

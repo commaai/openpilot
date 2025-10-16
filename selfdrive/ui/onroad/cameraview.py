@@ -1,3 +1,4 @@
+import time
 import platform
 import numpy as np
 import pyray as rl
@@ -177,12 +178,22 @@ class CameraView(Widget):
     ])
 
   def _render(self, rect: rl.Rectangle):
+    start_time = time.monotonic()
     if self._switching:
       self._handle_switch()
 
+    dt = (time.monotonic() - start_time) * 1000
+    if dt > 10:
+      print('__cameraview_timings switching', dt)
+
     if not self._ensure_connection():
       self._draw_placeholder(rect)
+      dt = (time.monotonic() - start_time) * 1000
+      if dt > 10:
+        print('__cameraview_timings ensure connnection', dt)
       return
+
+    print('after ensure connection', (time.monotonic() - start_time)* 1000)
 
     # Try to get a new buffer without blocking
     buffer = self.client.recv(timeout_ms=0)
@@ -190,8 +201,15 @@ class CameraView(Widget):
       self._texture_needs_update = True
       self.frame = buffer
 
+    dt = (time.monotonic() - start_time) * 1000
+    if dt > 10:
+      print('__cameraview_timings recv', dt)
+
     if not self.frame:
       self._draw_placeholder(rect)
+      dt = (time.monotonic() - start_time) * 1000
+      if dt > 10:
+        print('__cameraview_timings no frame', dt)
       return
 
     transform = self._calc_frame_matrix(rect)
@@ -199,6 +217,10 @@ class CameraView(Widget):
     # Flip driver camera horizontally
     if self._stream_type == VisionStreamType.VISION_STREAM_DRIVER:
       src_rect.width = -src_rect.width
+
+    dt = (time.monotonic() - start_time) * 1000
+    if dt > 10:
+      print('__cameraview_timings calc matrix', dt)
 
     # Calculate scale
     scale_x = rect.width * transform[0, 0]  # zx
@@ -218,6 +240,10 @@ class CameraView(Widget):
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
+
+    dt = (time.monotonic() - start_time) * 1000
+    if dt > 10:
+      print('__cameraview_timings render textures', dt)
 
   def _draw_placeholder(self, rect: rl.Rectangle):
     if self._placeholder_color:
@@ -272,7 +298,12 @@ class CameraView(Widget):
     rl.end_shader_mode()
 
   def _ensure_connection(self) -> bool:
-    if not self.client.is_connected():
+    start_time = time.monotonic()
+    is_connected = self.client.is_connected()
+    dt = (time.monotonic() - start_time) * 1000
+    if dt > 10:
+      print('__cameraview_timings is_connected', dt)
+    if not is_connected:
       self.frame = None
       self.available_streams.clear()
 
@@ -285,9 +316,17 @@ class CameraView(Widget):
       if not self.client.connect(False) or not self.client.num_buffers:
         return False
 
+      dt = (time.monotonic() - start_time) * 1000
+      if dt > 10:
+        print('__cameraview_timings connect', dt)
+
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
       self._initialize_textures()
       self.available_streams = self.client.available_streams(self._name, block=False)
+
+      dt = (time.monotonic() - start_time) * 1000
+      if dt > 10:
+        print('__cameraview_timings available_streams', dt)
 
     return True
 
