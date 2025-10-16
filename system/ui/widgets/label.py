@@ -156,6 +156,9 @@ class Label(Widget):
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
 
+      # Label only supports icon + single line of text for now
+      return
+
     print(self._text, self._text_size, self._emojis)
     print(list(zip_longest(self._text, self._text_size, self._emojis, fillvalue=[])))
     print()
