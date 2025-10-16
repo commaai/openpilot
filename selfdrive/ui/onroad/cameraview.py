@@ -119,7 +119,6 @@ class CameraView(Widget):
   def _vipc_thread_loop(self):
     while self._vipc_thread_running:
       if self.client is None or self._stream_type != self._requested_stream_type:
-        # self.frame = None
         cloudlog.debug(f"Connecting to stream {self._requested_stream_type}, was connected to {self._stream_type}")
         self._stream_type = self._requested_stream_type
         with self._vipc_thread_lock:
@@ -128,24 +127,18 @@ class CameraView(Widget):
 
       if not self.client.is_connected():
         with self._vipc_thread_lock:
-          # self.frame = None
           streams = self.client.available_streams(self._name, block=False)
         if not streams:
           time.sleep(0.1)
           continue
 
-        # TODO: don't need to do any blocking since user only reads, right?
-        # TODO: or threading.Event with argument passed to slot?
         self.available_streams = streams
 
-        # VisionIpcClient::connect is not thread safe, guard with lock
         with self._vipc_thread_lock:
           if not self.client.connect(False):
             time.sleep(0.1)
             continue
 
-        # TODO: this in main thread!
-        # self._emit_vipc_connected()
         print('CONNECTED TO NEW VIPC!')
         self._is_vipc_thread_connected.set()  # to draw placeholder
         self._vipc_thread_connected_event.set()  # to set up textures
