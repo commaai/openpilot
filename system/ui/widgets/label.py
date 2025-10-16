@@ -152,6 +152,7 @@ class Label(Widget):
 
     for text, text_size, emojis in zip_longest(self._text, self._text_size, self._emojis, fillvalue=[]):
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
+      rl.draw_circle(int(line_pos.x), int(line_pos.y), 3, rl.RED)
       if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
         line_pos.x += self._text_padding
       elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:

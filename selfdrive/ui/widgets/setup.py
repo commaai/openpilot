@@ -16,7 +16,8 @@ class SetupWidget(Widget):
     self._pair_device_btn = Button("Pair device", self._show_pairing, button_style=ButtonStyle.PRIMARY)
     self._open_settings_btn = Button("Open", lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
-    self._firehose_label = Label("🔥 Firehose Mode 🔥", font_weight=FontWeight.MEDIUM, font_size=64)
+    self._firehose_label = Label("🔥 Firehose Mode 🔥", font_weight=FontWeight.MEDIUM, font_size=64,
+                                 text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
@@ -65,7 +66,7 @@ class SetupWidget(Widget):
 
     # Title with fire emojis
     # TODO: fix Label centering with emojis
-    self._firehose_label.render(rl.Rectangle(x - 48, y, w, 64))
+    self._firehose_label.render(rl.Rectangle(rect.x, y, rect.width, 64))
     y += 64 + spacing
 
     # Description
