@@ -93,7 +93,7 @@ class Label(Widget):
                text: str,
                font_size: int = DEFAULT_TEXT_SIZE,
                font_weight: FontWeight = FontWeight.NORMAL,
-               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
                text_padding: int = 0,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
                icon: Union[rl.Texture, None] = None,  # noqa: UP007

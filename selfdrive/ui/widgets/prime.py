@@ -16,7 +16,7 @@ class PrimeWidget(Widget):
   def __init__(self):
     super().__init__()
     self._upgrade_label = Label("Upgrade Now", 75, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                text_color=rl.RED, text_padding=0)
+                                text_color=rl.RED)
 
   def _render(self, rect):
     if ui_state.prime_state.is_prime():
