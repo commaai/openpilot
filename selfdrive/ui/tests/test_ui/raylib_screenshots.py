@@ -223,7 +223,7 @@ def setup_onroad_full_alert_long_text(click, pm: PubMaster):
 CASES = {
   "homescreen": setup_homescreen,
   "setup": setup_homescreen,
-  "updater": setup_homescreen_update_available,
+  "updater": setup_homescreen,
   "reset": setup_homescreen,
   # "homescreen_paired": setup_homescreen,
   # "homescreen_prime": setup_homescreen,
@@ -253,11 +253,13 @@ CASES = {
 
 
 class TestUI:
-  def __init__(self):
+  def __init__(self, window_title="UI"):
+    self.window_title = window_title
+
     os.environ["SCALE"] = os.getenv("SCALE", "1")
     sys.modules["mouseinfo"] = False
 
-  def setup(self, window_title: str):
+  def setup(self):
     # Seed minimal offroad state
     self.pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
     ds = messaging.new_message('deviceState')
@@ -268,7 +270,7 @@ class TestUI:
       time.sleep(0.05)
     time.sleep(0.5)
     try:
-      self.ui = pywinctl.getWindowsWithTitle(window_title)[0]
+      self.ui = pywinctl.getWindowsWithTitle(self.window_title)[0]
     except Exception as e:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
@@ -283,8 +285,8 @@ class TestUI:
     time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
-  def run_test(self, name: str, setup_case, window_title = "UI"):
-    self.setup(window_title)  # setup UI
+  def run_test(self, name: str, setup_case):
+    self.setup()  # setup UI
     time.sleep(UI_DELAY)  # wait for UI to start
     setup_case(self.click, self.pm)  # setup case
     self.screenshot(name)  # take screenshot
@@ -295,10 +297,9 @@ class TestUI:
 
 
 class TestScriptUI(TestUI):
-  def __init__(self, script_path: str, window_title: str):
-    super().__init__()
+  def __init__(self, script_path: str, *args, **kwargs):
+    super().__init__(*args, **kwargs)
     self._script_path = script_path
-    self._window_title = window_title
     self._process = None
 
   def __enter__(self):
@@ -316,7 +317,7 @@ class TestScriptUI(TestUI):
 
   # override the TestUI method to not start another UI process
   def test_ui(self, name, setup_case):
-    self.run_test(name, setup_case, self._window_title)
+    self.run_test(name, setup_case)
 
 
 def create_screenshots():
