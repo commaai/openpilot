@@ -242,22 +242,6 @@ class CameraView(Widget):
   def switch_stream(self, stream_type: VisionStreamType) -> None:
     self._requested_stream_type = stream_type
 
-  # def switch_stream(self, stream_type: VisionStreamType) -> None:
-  #   if self._stream_type == stream_type:
-  #     return
-  #
-  #   if self._switching and self._target_stream_type == stream_type:
-  #     return
-  #
-  #   cloudlog.debug(f'Preparing switch from {self._stream_type} to {stream_type}')
-  #
-  #   if self._target_client:
-  #     del self._target_client
-  #
-  #   self._target_stream_type = stream_type
-  #   self._target_client = VisionIpcClient(self._name, stream_type, conflate=True)
-  #   self._switching = True
-
   @property
   def stream_type(self) -> VisionStreamType:
     return self._stream_type
