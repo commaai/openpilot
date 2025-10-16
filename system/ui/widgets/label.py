@@ -94,6 +94,7 @@ class Label(Widget):
                font_size: int = DEFAULT_TEXT_SIZE,
                font_weight: FontWeight = FontWeight.NORMAL,
                text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+               text_alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
                text_padding: int = 0,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
                icon: Union[rl.Texture, None] = None,  # noqa: UP007
@@ -104,6 +105,7 @@ class Label(Widget):
     self._font = gui_app.font(self._font_weight)
     self._font_size = font_size
     self._text_alignment = text_alignment
+    self._text_alignment_vertical = text_alignment_vertical
     self._text_padding = text_padding
     self._text_color = text_color
     self._icon = icon
@@ -118,6 +120,10 @@ class Label(Widget):
   def set_text_color(self, color):
     self._text_color = color
 
+  def set_font_size(self, size):
+    self._font_size = size
+    self._update_text(self._text)
+
   def _update_layout_rects(self):
     self._update_text(self._text)
 
@@ -131,7 +137,10 @@ class Label(Widget):
 
   def _render(self, _):
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
-    text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - text_size.y) // 2))
+    if self._text_alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
+      text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - text_size.y) // 2))
+    else:
+      text_pos = rl.Vector2(self._rect.x, self._rect.y)
 
     if self._icon:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
