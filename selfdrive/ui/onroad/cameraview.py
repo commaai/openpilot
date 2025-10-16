@@ -122,8 +122,10 @@ class CameraView(Widget):
         self._stream_type = self._requested_stream_type
         with self._vipc_thread_lock:
           print('CREATING NEW CLIENT')
+          # TODO: need to delete old client?
           self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
 
+      # TODO: need to in lock?
       if not self.client.is_connected():
         with self._vipc_thread_lock:
           streams = self.client.available_streams(self._name, block=False)
@@ -142,6 +144,7 @@ class CameraView(Widget):
         self._is_vipc_thread_connected.set()  # to draw placeholder
         self._vipc_thread_connected_event.set()  # to set up textures
 
+      # TODO: need to lock?
       if self.client.is_connected():
         time.sleep(0.1)
 
@@ -185,6 +188,7 @@ class CameraView(Widget):
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
 
+    # TODO: need to del and then set to None?
     self.client = None
 
   def __del__(self):
@@ -227,6 +231,7 @@ class CameraView(Widget):
 
     if self._vipc_thread_connected_event.is_set() and (buffer or self.frame is None):
       print('   INITIALIZING TEXTURES!!!!')
+      # TODO: need to lock?
       self._initialize_textures()
       self._vipc_thread_connected_event.clear()
 
