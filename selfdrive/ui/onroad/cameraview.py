@@ -179,7 +179,7 @@ class CameraView(Widget):
 
     while self._vipc_thread_running:
       if self.client is None or self._stream_type != self._requested_stream_type:
-        self.frame = None
+        # self.frame = None
         cloudlog.debug(f"Connecting to stream {self._requested_stream_type}, was connected to {self._stream_type}")
         self._stream_type = self._requested_stream_type
         with self._vipc_thread_lock:
@@ -187,7 +187,7 @@ class CameraView(Widget):
           self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
 
       if not self.client.is_connected():
-        self.frame = None
+        # self.frame = None
         streams = self.client.available_streams(self._name, block=False)
         if not streams:
           time.sleep(0.1)
@@ -303,11 +303,11 @@ class CameraView(Widget):
     ])
 
   def _render(self, rect: rl.Rectangle):
-    if self._vipc_thread_connected_event.is_set():
-      print('   INITIALIZING TEXTURES!!!!')
-      self._initialize_textures()
-      self._vipc_thread_connected_event.clear()
-      return
+    # if self._vipc_thread_connected_event.is_set():
+    #   print('   INITIALIZING TEXTURES!!!!')
+    #   self._initialize_textures()
+    #   self._vipc_thread_connected_event.clear()
+    #   # return
 
     start_time = time.monotonic()
     # if self._switching:
@@ -319,6 +319,7 @@ class CameraView(Widget):
 
     # if not self._ensure_connection():
     if not self._is_vipc_thread_connected.is_set():
+      print('DRAWING PLACEHOLDER!!')
       self._draw_placeholder(rect)
       dt = (time.monotonic() - start_time) * 1000
       if dt > 10:
@@ -332,6 +333,13 @@ class CameraView(Widget):
     # Try to get a new buffer without blocking
     with self._vipc_thread_lock:
       buffer = self.client.recv(timeout_ms=0)
+
+    if self._vipc_thread_connected_event.is_set() and (buffer or self.frame is None):
+      print('   INITIALIZING TEXTURES!!!!')
+      self._initialize_textures()
+      self._vipc_thread_connected_event.clear()
+      # return
+
     if buffer:
       self._texture_needs_update = True
       self.frame = buffer
@@ -342,6 +350,7 @@ class CameraView(Widget):
 
     if not self.frame:
       self._draw_placeholder(rect)
+      print('DRAWING PLACEHOLDER NO FRAME!!')
       dt = (time.monotonic() - start_time) * 1000
       if dt > 10:
         print('__cameraview_timings no frame', dt)
@@ -415,6 +424,7 @@ class CameraView(Widget):
   def _render_textures(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
     """Render using texture copies"""
     if not self.texture_y or not self.texture_uv or self.frame is None:
+      print('NOT RENDERING TEXTURES')
       return
 
     # Update textures with new frame data
