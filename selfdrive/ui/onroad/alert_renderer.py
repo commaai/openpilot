@@ -7,7 +7,7 @@ from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_text_box, Label
+from openpilot.system.ui.widgets.label import Label
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -73,6 +73,10 @@ class AlertRenderer(Widget):
     super().__init__()
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
+
+    # font size is set dynamically
+    self._full_text1_label = Label("", font_size=0, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self._full_text2_label = Label("", font_size=ALERT_FONT_BIG, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
   def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
     """Generate the current alert based on selfdrive state."""
@@ -153,20 +157,16 @@ class AlertRenderer(Widget):
       is_long = len(alert.text1) > 15
       font_size1 = 132 if is_long else 177
 
-      align_center = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
-
       top_offset = 200 if is_long or '\n' in alert.text1 else 270
       title_rect = rl.Rectangle(rect.x, rect.y + top_offset, rect.width, 600)
-      # gui_text_box(title_rect, alert.text1, font_size1, alignment=align_center, alignment_vertical=align_top, font_weight=FontWeight.BOLD)
-      # use Label
-      lbl = Label(alert.text1, font_size=font_size1, font_weight=FontWeight.BOLD, text_alignment=align_center)
-      lbl.render(title_rect)
+      self._full_text1_label.set_font_size(font_size1)
+      self._full_text1_label.set_text(alert.text1)
+      self._full_text1_label.render(title_rect)
 
       bottom_offset = 361 if is_long else 420
       subtitle_rect = rl.Rectangle(rect.x, rect.y + rect.height - bottom_offset, rect.width, 300)
-      # gui_text_box(subtitle_rect, alert.text2, ALERT_FONT_BIG, alignment=align_center, alignment_vertical=align_top)
-      lbl2 = Label(alert.text2, font_size=ALERT_FONT_BIG, text_alignment=align_center)
-      lbl2.render(subtitle_rect)
+      self._full_text2_label.set_text(alert.text2)
+      self._full_text2_label.render(subtitle_rect)
 
   def _draw_centered(self, text, rect, font, font_size, center_y=True, color=rl.WHITE) -> None:
     text_size = measure_text_cached(font, text, font_size)

@@ -118,6 +118,10 @@ class Label(Widget):
   def set_text_color(self, color):
     self._text_color = color
 
+  def set_font_size(self, size):
+    self._font_size = size
+    self._update_text(self._text)
+
   def _update_layout_rects(self):
     self._update_text(self._text)
 
