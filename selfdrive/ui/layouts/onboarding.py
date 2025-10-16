@@ -8,7 +8,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.widgets.label import Label, TextAlignment
+from openpilot.system.ui.widgets.label import Label
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 DEBUG = False
@@ -107,9 +107,9 @@ class TermsPage(Widget):
     self._on_accept = on_accept
     self._on_decline = on_decline
 
-    self._title = Label("Welcome to openpilot", font_size=90, font_weight=FontWeight.BOLD, text_alignment=TextAlignment.LEFT)
+    self._title = Label("Welcome to openpilot", font_size=90, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
     self._desc = Label("You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing.",
-                       font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=TextAlignment.LEFT)
+                       font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
 
     self._decline_btn = Button("Decline", click_callback=on_decline)
     self._accept_btn = Button("Agree", button_style=ButtonStyle.PRIMARY, click_callback=on_accept)
@@ -142,7 +142,7 @@ class DeclinePage(Widget):
   def __init__(self, back_callback=None):
     super().__init__()
     self._text = Label("You must accept the Terms and Conditions in order to use openpilot.",
-                       font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=TextAlignment.LEFT)
+                       font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
     self._back_btn = Button("Back", click_callback=back_callback)
     self._uninstall_btn = Button("Decline, uninstall openpilot", button_style=ButtonStyle.DANGER,
                                  click_callback=self._on_uninstall_clicked)
