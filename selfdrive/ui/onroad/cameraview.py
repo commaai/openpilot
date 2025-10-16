@@ -295,9 +295,9 @@ class CameraView(Widget):
 
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
 
-      self._vipc_connected.set()
       self.available_streams = self.client.available_streams(self._name, block=False)
       break
+    self._vipc_connected.set()
 
   def _ensure_connection(self) -> bool:
     if not self.client.is_connected():
