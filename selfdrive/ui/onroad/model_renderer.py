@@ -286,8 +286,6 @@ class ModelRenderer(Widget):
     if self._experimental_mode:
       # Draw with acceleration coloring
       if len(self._exp_gradient.colors) > 1:
-        print(self._exp_gradient, len(self._exp_gradient.colors), len(self._exp_gradient.stops))
-        print()
         draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
       else:
         draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
