@@ -28,7 +28,7 @@ EMOJI_REGEX = re.compile(
 \u231a
 \ufe0f
 \u3030
-]+""",
+]+""".replace("\n", ""),
   flags=re.UNICODE
 )
 
