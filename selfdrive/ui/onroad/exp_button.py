@@ -66,8 +66,5 @@ class ExpButton(Widget):
     if not self._params.get_bool("ExperimentalModeConfirmed"):
       return False
 
-    car_params = ui_state.sm["carParams"]
-    if car_params.alphaLongitudinalAvailable:
-      return self._params.get_bool("AlphaLongitudinalEnabled")
-    else:
-      return car_params.openpilotLongitudinalControl
+    # Mirror exp mode toggle using persistent car params
+    return ui_state.has_longitudinal_control

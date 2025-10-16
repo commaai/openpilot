@@ -226,8 +226,12 @@ class ModelRenderer(Widget):
       i += 1 + (1 if (i + 2) < max_len else 0)
 
     # Store the gradient in the path object
-    self._exp_gradient.colors = segment_colors
-    self._exp_gradient.stops = gradient_stops
+    self._exp_gradient = Gradient(
+      start=(0.0, 1.0),  # Bottom of path
+      end=(0.0, 0.0),  # Top of path
+      colors=segment_colors,
+      stops=gradient_stops,
+    )
 
   def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
     speed_buff, lead_buff = 10.0, 40.0

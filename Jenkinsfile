@@ -167,7 +167,7 @@ node {
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
   def excludeBranches = ['__nightly', 'devel', 'devel-staging', 'release3', 'release3-staging',
-                         'release-tici', 'release-tizi', 'testing-closet*', 'hotfix-*']
+                         'release-tici', 'release-tizi', 'release-tizi-staging', 'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
   if (env.BRANCH_NAME != 'master' && !env.BRANCH_NAME.contains('__jenkins_loop_')) {
@@ -178,8 +178,8 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tizi-needs-can", [], [
-        step("build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"),
+      deviceStage("build release-tizi-staging", "tizi-needs-can", [], [
+        step("build release-tizi-staging", "RELEASE_BRANCH=release-tizi-staging $SOURCE_DIR/release/build_release.sh"),
       ])
     }
 
