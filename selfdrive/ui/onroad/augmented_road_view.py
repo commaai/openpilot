@@ -60,7 +60,7 @@ class AugmentedRoadView(CameraView):
 
     self._switch_stream_if_needed(ui_state.sm)
 
-    dt = time.monotonic() - start_draw
+    dt = (time.monotonic() - start_draw) * 1000
     if dt > 10:
       print('__timings switch streams', dt)
 
