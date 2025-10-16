@@ -117,59 +117,6 @@ class CameraView(Widget):
       self._vipc_thread.start()
 
   def _vipc_thread_loop(self):
-    """
-    void CameraWidget::vipcThread() {
-      VisionStreamType cur_stream = requested_stream_type;
-      std::unique_ptr<VisionIpcClient> vipc_client;
-      VisionIpcBufExtra meta_main = {0};
-
-      while (!QThread::currentThread()->isInterruptionRequested()) {
-        if (!vipc_client || cur_stream != requested_stream_type) {
-          clearFrames();
-          qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
-          cur_stream = requested_stream_type;
-          vipc_client.reset(new VisionIpcClient(stream_name, cur_stream, false));
-        }
-        active_stream_type = cur_stream;
-
-        if (!vipc_client->connected) {
-          clearFrames();
-          auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
-          if (streams.empty()) {
-            QThread::msleep(100);
-            continue;
-          }
-          emit vipcAvailableStreamsUpdated(streams);
-
-          if (!vipc_client->connect(false)) {
-            QThread::msleep(100);
-            continue;
-          }
-          emit vipcThreadConnected(vipc_client.get());
-        }
-
-        if (VisionBuf *buf = vipc_client->recv(&meta_main, 1000)) {
-          {
-            std::lock_guard lk(frame_lock);
-            frames.push_back(std::make_pair(meta_main.frame_id, buf));
-            while (frames.size() > FRAME_BUFFER_SIZE) {
-              frames.pop_front();
-            }
-          }
-          emit vipcThreadFrameReceived();
-        } else {
-          if (!isVisible()) {
-            vipc_client->connected = false;
-          }
-        }
-      }
-    }
-    """
-
-    # cur_stream = self._stream_type
-    # vipc_client: VisionIpcClient | None = None
-    # meta_main = None
-
     while self._vipc_thread_running:
       if self.client is None or self._stream_type != self._requested_stream_type:
         # self.frame = None
