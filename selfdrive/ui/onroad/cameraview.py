@@ -313,15 +313,21 @@ class CameraView(Widget):
         return False
       self.last_connection_attempt = current_time
 
-      if not self.client.connect(False) or not self.client.num_buffers:
-        return False
-
+      connected = self.client.connect(False)
       dt = (time.monotonic() - start_time) * 1000
       if dt > 10:
         print('__cameraview_timings connect', dt)
 
+      if not connected or not self.client.num_buffers:
+        return False
+
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
       self._initialize_textures()
+
+      dt = (time.monotonic() - start_time) * 1000
+      if dt > 10:
+        print('__cameraview_timings initialize textures', dt)
+
       self.available_streams = self.client.available_streams(self._name, block=False)
 
       dt = (time.monotonic() - start_time) * 1000
@@ -369,12 +375,16 @@ class CameraView(Widget):
     self._initialize_textures()
 
   def _initialize_textures(self):
-      self._clear_textures()
-      if not TICI:
-        self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
-          int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
-        self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
-          int(self.client.height // 2), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
+    start_time = time.monotonic()
+    self._clear_textures()
+    dt = (time.monotonic() - start_time) * 1000
+    if dt > 10:
+      print('__cameraview_timings clear textures', dt)
+    if not TICI:
+      self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
+                                                           int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
+      self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
+                                                            int(self.client.height // 2), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
 
   def _clear_textures(self):
     if self.texture_y and self.texture_y.id:
