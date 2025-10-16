@@ -71,7 +71,7 @@ class CameraView(Widget):
     super().__init__()
     self._name = name
     # Primary stream
-    self.client: None | VisionIpcClient = None
+    self.client = VisionIpcClient(name, stream_type, conflate=True)
     self._stream_type = stream_type
     self._requested_stream_type = stream_type
     self.available_streams: list[VisionStreamType] = []
@@ -82,7 +82,6 @@ class CameraView(Widget):
     self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
 
     self.frame: VisionBuf | None = None
-    self._frames: list[tuple[int, VisionBuf]] = []
     self.texture_y: rl.Texture | None = None
     self.texture_uv: rl.Texture | None = None
 
@@ -94,7 +93,7 @@ class CameraView(Widget):
 
     # VIPC thread
     self._vipc_thread_running = True
-    self._vipc_thread = None
+    self._vipc_thread: threading.Thread | None = None
     self._is_vipc_thread_connected = threading.Event()  # current connection state
     self._vipc_thread_connected_event = threading.Event()  # rising edge of connection
     self._vipc_thread_lock = threading.Lock()
@@ -172,7 +171,7 @@ class CameraView(Widget):
   def close(self) -> None:
     # TODO: decide which order
     self._vipc_thread_running = False
-    if self._vipc_thread.is_alive():
+    if self._vipc_thread is not None and self._vipc_thread.is_alive():
       self._vipc_thread.join()
 
     self._clear_textures()
