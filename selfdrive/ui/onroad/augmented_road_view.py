@@ -101,7 +101,7 @@ class AugmentedRoadView(CameraView):
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
     msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
-    # self._pm.send('uiDebug', msg)
+    self._pm.send('uiDebug', msg)
 
   def _handle_mouse_press(self, _):
     if not self._hud_renderer.user_interacting() and self._click_callback is not None:
