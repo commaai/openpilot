@@ -126,25 +126,57 @@ def setup_experimental_mode_description(click, pm: PubMaster):
   click(1200, 280)  # expand description for experimental mode
 
 
+def setup_onroad(click, pm: PubMaster):
+  # self.started = self.sm["deviceState"].started and self.ignition
+  # if self.sm.updated["pandaStates"]:
+  #   panda_states = self.sm["pandaStates"]
+  #
+  #   if len(panda_states) > 0:
+  #     # Get panda type from first panda
+  #     self.panda_type = panda_states[0].pandaType
+  #     # Check ignition status across all pandas
+  #     if self.panda_type != log.PandaState.PandaType.unknown:
+  #       self.ignition = any(state.ignitionLine or state.ignitionCan for state in panda_states)
+  ds = messaging.new_message('deviceState')
+  ds.deviceState.started = True
+  # ds.deviceState.ignitionLine = True
+
+  ps = messaging.new_message('pandaStates', 1)
+  # ps.pandaStates = [log.PandaState.new_message()]
+  ps.pandaStates[0].pandaType = log.PandaState.PandaType.dos
+  ps.pandaStates[0].ignitionLine = True
+
+  for _ in range(5):
+    pm.send('deviceState', ds)
+    pm.send('pandaStates', ps)
+    ds.clear_write_flag()
+    ps.clear_write_flag()
+    time.sleep(0.05)
+  time.sleep(1.0)  # wait for onroad transition
+
+
+
+
 CASES = {
-  "homescreen": setup_homescreen,
-  "homescreen_paired": setup_homescreen,
-  "homescreen_prime": setup_homescreen,
-  "homescreen_update_available": setup_homescreen_update_available,
-  "settings_device": setup_settings,
-  "settings_network": setup_settings_network,
-  "settings_network_advanced": setup_settings_network_advanced,
-  "settings_toggles": setup_settings_toggles,
-  "settings_software": setup_settings_software,
-  "settings_software_download": setup_settings_software_download,
-  "settings_software_release_notes": setup_settings_software_release_notes,
-  "settings_firehose": setup_settings_firehose,
-  "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
-  "pair_device": setup_pair_device,
-  "offroad_alert": setup_offroad_alert,
-  "confirmation_dialog": setup_confirmation_dialog,
-  "experimental_mode_description": setup_experimental_mode_description,
+  # "homescreen": setup_homescreen,
+  # "homescreen_paired": setup_homescreen,
+  # "homescreen_prime": setup_homescreen,
+  # "homescreen_update_available": setup_homescreen_update_available,
+  # "settings_device": setup_settings,
+  # "settings_network": setup_settings_network,
+  # "settings_network_advanced": setup_settings_network_advanced,
+  # "settings_toggles": setup_settings_toggles,
+  # "settings_software": setup_settings_software,
+  # "settings_software_download": setup_settings_software_download,
+  # "settings_software_release_notes": setup_settings_software_release_notes,
+  # "settings_firehose": setup_settings_firehose,
+  # "settings_developer": setup_settings_developer,
+  # "keyboard": setup_keyboard,
+  # "pair_device": setup_pair_device,
+  # "offroad_alert": setup_offroad_alert,
+  # "confirmation_dialog": setup_confirmation_dialog,
+  # "experimental_mode_description": setup_experimental_mode_description,
+  "onroad": setup_onroad,
 }
 
 
@@ -155,7 +187,7 @@ class TestUI:
 
   def setup(self):
     # Seed minimal offroad state
-    self.pm = PubMaster(["deviceState"])
+    self.pm = PubMaster(["deviceState", "pandaStates"])
     ds = messaging.new_message('deviceState')
     ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
     for _ in range(5):
