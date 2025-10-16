@@ -185,6 +185,33 @@ def setup_onroad_full_alert(click, pm: PubMaster):
   setup_onroad(click, pm)
   alert = messaging.new_message('selfdriveState')
   alert.selfdriveState.alertSize = AlertSize.full
+  alert.selfdriveState.alertText1 = "DISENGAGE IMMEDIATELY"
+  alert.selfdriveState.alertText2 = "Driver Distracted"
+  alert.selfdriveState.alertStatus = AlertStatus.critical
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+  time.sleep(5)
+
+
+def setup_onroad_full_alert_multiline(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = AlertSize.full
+  alert.selfdriveState.alertText1 = "Reverse\nGear"
+  alert.selfdriveState.alertStatus = AlertStatus.critical
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+  time.sleep(5)
+
+
+def setup_onroad_full_alert_long_text(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = AlertSize.full
   alert.selfdriveState.alertText1 = "TAKE CONTROL IMMEDIATELY"
   alert.selfdriveState.alertText2 = "Calibration Invalid: Remount Device & Recalibrate"
   alert.selfdriveState.alertStatus = AlertStatus.critical
@@ -192,7 +219,7 @@ def setup_onroad_full_alert(click, pm: PubMaster):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
     time.sleep(0.05)
-  time.sleep(300)
+  time.sleep(5)
 
 
 CASES = {
@@ -219,6 +246,8 @@ CASES = {
   # "onroad_small_alert": setup_onroad_small_alert,
   # "onroad_medium_alert": setup_onroad_medium_alert,
   "onroad_full_alert": setup_onroad_full_alert,
+  "onroad_full_alert_multiline": setup_onroad_full_alert_multiline,
+  "onroad_full_alert_long_text": setup_onroad_full_alert_long_text,
 }
 
 
