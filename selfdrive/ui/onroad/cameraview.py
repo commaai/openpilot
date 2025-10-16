@@ -73,7 +73,7 @@ class CameraView(Widget):
     super().__init__()
     self._name = name
     # Primary stream
-    # self.client = VisionIpcClient(name, stream_type, conflate=True)
+    self.client: None | VisionIpcClient = None
     self._stream_type = stream_type
     self._requested_stream_type = stream_type
     self.available_streams: list[VisionStreamType] = []
@@ -102,7 +102,9 @@ class CameraView(Widget):
     # VIPC thread
     self._vipc_thread_running = True
     self._vipc_thread = None
-    self._vipc_thread_connected = threading.Event()
+    self._is_vipc_thread_connected = threading.Event()  # current connection state
+    self._vipc_thread_connected_event = threading.Event()  # rising edge of connection
+    self._vipc_thread_lock = threading.Lock()
 
     # Initialize EGL for zero-copy rendering on TICI
     if TICI:
@@ -114,7 +116,7 @@ class CameraView(Widget):
       self.egl_texture = rl.load_texture_from_image(temp_image)
       rl.unload_image(temp_image)
 
-    # ui_state.add_offroad_transition_callback(self._offroad_transition)
+    ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def show_event(self):
     if self._vipc_thread is None:
@@ -171,20 +173,22 @@ class CameraView(Widget):
     }
     """
 
-    cur_stream = self._stream_type
-    vipc_client: VisionIpcClient | None = None
-    meta_main = None
+    # cur_stream = self._stream_type
+    # vipc_client: VisionIpcClient | None = None
+    # meta_main = None
 
     while self._vipc_thread_running:
-      if vipc_client is None or cur_stream != self._stream_type:
+      if self.client is None or self._stream_type != self._requested_stream_type:
         self.frame = None
-        cloudlog.debug(f"Connecting to stream {self._stream_type}, was connected to {cur_stream}")
-        cur_stream = self._stream_type
-        vipc_client = VisionIpcClient(self._name, cur_stream, conflate=True)
+        cloudlog.debug(f"Connecting to stream {self._requested_stream_type}, was connected to {self._stream_type}")
+        self._stream_type = self._requested_stream_type
+        with self._vipc_thread_lock:
+          print('CREATING NEW CLIENT')
+          self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
 
-      if not vipc_client.is_connected():
+      if not self.client.is_connected():
         self.frame = None
-        streams = vipc_client.available_streams(self._name, block=False)
+        streams = self.client.available_streams(self._name, block=False)
         if not streams:
           time.sleep(0.1)
           continue
@@ -193,26 +197,31 @@ class CameraView(Widget):
         # TODO: or threading.Event with argument passed to slot?
         self.available_streams = streams
 
-        if not vipc_client.connect(False):
+        if not self.client.connect(False):
           time.sleep(0.1)
           continue
 
         # TODO: this in main thread!
         # self._emit_vipc_connected()
-        self._vipc_thread_connected.set()
+        self._is_vipc_thread_connected.set()  # to draw placeholder
+        self._vipc_thread_connected_event.set()  # to set up textures
 
-      buffer = vipc_client.recv(timeout_ms=1000)
-      if buffer:
-        self._frames.append((vipc_client.frame_id if meta_main else 0, buffer))
-        while len(self._frames) > 5:
-          self._frames.pop(0)
+      if self.client.is_connected():
+        time.sleep(0.1)
 
-        # TODO: qt calls update() from here? do we need to?
-      else:
-        if ui_state.is_offroad():
-          # TODO: need to del or does = None clean it up?
-          del vipc_client
-          vipc_client = None
+      # buffer = self.client.recv(timeout_ms=1000)
+      # if buffer:
+      #   self._frames.append((self.client.frame_id, buffer))
+      #   while len(self._frames) > 5:
+      #     self._frames.pop(0)
+      #
+      #   # TODO: qt calls update() from here? do we need to?
+      # else:
+      #   if ui_state.is_offroad():
+      #     # TODO: need to del or does = None clean it up?
+      #     del self.client
+      #     self.client = None
+      #     self._is_vipc_thread_connected.clear()
 
   def _offroad_transition(self):
     # Reconnect if not first time going onroad
@@ -221,13 +230,17 @@ class CameraView(Widget):
       # which drains the VisionIpcClient SubSocket for us. Re-connecting is not enough
       # and only clears internal buffers, not the message queue.
       self.frame = None
-      if self.client:
-        del self.client
-      self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
+      with self._vipc_thread_lock:
+        if self.client:
+          del self.client
+        self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
 
   def _set_placeholder_color(self, color: rl.Color):
     """Set a placeholder color to be drawn when no frame is available."""
     self._placeholder_color = color
+
+  def switch_stream(self, stream_type: VisionStreamType) -> None:
+    self._requested_stream_type = stream_type
 
   # def switch_stream(self, stream_type: VisionStreamType) -> None:
   #   if self._stream_type == stream_type:
@@ -290,15 +303,22 @@ class CameraView(Widget):
     ])
 
   def _render(self, rect: rl.Rectangle):
+    if self._vipc_thread_connected_event.is_set():
+      print('   INITIALIZING TEXTURES!!!!')
+      self._initialize_textures()
+      self._vipc_thread_connected_event.clear()
+      return
+
     start_time = time.monotonic()
-    if self._switching:
-      self._handle_switch()
+    # if self._switching:
+    #   self._handle_switch()
 
     dt = (time.monotonic() - start_time) * 1000
     if dt > 10:
       print('__cameraview_timings switching', dt)
 
-    if not self._ensure_connection():
+    # if not self._ensure_connection():
+    if not self._is_vipc_thread_connected.is_set():
       self._draw_placeholder(rect)
       dt = (time.monotonic() - start_time) * 1000
       if dt > 10:
@@ -310,7 +330,8 @@ class CameraView(Widget):
       print('after ensure connection', (time.monotonic() - start_time) * 1000)
 
     # Try to get a new buffer without blocking
-    buffer = self.client.recv(timeout_ms=0)
+    with self._vipc_thread_lock:
+      buffer = self.client.recv(timeout_ms=0)
     if buffer:
       self._texture_needs_update = True
       self.frame = buffer
@@ -450,43 +471,43 @@ class CameraView(Widget):
   #
   #   return True
 
-  def _handle_switch(self) -> None:
-    """Check if target stream is ready and switch immediately."""
-    if not self._target_client or not self._switching:
-      return
-
-    # Try to connect target if needed
-    if not self._target_client.is_connected():
-      if not self._target_client.connect(False) or not self._target_client.num_buffers:
-        return
-
-      cloudlog.debug(f"Target stream connected: {self._target_stream_type}")
-
-    # Check if target has frames ready
-    target_frame = self._target_client.recv(timeout_ms=0)
-    if target_frame:
-      self.frame = target_frame  # Update current frame to target frame
-      self._complete_switch()
-
-  def _complete_switch(self) -> None:
-    """Instantly switch to target stream."""
-    cloudlog.debug(f"Switching to {self._target_stream_type}")
-    # Clean up current resources
-    if self.client:
-      del self.client
-
-    # Switch to target
-    self.client = self._target_client
-    self._stream_type = self._target_stream_type
-    self._texture_needs_update = True
-
-    # Reset state
-    self._target_client = None
-    self._target_stream_type = None
-    self._switching = False
-
-    # Initialize textures for new stream
-    self._initialize_textures()
+  # def _handle_switch(self) -> None:
+  #   """Check if target stream is ready and switch immediately."""
+  #   if not self._target_client or not self._switching:
+  #     return
+  #
+  #   # Try to connect target if needed
+  #   if not self._target_client.is_connected():
+  #     if not self._target_client.connect(False) or not self._target_client.num_buffers:
+  #       return
+  #
+  #     cloudlog.debug(f"Target stream connected: {self._target_stream_type}")
+  #
+  #   # Check if target has frames ready
+  #   target_frame = self._target_client.recv(timeout_ms=0)
+  #   if target_frame:
+  #     self.frame = target_frame  # Update current frame to target frame
+  #     self._complete_switch()
+  #
+  # def _complete_switch(self) -> None:
+  #   """Instantly switch to target stream."""
+  #   cloudlog.debug(f"Switching to {self._target_stream_type}")
+  #   # Clean up current resources
+  #   if self.client:
+  #     del self.client
+  #
+  #   # Switch to target
+  #   self.client = self._target_client
+  #   self._stream_type = self._target_stream_type
+  #   self._texture_needs_update = True
+  #
+  #   # Reset state
+  #   self._target_client = None
+  #   self._target_stream_type = None
+  #   # self._switching = False
+  #
+  #   # Initialize textures for new stream
+  #   self._initialize_textures()
 
   def _initialize_textures(self):
     start_time = time.monotonic()

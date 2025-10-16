@@ -58,6 +58,9 @@ class AugmentedRoadView(CameraView):
     if not ui_state.started:
       return
 
+    def print(*args):
+      pass
+
     self._switch_stream_if_needed(ui_state.sm)
 
     dt = (time.monotonic() - start_draw) * 1000
