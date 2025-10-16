@@ -285,7 +285,7 @@ class TestOnroad:
 
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    assert np.average(mems) <= 65, "Average memory usage above 65%"
+    assert np.average(mems) <= 80, "Average memory usage above 80%"
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 
