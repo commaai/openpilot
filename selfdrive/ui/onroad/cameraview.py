@@ -187,8 +187,9 @@ class CameraView(Widget):
           self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
 
       if not self.client.is_connected():
-        # self.frame = None
-        streams = self.client.available_streams(self._name, block=False)
+        with self._vipc_thread_lock:
+          # self.frame = None
+          streams = self.client.available_streams(self._name, block=False)
         if not streams:
           time.sleep(0.1)
           continue
@@ -197,12 +198,15 @@ class CameraView(Widget):
         # TODO: or threading.Event with argument passed to slot?
         self.available_streams = streams
 
-        if not self.client.connect(False):
-          time.sleep(0.1)
-          continue
+        # VisionIpcClient::connect is not thread safe, guard with lock
+        with self._vipc_thread_lock:
+          if not self.client.connect(False):
+            time.sleep(0.1)
+            continue
 
         # TODO: this in main thread!
         # self._emit_vipc_connected()
+        print('CONNECTED TO NEW VIPC!')
         self._is_vipc_thread_connected.set()  # to draw placeholder
         self._vipc_thread_connected_event.set()  # to set up textures
 
@@ -417,6 +421,7 @@ class CameraView(Widget):
     dt = (time.monotonic() - start_time) * 1000
     if dt > 10:
       print('__cameraview_timings clear textures', dt)
+    print('stride', self.client.stride, 'height', self.client.height)
     if not TICI:
       self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
                                                            int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
