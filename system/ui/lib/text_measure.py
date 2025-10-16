@@ -25,6 +25,9 @@ def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: int =
   result = rl.measure_text_ex(font, non_emoji_text, font_size * FONT_SCALE, spacing)  # noqa: TID251
   if emoji:
     result.x += len(emoji) * font_size * FONT_SCALE
+    # If just emoji assume a single line height
+    if result.y == 0:
+      result.y = font_size * FONT_SCALE
 
   _cache[key] = result
   return result
