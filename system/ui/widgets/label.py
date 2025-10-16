@@ -147,10 +147,7 @@ class Label(Widget):
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
 
-    print()
-    print(self._text)
     for text, text_size, emojis in zip_longest(self._text, self._text_size, self._emojis, fillvalue=[]):
-      print(text, text_size.x, emojis)
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
       if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
         line_pos.x += self._text_padding
