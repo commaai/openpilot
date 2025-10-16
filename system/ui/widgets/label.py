@@ -1,4 +1,3 @@
-from enum import IntEnum
 from itertools import zip_longest
 from typing import Union
 
@@ -138,13 +137,12 @@ class Label(Widget):
   def _render(self, _):
     rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
-    text = self._text_wrapped[0] if self._text_wrapped else None
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
     text_pos = rl.Vector2(0, (self._rect.y + (self._rect.height - (text_size.y)) // 2))
 
     if self._icon:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
-      if text:
+      if len(self._text_wrapped) > 0:
         if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
           icon_x = self._rect.x + self._text_padding
           text_pos.x = self._icon.width + ICON_PADDING
