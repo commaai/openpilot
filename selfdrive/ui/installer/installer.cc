@@ -54,6 +54,8 @@ void branchMigration() {
   } else if (device_type == cereal::InitData::DeviceType::TIZI) {
     if (BRANCH_STR == "release3") {
       migrated_branch = "release-tizi";
+    } else if (BRANCH_STR == "release3-staging") {
+      migrated_branch = "release-tizi-staging";
     }
   }
 }
