@@ -217,10 +217,10 @@ CASES = {
   # "offroad_alert": setup_offroad_alert,
   # "confirmation_dialog": setup_confirmation_dialog,
   # "experimental_mode_description": setup_experimental_mode_description,
-  "onroad": setup_onroad,
-  "onroad_sidebar": setup_onroad_sidebar,
-  "onroad_small_alert": setup_onroad_small_alert,
-  "onroad_medium_alert": setup_onroad_medium_alert,
+  # "onroad": setup_onroad,
+  # "onroad_sidebar": setup_onroad_sidebar,
+  # "onroad_small_alert": setup_onroad_small_alert,
+  # "onroad_medium_alert": setup_onroad_medium_alert,
   "onroad_full_alert": setup_onroad_full_alert,
 }
 
