@@ -192,7 +192,6 @@ def setup_onroad_full_alert(click, pm: PubMaster):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
     time.sleep(0.05)
-  time.sleep(5)
 
 
 def setup_onroad_full_alert_multiline(click, pm: PubMaster):
@@ -205,7 +204,6 @@ def setup_onroad_full_alert_multiline(click, pm: PubMaster):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
     time.sleep(0.05)
-  time.sleep(5)
 
 
 def setup_onroad_full_alert_long_text(click, pm: PubMaster):
@@ -219,7 +217,6 @@ def setup_onroad_full_alert_long_text(click, pm: PubMaster):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
     time.sleep(0.05)
-  time.sleep(5)
 
 
 CASES = {
