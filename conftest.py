@@ -1,6 +1,7 @@
 import contextlib
 import gc
 import os
+import platform
 import pytest
 
 from openpilot.common.prefix import OpenpilotPrefix
@@ -49,13 +50,20 @@ def clean_env():
 def openpilot_function_fixture(request):
   with clean_env():
     # setup a clean environment for each test
-    with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
-      prefix = os.environ["OPENPILOT_PREFIX"]
-
+    is_darwin = platform.system() == "Darwin"
+    if is_darwin:
+      # ZMQ backend is mandatory on macOS and forbids OPENPILOT_PREFIX
+      if "OPENPILOT_PREFIX" in os.environ:
+        del os.environ["OPENPILOT_PREFIX"]
       yield
+    else:
+      with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
+        prefix = os.environ["OPENPILOT_PREFIX"]
 
-      # ensure the test doesn't change the prefix
-      assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
+        yield
+
+        # ensure the test doesn't change the prefix
+        assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
 
     # cleanup any started processes
     manager.manager_cleanup()

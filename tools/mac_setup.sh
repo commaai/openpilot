@@ -70,6 +70,18 @@ export PYCURL_SSL_LIBRARY=openssl
 $DIR/install_python_dependencies.sh
 echo "[ ] installed python dependencies t=$SECONDS"
 
+# Ensure pip is available in the venv and rebuild PyAudio for ARM64
+VENV_PYTHON="$ROOT/.venv/bin/python"
+
+if ! "$VENV_PYTHON" -m pip --version &>/dev/null; then
+    echo "[ ] Bootstrapping pip in venv"
+    curl -sS https://bootstrap.pypa.io/get-pip.py | arch -arm64 "$VENV_PYTHON"
+fi
+
+echo "[ ] Rebuilding PyAudio for ARM64"
+arch -arm64 "$VENV_PYTHON" -m pip uninstall -y pyaudio || true
+arch -arm64 "$VENV_PYTHON" -m pip install --no-binary :all: pyaudio
+
 # brew does not link qt5 by default
 # check if qt5 can be linked, if not, prompt the user to link it
 QT_BIN_LOCATION="$(command -v lupdate || :)"
