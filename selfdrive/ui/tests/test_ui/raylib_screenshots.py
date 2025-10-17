@@ -251,11 +251,11 @@ CASES: dict[str, Callable] = {
 }
 
 
-def software_setup_click_primary_button(click, pm: PubMaster):
+def fullscreen_click_primary_button(click, pm: PubMaster):
   click(1600, 950)
 
 
-def software_setup_click_secondary_button(click, pm: PubMaster):
+def fullscreen_click_secondary_button(click, pm: PubMaster):
   click(500, 950)
 
 
@@ -276,21 +276,21 @@ def software_setup_choose_software_click_custom(click, pm: PubMaster):
 # Each item can also be a group of steps to do, with the screenshot at the end.
 SCRIPT_UI_CASES: dict[str, list | list[list]] = {
   "setup": [
-    software_setup_click_primary_button,  # Low voltage warning; click "Continue"
+    fullscreen_click_primary_button,  # Low voltage warning; click "Continue"
     software_setup_get_started_next,  # Get started page; click arrow
     [
       # Do this in a group since we only want a screenshot of the warning
       software_setup_choose_software_click_custom,  # Choose software page; click "Custom"
-      software_setup_click_primary_button,  # Click "Continue"
+      fullscreen_click_primary_button,  # Click "Continue"
     ],
-    [software_setup_click_secondary_button, software_setup_choose_software_click_openpilot],  # Go back to choose software page and click "openpilot"
-    [software_setup_click_primary_button, lambda click, pm: time.sleep(1)],  # Click "Continue"; wait for networks to load
-    software_setup_click_primary_button,  # "Download" button
+    [fullscreen_click_secondary_button, software_setup_choose_software_click_openpilot],  # Go back to choose software page and click "openpilot"
+    [fullscreen_click_primary_button, lambda click, pm: time.sleep(1)],  # Click "Continue"; wait for networks to load
+    fullscreen_click_primary_button,  # "Download" button
   ],
   "updater": [],
   "reset": [
-    software_setup_click_primary_button,  # Click "Confirm" on initial confirmation
-    software_setup_click_primary_button,  # Click "Confirm" on final warning
+    fullscreen_click_primary_button,  # Click "Confirm" on initial confirmation
+    fullscreen_click_primary_button,  # Click "Confirm" on final warning
   ],
 }
 
