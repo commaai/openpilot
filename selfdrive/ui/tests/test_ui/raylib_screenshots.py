@@ -103,6 +103,25 @@ def setup_keyboard(click, pm: PubMaster):
   setup_settings_developer(click, pm)
   click(1930, 470)
 
+def keyboard_toggle_shift(click):
+  click(200, 800)
+
+def keyboard_toggle_numbers(click):
+  click(200, 900)
+
+def setup_keyboard_uppercase(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_shift(click)
+
+def setup_keyboard_numbers(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_numbers(click)
+
+def setup_keyboard_symbols(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_numbers(click)
+  keyboard_toggle_shift(click)  # symbols
+
 
 def setup_pair_device(click, pm: PubMaster):
   click(1950, 800)
@@ -234,6 +253,9 @@ CASES = {
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard,
+  "keyboard_uppercase": setup_keyboard_uppercase,
+  "keyboard_numbers": setup_keyboard_numbers,
+  "keyboard_symbols": setup_keyboard_symbols,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
   "confirmation_dialog": setup_confirmation_dialog,
