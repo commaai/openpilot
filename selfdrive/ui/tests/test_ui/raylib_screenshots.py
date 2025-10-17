@@ -361,7 +361,7 @@ class TestScriptUI(TestUI):
       self._process = None
 
   # Override the TestUI method to run multiple tests, and to avoid starting another UI process
-  def test_ui(self, name, setup_cases: list[Callable] | list[list[Callable]]):
+  def test_ui(self, name, setup_cases: list[Callable | list[Callable]]):
     self.setup()
     time.sleep(UI_DELAY)
     self.screenshot(name)  # initial screenshot
