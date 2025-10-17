@@ -284,7 +284,7 @@ SCRIPT_UI_CASES: dict[str, list | list[list]] = {
       software_setup_click_primary_button,  # Click "Continue"
     ],
     [software_setup_click_secondary_button, software_setup_choose_software_click_openpilot],  # Go back to choose software page and click "openpilot"
-    [software_setup_click_primary_button, lambda click, pm: time.sleep(1)],  # Click "Continue"; wait for networks to load
+    [software_setup_click_primary_button, lambda click, pm: time.sleep(0.5)],  # Click "Continue"; wait for networks to load
     software_setup_click_primary_button,  # "Download" button
   ],
   "updater": [],
