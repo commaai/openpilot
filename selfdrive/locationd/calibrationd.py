@@ -158,7 +158,7 @@ class Calibrator:
       self.cal_status = log.LiveCalibrationData.Status.invalid
 
     # If spread is too high, assume mounting was changed and reset to last block.
-    # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.
+    # Make the transition smooth. Abrupt transitions are not good for feedback loop through driving model.
     # TODO: add height spread check with smooth transition too
     spread_too_high = self.calib_spread[1] > MAX_ALLOWED_PITCH_SPREAD or self.calib_spread[2] > MAX_ALLOWED_YAW_SPREAD
     if spread_too_high and self.cal_status == log.LiveCalibrationData.Status.calibrated:
