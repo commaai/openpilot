@@ -328,7 +328,7 @@ class TestUI:
   @with_processes(["ui"])
   def test_ui(self, name, setup_case: Callable):
     self.setup()
-    time.sleep(UI_DELAY)
+    time.sleep(UI_DELAY)  # wait for UI to start
     setup_case(self.click, self.pm)
     self.screenshot(name)
 
@@ -390,7 +390,8 @@ def create_screenshots():
 
   for name, setup_cases in SCRIPT_UI_CASES.items():
     with OpenpilotPrefix():
-      with TestScriptUI(f"system/ui/{name}.py", "System Reset" if name == "reset" else name.capitalize()) as launcher:
+      window_title = "System Reset" if name == "reset" else name.capitalize()
+      with TestScriptUI(f"system/ui/{name}.py", window_title) as launcher:
         launcher.test_ui(name, setup_cases)
 
 
