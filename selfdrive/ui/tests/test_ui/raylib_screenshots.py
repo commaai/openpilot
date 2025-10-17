@@ -275,7 +275,7 @@ def software_setup_choose_software_click_custom(click, pm: PubMaster):
 # Each case is a list of additional steps to perform and screenshot, after initial screenshot.
 # Each step can also be a list of steps to do, with the screenshot at the end.
 SCRIPT_UI_CASES: dict[str, list | list[list]] = {
-  "setup_openpilot": [
+  "setup": [
     software_setup_click_primary_button,  # Low voltage warning; click "Continue"
     software_setup_get_started_next,  # Get started page; click arrow
     [
