@@ -252,11 +252,11 @@ CASES: dict[str, Callable] = {
 
 
 def fullscreen_click_primary_button(click, pm: PubMaster):
-  click(1600, 950)
+  click(1600, 950)  # Bottom right button
 
 
 def fullscreen_click_secondary_button(click, pm: PubMaster):
-  click(500, 950)
+  click(500, 950)  # Bottom left button
 
 
 def software_setup_get_started_next(click, pm: PubMaster):
@@ -271,10 +271,11 @@ def software_setup_choose_software_click_custom(click, pm: PubMaster):
   click(1200, 580)
 
 
-# These cases are for scripts that launch their own UI process (setup, updater, reset).
+# These cases are for the setup, updater, and reset screens that have their own UI process.
+# The key is the name of the script.
 # Each case is a list of additional steps to perform and screenshot (after initial screenshot).
 # Each item can also be a group of steps to do, with the screenshot at the end.
-SCRIPT_UI_CASES: dict[str, list | list[list]] = {
+SOFTWARE_SETUP_CASES: dict[str, list | list[list]] = {
   "setup": [
     fullscreen_click_primary_button,  # Low voltage warning; click "Continue"
     software_setup_get_started_next,  # Get started page; click arrow
@@ -391,7 +392,7 @@ def create_screenshots():
 
       t.test_ui(name, setup)
 
-  for name, setup_cases in SCRIPT_UI_CASES.items():
+  for name, setup_cases in SOFTWARE_SETUP_CASES.items():
     with OpenpilotPrefix():
       window_title = "System Reset" if name == "reset" else name.capitalize()
       with TestScriptUI(f"system/ui/{name}.py", window_title) as launcher:
