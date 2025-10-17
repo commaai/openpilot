@@ -272,8 +272,8 @@ def software_setup_choose_software_click_custom(click, pm: PubMaster):
 
 
 # These cases are for scripts that launch their own UI process (setup, updater, reset).
-# Each case is a list of additional steps to perform and screenshot, after initial screenshot.
-# Each step can also be a list of steps to do, with the screenshot at the end.
+# Each case is a list of additional steps to perform and screenshot (after initial screenshot).
+# Each item can also be a group of steps to do, with the screenshot at the end.
 SCRIPT_UI_CASES: dict[str, list | list[list]] = {
   "setup": [
     software_setup_click_primary_button,  # Low voltage warning; click "Continue"
