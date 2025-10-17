@@ -15,8 +15,9 @@ from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.ui.lib.onboarding_steps import STEP_RECTS
 from openpilot.system.updated.updated import parse_release_notes
 
 AlertSize = log.SelfdriveState.AlertSize
@@ -129,6 +130,14 @@ def setup_experimental_mode_description(click, pm: PubMaster):
   click(1200, 280)  # expand description for experimental mode
 
 
+def setup_onboarding(click, pm: PubMaster):
+  setup_settings(click, pm)
+  click(2000, 960)  # review training guide
+  # Click the center of each onboarding step rect
+  for _, rect in enumerate(STEP_RECTS[:-1]):
+    click(int(rect.x + rect.width / 2), int(rect.y + rect.height / 2))
+
+
 def setup_onroad(click, pm: PubMaster):
   ds = messaging.new_message('deviceState')
   ds.deviceState.started = True
@@ -238,6 +247,7 @@ CASES = {
   "offroad_alert": setup_offroad_alert,
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
+  "onboarding_completion": setup_onboarding,
   "onroad": setup_onroad,
   "onroad_sidebar": setup_onroad_sidebar,
   "onroad_small_alert": setup_onroad_small_alert,
