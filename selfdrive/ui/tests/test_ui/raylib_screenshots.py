@@ -338,13 +338,14 @@ class TestUI:
 
 
 class TestScriptUI(TestUI):
-  def __init__(self, script_path: str, *args, **kwargs):
+  def __init__(self, script_path: str, script_args: list[str] | None, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self._script_path = script_path
+    self._script_args = script_args or []
     self._process = None
 
   def __enter__(self):
-    self._process = subprocess.Popen([sys.executable, self._script_path])
+    self._process = subprocess.Popen([sys.executable, self._script_path] + self._script_args)
     return self
 
   def __exit__(self, exc_type, exc_value, traceback):
@@ -395,7 +396,8 @@ def create_screenshots():
   for name, setup_cases in SOFTWARE_SETUP_CASES.items():
     with OpenpilotPrefix():
       window_title = "System Reset" if name == "reset" else name.capitalize()
-      with TestScriptUI(f"system/ui/{name}.py", window_title) as launcher:
+      args = ["updater", "manifest"] if name == "updater" else None
+      with TestScriptUI(f"system/ui/{name}.py", args, window_title=window_title) as launcher:
         launcher.test_ui(name, setup_cases)
 
 
