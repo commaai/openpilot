@@ -4,11 +4,13 @@ import sys
 import shutil
 import time
 import pathlib
-from collections import namedtuple
 import subprocess
 
 import pyautogui
 import pywinctl
+
+from collections import namedtuple
+from collections.abc import Callable
 
 from cereal import log
 from cereal import messaging
@@ -220,11 +222,8 @@ def setup_onroad_full_alert_long_text(click, pm: PubMaster):
     time.sleep(0.05)
 
 
-CASES = {
+CASES: dict[str, Callable] = {
   "homescreen": setup_homescreen,
-  "setup": setup_homescreen,
-  "updater": setup_homescreen,
-  "reset": setup_homescreen,
   # "homescreen_paired": setup_homescreen,
   # "homescreen_prime": setup_homescreen,
   # "homescreen_update_available": setup_homescreen_update_available,
@@ -249,6 +248,47 @@ CASES = {
   # "onroad_full_alert": setup_onroad_full_alert,
   # "onroad_full_alert_multiline": setup_onroad_full_alert_multiline,
   # "onroad_full_alert_long_text": setup_onroad_full_alert_long_text,
+}
+
+
+def software_setup_click_primary_button(click, pm: PubMaster):
+  click(1600, 950)
+
+
+def software_setup_click_secondary_button(click, pm: PubMaster):
+  click(500, 950)
+
+
+def software_setup_get_started_next(click, pm: PubMaster):
+  click(2000, 630)
+
+
+def software_setup_choose_software_click_openpilot(click, pm: PubMaster):
+  click(1200, 320)
+
+
+def software_setup_choose_software_click_custom(click, pm: PubMaster):
+  click(1200, 580)
+
+
+# These cases are for scripts that launch their own UI process (setup, updater, reset).
+# Each case is a list of additional steps to perform and screenshot, after initial screenshot.
+# Each step can also be a list of steps to do, with the screenshot at the end.
+SCRIPT_UI_CASES: dict[str, list | list[list]] = {
+  "setup_openpilot": [
+    software_setup_click_primary_button,  # Low voltage warning; click "Continue"
+    software_setup_get_started_next,  # Get started page; click arrow
+    [
+      # Do this in a group since we only want a screenshot of the warning
+      software_setup_choose_software_click_custom,  # Choose software page; click "Custom"
+      software_setup_click_primary_button,  # Click "Continue"
+    ],
+    [software_setup_click_secondary_button, software_setup_choose_software_click_openpilot],  # Go back to choose software page and click "openpilot"
+    [software_setup_click_primary_button, lambda click, pm: time.sleep(1)],  # Click "Continue"; wait for networks to load
+    software_setup_click_primary_button,  # "Download" button
+  ],
+  "updater": [],
+  "reset": [],
 }
 
 
@@ -285,15 +325,12 @@ class TestUI:
     time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
-  def run_test(self, name: str, setup_case):
+  @with_processes(["ui"])
+  def test_ui(self, name, setup_case: Callable):
     self.setup()  # setup UI
     time.sleep(UI_DELAY)  # wait for UI to start
-    setup_case(self.click, self.pm)  # setup case
+    setup_case(self.click, self.pm)
     self.screenshot(name)  # take screenshot
-
-  @with_processes(["ui"])
-  def test_ui(self, name, setup_case):
-    self.run_test(name, setup_case)
 
 
 class TestScriptUI(TestUI):
@@ -315,9 +352,17 @@ class TestScriptUI(TestUI):
         self._process.kill()
       self._process = None
 
-  # override the TestUI method to not start another UI process
-  def test_ui(self, name, setup_case):
-    self.run_test(name, setup_case)
+  # Override the TestUI method to to run multiple tests, and to avoid starting another UI process
+  def test_ui(self, name, setup_cases: list[Callable] | list[list[Callable]]):
+    self.setup()  # setup UI
+    time.sleep(UI_DELAY)  # wait for UI to start
+    self.screenshot(name)  # initial screenshot
+    # Run each setup case, taking a screenshot after each group
+    for i, case in enumerate(setup_cases):
+      group = case if isinstance(case, list) else [case]  # each case can be a single step or group of steps
+      for setup_case in group:
+        setup_case(self.click, self.pm)  # run each step in the group
+      self.screenshot(f"{name}_{i + 1}")  # take screenshot after each case group
 
 
 def create_screenshots():
@@ -341,12 +386,12 @@ def create_screenshots():
       elif name == "homescreen_prime":
         params.put("PrimeType", 2)  # LITE
 
-      if name == "setup" or name == "updater" or name == "reset":
-        with TestScriptUI(f"system/ui/{name}.py", name.capitalize()) as launcher:
-          launcher.test_ui(name, setup)
-        continue
-
       t.test_ui(name, setup)
+
+  for name, setup_cases in SCRIPT_UI_CASES.items():
+    with OpenpilotPrefix():
+      with TestScriptUI(f"system/ui/{name}.py", "System Reset" if name == "reset" else name.capitalize()) as launcher:
+        launcher.test_ui(name, setup_cases)
 
 
 if __name__ == "__main__":
