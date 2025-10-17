@@ -54,7 +54,7 @@ while true; do
   #  /data/ciui.py &
   #fi
 
-  awk '{print \$1}' /proc/uptime > /var/tmp/power_watchdog
+  sudo systemctl stop power_monitor
   sleep 5s
 done
 
