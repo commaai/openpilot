@@ -280,8 +280,8 @@ SOFTWARE_SETUP_CASES: dict[str, list | list[list]] = {
     fullscreen_click_primary_button,  # Low voltage warning; click "Continue"
     software_setup_get_started_next,  # Get started page; click arrow
     [
-      # Do this in a group since we only want a screenshot of the warning
-      software_setup_choose_software_click_custom,  # Choose software page; click "Custom"
+      # Take a screenshot of the custom software warning first, so we can go back
+      software_setup_choose_software_click_custom,  # Click "Custom" on choose software page
       fullscreen_click_primary_button,  # Click "Continue"
     ],
     [fullscreen_click_secondary_button, software_setup_choose_software_click_openpilot],  # Go back to choose software page and click "openpilot"
@@ -370,6 +370,7 @@ class TestScriptUI(TestUI):
       group = case if isinstance(case, list) else [case]  # each case can be a single step or group of steps
       for setup_case in group:
         setup_case(self.click, self.pm)  # run each step in the group
+        time.sleep(0.1)  # allow UI to update between steps
       self.screenshot(f"{name}_{i + 1}")  # take screenshot after each case group
 
 
