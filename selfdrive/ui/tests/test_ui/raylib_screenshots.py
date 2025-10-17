@@ -327,10 +327,10 @@ class TestUI:
 
   @with_processes(["ui"])
   def test_ui(self, name, setup_case: Callable):
-    self.setup()  # setup UI
-    time.sleep(UI_DELAY)  # wait for UI to start
+    self.setup()
+    time.sleep(UI_DELAY)
     setup_case(self.click, self.pm)
-    self.screenshot(name)  # take screenshot
+    self.screenshot(name)
 
 
 class TestScriptUI(TestUI):
@@ -354,8 +354,8 @@ class TestScriptUI(TestUI):
 
   # Override the TestUI method to to run multiple tests, and to avoid starting another UI process
   def test_ui(self, name, setup_cases: list[Callable] | list[list[Callable]]):
-    self.setup()  # setup UI
-    time.sleep(UI_DELAY)  # wait for UI to start
+    self.setup()
+    time.sleep(UI_DELAY)
     self.screenshot(name)  # initial screenshot
     # Run each setup case, taking a screenshot after each group
     for i, case in enumerate(setup_cases):
