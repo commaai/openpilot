@@ -252,11 +252,11 @@ CASES: dict[str, Callable] = {
 
 
 def fullscreen_click_primary_button(click, pm: PubMaster):
-  click(1800, 950)  # Bottom right button
+  click(1950, 950)  # Bottom right button
 
 
 def fullscreen_click_secondary_button(click, pm: PubMaster):
-  click(200, 950)  # Bottom left button
+  click(150, 950)  # Bottom left button
 
 
 def software_setup_get_started_next(click, pm: PubMaster):
