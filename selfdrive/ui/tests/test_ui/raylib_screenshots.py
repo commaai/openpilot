@@ -252,11 +252,11 @@ CASES: dict[str, Callable] = {
 
 
 def fullscreen_click_primary_button(click, pm: PubMaster):
-  click(1600, 950)  # Bottom right button
+  click(1800, 950)  # Bottom right button
 
 
 def fullscreen_click_secondary_button(click, pm: PubMaster):
-  click(500, 950)  # Bottom left button
+  click(200, 950)  # Bottom left button
 
 
 def software_setup_get_started_next(click, pm: PubMaster):
@@ -288,7 +288,10 @@ SOFTWARE_SETUP_CASES: dict[str, list | list[list]] = {
     [fullscreen_click_primary_button, lambda click, pm: time.sleep(1)],  # Click "Continue"; wait for networks to load
     fullscreen_click_primary_button,  # "Download" button
   ],
-  "updater": [],
+  "updater": [
+    fullscreen_click_secondary_button,  # Click "Connect to Wi-Fi"
+    [fullscreen_click_secondary_button, fullscreen_click_primary_button],  # Click "Back", then "Install"
+  ],
   "reset": [
     fullscreen_click_primary_button,  # Click "Confirm" on initial confirmation
     fullscreen_click_primary_button,  # Click "Confirm" on final warning
