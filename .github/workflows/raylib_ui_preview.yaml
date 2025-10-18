@@ -87,7 +87,7 @@ jobs:
 
           scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1)
           A=($scenes)
-          echo "Found ${#A[*]} screenshots to compare"
+          echo "Found ${#A[*]} screenshots to compare" >> $GITHUB_OUTPUT
 
           DIFF=""
           TABLE="<details><summary>All Screenshots</summary>"
@@ -113,10 +113,7 @@ jobs:
               DIFF="${DIFF}</details>"
             elif [[ "${A[$i]}" == "pair_device" ]]; then
               echo "  - Skipped" >> $GITHUB_OUTPUT
-              if [ ! -f "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png" ]; then
-                echo "  - pair_device missing in master, copying from PR to ensure it displays" >> $GITHUB_OUTPUT
-                cp "${{ github.workspace }}/pr_ui/${A[$i]}.png" "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png"
-              fi
+              mv ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_master_ref.png
             elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
               echo "  - Different" >> $GITHUB_OUTPUT
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
