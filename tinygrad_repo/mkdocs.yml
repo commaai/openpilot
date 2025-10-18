@@ -1,0 +1,149 @@
+# pip install mkdocs mkdocs-material mkdocstrings[python]
+site_name: tinygrad docs
+site_url: https://docs.tinygrad.org/
+repo_url: https://github.com/tinygrad/tinygrad/
+nav:
+- Home:
+  - index.md
+  - Quickstart: quickstart.md
+  - Showcase: showcase.md
+  - MNIST Tutorial: mnist.md
+  - API Reference:
+    - Tensor:
+      - tensor/index.md
+      - Properties: tensor/properties.md
+      - Creation: tensor/creation.md
+      - Movement: tensor/movement.md
+      - Elementwise: tensor/elementwise.md
+      - Complex Ops: tensor/ops.md
+    - dtypes: dtypes.md
+    - nn (Neural Networks): nn.md
+    - Environment Variables: env_vars.md
+    - Runtime: runtime.md
+  - Developer:
+    - Intro: developer/developer.md
+    - Layout: developer/layout.md
+    - Speed: developer/speed.md
+    - UOp: developer/uop.md
+    - Grouper:
+      - developer/kernelize.md
+    - Runtime:
+      - developer/runtime.md
+      - HCQ: developer/hcq.md
+      - AM Driver: developer/am.md
+  - tinybox: tinybox.md
+#- tinygrad: reference/
+
+#extra_css:
+#- css/tinygrad.css
+
+validation:
+  links:
+    anchors: warn
+
+markdown_extensions:
+- attr_list
+- admonition
+- callouts
+- footnotes
+- pymdownx.details
+- pymdownx.emoji:
+    emoji_index: !!python/name:material.extensions.emoji.twemoji
+    emoji_generator: !!python/name:material.extensions.emoji.to_svg
+- pymdownx.highlight:
+    pygments_lang_class: true
+- pymdownx.inlinehilite:
+    style_plain_text: python
+- pymdownx.magiclink
+- pymdownx.snippets:
+    base_path: [!relative $config_dir]
+    check_paths: true
+- pymdownx.superfences
+- pymdownx.tabbed:
+    alternate_style: true
+    slugify: !!python/object/apply:pymdownx.slugs.slugify
+      kwds:
+        case: lower
+- pymdownx.tasklist:
+    custom_checkbox: true
+- pymdownx.tilde
+- toc:
+    permalink: "¤"
+
+theme:
+  name: material
+  logo: logo_tiny_dark.svg
+  favicon: favicon.svg
+  features:
+  - announce.dismiss
+  - content.action.edit
+  - content.action.view
+  - content.code.annotate
+  - content.code.copy
+  - content.tooltips
+  - navigation.footer
+  - navigation.indexes
+  - navigation.sections
+  - navigation.expand
+  - navigation.top
+  - navigation.path
+  - search.highlight
+  - search.suggest
+  - toc.follow
+  - toc.integrate
+  palette:
+    scheme: slate
+    primary: black
+    accent: lime
+  palette:
+    - media: "(prefers-color-scheme)"
+      accent: lime
+      primary: black
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      accent: lime
+      primary: black
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      accent: lime
+      primary: black
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+plugins:
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        import:
+        - https://docs.python.org/3/objects.inv
+        paths: [tinygrad]
+        options:
+          docstring_options:
+            ignore_init_summary: true
+          docstring_section_style: list
+          filters: ["!^_"]
+          heading_level: 3
+          inherited_members: false
+          merge_init_into_class: true
+          separate_signature: true
+          show_root_heading: true
+          show_root_full_path: false
+          show_signature_annotations: true
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true
+          show_source: true
+          signature_crossrefs: true
+          summary: true
+- markdown-exec
+#- gen-files:
+#    scripts:
+#      - docs/gen_ref_pages.py
+#- literate-nav:
+#    nav_file: SUMMARY.md
