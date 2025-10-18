@@ -117,7 +117,7 @@ PairingPopup::PairingPopup(QWidget *parent) : DialogBase(parent) {
 }
 
 int PairingPopup::exec() {
-  if (true || !util::system_time_valid()) {
+  if (!util::system_time_valid()) {
     ConfirmationDialog::alert(tr("Please connect to Wi-Fi to complete initial pairing"), parentWidget());
     return QDialog::Rejected;
   }

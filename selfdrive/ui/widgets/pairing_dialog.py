@@ -11,7 +11,6 @@ from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.common.time_helpers import system_time_valid
 
 
 class IconButton(Widget):
