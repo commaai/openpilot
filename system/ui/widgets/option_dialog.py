@@ -73,11 +73,4 @@ class MultiOptionDialog(Widget):
     self.select_button.set_enabled(self.selection != self.current)
     self.select_button.render(select_rect)
 
-    # Keyboard shortcuts
-    if rl.is_key_pressed(rl.KeyboardKey.KEY_ENTER):
-      if self.selection != self.current:
-        self._result = DialogResult.CONFIRM
-    elif rl.is_key_pressed(rl.KeyboardKey.KEY_ESCAPE):
-      self._result = DialogResult.CANCEL
-
     return self._result
