@@ -28,7 +28,8 @@ def gui_label(
   display_text = text
 
   # Elide text to fit within the rectangle
-  if elide_right and text_size.x > rect.width:
+  print(text, text_size.x, rect.width)
+  if elide_right and text_size.x - rect.width > 1e-3:
     _ellipsis = "..."
     left, right = 0, len(text)
     while left < right:
@@ -57,6 +58,7 @@ def gui_label(
   }.get(alignment_vertical, 0)
 
   # Draw the text in the specified rectangle
+  rl.draw_circle(int(text_x), int(text_y), 2, rl.RED)  # Debug: show text position
   rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), font_size, 0, color)
 
 

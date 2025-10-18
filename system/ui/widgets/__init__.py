@@ -14,7 +14,7 @@ class DialogResult(IntEnum):
 class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
-    self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
+    self._parent_rect: rl.Rectangle | None = None
     self.__is_pressed = [False] * MAX_TOUCH_SLOTS
     # if current mouse/touch down started within the widget's rectangle
     self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
@@ -74,6 +74,17 @@ class Widget(abc.ABC):
     self._rect.x, self._rect.y = x, y
     if changed:
       self._update_layout_rects()
+
+  def _hit_rect(self):
+    # clip to parent rect
+    if self._parent_rect is None:
+      return self._rect
+
+    x = max(self._rect.x, self._parent_rect.x)
+    y = max(self._rect.y, self._parent_rect.y)
+    w = min(self._rect.x + self._rect.width, self._parent_rect.x + self._parent_rect.width) - x
+    h = min(self._rect.y + self._rect.height, self._parent_rect.y + self._parent_rect.height) - y
+    return rl.Rectangle(x, y, w, h)
 
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     if rect is not None:
