@@ -99,6 +99,11 @@ class ButtonAction(ItemAction):
     )
     self.set_enabled(enabled)
 
+  def get_width_hint(self) -> float:
+    value_text = self.value
+    text_width = measure_text_cached(self._font, value_text, ITEM_TEXT_FONT_SIZE).x
+    return text_width + BUTTON_WIDTH + (TEXT_PADDING if value_text else 0)
+
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
     self._button.set_touch_valid_callback(touch_callback)
@@ -118,18 +123,33 @@ class ButtonAction(ItemAction):
     return _resolve_value(self._value_source, "")
 
   def _render(self, rect: rl.Rectangle) -> bool:
+    rl.draw_rectangle_lines_ex(rect, 1, rl.RED)
+
     self._button.set_text(self.text)
     self._button.set_enabled(_resolve_value(self.enabled))
-    button_rect = rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
+    button_rect = rl.Rectangle(rect.x + rect.width - BUTTON_WIDTH, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._button.render(button_rect)
 
     value_text = self.value
     if value_text:
-      spacing = 20
       text_size = measure_text_cached(self._font, value_text, ITEM_TEXT_FONT_SIZE)
-      text_x = button_rect.x - spacing - text_size.x
+      text_x = button_rect.x - TEXT_PADDING - text_size.x
       text_y = rect.y + (rect.height - text_size.y) / 2
-      rl.draw_text_ex(self._font, value_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_VALUE_COLOR)
+      # rl.draw_text_ex(self._font, value_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_VALUE_COLOR)
+      #  from text:
+      # gui_label(self._rect, self.text, font_size=ITEM_TEXT_FONT_SIZE, color=self.color,
+      #           font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
+      #           alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+      value_rect = rl.Rectangle(
+        rect.x, #text_x,
+        text_y,
+        rect.width - BUTTON_WIDTH - TEXT_PADDING,
+        text_size.y
+      )
+      rl.draw_rectangle_lines_ex(value_rect, 1, rl.BLUE)
+      gui_label(value_rect, value_text, font_size=ITEM_TEXT_FONT_SIZE, color=ITEM_TEXT_VALUE_COLOR,
+                font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
+                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
     # TODO: just use the generic Widget click callbacks everywhere, no returning from render
     pressed = self._pressed
