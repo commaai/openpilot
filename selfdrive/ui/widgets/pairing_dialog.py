@@ -42,8 +42,8 @@ class PairingDialog(Widget):
     try:
       dongle_id = self._params.get("DongleId") or ""
       token = Api(dongle_id).get_token({'pair': True})
-    except Exception as e:
-      cloudlog.warning(f"Failed to get pairing token: {e}")
+    except Exception:
+      cloudlog.exception("Failed to get pairing token")
       token = ""
     return f"https://connect.comma.ai/?pair={token}"
 
@@ -67,8 +67,8 @@ class PairingDialog(Widget):
       rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
 
       self._qr_texture = rl.load_texture_from_image(rl_image)
-    except Exception as e:
-      cloudlog.warning(f"QR code generation failed: {e}")
+    except Exception:
+      cloudlog.exception("QR code generation failed")
       self._qr_texture = None
 
   def _check_qr_refresh(self) -> None:
