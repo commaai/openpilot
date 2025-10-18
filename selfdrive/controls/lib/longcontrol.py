@@ -1,4 +1,3 @@
-    Dself.k_f = k_f   # feedforward gain
 import numpy as np
 from cereal import car
 from openpilot.common.realtime import DT_CTRL
