@@ -94,7 +94,6 @@ jobs:
 
           for ((i=0; i<${#A[*]}; i=i+1));
           do
-            # Skip diff checks for pair_device image (still include in all images table)
             if [[ "${A[$i]}" != *pair_device* ]]; then
               # Check if the master file exists
               if [ ! -f "${{ github.workspace }}/master_ui/${A[$i]}.png" ]; then
