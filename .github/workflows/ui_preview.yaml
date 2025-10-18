@@ -94,7 +94,7 @@ jobs:
 
           for ((i=0; i<${#A[*]}; i=i+1));
           do
-            if [[ "${A[$i]}" != pair_device.png ]]; then
+            if [[ "${A[$i]}" == "pair_device" ]]; then
               continue
             fi
             # Check if the master file exists
