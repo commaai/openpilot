@@ -28,13 +28,13 @@ class IconButton(Widget):
 class PairingDialog(Widget):
   """Dialog for device pairing with QR code."""
 
-  QR_REFRESH_INTERVAL = 300  # 5 minutes in seconds
+  QR_REFRESH_INTERVAL = 5  # 5 minutes in seconds
 
   def __init__(self):
     super().__init__()
     self.params = Params()
     self.qr_texture: rl.Texture | None = None
-    self.last_qr_generation = 0
+    self.last_qr_generation = float('-inf')
     self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
     self._close_btn.set_click_callback(lambda: gui_app.set_modal_overlay(None))
 
@@ -67,12 +67,14 @@ class PairingDialog(Widget):
       rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
 
       self.qr_texture = rl.load_texture_from_image(rl_image)
+      print('generated qr code!')
     except Exception:
       cloudlog.exception("QR code generation failed")
       self.qr_texture = None
 
   def _check_qr_refresh(self) -> None:
     current_time = time.monotonic()
+    print('check_qr_refresh called', current_time - self.last_qr_generation)
     if current_time - self.last_qr_generation >= self.QR_REFRESH_INTERVAL:
       self._generate_qr_code()
       self.last_qr_generation = current_time
