@@ -35,7 +35,6 @@ void PairingQRWidget::hideEvent(QHideEvent *event) {
 }
 
 void PairingQRWidget::refresh() {
-  qDebug() << "Refreshing pairing QR code";
   QString pairToken = CommaApi::create_jwt({{"pair", true}});
   QString qrString = "https://connect.comma.ai/?pair=" + pairToken;
   this->updateQrCode(qrString);
