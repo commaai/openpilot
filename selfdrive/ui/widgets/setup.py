@@ -5,7 +5,7 @@ from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import Label
 
@@ -87,7 +87,7 @@ class SetupWidget(Widget):
 
   def _show_pairing(self):
     if not system_time_valid():
-      dlg = ConfirmDialog("Please connect to Wi-Fi to complete initial pairing", "Ok", "")
+      dlg = alert_dialog("Please connect to Wi-Fi to complete initial pairing")
       gui_app.set_modal_overlay(dlg)
       return
 
