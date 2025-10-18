@@ -87,7 +87,6 @@ class SetupWidget(Widget):
 
   def _show_pairing(self):
     if not system_time_valid():
-      # confirm dialog
       dlg = ConfirmDialog("Please connect to Wi-Fi to complete initial pairing", "Ok", "")
       gui_app.set_modal_overlay(dlg)
       return
