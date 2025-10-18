@@ -95,11 +95,11 @@ jobs:
 
           for ((i=0; i<${#A[*]}; i=i+1));
           do
-            echo "Checking '${A[$i]}' (${i + 1}/${#A[*]})"
+            echo "Checking '${A[$i]}' (${i + 1}/${#A[*]})" >> $GITHUB_OUTPUT
 
             # Check if the master file exists
             if [ ! -f "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png" ]; then
-              echo "  - New file"
+              echo "  - New file" >> $GITHUB_OUTPUT
               # This is a new file in PR UI that doesn't exist in master
               DIFF="${DIFF}<details open>"
               DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{cyan}\\text{NEW}}\$\$</summary>"
@@ -112,9 +112,13 @@ jobs:
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
             elif [[ "${A[$i]}" == "pair_device" ]]; then
-              echo "  - Skipped"
+              echo "  - Skipped" >> $GITHUB_OUTPUT
+              if [ ! -f "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png" ]; then
+                echo "  - pair_device missing in master, copying from PR to ensure it displays" >> $GITHUB_OUTPUT
+                cp "${{ github.workspace }}/pr_ui/${A[$i]}.png" "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png"
+              fi
             elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
-              echo "  - Different"
+              echo "  - Different" >> $GITHUB_OUTPUT
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png
               convert -delay 100 ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
@@ -138,7 +142,7 @@ jobs:
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
             else
-              echo "  - No changes"
+              echo "  - No changes" >> $GITHUB_OUTPUT
               rm -f ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png
             fi
 
