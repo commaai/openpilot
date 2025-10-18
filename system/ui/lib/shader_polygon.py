@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, cast
 from openpilot.system.ui.lib.application import gui_app
 
-MAX_GRADIENT_COLORS = 15  # includes stops as well
+MAX_GRADIENT_COLORS = 20  # includes stops as well
 
 
 @dataclass
@@ -48,8 +48,8 @@ uniform vec4 fillColor;
 uniform int useGradient;
 uniform vec2 gradientStart;  // e.g. vec2(0, 0)
 uniform vec2 gradientEnd;    // e.g. vec2(0, screenHeight)
-uniform vec4 gradientColors[15];
-uniform float gradientStops[15];
+uniform vec4 gradientColors[20];
+uniform float gradientStops[20];
 uniform int gradientColorCount;
 
 vec4 getGradientColor(vec2 p) {

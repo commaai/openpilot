@@ -1,7 +1,7 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import FontWeight
+from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget, DialogResult
-from openpilot.system.ui.widgets.button import Button, ButtonStyle, TextAlignment
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
 
@@ -26,7 +26,7 @@ class MultiOptionDialog(Widget):
 
     # Create scroller with option buttons
     self.option_buttons = [Button(option, click_callback=lambda opt=option: self._on_option_clicked(opt),
-                                  text_alignment=TextAlignment.LEFT, button_style=ButtonStyle.NORMAL,
+                                  text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, button_style=ButtonStyle.NORMAL,
                                   text_padding=50, elide_right=True) for option in options]
     self.scroller = Scroller(self.option_buttons, spacing=LIST_ITEM_SPACING)
 
