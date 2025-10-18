@@ -199,6 +199,8 @@ class DeviceLayout(Widget):
   def _pair_device(self):
     if not self._pair_device_dialog:
       self._pair_device_dialog = PairingDialog()
+      # Match Qt behavior: generate QR immediately when shown
+      self._pair_device_dialog.show_event()
     gui_app.set_modal_overlay(self._pair_device_dialog, callback=lambda result: setattr(self, '_pair_device_dialog', None))
 
   def _on_regulatory(self):

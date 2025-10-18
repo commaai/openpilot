@@ -86,6 +86,8 @@ class SetupWidget(Widget):
   def _show_pairing(self):
     if not self._pairing_dialog:
       self._pairing_dialog = PairingDialog()
+      # Ensure immediate QR generation on show like Qt
+      self._pairing_dialog.show_event()
     gui_app.set_modal_overlay(self._pairing_dialog, lambda result: setattr(self, '_pairing_dialog', None))
 
   def __del__(self):

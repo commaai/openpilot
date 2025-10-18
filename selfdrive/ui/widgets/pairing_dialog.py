@@ -34,6 +34,7 @@ class PairingDialog(Widget):
     super().__init__()
     self.params = Params()
     self.qr_texture: rl.Texture | None = None
+    # Timestamp of last QR generation; set on show_event
     self.last_qr_generation = 0
     self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
     self._close_btn.set_click_callback(lambda: gui_app.set_modal_overlay(None))
@@ -73,9 +74,15 @@ class PairingDialog(Widget):
 
   def _check_qr_refresh(self) -> None:
     current_time = time.monotonic()
-    if current_time - self.last_qr_generation >= self.QR_REFRESH_INTERVAL:
+    # Always generate immediately on first show/open (no existing texture)
+    if self.qr_texture is None or current_time - self.last_qr_generation >= self.QR_REFRESH_INTERVAL:
       self._generate_qr_code()
       self.last_qr_generation = current_time
+
+  def show_event(self):
+    # Match Qt: generate immediately when shown, then refresh every 5 minutes
+    self._generate_qr_code()
+    self.last_qr_generation = time.monotonic()
 
   def _update_state(self):
     if ui_state.prime_state.is_paired():
