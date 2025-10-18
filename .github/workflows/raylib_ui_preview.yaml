@@ -85,9 +85,8 @@ jobs:
         run: >-
           sudo apt-get update && sudo apt-get install -y imagemagick
 
-          scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1)
+          scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1 | grep -v 'test')
           A=($scenes)
-          echo "Found ${#A[*]} screenshots to compare" >> $GITHUB_OUTPUT
 
           DIFF=""
           TABLE="<details><summary>All Screenshots</summary>"
@@ -95,11 +94,8 @@ jobs:
 
           for ((i=0; i<${#A[*]}; i=i+1));
           do
-            echo "Checking '${A[$i]}' (${i + 1}/${#A[*]})" >> $GITHUB_OUTPUT
-
             # Check if the master file exists
             if [ ! -f "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png" ]; then
-              echo "  - New file" >> $GITHUB_OUTPUT
               # This is a new file in PR UI that doesn't exist in master
               DIFF="${DIFF}<details open>"
               DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{cyan}\\text{NEW}}\$\$</summary>"
@@ -111,10 +107,7 @@ jobs:
 
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
-            # elif [[ "${A[$i]}" == "pair_device" ]]; then
-            #   echo "  - Skipped" >> $GITHUB_OUTPUT
-            elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
-              echo "  - Different" >> $GITHUB_OUTPUT
+            elif [[ "${A[$i]}" != "pair_device" ]] && ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png
               convert -delay 100 ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
@@ -138,7 +131,6 @@ jobs:
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
             else
-              echo "  - No changes" >> $GITHUB_OUTPUT
               rm -f ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png
             fi
 
