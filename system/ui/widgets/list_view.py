@@ -101,8 +101,11 @@ class ButtonAction(ItemAction):
 
   def get_width_hint(self) -> float:
     value_text = self.value
-    text_width = measure_text_cached(self._font, value_text, ITEM_TEXT_FONT_SIZE).x
-    return text_width + BUTTON_WIDTH + (TEXT_PADDING if value_text else 0)
+    if value_text:
+      text_width = measure_text_cached(self._font, value_text, ITEM_TEXT_FONT_SIZE).x
+      return text_width + BUTTON_WIDTH + TEXT_PADDING
+    else:
+      return BUTTON_WIDTH
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -123,6 +126,7 @@ class ButtonAction(ItemAction):
     return _resolve_value(self._value_source, "")
 
   def _render(self, rect: rl.Rectangle) -> bool:
+    rl.draw_rectangle_lines_ex(rect, 1, rl.RED)
     self._button.set_text(self.text)
     self._button.set_enabled(_resolve_value(self.enabled))
     button_rect = rl.Rectangle(rect.x + rect.width - BUTTON_WIDTH, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
@@ -131,6 +135,7 @@ class ButtonAction(ItemAction):
     value_text = self.value
     if value_text:
       value_rect = rl.Rectangle(rect.x, rect.y, rect.width - BUTTON_WIDTH - TEXT_PADDING, rect.height)
+      rl.draw_rectangle_lines_ex(value_rect, 1, rl.BLUE)
       gui_label(value_rect, value_text, font_size=ITEM_TEXT_FONT_SIZE, color=ITEM_TEXT_VALUE_COLOR,
                 font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
