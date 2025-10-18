@@ -85,7 +85,7 @@ jobs:
         run: >-
           sudo apt-get update && sudo apt-get install -y imagemagick
 
-          scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1)
+          scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1 | grep -v 'pair_device')
           A=($scenes)
 
           DIFF=""
@@ -107,7 +107,7 @@ jobs:
 
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
-            elif [[ "${A[$i]}" != "pair_device" ]] && ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
+            elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png
               convert -delay 100 ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
