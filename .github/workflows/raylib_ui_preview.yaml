@@ -111,7 +111,9 @@ jobs:
 
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
-            elif [[ "${A[$i]}" != "pair_device" ]] && ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
+            elif [[ "${A[$i]}" == "pair_device" ]]; then
+              echo "  - Skipped"
+            elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
               echo "  - Different"
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png
