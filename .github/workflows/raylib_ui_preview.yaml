@@ -87,6 +87,7 @@ jobs:
 
           scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1)
           A=($scenes)
+          echo "Found ${#A[*]} screenshots to compare"
 
           DIFF=""
           TABLE="<details><summary>All Screenshots</summary>"
@@ -94,8 +95,11 @@ jobs:
 
           for ((i=0; i<${#A[*]}; i=i+1));
           do
+            echo "Checking '${A[$i]}' (${i + 1}/${#A[*]})"
+
             # Check if the master file exists
             if [ ! -f "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png" ]; then
+              echo "  - New file"
               # This is a new file in PR UI that doesn't exist in master
               DIFF="${DIFF}<details open>"
               DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{cyan}\\text{NEW}}\$\$</summary>"
@@ -108,6 +112,7 @@ jobs:
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
             elif [[ "${A[$i]}" != "pair_device" ]] && ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
+              echo "  - Different"
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png
               convert -delay 100 ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
@@ -131,6 +136,7 @@ jobs:
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
             else
+              echo "  - No changes"
               rm -f ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png
             fi
 
