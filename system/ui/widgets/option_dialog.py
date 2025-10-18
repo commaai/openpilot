@@ -30,7 +30,6 @@ class MultiOptionDialog(Widget):
                                   text_padding=50, elide_right=True) for option in options]
     self.scroller = Scroller(self.option_buttons, spacing=LIST_ITEM_SPACING)
 
-    # Buttons set a result; the application loop will clear the overlay and invoke the callback
     self.cancel_button = Button("Cancel", click_callback=lambda: self._set_result(DialogResult.CANCEL))
     self.select_button = Button("Select", click_callback=lambda: self._set_result(DialogResult.CONFIRM), button_style=ButtonStyle.PRIMARY)
 
