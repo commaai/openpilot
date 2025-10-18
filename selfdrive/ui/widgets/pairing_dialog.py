@@ -32,15 +32,15 @@ class PairingDialog(Widget):
 
   def __init__(self):
     super().__init__()
-    self._params = Params()
-    self._qr_texture: rl.Texture | None = None
-    self._last_qr_generation = float('-inf')
+    self.params = Params()
+    self.qr_texture: rl.Texture | None = None
+    self.last_qr_generation = float('-inf')
     self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
     self._close_btn.set_click_callback(lambda: gui_app.set_modal_overlay(None))
 
   def _get_pairing_url(self) -> str:
     try:
-      dongle_id = self._params.get("DongleId") or ""
+      dongle_id = self.params.get("DongleId") or ""
       token = Api(dongle_id).get_token({'pair': True})
     except Exception:
       cloudlog.exception("Failed to get pairing token")
@@ -56,8 +56,8 @@ class PairingDialog(Widget):
       pil_img = qr.make_image(fill_color="black", back_color="white").convert('RGBA')
       img_array = np.array(pil_img, dtype=np.uint8)
 
-      if self._qr_texture and self._qr_texture.id != 0:
-        rl.unload_texture(self._qr_texture)
+      if self.qr_texture and self.qr_texture.id != 0:
+        rl.unload_texture(self.qr_texture)
 
       rl_image = rl.Image()
       rl_image.data = rl.ffi.cast("void *", img_array.ctypes.data)
@@ -66,16 +66,16 @@ class PairingDialog(Widget):
       rl_image.mipmaps = 1
       rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
 
-      self._qr_texture = rl.load_texture_from_image(rl_image)
+      self.qr_texture = rl.load_texture_from_image(rl_image)
     except Exception:
       cloudlog.exception("QR code generation failed")
-      self._qr_texture = None
+      self.qr_texture = None
 
   def _check_qr_refresh(self) -> None:
     current_time = time.monotonic()
-    if current_time - self._last_qr_generation >= self.QR_REFRESH_INTERVAL:
+    if current_time - self.last_qr_generation >= self.QR_REFRESH_INTERVAL:
       self._generate_qr_code()
-      self._last_qr_generation = current_time
+      self.last_qr_generation = current_time
 
   def _update_state(self):
     if ui_state.prime_state.is_paired():
@@ -153,7 +153,7 @@ class PairingDialog(Widget):
       y += text_height + 50
 
   def _render_qr_code(self, rect: rl.Rectangle) -> None:
-    if not self._qr_texture:
+    if not self.qr_texture:
       rl.draw_rectangle_rounded(rect, 0.1, 20, rl.Color(240, 240, 240, 255))
       error_font = gui_app.font(FontWeight.BOLD)
       rl.draw_text_ex(
@@ -161,12 +161,12 @@ class PairingDialog(Widget):
       )
       return
 
-    source = rl.Rectangle(0, 0, self._qr_texture.width, self._qr_texture.height)
-    rl.draw_texture_pro(self._qr_texture, source, rect, rl.Vector2(0, 0), 0, rl.WHITE)
+    source = rl.Rectangle(0, 0, self.qr_texture.width, self.qr_texture.height)
+    rl.draw_texture_pro(self.qr_texture, source, rect, rl.Vector2(0, 0), 0, rl.WHITE)
 
   def __del__(self):
-    if self._qr_texture and self._qr_texture.id != 0:
-      rl.unload_texture(self._qr_texture)
+    if self.qr_texture and self.qr_texture.id != 0:
+      rl.unload_texture(self.qr_texture)
 
 
 if __name__ == "__main__":
