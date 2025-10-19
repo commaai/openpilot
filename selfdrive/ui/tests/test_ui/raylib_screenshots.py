@@ -141,7 +141,7 @@ def setup_onboarding(click, pm: PubMaster):
   for _, rect in enumerate(STEP_RECTS[:-1]):
     click(int(rect.x + rect.width / 2), int(rect.y + rect.height / 2))
 
-    
+
 def setup_openpilot_long_confirmation_dialog(click, pm: PubMaster):
   setup_settings_developer(click, pm)
   click(2000, 960)  # toggle openpilot longitudinal control
