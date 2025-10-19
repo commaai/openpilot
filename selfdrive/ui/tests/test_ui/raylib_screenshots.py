@@ -381,7 +381,7 @@ class TestScriptUI(TestUI):
       for setup_case in group:
         setup_case(self.click, self.pm)  # run each step in the group
         time.sleep(0.1)  # allow UI to update between steps
-      self.screenshot(f"{name}_{i + 1}")  # take screenshot after each case group
+      self.screenshot(f"{name}_{i + 2}")  # take screenshot after each case group
 
 
 def create_screenshots():
