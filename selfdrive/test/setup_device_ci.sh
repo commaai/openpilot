@@ -42,6 +42,7 @@ sudo systemctl restart NetworkManager
 sudo systemctl disable ssh-param-watcher.path
 sudo systemctl disable ssh-param-watcher.service
 sudo mount -o ro,remount /
+sudo systemctl stop power_monitor
 
 while true; do
   if ! sudo systemctl is-active -q ssh; then
@@ -54,7 +55,6 @@ while true; do
   #  /data/ciui.py &
   #fi
 
-  awk '{print \$1}' /proc/uptime > /var/tmp/power_watchdog
   sleep 5s
 done
 

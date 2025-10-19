@@ -10,7 +10,8 @@ class LatControlPID(LatControl):
     super().__init__(CP, CI, dt)
     self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                              (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                             k_f=CP.lateralTuning.pid.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
+                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
+    self.ff_factor = CP.lateralTuning.pid.kf
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
   def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited, lat_delay):
@@ -30,7 +31,7 @@ class LatControlPID(LatControl):
 
     else:
       # offset does not contribute to resistive torque
-      ff = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
+      ff = self.ff_factor * self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
 
       output_torque = self.pid.update(error,

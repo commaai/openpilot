@@ -9,7 +9,7 @@ from collections import namedtuple
 import pyautogui
 import pywinctl
 
-from cereal import log
+from cereal import car, log
 from cereal import messaging
 from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
@@ -96,6 +96,10 @@ def setup_settings_firehose(click, pm: PubMaster):
 
 
 def setup_settings_developer(click, pm: PubMaster):
+  CP = car.CarParams()
+  CP.alphaLongitudinalAvailable = True  # show alpha long control toggle
+  Params().put("CarParamsPersistent", CP.to_bytes())
+
   setup_settings(click, pm)
   click(278, 950)
 
@@ -136,6 +140,11 @@ def setup_onboarding(click, pm: PubMaster):
   # Click the center of each onboarding step rect
   for _, rect in enumerate(STEP_RECTS[:-1]):
     click(int(rect.x + rect.width / 2), int(rect.y + rect.height / 2))
+
+    
+def setup_openpilot_long_confirmation_dialog(click, pm: PubMaster):
+  setup_settings_developer(click, pm)
+  click(2000, 960)  # toggle openpilot longitudinal control
 
 
 def setup_onroad(click, pm: PubMaster):
@@ -248,6 +257,7 @@ CASES = {
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
   "onboarding_completion": setup_onboarding,
+  "openpilot_long_confirmation_dialog": setup_openpilot_long_confirmation_dialog,
   "onroad": setup_onroad,
   "onroad_sidebar": setup_onroad_sidebar,
   "onroad_small_alert": setup_onroad_small_alert,
