@@ -166,7 +166,7 @@ class HomeLayout(Widget):
       highlight_color = rl.Color(255, 70, 70, 255) if self.current_state == HomeLayoutState.ALERTS else rl.Color(226, 44, 44, 255)
       rl.draw_rectangle_rounded(self.alert_notif_rect, 0.3, 10, highlight_color)
 
-      alert_text = trn("{n} ALERT", "{n} ALERTS", self.alert_count).format(self.alert_count)
+      alert_text = trn("{} ALERT", "{} ALERTS", self.alert_count).format(self.alert_count)
       text_size = measure_text_cached(font, alert_text, HEAD_BUTTON_FONT_SIZE)
       text_x = self.alert_notif_rect.x + (self.alert_notif_rect.width - text_size.x) // 2
       text_y = self.alert_notif_rect.y + (self.alert_notif_rect.height - text_size.y) // 2

@@ -14,7 +14,6 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC, TICI
-from openpilot.system.ui.lib.multilang import Multilang
 from openpilot.common.realtime import Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
@@ -142,7 +141,6 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
-    self._multilang = Multilang()
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []

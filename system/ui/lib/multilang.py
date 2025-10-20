@@ -1,7 +1,5 @@
 import os
 import gettext
-import pyray as rl
-from typing import Union
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
 
@@ -13,52 +11,51 @@ LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 
 class Multilang:
   def __init__(self):
-    self._language: str = "en"
-    self._translations: dict[str, dict[str, str]] = {}
+    self._params = Params()
+    self._language: str = self._params.get("LanguageSetting").strip("main_")
+    print(f"Multilang initialized with language: {self._language}")
 
-    self._load_languages()
-    self._hook_draw_text()
+    # self._translations: dict[str, dict[str, str]] = {}
 
-  def translate(self, text: str) -> str:
-    if self._language not in self._translations:
-      return text
-    return self._translations[self._language].get(text, text)
+    # self._load_languages()
 
-  def _load_languages(self):
-    self._language = Params().get("LanguageSetting")
+  def setup(self):
+    # global tr, trn
+    try:
+      with open(os.path.join(TRANSLATIONS_DIR, f'app_{self._language}.mo'), 'rb') as fh:
+        translation = gettext.GNUTranslations(fh)
+      translation.install()
+      tr = translation.gettext
+      trn = translation.ngettext
+      print(f"Loaded translations for language: {self._language}")
+    except FileNotFoundError:
+      print(f"No translation file found for language: {self._language}, using default.")
+      gettext.install('app')
+      tr = gettext.gettext
+      trn = gettext.ngettext
 
-    LANGUAGE_DIR = os.path.join(BASEDIR, "selfdrive", "ui", "translations")
-    for file in os.listdir(LANGUAGE_DIR):
-      if file.endswith(".ts"):
-        pass
+    return tr, trn
 
-  def _get_translated_text(self, text: str) -> str:
-    # print("Translating:", text, "to", self._language, self._translations.keys())
-    if self._language not in self._translations:
-      return text
-    return self._translations[self._language].get(text, text)
+  def install_language(self, language: str):
+    # install and set globals
+    global tr, trn
+    self._language = language
+    tr, trn = self.setup()
 
-  def _hook_draw_text(self):
-    # hook rl.draw_text* to get text for multilang
-    # TODO: and measure text
-    original_draw_text = rl.draw_text
-    original_draw_text_ex = rl.draw_text_ex
-
-    def draw_text_wrapper(text: str, posX: int, posY: int, fontSize: int, color: Union[rl.Color, list, tuple]) -> None:
-      assert False
-      text = self._get_translated_text(text)
-      return original_draw_text(text, posX, posY, fontSize, color)
-
-    def draw_text_ex_wrapper(font: Union[rl.Font, list, tuple], text: str, position: Union[rl.Vector2, list, tuple], fontSize: float, spacing: float,
-                             tint: Union[rl.Color, list, tuple]) -> None:
-      text = self._get_translated_text(text)
-      return original_draw_text_ex(font, text, position, fontSize, spacing, tint)
-
-    rl.draw_text = draw_text_wrapper
-    rl.draw_text_ex = draw_text_ex_wrapper
+  # def translate(self, text: str) -> str:
+  #   if self._language not in self._translations:
+  #     return text
+  #   return self._translations[self._language].get(text, text)
+  #
+  # def _load_languages(self):
+  #   self._language = Params().get("LanguageSetting")
+  #
+  #   LANGUAGE_DIR = os.path.join(BASEDIR, "selfdrive", "ui", "translations")
+  #   for file in os.listdir(LANGUAGE_DIR):
+  #     if file.endswith(".ts"):
+  #       pass
 
 
-# multilang = Multilang()
 # # l = gettext.translation('app_de', localedir=TRANSLATIONS_DIR, languages=['de'])
 # with open(os.path.join(TRANSLATIONS_DIR, 'app_de.mo'), 'rb') as fh:
 #   l = gettext.GNUTranslations(fh)
@@ -67,3 +64,9 @@ class Multilang:
 # # tr = gettext.gettext
 # tr = l.gettext
 # trn = l.ngettext
+
+# tr, trn = None, None
+# multilang = Multilang()
+
+multilang = Multilang()
+tr, trn = multilang.setup()
