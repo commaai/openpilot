@@ -1,4 +1,4 @@
-# Spanish translations for PACKAGE package.
+# Language zh-CHS translations for PACKAGE package.
 # Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Automatically generated, 2025.
@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 15:39-0700\n"
-"PO-Revision-Date: 2025-10-20 15:39-0700\n"
+"POT-Creation-Date: 2025-10-20 16:35-0700\n"
+"PO-Revision-Date: 2025-10-20 16:35-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
-"Language: es\n"
+"Language: zh-CHS\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:33
 #, python-format
@@ -60,4 +60,95 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:63
 #, python-format
 msgid "comma prime"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/home.py:155
+#, python-format
+msgid "UPDATE"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/home.py:170
+#, python-format, python-brace-format
+msgid "{n} ALERT"
+msgid_plural "{n} ALERTS"
+msgstr[0] ""
+msgstr[1] ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:25
+#, python-format
+msgid ""
+"Pair your device with comma connect (connect.comma.ai) and claim your comma "
+"prime offer."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:26
+#, python-format
+msgid ""
+"Preview the driver facing camera to ensure that driver monitoring has good "
+"visibility. (vehicle must be off)"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
+#, python-format
+msgid ""
+"openpilot requires the device to be mounted within 4° left or right and "
+"within 5° up or 9° down."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:28
+#, python-format
+msgid "Review the rules, features, and limitations of openpilot"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:17
+#, python-format
+msgid ""
+"Use the openpilot system for adaptive cruise control and lane keep driver "
+"assistance. Your attention is required at all times to use this feature."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:20
+#, python-format
+msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:22
+#, python-format
+msgid ""
+"Standard is recommended. In aggressive mode, openpilot will follow lead cars "
+"closer and be more aggressive with the gas and brake. In relaxed mode "
+"openpilot will stay further away from lead cars. On supported cars, you can "
+"cycle through these personalities with your steering wheel distance button."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:27
+#, python-format
+msgid ""
+"Receive alerts to steer back into the lane when your vehicle drifts over a "
+"detected lane line without a turn signal activated while driving over 31 mph "
+"(50 km/h)."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:30
+#, python-format
+msgid "Enable driver monitoring even when openpilot is not engaged."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:31
+#, python-format
+msgid ""
+"Upload data from the driver facing camera and help improve the driver "
+"monitoring algorithm."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:32
+#, python-format
+msgid "Display speed in km/h instead of mph."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:33
+#, python-format
+msgid ""
+"Record and store microphone audio while driving. The audio will be included "
+"in the dashcam video in comma connect."
 msgstr ""

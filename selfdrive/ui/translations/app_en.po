@@ -1,4 +1,4 @@
-# Spanish translations for PACKAGE package.
+# English translations for PACKAGE package.
 # Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Automatically generated, 2025.
@@ -7,11 +7,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 15:39-0700\n"
-"PO-Revision-Date: 2025-10-20 15:39-0700\n"
+"POT-Creation-Date: 2025-10-20 16:35-0700\n"
+"PO-Revision-Date: 2025-10-20 16:35-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
-"Language: es\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -20,44 +20,154 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:33
 #, python-format
 msgid "Upgrade Now"
-msgstr ""
+msgstr "Upgrade Now"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:38
 #, python-format
 msgid "Become a comma prime member at connect.comma.ai"
-msgstr ""
+msgstr "Become a comma prime member at connect.comma.ai"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:44
 #, python-format
 msgid "PRIME FEATURES:"
-msgstr ""
+msgstr "PRIME FEATURES:"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "Remote access"
-msgstr ""
+msgstr "Remote access"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "24/7 LTE connectivity"
-msgstr ""
+msgstr "24/7 LTE connectivity"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "1 year of drive storage"
-msgstr ""
+msgstr "1 year of drive storage"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "Remote snapshots"
-msgstr ""
+msgstr "Remote snapshots"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
 #, python-format
 msgid "✓ SUBSCRIBED"
-msgstr ""
+msgstr "✓ SUBSCRIBED"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:63
 #, python-format
 msgid "comma prime"
+msgstr "comma prime"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/home.py:155
+#, python-format
+msgid "UPDATE"
+msgstr "UPDATE"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/home.py:170
+#, python-format, python-brace-format
+msgid "{n} ALERT"
+msgid_plural "{n} ALERTS"
+msgstr[0] "{n} ALERT"
+msgstr[1] "{n} ALERTS"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:25
+#, python-format
+msgid ""
+"Pair your device with comma connect (connect.comma.ai) and claim your comma "
+"prime offer."
 msgstr ""
+"Pair your device with comma connect (connect.comma.ai) and claim your comma "
+"prime offer."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:26
+#, python-format
+msgid ""
+"Preview the driver facing camera to ensure that driver monitoring has good "
+"visibility. (vehicle must be off)"
+msgstr ""
+"Preview the driver facing camera to ensure that driver monitoring has good "
+"visibility. (vehicle must be off)"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
+#, python-format
+msgid ""
+"openpilot requires the device to be mounted within 4° left or right and "
+"within 5° up or 9° down."
+msgstr ""
+"openpilot requires the device to be mounted within 4° left or right and "
+"within 5° up or 9° down."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:28
+#, python-format
+msgid "Review the rules, features, and limitations of openpilot"
+msgstr "Review the rules, features, and limitations of openpilot"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:17
+#, python-format
+msgid ""
+"Use the openpilot system for adaptive cruise control and lane keep driver "
+"assistance. Your attention is required at all times to use this feature."
+msgstr ""
+"Use the openpilot system for adaptive cruise control and lane keep driver "
+"assistance. Your attention is required at all times to use this feature."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:20
+#, python-format
+msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
+msgstr "When enabled, pressing the accelerator pedal will disengage openpilot."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:22
+#, python-format
+msgid ""
+"Standard is recommended. In aggressive mode, openpilot will follow lead cars "
+"closer and be more aggressive with the gas and brake. In relaxed mode "
+"openpilot will stay further away from lead cars. On supported cars, you can "
+"cycle through these personalities with your steering wheel distance button."
+msgstr ""
+"Standard is recommended. In aggressive mode, openpilot will follow lead cars "
+"closer and be more aggressive with the gas and brake. In relaxed mode "
+"openpilot will stay further away from lead cars. On supported cars, you can "
+"cycle through these personalities with your steering wheel distance button."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:27
+#, python-format
+msgid ""
+"Receive alerts to steer back into the lane when your vehicle drifts over a "
+"detected lane line without a turn signal activated while driving over 31 mph "
+"(50 km/h)."
+msgstr ""
+"Receive alerts to steer back into the lane when your vehicle drifts over a "
+"detected lane line without a turn signal activated while driving over 31 mph "
+"(50 km/h)."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:30
+#, python-format
+msgid "Enable driver monitoring even when openpilot is not engaged."
+msgstr "Enable driver monitoring even when openpilot is not engaged."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:31
+#, python-format
+msgid ""
+"Upload data from the driver facing camera and help improve the driver "
+"monitoring algorithm."
+msgstr ""
+"Upload data from the driver facing camera and help improve the driver "
+"monitoring algorithm."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:32
+#, python-format
+msgid "Display speed in km/h instead of mph."
+msgstr "Display speed in km/h instead of mph."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:33
+#, python-format
+msgid ""
+"Record and store microphone audio while driving. The audio will be included "
+"in the dashcam video in comma connect."
+msgstr ""
+"Record and store microphone audio while driving. The audio will be included "
+"in the dashcam video in comma connect."

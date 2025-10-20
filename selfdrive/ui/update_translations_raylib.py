@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from itertools import chain
 import argparse
 import json
 import os
@@ -8,7 +9,8 @@ from openpilot.system.ui.lib.multilang import UI_DIR, TRANSLATIONS_DIR, LANGUAGE
 
 def update_translations():
   files = []
-  for root, _, filenames in os.walk(os.path.join(UI_DIR, "widgets")):
+  for root, _, filenames in chain(os.walk(os.path.join(UI_DIR, "widgets")),
+                                  os.walk(os.path.join(UI_DIR, "layouts"))):
     for filename in filenames:
       if filename.endswith(".py"):
         files.append(os.path.join(root, filename))
@@ -30,11 +32,11 @@ def update_translations():
   for file in translation_files:
     name = file.replace("main_", "")
     if os.path.exists(os.path.join(TRANSLATIONS_DIR, f"app_{name}.po")):
-      cmd = "msgmerge --update --backup=none --sort-output translations/app.pot translations/app_{}.po".format(name)
+      cmd = f"msgmerge --update --backup=none --sort-output translations/app_{name}.po translations/app.pot"
       ret = os.system(cmd)
       assert ret == 0
     else:
-      cmd = "msginit -l es --no-translator --input translations/app.pot --output-file translations/app_{}.po".format(name)
+      cmd = f"msginit -l {name} --no-translator --input translations/app.pot --output-file translations/app_{name}.po"
       ret = os.system(cmd)
       assert ret == 0
 

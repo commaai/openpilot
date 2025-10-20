@@ -58,12 +58,12 @@ class Multilang:
     rl.draw_text_ex = draw_text_ex_wrapper
 
 
-multilang = Multilang()
-# l = gettext.translation('app_de', localedir=TRANSLATIONS_DIR, languages=['de'])
-with open(os.path.join(TRANSLATIONS_DIR, 'app_de.mo'), 'rb') as fh:
-  l = gettext.GNUTranslations(fh)
-l.install()
-# tr = multilang.translate
-# tr = gettext.gettext
-tr = l.gettext
-trn = l.ngettext
+# multilang = Multilang()
+# # l = gettext.translation('app_de', localedir=TRANSLATIONS_DIR, languages=['de'])
+# with open(os.path.join(TRANSLATIONS_DIR, 'app_de.mo'), 'rb') as fh:
+#   l = gettext.GNUTranslations(fh)
+# l.install()
+# # tr = multilang.translate
+# # tr = gettext.gettext
+# tr = l.gettext
+# trn = l.ngettext
