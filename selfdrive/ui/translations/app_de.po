@@ -20,7 +20,7 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:33
 #, python-format
 msgid "Upgrade Now"
-msgstr ""
+msgstr "Opgrader nu"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:38
 #, python-format

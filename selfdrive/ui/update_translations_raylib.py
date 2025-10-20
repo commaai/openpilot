@@ -3,11 +3,7 @@ import argparse
 import json
 import os
 
-from openpilot.common.basedir import BASEDIR
-
-UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
-TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
-LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
+from openpilot.system.ui.lib.multilang import UI_DIR, TRANSLATIONS_DIR, LANGUAGES_FILE
 
 
 def update_translations():

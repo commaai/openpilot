@@ -12,6 +12,7 @@ from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.multilang import LANGUAGES_FILE, tr
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog, alert_dialog
 from openpilot.system.ui.widgets.html_render import HtmlModal
@@ -21,10 +22,10 @@ from openpilot.system.ui.widgets.scroller import Scroller
 
 # Description constants
 DESCRIPTIONS = {
-  'pair_device': "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
-  'driver_camera': "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)",
-  'reset_calibration': "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.",
-  'review_guide': "Review the rules, features, and limitations of openpilot",
+  'pair_device': tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
+  'driver_camera': tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
+  'reset_calibration': tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
+  'review_guide': tr("Review the rules, features, and limitations of openpilot"),
 }
 
 
@@ -84,14 +85,14 @@ class DeviceLayout(Widget):
     def handle_language_selection(result: int):
       if result == 1 and self._select_language_dialog:
         selected_language = self._select_language_dialog.selection
-        print("Selected language:", selected_language)
-        self._params.put("LanguageSetting", selected_language)
+        print("Selected language:", languages[selected_language])
+        self._params.put("LanguageSetting", languages[selected_language])
 
       self._select_language_dialog = None
 
     try:
-      languages_file = os.path.join(BASEDIR, "selfdrive/ui/translations/languages.json")
-      with open(languages_file, encoding='utf-8') as f:
+      # TODO: get from multilang file
+      with open(LANGUAGES_FILE, encoding='utf-8') as f:
         languages = json.load(f)
 
       self._select_language_dialog = MultiOptionDialog("Select a language", languages)

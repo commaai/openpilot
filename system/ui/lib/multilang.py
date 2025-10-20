@@ -5,9 +5,14 @@ from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
 
 
+UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
+TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
+LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
+
+
 class Multilang:
   def __init__(self):
-    self._language: str = "main_en"
+    self._language: str = "en"
     self._translations: dict[str, dict[str, str]] = {}
 
     self._load_languages()
@@ -27,6 +32,7 @@ class Multilang:
         pass
 
   def _get_translated_text(self, text: str) -> str:
+    # print("Translating:", text, "to", self._language, self._translations.keys())
     if self._language not in self._translations:
       return text
     return self._translations[self._language].get(text, text)
