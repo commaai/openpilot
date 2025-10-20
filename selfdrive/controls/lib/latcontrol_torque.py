@@ -25,7 +25,7 @@ from openpilot.common.pid import PIDController
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
 KP = 1.0
-KI = 0.1
+KI = 0.3
 KD = 0.0
 
 
