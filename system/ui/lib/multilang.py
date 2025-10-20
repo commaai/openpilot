@@ -13,6 +13,11 @@ class Multilang:
     self._load_languages()
     self._hook_draw_text()
 
+  def translate(self, text: str) -> str:
+    if self._language not in self._translations:
+      return text
+    return self._translations[self._language].get(text, text)
+
   def _load_languages(self):
     self._language = Params().get("LanguageSetting")
 
@@ -44,3 +49,7 @@ class Multilang:
 
     rl.draw_text = draw_text_wrapper
     rl.draw_text_ex = draw_text_ex_wrapper
+
+
+multilang = Multilang()
+tr = multilang.translate

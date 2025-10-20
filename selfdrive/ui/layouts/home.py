@@ -9,6 +9,7 @@ from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets import Widget
 
@@ -151,7 +152,7 @@ class HomeLayout(Widget):
       highlight_color = rl.Color(75, 95, 255, 255) if self.current_state == HomeLayoutState.UPDATE else rl.Color(54, 77, 239, 255)
       rl.draw_rectangle_rounded(self.update_notif_rect, 0.3, 10, highlight_color)
 
-      text = "UPDATE"
+      text = tr("UPDATE")
       text_size = measure_text_cached(font, text, HEAD_BUTTON_FONT_SIZE)
       text_x = self.update_notif_rect.x + (self.update_notif_rect.width - text_size.x) // 2
       text_y = self.update_notif_rect.y + (self.update_notif_rect.height - text_size.y) // 2
