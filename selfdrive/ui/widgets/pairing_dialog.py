@@ -34,7 +34,7 @@ class PairingDialog(Widget):
     super().__init__()
     self.params = Params()
     self.qr_texture: rl.Texture | None = None
-    self.last_qr_generation = 0
+    self.last_qr_generation = float('-inf')
     self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
     self._close_btn.set_click_callback(lambda: gui_app.set_modal_overlay(None))
 
@@ -42,8 +42,8 @@ class PairingDialog(Widget):
     try:
       dongle_id = self.params.get("DongleId") or ""
       token = Api(dongle_id).get_token({'pair': True})
-    except Exception as e:
-      cloudlog.warning(f"Failed to get pairing token: {e}")
+    except Exception:
+      cloudlog.exception("Failed to get pairing token")
       token = ""
     return f"https://connect.comma.ai/?pair={token}"
 
@@ -67,8 +67,8 @@ class PairingDialog(Widget):
       rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
 
       self.qr_texture = rl.load_texture_from_image(rl_image)
-    except Exception as e:
-      cloudlog.warning(f"QR code generation failed: {e}")
+    except Exception:
+      cloudlog.exception("QR code generation failed")
       self.qr_texture = None
 
   def _check_qr_refresh(self) -> None:
@@ -145,8 +145,8 @@ class PairingDialog(Widget):
       # Circle and number
       rl.draw_circle(int(circle_x), int(circle_y), circle_radius, rl.Color(70, 70, 70, 255))
       number = str(i + 1)
-      number_width = measure_text_cached(font, number, 30).x
-      rl.draw_text_ex(font, number, (int(circle_x - number_width // 2), int(circle_y - 15)), 30, 0, rl.WHITE)
+      number_size = measure_text_cached(font, number, 30)
+      rl.draw_text_ex(font, number, (int(circle_x - number_size.x // 2), int(circle_y - number_size.y // 2)), 30, 0, rl.WHITE)
 
       # Text
       rl.draw_text_ex(font, "\n".join(wrapped), rl.Vector2(text_x, y), 47, 0.0, rl.BLACK)

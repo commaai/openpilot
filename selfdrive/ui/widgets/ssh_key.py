@@ -21,6 +21,8 @@ from openpilot.system.ui.widgets.list_view import (
   BUTTON_WIDTH,
 )
 
+VALUE_FONT_SIZE = 48
+
 
 class SshKeyActionState(Enum):
   LOADING = "LOADING"
@@ -38,7 +40,7 @@ class SshKeyAction(ItemAction):
     self._keyboard = Keyboard(min_text_size=1)
     self._params = Params()
     self._error_message: str = ""
-    self._text_font = gui_app.font(FontWeight.MEDIUM)
+    self._text_font = gui_app.font(FontWeight.NORMAL)
     self._button = Button("", click_callback=self._handle_button_click, button_style=ButtonStyle.LIST_ACTION,
                           border_radius=BUTTON_BORDER_RADIUS, font_size=BUTTON_FONT_SIZE)
 
@@ -62,14 +64,14 @@ class SshKeyAction(ItemAction):
 
     # Draw username if exists
     if self._username:
-      text_size = measure_text_cached(self._text_font, self._username, BUTTON_FONT_SIZE)
+      text_size = measure_text_cached(self._text_font, self._username, VALUE_FONT_SIZE)
       rl.draw_text_ex(
         self._text_font,
         self._username,
         (rect.x + rect.width - BUTTON_WIDTH - text_size.x - 30, rect.y + (rect.height - text_size.y) / 2),
-        BUTTON_FONT_SIZE,
+        VALUE_FONT_SIZE,
         1.0,
-        rl.WHITE,
+        rl.Color(170, 170, 170, 255),
       )
 
     # Draw button

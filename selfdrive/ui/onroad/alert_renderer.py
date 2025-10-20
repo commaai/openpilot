@@ -7,7 +7,7 @@ from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_text_box
+from openpilot.system.ui.widgets.label import Label
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -63,8 +63,8 @@ ALERT_CRITICAL_TIMEOUT = Alert(
 ALERT_CRITICAL_REBOOT = Alert(
   text1="System Unresponsive",
   text2="Reboot Device",
-  size=AlertSize.full,
-  status=AlertStatus.critical,
+  size=AlertSize.mid,
+  status=AlertStatus.normal,
 )
 
 
@@ -74,13 +74,19 @@ class AlertRenderer(Widget):
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
 
+    # font size is set dynamically
+    self._full_text1_label = Label("", font_size=0, font_weight=FontWeight.BOLD, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                                   text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+    self._full_text2_label = Label("", font_size=ALERT_FONT_BIG, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                                   text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+
   def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
     """Generate the current alert based on selfdrive state."""
     ss = sm['selfdriveState']
 
     # Check if selfdriveState messages have stopped arriving
+    recv_frame = sm.recv_frame['selfdriveState']
     if not sm.updated['selfdriveState']:
-      recv_frame = sm.recv_frame['selfdriveState']
       time_since_onroad = time.monotonic() - ui_state.started_time
 
       # 1. Never received selfdriveState since going onroad
@@ -100,13 +106,17 @@ class AlertRenderer(Widget):
     if ss.alertSize == 0:
       return None
 
+    # Don't get old alert
+    if recv_frame < ui_state.started_frame:
+      return None
+
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle):
     alert = self.get_alert(ui_state.sm)
     if not alert:
-      return False
+      return
 
     alert_rect = self._get_alert_rect(rect, alert.size)
     self._draw_background(alert_rect, alert)
@@ -118,7 +128,6 @@ class AlertRenderer(Widget):
       alert_rect.height - 2 * ALERT_PADDING
     )
     self._draw_text(text_rect, alert)
-    return True
 
   def _get_alert_rect(self, rect: rl.Rectangle, size: int) -> rl.Rectangle:
     if size == AlertSize.full:
@@ -149,13 +158,17 @@ class AlertRenderer(Widget):
     else:
       is_long = len(alert.text1) > 15
       font_size1 = 132 if is_long else 177
-      align_ment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
-      vertical_align = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
-      text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height)
 
-      gui_text_box(text_rect, alert.text1, font_size1, alignment=align_ment, alignment_vertical=vertical_align, font_weight=FontWeight.BOLD)
-      text_rect.y = rect.y + rect.height // 2
-      gui_text_box(text_rect, alert.text2, ALERT_FONT_BIG, alignment=align_ment)
+      top_offset = 200 if is_long or '\n' in alert.text1 else 270
+      title_rect = rl.Rectangle(rect.x, rect.y + top_offset, rect.width, 600)
+      self._full_text1_label.set_font_size(font_size1)
+      self._full_text1_label.set_text(alert.text1)
+      self._full_text1_label.render(title_rect)
+
+      bottom_offset = 361 if is_long else 420
+      subtitle_rect = rl.Rectangle(rect.x, rect.y + rect.height - bottom_offset, rect.width, 300)
+      self._full_text2_label.set_text(alert.text2)
+      self._full_text2_label.render(subtitle_rect)
 
   def _draw_centered(self, text, rect, font, font_size, center_y=True, color=rl.WHITE) -> None:
     text_size = measure_text_cached(font, text, font_size)

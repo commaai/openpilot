@@ -64,10 +64,14 @@ class SoftwareLayout(Widget):
       self._version_item,
       self._download_btn,
       self._install_btn,
-      button_item("Target Branch", "SELECT", callback=self._on_select_branch),
+      # TODO: implement branch switching
+      # button_item("Target Branch", "SELECT", callback=self._on_select_branch),
       button_item("Uninstall", "UNINSTALL", callback=self._on_uninstall),
     ]
     return items
+
+  def show_event(self):
+    self._scroller.show_event()
 
   def _render(self, rect):
     self._scroller.render(rect)

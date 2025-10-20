@@ -6,7 +6,7 @@ import pyray as rl
 from enum import IntEnum
 
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
@@ -89,14 +89,14 @@ class Updater(Widget):
 
   def render_prompt_screen(self, rect: rl.Rectangle):
     # Title
-    title_rect = rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE * FONT_SCALE)
     gui_label(title_rect, "Update Required", TITLE_FONT_SIZE, font_weight=FontWeight.BOLD)
 
     # Description
     desc_text = ("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
                  "The download size is approximately 1GB.")
 
-    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
+    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE * FONT_SCALE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * FONT_SCALE * 4)
     gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)
 
     # Buttons at the bottom
@@ -113,8 +113,11 @@ class Updater(Widget):
 
   def render_wifi_screen(self, rect: rl.Rectangle):
     # Draw the Wi-Fi manager UI
-    wifi_rect = rl.Rectangle(MARGIN + 50, MARGIN, rect.width - MARGIN * 2 - 100, rect.height - MARGIN * 2 - BUTTON_HEIGHT - 20)
-    self.wifi_manager_ui.render(wifi_rect)
+    wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2,
+                             rect.height - BUTTON_HEIGHT - MARGIN * 3)
+    rl.draw_rectangle_rounded(wifi_rect, 0.035, 10, rl.Color(51, 51, 51, 255))
+    wifi_content_rect = rl.Rectangle(wifi_rect.x + 50, wifi_rect.y, wifi_rect.width - 100, wifi_rect.height)
+    self.wifi_manager_ui.render(wifi_content_rect)
 
     back_button_rect = rl.Rectangle(MARGIN, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._back_button.render(back_button_rect)
@@ -158,7 +161,9 @@ def main():
   try:
     gui_app.init_window("System Update")
     updater = Updater(updater_path, manifest_path)
-    for _ in gui_app.render():
+    for showing_dialog in gui_app.render():
+      if showing_dialog:
+        continue
       updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     # Make sure we clean up even if there's an error

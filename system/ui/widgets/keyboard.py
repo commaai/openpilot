@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.inputbox import InputBox
-from openpilot.system.ui.widgets.label import Label, TextAlignment
+from openpilot.system.ui.widgets.label import Label
 
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
@@ -19,7 +19,7 @@ DELETE_REPEAT_INTERVAL = 0.07
 CONTENT_MARGIN = 50
 BACKSPACE_KEY = "<-"
 ENTER_KEY = "->"
-SPACE_KEY = "  "
+SPACE_KEY = " "
 SHIFT_INACTIVE_KEY = "SHIFT_OFF"
 SHIFT_ACTIVE_KEY = "SHIFT_ON"
 CAPS_LOCK_KEY = "CAPS"
@@ -62,8 +62,8 @@ class Keyboard(Widget):
     self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False
     self._last_shift_press_time = 0
-    self._title = Label("", 90, FontWeight.BOLD, TextAlignment.LEFT)
-    self._sub_title = Label("", 55, FontWeight.NORMAL, TextAlignment.LEFT)
+    self._title = Label("", 90, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._sub_title = Label("", 55, FontWeight.NORMAL, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
 
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
