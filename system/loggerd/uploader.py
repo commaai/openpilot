@@ -29,7 +29,7 @@ MAX_UPLOAD_SIZES = {
   "qcam": 5*1e6,
 }
 
-allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
+allow_sleep = bool(int(os.getenv("UPLOADER_SLEEP", "1")))
 force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 

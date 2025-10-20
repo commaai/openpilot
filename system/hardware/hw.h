@@ -5,7 +5,7 @@
 #include "system/hardware/base.h"
 #include "common/util.h"
 
-#if QCOM2
+#if __TICI__
 #include "system/hardware/tici/hardware.h"
 #define Hardware HardwareTici
 #else

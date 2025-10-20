@@ -13,7 +13,7 @@
 #include <QOpenGLWidget>
 #include <QThread>
 
-#ifdef QCOM2
+#ifdef __TICI__
 #define EGL_EGLEXT_PROTOTYPES
 #define EGL_NO_X11
 #define GL_TEXTURE_EXTERNAL_OES 0x8D65
@@ -63,7 +63,7 @@ protected:
   std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
-#ifdef QCOM2
+#ifdef __TICI__
   std::map<int, EGLImageKHR> egl_images;
 #endif
 

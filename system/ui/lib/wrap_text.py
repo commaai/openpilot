@@ -36,7 +36,14 @@ def _break_long_word(font: rl.Font, word: str, font_size: int, max_width: int) -
   return parts
 
 
+_cache: dict[int, list[str]] = {}
+
+
 def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int) -> list[str]:
+  key = hash((font.texture.id, text, font_size, max_width))
+  if key in _cache:
+    return _cache[key]
+
   if not text or max_width <= 0:
     return []
 
@@ -100,4 +107,5 @@ def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int) -> list[
     # Add all lines from this paragraph
     all_lines.extend(lines)
 
+  _cache[key] = all_lines
   return all_lines

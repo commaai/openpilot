@@ -21,9 +21,11 @@ NM_ACCESS_POINT_IFACE = 'org.freedesktop.NetworkManager.AccessPoint'
 NM_SETTINGS_PATH = '/org/freedesktop/NetworkManager/Settings'
 NM_SETTINGS_IFACE = 'org.freedesktop.NetworkManager.Settings'
 NM_CONNECTION_IFACE = 'org.freedesktop.NetworkManager.Settings.Connection'
+NM_ACTIVE_CONNECTION_IFACE = 'org.freedesktop.NetworkManager.Connection.Active'
 NM_WIRELESS_IFACE = 'org.freedesktop.NetworkManager.Device.Wireless'
 NM_PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties'
-NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
+NM_DEVICE_IFACE = 'org.freedesktop.NetworkManager.Device'
+NM_IP4_CONFIG_IFACE = 'org.freedesktop.NetworkManager.IP4Config'
 
 NM_DEVICE_TYPE_WIFI = 2
 NM_DEVICE_TYPE_MODEM = 8

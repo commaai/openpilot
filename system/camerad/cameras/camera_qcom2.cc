@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#ifdef QCOM2
+#ifdef __TICI__
 #include "CL/cl_ext_qcom.h"
 #else
 #define CL_PRIORITY_HINT_HIGH_QCOM NULL
@@ -89,7 +89,7 @@ void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
   std::vector<std::pair<Rect, float>> ae_targets = {
     // (Rect, F)
-    std::make_pair((Rect){96, 250, 1734, 524}, 567.0),  // wide
+    std::make_pair((Rect){96, 400, 1734, 524}, 567.0),  // wide
     std::make_pair((Rect){96, 160, 1734, 986}, 2648.0), // road
     std::make_pair((Rect){96, 242, 1736, 906}, 567.0)   // driver
   };
