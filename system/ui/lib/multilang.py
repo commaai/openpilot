@@ -59,8 +59,11 @@ class Multilang:
 
 
 multilang = Multilang()
-l = gettext.translation('de', localedir=TRANSLATIONS_DIR, languages=[Params().get("LanguageSetting")])
+# l = gettext.translation('app_de', localedir=TRANSLATIONS_DIR, languages=['de'])
+with open(os.path.join(TRANSLATIONS_DIR, 'app_de.mo'), 'rb') as fh:
+  l = gettext.GNUTranslations(fh)
 l.install()
 # tr = multilang.translate
 # tr = gettext.gettext
 tr = l.gettext
+trn = l.ngettext
