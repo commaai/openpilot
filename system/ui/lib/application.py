@@ -136,6 +136,7 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
+    self._multilang = Multilang()
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -319,6 +320,7 @@ class GuiApplication:
   def height(self):
     return self._height
 
+
   def _load_fonts(self):
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
@@ -403,8 +405,5 @@ class GuiApplication:
       cloudlog.error(f"FPS dropped critically below {fps}. Shutting down UI.")
       os._exit(1)
 
-
-multilang = Multilang()
-tr = multilang.translate
 
 gui_app = GuiApplication(2160, 1080)
