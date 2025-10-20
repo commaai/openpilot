@@ -32,17 +32,10 @@ else
     brew up
 fi
 
+# Relink openssl
 # Fix OpenSSL conflicts
 if brew list openssl@1.1 &>/dev/null; then
     echo "[ ] Unlinking openssl@1.1 to avoid conflicts"
-    brew unlink openssl@1.1
-fi
-
-if brew list openssl@3 &>/dev/null; then
-    echo "[ ] Linking openssl@3 (overwrite conflicts)"
-    brew link --overwrite openssl@3
-fi
-
 
 brew bundle --file=- <<-EOS
 brew "git-lfs"
