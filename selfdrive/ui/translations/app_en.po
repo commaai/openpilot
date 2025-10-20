@@ -1,0 +1,63 @@
+# Spanish translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-20 15:39-0700\n"
+"PO-Revision-Date: 2025-10-20 15:39-0700\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:33
+#, python-format
+msgid "Upgrade Now"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:38
+#, python-format
+msgid "Become a comma prime member at connect.comma.ai"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:44
+#, python-format
+msgid "PRIME FEATURES:"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
+#, python-format
+msgid "Remote access"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
+#, python-format
+msgid "24/7 LTE connectivity"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
+#, python-format
+msgid "1 year of drive storage"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
+#, python-format
+msgid "Remote snapshots"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
+#, python-format
+msgid "✓ SUBSCRIBED"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:63
+#, python-format
+msgid "comma prime"
+msgstr ""
