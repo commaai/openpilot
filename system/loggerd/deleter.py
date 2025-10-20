@@ -54,16 +54,54 @@ def deleter_thread(exit_event: threading.Event):
       dirs = listdir_by_creation(Paths.log_root())
       preserved_dirs = get_preserved_segments(dirs)
 
-      # remove the earliest directory we can
-      for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        delete_path = os.path.join(Paths.log_root(), delete_dir)
+      # Get all items in log_root (both directories and files)
+      log_root = Paths.log_root()
+      try:
+        all_items = os.listdir(log_root)
+      except OSError:
+        cloudlog.exception(f"failed to list {log_root}")
+        exit_event.wait(.1)
+        continue
 
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+      # Separate directories (from listdir_by_creation) and other items (files, symlinks)
+      # Other items will be deleted after directories
+      other_items = [item for item in all_items if item not in dirs]
+
+      # Combine: directories first (sorted by age/preservation), then other items
+      items_to_check = sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)) + sorted(other_items)
+
+      # remove the earliest item we can
+      for item_name in items_to_check:
+        delete_path = os.path.join(log_root, item_name)
+
+        # Check if path exists (handle race conditions)
+        if not os.path.exists(delete_path) and not os.path.islink(delete_path):
           continue
 
+        # For directories, check for lock files
+        if os.path.isdir(delete_path) and not os.path.islink(delete_path):
+          try:
+            if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+              continue
+          except (OSError, NotADirectoryError):
+            # If we can't list it, try to delete it anyway
+            pass
+
+        # Delete the item (file, directory, or symlink)
         try:
           cloudlog.info(f"deleting {delete_path}")
-          shutil.rmtree(delete_path)
+          if os.path.islink(delete_path):
+            # For symlinks, remove the link itself (don't follow)
+            os.unlink(delete_path)
+          elif os.path.isfile(delete_path):
+            # Regular file
+            os.remove(delete_path)
+          elif os.path.isdir(delete_path):
+            # Directory
+            shutil.rmtree(delete_path)
+          else:
+            # Unknown type, try to remove as file
+            os.remove(delete_path)
           break
         except OSError:
           cloudlog.exception(f"issue deleting {delete_path}")
