@@ -26,11 +26,19 @@ jobs:
       with:
         submodules: true
 
+    # Cache pip dependencies
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-docs-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-docs-
+
     # Build
     - name: Build docs
       run: |
-        # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs
+        pip install jinja2 natsort mkdocs
         mkdocs build
 
     # Push to docs.comma.ai
