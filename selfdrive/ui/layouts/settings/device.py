@@ -65,7 +65,7 @@ class DeviceLayout(Widget):
       button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide, enabled=ui_state.is_offroad),
       regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory, enabled=ui_state.is_offroad),
       # TODO: implement multilang
-      # button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
+      button_item("Change Language", "CHANGE", callback=self._show_language_dialog, enabled=ui_state.is_offroad),
       self._power_off_btn,
     ]
     regulatory_btn.set_visible(TICI)
@@ -80,23 +80,24 @@ class DeviceLayout(Widget):
   def _render(self, rect):
     self._scroller.render(rect)
 
-  def _show_language_selection(self):
+  def _show_language_dialog(self):
+    def handle_language_selection(result: int):
+      if result == 1 and self._select_language_dialog:
+        selected_language = self._select_language_dialog.selection
+        print("Selected language:", selected_language)
+        self._params.put("LanguageSetting", selected_language)
+
+      self._select_language_dialog = None
+
     try:
       languages_file = os.path.join(BASEDIR, "selfdrive/ui/translations/languages.json")
       with open(languages_file, encoding='utf-8') as f:
         languages = json.load(f)
 
       self._select_language_dialog = MultiOptionDialog("Select a language", languages)
-      gui_app.set_modal_overlay(self._select_language_dialog, callback=self._handle_language_selection)
+      gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
     except FileNotFoundError:
       pass
-
-  def _handle_language_selection(self, result: int):
-    if result == 1 and self._select_language_dialog:
-      selected_language = self._select_language_dialog.selection
-      self._params.put("LanguageSetting", selected_language)
-
-    self._select_language_dialog = None
 
   def _show_driver_camera(self):
     if not self._driver_camera:

@@ -17,9 +17,14 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:33
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
-msgid "Upgrade Now"
+msgid "1 year of drive storage"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
+#, python-format
+msgid "24/7 LTE connectivity"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:38
@@ -39,25 +44,20 @@ msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
-msgid "24/7 LTE connectivity"
-msgstr ""
-
-#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
-#, python-format
-msgid "1 year of drive storage"
-msgstr ""
-
-#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
-#, python-format
 msgid "Remote snapshots"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:33
 #, python-format
-msgid "✓ SUBSCRIBED"
+msgid "Upgrade Now"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:63
 #, python-format
 msgid "comma prime"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
+#, python-format
+msgid "✓ SUBSCRIBED"
 msgstr ""
