@@ -1,4 +1,5 @@
 import os
+import gettext
 import pyray as rl
 from typing import Union
 from openpilot.common.params import Params
@@ -58,4 +59,8 @@ class Multilang:
 
 
 multilang = Multilang()
-tr = multilang.translate
+l = gettext.translation('de', localedir=TRANSLATIONS_DIR, languages=[Params().get("LanguageSetting")])
+l.install()
+# tr = multilang.translate
+# tr = gettext.gettext
+tr = l.gettext
