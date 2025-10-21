@@ -66,7 +66,7 @@ class DeviceLayout(Widget):
       button_item(tr("Review Training Guide"), tr("REVIEW"), DESCRIPTIONS['review_guide'], self._on_review_training_guide, enabled=ui_state.is_offroad),
       regulatory_btn := button_item(tr("Regulatory"), tr("VIEW"), callback=self._on_regulatory, enabled=ui_state.is_offroad),
       # TODO: implement multilang
-      # button_item(tr("Change Language"), tr("CHANGE"), callback=self._show_language_dialog, enabled=ui_state.is_offroad),
+      # button_item(tr("Change Language"), tr("CHANGE"), callback=self._show_language_selection, enabled=ui_state.is_offroad),
       self._power_off_btn,
     ]
     regulatory_btn.set_visible(TICI)
