@@ -14,6 +14,7 @@ class Multilang:
     self._params = Params()
     self.languages = {}
     self.codes = {}
+    self._translation: gettext.NullTranslations | gettext.GNUTranslations | None = None
     self._load_languages()
 
   @property
@@ -26,16 +27,31 @@ class Multilang:
       with open(os.path.join(TRANSLATIONS_DIR, f'app_{language}.mo'), 'rb') as fh:
         translation = gettext.GNUTranslations(fh)
       translation.install()
-      tr = translation.gettext
-      trn = translation.ngettext
+      self._translation = translation
       print(f"Loaded translations for language: {language}")
     except FileNotFoundError:
       print(f"No translation file found for language: {language}, using default.")
       gettext.install('app')
-      tr = gettext.gettext
-      trn = gettext.ngettext
+      self._translation = gettext.NullTranslations()
+    return None
 
-    return tr, trn
+  def change_language(self, language_code: str) -> None:
+    # Persist selection
+    if self._params.get("LanguageSetting") != language_code:
+      self._params.put("LanguageSetting", language_code)
+
+    # Reinstall gettext with the selected language
+    self.setup()
+
+  def tr(self, text: str) -> str:
+    if self._translation is None:
+      self.setup()
+    return self._translation.gettext(text)
+
+  def trn(self, singular: str, plural: str, n: int) -> str:
+    if self._translation is None:
+      self.setup()
+    return self._translation.ngettext(singular, plural, n)
 
   def _load_languages(self):
     with open(LANGUAGES_FILE, encoding='utf-8') as f:
@@ -44,4 +60,10 @@ class Multilang:
 
 
 multilang = Multilang()
-tr, trn = multilang.setup()
+multilang.setup()
+
+def tr(text: str) -> str:
+  return multilang.tr(text)
+
+def trn(singular: str, plural: str, n: int) -> str:
+  return multilang.trn(singular, plural, n)
