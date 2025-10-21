@@ -10,7 +10,8 @@ from openpilot.system.ui.lib.multilang import UI_DIR, TRANSLATIONS_DIR, LANGUAGE
 def update_translations():
   files = []
   for root, _, filenames in chain(os.walk(os.path.join(UI_DIR, "widgets")),
-                                  os.walk(os.path.join(UI_DIR, "layouts"))):
+                                  os.walk(os.path.join(UI_DIR, "layouts")),
+                                  os.walk(os.path.join(UI_DIR, "onroad"))):
     for filename in filenames:
       if filename.endswith(".py"):
         files.append(os.path.join(root, filename))

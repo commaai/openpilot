@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 17:18-0700\n"
+"POT-Creation-Date: 2025-10-20 17:23-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -894,4 +894,50 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:225
 #, python-format
 msgid "Enable"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:148
+#, python-format
+msgid "MAX"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
+#, python-format
+msgid "km/h"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
+#, python-format
+msgid "mph"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/driver_camera_dialog.py:34
+#, python-format
+msgid "camera starting"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:51
+#, python-format
+msgid "openpilot Unavailable"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:52
+#, python-format
+msgid "Waiting to start"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:58
+#, python-format
+msgid "TAKE CONTROL IMMEDIATELY"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:59
+#: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:65
+#, python-format
+msgid "System Unresponsive"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:66
+#, python-format
+msgid "Reboot Device"
 msgstr ""
