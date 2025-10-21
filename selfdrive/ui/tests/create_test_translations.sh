@@ -4,8 +4,8 @@ set -e
 
 UI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"/..
 TEST_TEXT="(WRAPPED_SOURCE_TEXT)"
-TEST_TS_FILE=$UI_DIR/translations/main_test_en.ts
-TEST_QM_FILE=$UI_DIR/translations/main_test_en.qm
+TEST_TS_FILE=$UI_DIR/translations/test_en.ts
+TEST_QM_FILE=$UI_DIR/translations/test_en.qm
 
 # translation strings
 UNFINISHED="<translation type=\"unfinished\"><\/translation>"
