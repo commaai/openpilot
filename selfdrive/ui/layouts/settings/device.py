@@ -1,5 +1,5 @@
 import os
-import sys
+import json
 import math
 
 from cereal import messaging, log
@@ -84,11 +84,8 @@ class DeviceLayout(Widget):
     def handle_language_selection(result: int):
       if result == 1 and self._select_language_dialog:
         selected_language = multilang.languages[self._select_language_dialog.selection]
-        multilang.change_language(selected_language)
+        self._params.put("LanguageSetting", selected_language)
         print("Selected language:", selected_language)
-        # Rebuild UI with new translations
-        self._rebuild_for_language_change()
-        gui_app.set_modal_overlay(None)
 
       self._select_language_dialog = None
 
@@ -97,21 +94,6 @@ class DeviceLayout(Widget):
       gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
     except FileNotFoundError:
       pass
-
-  def _rebuild_for_language_change(self):
-    # Recreate translated strings and UI items
-    global DESCRIPTIONS
-    DESCRIPTIONS = {
-      'pair_device': tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
-      'driver_camera': tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
-      'reset_calibration': tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
-      'review_guide': tr("Review the rules, features, and limitations of openpilot"),
-    }
-
-    items = self._initialize_items()
-    self._scroller = Scroller(items, line_separator=True, spacing=0)
-    self._offroad_transition()
-    self._scroller.show_event()
 
   def _show_driver_camera(self):
     if not self._driver_camera:

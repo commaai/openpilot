@@ -43,15 +43,15 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
 class FontWeight(StrEnum):
-  THIN = "Inter-Thin.ttf"
-  EXTRA_LIGHT = "Inter-ExtraLight.ttf"
-  LIGHT = "Inter-Light.ttf"
-  NORMAL = "Inter-Regular.ttf"
-  MEDIUM = "Inter-Medium.ttf"
-  SEMI_BOLD = "Inter-SemiBold.ttf"
-  BOLD = "Inter-Bold.ttf"
-  EXTRA_BOLD = "Inter-ExtraBold.ttf"
-  BLACK = "Inter-Black.ttf"
+  THIN = "OpenpilotSans-Regular.ttf"
+  EXTRA_LIGHT = "OpenpilotSans-Regular.ttf"
+  LIGHT = "OpenpilotSans-Regular.ttf"
+  NORMAL = "OpenpilotSans-Regular.ttf"
+  MEDIUM = "OpenpilotSans-Regular.ttf"
+  SEMI_BOLD = "OpenpilotSans-Regular.ttf"
+  BOLD = "OpenpilotSans-Regular.ttf"
+  EXTRA_BOLD = "OpenpilotSans-Regular.ttf"
+  BLACK = "OpenpilotSans-Regular.ttf"
 
 
 @dataclass
@@ -347,6 +347,7 @@ class GuiApplication:
   def height(self):
     return self._height
 
+
   def _load_fonts(self):
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
@@ -359,7 +360,20 @@ class GuiApplication:
     for cp in range(0x00A0, 0x0180):
       all_chars.add(chr(cp))
     all_chars |= set("–✓×°§•")
+
+    with open(LANGUAGES_FILE, "r") as f:
+      l = f.read()
+      languages = json.loads(l)
+      all_chars |= set(l)
+
+    # read each translation file now
+    for lang in languages:
+      lang_file = os.path.join(TRANSLATIONS_DIR, f"app_{lang}.po")
+      with open(lang_file, "r", encoding="utf-8") as f:
+        all_chars |= set(f.read())
+
     all_chars = "".join(all_chars)
+    print(all_chars)
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
