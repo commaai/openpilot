@@ -43,49 +43,49 @@ class TogglesLayout(Widget):
     # param, title, desc, icon, needs_restart
     self._toggle_defs = {
       "OpenpilotEnabledToggle": (
-        tr("Enable openpilot"),
+        lambda: tr("Enable openpilot"),
         DESCRIPTIONS["OpenpilotEnabledToggle"],
         "chffr_wheel.png",
         True,
       ),
       "ExperimentalMode": (
-        tr("Experimental Mode"),
+        lambda: tr("Experimental Mode"),
         "",
         "experimental_white.png",
         False,
       ),
       "DisengageOnAccelerator": (
-        tr("Disengage on Accelerator Pedal"),
+        lambda: tr("Disengage on Accelerator Pedal"),
         DESCRIPTIONS["DisengageOnAccelerator"],
         "disengage_on_accelerator.png",
         False,
       ),
       "IsLdwEnabled": (
-        tr("Enable Lane Departure Warnings"),
+        lambda: tr("Enable Lane Departure Warnings"),
         DESCRIPTIONS["IsLdwEnabled"],
         "warning.png",
         False,
       ),
       "AlwaysOnDM": (
-        tr("Always-On Driver Monitoring"),
+        lambda: tr("Always-On Driver Monitoring"),
         DESCRIPTIONS["AlwaysOnDM"],
         "monitoring.png",
         False,
       ),
       "RecordFront": (
-        tr("Record and Upload Driver Camera"),
+        lambda: tr("Record and Upload Driver Camera"),
         DESCRIPTIONS["RecordFront"],
         "monitoring.png",
         True,
       ),
       "RecordAudio": (
-        tr("Record and Upload Microphone Audio"),
+        lambda: tr("Record and Upload Microphone Audio"),
         DESCRIPTIONS["RecordAudio"],
         "microphone.png",
         True,
       ),
       "IsMetric": (
-        tr("Use Metric System"),
+        lambda: tr("Use Metric System"),
         DESCRIPTIONS["IsMetric"],
         "metric.png",
         False,
@@ -93,9 +93,9 @@ class TogglesLayout(Widget):
     }
 
     self._long_personality_setting = multiple_button_item(
-      tr("Driving Personality"),
+      lambda: tr("Driving Personality"),
       DESCRIPTIONS["LongitudinalPersonality"],
-      buttons=[tr("Aggressive"), tr("Standard"), tr("Relaxed")],
+      buttons=[lambda: tr("Aggressive"), lambda: tr("Standard"), lambda: tr("Relaxed")],
       button_width=255,
       callback=self._set_longitudinal_personality,
       selected_index=self._params.get("LongitudinalPersonality", return_default=True),
@@ -119,8 +119,11 @@ class TogglesLayout(Widget):
         locked = False
       toggle.action_item.set_enabled(not locked)
 
+      # Make description callable for live translation
+      additional_desc = ""
       if needs_restart and not locked:
-        toggle.set_description(toggle.description + tr(" Changing this setting will restart openpilot if the car is powered on."))
+        additional_desc = tr("Changing this setting will restart openpilot if the car is powered on.")
+      toggle.set_description(lambda original_desc=toggle.description: tr(original_desc) + "" + tr(additional_desc))
 
       # track for engaged state updates
       if locked:
