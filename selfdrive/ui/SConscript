@@ -96,15 +96,3 @@ if GetOption('extras'):
       f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
       # keep installers small
       assert f[0].get_size() < 1900*1e3, f[0].get_size()
-
-# Compile gettext .po -> .mo alongside Qt translations
-po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
-mo_targets = [src.replace(".po", ".mo") for src in po_sources]
-msgfmt_bin = 'msgfmt'
-
-# Build each .mo individually to ensure one-to-one mapping
-mo_build = []
-for src, tgt in zip(po_sources, mo_targets):
-  mo_build.append(env.Command(tgt, src, f"{msgfmt_bin} -o $TARGET $SOURCE"))
-
-qt_env.Depends(assets, mo_build)
