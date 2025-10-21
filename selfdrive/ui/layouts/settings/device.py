@@ -90,7 +90,7 @@ class DeviceLayout(Widget):
       self._select_language_dialog = None
 
     try:
-      self._select_language_dialog = MultiOptionDialog("Select a language", multilang.languages, multilang.codes[multilang.language])
+      self._select_language_dialog = MultiOptionDialog(tr("Select a language"), multilang.languages, multilang.codes[multilang.language])
       gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
     except FileNotFoundError:
       pass
@@ -133,7 +133,8 @@ class DeviceLayout(Widget):
         if calib.calStatus != log.LiveCalibrationData.Status.uncalibrated:
           pitch = math.degrees(calib.rpyCalib[1])
           yaw = math.degrees(calib.rpyCalib[2])
-          desc += f" Your device is pointed {abs(pitch):.1f}° {'down' if pitch > 0 else 'up'} and {abs(yaw):.1f}° {'left' if yaw > 0 else 'right'}."
+          desc += tr(" Your device is pointed {:.1f}° {} and {:.1f}° {}.").format(abs(pitch), tr("down") if pitch > 0 else tr("up"),
+                                                                                  abs(yaw), tr("left") if yaw > 0 else tr("right"))
       except Exception:
         cloudlog.exception("invalid CalibrationParams")
 
@@ -145,9 +146,9 @@ class DeviceLayout(Widget):
       except Exception:
         cloudlog.exception("invalid LiveDelay")
     if lag_perc < 100:
-      desc += f"<br><br>Steering lag calibration is {lag_perc}% complete."
+      desc += tr(f"<br><br>Steering lag calibration is {lag_perc}% complete.")
     else:
-      desc += "<br><br>Steering lag calibration is complete."
+      desc += tr("<br><br>Steering lag calibration is complete.")
 
     torque_bytes = self._params.get("LiveTorqueParameters")
     if torque_bytes:
@@ -157,15 +158,15 @@ class DeviceLayout(Widget):
         if torque.useParams:
           torque_perc = torque.calPerc
           if torque_perc < 100:
-            desc += f" Steering torque response calibration is {torque_perc}% complete."
+            desc += tr(f" Steering torque response calibration is {torque_perc}% complete.")
           else:
-            desc += " Steering torque response calibration is complete."
+            desc += tr(" Steering torque response calibration is complete.")
       except Exception:
         cloudlog.exception("invalid LiveTorqueParameters")
 
     desc += "<br><br>"
-    desc += ("openpilot is continuously calibrating, resetting is rarely required. " +
-             "Resetting calibration will restart openpilot if the car is powered on.")
+    desc += tr("openpilot is continuously calibrating, resetting is rarely required. " +
+               "Resetting calibration will restart openpilot if the car is powered on.")
 
     self._reset_calib_btn.set_description(desc)
 
@@ -207,5 +208,6 @@ class DeviceLayout(Widget):
     if not self._training_guide:
       def completed_callback():
         gui_app.set_modal_overlay(None)
+
       self._training_guide = TrainingGuide(completed_callback=completed_callback)
     gui_app.set_modal_overlay(self._training_guide)
