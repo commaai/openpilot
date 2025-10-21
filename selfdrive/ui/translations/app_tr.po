@@ -26,17 +26,17 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
 #, python-format
 msgid " Steering torque response calibration is complete."
-msgstr ""
+msgstr " Direksiyon tork tepkisi kalibrasyonu tamamlandı."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
-msgstr ""
+msgstr " Direksiyon tork tepkisi kalibrasyonu {}% tamamlandı."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
-msgstr ""
+msgstr " Cihazınız {:.1f}° {} ve {:.1f}° {} yönünde konumlandırılmış."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 #, python-format
@@ -720,7 +720,7 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
 #, python-format
 msgid "Select a language"
-msgstr ""
+msgstr "Bir dil seçin"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
@@ -903,7 +903,7 @@ msgstr "comma prime"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid "down"
-msgstr ""
+msgstr "aşağı"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:105
 #, python-format
@@ -918,7 +918,7 @@ msgstr "km/h"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "left"
-msgstr ""
+msgstr "sol"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1012,12 +1012,12 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "right"
-msgstr ""
+msgstr "sağ"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid "up"
-msgstr ""
+msgstr "yukarı"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:116
 #, python-format

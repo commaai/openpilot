@@ -27,17 +27,17 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
 #, python-format
 msgid " Steering torque response calibration is complete."
-msgstr ""
+msgstr " Die Lenkmoment-Reaktionskalibrierung ist abgeschlossen."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
-msgstr ""
+msgstr " Die Lenkmoment-Reaktionskalibrierung ist zu {}% abgeschlossen."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
-msgstr ""
+msgstr " Ihr Gerät ist um {:.1f}° {} und {:.1f}° {} ausgerichtet."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 #, python-format
@@ -179,7 +179,7 @@ msgstr "Werden Sie comma prime Mitglied auf connect.comma.ai"
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:130
 #, python-format
 msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
-msgstr ""
+msgstr "Fügen Sie connect.comma.ai Ihrem Startbildschirm hinzu, um es wie eine App zu verwenden"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
@@ -197,7 +197,7 @@ msgstr "PRÜFEN"
 #: /home/batman/openpilot/selfdrive/ui/widgets/exp_mode_button.py:50
 #, python-format
 msgid "CHILL MODE ON"
-msgstr ""
+msgstr "CHILL‑MODUS AKTIV"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:73
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:134
@@ -215,12 +215,12 @@ msgstr "Sprache ändern"
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:129
 #, python-format
 msgid "Click \"add new device\" and scan the QR code on the right"
-msgstr ""
+msgstr "Klicken Sie auf \"add new device\" und scannen Sie den QR‑Code rechts"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:105
 #, python-format
 msgid "Close"
-msgstr ""
+msgstr "Schließen"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:48
 #, python-format
@@ -310,7 +310,7 @@ msgstr "ETH"
 #: /home/batman/openpilot/selfdrive/ui/widgets/exp_mode_button.py:50
 #, python-format
 msgid "EXPERIMENTAL MODE ON"
-msgstr ""
+msgstr "EXPERIMENTALMODUS AKTIV"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:225
 #, python-format
@@ -354,7 +354,7 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:89
 #, python-format
 msgid "Enter your GitHub username"
-msgstr ""
+msgstr "Geben Sie Ihren GitHub‑Benutzernamen ein"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:52
 #, python-format
@@ -373,7 +373,7 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:44
 #, python-format
 msgid "Finish Setup"
-msgstr ""
+msgstr "Einrichtung abschließen"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:66
 #, python-format
@@ -440,7 +440,7 @@ msgstr "GUT"
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:128
 #, python-format
 msgid "Go to https://connect.comma.ai on your phone"
-msgstr ""
+msgstr "Gehen Sie auf Ihrem Telefon zu https://connect.comma.ai"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:129
 #, python-format
@@ -486,7 +486,7 @@ msgstr "Längsmanövermodus"
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:148
 #, python-format
 msgid "MAX"
-msgstr ""
+msgstr "MAX"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:75
 #, python-format
@@ -638,7 +638,7 @@ msgstr "Neustart"
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:66
 #, fuzzy, python-format
 msgid "Reboot Device"
-msgstr "Gerät"
+msgstr "Gerät neu starten"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:113
 #, python-format
@@ -724,7 +724,7 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
 #, python-format
 msgid "Select a language"
-msgstr ""
+msgstr "Sprache auswählen"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
@@ -764,12 +764,12 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:65
 #, python-format
 msgid "System Unresponsive"
-msgstr ""
+msgstr "System reagiert nicht"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:58
 #, python-format
 msgid "TAKE CONTROL IMMEDIATELY"
-msgstr ""
+msgstr "SOFORT DIE KONTROLLE ÜBERNEHMEN"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:71
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:125
@@ -852,7 +852,7 @@ msgstr "ANSEHEN"
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:52
 #, python-format
 msgid "Waiting to start"
-msgstr ""
+msgstr "Warten auf Start"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:19
 #, python-format
@@ -900,7 +900,7 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/onroad/driver_camera_dialog.py:34
 #, python-format
 msgid "camera starting"
-msgstr ""
+msgstr "Kamera startet"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:63
 #, python-format
@@ -910,7 +910,7 @@ msgstr "comma prime"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid "down"
-msgstr ""
+msgstr "unten"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:105
 #, python-format
@@ -920,17 +920,17 @@ msgstr "Überprüfung auf Updates fehlgeschlagen"
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
 msgid "km/h"
-msgstr ""
+msgstr "km/h"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "left"
-msgstr ""
+msgstr "links"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
 msgid "mph"
-msgstr ""
+msgstr "mph"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:19
 #, python-format
@@ -950,7 +950,7 @@ msgstr "openpilot Längsregelung (Alpha)"
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:51
 #, fuzzy, python-format
 msgid "openpilot Unavailable"
-msgstr "Update verfügbar"
+msgstr "openpilot nicht verfügbar"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:155
 #, python-format
@@ -1021,12 +1021,12 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "right"
-msgstr ""
+msgstr "rechts"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid "up"
-msgstr ""
+msgstr "oben"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:116
 #, python-format

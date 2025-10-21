@@ -26,17 +26,17 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
 #, python-format
 msgid " Steering torque response calibration is complete."
-msgstr ""
+msgstr " A calibração da resposta de torque da direção foi concluída."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
-msgstr ""
+msgstr " A calibração da resposta de torque da direção está {}% concluída."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
-msgstr ""
+msgstr " Seu dispositivo está apontado {:.1f}° {} e {:.1f}° {}."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 #, python-format
@@ -720,7 +720,7 @@ msgstr "Revise as regras, recursos e limitações do openpilot"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
 #, python-format
 msgid "Select a language"
-msgstr ""
+msgstr "Selecione um idioma"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
@@ -905,7 +905,7 @@ msgstr "comma prime"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid "down"
-msgstr ""
+msgstr "para baixo"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:105
 #, python-format
@@ -920,7 +920,7 @@ msgstr "km/h"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "left"
-msgstr ""
+msgstr "à esquerda"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1016,12 +1016,12 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "right"
-msgstr ""
+msgstr "à direita"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid "up"
-msgstr ""
+msgstr "para cima"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:116
 #, python-format

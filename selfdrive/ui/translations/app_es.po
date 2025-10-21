@@ -26,17 +26,17 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
 #, python-format
 msgid " Steering torque response calibration is complete."
-msgstr ""
+msgstr " La calibración de respuesta de par de dirección está completa."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
-msgstr ""
+msgstr " La calibración de respuesta de par de dirección está {}% completa."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
-msgstr ""
+msgstr " Tu dispositivo está orientado {:.1f}° {} y {:.1f}° {}."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 #, python-format
@@ -724,7 +724,7 @@ msgstr "Revisa las reglas, funciones y limitaciones de openpilot"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
 #, python-format
 msgid "Select a language"
-msgstr ""
+msgstr "Selecciona un idioma"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
@@ -910,7 +910,7 @@ msgstr "comma prime"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid "down"
-msgstr ""
+msgstr "abajo"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:105
 #, python-format
@@ -925,7 +925,7 @@ msgstr "km/h"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "left"
-msgstr ""
+msgstr "izquierda"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1023,12 +1023,12 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "right"
-msgstr ""
+msgstr "derecha"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
 #, python-format
 msgid "up"
-msgstr ""
+msgstr "arriba"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:116
 #, python-format
