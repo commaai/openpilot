@@ -12,7 +12,7 @@ from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.multilang import multilang, tr
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog, alert_dialog
 from openpilot.system.ui.widgets.html_render import HtmlModal
@@ -65,7 +65,8 @@ class DeviceLayout(Widget):
       self._reset_calib_btn,
       button_item(tr("Review Training Guide"), tr("REVIEW"), DESCRIPTIONS['review_guide'], self._on_review_training_guide, enabled=ui_state.is_offroad),
       regulatory_btn := button_item(tr("Regulatory"), tr("VIEW"), callback=self._on_regulatory, enabled=ui_state.is_offroad),
-      button_item(tr("Change Language"), tr("CHANGE"), callback=self._show_language_dialog, enabled=ui_state.is_offroad),
+      # TODO: implement multilang
+      # button_item(tr("Change Language"), tr("CHANGE"), callback=self._show_language_dialog, enabled=ui_state.is_offroad),
       self._power_off_btn,
     ]
     regulatory_btn.set_visible(TICI)
@@ -80,20 +81,23 @@ class DeviceLayout(Widget):
   def _render(self, rect):
     self._scroller.render(rect)
 
-  def _show_language_dialog(self):
-    def handle_language_selection(result: int):
-      if result == 1 and self._select_language_dialog:
-        selected_language = multilang.languages[self._select_language_dialog.selection]
-        self._params.put("LanguageSetting", selected_language)
-        print("Selected language:", selected_language)
-
-      self._select_language_dialog = None
-
+  def _show_language_selection(self):
     try:
-      self._select_language_dialog = MultiOptionDialog(tr("Select a language"), multilang.languages, multilang.codes[multilang.language])
-      gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
+      languages_file = os.path.join(BASEDIR, "selfdrive/ui/translations/languages.json")
+      with open(languages_file, encoding='utf-8') as f:
+        languages = json.load(f)
+
+      self._select_language_dialog = MultiOptionDialog("Select a language", languages)
+      gui_app.set_modal_overlay(self._select_language_dialog, callback=self._handle_language_selection)
     except FileNotFoundError:
       pass
+
+  def _handle_language_selection(self, result: int):
+    if result == 1 and self._select_language_dialog:
+      selected_language = self._select_language_dialog.selection
+      self._params.put("LanguageSetting", selected_language)
+
+    self._select_language_dialog = None
 
   def _show_driver_camera(self):
     if not self._driver_camera:
