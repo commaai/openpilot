@@ -3,6 +3,7 @@ import pyray as rl
 from collections.abc import Callable
 from abc import ABC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
@@ -111,7 +112,7 @@ class ButtonAction(ItemAction):
 
   @property
   def text(self):
-    return _resolve_value(self._text_source, "Error")
+    return _resolve_value(self._text_source, tr("Error"))
 
   @property
   def value(self):
@@ -149,7 +150,7 @@ class TextAction(ItemAction):
 
   @property
   def text(self):
-    return _resolve_value(self._text_source, "Error")
+    return _resolve_value(self._text_source, tr("Error"))
 
   def get_width_hint(self) -> float:
     text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
