@@ -86,14 +86,15 @@ class FirehoseLayout(Widget):
     w = int(rect.width - 80)
 
     # Title (centered)
+    title_text = tr(TITLE)  # live translate
     title_font = gui_app.font(FontWeight.MEDIUM)
-    text_width = measure_text_cached(title_font, TITLE, 100).x
+    text_width = measure_text_cached(title_font, title_text, 100).x
     title_x = rect.x + (rect.width - text_width) / 2
-    rl.draw_text_ex(title_font, TITLE, rl.Vector2(title_x, y), 100, 0, rl.WHITE)
+    rl.draw_text_ex(title_font, title_text, rl.Vector2(title_x, y), 100, 0, rl.WHITE)
     y += 200
 
     # Description
-    y = self._draw_wrapped_text(x, y, w, DESCRIPTION, gui_app.font(FontWeight.NORMAL), 45, rl.WHITE)
+    y = self._draw_wrapped_text(x, y, w, tr(DESCRIPTION), gui_app.font(FontWeight.NORMAL), 45, rl.WHITE)
     y += 40 + 20
 
     # Separator
@@ -117,7 +118,7 @@ class FirehoseLayout(Widget):
     y += 30 + 20
 
     # Instructions
-    y = self._draw_wrapped_text(x, y, w, INSTRUCTIONS, gui_app.font(FontWeight.NORMAL), 40, self.LIGHT_GRAY)
+    y = self._draw_wrapped_text(x, y, w, tr(INSTRUCTIONS), gui_app.font(FontWeight.NORMAL), 40, self.LIGHT_GRAY)
 
     # bottom margin + remove effect of scroll offset
     return int(round(y - self.scroll_panel.offset + 40))
