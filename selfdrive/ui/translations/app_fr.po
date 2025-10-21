@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 18:45-0700\n"
+"POT-Creation-Date: 2025-10-20 20:00-0700\n"
 "PO-Revision-Date: 2025-10-20 18:19-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -20,7 +20,24 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:123
 #, python-format
 msgid " Changing this setting will restart openpilot if the car is powered on."
-msgstr " La modification de ce réglage redémarrera openpilot si la voiture est sous tension."
+msgstr ""
+" La modification de ce réglage redémarrera openpilot si la voiture est sous "
+"tension."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
+#, python-format
+msgid " Steering torque response calibration is complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
+#, python-format
+msgid " Steering torque response calibration is {}% complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 #, python-format
@@ -62,8 +79,23 @@ msgid ""
 "Experimental mode is recommended when enabling openpilot longitudinal "
 "control alpha."
 msgstr ""
-"<b>ATTENTION : le contrôle longitudinal openpilot est en alpha pour cette voiture et désactivera le freinage d'urgence automatique (AEB).</b><br><br>Sur cette voiture, openpilot "
-"utilise par défaut le régulateur de vitesse adaptatif intégré au véhicule plutôt que le contrôle longitudinal d'openpilot. Activez ceci pour passer au contrôle longitudinal openpilot. Il est recommandé d'activer le mode expérimental lors de l'activation du contrôle longitudinal openpilot alpha."
+"<b>ATTENTION : le contrôle longitudinal openpilot est en alpha pour cette "
+"voiture et désactivera le freinage d'urgence automatique (AEB).</"
+"b><br><br>Sur cette voiture, openpilot utilise par défaut le régulateur de "
+"vitesse adaptatif intégré au véhicule plutôt que le contrôle longitudinal "
+"d'openpilot. Activez ceci pour passer au contrôle longitudinal openpilot. Il "
+"est recommandé d'activer le mode expérimental lors de l'activation du "
+"contrôle longitudinal openpilot alpha."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:151
+#, python-format
+msgid "<br><br>Steering lag calibration is complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:149
+#, python-format
+msgid "<br><br>Steering lag calibration is {}% complete."
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:137
 #, python-format
@@ -76,7 +108,9 @@ msgid ""
 "ADB (Android Debug Bridge) allows connecting to your device over USB or over "
 "the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."
 msgstr ""
-"ADB (Android Debug Bridge) permet de connecter votre appareil via USB ou via le réseau. Voir https://docs.comma.ai/how-to/connect-to-comma pour plus d'informations."
+"ADB (Android Debug Bridge) permet de connecter votre appareil via USB ou via "
+"le réseau. Voir https://docs.comma.ai/how-to/connect-to-comma pour plus "
+"d'informations."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:30
 #, python-format
@@ -109,14 +143,15 @@ msgid ""
 "An alpha version of openpilot longitudinal control can be tested, along with "
 "Experimental mode, on non-release branches."
 msgstr ""
-"Une version alpha du contrôle longitudinal openpilot peut être testée, avec le mode expérimental, sur des branches non publiées."
+"Une version alpha du contrôle longitudinal openpilot peut être testée, avec "
+"le mode expérimental, sur des branches non publiées."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:189
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "Êtes-vous sûr de vouloir éteindre ?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:177
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "Êtes-vous sûr de vouloir redémarrer ?"
@@ -144,7 +179,9 @@ msgstr "Devenez membre comma prime sur connect.comma.ai"
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:130
 #, python-format
 msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
-msgstr "Ajoutez connect.comma.ai à votre écran d'accueil pour l'utiliser comme une application"
+msgstr ""
+"Ajoutez connect.comma.ai à votre écran d'accueil pour l'utiliser comme une "
+"application"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
@@ -222,12 +259,12 @@ msgstr "Appareil"
 msgid "Disengage on Accelerator Pedal"
 msgstr "Désengager à l'appui sur l'accélérateur"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "Désengager pour éteindre"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "Désengager pour redémarrer"
@@ -300,7 +337,9 @@ msgstr "Activer SSH"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:30
 #, python-format
 msgid "Enable driver monitoring even when openpilot is not engaged."
-msgstr "Activer la surveillance du conducteur même lorsque openpilot n'est pas engagé."
+msgstr ""
+"Activer la surveillance du conducteur même lorsque openpilot n'est pas "
+"engagé."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:46
 #, python-format
@@ -309,9 +348,12 @@ msgstr "Activer openpilot"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:186
 #, python-format
-msgid "Enable the openpilot longitudinal control (alpha) toggle to allow "
+msgid ""
+"Enable the openpilot longitudinal control (alpha) toggle to allow "
 "Experimental mode."
-msgstr "Activez l'option de contrôle longitudinal openpilot (alpha) pour autoriser le mode expérimental."
+msgstr ""
+"Activez l'option de contrôle longitudinal openpilot (alpha) pour autoriser "
+"le mode expérimental."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:89
 #, python-format
@@ -325,9 +367,12 @@ msgstr "Mode expérimental"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:178
 #, python-format
-msgid "Experimental mode is currently unavailable on this car since the car's stock "
+msgid ""
+"Experimental mode is currently unavailable on this car since the car's stock "
 "ACC is used for longitudinal control."
-msgstr "Le mode expérimental est actuellement indisponible sur cette voiture car l'ACC d'origine est utilisé pour le contrôle longitudinal."
+msgstr ""
+"Le mode expérimental est actuellement indisponible sur cette voiture car "
+"l'ACC d'origine est utilisé pour le contrôle longitudinal."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:44
 #, python-format
@@ -367,7 +412,27 @@ msgid ""
 "\n"
 "Does it matter which software I run? Yes, only upstream openpilot (and "
 "particular forks) are able to be used for training."
-msgstr "Pour une efficacité maximale, rentrez votre appareil et connectez-le chaque semaine à un bon adaptateur USB-C et au Wi‑Fi.\n\nLe Mode Firehose peut aussi fonctionner pendant que vous conduisez si vous êtes connecté à un hotspot ou à une carte SIM illimitée.\n\n\nFoire aux questions\n\nEst-ce que la manière ou l'endroit où je conduis compte ? Non, conduisez normalement.\n\nTous mes segments sont-ils récupérés en Mode Firehose ? Non, nous récupérons de façon sélective un sous-ensemble de vos segments.\n\nQuel est un bon adaptateur USB-C ? Tout chargeur rapide de téléphone ou d'ordinateur portable convient.\n\nLe logiciel utilisé importe-t-il ? Oui, seul openpilot amont (et certains forks) peut être utilisé pour l'entraînement."
+msgstr ""
+"Pour une efficacité maximale, rentrez votre appareil et connectez-le chaque "
+"semaine à un bon adaptateur USB-C et au Wi‑Fi.\n"
+"\n"
+"Le Mode Firehose peut aussi fonctionner pendant que vous conduisez si vous "
+"êtes connecté à un hotspot ou à une carte SIM illimitée.\n"
+"\n"
+"\n"
+"Foire aux questions\n"
+"\n"
+"Est-ce que la manière ou l'endroit où je conduis compte ? Non, conduisez "
+"normalement.\n"
+"\n"
+"Tous mes segments sont-ils récupérés en Mode Firehose ? Non, nous récupérons "
+"de façon sélective un sous-ensemble de vos segments.\n"
+"\n"
+"Quel est un bon adaptateur USB-C ? Tout chargeur rapide de téléphone ou "
+"d'ordinateur portable convient.\n"
+"\n"
+"Le logiciel utilisé importe-t-il ? Oui, seul openpilot amont (et certains "
+"forks) peut être utilisé pour l'entraînement."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:71
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:125
@@ -428,8 +493,11 @@ msgstr "MAX"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:75
 #, python-format
-msgid "Maximize your training data uploads to improve openpilot's driving models."
-msgstr "Maximisez vos envois de données d'entraînement pour améliorer les modèles de conduite d'openpilot."
+msgid ""
+"Maximize your training data uploads to improve openpilot's driving models."
+msgstr ""
+"Maximisez vos envois de données d'entraînement pour améliorer les modèles de "
+"conduite d'openpilot."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:142
 #, python-format
@@ -447,8 +515,8 @@ msgid "No SSH keys found"
 msgstr "Aucune clé SSH trouvée"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:126
-#, python-format, python-brace-format
-msgid "No SSH keys found for user '{username}'"
+#, fuzzy, python-format
+msgid "No SSH keys found for user '{}'"
 msgstr "Aucune clé SSH trouvée pour l'utilisateur '{username}'"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:18
@@ -520,7 +588,9 @@ msgstr "Associez votre appareil à votre compte comma"
 msgid ""
 "Pair your device with comma connect (connect.comma.ai) and claim your comma "
 "prime offer."
-msgstr "Associez votre appareil à comma connect (connect.comma.ai) et réclamez votre offre comma prime."
+msgstr ""
+"Associez votre appareil à comma connect (connect.comma.ai) et réclamez votre "
+"offre comma prime."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:91
 #, python-format
@@ -528,7 +598,7 @@ msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "Veuillez vous connecter au Wi‑Fi pour terminer l'association initiale"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:189
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
 #, python-format
 msgid "Power Off"
 msgstr "Éteindre"
@@ -538,7 +608,10 @@ msgstr "Éteindre"
 msgid ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
 "visibility. (vehicle must be off)"
-msgstr "Prévisualisez la caméra orientée conducteur pour vous assurer que la surveillance du conducteur a une bonne visibilité. (le véhicule doit être éteint)"
+msgstr ""
+"Prévisualisez la caméra orientée conducteur pour vous assurer que la "
+"surveillance du conducteur a une bonne visibilité. (le véhicule doit être "
+"éteint)"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:161
 #, python-format
@@ -561,7 +634,7 @@ msgid "REVIEW"
 msgstr "CONSULTER"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:177
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
 #, python-format
 msgid "Reboot"
 msgstr "Redémarrer"
@@ -582,7 +655,10 @@ msgid ""
 "Receive alerts to steer back into the lane when your vehicle drifts over a "
 "detected lane line without a turn signal activated while driving over 31 mph "
 "(50 km/h)."
-msgstr "Recevez des alertes pour revenir dans la voie lorsque votre véhicule dépasse une ligne de voie détectée sans clignotant activé en roulant au-delà de 31 mph (50 km/h)."
+msgstr ""
+"Recevez des alertes pour revenir dans la voie lorsque votre véhicule dépasse "
+"une ligne de voie détectée sans clignotant activé en roulant au-delà de 31 "
+"mph (50 km/h)."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:76
 #, python-format
@@ -599,7 +675,9 @@ msgstr "Enregistrer et téléverser l'audio du microphone"
 msgid ""
 "Record and store microphone audio while driving. The audio will be included "
 "in the dashcam video in comma connect."
-msgstr "Enregistrer et stocker l'audio du microphone pendant la conduite. L'audio sera inclus dans la vidéo dashcam dans comma connect."
+msgstr ""
+"Enregistrer et stocker l'audio du microphone pendant la conduite. L'audio "
+"sera inclus dans la vidéo dashcam dans comma connect."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
 #, python-format
@@ -646,6 +724,11 @@ msgstr "Consulter le guide d'entraînement"
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "Consultez les règles, fonctionnalités et limitations d'openpilot"
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
+#, python-format
+msgid "Select a language"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
 msgid "Serial"
@@ -673,7 +756,12 @@ msgid ""
 "closer and be more aggressive with the gas and brake. In relaxed mode "
 "openpilot will stay further away from lead cars. On supported cars, you can "
 "cycle through these personalities with your steering wheel distance button."
-msgstr "Le mode standard est recommandé. En mode agressif, openpilot suivra les véhicules de tête de plus près et sera plus agressif avec l'accélérateur et le frein. En mode détendu, openpilot restera plus éloigné des véhicules de tête. Sur les voitures compatibles, vous pouvez parcourir ces personnalités avec le bouton de distance du volant."
+msgstr ""
+"Le mode standard est recommandé. En mode agressif, openpilot suivra les "
+"véhicules de tête de plus près et sera plus agressif avec l'accélérateur et "
+"le frein. En mode détendu, openpilot restera plus éloigné des véhicules de "
+"tête. Sur les voitures compatibles, vous pouvez parcourir ces personnalités "
+"avec le bouton de distance du volant."
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:59
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:65
@@ -722,7 +810,8 @@ msgstr "Inconnu"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:47
 #, python-format
 msgid "Updates are only downloaded while the car is off."
-msgstr "Les mises à jour ne sont téléchargées que lorsque la voiture est éteinte."
+msgstr ""
+"Les mises à jour ne sont téléchargées que lorsque la voiture est éteinte."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:33
 #, python-format
@@ -734,7 +823,9 @@ msgstr "Mettre à niveau maintenant"
 msgid ""
 "Upload data from the driver facing camera and help improve the driver "
 "monitoring algorithm."
-msgstr "Téléverser les données de la caméra orientée conducteur et aider à améliorer l'algorithme de surveillance du conducteur."
+msgstr ""
+"Téléverser les données de la caméra orientée conducteur et aider à améliorer "
+"l'algorithme de surveillance du conducteur."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:88
 #, python-format
@@ -746,7 +837,10 @@ msgstr "Utiliser le système métrique"
 msgid ""
 "Use the openpilot system for adaptive cruise control and lane keep driver "
 "assistance. Your attention is required at all times to use this feature."
-msgstr "Utilisez le système openpilot pour l'ACC et l'assistance au maintien de voie. Votre attention est requise en permanence pour utiliser cette fonctionnalité."
+msgstr ""
+"Utilisez le système openpilot pour l'ACC et l'assistance au maintien de "
+"voie. Votre attention est requise en permanence pour utiliser cette "
+"fonctionnalité."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:72
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:144
@@ -770,7 +864,11 @@ msgid ""
 "Warning: This grants SSH access to all public keys in your GitHub settings. "
 "Never enter a GitHub username other than your own. A comma employee will "
 "NEVER ask you to add their GitHub username."
-msgstr "Avertissement : Ceci accorde un accès SSH à toutes les clés publiques dans vos paramètres GitHub. N'entrez jamais un nom d'utilisateur GitHub autre que le vôtre. Un employé comma ne vous demandera JAMAIS d'ajouter son nom d'utilisateur GitHub."
+msgstr ""
+"Avertissement : Ceci accorde un accès SSH à toutes les clés publiques dans "
+"vos paramètres GitHub. N'entrez jamais un nom d'utilisateur GitHub autre que "
+"le vôtre. Un employé comma ne vous demandera JAMAIS d'ajouter son nom "
+"d'utilisateur GitHub."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:111
 #, python-format
@@ -780,7 +878,8 @@ msgstr "Bienvenue sur openpilot"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:20
 #, python-format
 msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
-msgstr "Lorsque activé, appuyer sur la pédale d'accélérateur désengagera openpilot."
+msgstr ""
+"Lorsque activé, appuyer sur la pédale d'accélérateur désengagera openpilot."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:44
 #, python-format
@@ -797,7 +896,9 @@ msgstr "Vous devez accepter les conditions générales pour utiliser openpilot."
 msgid ""
 "You must accept the Terms and Conditions to use openpilot. Read the latest "
 "terms at https://comma.ai/terms before continuing."
-msgstr "Vous devez accepter les conditions générales pour utiliser openpilot. Lisez les dernières conditions sur https://comma.ai/terms avant de continuer."
+msgstr ""
+"Vous devez accepter les conditions générales pour utiliser openpilot. Lisez "
+"les dernières conditions sur https://comma.ai/terms avant de continuer."
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/driver_camera_dialog.py:34
 #, python-format
@@ -809,6 +910,11 @@ msgstr "démarrage de la caméra"
 msgid "comma prime"
 msgstr "comma prime"
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid "down"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:105
 #, python-format
 msgid "failed to check for update"
@@ -818,6 +924,11 @@ msgstr "échec de la vérification de mise à jour"
 #, python-format
 msgid "km/h"
 msgstr "km/h"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#, python-format
+msgid "left"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -858,7 +969,28 @@ msgid ""
 "transition to the road-facing wide-angle camera at low speeds to better show "
 "some turns. The Experimental mode logo will also be shown in the top right "
 "corner."
-msgstr "openpilot roule par défaut en mode chill. Le mode expérimental active des fonctionnalités de niveau alpha qui ne sont pas prêtes pour le mode chill. Les fonctionnalités expérimentales sont listées ci‑dessous:<br><h4>Contrôle longitudinal de bout en bout</h4><br>Laissez le modèle de conduite contrôler l'accélérateur et les freins. openpilot conduira comme il pense qu'un humain le ferait, y compris s'arrêter aux feux rouges et aux panneaux stop. Comme le modèle décide de la vitesse à adopter, la vitesse réglée n'agira que comme une limite supérieure. C'est une fonctionnalité de qualité alpha ; des erreurs sont à prévoir.<br><h4>Nouvelle visualisation de conduite</h4><br>La visualisation passera à la caméra grand angle orientée route à basse vitesse pour mieux montrer certains virages. Le logo du mode expérimental sera également affiché en haut à droite."
+msgstr ""
+"openpilot roule par défaut en mode chill. Le mode expérimental active des "
+"fonctionnalités de niveau alpha qui ne sont pas prêtes pour le mode chill. "
+"Les fonctionnalités expérimentales sont listées ci‑dessous:<br><h4>Contrôle "
+"longitudinal de bout en bout</h4><br>Laissez le modèle de conduite contrôler "
+"l'accélérateur et les freins. openpilot conduira comme il pense qu'un humain "
+"le ferait, y compris s'arrêter aux feux rouges et aux panneaux stop. Comme "
+"le modèle décide de la vitesse à adopter, la vitesse réglée n'agira que "
+"comme une limite supérieure. C'est une fonctionnalité de qualité alpha ; des "
+"erreurs sont à prévoir.<br><h4>Nouvelle visualisation de conduite</h4><br>La "
+"visualisation passera à la caméra grand angle orientée route à basse vitesse "
+"pour mieux montrer certains virages. Le logo du mode expérimental sera "
+"également affiché en haut à droite."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:168
+#, fuzzy, python-format
+msgid ""
+"openpilot is continuously calibrating, resetting is rarely required. "
+"Resetting calibration will restart openpilot if the car is powered on."
+msgstr ""
+" La modification de ce réglage redémarrera openpilot si la voiture est sous "
+"tension."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:20
 #, python-format
@@ -868,19 +1000,40 @@ msgid ""
 "Firehose Mode allows you to maximize your training data uploads to improve "
 "openpilot's driving models. More data means bigger models, which means "
 "better Experimental Mode."
-msgstr "openpilot apprend à conduire en regardant des humains, comme vous, conduire.\n\nLe Mode Firehose vous permet de maximiser vos envois de données d'entraînement pour améliorer les modèles de conduite d'openpilot. Plus de données signifie des modèles plus grands, ce qui signifie un meilleur Mode expérimental."
+msgstr ""
+"openpilot apprend à conduire en regardant des humains, comme vous, "
+"conduire.\n"
+"\n"
+"Le Mode Firehose vous permet de maximiser vos envois de données "
+"d'entraînement pour améliorer les modèles de conduite d'openpilot. Plus de "
+"données signifie des modèles plus grands, ce qui signifie un meilleur Mode "
+"expérimental."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:180
 #, python-format
 msgid "openpilot longitudinal control may come in a future update."
-msgstr "Le contrôle longitudinal openpilot pourra arriver dans une future mise à jour."
+msgstr ""
+"Le contrôle longitudinal openpilot pourra arriver dans une future mise à "
+"jour."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
 #, python-format
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."
-msgstr "openpilot exige que l'appareil soit monté à moins de 4° à gauche ou à droite et à moins de 5° vers le haut ou 9° vers le bas."
+msgstr ""
+"openpilot exige que l'appareil soit monté à moins de 4° à gauche ou à droite "
+"et à moins de 5° vers le haut ou 9° vers le bas."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#, python-format
+msgid "right"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid "up"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:116
 #, python-format
@@ -929,8 +1082,12 @@ msgstr[1] "il y a {} minutes"
 #, python-format
 msgid "{} segment of your driving is in the training dataset so far."
 msgid_plural "{} segment of your driving is in the training dataset so far."
-msgstr[0] "{} segment de votre conduite est dans l'ensemble d'entraînement jusqu'à présent."
-msgstr[1] "{} segments de votre conduite sont dans l'ensemble d'entraînement jusqu'à présent."
+msgstr[0] ""
+"{} segment de votre conduite est dans l'ensemble d'entraînement jusqu'à "
+"présent."
+msgstr[1] ""
+"{} segments de votre conduite sont dans l'ensemble d'entraînement jusqu'à "
+"présent."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
 #, python-format

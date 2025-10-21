@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 18:45-0700\n"
+"POT-Creation-Date: 2025-10-20 20:00-0700\n"
 "PO-Revision-Date: 2025-10-20 16:35-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -22,6 +22,21 @@ msgstr ""
 msgid " Changing this setting will restart openpilot if the car is powered on."
 msgstr ""
 " Cambiar esta configuración reiniciará openpilot si el coche está encendido."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
+#, python-format
+msgid " Steering torque response calibration is complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
+#, python-format
+msgid " Steering torque response calibration is {}% complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 #, python-format
@@ -69,6 +84,16 @@ msgstr ""
 "coche en lugar del control longitudinal de openpilot. Activa esto para "
 "cambiar al control longitudinal de openpilot. Se recomienda activar el modo "
 "Experimental al habilitar el control longitudinal de openpilot (alpha)."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:151
+#, python-format
+msgid "<br><br>Steering lag calibration is complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:149
+#, python-format
+msgid "<br><br>Steering lag calibration is {}% complete."
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:137
 #, python-format
@@ -119,12 +144,12 @@ msgstr ""
 "Se puede probar una versión alpha del control longitudinal de openpilot, "
 "junto con el modo Experimental, en ramas que no son de lanzamiento."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:189
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "¿Seguro que quieres apagar?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:177
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "¿Seguro que quieres reiniciar?"
@@ -232,12 +257,12 @@ msgstr "Dispositivo"
 msgid "Disengage on Accelerator Pedal"
 msgstr "Desactivar con el pedal del acelerador"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "Desactivar para apagar"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "Desactivar para reiniciar"
@@ -487,8 +512,8 @@ msgid "No SSH keys found"
 msgstr "No se encontraron claves SSH"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:126
-#, python-format, python-brace-format
-msgid "No SSH keys found for user '{username}'"
+#, fuzzy, python-format
+msgid "No SSH keys found for user '{}'"
 msgstr "No se encontraron claves SSH para el usuario '{username}'"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:18
@@ -570,7 +595,7 @@ msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "Conéctate a Wi‑Fi para completar el emparejamiento inicial"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:189
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
 #, python-format
 msgid "Power Off"
 msgstr "Apagar"
@@ -606,7 +631,7 @@ msgid "REVIEW"
 msgstr "REVISAR"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:177
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
 #, python-format
 msgid "Reboot"
 msgstr "Reiniciar"
@@ -695,6 +720,11 @@ msgstr "Revisar guía de entrenamiento"
 #, python-format
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "Revisa las reglas, funciones y limitaciones de openpilot"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
+#, python-format
+msgid "Select a language"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
@@ -877,6 +907,11 @@ msgstr "iniciando cámara"
 msgid "comma prime"
 msgstr "comma prime"
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid "down"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:105
 #, python-format
 msgid "failed to check for update"
@@ -886,6 +921,11 @@ msgstr "Error al buscar actualizaciones"
 #, python-format
 msgid "km/h"
 msgstr "km/h"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#, python-format
+msgid "left"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -941,6 +981,14 @@ msgstr ""
 "mostrar mejor algunos giros. El logotipo del modo Experimental también se "
 "mostrará en la esquina superior derecha."
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:168
+#, fuzzy, python-format
+msgid ""
+"openpilot is continuously calibrating, resetting is rarely required. "
+"Resetting calibration will restart openpilot if the car is powered on."
+msgstr ""
+" Cambiar esta configuración reiniciará openpilot si el coche está encendido."
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:20
 #, python-format
 msgid ""
@@ -971,6 +1019,16 @@ msgid ""
 msgstr ""
 "openpilot requiere que el dispositivo esté montado dentro de 4° a izquierda "
 "o derecha y dentro de 5° hacia arriba o 9° hacia abajo."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#, python-format
+msgid "right"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid "up"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:116
 #, python-format

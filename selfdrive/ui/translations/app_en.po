@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 18:45-0700\n"
+"POT-Creation-Date: 2025-10-20 20:00-0700\n"
 "PO-Revision-Date: 2025-10-20 18:19-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -22,6 +22,21 @@ msgstr ""
 msgid " Changing this setting will restart openpilot if the car is powered on."
 msgstr ""
 " Changing this setting will restart openpilot if the car is powered on."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
+#, python-format
+msgid " Steering torque response calibration is complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
+#, python-format
+msgid " Steering torque response calibration is {}% complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 #, python-format
@@ -69,6 +84,16 @@ msgstr ""
 "control. Enable this to switch to openpilot longitudinal control. Enabling "
 "Experimental mode is recommended when enabling openpilot longitudinal "
 "control alpha."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:151
+#, python-format
+msgid "<br><br>Steering lag calibration is complete."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:149
+#, python-format
+msgid "<br><br>Steering lag calibration is {}% complete."
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:137
 #, python-format
@@ -118,12 +143,12 @@ msgstr ""
 "An alpha version of openpilot longitudinal control can be tested, along with "
 "Experimental mode, on non-release branches."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:189
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "Are you sure you want to power off?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:177
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "Are you sure you want to reboot?"
@@ -229,12 +254,12 @@ msgstr "Device"
 msgid "Disengage on Accelerator Pedal"
 msgstr "Disengage on Accelerator Pedal"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "Disengage to Power Off"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "Disengage to Reboot"
@@ -482,8 +507,8 @@ msgid "No SSH keys found"
 msgstr "No SSH keys found"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:126
-#, python-format, python-brace-format
-msgid "No SSH keys found for user '{username}'"
+#, fuzzy, python-format
+msgid "No SSH keys found for user '{}'"
 msgstr "No SSH keys found for user '{username}'"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:18
@@ -565,7 +590,7 @@ msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "Please connect to Wi-Fi to complete initial pairing"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:189
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
 #, python-format
 msgid "Power Off"
 msgstr "Power Off"
@@ -600,7 +625,7 @@ msgid "REVIEW"
 msgstr "REVIEW"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:177
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
 #, python-format
 msgid "Reboot"
 msgstr "Reboot"
@@ -689,6 +714,11 @@ msgstr "Review Training Guide"
 #, python-format
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "Review the rules, features, and limitations of openpilot"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
+#, python-format
+msgid "Select a language"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
@@ -866,6 +896,11 @@ msgstr "camera starting"
 msgid "comma prime"
 msgstr "comma prime"
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid "down"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:105
 #, python-format
 msgid "failed to check for update"
@@ -875,6 +910,11 @@ msgstr "failed to check for update"
 #, python-format
 msgid "km/h"
 msgstr "km/h"
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#, python-format
+msgid "left"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -928,6 +968,14 @@ msgstr ""
 "some turns. The Experimental mode logo will also be shown in the top right "
 "corner."
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:168
+#, fuzzy, python-format
+msgid ""
+"openpilot is continuously calibrating, resetting is rarely required. "
+"Resetting calibration will restart openpilot if the car is powered on."
+msgstr ""
+" Changing this setting will restart openpilot if the car is powered on."
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:20
 #, python-format
 msgid ""
@@ -956,6 +1004,16 @@ msgid ""
 msgstr ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#, python-format
+msgid "right"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#, python-format
+msgid "up"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:116
 #, python-format

@@ -146,7 +146,7 @@ class DeviceLayout(Widget):
       except Exception:
         cloudlog.exception("invalid LiveDelay")
     if lag_perc < 100:
-      desc += tr(f"<br><br>Steering lag calibration is {lag_perc}% complete.")
+      desc += tr("<br><br>Steering lag calibration is {}% complete.").format(lag_perc)
     else:
       desc += tr("<br><br>Steering lag calibration is complete.")
 
@@ -158,7 +158,7 @@ class DeviceLayout(Widget):
         if torque.useParams:
           torque_perc = torque.calPerc
           if torque_perc < 100:
-            desc += tr(f" Steering torque response calibration is {torque_perc}% complete.")
+            desc += tr(" Steering torque response calibration is {}% complete.").format(torque_perc)
           else:
             desc += tr(" Steering torque response calibration is complete.")
       except Exception:

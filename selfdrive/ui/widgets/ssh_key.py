@@ -123,7 +123,7 @@ class SshKeyAction(ItemAction):
       self._error_message = tr("Request timed out")
       self._state = SshKeyActionState.ADD
     except Exception:
-      self._error_message = tr(f"No SSH keys found for user '{username}'")
+      self._error_message = tr("No SSH keys found for user '{}'").format(username)
       self._state = SshKeyActionState.ADD
 
 
