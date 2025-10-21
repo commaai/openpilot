@@ -6,7 +6,6 @@ import signal
 import sys
 import pyray as rl
 import threading
-import json
 from collections.abc import Callable
 from collections import deque
 from dataclasses import dataclass
@@ -346,36 +345,16 @@ class GuiApplication:
   def height(self):
     return self._height
 
+
   def _load_fonts(self):
-    # Build a comprehensive character set for UI text rendering
-    # 1) Start with characters from our on-screen keyboards
+    # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
 
-    char_set = set()
+    all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
-      char_set.update(key for row in layout for key in row)
-
-    # 2) Add common UI symbols
-    char_set.update(list("–—…✓×°§•©®™±≤≥≠·•«»‘’‚“”„¥€£₩%½⅓⅔¼¾÷×±±ºªº·`~^¨´¸¯"))
-
-    # 3) Add Latin-1 Supplement and Latin Extended-A (covers accents like ç, ñ, ê)
-    char_set.update(chr(cp) for cp in range(0x00A0, 0x0100))
-    char_set.update(chr(cp) for cp in range(0x0100, 0x0180))
-
-    # 4) Include characters used in language display names (language picker)
-    try:
-      from importlib.resources import files as ir_files
-      lang_json_path = ir_files("openpilot.selfdrive.ui").joinpath("translations", "languages.json")
-      with as_file(lang_json_path) as fspath:
-        with open(fspath, encoding="utf-8") as f:
-          languages = json.load(f)
-      for display_name in languages.keys():
-        char_set.update(display_name)
-    except Exception:
-      # Best-effort; continue with what we have if anything fails
-      pass
-
-    all_chars = "".join(sorted(char_set))
+      all_chars.update(key for row in layout for key in row)
+    all_chars = "".join(all_chars)
+    all_chars += "–✓×°§•"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
