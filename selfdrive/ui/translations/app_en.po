@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 17:05-0700\n"
+"POT-Creation-Date: 2025-10-20 17:18-0700\n"
 "PO-Revision-Date: 2025-10-20 16:35-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -75,6 +75,16 @@ msgid ""
 "the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."
 msgstr ""
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:30
+#, python-format
+msgid "ADD"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:110
+#, python-format
+msgid "Acknowledge Excessive Actuation"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
 msgid "Aggressive"
@@ -127,6 +137,11 @@ msgstr ""
 msgid "Become a comma prime member at connect.comma.ai"
 msgstr "Become a comma prime member at connect.comma.ai"
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:130
+#, python-format
+msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
 msgid "CHANGE"
@@ -140,6 +155,11 @@ msgstr ""
 msgid "CHECK"
 msgstr ""
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/exp_mode_button.py:50
+#, python-format
+msgid "CHILL MODE ON"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:73
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:134
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:136
@@ -151,6 +171,16 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
 msgid "Change Language"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:129
+#, python-format
+msgid "Click \"add new device\" and scan the QR code on the right"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:105
+#, python-format
+msgid "Close"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:48
@@ -238,6 +268,11 @@ msgstr ""
 msgid "ETH"
 msgstr ""
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/exp_mode_button.py:50
+#, python-format
+msgid "EXPERIMENTAL MODE ON"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:225
 #, python-format
 msgid "Enable"
@@ -275,6 +310,11 @@ msgid ""
 "Experimental mode."
 msgstr ""
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:89
+#, python-format
+msgid "Enter your GitHub username"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:52
 #, python-format
 msgid "Experimental Mode"
@@ -285,6 +325,11 @@ msgstr ""
 msgid ""
 "Experimental mode is currently unavailable on this car since the car's stock "
 "ACC is used for longitudinal control."
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:44
+#, python-format
+msgid "Finish Setup"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:66
@@ -328,6 +373,11 @@ msgstr ""
 msgid "GOOD"
 msgstr ""
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:128
+#, python-format
+msgid "Go to https://connect.comma.ai on your phone"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:129
 #, python-format
 msgid "HIGH"
@@ -354,6 +404,11 @@ msgstr ""
 msgid "Joystick Debug Mode"
 msgstr ""
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:29
+#, python-format
+msgid "LOADING"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:48
 #, python-format
 msgid "LTE"
@@ -364,6 +419,12 @@ msgstr ""
 msgid "Longitudinal Maneuver Mode"
 msgstr ""
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:75
+#, python-format
+msgid ""
+"Maximize your training data uploads to improve openpilot's driving models."
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:142
 #, python-format
 msgid "NO"
@@ -372,6 +433,21 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:63
 #, python-format
 msgid "Network"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:114
+#, python-format
+msgid "No SSH keys found"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:126
+#, python-format, python-brace-format
+msgid "No SSH keys found for user '{username}'"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:18
+#, python-format
+msgid "No release notes available."
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:73
@@ -390,6 +466,11 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:144
 #, python-format
 msgid "ONLINE"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:20
+#, python-format
+msgid "Open"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:52
@@ -417,6 +498,17 @@ msgstr "PRIME FEATURES:"
 msgid "Pair Device"
 msgstr ""
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:19
+#, python-format
+msgid "Pair device"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:103
+#, python-format
+msgid "Pair your device to your comma account"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:48
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:25
 #, python-format
 msgid ""
@@ -425,6 +517,11 @@ msgid ""
 msgstr ""
 "Pair your device with comma connect (connect.comma.ai) and claim your comma "
 "prime offer."
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:91
+#, python-format
+msgid "Please connect to Wi-Fi to complete initial pairing"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:193
@@ -441,6 +538,16 @@ msgstr ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
 "visibility. (vehicle must be off)"
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:161
+#, python-format
+msgid "QR Code Error"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:31
+#, python-format
+msgid "REMOVE"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
 #, python-format
 msgid "RESET"
@@ -455,6 +562,11 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:181
 #, python-format
 msgid "Reboot"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:113
+#, python-format
+msgid "Reboot and Update"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:27
@@ -507,6 +619,11 @@ msgstr "Remote access"
 msgid "Remote snapshots"
 msgstr "Remote snapshots"
 
+#: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:123
+#, python-format
+msgid "Request timed out"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:126
 #, python-format
 msgid "Reset"
@@ -530,6 +647,11 @@ msgstr "Review the rules, features, and limitations of openpilot"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
 msgid "Serial"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:107
+#, python-format
+msgid "Snooze Update"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:65
@@ -786,3 +908,8 @@ msgstr[1] ""
 #, python-format
 msgid "✓ SUBSCRIBED"
 msgstr "✓ SUBSCRIBED"
+
+#: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:22
+#, python-format
+msgid "🔥 Firehose Mode 🔥"
+msgstr ""
