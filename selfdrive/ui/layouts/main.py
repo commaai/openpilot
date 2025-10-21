@@ -8,10 +8,7 @@ from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, Pan
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets import Widget
-
-
-ONROAD_FPS = 20
-OFFROAD_FPS = 60
+from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
 
 
 class MainState(IntEnum):
@@ -30,8 +27,6 @@ class MainLayout(Widget):
     self._current_mode = MainState.HOME
     self._prev_onroad = False
 
-    gui_app.set_target_fps(OFFROAD_FPS)
-
     # Initialize layouts
     self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
 
@@ -41,14 +36,21 @@ class MainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
+    # Start onboarding if terms or training not completed
+    self._onboarding_window = OnboardingWindow()
+    if not self._onboarding_window.completed:
+      gui_app.set_modal_overlay(self._onboarding_window)
+
   def _render(self, _):
     self._handle_onroad_transition()
     self._render_main_content()
 
   def _setup_callbacks(self):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
-                                on_flag=self._on_bookmark_clicked)
+                                on_flag=self._on_bookmark_clicked,
+                                open_settings=lambda: self.open_settings(PanelType.TOGGLES))
     self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
+    self._layouts[MainState.HOME].set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
     self._layouts[MainState.ONROAD].set_click_callback(self._on_onroad_clicked)
     device.add_interactive_timeout_callback(self._set_mode_for_state)
@@ -80,9 +82,6 @@ class MainLayout(Widget):
       self._layouts[self._current_mode].hide_event()
       self._current_mode = layout
       self._layouts[self._current_mode].show_event()
-
-      # No need to draw onroad faster than source (model at 20Hz) and prevents screen tearing
-      gui_app.set_target_fps(ONROAD_FPS if self._current_mode == MainState.ONROAD else OFFROAD_FPS)
 
   def open_settings(self, panel_type: PanelType):
     self._layouts[MainState.SETTINGS].set_current_panel(panel_type)

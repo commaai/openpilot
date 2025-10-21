@@ -4,12 +4,10 @@ import json
 import os
 
 from openpilot.common.basedir import BASEDIR
+from openpilot.system.ui.lib.multilang import UI_DIR, TRANSLATIONS_DIR, LANGUAGES_FILE
 
-UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
-TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
-LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 TRANSLATIONS_INCLUDE_FILE = os.path.join(TRANSLATIONS_DIR, "alerts_generated.h")
-PLURAL_ONLY = ["main_en"]  # base language, only create entries for strings with plural forms
+PLURAL_ONLY = ["en"]  # base language, only create entries for strings with plural forms
 
 
 def generate_translations_include():

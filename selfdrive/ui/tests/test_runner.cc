@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
   // unit tests for Qt
   QApplication app(argc, argv);
 
-  QString language_file = "main_test_en";
+  QString language_file = "test_en";
   // FIXME: pytest-cpp considers this print as a test case
   qDebug() << "Loading language:" << language_file;
 
