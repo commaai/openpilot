@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 from itertools import chain
-import argparse
 import json
 import os
-
-from openpilot.system.ui.lib.multilang import UI_DIR, TRANSLATIONS_DIR, LANGUAGES_FILE
+from openpilot.system.ui.lib.multilang import SYSTEM_UI_DIR, UI_DIR, TRANSLATIONS_DIR, LANGUAGES_FILE
 
 
 def update_translations():
   files = []
-  for root, _, filenames in chain(os.walk(os.path.join(UI_DIR, "widgets")),
+  for root, _, filenames in chain(os.walk(SYSTEM_UI_DIR),
+                                  os.walk(os.path.join(UI_DIR, "widgets")),
                                   os.walk(os.path.join(UI_DIR, "layouts")),
                                   os.walk(os.path.join(UI_DIR, "onroad"))):
     for filename in filenames:

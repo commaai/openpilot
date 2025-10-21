@@ -15,7 +15,7 @@ from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
-NO_RELEASE_NOTES = tr("<h2>No release notes available.</h2>")
+NO_RELEASE_NOTES = "<h2>" + tr("No release notes available.") + "</h2>"
 
 
 class AlertColors:

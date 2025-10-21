@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 20:00-0700\n"
+"POT-Creation-Date: 2025-10-20 21:48-0700\n"
 "PO-Revision-Date: 2025-10-20 16:35-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -23,17 +23,17 @@ msgid " Changing this setting will restart openpilot if the car is powered on."
 msgstr ""
 " Cambiar esta configuración reiniciará openpilot si el coche está encendido."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:181
 #, python-format
 msgid " Steering torque response calibration is complete."
 msgstr " La calibración de respuesta de par de dirección está completa."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:179
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
 msgstr " La calibración de respuesta de par de dirección está {}% completa."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:154
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
 msgstr " Tu dispositivo está orientado {:.1f}° {} y {:.1f}° {}."
@@ -85,12 +85,12 @@ msgstr ""
 "cambiar al control longitudinal de openpilot. Se recomienda activar el modo "
 "Experimental al habilitar el control longitudinal de openpilot (alpha)."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:151
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:169
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:149
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:167
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr ""
@@ -115,10 +115,21 @@ msgstr ""
 msgid "ADD"
 msgstr "AÑADIR"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:138
+#, python-format
+msgid "APN Setting"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:110
 #, python-format
 msgid "Acknowledge Excessive Actuation"
 msgstr "Reconocer actuación excesiva"
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:74
+#: /home/batman/openpilot/system/ui/widgets/network.py:95
+#, python-format
+msgid "Advanced"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
@@ -144,17 +155,17 @@ msgstr ""
 "Se puede probar una versión alpha del control longitudinal de openpilot, "
 "junto con el modo Experimental, en ramas que no son de lanzamiento."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:208
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "¿Seguro que quieres apagar?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:196
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "¿Seguro que quieres reiniciar?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:122
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:140
 #, python-format
 msgid "Are you sure you want to reset calibration?"
 msgstr "¿Seguro que quieres restablecer la calibración?"
@@ -164,6 +175,7 @@ msgstr "¿Seguro que quieres restablecer la calibración?"
 msgid "Are you sure you want to uninstall?"
 msgstr "¿Seguro que quieres desinstalar?"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:99
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:147
 #, python-format
 msgid "Back"
@@ -198,6 +210,7 @@ msgstr "COMPROBAR"
 msgid "CHILL MODE ON"
 msgstr "MODO CHILL ACTIVADO"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:153
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:73
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:134
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:136
@@ -205,6 +218,24 @@ msgstr "MODO CHILL ACTIVADO"
 #, python-format
 msgid "CONNECT"
 msgstr "CONECTAR"
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:367
+#, fuzzy, python-format
+msgid "CONNECTING..."
+msgstr "CONECTAR"
+
+#: /home/batman/openpilot/system/ui/widgets/confirm_dialog.py:23
+#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:34
+#: /home/batman/openpilot/system/ui/widgets/keyboard.py:81
+#: /home/batman/openpilot/system/ui/widgets/network.py:285
+#, python-format
+msgid "Cancel"
+msgstr ""
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:134
+#, python-format
+msgid "Cellular Metered"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
@@ -257,17 +288,17 @@ msgstr "Dispositivo"
 msgid "Disengage on Accelerator Pedal"
 msgstr "Desactivar con el pedal del acelerador"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:205
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "Desactivar para apagar"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:193
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "Desactivar para reiniciar"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:106
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:124
 #, python-format
 msgid "Disengage to Reset Calibration"
 msgstr "Desactivar para restablecer la calibración"
@@ -297,6 +328,12 @@ msgstr "Cámara del conductor"
 msgid "Driving Personality"
 msgstr "Estilo de conducción"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:123
+#: /home/batman/openpilot/system/ui/widgets/network.py:138
+#, python-format
+msgid "EDIT"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:138
 #, python-format
 msgid "ERROR"
@@ -312,6 +349,7 @@ msgstr "ETH"
 msgid "EXPERIMENTAL MODE ON"
 msgstr "MODO EXPERIMENTAL ACTIVADO"
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:167
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:225
 #, python-format
 msgid "Enable"
@@ -327,10 +365,20 @@ msgstr "Activar ADB"
 msgid "Enable Lane Departure Warnings"
 msgstr "Activar advertencias de salida de carril"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:129
+#, fuzzy, python-format
+msgid "Enable Roaming"
+msgstr "Activar openpilot"
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:47
 #, python-format
 msgid "Enable SSH"
 msgstr "Activar SSH"
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:120
+#, fuzzy, python-format
+msgid "Enable Tethering"
+msgstr "Activar advertencias de salida de carril"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:30
 #, python-format
@@ -353,10 +401,37 @@ msgstr ""
 "Activa el interruptor de control longitudinal de openpilot (alpha) para "
 "permitir el modo Experimental."
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:202
+#, python-format
+msgid "Enter APN"
+msgstr ""
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:239
+#, python-format
+msgid "Enter SSID"
+msgstr ""
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:252
+#, python-format
+msgid "Enter new tethering password"
+msgstr ""
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:235
+#: /home/batman/openpilot/system/ui/widgets/network.py:313
+#, python-format
+msgid "Enter password"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:89
 #, python-format
 msgid "Enter your GitHub username"
 msgstr "Introduce tu nombre de usuario de GitHub"
+
+#: /home/batman/openpilot/system/ui/widgets/list_view.py:115
+#: /home/batman/openpilot/system/ui/widgets/list_view.py:153
+#, python-format
+msgid "Error"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:52
 #, python-format
@@ -371,6 +446,11 @@ msgid ""
 msgstr ""
 "El modo experimental no está disponible actualmente en este coche, ya que se "
 "usa el ACC de fábrica para el control longitudinal."
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:371
+#, python-format
+msgid "FORGETTING..."
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:44
 #, python-format
@@ -431,6 +511,17 @@ msgstr ""
 "¿Importa qué software ejecuto? Sí, solo openpilot upstream (y forks "
 "particulares) pueden usarse para entrenamiento."
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:285
+#: /home/batman/openpilot/system/ui/widgets/network.py:449
+#, python-format
+msgid "Forget"
+msgstr ""
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:317
+#, python-format
+msgid "Forget Wi-Fi Network \"{}\"?"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:71
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:125
 #, python-format
@@ -447,6 +538,11 @@ msgstr "Ve a https://connect.comma.ai en tu teléfono"
 msgid "HIGH"
 msgstr "ALTO"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:153
+#, fuzzy, python-format
+msgid "Hidden Network"
+msgstr "Red"
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:139
 #, python-format
 msgid "INACTIVE: connect to an unmetered network"
@@ -457,6 +553,11 @@ msgstr "INACTIVO: conéctate a una red sin límites"
 #, python-format
 msgid "INSTALL"
 msgstr "INSTALAR"
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:148
+#, python-format
+msgid "IP Address"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:52
 #, python-format
@@ -496,6 +597,12 @@ msgstr ""
 "Maximiza tus cargas de datos de entrenamiento para mejorar los modelos de "
 "conducción de openpilot."
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:49
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:50
+#, python-format
+msgid "N/A"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:142
 #, python-format
 msgid "NO"
@@ -517,7 +624,7 @@ msgid "No SSH keys found for user '{}'"
 msgstr "No se encontraron claves SSH para el usuario '{username}'"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:18
-#, python-format
+#, fuzzy, python-format
 msgid "No release notes available."
 msgstr "No hay notas de versión disponibles."
 
@@ -527,6 +634,8 @@ msgstr "No hay notas de versión disponibles."
 msgid "OFFLINE"
 msgstr "SIN CONEXIÓN"
 
+#: /home/batman/openpilot/system/ui/widgets/html_render.py:247
+#: /home/batman/openpilot/system/ui/widgets/confirm_dialog.py:93
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:127
 #, python-format
 msgid "OK"
@@ -581,6 +690,7 @@ msgstr "Empareja tu dispositivo con tu cuenta de comma"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:48
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:25
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:105
 #, python-format
 msgid ""
 "Pair your device with comma connect (connect.comma.ai) and claim your comma "
@@ -595,12 +705,23 @@ msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "Conéctate a Wi‑Fi para completar el emparejamiento inicial"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:208
 #, python-format
 msgid "Power Off"
 msgstr "Apagar"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:142
+#, python-format
+msgid "Prevent large data uploads when on a metered Wi-Fi connection"
+msgstr ""
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:134
+#, python-format
+msgid "Prevent large data uploads when on a metered cellular connection"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:26
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:106
 #, python-format
 msgid ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
@@ -631,7 +752,7 @@ msgid "REVIEW"
 msgstr "REVISAR"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:196
 #, python-format
 msgid "Reboot"
 msgstr "Reiniciar"
@@ -701,7 +822,7 @@ msgstr "Capturas remotas"
 msgid "Request timed out"
 msgstr "Se agotó el tiempo de espera de la solicitud"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:122
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:140
 #, python-format
 msgid "Reset"
 msgstr "Restablecer"
@@ -717,11 +838,22 @@ msgid "Review Training Guide"
 msgstr "Revisar guía de entrenamiento"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:28
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:108
 #, python-format
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "Revisa las reglas, funciones y limitaciones de openpilot"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
+#: /home/batman/openpilot/system/ui/widgets/network.py:309
+#, python-format
+msgid "Scanning Wi-Fi networks..."
+msgstr ""
+
+#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:35
+#, python-format
+msgid "Select"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:96
 #, python-format
 msgid "Select a language"
 msgstr "Selecciona un idioma"
@@ -778,6 +910,11 @@ msgstr "TOME EL CONTROL INMEDIATAMENTE"
 #, python-format
 msgid "TEMP"
 msgstr "TEMP"
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:124
+#, python-format
+msgid "Tethering Password"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:64
 #, python-format
@@ -883,6 +1020,16 @@ msgstr ""
 msgid "Wi-Fi"
 msgstr "Wi‑Fi"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:142
+#, python-format
+msgid "Wi-Fi Network Metered"
+msgstr ""
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:313
+#, python-format
+msgid "Wrong password"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:145
 #, python-format
 msgid "You must accept the Terms and Conditions in order to use openpilot."
@@ -907,7 +1054,12 @@ msgstr "iniciando cámara"
 msgid "comma prime"
 msgstr "comma prime"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#: /home/batman/openpilot/system/ui/widgets/network.py:141
+#, python-format
+msgid "default"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:154
 #, python-format
 msgid "down"
 msgstr "abajo"
@@ -917,15 +1069,31 @@ msgstr "abajo"
 msgid "failed to check for update"
 msgstr "Error al buscar actualizaciones"
 
+#: /home/batman/openpilot/system/ui/widgets/network.py:235
+#: /home/batman/openpilot/system/ui/widgets/network.py:313
+#, python-format
+msgid "for \"{}\""
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
 msgid "km/h"
 msgstr "km/h"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#: /home/batman/openpilot/system/ui/widgets/network.py:202
+#, python-format
+msgid "leave blank for automatic configuration"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:155
 #, python-format
 msgid "left"
 msgstr "izquierda"
+
+#: /home/batman/openpilot/system/ui/widgets/network.py:141
+#, python-format
+msgid "metered"
+msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -981,7 +1149,7 @@ msgstr ""
 "mostrar mejor algunos giros. El logotipo del modo Experimental también se "
 "mostrará en la esquina superior derecha."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:168
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
 #, fuzzy, python-format
 msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
@@ -1012,6 +1180,7 @@ msgstr ""
 "futura."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:107
 #, fuzzy, python-format
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
@@ -1020,12 +1189,17 @@ msgstr ""
 "openpilot requiere que el dispositivo esté montado dentro de 4° a izquierda "
 "o derecha y dentro de 5° hacia arriba o 9° hacia abajo."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:155
 #, python-format
 msgid "right"
 msgstr "derecha"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#: /home/batman/openpilot/system/ui/widgets/network.py:141
+#, python-format
+msgid "unmetered"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:154
 #, python-format
 msgid "up"
 msgstr "arriba"
@@ -1074,9 +1248,9 @@ msgstr[0] "hace {} minuto"
 msgstr[1] "hace {} minutos"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:110
-#, python-format
+#, fuzzy, python-format
 msgid "{} segment of your driving is in the training dataset so far."
-msgid_plural "{} segment of your driving is in the training dataset so far."
+msgid_plural "{} segments of your driving is in the training dataset so far."
 msgstr[0] ""
 "{} segmento de tu conducción está en el conjunto de entrenamiento hasta "
 "ahora."
