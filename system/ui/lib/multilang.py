@@ -1,6 +1,5 @@
 import os
 import gettext
-from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
 
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
