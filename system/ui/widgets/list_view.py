@@ -204,7 +204,7 @@ class DualButtonAction(ItemAction):
 
 
 class MultipleButtonAction(ItemAction):
-  def __init__(self, buttons: list[str], button_width: int, selected_index: int = 0, callback: Callable = None):
+  def __init__(self, buttons: list[str | Callable[[], str]], button_width: int, selected_index: int = 0, callback: Callable = None):
     super().__init__(width=len(buttons) * button_width + (len(buttons) - 1) * RIGHT_ITEM_PADDING, enabled=True)
     self.buttons = buttons
     self.button_width = button_width
@@ -223,7 +223,7 @@ class MultipleButtonAction(ItemAction):
     spacing = RIGHT_ITEM_PADDING
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
 
-    for i, text in enumerate(self.buttons):
+    for i, _text in enumerate(self.buttons):
       button_x = rect.x + i * (self.button_width + spacing)
       button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
 
@@ -247,6 +247,7 @@ class MultipleButtonAction(ItemAction):
       rl.draw_rectangle_rounded(button_rect, 1.0, 20, bg_color)
 
       # Draw text
+      text = _resolve_value(_text, "")
       text_size = measure_text_cached(self._font, text, 40)
       text_x = button_x + (self.button_width - text_size.x) / 2
       text_y = button_y + (BUTTON_HEIGHT - text_size.y) / 2
@@ -256,7 +257,7 @@ class MultipleButtonAction(ItemAction):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     spacing = RIGHT_ITEM_PADDING
     button_y = self._rect.y + (self._rect.height - BUTTON_HEIGHT) / 2
-    for i, _text in enumerate(self.buttons):
+    for i, _ in enumerate(self.buttons):
       button_x = self._rect.x + i * (self.button_width + spacing)
       button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
       if rl.check_collision_point_rec(mouse_pos, button_rect):
