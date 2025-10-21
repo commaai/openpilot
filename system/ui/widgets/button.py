@@ -79,7 +79,7 @@ BUTTON_DISABLED_BACKGROUND_COLORS = {
 
 class Button(Widget):
   def __init__(self,
-               text: str,
+               text: str | Callable[[], str],
                click_callback: Callable[[], None] | None = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
                font_weight: FontWeight = FontWeight.MEDIUM,
