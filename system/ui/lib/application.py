@@ -41,15 +41,15 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
 class FontWeight(StrEnum):
-  THIN = "Inter-Thin.ttf"
-  EXTRA_LIGHT = "Inter-ExtraLight.ttf"
-  LIGHT = "Inter-Light.ttf"
-  NORMAL = "Inter-Regular.ttf"
-  MEDIUM = "Inter-Medium.ttf"
-  SEMI_BOLD = "Inter-SemiBold.ttf"
-  BOLD = "Inter-Bold.ttf"
-  EXTRA_BOLD = "Inter-ExtraBold.ttf"
-  BLACK = "Inter-Black.ttf"
+  THIN = "NotoSansJP-Regular.ttf"
+  EXTRA_LIGHT = "NotoSansJP-Regular.ttf"
+  LIGHT = "NotoSansJP-Regular.ttf"
+  NORMAL = "NotoSansJP-Regular.ttf"
+  MEDIUM = "NotoSansJP-Regular.ttf"
+  SEMI_BOLD = "NotoSansJP-Regular.ttf"
+  BOLD = "NotoSansJP-Regular.ttf"
+  EXTRA_BOLD = "NotoSansJP-Regular.ttf"
+  BLACK = "NotoSansJP-Regular.ttf"
 
 
 @dataclass
@@ -353,8 +353,23 @@ class GuiApplication:
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
+
+    # Ensure Japanese scripts and typical punctuation/fullwidth forms are loaded for NotoSansJP
+    jp_ranges = [
+      (0x3000, 0x303F),  # CJK Symbols and Punctuation
+      (0x3040, 0x309F),  # Hiragana
+      (0x30A0, 0x30FF),  # Katakana
+      (0x31F0, 0x31FF),  # Katakana Phonetic Extensions
+      (0xFF00, 0xFFEF),  # Halfwidth and Fullwidth Forms
+      (0x4E00, 0x9FFF),  # CJK Unified Ideographs (basic block)
+    ]
+    for start, end in jp_ranges:
+      all_chars.update(chr(cp) for cp in range(start, end + 1))
+
+    # Keep common UI symbols
+    all_chars.update(list("–✓×°§•"))
+
     all_chars = "".join(all_chars)
-    all_chars += "–✓×°§•"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
