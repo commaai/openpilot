@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 17:23-0700\n"
+"POT-Creation-Date: 2025-10-20 18:45-0700\n"
 "PO-Revision-Date: 2025-10-20 16:35-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -121,17 +121,17 @@ msgstr ""
 "Eine Alpha-Version der openpilot-Längsregelung kann zusammen mit dem "
 "Experimentalmodus auf Nicht-Release-Zweigen getestet werden."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:193
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:189
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "Sind Sie sicher, dass Sie ausschalten möchten?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:181
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:177
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "Sind Sie sicher, dass Sie neu starten möchten?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:126
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:122
 #, python-format
 msgid "Are you sure you want to reset calibration?"
 msgstr "Sind Sie sicher, dass Sie die Kalibrierung zurücksetzen möchten?"
@@ -232,17 +232,17 @@ msgstr "Gerät"
 msgid "Disengage on Accelerator Pedal"
 msgstr "Beim Gaspedal deaktivieren"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "Zum Ausschalten deaktivieren"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "Zum Neustart deaktivieren"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:110
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:106
 #, python-format
 msgid "Disengage to Reset Calibration"
 msgstr "Zum Zurücksetzen der Kalibrierung deaktivieren"
@@ -570,7 +570,7 @@ msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "Bitte mit WLAN verbinden, um das erste Koppeln abzuschließen"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:193
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:189
 #, python-format
 msgid "Power Off"
 msgstr "Ausschalten"
@@ -605,7 +605,7 @@ msgid "REVIEW"
 msgstr "ANSEHEN"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:58
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:181
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:177
 #, python-format
 msgid "Reboot"
 msgstr "Neustart"
@@ -675,7 +675,7 @@ msgstr "Remote‑Schnappschüsse"
 msgid "Request timed out"
 msgstr "Zeitüberschreitung bei der Anfrage"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:126
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:122
 #, python-format
 msgid "Reset"
 msgstr "Zurücksetzen"
@@ -961,7 +961,7 @@ msgid "openpilot longitudinal control may come in a future update."
 msgstr "Die openpilot‑Längsregelung könnte in einem zukünftigen Update kommen."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
-#, python-format
+#, fuzzy, python-format
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."
@@ -1020,7 +1020,7 @@ msgstr[0] "{} Segment Ihrer Fahrten ist bisher im Trainingsdatensatz."
 msgstr[1] "{} Segmente Ihrer Fahrten sind bisher im Trainingsdatensatz."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
-#, python-format
+#, fuzzy, python-format
 msgid "✓ SUBSCRIBED"
 msgstr "✓ ABONNIERT"
 
@@ -1028,3 +1028,7 @@ msgstr "✓ ABONNIERT"
 #, fuzzy, python-format
 msgid "🔥 Firehose Mode 🔥"
 msgstr "Firehose‑Modus"
+
+#, fuzzy, python-format
+#~ msgid " Firehose Mode "
+#~ msgstr "Firehose‑Modus"
