@@ -1,4 +1,5 @@
 import os
+import json
 import gettext
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
@@ -13,11 +14,9 @@ class Multilang:
   def __init__(self):
     self._params = Params()
     self._language: str = self._params.get("LanguageSetting").strip("main_")
+    self._languages = {}
+    self._load_languages()
     print(f"Multilang initialized with language: {self._language}")
-
-    # self._translations: dict[str, dict[str, str]] = {}
-
-    # self._load_languages()
 
   def setup(self):
     # global tr, trn
@@ -47,13 +46,10 @@ class Multilang:
   #     return text
   #   return self._translations[self._language].get(text, text)
   #
-  # def _load_languages(self):
-  #   self._language = Params().get("LanguageSetting")
-  #
-  #   LANGUAGE_DIR = os.path.join(BASEDIR, "selfdrive", "ui", "translations")
-  #   for file in os.listdir(LANGUAGE_DIR):
-  #     if file.endswith(".ts"):
-  #       pass
+  def _load_languages(self):
+    with open(LANGUAGES_FILE, encoding='utf-8') as f:
+      self._languages = json.load(f)
+    print(f"Available languages: {self._languages}")
 
 
 # # l = gettext.translation('app_de', localedir=TRANSLATIONS_DIR, languages=['de'])

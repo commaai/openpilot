@@ -30,8 +30,7 @@ def update_translations():
   with open(LANGUAGES_FILE) as f:
     translation_files = json.load(f).values()
 
-  for file in translation_files:
-    name = file.replace("main_", "")
+  for name in translation_files:
     if os.path.exists(os.path.join(TRANSLATIONS_DIR, f"app_{name}.po")):
       cmd = f"msgmerge --update --backup=none --sort-output translations/app_{name}.po translations/app.pot"
       ret = os.system(cmd)

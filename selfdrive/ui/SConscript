@@ -98,7 +98,7 @@ if GetOption('extras'):
       assert f[0].get_size() < 1900*1e3, f[0].get_size()
 
 # Compile gettext .po -> .mo alongside Qt translations
-po_sources = [f"#selfdrive/ui/translations/app_{l.replace('main_', '')}.po" for l in languages.values()]
+po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
 mo_targets = [src.replace(".po", ".mo") for src in po_sources]
 msgfmt_bin = 'msgfmt'
 
