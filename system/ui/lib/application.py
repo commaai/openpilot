@@ -4,7 +4,6 @@ import os
 import time
 import signal
 import sys
-import json
 import pyray as rl
 import threading
 from collections.abc import Callable
@@ -14,7 +13,6 @@ from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.lib.multilang import LANGUAGES_FILE, TRANSLATIONS_DIR
 from openpilot.system.hardware import HARDWARE, PC, TICI
 from openpilot.common.realtime import Ratekeeper
 
@@ -354,8 +352,8 @@ class GuiApplication:
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
-    all_chars |= set("–✓×°§•")
     all_chars = "".join(all_chars)
+    all_chars += "–✓×°§•"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
