@@ -127,5 +127,5 @@ class SshKeyAction(ItemAction):
       self._state = SshKeyActionState.ADD
 
 
-def ssh_key_item(title: str, description: str):
+def ssh_key_item(title: str | Callable[[], str], description: str | Callable[[], str]) -> ListItem:
   return ListItem(title=title, description=description, action_item=SshKeyAction())
