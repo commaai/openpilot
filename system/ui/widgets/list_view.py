@@ -455,7 +455,7 @@ def dual_button_item(left_text: str | Callable[[], str], right_text: str | Calla
   return ListItem(title="", description=description, action_item=action)
 
 
-def multiple_button_item(title: str | Callable[[], str], description: str | Callable[[], str], buttons: list[str], selected_index: int,
+def multiple_button_item(title: str | Callable[[], str], description: str | Callable[[], str], buttons: list[str | Callable[[], str]], selected_index: int,
                          button_width: int = BUTTON_WIDTH, callback: Callable = None, icon: str = ""):
   action = MultipleButtonAction(buttons, button_width, selected_index, callback=callback)
   return ListItem(title=title, description=description, icon=icon, action_item=action)
