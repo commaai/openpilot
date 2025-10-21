@@ -93,7 +93,7 @@ class TestTranslations:
   def test_bad_language(self):
     IGNORED_WORDS = {'pédale'}
 
-    match = re.search(r'_([a-zA-Z]{2,3})', self.file)
+    match = re.search(r'([a-zA-Z]{2,3})', self.file)
     assert match, f"{self.name} - could not parse language"
 
     try:
