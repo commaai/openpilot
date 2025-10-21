@@ -12,7 +12,7 @@ from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.multilang import LANGUAGES_FILE, tr
+from openpilot.system.ui.lib.multilang import multilang, tr
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog, alert_dialog
 from openpilot.system.ui.widgets.html_render import HtmlModal
@@ -83,18 +83,14 @@ class DeviceLayout(Widget):
   def _show_language_dialog(self):
     def handle_language_selection(result: int):
       if result == 1 and self._select_language_dialog:
-        selected_language = self._select_language_dialog.selection
-        print("Selected language:", languages[selected_language])
-        self._params.put("LanguageSetting", languages[selected_language])
+        selected_language = multilang.languages[self._select_language_dialog.selection]
+        self._params.put("LanguageSetting", selected_language)
+        print("Selected language:", selected_language)
 
       self._select_language_dialog = None
 
     try:
-      # TODO: get from multilang file
-      with open(LANGUAGES_FILE, encoding='utf-8') as f:
-        languages = json.load(f)
-
-      self._select_language_dialog = MultiOptionDialog("Select a language", languages)
+      self._select_language_dialog = MultiOptionDialog("Select a language", multilang.languages, multilang.codes[multilang.language])
       gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
     except FileNotFoundError:
       pass

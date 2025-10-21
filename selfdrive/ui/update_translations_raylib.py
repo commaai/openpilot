@@ -17,11 +17,9 @@ def update_translations():
         files.append(os.path.join(root, filename))
 
   # Create main translation file
-  print(files)
   cmd = ("xgettext -L Python --keyword=tr --keyword=trn:1,2 --keyword=pgettext:1c,2 --from-code=UTF-8 " +
          "--flag=tr:1:python-brace-format --flag=trn:1:python-brace-format --flag=trn:2:python-brace-format " +
          "-o translations/app.pot {}").format(" ".join(files))
-  print(cmd)
 
   ret = os.system(cmd)
   assert ret == 0
