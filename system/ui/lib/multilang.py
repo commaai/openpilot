@@ -20,6 +20,7 @@ class Multilang:
 
   @property
   def language(self) -> str:
+    # TODO: we need to default to english first time for live translate to fully work :hmm:
     return self._params.get("LanguageSetting") or "en"
 
   def setup(self):
