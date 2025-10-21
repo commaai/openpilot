@@ -44,12 +44,12 @@ class SoftwareLayout(Widget):
   def __init__(self):
     super().__init__()
 
-    self._onroad_label = ListItem(title=tr("Updates are only downloaded while the car is off."))
-    self._version_item = text_item(tr("Current Version"), ui_state.params.get("UpdaterCurrentDescription") or "")
-    self._download_btn = button_item(tr("Download"), tr("CHECK"), callback=self._on_download_update)
+    self._onroad_label = ListItem(lambda: tr("Updates are only downloaded while the car is off."))
+    self._version_item = text_item(lambda: tr("Current Version"), ui_state.params.get("UpdaterCurrentDescription") or "")
+    self._download_btn = button_item(lambda: tr("Download"), lambda: tr("CHECK"), callback=self._on_download_update)
 
     # Install button is initially hidden
-    self._install_btn = button_item(tr("Install Update"), tr("INSTALL"), callback=self._on_install_update)
+    self._install_btn = button_item(lambda: tr("Install Update"), lambda: tr("INSTALL"), callback=self._on_install_update)
     self._install_btn.set_visible(False)
 
     # Track waiting-for-updater transition to avoid brief re-enable while still idle
@@ -67,7 +67,7 @@ class SoftwareLayout(Widget):
       self._install_btn,
       # TODO: implement branch switching
       # button_item("Target Branch", "SELECT", callback=self._on_select_branch),
-      button_item("Uninstall", tr("UNINSTALL"), callback=self._on_uninstall),
+      button_item("Uninstall", lambda: tr("UNINSTALL"), callback=self._on_uninstall),
     ]
     return items
 
