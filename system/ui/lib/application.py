@@ -351,9 +351,10 @@ class GuiApplication:
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
 
-    all_chars = set("–✓×°§•")
+    all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
+    all_chars |= set("–✓×°§•")
     all_chars = "".join(all_chars)
 
     codepoint_count = rl.ffi.new("int *", 1)
