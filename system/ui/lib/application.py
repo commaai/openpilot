@@ -4,6 +4,7 @@ import os
 import time
 import signal
 import sys
+import json
 import pyray as rl
 import threading
 from collections.abc import Callable
@@ -13,6 +14,7 @@ from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.ui.lib.multilang import LANGUAGES_FILE, TRANSLATIONS_DIR
 from openpilot.system.hardware import HARDWARE, PC, TICI
 from openpilot.common.realtime import Ratekeeper
 
@@ -357,39 +359,21 @@ class GuiApplication:
     # Ensure Latin-1 Supplement and Latin Extended-A are covered (for de/fr/es/etc.)
     for cp in range(0x00A0, 0x0180):
       all_chars.add(chr(cp))
+    all_chars |= set("–✓×°§•")
 
-    # Add Asian script ranges (to support our language list without runtime fallback):
-    # - Japanese: Hiragana, Katakana, CJK Symbols/Punct, Katakana Extensions, Fullwidth, CJK Unified Ideographs
-    # - Chinese: Bopomofo + Bopomofo Extended, CJK Unified Ideographs
-    # - Korean: Hangul Jamo, Compatibility Jamo, Jamo Ext A/B, Hangul Syllables
-    # - Thai: Thai block
-    # - Arabic: Arabic, Supplement, Extended-A, Presentation Forms A/B
-    asian_ranges = [
-      (0x3000, 0x303F),  # CJK Symbols and Punctuation
-      (0x3040, 0x309F),  # Hiragana
-      (0x30A0, 0x30FF),  # Katakana
-      (0x31F0, 0x31FF),  # Katakana Phonetic Extensions
-      (0x3100, 0x312F),  # Bopomofo
-      (0x31A0, 0x31BF),  # Bopomofo Extended
-      (0x4E00, 0x9FFF),  # CJK Unified Ideographs (basic)
-      (0xFF00, 0xFFEF),  # Halfwidth and Fullwidth Forms
-      (0x1100, 0x11FF),  # Hangul Jamo
-      (0x3130, 0x318F),  # Hangul Compatibility Jamo
-      (0xA960, 0xA97F),  # Hangul Jamo Extended-A
-      (0xAC00, 0xD7A3),  # Hangul Syllables
-      (0xD7B0, 0xD7FF),  # Hangul Jamo Extended-B
-      (0x0E00, 0x0E7F),  # Thai
-      (0x0600, 0x06FF),  # Arabic
-      (0x0750, 0x077F),  # Arabic Supplement
-      (0x08A0, 0x08FF),  # Arabic Extended-A
-      (0xFB50, 0xFDFF),  # Arabic Presentation Forms-A
-      (0xFE70, 0xFEFF),  # Arabic Presentation Forms-B
-    ]
-    for start, end in asian_ranges:
-      for cp in range(start, end + 1):
-        all_chars.add(chr(cp))
+    with open(LANGUAGES_FILE, "r") as f:
+      l = f.read()
+      languages = json.loads(l)
+      all_chars |= set(l)
+
+    # read each translation file now
+    for lang in languages:
+      lang_file = os.path.join(TRANSLATIONS_DIR, f"app_{lang}.po")
+      with open(lang_file, "r", encoding="utf-8") as f:
+        all_chars |= set(f.read())
+
     all_chars = "".join(all_chars)
-    all_chars += "–✓×°§•"
+    print(all_chars)
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
