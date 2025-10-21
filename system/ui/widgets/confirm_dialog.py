@@ -1,5 +1,6 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.label import Label
@@ -16,8 +17,10 @@ BACKGROUND_COLOR = rl.Color(27, 27, 27, 255)
 
 
 class ConfirmDialog(Widget):
-  def __init__(self, text: str, confirm_text: str, cancel_text: str = "Cancel", rich: bool = False):
+  def __init__(self, text: str, confirm_text: str, cancel_text: str | None = None, rich: bool = False):
     super().__init__()
+    if cancel_text is None:
+      cancel_text = tr("Cancel")
     self._label = Label(text, 70, FontWeight.BOLD, text_color=rl.Color(201, 201, 201, 255))
     self._html_renderer = HtmlRenderer(text=text, text_size={ElementType.P: 50}, center_text=True)
     self._cancel_button = Button(cancel_text, self._cancel_button_callback)
@@ -85,5 +88,7 @@ class ConfirmDialog(Widget):
     return self._dialog_result
 
 
-def alert_dialog(message: str, button_text: str = "Ok"):
+def alert_dialog(message: str, button_text: str | None = None):
+  if button_text is None:
+    button_text = tr("OK")
   return ConfirmDialog(message, button_text, cancel_text="")

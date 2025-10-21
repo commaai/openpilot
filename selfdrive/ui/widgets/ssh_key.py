@@ -7,6 +7,7 @@ from enum import Enum
 
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
@@ -25,9 +26,9 @@ VALUE_FONT_SIZE = 48
 
 
 class SshKeyActionState(Enum):
-  LOADING = "LOADING"
-  ADD = "ADD"
-  REMOVE = "REMOVE"
+  LOADING = tr("LOADING")
+  ADD = tr("ADD")
+  REMOVE = tr("REMOVE")
 
 
 class SshKeyAction(ItemAction):
@@ -85,7 +86,7 @@ class SshKeyAction(ItemAction):
   def _handle_button_click(self):
     if self._state == SshKeyActionState.ADD:
       self._keyboard.reset()
-      self._keyboard.set_title("Enter your GitHub username")
+      self._keyboard.set_title(tr("Enter your GitHub username"))
       gui_app.set_modal_overlay(self._keyboard, callback=self._on_username_submit)
     elif self._state == SshKeyActionState.REMOVE:
       self._params.remove("GithubUsername")
@@ -110,7 +111,7 @@ class SshKeyAction(ItemAction):
       response.raise_for_status()
       keys = response.text.strip()
       if not keys:
-        raise requests.exceptions.HTTPError("No SSH keys found")
+        raise requests.exceptions.HTTPError(tr("No SSH keys found"))
 
       # Success - save keys
       self._params.put("GithubUsername", username)
@@ -119,10 +120,10 @@ class SshKeyAction(ItemAction):
       self._username = username
 
     except requests.exceptions.Timeout:
-      self._error_message = "Request timed out"
+      self._error_message = tr("Request timed out")
       self._state = SshKeyActionState.ADD
     except Exception:
-      self._error_message = f"No SSH keys found for user '{username}'"
+      self._error_message = tr("No SSH keys found for user '{}'").format(username)
       self._state = SshKeyActionState.ADD
 
 
