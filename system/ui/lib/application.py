@@ -41,15 +41,15 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
 class FontWeight(StrEnum):
-  THIN = "Inter-Thin.ttf"
-  EXTRA_LIGHT = "Inter-ExtraLight.ttf"
-  LIGHT = "Inter-Light.ttf"
-  NORMAL = "Inter-Regular.ttf"
-  MEDIUM = "Inter-Medium.ttf"
-  SEMI_BOLD = "Inter-SemiBold.ttf"
-  BOLD = "Inter-Bold.ttf"
-  EXTRA_BOLD = "Inter-ExtraBold.ttf"
-  BLACK = "Inter-Black.ttf"
+  THIN = "OpenpilotSans-Regular.ttf"
+  EXTRA_LIGHT = "OpenpilotSans-Regular.ttf"
+  LIGHT = "OpenpilotSans-Regular.ttf"
+  NORMAL = "OpenpilotSans-Regular.ttf"
+  MEDIUM = "OpenpilotSans-Regular.ttf"
+  SEMI_BOLD = "OpenpilotSans-Regular.ttf"
+  BOLD = "OpenpilotSans-Regular.ttf"
+  EXTRA_BOLD = "OpenpilotSans-Regular.ttf"
+  BLACK = "OpenpilotSans-Regular.ttf"
 
 
 @dataclass
@@ -353,6 +353,41 @@ class GuiApplication:
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
+
+    # Ensure Latin-1 Supplement and Latin Extended-A are covered (for de/fr/es/etc.)
+    for cp in range(0x00A0, 0x0180):
+      all_chars.add(chr(cp))
+
+    # Add Asian script ranges (to support our language list without runtime fallback):
+    # - Japanese: Hiragana, Katakana, CJK Symbols/Punct, Katakana Extensions, Fullwidth, CJK Unified Ideographs
+    # - Chinese: Bopomofo + Bopomofo Extended, CJK Unified Ideographs
+    # - Korean: Hangul Jamo, Compatibility Jamo, Jamo Ext A/B, Hangul Syllables
+    # - Thai: Thai block
+    # - Arabic: Arabic, Supplement, Extended-A, Presentation Forms A/B
+    asian_ranges = [
+      (0x3000, 0x303F),  # CJK Symbols and Punctuation
+      (0x3040, 0x309F),  # Hiragana
+      (0x30A0, 0x30FF),  # Katakana
+      (0x31F0, 0x31FF),  # Katakana Phonetic Extensions
+      (0x3100, 0x312F),  # Bopomofo
+      (0x31A0, 0x31BF),  # Bopomofo Extended
+      (0x4E00, 0x9FFF),  # CJK Unified Ideographs (basic)
+      (0xFF00, 0xFFEF),  # Halfwidth and Fullwidth Forms
+      (0x1100, 0x11FF),  # Hangul Jamo
+      (0x3130, 0x318F),  # Hangul Compatibility Jamo
+      (0xA960, 0xA97F),  # Hangul Jamo Extended-A
+      (0xAC00, 0xD7A3),  # Hangul Syllables
+      (0xD7B0, 0xD7FF),  # Hangul Jamo Extended-B
+      (0x0E00, 0x0E7F),  # Thai
+      (0x0600, 0x06FF),  # Arabic
+      (0x0750, 0x077F),  # Arabic Supplement
+      (0x08A0, 0x08FF),  # Arabic Extended-A
+      (0xFB50, 0xFDFF),  # Arabic Presentation Forms-A
+      (0xFE70, 0xFEFF),  # Arabic Presentation Forms-B
+    ]
+    for start, end in asian_ranges:
+      for cp in range(start, end + 1):
+        all_chars.add(chr(cp))
     all_chars = "".join(all_chars)
     all_chars += "–✓×°§•"
 
