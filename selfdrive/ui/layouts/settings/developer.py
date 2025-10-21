@@ -164,7 +164,7 @@ class DeveloperLayout(Widget):
       content = (f"<h1>{self._alpha_long_toggle.title}</h1><br>" +
                  f"<p>{self._alpha_long_toggle.description}</p>")
 
-      dlg = ConfirmDialog(content, "Enable", rich=True)
+      dlg = ConfirmDialog(content, tr("Enable"), rich=True)
       gui_app.set_modal_overlay(dlg, callback=confirm_callback)
 
     else:
