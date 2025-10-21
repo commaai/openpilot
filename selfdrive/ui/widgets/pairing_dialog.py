@@ -8,6 +8,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -99,7 +100,7 @@ class PairingDialog(Widget):
     y += close_size + 40
 
     # Title
-    title = "Pair your device to your comma account"
+    title = tr("Pair your device to your comma account")
     title_font = gui_app.font(FontWeight.NORMAL)
     left_width = int(content_rect.width * 0.5 - 15)
 
@@ -124,9 +125,9 @@ class PairingDialog(Widget):
 
   def _render_instructions(self, rect: rl.Rectangle) -> None:
     instructions = [
-      "Go to https://connect.comma.ai on your phone",
-      "Click \"add new device\" and scan the QR code on the right",
-      "Bookmark connect.comma.ai to your home screen to use it like an app",
+      tr("Go to https://connect.comma.ai on your phone"),
+      tr("Click \"add new device\" and scan the QR code on the right"),
+      tr("Bookmark connect.comma.ai to your home screen to use it like an app"),
     ]
 
     font = gui_app.font(FontWeight.BOLD)
@@ -157,7 +158,7 @@ class PairingDialog(Widget):
       rl.draw_rectangle_rounded(rect, 0.1, 20, rl.Color(240, 240, 240, 255))
       error_font = gui_app.font(FontWeight.BOLD)
       rl.draw_text_ex(
-        error_font, "QR Code Error", rl.Vector2(rect.x + 20, rect.y + rect.height // 2 - 15), 30, 0.0, rl.RED
+        error_font, tr("QR Code Error"), rl.Vector2(rect.x + 20, rect.y + rect.height // 2 - 15), 30, 0.0, rl.RED
       )
       return
 
