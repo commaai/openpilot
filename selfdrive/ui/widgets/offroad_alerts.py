@@ -15,9 +15,6 @@ from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
-NO_RELEASE_NOTES = "<h2>" + tr("No release notes available.") + "</h2>"
-
-
 class AlertColors:
   HIGH_SEVERITY = rl.Color(226, 44, 44, 255)
   LOW_SEVERITY = rl.Color(41, 41, 41, 255)
@@ -56,7 +53,7 @@ class ButtonStyle(IntEnum):
 
 
 class ActionButton(Widget):
-  def __init__(self, text: str, style: ButtonStyle = ButtonStyle.LIGHT,
+  def __init__(self, text: str | Callable[[], str], style: ButtonStyle = ButtonStyle.LIGHT,
                min_width: int = AlertConstants.MIN_BUTTON_WIDTH):
     super().__init__()
     self._style = style
@@ -64,11 +61,15 @@ class ActionButton(Widget):
     self._font = gui_app.font(FontWeight.MEDIUM)
     self.set_text(text)
 
-  def set_text(self, text: str):
+  def set_text(self, text: str | Callable[[], str]):
     self._text = text
     self._text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self._text, AlertConstants.FONT_SIZE)
     self._rect.width = max(self._text_size.x + 60 * 2, self._min_width)
     self._rect.height = AlertConstants.BUTTON_HEIGHT
+
+  @property
+  def text(self) -> str:
+    return self._text() if callable(self._text) else self._text
 
   def _render(self, _):
     roundness = AlertConstants.BORDER_RADIUS / self._rect.height
@@ -82,7 +83,7 @@ class ActionButton(Widget):
     color = rl.WHITE if self._style == ButtonStyle.DARK else rl.BLACK
     text_x = int(self._rect.x + (self._rect.width - self._text_size.x) // 2)
     text_y = int(self._rect.y + (self._rect.height - self._text_size.y) // 2)
-    rl.draw_text_ex(self._font, self._text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
+    rl.draw_text_ex(self._font, self.text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
 
 
 class AbstractAlert(Widget, ABC):
@@ -102,15 +103,15 @@ class AbstractAlert(Widget, ABC):
       if self.dismiss_callback:
         self.dismiss_callback()
 
-    self.dismiss_btn = ActionButton(tr("Close"))
+    self.dismiss_btn = ActionButton(lambda: tr("Close"))
 
-    self.snooze_btn = ActionButton(tr("Snooze Update"), style=ButtonStyle.DARK)
+    self.snooze_btn = ActionButton(lambda: tr("Snooze Update"), style=ButtonStyle.DARK)
     self.snooze_btn.set_click_callback(snooze_callback)
 
-    self.excessive_actuation_btn = ActionButton(tr("Acknowledge Excessive Actuation"), style=ButtonStyle.DARK, min_width=800)
+    self.excessive_actuation_btn = ActionButton(lambda: tr("Acknowledge Excessive Actuation"), style=ButtonStyle.DARK, min_width=800)
     self.excessive_actuation_btn.set_click_callback(excessive_actuation_callback)
 
-    self.reboot_btn = ActionButton(tr("Reboot and Update"), min_width=600)
+    self.reboot_btn = ActionButton(lambda: tr("Reboot and Update"), min_width=600)
     self.reboot_btn.set_click_callback(lambda: HARDWARE.reboot())
 
     # TODO: just use a Scroller?
@@ -318,12 +319,14 @@ class UpdateAlert(AbstractAlert):
 
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
+    no_release_notes = "<h2>" + tr("No release notes available.") + "</h2>"
+
     if update_available:
       self.release_notes = (self.params.get("UpdaterNewReleaseNotes") or b"").decode("utf8").strip()
-      self._html_renderer.parse_html_content(self.release_notes or NO_RELEASE_NOTES)
+      self._html_renderer.parse_html_content(self.release_notes or no_release_notes)
       self._cached_content_height = 0
     else:
-      self._html_renderer.parse_html_content(NO_RELEASE_NOTES)
+      self._html_renderer.parse_html_content(no_release_notes)
 
     return update_available
 
