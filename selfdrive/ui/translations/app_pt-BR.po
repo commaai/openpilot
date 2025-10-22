@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-21 21:36-0700\n"
+"POT-Creation-Date: 2025-10-22 15:30-0700\n"
 "PO-Revision-Date: 2025-10-21 00:00-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,17 +17,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:163
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:159
 #, python-format
 msgid " Steering torque response calibration is complete."
 msgstr " A calibração da resposta de torque da direção foi concluída."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:157
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
 msgstr " A calibração da resposta de torque da direção está {}% concluída."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
 msgstr " Seu dispositivo está apontado {:.1f}° {} e {:.1f}° {}."
@@ -75,12 +75,12 @@ msgstr ""
 "longitudinal do openpilot. Recomenda-se ativar o Modo Experimental ao ativar "
 "o controle longitudinal do openpilot em alpha."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:151
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:147
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:149
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:145
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr ""
@@ -143,17 +143,17 @@ msgstr ""
 "Uma versão alpha do controle longitudinal do openpilot pode ser testada, "
 "junto com o Modo Experimental, em ramificações fora de release."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "Tem certeza de que deseja desligar?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "Tem certeza de que deseja reiniciar?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:122
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:118
 #, python-format
 msgid "Are you sure you want to reset calibration?"
 msgstr "Tem certeza de que deseja redefinir a calibração?"
@@ -179,7 +179,7 @@ msgstr "Torne-se membro comma prime em connect.comma.ai"
 msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
 msgstr "Adicione connect.comma.ai à tela inicial para usá-lo como um app"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:69
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
 msgid "CHANGE"
 msgstr "ALTERAR"
@@ -224,7 +224,7 @@ msgstr ""
 msgid "Cellular Metered"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:69
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
 msgid "Change Language"
 msgstr "Alterar Idioma"
@@ -278,17 +278,17 @@ msgstr "Dispositivo"
 msgid "Disengage on Accelerator Pedal"
 msgstr "Desativar ao pressionar o acelerador"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:183
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "Desativar para Desligar"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:171
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "Desativar para Reiniciar"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:106
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:102
 #, python-format
 msgid "Disengage to Reset Calibration"
 msgstr "Desativar para Redefinir Calibração"
@@ -297,7 +297,7 @@ msgstr "Desativar para Redefinir Calibração"
 msgid "Display speed in km/h instead of mph."
 msgstr "Exibir velocidade em km/h em vez de mph."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:60
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:59
 #, python-format
 msgid "Dongle ID"
 msgstr "ID do Dongle"
@@ -307,7 +307,7 @@ msgstr "ID do Dongle"
 msgid "Download"
 msgstr "Baixar"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:63
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
 msgid "Driver Camera"
 msgstr "Câmera do Motorista"
@@ -575,8 +575,8 @@ msgstr ""
 "Maximize seus envios de dados de treinamento para melhorar os modelos de "
 "condução do openpilot."
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:59
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:60
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:61
 #, python-format
 msgid "N/A"
 msgstr ""
@@ -627,7 +627,7 @@ msgstr "ONLINE"
 msgid "Open"
 msgstr "Abrir"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:49
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:48
 #, python-format
 msgid "PAIR"
 msgstr "EMPARELHAR"
@@ -636,7 +636,7 @@ msgstr "EMPARELHAR"
 msgid "PANDA"
 msgstr "PANDA"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:63
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
 msgid "PREVIEW"
 msgstr "PRÉVIA"
@@ -646,7 +646,7 @@ msgstr "PRÉVIA"
 msgid "PRIME FEATURES:"
 msgstr "RECURSOS PRIME:"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:49
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:48
 #, python-format
 msgid "Pair Device"
 msgstr "Emparelhar Dispositivo"
@@ -662,7 +662,7 @@ msgid "Pair your device to your comma account"
 msgstr "Emparelhe seu dispositivo à sua conta comma"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:48
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:25
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:24
 #, python-format
 msgid ""
 "Pair your device with comma connect (connect.comma.ai) and claim your comma "
@@ -676,8 +676,8 @@ msgstr ""
 msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "Conecte-se ao Wi‑Fi para concluir o emparelhamento inicial"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:56
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:190
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
 #, python-format
 msgid "Power Off"
 msgstr "Desligar"
@@ -692,7 +692,7 @@ msgstr ""
 msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:26
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:25
 msgid ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
 "visibility. (vehicle must be off)"
@@ -710,18 +710,18 @@ msgstr "Erro no QR Code"
 msgid "REMOVE"
 msgstr "REMOVER"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:52
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:51
 #, python-format
 msgid "RESET"
 msgstr "REDEFINIR"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:66
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:65
 #, python-format
 msgid "REVIEW"
 msgstr "REVISAR"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:56
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
 #, python-format
 msgid "Reboot"
 msgstr "Reiniciar"
@@ -763,7 +763,7 @@ msgstr ""
 "Grave e armazene o áudio do microfone enquanto dirige. O áudio será incluído "
 "no vídeo da dashcam no comma connect."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
 #, python-format
 msgid "Regulatory"
 msgstr "Regulatório"
@@ -788,22 +788,22 @@ msgstr "Capturas remotas"
 msgid "Request timed out"
 msgstr "Tempo da solicitação esgotado"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:122
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:118
 #, python-format
 msgid "Reset"
 msgstr "Redefinir"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:52
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:51
 #, python-format
 msgid "Reset Calibration"
 msgstr "Redefinir Calibração"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:66
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:65
 #, python-format
 msgid "Review Training Guide"
 msgstr "Revisar Guia de Treinamento"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:28
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "Revise as regras, recursos e limitações do openpilot"
 
@@ -822,12 +822,12 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:93
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:91
 #, python-format
 msgid "Select a language"
 msgstr "Selecione um idioma"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:61
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:60
 #, python-format
 msgid "Serial"
 msgstr "Serial"
@@ -896,6 +896,7 @@ msgstr "DESINSTALAR"
 msgid "UPDATE"
 msgstr "ATUALIZAR"
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:70
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:158
 #, python-format
 msgid "Uninstall"
@@ -942,7 +943,7 @@ msgstr ""
 msgid "VEHICLE"
 msgstr "VEÍCULO"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
 #, python-format
 msgid "VIEW"
 msgstr "VER"
@@ -1016,7 +1017,7 @@ msgstr "comma prime"
 msgid "default"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
 #, python-format
 msgid "down"
 msgstr "para baixo"
@@ -1042,7 +1043,7 @@ msgstr "km/h"
 msgid "leave blank for automatic configuration"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "left"
 msgstr "à esquerda"
@@ -1105,7 +1106,7 @@ msgstr ""
 "curvas. O logotipo do Modo Experimental também será exibido no canto "
 "superior direito."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:168
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:164
 #, python-format
 msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
@@ -1133,7 +1134,7 @@ msgid "openpilot longitudinal control may come in a future update."
 msgstr ""
 "o controle longitudinal do openpilot pode vir em uma atualização futura."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:26
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."
@@ -1141,7 +1142,7 @@ msgstr ""
 "o openpilot requer que o dispositivo seja montado dentro de 4° para a "
 "esquerda ou direita e dentro de 5° para cima ou 9° para baixo."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:137
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "right"
 msgstr "à direita"
@@ -1151,7 +1152,7 @@ msgstr "à direita"
 msgid "unmetered"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:136
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
 #, python-format
 msgid "up"
 msgstr "para cima"
