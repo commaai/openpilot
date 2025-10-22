@@ -35,9 +35,13 @@ class DeveloperLayout(Widget):
       initial_state=self._params.get_bool("SshEnabled"),
       callback=self._on_enable_ssh,
     )
-    self._ssh_keys = ssh_key_item("SSH Keys", description=tr(
-      "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username " +
-      "other than your own. A comma employee will NEVER ask you to add their GitHub username."))
+    self._ssh_keys = ssh_key_item(
+      "SSH Keys",
+      description=tr(
+        "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username " +
+        "other than your own. A comma employee will NEVER ask you to add their GitHub username."
+      )
+    )
 
     self._joystick_toggle = toggle_item(
       tr("Joystick Debug Mode"),
