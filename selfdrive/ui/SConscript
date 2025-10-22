@@ -1,3 +1,4 @@
+import os
 import json
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
@@ -50,20 +51,22 @@ with open(File(translations_assets_src).abspath, 'w') as f:
   f.write('\n'.join([f'<file alias="{l}">../ui/translations/{l}.qm</file>' for l in languages.values()]))
   f.write('\n</qresource>\n</RCC>')
 
-# compile gettext .po -> .mo translations
-po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
-mo_targets = [src.replace(".po", ".mo") for src in po_sources]
-mo_build = []
-for src, tgt in zip(po_sources, mo_targets):
-  mo_build.append(env.Command(tgt, src, "msgfmt -o $TARGET $SOURCE"))
-qt_env.Depends(assets, mo_build)
-
 # build assets
 assets = "#selfdrive/assets/assets.cc"
 assets_src = "#selfdrive/assets/assets.qrc"
 qt_env.Command(assets, [assets_src, translations_assets_src], f"rcc $SOURCES -o $TARGET")
 qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
 asset_obj = qt_env.Object("assets", assets)
+
+# compile gettext .po -> .mo translations
+po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
+po_sources = [src for src in po_sources if os.path.exists(File(src).abspath)]
+mo_targets = [src.replace(".po", ".mo") for src in po_sources]
+mo_build = []
+for src, tgt in zip(po_sources, mo_targets):
+  mo_build.append(env.Command(tgt, src, "msgfmt -o $TARGET $SOURCE"))
+# TODO: should not depend on Qt assets
+qt_env.Depends(assets, mo_build)
 
 # build main UI
 qt_env.Program("ui", qt_src + [asset_obj], LIBS=qt_libs)
