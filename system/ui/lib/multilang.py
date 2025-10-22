@@ -66,7 +66,7 @@ class Multilang:
 
   def _load_languages(self):
     with open(LANGUAGES_FILE, encoding='utf-8') as f:
-      self.languages = {k: v for k, v in json.load(f) if v in SUPPORTED_LANGUAGES}
+      self.languages = {k: v for k, v in json.load(f).items() if v in SUPPORTED_LANGUAGES}
     self.codes = {v: k for k, v in self.languages.items() if v in SUPPORTED_LANGUAGES}
 
 
