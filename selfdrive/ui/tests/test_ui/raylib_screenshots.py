@@ -117,6 +117,11 @@ def setup_keyboard_uppercase(click, pm: PubMaster):
   setup_keyboard(click, pm)
   keyboard_toggle_shift(click)
 
+def setup_keyboard_caps_lock(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_shift(click)
+  keyboard_toggle_shift(click)  # press twice for caps lock
+
 def setup_keyboard_numbers(click, pm: PubMaster):
   setup_keyboard(click, pm)
   keyboard_toggle_numbers(click)
@@ -263,6 +268,7 @@ CASES = {
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard,
   "keyboard_uppercase": setup_keyboard_uppercase,
+  "keyboard_caps_lock": setup_keyboard_caps_lock,
   "keyboard_numbers": setup_keyboard_numbers,
   "keyboard_symbols": setup_keyboard_symbols,
   "pair_device": setup_pair_device,
