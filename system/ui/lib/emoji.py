@@ -28,7 +28,7 @@ EMOJI_REGEX = re.compile(
 \u231a
 \ufe0f
 \u3030
-]+""",
+]+""".replace("\n", ""),
   flags=re.UNICODE
 )
 
@@ -41,9 +41,9 @@ def emoji_tex(emoji):
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype(FONT_DIR.joinpath("NotoColorEmoji.ttf"), 109)
     draw.text((0, 0), emoji, font=font, embedded_color=True)
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    l = buffer.tell()
-    buffer.seek(0)
-    _cache[emoji] = rl.load_texture_from_image(rl.load_image_from_memory(".png", buffer.getvalue(), l))
+    with io.BytesIO() as buffer:
+      img.save(buffer, format="PNG")
+      l = buffer.tell()
+      buffer.seek(0)
+      _cache[emoji] = rl.load_texture_from_image(rl.load_image_from_memory(".png", buffer.getvalue(), l))
   return _cache[emoji]

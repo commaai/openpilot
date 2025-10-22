@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -14,7 +15,7 @@ from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 
-NO_RELEASE_NOTES = "<h2>No release notes available.</h2>"
+NO_RELEASE_NOTES = tr("<h2>No release notes available.</h2>")
 
 
 class AlertColors:
@@ -101,15 +102,15 @@ class AbstractAlert(Widget, ABC):
       if self.dismiss_callback:
         self.dismiss_callback()
 
-    self.dismiss_btn = ActionButton("Close")
+    self.dismiss_btn = ActionButton(tr("Close"))
 
-    self.snooze_btn = ActionButton("Snooze Update", style=ButtonStyle.DARK)
+    self.snooze_btn = ActionButton(tr("Snooze Update"), style=ButtonStyle.DARK)
     self.snooze_btn.set_click_callback(snooze_callback)
 
-    self.excessive_actuation_btn = ActionButton("Acknowledge Excessive Actuation", style=ButtonStyle.DARK, min_width=800)
+    self.excessive_actuation_btn = ActionButton(tr("Acknowledge Excessive Actuation"), style=ButtonStyle.DARK, min_width=800)
     self.excessive_actuation_btn.set_click_callback(excessive_actuation_callback)
 
-    self.reboot_btn = ActionButton("Reboot and Update", min_width=600)
+    self.reboot_btn = ActionButton(tr("Reboot and Update"), min_width=600)
     self.reboot_btn.set_click_callback(lambda: HARDWARE.reboot())
 
     # TODO: just use a Scroller?

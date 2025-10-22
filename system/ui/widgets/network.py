@@ -4,13 +4,14 @@ from typing import cast
 
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label import TextAlignment, gui_label
+from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
 
@@ -70,7 +71,7 @@ class NetworkUI(Widget):
     self._current_panel: PanelType = PanelType.WIFI
     self._wifi_panel = WifiManagerUI(wifi_manager)
     self._advanced_panel = AdvancedNetworkSettings(wifi_manager)
-    self._nav_button = NavButton("Advanced")
+    self._nav_button = NavButton(tr("Advanced"))
     self._nav_button.set_click_callback(self._cycle_panel)
 
   def show_event(self):
@@ -91,11 +92,11 @@ class NetworkUI(Widget):
     content_rect = rl.Rectangle(self._rect.x, self._rect.y + self._nav_button.rect.height + 40,
                                 self._rect.width, self._rect.height - self._nav_button.rect.height - 40)
     if self._current_panel == PanelType.WIFI:
-      self._nav_button.text = "Advanced"
+      self._nav_button.text = tr("Advanced")
       self._nav_button.set_position(self._rect.x + self._rect.width - self._nav_button.rect.width, self._rect.y + 20)
       self._wifi_panel.render(content_rect)
     else:
-      self._nav_button.text = "Back"
+      self._nav_button.text = tr("Back")
       self._nav_button.set_position(self._rect.x, self._rect.y + 20)
       self._advanced_panel.render(content_rect)
 
@@ -116,40 +117,40 @@ class AdvancedNetworkSettings(Widget):
 
     # Tethering
     self._tethering_action = ToggleAction(initial_state=False)
-    tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
+    tethering_btn = ListItem(title=tr("Enable Tethering"), action_item=self._tethering_action, callback=self._toggle_tethering)
 
     # Edit tethering password
-    self._tethering_password_action = ButtonAction(text="EDIT")
-    tethering_password_btn = ListItem(title="Tethering Password", action_item=self._tethering_password_action, callback=self._edit_tethering_password)
+    self._tethering_password_action = ButtonAction(text=tr("EDIT"))
+    tethering_password_btn = ListItem(title=tr("Tethering Password"), action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
     # Roaming toggle
     roaming_enabled = self._params.get_bool("GsmRoaming")
     self._roaming_action = ToggleAction(initial_state=roaming_enabled)
-    self._roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
+    self._roaming_btn = ListItem(title=tr("Enable Roaming"), action_item=self._roaming_action, callback=self._toggle_roaming)
 
     # Cellular metered toggle
     cellular_metered = self._params.get_bool("GsmMetered")
     self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
-    self._cellular_metered_btn = ListItem(title="Cellular Metered", description="Prevent large data uploads when on a metered cellular connection",
+    self._cellular_metered_btn = ListItem(title=tr("Cellular Metered"), description=tr("Prevent large data uploads when on a metered cellular connection"),
                                           action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
 
     # APN setting
-    self._apn_btn = button_item("APN Setting", "EDIT", callback=self._edit_apn)
+    self._apn_btn = button_item(tr("APN Setting"), tr("EDIT"), callback=self._edit_apn)
 
     # Wi-Fi metered toggle
-    self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
-    wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
+    self._wifi_metered_action = MultipleButtonAction([tr("default"), tr("metered"), tr("unmetered")], 255, 0, callback=self._toggle_wifi_metered)
+    wifi_metered_btn = ListItem(title=tr("Wi-Fi Network Metered"), description=tr("Prevent large data uploads when on a metered Wi-Fi connection"),
                                 action_item=self._wifi_metered_action)
 
     items: list[Widget] = [
       tethering_btn,
       tethering_password_btn,
-      text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
+      text_item(tr("IP Address"), lambda: self._wifi_manager.ipv4_address),
       self._roaming_btn,
       self._apn_btn,
       self._cellular_metered_btn,
       wifi_metered_btn,
-      button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
+      button_item(tr("Hidden Network"), tr("CONNECT"), callback=self._connect_to_hidden_network),
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
@@ -198,7 +199,7 @@ class AdvancedNetworkSettings(Widget):
 
     current_apn = self._params.get("GsmApn") or ""
     self._keyboard.reset(min_text_size=0)
-    self._keyboard.set_title("Enter APN", "leave blank for automatic configuration")
+    self._keyboard.set_title(tr("Enter APN"), tr("leave blank for automatic configuration"))
     self._keyboard.set_text(current_apn)
     gui_app.set_modal_overlay(self._keyboard, update_apn)
 
@@ -231,11 +232,11 @@ class AdvancedNetworkSettings(Widget):
         self._wifi_manager.connect_to_network(ssid, password, hidden=True)
 
       self._keyboard.reset(min_text_size=0)
-      self._keyboard.set_title("Enter password", f"for \"{ssid}\"")
+      self._keyboard.set_title(tr("Enter password"), tr("for \"{}\"").format(ssid))
       gui_app.set_modal_overlay(self._keyboard, enter_password)
 
     self._keyboard.reset(min_text_size=1)
-    self._keyboard.set_title("Enter SSID", "")
+    self._keyboard.set_title(tr("Enter SSID"), "")
     gui_app.set_modal_overlay(self._keyboard, connect_hidden)
 
   def _edit_tethering_password(self):
@@ -248,7 +249,7 @@ class AdvancedNetworkSettings(Widget):
       self._tethering_password_action.set_enabled(False)
 
     self._keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
-    self._keyboard.set_title("Enter new tethering password", "")
+    self._keyboard.set_title(tr("Enter new tethering password"), "")
     self._keyboard.set_text(self._wifi_manager.tethering_password)
     gui_app.set_modal_overlay(self._keyboard, update_password)
 
@@ -281,7 +282,7 @@ class WifiManagerUI(Widget):
     self._networks: list[Network] = []
     self._networks_buttons: dict[str, Button] = {}
     self._forget_networks_buttons: dict[str, Button] = {}
-    self._confirm_dialog = ConfirmDialog("", "Forget", "Cancel")
+    self._confirm_dialog = ConfirmDialog("", tr("Forget"), tr("Cancel"))
 
     self._wifi_manager.set_callbacks(need_auth=self._on_need_auth,
                                      activated=self._on_activated,
@@ -305,15 +306,15 @@ class WifiManagerUI(Widget):
 
   def _render(self, rect: rl.Rectangle):
     if not self._networks:
-      gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      gui_label(rect, tr("Scanning Wi-Fi networks..."), 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       return
 
     if self.state == UIState.NEEDS_AUTH and self._state_network:
-      self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}")
+      self.keyboard.set_title(tr("Wrong password") if self._password_retry else tr("Enter password"), tr("for \"{}\"").format(self._state_network.ssid))
       self.keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
       gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
     elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
-      self._confirm_dialog.set_text(f'Forget Wi-Fi Network "{self._state_network.ssid}"?')
+      self._confirm_dialog.set_text(tr("Forget Wi-Fi Network \"{}\"?").format(self._state_network.ssid))
       self._confirm_dialog.reset()
       gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
     else:
@@ -363,11 +364,11 @@ class WifiManagerUI(Widget):
     if self.state == UIState.CONNECTING and self._state_network:
       if self._state_network.ssid == network.ssid:
         self._networks_buttons[network.ssid].set_enabled(False)
-        status_text = "CONNECTING..."
+        status_text = tr("CONNECTING...")
     elif self.state == UIState.FORGETTING and self._state_network:
       if self._state_network.ssid == network.ssid:
         self._networks_buttons[network.ssid].set_enabled(False)
-        status_text = "FORGETTING..."
+        status_text = tr("FORGETTING...")
     elif network.security_type == SecurityType.UNSUPPORTED:
       self._networks_buttons[network.ssid].set_enabled(False)
     else:
@@ -442,10 +443,10 @@ class WifiManagerUI(Widget):
   def _on_network_updated(self, networks: list[Network]):
     self._networks = networks
     for n in self._networks:
-      self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
-                                              button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
+      self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55,
+                                              text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
       self._networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
-      self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
+      self._forget_networks_buttons[n.ssid] = Button(tr("Forget"), partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                      font_size=45)
       self._forget_networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
 

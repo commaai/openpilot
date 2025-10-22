@@ -5,7 +5,7 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import FontWeight, MousePos
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import TextAlignment, Label
+from openpilot.system.ui.widgets.label import Label
 
 
 class ButtonStyle(IntEnum):
@@ -61,7 +61,7 @@ BUTTON_BACKGROUND_COLORS = {
 BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.NORMAL: rl.Color(74, 74, 74, 255),
   ButtonStyle.PRIMARY: rl.Color(48, 73, 244, 255),
-  ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
+  ButtonStyle.DANGER: rl.Color(204, 0, 0, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
   ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
   ButtonStyle.TRANSPARENT_WHITE_BORDER: rl.BLANK,
@@ -85,7 +85,7 @@ class Button(Widget):
                font_weight: FontWeight = FontWeight.MEDIUM,
                button_style: ButtonStyle = ButtonStyle.NORMAL,
                border_radius: int = 10,
-               text_alignment: TextAlignment = TextAlignment.CENTER,
+               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                text_padding: int = 20,
                icon=None,
                multi_touch: bool = False,
@@ -96,8 +96,8 @@ class Button(Widget):
     self._border_radius = border_radius
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
 
-    self._label = Label(text, font_size, font_weight, text_alignment, text_padding,
-                        BUTTON_TEXT_COLOR[self._button_style], icon=icon)
+    self._label = Label(text, font_size, font_weight, text_alignment, text_padding=text_padding,
+                        text_color=BUTTON_TEXT_COLOR[self._button_style], icon=icon)
 
     self._click_callback = click_callback
     self._multi_touch = multi_touch
@@ -137,7 +137,7 @@ class ButtonRadio(Button):
                icon,
                click_callback: Callable[[], None] | None = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
-               text_alignment: TextAlignment = TextAlignment.LEFT,
+               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
                border_radius: int = 10,
                text_padding: int = 20,
                ):

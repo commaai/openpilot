@@ -1,6 +1,7 @@
 import pyray as rl
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 
 
@@ -46,7 +47,7 @@ class ExperimentalModeButton(Widget):
     rl.draw_line_ex(rl.Vector2(line_x, rect.y), rl.Vector2(line_x, rect.y + rect.height), 3, separator_color)
 
     # Draw text label (left aligned)
-    text = "EXPERIMENTAL MODE ON" if self.experimental_mode else "CHILL MODE ON"
+    text = tr("EXPERIMENTAL MODE ON") if self.experimental_mode else tr("CHILL MODE ON")
     text_x = rect.x + self.horizontal_padding
     text_y = rect.y + rect.height / 2 - 45 * FONT_SCALE // 2  # Center vertically
 

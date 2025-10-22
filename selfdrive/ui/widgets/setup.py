@@ -1,9 +1,12 @@
 import pyray as rl
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import Label
 
@@ -13,10 +16,10 @@ class SetupWidget(Widget):
     super().__init__()
     self._open_settings_callback = None
     self._pairing_dialog: PairingDialog | None = None
-    self._pair_device_btn = Button("Pair device", self._show_pairing, button_style=ButtonStyle.PRIMARY)
-    self._open_settings_btn = Button("Open", lambda: self._open_settings_callback() if self._open_settings_callback else None,
+    self._pair_device_btn = Button(tr("Pair device"), self._show_pairing, button_style=ButtonStyle.PRIMARY)
+    self._open_settings_btn = Button(tr("Open"), lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
-    self._firehose_label = Label("🔥 Firehose Mode 🔥", font_weight=FontWeight.MEDIUM, font_size=64)
+    self._firehose_label = Label(tr("🔥 Firehose Mode 🔥"), font_weight=FontWeight.MEDIUM, font_size=64)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
@@ -38,11 +41,11 @@ class SetupWidget(Widget):
 
     # Title
     font = gui_app.font(FontWeight.BOLD)
-    rl.draw_text_ex(font, "Finish Setup", rl.Vector2(x, y), 75, 0, rl.WHITE)
+    rl.draw_text_ex(font, tr("Finish Setup"), rl.Vector2(x, y), 75, 0, rl.WHITE)
     y += 113  # 75 + 38 spacing
 
     # Description
-    desc = "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."
+    desc = tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.")
     light_font = gui_app.font(FontWeight.LIGHT)
     wrapped = wrap_text(light_font, desc, 50, int(w))
     for line in wrapped:
@@ -64,13 +67,12 @@ class SetupWidget(Widget):
     spacing = 42
 
     # Title with fire emojis
-    # TODO: fix Label centering with emojis
-    self._firehose_label.render(rl.Rectangle(x - 48, y, w, 64))
+    self._firehose_label.render(rl.Rectangle(rect.x, y, rect.width, 64))
     y += 64 + spacing
 
     # Description
     desc_font = gui_app.font(FontWeight.NORMAL)
-    desc_text = "Maximize your training data uploads to improve openpilot's driving models."
+    desc_text = tr("Maximize your training data uploads to improve openpilot's driving models.")
     wrapped_desc = wrap_text(desc_font, desc_text, 40, int(w))
 
     for line in wrapped_desc:
@@ -85,6 +87,11 @@ class SetupWidget(Widget):
     self._open_settings_btn.render(button_rect)
 
   def _show_pairing(self):
+    if not system_time_valid():
+      dlg = alert_dialog(tr("Please connect to Wi-Fi to complete initial pairing"))
+      gui_app.set_modal_overlay(dlg)
+      return
+
     if not self._pairing_dialog:
       self._pairing_dialog = PairingDialog()
     gui_app.set_modal_overlay(self._pairing_dialog, lambda result: setattr(self, '_pairing_dialog', None))

@@ -9,7 +9,7 @@ from collections import namedtuple
 import pyautogui
 import pywinctl
 
-from cereal import log
+from cereal import car, log
 from cereal import messaging
 from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
@@ -18,6 +18,9 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.updated.updated import parse_release_notes
+
+AlertSize = log.SelfdriveState.AlertSize
+AlertStatus = log.SelfdriveState.AlertStatus
 
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
@@ -92,6 +95,10 @@ def setup_settings_firehose(click, pm: PubMaster):
 
 
 def setup_settings_developer(click, pm: PubMaster):
+  CP = car.CarParams()
+  CP.alphaLongitudinalAvailable = True  # show alpha long control toggle
+  Params().put("CarParamsPersistent", CP.to_bytes())
+
   setup_settings(click, pm)
   click(278, 950)
 
@@ -145,6 +152,101 @@ def setup_experimental_mode_description(click, pm: PubMaster):
   click(1200, 280)  # expand description for experimental mode
 
 
+def setup_openpilot_long_confirmation_dialog(click, pm: PubMaster):
+  setup_settings_developer(click, pm)
+  click(2000, 960)  # toggle openpilot longitudinal control
+
+
+def setup_onroad(click, pm: PubMaster):
+  ds = messaging.new_message('deviceState')
+  ds.deviceState.started = True
+
+  ps = messaging.new_message('pandaStates', 1)
+  ps.pandaStates[0].pandaType = log.PandaState.PandaType.dos
+  ps.pandaStates[0].ignitionLine = True
+
+  driverState = messaging.new_message('driverStateV2')
+  driverState.driverStateV2.leftDriverData.faceOrientation = [0, 0, 0]
+
+  for _ in range(5):
+    pm.send('deviceState', ds)
+    pm.send('pandaStates', ps)
+    pm.send('driverStateV2', driverState)
+    ds.clear_write_flag()
+    ps.clear_write_flag()
+    driverState.clear_write_flag()
+    time.sleep(0.05)
+
+
+def setup_onroad_sidebar(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  click(100, 100)  # open sidebar
+
+
+def setup_onroad_small_alert(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = AlertSize.small
+  alert.selfdriveState.alertText1 = "Small Alert"
+  alert.selfdriveState.alertText2 = "This is a small alert"
+  alert.selfdriveState.alertStatus = AlertStatus.normal
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+
+
+def setup_onroad_medium_alert(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = AlertSize.mid
+  alert.selfdriveState.alertText1 = "Medium Alert"
+  alert.selfdriveState.alertText2 = "This is a medium alert"
+  alert.selfdriveState.alertStatus = AlertStatus.userPrompt
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+
+
+def setup_onroad_full_alert(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = AlertSize.full
+  alert.selfdriveState.alertText1 = "DISENGAGE IMMEDIATELY"
+  alert.selfdriveState.alertText2 = "Driver Distracted"
+  alert.selfdriveState.alertStatus = AlertStatus.critical
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+
+
+def setup_onroad_full_alert_multiline(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = AlertSize.full
+  alert.selfdriveState.alertText1 = "Reverse\nGear"
+  alert.selfdriveState.alertStatus = AlertStatus.normal
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+
+
+def setup_onroad_full_alert_long_text(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  alert = messaging.new_message('selfdriveState')
+  alert.selfdriveState.alertSize = AlertSize.full
+  alert.selfdriveState.alertText1 = "TAKE CONTROL IMMEDIATELY"
+  alert.selfdriveState.alertText2 = "Calibration Invalid: Remount Device & Recalibrate"
+  alert.selfdriveState.alertStatus = AlertStatus.userPrompt
+  for _ in range(5):
+    pm.send('selfdriveState', alert)
+    alert.clear_write_flag()
+    time.sleep(0.05)
+
+
 CASES = {
   "homescreen": setup_homescreen,
   "homescreen_paired": setup_homescreen,
@@ -167,6 +269,14 @@ CASES = {
   "offroad_alert": setup_offroad_alert,
   "confirmation_dialog": setup_confirmation_dialog,
   "experimental_mode_description": setup_experimental_mode_description,
+  "openpilot_long_confirmation_dialog": setup_openpilot_long_confirmation_dialog,
+  "onroad": setup_onroad,
+  "onroad_sidebar": setup_onroad_sidebar,
+  "onroad_small_alert": setup_onroad_small_alert,
+  "onroad_medium_alert": setup_onroad_medium_alert,
+  "onroad_full_alert": setup_onroad_full_alert,
+  "onroad_full_alert_multiline": setup_onroad_full_alert_multiline,
+  "onroad_full_alert_long_text": setup_onroad_full_alert_long_text,
 }
 
 
@@ -177,7 +287,7 @@ class TestUI:
 
   def setup(self):
     # Seed minimal offroad state
-    self.pm = PubMaster(["deviceState"])
+    self.pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
     ds = messaging.new_message('deviceState')
     ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
     for _ in range(5):
