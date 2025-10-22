@@ -4,7 +4,6 @@ common_libs = [
   'params.cc',
   'swaglog.cc',
   'util.cc',
-  'watchdog.cc',
   'ratekeeper.cc',
   'clutil.cc',
 ]
