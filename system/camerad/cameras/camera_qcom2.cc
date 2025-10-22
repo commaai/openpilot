@@ -91,7 +91,7 @@ void CameraState::set_exposure_rect() {
     // (Rect, F)
     std::make_pair((Rect){96, 400, 1734, 524}, 567.0),  // wide
     std::make_pair((Rect){96, 160, 1734, 986}, 2648.0), // road
-    std::make_pair((Rect){96, 242, 1736, 906}, 567.0)   // driver
+    std::make_pair((Rect){364, 256, 1200, 660}, 567.0)   // driver
   };
   int h_ref = 1208;
   /*
