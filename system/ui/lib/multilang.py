@@ -24,7 +24,7 @@ class Multilang:
     self._params = Params()
     self.languages = {}
     self.codes = {}
-    self._translation: gettext.NullTranslations | gettext.GNUTranslations | None = None
+    self._translation: gettext.NullTranslations | gettext.GNUTranslations = gettext.NullTranslations()
     self._load_languages()
 
   @property
@@ -47,21 +47,14 @@ class Multilang:
     return None
 
   def change_language(self, language_code: str) -> None:
-    # Persist selection
-    if self._params.get("LanguageSetting") != language_code:
-      self._params.put("LanguageSetting", language_code)
-
     # Reinstall gettext with the selected language
+    self._params.put("LanguageSetting", language_code)
     self.setup()
 
   def tr(self, text: str) -> str:
-    if self._translation is None:
-      self.setup()
     return self._translation.gettext(text)
 
   def trn(self, singular: str, plural: str, n: int) -> str:
-    if self._translation is None:
-      self.setup()
     return self._translation.ngettext(singular, plural, n)
 
   def _load_languages(self):
