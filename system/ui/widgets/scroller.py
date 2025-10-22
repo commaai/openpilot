@@ -40,7 +40,6 @@ class Scroller(Widget):
     item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
   def _render(self, _):
-    # TODO: don't draw items that are not in the viewport
     visible_items = [item for item in self._items if item.is_visible]
 
     # Add line separator between items
@@ -58,10 +57,9 @@ class Scroller(Widget):
                           int(self._rect.width), int(self._rect.height))
 
     cur_height = 0
+    viewport_top = self._rect.y
+    viewport_bottom = self._rect.y + self._rect.height
     for idx, item in enumerate(visible_items):
-      if not item.is_visible:
-        continue
-
       # Nicely lay out items vertically
       x = self._rect.x
       y = self._rect.y + cur_height + self._spacing * (idx != 0)
@@ -69,6 +67,10 @@ class Scroller(Widget):
 
       # Consider scroll
       y += scroll
+
+      # Skip items outside viewport
+      if y + item.rect.height < viewport_top or y > viewport_bottom:
+        continue
 
       # Update item state
       item.set_position(x, y)
