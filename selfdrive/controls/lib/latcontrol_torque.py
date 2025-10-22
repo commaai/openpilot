@@ -16,10 +16,10 @@ from openpilot.common.pid import PIDController
 # wheel slip, or to speed.
 
 # This controller applies torque to achieve desired lateral
-# accelerations. To compensate for the low speed effects the 
-# proportional # gain is increased at low speeds by the PID controller. 
-# Additionally, there is friction in the steering wheel that needs 
-# to be overcome # to move it at all, this is compensated for too.
+# accelerations. To compensate for the low speed effects the
+# proportional gain is increased at low speeds by the PID controller.
+# Additionally, there is friction in the steering wheel that needs
+# to be overcome to move it at all, this is compensated for too.
 
 KP = 1.0
 KI = 0.3
