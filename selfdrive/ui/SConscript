@@ -50,6 +50,14 @@ with open(File(translations_assets_src).abspath, 'w') as f:
   f.write('\n'.join([f'<file alias="{l}">../ui/translations/{l}.qm</file>' for l in languages.values()]))
   f.write('\n</qresource>\n</RCC>')
 
+# compile gettext .po -> .mo translations
+po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
+mo_targets = [src.replace(".po", ".mo") for src in po_sources]
+mo_build = []
+for src, tgt in zip(po_sources, mo_targets):
+  mo_build.append(env.Command(tgt, src, "msgfmt -o $TARGET $SOURCE"))
+qt_env.Depends(assets, mo_build)
+
 # build assets
 assets = "#selfdrive/assets/assets.cc"
 assets_src = "#selfdrive/assets/assets.qrc"
@@ -96,15 +104,3 @@ if GetOption('extras'):
       f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
       # keep installers small
       assert f[0].get_size() < 1900*1e3, f[0].get_size()
-
-# Compile gettext .po -> .mo alongside Qt translations
-po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
-mo_targets = [src.replace(".po", ".mo") for src in po_sources]
-msgfmt_bin = 'msgfmt'
-
-# Build each .mo individually to ensure one-to-one mapping
-mo_build = []
-for src, tgt in zip(po_sources, mo_targets):
-  mo_build.append(env.Command(tgt, src, f"{msgfmt_bin} -o $TARGET $SOURCE"))
-
-qt_env.Depends(assets, mo_build)
