@@ -8,20 +8,20 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
-from openpilot.system.ui.lib.multilang import tr, trn
+from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 
-TITLE = tr("Firehose Mode")
-DESCRIPTION = tr(
+TITLE = tr_noop("Firehose Mode")
+DESCRIPTION = tr_noop(
   "openpilot learns to drive by watching humans, like you, drive.\n\n"
   + "Firehose Mode allows you to maximize your training data uploads to improve "
   + "openpilot's driving models. More data means bigger models, which means better Experimental Mode."
 )
-INSTRUCTIONS = tr(
+INSTRUCTIONS = tr_noop(
   "For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.\n\n"
   + "Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card.\n\n\n"
   + "Frequently Asked Questions\n\n"
