@@ -51,6 +51,7 @@ class FontWeight(StrEnum):
   BOLD = "Inter-Bold.ttf"
   EXTRA_BOLD = "Inter-ExtraBold.ttf"
   BLACK = "Inter-Black.ttf"
+  UNIFONT = "unifont.otf"
 
 
 @dataclass
