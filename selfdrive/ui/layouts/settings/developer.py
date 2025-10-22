@@ -19,8 +19,10 @@ class DeveloperLayout(Widget):
     # Build items and keep references for callbacks/state updates
     self._adb_toggle = toggle_item(
       tr("Enable ADB"),
-      description=tr("ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. " +
-                     "See https://docs.comma.ai/how-to/connect-to-comma for more info."),
+      description=tr(
+        "ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. " +
+        "See https://docs.comma.ai/how-to/connect-to-comma for more info."
+      ),
       initial_state=self._params.get_bool("AdbEnabled"),
       callback=self._on_enable_adb,
       enabled=ui_state.is_offroad,
