@@ -65,6 +65,9 @@ class HtmlRenderer(Widget):
     if text_size is None:
       text_size = {}
 
+    self._cached_height: float | None = None
+    self._cached_width: int = -1
+
     # Base paragraph size (Qt stylesheet default is 48px in offroad alerts)
     base_p_size = int(text_size.get(ElementType.P, 48))
 
@@ -97,6 +100,8 @@ class HtmlRenderer(Widget):
 
   def parse_html_content(self, html_content: str) -> None:
     self.elements.clear()
+    self._cached_height = None
+    self._cached_width = -1
 
     # Remove HTML comments
     html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
@@ -211,6 +216,9 @@ class HtmlRenderer(Widget):
     return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
+    if self._cached_height is not None and self._cached_width == content_width:
+      return self._cached_height
+
     total_height = 0.0
     padding = 20
     usable_width = content_width - (padding * 2)
@@ -230,6 +238,10 @@ class HtmlRenderer(Widget):
           total_height += element.font_size * FONT_SCALE * element.line_height
 
       total_height += element.margin_bottom
+
+    # Store result in cache
+    self._cached_height = total_height
+    self._cached_width = content_width
 
     return total_height
 
