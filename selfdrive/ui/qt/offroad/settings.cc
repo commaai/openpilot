@@ -6,7 +6,6 @@
 
 #include <QDebug>
 
-#include "common/watchdog.h"
 #include "common/util.h"
 #include "selfdrive/ui/qt/network/networking.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
@@ -270,7 +269,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
       // put language setting, exit Qt UI, and trigger fast restart
       params.put("LanguageSetting", langs[selection].toStdString());
       qApp->exit(18);
-      watchdog_kick(0);
     }
   });
   addItem(translateBtn);
