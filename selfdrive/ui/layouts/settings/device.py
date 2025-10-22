@@ -66,7 +66,7 @@ class DeviceLayout(Widget):
       button_item(lambda: tr("Review Training Guide"), lambda: tr("REVIEW"), lambda: tr(DESCRIPTIONS['review_guide']),
                   self._on_review_training_guide, enabled=ui_state.is_offroad),
       regulatory_btn := button_item(lambda: tr("Regulatory"), lambda: tr("VIEW"), callback=self._on_regulatory, enabled=ui_state.is_offroad),
-      button_item(lambda: tr("Change Language"), lambda: tr("CHANGE"), callback=self._show_language_dialog, enabled=ui_state.is_offroad),
+      button_item(lambda: tr("Change Language"), lambda: tr("CHANGE"), callback=self._show_language_dialog),
       self._power_off_btn,
     ]
     regulatory_btn.set_visible(TICI)
