@@ -2,6 +2,10 @@
 
 - This is an README version for dolphin team
 
+## Prerequisite
+
+- python version >= 3.11, < 3.13
+
 ## Usage
 
 ### Step 1: Clone, checkout to the vinfast branch
@@ -31,7 +35,7 @@ op setup
 - If using python you should create virtual environment and install pip (Optional)
 ```sh
 op venv
-python -m ensurepip && python -m pip install pip
+python -m pip install -e .
 ```
 
 ### Step 3: How to flash panda

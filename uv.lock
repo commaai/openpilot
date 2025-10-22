@@ -881,32 +881,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/19/04f9b178c2d8a15b076c8b5140708fa6ffc5601fb6f1e975537072df5b2a/mergedeep-1.3.4-py3-none-any.whl", hash = "sha256:70775750742b25c0d8f36c55aed03d24c3384d17c951b3175d898bd778ef0307", size = 6354, upload-time = "2021-02-05T18:55:29.583Z" },
 ]
 
-[[package]]
-name = "metadrive-simulator"
-version = "0.4.2.4"
-source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" }
-dependencies = [
-    { name = "filelock" },
-    { name = "gymnasium" },
-    { name = "lxml" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "opencv-python-headless" },
-    { name = "panda3d" },
-    { name = "panda3d-gltf" },
-    { name = "pillow" },
-    { name = "progressbar" },
-    { name = "psutil" },
-    { name = "pygments" },
-    { name = "requests" },
-    { name = "shapely" },
-    { name = "tqdm" },
-    { name = "yapf" },
-]
-wheels = [
-    { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl", hash = "sha256:fbf0ea9be67e65cd45d38ff930e3d49f705dd76c9ddbd1e1482e3f87b61efcef" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "cuda-python", marker = "extra == 'cuda'", specifier = "==12.0.0" },
@@ -1228,51 +1202,7 @@ dependencies = [
     { name = "zstandard" },
 ]
 
-[package.optional-dependencies]
-dev = [
-    { name = "av" },
-    { name = "azure-identity" },
-    { name = "azure-storage-blob" },
-    { name = "dbus-next" },
-    { name = "dictdiffer" },
-    { name = "matplotlib" },
-    { name = "opencv-python-headless" },
-    { name = "parameterized" },
-    { name = "pyautogui" },
-    { name = "pygame" },
-    { name = "pyopencl", marker = "platform_machine != 'aarch64'" },
-    { name = "pyprof2calltree" },
-    { name = "pytools", marker = "platform_machine != 'aarch64'" },
-    { name = "pywinctl" },
-    { name = "raylib" },
-    { name = "tabulate" },
-    { name = "types-requests" },
-    { name = "types-tabulate" },
-]
-docs = [
-    { name = "jinja2" },
-    { name = "mkdocs" },
-    { name = "natsort" },
-]
-testing = [
-    { name = "codespell" },
-    { name = "hypothesis" },
-    { name = "mypy" },
-    { name = "pre-commit-hooks" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cpp" },
-    { name = "pytest-mock" },
-    { name = "pytest-randomly" },
-    { name = "pytest-repeat" },
-    { name = "pytest-subtests" },
-    { name = "pytest-timeout" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-]
-tools = [
-    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'" },
-]
+
 
 [package.metadata]
 requires-dist = [
@@ -1295,7 +1225,6 @@ requires-dist = [
     { name = "json-rpc" },
     { name = "libusb1" },
     { name = "matplotlib", marker = "extra == 'dev'" },
-    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" },
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mypy", marker = "extra == 'testing'" },
     { name = "natsort", marker = "extra == 'docs'" },
