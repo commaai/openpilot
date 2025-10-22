@@ -169,9 +169,10 @@ class SoftwareLayout(Widget):
     ui_state.params.put_bool("DoReboot", True)
 
   def _on_select_branch(self):
-    current_branch = ui_state.params.get("GitBranch")
-    available_branches = (ui_state.params.get("UpdaterAvailableBranches") or "").split(",")
-    available_branches = [branch.strip() for branch in available_branches if branch.strip()]
+    current_branch = ui_state.params.get("GitBranch") or ""
+    branches_str = ui_state.params.get("UpdaterAvailableBranches") or ""
+
+    available_branches = [b.strip() for b in branches_str.split(",") if b.strip()]
     priority_branches = [current_branch, "devel-staging", "devel", "nightly", "nightly-dev", "master"]
     for branch in priority_branches:
       if branch in available_branches:
