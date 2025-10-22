@@ -46,9 +46,6 @@ class DeviceLayout(Widget):
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _initialize_items(self):
-    dongle_id = self._params.get("DongleId") or tr("N/A")
-    serial = self._params.get("HardwareSerial") or tr("N/A")
-
     self._pair_device_btn = button_item(lambda: tr("Pair Device"), lambda: tr("PAIR"), lambda: tr(DESCRIPTIONS['pair_device']), callback=self._pair_device)
     self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
@@ -60,8 +57,8 @@ class DeviceLayout(Widget):
                                            left_callback=self._reboot_prompt, right_callback=self._power_off_prompt)
 
     items = [
-      text_item(lambda: tr("Dongle ID"), dongle_id),
-      text_item(lambda: tr("Serial"), serial),
+      text_item(lambda: tr("Dongle ID"), self._params.get("DongleId") or (lambda: tr("N/A"))),
+      text_item(lambda: tr("Serial"), self._params.get("HardwareSerial") or (lambda: tr("N/A"))),
       self._pair_device_btn,
       button_item(lambda: tr("Driver Camera"), lambda: tr("PREVIEW"), lambda: tr(DESCRIPTIONS['driver_camera']),
                   callback=self._show_driver_camera, enabled=ui_state.is_offroad),
