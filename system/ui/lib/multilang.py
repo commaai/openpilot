@@ -9,6 +9,15 @@ UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 
+SUPPORTED_LANGUAGES = [
+  "en",
+  "de",
+  "fr",
+  "pt-BR",
+  "es",
+  "tr",
+]
+
 
 class Multilang:
   def __init__(self):
@@ -57,8 +66,8 @@ class Multilang:
 
   def _load_languages(self):
     with open(LANGUAGES_FILE, encoding='utf-8') as f:
-      self.languages = json.load(f)
-    self.codes = {v: k for k, v in self.languages.items()}
+      self.languages = {k: v for k, v in json.load(f) if v in SUPPORTED_LANGUAGES}
+    self.codes = {v: k for k, v in self.languages.items() if v in SUPPORTED_LANGUAGES}
 
 
 multilang = Multilang()

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 from itertools import chain
-import json
 import os
-from openpilot.system.ui.lib.multilang import SYSTEM_UI_DIR, UI_DIR, TRANSLATIONS_DIR, LANGUAGES_FILE
+from openpilot.system.ui.lib.multilang import SYSTEM_UI_DIR, UI_DIR, TRANSLATIONS_DIR, multilang
 
 
 def update_translations():
@@ -24,10 +23,7 @@ def update_translations():
   assert ret == 0
 
   # Generate/update translation files for each language
-  with open(LANGUAGES_FILE) as f:
-    translation_files = json.load(f).values()
-
-  for name in translation_files:
+  for name in multilang.languages.values():
     if os.path.exists(os.path.join(TRANSLATIONS_DIR, f"app_{name}.po")):
       cmd = f"msgmerge --update --backup=none --sort-output translations/app_{name}.po translations/app.pot"
       ret = os.system(cmd)
