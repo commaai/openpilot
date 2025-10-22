@@ -9,23 +9,6 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import DialogResult
 
-# Description constants
-DESCRIPTIONS = {
-  'enable_adb': tr(
-    "ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. " +
-    "See https://docs.comma.ai/how-to/connect-to-comma for more info."
-  ),
-  'ssh_key': tr(
-    "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username " +
-    "other than your own. A comma employee will NEVER ask you to add their GitHub username."
-  ),
-  'alpha_longitudinal': tr(
-    "<b>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</b><br><br>" +
-    "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. " +
-    "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha."
-  ),
-}
-
 
 class DeveloperLayout(Widget):
   def __init__(self):
@@ -36,7 +19,8 @@ class DeveloperLayout(Widget):
     # Build items and keep references for callbacks/state updates
     self._adb_toggle = toggle_item(
       tr("Enable ADB"),
-      description=DESCRIPTIONS["enable_adb"],
+      description=tr("ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. " +
+                     "See https://docs.comma.ai/how-to/connect-to-comma for more info."),
       initial_state=self._params.get_bool("AdbEnabled"),
       callback=self._on_enable_adb,
       enabled=ui_state.is_offroad,
@@ -49,7 +33,9 @@ class DeveloperLayout(Widget):
       initial_state=self._params.get_bool("SshEnabled"),
       callback=self._on_enable_ssh,
     )
-    self._ssh_keys = ssh_key_item("SSH Keys", description=DESCRIPTIONS["ssh_key"])
+    self._ssh_keys = ssh_key_item("SSH Keys", description=tr(
+      "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username " +
+      "other than your own. A comma employee will NEVER ask you to add their GitHub username."))
 
     self._joystick_toggle = toggle_item(
       tr("Joystick Debug Mode"),
@@ -68,7 +54,11 @@ class DeveloperLayout(Widget):
 
     self._alpha_long_toggle = toggle_item(
       tr("openpilot Longitudinal Control (Alpha)"),
-      description=DESCRIPTIONS["alpha_longitudinal"],
+      description=tr(
+        "<b>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</b><br><br>" +
+        "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. " +
+        "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha."
+      ),
       initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
       callback=self._on_alpha_long_enabled,
       enabled=lambda: not ui_state.engaged,
@@ -126,11 +116,11 @@ class DeveloperLayout(Widget):
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
     for key, item in (
-      ("AdbEnabled", self._adb_toggle),
-      ("SshEnabled", self._ssh_toggle),
-      ("JoystickDebugMode", self._joystick_toggle),
-      ("LongitudinalManeuverMode", self._long_maneuver_toggle),
-      ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
+        ("AdbEnabled", self._adb_toggle),
+        ("SshEnabled", self._ssh_toggle),
+        ("JoystickDebugMode", self._joystick_toggle),
+        ("LongitudinalManeuverMode", self._long_maneuver_toggle),
+        ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
     ):
       item.action_item.set_state(self._params.get_bool(key))
 

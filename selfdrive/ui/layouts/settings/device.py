@@ -20,14 +20,6 @@ from openpilot.system.ui.widgets.list_view import text_item, button_item, dual_b
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.scroller import Scroller
 
-# Description constants
-DESCRIPTIONS = {
-  'pair_device': tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
-  'driver_camera': tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
-  'reset_calibration': tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
-  'review_guide': tr("Review the rules, features, and limitations of openpilot"),
-}
-
 
 class DeviceLayout(Widget):
   def __init__(self):
@@ -49,10 +41,14 @@ class DeviceLayout(Widget):
     dongle_id = self._params.get("DongleId") or tr("N/A")
     serial = self._params.get("HardwareSerial") or tr("N/A")
 
-    self._pair_device_btn = button_item(tr("Pair Device"), tr("PAIR"), DESCRIPTIONS['pair_device'], callback=self._pair_device)
+    self._pair_device_btn = button_item(tr("Pair Device"), tr("PAIR"),
+                                        tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
+                                        callback=self._pair_device)
     self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
-    self._reset_calib_btn = button_item(tr("Reset Calibration"), tr("RESET"), DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt)
+    self._reset_calib_btn = button_item(tr("Reset Calibration"), tr("RESET"),
+                                        tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
+                                        callback=self._reset_calibration_prompt)
     self._reset_calib_btn.set_description_opened_callback(self._update_calib_description)
 
     self._power_off_btn = dual_button_item(tr("Reboot"), tr("Power Off"), left_callback=self._reboot_prompt, right_callback=self._power_off_prompt)
@@ -61,9 +57,13 @@ class DeviceLayout(Widget):
       text_item(tr("Dongle ID"), dongle_id),
       text_item(tr("Serial"), serial),
       self._pair_device_btn,
-      button_item(tr("Driver Camera"), tr("PREVIEW"), DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
+      button_item(tr("Driver Camera"), tr("PREVIEW"),
+                  tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
+                  callback=self._show_driver_camera, enabled=ui_state.is_offroad),
       self._reset_calib_btn,
-      button_item(tr("Review Training Guide"), tr("REVIEW"), DESCRIPTIONS['review_guide'], self._on_review_training_guide, enabled=ui_state.is_offroad),
+      button_item(tr("Review Training Guide"), tr("REVIEW"),
+                  tr("Review the rules, features, and limitations of openpilot"),
+                  self._on_review_training_guide, enabled=ui_state.is_offroad),
       regulatory_btn := button_item(tr("Regulatory"), tr("VIEW"), callback=self._on_regulatory, enabled=ui_state.is_offroad),
       # TODO: implement multilang
       # button_item(tr("Change Language"), tr("CHANGE"), callback=self._show_language_selection, enabled=ui_state.is_offroad),

@@ -11,28 +11,6 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
-# Description constants
-DESCRIPTIONS = {
-  "OpenpilotEnabledToggle": tr(
-    "Use the openpilot system for adaptive cruise control and lane keep driver assistance. " +
-    "Your attention is required at all times to use this feature."
-  ),
-  "DisengageOnAccelerator": tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
-  "LongitudinalPersonality": tr(
-    "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
-    "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with " +
-    "your steering wheel distance button."
-  ),
-  "IsLdwEnabled": tr(
-    "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
-    "without a turn signal activated while driving over 31 mph (50 km/h)."
-  ),
-  "AlwaysOnDM": tr("Enable driver monitoring even when openpilot is not engaged."),
-  'RecordFront': tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
-  "IsMetric": tr("Display speed in km/h instead of mph."),
-  "RecordAudio": tr("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
-}
-
 
 class TogglesLayout(Widget):
   def __init__(self):
@@ -44,7 +22,10 @@ class TogglesLayout(Widget):
     self._toggle_defs = {
       "OpenpilotEnabledToggle": (
         tr("Enable openpilot"),
-        DESCRIPTIONS["OpenpilotEnabledToggle"],
+        tr(
+          "Use the openpilot system for adaptive cruise control and lane keep driver assistance. " +
+          "Your attention is required at all times to use this feature."
+        ),
         "chffr_wheel.png",
         True,
       ),
@@ -56,37 +37,40 @@ class TogglesLayout(Widget):
       ),
       "DisengageOnAccelerator": (
         tr("Disengage on Accelerator Pedal"),
-        DESCRIPTIONS["DisengageOnAccelerator"],
+        tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
         "disengage_on_accelerator.png",
         False,
       ),
       "IsLdwEnabled": (
         tr("Enable Lane Departure Warnings"),
-        DESCRIPTIONS["IsLdwEnabled"],
+        tr(
+          "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
+          "without a turn signal activated while driving over 31 mph (50 km/h)."
+        ),
         "warning.png",
         False,
       ),
       "AlwaysOnDM": (
         tr("Always-On Driver Monitoring"),
-        DESCRIPTIONS["AlwaysOnDM"],
+        tr("Enable driver monitoring even when openpilot is not engaged."),
         "monitoring.png",
         False,
       ),
       "RecordFront": (
         tr("Record and Upload Driver Camera"),
-        DESCRIPTIONS["RecordFront"],
+        tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
         "monitoring.png",
         True,
       ),
       "RecordAudio": (
         tr("Record and Upload Microphone Audio"),
-        DESCRIPTIONS["RecordAudio"],
+        tr("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
         "microphone.png",
         True,
       ),
       "IsMetric": (
         tr("Use Metric System"),
-        DESCRIPTIONS["IsMetric"],
+        tr("Display speed in km/h instead of mph."),
         "metric.png",
         False,
       ),
@@ -94,7 +78,11 @@ class TogglesLayout(Widget):
 
     self._long_personality_setting = multiple_button_item(
       tr("Driving Personality"),
-      DESCRIPTIONS["LongitudinalPersonality"],
+      tr(
+        "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
+        "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with " +
+        "your steering wheel distance button."
+      ),
       buttons=[tr("Aggressive"), tr("Standard"), tr("Relaxed")],
       button_width=255,
       callback=self._set_longitudinal_personality,
