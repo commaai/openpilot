@@ -1,22 +1,21 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Automatically generated, 2025.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-22 16:32-0700\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2025-10-22 16:32-0700\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
 #: /home/batman/openpilot/system/ui/widgets/html_render.py:263
 #: /home/batman/openpilot/system/ui/widgets/confirm_dialog.py:93
@@ -385,7 +384,6 @@ msgstr ""
 msgid "{} ALERT"
 msgid_plural "{} ALERTS"
 msgstr[0] ""
-msgstr[1] ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 msgid "--"
@@ -537,7 +535,6 @@ msgstr ""
 msgid "{} segment of your driving is in the training dataset so far."
 msgid_plural "{} segments of your driving is in the training dataset so far."
 msgstr[0] ""
-msgstr[1] ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:138
 #, python-format
@@ -624,21 +621,18 @@ msgstr ""
 msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] ""
-msgstr[1] ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:37
 #, python-format
 msgid "{} hour ago"
 msgid_plural "{} hours ago"
 msgstr[0] ""
-msgstr[1] ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:40
 #, python-format
 msgid "{} day ago"
 msgid_plural "{} days ago"
 msgstr[0] ""
-msgstr[1] ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:48
 #, python-format

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-22 15:30-0700\n"
+"POT-Creation-Date: 2025-10-22 16:32-0700\n"
 "PO-Revision-Date: 2025-10-20 16:35-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -158,7 +158,7 @@ msgstr "¿Seguro que quieres reiniciar?"
 msgid "Are you sure you want to reset calibration?"
 msgstr "¿Seguro que quieres restablecer la calibración?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:158
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:163
 #, python-format
 msgid "Are you sure you want to uninstall?"
 msgstr "¿Seguro que quieres desinstalar?"
@@ -185,10 +185,10 @@ msgstr ""
 msgid "CHANGE"
 msgstr "CAMBIAR"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:49
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:106
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:117
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:142
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:50
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:111
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:122
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:147
 #, python-format
 msgid "CHECK"
 msgstr "COMPROBAR"
@@ -247,12 +247,12 @@ msgstr ""
 msgid "Close"
 msgstr "Cerrar"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:48
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:49
 #, python-format
 msgid "Current Version"
 msgstr "Versión actual"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:109
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:114
 #, python-format
 msgid "DOWNLOAD"
 msgstr "DESCARGAR"
@@ -304,7 +304,7 @@ msgstr "Mostrar la velocidad en km/h en lugar de mph."
 msgid "Dongle ID"
 msgstr "ID del dongle"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:49
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:50
 #, python-format
 msgid "Download"
 msgstr "Descargar"
@@ -531,8 +531,8 @@ msgstr "Red"
 msgid "INACTIVE: connect to an unmetered network"
 msgstr "INACTIVO: conéctate a una red sin límites"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:52
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:131
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:53
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:136
 #, python-format
 msgid "INSTALL"
 msgstr "INSTALAR"
@@ -542,7 +542,7 @@ msgstr "INSTALAR"
 msgid "IP Address"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:52
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:53
 #, python-format
 msgid "Install Update"
 msgstr "Instalar actualización"
@@ -612,7 +612,7 @@ msgstr "No hay notas de versión disponibles."
 msgid "OFFLINE"
 msgstr "SIN CONEXIÓN"
 
-#: /home/batman/openpilot/system/ui/widgets/html_render.py:247
+#: /home/batman/openpilot/system/ui/widgets/html_render.py:263
 #: /home/batman/openpilot/system/ui/widgets/confirm_dialog.py:93
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:127
 #, python-format
@@ -811,6 +811,11 @@ msgstr "Revisar guía de entrenamiento"
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "Revisa las reglas, funciones y limitaciones de openpilot"
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:57
+#, python-format
+msgid "SELECT"
+msgstr ""
+
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:53
 #, python-format
 msgid "SSH Keys"
@@ -824,6 +829,11 @@ msgstr ""
 #: /home/batman/openpilot/system/ui/widgets/option_dialog.py:35
 #, python-format
 msgid "Select"
+msgstr ""
+
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:182
+#, python-format
+msgid "Select a branch"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:91
@@ -881,6 +891,11 @@ msgstr "TOME EL CONTROL INMEDIATAMENTE"
 msgid "TEMP"
 msgstr "TEMP"
 
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:57
+#, python-format
+msgid "Target Branch"
+msgstr ""
+
 #: /home/batman/openpilot/system/ui/widgets/network.py:124
 #, python-format
 msgid "Tethering Password"
@@ -890,7 +905,7 @@ msgstr ""
 msgid "Toggles"
 msgstr "Interruptores"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:70
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:73
 #, python-format
 msgid "UNINSTALL"
 msgstr "DESINSTALAR"
@@ -900,8 +915,8 @@ msgstr "DESINSTALAR"
 msgid "UPDATE"
 msgstr "ACTUALIZAR"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:70
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:158
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:73
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:163
 #, python-format
 msgid "Uninstall"
 msgstr "Desinstalar"
@@ -910,7 +925,7 @@ msgstr "Desinstalar"
 msgid "Unknown"
 msgstr "Desconocido"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:47
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:48
 #, python-format
 msgid "Updates are only downloaded while the car is off."
 msgstr "Las actualizaciones solo se descargan cuando el coche está apagado."
@@ -1027,7 +1042,7 @@ msgstr ""
 msgid "down"
 msgstr "abajo"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:105
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:110
 #, python-format
 msgid "failed to check for update"
 msgstr "Error al buscar actualizaciones"
@@ -1063,12 +1078,12 @@ msgstr ""
 msgid "mph"
 msgstr "mph"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:19
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:20
 #, python-format
 msgid "never"
 msgstr "nunca"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:30
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:31
 #, python-format
 msgid "now"
 msgstr "ahora"
@@ -1164,17 +1179,17 @@ msgstr ""
 msgid "up"
 msgstr "arriba"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:116
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:121
 #, python-format
 msgid "up to date, last checked never"
 msgstr "actualizado, última comprobación: nunca"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:114
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:119
 #, python-format
 msgid "up to date, last checked {}"
 msgstr "actualizado, última comprobación: {}"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:108
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:113
 #, python-format
 msgid "update available"
 msgstr "actualización disponible"
@@ -1186,21 +1201,21 @@ msgid_plural "{} ALERTS"
 msgstr[0] "{} ALERTA"
 msgstr[1] "{} ALERTAS"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:39
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:40
 #, python-format
 msgid "{} day ago"
 msgid_plural "{} days ago"
 msgstr[0] "hace {} día"
 msgstr[1] "hace {} días"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:36
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:37
 #, python-format
 msgid "{} hour ago"
 msgid_plural "{} hours ago"
 msgstr[0] "hace {} hora"
 msgstr[1] "hace {} horas"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:33
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:34
 #, python-format
 msgid "{} minute ago"
 msgid_plural "{} minutes ago"
