@@ -174,7 +174,7 @@ class DualButtonAction(ItemAction):
   def __init__(self, left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable = None,
                right_callback: Callable = None, enabled: bool | Callable[[], bool] = True):
     super().__init__(width=0, enabled=enabled)  # Width 0 means use full width
-    self.left_button = Button(left_text, click_callback=left_callback, button_style=ButtonStyle.LIST_ACTION, text_padding=0)
+    self.left_button = Button(left_text, click_callback=left_callback, button_style=ButtonStyle.NORMAL, text_padding=0)
     self.right_button = Button(right_text, click_callback=right_callback, button_style=ButtonStyle.DANGER, text_padding=0)
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:

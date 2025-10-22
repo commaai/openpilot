@@ -8,7 +8,6 @@
 #include "common/transformations/orientation.hpp"
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "common/watchdog.h"
 #include "system/hardware/hw.h"
 
 #define BACKLIGHT_DT 0.05
@@ -116,9 +115,6 @@ void UIState::update() {
   update_state(this);
   updateStatus();
 
-  if (sm->frame % UI_FREQ == 0) {
-    watchdog_kick(nanos_since_boot());
-  }
   emit uiUpdate(*this);
 }
 
