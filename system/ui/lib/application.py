@@ -14,6 +14,7 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC, TICI
+from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, multilang
 from openpilot.common.realtime import Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
@@ -352,11 +353,16 @@ class GuiApplication:
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
-
-    # Ensure Latin-1 Supplement and Latin Extended-A are covered (for de/fr/es/etc.)
-    for cp in range(0x00A0, 0x0180):
-      all_chars.add(chr(cp))
     all_chars |= set("–‑✓×°§•")
+
+    # Load only the characters used in translations
+    for language in multilang.codes:
+      try:
+        with open(os.path.join(TRANSLATIONS_DIR, f"app_{language}.po")) as f:
+          all_chars |= set(f.read())
+      except FileNotFoundError:
+        cloudlog.warning(f"Translation file for language '{language}' not found when loading fonts.")
+
     all_chars = "".join(all_chars)
 
     codepoint_count = rl.ffi.new("int *", 1)
