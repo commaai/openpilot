@@ -28,10 +28,6 @@ def update_translations():
       cmd = f"msgmerge --update --no-fuzzy-matching --backup=none --sort-output translations/app_{name}.po translations/app.pot"
       ret = os.system(cmd)
       assert ret == 0
-
-      # cmd = f"msgattrib --no-fuzzy --no-obsolete -o translations/app_{name}.po translations/app_{name}.po"
-      # ret = os.system(cmd)
-      # assert ret == 0
     else:
       cmd = f"msginit -l {name} --no-translator --input translations/app.pot --output-file translations/app_{name}.po"
       ret = os.system(cmd)
