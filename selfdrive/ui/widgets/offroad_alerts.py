@@ -56,22 +56,20 @@ class ActionButton(Widget):
   def __init__(self, text: str | Callable[[], str], style: ButtonStyle = ButtonStyle.LIGHT,
                min_width: int = AlertConstants.MIN_BUTTON_WIDTH):
     super().__init__()
+    self._text = text
     self._style = style
     self._min_width = min_width
     self._font = gui_app.font(FontWeight.MEDIUM)
-    self.set_text(text)
-
-  def set_text(self, text: str | Callable[[], str]):
-    self._text = text
-    self._text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self._text, AlertConstants.FONT_SIZE)
-    self._rect.width = max(self._text_size.x + 60 * 2, self._min_width)
-    self._rect.height = AlertConstants.BUTTON_HEIGHT
 
   @property
   def text(self) -> str:
     return self._text() if callable(self._text) else self._text
 
   def _render(self, _):
+    text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self.text, AlertConstants.FONT_SIZE)
+    self._rect.width = max(text_size.x + 60 * 2, self._min_width)
+    self._rect.height = AlertConstants.BUTTON_HEIGHT
+
     roundness = AlertConstants.BORDER_RADIUS / self._rect.height
     bg_color = AlertColors.BUTTON if self._style == ButtonStyle.LIGHT else AlertColors.SNOOZE_BG
     if self.is_pressed:
@@ -81,8 +79,8 @@ class ActionButton(Widget):
 
     # center text
     color = rl.WHITE if self._style == ButtonStyle.DARK else rl.BLACK
-    text_x = int(self._rect.x + (self._rect.width - self._text_size.x) // 2)
-    text_y = int(self._rect.y + (self._rect.height - self._text_size.y) // 2)
+    text_x = int(self._rect.x + (self._rect.width - text_size.x) // 2)
+    text_y = int(self._rect.y + (self._rect.height - text_size.y) // 2)
     rl.draw_text_ex(self._font, self.text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
 
 
