@@ -123,7 +123,7 @@ class DeviceLayout(Widget):
     gui_app.set_modal_overlay(dialog, callback=reset_calibration)
 
   def _update_calib_description(self):
-    desc = DESCRIPTIONS['reset_calibration']
+    desc = tr(DESCRIPTIONS['reset_calibration'])
 
     calib_bytes = self._params.get("CalibrationParams")
     if calib_bytes:
