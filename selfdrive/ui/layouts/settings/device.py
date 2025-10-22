@@ -82,11 +82,6 @@ class DeviceLayout(Widget):
     self._scroller.show_event()
 
   def _render(self, rect):
-
-    # t = time.monotonic()
-    # tr("Hello test string! {}".format(1))
-    # print("Translation took {} ms".format((time.monotonic() - t) * 1000))
-
     self._scroller.render(rect)
 
   def _show_language_dialog(self):
@@ -94,9 +89,7 @@ class DeviceLayout(Widget):
       if result == 1 and self._select_language_dialog:
         selected_language = multilang.languages[self._select_language_dialog.selection]
         multilang.change_language(selected_language)
-        print("Selected language:", selected_language)
         self._update_calib_description()
-
       self._select_language_dialog = None
 
     try:
