@@ -66,8 +66,8 @@ class SoftwareLayout(Widget):
       self._download_btn,
       self._install_btn,
       # TODO: implement branch switching
-      # button_item("Target Branch", "SELECT", callback=self._on_select_branch),
-      button_item("Uninstall", lambda: tr("UNINSTALL"), callback=self._on_uninstall),
+      # button_item(lambda: tr("Target Branch"), lambda: tr("SELECT"), callback=self._on_select_branch),
+      button_item(lambda: tr("Uninstall"), lambda: tr("UNINSTALL"), callback=self._on_uninstall),
     ]
     return items
 
