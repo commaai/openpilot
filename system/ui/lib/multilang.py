@@ -3,6 +3,7 @@ import json
 import gettext
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.swaglog import cloudlog
 
 SYSTEM_UI_DIR = os.path.join(BASEDIR, "system", "ui")
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
@@ -20,8 +21,8 @@ class Multilang:
 
   @property
   def language(self) -> str:
-    lang = str(self._params.get("LanguageSetting")).strip("main_")
-    if lang not in self.languages:
+    lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
+    if lang not in self.codes:
       lang = "en"
     return lang
 
@@ -34,7 +35,7 @@ class Multilang:
       self._translation = translation
       print(f"Loaded translations for language: {language}")
     except FileNotFoundError:
-      print(f"No translation file found for language: {language}, using default.")
+      cloudlog.error(f"No translation file found for language: {language}, using default.")
       gettext.install('app')
       self._translation = gettext.NullTranslations()
     return None
