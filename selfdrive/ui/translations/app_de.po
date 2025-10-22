@@ -1252,7 +1252,7 @@ msgstr "✓ ABONNIERT"
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:22
 #, fuzzy, python-format
 msgid "🔥 Firehose Mode 🔥"
-msgstr "Firehose‑Modus"
+msgstr "🔥 Firehose‑Modus 🔥"
 
 #, fuzzy, python-format
 #~ msgid " Firehose Mode "

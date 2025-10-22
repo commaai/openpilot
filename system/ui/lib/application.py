@@ -356,7 +356,7 @@ class GuiApplication:
     # Ensure Latin-1 Supplement and Latin Extended-A are covered (for de/fr/es/etc.)
     for cp in range(0x00A0, 0x0180):
       all_chars.add(chr(cp))
-    all_chars |= set("–✓×°§•")
+    all_chars |= set("–‑✓×°§•")
     all_chars = "".join(all_chars)
 
     codepoint_count = rl.ffi.new("int *", 1)
