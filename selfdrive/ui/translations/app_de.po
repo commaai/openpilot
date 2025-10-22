@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-21 21:22-0700\n"
+"POT-Creation-Date: 2025-10-21 21:36-0700\n"
 "PO-Revision-Date: 2025-10-20 16:35-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -59,7 +59,6 @@ msgid "5G"
 msgstr "5G"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:23
-#, fuzzy
 msgid ""
 "<b>WARNING: openpilot longitudinal control is in alpha for this car and will "
 "disable Automatic Emergency Braking (AEB).</b><br><br>On this car, openpilot "
@@ -211,7 +210,7 @@ msgid "CONNECT"
 msgstr "VERBINDUNG"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:369
-#, fuzzy, python-format
+#, python-format
 msgid "CONNECTING..."
 msgstr "VERBINDUNG"
 
@@ -234,7 +233,7 @@ msgid "Change Language"
 msgstr "Sprache ändern"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:125
-#, fuzzy, python-format
+#, python-format
 msgid "Changing this setting will restart openpilot if the car is powered on."
 msgstr ""
 " Durch Ändern dieser Einstellung wird openpilot neu gestartet, wenn das Auto "
@@ -358,7 +357,7 @@ msgid "Enable Lane Departure Warnings"
 msgstr "Spurverlassenswarnungen aktivieren"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:129
-#, fuzzy, python-format
+#, python-format
 msgid "Enable Roaming"
 msgstr "openpilot aktivieren"
 
@@ -368,7 +367,7 @@ msgid "Enable SSH"
 msgstr "SSH aktivieren"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:120
-#, fuzzy, python-format
+#, python-format
 msgid "Enable Tethering"
 msgstr "Spurverlassenswarnungen aktivieren"
 
@@ -525,7 +524,7 @@ msgid "HIGH"
 msgstr "HOCH"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:155
-#, fuzzy, python-format
+#, python-format
 msgid "Hidden Network"
 msgstr "Netzwerk"
 
@@ -601,12 +600,12 @@ msgid "No SSH keys found"
 msgstr "Keine SSH‑Schlüssel gefunden"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:126
-#, fuzzy, python-format
+#, python-format
 msgid "No SSH keys found for user '{}'"
 msgstr "Keine SSH‑Schlüssel für Benutzer '{username}' gefunden"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:320
-#, fuzzy, python-format
+#, python-format
 msgid "No release notes available."
 msgstr "Keine Versionshinweise verfügbar."
 
@@ -658,7 +657,7 @@ msgid "Pair Device"
 msgstr "Gerät koppeln"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:19
-#, fuzzy, python-format
+#, python-format
 msgid "Pair device"
 msgstr "Gerät koppeln"
 
@@ -678,7 +677,7 @@ msgstr ""
 "comma‑prime‑Angebot ein."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:91
-#, fuzzy, python-format
+#, python-format
 msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "Bitte mit WLAN verbinden, um das erste Koppeln abzuschließen"
 
@@ -732,7 +731,7 @@ msgid "Reboot"
 msgstr "Neustart"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:66
-#, fuzzy, python-format
+#, python-format
 msgid "Reboot Device"
 msgstr "Gerät neu starten"
 
@@ -1081,7 +1080,7 @@ msgid "openpilot Longitudinal Control (Alpha)"
 msgstr "openpilot Längsregelung (Alpha)"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:51
-#, fuzzy, python-format
+#, python-format
 msgid "openpilot Unavailable"
 msgstr "openpilot nicht verfügbar"
 
@@ -1114,7 +1113,7 @@ msgstr ""
 "oben rechts angezeigt."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:168
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
 "Resetting calibration will restart openpilot if the car is powered on."
@@ -1142,7 +1141,6 @@ msgid "openpilot longitudinal control may come in a future update."
 msgstr "Die openpilot‑Längsregelung könnte in einem zukünftigen Update kommen."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
-#, fuzzy
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."
@@ -1209,22 +1207,18 @@ msgstr[0] "vor {} Minute"
 msgstr[1] "vor {} Minuten"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:111
-#, fuzzy, python-format
+#, python-format
 msgid "{} segment of your driving is in the training dataset so far."
 msgid_plural "{} segments of your driving is in the training dataset so far."
 msgstr[0] "{} Segment Ihrer Fahrten ist bisher im Trainingsdatensatz."
 msgstr[1] "{} Segmente Ihrer Fahrten sind bisher im Trainingsdatensatz."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
-#, fuzzy, python-format
+#, python-format
 msgid "✓ SUBSCRIBED"
 msgstr "✓ ABONNIERT"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:22
-#, fuzzy, python-format
+#, python-format
 msgid "🔥 Firehose Mode 🔥"
 msgstr "🔥 Firehose‑Modus 🔥"
-
-#, fuzzy, python-format
-#~ msgid " Firehose Mode "
-#~ msgstr "Firehose‑Modus"

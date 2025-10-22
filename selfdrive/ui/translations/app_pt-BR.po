@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-21 21:22-0700\n"
+"POT-Creation-Date: 2025-10-21 21:36-0700\n"
 "PO-Revision-Date: 2025-10-21 00:00-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -59,7 +59,6 @@ msgid "5G"
 msgstr "5G"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:23
-#, fuzzy
 msgid ""
 "<b>WARNING: openpilot longitudinal control is in alpha for this car and will "
 "disable Automatic Emergency Braking (AEB).</b><br><br>On this car, openpilot "
@@ -208,7 +207,7 @@ msgid "CONNECT"
 msgstr "CONECTAR"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:369
-#, fuzzy, python-format
+#, python-format
 msgid "CONNECTING..."
 msgstr "CONECTAR"
 
@@ -231,7 +230,7 @@ msgid "Change Language"
 msgstr "Alterar Idioma"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:125
-#, fuzzy, python-format
+#, python-format
 msgid "Changing this setting will restart openpilot if the car is powered on."
 msgstr ""
 " Alterar esta configuração reiniciará o openpilot se o carro estiver ligado."
@@ -354,7 +353,7 @@ msgid "Enable Lane Departure Warnings"
 msgstr "Ativar alertas de saída de faixa"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:129
-#, fuzzy, python-format
+#, python-format
 msgid "Enable Roaming"
 msgstr "Ativar openpilot"
 
@@ -364,7 +363,7 @@ msgid "Enable SSH"
 msgstr "Ativar SSH"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:120
-#, fuzzy, python-format
+#, python-format
 msgid "Enable Tethering"
 msgstr "Ativar alertas de saída de faixa"
 
@@ -520,7 +519,7 @@ msgid "HIGH"
 msgstr "ALTO"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:155
-#, fuzzy, python-format
+#, python-format
 msgid "Hidden Network"
 msgstr "Rede"
 
@@ -596,12 +595,12 @@ msgid "No SSH keys found"
 msgstr "Nenhuma chave SSH encontrada"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:126
-#, fuzzy, python-format
+#, python-format
 msgid "No SSH keys found for user '{}'"
 msgstr "Nenhuma chave SSH encontrada para o usuário '{username}'"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:320
-#, fuzzy, python-format
+#, python-format
 msgid "No release notes available."
 msgstr "Sem notas de versão disponíveis."
 
@@ -1107,7 +1106,7 @@ msgstr ""
 "superior direito."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:168
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
 "Resetting calibration will restart openpilot if the car is powered on."
@@ -1201,7 +1200,7 @@ msgstr[0] "{} minuto atrás"
 msgstr[1] "{} minutos atrás"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:111
-#, fuzzy, python-format
+#, python-format
 msgid "{} segment of your driving is in the training dataset so far."
 msgid_plural "{} segments of your driving is in the training dataset so far."
 msgstr[0] ""
