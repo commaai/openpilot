@@ -16,10 +16,10 @@ class SetupWidget(Widget):
     super().__init__()
     self._open_settings_callback = None
     self._pairing_dialog: PairingDialog | None = None
-    self._pair_device_btn = Button(tr("Pair device"), self._show_pairing, button_style=ButtonStyle.PRIMARY)
-    self._open_settings_btn = Button(tr("Open"), lambda: self._open_settings_callback() if self._open_settings_callback else None,
+    self._pair_device_btn = Button(lambda: tr("Pair device"), self._show_pairing, button_style=ButtonStyle.PRIMARY)
+    self._open_settings_btn = Button(lambda: tr("Open"), lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
-    self._firehose_label = Label(tr("🔥 Firehose Mode 🔥"), font_weight=FontWeight.MEDIUM, font_size=64)
+    self._firehose_label = Label(lambda: tr("🔥 Firehose Mode 🔥"), font_weight=FontWeight.MEDIUM, font_size=64)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
