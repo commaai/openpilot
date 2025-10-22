@@ -4,7 +4,6 @@ import os
 import time
 import signal
 import sys
-import json
 import pyray as rl
 import threading
 from collections.abc import Callable
@@ -14,7 +13,6 @@ from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.lib.multilang import LANGUAGES_FILE, TRANSLATIONS_DIR
 from openpilot.system.hardware import HARDWARE, PC, TICI
 from openpilot.common.realtime import Ratekeeper
 

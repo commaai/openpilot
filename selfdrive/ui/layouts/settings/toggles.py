@@ -123,7 +123,7 @@ class TogglesLayout(Widget):
       additional_desc = ""
       if needs_restart and not locked:
         additional_desc = tr("Changing this setting will restart openpilot if the car is powered on.")
-      toggle.set_description(lambda original_desc=toggle.description: tr(original_desc) + "" + tr(additional_desc))
+      toggle.set_description(lambda og_desc=toggle.description, add_desc=additional_desc: tr(og_desc) + "" + tr(add_desc))
 
       # track for engaged state updates
       if locked:
