@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-20 22:32-0700\n"
+"POT-Creation-Date: 2025-10-21 19:42-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -786,155 +786,155 @@ msgid "RESET"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:59
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:185
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:188
 #, python-format
 msgid "Reboot"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:59
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:197
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:200
 #, python-format
 msgid "Power Off"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:63
 #, python-format
 msgid "Dongle ID"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:63
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:64
 #, python-format
 msgid "Serial"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:65
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:66
 #, python-format
 msgid "Driver Camera"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:65
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:66
 #, python-format
 msgid "PREVIEW"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:69
 #, python-format
 msgid "Review Training Guide"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:69
 #, python-format
 msgid "REVIEW"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:71
 #, python-format
 msgid "Regulatory"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:71
 #, python-format
 msgid "VIEW"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:69
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:72
 #, python-format
 msgid "Change Language"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:69
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:72
 #, python-format
 msgid "CHANGE"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:100
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:103
 #, python-format
 msgid "Select a language"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:113
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:116
 #, python-format
 msgid "Disengage to Reset Calibration"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:129
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
 #, python-format
 msgid "Are you sure you want to reset calibration?"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:129
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
 #, python-format
 msgid "Reset"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:143
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:146
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:143
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:146
 #, python-format
 msgid "down"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:143
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:146
 #, python-format
 msgid "up"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:144
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:147
 #, python-format
 msgid "left"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:144
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:147
 #, python-format
 msgid "right"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:156
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:159
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:158
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:168
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:171
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:170
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:173
 #, python-format
 msgid " Steering torque response calibration is complete."
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:178
 #, python-format
 msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
 "Resetting calibration will restart openpilot if the car is powered on."
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:182
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:185
 #, python-format
 msgid "Disengage to Reboot"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:185
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:188
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:194
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:197
 #, python-format
 msgid "Disengage to Power Off"
 msgstr ""
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:197
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:200
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr ""
