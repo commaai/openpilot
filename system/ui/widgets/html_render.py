@@ -31,6 +31,10 @@ class ElementType(Enum):
 TAG_NAMES = '|'.join([t.value for t in ElementType])
 START_TAG_RE = re.compile(f'<({TAG_NAMES})>')
 END_TAG_RE = re.compile(f'</({TAG_NAMES})>')
+COMMENT_RE = re.compile(r'<!--.*?-->', flags=re.DOTALL)
+DOCTYPE_RE = re.compile(r'<!DOCTYPE[^>]*>')
+HTML_BODY_TAGS_RE = re.compile(r'</?(?:html|head|body)[^>]*>')
+TOKEN_RE = re.compile(r'</[^>]+>|<[^>]+>|[^<\s]+')
 
 
 def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
@@ -104,14 +108,14 @@ class HtmlRenderer(Widget):
     self._cached_width = -1
 
     # Remove HTML comments
-    html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
+    html_content = COMMENT_RE.sub('', html_content)
 
     # Remove DOCTYPE, html, head, body tags but keep their content
-    html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
-    html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
+    html_content = DOCTYPE_RE.sub('', html_content)
+    html_content = HTML_BODY_TAGS_RE.sub('', html_content)
 
     # Parse HTML
-    tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
+    tokens = TOKEN_RE.findall(html_content)
 
     def close_tag():
       nonlocal current_content
