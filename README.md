@@ -32,10 +32,11 @@ git checkout feat/vinfast
 op setup
 ```
 
-- If using python you should create virtual environment and install pip (Optional)
+- If using python you should create virtual environment and install panda package (Optional)
 ```sh
 op venv
-python -m pip install -e .
+cd panda/
+python -m ensurepip && python -m pip install -e .
 ```
 
 ### Step 3: How to flash panda
@@ -47,7 +48,6 @@ python -m pip install -e .
 - Connect panda to USB Type A port and run script to verify tx_hook.
 
 ```sh
-cd panda/
 python examples/vinfast_tester.py
 ```
 
