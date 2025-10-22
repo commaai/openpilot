@@ -64,8 +64,4 @@ class Multilang:
 multilang = Multilang()
 multilang.setup()
 
-def tr(text: str) -> str:
-  return multilang.tr(text)
-
-def trn(singular: str, plural: str, n: int) -> str:
-  return multilang.trn(singular, plural, n)
+tr, trn = multilang.tr, multilang.trn
