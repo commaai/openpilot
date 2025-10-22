@@ -84,12 +84,12 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:161
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
-msgstr ""
+msgstr "<br><br>Kalibrierung der Lenkverzögerung abgeschlossen."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:159
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
-msgstr ""
+msgstr "<br><br>Kalibrierung der Lenkverzögerung zu {}% abgeschlossen."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:138
 #, python-format
@@ -108,23 +108,23 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:30
 #, python-format
 msgid "ADD"
-msgstr ""
+msgstr "HINZUFÜGEN"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:139
 #, python-format
 msgid "APN Setting"
-msgstr ""
+msgstr "APN‑Einstellung"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:110
 #, python-format
 msgid "Acknowledge Excessive Actuation"
-msgstr ""
+msgstr "Übermäßige Betätigung bestätigen"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:74
 #: /home/batman/openpilot/system/ui/widgets/network.py:95
 #, python-format
 msgid "Advanced"
-msgstr ""
+msgstr "Erweitert"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
@@ -226,12 +226,12 @@ msgstr "VERBINDUNG"
 #: /home/batman/openpilot/system/ui/widgets/network.py:318
 #, python-format
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:134
 #, python-format
 msgid "Cellular Metered"
-msgstr ""
+msgstr "Getaktete Mobilfunkverbindung"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:72
 #, python-format
@@ -333,7 +333,7 @@ msgstr "Fahrstil"
 #: /home/batman/openpilot/system/ui/widgets/network.py:139
 #, python-format
 msgid "EDIT"
-msgstr ""
+msgstr "BEARBEITEN"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:138
 #, python-format
@@ -402,23 +402,23 @@ msgstr ""
 #: /home/batman/openpilot/system/ui/widgets/network.py:204
 #, python-format
 msgid "Enter APN"
-msgstr ""
+msgstr "APN eingeben"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:241
 #, python-format
 msgid "Enter SSID"
-msgstr ""
+msgstr "SSID eingeben"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:254
 #, python-format
 msgid "Enter new tethering password"
-msgstr ""
+msgstr "Neues Tethering‑Passwort eingeben"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:237
 #: /home/batman/openpilot/system/ui/widgets/network.py:314
 #, python-format
 msgid "Enter password"
-msgstr ""
+msgstr "Passwort eingeben"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:89
 #, python-format
@@ -429,7 +429,7 @@ msgstr "Geben Sie Ihren GitHub‑Benutzernamen ein"
 #: /home/batman/openpilot/system/ui/widgets/list_view.py:153
 #, python-format
 msgid "Error"
-msgstr ""
+msgstr "Fehler"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:52
 #, python-format
@@ -448,7 +448,7 @@ msgstr ""
 #: /home/batman/openpilot/system/ui/widgets/network.py:373
 #, python-format
 msgid "FORGETTING..."
-msgstr ""
+msgstr "WIRD VERGESSEN..."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:44
 #, python-format
@@ -515,12 +515,12 @@ msgstr ""
 #: /home/batman/openpilot/system/ui/widgets/network.py:451
 #, python-format
 msgid "Forget"
-msgstr ""
+msgstr "Vergessen"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:319
 #, python-format
 msgid "Forget Wi-Fi Network \"{}\"?"
-msgstr ""
+msgstr "WLAN‑Netz „{}“ vergessen?"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:71
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:125
@@ -557,7 +557,7 @@ msgstr "INSTALLIEREN"
 #: /home/batman/openpilot/system/ui/widgets/network.py:150
 #, python-format
 msgid "IP Address"
-msgstr ""
+msgstr "IP‑Adresse"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:52
 #, python-format
@@ -601,7 +601,7 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:50
 #, python-format
 msgid "N/A"
-msgstr ""
+msgstr "k. A."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:142
 #, python-format
@@ -839,17 +839,17 @@ msgstr ""
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:53
 #, python-format
 msgid "SSH Keys"
-msgstr ""
+msgstr "SSH‑Schlüssel"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:310
 #, python-format
 msgid "Scanning Wi-Fi networks..."
-msgstr ""
+msgstr "WLAN‑Netzwerke werden gesucht..."
 
 #: /home/batman/openpilot/system/ui/widgets/option_dialog.py:35
 #, python-format
 msgid "Select"
-msgstr ""
+msgstr "Auswählen"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:103
 #, python-format
@@ -911,7 +911,7 @@ msgstr "TEMP"
 #: /home/batman/openpilot/system/ui/widgets/network.py:124
 #, python-format
 msgid "Tethering Password"
-msgstr ""
+msgstr "Tethering‑Passwort"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:64
 #, python-format
@@ -1014,12 +1014,12 @@ msgstr "WLAN"
 #: /home/batman/openpilot/system/ui/widgets/network.py:144
 #, python-format
 msgid "Wi-Fi Network Metered"
-msgstr ""
+msgstr "Getaktetes WLAN‑Netzwerk"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:314
 #, python-format
 msgid "Wrong password"
-msgstr ""
+msgstr "Falsches Passwort"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:145
 #, python-format
@@ -1050,7 +1050,7 @@ msgstr "comma prime"
 #: /home/batman/openpilot/system/ui/widgets/network.py:142
 #, python-format
 msgid "default"
-msgstr ""
+msgstr "Standard"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:146
 #, python-format
@@ -1066,7 +1066,7 @@ msgstr "Überprüfung auf Updates fehlgeschlagen"
 #: /home/batman/openpilot/system/ui/widgets/network.py:314
 #, python-format
 msgid "for \"{}\""
-msgstr ""
+msgstr "für „{}“"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1076,7 +1076,7 @@ msgstr "km/h"
 #: /home/batman/openpilot/system/ui/widgets/network.py:204
 #, python-format
 msgid "leave blank for automatic configuration"
-msgstr ""
+msgstr "für automatische Konfiguration leer lassen"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:147
 #, python-format
@@ -1086,7 +1086,7 @@ msgstr "links"
 #: /home/batman/openpilot/system/ui/widgets/network.py:142
 #, python-format
 msgid "metered"
-msgstr ""
+msgstr "getaktet"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1187,7 +1187,7 @@ msgstr "rechts"
 #: /home/batman/openpilot/system/ui/widgets/network.py:142
 #, python-format
 msgid "unmetered"
-msgstr ""
+msgstr "unbegrenzt"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:146
 #, python-format
