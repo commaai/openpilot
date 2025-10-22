@@ -171,11 +171,9 @@ class TextAction(ItemAction):
 
 
 class DualButtonAction(ItemAction):
-  def __init__(self, left_text: str, right_text: str, left_callback: Callable = None,
+  def __init__(self, left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable = None,
                right_callback: Callable = None, enabled: bool | Callable[[], bool] = True):
     super().__init__(width=0, enabled=enabled)  # Width 0 means use full width
-    self.left_text, self.right_text = left_text, right_text
-
     self.left_button = Button(left_text, click_callback=left_callback, button_style=ButtonStyle.NORMAL, text_padding=0)
     self.right_button = Button(right_text, click_callback=right_callback, button_style=ButtonStyle.DANGER, text_padding=0)
 
@@ -206,7 +204,7 @@ class DualButtonAction(ItemAction):
 
 
 class MultipleButtonAction(ItemAction):
-  def __init__(self, buttons: list[str], button_width: int, selected_index: int = 0, callback: Callable = None):
+  def __init__(self, buttons: list[str | Callable[[], str]], button_width: int, selected_index: int = 0, callback: Callable = None):
     super().__init__(width=len(buttons) * button_width + (len(buttons) - 1) * RIGHT_ITEM_PADDING, enabled=True)
     self.buttons = buttons
     self.button_width = button_width
@@ -225,7 +223,7 @@ class MultipleButtonAction(ItemAction):
     spacing = RIGHT_ITEM_PADDING
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
 
-    for i, text in enumerate(self.buttons):
+    for i, _text in enumerate(self.buttons):
       button_x = rect.x + i * (self.button_width + spacing)
       button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
 
@@ -249,6 +247,7 @@ class MultipleButtonAction(ItemAction):
       rl.draw_rectangle_rounded(button_rect, 1.0, 20, bg_color)
 
       # Draw text
+      text = _resolve_value(_text, "")
       text_size = measure_text_cached(self._font, text, 40)
       text_x = button_x + (self.button_width - text_size.x) / 2
       text_y = button_y + (BUTTON_HEIGHT - text_size.y) / 2
@@ -258,7 +257,7 @@ class MultipleButtonAction(ItemAction):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     spacing = RIGHT_ITEM_PADDING
     button_y = self._rect.y + (self._rect.height - BUTTON_HEIGHT) / 2
-    for i, _text in enumerate(self.buttons):
+    for i, _ in enumerate(self.buttons):
       button_x = self._rect.x + i * (self.button_width + spacing)
       button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
       if rl.check_collision_point_rec(mouse_pos, button_rect):
@@ -268,11 +267,11 @@ class MultipleButtonAction(ItemAction):
 
 
 class ListItem(Widget):
-  def __init__(self, title: str = "", icon: str | None = None, description: str | Callable[[], str] | None = None,
+  def __init__(self, title: str | Callable[[], str] = "", icon: str | None = None, description: str | Callable[[], str] | None = None,
                description_visible: bool = False, callback: Callable | None = None,
                action_item: ItemAction | None = None):
     super().__init__()
-    self.title = title
+    self._title = title
     self.set_icon(icon)
     self._description = description
     self.description_visible = description_visible
@@ -285,7 +284,7 @@ class ListItem(Widget):
 
     self._html_renderer = HtmlRenderer(text="", text_size={ElementType.P: ITEM_DESC_FONT_SIZE},
                                        text_color=ITEM_DESC_TEXT_COLOR)
-    self.set_description(self.description)
+    self._parse_description(self.description)
 
     # Cached properties for performance
     self._prev_description: str | None = self.description
@@ -332,7 +331,7 @@ class ListItem(Widget):
     # Detect changes if description is callback
     new_description = self.description
     if new_description != self._prev_description:
-      self.set_description(new_description)
+      self._parse_description(new_description)
 
   def _render(self, _):
     if not self.is_visible:
@@ -385,9 +384,14 @@ class ListItem(Widget):
 
   def set_description(self, description: str | Callable[[], str] | None):
     self._description = description
-    new_desc = self.description
+
+  def _parse_description(self, new_desc):
     self._html_renderer.parse_html_content(new_desc)
     self._prev_description = new_desc
+
+  @property
+  def title(self):
+    return _resolve_value(self._title, "")
 
   @property
   def description(self):
@@ -423,35 +427,35 @@ class ListItem(Widget):
 
 
 # Factory functions
-def simple_item(title: str, callback: Callable | None = None) -> ListItem:
+def simple_item(title: str | Callable[[], str], callback: Callable | None = None) -> ListItem:
   return ListItem(title=title, callback=callback)
 
 
-def toggle_item(title: str, description: str | Callable[[], str] | None = None, initial_state: bool = False,
+def toggle_item(title: str | Callable[[], str], description: str | Callable[[], str] | None = None, initial_state: bool = False,
                 callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ToggleAction(initial_state=initial_state, enabled=enabled, callback=callback)
   return ListItem(title=title, description=description, action_item=action, icon=icon)
 
 
-def button_item(title: str, button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
+def button_item(title: str | Callable[[], str], button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
                 callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ButtonAction(text=button_text, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
-def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
+def text_item(title: str | Callable[[], str], value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
               callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = TextAction(text=value, color=ITEM_TEXT_VALUE_COLOR, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
-def dual_button_item(left_text: str, right_text: str, left_callback: Callable = None, right_callback: Callable = None,
+def dual_button_item(left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable = None, right_callback: Callable = None,
                      description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = DualButtonAction(left_text, right_text, left_callback, right_callback, enabled)
   return ListItem(title="", description=description, action_item=action)
 
 
-def multiple_button_item(title: str, description: str, buttons: list[str], selected_index: int,
+def multiple_button_item(title: str | Callable[[], str], description: str | Callable[[], str], buttons: list[str | Callable[[], str]], selected_index: int,
                          button_width: int = BUTTON_WIDTH, callback: Callable = None, icon: str = ""):
   action = MultipleButtonAction(buttons, button_width, selected_index, callback=callback)
   return ListItem(title=title, description=description, icon=icon, action_item=action)

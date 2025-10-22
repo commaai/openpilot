@@ -7,7 +7,7 @@ from enum import Enum
 
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
@@ -26,9 +26,9 @@ VALUE_FONT_SIZE = 48
 
 
 class SshKeyActionState(Enum):
-  LOADING = tr("LOADING")
-  ADD = tr("ADD")
-  REMOVE = tr("REMOVE")
+  LOADING = tr_noop("LOADING")
+  ADD = tr_noop("ADD")
+  REMOVE = tr_noop("REMOVE")
 
 
 class SshKeyAction(ItemAction):
@@ -78,7 +78,7 @@ class SshKeyAction(ItemAction):
     # Draw button
     button_rect = rl.Rectangle(rect.x + rect.width - BUTTON_WIDTH, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._button.set_rect(button_rect)
-    self._button.set_text(self._state.value)
+    self._button.set_text(tr(self._state.value))
     self._button.set_enabled(self._state != SshKeyActionState.LOADING)
     self._button.render(button_rect)
     return False
@@ -127,5 +127,5 @@ class SshKeyAction(ItemAction):
       self._state = SshKeyActionState.ADD
 
 
-def ssh_key_item(title: str, description: str):
+def ssh_key_item(title: str | Callable[[], str], description: str | Callable[[], str]) -> ListItem:
   return ListItem(title=title, description=description, action_item=SshKeyAction())

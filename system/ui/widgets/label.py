@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from itertools import zip_longest
 from typing import Union
 import pyray as rl
@@ -10,6 +11,13 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 
 ICON_PADDING = 15
+
+
+# TODO: make this common
+def _resolve_value(value, default=""):
+  if callable(value):
+    return value()
+  return value if value is not None else default
 
 
 # TODO: This should be a Widget class
@@ -90,7 +98,7 @@ def gui_text_box(
 # Non-interactive text area. Can render emojis and an optional specified icon.
 class Label(Widget):
   def __init__(self,
-               text: str,
+               text: str | Callable[[], str],
                font_size: int = DEFAULT_TEXT_SIZE,
                font_weight: FontWeight = FontWeight.NORMAL,
                text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
@@ -130,7 +138,7 @@ class Label(Widget):
   def _update_text(self, text):
     self._emojis = []
     self._text_size = []
-    self._text_wrapped = wrap_text(self._font, text, self._font_size, round(self._rect.width - (self._text_padding * 2)))
+    self._text_wrapped = wrap_text(self._font, _resolve_value(text), self._font_size, round(self._rect.width - (self._text_padding * 2)))
     for t in self._text_wrapped:
       self._emojis.append(find_emoji(t))
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))

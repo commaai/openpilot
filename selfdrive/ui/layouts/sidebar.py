@@ -5,7 +5,7 @@ from collections.abc import Callable
 from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, FONT_SCALE
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -40,13 +40,13 @@ class Colors:
 
 
 NETWORK_TYPES = {
-  NetworkType.none: tr("--"),
-  NetworkType.wifi: tr("Wi-Fi"),
-  NetworkType.ethernet: tr("ETH"),
-  NetworkType.cell2G: tr("2G"),
-  NetworkType.cell3G: tr("3G"),
-  NetworkType.cell4G: tr("LTE"),
-  NetworkType.cell5G: tr("5G"),
+  NetworkType.none: tr_noop("--"),
+  NetworkType.wifi: tr_noop("Wi-Fi"),
+  NetworkType.ethernet: tr_noop("ETH"),
+  NetworkType.cell2G: tr_noop("2G"),
+  NetworkType.cell3G: tr_noop("3G"),
+  NetworkType.cell4G: tr_noop("LTE"),
+  NetworkType.cell5G: tr_noop("5G"),
 }
 
 
@@ -68,9 +68,9 @@ class Sidebar(Widget):
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
     self._net_strength = 0
 
-    self._temp_status = MetricData(tr("TEMP"), tr("GOOD"), Colors.GOOD)
-    self._panda_status = MetricData(tr("VEHICLE"), tr("ONLINE"), Colors.GOOD)
-    self._connect_status = MetricData(tr("CONNECT"), tr("OFFLINE"), Colors.WARNING)
+    self._temp_status = MetricData(tr_noop("TEMP"), tr_noop("GOOD"), Colors.GOOD)
+    self._panda_status = MetricData(tr_noop("VEHICLE"), tr_noop("ONLINE"), Colors.GOOD)
+    self._connect_status = MetricData(tr_noop("CONNECT"), tr_noop("OFFLINE"), Colors.WARNING)
     self._recording_audio = False
 
     self._home_img = gui_app.texture("images/button_home.png", HOME_BTN.width, HOME_BTN.height)
@@ -114,7 +114,7 @@ class Sidebar(Widget):
     self._update_panda_status()
 
   def _update_network_status(self, device_state):
-    self._net_type = NETWORK_TYPES.get(device_state.networkType.raw, tr("Unknown"))
+    self._net_type = NETWORK_TYPES.get(device_state.networkType.raw, tr_noop("Unknown"))
     strength = device_state.networkStrength
     self._net_strength = max(0, min(5, strength.raw + 1)) if strength > 0 else 0
 
@@ -122,26 +122,26 @@ class Sidebar(Widget):
     thermal_status = device_state.thermalStatus
 
     if thermal_status == ThermalStatus.green:
-      self._temp_status.update(tr("TEMP"), tr("GOOD"), Colors.GOOD)
+      self._temp_status.update(tr_noop("TEMP"), tr_noop("GOOD"), Colors.GOOD)
     elif thermal_status == ThermalStatus.yellow:
-      self._temp_status.update(tr("TEMP"), tr("OK"), Colors.WARNING)
+      self._temp_status.update(tr_noop("TEMP"), tr_noop("OK"), Colors.WARNING)
     else:
-      self._temp_status.update(tr("TEMP"), tr("HIGH"), Colors.DANGER)
+      self._temp_status.update(tr_noop("TEMP"), tr_noop("HIGH"), Colors.DANGER)
 
   def _update_connection_status(self, device_state):
     last_ping = device_state.lastAthenaPingTime
     if last_ping == 0:
-      self._connect_status.update(tr("CONNECT"), tr("OFFLINE"), Colors.WARNING)
+      self._connect_status.update(tr_noop("CONNECT"), tr_noop("OFFLINE"), Colors.WARNING)
     elif time.monotonic_ns() - last_ping < 80_000_000_000:  # 80 seconds in nanoseconds
-      self._connect_status.update(tr("CONNECT"), tr("ONLINE"), Colors.GOOD)
+      self._connect_status.update(tr_noop("CONNECT"), tr_noop("ONLINE"), Colors.GOOD)
     else:
-      self._connect_status.update(tr("CONNECT"), tr("ERROR"), Colors.DANGER)
+      self._connect_status.update(tr_noop("CONNECT"), tr_noop("ERROR"), Colors.DANGER)
 
   def _update_panda_status(self):
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
-      self._panda_status.update(tr("NO"), tr("PANDA"), Colors.DANGER)
+      self._panda_status.update(tr_noop("NO"), tr_noop("PANDA"), Colors.DANGER)
     else:
-      self._panda_status.update(tr("VEHICLE"), tr("ONLINE"), Colors.GOOD)
+      self._panda_status.update(tr_noop("VEHICLE"), tr_noop("ONLINE"), Colors.GOOD)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN):
@@ -197,7 +197,7 @@ class Sidebar(Widget):
     # Network type text
     text_y = rect.y + 247
     text_pos = rl.Vector2(rect.x + 58, text_y)
-    rl.draw_text_ex(self._font_regular, self._net_type, text_pos, FONT_SIZE, 0, Colors.WHITE)
+    rl.draw_text_ex(self._font_regular, tr(self._net_type), text_pos, FONT_SIZE, 0, Colors.WHITE)
 
   def _draw_metrics(self, rect: rl.Rectangle):
     metrics = [(self._temp_status, 338), (self._panda_status, 496), (self._connect_status, 654)]
@@ -217,7 +217,7 @@ class Sidebar(Widget):
     rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.3, 10, 2, Colors.METRIC_BORDER)
 
     # Draw label and value
-    labels = [metric.label, metric.value]
+    labels = [tr(metric.label), tr(metric.value)]
     text_y = metric_rect.y + (metric_rect.height / 2 - len(labels) * FONT_SIZE * FONT_SCALE)
     for text in labels:
       text_size = measure_text_cached(self._font_bold, text, FONT_SIZE)

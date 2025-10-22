@@ -8,20 +8,20 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
-from openpilot.system.ui.lib.multilang import tr, trn
+from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 
-TITLE = tr("Firehose Mode")
-DESCRIPTION = tr(
+TITLE = tr_noop("Firehose Mode")
+DESCRIPTION = tr_noop(
   "openpilot learns to drive by watching humans, like you, drive.\n\n"
   + "Firehose Mode allows you to maximize your training data uploads to improve "
   + "openpilot's driving models. More data means bigger models, which means better Experimental Mode."
 )
-INSTRUCTIONS = tr(
+INSTRUCTIONS = tr_noop(
   "For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.\n\n"
   + "Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card.\n\n\n"
   + "Frequently Asked Questions\n\n"
@@ -86,14 +86,15 @@ class FirehoseLayout(Widget):
     w = int(rect.width - 80)
 
     # Title (centered)
+    title_text = tr(TITLE)  # live translate
     title_font = gui_app.font(FontWeight.MEDIUM)
-    text_width = measure_text_cached(title_font, TITLE, 100).x
+    text_width = measure_text_cached(title_font, title_text, 100).x
     title_x = rect.x + (rect.width - text_width) / 2
-    rl.draw_text_ex(title_font, TITLE, rl.Vector2(title_x, y), 100, 0, rl.WHITE)
+    rl.draw_text_ex(title_font, title_text, rl.Vector2(title_x, y), 100, 0, rl.WHITE)
     y += 200
 
     # Description
-    y = self._draw_wrapped_text(x, y, w, DESCRIPTION, gui_app.font(FontWeight.NORMAL), 45, rl.WHITE)
+    y = self._draw_wrapped_text(x, y, w, tr(DESCRIPTION), gui_app.font(FontWeight.NORMAL), 45, rl.WHITE)
     y += 40 + 20
 
     # Separator
@@ -117,7 +118,7 @@ class FirehoseLayout(Widget):
     y += 30 + 20
 
     # Instructions
-    y = self._draw_wrapped_text(x, y, w, INSTRUCTIONS, gui_app.font(FontWeight.NORMAL), 40, self.LIGHT_GRAY)
+    y = self._draw_wrapped_text(x, y, w, tr(INSTRUCTIONS), gui_app.font(FontWeight.NORMAL), 40, self.LIGHT_GRAY)
 
     # bottom margin + remove effect of scroll offset
     return int(round(y - self.scroll_panel.offset + 40))

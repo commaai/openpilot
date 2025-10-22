@@ -8,7 +8,7 @@ from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
@@ -59,12 +59,12 @@ class SettingsLayout(Widget):
     wifi_manager.set_active(False)
 
     self._panels = {
-      PanelType.DEVICE: PanelInfo(tr("Device"), DeviceLayout()),
-      PanelType.NETWORK: PanelInfo(tr("Network"), NetworkUI(wifi_manager)),
-      PanelType.TOGGLES: PanelInfo(tr("Toggles"), TogglesLayout()),
-      PanelType.SOFTWARE: PanelInfo(tr("Software"), SoftwareLayout()),
-      PanelType.FIREHOSE: PanelInfo(tr("Firehose"), FirehoseLayout()),
-      PanelType.DEVELOPER: PanelInfo(tr("Developer"), DeveloperLayout()),
+      PanelType.DEVICE: PanelInfo(tr_noop("Device"), DeviceLayout()),
+      PanelType.NETWORK: PanelInfo(tr_noop("Network"), NetworkUI(wifi_manager)),
+      PanelType.TOGGLES: PanelInfo(tr_noop("Toggles"), TogglesLayout()),
+      PanelType.SOFTWARE: PanelInfo(tr_noop("Software"), SoftwareLayout()),
+      PanelType.FIREHOSE: PanelInfo(tr_noop("Firehose"), FirehoseLayout()),
+      PanelType.DEVELOPER: PanelInfo(tr_noop("Developer"), DeveloperLayout()),
     }
 
     self._font_medium = gui_app.font(FontWeight.MEDIUM)
@@ -116,11 +116,12 @@ class SettingsLayout(Widget):
       is_selected = panel_type == self._current_panel
       text_color = TEXT_SELECTED if is_selected else TEXT_NORMAL
       # Draw button text (right-aligned)
-      text_size = measure_text_cached(self._font_medium, panel_info.name, 65)
+      panel_name = tr(panel_info.name)
+      text_size = measure_text_cached(self._font_medium, panel_name, 65)
       text_pos = rl.Vector2(
         button_rect.x + button_rect.width - text_size.x, button_rect.y + (button_rect.height - text_size.y) / 2
       )
-      rl.draw_text_ex(self._font_medium, panel_info.name, text_pos, 65, 0, text_color)
+      rl.draw_text_ex(self._font_medium, panel_name, text_pos, 65, 0, text_color)
 
       # Store button rect for click detection
       panel_info.button_rect = button_rect
