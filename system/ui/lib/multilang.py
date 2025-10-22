@@ -29,7 +29,7 @@ class Multilang:
 
   @property
   def language(self) -> str:
-    lang = self._params.get("LanguageSetting").strip("main_")
+    lang = self._params.get("LanguageSetting")
     if lang not in SUPPORTED_LANGUAGES:
       lang = "en"
     return lang
