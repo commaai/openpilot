@@ -42,14 +42,16 @@ class DeviceLayout(Widget):
     serial = self._params.get("HardwareSerial") or tr("N/A")
 
     self._pair_device_btn = button_item(
-      tr("Pair Device"), tr("PAIR"),
+      tr("Pair Device"),
+      tr("PAIR"),
       tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
       callback=self._pair_device
     )
     self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
     self._reset_calib_btn = button_item(
-      tr("Reset Calibration"), tr("RESET"),
+      tr("Reset Calibration"),
+      tr("RESET"),
       tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
       callback=self._reset_calibration_prompt
     )
@@ -62,13 +64,15 @@ class DeviceLayout(Widget):
       text_item(tr("Serial"), serial),
       self._pair_device_btn,
       button_item(
-        tr("Driver Camera"), tr("PREVIEW"),
+        tr("Driver Camera"),
+        tr("PREVIEW"),
         tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
         callback=self._show_driver_camera, enabled=ui_state.is_offroad
       ),
       self._reset_calib_btn,
       button_item(
-        tr("Review Training Guide"), tr("REVIEW"),
+        tr("Review Training Guide"),
+        tr("REVIEW"),
         tr("Review the rules, features, and limitations of openpilot"),
         self._on_review_training_guide, enabled=ui_state.is_offroad
       ),
