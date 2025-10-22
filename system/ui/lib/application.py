@@ -356,14 +356,16 @@ class GuiApplication:
     all_chars |= set("–‑✓×°§•")
 
     # Load only the characters used in translations
-    for language in multilang.codes:
+    for language, code in multilang.languages.items():
+      all_chars |= set(language)
       try:
-        with open(os.path.join(TRANSLATIONS_DIR, f"app_{language}.po")) as f:
+        with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
           all_chars |= set(f.read())
       except FileNotFoundError:
-        cloudlog.warning(f"Translation file for language '{language}' not found when loading fonts.")
+        cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
 
     all_chars = "".join(all_chars)
+    cloudlog.debug(f"Loading fonts with {len(all_chars)} glyphs.")
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
