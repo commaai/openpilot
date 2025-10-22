@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-21 19:42-0700\n"
+"POT-Creation-Date: 2025-10-21 20:04-0700\n"
 "PO-Revision-Date: 2025-10-21 00:00-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -63,7 +63,7 @@ msgid "5G"
 msgstr "5G"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:23
-#, fuzzy, python-format
+#, fuzzy
 msgid ""
 "<b>WARNING: openpilot longitudinal control is in alpha for this car and will "
 "disable Automatic Emergency Braking (AEB).</b><br><br>On this car, openpilot "
@@ -96,7 +96,6 @@ msgid "ACTIVE"
 msgstr "ATIVO"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:15
-#, python-format
 msgid ""
 "ADB (Android Debug Bridge) allows connecting to your device over USB or over "
 "the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."
@@ -303,7 +302,6 @@ msgid "Disengage to Reset Calibration"
 msgstr "Desativar para Redefinir Calibração"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:32
-#, python-format
 msgid "Display speed in km/h instead of mph."
 msgstr "Exibir velocidade em km/h em vez de mph."
 
@@ -380,7 +378,6 @@ msgid "Enable Tethering"
 msgstr "Ativar alertas de saída de faixa"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:30
-#, python-format
 msgid "Enable driver monitoring even when openpilot is not engaged."
 msgstr ""
 "Ativar monitoramento do motorista mesmo quando o openpilot não está engajado."
@@ -718,7 +715,6 @@ msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr ""
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:26
-#, python-format
 msgid ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
 "visibility. (vehicle must be off)"
@@ -764,7 +760,6 @@ msgid "Reboot and Update"
 msgstr "Reiniciar e Atualizar"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:27
-#, python-format
 msgid ""
 "Receive alerts to steer back into the lane when your vehicle drifts over a "
 "detected lane line without a turn signal activated while driving over 31 mph "
@@ -784,7 +779,6 @@ msgid "Record and Upload Microphone Audio"
 msgstr "Gravar e Enviar Áudio do Microfone"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:33
-#, python-format
 msgid ""
 "Record and store microphone audio while driving. The audio will be included "
 "in the dashcam video in comma connect."
@@ -833,7 +827,6 @@ msgid "Review Training Guide"
 msgstr "Revisar Guia de Treinamento"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:28
-#, python-format
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "Revise as regras, recursos e limitações do openpilot"
 
@@ -878,7 +871,6 @@ msgid "Standard"
 msgstr "Padrão"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:22
-#, python-format
 msgid ""
 "Standard is recommended. In aggressive mode, openpilot will follow lead cars "
 "closer and be more aggressive with the gas and brake. In relaxed mode "
@@ -951,7 +943,6 @@ msgid "Upgrade Now"
 msgstr "Atualizar Agora"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:31
-#, python-format
 msgid ""
 "Upload data from the driver facing camera and help improve the driver "
 "monitoring algorithm."
@@ -965,7 +956,6 @@ msgid "Use Metric System"
 msgstr "Usar Sistema Métrico"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:17
-#, python-format
 msgid ""
 "Use the openpilot system for adaptive cruise control and lane keep driver "
 "assistance. Your attention is required at all times to use this feature."
@@ -991,7 +981,6 @@ msgid "Waiting to start"
 msgstr "Aguardando para iniciar"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:19
-#, python-format
 msgid ""
 "Warning: This grants SSH access to all public keys in your GitHub settings. "
 "Never enter a GitHub username other than your own. A comma employee will "
@@ -1008,7 +997,6 @@ msgid "Welcome to openpilot"
 msgstr "Bem-vindo ao openpilot"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:20
-#, python-format
 msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
 msgstr ""
 "Quando ativado, pressionar o pedal do acelerador desengajará o openpilot."
@@ -1176,7 +1164,6 @@ msgstr ""
 "o controle longitudinal do openpilot pode vir em uma atualização futura."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
-#, python-format
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."

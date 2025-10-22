@@ -5,7 +5,7 @@ from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_i
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -13,24 +13,24 @@ PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
 # Description constants
 DESCRIPTIONS = {
-  "OpenpilotEnabledToggle": tr(
+  "OpenpilotEnabledToggle": tr_noop(
     "Use the openpilot system for adaptive cruise control and lane keep driver assistance. " +
     "Your attention is required at all times to use this feature."
   ),
-  "DisengageOnAccelerator": tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
-  "LongitudinalPersonality": tr(
+  "DisengageOnAccelerator": tr_noop("When enabled, pressing the accelerator pedal will disengage openpilot."),
+  "LongitudinalPersonality": tr_noop(
     "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
     "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with " +
     "your steering wheel distance button."
   ),
-  "IsLdwEnabled": tr(
+  "IsLdwEnabled": tr_noop(
     "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
     "without a turn signal activated while driving over 31 mph (50 km/h)."
   ),
-  "AlwaysOnDM": tr("Enable driver monitoring even when openpilot is not engaged."),
-  'RecordFront': tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
-  "IsMetric": tr("Display speed in km/h instead of mph."),
-  "RecordAudio": tr("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
+  "AlwaysOnDM": tr_noop("Enable driver monitoring even when openpilot is not engaged."),
+  'RecordFront': tr_noop("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
+  "IsMetric": tr_noop("Display speed in km/h instead of mph."),
+  "RecordAudio": tr_noop("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
 }
 
 
