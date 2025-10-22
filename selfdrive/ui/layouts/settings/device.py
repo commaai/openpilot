@@ -1,5 +1,4 @@
 import os
-#import time
 import math
 
 from cereal import messaging, log
@@ -89,11 +88,8 @@ class DeviceLayout(Widget):
         self._update_calib_description()
       self._select_language_dialog = None
 
-    try:
-      self._select_language_dialog = MultiOptionDialog(tr("Select a language"), multilang.languages, multilang.codes[multilang.language])
-      gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
-    except FileNotFoundError:
-      pass
+    self._select_language_dialog = MultiOptionDialog(tr("Select a language"), multilang.languages, multilang.codes[multilang.language])
+    gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
 
   def _show_driver_camera(self):
     if not self._driver_camera:
