@@ -390,7 +390,7 @@ class ListItem(Widget):
   def set_description(self, description: str | Callable[[], str] | None):
     self._description = description
 
-  def _parse_description(self, new_desc):
+  def _parse_description(self, new_desc: str):
     self._html_renderer.parse_html_content(new_desc)
     self._update_rect_height()
     self._prev_description = new_desc
