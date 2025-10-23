@@ -1,5 +1,10 @@
 import pyray as rl
+<<<<<<< HEAD
 from openpilot.system.ui.lib.application import FontWeight, gui_app
+=======
+from openpilot.system.ui.lib.application import FontWeight
+from openpilot.system.ui.lib.multilang import tr
+>>>>>>> upstream/master
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
@@ -73,5 +78,8 @@ class MultiOptionDialog(Widget):
     self.select_button.set_enabled(self.selection != self.current)
     self.select_button.render(select_rect)
 
+<<<<<<< HEAD
     rl.draw_rectangle_lines_ex(options_rect, 1, rl.RED)
+=======
+>>>>>>> upstream/master
     return self._result

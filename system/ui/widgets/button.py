@@ -61,7 +61,7 @@ BUTTON_BACKGROUND_COLORS = {
 BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.NORMAL: rl.Color(74, 74, 74, 255),
   ButtonStyle.PRIMARY: rl.Color(48, 73, 244, 255),
-  ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
+  ButtonStyle.DANGER: rl.Color(204, 0, 0, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
   ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
   ButtonStyle.TRANSPARENT_WHITE_BORDER: rl.BLANK,
@@ -79,7 +79,7 @@ BUTTON_DISABLED_BACKGROUND_COLORS = {
 
 class Button(Widget):
   def __init__(self,
-               text: str,
+               text: str | Callable[[], str],
                click_callback: Callable[[], None] | None = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
                font_weight: FontWeight = FontWeight.MEDIUM,

@@ -5,6 +5,7 @@ from typing import Literal
 import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.inputbox import InputBox
@@ -44,13 +45,13 @@ KEYBOARD_LAYOUTS = {
   "numbers": [
     ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
     ["-", "/", ":", ";", "(", ")", "$", "&", "@", "\""],
-    [SYMBOL_KEY, ".", ",", "?", "!", "`", BACKSPACE_KEY],
+    [SYMBOL_KEY, "_", ",", "?", "!", "`", BACKSPACE_KEY],
     [ABC_KEY, SPACE_KEY, ".", ENTER_KEY],
   ],
   "specials": [
     ["[", "]", "{", "}", "#", "%", "^", "*", "+", "="],
     ["_", "\\", "|", "~", "<", ">", "€", "£", "¥", "•"],
-    [NUMERIC_KEY, ".", ",", "?", "!", "'", BACKSPACE_KEY],
+    [NUMERIC_KEY, "-", ",", "?", "!", "'", BACKSPACE_KEY],
     [ABC_KEY, SPACE_KEY, ".", ENTER_KEY],
   ],
 }
@@ -77,7 +78,7 @@ class Keyboard(Widget):
     self._backspace_last_repeat: float = 0.0
 
     self._render_return_status = -1
-    self._cancel_button = Button("Cancel", self._cancel_button_callback)
+    self._cancel_button = Button(lambda: tr("Cancel"), self._cancel_button_callback)
 
     self._eye_button = Button("", self._eye_button_callback, button_style=ButtonStyle.TRANSPARENT)
 
@@ -98,7 +99,7 @@ class Keyboard(Widget):
           if key in self._key_icons:
             texture = self._key_icons[key]
             self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
-                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
+                                         button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
           else:
             self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
     self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
