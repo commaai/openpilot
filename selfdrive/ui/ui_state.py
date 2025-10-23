@@ -78,7 +78,14 @@ class UIState:
     self._offroad_transition_callbacks: list[Callable[[], None]] = []
     self._engaged_transition_callbacks: list[Callable[[], None]] = []
 
+    self._toggle_values: dict[str, bool] = {}
     self.update_params()
+
+  def set_toggle_value(self, key: str, value: bool):
+    self._toggle_values[key] = value
+
+  def get_toggle_value(self, key: str) -> bool:
+    return self._toggle_values.get(key, False)
 
   def add_offroad_transition_callback(self, callback: Callable[[], None]):
     self._offroad_transition_callbacks.append(callback)
@@ -130,9 +137,8 @@ class UIState:
     self.started = self.sm["deviceState"].started and self.ignition
 
     # Update recording audio state
-    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
-
-    self.is_metric = self.params.get_bool("IsMetric")
+    self.recording_audio = self.get_toggle_value("RecordAudio") and self.started
+    self.is_metric = self.get_toggle_value("IsMetric")
 
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:

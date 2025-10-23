@@ -105,13 +105,17 @@ class TogglesLayout(Widget):
     self._toggles = {}
     self._locked_toggles = set()
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
+      value = self._params.get_bool(param)
       toggle = toggle_item(
         title,
         desc,
-        self._params.get_bool(param),
+        value,
         callback=lambda state, p=param: self._toggle_callback(state, p),
         icon=icon,
       )
+
+      # initialize ui_state toggle values
+      ui_state.set_toggle_value(param, value)
 
       try:
         locked = self._params.get_bool(param + "Lock")
@@ -237,6 +241,8 @@ class TogglesLayout(Widget):
       return
 
     self._params.put_bool(param, state)
+    ui_state.set_toggle_value(param, state)
+
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True)
 
