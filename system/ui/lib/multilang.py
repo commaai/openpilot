@@ -82,9 +82,8 @@ class Multilang:
     self.codes = {v: k for k, v in self.languages.items() if v in SUPPORTED_LANGUAGES}
 
     lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
-    if lang not in self.codes:
-      lang = "en"
-    self._language = lang
+    if lang in self.codes:
+      self._language = lang
 
 
 multilang = Multilang()
