@@ -54,6 +54,13 @@ class FontWeight(StrEnum):
   UNIFONT = "unifont.otf"
 
 
+def font_fallback(font: rl.Font) -> rl.Font:
+  """Fall back to unifont for languages that require it."""
+  if multilang.requires_unifont():
+    return gui_app.font(FontWeight.UNIFONT)
+  return font
+
+
 @dataclass
 class ModalOverlay:
   overlay: object = None
@@ -393,6 +400,7 @@ class GuiApplication:
       rl._orig_draw_text_ex = rl.draw_text_ex
 
     def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
+      font = font_fallback(font)
       return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
 
     rl.draw_text_ex = _draw_text_ex_scaled
