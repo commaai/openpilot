@@ -330,9 +330,7 @@ class ListItem(Widget):
       # do callback first in case receiver changes description
       if self.description_visible and self.description_opened_callback is not None:
         self.description_opened_callback()
-
-      content_width = int(self._rect.width - ITEM_PADDING * 2)
-      self._rect.height = self.get_item_height(self._font, content_width)
+      self._update_rect_height()
 
   def _update_state(self):
     # Detect changes if description is callback
@@ -394,6 +392,7 @@ class ListItem(Widget):
 
   def _parse_description(self, new_desc):
     self._html_renderer.parse_html_content(new_desc)
+    self._update_rect_height()
     self._prev_description = new_desc
 
   @property
@@ -413,6 +412,10 @@ class ListItem(Widget):
       description_height = self._html_renderer.get_total_height(max_width)
       height += description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
     return height
+
+  def _update_rect_height(self):
+    content_width = int(self._rect.width - ITEM_PADDING * 2)
+    self._rect.height = self.get_item_height(self._font, content_width)
 
   def get_right_item_rect(self, item_rect: rl.Rectangle) -> rl.Rectangle:
     if not self.action_item:
