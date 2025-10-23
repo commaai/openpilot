@@ -77,7 +77,7 @@ class Widget(abc.ABC):
 
   @property
   def _hit_rect(self):
-    # clip to parent rect
+    # restrict touches to within parent rect if set, useful inside Scroller
     if self._parent_rect is None:
       return self._rect
 
