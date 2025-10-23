@@ -3,6 +3,7 @@
 #include <QFormLayout>
 #include <QMenu>
 #include <QRadioButton>
+#include <QPushButton>
 #include <QToolBar>
 
 #include "tools/cabana/commands.h"
