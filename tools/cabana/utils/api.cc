@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 
+#include "common/params.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "tools/cabana/utils/util.h"
