@@ -76,7 +76,7 @@ class Widget(abc.ABC):
       self._update_layout_rects()
 
   @property
-  def _hit_rect(self):
+  def _hit_rect(self) -> rl.Rectangle:
     # restrict touches to within parent rect if set, useful inside Scroller
     if self._parent_rect is None:
       return self._rect
