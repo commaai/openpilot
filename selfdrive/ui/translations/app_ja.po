@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-22 16:34-0700\n"
+"POT-Creation-Date: 2025-10-22 18:57-0700\n"
 "PO-Revision-Date: 2025-10-22 16:32-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,17 +17,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:159
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:160
 #, python-format
 msgid " Steering torque response calibration is complete."
 msgstr " ステアリングトルク応答のキャリブレーションが完了しました。"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:157
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:158
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
 msgstr " ステアリングトルク応答のキャリブレーションは{}%完了しました。"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
 msgstr " デバイスは{:.1f}°{}、{:.1f}°{}の向きです。"
@@ -67,14 +67,20 @@ msgid ""
 "Experimental mode is recommended when enabling openpilot longitudinal "
 "control alpha. Changing this setting will restart openpilot if the car is "
 "powered on."
-msgstr "<b>警告: この車におけるopenpilotの縦制御はアルファ版であり、自動緊急ブレーキ（AEB）を無効にします。</b><br><br>この車では、openpilotは縦制御としてopenpilotではなく車両の内蔵ACCを既定で使用します。openpilotの縦制御に切り替えるにはこの設定を有効にしてください。openpilot縦制御アルファを有効にする場合は実験モードの有効化を推奨します。この設定を変更すると、車が起動中の場合はopenpilotが再起動します。"
+msgstr ""
+"<b>警告: この車におけるopenpilotの縦制御はアルファ版であり、自動緊急ブレーキ"
+"（AEB）を無効にします。</b><br><br>この車では、openpilotは縦制御として"
+"openpilotではなく車両の内蔵ACCを既定で使用します。openpilotの縦制御に切り替え"
+"るにはこの設定を有効にしてください。openpilot縦制御アルファを有効にする場合は"
+"実験モードの有効化を推奨します。この設定を変更すると、車が起動中の場合は"
+"openpilotが再起動します。"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:147
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:148
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
 msgstr "<br><br>ステアリング遅延のキャリブレーションが完了しました。"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:145
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:146
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr "<br><br>ステアリング遅延のキャリブレーションは{}%完了しました。"
@@ -88,7 +94,10 @@ msgstr "アクティブ"
 msgid ""
 "ADB (Android Debug Bridge) allows connecting to your device over USB or over "
 "the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."
-msgstr "ADB（Android Debug Bridge）を使用すると、USBまたはネットワーク経由でデバイスに接続できます。詳しくは https://docs.comma.ai/how-to/connect-to-comma を参照してください。"
+msgstr ""
+"ADB（Android Debug Bridge）を使用すると、USBまたはネットワーク経由でデバイス"
+"に接続できます。詳しくは https://docs.comma.ai/how-to/connect-to-comma を参照"
+"してください。"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:30
 msgid "ADD"
@@ -130,19 +139,21 @@ msgstr "常時ドライバーモニタリング"
 msgid ""
 "An alpha version of openpilot longitudinal control can be tested, along with "
 "Experimental mode, on non-release branches."
-msgstr "openpilotの縦制御アルファ版は、実験モードと併せて非リリースブランチでテストできます。"
+msgstr ""
+"openpilotの縦制御アルファ版は、実験モードと併せて非リリースブランチでテストで"
+"きます。"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "本当に電源をオフにしますか？"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "本当に再起動しますか？"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:118
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:119
 #, python-format
 msgid "Are you sure you want to reset calibration?"
 msgstr "本当にキャリブレーションをリセットしますか？"
@@ -174,8 +185,8 @@ msgid "CHANGE"
 msgstr "変更"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:50
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:111
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:122
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:107
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:118
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:147
 #, python-format
 msgid "CHECK"
@@ -201,7 +212,7 @@ msgid "CONNECTING..."
 msgstr "接続中..."
 
 #: /home/batman/openpilot/system/ui/widgets/confirm_dialog.py:23
-#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:34
+#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:35
 #: /home/batman/openpilot/system/ui/widgets/keyboard.py:81
 #: /home/batman/openpilot/system/ui/widgets/network.py:318
 #, python-format
@@ -238,7 +249,7 @@ msgstr "閉じる"
 msgid "Current Version"
 msgstr "現在のバージョン"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:114
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:110
 #, python-format
 msgid "DOWNLOAD"
 msgstr "ダウンロード"
@@ -266,17 +277,17 @@ msgstr "デバイス"
 msgid "Disengage on Accelerator Pedal"
 msgstr "アクセルで解除"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:183
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:184
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "解除して電源オフ"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:171
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:172
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "解除して再起動"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:102
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:103
 #, python-format
 msgid "Disengage to Reset Calibration"
 msgstr "解除してキャリブレーションをリセット"
@@ -369,7 +380,8 @@ msgstr "openpilotを有効化"
 msgid ""
 "Enable the openpilot longitudinal control (alpha) toggle to allow "
 "Experimental mode."
-msgstr "openpilot縦制御（アルファ）のトグルを有効にすると実験モードが使用できます。"
+msgstr ""
+"openpilot縦制御（アルファ）のトグルを有効にすると実験モードが使用できます。"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:204
 #, python-format
@@ -397,8 +409,8 @@ msgstr "パスワードを入力"
 msgid "Enter your GitHub username"
 msgstr "GitHubユーザー名を入力"
 
-#: /home/batman/openpilot/system/ui/widgets/list_view.py:115
-#: /home/batman/openpilot/system/ui/widgets/list_view.py:153
+#: /home/batman/openpilot/system/ui/widgets/list_view.py:123
+#: /home/batman/openpilot/system/ui/widgets/list_view.py:160
 #, python-format
 msgid "Error"
 msgstr "エラー"
@@ -413,7 +425,8 @@ msgstr "実験モード"
 msgid ""
 "Experimental mode is currently unavailable on this car since the car's stock "
 "ACC is used for longitudinal control."
-msgstr "この車では縦制御に純正ACCを使用するため、現在実験モードは利用できません。"
+msgstr ""
+"この車では縦制御に純正ACCを使用するため、現在実験モードは利用できません。"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:373
 #, python-format
@@ -455,7 +468,26 @@ msgid ""
 "\n"
 "Does it matter which software I run? Yes, only upstream openpilot (and "
 "particular forks) are able to be used for training."
-msgstr "最大限の効果を得るため、デバイスを屋内に持ち込み、週に一度は品質の良いUSB-CアダプターとWi‑Fiに接続してください。\n\nFirehoseモードは、ホットスポットや無制限SIMに接続していれば走行中でも動作します。\n\n\nよくある質問\n\n運転の仕方や場所は関係ありますか？ いいえ。普段どおりに運転してください。\n\nFirehoseモードではすべてのセグメントが取得されますか？ いいえ。セグメントの一部を選択的に取得します。\n\n良いUSB‑Cアダプターとは？ 高速なスマホまたはノートPC用充電器で問題ありません。\n\nどのソフトウェアを使うかは重要ですか？ はい。学習に使えるのは上流のopenpilot（および特定のフォーク）のみです。"
+msgstr ""
+"最大限の効果を得るため、デバイスを屋内に持ち込み、週に一度は品質の良いUSB-Cア"
+"ダプターとWi‑Fiに接続してください。\n"
+"\n"
+"Firehoseモードは、ホットスポットや無制限SIMに接続していれば走行中でも動作しま"
+"す。\n"
+"\n"
+"\n"
+"よくある質問\n"
+"\n"
+"運転の仕方や場所は関係ありますか？ いいえ。普段どおりに運転してください。\n"
+"\n"
+"Firehoseモードではすべてのセグメントが取得されますか？ いいえ。セグメントの一"
+"部を選択的に取得します。\n"
+"\n"
+"良いUSB‑Cアダプターとは？ 高速なスマホまたはノートPC用充電器で問題ありませ"
+"ん。\n"
+"\n"
+"どのソフトウェアを使うかは重要ですか？ はい。学習に使えるのは上流のopenpilot"
+"（および特定のフォーク）のみです。"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:318
 #: /home/batman/openpilot/system/ui/widgets/network.py:451
@@ -535,7 +567,8 @@ msgstr "最大"
 #, python-format
 msgid ""
 "Maximize your training data uploads to improve openpilot's driving models."
-msgstr "学習データのアップロードを最大化してopenpilotの運転モデルを改善しましょう。"
+msgstr ""
+"学習データのアップロードを最大化してopenpilotの運転モデルを改善しましょう。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:59
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:60
@@ -629,7 +662,9 @@ msgstr "デバイスをあなたの comma アカウントにペアリング"
 msgid ""
 "Pair your device with comma connect (connect.comma.ai) and claim your comma "
 "prime offer."
-msgstr "デバイスを comma connect（connect.comma.ai）とペアリングして、comma prime 特典を受け取りましょう。"
+msgstr ""
+"デバイスを comma connect（connect.comma.ai）とペアリングして、comma prime 特"
+"典を受け取りましょう。"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:91
 #, python-format
@@ -637,7 +672,7 @@ msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "初回ペアリングを完了するにはWi‑Fiに接続してください"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Power Off"
 msgstr "電源オフ"
@@ -656,7 +691,9 @@ msgstr "従量課金の携帯回線接続時は大きなデータのアップロ
 msgid ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
 "visibility. (vehicle must be off)"
-msgstr "ドライバー向きカメラのプレビューでモニタリングの視界を確認します。（車両は停止状態である必要があります）"
+msgstr ""
+"ドライバー向きカメラのプレビューでモニタリングの視界を確認します。（車両は停"
+"止状態である必要があります）"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:161
 #, python-format
@@ -678,7 +715,7 @@ msgid "REVIEW"
 msgstr "確認"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Reboot"
 msgstr "再起動"
@@ -698,7 +735,9 @@ msgid ""
 "Receive alerts to steer back into the lane when your vehicle drifts over a "
 "detected lane line without a turn signal activated while driving over 31 mph "
 "(50 km/h)."
-msgstr "時速31mph（50km/h）を超えて走行中にウインカーを出さず検出された車線を外れた場合、車線内に戻るよう警告を受け取ります。"
+msgstr ""
+"時速31mph（50km/h）を超えて走行中にウインカーを出さず検出された車線を外れた場"
+"合、車線内に戻るよう警告を受け取ります。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:76
 #, python-format
@@ -714,7 +753,9 @@ msgstr "マイク音声を記録してアップロード"
 msgid ""
 "Record and store microphone audio while driving. The audio will be included "
 "in the dashcam video in comma connect."
-msgstr "走行中にマイク音声を記録・保存します。音声は comma connect のドライブレコーダー動画に含まれます。"
+msgstr ""
+"走行中にマイク音声を記録・保存します。音声は comma connect のドライブレコー"
+"ダー動画に含まれます。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
 #, python-format
@@ -741,7 +782,7 @@ msgstr "リモートスナップショット"
 msgid "Request timed out"
 msgstr "リクエストがタイムアウトしました"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:118
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:119
 #, python-format
 msgid "Reset"
 msgstr "リセット"
@@ -760,7 +801,7 @@ msgstr "トレーニングガイドを確認"
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "openpilotのルール、機能、制限を確認"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:57
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "SELECT"
 msgstr "選択"
@@ -775,12 +816,12 @@ msgstr "SSH鍵"
 msgid "Scanning Wi-Fi networks..."
 msgstr "Wi‑Fiネットワークを検索中..."
 
-#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:35
+#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:36
 #, python-format
 msgid "Select"
 msgstr "選択"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:182
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:183
 #, python-format
 msgid "Select a branch"
 msgstr "ブランチを選択"
@@ -815,7 +856,10 @@ msgid ""
 "closer and be more aggressive with the gas and brake. In relaxed mode "
 "openpilot will stay further away from lead cars. On supported cars, you can "
 "cycle through these personalities with your steering wheel distance button."
-msgstr "標準を推奨します。アグレッシブでは前走車に近づき、加減速も積極的になります。リラックスでは前走車との距離を保ちます。対応車種ではステアリングの車間ボタンでこれらの性格を切り替えられます。"
+msgstr ""
+"標準を推奨します。アグレッシブでは前走車に近づき、加減速も積極的になります。"
+"リラックスでは前走車との距離を保ちます。対応車種ではステアリングの車間ボタン"
+"でこれらの性格を切り替えられます。"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:59
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:65
@@ -835,7 +879,7 @@ msgstr "すぐに手動介入してください"
 msgid "TEMP"
 msgstr "温度"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:57
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "Target Branch"
 msgstr "対象ブランチ"
@@ -849,7 +893,7 @@ msgstr "テザリングのパスワード"
 msgid "Toggles"
 msgstr "トグル"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:73
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:72
 #, python-format
 msgid "UNINSTALL"
 msgstr "アンインストール"
@@ -859,7 +903,7 @@ msgstr "アンインストール"
 msgid "UPDATE"
 msgstr "更新"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:73
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:72
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:163
 #, python-format
 msgid "Uninstall"
@@ -883,7 +927,9 @@ msgstr "今すぐアップグレード"
 msgid ""
 "Upload data from the driver facing camera and help improve the driver "
 "monitoring algorithm."
-msgstr "ドライバー向きカメラのデータをアップロードしてモニタリングアルゴリズムの改善に協力してください。"
+msgstr ""
+"ドライバー向きカメラのデータをアップロードしてモニタリングアルゴリズムの改善"
+"に協力してください。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:88
 #, python-format
@@ -894,7 +940,9 @@ msgstr "メートル法を使用"
 msgid ""
 "Use the openpilot system for adaptive cruise control and lane keep driver "
 "assistance. Your attention is required at all times to use this feature."
-msgstr "ACCと車線維持支援にopenpilotを使用します。本機能の使用中は常に注意が必要です。"
+msgstr ""
+"ACCと車線維持支援にopenpilotを使用します。本機能の使用中は常に注意が必要で"
+"す。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:72
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:144
@@ -916,7 +964,10 @@ msgid ""
 "Warning: This grants SSH access to all public keys in your GitHub settings. "
 "Never enter a GitHub username other than your own. A comma employee will "
 "NEVER ask you to add their GitHub username."
-msgstr "警告: これはGitHub設定内のすべての公開鍵にSSHアクセスを与えます。自分以外のGitHubユーザー名を絶対に入力しないでください。comma の従業員が自分のGitHubユーザー名を追加するよう求めることは決してありません。"
+msgstr ""
+"警告: これはGitHub設定内のすべての公開鍵にSSHアクセスを与えます。自分以外の"
+"GitHubユーザー名を絶対に入力しないでください。comma の従業員が自分のGitHub"
+"ユーザー名を追加するよう求めることは決してありません。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:111
 #, python-format
@@ -951,7 +1002,9 @@ msgstr "openpilotを使用するには、利用規約に同意する必要があ
 msgid ""
 "You must accept the Terms and Conditions to use openpilot. Read the latest "
 "terms at https://comma.ai/terms before continuing."
-msgstr "openpilotを使用するには利用規約に同意する必要があります。続行する前に https://comma.ai/terms の最新の規約をお読みください。"
+msgstr ""
+"openpilotを使用するには利用規約に同意する必要があります。続行する前に "
+"https://comma.ai/terms の最新の規約をお読みください。"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/driver_camera_dialog.py:34
 #, python-format
@@ -968,12 +1021,12 @@ msgstr "comma prime"
 msgid "default"
 msgstr "既定"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "down"
 msgstr "下"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:110
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:106
 #, python-format
 msgid "failed to check for update"
 msgstr "アップデートの確認に失敗しました"
@@ -994,7 +1047,7 @@ msgstr "km/h"
 msgid "leave blank for automatic configuration"
 msgstr "自動設定の場合は空欄のままにしてください"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:134
 #, python-format
 msgid "left"
 msgstr "左"
@@ -1043,14 +1096,26 @@ msgid ""
 "transition to the road-facing wide-angle camera at low speeds to better show "
 "some turns. The Experimental mode logo will also be shown in the top right "
 "corner."
-msgstr "openpilotは既定でチルモードで走行します。実験モードでは、チルモードにはまだ準備ができていないアルファレベルの機能が有効になります。実験的な機能は以下のとおりです:<br><h4>エンドツーエンド縦制御</h4><br>運転モデルがアクセルとブレーキを制御します。openpilotは人間のように走行し、赤信号や一時停止でも停止します。走行速度は運転モデルが決めるため、設定速度は上限としてのみ機能します。これはアルファ品質の機能であり、誤動作が発生する可能性があります。<br><h4>新しい運転ビジュアライゼーション</h4><br>低速時には道路向きの広角カメラに切り替わり、一部の曲がりをより良く表示します。画面右上には実験モードのロゴも表示されます。"
+msgstr ""
+"openpilotは既定でチルモードで走行します。実験モードでは、チルモードにはまだ準"
+"備ができていないアルファレベルの機能が有効になります。実験的な機能は以下のと"
+"おりです:<br><h4>エンドツーエンド縦制御</h4><br>運転モデルがアクセルとブレー"
+"キを制御します。openpilotは人間のように走行し、赤信号や一時停止でも停止しま"
+"す。走行速度は運転モデルが決めるため、設定速度は上限としてのみ機能します。こ"
+"れはアルファ品質の機能であり、誤動作が発生する可能性があります。<br><h4>新し"
+"い運転ビジュアライゼーション</h4><br>低速時には道路向きの広角カメラに切り替わ"
+"り、一部の曲がりをより良く表示します。画面右上には実験モードのロゴも表示され"
+"ます。"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:164
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:165
 #, python-format
 msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
 "Resetting calibration will restart openpilot if the car is powered on."
-msgstr "openpilotは継続的にキャリブレーションを行っており、リセットが必要になることは稀です。車が起動中にキャリブレーションをリセットするとopenpilotが再起動します。"
+msgstr ""
+"openpilotは継続的にキャリブレーションを行っており、リセットが必要になることは"
+"稀です。車が起動中にキャリブレーションをリセットするとopenpilotが再起動しま"
+"す。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:20
 msgid ""
@@ -1059,7 +1124,12 @@ msgid ""
 "Firehose Mode allows you to maximize your training data uploads to improve "
 "openpilot's driving models. More data means bigger models, which means "
 "better Experimental Mode."
-msgstr "openpilotは、あなたのような人間の運転を見て運転を学習します。\n\nFirehoseモードを使うと、学習データのアップロードを最大化してopenpilotの運転モデルを改善できます。データが増えるほどモデルが大きくなり、実験モードがより良くなります。"
+msgstr ""
+"openpilotは、あなたのような人間の運転を見て運転を学習します。\n"
+"\n"
+"Firehoseモードを使うと、学習データのアップロードを最大化してopenpilotの運転モ"
+"デルを改善できます。データが増えるほどモデルが大きくなり、実験モードがより良"
+"くなります。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:183
 #, python-format
@@ -1070,9 +1140,11 @@ msgstr "openpilotの縦制御は将来のアップデートで提供される可
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."
-msgstr "openpilotでは、デバイスの取り付け角度が左右±4°、上方向5°以内、下方向9°以内である必要があります。"
+msgstr ""
+"openpilotでは、デバイスの取り付け角度が左右±4°、上方向5°以内、下方向9°以内で"
+"ある必要があります。"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:134
 #, python-format
 msgid "right"
 msgstr "右"
@@ -1082,22 +1154,22 @@ msgstr "右"
 msgid "unmetered"
 msgstr "非従量"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "up"
 msgstr "上"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:121
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:117
 #, python-format
 msgid "up to date, last checked never"
 msgstr "最新です。最終確認: なし"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:119
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:115
 #, python-format
 msgid "up to date, last checked {}"
 msgstr "最新です。最終確認: {}"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:113
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:109
 #, python-format
 msgid "update available"
 msgstr "更新があります"
@@ -1130,7 +1202,8 @@ msgstr[0] "{}分前"
 #, python-format
 msgid "{} segment of your driving is in the training dataset so far."
 msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "これまでにあなたの走行の{}セグメントが学習データセットに含まれています。"
+msgstr[0] ""
+"これまでにあなたの走行の{}セグメントが学習データセットに含まれています。"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
 #, python-format

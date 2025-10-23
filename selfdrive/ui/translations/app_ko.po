@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-22 16:34-0700\n"
+"POT-Creation-Date: 2025-10-22 18:57-0700\n"
 "PO-Revision-Date: 2025-10-22 16:32-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,17 +17,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:159
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:160
 #, python-format
 msgid " Steering torque response calibration is complete."
 msgstr " 스티어링 토크 응답 보정이 완료되었습니다."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:157
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:158
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
 msgstr " 스티어링 토크 응답 보정이 {}% 완료되었습니다."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
 msgstr " 장치는 {:.1f}° {} 및 {:.1f}° {} 방향을 가리키고 있습니다."
@@ -67,14 +67,19 @@ msgid ""
 "Experimental mode is recommended when enabling openpilot longitudinal "
 "control alpha. Changing this setting will restart openpilot if the car is "
 "powered on."
-msgstr "<b>경고: 이 차량에서 openpilot의 종방향 제어는 알파 버전이며 자동 긴급 제동(AEB)을 비활성화합니다.</b><br><br>이 차량에서는 openpilot 종방향 제어 대신 차량 내장 ACC가 기본으로 사용됩니다. openpilot 종방향 제어로 전환하려면 이 설정을 켜세요. 종방향 제어 알파를 켤 때는 실험 모드 사용을 권장합니다. 차량 전원이 켜져 있는 경우 이 설정을 변경하면 openpilot이 재시작됩니다."
+msgstr ""
+"<b>경고: 이 차량에서 openpilot의 종방향 제어는 알파 버전이며 자동 긴급 제동"
+"(AEB)을 비활성화합니다.</b><br><br>이 차량에서는 openpilot 종방향 제어 대신 "
+"차량 내장 ACC가 기본으로 사용됩니다. openpilot 종방향 제어로 전환하려면 이 설"
+"정을 켜세요. 종방향 제어 알파를 켤 때는 실험 모드 사용을 권장합니다. 차량 전"
+"원이 켜져 있는 경우 이 설정을 변경하면 openpilot이 재시작됩니다."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:147
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:148
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
 msgstr "<br><br>스티어링 지연 보정이 완료되었습니다."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:145
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:146
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr "<br><br>스티어링 지연 보정이 {}% 완료되었습니다."
@@ -88,7 +93,10 @@ msgstr "활성"
 msgid ""
 "ADB (Android Debug Bridge) allows connecting to your device over USB or over "
 "the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."
-msgstr "ADB(Android Debug Bridge)를 사용하면 USB 또는 네트워크로 장치에 연결할 수 있습니다. 자세한 내용은 https://docs.comma.ai/how-to/connect-to-comma 를 참고하세요."
+msgstr ""
+"ADB(Android Debug Bridge)를 사용하면 USB 또는 네트워크로 장치에 연결할 수 있"
+"습니다. 자세한 내용은 https://docs.comma.ai/how-to/connect-to-comma 를 참고하"
+"세요."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:30
 msgid "ADD"
@@ -130,19 +138,21 @@ msgstr "항상 켜짐 운전자 모니터링"
 msgid ""
 "An alpha version of openpilot longitudinal control can be tested, along with "
 "Experimental mode, on non-release branches."
-msgstr "openpilot 종방향 제어 알파 버전은 실험 모드와 함께 비릴리스 브랜치에서 테스트할 수 있습니다."
+msgstr ""
+"openpilot 종방향 제어 알파 버전은 실험 모드와 함께 비릴리스 브랜치에서 테스트"
+"할 수 있습니다."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "정말 전원을 끄시겠습니까?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "정말 재시작하시겠습니까?"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:118
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:119
 #, python-format
 msgid "Are you sure you want to reset calibration?"
 msgstr "정말 보정을 재설정하시겠습니까?"
@@ -174,8 +184,8 @@ msgid "CHANGE"
 msgstr "변경"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:50
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:111
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:122
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:107
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:118
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:147
 #, python-format
 msgid "CHECK"
@@ -201,7 +211,7 @@ msgid "CONNECTING..."
 msgstr "연결 중..."
 
 #: /home/batman/openpilot/system/ui/widgets/confirm_dialog.py:23
-#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:34
+#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:35
 #: /home/batman/openpilot/system/ui/widgets/keyboard.py:81
 #: /home/batman/openpilot/system/ui/widgets/network.py:318
 #, python-format
@@ -238,7 +248,7 @@ msgstr "닫기"
 msgid "Current Version"
 msgstr "현재 버전"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:114
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:110
 #, python-format
 msgid "DOWNLOAD"
 msgstr "다운로드"
@@ -266,17 +276,17 @@ msgstr "장치"
 msgid "Disengage on Accelerator Pedal"
 msgstr "가속 페달로 해제"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:183
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:184
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "해제 후 전원 끄기"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:171
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:172
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "해제 후 재시작"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:102
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:103
 #, python-format
 msgid "Disengage to Reset Calibration"
 msgstr "해제 후 보정 재설정"
@@ -397,8 +407,8 @@ msgstr "비밀번호 입력"
 msgid "Enter your GitHub username"
 msgstr "GitHub 사용자 이름 입력"
 
-#: /home/batman/openpilot/system/ui/widgets/list_view.py:115
-#: /home/batman/openpilot/system/ui/widgets/list_view.py:153
+#: /home/batman/openpilot/system/ui/widgets/list_view.py:123
+#: /home/batman/openpilot/system/ui/widgets/list_view.py:160
 #, python-format
 msgid "Error"
 msgstr "오류"
@@ -413,7 +423,9 @@ msgstr "실험 모드"
 msgid ""
 "Experimental mode is currently unavailable on this car since the car's stock "
 "ACC is used for longitudinal control."
-msgstr "이 차량은 종방향 제어에 순정 ACC를 사용하므로 현재 실험 모드를 사용할 수 없습니다."
+msgstr ""
+"이 차량은 종방향 제어에 순정 ACC를 사용하므로 현재 실험 모드를 사용할 수 없습"
+"니다."
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:373
 #, python-format
@@ -455,7 +467,26 @@ msgid ""
 "\n"
 "Does it matter which software I run? Yes, only upstream openpilot (and "
 "particular forks) are able to be used for training."
-msgstr "최대의 효과를 위해 주 1회는 장치를 실내로 가져와 품질 좋은 USB‑C 어댑터와 Wi‑Fi에 연결하세요.\n\n핫스팟이나 무제한 SIM에 연결되어 있다면 주행 중에도 Firehose 모드가 동작합니다.\n\n\n자주 묻는 질문\n\n어떻게, 어디서 운전하는지가 중요한가요? 아니요. 평소처럼 운전하세요.\n\nFirehose 모드에서 모든 세그먼트가 가져가지나요? 아니요. 일부 세그먼트만 선택적으로 가져갑니다.\n\n좋은 USB‑C 어댑터는 무엇인가요? 빠른 휴대폰 또는 노트북 충전기면 충분합니다.\n\n어떤 소프트웨어를 실행하는지가 중요한가요? 예. 학습에는 업스트림 openpilot(및 일부 포크)만 사용할 수 있습니다."
+msgstr ""
+"최대의 효과를 위해 주 1회는 장치를 실내로 가져와 품질 좋은 USB‑C 어댑터와 "
+"Wi‑Fi에 연결하세요.\n"
+"\n"
+"핫스팟이나 무제한 SIM에 연결되어 있다면 주행 중에도 Firehose 모드가 동작합니"
+"다.\n"
+"\n"
+"\n"
+"자주 묻는 질문\n"
+"\n"
+"어떻게, 어디서 운전하는지가 중요한가요? 아니요. 평소처럼 운전하세요.\n"
+"\n"
+"Firehose 모드에서 모든 세그먼트가 가져가지나요? 아니요. 일부 세그먼트만 선택"
+"적으로 가져갑니다.\n"
+"\n"
+"좋은 USB‑C 어댑터는 무엇인가요? 빠른 휴대폰 또는 노트북 충전기면 충분합니"
+"다.\n"
+"\n"
+"어떤 소프트웨어를 실행하는지가 중요한가요? 예. 학습에는 업스트림 "
+"openpilot(및 일부 포크)만 사용할 수 있습니다."
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:318
 #: /home/batman/openpilot/system/ui/widgets/network.py:451
@@ -629,7 +660,9 @@ msgstr "장치를 귀하의 comma 계정에 페어링하세요"
 msgid ""
 "Pair your device with comma connect (connect.comma.ai) and claim your comma "
 "prime offer."
-msgstr "장치를 comma connect(connect.comma.ai)와 페어링하고 comma prime 혜택을 받으세요."
+msgstr ""
+"장치를 comma connect(connect.comma.ai)와 페어링하고 comma prime 혜택을 받으세"
+"요."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:91
 #, python-format
@@ -637,7 +670,7 @@ msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "초기 페어링을 완료하려면 Wi‑Fi에 연결하세요"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:186
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Power Off"
 msgstr "전원 끄기"
@@ -656,7 +689,9 @@ msgstr "종량제 셀룰러 연결 시 대용량 업로드 방지"
 msgid ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
 "visibility. (vehicle must be off)"
-msgstr "운전자 모니터링의 가시성을 확인하기 위해 운전자 카메라를 미리 봅니다. (차량은 꺼져 있어야 합니다)"
+msgstr ""
+"운전자 모니터링의 가시성을 확인하기 위해 운전자 카메라를 미리 봅니다. (차량"
+"은 꺼져 있어야 합니다)"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:161
 #, python-format
@@ -678,7 +713,7 @@ msgid "REVIEW"
 msgstr "검토"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:174
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Reboot"
 msgstr "재시작"
@@ -698,7 +733,9 @@ msgid ""
 "Receive alerts to steer back into the lane when your vehicle drifts over a "
 "detected lane line without a turn signal activated while driving over 31 mph "
 "(50 km/h)."
-msgstr "시속 31mph(50km/h) 이상에서 방향지시등 없이 감지된 차선 밖으로 벗어나면 차선으로 복귀하라는 경고를 받습니다."
+msgstr ""
+"시속 31mph(50km/h) 이상에서 방향지시등 없이 감지된 차선 밖으로 벗어나면 차선"
+"으로 복귀하라는 경고를 받습니다."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:76
 #, python-format
@@ -714,7 +751,9 @@ msgstr "마이크 오디오 기록 및 업로드"
 msgid ""
 "Record and store microphone audio while driving. The audio will be included "
 "in the dashcam video in comma connect."
-msgstr "주행 중 마이크 오디오를 기록하고 저장합니다. 오디오는 comma connect의 대시캠 영상에 포함됩니다."
+msgstr ""
+"주행 중 마이크 오디오를 기록하고 저장합니다. 오디오는 comma connect의 대시캠 "
+"영상에 포함됩니다."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
 #, python-format
@@ -741,7 +780,7 @@ msgstr "원격 스냅샷"
 msgid "Request timed out"
 msgstr "요청 시간이 초과되었습니다"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:118
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:119
 #, python-format
 msgid "Reset"
 msgstr "재설정"
@@ -760,7 +799,7 @@ msgstr "학습 가이드 검토"
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr "openpilot의 규칙, 기능 및 제한을 검토"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:57
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "SELECT"
 msgstr "선택"
@@ -775,12 +814,12 @@ msgstr "SSH 키"
 msgid "Scanning Wi-Fi networks..."
 msgstr "Wi‑Fi 네트워크 검색 중..."
 
-#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:35
+#: /home/batman/openpilot/system/ui/widgets/option_dialog.py:36
 #, python-format
 msgid "Select"
 msgstr "선택"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:182
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:183
 #, python-format
 msgid "Select a branch"
 msgstr "브랜치 선택"
@@ -815,7 +854,10 @@ msgid ""
 "closer and be more aggressive with the gas and brake. In relaxed mode "
 "openpilot will stay further away from lead cars. On supported cars, you can "
 "cycle through these personalities with your steering wheel distance button."
-msgstr "표준을 권장합니다. 공격적 모드에서는 앞차를 더 가깝게 따라가고 가감속이 더 적극적입니다. 편안함 모드에서는 앞차와 거리를 더 둡니다. 지원 차량에서는 스티어링의 차간 버튼으로 이 성향들을 전환할 수 있습니다."
+msgstr ""
+"표준을 권장합니다. 공격적 모드에서는 앞차를 더 가깝게 따라가고 가감속이 더 적"
+"극적입니다. 편안함 모드에서는 앞차와 거리를 더 둡니다. 지원 차량에서는 스티어"
+"링의 차간 버튼으로 이 성향들을 전환할 수 있습니다."
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:59
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:65
@@ -835,7 +877,7 @@ msgstr "즉시 수동 조작하세요"
 msgid "TEMP"
 msgstr "온도"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:57
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "Target Branch"
 msgstr "대상 브랜치"
@@ -849,7 +891,7 @@ msgstr "테더링 비밀번호"
 msgid "Toggles"
 msgstr "토글"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:73
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:72
 #, python-format
 msgid "UNINSTALL"
 msgstr "제거"
@@ -859,7 +901,7 @@ msgstr "제거"
 msgid "UPDATE"
 msgstr "업데이트"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:73
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:72
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:163
 #, python-format
 msgid "Uninstall"
@@ -883,7 +925,9 @@ msgstr "지금 업그레이드"
 msgid ""
 "Upload data from the driver facing camera and help improve the driver "
 "monitoring algorithm."
-msgstr "운전자 방향 카메라 데이터를 업로드하여 운전자 모니터링 알고리즘 개선에 도움을 주세요."
+msgstr ""
+"운전자 방향 카메라 데이터를 업로드하여 운전자 모니터링 알고리즘 개선에 도움"
+"을 주세요."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:88
 #, python-format
@@ -894,7 +938,9 @@ msgstr "미터법 사용"
 msgid ""
 "Use the openpilot system for adaptive cruise control and lane keep driver "
 "assistance. Your attention is required at all times to use this feature."
-msgstr "ACC 및 차선 유지 보조에 openpilot을 사용합니다. 이 기능을 사용할 때는 항상 주의가 필요합니다."
+msgstr ""
+"ACC 및 차선 유지 보조에 openpilot을 사용합니다. 이 기능을 사용할 때는 항상 주"
+"의가 필요합니다."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:72
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:144
@@ -916,7 +962,10 @@ msgid ""
 "Warning: This grants SSH access to all public keys in your GitHub settings. "
 "Never enter a GitHub username other than your own. A comma employee will "
 "NEVER ask you to add their GitHub username."
-msgstr "경고: 이는 GitHub 설정의 모든 공개 키에 SSH 액세스를 부여합니다. 자신의 것이 아닌 GitHub 사용자 이름을 절대 입력하지 마세요. comma 직원이 본인의 GitHub 사용자 이름 추가를 요구하는 일은 결코 없습니다."
+msgstr ""
+"경고: 이는 GitHub 설정의 모든 공개 키에 SSH 액세스를 부여합니다. 자신의 것이 "
+"아닌 GitHub 사용자 이름을 절대 입력하지 마세요. comma 직원이 본인의 GitHub 사"
+"용자 이름 추가를 요구하는 일은 결코 없습니다."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:111
 #, python-format
@@ -951,7 +1000,9 @@ msgstr "openpilot을 사용하려면 약관에 동의해야 합니다."
 msgid ""
 "You must accept the Terms and Conditions to use openpilot. Read the latest "
 "terms at https://comma.ai/terms before continuing."
-msgstr "openpilot을 사용하려면 약관에 동의해야 합니다. 계속하기 전에 https://comma.ai/terms 에서 최신 약관을 읽어주세요."
+msgstr ""
+"openpilot을 사용하려면 약관에 동의해야 합니다. 계속하기 전에 https://comma."
+"ai/terms 에서 최신 약관을 읽어주세요."
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/driver_camera_dialog.py:34
 #, python-format
@@ -968,12 +1019,12 @@ msgstr "comma prime"
 msgid "default"
 msgstr "기본값"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "down"
 msgstr "아래"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:110
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:106
 #, python-format
 msgid "failed to check for update"
 msgstr "업데이트 확인 실패"
@@ -994,7 +1045,7 @@ msgstr "km/h"
 msgid "leave blank for automatic configuration"
 msgstr "자동 구성을 사용하려면 비워 두세요"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:134
 #, python-format
 msgid "left"
 msgstr "왼쪽"
@@ -1043,14 +1094,24 @@ msgid ""
 "transition to the road-facing wide-angle camera at low speeds to better show "
 "some turns. The Experimental mode logo will also be shown in the top right "
 "corner."
-msgstr "openpilot은 기본적으로 칠 모드로 주행합니다. 실험 모드를 사용하면 칠 모드에 아직 준비되지 않은 알파 수준의 기능이 활성화됩니다. 실험 기능은 아래와 같습니다:<br><h4>엔드투엔드 종방향 제어</h4><br>주행 모델이 가속과 제동을 제어합니다. openpilot은 빨간 신호 및 정지 표지에서의 정지를 포함해 사람이 운전한다고 판단하는 방식으로 주행합니다. 주행 속도는 모델이 결정하므로 설정 속도는 상한으로만 동작합니다. 알파 품질 기능이므로 오작동이 발생할 수 있습니다.<br><h4>새로운 주행 시각화</h4><br>저속에서는 도로 방향의 광각 카메라로 전환되어 일부 회전을 더 잘 보여줍니다. 화면 오른쪽 위에는 실험 모드 로고도 표시됩니다."
+msgstr ""
+"openpilot은 기본적으로 칠 모드로 주행합니다. 실험 모드를 사용하면 칠 모드에 "
+"아직 준비되지 않은 알파 수준의 기능이 활성화됩니다. 실험 기능은 아래와 같습니"
+"다:<br><h4>엔드투엔드 종방향 제어</h4><br>주행 모델이 가속과 제동을 제어합니"
+"다. openpilot은 빨간 신호 및 정지 표지에서의 정지를 포함해 사람이 운전한다고 "
+"판단하는 방식으로 주행합니다. 주행 속도는 모델이 결정하므로 설정 속도는 상한"
+"으로만 동작합니다. 알파 품질 기능이므로 오작동이 발생할 수 있습니다.<br><h4>"
+"새로운 주행 시각화</h4><br>저속에서는 도로 방향의 광각 카메라로 전환되어 일"
+"부 회전을 더 잘 보여줍니다. 화면 오른쪽 위에는 실험 모드 로고도 표시됩니다."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:164
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:165
 #, python-format
 msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
 "Resetting calibration will restart openpilot if the car is powered on."
-msgstr "openpilot은 지속적으로 보정을 진행하므로 재설정이 필요한 경우는 드뭅니다. 차량 전원이 켜져 있을 때 보정을 재설정하면 openpilot이 재시작됩니다."
+msgstr ""
+"openpilot은 지속적으로 보정을 진행하므로 재설정이 필요한 경우는 드뭅니다. 차"
+"량 전원이 켜져 있을 때 보정을 재설정하면 openpilot이 재시작됩니다."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:20
 msgid ""
@@ -1059,7 +1120,12 @@ msgid ""
 "Firehose Mode allows you to maximize your training data uploads to improve "
 "openpilot's driving models. More data means bigger models, which means "
 "better Experimental Mode."
-msgstr "openpilot은 당신과 같은 사람의 운전을 보며 운전을 학습합니다.\n\nFirehose 모드는 학습 데이터 업로드를 최대화하여 openpilot의 주행 모델을 개선할 수 있게 해줍니다. 데이터가 많을수록 모델은 커지고, 실험 모드는 더 좋아집니다."
+msgstr ""
+"openpilot은 당신과 같은 사람의 운전을 보며 운전을 학습합니다.\n"
+"\n"
+"Firehose 모드는 학습 데이터 업로드를 최대화하여 openpilot의 주행 모델을 개선"
+"할 수 있게 해줍니다. 데이터가 많을수록 모델은 커지고, 실험 모드는 더 좋아집니"
+"다."
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:183
 #, python-format
@@ -1072,7 +1138,7 @@ msgid ""
 "within 5° up or 9° down."
 msgstr "openpilot은 장치를 좌우 4°, 위쪽 5°, 아래쪽 9° 이내로 장착해야 합니다."
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:134
 #, python-format
 msgid "right"
 msgstr "오른쪽"
@@ -1082,22 +1148,22 @@ msgstr "오른쪽"
 msgid "unmetered"
 msgstr "비종량제"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:132
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "up"
 msgstr "위"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:121
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:117
 #, python-format
 msgid "up to date, last checked never"
 msgstr "최신입니다. 마지막 확인: 없음"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:119
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:115
 #, python-format
 msgid "up to date, last checked {}"
 msgstr "최신입니다. 마지막 확인: {}"
 
-#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:113
+#: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:109
 #, python-format
 msgid "update available"
 msgstr "업데이트 가능"
