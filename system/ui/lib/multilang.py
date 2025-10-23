@@ -35,8 +35,6 @@ class Multilang:
 
   def requires_unifont(self) -> bool:
     """Certain languages require unifont to render their glyphs."""
-    print(self._language, UNIFONT_LANGUAGES)
-    print(f"Checking if language {self._language} requires unifont.", self._language in UNIFONT_LANGUAGES)
     return self._language in UNIFONT_LANGUAGES
 
   def setup(self):
@@ -45,7 +43,7 @@ class Multilang:
         translation = gettext.GNUTranslations(fh)
       translation.install()
       self._translation = translation
-      print(f"Loaded translations for language: {self._language}")
+      cloudlog.warning(f"Loaded translations for language: {self._language}")
     except FileNotFoundError:
       cloudlog.error(f"No translation file found for language: {self._language}, using default.")
       gettext.install('app')
@@ -67,8 +65,6 @@ class Multilang:
     with open(LANGUAGES_FILE, encoding='utf-8') as f:
       self.languages = json.load(f)
     self.codes = {v: k for k, v in self.languages.items()}
-
-    print(self.languages)
 
     lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
     if lang in self.codes:
