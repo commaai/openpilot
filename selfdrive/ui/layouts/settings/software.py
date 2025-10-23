@@ -180,7 +180,7 @@ class SoftwareLayout(Widget):
         branches.insert(0, b)
 
     current_target = ui_state.params.get("UpdaterTargetBranch") or ""
-    self._branch_dialog = MultiOptionDialog("Select a branch", branches, current_target)
+    self._branch_dialog = MultiOptionDialog(tr("Select a branch"), branches, current_target)
 
     def handle_selection(result):
       # Confirmed selection

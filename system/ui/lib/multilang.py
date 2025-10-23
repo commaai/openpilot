@@ -3,25 +3,27 @@ import json
 import gettext
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.swaglog import cloudlog
 
 SYSTEM_UI_DIR = os.path.join(BASEDIR, "system", "ui")
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 
-SUPPORTED_LANGUAGES = [
-  "en",
-  "de",
-  "fr",
-  "pt-BR",
-  "es",
-  "tr",
+UNIFONT_LANGUAGES = [
+  "ar",
+  "th",
+  "zh-CHT",
+  "zh-CHS",
+  "ko",
+  "ja",
 ]
 
 
 class Multilang:
   def __init__(self):
     self._params = Params()
+    self._language: str = "en"
     self.languages = {}
     self.codes = {}
     self._translation: gettext.NullTranslations | gettext.GNUTranslations = gettext.NullTranslations()
@@ -29,28 +31,28 @@ class Multilang:
 
   @property
   def language(self) -> str:
-    lang = str(self._params.get("LanguageSetting")).strip("main_")
-    if lang not in SUPPORTED_LANGUAGES:
-      lang = "en"
-    return lang
+    return self._language
+
+  def requires_unifont(self) -> bool:
+    """Certain languages require unifont to render their glyphs."""
+    return self._language in UNIFONT_LANGUAGES
 
   def setup(self):
-    language = self.language
     try:
-      with open(os.path.join(TRANSLATIONS_DIR, f'app_{language}.mo'), 'rb') as fh:
+      with open(os.path.join(TRANSLATIONS_DIR, f'app_{self._language}.mo'), 'rb') as fh:
         translation = gettext.GNUTranslations(fh)
       translation.install()
       self._translation = translation
-      print(f"Loaded translations for language: {language}")
+      cloudlog.warning(f"Loaded translations for language: {self._language}")
     except FileNotFoundError:
-      print(f"No translation file found for language: {language}, using default.")
+      cloudlog.error(f"No translation file found for language: {self._language}, using default.")
       gettext.install('app')
       self._translation = gettext.NullTranslations()
-    return None
 
   def change_language(self, language_code: str) -> None:
     # Reinstall gettext with the selected language
     self._params.put("LanguageSetting", language_code)
+    self._language = language_code
     self.setup()
 
   def tr(self, text: str) -> str:
@@ -61,8 +63,12 @@ class Multilang:
 
   def _load_languages(self):
     with open(LANGUAGES_FILE, encoding='utf-8') as f:
-      self.languages = {k: v for k, v in json.load(f).items() if v in SUPPORTED_LANGUAGES}
-    self.codes = {v: k for k, v in self.languages.items() if v in SUPPORTED_LANGUAGES}
+      self.languages = json.load(f)
+    self.codes = {v: k for k, v in self.languages.items()}
+
+    lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
+    if lang in self.codes:
+      self._language = lang
 
 
 multilang = Multilang()

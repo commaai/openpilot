@@ -1,4 +1,4 @@
-# Turkish translations for PACKAGE package.
+# Japanese translations for PACKAGE package.
 # Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Automatically generated, 2025.
@@ -8,29 +8,29 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-22 18:57-0700\n"
-"PO-Revision-Date: 2025-10-20 18:19-0700\n"
+"PO-Revision-Date: 2025-10-22 16:32-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
-"Language: tr\n"
+"Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:160
 #, python-format
 msgid " Steering torque response calibration is complete."
-msgstr " Direksiyon tork tepkisi kalibrasyonu tamamlandı."
+msgstr " ステアリングトルク応答のキャリブレーションが完了しました。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:158
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
-msgstr " Direksiyon tork tepkisi kalibrasyonu {}% tamamlandı."
+msgstr " ステアリングトルク応答のキャリブレーションは{}%完了しました。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
-msgstr " Cihazınız {:.1f}° {} ve {:.1f}° {} yönünde konumlandırılmış."
+msgstr " デバイスは{:.1f}°{}、{:.1f}°{}の向きです。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:43
 msgid "--"
@@ -39,12 +39,12 @@ msgstr "--"
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "1 year of drive storage"
-msgstr "1 yıl sürüş depolaması"
+msgstr "走行データを1年間保存"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "24/7 LTE connectivity"
-msgstr "7/24 LTE bağlantısı"
+msgstr "24時間365日のLTE接続"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:46
 msgid "2G"
@@ -68,71 +68,71 @@ msgid ""
 "control alpha. Changing this setting will restart openpilot if the car is "
 "powered on."
 msgstr ""
-"<b>UYARI: Bu araç için openpilot boylamsal kontrolü alfa aşamasındadır ve "
-"Otomatik Acil Frenlemeyi (AEB) devre dışı bırakacaktır.</b><br><br>Bu araçta "
-"openpilot, openpilot'un boylamsal kontrolü yerine aracın yerleşik ACC'sini "
-"varsayılan olarak kullanır. openpilot boylamsal kontrolüne geçmek için bunu "
-"etkinleştirin. openpilot boylamsal kontrol alfayı etkinleştirirken Deneysel "
-"modu etkinleştirmeniz önerilir."
+"<b>警告: この車におけるopenpilotの縦制御はアルファ版であり、自動緊急ブレーキ"
+"（AEB）を無効にします。</b><br><br>この車では、openpilotは縦制御として"
+"openpilotではなく車両の内蔵ACCを既定で使用します。openpilotの縦制御に切り替え"
+"るにはこの設定を有効にしてください。openpilot縦制御アルファを有効にする場合は"
+"実験モードの有効化を推奨します。この設定を変更すると、車が起動中の場合は"
+"openpilotが再起動します。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:148
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
-msgstr ""
+msgstr "<br><br>ステアリング遅延のキャリブレーションが完了しました。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:146
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
-msgstr ""
+msgstr "<br><br>ステアリング遅延のキャリブレーションは{}%完了しました。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:138
 #, python-format
 msgid "ACTIVE"
-msgstr "AKTİF"
+msgstr "アクティブ"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:15
 msgid ""
 "ADB (Android Debug Bridge) allows connecting to your device over USB or over "
 "the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."
 msgstr ""
-"ADB (Android Debug Bridge), cihazınıza USB veya ağ üzerinden bağlanmayı "
-"sağlar. Daha fazla bilgi için https://docs.comma.ai/how-to/connect-to-comma "
-"adresine bakın."
+"ADB（Android Debug Bridge）を使用すると、USBまたはネットワーク経由でデバイス"
+"に接続できます。詳しくは https://docs.comma.ai/how-to/connect-to-comma を参照"
+"してください。"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:30
 msgid "ADD"
-msgstr "EKLE"
+msgstr "追加"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:139
 #, python-format
 msgid "APN Setting"
-msgstr ""
+msgstr "APN設定"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:109
 #, python-format
 msgid "Acknowledge Excessive Actuation"
-msgstr "Aşırı Müdahaleyi Onayla"
+msgstr "過度な作動を承認"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:74
 #: /home/batman/openpilot/system/ui/widgets/network.py:95
 #, python-format
 msgid "Advanced"
-msgstr ""
+msgstr "詳細設定"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
 msgid "Aggressive"
-msgstr "Agresif"
+msgstr "アグレッシブ"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:116
 #, python-format
 msgid "Agree"
-msgstr "Kabul et"
+msgstr "同意する"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:70
 #, python-format
 msgid "Always-On Driver Monitoring"
-msgstr "Sürekli Sürücü İzleme"
+msgstr "常時ドライバーモニタリング"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:186
 #, python-format
@@ -140,50 +140,49 @@ msgid ""
 "An alpha version of openpilot longitudinal control can be tested, along with "
 "Experimental mode, on non-release branches."
 msgstr ""
-"openpilot boylamsal kontrolünün alfa sürümü, Deneysel mod ile birlikte, "
-"yayın dışı dallarda test edilebilir."
+"openpilotの縦制御アルファ版は、実験モードと併せて非リリースブランチでテストで"
+"きます。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Are you sure you want to power off?"
-msgstr "Kapatmak istediğinizden emin misiniz?"
+msgstr "本当に電源をオフにしますか？"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Are you sure you want to reboot?"
-msgstr "Yeniden başlatmak istediğinizden emin misiniz?"
+msgstr "本当に再起動しますか？"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:119
 #, python-format
 msgid "Are you sure you want to reset calibration?"
-msgstr "Kalibrasyonu sıfırlamak istediğinizden emin misiniz?"
+msgstr "本当にキャリブレーションをリセットしますか？"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:163
 #, python-format
 msgid "Are you sure you want to uninstall?"
-msgstr "Kaldırmak istediğinizden emin misiniz?"
+msgstr "本当にアンインストールしますか？"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:99
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:147
 #, python-format
 msgid "Back"
-msgstr "Geri"
+msgstr "戻る"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:38
 #, python-format
 msgid "Become a comma prime member at connect.comma.ai"
-msgstr "connect.comma.ai adresinde comma prime üyesi olun"
+msgstr "connect.comma.aiで comma prime に加入"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:130
 #, python-format
 msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
-msgstr ""
-"connect.comma.ai'yi ana ekranınıza ekleyerek bir uygulama gibi kullanın"
+msgstr "connect.comma.aiをホーム画面に追加してアプリのように使いましょう"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
 msgid "CHANGE"
-msgstr "DEĞİŞTİR"
+msgstr "変更"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:50
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:107
@@ -191,12 +190,12 @@ msgstr "DEĞİŞTİR"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:147
 #, python-format
 msgid "CHECK"
-msgstr "KONTROL ET"
+msgstr "確認"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/exp_mode_button.py:50
 #, python-format
 msgid "CHILL MODE ON"
-msgstr "CHILL MODU AÇIK"
+msgstr "チルモードON"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:155
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:73
@@ -205,12 +204,12 @@ msgstr "CHILL MODU AÇIK"
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:138
 #, python-format
 msgid "CONNECT"
-msgstr "BAĞLAN"
+msgstr "接続"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:369
 #, python-format
 msgid "CONNECTING..."
-msgstr "BAĞLAN"
+msgstr "接続中..."
 
 #: /home/batman/openpilot/system/ui/widgets/confirm_dialog.py:23
 #: /home/batman/openpilot/system/ui/widgets/option_dialog.py:35
@@ -218,115 +217,114 @@ msgstr "BAĞLAN"
 #: /home/batman/openpilot/system/ui/widgets/network.py:318
 #, python-format
 msgid "Cancel"
-msgstr ""
+msgstr "キャンセル"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:134
 #, python-format
 msgid "Cellular Metered"
-msgstr ""
+msgstr "従量課金の携帯回線"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:68
 #, python-format
 msgid "Change Language"
-msgstr "Dili Değiştir"
+msgstr "言語を変更"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:125
 #, python-format
 msgid "Changing this setting will restart openpilot if the car is powered on."
-msgstr ""
-" Bu ayarı değiştirmek, araç çalışıyorsa openpilot'u yeniden başlatacaktır."
+msgstr "車が起動中の場合、この設定を変更するとopenpilotが再起動します。"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:129
 #, python-format
 msgid "Click \"add new device\" and scan the QR code on the right"
-msgstr "\"yeni cihaz ekle\"ye tıklayın ve sağdaki QR kodunu tarayın"
+msgstr "\"add new device\"を押して右側のQRコードをスキャン"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:104
 #, python-format
 msgid "Close"
-msgstr "Kapat"
+msgstr "閉じる"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:49
 #, python-format
 msgid "Current Version"
-msgstr "Geçerli Sürüm"
+msgstr "現在のバージョン"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:110
 #, python-format
 msgid "DOWNLOAD"
-msgstr "İNDİR"
+msgstr "ダウンロード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:115
 #, python-format
 msgid "Decline"
-msgstr "Reddet"
+msgstr "拒否する"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:148
 #, python-format
 msgid "Decline, uninstall openpilot"
-msgstr "Reddet, openpilot'u kaldır"
+msgstr "拒否してopenpilotをアンインストール"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:67
 msgid "Developer"
-msgstr "Geliştirici"
+msgstr "開発者"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:62
 msgid "Device"
-msgstr "Cihaz"
+msgstr "デバイス"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:58
 #, python-format
 msgid "Disengage on Accelerator Pedal"
-msgstr "Gaz Pedalında Devreden Çık"
+msgstr "アクセルで解除"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:184
 #, python-format
 msgid "Disengage to Power Off"
-msgstr "Kapatmak için Devreden Çıkın"
+msgstr "解除して電源オフ"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:172
 #, python-format
 msgid "Disengage to Reboot"
-msgstr "Yeniden Başlatmak için Devreden Çıkın"
+msgstr "解除して再起動"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:103
 #, python-format
 msgid "Disengage to Reset Calibration"
-msgstr "Kalibrasyonu Sıfırlamak için Devreden Çıkın"
+msgstr "解除してキャリブレーションをリセット"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:32
 msgid "Display speed in km/h instead of mph."
-msgstr "Hızı mph yerine km/h olarak göster."
+msgstr "速度をmphではなくkm/hで表示します。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:59
 #, python-format
 msgid "Dongle ID"
-msgstr "Dongle ID"
+msgstr "ドングルID"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:50
 #, python-format
 msgid "Download"
-msgstr "İndir"
+msgstr "ダウンロード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
 msgid "Driver Camera"
-msgstr "Sürücü Kamerası"
+msgstr "ドライバーカメラ"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:96
 #, python-format
 msgid "Driving Personality"
-msgstr "Sürüş Kişiliği"
+msgstr "走行性格"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:123
 #: /home/batman/openpilot/system/ui/widgets/network.py:139
 #, python-format
 msgid "EDIT"
-msgstr ""
+msgstr "編集"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:138
 msgid "ERROR"
-msgstr "HATA"
+msgstr "エラー"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:45
 msgid "ETH"
@@ -335,47 +333,47 @@ msgstr "ETH"
 #: /home/batman/openpilot/selfdrive/ui/widgets/exp_mode_button.py:50
 #, python-format
 msgid "EXPERIMENTAL MODE ON"
-msgstr "DENEYSEL MOD AÇIK"
+msgstr "実験モードON"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:166
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:228
 #, python-format
 msgid "Enable"
-msgstr "Etkinleştir"
+msgstr "有効化"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:39
 #, python-format
 msgid "Enable ADB"
-msgstr "ADB'yi Etkinleştir"
+msgstr "ADBを有効化"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:64
 #, python-format
 msgid "Enable Lane Departure Warnings"
-msgstr "Şerit Terk Uyarılarını Etkinleştir"
+msgstr "車線逸脱警報を有効化"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:129
 #, python-format
 msgid "Enable Roaming"
-msgstr "openpilot'u etkinleştir"
+msgstr "ローミングを有効化"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:48
 #, python-format
 msgid "Enable SSH"
-msgstr "SSH'yi Etkinleştir"
+msgstr "SSHを有効化"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:120
 #, python-format
 msgid "Enable Tethering"
-msgstr "Şerit Terk Uyarılarını Etkinleştir"
+msgstr "テザリングを有効化"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:30
 msgid "Enable driver monitoring even when openpilot is not engaged."
-msgstr "openpilot devrede değilken bile sürücü izlemesini etkinleştir."
+msgstr "openpilotが未作動でもドライバーモニタリングを有効にします。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:46
 #, python-format
 msgid "Enable openpilot"
-msgstr "openpilot'u etkinleştir"
+msgstr "openpilotを有効化"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:189
 #, python-format
@@ -383,44 +381,44 @@ msgid ""
 "Enable the openpilot longitudinal control (alpha) toggle to allow "
 "Experimental mode."
 msgstr ""
-"Deneysel modu etkinleştirmek için openpilot boylamsal kontrolünü (alfa) açın."
+"openpilot縦制御（アルファ）のトグルを有効にすると実験モードが使用できます。"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:204
 #, python-format
 msgid "Enter APN"
-msgstr ""
+msgstr "APNを入力"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:241
 #, python-format
 msgid "Enter SSID"
-msgstr ""
+msgstr "SSIDを入力"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:254
 #, python-format
 msgid "Enter new tethering password"
-msgstr ""
+msgstr "新しいテザリングのパスワードを入力"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:237
 #: /home/batman/openpilot/system/ui/widgets/network.py:314
 #, python-format
 msgid "Enter password"
-msgstr ""
+msgstr "パスワードを入力"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:89
 #, python-format
 msgid "Enter your GitHub username"
-msgstr "GitHub kullanıcı adınızı girin"
+msgstr "GitHubユーザー名を入力"
 
 #: /home/batman/openpilot/system/ui/widgets/list_view.py:123
 #: /home/batman/openpilot/system/ui/widgets/list_view.py:160
 #, python-format
 msgid "Error"
-msgstr ""
+msgstr "エラー"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:52
 #, python-format
 msgid "Experimental Mode"
-msgstr "Deneysel Mod"
+msgstr "実験モード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:181
 #, python-format
@@ -428,18 +426,17 @@ msgid ""
 "Experimental mode is currently unavailable on this car since the car's stock "
 "ACC is used for longitudinal control."
 msgstr ""
-"Bu araçta boylamsal kontrol için stok ACC kullanıldığından şu anda Deneysel "
-"mod kullanılamıyor."
+"この車では縦制御に純正ACCを使用するため、現在実験モードは利用できません。"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:373
 #, python-format
 msgid "FORGETTING..."
-msgstr ""
+msgstr "削除中..."
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:44
 #, python-format
 msgid "Finish Setup"
-msgstr "Kurulumu Bitir"
+msgstr "セットアップを完了"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:66
 msgid "Firehose"
@@ -447,7 +444,7 @@ msgstr "Firehose"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:18
 msgid "Firehose Mode"
-msgstr "Firehose Modu"
+msgstr "Firehoseモード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:25
 msgid ""
@@ -472,86 +469,85 @@ msgid ""
 "Does it matter which software I run? Yes, only upstream openpilot (and "
 "particular forks) are able to be used for training."
 msgstr ""
-"Maksimum verim için cihazınızı içeri alın ve haftalık olarak iyi bir USB-C "
-"adaptörüne ve Wi‑Fi'a bağlayın.\n"
+"最大限の効果を得るため、デバイスを屋内に持ち込み、週に一度は品質の良いUSB-Cア"
+"ダプターとWi‑Fiに接続してください。\n"
 "\n"
-"Firehose Modu, bir hotspot'a veya sınırsız SIM karta bağlıyken sürüş "
-"sırasında da çalışabilir.\n"
+"Firehoseモードは、ホットスポットや無制限SIMに接続していれば走行中でも動作しま"
+"す。\n"
 "\n"
 "\n"
-"Sıkça Sorulan Sorular\n"
+"よくある質問\n"
 "\n"
-"Nasıl veya nerede sürdüğüm önemli mi? Hayır, normalde nasıl sürüyorsanız "
-"öyle sürün.\n"
+"運転の仕方や場所は関係ありますか？ いいえ。普段どおりに運転してください。\n"
 "\n"
-"Firehose Modu'nda tüm segmentlerim çekiliyor mu? Hayır, segmentlerinizin bir "
-"alt kümesini seçerek çekiyoruz.\n"
+"Firehoseモードではすべてのセグメントが取得されますか？ いいえ。セグメントの一"
+"部を選択的に取得します。\n"
 "\n"
-"İyi bir USB‑C adaptörü nedir? Hızlı bir telefon veya dizüstü şarj cihazı "
-"uygundur.\n"
+"良いUSB‑Cアダプターとは？ 高速なスマホまたはノートPC用充電器で問題ありませ"
+"ん。\n"
 "\n"
-"Hangi yazılımı çalıştırdığım önemli mi? Evet, yalnızca upstream openpilot "
-"(ve bazı fork'lar) eğitim için kullanılabilir."
+"どのソフトウェアを使うかは重要ですか？ はい。学習に使えるのは上流のopenpilot"
+"（および特定のフォーク）のみです。"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:318
 #: /home/batman/openpilot/system/ui/widgets/network.py:451
 #, python-format
 msgid "Forget"
-msgstr ""
+msgstr "削除"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:319
 #, python-format
 msgid "Forget Wi-Fi Network \"{}\"?"
-msgstr ""
+msgstr "Wi‑Fiネットワーク「{}」を削除しますか？"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:71
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:125
 msgid "GOOD"
-msgstr "İYİ"
+msgstr "良好"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:128
 #, python-format
 msgid "Go to https://connect.comma.ai on your phone"
-msgstr "Telefonunuzda https://connect.comma.ai adresine gidin"
+msgstr "スマートフォンで https://connect.comma.ai にアクセス"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:129
 msgid "HIGH"
-msgstr "YÜKSEK"
+msgstr "高温"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:155
 #, python-format
 msgid "Hidden Network"
-msgstr "Ağ"
+msgstr "非公開ネットワーク"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:140
 #, python-format
 msgid "INACTIVE: connect to an unmetered network"
-msgstr "PASİF: sınırsız bir ağa bağlanın"
+msgstr "非アクティブ：非従量のネットワークに接続してください"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:53
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:136
 #, python-format
 msgid "INSTALL"
-msgstr "YÜKLE"
+msgstr "インストール"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:150
 #, python-format
 msgid "IP Address"
-msgstr ""
+msgstr "IPアドレス"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:53
 #, python-format
 msgid "Install Update"
-msgstr "Güncellemeyi Yükle"
+msgstr "アップデートをインストール"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:56
 #, python-format
 msgid "Joystick Debug Mode"
-msgstr "Joystick Hata Ayıklama Modu"
+msgstr "ジョイスティックデバッグモード"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:29
 msgid "LOADING"
-msgstr "YÜKLENİYOR"
+msgstr "読み込み中"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:48
 msgid "LTE"
@@ -560,54 +556,53 @@ msgstr "LTE"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:64
 #, python-format
 msgid "Longitudinal Maneuver Mode"
-msgstr "Boylamsal Manevra Modu"
+msgstr "縦制御マヌーバーモード"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:148
 #, python-format
 msgid "MAX"
-msgstr "MAKS"
+msgstr "最大"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:75
 #, python-format
 msgid ""
 "Maximize your training data uploads to improve openpilot's driving models."
 msgstr ""
-"openpilot'un sürüş modellerini iyileştirmek için eğitim veri yüklemelerinizi "
-"en üst düzeye çıkarın."
+"学習データのアップロードを最大化してopenpilotの運転モデルを改善しましょう。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:59
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:60
 #, python-format
 msgid "N/A"
-msgstr ""
+msgstr "該当なし"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:142
 msgid "NO"
-msgstr "HAYIR"
+msgstr "いいえ"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:63
 msgid "Network"
-msgstr "Ağ"
+msgstr "ネットワーク"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:114
 #, python-format
 msgid "No SSH keys found"
-msgstr "SSH anahtarı bulunamadı"
+msgstr "SSH鍵が見つかりません"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:126
 #, python-format
 msgid "No SSH keys found for user '{}'"
-msgstr "'{username}' için SSH anahtarı bulunamadı"
+msgstr "ユーザー'{}'のSSH鍵が見つかりません"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:320
 #, python-format
 msgid "No release notes available."
-msgstr "Sürüm notu mevcut değil."
+msgstr "リリースノートはありません。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:73
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:134
 msgid "OFFLINE"
-msgstr "ÇEVRİMDIŞI"
+msgstr "オフライン"
 
 #: /home/batman/openpilot/system/ui/widgets/html_render.py:263
 #: /home/batman/openpilot/system/ui/widgets/confirm_dialog.py:93
@@ -620,17 +615,17 @@ msgstr "OK"
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:136
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:144
 msgid "ONLINE"
-msgstr "ÇEVRİMİÇİ"
+msgstr "オンライン"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:20
 #, python-format
 msgid "Open"
-msgstr "Aç"
+msgstr "開く"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:48
 #, python-format
 msgid "PAIR"
-msgstr "EŞLE"
+msgstr "ペアリング"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:142
 msgid "PANDA"
@@ -639,27 +634,27 @@ msgstr "PANDA"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:62
 #, python-format
 msgid "PREVIEW"
-msgstr "ÖNİZLEME"
+msgstr "プレビュー"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:44
 #, python-format
 msgid "PRIME FEATURES:"
-msgstr "PRIME ÖZELLİKLERİ:"
+msgstr "prime の特典:"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:48
 #, python-format
 msgid "Pair Device"
-msgstr "Cihazı Eşle"
+msgstr "デバイスをペアリング"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:19
 #, python-format
 msgid "Pair device"
-msgstr "Cihazı eşle"
+msgstr "デバイスをペアリング"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:103
 #, python-format
 msgid "Pair your device to your comma account"
-msgstr "Cihazınızı comma hesabınızla eşleştirin"
+msgstr "デバイスをあなたの comma アカウントにペアリング"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:48
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:24
@@ -668,72 +663,72 @@ msgid ""
 "Pair your device with comma connect (connect.comma.ai) and claim your comma "
 "prime offer."
 msgstr ""
-"Cihazınızı comma connect (connect.comma.ai) ile eşleştirin ve comma prime "
-"teklifinizi alın."
+"デバイスを comma connect（connect.comma.ai）とペアリングして、comma prime 特"
+"典を受け取りましょう。"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:91
 #, python-format
 msgid "Please connect to Wi-Fi to complete initial pairing"
-msgstr "İlk eşleştirmeyi tamamlamak için lütfen Wi‑Fi'a bağlanın"
+msgstr "初回ペアリングを完了するにはWi‑Fiに接続してください"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:187
 #, python-format
 msgid "Power Off"
-msgstr "Kapat"
+msgstr "電源オフ"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:144
 #, python-format
 msgid "Prevent large data uploads when on a metered Wi-Fi connection"
-msgstr ""
+msgstr "従量課金のWi‑Fi接続時は大きなデータのアップロードを抑制"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:135
 #, python-format
 msgid "Prevent large data uploads when on a metered cellular connection"
-msgstr ""
+msgstr "従量課金の携帯回線接続時は大きなデータのアップロードを抑制"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:25
 msgid ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
 "visibility. (vehicle must be off)"
 msgstr ""
-"Sürücü izleme görünürlüğünün iyi olduğundan emin olmak için sürücüye bakan "
-"kamerayı önizleyin. (araç kapalı olmalıdır)"
+"ドライバー向きカメラのプレビューでモニタリングの視界を確認します。（車両は停"
+"止状態である必要があります）"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/pairing_dialog.py:161
 #, python-format
 msgid "QR Code Error"
-msgstr "QR Kod Hatası"
+msgstr "QRコードエラー"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:31
 msgid "REMOVE"
-msgstr "KALDIR"
+msgstr "削除"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:51
 #, python-format
 msgid "RESET"
-msgstr "SIFIRLA"
+msgstr "リセット"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:65
 #, python-format
 msgid "REVIEW"
-msgstr "GÖZDEN GEÇİR"
+msgstr "確認"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:55
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Reboot"
-msgstr "Yeniden Başlat"
+msgstr "再起動"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:66
 #, python-format
 msgid "Reboot Device"
-msgstr "Cihazı Yeniden Başlat"
+msgstr "デバイスを再起動"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:112
 #, python-format
 msgid "Reboot and Update"
-msgstr "Yeniden Başlat ve Güncelle"
+msgstr "再起動して更新"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:27
 msgid ""
@@ -741,120 +736,119 @@ msgid ""
 "detected lane line without a turn signal activated while driving over 31 mph "
 "(50 km/h)."
 msgstr ""
-"Araç 31 mph (50 km/h) üzerindeyken sinyal verilmeden algılanan şerit "
-"çizgisini aştığınızda şeride geri dönmeniz için uyarılar alın."
+"時速31mph（50km/h）を超えて走行中にウインカーを出さず検出された車線を外れた場"
+"合、車線内に戻るよう警告を受け取ります。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:76
 #, python-format
 msgid "Record and Upload Driver Camera"
-msgstr "Sürücü Kamerasını Kaydet ve Yükle"
+msgstr "ドライバーカメラを記録してアップロード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:82
 #, python-format
 msgid "Record and Upload Microphone Audio"
-msgstr "Mikrofon Sesini Kaydet ve Yükle"
+msgstr "マイク音声を記録してアップロード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:33
 msgid ""
 "Record and store microphone audio while driving. The audio will be included "
 "in the dashcam video in comma connect."
 msgstr ""
-"Sürüş sırasında mikrofon sesini kaydedip saklayın. Ses, comma connect'teki "
-"ön kamera videosuna dahil edilecektir."
+"走行中にマイク音声を記録・保存します。音声は comma connect のドライブレコー"
+"ダー動画に含まれます。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
 #, python-format
 msgid "Regulatory"
-msgstr "Mevzuat"
+msgstr "規制情報"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
 msgid "Relaxed"
-msgstr "Rahat"
+msgstr "リラックス"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "Remote access"
-msgstr "Uzaktan erişim"
+msgstr "リモートアクセス"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "Remote snapshots"
-msgstr "Uzaktan anlık görüntüler"
+msgstr "リモートスナップショット"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/ssh_key.py:123
 #, python-format
 msgid "Request timed out"
-msgstr "İstek zaman aşımına uğradı"
+msgstr "リクエストがタイムアウトしました"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:119
 #, python-format
 msgid "Reset"
-msgstr "Sıfırla"
+msgstr "リセット"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:51
 #, python-format
 msgid "Reset Calibration"
-msgstr "Kalibrasyonu Sıfırla"
+msgstr "キャリブレーションをリセット"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:65
 #, python-format
 msgid "Review Training Guide"
-msgstr "Eğitim Kılavuzunu İncele"
+msgstr "トレーニングガイドを確認"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:27
 msgid "Review the rules, features, and limitations of openpilot"
-msgstr ""
-"openpilot'un kurallarını, özelliklerini ve sınırlamalarını gözden geçirin"
+msgstr "openpilotのルール、機能、制限を確認"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "SELECT"
-msgstr ""
+msgstr "選択"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:53
 #, python-format
 msgid "SSH Keys"
-msgstr ""
+msgstr "SSH鍵"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:310
 #, python-format
 msgid "Scanning Wi-Fi networks..."
-msgstr ""
+msgstr "Wi‑Fiネットワークを検索中..."
 
 #: /home/batman/openpilot/system/ui/widgets/option_dialog.py:36
 #, python-format
 msgid "Select"
-msgstr ""
+msgstr "選択"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:183
 #, python-format
 msgid "Select a branch"
-msgstr ""
+msgstr "ブランチを選択"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:91
 #, python-format
 msgid "Select a language"
-msgstr "Bir dil seçin"
+msgstr "言語を選択"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:60
 #, python-format
 msgid "Serial"
-msgstr "Seri"
+msgstr "シリアル"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/offroad_alerts.py:106
 #, python-format
 msgid "Snooze Update"
-msgstr "Güncellemeyi Ertele"
+msgstr "更新を後で通知"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:65
 msgid "Software"
-msgstr "Yazılım"
+msgstr "ソフトウェア"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
 msgid "Standard"
-msgstr "Standart"
+msgstr "スタンダード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:22
 msgid ""
@@ -863,109 +857,107 @@ msgid ""
 "openpilot will stay further away from lead cars. On supported cars, you can "
 "cycle through these personalities with your steering wheel distance button."
 msgstr ""
-"Standart önerilir. Agresif modda openpilot öndeki aracı daha yakından takip "
-"eder ve gaz/fren kullanımında daha ataktır. Rahat modda openpilot öndeki "
-"araçlardan daha uzak durur. Desteklenen araçlarda bu kişilikler arasında "
-"direksiyon mesafe düğmesiyle geçiş yapabilirsiniz."
+"標準を推奨します。アグレッシブでは前走車に近づき、加減速も積極的になります。"
+"リラックスでは前走車との距離を保ちます。対応車種ではステアリングの車間ボタン"
+"でこれらの性格を切り替えられます。"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:59
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:65
 #, python-format
 msgid "System Unresponsive"
-msgstr "Sistem Yanıt Vermiyor"
+msgstr "システムが応答しません"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:58
 #, python-format
 msgid "TAKE CONTROL IMMEDIATELY"
-msgstr "HEMEN KONTROLÜ DEVRALIN"
+msgstr "すぐに手動介入してください"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:71
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:125
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:127
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:129
 msgid "TEMP"
-msgstr "TEMP"
+msgstr "温度"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "Target Branch"
-msgstr ""
+msgstr "対象ブランチ"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:124
 #, python-format
 msgid "Tethering Password"
-msgstr ""
+msgstr "テザリングのパスワード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/settings.py:64
 msgid "Toggles"
-msgstr "Seçenekler"
+msgstr "トグル"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:72
 #, python-format
 msgid "UNINSTALL"
-msgstr "KALDIR"
+msgstr "アンインストール"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/home.py:155
 #, python-format
 msgid "UPDATE"
-msgstr "GÜNCELLE"
+msgstr "更新"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:72
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:163
 #, python-format
 msgid "Uninstall"
-msgstr "Kaldır"
+msgstr "アンインストール"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:117
 msgid "Unknown"
-msgstr "Bilinmiyor"
+msgstr "不明"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:48
 #, python-format
 msgid "Updates are only downloaded while the car is off."
-msgstr "Güncellemeler yalnızca araç kapalıyken indirilir."
+msgstr "アップデートは車両の電源が切れている間のみダウンロードされます。"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:33
 #, python-format
 msgid "Upgrade Now"
-msgstr "Şimdi Yükselt"
+msgstr "今すぐアップグレード"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:31
 msgid ""
 "Upload data from the driver facing camera and help improve the driver "
 "monitoring algorithm."
 msgstr ""
-"Sürücüye bakan kameradan veri yükleyin ve sürücü izleme algoritmasını "
-"geliştirmeye yardımcı olun."
+"ドライバー向きカメラのデータをアップロードしてモニタリングアルゴリズムの改善"
+"に協力してください。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:88
 #, python-format
 msgid "Use Metric System"
-msgstr "Metrik Sistemi Kullan"
+msgstr "メートル法を使用"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:17
 msgid ""
 "Use the openpilot system for adaptive cruise control and lane keep driver "
 "assistance. Your attention is required at all times to use this feature."
 msgstr ""
-"Uyarlanabilir hız sabitleyici ve şerit koruma sürücü yardımında openpilot "
-"sistemini kullanın. Bu özelliği kullanırken her zaman dikkatli olmanız "
-"gerekir."
+"ACCと車線維持支援にopenpilotを使用します。本機能の使用中は常に注意が必要で"
+"す。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:72
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:144
 msgid "VEHICLE"
-msgstr "ARAÇ"
+msgstr "車両"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:67
 #, python-format
 msgid "VIEW"
-msgstr "GÖRÜNTÜLE"
+msgstr "表示"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:52
 #, python-format
 msgid "Waiting to start"
-msgstr "Başlatma bekleniyor"
+msgstr "開始待機中"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:19
 msgid ""
@@ -973,19 +965,18 @@ msgid ""
 "Never enter a GitHub username other than your own. A comma employee will "
 "NEVER ask you to add their GitHub username."
 msgstr ""
-"Uyarı: Bu, GitHub ayarlarınızdaki tüm açık anahtarlara SSH erişimi verir. "
-"Kendi adınız dışında asla bir GitHub kullanıcı adı girmeyin. Bir comma "
-"çalışanı sizden asla GitHub kullanıcı adlarını eklemenizi İSTEMEZ."
+"警告: これはGitHub設定内のすべての公開鍵にSSHアクセスを与えます。自分以外の"
+"GitHubユーザー名を絶対に入力しないでください。comma の従業員が自分のGitHub"
+"ユーザー名を追加するよう求めることは決してありません。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:111
 #, python-format
 msgid "Welcome to openpilot"
-msgstr "openpilot'a hoş geldiniz"
+msgstr "openpilotへようこそ"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:20
 msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
-msgstr ""
-"Etkinleştirildiğinde, gaz pedalına basmak openpilot'u devreden çıkarır."
+msgstr "有効にすると、アクセルを踏むとopenpilotが解除されます。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/sidebar.py:44
 msgid "Wi-Fi"
@@ -994,17 +985,17 @@ msgstr "Wi‑Fi"
 #: /home/batman/openpilot/system/ui/widgets/network.py:144
 #, python-format
 msgid "Wi-Fi Network Metered"
-msgstr ""
+msgstr "Wi‑Fiネットワーク（従量課金）"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:314
 #, python-format
 msgid "Wrong password"
-msgstr ""
+msgstr "パスワードが違います"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:145
 #, python-format
 msgid "You must accept the Terms and Conditions in order to use openpilot."
-msgstr "openpilot'u kullanmak için Şartlar ve Koşulları kabul etmelisiniz."
+msgstr "openpilotを使用するには、利用規約に同意する必要があります。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/onboarding.py:112
 #, python-format
@@ -1012,13 +1003,13 @@ msgid ""
 "You must accept the Terms and Conditions to use openpilot. Read the latest "
 "terms at https://comma.ai/terms before continuing."
 msgstr ""
-"openpilot'u kullanmak için Şartlar ve Koşulları kabul etmelisiniz. Devam "
-"etmeden önce en güncel şartları https://comma.ai/terms adresinde okuyun."
+"openpilotを使用するには利用規約に同意する必要があります。続行する前に "
+"https://comma.ai/terms の最新の規約をお読みください。"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/driver_camera_dialog.py:34
 #, python-format
 msgid "camera starting"
-msgstr "kamera başlatılıyor"
+msgstr "カメラを起動中"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:63
 #, python-format
@@ -1028,23 +1019,23 @@ msgstr "comma prime"
 #: /home/batman/openpilot/system/ui/widgets/network.py:142
 #, python-format
 msgid "default"
-msgstr ""
+msgstr "既定"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "down"
-msgstr "aşağı"
+msgstr "下"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:106
 #, python-format
 msgid "failed to check for update"
-msgstr "güncelleme kontrolü başarısız"
+msgstr "アップデートの確認に失敗しました"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:237
 #: /home/batman/openpilot/system/ui/widgets/network.py:314
 #, python-format
 msgid "for \"{}\""
-msgstr ""
+msgstr "「{}」向け"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1054,17 +1045,17 @@ msgstr "km/h"
 #: /home/batman/openpilot/system/ui/widgets/network.py:204
 #, python-format
 msgid "leave blank for automatic configuration"
-msgstr ""
+msgstr "自動設定の場合は空欄のままにしてください"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:134
 #, python-format
 msgid "left"
-msgstr "sol"
+msgstr "左"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:142
 #, python-format
 msgid "metered"
-msgstr ""
+msgstr "従量"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1074,22 +1065,22 @@ msgstr "mph"
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:20
 #, python-format
 msgid "never"
-msgstr "asla"
+msgstr "なし"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:31
 #, python-format
 msgid "now"
-msgstr "şimdi"
+msgstr "今"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/developer.py:71
 #, python-format
 msgid "openpilot Longitudinal Control (Alpha)"
-msgstr "openpilot Boylamsal Kontrol (Alfa)"
+msgstr "openpilot 縦制御（アルファ）"
 
 #: /home/batman/openpilot/selfdrive/ui/onroad/alert_renderer.py:51
 #, python-format
 msgid "openpilot Unavailable"
-msgstr "openpilot Kullanılamıyor"
+msgstr "openpilotは利用できません"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:158
 #, python-format
@@ -1106,17 +1097,15 @@ msgid ""
 "some turns. The Experimental mode logo will also be shown in the top right "
 "corner."
 msgstr ""
-"openpilot varsayılan olarak chill modunda sürer. Deneysel mod, chill moduna "
-"hazır olmayan alfa seviyesindeki özellikleri etkinleştirir. Deneysel "
-"özellikler aşağıda listelenmiştir:<br><h4>Uçtan Uca Boylamsal Kontrol</"
-"h4><br>Sürüş modelinin gaz ve frenleri kontrol etmesine izin verin. "
-"openpilot, kırmızı ışıklarda ve dur işaretlerinde durmak dahil, bir insan "
-"nasıl sürer diye düşündüğüne göre sürer. Hızı sürüş modeli belirlediğinden, "
-"ayarlanan hız yalnızca üst sınır olarak işlev görür. Bu bir alfa kalitesinde "
-"özelliktir; hatalar beklenmelidir.<br><h4>Yeni Sürüş Görselleştirmesi</"
-"h4><br>Sürüş görselleştirmesi, düşük hızlarda bazı dönüşleri daha iyi "
-"göstermek için yola bakan geniş açılı kameraya geçer. Deneysel mod logosu "
-"sağ üst köşede de gösterilecektir."
+"openpilotは既定でチルモードで走行します。実験モードでは、チルモードにはまだ準"
+"備ができていないアルファレベルの機能が有効になります。実験的な機能は以下のと"
+"おりです:<br><h4>エンドツーエンド縦制御</h4><br>運転モデルがアクセルとブレー"
+"キを制御します。openpilotは人間のように走行し、赤信号や一時停止でも停止しま"
+"す。走行速度は運転モデルが決めるため、設定速度は上限としてのみ機能します。こ"
+"れはアルファ品質の機能であり、誤動作が発生する可能性があります。<br><h4>新し"
+"い運転ビジュアライゼーション</h4><br>低速時には道路向きの広角カメラに切り替わ"
+"り、一部の曲がりをより良く表示します。画面右上には実験モードのロゴも表示され"
+"ます。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:165
 #, python-format
@@ -1124,7 +1113,9 @@ msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
 "Resetting calibration will restart openpilot if the car is powered on."
 msgstr ""
-" Bu ayarı değiştirmek, araç çalışıyorsa openpilot'u yeniden başlatacaktır."
+"openpilotは継続的にキャリブレーションを行っており、リセットが必要になることは"
+"稀です。車が起動中にキャリブレーションをリセットするとopenpilotが再起動しま"
+"す。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:20
 msgid ""
@@ -1134,96 +1125,92 @@ msgid ""
 "openpilot's driving models. More data means bigger models, which means "
 "better Experimental Mode."
 msgstr ""
-"openpilot, sizin gibi insanların nasıl sürdüğünü izleyerek sürmeyi öğrenir.\n"
+"openpilotは、あなたのような人間の運転を見て運転を学習します。\n"
 "\n"
-"Firehose Modu, openpilot'un sürüş modellerini geliştirmek için eğitim veri "
-"yüklemelerinizi en üst düzeye çıkarmanıza olanak tanır. Daha fazla veri, "
-"daha büyük modeller demektir; bu da daha iyi Deneysel Mod anlamına gelir."
+"Firehoseモードを使うと、学習データのアップロードを最大化してopenpilotの運転モ"
+"デルを改善できます。データが増えるほどモデルが大きくなり、実験モードがより良"
+"くなります。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/toggles.py:183
 #, python-format
 msgid "openpilot longitudinal control may come in a future update."
-msgstr "openpilot boylamsal kontrolü gelecekteki bir güncellemede gelebilir."
+msgstr "openpilotの縦制御は将来のアップデートで提供される可能性があります。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:26
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."
 msgstr ""
-"openpilot, cihazın sağa/sola 4° ve yukarı 5° veya aşağı 9° içinde monte "
-"edilmesini gerektirir."
+"openpilotでは、デバイスの取り付け角度が左右±4°、上方向5°以内、下方向9°以内で"
+"ある必要があります。"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:134
 #, python-format
 msgid "right"
-msgstr "sağ"
+msgstr "右"
 
 #: /home/batman/openpilot/system/ui/widgets/network.py:142
 #, python-format
 msgid "unmetered"
-msgstr ""
+msgstr "非従量"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "up"
-msgstr "yukarı"
+msgstr "上"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:117
 #, python-format
 msgid "up to date, last checked never"
-msgstr "güncel, son kontrol asla"
+msgstr "最新です。最終確認: なし"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:115
 #, python-format
 msgid "up to date, last checked {}"
-msgstr "güncel, son kontrol {}"
+msgstr "最新です。最終確認: {}"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:109
 #, python-format
 msgid "update available"
-msgstr "güncelleme mevcut"
+msgstr "更新があります"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/home.py:169
 #, python-format
 msgid "{} ALERT"
 msgid_plural "{} ALERTS"
-msgstr[0] "{} UYARI"
-msgstr[1] "{} UYARILAR"
+msgstr[0] "{}件のアラート"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:40
 #, python-format
 msgid "{} day ago"
 msgid_plural "{} days ago"
-msgstr[0] "{} gün önce"
-msgstr[1] "{} gün önce"
+msgstr[0] "{}日前"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:37
 #, python-format
 msgid "{} hour ago"
 msgid_plural "{} hours ago"
-msgstr[0] "{} saat önce"
-msgstr[1] "{} saat önce"
+msgstr[0] "{}時間前"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/software.py:34
 #, python-format
 msgid "{} minute ago"
 msgid_plural "{} minutes ago"
-msgstr[0] "{} dakika önce"
-msgstr[1] "{} dakika önce"
+msgstr[0] "{}分前"
 
 #: /home/batman/openpilot/selfdrive/ui/layouts/settings/firehose.py:111
 #, python-format
 msgid "{} segment of your driving is in the training dataset so far."
 msgid_plural "{} segments of your driving is in the training dataset so far."
-msgstr[0] "{} segment sürüşünüz eğitim veri setinde."
-msgstr[1] "{} segment sürüşünüz eğitim veri setinde."
+msgstr[0] ""
+"これまでにあなたの走行の{}セグメントが学習データセットに含まれています。"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/prime.py:62
 #, python-format
 msgid "✓ SUBSCRIBED"
-msgstr "✓ ABONE"
+msgstr "✓ 登録済み"
 
 #: /home/batman/openpilot/selfdrive/ui/widgets/setup.py:22
 #, python-format
 msgid "🔥 Firehose Mode 🔥"
-msgstr "🔥 Firehose Modu 🔥"
+msgstr "🔥 Firehoseモード 🔥"
