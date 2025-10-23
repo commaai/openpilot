@@ -1,6 +1,7 @@
 import os
 import json
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
+
+Import('env', 'arch', 'common')
 
 # compile gettext .po -> .mo translations
 with open(File("translations/languages.json").abspath) as f:
@@ -11,55 +12,41 @@ po_sources = [src for src in po_sources if os.path.exists(File(src).abspath)]
 mo_targets = [src.replace(".po", ".mo") for src in po_sources]
 mo_build = []
 for src, tgt in zip(po_sources, mo_targets):
-  mo_build.append(qt_env.Command(tgt, src, "msgfmt -o $TARGET $SOURCE"))
-mo_alias = qt_env.Alias('mo', mo_build)
-qt_env.AlwaysBuild(mo_alias)
+  mo_build.append(env.Command(tgt, src, "msgfmt -o $TARGET $SOURCE"))
+mo_alias = env.Alias('mo', mo_build)
+env.AlwaysBuild(mo_alias)
 
+# build installers
 if GetOption('extras'):
-  base_libs = [common, messaging, visionipc, transformations,
-               'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+  if arch != "Darwin":
+    raylib_env = env.Clone()
+    raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+    raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
 
-  if arch == 'larch64':
-    base_libs.append('EGL')
+    raylib_libs = common + ["raylib"]
+    if arch == "larch64":
+      raylib_libs += ["GLESv2", "EGL", "gbm", "drm"]
+    else:
+      raylib_libs += ["GL"]
 
-  if arch == "Darwin":
-    del base_libs[base_libs.index('OpenCL')]
-    qt_env['FRAMEWORKS'] += ['OpenCL']
+    release = "release3"
+    installers = [
+      ("openpilot", release),
+      ("openpilot_test", f"{release}-staging"),
+      ("openpilot_nightly", "nightly"),
+      ("openpilot_internal", "nightly-dev"),
+    ]
 
-  # FIXME: remove this once we're on 5.15 (24.04)
-  qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
+    cont = raylib_env.Command("installer/continue_openpilot.o", "installer/continue_openpilot.sh",
+                              "ld -r -b binary -o $TARGET $SOURCE")
+    inter = raylib_env.Command("installer/inter_ttf.o", "installer/inter-ascii.ttf",
+                               "ld -r -b binary -o $TARGET $SOURCE")
+    for name, branch in installers:
+      d = {'BRANCH': f"'\"{branch}\"'"}
+      if "internal" in name:
+        d['INTERNAL'] = "1"
 
-  if GetOption('extras'):
-    # build installers
-    if arch != "Darwin":
-      raylib_env = env.Clone()
-      raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
-      raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
-
-      raylib_libs = common + ["raylib"]
-      if arch == "larch64":
-        raylib_libs += ["GLESv2", "EGL", "gbm", "drm"]
-      else:
-        raylib_libs += ["GL"]
-
-      release = "release3"
-      installers = [
-        ("openpilot", release),
-        ("openpilot_test", f"{release}-staging"),
-        ("openpilot_nightly", "nightly"),
-        ("openpilot_internal", "nightly-dev"),
-      ]
-
-      cont = raylib_env.Command("installer/continue_openpilot.o", "installer/continue_openpilot.sh",
-                                "ld -r -b binary -o $TARGET $SOURCE")
-      inter = raylib_env.Command("installer/inter_ttf.o", "installer/inter-ascii.ttf",
-                                 "ld -r -b binary -o $TARGET $SOURCE")
-      for name, branch in installers:
-        d = {'BRANCH': f"'\"{branch}\"'"}
-        if "internal" in name:
-          d['INTERNAL'] = "1"
-
-        obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-        f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
-        # keep installers small
-        assert f[0].get_size() < 1900*1e3, f[0].get_size()
+      obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
+      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
+      # keep installers small
+      assert f[0].get_size() < 1900*1e3, f[0].get_size()
