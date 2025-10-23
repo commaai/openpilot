@@ -58,7 +58,7 @@ class SoftwareLayout(Widget):
     self._waiting_start_ts: float = 0.0
 
     # Branch switcher
-    self._branch_btn = button_item("Target Branch", "SELECT", callback=self._on_select_branch)
+    self._branch_btn = button_item(lambda: tr("Target Branch"), lambda: tr("SELECT"), callback=self._on_select_branch)
     self._branch_btn.set_visible(not ui_state.params.get_bool("IsTestedBranch"))
     self._branch_btn.action_item.set_value(ui_state.params.get("UpdaterTargetBranch") or "")
     self._branch_dialog: MultiOptionDialog | None = None
@@ -69,7 +69,7 @@ class SoftwareLayout(Widget):
       self._download_btn,
       self._install_btn,
       self._branch_btn,
-      button_item("Uninstall", "UNINSTALL", callback=self._on_uninstall),
+      button_item(lambda: tr("Uninstall"), lambda: tr("UNINSTALL"), callback=self._on_uninstall),
     ], line_separator=True, spacing=0)
 
   def show_event(self):
