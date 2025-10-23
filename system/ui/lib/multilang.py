@@ -10,25 +10,10 @@ UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 
-SUPPORTED_LANGUAGES = [
-  "en",
-  "de",
-  "fr",
-  "pt-BR",
-  "es",
-  "tr",
-  "ar",
-  "th",
-  "zh-CHT,"
-  "zh-CHS",
-  "ko",
-  "ja",
-]
-
 UNIFONT_LANGUAGES = [
   "ar",
   "th",
-  "zh-CHT,"
+  "zh-CHT",
   "zh-CHS",
   "ko",
   "ja",
@@ -50,6 +35,8 @@ class Multilang:
 
   def requires_unifont(self) -> bool:
     """Certain languages require unifont to render their glyphs."""
+    print(self._language, UNIFONT_LANGUAGES)
+    print(f"Checking if language {self._language} requires unifont.", self._language in UNIFONT_LANGUAGES)
     return self._language in UNIFONT_LANGUAGES
 
   def setup(self):
@@ -78,8 +65,10 @@ class Multilang:
 
   def _load_languages(self):
     with open(LANGUAGES_FILE, encoding='utf-8') as f:
-      self.languages = {k: v for k, v in json.load(f).items() if v in SUPPORTED_LANGUAGES}
-    self.codes = {v: k for k, v in self.languages.items() if v in SUPPORTED_LANGUAGES}
+      self.languages = json.load(f)
+    self.codes = {v: k for k, v in self.languages.items()}
+
+    print(self.languages)
 
     lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
     if lang in self.codes:
