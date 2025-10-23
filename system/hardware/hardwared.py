@@ -103,7 +103,6 @@ def hw_state_thread(end_event, hw_queue):
 
   modem_version = None
   modem_configured = False
-  modem_restarted = False
   modem_missing_count = 0
 
   while not end_event.is_set():
@@ -121,16 +120,15 @@ def hw_state_thread(end_event, hw_queue):
 
           if modem_version is not None:
             cloudlog.event("modem version", version=modem_version)
-          else:
-            if not modem_restarted:
-              # TODO: we may be able to remove this with a MM update
-              # ModemManager's probing on startup can fail
-              # rarely, restart the service to probe again.
-              modem_missing_count += 1
-              if modem_missing_count > 3:
-                modem_restarted = True
-                cloudlog.event("restarting ModemManager")
-                os.system("sudo systemctl restart --no-block ModemManager")
+
+        if AGNOS and HARDWARE.get_modem_version() is None:
+          # TODO: we may be able to remove this with a MM update
+          # ModemManager's probing on startup can fail
+          # rarely, restart the service to probe again.
+          modem_missing_count += 1
+          if (modem_missing_count % 4) == 0:
+            cloudlog.event("restarting ModemManager")
+            os.system("sudo systemctl restart --no-block ModemManager")
 
         tx, rx = HARDWARE.get_modem_data_usage()
 
