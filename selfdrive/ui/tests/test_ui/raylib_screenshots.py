@@ -25,7 +25,7 @@ AlertStatus = log.SelfdriveState.AlertStatus
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
-UI_DELAY = 0.2
+UI_DELAY = 0.5
 
 BRANCH_NAME = "this-is-a-really-super-mega-ultra-max-extreme-ultimate-long-branch-name"
 VERSION = f"0.10.1 / {BRANCH_NAME} / 7864838 / Oct 03"
