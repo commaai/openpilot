@@ -17,7 +17,7 @@ LIST_ITEM_SPACING = 25
 
 
 class MultiOptionDialog(Widget):
-  def __init__(self, title, options, current="", option_font_weight=FontWeight.NORMAL):
+  def __init__(self, title, options, current="", option_font_weight=FontWeight.MEDIUM):
     super().__init__()
     self.title = title
     self.options = options
