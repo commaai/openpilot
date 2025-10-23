@@ -80,7 +80,6 @@ procs = [
   PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
 
   PythonProcess("sensord", "system.sensord.sensord", only_onroad, enabled=not PC),
-  # NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, enabled=False),
   PythonProcess("ui", "selfdrive.ui.ui", always_run),
   PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad),
   PythonProcess("locationd", "selfdrive.locationd.locationd", only_onroad),
