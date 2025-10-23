@@ -1,6 +1,6 @@
 import os
 import json
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
+Import('env', 'arch', 'common')
 
 raylib_env = env.Clone()
 
