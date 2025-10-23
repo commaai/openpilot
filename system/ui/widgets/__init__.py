@@ -86,7 +86,6 @@ class Widget(abc.ABC):
     w = min(self._rect.x + self._rect.width, self._parent_rect.x + self._parent_rect.width) - x
     h = min(self._rect.y + self._rect.height, self._parent_rect.y + self._parent_rect.height) - y
     ret = rl.Rectangle(x, y, w, h)
-    rl.draw_rectangle_lines_ex(ret, 1, rl.RED)
     return ret
 
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
