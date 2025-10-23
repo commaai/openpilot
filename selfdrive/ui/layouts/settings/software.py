@@ -8,7 +8,6 @@ from openpilot.system.ui.lib.multilang import tr, trn
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
-from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.scroller import Scroller
 
 # TODO: remove this. updater fails to respond on startup if time is not correct
@@ -53,9 +52,6 @@ class SoftwareLayout(Widget):
     self._install_btn = button_item(lambda: tr("Install Update"), lambda: tr("INSTALL"), callback=self._on_install_update)
     self._install_btn.set_visible(False)
 
-    self._select_branch_dialog: MultiOptionDialog | None = None
-    self._target_branch_btn = button_item(tr("Target Branch"), tr("SELECT"), callback=self._on_select_branch)
-
     # Track waiting-for-updater transition to avoid brief re-enable while still idle
     self._waiting_for_updater = False
     self._waiting_start_ts: float = 0.0
@@ -69,7 +65,8 @@ class SoftwareLayout(Widget):
       self._version_item,
       self._download_btn,
       self._install_btn,
-      self._target_branch_btn,
+      # TODO: implement branch switching
+      # button_item("Target Branch", "SELECT", callback=self._on_select_branch),
       button_item(lambda: tr("Uninstall"), lambda: tr("UNINSTALL"), callback=self._on_uninstall),
     ]
     return items
@@ -89,8 +86,6 @@ class SoftwareLayout(Widget):
     current_release_notes = (ui_state.params.get("UpdaterCurrentReleaseNotes") or b"").decode("utf-8", "replace")
     self._version_item.action_item.set_text(current_desc)
     self._version_item.set_description(current_release_notes)
-
-    self._target_branch_btn.action_item.set_value(ui_state.params.get("UpdaterTargetBranch") or "")
 
     # Update download button visibility and state
     self._download_btn.set_visible(ui_state.is_offroad())
@@ -168,25 +163,4 @@ class SoftwareLayout(Widget):
     self._install_btn.action_item.set_enabled(False)
     ui_state.params.put_bool("DoReboot", True)
 
-  def _on_select_branch(self):
-    current_branch = ui_state.params.get("GitBranch") or ""
-    branches_str = ui_state.params.get("UpdaterAvailableBranches") or ""
-
-    available_branches = [b.strip() for b in branches_str.split(",") if b.strip()]
-    priority_branches = [current_branch, "devel-staging", "devel", "nightly", "nightly-dev", "master"]
-    for branch in priority_branches:
-      if branch in available_branches:
-        available_branches.remove(branch)
-        available_branches.insert(0, branch)
-
-    self._select_branch_dialog = MultiOptionDialog(tr("Select a branch"), available_branches, current=current_branch)
-    gui_app.set_modal_overlay(self._select_branch_dialog, callback=self._handle_branch_selection)
-
-  def _handle_branch_selection(self, result: int):
-    if result == 1 and self._select_branch_dialog:
-      selected = self._select_branch_dialog.selection
-      self._target_branch_btn.action_item.set_value(selected)
-      ui_state.params.put("UpdaterTargetBranch", selected)
-      os.system("pkill -SIGHUP -f system.updated.updated")
-
-    self._select_branch_dialog = None
+  def _on_select_branch(self): pass
