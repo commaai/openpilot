@@ -164,7 +164,6 @@ jobs:
                         # Pre-compile Python bytecode so each pytest worker doesn't need to
                         $PYTEST --collect-only -m 'not slow' -qq && \
                         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
-                        ./selfdrive/ui/tests/create_test_translations.sh && \
                         chmod -R 777 /tmp/comma_download_cache"
 
   process_replay:
