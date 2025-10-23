@@ -80,7 +80,6 @@ class Widget(abc.ABC):
     # restrict touches to within parent rect if set, useful inside Scroller
     if self._parent_rect is None:
       return self._rect
-
     return rl.get_collision_rec(self._rect, self._parent_rect)
 
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
