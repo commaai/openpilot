@@ -343,7 +343,7 @@ class GuiApplication:
     except KeyboardInterrupt:
       pass
 
-  def font(self, font_weight: FontWeight = FontWeight.NORMAL):
+  def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
     return self._fonts[font_weight]
 
   @property

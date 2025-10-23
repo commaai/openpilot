@@ -23,7 +23,7 @@ UNIFONT_LANGUAGES = [
 class Multilang:
   def __init__(self):
     self._params = Params()
-    self._language = "en"
+    self._language: str = "en"
     self.languages = {}
     self.codes = {}
     self._translation: gettext.NullTranslations | gettext.GNUTranslations = gettext.NullTranslations()
