@@ -76,18 +76,11 @@ class Widget(abc.ABC):
       self._update_layout_rects()
 
   @property
-  def _hit_rect(self):
-    # clip to parent rect
+  def _hit_rect(self) -> rl.Rectangle:
+    # restrict touches to within parent rect if set, useful inside Scroller
     if self._parent_rect is None:
       return self._rect
-
-    x = max(self._rect.x, self._parent_rect.x)
-    y = max(self._rect.y, self._parent_rect.y)
-    w = min(self._rect.x + self._rect.width, self._parent_rect.x + self._parent_rect.width) - x
-    h = min(self._rect.y + self._rect.height, self._parent_rect.y + self._parent_rect.height) - y
-    ret = rl.Rectangle(x, y, w, h)
-    rl.draw_rectangle_lines_ex(ret, 1, rl.RED)
-    return ret
+    return rl.get_collision_rec(self._rect, self._parent_rect)
 
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     if rect is not None:
