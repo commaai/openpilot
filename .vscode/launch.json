@@ -23,6 +23,11 @@
       "id": "args",
       "description": "Arguments to pass to the process",
       "type": "promptString"
+    },
+    {
+      "id": "replayArg",
+      "type": "promptString",
+      "description": "Enter route or segment to replay."
     }
   ],
   "configurations": [
@@ -40,7 +45,41 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/${input:cpp_process}",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Attach LLDB to Replay drive",
+      "type": "lldb",
+      "request": "attach",
+      "pid": "${command:pickMyProcess}",
+      "initCommands": [
+        "script import time; time.sleep(3)"
+      ]
+    },
+    {
+      "name": "Replay drive",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/opendbc/safety/tests/safety_replay/replay_drive.py",
+      "args": [
+        "${input:replayArg}"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "subProcess": true,
+      "stopOnEntry": false
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Replay drive + Safety LLDB",
+      "configurations": [
+        "Replay drive",
+        "Attach LLDB to Replay drive"
+      ]
     }
   ]
 }

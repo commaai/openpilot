@@ -3,10 +3,32 @@
 import argparse
 import time
 from openpilot.system.hardware import HARDWARE
+from openpilot.system.hardware.base import LPABase
+
+
+def bootstrap(lpa: LPABase) -> None:
+  print('┌──────────────────────────────────────────────────────────────────────────────┐')
+  print('│ WARNING, PLEASE READ BEFORE PROCEEDING                                       │')
+  print('│                                                                              │')
+  print('│ this is an irreversible operation that will remove the comma-provisioned     │')
+  print('│ profile.                                                                     │')
+  print('│                                                                              │')
+  print('│ after this operation, you must purchase a new eSIM from comma in order to    │')
+  print('│ use the comma prime subscription again.                                      │')
+  print('└──────────────────────────────────────────────────────────────────────────────┘')
+  print()
+  for severity in ('sure', '100% sure'):
+    print(f'are you {severity} you want to proceed? (y/N) ', end='')
+    confirm = input()
+    if confirm != 'y':
+      print('aborting')
+      exit(0)
+  lpa.bootstrap()
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
+  parser.add_argument('--bootstrap', action='store_true', help='bootstrap the eUICC (required before downloading profiles)')
   parser.add_argument('--backend', choices=['qmi', 'at'], default='qmi', help='use the specified backend, defaults to qmi')
   parser.add_argument('--switch', metavar='iccid', help='switch to profile')
   parser.add_argument('--delete', metavar='iccid', help='delete profile (warning: this cannot be undone)')
@@ -16,7 +38,10 @@ if __name__ == '__main__':
 
   mutated = False
   lpa = HARDWARE.get_sim_lpa()
-  if args.switch:
+  if args.bootstrap:
+    bootstrap(lpa)
+    mutated = True
+  elif args.switch:
     lpa.switch_profile(args.switch)
     mutated = True
   elif args.delete:

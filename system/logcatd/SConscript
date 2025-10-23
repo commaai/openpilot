@@ -1,3 +1,0 @@
-Import('env', 'messaging', 'common')
-
-env.Program('logcatd', 'logcatd_systemd.cc', LIBS=[messaging, common, 'systemd'])

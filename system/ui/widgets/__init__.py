@@ -14,13 +14,14 @@ class DialogResult(IntEnum):
 class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
-    self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
-    self._is_pressed = [False] * MAX_TOUCH_SLOTS
+    self._parent_rect: rl.Rectangle | None = None
+    self.__is_pressed = [False] * MAX_TOUCH_SLOTS
     # if current mouse/touch down started within the widget's rectangle
-    self._tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
+    self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
+    self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
 
   @property
@@ -40,7 +41,7 @@ class Widget(abc.ABC):
 
   @property
   def is_pressed(self) -> bool:
-    return any(self._is_pressed)
+    return any(self.__is_pressed)
 
   @property
   def enabled(self) -> bool:
@@ -56,6 +57,10 @@ class Widget(abc.ABC):
   def set_visible(self, visible: bool | Callable[[], bool]) -> None:
     self._is_visible = visible
 
+  def set_click_callback(self, click_callback: Callable[[], None] | None) -> None:
+    """Set a callback to be called when the widget is clicked."""
+    self._click_callback = click_callback
+
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     """Set a callback to determine if the widget can be clicked."""
     self._touch_valid_callback = touch_callback
@@ -69,6 +74,13 @@ class Widget(abc.ABC):
     self._rect.x, self._rect.y = x, y
     if changed:
       self._update_layout_rects()
+
+  @property
+  def _hit_rect(self) -> rl.Rectangle:
+    # restrict touches to within parent rect if set, useful inside Scroller
+    if self._parent_rect is None:
+      return self._rect
+    return rl.get_collision_rec(self._rect, self._parent_rect)
 
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     if rect is not None:
@@ -90,29 +102,30 @@ class Widget(abc.ABC):
         # Ignores touches/presses that start outside our rect
         # Allows touch to leave the rect and come back in focus if mouse did not release
         if mouse_event.left_pressed and self._touch_valid():
-          if rl.check_collision_point_rec(mouse_event.pos, self._rect):
-            self._is_pressed[mouse_event.slot] = True
-            self._tracking_is_pressed[mouse_event.slot] = True
+          if rl.check_collision_point_rec(mouse_event.pos, self._hit_rect):
+            self._handle_mouse_press(mouse_event.pos)
+            self.__is_pressed[mouse_event.slot] = True
+            self.__tracking_is_pressed[mouse_event.slot] = True
 
         # Callback such as scroll panel signifies user is scrolling
         elif not self._touch_valid():
-          self._is_pressed[mouse_event.slot] = False
-          self._tracking_is_pressed[mouse_event.slot] = False
+          self.__is_pressed[mouse_event.slot] = False
+          self.__tracking_is_pressed[mouse_event.slot] = False
 
         elif mouse_event.left_released:
-          if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
+          if self.__is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._hit_rect):
             self._handle_mouse_release(mouse_event.pos)
-          self._is_pressed[mouse_event.slot] = False
-          self._tracking_is_pressed[mouse_event.slot] = False
+          self.__is_pressed[mouse_event.slot] = False
+          self.__tracking_is_pressed[mouse_event.slot] = False
 
         # Mouse/touch is still within our rect
-        elif rl.check_collision_point_rec(mouse_event.pos, self._rect):
-          if self._tracking_is_pressed[mouse_event.slot]:
-            self._is_pressed[mouse_event.slot] = True
+        elif rl.check_collision_point_rec(mouse_event.pos, self._hit_rect):
+          if self.__tracking_is_pressed[mouse_event.slot]:
+            self.__is_pressed[mouse_event.slot] = True
 
         # Mouse/touch left our rect but may come back into focus later
-        elif not rl.check_collision_point_rec(mouse_event.pos, self._rect):
-          self._is_pressed[mouse_event.slot] = False
+        elif not rl.check_collision_point_rec(mouse_event.pos, self._hit_rect):
+          self.__is_pressed[mouse_event.slot] = False
 
     return ret
 
@@ -126,6 +139,19 @@ class Widget(abc.ABC):
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
 
+  def _handle_mouse_press(self, mouse_pos: MousePos) -> bool:
+    """Optionally handle mouse press events."""
+    return False
+
   def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     """Optionally handle mouse release events."""
+    if self._click_callback:
+      self._click_callback()
     return False
+
+  def show_event(self):
+    """Optionally handle show event. Parent must manually call this"""
+
+  def hide_event(self):
+    """Optionally handle hide event. Parent must manually call this"""
+

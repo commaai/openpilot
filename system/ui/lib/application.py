@@ -2,6 +2,8 @@ import atexit
 import cffi
 import os
 import time
+import signal
+import sys
 import pyray as rl
 import threading
 from collections.abc import Callable
@@ -11,10 +13,11 @@ from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.hardware import HARDWARE, PC, TICI
+from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, multilang
 from openpilot.common.realtime import Ratekeeper
 
-DEFAULT_FPS = int(os.getenv("FPS", "60"))
+_DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
@@ -30,6 +33,10 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
 
+# Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
+# The real scales for the fonts below range from 1.212 to 1.266
+FONT_SCALE = 1.242
+
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
@@ -44,6 +51,14 @@ class FontWeight(StrEnum):
   BOLD = "Inter-Bold.ttf"
   EXTRA_BOLD = "Inter-ExtraBold.ttf"
   BLACK = "Inter-Black.ttf"
+  UNIFONT = "unifont.otf"
+
+
+def font_fallback(font: rl.Font) -> rl.Font:
+  """Fall back to unifont for languages that require it."""
+  if multilang.requires_unifont():
+    return gui_app.font(FontWeight.UNIFONT)
+  return font
 
 
 @dataclass
@@ -72,7 +87,7 @@ class MouseState:
     self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
     self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
 
-    self._rk = Ratekeeper(MOUSE_THREAD_RATE)
+    self._rk = Ratekeeper(MOUSE_THREAD_RATE, print_delay_threshold=None)
     self._lock = threading.Lock()
     self._exit_event = threading.Event()
     self._thread = None
@@ -108,8 +123,8 @@ class MouseState:
       ev = MouseEvent(
         MousePos(x, y),
         slot,
-        rl.is_mouse_button_pressed(slot),
-        rl.is_mouse_button_released(slot),
+        rl.is_mouse_button_pressed(slot),  # noqa: TID251
+        rl.is_mouse_button_released(slot),  # noqa: TID251
         rl.is_mouse_button_down(slot),
         time.monotonic(),
       )
@@ -130,7 +145,7 @@ class GuiApplication:
     self._scaled_height = int(self._height * self._scale)
     self._render_texture: rl.RenderTexture | None = None
     self._textures: dict[str, rl.Texture] = {}
-    self._target_fps: int = DEFAULT_FPS
+    self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
     self._trace_log_callback = None
@@ -142,17 +157,25 @@ class GuiApplication:
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
 
+  @property
+  def target_fps(self):
+    return self._target_fps
+
   def request_close(self):
     self._window_close_requested = True
 
-  def init_window(self, title: str, fps: int = DEFAULT_FPS):
-    atexit.register(self.close)  # Automatically call close() on exit
+  def init_window(self, title: str, fps: int = _DEFAULT_FPS):
+    def _close(sig, frame):
+      self.close()
+      sys.exit(0)
+    signal.signal(signal.SIGINT, _close)
+    atexit.register(self.close)
 
     HARDWARE.set_display_power(True)
     HARDWARE.set_screen_brightness(65)
 
     self._set_log_callback()
-    rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
+    rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
 
     flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
     if ENABLE_VSYNC:
@@ -169,47 +192,59 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+    self._patch_text_functions()
 
     if not PC:
       self._mouse.start()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    if self._modal_overlay.overlay is not None:
+      if self._modal_overlay.callback is not None:
+        self._modal_overlay.callback(-1)
+
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
-  def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
+  def texture(self, asset_path: str, width: int | None = None, height: int | None = None,
+              alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
     if cache_key in self._textures:
       return self._textures[cache_key]
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-      texture_obj = self._load_texture_from_image(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      texture_obj = self._load_texture_from_image(image_obj)
     self._textures[cache_key] = texture_obj
     return texture_obj
 
-  def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
-    """Load and resize a texture, storing it for later automatic unloading."""
+  def _load_image_from_path(self, image_path: str, width: int | None = None, height: int | None = None,
+                            alpha_premultiply: bool = False, keep_aspect_ratio: bool = True) -> rl.Image:
+    """Load and resize an image, storing it for later automatic unloading."""
     image = rl.load_image(image_path)
 
     if alpha_premultiply:
       rl.image_alpha_premultiply(image)
 
-    # Resize with aspect ratio preservation if requested
-    if keep_aspect_ratio:
-      orig_width = image.width
-      orig_height = image.height
+    if width is not None and height is not None:
+      # Resize with aspect ratio preservation if requested
+      if keep_aspect_ratio:
+        orig_width = image.width
+        orig_height = image.height
 
-      scale_width = width / orig_width
-      scale_height = height / orig_height
+        scale_width = width / orig_width
+        scale_height = height / orig_height
 
-      # Calculate new dimensions
-      scale = min(scale_width, scale_height)
-      new_width = int(orig_width * scale)
-      new_height = int(orig_height * scale)
+        # Calculate new dimensions
+        scale = min(scale_width, scale_height)
+        new_width = int(orig_width * scale)
+        new_height = int(orig_height * scale)
 
-      rl.image_resize(image, new_width, new_height)
-    else:
-      rl.image_resize(image, width, height)
+        rl.image_resize(image, new_width, new_height)
+      else:
+        rl.image_resize(image, width, height)
+    return image
 
+  def _load_texture_from_image(self, image: rl.Image) -> rl.Texture:
+    """Send image to GPU and unload original image."""
     texture = rl.load_texture_from_image(image)
     # Set texture filtering to smooth the result
     rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
@@ -269,13 +304,14 @@ class GuiApplication:
             raise Exception
 
           if result >= 0:
-            # Execute callback with the result and clear the overlay
-            if self._modal_overlay.callback is not None:
-              self._modal_overlay.callback(result)
-
+            # Clear the overlay and execute the callback
+            original_modal = self._modal_overlay
             self._modal_overlay = ModalOverlay()
+            if original_modal.callback is not None:
+              original_modal.callback(result)
+          yield True
         else:
-          yield
+          yield False
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -307,7 +343,7 @@ class GuiApplication:
     except KeyboardInterrupt:
       pass
 
-  def font(self, font_weight: FontWeight = FontWeight.NORMAL):
+  def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
     return self._fonts[font_weight]
 
   @property
@@ -325,8 +361,19 @@ class GuiApplication:
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
+    all_chars |= set("–‑✓×°§•")
+
+    # Load only the characters used in translations
+    for language, code in multilang.languages.items():
+      all_chars |= set(language)
+      try:
+        with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
+          all_chars |= set(f.read())
+      except FileNotFoundError:
+        cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
+
     all_chars = "".join(all_chars)
-    all_chars += "–✓×°"
+    cloudlog.debug(f"Loading fonts with {len(all_chars)} glyphs.")
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
@@ -346,6 +393,17 @@ class GuiApplication:
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.BACKGROUND_COLOR, rl.color_to_int(rl.BLACK))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(DEFAULT_TEXT_COLOR))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
+
+  def _patch_text_functions(self):
+    # Wrap pyray text APIs to apply a global text size scale so our px sizes match Qt
+    if not hasattr(rl, "_orig_draw_text_ex"):
+      rl._orig_draw_text_ex = rl.draw_text_ex
+
+    def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
+      font = font_fallback(font)
+      return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
+
+    rl.draw_text_ex = _draw_text_ex_scaled
 
   def _set_log_callback(self):
     ffi_libc = cffi.FFI()

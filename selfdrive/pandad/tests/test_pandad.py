@@ -5,8 +5,7 @@ import time
 import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
-from panda import Panda, PandaDFU, PandaProtocolMismatch
-from openpilot.common.retry import retry
+from panda import Panda, PandaDFU
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.pins import GPIO
@@ -21,8 +20,6 @@ class TestPandad:
     # ensure panda is up
     if len(Panda.list()) == 0:
       self._run_test(60)
-
-    self.spi = HARDWARE.get_device_type() != 'tici'
 
   def teardown_method(self):
     managed_processes['pandad'].stop()
@@ -52,8 +49,7 @@ class TestPandad:
     assert not Panda.wait_for_dfu(None, 3)
     assert not Panda.wait_for_panda(None, 3)
 
-  @retry(attempts=3)
-  def _flash_bootstub_and_test(self, fn, expect_mismatch=False):
+  def _flash_bootstub(self, fn):
     self._go_to_dfu()
     pd = PandaDFU(None)
     if fn is None:
@@ -62,16 +58,6 @@ class TestPandad:
       pd.program_bootstub(f.read())
     pd.reset()
     HARDWARE.reset_internal_panda()
-
-    assert Panda.wait_for_panda(None, 10)
-    if expect_mismatch:
-      with pytest.raises(PandaProtocolMismatch):
-        Panda()
-    else:
-      with Panda() as p:
-        assert p.bootstub
-
-    self._run_test(45)
 
   def test_in_dfu(self):
     HARDWARE.recover_internal_panda()
@@ -106,17 +92,16 @@ class TestPandad:
     # - 0.2s pandad -> pandad
     # - plus some buffer
     print("startup times", ts, sum(ts) / len(ts))
-    assert 0.1 < (sum(ts)/len(ts)) < (0.7 if self.spi else 5.0)
+    assert 0.1 < (sum(ts)/len(ts)) < 0.7
 
-  def test_protocol_version_check(self):
-    if not self.spi:
-      pytest.skip("SPI test")
-    # flash old fw
-    fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
-    self._flash_bootstub_and_test(fn, expect_mismatch=True)
+  def test_old_spi_protocol(self):
+    # flash firmware with old SPI protocol
+    self._flash_bootstub(os.path.join(HERE, "bootstub.panda_h7_spiv0.bin"))
+    self._run_test(45)
 
   def test_release_to_devel_bootstub(self):
-    self._flash_bootstub_and_test(None)
+    self._flash_bootstub(None)
+    self._run_test(45)
 
   def test_recover_from_bad_bootstub(self):
     self._go_to_dfu()

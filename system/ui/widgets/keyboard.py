@@ -5,10 +5,11 @@ from typing import Literal
 import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.inputbox import InputBox
-from openpilot.system.ui.widgets.label import Label, TextAlignment
+from openpilot.system.ui.widgets.label import Label
 
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
@@ -19,7 +20,7 @@ DELETE_REPEAT_INTERVAL = 0.07
 CONTENT_MARGIN = 50
 BACKSPACE_KEY = "<-"
 ENTER_KEY = "->"
-SPACE_KEY = "  "
+SPACE_KEY = " "
 SHIFT_INACTIVE_KEY = "SHIFT_OFF"
 SHIFT_ACTIVE_KEY = "SHIFT_ON"
 CAPS_LOCK_KEY = "CAPS"
@@ -44,13 +45,13 @@ KEYBOARD_LAYOUTS = {
   "numbers": [
     ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
     ["-", "/", ":", ";", "(", ")", "$", "&", "@", "\""],
-    [SYMBOL_KEY, ".", ",", "?", "!", "`", BACKSPACE_KEY],
+    [SYMBOL_KEY, "_", ",", "?", "!", "`", BACKSPACE_KEY],
     [ABC_KEY, SPACE_KEY, ".", ENTER_KEY],
   ],
   "specials": [
     ["[", "]", "{", "}", "#", "%", "^", "*", "+", "="],
     ["_", "\\", "|", "~", "<", ">", "€", "£", "¥", "•"],
-    [NUMERIC_KEY, ".", ",", "?", "!", "'", BACKSPACE_KEY],
+    [NUMERIC_KEY, "-", ",", "?", "!", "'", BACKSPACE_KEY],
     [ABC_KEY, SPACE_KEY, ".", ENTER_KEY],
   ],
 }
@@ -62,8 +63,8 @@ class Keyboard(Widget):
     self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False
     self._last_shift_press_time = 0
-    self._title = Label("", 90, FontWeight.BOLD, TextAlignment.LEFT)
-    self._sub_title = Label("", 55, FontWeight.NORMAL, TextAlignment.LEFT)
+    self._title = Label("", 90, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._sub_title = Label("", 55, FontWeight.NORMAL, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
 
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
@@ -77,7 +78,7 @@ class Keyboard(Widget):
     self._backspace_last_repeat: float = 0.0
 
     self._render_return_status = -1
-    self._cancel_button = Button("Cancel", self._cancel_button_callback)
+    self._cancel_button = Button(lambda: tr("Cancel"), self._cancel_button_callback)
 
     self._eye_button = Button("", self._eye_button_callback, button_style=ButtonStyle.TRANSPARENT)
 
@@ -98,11 +99,14 @@ class Keyboard(Widget):
           if key in self._key_icons:
             texture = self._key_icons[key]
             self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
-                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
+                                         button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
           else:
             self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
     self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
                                            button_style=ButtonStyle.KEYBOARD, multi_touch=True)
+
+  def set_text(self, text: str):
+    self._input_box.text = text
 
   @property
   def text(self):
@@ -243,7 +247,9 @@ class Keyboard(Widget):
       if not self._caps_lock and self._layout_name == "uppercase":
         self._layout_name = "lowercase"
 
-  def reset(self):
+  def reset(self, min_text_size: int | None = None):
+    if min_text_size is not None:
+      self._min_text_size = min_text_size
     self._render_return_status = -1
     self.clear()
 

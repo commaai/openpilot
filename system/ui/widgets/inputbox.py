@@ -1,6 +1,6 @@
 import pyray as rl
 import time
-from openpilot.system.ui.lib.application import gui_app, MousePos
+from openpilot.system.ui.lib.application import gui_app, MousePos, FONT_SCALE
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -130,7 +130,7 @@ class InputBox(Widget):
     rl.draw_text_ex(
       font,
       display_text,
-      rl.Vector2(int(rect.x + padding - self._text_offset), int(rect.y + rect.height / 2 - font_size / 2)),
+      rl.Vector2(int(rect.x + padding - self._text_offset), int(rect.y + rect.height / 2 - font_size * FONT_SCALE / 2)),
       font_size,
       0,
       text_color,
@@ -145,7 +145,7 @@ class InputBox(Widget):
       # Apply text offset to cursor position
       cursor_x -= self._text_offset
 
-      cursor_height = font_size + 4
+      cursor_height = font_size * FONT_SCALE + 4
       cursor_y = rect.y + rect.height / 2 - cursor_height / 2
       rl.draw_line(int(cursor_x), int(cursor_y), int(cursor_x), int(cursor_y + cursor_height), rl.WHITE)
 

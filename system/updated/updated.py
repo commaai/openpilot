@@ -243,7 +243,7 @@ class Updater:
     if b is None:
       b = self.get_branch(BASEDIR)
     b = {
-      ("tici", "release3"): "release-tici"
+      ("tizi", "release3"): "release-tizi",
     }.get((HARDWARE.get_device_type(), b), b)
     return b
 
@@ -382,6 +382,8 @@ class Updater:
 
     setup_git_options(OVERLAY_MERGED)
 
+    run(["git", "config", "--replace-all", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"], OVERLAY_MERGED)
+
     branch = self.target_branch
     git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
     cloudlog.info("git fetch success: %s", git_fetch_output)
@@ -389,6 +391,7 @@ class Updater:
     cloudlog.info("git reset in progress")
     cmds = [
       ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
+      ["git", "branch", "--set-upstream-to", f"origin/{branch}"],
       ["git", "reset", "--hard"],
       ["git", "clean", "-xdff"],
       ["git", "submodule", "sync"],

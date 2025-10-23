@@ -61,18 +61,6 @@ BASE_CONFIG = [
 ]
 
 CONFIGS = {
-  "tici": [
-    AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),
-    AmpConfig("Right Speaker Mixer Gain", 0b00, 0x2D, 2, 0b00001100),
-    AmpConfig("Right speaker output volume", 0x1c, 0x3E, 0, 0b00011111),
-    AmpConfig("DAI2 EQ enable", 0b1, 0x49, 1, 0b00000010),
-
-    *configs_from_eq_params(0x84, EQParams(0x274F, 0xC0FF, 0x3BF9, 0x0B3C, 0x1656)),
-    *configs_from_eq_params(0x8E, EQParams(0x1009, 0xC6BF, 0x2952, 0x1C97, 0x30DF)),
-    *configs_from_eq_params(0x98, EQParams(0x0F75, 0xCBE5, 0x0ED2, 0x2528, 0x3E42)),
-    *configs_from_eq_params(0xA2, EQParams(0x091F, 0x3D4C, 0xCE11, 0x1266, 0x2807)),
-    *configs_from_eq_params(0xAC, EQParams(0x0A9E, 0x3F20, 0xE573, 0x0A8B, 0x3A3B)),
-  ],
   "tizi": [
     AmpConfig("Left speaker output from left DAC", 0b1, 0x2B, 0, 0b11111111),
     AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),

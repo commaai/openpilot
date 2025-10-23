@@ -23,7 +23,7 @@ dependencies = [
   # core
   "cffi",
   "scons",
-  "pycapnp",
+  "pycapnp==2.1.0",
   "Cython",
   "setuptools",
   "numpy >=2.0",
@@ -35,6 +35,9 @@ dependencies = [
   # with the latest release
   "pyopenssl < 24.3.0",
   "pyaudio",
+
+  # ubloxd (TODO: just use struct)
+  "kaitaistruct",
 
   # panda
   "libusb1",
@@ -69,7 +72,9 @@ dependencies = [
   "zstandard",
 
   # ui
+  "raylib < 5.5.0.3", # TODO: unpin when they fix https://github.com/electronstudio/raylib-python-cffi/issues/186
   "qrcode",
+  "mapbox-earcut",
 ]
 
 [project.optional-dependencies]
@@ -101,8 +106,9 @@ dev = [
   "av",
   "azure-identity",
   "azure-storage-blob",
-  "dbus-next",
+  "dbus-next", # TODO: remove once we moved everything to jeepney
   "dictdiffer",
+  "jeepney",
   "matplotlib",
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
@@ -115,11 +121,11 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
-  "raylib",
 ]
 
 tools = [
   "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl ; (platform_machine != 'aarch64')",
+  "dearpygui>=2.1.0",
 ]
 
 [project.urls]
@@ -157,7 +163,6 @@ testpaths = [
   "system/camerad",
   "system/hardware",
   "system/loggerd",
-  "system/proclogd",
   "system/tests",
   "system/ubloxd",
   "system/webrtc",
@@ -172,7 +177,7 @@ quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
 ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
-skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.ts, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*"
+skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.ts, *.po, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*"
 
 [tool.mypy]
 python_version = "3.11"
@@ -246,6 +251,7 @@ exclude = [
   "teleoprtc_repo",
   "third_party",
   "*.ipynb",
+  "generated",
 ]
 lint.flake8-implicit-str-concat.allow-multiline = false
 
@@ -257,8 +263,13 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "tools".msg = "Use openpilot.tools"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
-"pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
 "time.time".msg = "Use time.monotonic"
+
+# raylib banned APIs
+"pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
+"pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
+"pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
+"pyray.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
 
 [tool.ruff.format]
 quote-style = "preserve"

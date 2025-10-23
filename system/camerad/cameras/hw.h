@@ -13,7 +13,7 @@ typedef enum {
   ISP_BPS_PROCESSED,  // fully processed image through the BPS
 } SpectraOutputType;
 
-// For the comma 3/3X three camera platform
+// For the comma 3X three camera platform
 
 struct CameraConfig {
   int camera_num;

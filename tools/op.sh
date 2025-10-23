@@ -284,7 +284,7 @@ function op_venv() {
 
 function op_adb() {
   op_before_cmd
-  op_run_command tools/scripts/adb_ssh.sh
+  op_run_command tools/scripts/adb_ssh.sh "$@"
 }
 
 function op_ssh() {
@@ -365,9 +365,12 @@ function op_switch() {
   fi
   BRANCH="$1"
 
+  git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git submodule deinit --all --force
   git fetch "$REMOTE" "$BRANCH"
   git checkout -f FETCH_HEAD
   git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
+  git submodule deinit --all --force
   git reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
   git submodule update --init --recursive
