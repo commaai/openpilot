@@ -37,6 +37,7 @@ OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
 def put_update_params(params: Params):
   params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
   params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+  params.put("UpdaterTargetBranch", BRANCH_NAME)
 
 
 def setup_homescreen(click, pm: PubMaster):
