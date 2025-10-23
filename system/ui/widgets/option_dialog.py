@@ -74,5 +74,4 @@ class MultiOptionDialog(Widget):
     self.select_button.set_enabled(self.selection != self.current)
     self.select_button.render(select_rect)
 
-    rl.draw_rectangle_lines_ex(options_rect, 1, rl.RED)
     return self._result
