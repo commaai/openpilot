@@ -175,14 +175,14 @@ class AdvancedNetworkSettings(Widget):
       self._wifi_metered_action.selected_button = int(metered) if metered in (MeteredType.UNKNOWN, MeteredType.YES, MeteredType.NO) else 0
 
   def _toggle_tethering(self):
-    checked = self._tethering_action.state
+    checked = self._tethering_action.get_state()
     self._tethering_action.set_enabled(False)
     if checked:
       self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
 
   def _toggle_roaming(self):
-    roaming_state = self._roaming_action.state
+    roaming_state = self._roaming_action.get_state()
     self._params.put_bool("GsmRoaming", roaming_state)
     self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn") or "", self._params.get_bool("GsmMetered"))
 
@@ -206,7 +206,7 @@ class AdvancedNetworkSettings(Widget):
     gui_app.set_modal_overlay(self._keyboard, update_apn)
 
   def _toggle_cellular_metered(self):
-    metered = self._cellular_metered_action.state
+    metered = self._cellular_metered_action.get_state()
     self._params.put_bool("GsmMetered", metered)
     self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), self._params.get("GsmApn") or "", metered)
 
