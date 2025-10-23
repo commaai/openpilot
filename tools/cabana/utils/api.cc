@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/api.h"
+#include "tools/cabana/utils/api.h"
 
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
@@ -15,7 +15,7 @@
 
 #include "common/util.h"
 #include "system/hardware/hw.h"
-#include "selfdrive/ui/qt/util.h"
+#include "tools/cabana/utils/util.h"
 
 QString getVersion() {
   static QString version =  QString::fromStdString(Params().get("Version"));
