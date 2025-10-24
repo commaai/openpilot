@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-import re
-import sys
 import pyray as rl
+import re
+import shutil
+import sys
+
+from pathlib import Path
+
+from openpilot.common.basedir import BASEDIR
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
+from openpilot.system.updated.updated import STAGING_ROOT
 
 MARGIN = 50
 SPACING = 40
@@ -18,6 +24,7 @@ BUTTON_SIZE = rl.Vector2(310, 160)
 DEMO_TEXT = """This is a sample text that will be wrapped and scrolled if necessary.
             The text is long enough to demonstrate scrolling and word wrapping.""" * 30
 
+OLD_OPENPILOT = Path(STAGING_ROOT) / "old_openpilot"
 
 def wrap_text(text, font_size, max_width):
   lines = []
@@ -56,13 +63,30 @@ class TextWindow(Widget):
     self._scroll_panel = GuiScrollPanel()
     self._scroll_panel._offset_filter_y.x = -max(self._content_rect.height - self._textarea_rect.height, 0)
 
-    button_text = "Exit" if PC else "Reboot"
-    self._button = Button(button_text, click_callback=self._on_button_clicked, button_style=ButtonStyle.TRANSPARENT_WHITE_BORDER)
+    if PC:
+      self._button_text = "Exit"
+    elif OLD_OPENPILOT.exists():
+      self._button_text = "Restore"
+    else:
+      self._button_text = "Reboot"
 
-  @staticmethod
-  def _on_button_clicked():
+    self._button = Button(self._button_text, click_callback=self._on_button_clicked, button_style=ButtonStyle.TRANSPARENT_WHITE_BORDER)
+
+  def _on_button_clicked(self):
     gui_app.request_close()
     if not PC:
+      if self._button_text == "Restore":
+        try:
+          temp_path = Path("/data/openpilot_new")
+          if temp_path.exists():
+            shutil.rmtree(temp_path)
+
+          shutil.move(str(BASEDIR), str(temp_path))
+          shutil.move(str(OLD_OPENPILOT), str(BASEDIR))
+
+          shutil.rmtree(temp_path)
+        except Exception:
+          pass
       HARDWARE.reboot()
 
   def _render(self, rect: rl.Rectangle):
