@@ -140,7 +140,12 @@ class GuiApplication:
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
-    self._scale = SCALE
+
+    if PC and SCALE == 1.0:
+      self._scale = self._calculate_auto_scale()
+    else:
+      self._scale = SCALE
+
     self._scaled_width = int(self._width * self._scale)
     self._scaled_height = int(self._height * self._scale)
     self._render_texture: rl.RenderTexture | None = None
@@ -459,6 +464,18 @@ class GuiApplication:
     if STRICT_MODE and fps < self._target_fps * FPS_CRITICAL_THRESHOLD:
       cloudlog.error(f"FPS dropped critically below {fps}. Shutting down UI.")
       os._exit(1)
+
+  def _calculate_auto_scale(self) -> float:
+     # Create temporary window to query monitor info
+    rl.init_window(1, 1, "")
+    w, h = rl.get_monitor_width(0), rl.get_monitor_height(0)
+    rl.close_window()
+
+    if w == 0 or h == 0 or (w >= self._width and h >= self._height):
+      return 1.0
+
+    # Apply 0.95 factor for window decorations/taskbar margin
+    return max(0.3, min(w / self._width, h / self._height) * 0.95)
 
 
 gui_app = GuiApplication(2160, 1080)
