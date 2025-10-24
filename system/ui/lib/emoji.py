@@ -6,6 +6,7 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import FONT_DIR
 
+_emoji_font: ImageFont.FreeTypeFont | None = None
 _cache: dict[str, rl.Texture] = {}
 
 EMOJI_REGEX = re.compile(
@@ -32,6 +33,12 @@ EMOJI_REGEX = re.compile(
   flags=re.UNICODE
 )
 
+def _load_emoji_font() -> ImageFont.FreeTypeFont | None:
+  global _emoji_font
+  if _emoji_font is None:
+    _emoji_font = ImageFont.truetype(str(FONT_DIR.joinpath("NotoColorEmoji.ttf")), 109)
+  return _emoji_font
+
 def find_emoji(text):
   return [(m.start(), m.end(), m.group()) for m in EMOJI_REGEX.finditer(text)]
 
@@ -39,8 +46,7 @@ def emoji_tex(emoji):
   if emoji not in _cache:
     img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype(FONT_DIR.joinpath("NotoColorEmoji.ttf"), 109)
-    draw.text((0, 0), emoji, font=font, embedded_color=True)
+    draw.text((0, 0), emoji, font=_load_emoji_font(), embedded_color=True)
     with io.BytesIO() as buffer:
       img.save(buffer, format="PNG")
       l = buffer.tell()
