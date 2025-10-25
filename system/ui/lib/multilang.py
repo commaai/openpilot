@@ -1,7 +1,6 @@
 import os
 import json
 import gettext
-from collections.abc import Callable
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 
@@ -32,7 +31,6 @@ class Multilang:
     self.languages = {}
     self.codes = {}
     self._translation: gettext.NullTranslations | gettext.GNUTranslations = gettext.NullTranslations()
-    self._listeners: list[Callable[[str], None]] = []
     self._load_languages()
 
   @property
@@ -60,12 +58,6 @@ class Multilang:
     self._params.put("LanguageSetting", language_code)
     self._language = language_code
     self.setup()
-    # Notify listeners (e.g., UI) so they can load additional font codepoints
-    for cb in self._listeners:
-      try:
-        cb(language_code)
-      except Exception as e:
-        cloudlog.error(f"Language change listener error: {e}")
 
   def tr(self, text: str) -> str:
     return self._translation.gettext(text)
@@ -82,10 +74,6 @@ class Multilang:
       lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
       if lang in self.codes:
         self._language = lang
-
-  # Listener registration for language change events
-  def add_language_change_listener(self, listener: Callable[[str], None]) -> None:
-    self._listeners.append(listener)
 
 
 multilang = Multilang()

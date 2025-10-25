@@ -140,7 +140,6 @@ class GuiApplication:
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
-    self._unifont_languages_loaded: set[str] = set()
 
     if PC and os.getenv("SCALE") is None:
       self._scale = self._calculate_auto_scale()
@@ -198,8 +197,6 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
-    # Update fonts dynamically on language change (load additional codepoints as needed)
-    multilang.add_language_change_listener(self._on_language_changed)
     self._patch_text_functions()
 
     if not PC:
@@ -363,88 +360,37 @@ class GuiApplication:
     return self._height
 
   def _load_fonts(self):
-    # Load fonts with a minimal, fast set of codepoints
-    # - Inter: pre-load ASCII + Latin ranges to cover all Latin-based languages
-    # - Unifont: load only current language's required glyphs; other languages loaded on demand
-    inter_chars = self._build_base_char_set()
-    inter_cp_count = rl.ffi.new("int *", 1)
-    inter_codepoints = rl.load_codepoints("".join(inter_chars), inter_cp_count)
+    # Create a character set from our keyboard layouts
+    from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
+
+    all_chars = set()
+    for layout in KEYBOARD_LAYOUTS.values():
+      all_chars.update(key for row in layout for key in row)
+    all_chars |= set("–‑✓×°§•")
+
+    # Load only the characters used in translations
+    for language, code in multilang.languages.items():
+      all_chars |= set(language)
+      try:
+        with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
+          all_chars |= set(f.read())
+      except FileNotFoundError:
+        cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
+
+    all_chars = "".join(all_chars)
+    cloudlog.debug(f"Loading fonts with {len(all_chars)} glyphs.")
+
+    codepoint_count = rl.ffi.new("int *", 1)
+    codepoints = rl.load_codepoints(all_chars, codepoint_count)
 
     for font_weight_file in FontWeight:
-      if font_weight_file == FontWeight.UNIFONT:
-        continue
       with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-        font = rl.load_font_ex(fspath.as_posix(), 200, inter_codepoints, inter_cp_count[0])
+        font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font
 
-    rl.unload_codepoints(inter_codepoints)
-
-    # Load unifont only if current language requires it
-    if multilang.requires_unifont():
-      self._unifont_languages_loaded.add(multilang.language)
-      self._reload_unifont_fonts()
-
+    rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
-
-  def _build_base_char_set(self) -> set[str]:
-    # ASCII printable range + Latin-1 Supplement + Latin Extended-A
-    base = {chr(cp) for cp in range(32, 127)}
-    base |= {chr(cp) for cp in range(0x00A0, 0x00FF + 1)}
-    base |= {chr(cp) for cp in range(0x0100, 0x017F + 1)}
-
-    # Add symbols used in UI
-    base |= set("–‑✓×°§•")
-
-    # Add characters from on-screen keyboard layouts
-    from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
-    for layout in KEYBOARD_LAYOUTS.values():
-      base.update({key for row in layout for key in row})
-    return base
-
-  def _gather_language_chars(self, language_code: str) -> set[str]:
-    chars = set()
-    # Add the display name and some UI symbols
-    for name, code in multilang.languages.items():
-      if code == language_code:
-        chars |= set(name)
-        break
-    chars |= set("–‑✓×°§•")
-    # Add translation file chars
-    try:
-      with open(os.path.join(TRANSLATIONS_DIR, f"app_{language_code}.po"), encoding="utf-8") as f:
-        chars |= set(f.read())
-    except FileNotFoundError:
-      cloudlog.warning(f"Translation file for language '{language_code}' not found when loading fonts.")
-    return chars
-
-  def _reload_unifont_fonts(self) -> None:
-    if not self._unifont_languages_loaded:
-      return
-    lang_chars = set()
-    for code in self._unifont_languages_loaded:
-      lang_chars |= self._gather_language_chars(code)
-    cp_count = rl.ffi.new("int *", 1)
-    codepoints = rl.load_codepoints("".join(lang_chars), cp_count)
-    try:
-      with as_file(FONT_DIR.joinpath(FontWeight.UNIFONT)) as fspath:
-        font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, cp_count[0])
-        rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        # If an old Unifont exists, unload it to free memory
-        if FontWeight.UNIFONT in self._fonts:
-          try:
-            rl.unload_font(self._fonts[FontWeight.UNIFONT])
-          except Exception:
-            pass
-        self._fonts[FontWeight.UNIFONT] = font
-    finally:
-      rl.unload_codepoints(codepoints)
-
-  def _on_language_changed(self, language_code: str) -> None:
-    # If new language requires unifont, load appropriate glyphs.
-    if multilang.requires_unifont():
-      self._unifont_languages_loaded.add(language_code)
-      self._reload_unifont_fonts()
 
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
