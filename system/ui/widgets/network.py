@@ -80,12 +80,16 @@ class NetworkUI(Widget):
 
   def hide_event(self):
     self._wifi_panel.hide_event()
+    if self._current_panel == PanelType.ADVANCED:
+      self._advanced_panel.hide_event()
 
   def _cycle_panel(self):
     if self._current_panel == PanelType.WIFI:
       self._set_current_panel(PanelType.ADVANCED)
+      self._advanced_panel.show_event()
     else:
       self._set_current_panel(PanelType.WIFI)
+      self._advanced_panel.hide_event()
 
   def _render(self, _):
     # subtract button
@@ -160,6 +164,12 @@ class AdvancedNetworkSettings(Widget):
     # Set initial config
     metered = self._params.get_bool("GsmMetered")
     self._wifi_manager.update_gsm_settings(roaming_enabled, self._params.get("GsmApn") or "", metered)
+
+  def show_event(self):
+    self._scroller.show_event()
+
+  def hide_event(self):
+    self._scroller.hide_event()
 
   def _on_network_updated(self, networks: list[Network]):
     self._tethering_action.set_enabled(True)
