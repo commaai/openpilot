@@ -2,7 +2,7 @@ import os
 import posixpath
 import socket
 from functools import cache
-from openpilot.common.retry import retry
+from openpilot.common.utils import retry
 from urllib.parse import urlparse
 
 from openpilot.tools.lib.url_file import URLFile
