@@ -11,9 +11,9 @@ from collections import deque
 from dataclasses import dataclass
 from typing import NamedTuple
 from importlib.resources import as_file, files
+from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC, TICI
-from openpilot.common.realtime import Ratekeeper
 from openpilot.system.ui.lib.font import DEFAULT_TEXT_COLOR, DEFAULT_TEXT_SIZE, FONT_SCALE, FontWeight, FontManager
 
 _DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
