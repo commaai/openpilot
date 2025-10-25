@@ -11,7 +11,7 @@ import shutil
 import pyray as rl
 
 from cereal import log
-from openpilot.common.run import run_cmd
+from openpilot.common.utils import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
