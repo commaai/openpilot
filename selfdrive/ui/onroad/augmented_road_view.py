@@ -112,25 +112,12 @@ class AugmentedRoadView(CameraView):
     pass
 
   def _draw_border(self, rect: rl.Rectangle):
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+    rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, rl.BLACK)
     border_roundness = 0.12
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
     border_rect = rl.Rectangle(rect.x + UI_BORDER_SIZE, rect.y + UI_BORDER_SIZE,
                                rect.width - 2 * UI_BORDER_SIZE, rect.height - 2 * UI_BORDER_SIZE)
     rl.draw_rectangle_rounded_lines_ex(border_rect, border_roundness, 10, UI_BORDER_SIZE, border_color)
-
-    # black bg around colored border
-    black_bg_thickness = UI_BORDER_SIZE
-    black_bg_rect = rl.Rectangle(
-      border_rect.x - UI_BORDER_SIZE,
-      border_rect.y - UI_BORDER_SIZE,
-      border_rect.width + 2 * UI_BORDER_SIZE,
-      border_rect.height + 2 * UI_BORDER_SIZE,
-    )
-    edge_offset = (black_bg_rect.height - border_rect.height) / 2  # distance between rect edges
-    roundness_out = (border_roundness * border_rect.height + 2 * edge_offset) / max(1.0, black_bg_rect.height)
-    rl.draw_rectangle_rounded_lines_ex(black_bg_rect, roundness_out, 10, black_bg_thickness, rl.BLACK)
-    rl.end_scissor_mode()
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
