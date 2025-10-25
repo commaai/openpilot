@@ -217,24 +217,22 @@ class GuiApplication:
     profiler = cProfile.Profile()
     start_time = time.monotonic()
     profiler.enable()
-    try:
-      yield
-    except Exception:
-      profiler.disable()
-      raise
-    else:
-      profiler.disable()
-      elapsed_ms = (time.monotonic() - start_time) * 1e3
 
-      stats_stream = io.StringIO()
-      pstats.Stats(profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
-      print("\n=== Startup profile ===")
-      print(stats_stream.getvalue().rstrip())
+    # do the init
+    yield
 
-      green = "\033[92m"
-      reset = "\033[0m"
-      print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
-      sys.exit(0)
+    profiler.disable()
+    elapsed_ms = (time.monotonic() - start_time) * 1e3
+
+    stats_stream = io.StringIO()
+    pstats.Stats(profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+    print("\n=== Startup profile ===")
+    print(stats_stream.getvalue().rstrip())
+
+    green = "\033[92m"
+    reset = "\033[0m"
+    print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
+    sys.exit(0)
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:
