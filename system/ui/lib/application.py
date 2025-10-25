@@ -9,13 +9,12 @@ import threading
 from collections.abc import Callable
 from collections import deque
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC, TICI
-from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, UNIFONT_LANGUAGES, multilang
 from openpilot.common.realtime import Ratekeeper
+from openpilot.system.ui.lib.font import DEFAULT_TEXT_COLOR, DEFAULT_TEXT_SIZE, FONT_SCALE, FontWeight, font_fallback, load_fonts
 
 _DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -30,35 +29,7 @@ SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == "1"
 STRICT_MODE = os.getenv("STRICT_MODE") == "1"
 SCALE = float(os.getenv("SCALE", "1.0"))
 
-DEFAULT_TEXT_SIZE = 60
-DEFAULT_TEXT_COLOR = rl.WHITE
-
-# Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
-# The real scales for the fonts below range from 1.212 to 1.266
-FONT_SCALE = 1.242
-
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
-FONT_DIR = ASSETS_DIR.joinpath("fonts")
-
-
-class FontWeight(StrEnum):
-  THIN = "Inter-Thin.ttf"
-  EXTRA_LIGHT = "Inter-ExtraLight.ttf"
-  LIGHT = "Inter-Light.ttf"
-  NORMAL = "Inter-Regular.ttf"
-  MEDIUM = "Inter-Medium.ttf"
-  SEMI_BOLD = "Inter-SemiBold.ttf"
-  BOLD = "Inter-Bold.ttf"
-  EXTRA_BOLD = "Inter-ExtraBold.ttf"
-  BLACK = "Inter-Black.ttf"
-  UNIFONT = "unifont.otf"
-
-
-def font_fallback(font: rl.Font) -> rl.Font:
-  """Fall back to unifont for languages that require it."""
-  if multilang.requires_unifont():
-    return gui_app.font(FontWeight.UNIFONT)
-  return font
 
 
 @dataclass
@@ -196,7 +167,7 @@ class GuiApplication:
 
     self._target_fps = fps
     self._set_styles()
-    self._load_fonts()
+    load_fonts(self)
     self._patch_text_functions()
 
     if not PC:
@@ -359,53 +330,6 @@ class GuiApplication:
   def height(self):
     return self._height
 
-  def _load_fonts(self):
-    # Create a character set from our keyboard layouts
-    from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
-
-    base_chars = set()
-    for layout in KEYBOARD_LAYOUTS.values():
-      base_chars.update(key for row in layout for key in row)
-    base_chars |= set("–‑✓×°§•")
-
-    # Load only the characters used in translations
-    unifont_chars = set(base_chars)
-    for language, code in multilang.languages.items():
-      unifont_chars |= set(language)
-      try:
-        with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
-          lang_chars = set(f.read())
-          if code in UNIFONT_LANGUAGES:
-            unifont_chars |= lang_chars
-          else:
-            base_chars |= lang_chars
-      except FileNotFoundError:
-        cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
-
-    base_chars = "".join(base_chars)
-    cloudlog.debug(f"Loading fonts with {len(base_chars)} glyphs.")
-
-    unifont_chars = "".join(unifont_chars)
-    cloudlog.debug(f"Loading unifont with {len(unifont_chars)} glyphs.")
-
-    base_codepoint_count = rl.ffi.new("int *", 1)
-    base_codepoints = rl.load_codepoints(base_chars, base_codepoint_count)
-
-    unifont_codepoint_count = rl.ffi.new("int *", 1)
-    unifont_codepoints = rl.load_codepoints(unifont_chars, unifont_codepoint_count)
-
-    for font_weight_file in FontWeight:
-      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-        if font_weight_file == FontWeight.UNIFONT:
-          font = rl.load_font_ex(fspath.as_posix(), 200, unifont_codepoints, unifont_codepoint_count[0])
-        else:
-          font = rl.load_font_ex(fspath.as_posix(), 200, base_codepoints, base_codepoint_count[0])
-        rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        self._fonts[font_weight_file] = font
-
-    rl.unload_codepoints(base_codepoints)
-    rl.unload_codepoints(unifont_codepoints)
-    rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
@@ -420,7 +344,7 @@ class GuiApplication:
       rl._orig_draw_text_ex = rl.draw_text_ex
 
     def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
-      font = font_fallback(font)
+      font = font_fallback(font, self)
       return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
 
     rl.draw_text_ex = _draw_text_ex_scaled
@@ -481,7 +405,7 @@ class GuiApplication:
       os._exit(1)
 
   def _calculate_auto_scale(self) -> float:
-     # Create temporary window to query monitor info
+    # Create temporary window to query monitor info
     rl.init_window(1, 1, "")
     w, h = rl.get_monitor_width(0), rl.get_monitor_height(0)
     rl.close_window()

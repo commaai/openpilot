@@ -4,7 +4,7 @@ import re
 from PIL import Image, ImageDraw, ImageFont
 import pyray as rl
 
-from openpilot.system.ui.lib.application import FONT_DIR
+from openpilot.system.ui.lib.font import FONT_DIR
 
 _emoji_font: ImageFont.FreeTypeFont | None = None
 _cache: dict[str, rl.Texture] = {}
