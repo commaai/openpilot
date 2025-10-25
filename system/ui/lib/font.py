@@ -29,58 +29,69 @@ class FontWeight(StrEnum):
   UNIFONT = "unifont.otf"
 
 
-def font_fallback(font: rl.Font, gui_app) -> rl.Font:
-  """Fall back to unifont for languages that require it."""
-  if multilang.requires_unifont():
-    return gui_app.font(FontWeight.UNIFONT)
-  return font
+class FontManager:
+  def __init__(self, gui_app):
+    self.gui_app = gui_app
+    self._fonts: dict[FontWeight, rl.Font] = {}
 
+  def font(self, font_weight: FontWeight) -> rl.Font:
+    return self._fonts[font_weight]
 
-def load_fonts(gui_app):
-  """Load fonts into the provided GuiApplication instance (gui_app._fonts)."""
-  # Create a character set from our keyboard layouts
-  from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
+  def font_fallback(self, font: rl.Font) -> rl.Font:
+    """Fall back to unifont for languages that require it."""
+    if multilang.requires_unifont():
+      return self.font(FontWeight.UNIFONT)
+    return font
 
-  base_chars = set()
-  for layout in KEYBOARD_LAYOUTS.values():
-    base_chars.update(key for row in layout for key in row)
-  base_chars |= set("–‑✓×°§•")
+  def load_fonts(self):
+    # Create a character set from our keyboard layouts
+    from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
 
-  # Load only the characters used in translations
-  unifont_chars = set(base_chars)
-  for language, code in multilang.languages.items():
-    unifont_chars |= set(language)
-    try:
-      with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
-        lang_chars = set(f.read())
-        if code in UNIFONT_LANGUAGES:
-          unifont_chars |= lang_chars
+    base_chars = set()
+    for layout in KEYBOARD_LAYOUTS.values():
+      base_chars.update(key for row in layout for key in row)
+    base_chars |= set("–‑✓×°§•")
+
+    # Load only the characters used in translations
+    unifont_chars = set(base_chars)
+    for language, code in multilang.languages.items():
+      unifont_chars |= set(language)
+      try:
+        with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
+          lang_chars = set(f.read())
+          if code in UNIFONT_LANGUAGES:
+            unifont_chars |= lang_chars
+          else:
+            base_chars |= lang_chars
+      except FileNotFoundError:
+        cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
+
+    base_chars = "".join(base_chars)
+    cloudlog.debug(f"Loading fonts with {len(base_chars)} glyphs.")
+
+    unifont_chars = "".join(unifont_chars)
+    cloudlog.debug(f"Loading unifont with {len(unifont_chars)} glyphs.")
+
+    base_codepoint_count = rl.ffi.new("int *", 1)
+    base_codepoints = rl.load_codepoints(base_chars, base_codepoint_count)
+
+    unifont_codepoint_count = rl.ffi.new("int *", 1)
+    unifont_codepoints = rl.load_codepoints(unifont_chars, unifont_codepoint_count)
+
+    for font_weight_file in FontWeight:
+      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
+        if font_weight_file == FontWeight.UNIFONT:
+          font = rl.load_font_ex(fspath.as_posix(), 200, unifont_codepoints, unifont_codepoint_count[0])
         else:
-          base_chars |= lang_chars
-    except FileNotFoundError:
-      cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
+          font = rl.load_font_ex(fspath.as_posix(), 200, base_codepoints, base_codepoint_count[0])
+        rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        self._fonts[font_weight_file] = font
 
-  base_chars = "".join(base_chars)
-  cloudlog.debug(f"Loading fonts with {len(base_chars)} glyphs.")
+    rl.unload_codepoints(base_codepoints)
+    rl.unload_codepoints(unifont_codepoints)
+    rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
-  unifont_chars = "".join(unifont_chars)
-  cloudlog.debug(f"Loading unifont with {len(unifont_chars)} glyphs.")
-
-  base_codepoint_count = rl.ffi.new("int *", 1)
-  base_codepoints = rl.load_codepoints(base_chars, base_codepoint_count)
-
-  unifont_codepoint_count = rl.ffi.new("int *", 1)
-  unifont_codepoints = rl.load_codepoints(unifont_chars, unifont_codepoint_count)
-
-  for font_weight_file in FontWeight:
-    with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-      if font_weight_file == FontWeight.UNIFONT:
-        font = rl.load_font_ex(fspath.as_posix(), 200, unifont_codepoints, unifont_codepoint_count[0])
-      else:
-        font = rl.load_font_ex(fspath.as_posix(), 200, base_codepoints, base_codepoint_count[0])
-      rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-      gui_app._fonts[font_weight_file] = font
-
-  rl.unload_codepoints(base_codepoints)
-  rl.unload_codepoints(unifont_codepoints)
-  rl.gui_set_font(gui_app._fonts[FontWeight.NORMAL])
+  def unload_fonts(self):
+    for font in self._fonts.values():
+      rl.unload_font(font)
+    self._fonts = {}

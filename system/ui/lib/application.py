@@ -14,7 +14,7 @@ from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC, TICI
 from openpilot.common.realtime import Ratekeeper
-from openpilot.system.ui.lib.font import DEFAULT_TEXT_COLOR, DEFAULT_TEXT_SIZE, FONT_SCALE, FontWeight, font_fallback, load_fonts
+from openpilot.system.ui.lib.font import DEFAULT_TEXT_COLOR, DEFAULT_TEXT_SIZE, FONT_SCALE, FontWeight, FontManager
 
 _DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -108,7 +108,6 @@ class MouseState:
 
 class GuiApplication:
   def __init__(self, width: int, height: int):
-    self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
 
@@ -126,6 +125,8 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
+
+    self.fonts = FontManager(self)
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -167,7 +168,7 @@ class GuiApplication:
 
     self._target_fps = fps
     self._set_styles()
-    load_fonts(self)
+    self.fonts.load_fonts()
     self._patch_text_functions()
 
     if not PC:
@@ -236,9 +237,7 @@ class GuiApplication:
       rl.unload_texture(texture)
     self._textures = {}
 
-    for font in self._fonts.values():
-      rl.unload_font(font)
-    self._fonts = {}
+    self.fonts.unload_fonts()
 
     if self._render_texture is not None:
       rl.unload_render_texture(self._render_texture)
@@ -320,7 +319,7 @@ class GuiApplication:
       pass
 
   def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
-    return self._fonts[font_weight]
+    return self.fonts.font(font_weight)
 
   @property
   def width(self):
@@ -344,7 +343,7 @@ class GuiApplication:
       rl._orig_draw_text_ex = rl.draw_text_ex
 
     def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
-      font = font_fallback(font, self)
+      font = self.fonts.font_fallback(font)
       return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
 
     rl.draw_text_ex = _draw_text_ex_scaled
