@@ -363,27 +363,29 @@ class GuiApplication:
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
 
-    all_chars = set()
+    base_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
-      all_chars.update(key for row in layout for key in row)
-    all_chars |= set("–‑✓×°§•")
-
-    # Load only the characters used in translations
-    for language, code in multilang.languages.items():
-      all_chars |= set(language)
-      try:
-        with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
-          all_chars |= set(f.read())
-      except FileNotFoundError:
-        cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
-
-    all_chars = "".join(all_chars)
-    cloudlog.debug(f"Loading fonts with {len(all_chars)} glyphs.")
-
-    codepoint_count = rl.ffi.new("int *", 1)
-    codepoints = rl.load_codepoints(all_chars, codepoint_count)
+      base_chars.update(key for row in layout for key in row)
+    base_chars |= set("–‑✓×°§•")
 
     for font_weight_file in FontWeight:
+      font_chars = set(base_chars)
+      # Load only the characters used in translations
+      if font_weight_file == FontWeight.UNIFONT:
+        for language, code in multilang.languages.items():
+          font_chars |= set(language)
+          try:
+            with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
+              font_chars |= set(f.read())
+          except FileNotFoundError:
+            cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
+
+      font_chars = "".join(font_chars)
+      cloudlog.debug(f"Loading fonts with {len(font_chars)} glyphs.")
+
+      codepoint_count = rl.ffi.new("int *", 1)
+      codepoints = rl.load_codepoints(font_chars, codepoint_count)
+
       print(f"Loading font: {font_weight_file}")
       t = time.monotonic()
       with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
@@ -392,7 +394,7 @@ class GuiApplication:
         self._fonts[font_weight_file] = font
       print(f"Loaded font {font_weight_file} in {(time.monotonic() - t) * 1000:0.2f}ms")
 
-    rl.unload_codepoints(codepoints)
+      rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
