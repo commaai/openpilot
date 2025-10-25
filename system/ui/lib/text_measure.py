@@ -1,6 +1,5 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.font import FONT_SCALE
+from openpilot.system.ui.lib.application import gui_app, FONT_SCALE
 from openpilot.system.ui.lib.emoji import find_emoji
 
 _cache: dict[int, rl.Vector2] = {}
