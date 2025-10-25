@@ -6,6 +6,7 @@ import signal
 import sys
 import pyray as rl
 import threading
+from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
 from dataclasses import dataclass
@@ -14,7 +15,7 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC, TICI
-from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, multilang
+from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, UNIFONT_LANGUAGES, multilang
 from openpilot.common.realtime import Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
@@ -141,7 +142,7 @@ class GuiApplication:
     self._width = width
     self._height = height
 
-    if PC and SCALE == 1.0:
+    if PC and os.getenv("SCALE") is None:
       self._scale = self._calculate_auto_scale()
     else:
       self._scale = SCALE
@@ -170,37 +171,68 @@ class GuiApplication:
     self._window_close_requested = True
 
   def init_window(self, title: str, fps: int = _DEFAULT_FPS):
-    def _close(sig, frame):
-      self.close()
-      sys.exit(0)
-    signal.signal(signal.SIGINT, _close)
-    atexit.register(self.close)
+    with self._startup_profile_context():
+      def _close(sig, frame):
+        self.close()
+        sys.exit(0)
+      signal.signal(signal.SIGINT, _close)
+      atexit.register(self.close)
 
-    HARDWARE.set_display_power(True)
-    HARDWARE.set_screen_brightness(65)
+      HARDWARE.set_display_power(True)
+      HARDWARE.set_screen_brightness(65)
 
-    self._set_log_callback()
-    rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
+      self._set_log_callback()
+      rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
 
-    flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
-    if ENABLE_VSYNC:
-      flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
-    rl.set_config_flags(flags)
+      flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
+      if ENABLE_VSYNC:
+        flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
+      rl.set_config_flags(flags)
 
-    rl.init_window(self._scaled_width, self._scaled_height, title)
-    if self._scale != 1.0:
-      rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
-      self._render_texture = rl.load_render_texture(self._width, self._height)
-      rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-    rl.set_target_fps(fps)
+      rl.init_window(self._scaled_width, self._scaled_height, title)
+      if self._scale != 1.0:
+        rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
+        self._render_texture = rl.load_render_texture(self._width, self._height)
+        rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      rl.set_target_fps(fps)
 
-    self._target_fps = fps
-    self._set_styles()
-    self._load_fonts()
-    self._patch_text_functions()
+      self._target_fps = fps
+      self._set_styles()
+      self._load_fonts()
+      self._patch_text_functions()
 
-    if not PC:
-      self._mouse.start()
+      if not PC:
+        self._mouse.start()
+
+  @contextmanager
+  def _startup_profile_context(self):
+    if "PROFILE_STARTUP" not in os.environ:
+      yield
+      return
+
+    import cProfile
+    import io
+    import pstats
+
+    profiler = cProfile.Profile()
+    start_time = time.monotonic()
+    profiler.enable()
+
+    # do the init
+    yield
+
+    profiler.disable()
+    elapsed_ms = (time.monotonic() - start_time) * 1e3
+
+    stats_stream = io.StringIO()
+    pstats.Stats(profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+    print("\n=== Startup profile ===")
+    print(stats_stream.getvalue().rstrip())
+
+    green = "\033[92m"
+    reset = "\033[0m"
+    print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
+    sys.exit(0)
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:
@@ -363,33 +395,48 @@ class GuiApplication:
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
 
-    all_chars = set()
+    base_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
-      all_chars.update(key for row in layout for key in row)
-    all_chars |= set("–‑✓×°§•")
+      base_chars.update(key for row in layout for key in row)
+    base_chars |= set("–‑✓×°§•")
 
     # Load only the characters used in translations
+    unifont_chars = set(base_chars)
     for language, code in multilang.languages.items():
-      all_chars |= set(language)
+      unifont_chars |= set(language)
       try:
         with open(os.path.join(TRANSLATIONS_DIR, f"app_{code}.po")) as f:
-          all_chars |= set(f.read())
+          lang_chars = set(f.read())
+          if code in UNIFONT_LANGUAGES:
+            unifont_chars |= lang_chars
+          else:
+            base_chars |= lang_chars
       except FileNotFoundError:
         cloudlog.warning(f"Translation file for language '{code}' not found when loading fonts.")
 
-    all_chars = "".join(all_chars)
-    cloudlog.debug(f"Loading fonts with {len(all_chars)} glyphs.")
+    base_chars = "".join(base_chars)
+    cloudlog.debug(f"Loading fonts with {len(base_chars)} glyphs.")
 
-    codepoint_count = rl.ffi.new("int *", 1)
-    codepoints = rl.load_codepoints(all_chars, codepoint_count)
+    unifont_chars = "".join(unifont_chars)
+    cloudlog.debug(f"Loading unifont with {len(unifont_chars)} glyphs.")
+
+    base_codepoint_count = rl.ffi.new("int *", 1)
+    base_codepoints = rl.load_codepoints(base_chars, base_codepoint_count)
+
+    unifont_codepoint_count = rl.ffi.new("int *", 1)
+    unifont_codepoints = rl.load_codepoints(unifont_chars, unifont_codepoint_count)
 
     for font_weight_file in FontWeight:
       with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-        font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
+        if font_weight_file == FontWeight.UNIFONT:
+          font = rl.load_font_ex(fspath.as_posix(), 200, unifont_codepoints, unifont_codepoint_count[0])
+        else:
+          font = rl.load_font_ex(fspath.as_posix(), 200, base_codepoints, base_codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font
 
-    rl.unload_codepoints(codepoints)
+    rl.unload_codepoints(base_codepoints)
+    rl.unload_codepoints(unifont_codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):

@@ -31,7 +31,7 @@ import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api
-from openpilot.common.file_helpers import CallbackReader, get_upload_stream
+from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC

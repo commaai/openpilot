@@ -330,6 +330,8 @@ class ListItem(Widget):
       # do callback first in case receiver changes description
       if self.description_visible and self.description_opened_callback is not None:
         self.description_opened_callback()
+        # Call _update_state to catch any description changes
+        self._update_state()
 
       content_width = int(self._rect.width - ITEM_PADDING * 2)
       self._rect.height = self.get_item_height(self._font, content_width)

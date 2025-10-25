@@ -1,9 +1,13 @@
 import os
 import json
 import gettext
-from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
+
+try:
+  from openpilot.common.params import Params
+except ImportError:
+  Params = None
 
 SYSTEM_UI_DIR = os.path.join(BASEDIR, "system", "ui")
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
@@ -22,7 +26,7 @@ UNIFONT_LANGUAGES = [
 
 class Multilang:
   def __init__(self):
-    self._params = Params()
+    self._params = Params() if Params is not None else None
     self._language: str = "en"
     self.languages = {}
     self.codes = {}
@@ -66,9 +70,10 @@ class Multilang:
       self.languages = json.load(f)
     self.codes = {v: k for k, v in self.languages.items()}
 
-    lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
-    if lang in self.codes:
-      self._language = lang
+    if self._params is not None:
+      lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
+      if lang in self.codes:
+        self._language = lang
 
 
 multilang = Multilang()
