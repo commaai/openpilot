@@ -69,23 +69,24 @@ class NetworkUI(Widget):
     super().__init__()
     self._wifi_manager = wifi_manager
     self._current_panel: PanelType = PanelType.WIFI
-    self._wifi_panel = WifiManagerUI(wifi_manager)
-    self._advanced_panel = AdvancedNetworkSettings(wifi_manager)
+    self._panels = {
+      PanelType.WIFI: WifiManagerUI(wifi_manager),
+      PanelType.ADVANCED: AdvancedNetworkSettings(wifi_manager),
+    }
     self._nav_button = NavButton(tr("Advanced"))
     self._nav_button.set_click_callback(self._cycle_panel)
 
   def show_event(self):
     self._set_current_panel(PanelType.WIFI)
-    self._wifi_panel.show_event()
+    self._panels[self._current_panel].show_event()
 
   def hide_event(self):
-    self._wifi_panel.hide_event()
+    self._panels[self._current_panel].hide_event()
 
   def _cycle_panel(self):
-    if self._current_panel == PanelType.WIFI:
-      self._set_current_panel(PanelType.ADVANCED)
-    else:
-      self._set_current_panel(PanelType.WIFI)
+    self._panels[self._current_panel].hide_event()  # hide current panel
+    self._set_current_panel(PanelType.ADVANCED if self._current_panel == PanelType.WIFI else PanelType.WIFI)
+    self._panels[self._current_panel].show_event()  # show new panel
 
   def _render(self, _):
     # subtract button
@@ -94,12 +95,11 @@ class NetworkUI(Widget):
     if self._current_panel == PanelType.WIFI:
       self._nav_button.text = tr("Advanced")
       self._nav_button.set_position(self._rect.x + self._rect.width - self._nav_button.rect.width, self._rect.y + 20)
-      self._wifi_panel.render(content_rect)
     else:
       self._nav_button.text = tr("Back")
       self._nav_button.set_position(self._rect.x, self._rect.y + 20)
-      self._advanced_panel.render(content_rect)
 
+    self._panels[self._current_panel].render(content_rect)
     self._nav_button.render()
 
   def _set_current_panel(self, panel: PanelType):
@@ -160,6 +160,12 @@ class AdvancedNetworkSettings(Widget):
     # Set initial config
     metered = self._params.get_bool("GsmMetered")
     self._wifi_manager.update_gsm_settings(roaming_enabled, self._params.get("GsmApn") or "", metered)
+
+  def show_event(self):
+    self._scroller.show_event()
+
+  def hide_event(self):
+    self._scroller.hide_event()
 
   def _on_network_updated(self, networks: list[Network]):
     self._tethering_action.set_enabled(True)
