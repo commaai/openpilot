@@ -60,6 +60,12 @@ class TogglesLayout(Widget):
         "disengage_on_accelerator.png",
         False,
       ),
+      "LongitudinalPersonality": (
+        lambda: tr("Driving Personality"),
+        DESCRIPTIONS["LongitudinalPersonality"],
+        "speed_limit.png",
+        False,
+      ),
       "IsLdwEnabled": (
         lambda: tr("Enable Lane Departure Warnings"),
         DESCRIPTIONS["IsLdwEnabled"],
@@ -92,26 +98,27 @@ class TogglesLayout(Widget):
       ),
     }
 
-    self._long_personality_setting = multiple_button_item(
-      lambda: tr("Driving Personality"),
-      lambda: tr(DESCRIPTIONS["LongitudinalPersonality"]),
-      buttons=[lambda: tr("Aggressive"), lambda: tr("Standard"), lambda: tr("Relaxed")],
-      button_width=255,
-      callback=self._set_longitudinal_personality,
-      selected_index=self._params.get("LongitudinalPersonality", return_default=True),
-      icon="speed_limit.png"
-    )
-
     self._toggles = {}
     self._locked_toggles = set()
     for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
-      toggle = toggle_item(
-        title,
-        desc,
-        self._params.get_bool(param),
-        callback=lambda state, p=param: self._toggle_callback(state, p),
-        icon=icon,
-      )
+      if param == "LongitudinalPersonality":
+        toggle = multiple_button_item(
+          title,
+          desc,
+          buttons=[lambda: tr("Aggressive"), lambda: tr("Standard"), lambda: tr("Relaxed")],
+          button_width=255,
+          callback=self._set_longitudinal_personality,
+          selected_index=self._params.get(param, return_default=True),
+          icon=icon
+        )
+      else:
+        toggle = toggle_item(
+          title,
+          desc,
+          self._params.get_bool(param),
+          callback=lambda state, p=param: self._toggle_callback(state, p),
+          icon=icon,
+        )
 
       try:
         locked = self._params.get_bool(param + "Lock")
@@ -131,10 +138,6 @@ class TogglesLayout(Widget):
 
       self._toggles[param] = toggle
 
-      # insert longitudinal personality after NDOG toggle
-      if param == "DisengageOnAccelerator":
-        self._toggles["LongitudinalPersonality"] = self._long_personality_setting
-
     self._update_experimental_mode_icon()
     self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
 
@@ -144,7 +147,7 @@ class TogglesLayout(Widget):
     if ui_state.sm.updated["selfdriveState"]:
       personality = PERSONALITY_TO_INT[ui_state.sm["selfdriveState"].personality]
       if personality != ui_state.personality and ui_state.started:
-        self._long_personality_setting.action_item.set_selected_button(personality)
+        self._toggles["LongitudinalPersonality"].action_item.set_selected_button(personality)
       ui_state.personality = personality
 
   def show_event(self):
@@ -170,12 +173,12 @@ class TogglesLayout(Widget):
       if ui_state.has_longitudinal_control:
         self._toggles["ExperimentalMode"].action_item.set_enabled(True)
         self._toggles["ExperimentalMode"].set_description(e2e_description)
-        self._long_personality_setting.action_item.set_enabled(True)
+        self._toggles["LongitudinalPersonality"].action_item.set_enabled(True)
       else:
         # no long for now
         self._toggles["ExperimentalMode"].action_item.set_enabled(False)
         self._toggles["ExperimentalMode"].action_item.set_state(False)
-        self._long_personality_setting.action_item.set_enabled(False)
+        self._toggles["LongitudinalPersonality"].action_item.set_enabled(False)
         self._params.remove("ExperimentalMode")
 
         unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.")
@@ -197,7 +200,11 @@ class TogglesLayout(Widget):
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
     for param in self._toggle_defs:
-      self._toggles[param].action_item.set_state(self._params.get_bool(param))
+      action_item = self._toggles[param].action_item
+      if (param == "LongitudinalPersonality"):
+        action_item.set_selected_button(self._params.get(param, return_default=True))
+      else:
+        action_item.set_state(self._params.get_bool(param))
 
     # these toggles need restart, block while engaged
     for toggle_def in self._toggle_defs:
