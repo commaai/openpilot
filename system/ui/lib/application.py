@@ -141,7 +141,7 @@ class GuiApplication:
     self._width = width
     self._height = height
 
-    if PC and SCALE == 1.0:
+    if PC and os.getenv("SCALE") is None:
       self._scale = self._calculate_auto_scale()
     else:
       self._scale = SCALE
