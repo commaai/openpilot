@@ -108,6 +108,8 @@ class MouseState:
 
 class GuiApplication:
   def __init__(self, width: int, height: int):
+    self.fonts = FontManager()
+
     self._width = width
     self._height = height
 
@@ -125,8 +127,6 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
-
-    self.fonts = FontManager(self)
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []

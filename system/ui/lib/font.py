@@ -30,8 +30,7 @@ class FontWeight(StrEnum):
 
 
 class FontManager:
-  def __init__(self, gui_app):
-    self.gui_app = gui_app
+  def __init__(self):
     self._fonts: dict[FontWeight, rl.Font] = {}
 
   def font(self, font_weight: FontWeight) -> rl.Font:
