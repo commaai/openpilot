@@ -32,7 +32,7 @@ env:
 jobs:
   build_release:
     name: build release
-    runs-on: ${{
+    runs-on: &linux_runner ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
@@ -41,7 +41,8 @@ jobs:
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
-    - uses: actions/checkout@v4
+    - &checkout_submodules
+      uses: actions/checkout@v4
       with:
         submodules: true
     - name: Getting LFS files
@@ -53,7 +54,8 @@ jobs:
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_stripped.sh
-    - uses: ./.github/workflows/setup-with-retry
+    - &setup_with_retry_step
+      uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot and run checks
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
@@ -70,22 +72,15 @@ jobs:
       run: release/check-submodules.sh
 
   build:
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: *linux_runner
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
+    - *checkout_submodules
     - name: Setup docker push
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
-    - uses: ./.github/workflows/setup-with-retry
+    - *setup_with_retry_step
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: 30
 
@@ -93,9 +88,7 @@ jobs:
     name: build macOS
     runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
+    - *checkout_submodules
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Homebrew cache
       uses: ./.github/workflows/auto-cache
@@ -124,36 +117,22 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: *linux_runner
     env:
       PYTHONWARNINGS: default
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - *checkout_submodules
+    - *setup_with_retry_step
     - name: Static analysis
       timeout-minutes: 1
       run: ${{ env.RUN }} "scripts/lint/lint.sh"
 
   unit_tests:
     name: unit tests
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: *linux_runner
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - *checkout_submodules
+    - <<: *setup_with_retry_step
       id: setup-step
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
@@ -168,17 +147,10 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: *linux_runner
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - *checkout_submodules
+    - <<: *setup_with_retry_step
       id: setup-step
     - name: Cache test routes
       id: dependency-cache
@@ -217,18 +189,11 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: *linux_runner
     if: false  # FIXME: Started to timeout recently
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - *checkout_submodules
+    - <<: *setup_with_retry_step
       id: setup-step
     - name: Build openpilot
       run: |
@@ -242,17 +207,10 @@ jobs:
 
   create_raylib_ui_report:
     name: Create raylib UI Report
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: *linux_runner
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - uses: ./.github/workflows/setup-with-retry
+      - *checkout_submodules
+      - *setup_with_retry_step
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
       - name: Create raylib UI Report
