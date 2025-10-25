@@ -13,11 +13,6 @@
 
 class HardwareTici : public HardwareNone {
 public:
-  static bool TICI() { return true; }
-  static std::string get_os_version() {
-    return "AGNOS " + util::read_file("/VERSION");
-  }
-
   static std::string get_name() {
     std::string model = util::read_file("/sys/firmware/devicetree/base/model");
     return util::strip(model.substr(std::string("comma ").size()));

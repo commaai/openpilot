@@ -10,7 +10,6 @@
 // no-op base hw class
 class HardwareNone {
 public:
-  static std::string get_os_version() { return ""; }
   static std::string get_name() { return ""; }
   static cereal::InitData::DeviceType get_device_type() { return cereal::InitData::DeviceType::UNKNOWN; }
   static int get_voltage() { return 0; }
