@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import pyray as rl
 
-
 from openpilot.common.realtime import config_realtime_process
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
