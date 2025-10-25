@@ -6,6 +6,7 @@ import signal
 import sys
 import pyray as rl
 import threading
+from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
 from dataclasses import dataclass
@@ -170,37 +171,70 @@ class GuiApplication:
     self._window_close_requested = True
 
   def init_window(self, title: str, fps: int = _DEFAULT_FPS):
-    def _close(sig, frame):
-      self.close()
+    with self._startup_profile_context():
+      def _close(sig, frame):
+        self.close()
+        sys.exit(0)
+      signal.signal(signal.SIGINT, _close)
+      atexit.register(self.close)
+
+      HARDWARE.set_display_power(True)
+      HARDWARE.set_screen_brightness(65)
+
+      self._set_log_callback()
+      rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
+
+      flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
+      if ENABLE_VSYNC:
+        flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
+      rl.set_config_flags(flags)
+
+      rl.init_window(self._scaled_width, self._scaled_height, title)
+      if self._scale != 1.0:
+        rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
+        self._render_texture = rl.load_render_texture(self._width, self._height)
+        rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      rl.set_target_fps(fps)
+
+      self._target_fps = fps
+      self._set_styles()
+      self._load_fonts()
+      self._patch_text_functions()
+
+      if not PC:
+        self._mouse.start()
+
+  @contextmanager
+  def _startup_profile_context(self):
+    if "PROFILE_STARTUP" not in os.environ:
+      yield
+      return
+
+    import cProfile
+    import io
+    import pstats
+
+    profiler = cProfile.Profile()
+    start_time = time.monotonic()
+    profiler.enable()
+    try:
+      yield
+    except Exception:
+      profiler.disable()
+      raise
+    else:
+      profiler.disable()
+      elapsed_ms = (time.monotonic() - start_time) * 1e3
+
+      stats_stream = io.StringIO()
+      pstats.Stats(profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+      print("\n=== Startup profile ===")
+      print(stats_stream.getvalue().rstrip())
+
+      green = "\033[92m"
+      reset = "\033[0m"
+      print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
       sys.exit(0)
-    signal.signal(signal.SIGINT, _close)
-    atexit.register(self.close)
-
-    HARDWARE.set_display_power(True)
-    HARDWARE.set_screen_brightness(65)
-
-    self._set_log_callback()
-    rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
-
-    flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
-    if ENABLE_VSYNC:
-      flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
-    rl.set_config_flags(flags)
-
-    rl.init_window(self._scaled_width, self._scaled_height, title)
-    if self._scale != 1.0:
-      rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
-      self._render_texture = rl.load_render_texture(self._width, self._height)
-      rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-    rl.set_target_fps(fps)
-
-    self._target_fps = fps
-    self._set_styles()
-    self._load_fonts()
-    self._patch_text_functions()
-
-    if not PC:
-      self._mouse.start()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:
