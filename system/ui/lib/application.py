@@ -43,15 +43,11 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
 class FontWeight(StrEnum):
-  THIN = "Inter-Thin.fnt"
-  EXTRA_LIGHT = "Inter-ExtraLight.fnt"
   LIGHT = "Inter-Light.fnt"
   NORMAL = "Inter-Regular.fnt"
   MEDIUM = "Inter-Medium.fnt"
   SEMI_BOLD = "Inter-SemiBold.fnt"
   BOLD = "Inter-Bold.fnt"
-  EXTRA_BOLD = "Inter-ExtraBold.fnt"
-  BLACK = "Inter-Black.fnt"
   UNIFONT = "unifont.fnt"
 
 
