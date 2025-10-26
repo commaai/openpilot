@@ -9,7 +9,6 @@ SELFDRIVE_DIR = FONT_DIR.parents[1]
 TRANSLATIONS_DIR = SELFDRIVE_DIR / "ui" / "translations"
 LANGUAGES_FILE = TRANSLATIONS_DIR / "languages.json"
 
-FONT_SIZE = 200
 GLYPH_PADDING = 6
 EXTRA_CHARS = "–‑✓×°§•€£¥"
 UNIFONT_LANGUAGES = {"ar", "th", "zh-CHT", "zh-CHS", "ko", "ja"}
@@ -68,9 +67,9 @@ def _glyph_metrics(glyphs, rects, codepoints):
   return entries, line_height, base
 
 
-def _write_bmfont(path: Path, face: str, atlas_name: str, line_height: int, base: int, atlas_size, entries):
+def _write_bmfont(path: Path, font_size: int, face: str, atlas_name: str, line_height: int, base: int, atlas_size, entries):
   lines = [
-    f"info face=\"{face}\" size=-{FONT_SIZE} bold=0 italic=0 charset=\"\" unicode=1 stretchH=100 smooth=0 aa=1 padding=0,0,0,0 spacing=0,0 outline=0",
+    f"info face=\"{face}\" size=-{font_size} bold=0 italic=0 charset=\"\" unicode=1 stretchH=100 smooth=0 aa=1 padding=0,0,0,0 spacing=0,0 outline=0",
     f"common lineHeight={line_height} base={base} scaleW={atlas_size[0]} scaleH={atlas_size[1]} pages=1 packed=0 alphaChnl=0 redChnl=4 greenChnl=4 blueChnl=4",
     f"page id=0 file=\"{atlas_name}\"",
     f"chars count={len(entries)}",
@@ -85,16 +84,21 @@ def _write_bmfont(path: Path, face: str, atlas_name: str, line_height: int, base
 
 def _process_font(font_path: Path, codepoints: tuple[int, ...]):
   print(f"Processing {font_path.name}...")
+
+  font_size = {
+    "unifont.otf": 24,  # unifont is huge
+  }.get(font_path.name, 200)
+
   data = font_path.read_bytes()
   file_buf = rl.ffi.new("unsigned char[]", data)
   cp_buffer = rl.ffi.new("int[]", codepoints)
   cp_ptr = rl.ffi.cast("int *", cp_buffer)
-  glyphs = rl.load_font_data(rl.ffi.cast("unsigned char *", file_buf), len(data), FONT_SIZE, cp_ptr, len(codepoints), rl.FontType.FONT_DEFAULT)
+  glyphs = rl.load_font_data(rl.ffi.cast("unsigned char *", file_buf), len(data), font_size, cp_ptr, len(codepoints), rl.FontType.FONT_DEFAULT)
   if glyphs == rl.ffi.NULL:
     raise RuntimeError("raylib failed to load font data")
 
   rects_ptr = rl.ffi.new("Rectangle **")
-  image = rl.gen_image_font_atlas(glyphs, rects_ptr, len(codepoints), FONT_SIZE, GLYPH_PADDING, 0)
+  image = rl.gen_image_font_atlas(glyphs, rects_ptr, len(codepoints), font_size, GLYPH_PADDING, 0)
   if image.width == 0 or image.height == 0:
     raise RuntimeError("raylib returned an empty atlas")
 
@@ -106,7 +110,7 @@ def _process_font(font_path: Path, codepoints: tuple[int, ...]):
   if not rl.export_image(image, atlas_path.as_posix()):
     raise RuntimeError("Failed to export atlas image")
 
-  _write_bmfont(FONT_DIR / f"{font_path.stem}.fnt", font_path.stem, atlas_name, line_height, base, (image.width, image.height), entries)
+  _write_bmfont(FONT_DIR / f"{font_path.stem}.fnt", font_size, font_path.stem, atlas_name, line_height, base, (image.width, image.height), entries)
 
 
 def main():
