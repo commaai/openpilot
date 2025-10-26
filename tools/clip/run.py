@@ -210,16 +210,6 @@ def clip(
   begin_at = max(start - SECONDS_TO_WARM, 0)
   duration = end - start
   bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
-   
-   x11_unix_dir = "/tmp/.X11-unix"
-    if not os.path.isdir(x11_unix_dir):
-        return None  # Directory doesn't exist
-
-    existing_displays = set()
-    for filename in os.listdir(x11_unix_dir):
-        if filename.startswith("X") and filename[1:].isdigit():
-            try:
-                display_num = int(filename[1:])
   display = f':{check_unix_display_num()}'
   box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
   meta_text = get_meta_text(lr, route)
