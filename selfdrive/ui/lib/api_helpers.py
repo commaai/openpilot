@@ -10,6 +10,7 @@ TOKEN_EXPIRY_HOURS = 2
 def _get_token(dongle_id: str, t: int):
   if not system_time_valid():
     raise RuntimeError("System time is not valid, cannot generate token")
+
   return Api(dongle_id).get_token(expiry_hours=TOKEN_EXPIRY_HOURS)
 
 
