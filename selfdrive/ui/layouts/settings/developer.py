@@ -35,41 +35,34 @@ class DeveloperLayout(Widget):
     self._is_release = self._params.get_bool("IsReleaseBranch")
 
     # Build items and keep references for callbacks/state updates
-    self._adb_toggle = toggle_item(
-      lambda: tr("Enable ADB"),
-      description=lambda: tr(DESCRIPTIONS["enable_adb"]),
+    self._adb_toggle = toggle_item("", "",
       initial_state=self._params.get_bool("AdbEnabled"),
       callback=self._on_enable_adb,
       enabled=ui_state.is_offroad,
     )
 
     # SSH enable toggle + SSH key management
-    self._ssh_toggle = toggle_item(
-      lambda: tr("Enable SSH"),
+    self._ssh_toggle = toggle_item("",
       description="",
       initial_state=self._params.get_bool("SshEnabled"),
       callback=self._on_enable_ssh,
     )
-    self._ssh_keys = ssh_key_item(lambda: tr("SSH Keys"), description=lambda: tr(DESCRIPTIONS["ssh_key"]))
+    self._ssh_keys = ssh_key_item("", "")
 
-    self._joystick_toggle = toggle_item(
-      lambda: tr("Joystick Debug Mode"),
+    self._joystick_toggle = toggle_item("",
       description="",
       initial_state=self._params.get_bool("JoystickDebugMode"),
       callback=self._on_joystick_debug_mode,
       enabled=ui_state.is_offroad,
     )
 
-    self._long_maneuver_toggle = toggle_item(
-      lambda: tr("Longitudinal Maneuver Mode"),
+    self._long_maneuver_toggle = toggle_item("",
       description="",
       initial_state=self._params.get_bool("LongitudinalManeuverMode"),
       callback=self._on_long_maneuver_mode,
     )
 
-    self._alpha_long_toggle = toggle_item(
-      lambda: tr("openpilot Longitudinal Control (Alpha)"),
-      description=lambda: tr(DESCRIPTIONS["alpha_longitudinal"]),
+    self._alpha_long_toggle = toggle_item("", "",
       initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
       callback=self._on_alpha_long_enabled,
       enabled=lambda: not ui_state.engaged,
@@ -88,6 +81,17 @@ class DeveloperLayout(Widget):
 
     # Toggles should be not available to change in onroad state
     ui_state.add_offroad_transition_callback(self._update_toggles)
+
+  def retranslate_ui(self) -> None:
+    self._adb_toggle.set_title(tr("Enable ADB"))
+    self._adb_toggle.set_description(tr(DESCRIPTIONS["enable_adb"]))
+    self._ssh_toggle.set_title(tr("Enable SSH"))
+    self._ssh_keys.set_title(tr("SSH Keys"))
+    self._ssh_keys.set_description(tr(DESCRIPTIONS["ssh_key"]))
+    self._joystick_toggle.set_title(tr("Joystick Debug Mode"))
+    self._long_maneuver_toggle.set_title(tr("Longitudinal Maneuver Mode"))
+    self._alpha_long_toggle.set_title(tr("openpilot Longitudinal Control (Alpha)"))
+    self._alpha_long_toggle.set_description(tr(DESCRIPTIONS["alpha_longitudinal"]))
 
   def _render(self, rect):
     self._scroller.render(rect)

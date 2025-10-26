@@ -26,6 +26,7 @@ UNIFONT_LANGUAGES = [
 
 class Multilang:
   def __init__(self):
+    self._gui_app = None
     self._params = Params() if Params is not None else None
     self._language: str = "en"
     self.languages = {}
@@ -41,6 +42,10 @@ class Multilang:
     """Certain languages require unifont to render their glyphs."""
     return self._language in UNIFONT_LANGUAGES
 
+  def initialize(self, gui_app=None)-> None:
+    self._gui_app = gui_app
+    self.setup()
+
   def setup(self):
     try:
       with open(os.path.join(TRANSLATIONS_DIR, f'app_{self._language}.mo'), 'rb') as fh:
@@ -48,6 +53,8 @@ class Multilang:
       translation.install()
       self._translation = translation
       cloudlog.warning(f"Loaded translations for language: {self._language}")
+      if self._gui_app is not None:
+        self._gui_app.language_changed()
     except FileNotFoundError:
       cloudlog.error(f"No translation file found for language: {self._language}, using default.")
       gettext.install('app')
@@ -77,7 +84,6 @@ class Multilang:
 
 
 multilang = Multilang()
-multilang.setup()
 
 tr, trn = multilang.tr, multilang.trn
 

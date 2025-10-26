@@ -159,8 +159,17 @@ class GuiApplication:
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
 
+    self._widgets: list[object] = []
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
+
+  def register_widget(self, widget: object) -> None:
+    self._widgets.append(widget)
+
+  def language_changed(self):
+    # Notify all widgets of language change
+    for widget in self._widgets:
+      widget.retranslate_ui()
 
   @property
   def target_fps(self):
@@ -362,6 +371,8 @@ class GuiApplication:
   def _load_fonts(self):
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
+
+    multilang.initialize(self)
 
     base_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():

@@ -402,6 +402,9 @@ class ListItem(Widget):
   def title(self):
     return _resolve_value(self._title, "")
 
+  def set_title(self, title: str | Callable[[], str]):
+    self._title = title
+
   @property
   def description(self):
     return _resolve_value(self._description, "")

@@ -12,6 +12,15 @@ class DialogResult(IntEnum):
 
 
 class Widget(abc.ABC):
+  def __init_subclass__(cls, **kwargs):
+    """Hook to call _post_init() after subclass __init__ completes."""
+    super().__init_subclass__(**kwargs)
+    original_init = cls.__init__
+    def wrapped_init(self, *args, **kwargs):
+      original_init(self, *args, **kwargs)
+      self._post_init()
+    cls.__init__ = wrapped_init
+
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle | None = None
@@ -23,6 +32,11 @@ class Widget(abc.ABC):
     self._touch_valid_callback: Callable[[], bool] | None = None
     self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
+
+    gui_app.register_widget(self)
+
+  def _post_init(self) -> None:
+    self.retranslate_ui()
 
   @property
   def rect(self) -> rl.Rectangle:
@@ -74,6 +88,9 @@ class Widget(abc.ABC):
     self._rect.x, self._rect.y = x, y
     if changed:
       self._update_layout_rects()
+
+  def retranslate_ui(self) -> None:
+    """Override this method to set translatable text."""
 
   @property
   def _hit_rect(self) -> rl.Rectangle:
