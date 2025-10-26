@@ -311,6 +311,21 @@ class GuiApplication:
     return self._mouse_events
 
   def render(self):
+    profile_render_enabled = "PROFILE_RENDER" in os.environ
+    if profile_render_enabled:
+      import cProfile
+      import io
+      import pstats
+
+      render_profiler = cProfile.Profile()
+      render_profiler.enable()
+      render_profile_start = time.monotonic()
+      render_profile_frames = 0
+    else:
+      render_profiler = None
+      render_profile_start = 0.0
+      render_profile_frames = 0
+
     try:
       while not (self._window_close_requested or rl.window_should_close()):
         if PC:
@@ -373,6 +388,22 @@ class GuiApplication:
 
         rl.end_drawing()
         self._monitor_fps()
+
+        if profile_render_enabled and render_profiler is not None:
+          render_profile_frames += 1
+          elapsed = time.monotonic() - render_profile_start
+          if elapsed >= 5.0:
+            render_profiler.disable()
+            stats_stream = io.StringIO()
+            pstats.Stats(render_profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+            print("\n=== Render profile ===")
+            print(stats_stream.getvalue().rstrip())
+
+            avg_ms = (elapsed / max(render_profile_frames, 1)) * 1e3
+            green = "\033[92m"
+            reset = "\033[0m"
+            print(f"{green}Average render time over {render_profile_frames} frames: {avg_ms:.3f} ms{reset}")
+            sys.exit(0)
     except KeyboardInterrupt:
       pass
 
