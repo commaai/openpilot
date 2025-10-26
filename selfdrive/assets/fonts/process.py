@@ -5,12 +5,12 @@ import pyray as rl
 
 FONT_DIR = Path(__file__).resolve().parent
 FONT_SIZE = 200
+GLYPH_PADDING = 2
 CODEPOINTS = tuple(range(32, 127))
 SKIP = {"NotoColorEmoji.ttf"}
 
 _CODEPOINT_BUFFER = rl.ffi.new("int[]", CODEPOINTS)
 _CODEPOINT_PTR = rl.ffi.cast("int *", _CODEPOINT_BUFFER)
-
 
 def _glyph_metrics(glyphs, rects):
   entries = []
@@ -73,24 +73,18 @@ def _process_font(font_path: Path):
     raise RuntimeError("raylib failed to load font data")
 
   rects_ptr = rl.ffi.new("Rectangle **")
-  image = rl.gen_image_font_atlas(glyphs, rects_ptr, len(CODEPOINTS), FONT_SIZE, 0, 0)
-  if image.width == 0 or image.height == 0:
-    rl.unload_font_data(glyphs, len(CODEPOINTS))
-    raise RuntimeError("raylib returned an empty atlas")
+  # padding avoids sampling neighboring glyphs when the atlas is filtered
+  image = rl.gen_image_font_atlas(glyphs, rects_ptr, len(CODEPOINTS), FONT_SIZE, GLYPH_PADDING, 0)
+  assert image.width > 0 and image.height > 0
 
   rects = rects_ptr[0]
-  atlas_name = f"{font_path.stem}_0.png"
+  atlas_name = f"{font_path.stem}.png"
   atlas_path = FONT_DIR / atlas_name
   atlas_size = (image.width, image.height)
 
-  try:
-    entries, line_height, base = _glyph_metrics(glyphs, rects)
-    if not rl.export_image(image, atlas_path.as_posix()):
-      raise RuntimeError("Failed to export atlas image")
-  finally:
-    rl.mem_free(rects)
-    rl.unload_image(image)
-    rl.unload_font_data(glyphs, len(CODEPOINTS))
+  entries, line_height, base = _glyph_metrics(glyphs, rects)
+  if not rl.export_image(image, atlas_path.as_posix()):
+    raise RuntimeError("Failed to export atlas image")
 
   fnt_path = FONT_DIR / f"{font_path.stem}.fnt"
   _write_bmfont(fnt_path, font_path.stem, atlas_name, line_height, base, atlas_size, entries)
@@ -100,7 +94,6 @@ def main():
   fonts = sorted(FONT_DIR.glob("*.ttf")) + sorted(FONT_DIR.glob("*.otf"))
   for font in fonts:
     if font.name in SKIP:
-      print(f"Skipping {font.name} (unsupported)")
       continue
     _process_font(font)
 
