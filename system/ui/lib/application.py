@@ -167,6 +167,8 @@ class GuiApplication:
     self._widgets.append(widget)
 
   def language_changed(self):
+    # TODO: Reload fonts with language-specific character sets
+
     # Notify all widgets of language change
     for widget in self._widgets:
       widget.retranslate_ui()
