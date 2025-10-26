@@ -47,18 +47,18 @@ def _glyph_metrics(glyphs, rects):
   return entries, line_height, base
 
 
-def _write_bmfont(target, face, atlas_name, line_height, base, texture_size, entries):
+def _write_bmfont(target, face, atlas_name, lh, base, texture_size, entries):
   lines = [
     f"info face=\"{face}\" size=-{FONT_SIZE} bold=0 italic=0 charset=\"\" unicode=1 stretchH=100 smooth=0 aa=1 padding=0,0,0,0 spacing=0,0 outline=0",
-    f"common lineHeight={line_height} base={base} scaleW={texture_size[0]} scaleH={texture_size[1]} pages=1 packed=0 alphaChnl=0 redChnl=4 greenChnl=4 blueChnl=4",
+    f"common lineHeight={lh} base={base} scaleW={texture_size[0]} scaleH={texture_size[1]} pages=1 packed=0 alphaChnl=0 redChnl=4 greenChnl=4 blueChnl=4",
     f"page id=0 file=\"{atlas_name}\"",
     f"chars count={len(entries)}",
   ]
 
   for entry in entries:
     lines.append(
-      "char id={id:<4} x={x:<5} y={y:<5} width={width:<5} height={height:<5} "
-      "xoffset={xoffset:<5} yoffset={yoffset:<5} xadvance={xadvance:<5} page=0  chnl=15".format(**entry),
+      ("char id={id:<4} x={x:<5} y={y:<5} width={width:<5} height={height:<5} " +
+       "xoffset={xoffset:<5} yoffset={yoffset:<5} xadvance={xadvance:<5} page=0  chnl=15").format(**entry),
     )
 
   target.write_text("\n".join(lines) + "\n")
