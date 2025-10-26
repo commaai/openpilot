@@ -393,8 +393,7 @@ class GuiApplication:
 
   def _load_fonts(self):
     for font_weight_file in FontWeight:
-      bmfont = font_weight_file.rsplit('.', 1)[0] + ".fnt"
-      with as_file(FONT_DIR.joinpath(bmfont)) as fspath:
+      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
         font = rl.load_font(fspath.as_posix())
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font

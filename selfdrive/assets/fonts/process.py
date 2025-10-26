@@ -10,9 +10,8 @@ TRANSLATIONS_DIR = SELFDRIVE_DIR / "ui" / "translations"
 LANGUAGES_FILE = TRANSLATIONS_DIR / "languages.json"
 
 FONT_SIZE = 200
-GLYPH_PADDING = 2
+GLYPH_PADDING = 6
 EXTRA_CHARS = "–‑✓×°§•€£¥"
-SKIP = {"NotoColorEmoji.ttf"}
 UNIFONT_LANGUAGES = {"ar", "th", "zh-CHT", "zh-CHS", "ko", "ja"}
 
 
@@ -78,8 +77,8 @@ def _write_bmfont(path: Path, face: str, atlas_name: str, line_height: int, base
   ]
   for entry in entries:
     lines.append(
-      "char id={id:<4} x={x:<5} y={y:<5} width={width:<5} height={height:<5} "
-      "xoffset={xoffset:<5} yoffset={yoffset:<5} xadvance={xadvance:<5} page=0  chnl=15".format(**entry),
+      ("char id={id:<4} x={x:<5} y={y:<5} width={width:<5} height={height:<5} " +
+       "xoffset={xoffset:<5} yoffset={yoffset:<5} xadvance={xadvance:<5} page=0  chnl=15").format(**entry)
     )
   path.write_text("\n".join(lines) + "\n")
 
@@ -114,7 +113,7 @@ def main():
   base_cp, unifont_cp = _char_sets()
   fonts = sorted(FONT_DIR.glob("*.ttf")) + sorted(FONT_DIR.glob("*.otf"))
   for font in fonts:
-    if font.name in SKIP:
+    if "emoji" in font.name.lower():
       continue
     glyphs = unifont_cp if font.stem.lower().startswith("unifont") else base_cp
     _process_font(font, glyphs)
