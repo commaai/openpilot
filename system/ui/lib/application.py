@@ -43,16 +43,16 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
 class FontWeight(StrEnum):
-  THIN = "Inter-Thin.ttf"
-  EXTRA_LIGHT = "Inter-ExtraLight.ttf"
-  LIGHT = "Inter-Light.ttf"
-  NORMAL = "Inter-Regular.ttf"
-  MEDIUM = "Inter-Medium.ttf"
-  SEMI_BOLD = "Inter-SemiBold.ttf"
-  BOLD = "Inter-Bold.ttf"
-  EXTRA_BOLD = "Inter-ExtraBold.ttf"
-  BLACK = "Inter-Black.ttf"
-  UNIFONT = "unifont.otf"
+  THIN = "Inter-Thin.fnt"
+  EXTRA_LIGHT = "Inter-ExtraLight.fnt"
+  LIGHT = "Inter-Light.fnt"
+  NORMAL = "Inter-Regular.fnt"
+  MEDIUM = "Inter-Medium.fnt"
+  SEMI_BOLD = "Inter-SemiBold.fnt"
+  BOLD = "Inter-Bold.fnt"
+  EXTRA_BOLD = "Inter-ExtraBold.fnt"
+  BLACK = "Inter-Black.fnt"
+  UNIFONT = "unifont.fnt"
 
 
 def font_fallback(font: rl.Font) -> rl.Font:
@@ -393,11 +393,10 @@ class GuiApplication:
 
   def _load_fonts(self):
     for font_weight_file in FontWeight:
-      with as_file(FONT_DIR.joinpath(font_weight_file.replace('ttf', 'fnt'))) as fspath:
+      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
         font = rl.load_font(fspath.as_posix())
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font
-
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
