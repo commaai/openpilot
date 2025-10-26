@@ -87,7 +87,7 @@ def _process_font(font_path: Path, codepoints: tuple[int, ...]):
 
   font_size = {
     "unifont.otf": 24,  # unifont is huge
-  }.get(font_path.name, 200)
+  }.get(font_path.name, 64)
 
   data = font_path.read_bytes()
   file_buf = rl.ffi.new("unsigned char[]", data)
