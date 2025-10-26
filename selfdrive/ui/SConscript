@@ -1,6 +1,22 @@
 import os
+import re
 import json
+from pathlib import Path
 Import('env', 'arch', 'common')
+
+# build the fonts
+generator = File("#selfdrive/assets/fonts/process.py")
+source_files = Glob("#selfdrive/assets/fonts/*.ttf") + Glob("#selfdrive/assets/fonts/*.otf")
+output_files = [
+  (f.abspath.split('.')[0] + ".fnt", f.abspath.split('.')[0] + ".png")
+  for f in source_files
+  if "NotoColor" not in f.name
+]
+env.Command(
+  target=output_files,
+  source=[generator, source_files],
+  action=f"python3 {generator}",
+)
 
 # compile gettext .po -> .mo translations
 with open(File("translations/languages.json").abspath) as f:
