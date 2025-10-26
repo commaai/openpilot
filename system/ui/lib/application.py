@@ -427,11 +427,12 @@ class GuiApplication:
     unifont_codepoints = rl.load_codepoints(unifont_chars, unifont_codepoint_count)
 
     for font_weight_file in FontWeight:
-      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-        if font_weight_file == FontWeight.UNIFONT:
-          font = rl.load_font_ex(fspath.as_posix(), 200, unifont_codepoints, unifont_codepoint_count[0])
-        else:
-          font = rl.load_font_ex(fspath.as_posix(), 200, base_codepoints, base_codepoint_count[0])
+      with as_file(FONT_DIR.joinpath(font_weight_file.replace('ttf', 'fnt'))) as fspath:
+        font = rl.load_font(fspath.as_posix())
+        #if font_weight_file == FontWeight.UNIFONT:
+        #  font = rl.load_font_ex(fspath.as_posix(), 200, unifont_codepoints, unifont_codepoint_count[0])
+        #else:
+        #  font = rl.load_font_ex(fspath.as_posix(), 200, base_codepoints, base_codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font
 
