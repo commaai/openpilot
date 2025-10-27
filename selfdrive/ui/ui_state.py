@@ -188,6 +188,10 @@ class Device:
     self._brightness_filter = FirstOrderFilter(BACKLIGHT_OFFROAD, 10.00, 1 / gui_app.target_fps)
     self._brightness_thread: threading.Thread | None = None
 
+  @property
+  def awake(self):
+    return self._awake
+
   def reset_interactive_timeout(self, timeout: int = -1) -> None:
     if timeout == -1:
       timeout = 10 if ui_state.ignition else 30

@@ -4,7 +4,7 @@ import pyray as rl
 from openpilot.common.realtime import config_realtime_process
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.ui_state import device, ui_state
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
   for showing_dialog in gui_app.render():
     ui_state.update()
 
-    if not showing_dialog:
+    if device.awake and not showing_dialog:
       main_layout.render()
 
 
