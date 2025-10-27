@@ -397,8 +397,9 @@ class GuiApplication:
       png_res = files(FONT_PKG).joinpath(font_weight_file.replace(".fnt", ".png"))
       with TemporaryDirectory(prefix="fonts_") as tmp:
         with as_file(fnt_res) as fnt_src, as_file(png_res) as png_src:
-          fnt_dst = os.path.join(tmp, os.path.basename(fnt_src))
-          png_dst = os.path.join(tmp, os.path.basename(png_src))
+          fnt_dst = os.path.join(tmp, font_weight_file)
+          png_dst = os.path.join(tmp, font_weight_file.replace(".fnt", ".png"))
+
           shutil.copy2(fnt_src, fnt_dst)
           shutil.copy2(png_src, png_dst)
 
