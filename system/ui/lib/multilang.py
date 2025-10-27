@@ -1,7 +1,7 @@
 import os
 import json
 import gettext
-from importlib.resources import files as pkg_files
+import importlib
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 
@@ -44,15 +44,7 @@ class Multilang:
 
   def setup(self):
     try:
-      # Try filesystem first
-      path = os.path.join(TRANSLATIONS_DIR, f'app_{self._language}.mo')
-      try:
-        fh = open(path, 'rb')
-      except FileNotFoundError:
-        # Fallback to package resources when running as zipapp
-        res = pkg_files('openpilot.selfdrive.ui.translations').joinpath(f'app_{self._language}.mo')
-        fh = res.open('rb')
-      with fh:
+      with importlib.resources.open_binary('openpilot.selfdrive.ui.translations', f'app_{self._language}.mo') as fh:
         translation = gettext.GNUTranslations(fh)
       translation.install()
       self._translation = translation
@@ -75,13 +67,8 @@ class Multilang:
     return self._translation.ngettext(singular, plural, n)
 
   def _load_languages(self):
-    try:
-      with open(LANGUAGES_FILE, encoding='utf-8') as f:
-        self.languages = json.load(f)
-    except (FileNotFoundError, NotADirectoryError):
-      # Fallback to resources when running from zipapp
-      data = pkg_files('openpilot.selfdrive.ui.translations').joinpath('languages.json').read_text(encoding='utf-8')
-      self.languages = json.loads(data)
+    with importlib.resources.open_text('openpilot.selfdrive.ui.translations', 'languages.json', encoding='utf-8') as f:
+      self.languages = json.load(f)
     self.codes = {v: k for k, v in self.languages.items()}
 
     if self._params is not None:
