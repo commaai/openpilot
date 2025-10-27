@@ -6,6 +6,7 @@ import signal
 import sys
 import pyray as rl
 import threading
+import tempfile
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
@@ -155,6 +156,7 @@ class GuiApplication:
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
+    self._font_tmpdirs: list[tempfile.TemporaryDirectory] = []
 
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
@@ -305,6 +307,12 @@ class GuiApplication:
       self._mouse.stop()
 
     rl.close_window()
+    for td in self._font_tmpdirs:
+      try:
+        td.cleanup()
+      except Exception:
+        pass
+    self._font_tmpdirs = []
 
   @property
   def mouse_events(self) -> list[MouseEvent]:
@@ -389,10 +397,26 @@ class GuiApplication:
 
   def _load_fonts(self):
     for font_weight_file in FontWeight:
-      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-        font = rl.load_font(fspath.as_posix())
-        rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        self._fonts[font_weight_file] = font
+      # Extract both .fnt and its referenced .png into a temp directory
+      tmpdir = tempfile.TemporaryDirectory(prefix="fonts_")
+      self._font_tmpdirs.append(tmpdir)
+
+      fnt_name = str(font_weight_file)
+      png_name = fnt_name.replace(".fnt", ".png")
+
+      fnt_bytes = FONT_DIR.joinpath(fnt_name).read_bytes()
+      png_bytes = FONT_DIR.joinpath(png_name).read_bytes()
+
+      fnt_path = os.path.join(tmpdir.name, fnt_name)
+      png_path = os.path.join(tmpdir.name, png_name)
+      with open(fnt_path, "wb") as f:
+        f.write(fnt_bytes)
+      with open(png_path, "wb") as f:
+        f.write(png_bytes)
+
+      font = rl.load_font(fnt_path)
+      rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      self._fonts[font_weight_file] = font
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
