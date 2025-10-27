@@ -53,12 +53,6 @@ class DriverCameraDialog(CameraView):
     self.stream_switch_button.set_text(self._get_stream_button_text())
     self.switch_stream(self.stream_options[self.current_stream_index])
 
-  def _update_stream_index(self):
-    try:
-      self.current_stream_index = self.stream_options.index(self.stream_type)
-    except ValueError:
-      self.current_stream_index = 0
-
   def _handle_mouse_release(self, _):
     super()._handle_mouse_release(_)
     self.stop_dmonitoringmodeld()
