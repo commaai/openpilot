@@ -6,7 +6,9 @@ import signal
 import sys
 import pyray as rl
 import threading
-import tempfile
+import shutil
+from tempfile import TemporaryDirectory
+from importlib import resources
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
@@ -41,6 +43,7 @@ FONT_SCALE = 1.242
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
+FONT_PKG = "openpilot.selfdrive.assets.fonts"
 
 
 class FontWeight(StrEnum):
@@ -156,7 +159,6 @@ class GuiApplication:
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
-    self._font_tmpdirs: list[tempfile.TemporaryDirectory] = []
 
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
@@ -307,12 +309,6 @@ class GuiApplication:
       self._mouse.stop()
 
     rl.close_window()
-    for td in self._font_tmpdirs:
-      try:
-        td.cleanup()
-      except Exception:
-        pass
-    self._font_tmpdirs = []
 
   @property
   def mouse_events(self) -> list[MouseEvent]:
@@ -397,26 +393,29 @@ class GuiApplication:
 
   def _load_fonts(self):
     for font_weight_file in FontWeight:
-      # Extract both .fnt and its referenced .png into a temp directory
-      tmpdir = tempfile.TemporaryDirectory(prefix="fonts_")
-      self._font_tmpdirs.append(tmpdir)
+      fnt_res = files(FONT_PKG).joinpath(font_weight_file)
+      png_res = files(FONT_PKG).joinpath(font_weight_file.replace(".fnt", ".png"))
+      with TemporaryDirectory(prefix="fonts_") as tmp:
+        with as_file(fnt_res) as fnt_src, as_file(png_res) as png_src:
+          fnt_dst = os.path.join(tmp, os.path.basename(fnt_src))
+          png_dst = os.path.join(tmp, os.path.basename(png_src))
+          shutil.copy2(fnt_src, fnt_dst)
+          shutil.copy2(png_src, png_dst)
 
-      fnt_name = str(font_weight_file)
-      png_name = fnt_name.replace(".fnt", ".png")
+          font = rl.load_font(fnt_dst)
+          rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+          self._fonts[font_weight_file] = font
 
-      fnt_bytes = FONT_DIR.joinpath(fnt_name).read_bytes()
-      png_bytes = FONT_DIR.joinpath(png_name).read_bytes()
 
-      fnt_path = os.path.join(tmpdir.name, fnt_name)
-      png_path = os.path.join(tmpdir.name, png_name)
-      with open(fnt_path, "wb") as f:
-        f.write(fnt_bytes)
-      with open(png_path, "wb") as f:
-        f.write(png_bytes)
-
-      font = rl.load_font(fnt_path)
-      rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-      self._fonts[font_weight_file] = font
+      # with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
+      #   font = rl.load_font(fspath.as_posix())
+      #   rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      #   self._fonts[font_weight_file] = font
+      # with resources.open_binary(FONT_PKG, font_weight_file) as font_file:
+      #   with as_file(font_file) as fspath:
+      #     font = rl.load_font(fspath.as_posix())
+      #     rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      #     self._fonts[font_weight_file] = font
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
