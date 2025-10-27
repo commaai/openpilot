@@ -6,6 +6,7 @@ from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
 
 
@@ -17,9 +18,46 @@ class DriverCameraDialog(CameraView):
     device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
     ui_state.params.put_bool("IsDriverViewEnabled", True)
 
+    self.current_stream_index = 0
+    self.stream_options = [
+      VisionStreamType.VISION_STREAM_DRIVER,
+      VisionStreamType.VISION_STREAM_ROAD,
+      VisionStreamType.VISION_STREAM_WIDE_ROAD,
+    ]
+
+    self.stream_switch_button = Button(
+      text=self._get_stream_button_text,
+      click_callback=self._switch_stream,
+      font_size=40,
+      button_style=ButtonStyle.PRIMARY,
+      border_radius=8,
+    )
+
   def stop_dmonitoringmodeld(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
+
+  def _get_stream_button_text(self) -> str:
+    """Get the text to display on the stream switch button."""
+    stream_type = self.stream_options[self.current_stream_index]
+    if stream_type == VisionStreamType.VISION_STREAM_ROAD:
+      return tr("Road")
+    elif stream_type == VisionStreamType.VISION_STREAM_WIDE_ROAD:
+      return tr("Wide")
+    elif stream_type == VisionStreamType.VISION_STREAM_DRIVER:
+      return tr("Driver")
+    return tr("Unknown")
+
+  def _switch_stream(self):
+    self.current_stream_index = (self.current_stream_index + 1) % len(self.stream_options)
+    self.stream_switch_button.set_text(self._get_stream_button_text())
+    self.switch_stream(self.stream_options[self.current_stream_index])
+
+  def _update_stream_index(self):
+    try:
+      self.current_stream_index = self.stream_options.index(self.stream_type)
+    except ValueError:
+      self.current_stream_index = 0
 
   def _handle_mouse_release(self, _):
     super()._handle_mouse_release(_)
@@ -38,8 +76,16 @@ class DriverCameraDialog(CameraView):
       )
       return -1
 
-    self._draw_face_detection(rect)
-    self.driver_state_renderer.render(rect)
+    if self.stream_type == VisionStreamType.VISION_STREAM_DRIVER:
+      self._draw_face_detection(rect)
+      self.driver_state_renderer.render(rect)
+
+    button_width = 180
+    button_height = 60
+    button_x = rect.x + rect.width - button_width - 20
+    button_y = rect.y + rect.height - button_height - 20
+    button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)
+    self.stream_switch_button.render(button_rect)
 
     return -1
 
