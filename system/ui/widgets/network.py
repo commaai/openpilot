@@ -77,16 +77,16 @@ class NetworkUI(Widget):
     self._nav_button.set_click_callback(self._cycle_panel)
 
   def show_event(self):
-    self._set_current_panel(PanelType.WIFI)
-    self._panels[self._current_panel].show_event()
+    if self._current_panel == PanelType.WIFI:
+      self._panels[self._current_panel].show_event()  # already on the wifi panel; _set_current_panel would skip to avoid unnecessary event calls
+    else:
+      self._set_current_panel(PanelType.WIFI)
 
   def hide_event(self):
     self._panels[self._current_panel].hide_event()
 
   def _cycle_panel(self):
-    self._panels[self._current_panel].hide_event()  # current panel hidden
     self._set_current_panel(PanelType.ADVANCED if self._current_panel == PanelType.WIFI else PanelType.WIFI)
-    self._panels[self._current_panel].show_event()  # new panel shown
 
   def _render(self, _):
     # subtract button
@@ -103,7 +103,11 @@ class NetworkUI(Widget):
     self._nav_button.render()
 
   def _set_current_panel(self, panel: PanelType):
+    if panel == self._current_panel:
+      return  # avoid unnecessary event calls
+    self._panels[self._current_panel].hide_event()  # previous panel hidden
     self._current_panel = panel
+    self._panels[panel].show_event()  # new panel shown
 
 
 class AdvancedNetworkSettings(Widget):
