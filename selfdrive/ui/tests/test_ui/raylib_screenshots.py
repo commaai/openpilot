@@ -25,7 +25,10 @@ AlertStatus = log.SelfdriveState.AlertStatus
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
-UI_DELAY = 0.2
+UI_DELAY = 0.5
+
+BRANCH_NAME = "this-is-a-really-super-mega-ultra-max-extreme-ultimate-long-branch-name"
+VERSION = f"0.10.1 / {BRANCH_NAME} / 7864838 / Oct 03"
 
 # Offroad alerts to test
 OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
@@ -34,6 +37,7 @@ OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
 def put_update_params(params: Params):
   params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
   params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+  params.put("UpdaterTargetBranch", BRANCH_NAME)
 
 
 def setup_homescreen(click, pm: PubMaster):
@@ -87,6 +91,15 @@ def setup_settings_software_download(click, pm: PubMaster):
 def setup_settings_software_release_notes(click, pm: PubMaster):
   setup_settings_software(click, pm)
   click(588, 110)  # expand description for current version
+
+
+def setup_settings_software_branch_switcher(click, pm: PubMaster):
+  setup_settings_software(click, pm)
+  params = Params()
+  params.put("UpdaterAvailableBranches", f"master,nightly,release,{BRANCH_NAME}")
+  params.put("GitBranch", BRANCH_NAME)  # should be on top
+  params.put("UpdaterTargetBranch", "nightly")  # should be selected
+  click(1984, 449)
 
 
 def setup_settings_firehose(click, pm: PubMaster):
@@ -240,6 +253,7 @@ CASES = {
   "settings_software": setup_settings_software,
   "settings_software_download": setup_settings_software_download,
   "settings_software_release_notes": setup_settings_software_release_notes,
+  "settings_software_branch_switcher": setup_settings_software_branch_switcher,
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard,
@@ -309,9 +323,8 @@ def create_screenshots():
       params.put("DongleId", "123456789012345")
 
       # Set branch name
-      description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
-      params.put("UpdaterCurrentDescription", description)
-      params.put("UpdaterNewDescription", description)
+      params.put("UpdaterCurrentDescription", VERSION)
+      params.put("UpdaterNewDescription", VERSION)
 
       if name == "homescreen_paired":
         params.put("PrimeType", 0)  # NONE

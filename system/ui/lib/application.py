@@ -6,6 +6,7 @@ import signal
 import sys
 import pyray as rl
 import threading
+from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
 from dataclasses import dataclass
@@ -14,7 +15,7 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC, TICI
-from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, multilang
+from openpilot.system.ui.lib.multilang import multilang
 from openpilot.common.realtime import Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
@@ -42,15 +43,19 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
 class FontWeight(StrEnum):
-  THIN = "Inter-Thin.ttf"
-  EXTRA_LIGHT = "Inter-ExtraLight.ttf"
-  LIGHT = "Inter-Light.ttf"
-  NORMAL = "Inter-Regular.ttf"
-  MEDIUM = "Inter-Medium.ttf"
-  SEMI_BOLD = "Inter-SemiBold.ttf"
-  BOLD = "Inter-Bold.ttf"
-  EXTRA_BOLD = "Inter-ExtraBold.ttf"
-  BLACK = "Inter-Black.ttf"
+  LIGHT = "Inter-Light.fnt"
+  NORMAL = "Inter-Regular.fnt"
+  MEDIUM = "Inter-Medium.fnt"
+  SEMI_BOLD = "Inter-SemiBold.fnt"
+  BOLD = "Inter-Bold.fnt"
+  UNIFONT = "unifont.fnt"
+
+
+def font_fallback(font: rl.Font) -> rl.Font:
+  """Fall back to unifont for languages that require it."""
+  if multilang.requires_unifont():
+    return gui_app.font(FontWeight.UNIFONT)
+  return font
 
 
 @dataclass
@@ -132,7 +137,12 @@ class GuiApplication:
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
-    self._scale = SCALE
+
+    if PC and os.getenv("SCALE") is None:
+      self._scale = self._calculate_auto_scale()
+    else:
+      self._scale = SCALE
+
     self._scaled_width = int(self._width * self._scale)
     self._scaled_height = int(self._height * self._scale)
     self._render_texture: rl.RenderTexture | None = None
@@ -157,37 +167,68 @@ class GuiApplication:
     self._window_close_requested = True
 
   def init_window(self, title: str, fps: int = _DEFAULT_FPS):
-    def _close(sig, frame):
-      self.close()
-      sys.exit(0)
-    signal.signal(signal.SIGINT, _close)
-    atexit.register(self.close)
+    with self._startup_profile_context():
+      def _close(sig, frame):
+        self.close()
+        sys.exit(0)
+      signal.signal(signal.SIGINT, _close)
+      atexit.register(self.close)
 
-    HARDWARE.set_display_power(True)
-    HARDWARE.set_screen_brightness(65)
+      HARDWARE.set_display_power(True)
+      HARDWARE.set_screen_brightness(65)
 
-    self._set_log_callback()
-    rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
+      self._set_log_callback()
+      rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
 
-    flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
-    if ENABLE_VSYNC:
-      flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
-    rl.set_config_flags(flags)
+      flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
+      if ENABLE_VSYNC:
+        flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
+      rl.set_config_flags(flags)
 
-    rl.init_window(self._scaled_width, self._scaled_height, title)
-    if self._scale != 1.0:
-      rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
-      self._render_texture = rl.load_render_texture(self._width, self._height)
-      rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-    rl.set_target_fps(fps)
+      rl.init_window(self._scaled_width, self._scaled_height, title)
+      if self._scale != 1.0:
+        rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
+        self._render_texture = rl.load_render_texture(self._width, self._height)
+        rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      rl.set_target_fps(fps)
 
-    self._target_fps = fps
-    self._set_styles()
-    self._load_fonts()
-    self._patch_text_functions()
+      self._target_fps = fps
+      self._set_styles()
+      self._load_fonts()
+      self._patch_text_functions()
 
-    if not PC:
-      self._mouse.start()
+      if not PC:
+        self._mouse.start()
+
+  @contextmanager
+  def _startup_profile_context(self):
+    if "PROFILE_STARTUP" not in os.environ:
+      yield
+      return
+
+    import cProfile
+    import io
+    import pstats
+
+    profiler = cProfile.Profile()
+    start_time = time.monotonic()
+    profiler.enable()
+
+    # do the init
+    yield
+
+    profiler.disable()
+    elapsed_ms = (time.monotonic() - start_time) * 1e3
+
+    stats_stream = io.StringIO()
+    pstats.Stats(profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+    print("\n=== Startup profile ===")
+    print(stats_stream.getvalue().rstrip())
+
+    green = "\033[92m"
+    reset = "\033[0m"
+    print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
+    sys.exit(0)
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:
@@ -335,7 +376,7 @@ class GuiApplication:
     except KeyboardInterrupt:
       pass
 
-  def font(self, font_weight: FontWeight = FontWeight.NORMAL):
+  def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
     return self._fonts[font_weight]
 
   @property
@@ -347,34 +388,11 @@ class GuiApplication:
     return self._height
 
   def _load_fonts(self):
-    # Create a character set from our keyboard layouts
-    from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
-
-    all_chars = set()
-    for layout in KEYBOARD_LAYOUTS.values():
-      all_chars.update(key for row in layout for key in row)
-    all_chars |= set("–‑✓×°§•")
-
-    # Load only the characters used in translations
-    for language in multilang.codes:
-      try:
-        with open(os.path.join(TRANSLATIONS_DIR, f"app_{language}.po")) as f:
-          all_chars |= set(f.read())
-      except FileNotFoundError:
-        cloudlog.warning(f"Translation file for language '{language}' not found when loading fonts.")
-
-    all_chars = "".join(all_chars)
-
-    codepoint_count = rl.ffi.new("int *", 1)
-    codepoints = rl.load_codepoints(all_chars, codepoint_count)
-
     for font_weight_file in FontWeight:
       with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-        font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
+        font = rl.load_font(fspath.as_posix())
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font
-
-    rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
@@ -390,6 +408,7 @@ class GuiApplication:
       rl._orig_draw_text_ex = rl.draw_text_ex
 
     def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
+      font = font_fallback(font)
       return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
 
     rl.draw_text_ex = _draw_text_ex_scaled
@@ -448,6 +467,18 @@ class GuiApplication:
     if STRICT_MODE and fps < self._target_fps * FPS_CRITICAL_THRESHOLD:
       cloudlog.error(f"FPS dropped critically below {fps}. Shutting down UI.")
       os._exit(1)
+
+  def _calculate_auto_scale(self) -> float:
+     # Create temporary window to query monitor info
+    rl.init_window(1, 1, "")
+    w, h = rl.get_monitor_width(0), rl.get_monitor_height(0)
+    rl.close_window()
+
+    if w == 0 or h == 0 or (w >= self._width and h >= self._height):
+      return 1.0
+
+    # Apply 0.95 factor for window decorations/taskbar margin
+    return max(0.3, min(w / self._width, h / self._height) * 0.95)
 
 
 gui_app = GuiApplication(2160, 1080)

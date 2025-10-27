@@ -6,11 +6,11 @@
 #include <QTextEdit>
 #include <set>
 
-#include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signalview.h"
+#include "tools/cabana/utils/elidedlabel.h"
 
 class EditMessageDialog : public QDialog {
 public:

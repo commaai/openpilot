@@ -12,7 +12,7 @@ from collections.abc import Iterator
 from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.api import Api
-from openpilot.common.file_helpers import get_upload_stream
+from openpilot.common.utils import get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware.hw import Paths

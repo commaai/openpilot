@@ -37,7 +37,7 @@ class DeveloperLayout(Widget):
     # Build items and keep references for callbacks/state updates
     self._adb_toggle = toggle_item(
       lambda: tr("Enable ADB"),
-      description=lambda: DESCRIPTIONS["enable_adb"],
+      description=lambda: tr(DESCRIPTIONS["enable_adb"]),
       initial_state=self._params.get_bool("AdbEnabled"),
       callback=self._on_enable_adb,
       enabled=ui_state.is_offroad,
@@ -50,7 +50,7 @@ class DeveloperLayout(Widget):
       initial_state=self._params.get_bool("SshEnabled"),
       callback=self._on_enable_ssh,
     )
-    self._ssh_keys = ssh_key_item(lambda: tr("SSH Keys"), description=lambda: DESCRIPTIONS["ssh_key"])
+    self._ssh_keys = ssh_key_item(lambda: tr("SSH Keys"), description=lambda: tr(DESCRIPTIONS["ssh_key"]))
 
     self._joystick_toggle = toggle_item(
       lambda: tr("Joystick Debug Mode"),
@@ -69,7 +69,7 @@ class DeveloperLayout(Widget):
 
     self._alpha_long_toggle = toggle_item(
       lambda: tr("openpilot Longitudinal Control (Alpha)"),
-      description=lambda: DESCRIPTIONS["alpha_longitudinal"],
+      description=lambda: tr(DESCRIPTIONS["alpha_longitudinal"]),
       initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
       callback=self._on_alpha_long_enabled,
       enabled=lambda: not ui_state.engaged,

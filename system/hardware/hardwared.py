@@ -12,7 +12,7 @@ import psutil
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.dict_helpers import strip_deprecated_keys
+from openpilot.common.utils import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
@@ -193,6 +193,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   should_start_prev = False
   in_car = False
   engaged_prev = False
+  pwrsave = False
   offroad_cycle_count = 0
 
   params = Params()
@@ -339,7 +340,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsEngaged", False)
       engaged_prev = False
-      HARDWARE.set_power_save(not should_start)
 
     if sm.updated['selfdriveState']:
       engaged = sm['selfdriveState'].enabled
@@ -352,6 +352,11 @@ def hardware_thread(end_event, hw_queue) -> None:
           kmsg.write(f"<3>[hardware] engaged: {engaged}\n")
       except Exception:
         pass
+
+    should_pwrsave = not onroad_conditions["ignition"] and msg.deviceState.screenBrightnessPercent < 1e-3
+    if should_pwrsave != pwrsave or (count == 0):
+      HARDWARE.set_power_save(should_pwrsave)
+    pwrsave = should_pwrsave
 
     if should_start:
       off_ts = None
