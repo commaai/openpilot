@@ -28,7 +28,7 @@ class DriverCameraDialog(CameraView):
     self.stream_switch_button = Button(
       text=self._get_stream_button_text,
       click_callback=self._switch_stream,
-      font_size=40,
+      font_size=80,
       button_style=ButtonStyle.PRIMARY,
       border_radius=8,
     )
@@ -74,10 +74,10 @@ class DriverCameraDialog(CameraView):
       self._draw_face_detection(rect)
       self.driver_state_renderer.render(rect)
 
-    button_width = 180
-    button_height = 60
-    button_x = rect.x + rect.width - button_width - 20
-    button_y = rect.y + rect.height - button_height - 20
+    button_width = 360
+    button_height = 120
+    button_x = rect.x + rect.width - button_width - 40
+    button_y = rect.y + rect.height - button_height - 40
     button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)
     self.stream_switch_button.render(button_rect)
 
