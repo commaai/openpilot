@@ -186,7 +186,7 @@ class WifiManager:
 
     threading.Thread(target=worker, daemon=True).start()
 
-  def set_callbacks(self, need_auth: Callable[[str], None] | None = None,
+  def add_callbacks(self, need_auth: Callable[[str], None] | None = None,
                     activated: Callable[[], None] | None = None,
                     forgotten: Callable[[], None] | None = None,
                     networks_updated: Callable[[list[Network]], None] | None = None,
