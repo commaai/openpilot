@@ -5,7 +5,7 @@ from cereal import messaging, log
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
+from openpilot.selfdrive.ui.onroad.driver_camera_dialog import CameraDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
@@ -34,7 +34,7 @@ class DeviceLayout(Widget):
 
     self._params = Params()
     self._select_language_dialog: MultiOptionDialog | None = None
-    self._driver_camera: DriverCameraDialog | None = None
+    self._camera: CameraDialog | None = None
     self._pair_device_dialog: PairingDialog | None = None
     self._fcc_dialog: HtmlModal | None = None
     self._training_guide: TrainingGuide | None = None
@@ -60,7 +60,7 @@ class DeviceLayout(Widget):
       text_item(lambda: tr("Serial"), self._params.get("HardwareSerial") or (lambda: tr("N/A"))),
       self._pair_device_btn,
       button_item(lambda: tr("Driver Camera"), lambda: tr("PREVIEW"), lambda: tr(DESCRIPTIONS['driver_camera']),
-                  callback=self._show_driver_camera, enabled=ui_state.is_offroad),
+                  callback=self._show_camera, enabled=ui_state.is_offroad),
       self._reset_calib_btn,
       button_item(lambda: tr("Review Training Guide"), lambda: tr("REVIEW"), lambda: tr(DESCRIPTIONS['review_guide']),
                   self._on_review_training_guide, enabled=ui_state.is_offroad),
@@ -92,11 +92,11 @@ class DeviceLayout(Widget):
                                                      option_font_weight=FontWeight.UNIFONT)
     gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
 
-  def _show_driver_camera(self):
-    if not self._driver_camera:
-      self._driver_camera = DriverCameraDialog()
+  def _show_camera(self):
+    if not self._camera:
+      self._camera = CameraDialog()
 
-    gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
+    gui_app.set_modal_overlay(self._camera, callback=lambda result: setattr(self, '_camera', None))
 
   def _reset_calibration_prompt(self):
     if ui_state.engaged:
