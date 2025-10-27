@@ -1,7 +1,7 @@
 import os
 import json
 import gettext
-import importlib
+from importlib import resources
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 
@@ -13,6 +13,7 @@ except ImportError:
 SYSTEM_UI_DIR = os.path.join(BASEDIR, "system", "ui")
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
+TRANSLATIONS_PKG = 'openpilot.selfdrive.ui.translations'
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 
 UNIFONT_LANGUAGES = [
@@ -44,7 +45,7 @@ class Multilang:
 
   def setup(self):
     try:
-      with importlib.resources.open_binary('openpilot.selfdrive.ui.translations', f'app_{self._language}.mo') as fh:
+      with resources.open_binary(TRANSLATIONS_PKG, f'app_{self._language}.mo') as fh:
         translation = gettext.GNUTranslations(fh)
       translation.install()
       self._translation = translation
@@ -67,7 +68,7 @@ class Multilang:
     return self._translation.ngettext(singular, plural, n)
 
   def _load_languages(self):
-    with importlib.resources.open_text('openpilot.selfdrive.ui.translations', 'languages.json', encoding='utf-8') as f:
+    with resources.open_text(TRANSLATIONS_PKG, 'languages.json', encoding='utf-8') as f:
       self.languages = json.load(f)
     self.codes = {v: k for k, v in self.languages.items()}
 
