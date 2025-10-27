@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
 
 
-class CameraDialog(CameraView):
+class DriverCameraDialog(CameraView):
   def __init__(self):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
@@ -138,7 +138,7 @@ class CameraDialog(CameraView):
 if __name__ == "__main__":
   gui_app.init_window("Driver Camera View")
 
-  driver_camera_view = CameraDialog()
+  driver_camera_view = DriverCameraDialog()
   try:
     for _ in gui_app.render():
       ui_state.update()
