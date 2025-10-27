@@ -8,6 +8,7 @@ on:
     branches:
       - 'master'
     paths:
+      - 'selfdrive/assets/**'
       - 'selfdrive/ui/**'
       - 'system/ui/**'
   workflow_dispatch:
