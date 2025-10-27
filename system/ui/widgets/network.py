@@ -86,7 +86,10 @@ class NetworkUI(Widget):
     self._panels[self._current_panel].hide_event()
 
   def _cycle_panel(self):
-    self._set_current_panel(PanelType.ADVANCED if self._current_panel == PanelType.WIFI else PanelType.WIFI)
+    if self._current_panel == PanelType.WIFI:
+      self._set_current_panel(PanelType.ADVANCED)
+    else:
+      self._set_current_panel(PanelType.WIFI)
 
   def _render(self, _):
     # subtract button
