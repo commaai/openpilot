@@ -406,17 +406,6 @@ class GuiApplication:
           font = rl.load_font(fnt_dst)
           rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
           self._fonts[font_weight_file] = font
-
-
-      # with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-      #   font = rl.load_font(fspath.as_posix())
-      #   rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-      #   self._fonts[font_weight_file] = font
-      # with resources.open_binary(FONT_PKG, font_weight_file) as font_file:
-      #   with as_file(font_file) as fspath:
-      #     font = rl.load_font(fspath.as_posix())
-      #     rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-      #     self._fonts[font_weight_file] = font
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
