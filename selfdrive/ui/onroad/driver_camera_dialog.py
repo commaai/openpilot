@@ -30,7 +30,7 @@ class DriverCameraDialog(CameraView):
 
     self.stream_switch_button = Button(
       text=self._get_stream_button_text,
-      click_callback=self._switch_stream,
+      click_callback=self._rotate_stream,
       font_size=80,
       font_weight=FontWeight.BOLD,
       button_style=ButtonStyle.PRIMARY,
@@ -55,7 +55,7 @@ class DriverCameraDialog(CameraView):
       VisionStreamType.VISION_STREAM_DRIVER: tr("Driver")
     }.get(self.stream_options[self.current_stream_index], tr("Unknown"))
 
-  def _switch_stream(self):
+  def _rotate_stream(self):
     self.current_stream_index = (self.current_stream_index + 1) % len(self.stream_options)
     self.stream_switch_button.set_text(self._get_stream_button_text())
     self.switch_stream(self.stream_options[self.current_stream_index])
