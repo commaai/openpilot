@@ -18,7 +18,7 @@ class DriverCameraDialog(CameraView):
     self.on_close = on_close
 
     # TODO: this can grow unbounded, should be given some thought
-    device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
+    device.add_interactive_timeout_callback(self._on_close)
     ui_state.params.put_bool("IsDriverViewEnabled", True)
 
     self.current_stream_index = 0
@@ -40,13 +40,10 @@ class DriverCameraDialog(CameraView):
     self.close_button = Button(
       "",
       icon=gui_app.texture("icons/close2.png", 60, 60, True),
-      click_callback=self._on_close_click,
+      click_callback=self._on_close,
       button_style=ButtonStyle.DANGER,
       border_radius=8,
     )
-
-  def stop_dmonitoringmodeld(self):
-    ui_state.params.put_bool("IsDriverViewEnabled", False)
 
   def _get_stream_button_text(self) -> str:
     return {
@@ -63,8 +60,8 @@ class DriverCameraDialog(CameraView):
     self.stream_switch_button.set_text(self._get_stream_button_text())
     self.switch_stream(self.stream_options[self.current_stream_index])
 
-  def _on_close_click(self):
-    self.stop_dmonitoringmodeld()
+  def _on_close(self):
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
 
     if self.on_close:
