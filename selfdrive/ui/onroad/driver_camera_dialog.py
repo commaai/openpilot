@@ -47,7 +47,7 @@ class DriverCameraDialog(CameraView):
     self.close_button = Button(
       "",
       icon=gui_app.texture("icons/close2.png", FONT_SIZE, FONT_SIZE),
-      click_callback=self._on_close,
+      click_callback=self.close,
       button_style=ButtonStyle.DANGER,
       border_radius=BUTTON_BORDER_SIZE,
     )
