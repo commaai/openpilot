@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Forward SSH port first for interactive shell access.
-adb forward tcp:2222 tcp:22
-
 # Forward all openpilot service ports
 mapfile -t SERVICE_PORTS < <(python3 - <<'PY'
 from cereal.services import SERVICE_LIST
@@ -39,6 +34,9 @@ for entry in "${SERVICE_PORTS[@]}"; do
   port="${entry##* }"
   adb forward "tcp:${port}" "tcp:${port}" > /dev/null
 done
+
+# Forward SSH port first for interactive shell access.
+adb forward tcp:2222 tcp:22
 
 # SSH!
 ssh comma@localhost -p 2222 "$@"
