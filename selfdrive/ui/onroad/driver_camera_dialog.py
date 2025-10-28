@@ -10,10 +10,22 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
 
+CLOSE_BTN_SIZE = 200
+BUTTON_BORDER_SIZE = 8
+BUTTON_WIDTH = 440
+BUTTON_HEIGHT = 200
+FONT_SIZE = 100
+
+DEFAULT_STREAM_INDEX = 0
+STREAM_OPTIONS = [
+  VisionStreamType.VISION_STREAM_DRIVER,
+  VisionStreamType.VISION_STREAM_ROAD,
+  VisionStreamType.VISION_STREAM_WIDE_ROAD,
+]
 
 class DriverCameraDialog(CameraView):
   def __init__(self, on_close: Callable[[], None] | None = None):
-    super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
+    super().__init__("camerad", STREAM_OPTIONS[DEFAULT_STREAM_INDEX])
     self.driver_state_renderer = DriverStateRenderer()
     self.on_close = on_close
 
@@ -21,32 +33,23 @@ class DriverCameraDialog(CameraView):
     device.add_interactive_timeout_callback(self._on_close)
     ui_state.params.put_bool("IsDriverViewEnabled", True)
 
-    self.current_stream_index = 0
-    self.stream_options = [
-      VisionStreamType.VISION_STREAM_DRIVER,
-      VisionStreamType.VISION_STREAM_ROAD,
-      VisionStreamType.VISION_STREAM_WIDE_ROAD,
-    ]
-
-    self.font_size = 100
-    self.btn_width = 440
-    self.btn_height = 200
+    self.current_stream_index = DEFAULT_STREAM_INDEX
 
     self.stream_switch_button = Button(
       text=self._get_stream_button_text,
       click_callback=self._rotate_stream,
-      font_size=self.font_size,
+      font_size=FONT_SIZE,
       font_weight=FontWeight.BOLD,
       button_style=ButtonStyle.PRIMARY,
-      border_radius=8,
+      border_radius=BUTTON_BORDER_SIZE,
     )
 
     self.close_button = Button(
       "",
-      icon=gui_app.texture("icons/close2.png", self.font_size, self.font_size),
+      icon=gui_app.texture("icons/close2.png", FONT_SIZE, FONT_SIZE),
       click_callback=self._on_close,
       button_style=ButtonStyle.DANGER,
-      border_radius=8,
+      border_radius=BUTTON_BORDER_SIZE,
     )
 
   def _get_stream_button_text(self) -> str:
@@ -54,15 +57,15 @@ class DriverCameraDialog(CameraView):
       VisionStreamType.VISION_STREAM_ROAD: tr("Road"),
       VisionStreamType.VISION_STREAM_WIDE_ROAD: tr("Wide"),
       VisionStreamType.VISION_STREAM_DRIVER: tr("Driver")
-    }.get(self.stream_options[self.current_stream_index], tr("Unknown"))
+    }.get(STREAM_OPTIONS[self.current_stream_index], tr("Unknown"))
 
   def _handle_mouse_release(self, _):
     super()._handle_mouse_release(_)
 
   def _rotate_stream(self):
-    self.current_stream_index = (self.current_stream_index + 1) % len(self.stream_options)
+    self.current_stream_index = (self.current_stream_index + 1) % len(STREAM_OPTIONS)
     self.stream_switch_button.set_text(self._get_stream_button_text())
-    self.switch_stream(self.stream_options[self.current_stream_index])
+    self.switch_stream(STREAM_OPTIONS[self.current_stream_index])
 
   def _on_close(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
@@ -78,7 +81,7 @@ class DriverCameraDialog(CameraView):
       gui_label(
         rect,
         tr("camera starting"),
-        font_size=100,
+        font_size=FONT_SIZE,
         font_weight=FontWeight.BOLD,
         alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
       )
@@ -88,12 +91,12 @@ class DriverCameraDialog(CameraView):
       self._draw_face_detection(rect)
       self.driver_state_renderer.render(rect)
 
-    close_button_rect = rl.Rectangle(UI_BORDER_SIZE, UI_BORDER_SIZE, self.btn_height, self.btn_height)
+    close_button_rect = rl.Rectangle(UI_BORDER_SIZE, UI_BORDER_SIZE, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE)
     self.close_button.render(close_button_rect)
 
-    button_x = rect.x + rect.width - self.btn_width - UI_BORDER_SIZE
-    button_y = rect.y + rect.height - self.btn_height - UI_BORDER_SIZE
-    button_rect = rl.Rectangle(button_x, button_y, self.btn_width, self.btn_height)
+    button_x = rect.x + rect.width - BUTTON_WIDTH - UI_BORDER_SIZE
+    button_y = rect.y + rect.height - BUTTON_HEIGHT - UI_BORDER_SIZE
+    button_rect = rl.Rectangle(button_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
     self.stream_switch_button.render(button_rect)
 
     return -1
