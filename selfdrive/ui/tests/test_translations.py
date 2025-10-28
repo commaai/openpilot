@@ -8,7 +8,7 @@ import requests
 from parameterized import parameterized_class
 from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, LANGUAGES_FILE
 
-with open(LANGUAGES_FILE) as f:
+with open(str(LANGUAGES_FILE)) as f:
   translation_files = json.load(f)
 
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""  # non-empty translations can be marked unfinished
