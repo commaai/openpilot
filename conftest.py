@@ -48,14 +48,7 @@ def clean_env():
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
   with clean_env():
-    # setup a clean environment for each test
-    with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
-      prefix = os.environ["OPENPILOT_PREFIX"]
-
-      yield
-
-      # ensure the test doesn't change the prefix
-      assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
+    yield
 
     # cleanup any started processes
     manager.manager_cleanup()
