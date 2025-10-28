@@ -15,6 +15,7 @@ BUTTON_BORDER_SIZE = 100
 BUTTON_WIDTH = 440
 BUTTON_HEIGHT = 192
 FONT_SIZE = 70
+FONT_SIZE_LOADING = 100
 
 DEFAULT_STREAM_INDEX = 0
 STREAM_OPTIONS = [
@@ -79,8 +80,8 @@ class DriverCameraDialog(CameraView):
     if not self.frame:
       gui_label(
         rect,
-        tr("camera starting"),
-        font_size=FONT_SIZE,
+        tr("starting cameras"),
+        font_size=FONT_SIZE_LOADING,
         font_weight=FontWeight.BOLD,
         alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
       )
