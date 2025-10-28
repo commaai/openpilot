@@ -274,6 +274,8 @@ class GuiApplication:
         rl.image_resize(image, new_width, new_height)
       else:
         rl.image_resize(image, width, height)
+    else:
+      assert keep_aspect_ratio, "Cannot resize without specifying width and height"
     return image
 
   def _load_texture_from_image(self, image: rl.Image) -> rl.Texture:

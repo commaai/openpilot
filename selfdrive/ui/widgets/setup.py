@@ -46,7 +46,7 @@ class SetupWidget(Widget):
 
     # Description
     desc = tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.")
-    light_font = gui_app.font(FontWeight.LIGHT)
+    light_font = gui_app.font(FontWeight.NORMAL)
     wrapped = wrap_text(light_font, desc, 50, int(w))
     for line in wrapped:
       rl.draw_text_ex(light_font, line, rl.Vector2(x, y), 50, 0, rl.WHITE)
