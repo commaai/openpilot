@@ -32,15 +32,18 @@ class DriverCameraDialog(CameraView):
       text=self._get_stream_button_text,
       click_callback=self._switch_stream,
       font_size=80,
+      font_weight=FontWeight.BOLD,
       button_style=ButtonStyle.PRIMARY,
       border_radius=8,
     )
 
+    close_icon = gui_app.texture("icons/close2.png", 60, 60, True)
+
     # Close button
     self.close_button = Button(
-      "X",
+      "",
+      icon=close_icon,
       click_callback=self._on_close_click,
-      font_size=60,
       button_style=ButtonStyle.DANGER,
       border_radius=8,
     )
