@@ -172,10 +172,6 @@ class TextAction(ItemAction):
   def set_text(self, text: str | Callable[[], str]):
     self._text_source = text
 
-  def get_width(self) -> int:
-    text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
-    return int(text_width + TEXT_PADDING)
-
 
 class DualButtonAction(ItemAction):
   def __init__(self, left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable = None,
