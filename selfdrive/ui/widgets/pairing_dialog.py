@@ -11,19 +11,8 @@ from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.widgets.button import IconButton
 from openpilot.selfdrive.ui.ui_state import ui_state
-
-
-class IconButton(Widget):
-  def __init__(self, texture: rl.Texture):
-    super().__init__()
-    self._texture = texture
-
-  def _render(self, rect: rl.Rectangle):
-    color = rl.Color(180, 180, 180, 150) if self.is_pressed else rl.WHITE
-    draw_x = rect.x + (rect.width - self._texture.width) / 2
-    draw_y = rect.y + (rect.height - self._texture.height) / 2
-    rl.draw_texture(self._texture, int(draw_x), int(draw_y), color)
 
 
 class PairingDialog(Widget):
