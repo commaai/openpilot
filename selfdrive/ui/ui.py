@@ -13,10 +13,9 @@ def main():
   gui_app.init_window("UI")
   main_layout = MainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-  for showing_dialog in gui_app.render():
+  for should_render in gui_app.render():
     ui_state.update()
-
-    if not showing_dialog:
+    if should_render:
       main_layout.render()
 
 
