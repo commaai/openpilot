@@ -12,7 +12,6 @@ from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.hardware import HARDWARE
 
-UI_BORDER_SIZE = 30
 BACKLIGHT_OFFROAD = 50
 
 
@@ -254,6 +253,7 @@ class Device:
       self._awake = on
       cloudlog.debug(f"setting display power {int(on)}")
       HARDWARE.set_display_power(on)
+      gui_app.set_should_render(on)
 
 
 # Global instance

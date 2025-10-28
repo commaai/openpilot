@@ -3,7 +3,8 @@ import numpy as np
 import pyray as rl
 from cereal import log, messaging
 from msgq.visionipc import VisionStreamType
-from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, UI_BORDER_SIZE
+from openpilot.selfdrive.ui import UI_BORDER_SIZE
+from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.onroad.alert_renderer import AlertRenderer
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.onroad.hud_renderer import HudRenderer

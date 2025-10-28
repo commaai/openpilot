@@ -156,6 +156,8 @@ class GuiApplication:
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
 
+    self._should_render = True
+
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
 
@@ -237,6 +239,9 @@ class GuiApplication:
 
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
+  def set_should_render(self, should_render: bool):
+    self._should_render = should_render
+
   def texture(self, asset_path: str, width: int | None = None, height: int | None = None,
               alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
@@ -274,6 +279,8 @@ class GuiApplication:
         rl.image_resize(image, new_width, new_height)
       else:
         rl.image_resize(image, width, height)
+    else:
+      assert keep_aspect_ratio, "Cannot resize without specifying width and height"
     return image
 
   def _load_texture_from_image(self, image: rl.Image) -> rl.Texture:
@@ -320,6 +327,12 @@ class GuiApplication:
         # Store all mouse events for the current frame
         self._mouse_events = self._mouse.get_events()
 
+        # Skip rendering when screen is off
+        if not self._should_render:
+          time.sleep(1 / self._target_fps)
+          yield False
+          continue
+
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
           rl.clear_background(rl.BLACK)
@@ -342,9 +355,9 @@ class GuiApplication:
             self._modal_overlay = ModalOverlay()
             if original_modal.callback is not None:
               original_modal.callback(result)
-          yield True
-        else:
           yield False
+        else:
+          yield True
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -389,8 +402,9 @@ class GuiApplication:
 
   def _load_fonts(self):
     for font_weight_file in FontWeight:
-      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
-        font = rl.load_font(fspath.as_posix())
+      with as_file(FONT_DIR) as fspath:
+        fnt_path = fspath / font_weight_file
+        font = rl.load_font(fnt_path.as_posix())
         if font_weight_file != FontWeight.UNIFONT:
           rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font
