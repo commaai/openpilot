@@ -183,68 +183,38 @@ def setup_onroad_sidebar(click, pm: PubMaster):
   click(100, 100)  # open sidebar
 
 
-def setup_onroad_small_alert(click, pm: PubMaster):
+def setup_onroad_alert(click, pm: PubMaster, size: log.SelfdriveState.AlertSize, text1: str, text2: str, status: log.SelfdriveState.AlertStatus):
   setup_onroad(click, pm)
   alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.small
-  alert.selfdriveState.alertText1 = "Small Alert"
-  alert.selfdriveState.alertText2 = "This is a small alert"
-  alert.selfdriveState.alertStatus = AlertStatus.normal
+  ss = alert.selfdriveState
+  ss.alertSize = size
+  ss.alertText1 = text1
+  ss.alertText2 = text2
+  ss.alertStatus = status
   for _ in range(5):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
     time.sleep(0.05)
+
+
+def setup_onroad_small_alert(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, AlertSize.small, "Small Alert", "This is a small alert", AlertStatus.normal)
 
 
 def setup_onroad_medium_alert(click, pm: PubMaster):
-  setup_onroad(click, pm)
-  alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.mid
-  alert.selfdriveState.alertText1 = "Medium Alert"
-  alert.selfdriveState.alertText2 = "This is a medium alert"
-  alert.selfdriveState.alertStatus = AlertStatus.userPrompt
-  for _ in range(5):
-    pm.send('selfdriveState', alert)
-    alert.clear_write_flag()
-    time.sleep(0.05)
+  setup_onroad_alert(click, pm, AlertSize.mid, "Medium Alert", "This is a medium alert", AlertStatus.userPrompt)
 
 
 def setup_onroad_full_alert(click, pm: PubMaster):
-  setup_onroad(click, pm)
-  alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.full
-  alert.selfdriveState.alertText1 = "DISENGAGE IMMEDIATELY"
-  alert.selfdriveState.alertText2 = "Driver Distracted"
-  alert.selfdriveState.alertStatus = AlertStatus.critical
-  for _ in range(5):
-    pm.send('selfdriveState', alert)
-    alert.clear_write_flag()
-    time.sleep(0.05)
+  setup_onroad_alert(click, pm, AlertSize.full, "DISENGAGE IMMEDIATELY", "Driver Distracted", AlertStatus.critical)
 
 
 def setup_onroad_full_alert_multiline(click, pm: PubMaster):
-  setup_onroad(click, pm)
-  alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.full
-  alert.selfdriveState.alertText1 = "Reverse\nGear"
-  alert.selfdriveState.alertStatus = AlertStatus.normal
-  for _ in range(5):
-    pm.send('selfdriveState', alert)
-    alert.clear_write_flag()
-    time.sleep(0.05)
+  setup_onroad_alert(click, pm, AlertSize.full, "Reverse\nGear", "", AlertStatus.normal)
 
 
 def setup_onroad_full_alert_long_text(click, pm: PubMaster):
-  setup_onroad(click, pm)
-  alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.full
-  alert.selfdriveState.alertText1 = "TAKE CONTROL IMMEDIATELY"
-  alert.selfdriveState.alertText2 = "Calibration Invalid: Remount Device & Recalibrate"
-  alert.selfdriveState.alertStatus = AlertStatus.userPrompt
-  for _ in range(5):
-    pm.send('selfdriveState', alert)
-    alert.clear_write_flag()
-    time.sleep(0.05)
+  setup_onroad_alert(click, pm, AlertSize.full, "TAKE CONTROL IMMEDIATELY", "Calibration Invalid: Remount Device & Recalibrate", AlertStatus.userPrompt)
 
 
 CASES = {

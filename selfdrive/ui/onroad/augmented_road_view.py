@@ -39,9 +39,7 @@ class AugmentedRoadView(CameraView):
     self.view_from_calib = view_frame_from_device_frame.copy()
     self.view_from_wide_calib = view_frame_from_device_frame.copy()
 
-    self._last_calib_time: float = 0
-    self._last_rect_dims = (0.0, 0.0)
-    self._last_stream_type = stream_type
+    self._matrix_cache_key = (0, 0.0, 0.0, stream_type)
     self._cached_matrix: np.ndarray | None = None
     self._content_rect = rl.Rectangle()
 
@@ -161,12 +159,13 @@ class AugmentedRoadView(CameraView):
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     # Check if we can use cached matrix
-    calib_time = ui_state.sm.recv_frame['liveCalibration']
-    current_dims = (self._content_rect.width, self._content_rect.height)
-    if (self._last_calib_time == calib_time and
-        self._last_rect_dims == current_dims and
-        self._last_stream_type == self.stream_type and
-        self._cached_matrix is not None):
+    cache_key = (
+      ui_state.sm.recv_frame['liveCalibration'],
+      self._content_rect.width,
+      self._content_rect.height,
+      self.stream_type
+    )
+    if cache_key == self._matrix_cache_key and self._cached_matrix is not None:
       return self._cached_matrix
 
     # Get camera configuration
@@ -201,9 +200,7 @@ class AugmentedRoadView(CameraView):
       x_offset, y_offset = 0, 0
 
     # Cache the computed transformation matrix to avoid recalculations
-    self._last_calib_time = calib_time
-    self._last_rect_dims = current_dims
-    self._last_stream_type = self.stream_type
+    self._matrix_cache_key = cache_key
     self._cached_matrix = np.array([
       [zoom * 2 * cx / w, 0, -x_offset / w * 2],
       [0, zoom * 2 * cy / h, -y_offset / h * 2],
