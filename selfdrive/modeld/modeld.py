@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
+os.environ['DEV'] = 'QCOM' if TICI else 'CL'
 USBGPU = "USBGPU" in os.environ
 if USBGPU:
   os.environ['DEV'] = 'AMD'
@@ -262,7 +262,7 @@ def main(demo=False):
 
   # messaging
   pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
-  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
+  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay", "clocks"])
 
   publish_state = PublishState()
   params = Params()
@@ -373,9 +373,16 @@ def main(demo=False):
     model_execution_time = mt2 - mt1
 
     if model_output is not None:
-      modelv2_send = messaging.new_message('modelV2')
-      drivingdata_send = messaging.new_message('drivingModelData')
-      posenet_send = messaging.new_message('cameraOdometry')
+      #def remote_mono_time():
+      #  # TODO: this relies on correct wall time on device
+      #  future = time.time_ns() - sm['clocks'].wallTimeNanos
+      #  assert future >= 1e-6
+      #  return sm['clocks'].logMonoTime + future
+      args = {'logMonoTime': max(sm.logMonoTime.values())}
+
+      modelv2_send = messaging.new_message('modelV2', **args)
+      drivingdata_send = messaging.new_message('drivingModelData', **args)
+      posenet_send = messaging.new_message('cameraOdometry', **args)
 
       action = get_action_from_model(model_output, prev_action, lat_delay + DT_MDL, long_delay + DT_MDL, v_ego)
       prev_action = action
