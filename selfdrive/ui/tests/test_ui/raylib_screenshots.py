@@ -216,6 +216,7 @@ CASES = {
   "homescreen_paired": setup_homescreen,
   "homescreen_prime": setup_homescreen,
   "homescreen_update_available": setup_homescreen_update_available,
+  "homescreen_unifont": setup_homescreen,
   "settings_device": setup_settings,
   "settings_network": setup_settings_network,
   "settings_network_advanced": setup_settings_network_advanced,
@@ -300,6 +301,8 @@ def create_screenshots():
         params.put("PrimeType", 0)  # NONE
       elif name == "homescreen_prime":
         params.put("PrimeType", 2)  # LITE
+      elif name == "homescreen_unifont":
+        params.put("LanguageSetting", "zh-CHT")  # Traditional Chinese
 
       t.test_ui(name, setup)
 
