@@ -28,10 +28,14 @@ class DriverCameraDialog(CameraView):
       VisionStreamType.VISION_STREAM_WIDE_ROAD,
     ]
 
+    self.font_size = 100
+    self.btn_width = 440
+    self.btn_height = 200
+
     self.stream_switch_button = Button(
       text=self._get_stream_button_text,
       click_callback=self._rotate_stream,
-      font_size=80,
+      font_size=self.font_size,
       font_weight=FontWeight.BOLD,
       button_style=ButtonStyle.PRIMARY,
       border_radius=8,
@@ -39,7 +43,7 @@ class DriverCameraDialog(CameraView):
 
     self.close_button = Button(
       "",
-      icon=gui_app.texture("icons/close2.png", 60, 60, True),
+      icon=gui_app.texture("icons/close2.png", self.font_size, self.font_size),
       click_callback=self._on_close,
       button_style=ButtonStyle.DANGER,
       border_radius=8,
@@ -84,19 +88,12 @@ class DriverCameraDialog(CameraView):
       self._draw_face_detection(rect)
       self.driver_state_renderer.render(rect)
 
-    # Draw close button in top left corner
-    close_button_size = 120
-    close_button_x = UI_BORDER_SIZE
-    close_button_y = UI_BORDER_SIZE
-    close_button_rect = rl.Rectangle(close_button_x, close_button_y, close_button_size, close_button_size)
+    close_button_rect = rl.Rectangle(UI_BORDER_SIZE, UI_BORDER_SIZE, self.btn_height, self.btn_height)
     self.close_button.render(close_button_rect)
 
-    # Draw stream switch button
-    button_width = 360
-    button_height = 120
-    button_x = rect.x + rect.width - button_width - UI_BORDER_SIZE
-    button_y = rect.y + rect.height - button_height - UI_BORDER_SIZE
-    button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)
+    button_x = rect.x + rect.width - self.btn_width - UI_BORDER_SIZE
+    button_y = rect.y + rect.height - self.btn_height - UI_BORDER_SIZE
+    button_rect = rl.Rectangle(button_x, button_y, self.btn_width, self.btn_height)
     self.stream_switch_button.render(button_rect)
 
     return -1
