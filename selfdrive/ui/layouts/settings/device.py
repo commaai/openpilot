@@ -94,9 +94,8 @@ class DeviceLayout(Widget):
 
   def _show_driver_camera(self):
     if not self._driver_camera:
-      self._driver_camera = DriverCameraDialog()
+      self._driver_camera = DriverCameraDialog(on_close=lambda: setattr(self, '_driver_camera', None))
 
-    gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
 
   def _reset_calibration_prompt(self):
     if ui_state.engaged:

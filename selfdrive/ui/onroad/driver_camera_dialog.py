@@ -1,5 +1,6 @@
 import numpy as np
 import pyray as rl
+from collections.abc import Callable
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
@@ -11,9 +12,11 @@ from openpilot.system.ui.widgets.label import gui_label
 
 
 class DriverCameraDialog(CameraView):
-  def __init__(self):
+  def __init__(self, on_close: Callable[[], None] | None = None):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
+    self.on_close = on_close
+
     # TODO: this can grow unbounded, should be given some thought
     device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
     ui_state.params.put_bool("IsDriverViewEnabled", True)
@@ -33,9 +36,17 @@ class DriverCameraDialog(CameraView):
       border_radius=8,
     )
 
+    # Close button
+    self.close_button = Button(
+      "X",
+      click_callback=self._on_close_click,
+      font_size=60,
+      button_style=ButtonStyle.DANGER,
+      border_radius=8,
+    )
+
   def stop_dmonitoringmodeld(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    gui_app.set_modal_overlay(None)
 
   def _get_stream_button_text(self) -> str:
     """Get the text to display on the stream switch button."""
@@ -53,9 +64,13 @@ class DriverCameraDialog(CameraView):
     self.stream_switch_button.set_text(self._get_stream_button_text())
     self.switch_stream(self.stream_options[self.current_stream_index])
 
-  def _handle_mouse_release(self, _):
-    super()._handle_mouse_release(_)
+  def _on_close_click(self):
     self.stop_dmonitoringmodeld()
+    gui_app.set_modal_overlay(None)
+
+    if self.on_close:
+      self.on_close()
+
 
   def _render(self, rect):
     super()._render(rect)
@@ -74,6 +89,14 @@ class DriverCameraDialog(CameraView):
       self._draw_face_detection(rect)
       self.driver_state_renderer.render(rect)
 
+    # Draw close button in top left corner
+    close_button_size = 80
+    close_button_x = UI_BORDER_SIZE
+    close_button_y = UI_BORDER_SIZE
+    close_button_rect = rl.Rectangle(close_button_x, close_button_y, close_button_size, close_button_size)
+    self.close_button.render(close_button_rect)
+
+    # Draw stream switch button
     button_width = 360
     button_height = 120
     button_x = rect.x + rect.width - button_width - UI_BORDER_SIZE
@@ -136,9 +159,10 @@ class DriverCameraDialog(CameraView):
 
 
 if __name__ == "__main__":
+  import sys
   gui_app.init_window("Driver Camera View")
 
-  driver_camera_view = DriverCameraDialog()
+  driver_camera_view = DriverCameraDialog(on_close=lambda: sys.exit(0))
   try:
     for _ in gui_app.render():
       ui_state.update()
