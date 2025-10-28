@@ -29,7 +29,6 @@ KD = 0.0
 
 LP_FILTER_CUTOFF_HZ = 1.2
 LAT_ACCEL_REQUEST_BUFFER_SECONDS = 1.0
-VERSION = 0
 
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI, dt):
@@ -57,7 +56,6 @@ class LatControlTorque(LatControl):
 
   def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited, lat_delay):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
-    pid_log.version = VERSION
     if not active:
       output_torque = 0.0
       pid_log.active = False
@@ -108,7 +106,6 @@ class LatControlTorque(LatControl):
       pid_log.output = float(-output_torque)  # TODO: log lat accel?
       pid_log.actualLateralAccel = float(measurement)
       pid_log.desiredLateralAccel = float(setpoint)
-      pid_log.desiredLateralJerk= float(desired_lateral_jerk)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
