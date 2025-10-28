@@ -20,6 +20,7 @@ export TERM=xterm-256color
 
 shopt -s huponexit # kill all child processes when the shell exits
 
+export ZMQ=1
 export CI=1
 export PYTHONWARNINGS=error
 export LOGPRINT=debug
