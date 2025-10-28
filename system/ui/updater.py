@@ -163,8 +163,7 @@ def main():
     updater = Updater(updater_path, manifest_path)
     for should_render in gui_app.render():
       if should_render:
-        continue
-      updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+        updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     # Make sure we clean up even if there's an error
     gui_app.close()

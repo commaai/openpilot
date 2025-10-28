@@ -434,8 +434,7 @@ def main():
     setup = Setup()
     for should_render in gui_app.render():
       if should_render:
-        continue
-      setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+        setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     setup.close()
   except Exception as e:
     print(f"Setup error: {e}")

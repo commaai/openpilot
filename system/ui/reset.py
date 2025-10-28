@@ -128,9 +128,8 @@ def main():
 
   for should_render in gui_app.render():
     if should_render:
-      continue
-    if not reset.render(rl.Rectangle(45, 200, gui_app.width - 90, gui_app.height - 245)):
-      break
+      if not reset.render(rl.Rectangle(45, 200, gui_app.width - 90, gui_app.height - 245)):
+        break
 
 
 if __name__ == "__main__":
