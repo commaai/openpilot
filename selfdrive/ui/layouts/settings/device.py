@@ -59,7 +59,7 @@ class DeviceLayout(Widget):
       text_item(lambda: tr("Dongle ID"), self._params.get("DongleId") or (lambda: tr("N/A"))),
       text_item(lambda: tr("Serial"), self._params.get("HardwareSerial") or (lambda: tr("N/A"))),
       self._pair_device_btn,
-      button_item(lambda: tr("Camera"), lambda: tr("PREVIEW"), lambda: tr(DESCRIPTIONS['camera']),
+      button_item(lambda: tr("Camera Preview"), lambda: tr("OPEN"), lambda: tr(DESCRIPTIONS['camera']),
                   callback=self._show_driver_camera, enabled=ui_state.is_offroad),
       self._reset_calib_btn,
       button_item(lambda: tr("Review Training Guide"), lambda: tr("REVIEW"), lambda: tr(DESCRIPTIONS['review_guide']),
