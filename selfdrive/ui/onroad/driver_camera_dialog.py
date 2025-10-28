@@ -90,7 +90,7 @@ class DriverCameraDialog(CameraView):
       self.driver_state_renderer.render(rect)
 
     # Draw close button in top left corner
-    close_button_size = 80
+    close_button_size = 120
     close_button_x = UI_BORDER_SIZE
     close_button_y = UI_BORDER_SIZE
     close_button_rect = rl.Rectangle(close_button_x, close_button_y, close_button_size, close_button_size)
