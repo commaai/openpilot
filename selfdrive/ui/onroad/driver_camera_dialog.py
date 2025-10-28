@@ -10,10 +10,10 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
 
-CLOSE_BTN_SIZE = 200
-BUTTON_BORDER_SIZE = 8
+CLOSE_BTN_SIZE = 192
+BUTTON_BORDER_SIZE = 100
 BUTTON_WIDTH = 440
-BUTTON_HEIGHT = 200
+BUTTON_HEIGHT = 192
 FONT_SIZE = 100
 
 DEFAULT_STREAM_INDEX = 0
