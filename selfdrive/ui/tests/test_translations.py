@@ -29,7 +29,7 @@ class TestTranslations:
       return f.read()
 
   def test_missing_translation_files(self):
-    assert os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")), \
+    assert os.path.exists(os.path.join(TRANSLATIONS_DIR.as_posix(), f"{self.file}.ts")), \
                     f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py"
 
   @pytest.mark.skip("Only test unfinished translations before going to release")

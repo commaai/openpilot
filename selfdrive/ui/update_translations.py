@@ -4,7 +4,7 @@ import os
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.multilang import SYSTEM_UI_DIR, UI_DIR, TRANSLATIONS_DIR, multilang
 
-POT_FILE = os.path.join(TRANSLATIONS_DIR, "app.pot")
+POT_FILE = os.path.join(TRANSLATIONS_DIR.as_posix(), "app.pot")
 
 
 def update_translations():

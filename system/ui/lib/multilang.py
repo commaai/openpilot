@@ -1,4 +1,4 @@
-from importlib.resources import as_file, files
+from importlib.resources import files
 import os
 import json
 import gettext
