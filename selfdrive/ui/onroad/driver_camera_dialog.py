@@ -55,6 +55,9 @@ class DriverCameraDialog(CameraView):
       VisionStreamType.VISION_STREAM_DRIVER: tr("Driver")
     }.get(self.stream_options[self.current_stream_index], tr("Unknown"))
 
+  def _handle_mouse_release(self, _):
+    super()._handle_mouse_release(_)
+
   def _rotate_stream(self):
     self.current_stream_index = (self.current_stream_index + 1) % len(self.stream_options)
     self.stream_switch_button.set_text(self._get_stream_button_text())
