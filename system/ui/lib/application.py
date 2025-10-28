@@ -331,6 +331,7 @@ class GuiApplication:
         if not self._should_render:
           time.sleep(1 / self._target_fps)
           yield False
+          continue
 
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)

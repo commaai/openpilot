@@ -432,8 +432,8 @@ def main():
   try:
     gui_app.init_window("Setup", 20)
     setup = Setup()
-    for showing_dialog in gui_app.render():
-      if showing_dialog:
+    for should_render in gui_app.render():
+      if should_render:
         continue
       setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     setup.close()
