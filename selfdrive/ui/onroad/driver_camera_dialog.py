@@ -3,7 +3,7 @@ import pyray as rl
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
-from openpilot.selfdrive.ui.ui_state import ui_state, device
+from openpilot.selfdrive.ui.ui_state import UI_BORDER_SIZE, ui_state, device
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
@@ -76,8 +76,8 @@ class DriverCameraDialog(CameraView):
 
     button_width = 360
     button_height = 120
-    button_x = rect.x + rect.width - button_width - 40
-    button_y = rect.y + rect.height - button_height - 40
+    button_x = rect.x + rect.width - button_width - UI_BORDER_SIZE
+    button_y = rect.y + rect.height - button_height - UI_BORDER_SIZE
     button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)
     self.stream_switch_button.render(button_rect)
 
