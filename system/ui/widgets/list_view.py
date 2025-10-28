@@ -347,7 +347,7 @@ class ListItem(Widget):
       return
 
     # Don't draw items that are not in parent's viewport
-    if ((self._rect.y + self.rect.height) <= self._parent_rect.y or
+    if ((self._rect.y + self._rect.height) <= self._parent_rect.y or
       self._rect.y >= (self._parent_rect.y + self._parent_rect.height)):
       return
 
