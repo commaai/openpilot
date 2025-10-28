@@ -49,7 +49,7 @@ class DriverCameraDialog(CameraView):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
 
   def _get_stream_button_text(self) -> str:
-    {
+    return {
       VisionStreamType.VISION_STREAM_ROAD: tr("Road"),
       VisionStreamType.VISION_STREAM_WIDE_ROAD: tr("Wide"),
       VisionStreamType.VISION_STREAM_DRIVER: tr("Driver")
@@ -66,7 +66,6 @@ class DriverCameraDialog(CameraView):
 
     if self.on_close:
       self.on_close()
-
 
   def _render(self, rect):
     super()._render(rect)
