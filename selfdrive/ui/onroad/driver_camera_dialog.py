@@ -52,7 +52,6 @@ class DriverCameraDialog(CameraView):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
 
   def _get_stream_button_text(self) -> str:
-    """Get the text to display on the stream switch button."""
     {
       VisionStreamType.VISION_STREAM_ROAD: tr("Road"),
       VisionStreamType.VISION_STREAM_WIDE_ROAD: tr("Wide"),
