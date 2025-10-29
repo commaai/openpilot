@@ -46,7 +46,7 @@ void MsgqToZmq::run(const std::vector<std::string> &endpoints, const std::string
       cv.wait(lk, [this]() { return do_exit || !sub2pub.empty(); });
       if (do_exit) break;
 
-      for (auto sub_sock : msgq_poller->poll(100)) {
+      for (auto sub_sock : msgq_poller->poll(10)) {
         // Process messages for each socket
         ZMQPubSocket *pub_sock = sub2pub.at(sub_sock);
         for (int i = 0; i < MAX_MESSAGES_PER_SOCKET; ++i) {

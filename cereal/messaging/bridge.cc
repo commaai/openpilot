@@ -3,6 +3,7 @@
 #include "cereal/messaging/msgq_to_zmq.h"
 #include "cereal/services.h"
 #include "common/util.h"
+#include "system/hardware/hw.h"
 
 ExitHandler do_exit;
 
@@ -41,7 +42,7 @@ void zmq_to_msgq(const std::vector<std::string> &endpoints, const std::string &i
   }
 
   while (!do_exit) {
-    for (auto sub_sock : poller->poll(100)) {
+    for (auto sub_sock : poller->poll(10)) {
       std::unique_ptr<Message> msg(sub_sock->receive(true));
       if (msg) {
         sub2pub[sub_sock]->sendMessage(msg.get());
@@ -57,6 +58,12 @@ void zmq_to_msgq(const std::vector<std::string> &endpoints, const std::string &i
 }
 
 int main(int argc, char **argv) {
+  // Set realtime priority for low latency message forwarding
+  if (!Hardware::PC()) {
+    int err = util::set_realtime_priority(1);
+    assert(err == 0);
+  }
+
   bool is_zmq_to_msgq = argc > 2;
   std::string ip = is_zmq_to_msgq ? argv[1] : "127.0.0.1";
   std::string whitelist_str = is_zmq_to_msgq ? std::string(argv[2]) : "";
