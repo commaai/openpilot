@@ -15,6 +15,7 @@ import cereal.messaging as messaging
 from cereal import car, log
 from pathlib import Path
 from cereal.messaging import PubMaster, SubMaster
+import msgq
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
@@ -237,9 +238,19 @@ def main(demo=False):
   model = ModelState(cl_context)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
+  # messaging
+  os.environ["ZMQ"] = "1"
+  os.environ["MSGQ_ADDR"] = "192.168.64.1"
+  messaging.reset_context()
+  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay", "clocks"], addr="192.168.64.1")
+  pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
+  os.environ.pop("ZMQ")
+  os.environ.pop("MSGQ_ADDR")
+  messaging.reset_context()
+
   # visionipc clients
   while True:
-    available_streams = VisionIpcClient.available_streams("camerad", block=False)
+    available_streams = VisionIpcClient.available_streams("navd", block=False)
     if available_streams:
       use_extra_client = VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams and VisionStreamType.VISION_STREAM_ROAD in available_streams
       main_wide_camera = VisionStreamType.VISION_STREAM_ROAD not in available_streams
@@ -247,8 +258,8 @@ def main(demo=False):
     time.sleep(.1)
 
   vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
-  vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, cl_context)
-  vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
+  vipc_client_main = VisionIpcClient("navd", vipc_client_main_stream, True, cl_context)
+  vipc_client_extra = VisionIpcClient("navd", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
   cloudlog.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
 
   while not vipc_client_main.connect(False):
@@ -259,10 +270,6 @@ def main(demo=False):
   cloudlog.warning(f"connected main cam with buffer size: {vipc_client_main.buffer_len} ({vipc_client_main.width} x {vipc_client_main.height})")
   if use_extra_client:
     cloudlog.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
-
-  # messaging
-  pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
-  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay", "clocks"])
 
   publish_state = PublishState()
   params = Params()
@@ -313,6 +320,8 @@ def main(demo=False):
         meta_extra = FrameMeta(vipc_client_extra)
         if buf_extra is None or meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
           break
+        #print(meta_extra.frame_id, meta_main.frame_id)
+        break
 
       if buf_extra is None:
         cloudlog.debug("vipc_client_extra no frame")
@@ -353,10 +362,11 @@ def main(demo=False):
     if run_count < 10: # let frame drops warm up
       frame_dropped_filter.x = 0.
       frames_dropped = 0.
+    frames_dropped = 0.
     run_count = run_count + 1
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
-    prepare_only = vipc_dropped_frames > 0
+    prepare_only = vipc_dropped_frames > 0 and False
     if prepare_only:
       cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
@@ -401,9 +411,12 @@ def main(demo=False):
       drivingdata_send.drivingModelData.meta.laneChangeDirection = DH.lane_change_direction
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
-      pm.send('modelV2', modelv2_send)
-      pm.send('drivingModelData', drivingdata_send)
-      pm.send('cameraOdometry', posenet_send)
+      try:
+        pm.send('modelV2', modelv2_send)
+        pm.send('drivingModelData', drivingdata_send)
+        pm.send('cameraOdometry', posenet_send)
+      except msgq.ipc_pyx.IpcError:
+        pass
     last_vipc_frame_id = meta_main.frame_id
 
 

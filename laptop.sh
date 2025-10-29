@@ -26,7 +26,10 @@ device "sudo ip link set usb0 up"
 device "sudo ip addr flush dev usb0"
 device "sudo ip addr add 192.168.64.1/24 dev usb0"
 device "tmux list-sessions > /dev/null 2>&1 && tmux kill-server || true"
-device "tmux new-session -s laptop -e PYTHONPATH='/data/pythonpath' -e FINGERPRINT='TOYOTA_COROLLA_TSS2' -e ZMQ=1 -e BLOCK=modeld -d 'source /etc/profile && /data/continue.sh'"
+device "tmux new-session -s laptop -e PYTHONPATH='/data/pythonpath' -e FINGERPRINT='TOYOTA_COROLLA_TSS2' -e BLOCK=modeld -d 'source /etc/profile && /data/continue.sh'"
+device "tmux new-window -t laptop 'sudo systemctl restart lte'"
+device "tmux new-window -t laptop 'cd /data/openpilot/cereal/messaging && ./bridge'"
+device "tmux new-window -t laptop 'cd /data/openpilot/cereal/messaging && ./bridge 192.168.64.2 modelV2,drivingModelData,cameraOdometry'"
 
 get_usb_ncm_iface() {
   for i in /sys/class/net/*; do
@@ -48,9 +51,6 @@ ping -c 5 192.168.64.1
 # run modeld
 echo -e "${BOLD}${GREEN}Prepping laptop...${NC}"
 echo -e "${BOLD}${GREEN}==================${NC}\n"
-source tools/install_python_dependencies.sh
-scons
-
+source .venv/bin/activate
 tools/camerastream/compressed_vipc.py --silent --server navd 192.168.64.1 &
-
-#ZMQ=1 selfdrive/modeld/modeld.py
+selfdrive/modeld/modeld.py
