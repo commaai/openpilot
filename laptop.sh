@@ -18,6 +18,8 @@ device() {
   tools/scripts/adb_ssh.sh "$@"
 }
 
+source .venv/bin/activate
+
 set -x
 
 echo -e "${BOLD}${GREEN}Prepping device...${NC}"
@@ -46,11 +48,22 @@ get_usb_ncm_iface() {
 iface=$(get_usb_ncm_iface) && echo "NCM interface: $iface"
 sudo ip addr add 192.168.64.2/30 dev $iface || true
 sudo ip link set dev $iface up
+sudo nmcli con mod $iface ipv4.method manual
+sudo nmcli con mod $iface ipv4.addresses 192.168.64.2/30
+sudo nmcli con mod $iface ipv4.gateway ""
+sudo nmcli con mod $iface ipv4.dns ""
+sudo nmcli con up $iface
 ping -c 5 192.168.64.1
 
 # run modeld
+parent=$$
+cleanup() {
+  trap - EXIT INT TERM    # stop the trap from re-firing
+  echo "cleaning up..."
+  kill -TERM 0            # 0 ⇒ every process in *this* group EXCEPT myself
+}
+trap cleanup EXIT INT TERM
 echo -e "${BOLD}${GREEN}Prepping laptop...${NC}"
 echo -e "${BOLD}${GREEN}==================${NC}\n"
-source .venv/bin/activate
 tools/camerastream/compressed_vipc.py --silent --server camerad 192.168.64.1 &
 selfdrive/modeld/modeld.py
