@@ -25,19 +25,12 @@ echo -e "${BOLD}${GREEN}Prepping device...${NC}"
 echo -e "${BOLD}${GREEN}==================${NC}\n"
 device "exit 0"
 device "tmux list-sessions > /dev/null 2>&1 && tmux kill-server || true"
-device "tmux new-session -s laptop -e BLOCK=modeld -d /usr/comma/comma.sh"
-
+device "tmux new-session -s laptop -e FINGERPRINT='TOYOTA_COROLLA_TSS2' -e ZMQ=1 -e BLOCK=modeld -d /data/continue.sh"
 
 # run modeld
-#scons
 echo -e "${BOLD}${GREEN}Prepping laptop...${NC}"
 echo -e "${BOLD}${GREEN}==================${NC}\n"
 source tools/install_python_dependencies.sh
-
-pkill -f bridge || true
-
-# broadcast to ZMQ
-cereal/message/bridge
-t
+scons
 
 ZMQ=1 selfdrive/modeld/modeld.py
