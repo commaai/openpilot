@@ -52,7 +52,7 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   flags = {
     'larch64': 'DEV=QCOM IMAGE=1 FLOAT16=1',
     'Darwin': f'DEV=METAL', # tinygrad calls brew which needs a $HOME in the env
-  }.get(arch, 'DEV=CL BEAM=2 FLOAT16=1')
+  }.get(arch, 'DEV=CL BEAM=2 FLOAT16=1 IMAGE=1')
   tg_compile(flags, model_name)
 
 # Compile BIG model if USB GPU is available
