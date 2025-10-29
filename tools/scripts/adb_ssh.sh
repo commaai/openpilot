@@ -32,7 +32,7 @@ PY
 for entry in "${SERVICE_PORTS[@]}"; do
   name="${entry% *}"
   port="${entry##* }"
-  adb forward "tcp:${port}" "tcp:${port}" > /dev/null
+  #adb forward "tcp:${port}" "tcp:${port}" > /dev/null
 done
 
 # Forward SSH port first for interactive shell access.

@@ -18,11 +18,32 @@ device() {
   tools/scripts/adb_ssh.sh "$@"
 }
 
+set -x
+
 echo -e "${BOLD}${GREEN}Prepping device...${NC}"
 echo -e "${BOLD}${GREEN}==================${NC}\n"
-device "exit 0"
+device "sudo ip link set usb0 up"
+device "sudo ip addr flush dev usb0"
+device "sudo ip addr add 192.168.64.1/24 dev usb0"
 device "tmux list-sessions > /dev/null 2>&1 && tmux kill-server || true"
-device "tmux new-session -s laptop -e PYTHONPATH='/data/pythonpath' -e FINGERPRINT='TOYOTA_COROLLA_TSS2' -e ZMQ=1 -e BLOCK=modeld -d 'source /etc/profile && env && /data/openpilot/system/manager/manager.py'"
+device "tmux new-session -s laptop -e PYTHONPATH='/data/pythonpath' -e FINGERPRINT='TOYOTA_COROLLA_TSS2' -e ZMQ=1 -e BLOCK=modeld -d 'source /etc/profile && /data/continue.sh'"
+
+get_usb_ncm_iface() {
+  for i in /sys/class/net/*; do
+    iface=${i##*/}
+    [[ -f "$i/type" && $(<"$i/type") -eq 1 ]] || continue
+    readlink -f "$i" | grep -q '/usb' || continue
+    if ethtool -i "$iface" 2>/dev/null | grep -qE 'driver: (cdc_ncm|huawei_cdc_ncm|cdc_mbim)'; then
+      echo "$iface"
+      return 0
+    fi
+  done
+  return 1
+}
+iface=$(get_usb_ncm_iface) && echo "NCM interface: $iface"
+sudo ip addr add 192.168.64.2/30 dev $iface || true
+sudo ip link set dev $iface up
+ping -c 5 192.168.64.1
 
 # run modeld
 echo -e "${BOLD}${GREEN}Prepping laptop...${NC}"
@@ -30,12 +51,6 @@ echo -e "${BOLD}${GREEN}==================${NC}\n"
 source tools/install_python_dependencies.sh
 scons
 
-set -x
+tools/camerastream/compressed_vipc.py --silent --server navd 192.168.64.1 &
 
-adb forward --remove tcp:58537
-adb forward --remove tcp:50972
-adb forward --remove tcp:49244
-
-tools/camerastream/compressed_vipc.py --silent 127.0.0.1 &
-
-ZMQ=1 selfdrive/modeld/modeld.py
+#ZMQ=1 selfdrive/modeld/modeld.py
