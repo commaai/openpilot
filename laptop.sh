@@ -14,9 +14,6 @@ if [ -f /TICI ]; then
   exit 1
 fi
 
-set -x
-
-# laptop must have
 device() {
   tools/scripts/adb_ssh.sh "$@"
 }
@@ -25,12 +22,20 @@ echo -e "${BOLD}${GREEN}Prepping device...${NC}"
 echo -e "${BOLD}${GREEN}==================${NC}\n"
 device "exit 0"
 device "tmux list-sessions > /dev/null 2>&1 && tmux kill-server || true"
-device "tmux new-session -s laptop -e FINGERPRINT='TOYOTA_COROLLA_TSS2' -e ZMQ=1 -e BLOCK=modeld -d /data/continue.sh"
+device "tmux new-session -s laptop -e PYTHONPATH='/data/pythonpath' -e FINGERPRINT='TOYOTA_COROLLA_TSS2' -e ZMQ=1 -e BLOCK=modeld -d 'source /etc/profile && env && /data/openpilot/system/manager/manager.py'"
 
 # run modeld
 echo -e "${BOLD}${GREEN}Prepping laptop...${NC}"
 echo -e "${BOLD}${GREEN}==================${NC}\n"
 source tools/install_python_dependencies.sh
 scons
+
+set -x
+
+adb forward --remove tcp:58537
+adb forward --remove tcp:50972
+adb forward --remove tcp:49244
+
+tools/camerastream/compressed_vipc.py --silent 127.0.0.1 &
 
 ZMQ=1 selfdrive/modeld/modeld.py
