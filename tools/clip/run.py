@@ -180,7 +180,7 @@ def check_unix_display_num():
   x11_unix_dir = "/tmp/.X11-unix"
   if not os.path.isdir(x11_unix_dir):
     return randint(99, 999)
-  existing_displays = set() 
+  existing_displays = set()
   for filename in os.listdir(x11_unix_dir):
     if filename.startswith("X") and filename[1:].isdigit():
       try:
