@@ -52,5 +52,5 @@ ping -c 5 192.168.64.1
 echo -e "${BOLD}${GREEN}Prepping laptop...${NC}"
 echo -e "${BOLD}${GREEN}==================${NC}\n"
 source .venv/bin/activate
-tools/camerastream/compressed_vipc.py --silent 192.168.64.1 &
+tools/camerastream/compressed_vipc.py --silent --server camerad 192.168.64.1 &
 selfdrive/modeld/modeld.py
