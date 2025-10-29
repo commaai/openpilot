@@ -10,7 +10,6 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 def main():
   config_realtime_process([1, 2], 1)
 
-  ui_state._instance._initialize()
   gui_app.init_window("UI")
   main_layout = MainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
