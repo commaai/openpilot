@@ -176,6 +176,24 @@ def wait_for_frames(procs: list[Popen]):
     check_for_failure(procs)
 
 
+def check_unix_display_num():
+  x11_unix_dir = "/tmp/.X11-unix"
+  if not os.path.isdir(x11_unix_dir):
+    return randint(99, 999)
+  existing_displays = set() 
+  for filename in os.listdir(x11_unix_dir):
+    if filename.startswith("X") and filename[1:].isdigit():
+      try:
+        display_num = int(filename[1:])
+        existing_displays.add(display_num)
+      except ValueError:
+        continue
+  while True:
+    display_num = randint(99, 999)
+    if display_num not in existing_displays:
+      return display_num
+
+
 def clip(
   data_dir: str | None,
   quality: Literal['low', 'high'],
@@ -194,9 +212,7 @@ def clip(
   begin_at = max(start - SECONDS_TO_WARM, 0)
   duration = end - start
   bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
-
-  # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
-  display = f':{randint(99, 999)}'
+  display = f':{check_unix_display_num()}'
 
   box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
   meta_text = get_meta_text(lr, route)
