@@ -2,6 +2,7 @@ from importlib.resources import files
 import os
 import json
 import gettext
+from typing import Any
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 
@@ -23,6 +24,35 @@ UNIFONT_LANGUAGES = [
   "ko",
   "ja",
 ]
+
+
+class Translatable(str):
+  """A lazy translation wrapper that behaves like a str and a callable.
+
+  - As a str: it renders to the current translation at creation time (for
+    immediate uses that require a concrete Python str).
+  - As a callable: calling it re-fetches the current translation from the
+    active gettext catalog, optionally applying format() arguments.
+  - format(): returns a concrete str using the latest translation.
+  """
+
+  def __new__(cls, msgid: str):
+    # Create a str value using the current translation so immediate consumers
+    # expecting a concrete str keep working.
+    value = multilang._translation.gettext(msgid)
+    obj = super().__new__(cls, value)
+    obj._msgid = msgid  # type: ignore[attr-defined]
+    return obj
+
+  def __call__(self, *args: Any, **kwargs: Any) -> str:
+    translated = multilang._translation.gettext(self._msgid)  # type: ignore[attr-defined]
+    if args or kwargs:
+      return translated.format(*args, **kwargs)
+    return translated
+
+  def format(self, *args: Any, **kwargs: Any) -> str:  # type: ignore[override]
+    translated = multilang._translation.gettext(self._msgid)  # type: ignore[attr-defined]
+    return translated.format(*args, **kwargs)
 
 
 class Multilang:
@@ -60,8 +90,8 @@ class Multilang:
     self._language = language_code
     self.setup()
 
-  def tr(self, text: str) -> str:
-    return self._translation.gettext(text)
+  def tr(self, text: str) -> Translatable:
+    return Translatable(text)
 
   def trn(self, singular: str, plural: str, n: int) -> str:
     return self._translation.ngettext(singular, plural, n)
@@ -80,9 +110,11 @@ class Multilang:
 multilang = Multilang()
 multilang.setup()
 
+# Public API
 tr, trn = multilang.tr, multilang.trn
 
 
-# no-op marker for static strings translated later
-def tr_noop(s: str) -> str:
-  return s
+# Backwards-compat: no-op marker for static strings translated later
+def tr_noop(s: str) -> Translatable:
+  # Return a Translatable so call sites can be simplified to just `tr(...)`.
+  return Translatable(s)

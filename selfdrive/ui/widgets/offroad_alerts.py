@@ -101,15 +101,15 @@ class AbstractAlert(Widget, ABC):
       if self.dismiss_callback:
         self.dismiss_callback()
 
-    self.dismiss_btn = ActionButton(lambda: tr("Close"))
+    self.dismiss_btn = ActionButton(tr("Close"))
 
-    self.snooze_btn = ActionButton(lambda: tr("Snooze Update"), style=ButtonStyle.DARK)
+    self.snooze_btn = ActionButton(tr("Snooze Update"), style=ButtonStyle.DARK)
     self.snooze_btn.set_click_callback(snooze_callback)
 
-    self.excessive_actuation_btn = ActionButton(lambda: tr("Acknowledge Excessive Actuation"), style=ButtonStyle.DARK, min_width=800)
+    self.excessive_actuation_btn = ActionButton(tr("Acknowledge Excessive Actuation"), style=ButtonStyle.DARK, min_width=800)
     self.excessive_actuation_btn.set_click_callback(excessive_actuation_callback)
 
-    self.reboot_btn = ActionButton(lambda: tr("Reboot and Update"), min_width=600)
+    self.reboot_btn = ActionButton(tr("Reboot and Update"), min_width=600)
     self.reboot_btn.set_click_callback(lambda: HARDWARE.reboot())
 
     # TODO: just use a Scroller?

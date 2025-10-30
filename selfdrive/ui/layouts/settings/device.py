@@ -11,7 +11,7 @@ from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import FontWeight, gui_app
-from openpilot.system.ui.lib.multilang import multilang, tr, tr_noop
+from openpilot.system.ui.lib.multilang import multilang, tr
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog, alert_dialog
 from openpilot.system.ui.widgets.html_render import HtmlModal
@@ -21,10 +21,10 @@ from openpilot.system.ui.widgets.scroller import Scroller
 
 # Description constants
 DESCRIPTIONS = {
-  'pair_device': tr_noop("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
-  'driver_camera': tr_noop("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
-  'reset_calibration': tr_noop("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
-  'review_guide': tr_noop("Review the rules, features, and limitations of openpilot"),
+  'pair_device': tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
+  'driver_camera': tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
+  'reset_calibration': tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
+  'review_guide': tr("Review the rules, features, and limitations of openpilot"),
 }
 
 
@@ -45,27 +45,27 @@ class DeviceLayout(Widget):
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _initialize_items(self):
-    self._pair_device_btn = button_item(lambda: tr("Pair Device"), lambda: tr("PAIR"), lambda: tr(DESCRIPTIONS['pair_device']), callback=self._pair_device)
+    self._pair_device_btn = button_item(tr("Pair Device"), tr("PAIR"), DESCRIPTIONS['pair_device'], callback=self._pair_device)
     self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
-    self._reset_calib_btn = button_item(lambda: tr("Reset Calibration"), lambda: tr("RESET"), lambda: tr(DESCRIPTIONS['reset_calibration']),
+    self._reset_calib_btn = button_item(tr("Reset Calibration"), tr("RESET"), DESCRIPTIONS['reset_calibration'],
                                         callback=self._reset_calibration_prompt)
     self._reset_calib_btn.set_description_opened_callback(self._update_calib_description)
 
-    self._power_off_btn = dual_button_item(lambda: tr("Reboot"), lambda: tr("Power Off"),
+    self._power_off_btn = dual_button_item(tr("Reboot"), tr("Power Off"),
                                            left_callback=self._reboot_prompt, right_callback=self._power_off_prompt)
 
     items = [
-      text_item(lambda: tr("Dongle ID"), self._params.get("DongleId") or (lambda: tr("N/A"))),
-      text_item(lambda: tr("Serial"), self._params.get("HardwareSerial") or (lambda: tr("N/A"))),
+      text_item(tr("Dongle ID"), self._params.get("DongleId") or (lambda: tr("N/A"))),
+      text_item(tr("Serial"), self._params.get("HardwareSerial") or (lambda: tr("N/A"))),
       self._pair_device_btn,
-      button_item(lambda: tr("Driver Camera"), lambda: tr("PREVIEW"), lambda: tr(DESCRIPTIONS['driver_camera']),
+      button_item(tr("Driver Camera"), tr("PREVIEW"), DESCRIPTIONS['driver_camera'],
                   callback=self._show_driver_camera, enabled=ui_state.is_offroad),
       self._reset_calib_btn,
-      button_item(lambda: tr("Review Training Guide"), lambda: tr("REVIEW"), lambda: tr(DESCRIPTIONS['review_guide']),
+      button_item(tr("Review Training Guide"), tr("REVIEW"), DESCRIPTIONS['review_guide'],
                   self._on_review_training_guide, enabled=ui_state.is_offroad),
-      regulatory_btn := button_item(lambda: tr("Regulatory"), lambda: tr("VIEW"), callback=self._on_regulatory, enabled=ui_state.is_offroad),
-      button_item(lambda: tr("Change Language"), lambda: tr("CHANGE"), callback=self._show_language_dialog),
+      regulatory_btn := button_item(tr("Regulatory"), tr("VIEW"), callback=self._on_regulatory, enabled=ui_state.is_offroad),
+      button_item(tr("Change Language"), tr("CHANGE"), callback=self._show_language_dialog),
       self._power_off_btn,
     ]
     regulatory_btn.set_visible(TICI)

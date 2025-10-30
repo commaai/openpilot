@@ -7,7 +7,7 @@ from enum import Enum
 
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.multilang import tr, tr_noop
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
@@ -26,9 +26,9 @@ VALUE_FONT_SIZE = 48
 
 
 class SshKeyActionState(Enum):
-  LOADING = tr_noop("LOADING")
-  ADD = tr_noop("ADD")
-  REMOVE = tr_noop("REMOVE")
+  LOADING = tr("LOADING")
+  ADD = tr("ADD")
+  REMOVE = tr("REMOVE")
 
 
 class SshKeyAction(ItemAction):
