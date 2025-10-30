@@ -160,6 +160,14 @@ class GuiApplication:
 
     # Debug variables
     self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
+    self._show_touches = SHOW_TOUCHES
+    self._show_fps = SHOW_FPS
+
+  def set_show_touches(self, show: bool):
+    self._show_touches = show
+
+  def set_show_fps(self, show: bool):
+    self._show_fps = show
 
   @property
   def target_fps(self):
@@ -367,10 +375,10 @@ class GuiApplication:
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
           rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
-        if SHOW_FPS:
+        if self._show_fps:
           rl.draw_fps(10, 10)
 
-        if SHOW_TOUCHES:
+        if self._show_touches:
           for mouse_event in self._mouse_events:
             if mouse_event.left_pressed:
               self._mouse_history.clear()
