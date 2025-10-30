@@ -22,9 +22,7 @@ else:
   qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
 
   qt_env['QTDIR'] = qt_install_prefix
-  qt_dirs = [
-    f"{qt_install_headers}",
-  ]
+  qt_dirs = [f"{qt_install_headers}"]
 
   qt_gui_path = os.path.join(qt_install_headers, "QtGui")
   qt_gui_dirs = [d for d in os.listdir(qt_gui_path) if os.path.isdir(os.path.join(qt_gui_path, d))]
@@ -32,15 +30,11 @@ else:
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]
-  if arch == "larch64":
-    qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
-  elif arch != "Darwin":
-    qt_libs += ["GL"]
+  qt_libs += ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']
 qt_env.Tool('qt3')
 
-qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode"]
+qt_env['CPPPATH'] += qt_dirs
 qt_flags = [
   "-D_REENTRANT",
   "-DQT_NO_DEBUG",
