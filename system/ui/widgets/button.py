@@ -172,10 +172,6 @@ class ButtonRadio(Button):
 
 
 class IconButton(Widget):
-  def __init__(self, texture: rl.Texture):
-    super().__init__()
-    self._texture = texture
-
   def _render(self, rect: rl.Rectangle):
     color = rl.Color(180, 180, 180, 150) if self.is_pressed else rl.WHITE
     draw_x = rect.x + (rect.width - self._texture.width) / 2
