@@ -81,6 +81,7 @@ class DeveloperLayout(Widget):
       initial_state=self._params.get_bool("ShowDebugInfo"),
       callback=self._on_enable_ui_debug,
     )
+    self._on_enable_ui_debug(self._params.get_bool("ShowDebugInfo"))
 
     self._scroller = Scroller([
       self._adb_toggle,
