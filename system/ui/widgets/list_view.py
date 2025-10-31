@@ -2,7 +2,8 @@ import os
 import pyray as rl
 from collections.abc import Callable
 from abc import ABC
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.mouse_state import MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget

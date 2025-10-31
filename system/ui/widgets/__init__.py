@@ -2,7 +2,8 @@ import abc
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
-from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.mouse_state import MousePos, MAX_TOUCH_SLOTS
 
 
 class DialogResult(IntEnum):

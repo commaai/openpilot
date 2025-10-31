@@ -1,6 +1,7 @@
 import pyray as rl
 import time
-from openpilot.system.ui.lib.application import gui_app, MousePos, FONT_SCALE
+from openpilot.system.ui.lib.application import gui_app, FONT_SCALE
+from openpilot.system.ui.lib.mouse_state import MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 

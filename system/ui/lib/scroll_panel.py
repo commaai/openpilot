@@ -1,7 +1,8 @@
 import math
 import pyray as rl
 from enum import IntEnum
-from openpilot.system.ui.lib.application import gui_app, MouseEvent
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.mouse_state import MouseEvent
 from openpilot.common.filter_simple import FirstOrderFilter
 
 # Scroll constants for smooth scrolling behavior
