@@ -21,19 +21,17 @@ ARCHNAME=$(uname -m)
 if [ -f /TICI ]; then
   ARCHNAME="larch64"
   RAYLIB_PLATFORM="PLATFORM_COMMA"
-fi
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  ARCHNAME="Darwin"
-fi
-
-# required dependencies on Linux
-if [[ "$OSTYPE" == "linux"* ]]; then
+elif [[ "$OSTYPE" == "linux"* ]]; then
+  # required dependencies on Linux PC
   $SUDO apt install \
     libxcursor-dev \
     libxi-dev \
     libxinerama-dev \
     libxrandr-dev
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  ARCHNAME="Darwin"
 fi
 
 INSTALL_DIR="$DIR/$ARCHNAME"
