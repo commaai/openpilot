@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
+SUDO=""
+
+# Use sudo if not root
+if [[ ! $(id -u) -eq 0 ]]; then
+  if [[ -z $(which sudo) ]]; then
+    echo "Please install sudo or run as root"
+    exit 1
+  fi
+  SUDO="sudo"
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
 
@@ -14,6 +25,15 @@ fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
   ARCHNAME="Darwin"
+fi
+
+# required dependencies on Linux
+if [[ "$OSTYPE" == "linux"* ]]; then
+  $SUDO apt install \
+    libxcursor-dev \
+    libxi-dev \
+    libxinerama-dev \
+    libxrandr-dev
 fi
 
 INSTALL_DIR="$DIR/$ARCHNAME"

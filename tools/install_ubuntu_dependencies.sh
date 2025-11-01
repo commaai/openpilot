@@ -67,11 +67,7 @@ function install_ubuntu_common_requirements() {
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
     libqt5opengl5-dev \
-    gettext \
-    libxcursor-dev \
-    libxi-dev \
-    libxinerama-dev \
-    libxrandr-dev
+    gettext
 }
 
 # Install Ubuntu 24.04 LTS packages
