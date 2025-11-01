@@ -52,7 +52,7 @@ class HtmlElement:
   font_weight: FontWeight
   margin_top: int
   margin_bottom: int
-  line_height: float = 0.9  # matches Qt visually, unsure why not default 1.2
+  line_height: float = 1.2
   indent_level: int = 0
 
 
