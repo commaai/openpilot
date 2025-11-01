@@ -15,11 +15,13 @@ def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: int =
   # Measure normal characters without emojis, then add standard width for each found emoji
   emoji = find_emoji(text)
   if emoji:
-    non_emoji_text = ""
+    parts = []
     last_index = 0
     for start, end, _ in emoji:
-      non_emoji_text += text[last_index:start]
+      parts.append(text[last_index:start])
       last_index = end
+    parts.append(text[last_index:])
+    non_emoji_text = "".join(parts)
   else:
     non_emoji_text = text
 
