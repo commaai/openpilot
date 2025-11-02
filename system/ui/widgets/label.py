@@ -291,28 +291,22 @@ class Label(Widget):
     self._line_scale = line_scale
 
     self._text = text
-
-    self._dirty = True
-    self._resolved_text: str = ""
-    self._cached_width: float = -1.0
+    self._cache_key = None
 
     self.set_text(text)
 
   def set_text(self, text):
     self._text = text
-    self._dirty = True
 
   def set_text_color(self, color):
     self._text_color = color
 
   def set_font_size(self, size):
     self._font_size = size
-    self._dirty = True
 
-  def _update_text(self):
+  def _update_text(self, text: str):
     self._emojis = []
     self._text_size = []
-    text = self._resolved_text
 
     if self._elide_right:
       display_text = text
@@ -343,22 +337,13 @@ class Label(Widget):
       self._emojis.append(find_emoji(t))
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
-  def _ensure_layout(self):
-    resolved = _resolve_value(self._text)
-    if resolved != self._resolved_text:
-      self._resolved_text = resolved
-      self._dirty = True
-
-    if self._cached_width != self._rect.width:
-      self._cached_width = self._rect.width
-      self._dirty = True
-
-    if self._dirty:
-      self._update_text()
-      self._dirty = False
-
   def _render(self, _):
-    self._ensure_layout()
+    # Text can be a callable
+    text = _resolve_value(self._text)
+    cache_key = (text, self._rect.width, self._rect.height, self._font_size)
+    if self._cache_key != cache_key:
+      self._update_text(text)
+      self._cache_key = cache_key
 
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
     if self._text_alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
