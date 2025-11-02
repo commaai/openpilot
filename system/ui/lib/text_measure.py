@@ -20,6 +20,7 @@ def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: int =
     for start, end, _ in emoji:
       non_emoji_text += text[last_index:start]
       last_index = end
+    non_emoji_text += text[last_index:]
   else:
     non_emoji_text = text
 
