@@ -1,8 +1,23 @@
+"""Test car interfaces with Hypothesis-based fuzzy testing.
+
+NOTE: max_examples has been reduced from 60 to 50 as an interim fix to address
+Hypothesis performance regression in newer versions. This change speeds up CI
+execution while maintaining sufficient test coverage.
+
+Related issues:
+- openpilot issue #32693: Investigation of slow Hypothesis example generation
+- Hypothesis issue #4014: Performance regression in newer versions
+
+For persistent speed issues, consider:
+- Further profiling of test execution
+- Test sharding across multiple workers
+- Targeted optimization of expensive test operations
+"""
+
 import os
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized
-
 from cereal import car
 from opendbc.car import DT_CTRL
 from opendbc.car.structs import CarParams
@@ -15,7 +30,7 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '50'))
 
 
 class TestCarInterfaces:
@@ -28,8 +43,8 @@ class TestCarInterfaces:
   def test_car_interfaces(self, car_name, data):
     car_interface = get_fuzzy_car_interface(car_name, data.draw)
     car_params = car_interface.CP.as_reader()
-
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+
     # Run car interface
     now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
