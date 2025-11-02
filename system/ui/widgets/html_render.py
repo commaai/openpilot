@@ -12,6 +12,7 @@ from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 LIST_INDENT_PX = 40
+PADDING = 20
 
 
 class ElementType(Enum):
@@ -56,6 +57,23 @@ class HtmlElement:
   indent_level: int = 0
 
 
+@dataclass
+class RenderLine:
+  text: str
+  x: float
+  y: float
+  height: float
+  font_size: int
+  font: rl.Font
+
+
+@dataclass
+class LayoutCache:
+  content_width: int
+  lines: list[RenderLine]
+  total_height: float
+
+
 class HtmlRenderer(Widget):
   def __init__(self, file_path: str | None = None, text: str | None = None,
                text_size: dict | None = None, text_color: rl.Color = rl.WHITE, center_text: bool = False):
@@ -65,12 +83,10 @@ class HtmlRenderer(Widget):
     self._normal_font = gui_app.font(FontWeight.NORMAL)
     self._bold_font = gui_app.font(FontWeight.BOLD)
     self._indent_level = 0
+    self._layout_cache: LayoutCache | None = None
 
     if text_size is None:
       text_size = {}
-
-    self._cached_height: float | None = None
-    self._cached_width: int = -1
 
     # Base paragraph size (Qt stylesheet default is 48px in offroad alerts)
     base_p_size = int(text_size.get(ElementType.P, 48))
@@ -104,8 +120,7 @@ class HtmlRenderer(Widget):
 
   def parse_html_content(self, html_content: str) -> None:
     self.elements.clear()
-    self._cached_height = None
-    self._cached_width = -1
+    self._layout_cache = None
 
     # Remove HTML comments
     html_content = COMMENT_RE.sub('', html_content)
@@ -145,11 +160,7 @@ class HtmlRenderer(Widget):
         elif is_start_tag or is_end_tag:
           # Always add content regardless of opening or closing tag
           close_tag()
-
-          if is_start_tag:
-            current_tag = tag
-          else:
-            current_tag = None
+          current_tag = tag if is_start_tag else None
 
         # increment after we add the content for the current tag
         if tag == ElementType.UL:
@@ -176,11 +187,10 @@ class HtmlRenderer(Widget):
 
     self.elements.append(element)
 
-  def _render(self, rect: rl.Rectangle):
-    # TODO: speed up by removing duplicate calculations across renders
-    current_y = rect.y
-    padding = 20
-    content_width = rect.width - (padding * 2)
+  def _calculate_layout(self, content_width: int) -> LayoutCache:
+    lines: list[RenderLine] = []
+    current_y = 0.0
+    usable_width = content_width - (PADDING * 2)
 
     for element in self.elements:
       if element.type == ElementType.BR:
@@ -188,66 +198,51 @@ class HtmlRenderer(Widget):
         continue
 
       current_y += element.margin_top
-      if current_y > rect.y + rect.height:
-        break
-
-      if element.content:
-        font = self._get_font(element.font_weight)
-        wrapped_lines = wrap_text(font, element.content, element.font_size, int(content_width))
-
-        for line in wrapped_lines:
-          # Use FONT_SCALE from wrapped raylib text functions to match what is drawn
-          if current_y < rect.y - element.font_size * FONT_SCALE:
-            current_y += element.font_size * FONT_SCALE * element.line_height
-            continue
-
-          if current_y > rect.y + rect.height:
-            break
-
-          if self._center_text:
-            text_width = measure_text_cached(font, line, element.font_size).x
-            text_x = rect.x + (rect.width - text_width) / 2
-          else:  # left align
-            text_x = rect.x + (max(element.indent_level - 1, 0) * LIST_INDENT_PX)
-
-          rl.draw_text_ex(font, line, rl.Vector2(text_x + padding, current_y), element.font_size, 0, self._text_color)
-
-          current_y += element.font_size * FONT_SCALE * element.line_height
-
-      # Apply bottom margin
-      current_y += element.margin_bottom
-
-    return current_y - rect.y
-
-  def get_total_height(self, content_width: int) -> float:
-    if self._cached_height is not None and self._cached_width == content_width:
-      return self._cached_height
-
-    total_height = 0.0
-    padding = 20
-    usable_width = content_width - (padding * 2)
-
-    for element in self.elements:
-      if element.type == ElementType.BR:
-        total_height += element.margin_bottom
-        continue
-
-      total_height += element.margin_top
 
       if element.content:
         font = self._get_font(element.font_weight)
         wrapped_lines = wrap_text(font, element.content, element.font_size, int(usable_width))
+        indent = max(element.indent_level - 1, 0) * LIST_INDENT_PX
 
-        for _ in wrapped_lines:
-          total_height += element.font_size * FONT_SCALE * element.line_height
+        for line_text in wrapped_lines:
+          if self._center_text:
+            text_width = measure_text_cached(font, line_text, element.font_size).x
+            x = (content_width - text_width) // 2
+          else:
+            x = indent + PADDING
 
-      total_height += element.margin_bottom
+          height = element.font_size * FONT_SCALE * element.line_height
+          lines.append(RenderLine(line_text, x, current_y, height, element.font_size, font))
+          current_y += height
 
-    # Store result in cache
-    self._cached_height = total_height
-    self._cached_width = content_width
+      current_y += element.margin_bottom
 
-    return total_height
+    return LayoutCache(content_width, lines, current_y)
+
+  def _render(self, rect: rl.Rectangle) -> int:
+    content_width = int(rect.width)
+
+    if self._layout_cache is None or self._layout_cache.content_width != content_width:
+      self._layout_cache = self._calculate_layout(content_width)
+
+    viewport_rect = self._parent_rect if self._parent_rect is not None else rect
+    for line in self._layout_cache.lines:
+      y = rect.y + line.y
+      if (y + line.height) < viewport_rect.y:
+        continue  # Above viewport
+      if  y > (viewport_rect.y + viewport_rect.height):
+        break  # Below viewport
+
+      pos = rl.Vector2(rect.x + line.x, y)
+      rl.draw_text_ex(line.font, line.text, pos, line.font_size, 0, self._text_color)
+
+    return int(self._layout_cache.total_height)
+
+  def get_total_height(self, content_width: int) -> float:
+    if self._layout_cache is None or self._layout_cache.content_width != content_width:
+      self._layout_cache = self._calculate_layout(content_width)
+
+    return self._layout_cache.total_height
 
   def _get_font(self, weight: FontWeight):
     if weight == FontWeight.BOLD:
