@@ -94,7 +94,6 @@ def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int) -> list[
         if current_line:
           lines.append(" ".join(current_line))
         current_line = [word]
-        current_width = word_width
 
     # Add remaining words
     if current_line:
