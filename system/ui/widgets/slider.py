@@ -66,6 +66,7 @@ class ShimmerShaderState:
   def get_instance(cls):
     if cls._instance is None:
       cls._instance = cls()
+      cls._instance.initialize()
     return cls._instance
 
   def __init__(self):
@@ -158,7 +159,6 @@ class SmallSlider(Widget):
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
 
     self._shader_state = ShimmerShaderState.get_instance()
-    self._shader_state.initialize()
 
     self._text_render_texture: rl.RenderTexture | None = None
     self._text_render_texture_width = 0
