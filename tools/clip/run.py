@@ -32,7 +32,6 @@ DEMO_END = 105
 DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
 FRAMERATE = 20
 RESOLUTION = '2160x1080'
-SECONDS_TO_WARM = 2
 
 OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
@@ -44,7 +43,6 @@ _ffi = cffi.FFI()
 _ffi.cdef("""
   void glReadPixels(int x, int y, int width, int height, unsigned int format, unsigned int type, void *data);
   void glBindFramebuffer(unsigned int target, unsigned int framebuffer);
-  unsigned int glGetError(void);
 """)
 # Load OpenGL library explicitly (libGL.so on Linux)
 import ctypes.util
@@ -148,8 +146,6 @@ def parse_args(parser: ArgumentParser):
     args.end = int(parts[3])
   if args.end <= args.start:
     parser.error(f'end ({args.end}) must be greater than start ({args.start})')
-  if args.start < SECONDS_TO_WARM:
-    parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
   try:
     args.route = Route(args.route, data_dir=args.data_dir)
@@ -240,7 +236,6 @@ def clip(
   logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
   lr = get_logreader(route)
 
-  begin_at = max(start - SECONDS_TO_WARM, 0)
   duration = end - start
   bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
 
@@ -285,7 +280,7 @@ def clip(
     out,
   ]
 
-  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
+  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(start), '--prefix', prefix]
   if data_dir:
     replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
@@ -342,11 +337,10 @@ def clip(
 
         # Initialize window and create render texture
         gui_app.init_window("Clip Renderer", fps=FRAMERATE)
-        if gui_app._render_texture is None or gui_app._render_texture.texture.width != width:
-          if gui_app._render_texture is not None:
-            rl.unload_render_texture(gui_app._render_texture)
-          gui_app._render_texture = rl.load_render_texture(width, height)
-          rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        if gui_app._render_texture is not None:
+          rl.unload_render_texture(gui_app._render_texture)
+        gui_app._render_texture = rl.load_render_texture(width, height)
+        rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
         # Initialize MainLayout
         main_layout = MainLayout()
@@ -357,17 +351,6 @@ def clip(
           os.environ['SCALE'] = original_scale
         else:
           os.environ.pop('SCALE', None)
-
-        # Let UI warm up
-        logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
-        warmup_end_time = time.time() + SECONDS_TO_WARM
-        while time.time() < warmup_end_time:
-          ui_state.update()
-          rl.begin_texture_mode(gui_app._render_texture)
-          rl.clear_background(rl.BLACK)
-          main_layout.render()
-          rl.end_texture_mode()
-          time.sleep(1.0 / FRAMERATE)
 
         # Start ffmpeg with stdin pipe
         logger.info(f'recording in progress ({duration}s)...')
