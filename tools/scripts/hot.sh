@@ -10,17 +10,8 @@ source "$TOOLS_DIR/lib/common.sh"
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 if ! command_exists inotifywait; then
-  echo "error: inotifywait not found. attempting to install..." >&2
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    if ! command_exists brew; then
-      echo "homebrew not found. install Homebrew and try again."
-      exit 1
-    fi
-    brew install inotify-tools
-  else
-    sudo apt-get update -y || true
-    sudo apt-get install -y inotify-tools
-  fi
+  echo "error: inotifywait not found. did you run setup?" >&2
+  exit 1
 fi
 
 CMD=( )
