@@ -129,7 +129,7 @@ class SmallSlider(Widget):
   def set_opacity(self, opacity: float):
     self._opacity = opacity
 
-  def _ensure_render_texture(self, width: int, height: int):
+  def _ensure_render_texture(self, width: int, height: int) -> rl.RenderTexture:
     if (self._text_render_texture is None or
         self._text_render_texture_width != width or
         self._text_render_texture_height != height):
@@ -140,6 +140,8 @@ class SmallSlider(Widget):
       rl.set_texture_filter(self._text_render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       self._text_render_texture_width = width
       self._text_render_texture_height = height
+
+    return self._text_render_texture
 
   def _render_text_to_texture(self, label_rect: rl.Rectangle, text_color: rl.Color):
     # Only re-render if color changed
@@ -153,10 +155,8 @@ class SmallSlider(Widget):
     self._last_text_color = text_color
     width = int(label_rect.width)
     height = int(label_rect.height)
-    self._ensure_render_texture(width, height)
 
-    # Render to texture
-    rl.begin_texture_mode(self._text_render_texture)
+    rl.begin_texture_mode(self._ensure_render_texture(width, height))
     rl.clear_background(rl.Color(0, 0, 0, 0))  # Transparent background
     self._label.render(rl.Rectangle(0, 0, width, height))
     rl.end_texture_mode()
