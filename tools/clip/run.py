@@ -6,12 +6,15 @@ import platform
 import shutil
 import sys
 import time
+import cffi
 from argparse import ArgumentParser, ArgumentTypeError
 from collections.abc import Sequence
 from pathlib import Path
 from random import randint
-from subprocess import Popen
+from subprocess import Popen, DEVNULL, PIPE
 from typing import Literal
+
+import pyray as rl
 
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
@@ -20,22 +23,72 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.utils import managed_proc
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
+# GUI imports moved to clip() function after DISPLAY is set
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
 DEMO_END = 105
 DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
 FRAMERATE = 20
-PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
 PROC_WAIT_SECONDS = 30*10
 
 OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
-UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
 
 logger = logging.getLogger('clip.py')
+
+# Initialize cffi for OpenGL calls
+_ffi = cffi.FFI()
+_ffi.cdef("""
+  void glReadPixels(int x, int y, int width, int height, unsigned int format, unsigned int type, void *data);
+  void glBindFramebuffer(unsigned int target, unsigned int framebuffer);
+  unsigned int glGetError(void);
+""")
+_opengl = _ffi.dlopen(None)  # Load OpenGL library
+
+
+def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, height: int) -> bytes:
+  """Extract RGB24 pixel data from a RenderTexture.
+
+  Args:
+    render_texture: The RenderTexture to read from
+    width: Width of the texture
+    height: Height of the texture
+
+  Returns:
+    RGB24 pixel data as bytes (width * height * 3 bytes)
+  """
+  # Bind the framebuffer to read from it
+  _opengl.glBindFramebuffer(0x8D40, render_texture.id)  # GL_FRAMEBUFFER = 0x8D40
+
+  # Allocate buffer for RGBA data (OpenGL returns RGBA)
+  rgba_size = width * height * 4
+  rgba_buffer = _ffi.new("unsigned char[]", rgba_size)
+
+  # Read pixels from framebuffer (RGBA format)
+  _opengl.glReadPixels(0, 0, width, height, 0x1908, 0x1401, rgba_buffer)  # GL_RGBA = 0x1908, GL_UNSIGNED_BYTE = 0x1401
+
+  # Unbind framebuffer
+  _opengl.glBindFramebuffer(0x8D40, 0)
+
+  # Convert RGBA to RGB24 and flip vertically (OpenGL coordinates are bottom-up)
+  # Use memoryview for efficient access and array slicing for fast conversion
+  rgba_bytes = memoryview(_ffi.buffer(rgba_buffer))
+  rgb_data = bytearray(width * height * 3)
+
+  # Process rows in reverse to flip vertically
+  for y in range(height):
+    src_row = y * width * 4
+    dst_row = (height - 1 - y) * width * 3
+    # Copy R, G, B (skip A) using slice assignment - much faster than per-pixel loop
+    for x in range(width):
+      src = src_row + x * 4
+      dst = dst_row + x * 3
+      rgb_data[dst:dst+3] = rgba_bytes[src:src+3]
+
+  return bytes(rgb_data)
 
 
 def check_for_failure(procs: list[Popen]):
@@ -139,14 +192,15 @@ def populate_car_params(lr: LogReader):
 
 
 def validate_env(parser: ArgumentParser):
-  if platform.system() not in ['Linux']:
-    parser.exit(1, f'clip.py: error: {platform.system()} is not a supported operating system\n')
-  for proc in ['Xvfb', 'ffmpeg']:
-    if shutil.which(proc) is None:
-      parser.exit(1, f'clip.py: error: missing {proc} command, is it installed?\n')
-  for proc in [REPLAY, UI]:
-    if shutil.which(proc) is None:
-      parser.exit(1, f'clip.py: error: missing {proc} command, did you build openpilot yet?\n')
+  # Check ffmpeg
+  if shutil.which('ffmpeg') is None:
+    parser.exit(1, f'clip.py: error: missing ffmpeg command, is it installed?\n')
+  # Check Xvfb (needed for GLFW to create OpenGL context on Linux)
+  if platform.system() == 'Linux' and shutil.which('Xvfb') is None:
+    parser.exit(1, f'clip.py: error: missing Xvfb command, is it installed?\n')
+  # Check replay binary
+  if not Path(REPLAY).exists():
+    parser.exit(1, f'clip.py: error: missing {REPLAY} command, did you build openpilot yet?\n')
 
 
 def validate_output_file(output_file: str):
@@ -167,13 +221,17 @@ def validate_title(title: str):
   return title
 
 
-def wait_for_frames(procs: list[Popen]):
-  sm = SubMaster(['uiDebug'])
-  no_frames_drawn = True
-  while no_frames_drawn:
-    sm.update()
-    no_frames_drawn = sm['uiDebug'].drawTimeMillis == 0.
-    check_for_failure(procs)
+def wait_for_replay_ready():
+  """Wait for replay to be ready by checking VisionIPC connection."""
+  sm = SubMaster(['roadCameraState'])
+  max_wait = 60  # Wait up to 60 seconds
+  start_time = time.time()
+  while time.time() - start_time < max_wait:
+    sm.update(0)
+    if sm.recv_frame.get('roadCameraState', 0) > 0:
+      return True
+    time.sleep(0.1)
+  return False
 
 
 def clip(
@@ -195,8 +253,8 @@ def clip(
   duration = end - start
   bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
 
-  # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
-  display = f':{randint(99, 999)}'
+  # Parse resolution
+  width, height = map(int, RESOLUTION.split('x'))
 
   box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
   meta_text = get_meta_text(lr, route)
@@ -215,21 +273,20 @@ def clip(
       "fps=60",
     ]
 
+  # ffmpeg command using rawvideo input from stdin
   ffmpeg_cmd = [
     'ffmpeg', '-y',
-    '-video_size', RESOLUTION,
-    '-framerate', str(FRAMERATE),
-    '-f', 'x11grab',
-    '-rtbufsize', '100M',
-    '-draw_mouse', '0',
-    '-i', display,
+    '-f', 'rawvideo',
+    '-pix_fmt', 'rgb24',
+    '-s', RESOLUTION,
+    '-r', str(FRAMERATE),
+    '-i', 'pipe:0',
     '-c:v', 'libx264',
     '-maxrate', f'{bit_rate_kbps}k',
     '-bufsize', f'{bit_rate_kbps*2}k',
     '-crf', '23',
     '-filter:v', ','.join(overlays),
     '-preset', 'ultrafast',
-    '-tune', 'zerolatency',
     '-pix_fmt', 'yuv420p',
     '-movflags', '+faststart',
     '-f', 'mp4',
@@ -244,27 +301,144 @@ def clip(
     replay_cmd.append('--qcam')
   replay_cmd.append(route.name.canonical_name)
 
-  ui_cmd = [UI, '-platform', 'xcb']
-  xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
-
   with OpenpilotPrefix(prefix, shared_download_cache=True):
     populate_car_params(lr)
-    env = os.environ.copy()
-    env['DISPLAY'] = display
 
-    with managed_proc(xvfb_cmd, env) as xvfb_proc, managed_proc(ui_cmd, env) as ui_proc, managed_proc(replay_cmd, env) as replay_proc:
-      procs = [xvfb_proc, ui_proc, replay_proc]
-      logger.info('waiting for replay to begin (loading segments, may take a while)...')
-      wait_for_frames(procs)
-      logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
-      time.sleep(SECONDS_TO_WARM)
-      check_for_failure(procs)
-      with managed_proc(ffmpeg_cmd, env) as ffmpeg_proc:
-        procs.append(ffmpeg_proc)
+    # Setup Xvfb for GLFW (Linux only - GLFW needs X11 display for OpenGL context)
+    # MUST set DISPLAY before importing GUI components (GLFW reads DISPLAY at import time)
+    xvfb_proc = None
+    original_display = os.environ.get('DISPLAY')
+    if platform.system() == 'Linux':
+      # Check if existing DISPLAY is valid
+      display = existing_display = os.environ.get('DISPLAY')
+      if not display or Popen(['xdpyinfo', '-display', display], stdout=DEVNULL, stderr=DEVNULL).wait() != 0:
+        # Create new Xvfb display
+        display = f':{randint(99, 999)}'
+        xvfb_proc = Popen(['Xvfb', display, '-screen', '0', f'{width}x{height}x24'], stdout=DEVNULL, stderr=DEVNULL)
+        # Wait for Xvfb to be ready (max 5s)
+        for _ in range(50):
+          if xvfb_proc.poll() is not None:
+            raise RuntimeError(f'Xvfb failed to start (exit code {xvfb_proc.returncode})')
+          if Popen(['xdpyinfo', '-display', display], stdout=DEVNULL, stderr=DEVNULL).wait() == 0:
+            break
+          time.sleep(0.1)
+        else:
+          raise RuntimeError('Xvfb failed to become ready within 5s')
+
+      os.environ['DISPLAY'] = display
+
+    env = os.environ.copy()
+
+    # Import GUI components AFTER DISPLAY is set (GLFW reads DISPLAY at import time)
+    from openpilot.system.ui.lib.application import gui_app
+    from openpilot.selfdrive.ui.layouts.main import MainLayout
+    from openpilot.selfdrive.ui.ui_state import ui_state
+
+    try:
+      # Start replay subprocess
+      with managed_proc(replay_cmd, env) as replay_proc:
+        logger.info('waiting for replay to begin (loading segments, may take a while)...')
+        if not wait_for_replay_ready():
+          raise RuntimeError('replay failed to start within timeout')
+        check_for_failure([replay_proc])
+
+        # Initialize Python UI in headless mode
+        logger.debug('initializing UI...')
+        # Set environment to force headless/offscreen rendering
+        os.environ.setdefault('HEADLESS', '1')
+
+        # Force render texture creation by setting scale != 1.0
+        original_scale = os.environ.pop('SCALE', None)
+        os.environ['SCALE'] = '2.0'
+
+        # Initialize window and create render texture
+        gui_app.init_window("Clip Renderer", fps=FRAMERATE)
+        if gui_app._render_texture is None or gui_app._render_texture.texture.width != width:
+          if gui_app._render_texture is not None:
+            rl.unload_render_texture(gui_app._render_texture)
+          gui_app._render_texture = rl.load_render_texture(width, height)
+          rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+
+        # Initialize MainLayout
+        main_layout = MainLayout()
+        main_layout.set_rect(rl.Rectangle(0, 0, width, height))
+
+        # Restore original scale
+        if original_scale:
+          os.environ['SCALE'] = original_scale
+        elif 'SCALE' in os.environ:
+          del os.environ['SCALE']
+
+        # Let UI warm up
+        logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
+        warmup_end_time = time.time() + SECONDS_TO_WARM
+        while time.time() < warmup_end_time:
+          ui_state.update()
+          rl.begin_texture_mode(gui_app._render_texture)
+          rl.clear_background(rl.BLACK)
+          main_layout.render()
+          rl.end_texture_mode()
+          time.sleep(1.0 / FRAMERATE)
+
+        # Start ffmpeg with stdin pipe
         logger.info(f'recording in progress ({duration}s)...')
-        ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
-        check_for_failure(procs)
+        ffmpeg_proc = Popen(ffmpeg_cmd, stdin=PIPE, env=env)
+
+        try:
+          frame_count = 0
+          target_frames = int(duration * FRAMERATE)
+          frame_time = 1.0 / FRAMERATE
+          start_time = time.time()
+
+          # Render loop
+          while frame_count < target_frames:
+            # Update UI state (reads from replay's ZMQ)
+            ui_state.update()
+
+            # Render frame to texture
+            rl.begin_texture_mode(gui_app._render_texture)
+            rl.clear_background(rl.BLACK)
+            main_layout.render()
+            rl.end_texture_mode()
+
+            # Extract frame pixels
+            frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
+
+            # Write to ffmpeg
+            ffmpeg_proc.stdin.write(frame_data)
+            ffmpeg_proc.stdin.flush()
+
+            frame_count += 1
+
+            # Rate limiting to match FRAMERATE
+            next_frame_time = (frame_count + 1) * frame_time
+            sleep_time = next_frame_time - (time.time() - start_time)
+            if sleep_time > 0:
+              time.sleep(sleep_time)
+
+          # Cleanup
+          ffmpeg_proc.stdin.close()
+          ffmpeg_proc.wait()
+
+          if ffmpeg_proc.returncode != 0:
+            raise ChildProcessError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
+
+        finally:
+          # Cleanup UI
+          gui_app.close()
+          check_for_failure([replay_proc])
+
         logger.info(f'recording complete: {Path(out).resolve()}')
+    finally:
+      # Cleanup Xvfb and restore DISPLAY
+      if xvfb_proc is not None:
+        xvfb_proc.terminate()
+        xvfb_proc.wait()
+      # Restore original DISPLAY
+      if original_display is not None:
+        os.environ['DISPLAY'] = original_display
+      elif 'DISPLAY' in os.environ:
+        del os.environ['DISPLAY']
 
 
 def main():
