@@ -21,7 +21,7 @@ if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
 fi
 
 OP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-source "$OP_DIR/lib/common.sh"
+source "$OP_DIR/scripts/lib/common.sh"
 
 function op_install() {
   echo "Installing op system-wide..."
