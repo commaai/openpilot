@@ -354,7 +354,7 @@ function op_clip() {
 
 function op_hot() {
   op_before_cmd
-  op_run_command scripts/hot.sh $@
+  op_run_command tools/scripts/hot.sh $@
 }
 
 function op_switch() {
