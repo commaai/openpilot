@@ -46,14 +46,14 @@ void main() {
 
   float xPos = fragTexCoord.x;
 
-  float shimmerPos = mod(time * shimmerSpeed, 1.0 + shimmerWidth);
+  float shimmerPos = mod(-time * shimmerSpeed, 1.0 + shimmerWidth);
 
   float distFromShimmer = abs(xPos - shimmerPos);
 
   float mask = 1.0 - smoothstep(0.0, shimmerWidth, distFromShimmer);
 
   vec3 shimmerColor = vec3(1.0, 1.0, 1.0);
-  vec3 finalRGB = mix(texColor.rgb, shimmerColor, mask * 0.9);
+  vec3 finalRGB = mix(texColor.rgb, shimmerColor, mask);
 
   finalColor = vec4(finalRGB, texColor.a) * fragColor;
 }
@@ -98,8 +98,8 @@ class SmallSlider(Widget):
     proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
     rl.set_shader_value_matrix(self.shader, self._mvp_loc, proj)
 
-    shimmer_width_val = rl.ffi.new("float[]", [0.3])  # Width of shimmer zone (0.0 to 1.0)
-    shimmer_speed_val = rl.ffi.new("float[]", [0.65])  # Speed of animation (30% faster than 0.5)
+    shimmer_width_val = rl.ffi.new("float[]", [0.2])
+    shimmer_speed_val = rl.ffi.new("float[]", [0.85])
     rl.set_shader_value(self.shader, self._shimmer_width_loc, shimmer_width_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
     rl.set_shader_value(self.shader, self._shimmer_speed_loc, shimmer_speed_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
 
