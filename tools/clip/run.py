@@ -33,7 +33,6 @@ DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
 FRAMERATE = 20
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
-PROC_WAIT_SECONDS = 30*10
 
 OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
@@ -91,11 +90,7 @@ def check_for_failure(procs: list[Popen]):
   for proc in procs:
     exit_code = proc.poll()
     if exit_code is not None and exit_code != 0:
-      cmd = str(proc.args)
-      if isinstance(proc.args, str):
-        cmd = proc.args
-      elif isinstance(proc.args, Sequence):
-        cmd = str(proc.args[0])
+      cmd = proc.args[0] if isinstance(proc.args, Sequence) else str(proc.args)
       msg = f'{cmd} failed, exit code {exit_code}'
       logger.error(msg)
       stdout, stderr = proc.communicate()
@@ -290,7 +285,7 @@ def clip(
     out,
   ]
 
-  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(begin_at), '--prefix', prefix, '--headless']
+  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
   if data_dir:
     replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
@@ -305,10 +300,9 @@ def clip(
     xvfb_proc = None
     original_display = os.environ.get('DISPLAY')
     if platform.system() == 'Linux':
-      # Check if existing DISPLAY is valid
-      display = existing_display = os.environ.get('DISPLAY')
+      # Check if existing DISPLAY is valid, create Xvfb if needed
+      display = os.environ.get('DISPLAY')
       if not display or Popen(['xdpyinfo', '-display', display], stdout=DEVNULL, stderr=DEVNULL).wait() != 0:
-        # Create new Xvfb display
         display = f':{randint(99, 999)}'
         xvfb_proc = Popen(['Xvfb', display, '-screen', '0', f'{width}x{height}x24'], stdout=DEVNULL, stderr=DEVNULL)
         # Wait for Xvfb to be ready (max 5s)
@@ -320,7 +314,6 @@ def clip(
           time.sleep(0.1)
         else:
           raise RuntimeError('Xvfb failed to become ready within 5s')
-
       os.environ['DISPLAY'] = display
 
     env = os.environ.copy()
@@ -362,8 +355,8 @@ def clip(
         # Restore original scale
         if original_scale:
           os.environ['SCALE'] = original_scale
-        elif 'SCALE' in os.environ:
-          del os.environ['SCALE']
+        else:
+          os.environ.pop('SCALE', None)
 
         # Let UI warm up
         logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
@@ -431,10 +424,10 @@ def clip(
         xvfb_proc.terminate()
         xvfb_proc.wait()
       # Restore original DISPLAY
-      if original_display is not None:
+      if original_display:
         os.environ['DISPLAY'] = original_display
-      elif 'DISPLAY' in os.environ:
-        del os.environ['DISPLAY']
+      else:
+        os.environ.pop('DISPLAY', None)
 
 
 def main():
