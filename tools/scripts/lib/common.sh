@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 resolve_root_dir() {
   local root_dir
