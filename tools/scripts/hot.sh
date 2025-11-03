@@ -2,6 +2,9 @@
 
 set -Eeuo pipefail
 
+TOOLS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+source "$TOOLS_DIR/lib/common.sh"
+
 # usage: hot.sh -- COMMAND [ARGS...]
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
@@ -19,10 +22,6 @@ if ! command_exists inotifywait; then
     sudo apt-get install -y inotify-tools
   fi
 fi
-
-# source common helpers
-_HOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-source "$_HOT_DIR/lib/common.sh"
 
 CMD=( )
 if [[ $# -eq 0 || "$1" != "--" ]]; then
