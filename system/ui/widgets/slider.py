@@ -181,7 +181,6 @@ class SmallSlider(Widget):
     self._is_dragging_circle = False
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
-    self._last_text_color = None  # Force texture re-render
 
   def set_opacity(self, opacity: float):
     self._opacity = opacity
