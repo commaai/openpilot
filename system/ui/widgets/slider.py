@@ -240,7 +240,7 @@ class SmallSlider(Widget):
     btn_x = bg_txt_x + self._bg_txt.width - self._circle_bg_txt.width + self._scroll_x_circle_filter.x
     btn_y = self._rect.y + (self._rect.height - self._circle_bg_txt.height) / 2
 
-    if not self._confirmed_time == 0 or self._scroll_x_circle > 0:
+    if self._confirmed_time == 0 or self._scroll_x_circle > 0:
       text_color = rl.Color(255, 255, 255, int(255 * 0.65 * (1.0 - self.slider_percentage) * self._opacity))
       self._label.set_text_color(text_color)
       label_rect = rl.Rectangle(
