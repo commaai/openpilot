@@ -145,6 +145,8 @@ class Label(Widget):
       # Elide text to fit within the rectangle
       text_size = measure_text_cached(self._font, text, self._font_size)
       content_width = self._rect.width - self._text_padding * 2
+      if self._icon:
+        content_width -= self._icon.width + ICON_PADDING
       if text_size.x > content_width:
         _ellipsis = "..."
         left, right = 0, len(text)
