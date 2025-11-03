@@ -352,6 +352,11 @@ function op_clip() {
   op_run_command tools/clip/run.py $@
 }
 
+function op_hot() {
+  op_before_cmd
+  op_run_command scripts/hot.sh $@
+}
+
 function op_switch() {
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
@@ -419,6 +424,7 @@ function op_default() {
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
+  echo -e "  ${BOLD}hot${NC}          Hot reload a command when files change"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
   echo ""
@@ -472,6 +478,7 @@ function _op() {
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
     clip )          shift 1; op_clip "$@" ;;
+    hot )           shift 1; op_hot "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
