@@ -23,5 +23,3 @@ resolve_root_dir() {
 
   pwd -P
 }
-
-
