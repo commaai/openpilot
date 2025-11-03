@@ -39,23 +39,21 @@ uniform sampler2D texture0;
 uniform float time;
 uniform float shimmerWidth;
 uniform float shimmerSpeed;
+uniform float sliderPercentage;
+uniform float opacity;
 out vec4 finalColor;
 
 void main() {
   vec4 texColor = texture(texture0, fragTexCoord);
-
   float xPos = fragTexCoord.x;
-
   float shimmerPos = mod(-time * shimmerSpeed, 1.0 + shimmerWidth);
-
   float distFromShimmer = abs(xPos - shimmerPos);
-
   float mask = 1.0 - smoothstep(0.0, shimmerWidth, distFromShimmer);
-
   vec3 shimmerColor = vec3(1.0, 1.0, 1.0);
   vec3 finalRGB = mix(texColor.rgb, shimmerColor, mask);
-
-  finalColor = vec4(finalRGB, texColor.a) * fragColor;
+  float alphaFade = (1.0 - sliderPercentage) * opacity;
+  float finalAlpha = texColor.a * alphaFade;
+  finalColor = vec4(finalRGB, finalAlpha) * fragColor;
 }
 """
 
@@ -93,6 +91,8 @@ class SmallSlider(Widget):
     self._time_loc = rl.get_shader_location(self.shader, "time")
     self._shimmer_width_loc = rl.get_shader_location(self.shader, "shimmerWidth")
     self._shimmer_speed_loc = rl.get_shader_location(self.shader, "shimmerSpeed")
+    self._slider_percentage_loc = rl.get_shader_location(self.shader, "sliderPercentage")
+    self._opacity_loc = rl.get_shader_location(self.shader, "opacity")
     self._mvp_loc = rl.get_shader_location(self.shader, "mvp")
 
     proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
@@ -253,7 +253,11 @@ class SmallSlider(Widget):
       self._render_text_to_texture(label_rect, text_color)
 
       time_val = rl.ffi.new("float[]", [rl.get_time()])
+      slider_percentage_val = rl.ffi.new("float[]", [self.slider_percentage])
+      opacity_val = rl.ffi.new("float[]", [self._opacity])
       rl.set_shader_value(self.shader, self._time_loc, time_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+      rl.set_shader_value(self.shader, self._slider_percentage_loc, slider_percentage_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+      rl.set_shader_value(self.shader, self._opacity_loc, opacity_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
 
       rl.begin_shader_mode(self.shader)
       src_rect = rl.Rectangle(0, 0, float(self._text_render_texture_width), -float(self._text_render_texture_height))
