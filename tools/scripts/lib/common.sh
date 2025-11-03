@@ -4,7 +4,7 @@ resolve_root_dir() {
   local root_dir
   root_dir="$(pwd -P)"
 
-  # traverse up until we find launch_openpilot.sh
+  # First try traversing up the directory tree
   while [[ "$root_dir" != "/" ]]; do
     if [[ -f "$root_dir/launch_openpilot.sh" ]]; then
       echo "$root_dir"
@@ -13,7 +13,7 @@ resolve_root_dir() {
     root_dir="$(readlink -f "$root_dir/..")"
   done
 
-  # fallbacks
+  # Fallback to hardcoded directories if not found
   for dir in "$HOME/openpilot" "/data/openpilot"; do
     if [[ -f "$dir/launch_openpilot.sh" ]]; then
       echo "$dir"
