@@ -1,5 +1,6 @@
-from collections.abc import Callable
 import platform
+from collections.abc import Callable
+from typing import Any
 
 import pyray as rl
 
@@ -58,6 +59,75 @@ void main() {
 """
 
 
+class ShimmerShaderState:
+  _instance: Any = None
+
+  @classmethod
+  def get_instance(cls):
+    if cls._instance is None:
+      cls._instance = cls()
+    return cls._instance
+
+  def __init__(self):
+    if ShimmerShaderState._instance is not None:
+      raise Exception("This class is a singleton. Use get_instance() instead.")
+
+    self.initialized = False
+    self.shader = None
+
+    self.locations = {
+      'time': None,
+      'shimmerWidth': None,
+      'shimmerSpeed': None,
+      'sliderPercentage': None,
+      'opacity': None,
+      'mvp': None,
+    }
+
+    self.time_ptr = rl.ffi.new("float[]", [0.0])
+    self.shimmer_width_ptr = rl.ffi.new("float[]", [0.15])
+    self.shimmer_speed_ptr = rl.ffi.new("float[]", [0.6])
+    self.slider_percentage_ptr = rl.ffi.new("float[]", [0.0])
+    self.opacity_ptr = rl.ffi.new("float[]", [1.0])
+
+  def initialize(self):
+    if self.initialized:
+      return
+
+    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, SHIMMER_FRAGMENT_SHADER)
+
+    for uniform in self.locations.keys():
+      self.locations[uniform] = rl.get_shader_location(self.shader, uniform)
+
+    proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
+    rl.set_shader_value_matrix(self.shader, self.locations['mvp'], proj)
+    rl.set_shader_value(self.shader, self.locations['shimmerWidth'], self.shimmer_width_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+    rl.set_shader_value(self.shader, self.locations['shimmerSpeed'], self.shimmer_speed_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+
+    self.initialized = True
+
+  def cleanup(self):
+    if not self.initialized:
+      return
+    if self.shader:
+      rl.unload_shader(self.shader)
+      self.shader = None
+
+    self.initialized = False
+
+  def set_uniforms(self, time: float, slider_percentage: float, opacity: float):
+    if not self.initialized:
+      self.initialize()
+
+    self.time_ptr[0] = time
+    self.slider_percentage_ptr[0] = slider_percentage
+    self.opacity_ptr[0] = opacity
+
+    rl.set_shader_value(self.shader, self.locations['time'], self.time_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+    rl.set_shader_value(self.shader, self.locations['sliderPercentage'], self.slider_percentage_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+    rl.set_shader_value(self.shader, self.locations['opacity'], self.opacity_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+
+
 class SmallSlider(Widget):
   HORIZONTAL_PADDING = 8
   CONFIRM_DELAY = 0.2
@@ -87,21 +157,8 @@ class SmallSlider(Widget):
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
 
-    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, SHIMMER_FRAGMENT_SHADER)
-    self._time_loc = rl.get_shader_location(self.shader, "time")
-    self._shimmer_width_loc = rl.get_shader_location(self.shader, "shimmerWidth")
-    self._shimmer_speed_loc = rl.get_shader_location(self.shader, "shimmerSpeed")
-    self._slider_percentage_loc = rl.get_shader_location(self.shader, "sliderPercentage")
-    self._opacity_loc = rl.get_shader_location(self.shader, "opacity")
-    self._mvp_loc = rl.get_shader_location(self.shader, "mvp")
-
-    proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
-    rl.set_shader_value_matrix(self.shader, self._mvp_loc, proj)
-
-    shimmer_width_val = rl.ffi.new("float[]", [0.15])
-    shimmer_speed_val = rl.ffi.new("float[]", [0.6])
-    rl.set_shader_value(self.shader, self._shimmer_width_loc, shimmer_width_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
-    rl.set_shader_value(self.shader, self._shimmer_speed_loc, shimmer_speed_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+    self._shader_state = ShimmerShaderState.get_instance()
+    self._shader_state.initialize()
 
     self._text_render_texture: rl.RenderTexture | None = None
     self._text_render_texture_width = 0
@@ -165,10 +222,6 @@ class SmallSlider(Widget):
     if self._text_render_texture is not None:
       rl.unload_render_texture(self._text_render_texture)
       self._text_render_texture = None
-
-    if self.shader and self.shader.id:
-      rl.unload_shader(self.shader)
-      self.shader = None
 
   def __del__(self):
     self.close()
@@ -252,14 +305,9 @@ class SmallSlider(Widget):
 
       self._render_text_to_texture(label_rect, text_color)
 
-      time_val = rl.ffi.new("float[]", [rl.get_time()])
-      slider_percentage_val = rl.ffi.new("float[]", [self.slider_percentage])
-      opacity_val = rl.ffi.new("float[]", [self._opacity])
-      rl.set_shader_value(self.shader, self._time_loc, time_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
-      rl.set_shader_value(self.shader, self._slider_percentage_loc, slider_percentage_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
-      rl.set_shader_value(self.shader, self._opacity_loc, opacity_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+      self._shader_state.set_uniforms(rl.get_time(), self.slider_percentage, self._opacity)
 
-      rl.begin_shader_mode(self.shader)
+      rl.begin_shader_mode(self._shader_state.shader)
       src_rect = rl.Rectangle(0, 0, float(self._text_render_texture_width), -float(self._text_render_texture_height))
       rl.draw_texture_pro(self._text_render_texture.texture, src_rect, label_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
       rl.end_shader_mode()
