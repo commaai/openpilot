@@ -424,7 +424,7 @@ function op_default() {
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
-  echo -e "  ${BOLD}hot${NC}          Hot reload a command when files change"
+  echo -e "  ${BOLD}hot${NC}          Hot reload a command when files in the openpilot directory change"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
   echo ""
