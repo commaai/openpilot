@@ -29,7 +29,6 @@ resolve_repo_root() {
 }
 
 CMD=( )
-
 if [[ $# -eq 0 || "$1" != "--" ]]; then
   echo "usage: $(basename "$0") -- COMMAND [ARGS...]" >&2
   exit 2
