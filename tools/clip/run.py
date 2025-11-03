@@ -47,7 +47,13 @@ _ffi.cdef("""
   void glBindFramebuffer(unsigned int target, unsigned int framebuffer);
   unsigned int glGetError(void);
 """)
-_opengl = _ffi.dlopen(None)  # Load OpenGL library
+# Load OpenGL library explicitly (libGL.so on Linux)
+import ctypes.util
+if platform.system() == 'Linux':
+  opengl_lib = ctypes.util.find_library('GL') or 'libGL.so.1'
+else:
+  opengl_lib = None
+_opengl = _ffi.dlopen(opengl_lib)
 
 
 def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, height: int) -> bytes:
@@ -284,7 +290,7 @@ def clip(
     out,
   ]
 
-  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
+  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(begin_at), '--prefix', prefix, '--headless']
   if data_dir:
     replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
