@@ -48,9 +48,9 @@ _ffi.cdef("""
 import ctypes.util
 if platform.system() == 'Linux':
   opengl_lib = ctypes.util.find_library('GL') or 'libGL.so.1'
+  _opengl = _ffi.dlopen(opengl_lib)
 else:
-  opengl_lib = None
-_opengl = _ffi.dlopen(opengl_lib)
+  _opengl = _ffi.dlopen(None)
 
 
 def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, height: int) -> bytes:
@@ -88,7 +88,11 @@ def check_for_failure(procs: list[Popen]):
   for proc in procs:
     exit_code = proc.poll()
     if exit_code is not None and exit_code != 0:
-      cmd = proc.args[0] if isinstance(proc.args, Sequence) else str(proc.args)
+      if isinstance(proc.args, Sequence):
+        cmd_arg = proc.args[0]
+        cmd = cmd_arg.decode() if isinstance(cmd_arg, bytes) else str(cmd_arg)
+      else:
+        cmd = str(proc.args)
       msg = f'{cmd} failed, exit code {exit_code}'
       logger.error(msg)
       stdout, stderr = proc.communicate()
@@ -181,10 +185,10 @@ def populate_car_params(lr: LogReader):
 def validate_env(parser: ArgumentParser):
   # Check ffmpeg
   if shutil.which('ffmpeg') is None:
-    parser.exit(1, f'clip.py: error: missing ffmpeg command, is it installed?\n')
+    parser.exit(1, 'clip.py: error: missing ffmpeg command, is it installed?\n')
   # Check Xvfb (needed for GLFW to create OpenGL context on Linux)
   if platform.system() == 'Linux' and shutil.which('Xvfb') is None:
-    parser.exit(1, f'clip.py: error: missing Xvfb command, is it installed?\n')
+    parser.exit(1, 'clip.py: error: missing Xvfb command, is it installed?\n')
   # Check replay binary
   if not Path(REPLAY).exists():
     parser.exit(1, f'clip.py: error: missing {REPLAY} command, did you build openpilot yet?\n')
@@ -212,8 +216,8 @@ def wait_for_replay_ready():
   """Wait for replay to be ready by checking VisionIPC connection."""
   sm = SubMaster(['roadCameraState'])
   max_wait = 60  # Wait up to 60 seconds
-  start_time = time.time()
-  while time.time() - start_time < max_wait:
+  start_time = time.monotonic()
+  while time.monotonic() - start_time < max_wait:
     sm.update(0)
     if sm.recv_frame.get('roadCameraState', 0) > 0:
       return True
@@ -360,7 +364,7 @@ def clip(
           frame_count = 0
           target_frames = int(duration * FRAMERATE)
           frame_time = 1.0 / FRAMERATE
-          start_time = time.time()
+          start_time = time.monotonic()
 
           # Render loop
           while frame_count < target_frames:
@@ -377,6 +381,7 @@ def clip(
             frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
 
             # Write to ffmpeg
+            assert ffmpeg_proc.stdin is not None
             ffmpeg_proc.stdin.write(frame_data)
             ffmpeg_proc.stdin.flush()
 
@@ -384,11 +389,12 @@ def clip(
 
             # Rate limiting to match FRAMERATE
             next_frame_time = (frame_count + 1) * frame_time
-            sleep_time = next_frame_time - (time.time() - start_time)
+            sleep_time = next_frame_time - (time.monotonic() - start_time)
             if sleep_time > 0:
               time.sleep(sleep_time)
 
           # Cleanup
+          assert ffmpeg_proc.stdin is not None
           ffmpeg_proc.stdin.close()
           ffmpeg_proc.wait()
 
