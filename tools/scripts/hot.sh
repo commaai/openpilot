@@ -60,10 +60,11 @@ start_child() {
   child_pid=$!
 }
 
+exclude_flags=$(grep -v '^[[:space:]]*#' .gitignore | grep -v '^[[:space:]]*$' | grep -v '^!' | sed 's|/$||' | sed 's|^|--exclude |')
+
 while true; do
   start_child
-
-  inotifywait -r --quiet --event modify,create,delete,move "$ROOT_DIR"
+  inotifywait -r --quiet --event modify,create,delete,move $exclude_flags "$ROOT_DIR"
 
   if kill -0 "$child_pid" 2>/dev/null; then
     kill -TERM -"$child_pid" 2>/dev/null || true
