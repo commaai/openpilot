@@ -20,4 +20,4 @@ class CV:
   LB_TO_KG = 0.453592
 
 
-ACCELERATION_DUE_TO_GRAVITY = 9.81  # m/s^2
+ACCELERATION_DUE_TO_GRAVITY = 9.80665  # m/s^2, standard acceleration of gravity
