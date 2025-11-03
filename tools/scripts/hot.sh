@@ -20,13 +20,9 @@ if ! command_exists inotifywait; then
   fi
 fi
 
-resolve_repo_root() {
-  if command_exists git && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git rev-parse --show-toplevel
-  else
-    pwd -P
-  fi
-}
+# source common helpers
+_HOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+source "$_HOT_DIR/lib/common.sh"
 
 CMD=( )
 if [[ $# -eq 0 || "$1" != "--" ]]; then
@@ -40,7 +36,7 @@ if [[ $# -eq 0 ]]; then
 fi
 CMD=("$@")
 
-ROOT_DIR="$(resolve_repo_root)"
+ROOT_DIR="$(resolve_root_dir)"
 
 echo "watching: $ROOT_DIR" >&2
 echo "command: ${CMD[*]}" >&2
@@ -60,7 +56,10 @@ start_child() {
   child_pid=$!
 }
 
-exclude_flags=$(grep -v '^[[:space:]]*#' .gitignore | grep -v '^[[:space:]]*$' | grep -v '^!' | sed 's|/$||' | sed 's|^|--exclude |')
+exclude_flags=""
+if [[ -f "$ROOT_DIR/.gitignore" ]]; then
+  exclude_flags=$(cd "$ROOT_DIR" && grep -v '^[[:space:]]*#' .gitignore | grep -v '^[[:space:]]*$' | grep -v '^!' | sed 's|/$||' | sed 's|^|--exclude |')
+fi
 
 while true; do
   start_child

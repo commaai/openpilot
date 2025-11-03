@@ -19,6 +19,10 @@ RC_FILE="${HOME}/.$(basename ${SHELL})rc"
 if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
   RC_FILE="$HOME/.bash_profile"
 fi
+
+OP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+source "$OP_DIR/lib/common.sh"
+
 function op_install() {
   echo "Installing op system-wide..."
   CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
@@ -52,22 +56,7 @@ function op_run_command() {
 # be default, assume openpilot dir is in current directory
 OPENPILOT_ROOT=$(pwd)
 function op_get_openpilot_dir() {
-  # First try traversing up the directory tree
-  while [[ "$OPENPILOT_ROOT" != '/' ]];
-  do
-    if find "$OPENPILOT_ROOT/launch_openpilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
-      return 0
-    fi
-    OPENPILOT_ROOT="$(readlink -f "$OPENPILOT_ROOT/"..)"
-  done
-
-  # Fallback to hardcoded directories if not found
-  for dir in "$HOME/openpilot" "/data/openpilot"; do
-    if [[ -f "$dir/launch_openpilot.sh" ]]; then
-      OPENPILOT_ROOT="$dir"
-      return 0
-    fi
-  done
+  OPENPILOT_ROOT="$(resolve_root_dir)"
 }
 
 function op_install_post_commit() {
