@@ -15,6 +15,7 @@ from subprocess import Popen, DEVNULL, PIPE
 from typing import Literal
 
 import pyray as rl
+import numpy as np
 
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
@@ -73,22 +74,11 @@ def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, hei
   # Unbind framebuffer
   _opengl.glBindFramebuffer(0x8D40, 0)
 
-  # Convert RGBA to RGB24 and flip vertically (OpenGL coordinates are bottom-up)
-  # Use memoryview for efficient access and array slicing for fast conversion
-  rgba_bytes = memoryview(_ffi.buffer(rgba_buffer))
-  rgb_data = bytearray(width * height * 3)
-
-  # Process rows in reverse to flip vertically
-  for y in range(height):
-    src_row = y * width * 4
-    dst_row = (height - 1 - y) * width * 3
-    # Copy R, G, B (skip A) using slice assignment - much faster than per-pixel loop
-    for x in range(width):
-      src = src_row + x * 4
-      dst = dst_row + x * 3
-      rgb_data[dst:dst+3] = rgba_bytes[src:src+3]
-
-  return bytes(rgb_data)
+  # Convert RGBA to RGB24 and flip vertically using numpy (much faster)
+  rgba_array = np.frombuffer(_ffi.buffer(rgba_buffer), dtype=np.uint8).reshape(height, width, 4)
+  # Extract RGB channels and flip vertically in one operation
+  rgb_array = rgba_array[::-1, :, :3].reshape(height * width * 3)
+  return rgb_array.tobytes()
 
 
 def check_for_failure(procs: list[Popen]):
