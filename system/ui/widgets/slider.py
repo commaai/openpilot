@@ -1,4 +1,5 @@
 from collections.abc import Callable
+import platform
 
 import pyray as rl
 
@@ -6,6 +7,57 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.common.filter_simple import FirstOrderFilter
+
+VERSION = """
+#version 300 es
+precision mediump float;
+"""
+if platform.system() == "Darwin":
+  VERSION = """
+    #version 330 core
+  """
+
+VERTEX_SHADER = VERSION + """
+in vec3 vertexPosition;
+in vec2 vertexTexCoord;
+in vec3 vertexNormal;
+in vec4 vertexColor;
+uniform mat4 mvp;
+out vec2 fragTexCoord;
+out vec4 fragColor;
+void main() {
+  fragTexCoord = vertexTexCoord;
+  fragColor = vertexColor;
+  gl_Position = mvp * vec4(vertexPosition, 1.0);
+}
+"""
+
+SHIMMER_FRAGMENT_SHADER = VERSION + """
+in vec2 fragTexCoord;
+in vec4 fragColor;
+uniform sampler2D texture0;
+uniform float time;
+uniform float shimmerWidth;
+uniform float shimmerSpeed;
+out vec4 finalColor;
+
+void main() {
+  vec4 texColor = texture(texture0, fragTexCoord);
+
+  float xPos = fragTexCoord.x;
+
+  float shimmerPos = mod(time * shimmerSpeed, 1.0 + shimmerWidth);
+
+  float distFromShimmer = abs(xPos - shimmerPos);
+
+  float mask = 1.0 - smoothstep(0.0, shimmerWidth, distFromShimmer);
+
+  vec3 shimmerColor = vec3(1.0, 1.0, 1.0);
+  vec3 finalRGB = mix(texColor.rgb, shimmerColor, mask * 0.9);
+
+  finalColor = vec4(finalRGB, texColor.a) * fragColor;
+}
+"""
 
 
 class SmallSlider(Widget):
@@ -37,6 +89,25 @@ class SmallSlider(Widget):
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
 
+    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, SHIMMER_FRAGMENT_SHADER)
+    self._time_loc = rl.get_shader_location(self.shader, "time")
+    self._shimmer_width_loc = rl.get_shader_location(self.shader, "shimmerWidth")
+    self._shimmer_speed_loc = rl.get_shader_location(self.shader, "shimmerSpeed")
+    self._mvp_loc = rl.get_shader_location(self.shader, "mvp")
+
+    proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
+    rl.set_shader_value_matrix(self.shader, self._mvp_loc, proj)
+
+    shimmer_width_val = rl.ffi.new("float[]", [0.3])  # Width of shimmer zone (0.0 to 1.0)
+    shimmer_speed_val = rl.ffi.new("float[]", [0.65])  # Speed of animation (30% faster than 0.5)
+    rl.set_shader_value(self.shader, self._shimmer_width_loc, shimmer_width_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+    rl.set_shader_value(self.shader, self._shimmer_speed_loc, shimmer_speed_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+
+    self._text_render_texture: rl.RenderTexture | None = None
+    self._text_render_texture_width = 0
+    self._text_render_texture_height = 0
+    self._last_text_color: rl.Color | None = None
+
   def _load_assets(self):
     self.set_rect(rl.Rectangle(0, 0, 316 + self.HORIZONTAL_PADDING * 2, 100))
 
@@ -53,9 +124,54 @@ class SmallSlider(Widget):
     self._is_dragging_circle = False
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
+    self._last_text_color = None  # Force texture re-render
 
   def set_opacity(self, opacity: float):
     self._opacity = opacity
+
+  def _ensure_render_texture(self, width: int, height: int):
+    if (self._text_render_texture is None or
+        self._text_render_texture_width != width or
+        self._text_render_texture_height != height):
+      if self._text_render_texture is not None:
+        rl.unload_render_texture(self._text_render_texture)
+
+      self._text_render_texture = rl.load_render_texture(width, height)
+      rl.set_texture_filter(self._text_render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      self._text_render_texture_width = width
+      self._text_render_texture_height = height
+
+  def _render_text_to_texture(self, label_rect: rl.Rectangle, text_color: rl.Color):
+    # Only re-render if color changed
+    if (self._last_text_color is not None and
+        self._last_text_color.r == text_color.r and
+        self._last_text_color.g == text_color.g and
+        self._last_text_color.b == text_color.b and
+        self._last_text_color.a == text_color.a):
+      return
+
+    self._last_text_color = text_color
+    width = int(label_rect.width)
+    height = int(label_rect.height)
+    self._ensure_render_texture(width, height)
+
+    # Render to texture
+    rl.begin_texture_mode(self._text_render_texture)
+    rl.clear_background(rl.Color(0, 0, 0, 0))  # Transparent background
+    self._label.render(rl.Rectangle(0, 0, width, height))
+    rl.end_texture_mode()
+
+  def close(self):
+    if self._text_render_texture is not None:
+      rl.unload_render_texture(self._text_render_texture)
+      self._text_render_texture = None
+
+    if self.shader and self.shader.id:
+      rl.unload_shader(self.shader)
+      self.shader = None
+
+  def __del__(self):
+    self.close()
 
   @property
   def slider_percentage(self):
@@ -115,8 +231,6 @@ class SmallSlider(Widget):
       self._scroll_x_circle_filter.x = self._scroll_x_circle
 
   def _render(self, _):
-    # TODO: iOS text shimmering animation
-
     white = rl.Color(255, 255, 255, int(255 * self._opacity))
 
     bg_txt_x = self._rect.x + (self._rect.width - self._bg_txt.width) / 2
@@ -126,15 +240,25 @@ class SmallSlider(Widget):
     btn_x = bg_txt_x + self._bg_txt.width - self._circle_bg_txt.width + self._scroll_x_circle_filter.x
     btn_y = self._rect.y + (self._rect.height - self._circle_bg_txt.height) / 2
 
-    if self._confirmed_time == 0.0 or self._scroll_x_circle > 0:
-      self._label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.65 * (1.0 - self.slider_percentage) * self._opacity)))
+    if not self._confirmed_time == 0 or self._scroll_x_circle > 0:
+      text_color = rl.Color(255, 255, 255, int(255 * 0.65 * (1.0 - self.slider_percentage) * self._opacity))
+      self._label.set_text_color(text_color)
       label_rect = rl.Rectangle(
         self._rect.x + 20,
         self._rect.y,
         self._rect.width - self._circle_bg_txt.width - 20 * 3,
         self._rect.height,
       )
-      self._label.render(label_rect)
+
+      self._render_text_to_texture(label_rect, text_color)
+
+      time_val = rl.ffi.new("float[]", [rl.get_time()])
+      rl.set_shader_value(self.shader, self._time_loc, time_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+
+      rl.begin_shader_mode(self.shader)
+      src_rect = rl.Rectangle(0, 0, float(self._text_render_texture_width), -float(self._text_render_texture_height))
+      rl.draw_texture_pro(self._text_render_texture.texture, src_rect, label_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+      rl.end_shader_mode()
 
     # circle and arrow
     rl.draw_texture_ex(self._circle_bg_txt, rl.Vector2(btn_x, btn_y), 0.0, 1.0, white)
