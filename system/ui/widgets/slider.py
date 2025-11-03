@@ -304,7 +304,6 @@ class SmallSlider(Widget):
       )
 
       self._render_text_to_texture(label_rect, text_color)
-
       self._shader_state.set_uniforms(rl.get_time(), self.slider_percentage, self._opacity)
 
       rl.begin_shader_mode(self._shader_state.shader)
