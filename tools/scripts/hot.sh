@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
+# usage: hot.sh -- COMMAND [ARGS...]
+
 set -Eeuo pipefail
 
 TOOLS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 source "$TOOLS_DIR/lib/common.sh"
-
-# usage: hot.sh -- COMMAND [ARGS...]
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
