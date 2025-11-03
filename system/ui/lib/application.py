@@ -410,7 +410,7 @@ class GuiApplication:
           for mouse_event in self._mouse_events:
             if mouse_event.left_pressed:
               self._mouse_history.clear()
-            self._mouse_history.append(MousePosWithTime(mouse_event.pos.x, mouse_event.pos.y, current_time))
+            self._mouse_history.append(MousePosWithTime(mouse_event.pos.x * self._scale, mouse_event.pos.y * self._scale, current_time))
 
           # Remove old touch points that exceed the timeout
           while self._mouse_history and (current_time - self._mouse_history[0].t) > TOUCH_HISTORY_TIMEOUT:
