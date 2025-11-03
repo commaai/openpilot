@@ -357,6 +357,8 @@ class GuiApplication:
 
         # Skip rendering when screen is off
         if not self._should_render:
+          if PC:
+            rl.poll_input_events()
           time.sleep(1 / self._target_fps)
           yield False
           continue
