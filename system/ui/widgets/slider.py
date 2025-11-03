@@ -98,8 +98,8 @@ class SmallSlider(Widget):
     proj = rl.matrix_ortho(0, gui_app.width, gui_app.height, 0, -1, 1)
     rl.set_shader_value_matrix(self.shader, self._mvp_loc, proj)
 
-    shimmer_width_val = rl.ffi.new("float[]", [0.2])
-    shimmer_speed_val = rl.ffi.new("float[]", [0.85])
+    shimmer_width_val = rl.ffi.new("float[]", [0.15])
+    shimmer_speed_val = rl.ffi.new("float[]", [0.6])
     rl.set_shader_value(self.shader, self._shimmer_width_loc, shimmer_width_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
     rl.set_shader_value(self.shader, self._shimmer_speed_loc, shimmer_speed_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
 
