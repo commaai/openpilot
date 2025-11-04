@@ -22,6 +22,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.lib.route import Route
+from selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 # GUI imports moved to clip() function after DISPLAY is set
@@ -37,12 +38,12 @@ OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').r
 
 logger = logging.getLogger('clip.py')
 
-SERVICES = [
-    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
-    "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
-    "roadCameraState", "wideRoadCameraState", "managerState", "selfdriveState",
-    "longitudinalPlan", "rawAudioData"
-]
+# SERVICES = [
+#     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
+#     "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
+#     "roadCameraState", "wideRoadCameraState", "managerState", "selfdriveState",
+#     "longitudinalPlan", "rawAudioData"
+# ]
 
 class MockSubMaster:
   def __init__(self):
@@ -313,11 +314,46 @@ def clip(
 
     env = os.environ.copy()
 
-    # Import GUI components AFTER DISPLAY is set (GLFW reads DISPLAY at import time)
+    # Enable simulation mode BEFORE importing UI to disable SubMaster frequency tracking
+    os.environ['SIMULATION'] = '1'
+
+    # In simulation, SubMaster frequency checks are bypassed. However, the implementation has a bug where
+    # it checks the frequency before checking if simulation is enabled, leading to a crash.
+    # To work around this, we replace the entire `update_msgs` method with a corrected version.
+    def patched_update_msgs(self, cur_time, msgs):
+        self.frame += 1
+        self.updated = dict.fromkeys(self.services, False)
+        for msg in msgs:
+            if msg is None:
+                continue
+
+            s = msg.which()
+            if s not in self.services:
+                continue
+
+            self.seen[s] = True
+            self.updated[s] = True
+
+            self.freq_tracker[s].record_recv_time(cur_time)
+            self.recv_time[s] = cur_time
+            self.recv_frame[s] = self.frame
+            self.data[s] = getattr(msg, s)
+            self.logMonoTime[s] = msg.logMonoTime
+            self.valid[s] = msg.valid
+
+        for s in self.static_freq_services:
+            # alive if delay is within 10x the expected frequency; checks relaxed in simulator
+            self.alive[s] = (cur_time - self.recv_time[s]) < (10. / messaging.SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
+            # Corrected logic: check simulation flag first to short-circuit and avoid ZeroDivisionError
+            self.freq_ok[s] = self.simulation or self.freq_tracker[s].valid
+    messaging.SubMaster.update_msgs = patched_update_msgs
+
+    messaging.SubMaster.update_msgs = patched_update_msgs
+
+    # Import GUI components AFTER patching and DISPLAY is set
     from openpilot.system.ui.lib.application import gui_app
-    from openpilot.selfdrive.ui.layouts.main import MainLayout
+    from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
     from openpilot.selfdrive.ui.ui_state import ui_state
-    ui_state.sm = MockSubMaster()
 
     try:
       # Initialize Python UI in headless mode
@@ -336,9 +372,10 @@ def clip(
       gui_app._render_texture = rl.load_render_texture(width, height)
       rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
-      # Initialize MainLayout
-      main_layout = MainLayout()
-      main_layout.set_rect(rl.Rectangle(0, 0, width, height))
+      # Initialize AugmentedRoadView which contains all the UI renderers
+      from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
+      road_view = AugmentedRoadView()
+      road_view.set_rect(rl.Rectangle(0, 0, width, height))
 
       # Restore original scale
       if original_scale:
@@ -346,110 +383,108 @@ def clip(
       else:
         os.environ.pop('SCALE', None)
 
-      # Start ffmpeg with stdin pipe
-      logger.info(f'recording in progress ({duration}s)...')
-      ffmpeg_proc = Popen(ffmpeg_cmd, stdin=PIPE, env=env)
+
 
       try:
-        # Load all log messages and sort them
-        logger.info("Loading and sorting log messages...")
+        # Build message lookup by timestamp for efficient access
+        logger.info('indexing log messages...')
         all_msgs = []
         for log_path in route.log_paths():
           if log_path is not None:
             lr = LogReader(log_path)
             all_msgs.extend(lr)
-        sorted_lr = sorted(all_msgs, key=lambda msg: msg.logMonoTime)
-        logger.info(f"Log messages loaded, total: {len(sorted_lr)}")
+
+        all_msgs = migrate_all(all_msgs)
+        if not all_msgs:
+          raise RuntimeError("No messages found in logs")
+
+        # Determine services present in the log
+        services = set(m.which() for m in all_msgs)
+        # Always include services the UI expects, even if not in log
+        services.add('selfdriveState')
+
+        # Filter for services that are valid in the current openpilot version
+        valid_services = [s for s in messaging.SERVICE_LIST if s in services]
+
+        # Re-initialize SubMaster with the correct services
+        ui_state.sm = messaging.SubMaster(valid_services)
 
         # get start mono time from the first log message
-        start_mono_time = sorted_lr[0].logMonoTime
+        start_mono_time = all_msgs[0].logMonoTime
+
+        # filter and sort messages by time
+        logger.info(f"Filtering {len(all_msgs)} messages for time range {start}s to {end}s")
+        start_filter_mono_time = start_mono_time + start * 1e9
+        end_filter_mono_time = start_mono_time + end * 1e9
+        logger.info(f"Time filter range (monotonic): {start_filter_mono_time} to {end_filter_mono_time}")
+
+        messages_by_time = sorted([(msg.logMonoTime, msg) for msg in all_msgs if start_filter_mono_time <= msg.logMonoTime <= end_filter_mono_time],\
+                                  key=lambda x: x[0])
+        logger.info(f"Found {len(messages_by_time)} messages in the time range.")
+
+        camera_messages = [m for t, m in messages_by_time if m.which() == 'roadCameraState']
+        logger.info(f"Found {len(camera_messages)} roadCameraState messages to process.")
+
+        if not camera_messages:
+          raise RuntimeError(f'no roadCameraState messages found in time range {start}-{end}s')
+
+
+
+
+        # Prime the UI with the last known state before the clip starts
+
+        prime_msgs = [m for m in all_msgs if m.logMonoTime < start_mono_time + start * 1e9 and m.which() == 'liveCalibration']
+        if prime_msgs:
+          ui_state.sm.update_msgs(time.monotonic(), prime_msgs)
+
+        # Start ffmpeg with stdin pipe
+        logger.info(f'recording in progress ({duration}s)...')
+        ffmpeg_proc = Popen(ffmpeg_cmd, stdin=PIPE, env=env)
 
         current_segment = -1
         fr = None
         segment_duration_frames = 60 * FRAMERATE
-        log_message_idx = 0
+        msg_idx = 0
 
-        # Render loop
-        for i in range(int(duration * FRAMERATE)):
-          frame_mono_time = start_mono_time + (start + i / FRAMERATE) * 1e9
+        # Manually set ui_state to started mode before the loop begins
+        ui_state.started = True
+        ui_state.ignition = True
 
-          # Process log messages up to the current frame time
-          while log_message_idx < len(sorted_lr) and sorted_lr[log_message_idx].logMonoTime < frame_mono_time:
-            msg = sorted_lr[log_message_idx]
-            which = msg.which()
+        for i, camera_msg in enumerate(camera_messages):
+          frame_mono_time = camera_msg.logMonoTime
 
-            if which == 'deviceState':
-              new_msg_builder = messaging.new_message('deviceState').deviceState
-              old_msg_reader = msg.deviceState
-              known_good_fields = (
-                  "carBatteryCapacityUwh", "caseTempC", "cpuTempC", "cpuUsagePercent",
-                  "deviceType", "dspTempC", "exhaustTempC", "fanSpeedPercentDesired",
-                  "freeSpacePercent", "gpuTempC", "gpuUsagePercent", "intakeTempC",
-                  "lastAthenaPingTime", "maxTempC", "memoryTempC", "memoryUsagePercent",
-                  "modemTempC", "networkInfo", "networkMetered", "networkStats",
-                  "networkStrength", "offroadPowerUsageUwh", "pmicTempC",
-                  "powerDrawW", "screenBrightnessPercent", "somPowerDrawW", "started",
-                  "startedMonoTime", "thermalStatus", "thermalZones"
-              )
-              for field in known_good_fields:
-                try:
-                  setattr(new_msg_builder, field, getattr(old_msg_reader, field))
-                except AttributeError:
-                  pass # Field didn't exist in the old log, skip it.
-              new_msg_builder.networkType = messaging.log.DeviceState.NetworkType.none
-              ui_state.sm[which] = new_msg_builder.as_reader()
-            elif which == 'pandaStates':
-              new_msg_builder = messaging.new_message('pandaStates', size=len(msg.pandaStates))
-              for i, old_panda_state in enumerate(msg.pandaStates):
-                known_good_fields = (
-                  "ignitionLine", "rxBufferOverflow", "txBufferOverflow", "pandaType", "ignitionCan",
-                  "faultStatus", "powerSaveEnabled", "uptime", "faults", "heartbeatLost",
-                  "interruptLoad", "fanPower", "spiErrorCount", "harnessStatus", "sbu1Voltage",
-                  "sbu2Voltage", "canState0", "canState1", "canState2", "controlsAllowed",
-                  "safetyRxInvalid", "safetyTxBlocked", "safetyModel", "safetyParam",
-                  "alternativeExperience", "safetyRxChecksInvalid", "voltage", "current"
-                )
-                for field in known_good_fields:
-                  try:
-                    setattr(new_msg_builder.pandaStates[i], field, getattr(old_panda_state, field))
-                  except AttributeError:
-                    pass
-                new_msg_builder.pandaStates[i].ignitionLine = True
-              ui_state.sm[which] = new_msg_builder.pandaStates
-            else:
-              ui_state.sm[which] = msg
-            log_message_idx += 1
+          # feed all messages up to this camera frame
+          messages_to_feed = []
+          while msg_idx < len(messages_by_time) and messages_by_time[msg_idx][0] <= frame_mono_time:
+            messages_to_feed.append(messages_by_time[msg_idx][1])
+            msg_idx += 1
 
-          # Inject a fake selfdriveState message
-          ss = messaging.new_message('selfdriveState')
-          ss.selfdriveState.enabled = True
-          ss.selfdriveState.active = True
-          ui_state.sm['selfdriveState'] = ss.selfdriveState
+          if messages_to_feed:
+            ui_state.sm.update_msgs(frame_mono_time / 1e9, messages_to_feed)
+
+          ui_state._update_state() # Process new messages
+          ui_state._update_status() # update status to reflect new state
 
           # Get camera frame
-          frame_idx = int(start * FRAMERATE + i)
-          segment_num = frame_idx // segment_duration_frames
+          frame_id = camera_msg.roadCameraState.frameId
+          # Calculate segment number based on elapsed time, not frame_id
+          elapsed_time = (frame_mono_time - start_mono_time) / 1e9
+          segment_num = int((elapsed_time - start) // 60) + (start // 60)
 
           if segment_num != current_segment:
             current_segment = segment_num
             segment_path = camera_paths[current_segment]
             if segment_path is None:
               logger.warning(f"Segment {current_segment} is missing camera footage, skipping.")
-              # Render a black frame
-              rl.begin_texture_mode(gui_app._render_texture)
-              rl.clear_background(rl.BLACK)
-              rl.end_texture_mode()
-              frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
-              assert ffmpeg_proc.stdin is not None
-              ffmpeg_proc.stdin.write(frame_data)
-              ffmpeg_proc.stdin.flush()
               continue
-
             logger.info(f"Loading segment {current_segment}: {segment_path}")
             fr = FrameReader(segment_path, pix_fmt='rgb24')
 
-          frame_in_segment_idx = frame_idx % segment_duration_frames
+          frame_in_segment_idx = frame_id % (FRAMERATE * 60)
           frame_np = fr.get(frame_in_segment_idx)
+          if frame_np is None:
+            logger.warning(f"Failed to get frame {frame_id}, skipping")
+            continue
 
           # Convert numpy frame to pyray Image/Texture
           frame_image = rl.Image()
@@ -463,8 +498,41 @@ def clip(
           # Render to texture
           rl.begin_texture_mode(gui_app._render_texture)
           rl.clear_background(rl.BLACK)
+
+          # Draw camera frame
           rl.draw_texture(frame_texture, 0, 0, rl.WHITE)
-          main_layout.render()
+
+          # Define full rect and content rect (with border padding)
+          from openpilot.selfdrive.ui import UI_BORDER_SIZE
+          full_rect = rl.Rectangle(0, 0, width, height)
+          content_rect = rl.Rectangle(
+            UI_BORDER_SIZE,
+            UI_BORDER_SIZE,
+            width - 2 * UI_BORDER_SIZE,
+            height - 2 * UI_BORDER_SIZE,
+          )
+
+          # Enable scissor mode to clip rendering within content rectangle
+          rl.begin_scissor_mode(
+            int(content_rect.x),
+            int(content_rect.y),
+            int(content_rect.width),
+            int(content_rect.height)
+          )
+
+          # Render UI overlays on top
+
+          road_view.model_renderer.render(content_rect)
+          road_view._hud_renderer.render(content_rect)
+          road_view.alert_renderer.render(content_rect)
+          road_view.driver_state_renderer.render(content_rect)
+
+          # End clipping region
+          rl.end_scissor_mode()
+
+          # Draw colored border based on driving state
+          road_view._draw_border(full_rect)
+
           rl.end_texture_mode()
 
           rl.unload_texture(frame_texture)
