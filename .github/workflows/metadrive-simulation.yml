@@ -19,11 +19,17 @@ jobs:
           submodules: recursive
           lfs: false
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
+
+      - name: Verify Python version
+        run: |
+          python --version
+          python -c "import sys; print(f'Python {sys.version}')"
+          which python
+          which python3
 
       - name: Free up disk space
         run: |
@@ -79,11 +85,8 @@ jobs:
           XVFB_PID=$!
           echo "XVFB_PID=$XVFB_PID" >> $GITHUB_ENV
           echo "Xvfb started with PID: $XVFB_PID"
-
-          # Wait for Xvfb to be ready (simple sleep)
           sleep 5
 
-          # Check if Xvfb is running
           if ps -p $XVFB_PID > /dev/null; then
             echo "✅ Xvfb is running (PID: $XVFB_PID)"
           else
@@ -113,13 +116,14 @@ jobs:
 
       - name: Install openpilot dependencies
         run: |
-          pip install --upgrade pip setuptools wheel
-          pip install --no-cache-dir -e .
+          # Use Python 3.11 explicitly
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --no-cache-dir -e .
           echo "✅ Openpilot dependencies installed"
 
       - name: Install MetaDrive
         run: |
-          pip install --no-cache-dir metadrive-simulator
+          python -m pip install --no-cache-dir metadrive-simulator
           python -m metadrive.pull_asset
           echo "✅ MetaDrive installed"
 
