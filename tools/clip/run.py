@@ -398,9 +398,26 @@ def clip(
                   pass # Field didn't exist in the old log, skip it.
               new_msg_builder.networkType = messaging.log.DeviceState.NetworkType.none
               ui_state.sm[which] = new_msg_builder.as_reader()
+            elif which == 'pandaStates':
+              new_msg_builder = messaging.new_message('pandaStates', size=len(msg.pandaStates))
+              for i, old_panda_state in enumerate(msg.pandaStates):
+                known_good_fields = (
+                  "ignitionLine", "rxBufferOverflow", "txBufferOverflow", "pandaType", "ignitionCan",
+                  "faultStatus", "powerSaveEnabled", "uptime", "faults", "heartbeatLost",
+                  "interruptLoad", "fanPower", "spiErrorCount", "harnessStatus", "sbu1Voltage",
+                  "sbu2Voltage", "canState0", "canState1", "canState2", "controlsAllowed",
+                  "safetyRxInvalid", "safetyTxBlocked", "safetyModel", "safetyParam",
+                  "alternativeExperience", "safetyRxChecksInvalid", "voltage", "current"
+                )
+                for field in known_good_fields:
+                  try:
+                    setattr(new_msg_builder.pandaStates[i], field, getattr(old_panda_state, field))
+                  except AttributeError:
+                    pass
+                new_msg_builder.pandaStates[i].ignitionLine = True
+              ui_state.sm[which] = new_msg_builder.pandaStates
             else:
               ui_state.sm[which] = msg
-            
             log_message_idx += 1
 
           # Inject a fake selfdriveState message
