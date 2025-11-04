@@ -7,15 +7,14 @@ from openpilot.system.version import get_version
 
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
-       # file name : type
+       # name : jwt signature algorithm
 KEYS = {"id_rsa" : "RS256",
         "id_ecdsa" : "ES256"}
 
 class Api:
   def __init__(self, dongle_id):
     self.dongle_id = dongle_id
-    key_name, self.private_key, _ = get_key_pair()
-    self.jwt_algorithm = get_jwt_algorithm(key_name)
+    self.jwt_algorithm, self.private_key, _ = get_key_pair()
 
   def get(self, *args, **kwargs):
     return self.request('GET', *args, **kwargs)
@@ -55,8 +54,5 @@ def get_key_pair():
   for key in KEYS:
     if os.path.isfile(Paths.persist_root() + f'/comma/{key}') and os.path.isfile(Paths.persist_root() + f'/comma/{key}.pub'):
       with open(Paths.persist_root() + f'/comma/{key}') as private, open(Paths.persist_root() + f'/comma/{key}.pub') as public:
-        return key, private.read(), public.read()
+        return KEYS[key], private.read(), public.read()
   return None, None, None
-
-def get_jwt_algorithm(key_name):
-  return KEYS.get(key_name, None)

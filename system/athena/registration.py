@@ -5,7 +5,7 @@ import jwt
 from pathlib import Path
 
 from datetime import datetime, timedelta, UTC
-from openpilot.common.api import api_get, get_key_pair, get_jwt_algorithm
+from openpilot.common.api import api_get, get_key_pair
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
@@ -40,10 +40,9 @@ def register(show_spinner=False) -> str | None:
       dongle_id = f.read().strip()
 
   # Create registration token, in the future, this key will make JWTs directly
-  key_name, private_key, public_key = get_key_pair()
-  jwt_algorithm = get_jwt_algorithm(key_name)
+  jwt_algorithm, private_key, public_key = get_key_pair()
 
-  if not public_key or not jwt_algorithm:
+  if not public_key:
     dongle_id = UNREGISTERED_DONGLE_ID
     cloudlog.warning("missing public key")
   elif dongle_id is None:
