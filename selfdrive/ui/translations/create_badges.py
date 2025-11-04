@@ -30,35 +30,38 @@ def parse_po_file(file_path):
       continue
 
     # Check if this entry has a msgid (translation entry)
-    # Skip the header msgid which is empty
-    if 'msgid "' in entry and not entry.strip().startswith('msgid ""'):
-      total_translations += 1
+    # After skipping header, any entry with msgid " is a translation
+    # (both msgid "content" and msgid "" for multiline contain msgid ")
+    if 'msgid "' not in entry:
+      continue
 
-      # Check if msgstr is empty (unfinished translation)
-      if 'msgstr ""' in entry:
-        # Check if there are continuation lines with content after msgstr ""
-        lines = entry.split('\n')
-        msgstr_idx = None
-        for i, line in enumerate(lines):
-          if line.strip().startswith('msgstr ""'):
-            msgstr_idx = i
+    total_translations += 1
+
+    # Check if msgstr is empty (unfinished translation)
+    if 'msgstr ""' in entry:
+      # Check if there are continuation lines with content after msgstr ""
+      lines = entry.split('\n')
+      msgstr_idx = None
+      for i, line in enumerate(lines):
+        if line.strip().startswith('msgstr ""'):
+          msgstr_idx = i
+          break
+
+      if msgstr_idx is not None:
+        # Check if any continuation lines have content
+        has_content = False
+        for line in lines[msgstr_idx + 1:]:
+          stripped = line.strip()
+          # Continuation line with content
+          if stripped.startswith('"') and len(stripped) > 2:
+            has_content = True
+            break
+          # End of entry
+          if stripped.startswith(('msgid', '#')) or not stripped:
             break
 
-        if msgstr_idx is not None:
-          # Check if any continuation lines have content
-          has_content = False
-          for line in lines[msgstr_idx + 1:]:
-            stripped = line.strip()
-            # Continuation line with content
-            if stripped.startswith('"') and len(stripped) > 2:
-              has_content = True
-              break
-            # End of entry
-            if stripped.startswith(('msgid', '#')) or not stripped:
-              break
-
-          if not has_content:
-            unfinished_translations += 1
+        if not has_content:
+          unfinished_translations += 1
 
   return (total_translations, unfinished_translations)
 
@@ -68,7 +71,7 @@ if __name__ == "__main__":
 
   badge_svg = []
   max_badge_width = 0  # keep track of max width to set parent element
-  for idx, (name, file) in enumerate(translation_files.items()):
+  for idx, (name, file) in enumerate([['Turkish', 'tr']]):
     po_file_path = os.path.join(TRANSLATIONS_DIR, f"app_{file}.po")
 
     total_translations, unfinished_translations = parse_po_file(po_file_path)
