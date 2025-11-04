@@ -405,7 +405,7 @@ class DriverMonitoring:
       enabled = sm['selfdriveState'].enabled
       wrong_gear = sm['carState'].gearShifter not in (car.CarState.GearShifter.drive, car.CarState.GearShifter.low)
       standstill = sm['carState'].standstill
-      driver_engaged = sm['driverStateV2'].driverEngaged
+      driver_engaged = sm['carState'].steeringPressed or sm['carState'].gasPressed
       brake_disengage_prob = sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
     self._set_policy(
       brake_disengage_prob=brake_disengage_prob,
