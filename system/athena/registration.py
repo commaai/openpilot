@@ -40,7 +40,7 @@ def register(show_spinner=False) -> str | None:
       dongle_id = f.read().strip()
 
   # Create registration token, in the future, this key will make JWTs directly
-  jwt_algorithm, private_key, public_key = get_key_pair()
+  jwt_algo, private_key, public_key = get_key_pair()
 
   if not public_key:
     dongle_id = UNREGISTERED_DONGLE_ID
@@ -69,7 +69,7 @@ def register(show_spinner=False) -> str | None:
     start_time = time.monotonic()
     while True:
       try:
-        register_token = jwt.encode({'register': True, 'exp': datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)}, private_key, algorithm=jwt_algorithm)
+        register_token = jwt.encode({'register': True, 'exp': datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)}, private_key, algorithm=jwt_algo)
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
                        imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
