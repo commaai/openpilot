@@ -5,7 +5,7 @@ import jwt
 from pathlib import Path
 
 from datetime import datetime, timedelta, UTC
-from openpilot.common.api import api_get
+from openpilot.common.api import api_get, get_key_pair, get_jwt_algorithm
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
@@ -39,19 +39,17 @@ def register(show_spinner=False) -> str | None:
     with open(Paths.persist_root()+"/comma/dongle_id") as f:
       dongle_id = f.read().strip()
 
-  pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
-  if not pubkey.is_file():
+  # Create registration token, in the future, this key will make JWTs directly
+  key_name, private_key, public_key = get_key_pair()
+  jwt_algorithm = get_jwt_algorithm(key_name)
+
+  if not public_key or not jwt_algorithm:
     dongle_id = UNREGISTERED_DONGLE_ID
-    cloudlog.warning(f"missing public key: {pubkey}")
+    cloudlog.warning("missing public key")
   elif dongle_id is None:
     if show_spinner:
       spinner = Spinner()
       spinner.update("registering device")
-
-    # Create registration token, in the future, this key will make JWTs directly
-    with open(Paths.persist_root()+"/comma/id_rsa.pub") as f1, open(Paths.persist_root()+"/comma/id_rsa") as f2:
-      public_key = f1.read()
-      private_key = f2.read()
 
     # Block until we get the imei
     serial = HARDWARE.get_serial()
@@ -72,7 +70,7 @@ def register(show_spinner=False) -> str | None:
     start_time = time.monotonic()
     while True:
       try:
-        register_token = jwt.encode({'register': True, 'exp': datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)}, private_key, algorithm='RS256')
+        register_token = jwt.encode({'register': True, 'exp': datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)}, private_key, algorithm=jwt_algorithm)
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
                        imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
