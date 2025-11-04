@@ -31,6 +31,7 @@ SHOW_FPS = os.getenv("SHOW_FPS") == "1"
 SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == "1"
 STRICT_MODE = os.getenv("STRICT_MODE") == "1"
 SCALE = float(os.getenv("SCALE", "1.0"))
+PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
@@ -172,6 +173,9 @@ class GuiApplication:
     self._mouse_history: deque[MousePosWithTime] = deque(maxlen=MOUSE_THREAD_RATE)
     self._show_touches = SHOW_TOUCHES
     self._show_fps = SHOW_FPS
+    self._profile_render_frames = PROFILE_RENDER
+    self._render_profiler = None
+    self._render_profile_start_time = None
 
   @property
   def frame(self):
@@ -345,6 +349,12 @@ class GuiApplication:
 
   def render(self):
     try:
+      if self._profile_render_frames > 0:
+        import cProfile
+        self._render_profiler = cProfile.Profile()
+        self._render_profile_start_time = time.monotonic()
+        self._render_profiler.enable()
+
       while not (self._window_close_requested or rl.window_should_close()):
         if PC:
           # Thread is not used on PC, need to manually add mouse events
@@ -429,6 +439,9 @@ class GuiApplication:
         rl.end_drawing()
         self._monitor_fps()
         self._frame += 1
+
+        if self._profile_render_frames > 0 and self._frame >= self._profile_render_frames:
+          self._output_render_profile()
     except KeyboardInterrupt:
       pass
 
@@ -525,6 +538,25 @@ class GuiApplication:
     if STRICT_MODE and fps < self._target_fps * FPS_CRITICAL_THRESHOLD:
       cloudlog.error(f"FPS dropped critically below {fps}. Shutting down UI.")
       os._exit(1)
+
+  def _output_render_profile(self):
+    import io
+    import pstats
+
+    self._render_profiler.disable()
+    elapsed_ms = (time.monotonic() - self._render_profile_start_time) * 1e3
+    avg_frame_time = elapsed_ms / self._frame if self._frame > 0 else 0
+
+    stats_stream = io.StringIO()
+    pstats.Stats(self._render_profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+    print("\n=== Render loop profile ===")
+    print(stats_stream.getvalue().rstrip())
+
+    green = "\033[92m"
+    reset = "\033[0m"
+    print(f"\n{green}Rendered {self._frame} frames in {elapsed_ms:.1f} ms{reset}")
+    print(f"{green}Average frame time: {avg_frame_time:.2f} ms ({1000/avg_frame_time:.1f} FPS){reset}")
+    sys.exit(0)
 
   def _calculate_auto_scale(self) -> float:
      # Create temporary window to query monitor info
