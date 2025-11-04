@@ -19,17 +19,24 @@ jobs:
           submodules: recursive
           lfs: false
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Verify Python version
+      - name: Install Python 3.11 from deadsnakes PPA
         run: |
+          sudo add-apt-repository ppa:deadsnakes/ppa -y
+          sudo apt-get update
+          sudo apt-get install -y python3.11 python3.11-venv python3.11-dev
+
+          # Make Python 3.11 the default
+          sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
+
+          # Verify
           python --version
-          python -c "import sys; print(f'Python {sys.version}')"
-          which python
-          which python3
+          python3 --version
+
+      - name: Install pip for Python 3.11
+        run: |
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+          python3.11 -m pip --version
 
       - name: Free up disk space
         run: |
@@ -108,29 +115,28 @@ jobs:
         run: |
           export DISPLAY=:99
           echo "=== OpenGL Configuration ==="
-          glxinfo | grep "OpenGL renderer" || echo "⚠️  Could not get renderer info"
-          glxinfo | grep "OpenGL version" || echo "⚠️  Could not get version info"
+          glxinfo | grep "OpenGL renderer"
+          glxinfo | grep "OpenGL version"
           echo ""
           echo "=== Display Configuration ==="
           echo "DISPLAY=$DISPLAY"
 
       - name: Install openpilot dependencies
         run: |
-          # Use Python 3.11 explicitly
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install --no-cache-dir -e .
+          python3.11 -m pip install --upgrade pip setuptools wheel
+          python3.11 -m pip install --no-cache-dir -e .
           echo "✅ Openpilot dependencies installed"
 
       - name: Install MetaDrive
         run: |
-          python -m pip install --no-cache-dir metadrive-simulator
-          python -m metadrive.pull_asset
+          python3.11 -m pip install --no-cache-dir metadrive-simulator
+          python3.11 -m metadrive.pull_asset
           echo "✅ MetaDrive installed"
 
       - name: Verify MetaDrive headless installation
         run: |
           export DISPLAY=:99
-          timeout 60 python -m metadrive.examples.verify_headless_installation || {
+          timeout 60 python3.11 -m metadrive.examples.verify_headless_installation || {
             echo "⚠️  Headless verification timed out or failed"
             echo "Continuing anyway..."
           }
@@ -157,11 +163,11 @@ jobs:
 
           echo "=== Starting MetaDrive Simulation Test ==="
           echo "Timestamp: $(date -Iseconds)"
-          echo "Python: $(python --version)"
+          echo "Python: $(python3.11 --version)"
           echo ""
 
           cd tools/sim
-          python -m pytest \
+          python3.11 -m pytest \
             tests/test_sim_bridge.py::TestMetaDriveBridge::test_driving \
             -v \
             --tb=short \
@@ -204,7 +210,7 @@ jobs:
           System Information
           ==================
           OS: $(uname -a)
-          Python: $(python --version)
+          Python: $(python3.11 --version)
           OpenGL: $(glxinfo | grep "OpenGL version" || echo "N/A")
 
           Collected Files
