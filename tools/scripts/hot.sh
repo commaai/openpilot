@@ -9,8 +9,8 @@ source "$TOOLS_DIR/lib/common.sh"
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
-if ! command_exists inotifywait; then
-  echo "error: inotifywait not found. did you run setup?" >&2
+if ! command_exists fswatch; then
+  echo "error: fswatch not found. did you run setup?" >&2
   exit 1
 fi
 
@@ -38,6 +38,7 @@ cleanup() {
     wait "$child_pid" 2>/dev/null || true
   fi
 }
+
 trap cleanup INT TERM EXIT
 
 start_child() {
@@ -48,12 +49,14 @@ start_child() {
 
 exclude_flags=""
 if [[ -f "$ROOT_DIR/.gitignore" ]]; then
-  exclude_flags=$(cd "$ROOT_DIR" && grep -v '^[[:space:]]*#' .gitignore | grep -v '^[[:space:]]*$' | grep -v '^!' | sed 's|/$||' | sed 's|^|--exclude |')
+  exclude_flags=$(cd "$ROOT_DIR" && grep -v '^[[:space:]]*#' .gitignore | grep -v '^[[:space:]]*$' | grep -v '^!' | sed 's|/$||' | sed 's|^|-e |')
 fi
 
 while true; do
   start_child
-  inotifywait -r --quiet --event modify,create,delete,move $exclude_flags "$ROOT_DIR"
+
+  echo "watching: $ROOT_DIR" >&2
+  fswatch -1 --latency=1 --event Updated --event Removed --event Renamed -x -Lr openpilot/ | while read event; do echo "$event"; done
 
   if kill -0 "$child_pid" 2>/dev/null; then
     kill -TERM -"$child_pid" 2>/dev/null || true

@@ -48,7 +48,7 @@ brew "zeromq"
 cask "gcc-arm-embedded"
 brew "portaudio"
 brew "gcc@13"
-brew "inotify-tools"
+brew "fswatch"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
