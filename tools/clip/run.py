@@ -25,6 +25,7 @@ from openpilot.tools.lib.route import Route
 from selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
+from openpilot.common.transformations.orientation import rot_from_euler
 # GUI imports moved to clip() function after DISPLAY is set
 
 DEFAULT_OUTPUT = 'output.mp4'
@@ -233,22 +234,34 @@ def clip(
 ):
   logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
   lr = get_logreader(route)
+  init_data = lr.first('initData')
+  device_type = str(init_data.deviceType) if init_data.deviceType else 'tici'
 
   if quality == 'high':
     camera_paths = route.camera_paths()
   else:
     camera_paths = route.qcamera_paths()
 
-  # Get frame resolution from the first valid segment
+  # Use UI resolution (2160x1080) instead of camera resolution for proper path visualization
+  # This matches the replay system approach where all UI rendering happens at UI resolution
+  width, height = 2160, 1080
+  # Still get camera frame resolution for scaling calculations
   first_segment_path = next((p for p in camera_paths if p is not None), None)
   if not first_segment_path:
     raise RuntimeError("No camera segments found to determine resolution")
   temp_fr = FrameReader(first_segment_path)
-  width, height = temp_fr.w, temp_fr.h
+  camera_width, camera_height = temp_fr.w, temp_fr.h
   del temp_fr
 
   duration = end - start
   bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
+
+  view_frame_from_device_frame = np.array([
+    [ 0.,  0.,  1.],
+    [ 1.,  0.,  0.],
+    [ 0.,  1.,  0.]
+  ]).T
+  INF_POINT = np.array([1000.0, 0.0, 0.0])
 
   box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
   meta_text = get_meta_text(lr, route)
@@ -355,6 +368,7 @@ def clip(
     from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
     from openpilot.selfdrive.ui import UI_BORDER_SIZE
     from openpilot.selfdrive.ui.ui_state import ui_state
+    from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
     try:
       # Initialize Python UI in headless mode
@@ -452,6 +466,10 @@ def clip(
         if not camera_messages:
           raise RuntimeError(f'no roadCameraState messages found in time range {start}-{end}s')
 
+        first_cam_sensor = camera_messages[0].roadCameraState.sensor
+        camera = DEVICE_CAMERAS[(device_type, str(first_cam_sensor))]
+        intrinsic_matrix = camera.fcam.intrinsics
+
 
 
 
@@ -518,11 +536,11 @@ def clip(
             logger.warning(f"Failed to get frame {frame_id}, skipping")
             continue
 
-          # Convert numpy frame to pyray Image/Texture
+          # Convert numpy frame to pyray Image/Texture using actual camera frame dimensions
           frame_image = rl.Image()
           frame_image.data = rl.ffi.cast("void *", frame_np.ctypes.data)
-          frame_image.width = width
-          frame_image.height = height
+          frame_image.width = camera_width  # Use actual camera frame width
+          frame_image.height = camera_height  # Use actual camera frame height
           frame_image.mipmaps = 1
           frame_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8
           frame_texture = rl.load_texture_from_image(frame_image)
@@ -531,8 +549,61 @@ def clip(
           rl.begin_texture_mode(gui_app._render_texture)
           rl.clear_background(rl.BLACK)
 
-          # Draw camera frame
-          rl.draw_texture(frame_texture, 0, 0, rl.WHITE)
+          # Ported from AugmentedRoadView and CameraView
+          zoom = 1.1  # Fixed zoom factor from AugmentedRoadView
+
+          # Get calibration from liveCalibration
+          calib = ui_state.sm['liveCalibration']
+          if len(calib.rpyCalib) == 3:
+            device_from_calib = rot_from_euler(calib.rpyCalib)
+            calibration = view_frame_from_device_frame @ device_from_calib
+
+            calib_transform = intrinsic_matrix @ calibration
+            kep = calib_transform @ INF_POINT
+            w, h = 1620, 1080 # render at 1.5 aspect ratio
+            cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
+
+            margin = 5
+            max_x_offset = cx * zoom - w / 2 - margin
+            max_y_offset = cy * zoom - h / 2 - margin
+
+            if abs(kep[2]) > 1e-6:
+              x_offset_aug = np.clip((kep[0] / kep[2] - cx) * zoom, -max_x_offset, max_x_offset)
+              y_offset_aug = np.clip((kep[1] / kep[2] - cy) * zoom, -max_y_offset, max_y_offset)
+            else:
+              x_offset_aug, y_offset_aug = 0, 0
+          else:
+            x_offset_aug, y_offset_aug = 0, 0
+            w, h = width, height
+            cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
+
+          # The transform matrix from AugmentedRoadView
+          transform = np.array([
+            [zoom * 2 * cx / w, 0, -x_offset_aug / w * 2],
+            [0, zoom * 2 * cy / h, -y_offset_aug / h * 2],
+            [0, 0, 1.0]
+          ])
+
+          # From CameraView._render
+          rect = rl.Rectangle(0, 0, width, height)
+          scale_x = rect.width * transform[0, 0]
+          scale_y = rect.height * transform[1, 1]
+
+          x_offset_cam = rect.x + (rect.width - scale_x) / 2
+          y_offset_cam = rect.y + (rect.height - scale_y) / 2
+
+          x_offset_cam += transform[0, 2] * rect.width / 2
+          y_offset_cam += transform[1, 2] * rect.height / 2
+
+          dst_rect = rl.Rectangle(x_offset_cam + (width - w) / 2, y_offset_cam, scale_x, scale_y)
+          src_rect = rl.Rectangle(0, 0, camera_width, camera_height)
+
+          # Draw camera frame zoomed to fill the screen
+          rl.draw_texture_pro(frame_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+          dst_rect = rl.Rectangle(0, 0, width, height)
+
+          # Draw camera frame zoomed to fill the screen
+          rl.draw_texture_pro(frame_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
           # Define full rect and content rect (with border padding)
           from openpilot.selfdrive.ui import UI_BORDER_SIZE
@@ -553,23 +624,16 @@ def clip(
           )
 
           road_view._update_calibration()
-          # Use the actual camera frame dimensions for content_rect calculation
-          content_rect = rl.Rectangle(
-            0 + UI_BORDER_SIZE, # Assuming camera frame is drawn at (0,0)
-            0 + UI_BORDER_SIZE,
-            fr.w - 2 * UI_BORDER_SIZE,
-            fr.h - 2 * UI_BORDER_SIZE,
-          )
           road_view._content_rect = content_rect # Assign to instance variable
 
           # Manually calculate the frame matrix to set the transform for the model renderer
           road_view._calc_frame_matrix(content_rect) # Pass content_rect here
 
-          # Render UI overlays on top
-          road_view.model_renderer.render(content_rect)
-          road_view._hud_renderer.render(content_rect)
-          road_view.alert_renderer.render(content_rect)
-          road_view.driver_state_renderer.render(content_rect)
+          # Render UI overlays on top using the properly calculated content rectangle
+          road_view.model_renderer.render(road_view._content_rect)
+          road_view._hud_renderer.render(road_view._content_rect)
+          road_view.alert_renderer.render(road_view._content_rect)
+          road_view.driver_state_renderer.render(road_view._content_rect)
 
           # End clipping region
           rl.end_scissor_mode()
