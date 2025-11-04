@@ -233,11 +233,21 @@ def clip(
   logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
   lr = get_logreader(route)
 
+  if quality == 'high':
+    camera_paths = route.camera_paths()
+  else:
+    camera_paths = route.qcamera_paths()
+
+  # Get frame resolution from the first valid segment
+  first_segment_path = next((p for p in camera_paths if p is not None), None)
+  if not first_segment_path:
+    raise RuntimeError("No camera segments found to determine resolution")
+  temp_fr = FrameReader(first_segment_path)
+  width, height = temp_fr.w, temp_fr.h
+  del temp_fr
+
   duration = end - start
   bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
-
-  # Parse resolution
-  width, height = map(int, RESOLUTION.split('x'))
 
   box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
   meta_text = get_meta_text(lr, route)
@@ -261,7 +271,7 @@ def clip(
     'ffmpeg', '-y',
     '-f', 'rawvideo',
     '-pix_fmt', 'rgb24',
-    '-s', RESOLUTION,
+    '-s', f'{width}x{height}',
     '-r', str(FRAMERATE),
     '-i', 'pipe:0',
     '-c:v', 'libx264',
@@ -276,11 +286,6 @@ def clip(
     '-t', str(duration),
     out,
   ]
-
-  if quality == 'high':
-    camera_paths = route.camera_paths()
-  else:
-    camera_paths = route.qcamera_paths()
 
   with OpenpilotPrefix(prefix, shared_download_cache=True):
     populate_car_params(lr)
@@ -350,7 +355,7 @@ def clip(
         fr = None
         segment_duration_frames = 60 * FRAMERATE
 
-        # Render loop
+        # Render loop (simplified to write raw frames)
         for i in range(int(duration * FRAMERATE)):
           frame_idx = int(start * FRAMERATE + i)
           segment_num = frame_idx // segment_duration_frames
@@ -360,13 +365,10 @@ def clip(
             segment_path = camera_paths[current_segment]
             if segment_path is None:
               logger.warning(f"Segment {current_segment} is missing camera footage, skipping.")
-              # Render a black frame
-              rl.begin_texture_mode(gui_app._render_texture)
-              rl.clear_background(rl.BLACK)
-              rl.end_texture_mode()
-              frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
+              # Create a black frame to keep video timing correct
+              black_frame = np.zeros((height, width, 3), dtype=np.uint8)
               assert ffmpeg_proc.stdin is not None
-              ffmpeg_proc.stdin.write(frame_data)
+              ffmpeg_proc.stdin.write(black_frame.tobytes())
               ffmpeg_proc.stdin.flush()
               continue
 
@@ -374,26 +376,11 @@ def clip(
             fr = FrameReader(segment_path, pix_fmt='rgb24')
 
           frame_in_segment_idx = frame_idx % segment_duration_frames
-          frame = fr.get(frame_in_segment_idx)[0]
+          frame = fr.get(frame_in_segment_idx)
 
-          # Create fake roadCameraState message
-          msg = messaging.new_message('roadCameraState')
-          msg.roadCameraState.image = frame.tobytes()
-          msg.roadCameraState.frameId = frame_idx
-          ui_state.sm['roadCameraState'] = msg
-
-          # Render frame to texture
-          rl.begin_texture_mode(gui_app._render_texture)
-          rl.clear_background(rl.BLACK)
-          main_layout.render()
-          rl.end_texture_mode()
-
-          # Extract frame pixels
-          frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
-
-          # Write to ffmpeg
+          # Write raw frame directly to ffmpeg, bypassing UI rendering
           assert ffmpeg_proc.stdin is not None
-          ffmpeg_proc.stdin.write(frame_data)
+          ffmpeg_proc.stdin.write(frame.tobytes())
           ffmpeg_proc.stdin.flush()
 
         # Cleanup
