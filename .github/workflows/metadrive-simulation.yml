@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          lfs: true
+          lfs: false  # Disable LFS - not needed for simulation test
 
       - name: Set up Python
         uses: actions/setup-python@v5
