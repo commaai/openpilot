@@ -133,7 +133,7 @@ def create_egl_image(width: int, height: int, stride: int, fd: int, uv_offset: i
   try:
     dup_fd = os.dup(fd)
   except OSError:
-    cloudlog.exception("Failed to duplicate fd")
+    cloudlog.exception("Failed to duplicate fd when creating EGL image")
     return None
 
   # Create image attributes for EGL
