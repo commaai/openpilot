@@ -24,12 +24,8 @@ jobs:
           sudo add-apt-repository ppa:deadsnakes/ppa -y
           sudo apt-get update
           sudo apt-get install -y python3.11 python3.11-venv python3.11-dev
-
-          # Make Python 3.11 the default
           sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
           sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
-
-          # Verify
           python --version
           python3 --version
 
@@ -48,7 +44,8 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update
+          # Fix apt_pkg error by continuing on apt update failure
+          sudo apt-get update || true
           sudo apt-get install -y --no-install-recommends \
             libegl1-mesa \
             libegl1-mesa-dev \
@@ -210,8 +207,8 @@ jobs:
           System Information
           ==================
           OS: $(uname -a)
-          Python: $(python3.11 --version)
-          OpenGL: $(glxinfo | grep "OpenGL version" || echo "N/A")
+          Python: $(python3.11 --version 2>&1)
+          OpenGL: $(DISPLAY=:99 glxinfo 2>/dev/null | grep "OpenGL version" || echo "N/A")
 
           Collected Files
           ===============
@@ -245,6 +242,6 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          pulseaudio --kill || true
-          [ -n "$XVFB_PID" ] && kill $XVFB_PID || true
+          pulseaudio --kill 2>/dev/null || true
+          [ -n "$XVFB_PID" ] && kill $XVFB_PID 2>/dev/null || true
           echo "✅ Cleanup complete"
