@@ -400,6 +400,7 @@ class DriverMonitoring:
       standstill = False
       driver_engaged = False
       brake_disengage_prob = 1.0
+      rpyCalib = [0., 0., 0.]
     else:
       highway_speed = sm['carState'].vEgo
       enabled = sm['selfdriveState'].enabled
@@ -407,6 +408,7 @@ class DriverMonitoring:
       standstill = sm['carState'].standstill
       driver_engaged = sm['carState'].steeringPressed or sm['carState'].gasPressed
       brake_disengage_prob = sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
+      rpyCalib = sm['liveCalibration'].rpyCalib
     self._set_policy(
       brake_disengage_prob=brake_disengage_prob,
       car_speed=highway_speed,
@@ -415,7 +417,7 @@ class DriverMonitoring:
     # Parse data from dmonitoringmodeld
     self._update_states(
       driver_state=sm['driverStateV2'],
-      cal_rpy=sm['liveCalibration'].rpyCalib,
+      cal_rpy=rpyCalib,
       car_speed=highway_speed,
       op_engaged=enabled,
     )
