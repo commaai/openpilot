@@ -201,7 +201,7 @@ class DriverMonitoring:
       self.active_monitoring_mode = False
 
   def _set_policy(self, model_data, car_speed):
-    bp = #model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
+    bp = 1.0 #model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
     self.pose.cfactor_pitch = np.interp(bp_normal, [0, 0.5],
