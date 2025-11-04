@@ -8,9 +8,9 @@ from openpilot.common.pid import PIDController
 class LatControlPID(LatControl):
   def __init__(self, CP, CI, dt):
     super().__init__(CP, CI, dt)
-    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
-                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                             pos_limit=self.steer_max, neg_limit=-self.steer_max)
+    self.pid = PIDController(proportional_gain=(CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
+                             integral_gain=(CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
+                             positive_limit=self.steer_max, negative_limit=-self.steer_max)
     self.ff_factor = CP.lateralTuning.pid.kf
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
@@ -40,9 +40,9 @@ class LatControlPID(LatControl):
                                 freeze_integrator=freeze_integrator)
 
       pid_log.active = True
-      pid_log.p = float(self.pid.p)
-      pid_log.i = float(self.pid.i)
-      pid_log.f = float(self.pid.f)
+      pid_log.p = float(self.pid.proportional_term)
+      pid_log.i = float(self.pid.integral_term)
+      pid_log.f = float(self.pid.feedforward_term)
       pid_log.output = float(output_torque)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 

@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
+from openpilot.common.constants import GRAVITY_ACCELERATION
 from openpilot.selfdrive.locationd.models.constants import ObservationKind
 from openpilot.common.swaglog import cloudlog
 
@@ -130,7 +130,7 @@ class CarKalman(KalmanFilter):
     B[1, 0] = (cF * aF) / j / sR
 
     C = sp.Matrix(np.zeros((2, 1)))
-    C[0, 0] = ACCELERATION_DUE_TO_GRAVITY
+    C[0, 0] = GRAVITY_ACCELERATION
     C[1, 0] = 0
 
     x = sp.Matrix([v, r])  # lateral velocity, yaw rate

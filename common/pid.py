@@ -2,62 +2,106 @@ import numpy as np
 from numbers import Number
 
 class PIDController:
-  def __init__(self, k_p, k_i, k_d=0., pos_limit=1e308, neg_limit=-1e308, rate=100):
-    self._k_p = k_p
-    self._k_i = k_i
-    self._k_d = k_d
-    if isinstance(self._k_p, Number):
-      self._k_p = [[0], [self._k_p]]
-    if isinstance(self._k_i, Number):
-      self._k_i = [[0], [self._k_i]]
-    if isinstance(self._k_d, Number):
-      self._k_d = [[0], [self._k_d]]
+  """A PID controller with speed-dependent gains and integrator anti-windup."""
+  
+  # Default limits for control output
+  DEFAULT_POSITIVE_LIMIT = 1e308
+  DEFAULT_NEGATIVE_LIMIT = -1e308
 
-    self.set_limits(pos_limit, neg_limit)
+  def __init__(self, proportional_gain, integral_gain, derivative_gain=0., 
+               positive_limit=1e308, negative_limit=-1e308, rate=100):
+    """
+    Initialize the PID controller.
+    
+    Args:
+        proportional_gain: Proportional gain (can be a scalar or [speed_points, gains] pair)
+        integral_gain: Integral gain (can be a scalar or [speed_points, gains] pair) 
+        derivative_gain: Derivative gain (can be a scalar or [speed_points, gains] pair)
+        positive_limit: Maximum output limit
+        negative_limit: Minimum output limit
+        rate: Update rate in Hz
+    """
+    self._proportional_gain = self._normalize_gain_format(proportional_gain)
+    self._integral_gain = self._normalize_gain_format(integral_gain)
+    self._derivative_gain = self._normalize_gain_format(derivative_gain)
 
-    self.i_dt = 1.0 / rate
-    self.speed = 0.0
+    self.set_output_limits(positive_limit, negative_limit)
+
+    self.integration_time_step = 1.0 / rate
+    self.current_speed = 0.0
 
     self.reset()
 
-  @property
-  def k_p(self):
-    return np.interp(self.speed, self._k_p[0], self._k_p[1])
+  @staticmethod
+  def _normalize_gain_format(gain):
+    """Normalize gain format to be either a scalar or a [speed_points, gains] pair."""
+    if isinstance(gain, Number):
+      return [[0], [gain]]
+    return gain
 
   @property
-  def k_i(self):
-    return np.interp(self.speed, self._k_i[0], self._k_i[1])
+  def proportional_gain_at_current_speed(self):
+    """Get the proportional gain interpolated at the current speed."""
+    return np.interp(self.current_speed, self._proportional_gain[0], self._proportional_gain[1])
 
   @property
-  def k_d(self):
-    return np.interp(self.speed, self._k_d[0], self._k_d[1])
+  def integral_gain_at_current_speed(self):
+    """Get the integral gain interpolated at the current speed."""
+    return np.interp(self.current_speed, self._integral_gain[0], self._integral_gain[1])
+
+  @property
+  def derivative_gain_at_current_speed(self):
+    """Get the derivative gain interpolated at the current speed."""
+    return np.interp(self.current_speed, self._derivative_gain[0], self._derivative_gain[1])
 
   def reset(self):
-    self.p = 0.0
-    self.i = 0.0
-    self.d = 0.0
-    self.f = 0.0
-    self.control = 0
+    """Reset the internal state of the PID controller."""
+    self.proportional_term = 0.0
+    self.integral_term = 0.0
+    self.derivative_term = 0.0
+    self.feedforward_term = 0.0
+    self.output = 0
 
-  def set_limits(self, pos_limit, neg_limit):
-    self.pos_limit = pos_limit
-    self.neg_limit = neg_limit
+  def set_output_limits(self, positive_limit, negative_limit):
+    """Set the output limits for the controller."""
+    self.positive_limit = positive_limit
+    self.negative_limit = negative_limit
 
   def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False):
-    self.speed = speed
-    self.p = self.k_p * float(error)
-    self.d = self.k_d * error_rate
-    self.f = feedforward
+    """
+    Update the PID controller with new error values.
+    
+    Args:
+        error: Current error value
+        error_rate: Rate of change of error (derivative term input)
+        speed: Current speed (used for gain scheduling)
+        feedforward: Feedforward control component
+        freeze_integrator: Whether to freeze the integral term integration
+        
+    Returns:
+        The control output after applying all PID terms and limits
+    """
+    self.current_speed = speed
+    
+    # Calculate individual PID terms
+    self.proportional_term = self.proportional_gain_at_current_speed * float(error)
+    self.derivative_term = self.derivative_gain_at_current_speed * error_rate
+    self.feedforward_term = feedforward
 
+    # Update integral term with anti-windup protection
     if not freeze_integrator:
-      i = self.i + self.k_i * self.i_dt * error
+      new_integral = self.integral_term + self.integral_gain_at_current_speed * self.integration_time_step * error
 
-      # Don't allow windup if already clipping
-      test_control = self.p + i + self.d + self.f
-      i_upperbound = self.i if test_control > self.pos_limit else self.pos_limit
-      i_lowerbound = self.i if test_control < self.neg_limit else self.neg_limit
-      self.i = np.clip(i, i_lowerbound, i_upperbound)
-
-    control = self.p + self.i + self.d + self.f
-    self.control = np.clip(control, self.neg_limit, self.pos_limit)
-    return self.control
+      # Anti-windup: don't allow windup when output is already at limit
+      proposed_output = self.proportional_term + new_integral + self.derivative_term + self.feedforward_term
+      integral_upper_bound = self.integral_term if proposed_output > self.positive_limit else self.positive_limit
+      integral_lower_bound = self.integral_term if proposed_output < self.negative_limit else self.negative_limit
+      self.integral_term = np.clip(new_integral, integral_lower_bound, integral_upper_bound)
+    
+    # Calculate final control output
+    control_output = (self.proportional_term + self.integral_term + 
+                     self.derivative_term + self.feedforward_term)
+    
+    # Apply output limits
+    self.output = np.clip(control_output, self.negative_limit, self.positive_limit)
+    return self.output

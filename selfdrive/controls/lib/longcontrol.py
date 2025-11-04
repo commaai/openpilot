@@ -10,46 +10,63 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
-def long_control_state_trans(CP, active, long_control_state, v_ego,
-                             should_stop, brake_pressed, cruise_standstill):
-  stopping_condition = should_stop
-  starting_condition = (not should_stop and
-                        not cruise_standstill and
-                        not brake_pressed)
-  started_condition = v_ego > CP.vEgoStarting
-
+def long_control_state_trans(CP, active, long_control_state, v_ego, should_stop, brake_pressed, cruise_standstill):
+  """Determines the next longitudinal control state based on current conditions and vehicle state.
+  
+  Args:
+      CP: Car parameters
+      active: Whether the control system is active
+      long_control_state: Current longitudinal control state
+      v_ego: Current vehicle speed in m/s
+      should_stop: Whether the system should stop
+      brake_pressed: Whether brake is pressed
+      cruise_standstill: Whether cruise control is in standstill mode
+      
+  Returns:
+      The next longitudinal control state
+  """
   if not active:
-    long_control_state = LongCtrlState.off
+    return LongCtrlState.off
 
-  else:
-    if long_control_state == LongCtrlState.off:
-      if not starting_condition:
-        long_control_state = LongCtrlState.stopping
-      else:
-        if starting_condition and CP.startingState:
-          long_control_state = LongCtrlState.starting
-        else:
-          long_control_state = LongCtrlState.pid
+  # Determine conditions for different states
+  is_stopping = should_stop
+  is_starting = (not should_stop and not cruise_standstill and not brake_pressed)
+  is_started = v_ego > CP.vEgoStarting
 
-    elif long_control_state == LongCtrlState.stopping:
-      if starting_condition and CP.startingState:
-        long_control_state = LongCtrlState.starting
-      elif starting_condition:
-        long_control_state = LongCtrlState.pid
+  # State transition logic
+  if long_control_state == LongCtrlState.off:
+    if not is_starting:
+      return LongCtrlState.stopping
+    elif is_starting and CP.startingState:
+      return LongCtrlState.starting
+    else:
+      return LongCtrlState.pid
 
-    elif long_control_state in [LongCtrlState.starting, LongCtrlState.pid]:
-      if stopping_condition:
-        long_control_state = LongCtrlState.stopping
-      elif started_condition:
-        long_control_state = LongCtrlState.pid
+  elif long_control_state == LongCtrlState.stopping:
+    if is_starting and CP.startingState:
+      return LongCtrlState.starting
+    elif is_starting:
+      return LongCtrlState.pid
+    else:
+      return long_control_state  # Stay in stopping state
+
+  elif long_control_state in [LongCtrlState.starting, LongCtrlState.pid]:
+    if is_stopping:
+      return LongCtrlState.stopping
+    elif is_started:
+      return LongCtrlState.pid
+    else:
+      return long_control_state  # Maintain current state
+
+  # Fallback - should not reach here with proper state machine
   return long_control_state
 
 class LongControl:
   def __init__(self, CP):
     self.CP = CP
     self.long_control_state = LongCtrlState.off
-    self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
-                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
+    self.pid = PIDController(proportional_gain=(CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
+                             integral_gain=(CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                              rate=1 / DT_CTRL)
     self.last_output_accel = 0.0
 

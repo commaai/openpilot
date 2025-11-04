@@ -4,7 +4,7 @@ from enum import StrEnum, auto
 from cereal import car, messaging
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.helpers import Pose
-from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
+from openpilot.common.constants import GRAVITY_ACCELERATION as ACCELERATION_DUE_TO_GRAVITY
 from opendbc.car.lateral import ISO_LATERAL_ACCEL
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 

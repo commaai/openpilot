@@ -1,5 +1,5 @@
 import numpy as np
-from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
+from openpilot.common.constants import GRAVITY_ACCELERATION
 from openpilot.common.realtime import DT_CTRL, DT_MDL
 
 MIN_SPEED = 1.0
@@ -30,7 +30,7 @@ def clip_curvature(v_ego, prev_curvature, new_curvature, roll) -> tuple[float, b
                           prev_curvature - max_curvature_rate * DT_CTRL,
                           prev_curvature + max_curvature_rate * DT_CTRL)
 
-  roll_compensation = roll * ACCELERATION_DUE_TO_GRAVITY
+  roll_compensation = roll * GRAVITY_ACCELERATION
   max_lat_accel = MAX_LATERAL_ACCEL_NO_ROLL + roll_compensation
   min_lat_accel = -MAX_LATERAL_ACCEL_NO_ROLL + roll_compensation
   new_curvature, limited_accel = clamp(new_curvature, min_lat_accel / v_ego ** 2, max_lat_accel / v_ego ** 2)
