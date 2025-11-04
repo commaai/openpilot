@@ -46,7 +46,7 @@ class ArcData:
   thickness: float
 
 
-class DriverStateRenderer(Widget):
+class DMoji(Widget):
   def __init__(self):
     super().__init__()
     # Initial state with NumPy arrays
