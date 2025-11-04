@@ -155,6 +155,8 @@ class CameraView(Widget):
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
 
+    self.frame = None
+    self.available_streams.clear()
     self.client = None
 
   def __del__(self):
@@ -191,6 +193,9 @@ class CameraView(Widget):
     if buffer:
       self._texture_needs_update = True
       self.frame = buffer
+    elif not self.client.is_connected():
+      # ensure we clear the displayed frame when the connection is lost
+      self.frame = None
 
     if not self.frame:
       self._draw_placeholder(rect)
