@@ -351,12 +351,65 @@ def clip(
       ffmpeg_proc = Popen(ffmpeg_cmd, stdin=PIPE, env=env)
 
       try:
+        # Load all log messages and sort them
+        logger.info("Loading and sorting log messages...")
+        all_msgs = []
+        for log_path in route.log_paths():
+          if log_path is not None:
+            lr = LogReader(log_path)
+            all_msgs.extend(lr)
+        sorted_lr = sorted(all_msgs, key=lambda msg: msg.logMonoTime)
+        logger.info(f"Log messages loaded, total: {len(sorted_lr)}")
+
+        # get start mono time from the first log message
+        start_mono_time = sorted_lr[0].logMonoTime
+
         current_segment = -1
         fr = None
         segment_duration_frames = 60 * FRAMERATE
+        log_message_idx = 0
 
-        # Render loop (simplified to write raw frames)
+        # Render loop
         for i in range(int(duration * FRAMERATE)):
+          frame_mono_time = start_mono_time + (start + i / FRAMERATE) * 1e9
+
+          # Process log messages up to the current frame time
+          while log_message_idx < len(sorted_lr) and sorted_lr[log_message_idx].logMonoTime < frame_mono_time:
+            msg = sorted_lr[log_message_idx]
+            which = msg.which()
+
+            if which == 'deviceState':
+              new_msg_builder = messaging.new_message('deviceState').deviceState
+              old_msg_reader = msg.deviceState
+              known_good_fields = (
+                  "carBatteryCapacityUwh", "caseTempC", "cpuTempC", "cpuUsagePercent",
+                  "deviceType", "dspTempC", "exhaustTempC", "fanSpeedPercentDesired",
+                  "freeSpacePercent", "gpuTempC", "gpuUsagePercent", "intakeTempC",
+                  "lastAthenaPingTime", "maxTempC", "memoryTempC", "memoryUsagePercent",
+                  "modemTempC", "networkInfo", "networkMetered", "networkStats",
+                  "networkStrength", "offroadPowerUsageUwh", "pmicTempC",
+                  "powerDrawW", "screenBrightnessPercent", "somPowerDrawW", "started",
+                  "startedMonoTime", "thermalStatus", "thermalZones"
+              )
+              for field in known_good_fields:
+                try:
+                  setattr(new_msg_builder, field, getattr(old_msg_reader, field))
+                except AttributeError:
+                  pass # Field didn't exist in the old log, skip it.
+              new_msg_builder.networkType = messaging.log.DeviceState.NetworkType.none
+              ui_state.sm[which] = new_msg_builder.as_reader()
+            else:
+              ui_state.sm[which] = msg
+            
+            log_message_idx += 1
+
+          # Inject a fake selfdriveState message
+          ss = messaging.new_message('selfdriveState')
+          ss.selfdriveState.enabled = True
+          ss.selfdriveState.active = True
+          ui_state.sm['selfdriveState'] = ss.selfdriveState
+
+          # Get camera frame
           frame_idx = int(start * FRAMERATE + i)
           segment_num = frame_idx // segment_duration_frames
 
@@ -365,10 +418,13 @@ def clip(
             segment_path = camera_paths[current_segment]
             if segment_path is None:
               logger.warning(f"Segment {current_segment} is missing camera footage, skipping.")
-              # Create a black frame to keep video timing correct
-              black_frame = np.zeros((height, width, 3), dtype=np.uint8)
+              # Render a black frame
+              rl.begin_texture_mode(gui_app._render_texture)
+              rl.clear_background(rl.BLACK)
+              rl.end_texture_mode()
+              frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
               assert ffmpeg_proc.stdin is not None
-              ffmpeg_proc.stdin.write(black_frame.tobytes())
+              ffmpeg_proc.stdin.write(frame_data)
               ffmpeg_proc.stdin.flush()
               continue
 
@@ -376,11 +432,32 @@ def clip(
             fr = FrameReader(segment_path, pix_fmt='rgb24')
 
           frame_in_segment_idx = frame_idx % segment_duration_frames
-          frame = fr.get(frame_in_segment_idx)
+          frame_np = fr.get(frame_in_segment_idx)
 
-          # Write raw frame directly to ffmpeg, bypassing UI rendering
+          # Convert numpy frame to pyray Image/Texture
+          frame_image = rl.Image()
+          frame_image.data = rl.ffi.cast("void *", frame_np.ctypes.data)
+          frame_image.width = width
+          frame_image.height = height
+          frame_image.mipmaps = 1
+          frame_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8
+          frame_texture = rl.load_texture_from_image(frame_image)
+
+          # Render to texture
+          rl.begin_texture_mode(gui_app._render_texture)
+          rl.clear_background(rl.BLACK)
+          rl.draw_texture(frame_texture, 0, 0, rl.WHITE)
+          main_layout.render()
+          rl.end_texture_mode()
+
+          rl.unload_texture(frame_texture)
+
+          # Extract frame pixels
+          frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
+
+          # Write to ffmpeg
           assert ffmpeg_proc.stdin is not None
-          ffmpeg_proc.stdin.write(frame.tobytes())
+          ffmpeg_proc.stdin.write(frame_data)
           ffmpeg_proc.stdin.flush()
 
         # Cleanup
