@@ -32,7 +32,7 @@ DEMO_START = 90
 DEMO_END = 105
 DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
 FRAMERATE = 20
-RESOLUTION = '2160x1080'
+# RESOLUTION = os.environ.get("RESOLUTION", "2160x1080") # Dynamically set based on camera frame
 
 OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
 
@@ -353,6 +353,7 @@ def clip(
     # Import GUI components AFTER patching and DISPLAY is set
     from openpilot.system.ui.lib.application import gui_app
     from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
+    from openpilot.selfdrive.ui import UI_BORDER_SIZE
     from openpilot.selfdrive.ui.ui_state import ui_state
 
     try:
@@ -366,17 +367,18 @@ def clip(
       os.environ['SCALE'] = '2.0'
 
       # Initialize window and create render texture
-      gui_app.init_window("Clip Renderer", fps=FRAMERATE)
+      # gui_app.init_window("Clip Renderer", fps=FRAMERATE) # Moved below after FrameReader init
       if gui_app._render_texture is not None:
         rl.unload_render_texture(gui_app._render_texture)
+      gui_app.init_window("Clip Renderer", fps=FRAMERATE)
       gui_app._render_texture = rl.load_render_texture(width, height)
       rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
       # Initialize AugmentedRoadView which contains all the UI renderers
-      from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
       road_view = AugmentedRoadView()
       road_view.set_rect(rl.Rectangle(0, 0, width, height))
 
+      # fr and gui_app.init_window moved below after fcamera_path is defined
       # Restore original scale
       if original_scale:
         os.environ['SCALE'] = original_scale
@@ -422,6 +424,28 @@ def clip(
                                   key=lambda x: x[0])
         logger.info(f"Found {len(messages_by_time)} messages in the time range.")
 
+        # --- DEBUG: Inspect liveCalibration messages ---
+        calib_msgs = [m for t, m in messages_by_time if m.which() == 'liveCalibration']
+        logger.info(f"Found {len(calib_msgs)} liveCalibration messages in the time range.")
+        if calib_msgs:
+            logger.info("--- Checking `valid` and `height` data of first 5 liveCalibration messages ---")
+            for i, msg in enumerate(calib_msgs[:5]):
+                calib_height = msg.liveCalibration.height if msg.liveCalibration else 'N/A'
+                logger.info(f"  liveCalibration message {i}: valid={msg.valid}, height={calib_height}")
+            logger.info("--------------------------------------------------------------------------")
+        # --- END DEBUG ---
+
+        # --- DEBUG: Inspect modelV2 messages ---
+        model_msgs = [m for t, m in messages_by_time if m.which() == 'modelV2']
+        logger.info(f"Found {len(model_msgs)} modelV2 messages in the time range.")
+        if model_msgs:
+            logger.info("--- Checking `valid` and `position` data of first 5 modelV2 messages ---")
+            for i, msg in enumerate(model_msgs[:5]):
+                pos_len = len(msg.modelV2.position.x) if msg.modelV2 and msg.modelV2.position else 0
+                logger.info(f"  modelV2 message {i}: valid={msg.valid}, position_len={pos_len}")
+            logger.info("--------------------------------------------------------------------")
+        # --- END DEBUG ---
+
         camera_messages = [m for t, m in messages_by_time if m.which() == 'roadCameraState']
         logger.info(f"Found {len(camera_messages)} roadCameraState messages to process.")
 
@@ -432,10 +456,18 @@ def clip(
 
 
         # Prime the UI with the last known state before the clip starts
+        prime_mono_time = start_mono_time + start * 1e9
+        prime_services = {'liveCalibration', 'modelV2', 'carParams', 'selfdriveState'}
+        prime_msgs = []
+        for s in prime_services:
+            # Find the last message for each service before the clip starts
+            last_msg = next((m for m in reversed(all_msgs) if m.logMonoTime < prime_mono_time and m.which() == s), None)
+            if last_msg:
+                prime_msgs.append(last_msg)
 
-        prime_msgs = [m for m in all_msgs if m.logMonoTime < start_mono_time + start * 1e9 and m.which() == 'liveCalibration']
         if prime_msgs:
-          ui_state.sm.update_msgs(time.monotonic(), prime_msgs)
+            # Feed these last-known-good messages to the SubMaster to set the initial state
+            ui_state.sm.update_msgs(prime_mono_time / 1e9, prime_msgs)
 
         # Start ffmpeg with stdin pipe
         logger.info(f'recording in progress ({duration}s)...')
@@ -520,8 +552,20 @@ def clip(
             int(content_rect.height)
           )
 
-          # Render UI overlays on top
+          road_view._update_calibration()
+          # Use the actual camera frame dimensions for content_rect calculation
+          content_rect = rl.Rectangle(
+            0 + UI_BORDER_SIZE, # Assuming camera frame is drawn at (0,0)
+            0 + UI_BORDER_SIZE,
+            fr.w - 2 * UI_BORDER_SIZE,
+            fr.h - 2 * UI_BORDER_SIZE,
+          )
+          road_view._content_rect = content_rect # Assign to instance variable
 
+          # Manually calculate the frame matrix to set the transform for the model renderer
+          road_view._calc_frame_matrix(content_rect) # Pass content_rect here
+
+          # Render UI overlays on top
           road_view.model_renderer.render(content_rect)
           road_view._hud_renderer.render(content_rect)
           road_view.alert_renderer.render(content_rect)
@@ -529,6 +573,17 @@ def clip(
 
           # End clipping region
           rl.end_scissor_mode()
+
+          # --- DEBUG: Inspect ModelRenderer internal state ---
+          if i % 20 == 0: # Log once per second
+              renderer = road_view.model_renderer
+              raw_size = renderer._path.raw_points.size
+              proj_size = renderer._path.projected_points.size
+              transform_flat = renderer._car_space_transform.flatten()
+              logger.info(f"[Frame {i}] Renderer state: raw_points={raw_size}, projected_points={proj_size}")
+              # Log first few elements of transform matrix to see if it's changing/valid
+              logger.info(f"  Transform matrix (first 4): {transform_flat[:4]}")
+          # --- END DEBUG ---
 
           # Draw colored border based on driving state
           road_view._draw_border(full_rect)
