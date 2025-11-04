@@ -9,7 +9,12 @@ DEFAULT_DOWNLOAD_CACHE_ROOT = "/tmp/comma_download_cache"
 class Paths:
   @staticmethod
   def comma_home() -> str:
-    return os.path.join(str(Path.home()), ".comma" + os.environ.get("OPENPILOT_PREFIX", ""))
+    override = os.environ.get("OPENPILOT_COMMA_HOME")
+    if override:
+      prefix = os.environ.get("OPENPILOT_PREFIX", "")
+      return os.path.join(override, prefix) if prefix else override
+    prefix = os.environ.get("OPENPILOT_PREFIX", "")
+    return os.path.join(str(Path.home()), f".comma{prefix}")
 
   @staticmethod
   def log_root() -> str:
@@ -60,6 +65,9 @@ class Paths:
 
   @staticmethod
   def shm_path() -> str:
+    env_shm = os.environ.get("OPENPILOT_SHM_PATH")
+    if env_shm:
+      return env_shm
     if PC and platform.system() == "Darwin":
       return "/tmp"  # This is not really shared memory on macOS, but it's the closest we can get
     return "/dev/shm"

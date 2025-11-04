@@ -19,6 +19,17 @@ namespace Path {
   }
 
   inline std::string comma_home() {
+    if (const char *env = getenv("OPENPILOT_COMMA_HOME")) {
+      std::string base = env;
+      if (!base.empty() && base.back() == '/') {
+        base.pop_back();
+      }
+      std::string prefix = Path::openpilot_prefix();
+      if (!prefix.empty()) {
+        base += "/" + prefix;
+      }
+      return base;
+    }
     return util::getenv("HOME") + "/.comma" + Path::openpilot_prefix();
   }
 
@@ -49,6 +60,9 @@ namespace Path {
   }
 
  inline std::string shm_path() {
+    if (const char *env = getenv("OPENPILOT_SHM_PATH")) {
+      return env;
+    }
     #ifdef __APPLE__
      return"/tmp";
     #else
