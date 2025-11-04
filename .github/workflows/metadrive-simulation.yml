@@ -1,0 +1,310 @@
+name: MetaDrive Simulation Test (Robust)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  metadrive-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1-mesa \
+            libegl1-mesa-dev \
+            libgles2-mesa-dev \
+            libgl1-mesa-dev \
+            libgl1-mesa-dri \
+            libglx-mesa0 \
+            mesa-utils \
+            mesa-common-dev \
+            libglu1-mesa-dev \
+            xvfb \
+            pulseaudio \
+            ffmpeg \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libcapnp-dev \
+            capnproto
+
+      - name: Configure environment for headless rendering
+        run: |
+          # Display settings
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+          # Mesa/OpenGL software rendering
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> $GITHUB_ENV
+          echo "GALLIUM_DRIVER=llvmpipe" >> $GITHUB_ENV
+          echo "LP_NUM_THREADS=4" >> $GITHUB_ENV
+          echo "MESA_GL_VERSION_OVERRIDE=3.3" >> $GITHUB_ENV
+          echo "MESA_GLSL_VERSION_OVERRIDE=330" >> $GITHUB_ENV
+
+          # Openpilot CI settings
+          echo "SKIP_FW_QUERY=1" >> $GITHUB_ENV
+          echo "PASSIVE=0" >> $GITHUB_ENV
+          echo "SIMULATION=1" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "CI_DISABLE_SOUNDD=1" >> $GITHUB_ENV
+
+          # Panda3D settings for headless
+          echo "PANDA_PRC_DIR=" >> $GITHUB_ENV
+
+      - name: Start Xvfb virtual display
+        run: |
+          # Start Xvfb with proper configuration
+          Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset -nolisten tcp &
+          XVFB_PID=$!
+          echo "XVFB_PID=$XVFB_PID" >> $GITHUB_ENV
+
+          # Wait for Xvfb to be ready
+          timeout 30 bash -c 'until xdpyinfo -display :99 >/dev/null 2>&1; do sleep 0.5; done' || {
+            echo "❌ Xvfb failed to start"
+            exit 1
+          }
+
+          echo "✅ Xvfb started successfully (PID: $XVFB_PID)"
+
+      - name: Setup PulseAudio virtual sound device
+        run: |
+          # Start PulseAudio
+          pulseaudio --start --exit-idle-time=-1
+          sleep 2
+
+          # Create virtual sink
+          pacmd load-module module-null-sink sink_name=virtual-speaker
+          pacmd set-default-sink virtual-speaker
+
+          # Verify
+          pactl list sinks short
+          echo "✅ Virtual audio device configured"
+
+      - name: Verify OpenGL rendering setup
+        run: |
+          export DISPLAY=:99
+
+          echo "=== OpenGL Configuration ==="
+          glxinfo | grep "OpenGL renderer" || echo "⚠️  Could not get renderer info"
+          glxinfo | grep "OpenGL version" || echo "⚠️  Could not get version info"
+          glxinfo | grep "OpenGL vendor" || echo "⚠️  Could not get vendor info"
+
+          echo ""
+          echo "=== Display Configuration ==="
+          echo "DISPLAY=$DISPLAY"
+          xdpyinfo -display :99 | grep dimensions || echo "⚠️  Could not get display info"
+
+      - name: Install openpilot dependencies
+        run: |
+          # Update pip
+          pip install --upgrade pip setuptools wheel
+
+          # Install openpilot
+          pip install --no-cache-dir -e .
+
+          echo "✅ Openpilot dependencies installed"
+
+      - name: Install MetaDrive
+        run: |
+          # Install MetaDrive
+          pip install --no-cache-dir metadrive-simulator
+
+          # Pull assets
+          python -m metadrive.pull_asset
+
+          echo "✅ MetaDrive installed"
+
+      - name: Verify MetaDrive headless installation
+        run: |
+          export DISPLAY=:99
+
+          # Verify headless rendering
+          timeout 60 python -m metadrive.examples.verify_headless_installation || {
+            echo "⚠️  Headless verification timed out or failed"
+            echo "Continuing anyway as this is not always reliable in CI..."
+          }
+
+      - name: Create CI-specific manager configuration
+        run: |
+          # Create marker file for CI mode
+          echo "disable_soundd" > /tmp/ci_mode
+
+          # Create config override if needed
+          mkdir -p tools/sim
+          cat > tools/sim/ci_config.sh << 'EOF'
+          #!/bin/bash
+          # CI-specific configuration
+          export CI_DISABLE_SOUNDD=1
+          export SIMULATION=1
+          export PASSIVE=0
+          EOF
+
+          chmod +x tools/sim/ci_config.sh
+
+          echo "✅ CI configuration created"
+
+      - name: Run MetaDrive simulation test
+        id: simulation_test
+        timeout-minutes: 12
+        run: |
+          export DISPLAY=:99
+
+          # Source CI config
+          [ -f tools/sim/ci_config.sh ] && source tools/sim/ci_config.sh
+
+          echo "=== Starting MetaDrive Simulation Test ==="
+          echo "Timestamp: $(date -Iseconds)"
+          echo "Python: $(python --version)"
+          echo "Working directory: $(pwd)"
+          echo ""
+
+          # Run test with pytest
+          cd tools/sim
+          python -m pytest \
+            tests/test_sim_bridge.py::TestMetaDriveBridge::test_driving \
+            -v \
+            --tb=short \
+            --timeout=600 \
+            --log-cli-level=INFO
+
+          TEST_RESULT=$?
+
+          echo ""
+          echo "=== Test Completed ==="
+          echo "Exit code: $TEST_RESULT"
+          echo "Timestamp: $(date -Iseconds)"
+
+          exit $TEST_RESULT
+
+      - name: Collect simulation logs
+        if: always()
+        run: |
+          echo "=== Collecting Simulation Artifacts ==="
+
+          mkdir -p simulation_artifacts
+
+          # Search common log locations
+          LOG_LOCATIONS=(
+            "/tmp"
+            "/tmp/comma"
+            "$HOME/.comma"
+            "$(pwd)/tools/sim"
+          )
+
+          for location in "${LOG_LOCATIONS[@]}"; do
+            if [ -d "$location" ]; then
+              # Find qlogs
+              find "$location" -name "*.qlog" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+
+              # Find rlogs
+              find "$location" -name "*.rlog" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+
+              # Find camera files
+              find "$location" -name "*.hevc" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+              find "$location" -name "fcamera.hevc" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+
+              # Find error logs
+              find "$location" -name "error.log" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+              find "$location" -name "crash.log" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+            fi
+          done
+
+          # Create metadata file
+          cat > simulation_artifacts/metadata.txt << EOF
+          Test Run Information
+          ====================
+          Timestamp: $(date -Iseconds)
+          GitHub Run ID: ${{ github.run_id }}
+          Commit SHA: ${{ github.sha }}
+          Branch: ${{ github.ref }}
+          Event: ${{ github.event_name }}
+          Test Result: ${{ steps.simulation_test.outcome }}
+
+          System Information
+          ==================
+          OS: $(uname -a)
+          Python: $(python --version)
+          OpenGL: $(glxinfo | grep "OpenGL version" || echo "N/A")
+
+          Collected Files
+          ===============
+          EOF
+
+          ls -lh simulation_artifacts/ >> simulation_artifacts/metadata.txt
+
+          echo "✅ Artifact collection complete"
+          cat simulation_artifacts/metadata.txt
+
+      - name: Upload simulation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metadrive-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: simulation_artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Performance and reliability report
+        if: always()
+        run: |
+          echo "=== Performance & Reliability Report ==="
+          echo ""
+          echo "Test Status: ${{ steps.simulation_test.outcome }}"
+          echo "Duration: Check job summary for timing"
+          echo "Artifacts: Check 'Artifacts' section"
+          echo ""
+
+          if [ "${{ steps.simulation_test.outcome }}" == "success" ]; then
+            echo "✅ Test PASSED - Simulation completed successfully"
+            echo ""
+            echo "Next steps:"
+            echo "1. Review uploaded artifacts for log quality"
+            echo "2. Run test multiple times to verify reliability"
+            echo "3. If passes 20+ times, solution meets requirements"
+          else
+            echo "❌ Test FAILED - Review logs for details"
+            echo ""
+            echo "Troubleshooting:"
+            echo "1. Check simulation_artifacts/error.log if present"
+            echo "2. Review pytest output above"
+            echo "3. Verify OpenGL setup in earlier steps"
+            echo "4. Check for soundd crashes in logs"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          # Stop PulseAudio
+          pulseaudio --kill || true
+
+          # Stop Xvfb
+          [ -n "$XVFB_PID" ] && kill $XVFB_PID || true
+
+          echo "✅ Cleanup complete"
