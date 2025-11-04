@@ -59,6 +59,7 @@ jobs:
             xvfb \
             x11-utils \
             pulseaudio \
+            portaudio19-dev \
             ffmpeg \
             libavcodec-dev \
             libavformat-dev \
