@@ -200,8 +200,8 @@ class DriverMonitoring:
       self.step_change = self.settings._DT_DMON / self.settings._AWARENESS_TIME
       self.active_monitoring_mode = False
 
-  def _set_policy(self, model_data, car_speed):
-    bp = 1.0 #model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
+  def _set_policy(self, brake_disengage_prob, car_speed):
+    bp = brake_disengage_prob
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
     self.pose.cfactor_pitch = np.interp(bp_normal, [0, 0.5],
@@ -392,15 +392,23 @@ class DriverMonitoring:
     }
     return dat
 
-  def run_step(self, sm):
-    # Set strictness
-    highway_speed = 30
-    enabled = True
-    wrong_gear = False
-    standstill = False
-    driver_engaged = False
+  def run_step(self, sm, demo=False):
+    if demo:
+      highway_speed = 30
+      enabled = True
+      wrong_gear = False
+      standstill = False
+      driver_engaged = False
+      brake_disengage_prob = 1.0
+    else:
+      highway_speed = sm['carState'].vEgo
+      enabled = sm['selfdriveState'].enabled
+      wrong_gear = sm['carState'].gearShifter not in (car.CarState.GearShifter.drive, car.CarState.GearShifter.low)
+      standstill = sm['carState'].standstill
+      driver_engaged = sm['driverStateV2'].driverEngaged
+      brake_disengage_prob = sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
     self._set_policy(
-      model_data=sm['modelV2'],
+      brake_disengage_prob=brake_disengage_prob,
       car_speed=highway_speed,
     )
 
