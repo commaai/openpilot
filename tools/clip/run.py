@@ -17,13 +17,13 @@ from typing import Literal
 import pyray as rl
 import numpy as np
 
-from cereal.messaging import SubMaster
+from cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.common.utils import managed_proc
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.framereader import FrameReader
 # GUI imports moved to clip() function after DISPLAY is set
 
 DEFAULT_OUTPUT = 'output.mp4'
@@ -34,9 +34,33 @@ FRAMERATE = 20
 RESOLUTION = '2160x1080'
 
 OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
-REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
 
 logger = logging.getLogger('clip.py')
+
+SERVICES = [
+    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
+    "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
+    "roadCameraState", "wideRoadCameraState", "managerState", "selfdriveState",
+    "longitudinalPlan", "rawAudioData"
+]
+
+class MockSubMaster:
+  def __init__(self):
+    self.data = {}
+    self.updated = {s: False for s in SERVICES}
+    self.valid = {s: False for s in SERVICES}
+    self.alive = {s: False for s in SERVICES}
+
+  def __getitem__(self, s):
+    return self.data.get(s)
+
+  def __setitem__(self, s, msg):
+    self.data[s] = msg
+    self.updated[s] = True
+    self.valid[s] = True
+    self.alive[s] = True
+
+
 
 # Initialize cffi for OpenGL calls
 _ffi = cffi.FFI()
@@ -84,23 +108,6 @@ def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, hei
   return rgb_array.tobytes()
 
 
-def check_for_failure(procs: list[Popen]):
-  for proc in procs:
-    exit_code = proc.poll()
-    if exit_code is not None and exit_code != 0:
-      if isinstance(proc.args, Sequence):
-        cmd_arg = proc.args[0]
-        cmd = cmd_arg.decode() if isinstance(cmd_arg, bytes) else str(cmd_arg)
-      else:
-        cmd = str(proc.args)
-      msg = f'{cmd} failed, exit code {exit_code}'
-      logger.error(msg)
-      stdout, stderr = proc.communicate()
-      if stdout:
-        logger.error(stdout.decode())
-      if stderr:
-        logger.error(stderr.decode())
-      raise ChildProcessError(msg)
 
 
 def escape_ffmpeg_text(value: str):
@@ -189,9 +196,6 @@ def validate_env(parser: ArgumentParser):
   # Check Xvfb (needed for GLFW to create OpenGL context on Linux)
   if platform.system() == 'Linux' and shutil.which('Xvfb') is None:
     parser.exit(1, 'clip.py: error: missing Xvfb command, is it installed?\n')
-  # Check replay binary
-  if not Path(REPLAY).exists():
-    parser.exit(1, f'clip.py: error: missing {REPLAY} command, did you build openpilot yet?\n')
 
 
 def validate_output_file(output_file: str):
@@ -212,17 +216,6 @@ def validate_title(title: str):
   return title
 
 
-def wait_for_replay_ready():
-  """Wait for replay to be ready by checking VisionIPC connection."""
-  sm = SubMaster(['roadCameraState'])
-  max_wait = 60  # Wait up to 60 seconds
-  start_time = time.monotonic()
-  while time.monotonic() - start_time < max_wait:
-    sm.update(0)
-    if sm.recv_frame.get('roadCameraState', 0) > 0:
-      return True
-    time.sleep(0.1)
-  return False
 
 
 def clip(
@@ -284,12 +277,10 @@ def clip(
     out,
   ]
 
-  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(start), '--prefix', prefix]
-  if data_dir:
-    replay_cmd.extend(['--data_dir', data_dir])
-  if quality == 'low':
-    replay_cmd.append('--qcam')
-  replay_cmd.append(route.name.canonical_name)
+  if quality == 'high':
+    camera_paths = route.camera_paths()
+  else:
+    camera_paths = route.qcamera_paths()
 
   with OpenpilotPrefix(prefix, shared_download_cache=True):
     populate_car_params(lr)
@@ -321,92 +312,103 @@ def clip(
     from openpilot.system.ui.lib.application import gui_app
     from openpilot.selfdrive.ui.layouts.main import MainLayout
     from openpilot.selfdrive.ui.ui_state import ui_state
+    ui_state.sm = MockSubMaster()
 
     try:
-      # Start replay subprocess
-      with managed_proc(replay_cmd, env) as replay_proc:
-        logger.info('waiting for replay to begin (loading segments, may take a while)...')
-        if not wait_for_replay_ready():
-          raise RuntimeError('replay failed to start within timeout')
-        check_for_failure([replay_proc])
+      # Initialize Python UI in headless mode
+      logger.debug('initializing UI...')
+      # Set environment to force headless/offscreen rendering
+      os.environ.setdefault('HEADLESS', '1')
 
-        # Initialize Python UI in headless mode
-        logger.debug('initializing UI...')
-        # Set environment to force headless/offscreen rendering
-        os.environ.setdefault('HEADLESS', '1')
+      # Force render texture creation by setting scale != 1.0
+      original_scale = os.environ.pop('SCALE', None)
+      os.environ['SCALE'] = '2.0'
 
-        # Force render texture creation by setting scale != 1.0
-        original_scale = os.environ.pop('SCALE', None)
-        os.environ['SCALE'] = '2.0'
+      # Initialize window and create render texture
+      gui_app.init_window("Clip Renderer", fps=FRAMERATE)
+      if gui_app._render_texture is not None:
+        rl.unload_render_texture(gui_app._render_texture)
+      gui_app._render_texture = rl.load_render_texture(width, height)
+      rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
-        # Initialize window and create render texture
-        gui_app.init_window("Clip Renderer", fps=FRAMERATE)
-        if gui_app._render_texture is not None:
-          rl.unload_render_texture(gui_app._render_texture)
-        gui_app._render_texture = rl.load_render_texture(width, height)
-        rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      # Initialize MainLayout
+      main_layout = MainLayout()
+      main_layout.set_rect(rl.Rectangle(0, 0, width, height))
 
-        # Initialize MainLayout
-        main_layout = MainLayout()
-        main_layout.set_rect(rl.Rectangle(0, 0, width, height))
+      # Restore original scale
+      if original_scale:
+        os.environ['SCALE'] = original_scale
+      else:
+        os.environ.pop('SCALE', None)
 
-        # Restore original scale
-        if original_scale:
-          os.environ['SCALE'] = original_scale
-        else:
-          os.environ.pop('SCALE', None)
+      # Start ffmpeg with stdin pipe
+      logger.info(f'recording in progress ({duration}s)...')
+      ffmpeg_proc = Popen(ffmpeg_cmd, stdin=PIPE, env=env)
 
-        # Start ffmpeg with stdin pipe
-        logger.info(f'recording in progress ({duration}s)...')
-        ffmpeg_proc = Popen(ffmpeg_cmd, stdin=PIPE, env=env)
+      try:
+        current_segment = -1
+        fr = None
+        segment_duration_frames = 60 * FRAMERATE
 
-        try:
-          frame_count = 0
-          target_frames = int(duration * FRAMERATE)
-          frame_time = 1.0 / FRAMERATE
-          start_time = time.monotonic()
+        # Render loop
+        for i in range(int(duration * FRAMERATE)):
+          frame_idx = int(start * FRAMERATE + i)
+          segment_num = frame_idx // segment_duration_frames
 
-          # Render loop
-          while frame_count < target_frames:
-            # Update UI state (reads from replay's ZMQ)
-            ui_state.update()
+          if segment_num != current_segment:
+            current_segment = segment_num
+            segment_path = camera_paths[current_segment]
+            if segment_path is None:
+              logger.warning(f"Segment {current_segment} is missing camera footage, skipping.")
+              # Render a black frame
+              rl.begin_texture_mode(gui_app._render_texture)
+              rl.clear_background(rl.BLACK)
+              rl.end_texture_mode()
+              frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
+              assert ffmpeg_proc.stdin is not None
+              ffmpeg_proc.stdin.write(frame_data)
+              ffmpeg_proc.stdin.flush()
+              continue
 
-            # Render frame to texture
-            rl.begin_texture_mode(gui_app._render_texture)
-            rl.clear_background(rl.BLACK)
-            main_layout.render()
-            rl.end_texture_mode()
+            logger.info(f"Loading segment {current_segment}: {segment_path}")
+            fr = FrameReader(segment_path, pix_fmt='rgb24')
 
-            # Extract frame pixels
-            frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
+          frame_in_segment_idx = frame_idx % segment_duration_frames
+          frame = fr.get(frame_in_segment_idx)[0]
 
-            # Write to ffmpeg
-            assert ffmpeg_proc.stdin is not None
-            ffmpeg_proc.stdin.write(frame_data)
-            ffmpeg_proc.stdin.flush()
+          # Create fake roadCameraState message
+          msg = messaging.new_message('roadCameraState')
+          msg.roadCameraState.image = frame.tobytes()
+          msg.roadCameraState.frameId = frame_idx
+          ui_state.sm['roadCameraState'] = msg
 
-            frame_count += 1
+          # Render frame to texture
+          rl.begin_texture_mode(gui_app._render_texture)
+          rl.clear_background(rl.BLACK)
+          main_layout.render()
+          rl.end_texture_mode()
 
-            # Rate limiting to match FRAMERATE
-            next_frame_time = (frame_count + 1) * frame_time
-            sleep_time = next_frame_time - (time.monotonic() - start_time)
-            if sleep_time > 0:
-              time.sleep(sleep_time)
+          # Extract frame pixels
+          frame_data = extract_frame_from_texture(gui_app._render_texture, width, height)
 
-          # Cleanup
+          # Write to ffmpeg
           assert ffmpeg_proc.stdin is not None
-          ffmpeg_proc.stdin.close()
-          ffmpeg_proc.wait()
+          ffmpeg_proc.stdin.write(frame_data)
+          ffmpeg_proc.stdin.flush()
 
-          if ffmpeg_proc.returncode != 0:
-            raise ChildProcessError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
+        # Cleanup
+        assert ffmpeg_proc.stdin is not None
+        ffmpeg_proc.stdin.close()
+        ffmpeg_proc.wait()
 
-        finally:
-          # Cleanup UI
-          gui_app.close()
-          check_for_failure([replay_proc])
+        if ffmpeg_proc.returncode != 0:
+          raise RuntimeError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
 
-        logger.info(f'recording complete: {Path(out).resolve()}')
+      finally:
+        # Cleanup UI
+        gui_app.close()
+
+      logger.info(f'recording complete: {Path(out).resolve()}')
     finally:
       # Cleanup Xvfb and restore DISPLAY
       if xvfb_proc is not None:
