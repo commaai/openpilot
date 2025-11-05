@@ -8,6 +8,7 @@ from openpilot.system.ui.lib.multilang import tr, trn
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
+from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.scroller import Scroller
 
 # TODO: remove this. updater fails to respond on startup if time is not correct
@@ -44,32 +45,32 @@ class SoftwareLayout(Widget):
   def __init__(self):
     super().__init__()
 
-    self._onroad_label = ListItem(title=tr("Updates are only downloaded while the car is off."))
-    self._version_item = text_item(tr("Current Version"), ui_state.params.get("UpdaterCurrentDescription") or "")
-    self._download_btn = button_item(tr("Download"), tr("CHECK"), callback=self._on_download_update)
+    self._onroad_label = ListItem(lambda: tr("Updates are only downloaded while the car is off."))
+    self._version_item = text_item(lambda: tr("Current Version"), ui_state.params.get("UpdaterCurrentDescription") or "")
+    self._download_btn = button_item(lambda: tr("Download"), lambda: tr("CHECK"), callback=self._on_download_update)
 
     # Install button is initially hidden
-    self._install_btn = button_item(tr("Install Update"), tr("INSTALL"), callback=self._on_install_update)
+    self._install_btn = button_item(lambda: tr("Install Update"), lambda: tr("INSTALL"), callback=self._on_install_update)
     self._install_btn.set_visible(False)
 
     # Track waiting-for-updater transition to avoid brief re-enable while still idle
     self._waiting_for_updater = False
     self._waiting_start_ts: float = 0.0
 
-    items = self._init_items()
-    self._scroller = Scroller(items, line_separator=True, spacing=0)
+    # Branch switcher
+    self._branch_btn = button_item(lambda: tr("Target Branch"), lambda: tr("SELECT"), callback=self._on_select_branch)
+    self._branch_btn.set_visible(not ui_state.params.get_bool("IsTestedBranch"))
+    self._branch_btn.action_item.set_value(ui_state.params.get("UpdaterTargetBranch") or "")
+    self._branch_dialog: MultiOptionDialog | None = None
 
-  def _init_items(self):
-    items = [
+    self._scroller = Scroller([
       self._onroad_label,
       self._version_item,
       self._download_btn,
       self._install_btn,
-      # TODO: implement branch switching
-      # button_item("Target Branch", "SELECT", callback=self._on_select_branch),
-      button_item("Uninstall", tr("UNINSTALL"), callback=self._on_uninstall),
-    ]
-    return items
+      self._branch_btn,
+      button_item(lambda: tr("Uninstall"), lambda: tr("UNINSTALL"), callback=self._on_uninstall),
+    ], line_separator=True, spacing=0)
 
   def show_event(self):
     self._scroller.show_event()
@@ -123,6 +124,10 @@ class SoftwareLayout(Widget):
       # Only enable if we're not waiting for updater to flip out of idle
       self._download_btn.action_item.set_enabled(not self._waiting_for_updater)
 
+    # Update target branch button value
+    current_branch = ui_state.params.get("UpdaterTargetBranch") or ""
+    self._branch_btn.action_item.set_value(current_branch)
+
     # Update install button
     self._install_btn.set_visible(ui_state.is_offroad() and update_available)
     if update_available:
@@ -163,4 +168,27 @@ class SoftwareLayout(Widget):
     self._install_btn.action_item.set_enabled(False)
     ui_state.params.put_bool("DoReboot", True)
 
-  def _on_select_branch(self): pass
+  def _on_select_branch(self):
+    # Get available branches and order
+    current_git_branch = ui_state.params.get("GitBranch") or ""
+    branches_str = ui_state.params.get("UpdaterAvailableBranches") or ""
+    branches = [b for b in branches_str.split(",") if b]
+
+    for b in [current_git_branch, "devel-staging", "devel", "nightly", "nightly-dev", "master"]:
+      if b in branches:
+        branches.remove(b)
+        branches.insert(0, b)
+
+    current_target = ui_state.params.get("UpdaterTargetBranch") or ""
+    self._branch_dialog = MultiOptionDialog(tr("Select a branch"), branches, current_target)
+
+    def handle_selection(result):
+      # Confirmed selection
+      if result == DialogResult.CONFIRM and self._branch_dialog is not None and self._branch_dialog.selection:
+        selection = self._branch_dialog.selection
+        ui_state.params.put("UpdaterTargetBranch", selection)
+        self._branch_btn.action_item.set_value(selection)
+        os.system("pkill -SIGUSR1 -f system.updated.updated")
+      self._branch_dialog = None
+
+    gui_app.set_modal_overlay(self._branch_dialog, callback=handle_selection)

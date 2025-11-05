@@ -36,7 +36,7 @@ a.out
 *.class
 *.pyxbldc
 *.vcd
-*.qm
+*.mo
 *_pyx.cpp
 config.json
 clcache

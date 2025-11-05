@@ -110,47 +110,49 @@ class AdvancedNetworkSettings(Widget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
     self._wifi_manager = wifi_manager
-    self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
+    self._wifi_manager.add_callbacks(networks_updated=self._on_network_updated)
     self._params = Params()
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
     # Tethering
     self._tethering_action = ToggleAction(initial_state=False)
-    tethering_btn = ListItem(title=tr("Enable Tethering"), action_item=self._tethering_action, callback=self._toggle_tethering)
+    tethering_btn = ListItem(lambda: tr("Enable Tethering"), action_item=self._tethering_action, callback=self._toggle_tethering)
 
     # Edit tethering password
-    self._tethering_password_action = ButtonAction(text=tr("EDIT"))
-    tethering_password_btn = ListItem(title=tr("Tethering Password"), action_item=self._tethering_password_action, callback=self._edit_tethering_password)
+    self._tethering_password_action = ButtonAction(lambda: tr("EDIT"))
+    tethering_password_btn = ListItem(lambda: tr("Tethering Password"), action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
     # Roaming toggle
     roaming_enabled = self._params.get_bool("GsmRoaming")
     self._roaming_action = ToggleAction(initial_state=roaming_enabled)
-    self._roaming_btn = ListItem(title=tr("Enable Roaming"), action_item=self._roaming_action, callback=self._toggle_roaming)
+    self._roaming_btn = ListItem(lambda: tr("Enable Roaming"), action_item=self._roaming_action, callback=self._toggle_roaming)
 
     # Cellular metered toggle
     cellular_metered = self._params.get_bool("GsmMetered")
     self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
-    self._cellular_metered_btn = ListItem(title=tr("Cellular Metered"), description=tr("Prevent large data uploads when on a metered cellular connection"),
+    self._cellular_metered_btn = ListItem(lambda: tr("Cellular Metered"),
+                                          description=lambda: tr("Prevent large data uploads when on a metered cellular connection"),
                                           action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
 
     # APN setting
-    self._apn_btn = button_item(tr("APN Setting"), tr("EDIT"), callback=self._edit_apn)
+    self._apn_btn = button_item(lambda: tr("APN Setting"), lambda: tr("EDIT"), callback=self._edit_apn)
 
     # Wi-Fi metered toggle
-    self._wifi_metered_action = MultipleButtonAction([tr("default"), tr("metered"), tr("unmetered")], 255, 0, callback=self._toggle_wifi_metered)
-    wifi_metered_btn = ListItem(title=tr("Wi-Fi Network Metered"), description=tr("Prevent large data uploads when on a metered Wi-Fi connection"),
+    self._wifi_metered_action = MultipleButtonAction([lambda: tr("default"), lambda: tr("metered"), lambda: tr("unmetered")], 255, 0,
+                                                     callback=self._toggle_wifi_metered)
+    wifi_metered_btn = ListItem(lambda: tr("Wi-Fi Network Metered"), description=lambda: tr("Prevent large data uploads when on a metered Wi-Fi connection"),
                                 action_item=self._wifi_metered_action)
 
     items: list[Widget] = [
       tethering_btn,
       tethering_password_btn,
-      text_item(tr("IP Address"), lambda: self._wifi_manager.ipv4_address),
+      text_item(lambda: tr("IP Address"), lambda: self._wifi_manager.ipv4_address),
       self._roaming_btn,
       self._apn_btn,
       self._cellular_metered_btn,
       wifi_metered_btn,
-      button_item(tr("Hidden Network"), tr("CONNECT"), callback=self._connect_to_hidden_network),
+      button_item(lambda: tr("Hidden Network"), lambda: tr("CONNECT"), callback=self._connect_to_hidden_network),
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
@@ -173,14 +175,14 @@ class AdvancedNetworkSettings(Widget):
       self._wifi_metered_action.selected_button = int(metered) if metered in (MeteredType.UNKNOWN, MeteredType.YES, MeteredType.NO) else 0
 
   def _toggle_tethering(self):
-    checked = self._tethering_action.state
+    checked = self._tethering_action.get_state()
     self._tethering_action.set_enabled(False)
     if checked:
       self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
 
   def _toggle_roaming(self):
-    roaming_state = self._roaming_action.state
+    roaming_state = self._roaming_action.get_state()
     self._params.put_bool("GsmRoaming", roaming_state)
     self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn") or "", self._params.get_bool("GsmMetered"))
 
@@ -204,7 +206,7 @@ class AdvancedNetworkSettings(Widget):
     gui_app.set_modal_overlay(self._keyboard, update_apn)
 
   def _toggle_cellular_metered(self):
-    metered = self._cellular_metered_action.state
+    metered = self._cellular_metered_action.get_state()
     self._params.put_bool("GsmMetered", metered)
     self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), self._params.get("GsmApn") or "", metered)
 
@@ -282,9 +284,8 @@ class WifiManagerUI(Widget):
     self._networks: list[Network] = []
     self._networks_buttons: dict[str, Button] = {}
     self._forget_networks_buttons: dict[str, Button] = {}
-    self._confirm_dialog = ConfirmDialog("", tr("Forget"), tr("Cancel"))
 
-    self._wifi_manager.set_callbacks(need_auth=self._on_need_auth,
+    self._wifi_manager.add_callbacks(need_auth=self._on_need_auth,
                                      activated=self._on_activated,
                                      forgotten=self._on_forgotten,
                                      networks_updated=self._on_network_updated,
@@ -314,9 +315,10 @@ class WifiManagerUI(Widget):
       self.keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
       gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
     elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
-      self._confirm_dialog.set_text(tr("Forget Wi-Fi Network \"{}\"?").format(self._state_network.ssid))
-      self._confirm_dialog.reset()
-      gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
+      confirm_dialog = ConfirmDialog("", tr("Forget"), tr("Cancel"))
+      confirm_dialog.set_text(tr("Forget Wi-Fi Network \"{}\"?").format(self._state_network.ssid))
+      confirm_dialog.reset()
+      gui_app.set_modal_overlay(confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
     else:
       self._draw_network_list(rect)
 

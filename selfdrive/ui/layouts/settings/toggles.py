@@ -5,7 +5,7 @@ from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_i
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -13,24 +13,24 @@ PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
 # Description constants
 DESCRIPTIONS = {
-  "OpenpilotEnabledToggle": tr(
+  "OpenpilotEnabledToggle": tr_noop(
     "Use the openpilot system for adaptive cruise control and lane keep driver assistance. " +
     "Your attention is required at all times to use this feature."
   ),
-  "DisengageOnAccelerator": tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
-  "LongitudinalPersonality": tr(
+  "DisengageOnAccelerator": tr_noop("When enabled, pressing the accelerator pedal will disengage openpilot."),
+  "LongitudinalPersonality": tr_noop(
     "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
     "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with " +
     "your steering wheel distance button."
   ),
-  "IsLdwEnabled": tr(
+  "IsLdwEnabled": tr_noop(
     "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
     "without a turn signal activated while driving over 31 mph (50 km/h)."
   ),
-  "AlwaysOnDM": tr("Enable driver monitoring even when openpilot is not engaged."),
-  'RecordFront': tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
-  "IsMetric": tr("Display speed in km/h instead of mph."),
-  "RecordAudio": tr("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
+  "AlwaysOnDM": tr_noop("Enable driver monitoring even when openpilot is not engaged."),
+  'RecordFront': tr_noop("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
+  "IsMetric": tr_noop("Display speed in km/h instead of mph."),
+  "RecordAudio": tr_noop("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
 }
 
 
@@ -43,49 +43,49 @@ class TogglesLayout(Widget):
     # param, title, desc, icon, needs_restart
     self._toggle_defs = {
       "OpenpilotEnabledToggle": (
-        tr("Enable openpilot"),
+        lambda: tr("Enable openpilot"),
         DESCRIPTIONS["OpenpilotEnabledToggle"],
         "chffr_wheel.png",
         True,
       ),
       "ExperimentalMode": (
-        tr("Experimental Mode"),
+        lambda: tr("Experimental Mode"),
         "",
         "experimental_white.png",
         False,
       ),
       "DisengageOnAccelerator": (
-        tr("Disengage on Accelerator Pedal"),
+        lambda: tr("Disengage on Accelerator Pedal"),
         DESCRIPTIONS["DisengageOnAccelerator"],
         "disengage_on_accelerator.png",
         False,
       ),
       "IsLdwEnabled": (
-        tr("Enable Lane Departure Warnings"),
+        lambda: tr("Enable Lane Departure Warnings"),
         DESCRIPTIONS["IsLdwEnabled"],
         "warning.png",
         False,
       ),
       "AlwaysOnDM": (
-        tr("Always-On Driver Monitoring"),
+        lambda: tr("Always-On Driver Monitoring"),
         DESCRIPTIONS["AlwaysOnDM"],
         "monitoring.png",
         False,
       ),
       "RecordFront": (
-        tr("Record and Upload Driver Camera"),
+        lambda: tr("Record and Upload Driver Camera"),
         DESCRIPTIONS["RecordFront"],
         "monitoring.png",
         True,
       ),
       "RecordAudio": (
-        tr("Record and Upload Microphone Audio"),
+        lambda: tr("Record and Upload Microphone Audio"),
         DESCRIPTIONS["RecordAudio"],
         "microphone.png",
         True,
       ),
       "IsMetric": (
-        tr("Use Metric System"),
+        lambda: tr("Use Metric System"),
         DESCRIPTIONS["IsMetric"],
         "metric.png",
         False,
@@ -93,9 +93,9 @@ class TogglesLayout(Widget):
     }
 
     self._long_personality_setting = multiple_button_item(
-      tr("Driving Personality"),
-      DESCRIPTIONS["LongitudinalPersonality"],
-      buttons=[tr("Aggressive"), tr("Standard"), tr("Relaxed")],
+      lambda: tr("Driving Personality"),
+      lambda: tr(DESCRIPTIONS["LongitudinalPersonality"]),
+      buttons=[lambda: tr("Aggressive"), lambda: tr("Standard"), lambda: tr("Relaxed")],
       button_width=255,
       callback=self._set_longitudinal_personality,
       selected_index=self._params.get("LongitudinalPersonality", return_default=True),
@@ -119,8 +119,11 @@ class TogglesLayout(Widget):
         locked = False
       toggle.action_item.set_enabled(not locked)
 
+      # Make description callable for live translation
+      additional_desc = ""
       if needs_restart and not locked:
-        toggle.set_description(toggle.description + tr(" Changing this setting will restart openpilot if the car is powered on."))
+        additional_desc = tr("Changing this setting will restart openpilot if the car is powered on.")
+      toggle.set_description(lambda og_desc=toggle.description, add_desc=additional_desc: tr(og_desc) + (" " + tr(add_desc) if add_desc else ""))
 
       # track for engaged state updates
       if locked:

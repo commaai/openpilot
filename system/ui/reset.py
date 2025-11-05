@@ -126,11 +126,10 @@ def main():
   if mode == ResetMode.FORMAT:
     reset.start_reset()
 
-  for showing_dialog in gui_app.render():
-    if showing_dialog:
-      continue
-    if not reset.render(rl.Rectangle(45, 200, gui_app.width - 90, gui_app.height - 245)):
-      break
+  for should_render in gui_app.render():
+    if should_render:
+      if not reset.render(rl.Rectangle(45, 200, gui_app.width - 90, gui_app.height - 245)):
+        break
 
 
 if __name__ == "__main__":

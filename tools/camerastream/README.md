@@ -39,7 +39,7 @@ Decode the stream with `compressed_vipc.py`:
 
 To actually display the stream, run `watch3` in separate terminal:
 
-```cd ~/openpilot/selfdrive/ui/ && ./watch3```
+```cd ~/openpilot/selfdrive/ui/ && ./watch3.py```
 
 ## compressed_vipc.py usage
 ```
@@ -62,5 +62,5 @@ options:
 ## Example:
 ```
 cd ~/openpilot/tools/camerastream && ./compressed_vipc.py comma-ffffffff --cams 0
-cd ~/openpilot/selfdrive/ui/ && ./watch3
+cd ~/openpilot/selfdrive/ui/ && ./watch3.py
 ```

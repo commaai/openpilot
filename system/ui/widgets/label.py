@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from itertools import zip_longest
 from typing import Union
 import pyray as rl
@@ -10,6 +11,13 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 
 ICON_PADDING = 15
+
+
+# TODO: make this common
+def _resolve_value(value, default=""):
+  if callable(value):
+    return value()
+  return value if value is not None else default
 
 
 # TODO: This should be a Widget class
@@ -29,17 +37,17 @@ def gui_label(
 
   # Elide text to fit within the rectangle
   if elide_right and text_size.x > rect.width:
-    ellipsis = "..."
+    _ellipsis = "..."
     left, right = 0, len(text)
     while left < right:
       mid = (left + right) // 2
-      candidate = text[:mid] + ellipsis
+      candidate = text[:mid] + _ellipsis
       candidate_size = measure_text_cached(font, candidate, font_size)
       if candidate_size.x <= rect.width:
         left = mid + 1
       else:
         right = mid
-    display_text = text[: left - 1] + ellipsis if left > 0 else ellipsis
+    display_text = text[: left - 1] + _ellipsis if left > 0 else _ellipsis
     text_size = measure_text_cached(font, display_text, font_size)
 
   # Calculate horizontal position based on alignment
@@ -90,7 +98,7 @@ def gui_text_box(
 # Non-interactive text area. Can render emojis and an optional specified icon.
 class Label(Widget):
   def __init__(self,
-               text: str,
+               text: str | Callable[[], str],
                font_size: int = DEFAULT_TEXT_SIZE,
                font_weight: FontWeight = FontWeight.NORMAL,
                text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
@@ -98,6 +106,7 @@ class Label(Widget):
                text_padding: int = 0,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
                icon: Union[rl.Texture, None] = None,  # noqa: UP007
+               elide_right: bool = False,
                ):
 
     super().__init__()
@@ -109,6 +118,7 @@ class Label(Widget):
     self._text_padding = text_padding
     self._text_color = text_color
     self._icon = icon
+    self._elide_right = elide_right
 
     self._text = text
     self.set_text(text)
@@ -124,21 +134,49 @@ class Label(Widget):
     self._font_size = size
     self._update_text(self._text)
 
-  def _update_layout_rects(self):
-    self._update_text(self._text)
-
   def _update_text(self, text):
     self._emojis = []
     self._text_size = []
-    self._text_wrapped = wrap_text(self._font, text, self._font_size, round(self._rect.width - (self._text_padding * 2)))
+    text = _resolve_value(text)
+
+    if self._elide_right:
+      display_text = text
+
+      # Elide text to fit within the rectangle
+      text_size = measure_text_cached(self._font, text, self._font_size)
+      content_width = self._rect.width - self._text_padding * 2
+      if self._icon:
+        content_width -= self._icon.width + ICON_PADDING
+      if text_size.x > content_width:
+        _ellipsis = "..."
+        left, right = 0, len(text)
+        while left < right:
+          mid = (left + right) // 2
+          candidate = text[:mid] + _ellipsis
+          candidate_size = measure_text_cached(self._font, candidate, self._font_size)
+          if candidate_size.x <= content_width:
+            left = mid + 1
+          else:
+            right = mid
+        display_text = text[: left - 1] + _ellipsis if left > 0 else _ellipsis
+
+      self._text_wrapped = [display_text]
+    else:
+      self._text_wrapped = wrap_text(self._font, text, self._font_size, round(self._rect.width - (self._text_padding * 2)))
+
     for t in self._text_wrapped:
       self._emojis.append(find_emoji(t))
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
   def _render(self, _):
+    # Text can be a callable
+    # TODO: cache until text changed
+    self._update_text(self._text)
+
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
     if self._text_alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
-      text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - text_size.y) // 2))
+      total_text_height = sum(ts.y for ts in self._text_size) or self._font_size * FONT_SCALE
+      text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - total_text_height) // 2))
     else:
       text_pos = rl.Vector2(self._rect.x, self._rect.y)
 

@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  selfdrive_tests:
-    uses: commaai/openpilot/.github/workflows/selfdrive_tests.yaml@master
+  tests:
+    uses: commaai/openpilot/.github/workflows/tests.yaml@master
     with:
       run_number: ${{ inputs.run_number }}

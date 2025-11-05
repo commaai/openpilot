@@ -78,7 +78,7 @@ class Keyboard(Widget):
     self._backspace_last_repeat: float = 0.0
 
     self._render_return_status = -1
-    self._cancel_button = Button(tr("Cancel"), self._cancel_button_callback)
+    self._cancel_button = Button(lambda: tr("Cancel"), self._cancel_button_callback)
 
     self._eye_button = Button("", self._eye_button_callback, button_style=ButtonStyle.TRANSPARENT)
 
@@ -251,6 +251,10 @@ class Keyboard(Widget):
     if min_text_size is not None:
       self._min_text_size = min_text_size
     self._render_return_status = -1
+    self._last_shift_press_time = 0
+    self._backspace_pressed = False
+    self._backspace_press_time = 0.0
+    self._backspace_last_repeat = 0.0
     self.clear()
 
 

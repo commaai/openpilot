@@ -47,7 +47,7 @@ BUTTON_DISABLED_TEXT_COLORS = {
 BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.NORMAL: rl.Color(51, 51, 51, 255),
   ButtonStyle.PRIMARY: rl.Color(70, 91, 234, 255),
-  ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
+  ButtonStyle.DANGER: rl.Color(226, 44, 44, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
   ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
   ButtonStyle.TRANSPARENT_WHITE_BORDER: rl.BLACK,
@@ -61,7 +61,7 @@ BUTTON_BACKGROUND_COLORS = {
 BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.NORMAL: rl.Color(74, 74, 74, 255),
   ButtonStyle.PRIMARY: rl.Color(48, 73, 244, 255),
-  ButtonStyle.DANGER: rl.Color(204, 0, 0, 255),
+  ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
   ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
   ButtonStyle.TRANSPARENT_WHITE_BORDER: rl.BLANK,
@@ -79,7 +79,7 @@ BUTTON_DISABLED_BACKGROUND_COLORS = {
 
 class Button(Widget):
   def __init__(self,
-               text: str,
+               text: str | Callable[[], str],
                click_callback: Callable[[], None] | None = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
                font_weight: FontWeight = FontWeight.MEDIUM,
@@ -88,6 +88,7 @@ class Button(Widget):
                text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                text_padding: int = 20,
                icon=None,
+               elide_right: bool = False,
                multi_touch: bool = False,
                ):
 
@@ -97,7 +98,7 @@ class Button(Widget):
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
 
     self._label = Label(text, font_size, font_weight, text_alignment, text_padding=text_padding,
-                        text_color=BUTTON_TEXT_COLOR[self._button_style], icon=icon)
+                        text_color=BUTTON_TEXT_COLOR[self._button_style], icon=icon, elide_right=elide_right)
 
     self._click_callback = click_callback
     self._multi_touch = multi_touch
@@ -168,3 +169,15 @@ class ButtonRadio(Button):
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
       icon_x = self._rect.x + self._rect.width - self._icon.width - self._text_padding - ICON_PADDING
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE if self.enabled else rl.Color(255, 255, 255, 100))
+
+
+class IconButton(Widget):
+  def __init__(self, texture: rl.Texture):
+    super().__init__()
+    self._texture = texture
+
+  def _render(self, rect: rl.Rectangle):
+    color = rl.Color(180, 180, 180, 150) if self.is_pressed else rl.WHITE
+    draw_x = rect.x + (rect.width - self._texture.width) / 2
+    draw_y = rect.y + (rect.height - self._texture.height) / 2
+    rl.draw_texture(self._texture, int(draw_x), int(draw_y), color)

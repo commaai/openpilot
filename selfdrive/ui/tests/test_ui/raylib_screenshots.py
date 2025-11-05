@@ -25,7 +25,10 @@ AlertStatus = log.SelfdriveState.AlertStatus
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
-UI_DELAY = 0.2
+UI_DELAY = 0.5
+
+BRANCH_NAME = "this-is-a-really-super-mega-ultra-max-extreme-ultimate-long-branch-name"
+VERSION = f"0.10.1 / {BRANCH_NAME} / 7864838 / Oct 03"
 
 # Offroad alerts to test
 OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
@@ -34,6 +37,7 @@ OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
 def put_update_params(params: Params):
   params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
   params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+  params.put("UpdaterTargetBranch", BRANCH_NAME)
 
 
 def setup_homescreen(click, pm: PubMaster):
@@ -87,6 +91,15 @@ def setup_settings_software_download(click, pm: PubMaster):
 def setup_settings_software_release_notes(click, pm: PubMaster):
   setup_settings_software(click, pm)
   click(588, 110)  # expand description for current version
+
+
+def setup_settings_software_branch_switcher(click, pm: PubMaster):
+  setup_settings_software(click, pm)
+  params = Params()
+  params.put("UpdaterAvailableBranches", f"master,nightly,release,{BRANCH_NAME}")
+  params.put("GitBranch", BRANCH_NAME)  # should be on top
+  params.put("UpdaterTargetBranch", "nightly")  # should be selected
+  click(1984, 449)
 
 
 def setup_settings_firehose(click, pm: PubMaster):
@@ -200,68 +213,38 @@ def setup_onroad_sidebar(click, pm: PubMaster):
   click(100, 100)  # open sidebar
 
 
-def setup_onroad_small_alert(click, pm: PubMaster):
+def setup_onroad_alert(click, pm: PubMaster, size: log.SelfdriveState.AlertSize, text1: str, text2: str, status: log.SelfdriveState.AlertStatus):
   setup_onroad(click, pm)
   alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.small
-  alert.selfdriveState.alertText1 = "Small Alert"
-  alert.selfdriveState.alertText2 = "This is a small alert"
-  alert.selfdriveState.alertStatus = AlertStatus.normal
+  ss = alert.selfdriveState
+  ss.alertSize = size
+  ss.alertText1 = text1
+  ss.alertText2 = text2
+  ss.alertStatus = status
   for _ in range(5):
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
     time.sleep(0.05)
+
+
+def setup_onroad_small_alert(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, AlertSize.small, "Small Alert", "This is a small alert", AlertStatus.normal)
 
 
 def setup_onroad_medium_alert(click, pm: PubMaster):
-  setup_onroad(click, pm)
-  alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.mid
-  alert.selfdriveState.alertText1 = "Medium Alert"
-  alert.selfdriveState.alertText2 = "This is a medium alert"
-  alert.selfdriveState.alertStatus = AlertStatus.userPrompt
-  for _ in range(5):
-    pm.send('selfdriveState', alert)
-    alert.clear_write_flag()
-    time.sleep(0.05)
+  setup_onroad_alert(click, pm, AlertSize.mid, "Medium Alert", "This is a medium alert", AlertStatus.userPrompt)
 
 
 def setup_onroad_full_alert(click, pm: PubMaster):
-  setup_onroad(click, pm)
-  alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.full
-  alert.selfdriveState.alertText1 = "DISENGAGE IMMEDIATELY"
-  alert.selfdriveState.alertText2 = "Driver Distracted"
-  alert.selfdriveState.alertStatus = AlertStatus.critical
-  for _ in range(5):
-    pm.send('selfdriveState', alert)
-    alert.clear_write_flag()
-    time.sleep(0.05)
+  setup_onroad_alert(click, pm, AlertSize.full, "DISENGAGE IMMEDIATELY", "Driver Distracted", AlertStatus.critical)
 
 
 def setup_onroad_full_alert_multiline(click, pm: PubMaster):
-  setup_onroad(click, pm)
-  alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.full
-  alert.selfdriveState.alertText1 = "Reverse\nGear"
-  alert.selfdriveState.alertStatus = AlertStatus.normal
-  for _ in range(5):
-    pm.send('selfdriveState', alert)
-    alert.clear_write_flag()
-    time.sleep(0.05)
+  setup_onroad_alert(click, pm, AlertSize.full, "Reverse\nGear", "", AlertStatus.normal)
 
 
 def setup_onroad_full_alert_long_text(click, pm: PubMaster):
-  setup_onroad(click, pm)
-  alert = messaging.new_message('selfdriveState')
-  alert.selfdriveState.alertSize = AlertSize.full
-  alert.selfdriveState.alertText1 = "TAKE CONTROL IMMEDIATELY"
-  alert.selfdriveState.alertText2 = "Calibration Invalid: Remount Device & Recalibrate"
-  alert.selfdriveState.alertStatus = AlertStatus.userPrompt
-  for _ in range(5):
-    pm.send('selfdriveState', alert)
-    alert.clear_write_flag()
-    time.sleep(0.05)
+  setup_onroad_alert(click, pm, AlertSize.full, "TAKE CONTROL IMMEDIATELY", "Calibration Invalid: Remount Device & Recalibrate", AlertStatus.userPrompt)
 
 
 CASES = {
@@ -269,6 +252,7 @@ CASES = {
   "homescreen_paired": setup_homescreen,
   "homescreen_prime": setup_homescreen,
   "homescreen_update_available": setup_homescreen_update_available,
+  "homescreen_unifont": setup_homescreen,
   "settings_device": setup_settings,
   "settings_network": setup_settings_network,
   "settings_network_advanced": setup_settings_network_advanced,
@@ -276,6 +260,7 @@ CASES = {
   "settings_software": setup_settings_software,
   "settings_software_download": setup_settings_software_download,
   "settings_software_release_notes": setup_settings_software_release_notes,
+  "settings_software_branch_switcher": setup_settings_software_branch_switcher,
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard_with_text,
@@ -349,14 +334,15 @@ def create_screenshots():
       params.put("DongleId", "123456789012345")
 
       # Set branch name
-      description = "0.10.1 / this-is-a-really-super-mega-long-branch-name / 7864838 / Oct 03"
-      params.put("UpdaterCurrentDescription", description)
-      params.put("UpdaterNewDescription", description)
+      params.put("UpdaterCurrentDescription", VERSION)
+      params.put("UpdaterNewDescription", VERSION)
 
       if name == "homescreen_paired":
         params.put("PrimeType", 0)  # NONE
       elif name == "homescreen_prime":
         params.put("PrimeType", 2)  # LITE
+      elif name == "homescreen_unifont":
+        params.put("LanguageSetting", "zh-CHT")  # Traditional Chinese
 
       t.test_ui(name, setup)
 

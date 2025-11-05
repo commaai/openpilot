@@ -1,7 +1,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
-#include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
