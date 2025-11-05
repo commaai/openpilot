@@ -410,7 +410,6 @@ def clip(
 
       try:
         # Build message lookup by timestamp for efficient access
-        logger.info('indexing log messages...')
         all_msgs = []
         for log_path in route.log_paths():
           if log_path is not None:
@@ -423,7 +422,6 @@ def clip(
 
         # Determine services present in the log
         services = set(m.which() for m in all_msgs)
-        logger.info(f"Services found in logs: {sorted(list(services))}")
         
         # Always include services the UI expects, even if not in log
         services.add('selfdriveState')
@@ -440,39 +438,17 @@ def clip(
         start_mono_time = all_msgs[0].logMonoTime
 
         # filter and sort messages by time
-        logger.info(f"Filtering {len(all_msgs)} messages for time range {start}s to {end}s")
         start_filter_mono_time = start_mono_time + start * 1e9
         end_filter_mono_time = start_mono_time + end * 1e9
-        logger.info(f"Time filter range (monotonic): {start_filter_mono_time} to {end_filter_mono_time}")
 
         messages_by_time = sorted([(msg.logMonoTime, msg) for msg in all_msgs if start_filter_mono_time <= msg.logMonoTime <= end_filter_mono_time],\
                                   key=lambda x: x[0])
-        logger.info(f"Found {len(messages_by_time)} messages in the time range.")
 
-        # --- DEBUG: Inspect liveCalibration messages ---
+        # Check for liveCalibration and modelV2 messages
         calib_msgs = [m for t, m in messages_by_time if m.which() == 'liveCalibration']
-        logger.info(f"Found {len(calib_msgs)} liveCalibration messages in the time range.")
-        if calib_msgs:
-            logger.info("--- Checking `valid` and `height` data of first 5 liveCalibration messages ---")
-            for i, msg in enumerate(calib_msgs[:5]):
-                calib_height = msg.liveCalibration.height if msg.liveCalibration else 'N/A'
-                logger.info(f"  liveCalibration message {i}: valid={msg.valid}, height={calib_height}")
-            logger.info("--------------------------------------------------------------------------")
-        # --- END DEBUG ---
-
-        # --- DEBUG: Inspect modelV2 messages ---
         model_msgs = [m for t, m in messages_by_time if m.which() == 'modelV2']
-        logger.info(f"Found {len(model_msgs)} modelV2 messages in the time range.")
-        if model_msgs:
-            logger.info("--- Checking `valid` and `position` data of first 5 modelV2 messages ---")
-            for i, msg in enumerate(model_msgs[:5]):
-                pos_len = len(msg.modelV2.position.x) if msg.modelV2 and msg.modelV2.position else 0
-                logger.info(f"  modelV2 message {i}: valid={msg.valid}, position_len={pos_len}")
-            logger.info("--------------------------------------------------------------------")
-        # --- END DEBUG ---
 
         camera_messages = [m for t, m in messages_by_time if m.which() == 'roadCameraState']
-        logger.info(f"Found {len(camera_messages)} roadCameraState messages to process.")
 
         if not camera_messages:
           raise RuntimeError(f'no roadCameraState messages found in time range {start}-{end}s')
@@ -494,21 +470,16 @@ def clip(
             if last_msg:
                 prime_msgs.append(last_msg)
 
-        # Debug: Check if carParams has longitudinal control enabled
+        # Check if carParams has longitudinal control enabled
         car_params_msg = next((m for m in reversed(all_msgs) if m.which() == 'carParams' and m.logMonoTime < prime_mono_time), None)
         if car_params_msg:
             cp = car_params_msg.carParams
-            logger.info(f"CarParams longitudinal control: {cp.openpilotLongitudinalControl}")
-            logger.info(f"Car fingerprint: {cp.carFingerprint}")
-        else:
-            logger.warning("No carParams message found for longitudinal control check")
 
         if prime_msgs:
             # Feed these last-known-good messages to the SubMaster to set the initial state
             ui_state.sm.update_msgs(prime_mono_time / 1e9, prime_msgs)
 
         # Start ffmpeg with stdin pipe
-        logger.info(f'recording in progress ({duration}s)...')
         ffmpeg_proc = Popen(ffmpeg_cmd, stdin=PIPE, env=env)
 
         current_segment = -1
@@ -530,12 +501,6 @@ def clip(
             msg_idx += 1
 
           if messages_to_feed:
-            # Check if carParams with longitudinal control info is being updated
-            for msg in messages_to_feed:
-              if msg.which() == 'carParams':
-                cp = msg.carParams
-                if hasattr(cp, 'openpilotLongitudinalControl'):
-                  logger.debug(f"[Frame {i}] CarParams longitudinal control updated: {cp.openpilotLongitudinalControl}, vEgo={ui_state.sm['carState'].vEgo if ui_state.sm.valid['carState'] else 'N/A'}")
             ui_state.sm.update_msgs(frame_mono_time / 1e9, messages_to_feed)
 
           ui_state._update_state() # Process new messages
@@ -551,15 +516,12 @@ def clip(
             current_segment = segment_num
             segment_path = camera_paths[current_segment]
             if segment_path is None:
-              logger.warning(f"Segment {current_segment} is missing camera footage, skipping.")
               continue
-            logger.info(f"Loading segment {current_segment}: {segment_path}")
             fr = FrameReader(segment_path, pix_fmt='rgb24')
 
           frame_in_segment_idx = frame_id % (FRAMERATE * 60)
           frame_np = fr.get(frame_in_segment_idx)
           if frame_np is None:
-            logger.warning(f"Failed to get frame {frame_id}, skipping")
             continue
 
           # Convert numpy frame to pyray Image/Texture using actual camera frame dimensions
@@ -672,54 +634,6 @@ def clip(
 
           # End clipping region
           rl.end_scissor_mode()
-
-          # --- DEBUG: Inspect ModelRenderer internal state ---
-          if i % 20 == 0: # Log once per second
-              renderer = road_view.model_renderer
-              raw_size = renderer._path.raw_points.size
-              proj_size = renderer._path.projected_points.size
-              transform_flat = renderer._car_space_transform.flatten()
-              
-              # Debug lead car indicators
-              sm = ui_state.sm
-              radar_state = sm['radarState'] if sm.valid['radarState'] else None
-              lead_one = radar_state.leadOne if radar_state else None
-              has_longitudinal_control = renderer._longitudinal_control if hasattr(renderer, '_longitudinal_control') else 'UNKNOWN'
-              
-              # Additional debugging for car state
-              sm = ui_state.sm
-              car_state = sm['carState'] if sm.valid['carState'] else None
-              v_ego = car_state.vEgo if car_state else 0.0
-              
-              logger.info(f"[Frame {i}] Renderer state: raw_points={raw_size}, projected_points={proj_size}")
-              # Log first few elements of transform matrix to see if it's changing/valid
-              logger.info(f"  Transform matrix (first 4): {transform_flat[:4]}")
-              logger.info(f"  Longitudinal control enabled: {has_longitudinal_control}")
-              logger.info(f"  RadarState valid: {sm.valid['radarState'] if 'radarState' in sm.valid else 'N/A'}")
-              # Debug the conditions for drawing lead indicators
-              render_lead_indicator = has_longitudinal_control and radar_state is not None
-              
-              logger.info(f"  CarState valid: {sm.valid['carState'] if 'carState' in sm.valid else 'N/A'}, vEgo: {v_ego}")
-              logger.info(f"  Render lead indicator: {render_lead_indicator}")
-              if radar_state and lead_one:
-                  logger.info(f"  Lead car detected: dRel={lead_one.dRel}, yRel={lead_one.yRel}, vRel={lead_one.vRel}, status={lead_one.status}")
-                  # Calculate what the fill alpha would be based on distance
-                  d_rel = lead_one.dRel
-                  speed_buff, lead_buff = 10.0, 40.0
-                  fill_alpha = 0
-                  if d_rel < lead_buff:
-                      fill_alpha = 255 * (1.0 - (d_rel / lead_buff))
-                      if lead_one.vRel < 0:  # approaching
-                          fill_alpha += 255 * (-1 * (lead_one.vRel / speed_buff))
-                      fill_alpha = min(fill_alpha, 255)
-                  logger.info(f"    Calculated fill_alpha: {fill_alpha} (dRel: {d_rel}, lead_buff: {lead_buff})")
-              else:
-                  logger.info(f"  No lead car data: radar_state={radar_state is not None}, lead_one={lead_one is not None}")
-              # Log lead vehicle status
-              logger.info(f"  Lead vehicles: {len(renderer._lead_vehicles)}")
-              for idx, lead in enumerate(renderer._lead_vehicles):
-                  logger.info(f"    Lead {idx}: glow={lead.glow is not None}, chevron={lead.chevron is not None}, alpha={lead.fill_alpha}")
-          # --- END DEBUG ---
 
           # Draw colored border based on driving state
           road_view._draw_border(full_rect)
