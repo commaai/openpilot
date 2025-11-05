@@ -5,7 +5,7 @@ import threading
 
 from cereal import messaging
 from openpilot.common.realtime import Ratekeeper
-from openpilot.common.retry import retry
+from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
 RATE = 10
@@ -94,7 +94,7 @@ class Mic:
 
         self.measurements = self.measurements[FFT_SAMPLES:]
 
-  @retry(attempts=7, delay=3)
+  @retry(attempts=10, delay=3)
   def get_stream(self, sd):
     # reload sounddevice to reinitialize portaudio
     sd._terminate()

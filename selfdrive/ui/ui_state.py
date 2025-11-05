@@ -12,7 +12,6 @@ from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.hardware import HARDWARE
 
-UI_BORDER_SIZE = 30
 BACKLIGHT_OFFROAD = 50
 
 
@@ -98,6 +97,7 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
+    self.prime_state.start()  # start thread after manager forks ui
     self.sm.update(0)
     self._update_state()
     self._update_status()
@@ -253,6 +253,7 @@ class Device:
       self._awake = on
       cloudlog.debug(f"setting display power {int(on)}")
       HARDWARE.set_display_power(on)
+      gui_app.set_should_render(on)
 
 
 # Global instance
