@@ -188,6 +188,13 @@ def populate_car_params(lr: LogReader):
     except UnknownKeyName:
       # forks of openpilot may have other Params keys configured. ignore these
       logger.warning(f"unknown Params key '{key}', skipping")
+  
+  # Additionally, store the actual carParams message in the Params system
+  # so ModelRenderer can access it for longitudinal control initialization
+  car_params = lr.first('carParams')
+  if car_params:
+    params.put("CarParams", car_params.as_builder().to_bytes())
+  
   logger.debug('persisted CarParams')
 
 
@@ -416,8 +423,12 @@ def clip(
 
         # Determine services present in the log
         services = set(m.which() for m in all_msgs)
+        logger.info(f"Services found in logs: {sorted(list(services))}")
+        
         # Always include services the UI expects, even if not in log
         services.add('selfdriveState')
+        services.add('radarState')  # Needed for lead car indicators in ModelRenderer
+        services.add('longitudinalPlan')  # Needed for throttle information in ModelRenderer
 
         # Filter for services that are valid in the current openpilot version
         valid_services = [s for s in messaging.SERVICE_LIST if s in services]
@@ -475,13 +486,22 @@ def clip(
 
         # Prime the UI with the last known state before the clip starts
         prime_mono_time = start_mono_time + start * 1e9
-        prime_services = {'liveCalibration', 'modelV2', 'carParams', 'selfdriveState'}
+        prime_services = {'liveCalibration', 'modelV2', 'carParams', 'selfdriveState', 'radarState'}  # Include radarState for lead info
         prime_msgs = []
         for s in prime_services:
             # Find the last message for each service before the clip starts
             last_msg = next((m for m in reversed(all_msgs) if m.logMonoTime < prime_mono_time and m.which() == s), None)
             if last_msg:
                 prime_msgs.append(last_msg)
+
+        # Debug: Check if carParams has longitudinal control enabled
+        car_params_msg = next((m for m in reversed(all_msgs) if m.which() == 'carParams' and m.logMonoTime < prime_mono_time), None)
+        if car_params_msg:
+            cp = car_params_msg.carParams
+            logger.info(f"CarParams longitudinal control: {cp.openpilotLongitudinalControl}")
+            logger.info(f"Car fingerprint: {cp.carFingerprint}")
+        else:
+            logger.warning("No carParams message found for longitudinal control check")
 
         if prime_msgs:
             # Feed these last-known-good messages to the SubMaster to set the initial state
@@ -510,6 +530,12 @@ def clip(
             msg_idx += 1
 
           if messages_to_feed:
+            # Check if carParams with longitudinal control info is being updated
+            for msg in messages_to_feed:
+              if msg.which() == 'carParams':
+                cp = msg.carParams
+                if hasattr(cp, 'openpilotLongitudinalControl'):
+                  logger.debug(f"[Frame {i}] CarParams longitudinal control updated: {cp.openpilotLongitudinalControl}, vEgo={ui_state.sm['carState'].vEgo if ui_state.sm.valid['carState'] else 'N/A'}")
             ui_state.sm.update_msgs(frame_mono_time / 1e9, messages_to_feed)
 
           ui_state._update_state() # Process new messages
@@ -653,9 +679,46 @@ def clip(
               raw_size = renderer._path.raw_points.size
               proj_size = renderer._path.projected_points.size
               transform_flat = renderer._car_space_transform.flatten()
+              
+              # Debug lead car indicators
+              sm = ui_state.sm
+              radar_state = sm['radarState'] if sm.valid['radarState'] else None
+              lead_one = radar_state.leadOne if radar_state else None
+              has_longitudinal_control = renderer._longitudinal_control if hasattr(renderer, '_longitudinal_control') else 'UNKNOWN'
+              
+              # Additional debugging for car state
+              sm = ui_state.sm
+              car_state = sm['carState'] if sm.valid['carState'] else None
+              v_ego = car_state.vEgo if car_state else 0.0
+              
               logger.info(f"[Frame {i}] Renderer state: raw_points={raw_size}, projected_points={proj_size}")
               # Log first few elements of transform matrix to see if it's changing/valid
               logger.info(f"  Transform matrix (first 4): {transform_flat[:4]}")
+              logger.info(f"  Longitudinal control enabled: {has_longitudinal_control}")
+              logger.info(f"  RadarState valid: {sm.valid['radarState'] if 'radarState' in sm.valid else 'N/A'}")
+              # Debug the conditions for drawing lead indicators
+              render_lead_indicator = has_longitudinal_control and radar_state is not None
+              
+              logger.info(f"  CarState valid: {sm.valid['carState'] if 'carState' in sm.valid else 'N/A'}, vEgo: {v_ego}")
+              logger.info(f"  Render lead indicator: {render_lead_indicator}")
+              if radar_state and lead_one:
+                  logger.info(f"  Lead car detected: dRel={lead_one.dRel}, yRel={lead_one.yRel}, vRel={lead_one.vRel}, status={lead_one.status}")
+                  # Calculate what the fill alpha would be based on distance
+                  d_rel = lead_one.dRel
+                  speed_buff, lead_buff = 10.0, 40.0
+                  fill_alpha = 0
+                  if d_rel < lead_buff:
+                      fill_alpha = 255 * (1.0 - (d_rel / lead_buff))
+                      if lead_one.vRel < 0:  # approaching
+                          fill_alpha += 255 * (-1 * (lead_one.vRel / speed_buff))
+                      fill_alpha = min(fill_alpha, 255)
+                  logger.info(f"    Calculated fill_alpha: {fill_alpha} (dRel: {d_rel}, lead_buff: {lead_buff})")
+              else:
+                  logger.info(f"  No lead car data: radar_state={radar_state is not None}, lead_one={lead_one is not None}")
+              # Log lead vehicle status
+              logger.info(f"  Lead vehicles: {len(renderer._lead_vehicles)}")
+              for idx, lead in enumerate(renderer._lead_vehicles):
+                  logger.info(f"    Lead {idx}: glow={lead.glow is not None}, chevron={lead.chevron is not None}, alpha={lead.fill_alpha}")
           # --- END DEBUG ---
 
           # Draw colored border based on driving state
