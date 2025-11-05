@@ -549,7 +549,8 @@ def clip(
           rl.begin_texture_mode(gui_app._render_texture)
           rl.clear_background(rl.BLACK)
 
-          # Ported from AugmentedRoadView and CameraView
+          # Apply camera transformation similar to the original augmented road view
+          # This maintains proper calibration for model alignment while using simpler scaling like VisionIPC
           zoom = 1.1  # Fixed zoom factor from AugmentedRoadView
 
           # Get calibration from liveCalibration
@@ -560,7 +561,7 @@ def clip(
 
             calib_transform = intrinsic_matrix @ calibration
             kep = calib_transform @ INF_POINT
-            w, h = 1620, 1080 # render at 1.5 aspect ratio
+            w, h = width, height  # Use the UI dimensions for calculations
             cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
 
             margin = 5
@@ -577,32 +578,39 @@ def clip(
             w, h = width, height
             cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
 
-          # The transform matrix from AugmentedRoadView
+          # The transform matrix for calibrated display
           transform = np.array([
             [zoom * 2 * cx / w, 0, -x_offset_aug / w * 2],
             [0, zoom * 2 * cy / h, -y_offset_aug / h * 2],
             [0, 0, 1.0]
           ])
 
-          # From CameraView._render
-          rect = rl.Rectangle(0, 0, width, height)
-          scale_x = rect.width * transform[0, 0]
-          scale_y = rect.height * transform[1, 1]
+          # Calculate scale with the transform
+          scale_x = width * transform[0, 0]
+          scale_y = height * transform[1, 1]
 
-          x_offset_cam = rect.x + (rect.width - scale_x) / 2
-          y_offset_cam = rect.y + (rect.height - scale_y) / 2
+          # Calculate position with the transform (handles calibration positioning)
+          x_offset = (width - scale_x) / 2 + transform[0, 2] * width / 2
+          y_offset = (height - scale_y) / 2 + transform[1, 2] * height / 2
 
-          x_offset_cam += transform[0, 2] * rect.width / 2
-          y_offset_cam += transform[1, 2] * rect.height / 2
+          # Use the original approach but keep aspect ratio constraints like VisionIPC
+          if scale_x / width > scale_y / height:
+              # Width is more constrained, so scale width to fit and center height
+              final_scale_x = scale_x
+              final_scale_y = scale_y * (width * transform[0, 0]) / scale_x
+              final_x_offset = x_offset
+              final_y_offset = (height - final_scale_y) / 2
+          else:
+              # Height is more constrained, so scale height to fit and center width
+              final_scale_y = scale_y
+              final_scale_x = scale_x * (height * transform[1, 1]) / scale_y
+              final_y_offset = y_offset
+              final_x_offset = (width - final_scale_x) / 2
 
-          dst_rect = rl.Rectangle(x_offset_cam + (width - w) / 2, y_offset_cam, scale_x, scale_y)
+          dst_rect = rl.Rectangle(final_x_offset, final_y_offset, final_scale_x, final_scale_y)
           src_rect = rl.Rectangle(0, 0, camera_width, camera_height)
 
-          # Draw camera frame zoomed to fill the screen
-          rl.draw_texture_pro(frame_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
-          dst_rect = rl.Rectangle(0, 0, width, height)
-
-          # Draw camera frame zoomed to fill the screen
+          # Draw camera frame
           rl.draw_texture_pro(frame_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
           # Define full rect and content rect (with border padding)
@@ -627,6 +635,7 @@ def clip(
           road_view._content_rect = content_rect # Assign to instance variable
 
           # Manually calculate the frame matrix to set the transform for the model renderer
+          # This still needs to apply the calibration for proper model alignment
           road_view._calc_frame_matrix(content_rect) # Pass content_rect here
 
           # Render UI overlays on top using the properly calculated content rectangle
