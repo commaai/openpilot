@@ -90,8 +90,8 @@ class LatControlTorque(LatControl):
       ff += get_friction(error, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
-      output_lataccel = self.pid.update(pid_log.error,
-                                       -measurement_rate,
+      output_lataccel = self.pid.update(pid_log.error,                            #       setpoint - measurement
+                                        desired_lateral_jerk - measurement_rate,  # d/dt (setpoint - measurement)
                                         feedforward=ff,
                                         speed=CS.vEgo,
                                         freeze_integrator=freeze_integrator)
