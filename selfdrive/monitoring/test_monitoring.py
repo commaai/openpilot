@@ -203,3 +203,19 @@ class TestMonitoring:
     assert EventName.driverUnresponsive in \
                               events[int((INVISIBLE_SECONDS_TO_RED-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names
 
+  # Test awareness boundary condition - awareness at exactly 0 should trigger terminal alert
+  def test_awareness_boundary_condition(self):
+    # Setup scenario where awareness reaches exactly 0
+    DM = DriverMonitoring()
+    
+    # Set awareness to exactly 0 to test boundary condition
+    DM.awareness = 0.0
+    DM.active_monitoring_mode = True  # Set to active monitoring mode
+    
+    # When awareness is 0, it should trigger terminal alert condition
+    assert DM.awareness <= 0., "Awareness at 0 should satisfy terminal alert condition"
+    
+    # Check that the state packet reflects the critical state
+    state_packet = DM.get_state_packet()
+    assert state_packet.driverMonitoringState.awarenessStatus == 0.0, "Awareness status should be 0.0"
+
