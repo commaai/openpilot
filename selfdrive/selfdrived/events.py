@@ -166,7 +166,7 @@ class SoftDisableAlert(Alert):
 # less harsh version of SoftDisable, where the condition is user-triggered
 class UserSoftDisableAlert(SoftDisableAlert):
   def __init__(self, alert_text_2: str):
-    super().__init__(alert_text_2),
+    super().__init__(alert_text_2)
     self.alert_text_1 = "openpilot will disengage"
 
 
@@ -175,7 +175,7 @@ class ImmediateDisableAlert(Alert):
     super().__init__("TAKE CONTROL IMMEDIATELY", alert_text_2,
                      AlertStatus.critical, AlertSize.full,
                      Priority.HIGHEST, VisualAlert.steerRequired,
-                     AudibleAlert.warningImmediate, 4.),
+                     AudibleAlert.warningImmediate, 4.)
 
 
 class EngagementAlert(Alert):
@@ -183,21 +183,21 @@ class EngagementAlert(Alert):
     super().__init__("", "",
                      AlertStatus.normal, AlertSize.none,
                      Priority.MID, VisualAlert.none,
-                     audible_alert, .2),
+                     audible_alert, .2)
 
 
 class NormalPermanentAlert(Alert):
   def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2, priority: Priority = Priority.LOWER, creation_delay: float = 0.):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
-                     priority, VisualAlert.none, AudibleAlert.none, duration, creation_delay=creation_delay),
+                     priority, VisualAlert.none, AudibleAlert.none, duration, creation_delay=creation_delay)
 
 
 class StartupAlert(Alert):
   def __init__(self, alert_text_1: str, alert_text_2: str = "Always keep hands on wheel and eyes on road", alert_status=AlertStatus.normal):
     super().__init__(alert_text_1, alert_text_2,
                      alert_status, AlertSize.mid,
-                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
+                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.)
 
 
 
