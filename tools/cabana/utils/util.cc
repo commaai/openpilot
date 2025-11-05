@@ -10,11 +10,16 @@
 
 #include <QColor>
 #include <QDateTime>
+#include <QDir>
 #include <QFontDatabase>
 #include <QLocale>
 #include <QPixmapCache>
-
-#include "selfdrive/ui/qt/util.h"
+#include <QSurfaceFormat>
+#include <QFileInfo>
+#include <QPainterPath>
+#include <QTextStream>
+#include <QtXml/QDomDocument>
+#include "common/util.h"
 
 // SegmentTree
 
@@ -275,4 +280,81 @@ QString signalToolTip(const cabana::Signal *sig) {
     Little Endian: %6 Signed: %7</span>
   )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
      .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
+}
+
+void setSurfaceFormat() {
+  QSurfaceFormat fmt;
+#ifdef __APPLE__
+  fmt.setVersion(3, 2);
+  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
+  fmt.setRenderableType(QSurfaceFormat::OpenGL);
+#else
+  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
+#endif
+  fmt.setSamples(16);
+  fmt.setStencilBufferSize(1);
+  QSurfaceFormat::setDefaultFormat(fmt);
+}
+
+void sigTermHandler(int s) {
+  std::signal(s, SIG_DFL);
+  qApp->quit();
+}
+
+void initApp(int argc, char *argv[], bool disable_hidpi) {
+  // setup signal handlers to exit gracefully
+  std::signal(SIGINT, sigTermHandler);
+  std::signal(SIGTERM, sigTermHandler);
+
+  QString app_dir;
+#ifdef __APPLE__
+  // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
+  QApplication tmp(argc, argv);
+  app_dir = QCoreApplication::applicationDirPath();
+  if (disable_hidpi) {
+    qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio()).toLocal8Bit());
+  }
+#else
+  app_dir = QFileInfo(util::readlink("/proc/self/exe").c_str()).path();
+#endif
+
+  qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
+  // ensure the current dir matches the exectuable's directory
+  QDir::setCurrent(app_dir);
+
+  setSurfaceFormat();
+}
+
+static QHash<QString, QByteArray> load_bootstrap_icons() {
+  QHash<QString, QByteArray> icons;
+
+  QFile f(":/bootstrap-icons.svg");
+  if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QDomDocument xml;
+    xml.setContent(&f);
+    QDomNode n = xml.documentElement().firstChild();
+    while (!n.isNull()) {
+      QDomElement e = n.toElement();
+      if (!e.isNull() && e.hasAttribute("id")) {
+        QString svg_str;
+        QTextStream stream(&svg_str);
+        n.save(stream, 0);
+        svg_str.replace("<symbol", "<svg");
+        svg_str.replace("</symbol>", "</svg>");
+        icons[e.attribute("id")] = svg_str.toUtf8();
+      }
+      n = n.nextSibling();
+    }
+  }
+  return icons;
+}
+
+QPixmap bootstrapPixmap(const QString &id) {
+  static QHash<QString, QByteArray> icons = load_bootstrap_icons();
+
+  QPixmap pixmap;
+  if (auto it = icons.find(id); it != icons.end()) {
+    pixmap.loadFromData(it.value(), "svg");
+  }
+  return pixmap;
 }

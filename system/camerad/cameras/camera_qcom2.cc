@@ -50,7 +50,7 @@ public:
 
   Rect ae_xywh = {};
   float measured_grey_fraction = 0;
-  float target_grey_fraction = 0.3;
+  float target_grey_fraction = 0.125;
 
   float fl_pix = 0;
   std::unique_ptr<PubMaster> pm;

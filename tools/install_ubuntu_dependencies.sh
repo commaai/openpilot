@@ -66,7 +66,8 @@ function install_ubuntu_common_requirements() {
     libqt5svg5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
-    libqt5opengl5-dev
+    libqt5opengl5-dev \
+    gettext
 }
 
 # Install Ubuntu 24.04 LTS packages

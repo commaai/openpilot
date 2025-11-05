@@ -6,15 +6,13 @@ from dataclasses import dataclass
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
-
-
-NO_RELEASE_NOTES = "<h2>No release notes available.</h2>"
 
 
 class AlertColors:
@@ -55,21 +53,23 @@ class ButtonStyle(IntEnum):
 
 
 class ActionButton(Widget):
-  def __init__(self, text: str, style: ButtonStyle = ButtonStyle.LIGHT,
+  def __init__(self, text: str | Callable[[], str], style: ButtonStyle = ButtonStyle.LIGHT,
                min_width: int = AlertConstants.MIN_BUTTON_WIDTH):
     super().__init__()
+    self._text = text
     self._style = style
     self._min_width = min_width
     self._font = gui_app.font(FontWeight.MEDIUM)
-    self.set_text(text)
 
-  def set_text(self, text: str):
-    self._text = text
-    self._text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self._text, AlertConstants.FONT_SIZE)
-    self._rect.width = max(self._text_size.x + 60 * 2, self._min_width)
-    self._rect.height = AlertConstants.BUTTON_HEIGHT
+  @property
+  def text(self) -> str:
+    return self._text() if callable(self._text) else self._text
 
   def _render(self, _):
+    text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self.text, AlertConstants.FONT_SIZE)
+    self._rect.width = max(text_size.x + 60 * 2, self._min_width)
+    self._rect.height = AlertConstants.BUTTON_HEIGHT
+
     roundness = AlertConstants.BORDER_RADIUS / self._rect.height
     bg_color = AlertColors.BUTTON if self._style == ButtonStyle.LIGHT else AlertColors.SNOOZE_BG
     if self.is_pressed:
@@ -79,9 +79,9 @@ class ActionButton(Widget):
 
     # center text
     color = rl.WHITE if self._style == ButtonStyle.DARK else rl.BLACK
-    text_x = int(self._rect.x + (self._rect.width - self._text_size.x) // 2)
-    text_y = int(self._rect.y + (self._rect.height - self._text_size.y) // 2)
-    rl.draw_text_ex(self._font, self._text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
+    text_x = int(self._rect.x + (self._rect.width - text_size.x) // 2)
+    text_y = int(self._rect.y + (self._rect.height - text_size.y) // 2)
+    rl.draw_text_ex(self._font, self.text, rl.Vector2(text_x, text_y), AlertConstants.FONT_SIZE, 0, color)
 
 
 class AbstractAlert(Widget, ABC):
@@ -101,15 +101,15 @@ class AbstractAlert(Widget, ABC):
       if self.dismiss_callback:
         self.dismiss_callback()
 
-    self.dismiss_btn = ActionButton("Close")
+    self.dismiss_btn = ActionButton(lambda: tr("Close"))
 
-    self.snooze_btn = ActionButton("Snooze Update", style=ButtonStyle.DARK)
+    self.snooze_btn = ActionButton(lambda: tr("Snooze Update"), style=ButtonStyle.DARK)
     self.snooze_btn.set_click_callback(snooze_callback)
 
-    self.excessive_actuation_btn = ActionButton("Acknowledge Excessive Actuation", style=ButtonStyle.DARK, min_width=800)
+    self.excessive_actuation_btn = ActionButton(lambda: tr("Acknowledge Excessive Actuation"), style=ButtonStyle.DARK, min_width=800)
     self.excessive_actuation_btn.set_click_callback(excessive_actuation_callback)
 
-    self.reboot_btn = ActionButton("Reboot and Update", min_width=600)
+    self.reboot_btn = ActionButton(lambda: tr("Reboot and Update"), min_width=600)
     self.reboot_btn.set_click_callback(lambda: HARDWARE.reboot())
 
     # TODO: just use a Scroller?
@@ -317,12 +317,14 @@ class UpdateAlert(AbstractAlert):
 
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
+    no_release_notes = "<h2>" + tr("No release notes available.") + "</h2>"
+
     if update_available:
       self.release_notes = (self.params.get("UpdaterNewReleaseNotes") or b"").decode("utf8").strip()
-      self._html_renderer.parse_html_content(self.release_notes or NO_RELEASE_NOTES)
+      self._html_renderer.parse_html_content(self.release_notes or no_release_notes)
       self._cached_content_height = 0
     else:
-      self._html_renderer.parse_html_content(NO_RELEASE_NOTES)
+      self._html_renderer.parse_html_content(no_release_notes)
 
     return update_available
 
