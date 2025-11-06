@@ -1,7 +1,7 @@
 from math import atan2
 import numpy as np
 
-from cereal import car, log
+from cereal import log
 import cereal.messaging as messaging
 from openpilot.selfdrive.selfdrived.events import Events
 from openpilot.common.realtime import DT_DMON
@@ -259,9 +259,13 @@ class DriverMonitoring:
     if op_engaged and self.wheel_on_right_last is not None and self.wheel_on_right_last != self.wheel_on_right:
       self.wheel_on_right = self.wheel_on_right_last
     driver_data = driver_state.rightDriverData if self.wheel_on_right else driver_state.leftDriverData
-    if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
+    # Safety validation: ensure all required arrays exist and have expected lengths
+    if (not hasattr(driver_data, 'faceOrientation') or not hasattr(driver_data, 'facePosition') or
+        not hasattr(driver_data, 'faceOrientationStd') or not hasattr(driver_data, 'facePositionStd') or
+        not hasattr(driver_data, 'notReadyProb') or
+        not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
                                     driver_data.faceOrientationStd, driver_data.facePositionStd,
-                                    driver_data.notReadyProb)):
+                                    driver_data.notReadyProb))):
       return
 
     self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
