@@ -3,7 +3,6 @@
 These are example test drives that can help identify the CAN bus messaging necessary for ADAS control. Each scripted
 drive should be done in a separate route (ignition cycle).
 
-> [!IMPORTANT]
 Constant power to the comma device is highly recommended, using [comma power](https://comma.ai/shop/comma-power) if
 necessary, to make sure all test activity is fully captured and for ease of uploading. If constant power isn't
 available, keep the ignition on for at least one minute after your test to make sure the results are saved.
