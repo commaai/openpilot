@@ -3,7 +3,7 @@ import os
 import time
 import threading
 
-import cereal.messaging as messaging
+from cereal import messaging
 
 from cereal import car, log
 
@@ -56,6 +56,11 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
 
   return can_recv, can_send
+
+
+# Define constants for magic numbers
+SECOC_KEY_LENGTH = 32
+SAVED_SECOC_KEY_LENGTH = 16
 
 
 class Car:
@@ -123,7 +128,7 @@ class Car:
       try:
         with open("/cache/params/SecOCKey") as f:
           user_key = f.readline().strip()
-          if len(user_key) == 32:
+          if len(user_key) == SECOC_KEY_LENGTH:
             self.params.put("SecOCKey", user_key)
       except Exception:
         pass
@@ -131,7 +136,7 @@ class Car:
       secoc_key = self.params.get("SecOCKey")
       if secoc_key is not None:
         saved_secoc_key = bytes.fromhex(secoc_key.strip())
-        if len(saved_secoc_key) == 16:
+        if len(saved_secoc_key) == SAVED_SECOC_KEY_LENGTH:
           self.CP.secOcKeyAvailable = True
           self.CI.CS.secoc_key = saved_secoc_key
           if controller_available:
