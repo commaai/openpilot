@@ -191,12 +191,14 @@ class ClipGenerator:
     bit_rate_kbps = int(round(self.args['target_mb'] * 8 * 1024 * 1024 / duration / 1000))
     meta_text = get_meta_text(self.lr, self.args['route'])
     box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
-    overlays = [
-      f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
-                  (
-        rf"drawtext=text='%{{eif\:floor(({self.args['start']}+t)/60)\:d\:2}}\:%{{eif\:mod({self.args['start']}+t,60)\:d\:2}}'"
-        rf":fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
-      ),     ]
+        time_overlay = (
+          rf"drawtext=text='%{{eif\:floor(({self.args['start']}+t)/60)\:d\:2}}\:%{{eif\:mod({self.args['start']}+t,60)\:d\:2}}'"
+          rf":fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
+        )
+        overlays = [
+          f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
+          time_overlay,
+        ]
     if self.args['title']:
       overlays.append(f"drawtext=text='{escape_ffmpeg_text(self.args['title'])}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
     if self.args['speed'] > 1:
@@ -211,11 +213,10 @@ class ClipGenerator:
     ]
 
   def run(self):
-    logger.info(
-      f"clipping route {self.args['route'].name.canonical_name}, start={self.args['start']} end={self.args['end']} "
-      f"quality={self.args['quality']} target_filesize={self.args['target_mb']}MB"
-    )
-
+          logger.info((
+            f"clipping route {self.args['route'].name.canonical_name}, start={self.args['start']} end={self.args['end']} "
+            f"quality={self.args['quality']} target_filesize={self.args['target_mb']}MB"
+          ))
     with OpenpilotPrefix(self.args['prefix'], shared_download_cache=True):
       populate_car_params(self.lr)
       with self._setup_environment():
