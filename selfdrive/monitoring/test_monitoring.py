@@ -203,3 +203,34 @@ class TestMonitoring:
     assert EventName.driverUnresponsive in \
                               events[int((INVISIBLE_SECONDS_TO_RED-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names
 
+  # Test RHD wheel detection - verifies wheel position detection and calibration
+  def test_rhd_wheel_detection(self):
+    # Simulate a driver with wheel on right (RHD detection)
+    DM = DriverMonitoring(rhd_saved=False)  # Start with default LHD
+    
+    # Create a message that consistently shows wheel on right
+    rhd_msg = make_msg(True)
+    rhd_msg.wheelOnRightProb = 0.8  # High probability of wheel on right
+    
+    # Simulate multiple frames with high RHD probability to trigger calibration
+    for i in range(int(DM.settings._WHEELPOS_FILTER_MIN_COUNT / 2)):  # Not quite enough for detection
+        DM._update_states(rhd_msg, [0, 0, 0], DM.settings._WHEELPOS_CALIB_MIN_SPEED + 1, False)
+        # Wheel should still be default (False) since not enough data yet
+        assert DM.wheel_on_right == False  # Still default
+    
+    # Add more frames to exceed the calibration threshold
+    for i in range(int(DM.settings._WHEELPOS_FILTER_MIN_COUNT / 2) + 1):
+        DM._update_states(rhd_msg, [0, 0, 0], DM.settings._WHEELPOS_CALIB_MIN_SPEED + 1, False)
+    
+    # Now wheel should be detected as on right side
+    assert DM.wheel_on_right == True  # Should be detected as RHD now
+    
+    # Test that the wheel side doesn't change when engaged and previously determined
+    original_wheel_side = DM.wheel_on_right
+    # Simulate engagement with different wheel detection which should be ignored
+    rhd_msg.wheelOnRightProb = 0.2  # Opposite detection
+    DM._update_states(rhd_msg, [0, 0, 0], DM.settings._WHEELPOS_CALIB_MIN_SPEED + 1, True)  # Engaged = True
+    
+    # Wheel side should remain unchanged when engaged
+    assert DM.wheel_on_right == original_wheel_side
+
