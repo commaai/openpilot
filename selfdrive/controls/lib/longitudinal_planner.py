@@ -71,10 +71,9 @@ class LongitudinalPlanner:
 
   @staticmethod
   def parse_model(model_msg):
-    if (model_msg.position.x and model_msg.velocity.x and model_msg.acceleration.x and
-        len(model_msg.position.x) == ModelConstants.IDX_N and
-        len(model_msg.velocity.x) == ModelConstants.IDX_N and
-        len(model_msg.acceleration.x) == ModelConstants.IDX_N):
+    if (len(model_msg.position.x) == ModelConstants.IDX_N and
+      len(model_msg.velocity.x) == ModelConstants.IDX_N and
+      len(model_msg.acceleration.x) == ModelConstants.IDX_N):
       x = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.position.x)
       v = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.velocity.x)
       a = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.acceleration.x)
@@ -84,7 +83,7 @@ class LongitudinalPlanner:
       v = np.zeros(len(T_IDXS_MPC))
       a = np.zeros(len(T_IDXS_MPC))
       j = np.zeros(len(T_IDXS_MPC))
-    if model_msg.meta.disengagePredictions.gasPressProbs and len(model_msg.meta.disengagePredictions.gasPressProbs) > 1:
+    if len(model_msg.meta.disengagePredictions.gasPressProbs) > 1:
       throttle_prob = model_msg.meta.disengagePredictions.gasPressProbs[1]
     else:
       throttle_prob = 1.0
