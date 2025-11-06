@@ -38,6 +38,7 @@ a.out
 *.vcd
 *.mo
 *_pyx.cpp
+*.stats
 config.json
 clcache
 compile_commands.json
