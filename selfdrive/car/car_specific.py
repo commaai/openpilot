@@ -237,7 +237,7 @@ class CarSpecificEvents:
     self._add_vehicle_status_events(CS, events, extra_gears)
     self._add_speed_related_events(CS, events)
     self._add_control_status_events(CS, events, CS_prev)
-    
+
     # Handle special event types
     self._add_button_events(CS, events, allow_button_cancel)
     self._add_steering_fault_events(CS, events, CS_prev)
