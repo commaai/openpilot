@@ -39,10 +39,14 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
   """
-  # FIXME: This function to calculate lateral accel is incorrect and should use the VehicleModel
-  # The lookup table for turns should also be updated if we do this
+  # Use VehicleModel for proper lateral acceleration calculation
+  from opendbc.car.vehicle_model import VehicleModel
+  VM = VehicleModel(CP)
+  # Convert steer angle from degrees to radians - it's the steering wheel angle
+  steer_radians = math.radians(angle_steers)
+  curvature = VM.calc_curvature(steer_radians, v_ego, 0.0)  # Using 0.0 roll for now
+  a_y = v_ego ** 2 * curvature
   a_total_max = np.interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
