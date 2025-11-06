@@ -20,13 +20,12 @@ def main():
     if should_render:
       main_layout.render()
 
-      # reaffine after power save offlines our core
-      if os.sched_getaffinity(0) != cores:
-        try:
-          set_core_affinity(list(cores))
-        except OSError:
-          pass
-
+      # Reaffine after power save offlines our core
+      try:
+          if hasattr(os, 'sched_getaffinity') and os.sched_getaffinity(0) != cores:
+              set_core_affinity(list(cores))
+      except (OSError, AttributeError):
+          pass  # Affinity setting unavailable or failed
 
 if __name__ == "__main__":
   main()
