@@ -112,6 +112,10 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
 
+  # Ensure angles_desc has at least 3 elements to avoid unpacking errors
+  if len(angles_desc) < 3:
+    return 0.0, 0.0, 0.0
+
   pitch_net, yaw_net, roll_net = angles_desc
 
   face_pixel_position = ((pos_desc[0]+0.5)*W, (pos_desc[1]+0.5)*H)
@@ -122,8 +126,13 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   yaw = -yaw_net + yaw_focal_angle
 
   # no calib for roll
-  pitch -= rpy_calib[1]
-  yaw -= rpy_calib[2]
+  # Ensure rpy_calib has at least 3 elements to avoid indexing errors
+  if len(rpy_calib) < 3:
+    pitch -= 0.0
+    yaw -= 0.0
+  else:
+    pitch -= rpy_calib[1]
+    yaw -= rpy_calib[2]
   return roll_net, pitch, yaw
 
 
