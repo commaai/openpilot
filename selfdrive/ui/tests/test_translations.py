@@ -8,7 +8,7 @@ import requests
 from parameterized import parameterized_class
 from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, LANGUAGES_FILE
 
-with open(LANGUAGES_FILE) as f:
+with open(str(LANGUAGES_FILE)) as f:
   translation_files = json.load(f)
 
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""  # non-empty translations can be marked unfinished
@@ -29,7 +29,7 @@ class TestTranslations:
       return f.read()
 
   def test_missing_translation_files(self):
-    assert os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")), \
+    assert os.path.exists(os.path.join(str(TRANSLATIONS_DIR), f"{self.file}.ts")), \
                     f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py"
 
   @pytest.mark.skip("Only test unfinished translations before going to release")

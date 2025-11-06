@@ -172,10 +172,6 @@ class TextAction(ItemAction):
   def set_text(self, text: str | Callable[[], str]):
     self._text_source = text
 
-  def get_width(self) -> int:
-    text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
-    return int(text_width + TEXT_PADDING)
-
 
 class DualButtonAction(ItemAction):
   def __init__(self, left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable = None,
@@ -358,7 +354,7 @@ class ListItem(Widget):
     if self.title:
       # Draw icon if present
       if self.icon:
-        rl.draw_texture(self._icon_texture, int(content_x), int(self._rect.y + (ITEM_BASE_HEIGHT - self._icon_texture.width) // 2), rl.WHITE)
+        rl.draw_texture(self._icon_texture, int(content_x), int(self._rect.y + (ITEM_BASE_HEIGHT - self._icon_texture.height) // 2), rl.WHITE)
         text_x += ICON_SIZE + ITEM_PADDING
 
       # Draw main text

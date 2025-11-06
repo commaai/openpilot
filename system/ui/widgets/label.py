@@ -145,6 +145,8 @@ class Label(Widget):
       # Elide text to fit within the rectangle
       text_size = measure_text_cached(self._font, text, self._font_size)
       content_width = self._rect.width - self._text_padding * 2
+      if self._icon:
+        content_width -= self._icon.width + ICON_PADDING
       if text_size.x > content_width:
         _ellipsis = "..."
         left, right = 0, len(text)
@@ -173,7 +175,8 @@ class Label(Widget):
 
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
     if self._text_alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
-      text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - text_size.y) // 2))
+      total_text_height = sum(ts.y for ts in self._text_size) or self._font_size * FONT_SCALE
+      text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - total_text_height) // 2))
     else:
       text_pos = rl.Vector2(self._rect.x, self._rect.y)
 

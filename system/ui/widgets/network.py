@@ -117,7 +117,7 @@ class AdvancedNetworkSettings(Widget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
     self._wifi_manager = wifi_manager
-    self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
+    self._wifi_manager.add_callbacks(networks_updated=self._on_network_updated)
     self._params = Params()
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
@@ -298,7 +298,7 @@ class WifiManagerUI(Widget):
     self._networks_buttons: dict[str, Button] = {}
     self._forget_networks_buttons: dict[str, Button] = {}
 
-    self._wifi_manager.set_callbacks(need_auth=self._on_need_auth,
+    self._wifi_manager.add_callbacks(need_auth=self._on_need_auth,
                                      activated=self._on_activated,
                                      forgotten=self._on_forgotten,
                                      networks_updated=self._on_network_updated,

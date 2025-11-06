@@ -4,6 +4,7 @@ import re
 import threading
 import time
 import urllib.request
+import urllib.error
 from urllib.parse import urlparse
 from enum import IntEnum
 import shutil
@@ -418,6 +419,10 @@ class Setup(Widget):
       time.sleep(0.1)
       gui_app.request_close()
 
+    except urllib.error.HTTPError as e:
+      if e.code == 409:
+        error_msg = e.read().decode("utf-8")
+        self.download_failed(self.download_url, error_msg)
     except Exception:
       error_msg = "Ensure the entered URL is valid, and the device's internet connection is good."
       self.download_failed(self.download_url, error_msg)
@@ -432,10 +437,9 @@ def main():
   try:
     gui_app.init_window("Setup", 20)
     setup = Setup()
-    for showing_dialog in gui_app.render():
-      if showing_dialog:
-        continue
-      setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    for should_render in gui_app.render():
+      if should_render:
+        setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     setup.close()
   except Exception as e:
     print(f"Setup error: {e}")
