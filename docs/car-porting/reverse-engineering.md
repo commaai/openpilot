@@ -1,17 +1,23 @@
 # Stimulus-Response Tests
 
 These are example test drives that can help identify the CAN bus messaging necessary for ADAS control. Each scripted
-drive should be done in a separate route (ignition cycle). Constant power to the comma device is highly
-recommended, using [comma power](https://comma.ai/shop/comma-power) if necessary, to make sure all test activity is
-fully captured and for ease of uploading. If constant power isn't available, keep the ignition on for at least one
-minute after your
+drive should be done in a separate route (ignition cycle).
+
+[!IMPORTANT]
+Constant power to the comma device is highly recommended, using [comma power](https://comma.ai/shop/comma-power) if
+necessary, to make sure all test activity is fully captured and for ease of uploading. If constant power isn't
+available, keep the ignition on for at least one minute after your test to make sure the results are saved.
 
 ## Stationary ignition-only tests
 
 1. Ignition on, but don't start engine
 2. Slowly press and release the accelerator pedal 3 times
 3. Slowly press and release the brake pedal 3 times
-4. Ignition off
+4. Open and close each door in a defined order: driver, passenger, rear left, rear right
+5. Ignition off
+
+[!NOTE]
+Locate signals for all four door states if possible, but some cars only expose the driver's door state on the ADAS bus.
 
 ## Steering angle and steering torque signals
 
@@ -28,3 +34,5 @@ Power steering should be available. On ICE cars, engine RPM may be present.
    7. Turn to 180 degrees left and hold
    8. Return to center and release
 3. Ignition off
+
+## Adaptive cruise
