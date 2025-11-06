@@ -195,22 +195,6 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # no
     state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
 
-
-def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
-  """Only supports simple polygons with two chains (ribbon)."""
-
-  # TODO: consider deduping close screenspace points
-  # interleave points to produce a triangle strip
-  assert len(pts) % 2 == 0, "Interleaving expects even number of points"
-
-  tri_strip = []
-  for i in range(len(pts) // 2):
-    tri_strip.append(pts[i])
-    tri_strip.append(pts[-i - 1])
-
-  return cast(list, np.array(tri_strip).tolist())
-
-
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
                  color: Optional[rl.Color] = None, gradient: Gradient | None = None):  # noqa: UP045
 
@@ -232,12 +216,9 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   # Configure gradient shader
   _configure_shader_color(state, color, gradient, origin_rect)
 
-  # Triangulate via interleaving
-  tri_strip = triangulate(pts)
-
   # Draw strip, color here doesn't matter
   rl.begin_shader_mode(state.shader)
-  rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
+  rl.draw_triangle_strip(points.tolist(), len(points), rl.WHITE)
   rl.end_shader_mode()
 
 
