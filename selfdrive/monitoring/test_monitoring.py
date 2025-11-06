@@ -203,3 +203,15 @@ class TestMonitoring:
     assert EventName.driverUnresponsive in \
                               events[int((INVISIBLE_SECONDS_TO_RED-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names
 
+  # Test for edge case where driver is distracted but engages/disengages rapidly
+  def test_rapid_engage_disengage(self):
+    ds_vector = [msg_ATTENTIVE] * int(5/DT_DMON) + [msg_DISTRACTED] * int(10/DT_DMON) + [msg_ATTENTIVE] * int(5/DT_DMON)
+    interaction_vector = always_false[:]
+    engaged_vector = [True] * int(3/DT_DMON) + [False] * int(5/DT_DMON) + [True] * int(10/DT_DMON) + [False] * int(2/DT_DMON)
+    standstill_vector = always_false[:]
+    events, _ = self._run_seq(ds_vector, interaction_vector, engaged_vector, standstill_vector)
+    # Should not have alerts when disengaged, and should reset properly when re-engaged
+    # Check that after disengage, no alert continues
+    for i in range(int(3/DT_DMON), int(8/DT_DMON)):  # During disengaged period
+      assert len(events[i]) == 0
+
