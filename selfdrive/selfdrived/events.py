@@ -524,7 +524,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Poor Driver Visibility Detected",
       "Ensure device has a clear view of the driver",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5., creation_delay=600.)
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.)
   },
 
   EventName.preDriverUnresponsive: {

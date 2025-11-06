@@ -162,6 +162,7 @@ class DriverMonitoring:
     self.threshold_pre = self.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
     self.threshold_prompt = self.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
     self.dcam_uncertain_cnt = 0
+    self.dcam_uncertain_alerted = False # once per drive
     self.dcam_reset_cnt = 0
 
     self.params = Params()
@@ -387,8 +388,9 @@ class DriverMonitoring:
     if alert is not None:
       self.current_events.add(alert)
 
-    if self.dcam_uncertain_cnt > self.settings._DCAM_UNCERTAIN_ALERT_COUNT:
+    if self.dcam_uncertain_cnt > self.settings._DCAM_UNCERTAIN_ALERT_COUNT and not self.dcam_uncertain_alerted:
       self.current_events.add(EventName.driverCameraUncertain)
+      self.dcam_uncertain_alerted = True
 
 
   def get_state_packet(self, valid=True):
