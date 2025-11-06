@@ -9,12 +9,12 @@ import time
 import cffi
 import ctypes.util
 from argparse import ArgumentParser, ArgumentTypeError
-from collections.abc import Sequence
+
 from contextlib import contextmanager
 from pathlib import Path
 from random import randint
 from subprocess import Popen, DEVNULL, PIPE
-from typing import Literal
+
 
 import pyray as rl
 import numpy as np
@@ -24,7 +24,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.lib.route import Route
-from selfdrive.test.process_replay.migration import migrate_all
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.common.transformations.orientation import rot_from_euler
@@ -193,7 +193,10 @@ class ClipGenerator:
     box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
     overlays = [
       f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
-            rf"drawtext=text='%{{eif\:floor(({self.args['start']}+t)/60)\:d\:2}}\:%{{eif\:mod({self.args['start']}+t,60)\:d\:2}}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"     ]
+                  (
+        rf"drawtext=text='%{{eif\:floor(({self.args['start']}+t)/60)\:d\:2}}\:%{{eif\:mod({self.args['start']}+t,60)\:d\:2}}'"
+        rf":fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
+      ),     ]
     if self.args['title']:
       overlays.append(f"drawtext=text='{escape_ffmpeg_text(self.args['title'])}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
     if self.args['speed'] > 1:
@@ -208,7 +211,10 @@ class ClipGenerator:
     ]
 
   def run(self):
-    logger.info(f"clipping route {self.args['route'].name.canonical_name}, start={self.args['start']} end={self.args['end']} quality={self.args['quality']} target_filesize={self.args['target_mb']}MB")
+    logger.info(
+      f"clipping route {self.args['route'].name.canonical_name}, start={self.args['start']} end={self.args['end']} "
+      f"quality={self.args['quality']} target_filesize={self.args['target_mb']}MB"
+    )
 
     with OpenpilotPrefix(self.args['prefix'], shared_download_cache=True):
       populate_car_params(self.lr)
@@ -245,7 +251,10 @@ class ClipGenerator:
           start_mono_time = all_msgs[0].logMonoTime
           start_filter_mono_time = start_mono_time + self.args['start'] * 1e9
           end_filter_mono_time = start_mono_time + self.args['end'] * 1e9
-          messages_by_time = sorted([(m.logMonoTime, m) for m in all_msgs if start_filter_mono_time <= m.logMonoTime <= end_filter_mono_time], key=lambda x: x[0])
+          messages_by_time = sorted(
+            [(m.logMonoTime, m) for m in all_msgs if start_filter_mono_time <= m.logMonoTime <= end_filter_mono_time],
+            key=lambda x: x[0],
+          )
           camera_messages = [m for t, m in messages_by_time if m.which() == 'roadCameraState']
           if not camera_messages:
             raise RuntimeError(f"no roadCameraState messages found in time range {self.args['start']}-{self.args['end']}s")
@@ -256,7 +265,11 @@ class ClipGenerator:
 
           prime_mono_time = start_mono_time + self.args['start'] * 1e9
           prime_services = {'liveCalibration', 'modelV2', 'carParams', 'selfdriveState', 'radarState'}
-          prime_msgs = [m for s in prime_services for m in [next((m for m in reversed(all_msgs) if m.logMonoTime < prime_mono_time and m.which() == s), None)] if m]
+          prime_msgs = []
+          for s in prime_services:
+            m = next((m for m in reversed(all_msgs) if m.logMonoTime < prime_mono_time and m.which() == s), None)
+            if m:
+              prime_msgs.append(m)
           if prime_msgs:
             ui_state.sm.update_msgs(prime_mono_time / 1e9, prime_msgs)
 
@@ -264,7 +277,7 @@ class ClipGenerator:
           current_segment, fr, msg_idx = -1, None, 0
           ui_state.started = ui_state.ignition = True
 
-          for i, camera_msg in enumerate(camera_messages):
+          for _, camera_msg in enumerate(camera_messages):
             frame_mono_time = camera_msg.logMonoTime
             messages_to_feed = []
             while msg_idx < len(messages_by_time) and messages_by_time[msg_idx][0] <= frame_mono_time:
