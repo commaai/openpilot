@@ -15,7 +15,7 @@ def test_actuator_finite_values():
   assert np.isfinite(actuators.accel)
   assert np.isfinite(actuators.torque)
   assert np.isfinite(actuators.steeringAngleDeg)
-  
+
   # Test that the validation catches non-finite values
   actuators.accel = float('inf')
   assert not np.isfinite(actuators.accel)
