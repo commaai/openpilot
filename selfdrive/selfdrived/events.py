@@ -519,6 +519,14 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediate, .1),
   },
 
+  EventName.driverCameraUncertain: {
+    ET.PERMANENT: Alert(
+      "Poor Driver Visibility Detected",
+      "Ensure device has a clear view of the driver",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5., creation_delay=600.)
+  },
+
   EventName.preDriverUnresponsive: {
     ET.PERMANENT: Alert(
       "Touch Steering Wheel: No Face Detected",
