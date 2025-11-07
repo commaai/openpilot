@@ -33,21 +33,22 @@ MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
 # TODO: slice from meta
 class DriverStateResult(ctypes.Structure):
+  # Note: Unused fields preserve neural network output format compatibility
   _fields_ = [
     ("face_orientation", ctypes.c_float*3),
     ("face_position", ctypes.c_float*3),
     ("face_orientation_std", ctypes.c_float*3),
     ("face_position_std", ctypes.c_float*3),
     ("face_prob", ctypes.c_float),
-    ("_unused_a", ctypes.c_float*8),
+    ("_unused_a", ctypes.c_float*8),  # Preserved for neural network output format
     ("left_eye_prob", ctypes.c_float),
-    ("_unused_b", ctypes.c_float*8),
+    ("_unused_b", ctypes.c_float*8),  # Preserved for neural network output format
     ("right_eye_prob", ctypes.c_float),
     ("left_blink_prob", ctypes.c_float),
     ("right_blink_prob", ctypes.c_float),
     ("sunglasses_prob", ctypes.c_float),
-    ("_unused_c", ctypes.c_float),
-    ("_unused_d", ctypes.c_float*4),
+    ("_unused_c", ctypes.c_float),    # Preserved for neural network output format
+    ("_unused_d", ctypes.c_float*4),  # Preserved for neural network output format
     ("not_ready_prob", ctypes.c_float*2)]
 
 
