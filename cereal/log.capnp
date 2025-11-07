@@ -74,7 +74,6 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     preDriverUnresponsive @36;
     promptDriverUnresponsive @37;
     driverUnresponsive @38;
-    driverCameraUncertain @98;
     belowSteerSpeed @39;
     lowBattery @40;
     accFaulted @41;

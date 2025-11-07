@@ -390,7 +390,6 @@ class DriverMonitoring:
       self.current_events.add(alert)
 
     if self.dcam_uncertain_cnt > self.settings._DCAM_UNCERTAIN_ALERT_COUNT and not self.dcam_uncertain_alerted:
-      self.current_events.add(EventName.driverCameraUncertain)
       set_offroad_alert("Offroad_DriverCameraUncertain", True)
       self.dcam_uncertain_alerted = True
 
