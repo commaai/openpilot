@@ -414,7 +414,7 @@ class DriverMonitoring:
       "hiStdCount": self.hi_stds,
       "isActiveMode": self.active_monitoring_mode,
       "isRHD": self.wheel_on_right,
-      "cameraUncertainCount": self.dcam_uncertain_cnt,
+      "uncertainCount": self.dcam_uncertain_cnt,
     }
     return dat
 
