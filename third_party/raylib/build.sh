@@ -30,7 +30,7 @@ fi
 
 cd raylib_repo
 
-COMMIT=${1:-d6ced9338be75fd92b2ac72cdb87a4fb252b3a89}
+COMMIT=${1:-97dc6a9f1da2b5bbca6fee86b28ac79f7b28b573}
 git fetch origin $COMMIT
 git reset --hard $COMMIT
 git clean -xdff .
@@ -57,7 +57,7 @@ if [ -f /TICI ]; then
 
   cd raylib_python_repo
 
-  BINDINGS_COMMIT="ab0191f445272ca66758f9dd345b7395518d6a77"
+  BINDINGS_COMMIT="a0710d95af3c12fd7f4b639589be9a13dad93cb6"
   git fetch origin $BINDINGS_COMMIT
   git reset --hard $BINDINGS_COMMIT
   git clean -xdff .
