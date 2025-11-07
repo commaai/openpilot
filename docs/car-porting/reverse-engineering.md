@@ -14,8 +14,8 @@ Identify the signals for the accelerator pedal, brake pedal, cruise button, and 
 1. Ignition on, but don't start engine, remain in Park
 2. Slowly press and release the accelerator pedal 3 times
 3. Slowly press and release the brake pedal 3 times
-4. Open and close each door in a defined order: driver, passenger, rear left, rear right
-5. Press each ACC button in a defined order: main switch, set, cancel, accel,
+4. Open and close each door in a defined order driver, passenger, rear left, rear right
+5. Press each ACC button in a defined order: main switch on/off, set, cancel, accel, coast, gap adjust
 6. Ignition off
 
 Brake-pressed information may show up in several messages and signals, both as on/off states and as a percentage or
