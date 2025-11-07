@@ -14,6 +14,7 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
 from pathlib import Path
+import argparse
 from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params

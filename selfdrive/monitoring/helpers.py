@@ -86,10 +86,8 @@ class DriverPose:
   def __init__(self, max_trackable):
     self.yaw = 0.
     self.pitch = 0.
-    self.roll = 0.
     self.yaw_std = 0.
     self.pitch_std = 0.
-    self.roll_std = 0.
     self.pitch_offseter = RunningStatFilter(max_trackable=max_trackable)
     self.yaw_offseter = RunningStatFilter(max_trackable=max_trackable)
     self.calibrated = False
@@ -265,7 +263,9 @@ class DriverMonitoring:
       return
 
     self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
-    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
+    # Unpack all values from face_orientation_from_net but only use pitch and yaw
+    # roll component is not used in monitoring logic
+    _, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
     if self.wheel_on_right:
       self.pose.yaw *= -1
     self.wheel_on_right_last = self.wheel_on_right
