@@ -15,7 +15,7 @@ EventName = log.OnroadEvent.EventName
 
 # ******************************************************************************************
 #  NOTE: To fork maintainers.
-#  Disabling or nerfing safety features will get you and your users banned from our servers.
+#  Disabling or reducing safety features will get you and your users banned from our servers.
 #  We recommend that you do not change these numbers from the defaults.
 # ******************************************************************************************
 

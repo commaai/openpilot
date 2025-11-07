@@ -27,7 +27,6 @@ CALIB_LEN = 3
 FEATURE_LEN = 512
 OUTPUT_SIZE = 83 + FEATURE_LEN
 
-PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
