@@ -4,6 +4,7 @@ import numpy as np
 from cereal import car, log
 import cereal.messaging as messaging
 from openpilot.selfdrive.selfdrived.events import Events
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
@@ -390,6 +391,7 @@ class DriverMonitoring:
 
     if self.dcam_uncertain_cnt > self.settings._DCAM_UNCERTAIN_ALERT_COUNT and not self.dcam_uncertain_alerted:
       self.current_events.add(EventName.driverCameraUncertain)
+      set_offroad_alert("Offroad_DriverCameraUncertain", True)
       self.dcam_uncertain_alerted = True
 
 
