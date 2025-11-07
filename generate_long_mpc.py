@@ -11,9 +11,7 @@ os.environ['ACADOS_SOURCE_DIR'] = '/Users/tom/Documents/apps/openpilot/third_par
 os.environ['ACADOS_PYTHON_INTERFACE_PATH'] = '/Users/tom/Documents/apps/openpilot/third_party/acados/acados_template'
 os.environ['TERA_PATH'] = '/Users/tom/Documents/apps/openpilot/third_party/acados/Darwin/t_renderer'
 
-# Create an empty c_generated_code module to prevent import errors
-import importlib.util
-from types import ModuleType
+
 
 # Create the c_generated_code directory if it doesn't exist
 cgen_dir = 'selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code'

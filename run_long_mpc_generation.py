@@ -17,8 +17,8 @@ os.chdir('/Users/tom/Documents/apps/openpilot/selfdrive/controls/lib/longitudina
 # Now run the long_mpc.py as main
 if __name__ == '__main__':
     # Execute the original file content with __name__ set to '__main__'
-    with open('long_mpc.py', 'r') as f:
+    with open('long_mpc.py') as f:
         content = f.read()
-    
+
     # Execute the content in the __main__ context
     exec(content, {'__name__': '__main__', '__file__': 'long_mpc.py'})
