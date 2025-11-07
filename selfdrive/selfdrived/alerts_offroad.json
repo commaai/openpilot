@@ -38,7 +38,7 @@
     "severity": 0
   },
   "Offroad_DriverCameraUncertain": {
-    "text": "openpilot detected possible poor visibility for driver monitoring. Ensure the device has a clear view of the driver and this can be checked using settings -> device -> driver camera preview.",
+    "text": "openpilot detected possible poor visibility for driver monitoring. Ensure the device has a clear view of the driver. This can be checked using Settings -> Device -> Driver Camera Preview.",
     "severity": 0
   },
   "Offroad_ExcessiveActuation": {
