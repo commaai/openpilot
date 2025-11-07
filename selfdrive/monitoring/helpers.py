@@ -13,6 +13,7 @@ from openpilot.system.hardware import HARDWARE
 
 EventName = log.OnroadEvent.EventName
 
+
 # ******************************************************************************************
 #  NOTE: To fork maintainers.
 #  Disabling or nerfing safety features will get you and your users banned from our servers.
@@ -76,11 +77,13 @@ class DRIVER_MONITOR_SETTINGS:
     self._MAX_TERMINAL_ALERTS = 3  # not allowed to engage after 3 terminal alerts
     self._MAX_TERMINAL_DURATION = int(30 / self._DT_DMON)  # not allowed to engage after 30s of terminal alerts
 
+
 class DistractedType:
   NOT_DISTRACTED = 0
   DISTRACTED_POSE = 1 << 0
   DISTRACTED_BLINK = 1 << 1
   DISTRACTED_E2E = 1 << 2
+
 
 class DriverPose:
   def __init__(self, max_trackable):
@@ -97,6 +100,7 @@ class DriverPose:
     self.cfactor_pitch = 1.
     self.cfactor_yaw = 1.
 
+
 class DriverBlink:
   def __init__(self):
     self.left = 0.
@@ -107,6 +111,7 @@ class DriverBlink:
 EFL = 598.0 # focal length in K
 cam = DEVICE_CAMERAS[("tici", "ar0231")] # corrected image has same size as raw
 W, H = (cam.dcam.width, cam.dcam.height)  # corrected image has same size as raw
+
 
 def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in device frame

@@ -31,6 +31,7 @@ PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
+
 # TODO: slice from meta
 class DriverStateResult(ctypes.Structure):
   _fields_ = [
