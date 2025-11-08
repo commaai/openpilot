@@ -3,7 +3,7 @@ import math
 from numbers import Number
 
 from cereal import car, log
-import cereal.messaging as messaging
+from cereal import messaging
 from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_CTRL, Priority, Ratekeeper
@@ -23,6 +23,9 @@ from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 State = log.SelfdriveState.OpenpilotState
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
+
+# Define constants for magic numbers
+TORQUE_SATURATION_THRESHOLD = 1e-2
 
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 
@@ -172,7 +175,7 @@ class Controls:
         self.steer_limited_by_safety = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
                                               STEER_ANGLE_SATURATION_THRESHOLD
       else:
-        self.steer_limited_by_safety = abs(CC.actuators.torque - CO.actuatorsOutput.torque) > 1e-2
+        self.steer_limited_by_safety = abs(CC.actuators.torque - CO.actuatorsOutput.torque) > TORQUE_SATURATION_THRESHOLD
 
     # TODO: both controlsState and carControl valids should be set by
     #       sm.all_checks(), but this creates a circular dependency

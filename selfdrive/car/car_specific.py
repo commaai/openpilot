@@ -1,5 +1,5 @@
 from cereal import car, log
-import cereal.messaging as messaging
+from cereal import messaging
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import MAX_CTRL_SPEED
 
@@ -9,6 +9,12 @@ ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
 EventName = log.OnroadEvent.EventName
 NetworkLocation = structs.CarParams.NetworkLocation
+
+# Define constants for magic numbers
+STANDSTILL_THRESHOLD = 0.001
+ACCELERATION_MARGIN = 0.3
+BRAKE_THRESHOLD = 20
+STEER_FAULT_THRESHOLD = 1.5
 
 
 # TODO: the goal is to abstract this file into the CarState struct and make events generic
@@ -74,7 +80,7 @@ class CarSpecificEvents:
             events.add(EventName.speedTooLow)
           else:
             events.add(EventName.cruiseDisabled)
-      if self.CP.minEnableSpeed > 0 and CS.vEgo < 0.001:
+      if self.CP.minEnableSpeed > 0 and CS.vEgo < STANDSTILL_THRESHOLD:
         events.add(EventName.manualRestart)
 
     elif self.CP.brand == 'toyota':
@@ -86,10 +92,10 @@ class CarSpecificEvents:
           events.add(EventName.resumeRequired)
         if CS.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.belowEngageSpeed)
-          if CC.actuators.accel > 0.3:
+          if CC.actuators.accel > ACCELERATION_MARGIN:
             # some margin on the actuator to not false trigger cancellation while stopping
             events.add(EventName.speedTooLow)
-          if CS.vEgo < 0.001:
+          if CS.vEgo < STANDSTILL_THRESHOLD:
             # while in standstill, send a user alert
             events.add(EventName.manualRestart)
 
@@ -99,8 +105,8 @@ class CarSpecificEvents:
                                          pcm_enable=self.CP.pcmCruise)
 
       # Enabling at a standstill with brake is allowed
-      # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
-      if CS.vEgo < self.CP.minEnableSpeed and not (CS.standstill and CS.brake >= 20 and
+      # TODO: verify 17 Volt can enable for the first time at a start and allow for all GMs
+      if CS.vEgo < self.CP.minEnableSpeed and not (CS.standstill and CS.brake >= BRAKE_THRESHOLD and
                                                    self.CP.networkLocation == NetworkLocation.fwdCamera):
         events.add(EventName.belowEngageSpeed)
       if CS.cruiseState.standstill:
@@ -129,10 +135,8 @@ class CarSpecificEvents:
 
     return events
 
-  def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
-                           allow_button_cancel=True):
-    events = Events()
-
+  def _add_vehicle_status_events(self, CS: structs.CarState, events: Events, extra_gears=None):
+    """Add events related to basic vehicle status."""
     if CS.doorOpen:
       events.add(EventName.doorOpen)
     if CS.seatbeltUnlatched:
@@ -152,10 +156,16 @@ class CarSpecificEvents:
       events.add(EventName.stockFcw)
     if CS.stockAeb:
       events.add(EventName.stockAeb)
+
+  def _add_speed_related_events(self, CS: structs.CarState, events: Events):
+    """Add events related to speed."""
     if CS.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
     if CS.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
+
+  def _add_control_status_events(self, CS: structs.CarState, events: Events, CS_prev: car.CarState):
+    """Add events related to control status."""
     if CS.brakeHoldActive and self.CP.openpilotLongitudinalControl:
       events.add(EventName.brakeHold)
     if CS.parkingBrake:
@@ -179,13 +189,16 @@ class CarSpecificEvents:
     if CS.buttonEnable:
       events.add(EventName.buttonEnable)
 
-    # Handle cancel button presses
+  def _add_button_events(self, CS: structs.CarState, events: Events, allow_button_cancel: bool):
+    """Handle button press events."""
     for b in CS.buttonEvents:
       # Disable on rising and falling edge of cancel for both stock and OP long
       # TODO: only check the cancel button with openpilot longitudinal on all brands to match panda safety
       if b.type == ButtonType.cancel and (allow_button_cancel or not self.CP.pcmCruise):
         events.add(EventName.buttonCancel)
 
+  def _add_steering_fault_events(self, CS: structs.CarState, events: Events, CS_prev: car.CarState):
+    """Handle steering fault events."""
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if CS.steeringPressed else self.steering_unpressed + 1
     if CS.steerFaultTemporary:
@@ -195,7 +208,7 @@ class CarSpecificEvents:
         self.no_steer_warning = False
 
         # if the user overrode recently, show a less harsh alert
-        if self.silent_steer_warning or CS.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
+        if self.silent_steer_warning or CS.standstill or self.steering_unpressed < int(STEER_FAULT_THRESHOLD / DT_CTRL):
           self.silent_steer_warning = True
           events.add(EventName.steerTempUnavailableSilent)
         else:
@@ -206,6 +219,8 @@ class CarSpecificEvents:
     if CS.steerFaultPermanent:
       events.add(EventName.steerUnavailable)
 
+  def _add_cruise_engagement_events(self, CS: structs.CarState, events: Events, CS_prev: car.CarState, pcm_enable: bool):
+    """Handle cruise engagement events."""
     # we engage when pcm is active (rising edge)
     # enabling can optionally be blocked by the car interface
     if pcm_enable:
@@ -213,5 +228,19 @@ class CarSpecificEvents:
         events.add(EventName.pcmEnable)
       elif not CS.cruiseState.enabled:
         events.add(EventName.pcmDisable)
+
+  def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
+                           allow_button_cancel=True):
+    events = Events()
+
+    # Add events organized by category
+    self._add_vehicle_status_events(CS, events, extra_gears)
+    self._add_speed_related_events(CS, events)
+    self._add_control_status_events(CS, events, CS_prev)
+
+    # Handle special event types
+    self._add_button_events(CS, events, allow_button_cancel)
+    self._add_steering_fault_events(CS, events, CS_prev)
+    self._add_cruise_engagement_events(CS, events, CS_prev, pcm_enable)
 
     return events
