@@ -198,25 +198,6 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
   return current_valid
 
 
-# TODO: Remove this function after few releases (added in 0.9.9)
-def migrate_cached_vehicle_params_if_needed(params: Params):
-  last_parameters_data_old = params.get("LiveParameters")
-  last_parameters_data = params.get("LiveParametersV2")
-  if last_parameters_data_old is None or last_parameters_data is not None:
-    return
-
-  try:
-    last_parameters_msg = messaging.new_message('liveParameters')
-    last_parameters_msg.liveParameters.valid = True
-    last_parameters_msg.liveParameters.steerRatio = last_parameters_data_old['steerRatio']
-    last_parameters_msg.liveParameters.stiffnessFactor = last_parameters_data_old['stiffnessFactor']
-    last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_data_old['angleOffsetAverageDeg']
-    params.put("LiveParametersV2", last_parameters_msg.to_bytes())
-  except Exception as e:
-    cloudlog.error(f"Failed to perform parameter migration: {e}")
-    params.remove("LiveParameters")
-
-
 def retrieve_initial_vehicle_params(params: Params, CP: car.CarParams, replay: bool, debug: bool):
   last_parameters_data = params.get("LiveParametersV2")
   last_carparams_data = params.get("CarParamsPrevRoute")
@@ -270,8 +251,6 @@ def main():
 
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
-
-  migrate_cached_vehicle_params_if_needed(params)
 
   steer_ratio, stiffness_factor, angle_offset_deg, pInitial = retrieve_initial_vehicle_params(params, CP, REPLAY, DEBUG)
   learner = VehicleParamsLearner(CP, steer_ratio, stiffness_factor, np.radians(angle_offset_deg), pInitial)
