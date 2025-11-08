@@ -14,9 +14,9 @@ in loss of the last minute of testing data.
 2. Open and close each door in a defined order: driver, passenger, rear left, rear right
 3. Re-enter the vehicle, close the driver's door, and fasten the driver's seatbelt
 4. Slowly press and release the accelerator pedal 3 times
-6. Slowly press and release the brake pedal 3 times
-7. Hold the brake and move the gearshift to reverse, then neutral, then drive, then sport/eco/etc if applicable
-8. Return to Park, ignition off
+5. Slowly press and release the brake pedal 3 times
+6. Hold the brake and move the gearshift to reverse, then neutral, then drive, then sport/eco/etc if applicable
+7. Return to Park, ignition off
 
 Brake-pressed information may show up in several messages and signals, both as on/off states and as a percentage or
 pressure. It may reflect a switch on the driver's brake pedal, or a pressure-threshold state, or signals to turn on
