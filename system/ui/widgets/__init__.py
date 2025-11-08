@@ -23,6 +23,7 @@ class Widget(abc.ABC):
     self._touch_valid_callback: Callable[[], bool] | None = None
     self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
+    self._mouse_events_enabled: bool = True
 
   @property
   def rect(self) -> rl.Rectangle:
@@ -38,6 +39,13 @@ class Widget(abc.ABC):
   def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
     """Can be used like size hint in QT"""
     self._parent_rect = parent_rect
+
+  @property
+  def mouse_events_enabled(self) -> bool:
+    return self._mouse_events_enabled
+
+  def set_mouse_events_enabled(self, enabled: bool) -> None:
+    self._mouse_events_enabled = enabled
 
   @property
   def is_pressed(self) -> bool:
@@ -94,7 +102,7 @@ class Widget(abc.ABC):
     ret = self._render(self._rect)
 
     # Keep track of whether mouse down started within the widget's rectangle
-    if self.enabled:
+    if self.enabled and self._mouse_events_enabled:
       for mouse_event in gui_app.mouse_events:
         if not self._multi_touch and mouse_event.slot != 0:
           continue
