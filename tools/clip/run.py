@@ -5,7 +5,6 @@ import os
 import platform
 import shutil
 import sys
-import time
 import cffi
 import ctypes.util
 from argparse import ArgumentParser, ArgumentTypeError
@@ -13,7 +12,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 from contextlib import contextmanager
 from pathlib import Path
 from random import randint
-from subprocess import Popen, DEVNULL, PIPE
+from subprocess import Popen, PIPE
 
 import pyray as rl
 import numpy as np
@@ -57,7 +56,6 @@ elif platform.system() == 'Darwin':
 else:
   _opengl = _ffi.dlopen(ctypes.util.find_library('opengl32'))
 
-
 def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, height: int) -> bytes:
   _opengl.glBindFramebuffer(0x8D40, render_texture.id)
   rgba_size = width * height * 4
@@ -67,7 +65,6 @@ def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, hei
   rgba_array = np.frombuffer(_ffi.buffer(rgba_buffer), dtype=np.uint8).reshape(height, width, 4)
   rgb_array = rgba_array[::-1, :, :3].reshape(height * width * 3)
   return rgb_array.tobytes()
-
 
 def escape_ffmpeg_text(value: str):
   special_chars = {',': r'\,', ':': r'\:', '=': r'\=', '[': r'\[', ']': r'\]'}
@@ -155,6 +152,8 @@ class ClipGenerator:
   def _get_camera_transform(self, sm, intrinsic_matrix):
     x_offset_aug, y_offset_aug = 0, 0
     zoom = 1.1
+    w, h = UI_WIDTH, UI_HEIGHT
+    cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
 
     calib = sm['liveCalibration']
     if len(calib.rpyCalib) == 3:
@@ -163,15 +162,11 @@ class ClipGenerator:
       calibration = view_frame_from_device_frame @ device_from_calib
       calib_transform = intrinsic_matrix @ calibration
       kep = calib_transform @ np.array([1000.0, 0.0, 0.0])
-      w, h = UI_WIDTH, UI_HEIGHT
-      cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
       max_x_offset, max_y_offset = cx * zoom - w / 2 - 5, cy * zoom - h / 2 - 5
       if abs(kep[2]) > 1e-6:
         x_offset_aug = np.clip((kep[0] / kep[2] - cx) * zoom, -max_x_offset, max_x_offset)
         y_offset_aug = np.clip((kep[1] / kep[2] - cy) * zoom, -max_y_offset, max_y_offset)
 
-    w, h = UI_WIDTH, UI_HEIGHT
-    cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
     return np.array([
       [zoom * 2 * cx / w, 0, -x_offset_aug / w * 2],
       [0, zoom * 2 * cy / h, -y_offset_aug / h * 2],
@@ -332,7 +327,7 @@ class ClipGenerator:
     current_segment, fr, msg_idx = -1, None, 0
     ui_state.started = ui_state.ignition = True
 
-    for _, camera_msg in enumerate(camera_messages):
+    for camera_msg in camera_messages:
       frame_mono_time = camera_msg.logMonoTime
       messages_to_feed = []
       while msg_idx < len(messages_by_time) and messages_by_time[msg_idx][0] <= frame_mono_time:
@@ -364,7 +359,7 @@ class ClipGenerator:
     if ffmpeg_proc.returncode != 0:
       raise RuntimeError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
 
-  def run(self):
+  def clip(self):
     logger.info(
       f"clipping route {self.args['route'].name.canonical_name}, start={self.args['start']} end={self.args['end']} " +
       f"quality={self.args['quality']} target_filesize={self.args['target_mb']}MB"
@@ -374,24 +369,13 @@ class ClipGenerator:
       with self._setup_environment():
         from openpilot.system.ui.lib.application import gui_app
         try:
-          # Setup UI and message handling
           road_view = self._init_ui()
-
-          # Load and prepare log messages
           all_msgs, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix = self._load_and_prepare_msgs()
-
-          # Prime state with initial messages
           self._prime_state(all_msgs, start_mono_time)
-
-          # Main loop to process frames and render to video
           self._process_frames(road_view, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix)
         finally:
           gui_app.close()
       logger.info(f'recording complete: {Path(self.args["out"]).resolve()}')
-
-def clip(**kwargs):
-  c = ClipGenerator(**kwargs)
-  c.run()
 
 
 def parse_args(parser: ArgumentParser):
@@ -421,15 +405,18 @@ def parse_args(parser: ArgumentParser):
     parser.error(f'start/end ({args.start}/{args.end}) out of range for route length ({length}s)')
   return args
 
+
 def validate_output_file(output_file: str):
   if not output_file.endswith('.mp4'):
     raise ArgumentTypeError('output must be an mp4')
   return output_file
 
+
 def validate_route(route: str):
   if route.count('/') not in (1, 3):
     raise ArgumentTypeError(f'route must include or exclude timing, example: {DEMO_ROUTE}')
   return route
+
 
 def validate_title(title: str):
   if len(title) > 80:
@@ -457,11 +444,11 @@ def main():
   args = parse_args(p)
 
   try:
-    clip(
+    ClipGenerator(
       data_dir=args.data_dir, quality=args.quality, prefix=args.prefix, route=args.route,
       out=args.output, start=args.start, end=args.end, speed=args.speed,
       target_mb=args.file_size, title=args.title,
-    )
+    ).clip()
   except (KeyboardInterrupt, Exception) as e:
     logger.exception('encountered error', exc_info=e)
     sys.exit(1)
