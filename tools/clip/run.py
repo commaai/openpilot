@@ -149,8 +149,8 @@ class ClipGenerator:
     if not first_segment_path:
       raise RuntimeError("No camera segments found to determine resolution")
     temp_fr = FrameReader(first_segment_path)
-        self.camera_width, self.camera_height = temp_fr.w, temp_fr.h
-        del temp_fr
+    self.camera_width, self.camera_height = temp_fr.w, temp_fr.h
+    del temp_fr
 
   def _get_camera_transform(self, sm, intrinsic_matrix):
     x_offset_aug, y_offset_aug = 0, 0
@@ -228,6 +228,142 @@ class ClipGenerator:
       '-f', 'mp4', '-t', str(duration), self.args['out'],
     ]
 
+  def _get_draw_rect(self, transform):
+    scale_x, scale_y = UI_WIDTH * transform[0, 0], UI_HEIGHT * transform[1, 1]
+    x_offset, y_offset = (UI_WIDTH - scale_x) / 2 + transform[0, 2] * UI_WIDTH / 2, (UI_HEIGHT - scale_y) / 2 + transform[1, 2] * UI_HEIGHT / 2
+    if scale_x / UI_WIDTH > scale_y / UI_HEIGHT:
+      final_scale_y = scale_y * (UI_WIDTH * transform[0, 0]) / scale_x
+      final_x_offset, final_y_offset = x_offset, (UI_HEIGHT - final_scale_y) / 2
+    else:
+      final_scale_x = scale_x * (UI_HEIGHT * transform[1, 1]) / scale_y
+      final_x_offset, final_y_offset = (UI_WIDTH - final_scale_x) / 2, y_offset
+    return rl.Rectangle(final_x_offset, final_y_offset, scale_x, scale_y)
+
+  def _init_ui(self):
+    from openpilot.system.ui.lib.application import gui_app
+    rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
+    gui_app.init_window("Clip Renderer", fps=FRAMERATE)
+    gui_app._render_texture = rl.load_render_texture(UI_WIDTH, UI_HEIGHT)
+    rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+
+    road_view = AugmentedRoadView()
+    road_view.set_rect(rl.Rectangle(0, 0, UI_WIDTH, UI_HEIGHT))
+    return road_view
+
+  def _load_and_prepare_msgs(self):
+    from openpilot.common.transformations.camera import DEVICE_CAMERAS
+    all_msgs = migrate_all([m for p in self.args['route'].log_paths() if p for m in LogReader(p)])
+    if not all_msgs:
+      raise RuntimeError("No messages found in logs")
+
+    services = {m.which() for m in all_msgs} | {'selfdriveState', 'radarState', 'longitudinalPlan'}
+    valid_services = [s for s in messaging.SERVICE_LIST if s in services]
+    ui_state.sm = messaging.SubMaster(valid_services)
+
+    start_mono_time = all_msgs[0].logMonoTime
+    start_filter_mono_time = start_mono_time + self.args['start'] * 1e9
+    end_filter_mono_time = start_mono_time + self.args['end'] * 1e9
+    messages_by_time = sorted(
+      [(m.logMonoTime, m) for m in all_msgs if start_filter_mono_time <= m.logMonoTime <= end_filter_mono_time],
+      key=lambda x: x[0],
+    )
+    camera_messages = [m for t, m in messages_by_time if m.which() == 'roadCameraState']
+    if not camera_messages:
+      raise RuntimeError(f"no roadCameraState messages found in time range {self.args['start']}-{self.args['end']}s")
+
+    first_cam_sensor = camera_messages[0].roadCameraState.sensor
+    camera = DEVICE_CAMERAS[(self.device_type, str(first_cam_sensor))]
+    intrinsic_matrix = camera.fcam.intrinsics
+
+    return all_msgs, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix
+
+  def _prime_state(self, all_msgs, start_mono_time):
+    prime_mono_time = start_mono_time + self.args['start'] * 1e9
+    prime_services = {'liveCalibration', 'modelV2', 'carParams', 'selfdriveState', 'radarState'}
+    prime_msgs = []
+    for s in prime_services:
+      m = next((m for m in reversed(all_msgs) if m.logMonoTime < prime_mono_time and m.which() == s), None)
+      if m:
+        prime_msgs.append(m)
+    if prime_msgs:
+      ui_state.sm.update_msgs(prime_mono_time / 1e9, prime_msgs)
+
+  def _render_frame(self, road_view, fr, camera_msg, intrinsic_matrix):
+    from openpilot.system.ui.lib.application import gui_app
+    frame_in_segment_idx = camera_msg.roadCameraState.frameId % (FRAMERATE * 60)
+    frame_np = fr.get(frame_in_segment_idx)
+    if frame_np is None:
+      return None
+
+    frame_image = rl.Image()
+    frame_image.data = rl.ffi.cast("void *", frame_np.ctypes.data)
+    frame_image.width = self.camera_width
+    frame_image.height = self.camera_height
+    frame_image.mipmaps = 1
+    frame_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8
+    frame_texture = rl.load_texture_from_image(frame_image)
+
+    rl.begin_texture_mode(gui_app._render_texture)
+    rl.clear_background(rl.BLACK)
+
+    transform = self._get_camera_transform(ui_state.sm, intrinsic_matrix)
+    dst_rect = self._get_draw_rect(transform)
+    src_rect = rl.Rectangle(0, 0, self.camera_width, self.camera_height)
+    rl.draw_texture_pro(frame_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+
+    content_rect = rl.Rectangle(UI_BORDER_SIZE, UI_BORDER_SIZE, UI_WIDTH - 2 * UI_BORDER_SIZE, UI_HEIGHT - 2 * UI_BORDER_SIZE)
+    rl.begin_scissor_mode(int(content_rect.x), int(content_rect.y), int(content_rect.width), int(content_rect.height))
+    road_view._update_calibration()
+    road_view._content_rect = content_rect
+    road_view._calc_frame_matrix(content_rect)
+    road_view.model_renderer.render(road_view._content_rect)
+    road_view._hud_renderer.render(road_view._content_rect)
+    road_view.alert_renderer.render(road_view._content_rect)
+    road_view.driver_state_renderer.render(road_view._content_rect)
+    rl.end_scissor_mode()
+    road_view._draw_border(rl.Rectangle(0, 0, UI_WIDTH, UI_HEIGHT))
+    rl.end_texture_mode()
+    rl.unload_texture(frame_texture)
+
+    return extract_frame_from_texture(gui_app._render_texture, UI_WIDTH, UI_HEIGHT)
+
+  def _process_frames(self, road_view, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix):
+    ffmpeg_proc = Popen(self._get_ffmpeg_cmd(), stdin=PIPE, env=os.environ.copy())
+    current_segment, fr, msg_idx = -1, None, 0
+    ui_state.started = ui_state.ignition = True
+
+    for _, camera_msg in enumerate(camera_messages):
+      frame_mono_time = camera_msg.logMonoTime
+      messages_to_feed = []
+      while msg_idx < len(messages_by_time) and messages_by_time[msg_idx][0] <= frame_mono_time:
+        messages_to_feed.append(messages_by_time[msg_idx][1])
+        msg_idx += 1
+      if messages_to_feed:
+        ui_state.sm.update_msgs(frame_mono_time / 1e9, messages_to_feed)
+      ui_state._update_state()
+      ui_state._update_status()
+
+      elapsed_time = (frame_mono_time - start_mono_time) / 1e9
+      segment_num = int((elapsed_time - self.args['start']) // 60) + (self.args['start'] // 60)
+      if segment_num != current_segment:
+        if fr is not None:
+          fr.close()
+        current_segment = segment_num
+        if self.camera_paths[current_segment] is not None:
+          fr = FrameReader(self.camera_paths[current_segment], pix_fmt='rgb24')
+      if fr is None:
+        continue
+
+      frame_data = self._render_frame(road_view, fr, camera_msg, intrinsic_matrix)
+      if frame_data is not None:
+        ffmpeg_proc.stdin.write(frame_data)
+        ffmpeg_proc.stdin.flush()
+
+    ffmpeg_proc.stdin.close()
+    ffmpeg_proc.wait()
+    if ffmpeg_proc.returncode != 0:
+      raise RuntimeError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
+
   def run(self):
     logger.info(
       f"clipping route {self.args['route'].name.canonical_name}, start={self.args['start']} end={self.args['end']} " +
@@ -237,131 +373,21 @@ class ClipGenerator:
       populate_car_params(self.lr)
       with self._setup_environment():
         from openpilot.system.ui.lib.application import gui_app
-        from openpilot.common.transformations.camera import DEVICE_CAMERAS
-
         try:
-          rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
-          gui_app.init_window("Clip Renderer", fps=FRAMERATE)
-          gui_app._render_texture = rl.load_render_texture(UI_WIDTH, UI_HEIGHT)
-          rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+          # Setup UI and message handling
+          road_view = self._init_ui()
 
-          road_view = AugmentedRoadView()
-          road_view.set_rect(rl.Rectangle(0, 0, UI_WIDTH, UI_HEIGHT))
+          # Load and prepare log messages
+          all_msgs, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix = self._load_and_prepare_msgs()
 
-          all_msgs = migrate_all([m for p in self.args['route'].log_paths() if p for m in LogReader(p)])
-          if not all_msgs:
-            raise RuntimeError("No messages found in logs")
+          # Prime state with initial messages
+          self._prime_state(all_msgs, start_mono_time)
 
-          services = {m.which() for m in all_msgs} | {'selfdriveState', 'radarState', 'longitudinalPlan'}
-          valid_services = [s for s in messaging.SERVICE_LIST if s in services]
-          ui_state.sm = messaging.SubMaster(valid_services)
-
-          start_mono_time = all_msgs[0].logMonoTime
-          start_filter_mono_time = start_mono_time + self.args['start'] * 1e9
-          end_filter_mono_time = start_mono_time + self.args['end'] * 1e9
-          messages_by_time = sorted(
-            [(m.logMonoTime, m) for m in all_msgs if start_filter_mono_time <= m.logMonoTime <= end_filter_mono_time],
-            key=lambda x: x[0],
-          )
-          camera_messages = [m for t, m in messages_by_time if m.which() == 'roadCameraState']
-          if not camera_messages:
-            raise RuntimeError(f"no roadCameraState messages found in time range {self.args['start']}-{self.args['end']}s")
-
-          first_cam_sensor = camera_messages[0].roadCameraState.sensor
-          camera = DEVICE_CAMERAS[(self.device_type, str(first_cam_sensor))]
-          intrinsic_matrix = camera.fcam.intrinsics
-
-          prime_mono_time = start_mono_time + self.args['start'] * 1e9
-          prime_services = {'liveCalibration', 'modelV2', 'carParams', 'selfdriveState', 'radarState'}
-          prime_msgs = []
-          for s in prime_services:
-            m = next((m for m in reversed(all_msgs) if m.logMonoTime < prime_mono_time and m.which() == s), None)
-            if m:
-              prime_msgs.append(m)
-          if prime_msgs:
-            ui_state.sm.update_msgs(prime_mono_time / 1e9, prime_msgs)
-
-          ffmpeg_proc = Popen(self._get_ffmpeg_cmd(), stdin=PIPE, env=os.environ.copy())
-          current_segment, fr, msg_idx = -1, None, 0
-          ui_state.started = ui_state.ignition = True
-
-          for _, camera_msg in enumerate(camera_messages):
-            frame_mono_time = camera_msg.logMonoTime
-            messages_to_feed = []
-            while msg_idx < len(messages_by_time) and messages_by_time[msg_idx][0] <= frame_mono_time:
-              messages_to_feed.append(messages_by_time[msg_idx][1])
-              msg_idx += 1
-            if messages_to_feed:
-              ui_state.sm.update_msgs(frame_mono_time / 1e9, messages_to_feed)
-            ui_state._update_state()
-            ui_state._update_status()
-
-            elapsed_time = (frame_mono_time - start_mono_time) / 1e9
-            segment_num = int((elapsed_time - self.args['start']) // 60) + (self.args['start'] // 60)
-            if segment_num != current_segment:
-              if fr is not None:
-                fr.close()
-              current_segment = segment_num
-              if self.camera_paths[current_segment] is not None:
-                fr = FrameReader(self.camera_paths[current_segment], pix_fmt='rgb24')
-            if fr is None:
-              continue
-
-            frame_in_segment_idx = camera_msg.roadCameraState.frameId % (FRAMERATE * 60)
-            frame_np = fr.get(frame_in_segment_idx)
-            if frame_np is None:
-              continue
-
-            frame_image = rl.Image()
-            frame_image.data = rl.ffi.cast("void *", frame_np.ctypes.data)
-            frame_image.width = self.camera_width
-            frame_image.height = self.camera_height
-            frame_image.mipmaps = 1
-            frame_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8
-            frame_texture = rl.load_texture_from_image(frame_image)
-
-            rl.begin_texture_mode(gui_app._render_texture)
-            rl.clear_background(rl.BLACK)
-
-            transform = self._get_camera_transform(ui_state.sm, intrinsic_matrix)
-            scale_x, scale_y = UI_WIDTH * transform[0, 0], UI_HEIGHT * transform[1, 1]
-            x_offset, y_offset = (UI_WIDTH - scale_x) / 2 + transform[0, 2] * UI_WIDTH / 2, (UI_HEIGHT - scale_y) / 2 + transform[1, 2] * UI_HEIGHT / 2
-            if scale_x / UI_WIDTH > scale_y / UI_HEIGHT:
-                final_scale_y = scale_y * (UI_WIDTH * transform[0, 0]) / scale_x
-                final_x_offset, final_y_offset = x_offset, (UI_HEIGHT - final_scale_y) / 2
-            else:
-                final_scale_x = scale_x * (UI_HEIGHT * transform[1, 1]) / scale_y
-                final_x_offset, final_y_offset = (UI_WIDTH - final_scale_x) / 2, y_offset
-            dst_rect = rl.Rectangle(final_x_offset, final_y_offset, scale_x, scale_y)
-            src_rect = rl.Rectangle(0, 0, self.camera_width, self.camera_height)
-            rl.draw_texture_pro(frame_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
-
-            content_rect = rl.Rectangle(UI_BORDER_SIZE, UI_BORDER_SIZE, UI_WIDTH - 2 * UI_BORDER_SIZE, UI_HEIGHT - 2 * UI_BORDER_SIZE)
-            rl.begin_scissor_mode(int(content_rect.x), int(content_rect.y), int(content_rect.width), int(content_rect.height))
-            road_view._update_calibration()
-            road_view._content_rect = content_rect
-            road_view._calc_frame_matrix(content_rect)
-            road_view.model_renderer.render(road_view._content_rect)
-            road_view._hud_renderer.render(road_view._content_rect)
-            road_view.alert_renderer.render(road_view._content_rect)
-            road_view.driver_state_renderer.render(road_view._content_rect)
-            rl.end_scissor_mode()
-            road_view._draw_border(rl.Rectangle(0, 0, UI_WIDTH, UI_HEIGHT))
-            rl.end_texture_mode()
-            rl.unload_texture(frame_texture)
-
-            frame_data = extract_frame_from_texture(gui_app._render_texture, UI_WIDTH, UI_HEIGHT)
-            ffmpeg_proc.stdin.write(frame_data)
-            ffmpeg_proc.stdin.flush()
-
-          ffmpeg_proc.stdin.close()
-          ffmpeg_proc.wait()
-          if ffmpeg_proc.returncode != 0:
-            raise RuntimeError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
+          # Main loop to process frames and render to video
+          self._process_frames(road_view, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix)
         finally:
           gui_app.close()
       logger.info(f'recording complete: {Path(self.args["out"]).resolve()}')
-
 
 def clip(**kwargs):
   c = ClipGenerator(**kwargs)
