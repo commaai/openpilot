@@ -49,8 +49,11 @@ _ffi.cdef("""
 if platform.system() == 'Linux':
   opengl_lib = ctypes.util.find_library('GL') or 'libGL.so.1'
   _opengl = _ffi.dlopen(opengl_lib)
+elif platform.system() == 'Darwin':
+  opengl_lib = '/System/Library/Frameworks/OpenGL.framework/OpenGL'
+  _opengl = _ffi.dlopen(opengl_lib)
 else:
-  _opengl = _ffi.dlopen(None)
+  _opengl = _ffi.dlopen(ctypes.util.find_library('opengl32'))
 
 
 def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, height: int) -> bytes:
@@ -137,6 +140,7 @@ class ClipGenerator:
     if self.args['quality'] == 'high':
       self.camera_paths = self.args['route'].camera_paths()
     else:
+      # Doesnt work right now due to FrameReader
       self.camera_paths = self.args['route'].qcamera_paths()
 
     first_segment_path = next((p for p in self.camera_paths if p is not None), None)
@@ -148,23 +152,6 @@ class ClipGenerator:
 
   @contextmanager
   def _setup_environment(self):
-    original_display = os.environ.get('DISPLAY')
-    xvfb_proc = None
-    if platform.system() == 'Linux':
-      display = os.environ.get('DISPLAY')
-      if not display or Popen(['xdpyinfo', '-display', display], stdout=DEVNULL, stderr=DEVNULL).wait() != 0:
-        display = f':{randint(99, 999)}'
-        xvfb_proc = Popen(['Xvfb', display, '-screen', '0', f'{UI_WIDTH}x{UI_HEIGHT}x24'], stdout=DEVNULL, stderr=DEVNULL)
-        for _ in range(50):
-          if xvfb_proc.poll() is not None:
-            raise RuntimeError(f'Xvfb failed to start (exit code {xvfb_proc.returncode})')
-          if Popen(['xdpyinfo', '-display', display], stdout=DEVNULL, stderr=DEVNULL).wait() == 0:
-            break
-          time.sleep(0.1)
-        else:
-          raise RuntimeError('Xvfb failed to become ready within 5s')
-      os.environ['DISPLAY'] = display
-
     original_simulation = os.environ.get('SIMULATION')
     os.environ['SIMULATION'] = '1'
     original_update_msgs = messaging.SubMaster.update_msgs
@@ -173,13 +160,6 @@ class ClipGenerator:
     try:
       yield
     finally:
-      if xvfb_proc:
-        xvfb_proc.terminate()
-        xvfb_proc.wait()
-      if original_display:
-        os.environ['DISPLAY'] = original_display
-      else:
-        os.environ.pop('DISPLAY', None)
       if original_simulation:
         os.environ['SIMULATION'] = original_simulation
       else:
@@ -228,6 +208,7 @@ class ClipGenerator:
 
         try:
           os.environ.setdefault('HEADLESS', '1')
+          rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
           original_scale = os.environ.pop('SCALE', None)
           os.environ['SCALE'] = '2.0'
           gui_app.init_window("Clip Renderer", fps=FRAMERATE)
@@ -292,6 +273,8 @@ class ClipGenerator:
             elapsed_time = (frame_mono_time - start_mono_time) / 1e9
             segment_num = int((elapsed_time - self.args['start']) // 60) + (self.args['start'] // 60)
             if segment_num != current_segment:
+              if fr is not None:
+                fr.close()
               current_segment = segment_num
               if self.camera_paths[current_segment] is not None:
                 fr = FrameReader(self.camera_paths[current_segment], pix_fmt='rgb24')
@@ -418,8 +401,6 @@ def main():
   p = ArgumentParser(prog='clip.py', description='clip your openpilot route.', epilog='comma.ai')
   if shutil.which('ffmpeg') is None:
     p.exit(1, 'clip.py: error: missing ffmpeg command, is it installed?\n')
-  if platform.system() == 'Linux' and shutil.which('Xvfb') is None:
-    p.exit(1, 'clip.py: error: missing Xvfb command, is it installed?\n')
 
   route_group = p.add_mutually_exclusive_group(required=True)
   route_group.add_argument('route', nargs='?', type=validate_route, help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
