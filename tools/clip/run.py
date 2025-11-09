@@ -139,7 +139,7 @@ class ClipGenerator:
     if self.args['quality'] == 'high':
       self.camera_paths = self.args['route'].camera_paths()
     else:
-      # Doesnt work right now due to FrameReader
+      # Doesn't work right now due to FrameReader
       self.camera_paths = self.args['route'].qcamera_paths()
 
     first_segment_path = next((p for p in self.camera_paths if p is not None), None)
