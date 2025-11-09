@@ -15,7 +15,6 @@ from pathlib import Path
 from random import randint
 from subprocess import Popen, DEVNULL, PIPE
 
-
 import pyray as rl
 import numpy as np
 
@@ -28,6 +27,9 @@ from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.common.transformations.orientation import rot_from_euler
+from openpilot.selfdrive.ui import UI_BORDER_SIZE
+from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
+from openpilot.selfdrive.ui.ui_state import ui_state
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
@@ -147,23 +149,57 @@ class ClipGenerator:
     if not first_segment_path:
       raise RuntimeError("No camera segments found to determine resolution")
     temp_fr = FrameReader(first_segment_path)
-    self.camera_width, self.camera_height = temp_fr.w, temp_fr.h
-    del temp_fr
+        self.camera_width, self.camera_height = temp_fr.w, temp_fr.h
+        del temp_fr
+
+  def _get_camera_transform(self, sm, intrinsic_matrix):
+    x_offset_aug, y_offset_aug = 0, 0
+    zoom = 1.1
+
+    calib = sm['liveCalibration']
+    if len(calib.rpyCalib) == 3:
+      device_from_calib = rot_from_euler(calib.rpyCalib)
+      view_frame_from_device_frame = np.array([[0., 0., 1.], [1., 0., 0.], [0., 1., 0.]]).T
+      calibration = view_frame_from_device_frame @ device_from_calib
+      calib_transform = intrinsic_matrix @ calibration
+      kep = calib_transform @ np.array([1000.0, 0.0, 0.0])
+      w, h = UI_WIDTH, UI_HEIGHT
+      cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
+      max_x_offset, max_y_offset = cx * zoom - w / 2 - 5, cy * zoom - h / 2 - 5
+      if abs(kep[2]) > 1e-6:
+        x_offset_aug = np.clip((kep[0] / kep[2] - cx) * zoom, -max_x_offset, max_x_offset)
+        y_offset_aug = np.clip((kep[1] / kep[2] - cy) * zoom, -max_y_offset, max_y_offset)
+
+    w, h = UI_WIDTH, UI_HEIGHT
+    cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
+    return np.array([
+      [zoom * 2 * cx / w, 0, -x_offset_aug / w * 2],
+      [0, zoom * 2 * cy / h, -y_offset_aug / h * 2],
+      [0, 0, 1.0]
+    ])
 
   @contextmanager
   def _setup_environment(self):
-    original_simulation = os.environ.get('SIMULATION')
+    original_vars = {
+      'SIMULATION': os.environ.get('SIMULATION'),
+      'SCALE': os.environ.get('SCALE'),
+      'HEADLESS': os.environ.get('HEADLESS'),
+    }
     os.environ['SIMULATION'] = '1'
+    os.environ['SCALE'] = '2.0'
+    os.environ['HEADLESS'] = '1'
+
     original_update_msgs = messaging.SubMaster.update_msgs
     messaging.SubMaster.update_msgs = patched_update_msgs
 
     try:
       yield
     finally:
-      if original_simulation:
-        os.environ['SIMULATION'] = original_simulation
-      else:
-        os.environ.pop('SIMULATION', None)
+      for k, v in original_vars.items():
+        if v is not None:
+          os.environ[k] = v
+        else:
+          os.environ.pop(k, None)
       messaging.SubMaster.update_msgs = original_update_msgs
 
   def _get_ffmpeg_cmd(self):
@@ -201,23 +237,13 @@ class ClipGenerator:
       populate_car_params(self.lr)
       with self._setup_environment():
         from openpilot.system.ui.lib.application import gui_app
-        from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
-        from openpilot.selfdrive.ui import UI_BORDER_SIZE
-        from openpilot.selfdrive.ui.ui_state import ui_state
         from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
         try:
-          os.environ.setdefault('HEADLESS', '1')
           rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
-          original_scale = os.environ.pop('SCALE', None)
-          os.environ['SCALE'] = '2.0'
           gui_app.init_window("Clip Renderer", fps=FRAMERATE)
           gui_app._render_texture = rl.load_render_texture(UI_WIDTH, UI_HEIGHT)
           rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-          if original_scale:
-            os.environ['SCALE'] = original_scale
-          else:
-            os.environ.pop('SCALE', None)
 
           road_view = AugmentedRoadView()
           road_view.set_rect(rl.Rectangle(0, 0, UI_WIDTH, UI_HEIGHT))
@@ -297,22 +323,7 @@ class ClipGenerator:
             rl.begin_texture_mode(gui_app._render_texture)
             rl.clear_background(rl.BLACK)
 
-            calib = ui_state.sm['liveCalibration']
-            if len(calib.rpyCalib) == 3:
-                device_from_calib = rot_from_euler(calib.rpyCalib)
-                view_frame_from_device_frame = np.array([[0., 0., 1.], [1., 0., 0.], [0., 1., 0.]]).T
-                calibration = view_frame_from_device_frame @ device_from_calib
-                calib_transform = intrinsic_matrix @ calibration
-                kep = calib_transform @ np.array([1000.0, 0.0, 0.0])
-                w, h, zoom = UI_WIDTH, UI_HEIGHT, 1.1
-                cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
-                max_x_offset, max_y_offset = cx * zoom - w / 2 - 5, cy * zoom - h / 2 - 5
-                x_offset_aug = np.clip((kep[0] / kep[2] - cx) * zoom, -max_x_offset, max_x_offset) if abs(kep[2]) > 1e-6 else 0
-                y_offset_aug = np.clip((kep[1] / kep[2] - cy) * zoom, -max_y_offset, max_y_offset) if abs(kep[2]) > 1e-6 else 0
-            else:
-                x_offset_aug, y_offset_aug = 0, 0
-
-            transform = np.array([[zoom * 2 * cx / w, 0, -x_offset_aug / w * 2], [0, zoom * 2 * cy / h, -y_offset_aug / h * 2], [0, 0, 1.0]])
+            transform = self._get_camera_transform(ui_state.sm, intrinsic_matrix)
             scale_x, scale_y = UI_WIDTH * transform[0, 0], UI_HEIGHT * transform[1, 1]
             x_offset, y_offset = (UI_WIDTH - scale_x) / 2 + transform[0, 2] * UI_WIDTH / 2, (UI_HEIGHT - scale_y) / 2 + transform[1, 2] * UI_HEIGHT / 2
             if scale_x / UI_WIDTH > scale_y / UI_HEIGHT:
@@ -351,9 +362,11 @@ class ClipGenerator:
           gui_app.close()
       logger.info(f'recording complete: {Path(self.args["out"]).resolve()}')
 
+
 def clip(**kwargs):
   c = ClipGenerator(**kwargs)
   c.run()
+
 
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
@@ -396,6 +409,7 @@ def validate_title(title: str):
   if len(title) > 80:
     raise ArgumentTypeError('title must be no longer than 80 chars')
   return title
+
 
 def main():
   p = ArgumentParser(prog='clip.py', description='clip your openpilot route.', epilog='comma.ai')
