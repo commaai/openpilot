@@ -4,7 +4,6 @@ import logging
 import os
 import shutil
 import sys
-import ctypes
 from argparse import ArgumentParser, ArgumentTypeError
 
 from contextlib import contextmanager
@@ -364,7 +363,6 @@ class ClipGenerator:
     with OpenpilotPrefix(self.args['prefix'], shared_download_cache=True):
       populate_car_params(self.lr)
       with self._setup_environment():
-        from openpilot.system.ui.lib.application import gui_app
         try:
           road_view = self._init_ui()
           all_msgs, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix = self._load_and_prepare_msgs()
