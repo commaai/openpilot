@@ -2,11 +2,9 @@
 
 import logging
 import os
-import platform
 import shutil
 import sys
-import cffi
-import ctypes.util
+import ctypes
 from argparse import ArgumentParser, ArgumentTypeError
 
 from contextlib import contextmanager
@@ -29,6 +27,7 @@ from openpilot.common.transformations.orientation import rot_from_euler
 from openpilot.selfdrive.ui import UI_BORDER_SIZE
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.shader_polygon import cleanup_shader_resources
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
@@ -41,30 +40,17 @@ OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').r
 
 logger = logging.getLogger('clip.py')
 
-# Initialize cffi for OpenGL calls
-_ffi = cffi.FFI()
-_ffi.cdef("""
-  void glReadPixels(int x, int y, int width, int height, unsigned int format, unsigned int type, void *data);
-  void glBindFramebuffer(unsigned int target, unsigned int framebuffer);
-""")
-if platform.system() == 'Linux':
-  opengl_lib = ctypes.util.find_library('GL') or 'libGL.so.1'
-  _opengl = _ffi.dlopen(opengl_lib)
-elif platform.system() == 'Darwin':
-  opengl_lib = '/System/Library/Frameworks/OpenGL.framework/OpenGL'
-  _opengl = _ffi.dlopen(opengl_lib)
-else:
-  _opengl = _ffi.dlopen(ctypes.util.find_library('opengl32'))
-
 def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, height: int) -> bytes:
-  _opengl.glBindFramebuffer(0x8D40, render_texture.id)
-  rgba_size = width * height * 4
-  rgba_buffer = _ffi.new("unsigned char[]", rgba_size)
-  _opengl.glReadPixels(0, 0, width, height, 0x1908, 0x1401, rgba_buffer)
-  _opengl.glBindFramebuffer(0x8D40, 0)
-  rgba_array = np.frombuffer(_ffi.buffer(rgba_buffer), dtype=np.uint8).reshape(height, width, 4)
-  rgb_array = rgba_array[::-1, :, :3].reshape(height * width * 3)
-  return rgb_array.tobytes()
+  image = rl.load_image_from_texture(render_texture.texture)
+  rl.image_flip_vertical(image)
+  rl.image_format(image, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8)
+
+  # image.data is now in RGB format
+  rgb_buffer = rl.ffi.buffer(image.data, width * height * 3)
+  frame_bytes = bytes(rgb_buffer)
+
+  rl.unload_image(image)
+  return frame_bytes
 
 def escape_ffmpeg_text(value: str):
   special_chars = {',': r'\,', ':': r'\:', '=': r'\=', '[': r'\[', ']': r'\]'}
@@ -374,7 +360,9 @@ class ClipGenerator:
           self._prime_state(all_msgs, start_mono_time)
           self._process_frames(road_view, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix)
         finally:
-          gui_app.close()
+          if road_view:
+            road_view.close()
+          cleanup_shader_resources()
       logger.info(f'recording complete: {Path(self.args["out"]).resolve()}')
 
 

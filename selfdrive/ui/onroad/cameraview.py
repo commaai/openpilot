@@ -154,6 +154,7 @@ class CameraView(Widget):
     # Clean up shader
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
+      self.shader = None
 
     self.client = None
 
