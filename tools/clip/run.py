@@ -269,20 +269,14 @@ class ClipGenerator:
     if prime_msgs:
       ui_state.sm.update_msgs(prime_mono_time / 1e9, prime_msgs)
 
-  def _render_frame(self, road_view, fr, camera_msg, intrinsic_matrix):
+  def _render_frame(self, road_view, fr, camera_msg, intrinsic_matrix, frame_texture):
     from openpilot.system.ui.lib.application import gui_app
     frame_in_segment_idx = camera_msg.roadCameraState.frameId % (FRAMERATE * 60)
     frame_np = fr.get(frame_in_segment_idx)
     if frame_np is None:
       return None
 
-    frame_image = rl.Image()
-    frame_image.data = rl.ffi.cast("void *", frame_np.ctypes.data)
-    frame_image.width = self.camera_width
-    frame_image.height = self.camera_height
-    frame_image.mipmaps = 1
-    frame_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8
-    frame_texture = rl.load_texture_from_image(frame_image)
+    rl.update_texture(frame_texture, rl.ffi.cast("void *", frame_np.ctypes.data))
 
     rl.begin_texture_mode(gui_app._render_texture)
     rl.clear_background(rl.BLACK)
@@ -304,7 +298,6 @@ class ClipGenerator:
     rl.end_scissor_mode()
     road_view._draw_border(rl.Rectangle(0, 0, UI_WIDTH, UI_HEIGHT))
     rl.end_texture_mode()
-    rl.unload_texture(frame_texture)
 
     return extract_frame_from_texture(gui_app._render_texture, UI_WIDTH, UI_HEIGHT)
 
@@ -313,37 +306,54 @@ class ClipGenerator:
     current_segment, fr, msg_idx = -1, None, 0
     ui_state.started = ui_state.ignition = True
 
-    for camera_msg in camera_messages:
-      frame_mono_time = camera_msg.logMonoTime
-      messages_to_feed = []
-      while msg_idx < len(messages_by_time) and messages_by_time[msg_idx][0] <= frame_mono_time:
-        messages_to_feed.append(messages_by_time[msg_idx][1])
-        msg_idx += 1
-      if messages_to_feed:
-        ui_state.sm.update_msgs(frame_mono_time / 1e9, messages_to_feed)
-      ui_state._update_state()
-      ui_state._update_status()
+    # Create an image struct with the correct format and dimensions, but no data
+    image = rl.Image()
+    image.width = self.camera_width
+    image.height = self.camera_height
+    image.mipmaps = 1
+    image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8
+    image.data = rl.ffi.NULL  # Important: no initial pixel data
 
-      elapsed_time = (frame_mono_time - start_mono_time) / 1e9
-      segment_num = int((elapsed_time - self.args['start']) // 60) + (self.args['start'] // 60)
-      if segment_num != current_segment:
-        if fr is not None:
-          fr.close()
-        current_segment = segment_num
-        if self.camera_paths[current_segment] is not None:
-          fr = FrameReader(self.camera_paths[current_segment], pix_fmt='rgb24')
-      if fr is None:
-        continue
+    # Create an empty texture from the image definition
+    frame_texture = rl.load_texture_from_image(image)
 
-      frame_data = self._render_frame(road_view, fr, camera_msg, intrinsic_matrix)
-      if frame_data is not None:
-        ffmpeg_proc.stdin.write(frame_data)
-        ffmpeg_proc.stdin.flush()
+    try:
+      for camera_msg in camera_messages:
+        frame_mono_time = camera_msg.logMonoTime
+        messages_to_feed = []
+        while msg_idx < len(messages_by_time) and messages_by_time[msg_idx][0] <= frame_mono_time:
+          messages_to_feed.append(messages_by_time[msg_idx][1])
+          msg_idx += 1
+        if messages_to_feed:
+          ui_state.sm.update_msgs(frame_mono_time / 1e9, messages_to_feed)
+        ui_state._update_state()
+        ui_state._update_status()
 
-    ffmpeg_proc.stdin.close()
-    ffmpeg_proc.wait()
-    if ffmpeg_proc.returncode != 0:
-      raise RuntimeError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
+        elapsed_time = (frame_mono_time - start_mono_time) / 1e9
+        segment_num = int((elapsed_time - self.args['start']) // 60) + (self.args['start'] // 60)
+        if segment_num != current_segment:
+
+          current_segment = segment_num
+          if self.camera_paths[current_segment] is not None:
+            fr = FrameReader(self.camera_paths[current_segment], pix_fmt='rgb24')
+        if fr is None:
+          continue
+
+        frame_data = self._render_frame(road_view, fr, camera_msg, intrinsic_matrix, frame_texture)
+        if frame_data is not None:
+          try:
+            ffmpeg_proc.stdin.write(frame_data)
+            ffmpeg_proc.stdin.flush()
+          except (BrokenPipeError, ConnectionResetError):
+            break
+    finally:
+      rl.unload_texture(frame_texture)
+
+      if ffmpeg_proc.stdin:
+        ffmpeg_proc.stdin.close()
+      ffmpeg_proc.wait()
+      if ffmpeg_proc.returncode not in (0, -15):  # -15 is SIGTERM
+        raise RuntimeError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
 
   def clip(self):
     logger.info(
