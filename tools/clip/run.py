@@ -312,12 +312,12 @@ class ClipGenerator:
     image.height = self.camera_height
     image.mipmaps = 1
     image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8
-    image.data = rl.ffi.NULL  # Important: no initial pixel data
-
-    # Create an empty texture from the image definition
-    frame_texture = rl.load_texture_from_image(image)
+    image.data = rl.ffi.NULL
 
     try:
+      # Create an empty texture from the image definition
+      frame_texture = rl.load_texture_from_image(image)
+
       for camera_msg in camera_messages:
         frame_mono_time = camera_msg.logMonoTime
         messages_to_feed = []
@@ -347,6 +347,7 @@ class ClipGenerator:
           except (BrokenPipeError, ConnectionResetError):
             break
     finally:
+      rl.unload_image(image)
       rl.unload_texture(frame_texture)
 
       if ffmpeg_proc.stdin:
