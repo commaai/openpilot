@@ -202,9 +202,6 @@ class GuiApplication:
       signal.signal(signal.SIGINT, _close)
       atexit.register(self.close)
 
-      HARDWARE.set_display_power(True)
-      HARDWARE.set_screen_brightness(65)
-
       self._set_log_callback()
       rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
 
