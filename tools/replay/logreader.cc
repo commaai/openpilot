@@ -121,8 +121,9 @@ void LogReader::migrateOldEvents() {
       auto new_evt = msg.initEvent(old_evt.getValid());
       new_evt.setLogMonoTime(old_evt.getLogMonoTime());
 
-      auto new_onroad_events = new_evt.initOnroadEvents(old_state.size());
-      for (int j = 0; j < new_onroad_events.size(); j++) {
+      size_t new_onroad_events_size = old_state.size();
+      auto new_onroad_events = new_evt.initOnroadEvents(new_onroad_events_size);
+      for (size_t j = 0; j < new_onroad_events_size; j++) {
         cereal::OnroadEventDEPRECATED::Reader old_event = old_state[j];
         cereal::OnroadEvent::Builder new_event = new_onroad_events[j];
 
