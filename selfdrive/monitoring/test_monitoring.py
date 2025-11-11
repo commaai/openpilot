@@ -53,7 +53,7 @@ class TestMonitoring:
     DM = DriverMonitoring()
     events = []
     for idx in range(len(msgs)):
-      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx])
+      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx], standstill[idx])
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests

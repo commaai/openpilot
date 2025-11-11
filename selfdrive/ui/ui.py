@@ -2,6 +2,7 @@
 import os
 import pyray as rl
 
+from openpilot.system.hardware import TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
@@ -9,8 +10,8 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 
 
 def main():
-  cores = {7, }
-  config_realtime_process(0, 1)
+  cores = {5, }
+  config_realtime_process(0, 51)
 
   gui_app.init_window("UI")
   main_layout = MainLayout()
@@ -21,7 +22,7 @@ def main():
       main_layout.render()
 
       # reaffine after power save offlines our core
-      if os.sched_getaffinity(0) != cores:
+      if TICI and os.sched_getaffinity(0) != cores:
         try:
           set_core_affinity(list(cores))
         except OSError:

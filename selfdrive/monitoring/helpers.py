@@ -4,11 +4,13 @@ import numpy as np
 from cereal import car, log
 import cereal.messaging as messaging
 from openpilot.selfdrive.selfdrived.events import Events
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.stat_live import RunningStatFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
+from openpilot.system.hardware import HARDWARE
 
 EventName = log.OnroadEvent.EventName
 
@@ -34,7 +36,10 @@ class DRIVER_MONITOR_SETTINGS:
     self._SG_THRESHOLD = 0.9
     self._BLINK_THRESHOLD = 0.865
 
-    self._EE_THRESH11 = 0.4
+    if HARDWARE.get_device_type() == 'mici':
+      self._EE_THRESH11 = 0.75
+    else:
+      self._EE_THRESH11 = 0.4
     self._EE_THRESH12 = 15.0
     self._EE_MAX_OFFSET1 = 0.06
     self._EE_MIN_OFFSET1 = 0.025
@@ -53,6 +58,9 @@ class DRIVER_MONITOR_SETTINGS:
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
 
+    self._DCAM_UNCERTAIN_ALERT_THRESHOLD = 0.1
+    self._DCAM_UNCERTAIN_ALERT_COUNT = int(60  / self._DT_DMON)
+    self._DCAM_UNCERTAIN_RESET_COUNT = int(20  / self._DT_DMON)
     self._POSESTD_THRESHOLD = 0.3
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
@@ -154,6 +162,9 @@ class DriverMonitoring:
     self.hi_stds = 0
     self.threshold_pre = self.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
     self.threshold_prompt = self.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
+    self.dcam_uncertain_cnt = 0
+    self.dcam_uncertain_alerted = False # once per drive
+    self.dcam_reset_cnt = 0
 
     self.params = Params()
     self.too_distracted = self.params.get_bool("DriverTooDistracted")
@@ -241,7 +252,7 @@ class DriverMonitoring:
 
     return distracted_types
 
-  def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
+  def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill):
     rhd_pred = driver_state.wheelOnRightProb
     # calibrates only when there's movement and either face detected
     if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
@@ -291,6 +302,16 @@ class DriverMonitoring:
     self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and \
                                        self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
     self.ee1_calibrated = self.ee1_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+
+    if self.face_detected and not self.driver_distracted:
+      if model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD:
+        if not standstill:
+          self.dcam_uncertain_cnt += 1
+          self.dcam_reset_cnt = 0
+      else:
+        self.dcam_reset_cnt += 1
+        if self.dcam_reset_cnt > self.settings._DCAM_UNCERTAIN_RESET_COUNT:
+          self.dcam_uncertain_cnt = 0
 
     self.is_model_uncertain = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME
     self._set_timers(self.face_detected and not self.is_model_uncertain)
@@ -368,6 +389,10 @@ class DriverMonitoring:
     if alert is not None:
       self.current_events.add(alert)
 
+    if self.dcam_uncertain_cnt > self.settings._DCAM_UNCERTAIN_ALERT_COUNT and not self.dcam_uncertain_alerted:
+      set_offroad_alert("Offroad_DriverMonitoringUncertain", True)
+      self.dcam_uncertain_alerted = True
+
 
   def get_state_packet(self, valid=True):
     # build driverMonitoringState packet
@@ -389,6 +414,7 @@ class DriverMonitoring:
       "hiStdCount": self.hi_stds,
       "isActiveMode": self.active_monitoring_mode,
       "isRHD": self.wheel_on_right,
+      "uncertainCount": self.dcam_uncertain_cnt,
     }
     return dat
 
@@ -404,7 +430,8 @@ class DriverMonitoring:
       driver_state=sm['driverStateV2'],
       cal_rpy=sm['liveCalibration'].rpyCalib,
       car_speed=sm['carState'].vEgo,
-      op_engaged=sm['selfdriveState'].enabled
+      op_engaged=sm['selfdriveState'].enabled,
+      standstill=sm['carState'].standstill,
     )
 
     # Update distraction events
