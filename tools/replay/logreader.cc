@@ -2,8 +2,6 @@
 
 #include <algorithm>
 #include <utility>
-#include "cereal/gen/cpp/car.capnp.h"
-#include "cereal/gen/cpp/log.capnp.h"
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
 #include "common/util.h"
