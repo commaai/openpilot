@@ -32,6 +32,7 @@ SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == "1"
 STRICT_MODE = os.getenv("STRICT_MODE") == "1"
 SCALE = float(os.getenv("SCALE", "1.0"))
 PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
+PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
@@ -554,7 +555,7 @@ class GuiApplication:
     avg_frame_time = elapsed_ms / self._frame if self._frame > 0 else 0
 
     stats_stream = io.StringIO()
-    pstats.Stats(self._render_profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+    pstats.Stats(self._render_profiler, stream=stats_stream).sort_stats("cumtime").print_stats(PROFILE_STATS)
     print("\n=== Render loop profile ===")
     print(stats_stream.getvalue().rstrip())
 
