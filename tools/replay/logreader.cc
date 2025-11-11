@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <utility>
+#include "cereal/gen/cpp/car.capnp.h"
+#include "cereal/gen/cpp/log.capnp.h"
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
 #include "common/util.h"
@@ -102,6 +104,319 @@ void LogReader::migrateOldEvents() {
       new_state.setExperimentalMode(old_state.getExperimentalModeDEPRECATED());
       new_state.setPersonality(old_state.getPersonalityDEPRECATED());
       new_state.setState(old_state.getStateDEPRECATED());
+
+      // Serialize the new event to the buffer
+      auto buf_size = msg.getSerializedSize();
+      auto buf = buffer_.allocate(buf_size);
+      msg.serializeToBuffer(reinterpret_cast<unsigned char *>(buf), buf_size);
+
+      // Store the migrated event in the events list
+      auto event_data = kj::arrayPtr(reinterpret_cast<const capnp::word *>(buf), buf_size);
+      events.emplace_back(new_evt.which(), new_evt.getLogMonoTime(), event_data);
+    } else if (event.which == cereal::Event::ONROAD_EVENTS_D_E_P_R_E_C_A_T_E_D) {
+      // Read the old event data
+      capnp::FlatArrayMessageReader reader(event.data);
+      auto old_evt = reader.getRoot<cereal::Event>();
+      auto old_state = old_evt.getOnroadEventsDEPRECATED();
+
+      // Migrate relevant fields from old SELFDRIVE_STATE to new SelfdriveState
+      MessageBuilder msg;
+      auto new_evt = msg.initEvent(old_evt.getValid());
+      new_evt.setLogMonoTime(old_evt.getLogMonoTime());
+      capnp::List<cereal::OnroadEvent>::Builder new_onroad_events = new_evt.initOnroadEvents(old_state.size());
+
+      for (int j = 0; j < old_state.size(); j++) {
+        cereal::OnroadEvent::Builder new_onroad_event = new_onroad_events[j];
+        switch (old_state[j].getName()) {
+          case cereal::OnroadEventDEPRECATED::EventName::CAN_ERROR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CAN_ERROR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STEER_UNAVAILABLE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STEER_UNAVAILABLE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::WRONG_GEAR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::WRONG_GEAR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::DOOR_OPEN:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::DOOR_OPEN);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::SEATBELT_NOT_LATCHED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::SEATBELT_NOT_LATCHED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::ESP_DISABLED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::ESP_DISABLED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::WRONG_CAR_MODE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::WRONG_CAR_MODE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STEER_TEMP_UNAVAILABLE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STEER_TEMP_UNAVAILABLE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::REVERSE_GEAR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::REVERSE_GEAR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::BUTTON_CANCEL:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::BUTTON_CANCEL);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::BUTTON_ENABLE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::BUTTON_ENABLE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PEDAL_PRESSED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PEDAL_PRESSED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PRE_ENABLE_STANDSTILL:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PRE_ENABLE_STANDSTILL);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::GAS_PRESSED_OVERRIDE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::GAS_PRESSED_OVERRIDE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STEER_OVERRIDE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STEER_OVERRIDE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CRUISE_DISABLED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CRUISE_DISABLED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::SPEED_TOO_LOW:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::SPEED_TOO_LOW);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::OUT_OF_SPACE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::OUT_OF_SPACE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::OVERHEAT:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::OVERHEAT);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CALIBRATION_INCOMPLETE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CALIBRATION_INCOMPLETE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CALIBRATION_INVALID:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CALIBRATION_INVALID);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CALIBRATION_RECALIBRATING:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CALIBRATION_RECALIBRATING);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CONTROLS_MISMATCH:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CONTROLS_MISMATCH);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PCM_ENABLE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PCM_ENABLE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PCM_DISABLE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PCM_DISABLE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::RADAR_FAULT:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::RADAR_FAULT);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::BRAKE_HOLD:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::BRAKE_HOLD);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PARK_BRAKE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PARK_BRAKE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::MANUAL_RESTART:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::MANUAL_RESTART);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::JOYSTICK_DEBUG:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::JOYSTICK_DEBUG);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LONGITUDINAL_MANEUVER:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::LONGITUDINAL_MANEUVER);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STEER_TEMP_UNAVAILABLE_SILENT:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STEER_TEMP_UNAVAILABLE_SILENT);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::RESUME_REQUIRED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::RESUME_REQUIRED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PRE_DRIVER_DISTRACTED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PRE_DRIVER_DISTRACTED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PROMPT_DRIVER_DISTRACTED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PROMPT_DRIVER_DISTRACTED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::DRIVER_DISTRACTED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::DRIVER_DISTRACTED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PRE_DRIVER_UNRESPONSIVE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PRE_DRIVER_UNRESPONSIVE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PROMPT_DRIVER_UNRESPONSIVE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PROMPT_DRIVER_UNRESPONSIVE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::DRIVER_UNRESPONSIVE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::DRIVER_UNRESPONSIVE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::BELOW_STEER_SPEED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::BELOW_STEER_SPEED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LOW_BATTERY:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::LOW_BATTERY);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::ACC_FAULTED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::ACC_FAULTED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::SENSOR_DATA_INVALID:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::SENSOR_DATA_INVALID);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::COMM_ISSUE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::COMM_ISSUE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::TOO_DISTRACTED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::TOO_DISTRACTED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::POSENET_INVALID:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::POSENET_INVALID);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PRE_LANE_CHANGE_LEFT:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PRE_LANE_CHANGE_LEFT);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PRE_LANE_CHANGE_RIGHT:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PRE_LANE_CHANGE_RIGHT);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LANE_CHANGE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::LANE_CHANGE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LOW_MEMORY:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::LOW_MEMORY);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STOCK_AEB:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STOCK_AEB);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LDW:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::LDW);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CAR_UNRECOGNIZED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CAR_UNRECOGNIZED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::INVALID_LKAS_SETTING:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::INVALID_LKAS_SETTING);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::SPEED_TOO_HIGH:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::SPEED_TOO_HIGH);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LANE_CHANGE_BLOCKED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::LANE_CHANGE_BLOCKED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::RELAY_MALFUNCTION:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::RELAY_MALFUNCTION);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STOCK_FCW:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STOCK_FCW);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STARTUP:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STARTUP);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STARTUP_NO_CAR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STARTUP_NO_CAR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STARTUP_NO_CONTROL:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STARTUP_NO_CONTROL);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STARTUP_NO_SEC_OC_KEY:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STARTUP_NO_SEC_OC_KEY);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STARTUP_MASTER:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STARTUP_MASTER);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::FCW:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::FCW);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STEER_SATURATED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STEER_SATURATED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::BELOW_ENGAGE_SPEED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::BELOW_ENGAGE_SPEED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::NO_GPS:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::NO_GPS);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::WRONG_CRUISE_MODE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::WRONG_CRUISE_MODE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::MODELD_LAGGING:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::MODELD_LAGGING);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::DEVICE_FALLING:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::DEVICE_FALLING);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::FAN_MALFUNCTION:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::FAN_MALFUNCTION);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CAMERA_MALFUNCTION:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CAMERA_MALFUNCTION);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PROCESS_NOT_RUNNING:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PROCESS_NOT_RUNNING);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::DASHCAM_MODE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::DASHCAM_MODE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::SELFDRIVE_INITIALIZING:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::SELFDRIVE_INITIALIZING);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::USB_ERROR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::USB_ERROR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CRUISE_MISMATCH:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CRUISE_MISMATCH);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LOCATIOND_TEMPORARY_ERROR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::LOCATIOND_TEMPORARY_ERROR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PARAMSD_TEMPORARY_ERROR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PARAMSD_TEMPORARY_ERROR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::COMM_ISSUE_AVG_FREQ:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::COMM_ISSUE_AVG_FREQ);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CAMERA_FRAME_RATE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CAMERA_FRAME_RATE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CAN_BUS_MISSING:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::CAN_BUS_MISSING);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::SELFDRIVED_LAGGING:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::SELFDRIVED_LAGGING);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::RESUME_BLOCKED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::RESUME_BLOCKED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STEER_TIME_LIMIT:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::STEER_TIME_LIMIT);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::VEHICLE_SENSORS_INVALID:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::VEHICLE_SENSORS_INVALID);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LOCATIOND_PERMANENT_ERROR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::LOCATIOND_PERMANENT_ERROR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PARAMSD_PERMANENT_ERROR:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PARAMSD_PERMANENT_ERROR);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::ACTUATORS_API_UNAVAILABLE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::ACTUATORS_API_UNAVAILABLE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::ESP_ACTIVE:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::ESP_ACTIVE);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PERSONALITY_CHANGED:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::PERSONALITY_CHANGED);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::AEB:
+            new_onroad_event.setName(cereal::OnroadEvent::EventName::AEB);
+            break;
+          default:
+            break;
+        }
+        new_onroad_event.setEnable(old_state[j].getEnable());
+        new_onroad_event.setNoEntry(old_state[j].getNoEntry());
+        new_onroad_event.setWarning(old_state[j].getWarning());
+        new_onroad_event.setUserDisable(old_state[j].getUserDisable());
+        new_onroad_event.setSoftDisable(old_state[j].getSoftDisable());
+        new_onroad_event.setImmediateDisable(old_state[j].getImmediateDisable());
+        new_onroad_event.setPreEnable(old_state[j].getPreEnable());
+        new_onroad_event.setPermanent(old_state[j].getPermanent());
+        new_onroad_event.setOverrideLateral(old_state[j].getOverrideLateral());
+      }
 
       // Serialize the new event to the buffer
       auto buf_size = msg.getSerializedSize();
