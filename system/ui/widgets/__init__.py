@@ -116,7 +116,6 @@ class Widget(abc.ABC):
       if not self._multi_touch and mouse_event.slot != 0:
         continue
 
-      slot = mouse_event.slot
       in_rect = rl.check_collision_point_rec(mouse_event.pos, hit_rect)
 
       # Ignores touches/presses that start outside our rect
@@ -124,28 +123,28 @@ class Widget(abc.ABC):
       if mouse_event.left_pressed and touch_valid:
         if in_rect:
           self._handle_mouse_press(mouse_event.pos)
-          self.__is_pressed[slot] = True
-          self.__tracking_is_pressed[slot] = True
+          self.__is_pressed[mouse_event.slot] = True
+          self.__tracking_is_pressed[mouse_event.slot] = True
 
       # Callback such as scroll panel signifies user is scrolling
       elif not touch_valid:
-        self.__is_pressed[slot] = False
-        self.__tracking_is_pressed[slot] = False
+        self.__is_pressed[mouse_event.slot] = False
+        self.__tracking_is_pressed[mouse_event.slot] = False
 
       elif mouse_event.left_released:
-        if self.__is_pressed[slot] and in_rect:
+        if self.__is_pressed[mouse_event.slot] and in_rect:
           self._handle_mouse_release(mouse_event.pos)
-        self.__is_pressed[slot] = False
-        self.__tracking_is_pressed[slot] = False
+        self.__is_pressed[mouse_event.slot] = False
+        self.__tracking_is_pressed[mouse_event.slot] = False
 
       # Mouse/touch is still within our rect
       elif in_rect:
-        if self.__tracking_is_pressed[slot]:
-          self.__is_pressed[slot] = True
+        if self.__tracking_is_pressed[mouse_event.slot]:
+          self.__is_pressed[mouse_event.slot] = True
 
       # Mouse/touch left our rect but may come back into focus later
       else:
-        self.__is_pressed[slot] = False
+        self.__is_pressed[mouse_event.slot] = False
 
   @abc.abstractmethod
   def _render(self, rect: rl.Rectangle) -> bool | int | None:
