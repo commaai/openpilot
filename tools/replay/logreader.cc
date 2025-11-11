@@ -117,7 +117,6 @@ void LogReader::migrateOldEvents() {
       auto old_evt = reader.getRoot<cereal::Event>();
       auto old_state = old_evt.getOnroadEventsDEPRECATED();
 
-      // Migrate relevant fields from old SELFDRIVE_STATE to new SelfdriveState
       MessageBuilder msg;
       auto new_evt = msg.initEvent(old_evt.getValid());
       new_evt.setLogMonoTime(old_evt.getLogMonoTime());
