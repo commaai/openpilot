@@ -32,6 +32,9 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
       auto which = event.which();
       auto event_data = kj::arrayPtr(words.begin(), reader.getEnd());
       words = kj::arrayPtr(reader.getEnd(), words.end());
+      if (which == cereal::Event::Which::SELFDRIVE_STATE) {
+        requires_controls_migration = false;
+      }
 
       if (!filters_.empty()) {
         if (which >= filters_.size() || !filters_[which])
@@ -58,9 +61,11 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
     rWarning("Failed to parse log : %s.\nRetrieved %zu events from corrupt log", e.getDescription().cStr(), events.size());
   }
 
-  if (requires_migration) {
-    migrateOldEvents();
+  if (requires_controls_migration) {
+    migrateControlsEvents();
   }
+
+  migrateEvents();
 
   if (!events.empty() && !(abort && *abort)) {
     events.shrink_to_fit();
@@ -70,13 +75,21 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
   return false;
 }
 
-void LogReader::migrateOldEvents() {
+void LogReader::migrateControlsEvents() {
   size_t events_size = events.size();
   for (int i = 0; i < events_size; ++i) {
     auto &event = events[i];
     if (event.which == cereal::Event::CONTROLS_STATE) {
       migrateControlsState(event.data);
-    } else if (event.which == cereal::Event::ONROAD_EVENTS_D_E_P_R_E_C_A_T_E_D) {
+    }
+  }
+}
+
+void LogReader::migrateEvents() {
+  size_t events_size = events.size();
+  for (int i = 0; i < events_size; ++i) {
+    auto &event = events[i];
+    if (event.which == cereal::Event::ONROAD_EVENTS_D_E_P_R_E_C_A_T_E_D) {
       migrateOnroadEvents(event.data);
     }
   }
