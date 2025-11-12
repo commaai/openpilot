@@ -32,9 +32,6 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
       auto which = event.which();
       auto event_data = kj::arrayPtr(words.begin(), reader.getEnd());
       words = kj::arrayPtr(reader.getEnd(), words.end());
-      if (which == cereal::Event::Which::SELFDRIVE_STATE) {
-        requires_migration = false;
-      }
 
       if (!filters_.empty()) {
         if (which >= filters_.size() || !filters_[which])
