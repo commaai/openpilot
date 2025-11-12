@@ -34,6 +34,8 @@ public:
 
 private:
   void migrateOldEvents();
+  void migrateControlsState(const kj::ArrayPtr<const capnp::word> &event_data);
+  void migrateOnroadEvents(const kj::ArrayPtr<const capnp::word> &event_data);
 
   std::string raw_;
   bool requires_migration = true;
