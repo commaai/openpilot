@@ -33,9 +33,8 @@ public:
   std::vector<Event> events;
 
 private:
-  void migrateControlsEvents();
+  void migrateOldEvents();
   void migrateControlsState(const kj::ArrayPtr<const capnp::word> &event_data);
-  void migrateEvents();
   void migrateOnroadEvents(const kj::ArrayPtr<const capnp::word> &event_data);
 
   std::string raw_;
