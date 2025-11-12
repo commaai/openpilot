@@ -23,6 +23,8 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
 }
 
 bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
+  requires_controls_migration = true;
+
   try {
     events.reserve(65000);
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)data, size / sizeof(capnp::word));
