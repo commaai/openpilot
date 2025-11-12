@@ -33,12 +33,13 @@ public:
   std::vector<Event> events;
 
 private:
-  void migrateOldEvents();
+  void migrateControlsEvents();
+  void migrateEvents();
   void migrateControlsState(const kj::ArrayPtr<const capnp::word> &event_data);
   void migrateOnroadEvents(const kj::ArrayPtr<const capnp::word> &event_data);
 
   std::string raw_;
-  bool requires_migration = true;
+  bool requires_controls_migration = true;
   std::vector<bool> filters_;
   MonotonicBuffer buffer_{1024 * 1024};
 };
