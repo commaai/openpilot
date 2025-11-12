@@ -76,9 +76,7 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
 }
 
 void LogReader::migrateControlsEvents() {
-  size_t events_size = events.size();
-  for (int i = 0; i < events_size; ++i) {
-    auto &event = events[i];
+  for (const auto &event : events) {
     if (event.which == cereal::Event::CONTROLS_STATE) {
       migrateControlsState(event.data);
     }
@@ -86,9 +84,7 @@ void LogReader::migrateControlsEvents() {
 }
 
 void LogReader::migrateEvents() {
-  size_t events_size = events.size();
-  for (int i = 0; i < events_size; ++i) {
-    auto &event = events[i];
+  for (const auto &event : events) {
     if (event.which == cereal::Event::ONROAD_EVENTS_D_E_P_R_E_C_A_T_E_D) {
       migrateOnroadEvents(event.data);
     }
