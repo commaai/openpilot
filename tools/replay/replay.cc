@@ -52,7 +52,10 @@ void Replay::setupSegmentManager(bool has_filters) {
   if (has_filters) {
     std::vector<bool> filters(sockets_.size(), false);
     for (size_t i = 0; i < sockets_.size(); ++i) {
-      filters[i] = (i == cereal::Event::Which::INIT_DATA || i == cereal::Event::Which::CAR_PARAMS || sockets_[i]);
+      filters[i] = (i == cereal::Event::Which::INIT_DATA ||
+                    i == cereal::Event::Which::CAR_PARAMS ||
+                    i == cereal::Event::Which::ONROAD_EVENTS_D_E_P_R_E_C_A_T_E_D ||
+                    sockets_[i]);
     }
     seg_mgr_->setFilters(filters);
   }
