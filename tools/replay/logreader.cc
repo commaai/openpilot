@@ -120,7 +120,6 @@ void LogReader::migrateOldEvents() {
       MessageBuilder msg;
       auto new_evt = msg.initEvent(old_evt.getValid());
       new_evt.setLogMonoTime(old_evt.getLogMonoTime());
-
       size_t new_onroad_events_size = old_state.size();
       auto new_onroad_events = new_evt.initOnroadEvents(new_onroad_events_size);
       for (size_t j = 0; j < new_onroad_events_size; j++) {
@@ -164,15 +163,6 @@ void LogReader::migrateOldEvents() {
           case cereal::OnroadEventDEPRECATED::EventName::PEDAL_PRESSED:
             new_event.setName(cereal::OnroadEvent::EventName::PEDAL_PRESSED);
             break;
-          case cereal::OnroadEventDEPRECATED::EventName::PRE_ENABLE_STANDSTILL:
-            new_event.setName(cereal::OnroadEvent::EventName::PRE_ENABLE_STANDSTILL);
-            break;
-          case cereal::OnroadEventDEPRECATED::EventName::GAS_PRESSED_OVERRIDE:
-            new_event.setName(cereal::OnroadEvent::EventName::GAS_PRESSED_OVERRIDE);
-            break;
-          case cereal::OnroadEventDEPRECATED::EventName::STEER_OVERRIDE:
-            new_event.setName(cereal::OnroadEvent::EventName::STEER_OVERRIDE);
-            break;
           case cereal::OnroadEventDEPRECATED::EventName::CRUISE_DISABLED:
             new_event.setName(cereal::OnroadEvent::EventName::CRUISE_DISABLED);
             break;
@@ -190,9 +180,6 @@ void LogReader::migrateOldEvents() {
             break;
           case cereal::OnroadEventDEPRECATED::EventName::CALIBRATION_INVALID:
             new_event.setName(cereal::OnroadEvent::EventName::CALIBRATION_INVALID);
-            break;
-          case cereal::OnroadEventDEPRECATED::EventName::CALIBRATION_RECALIBRATING:
-            new_event.setName(cereal::OnroadEvent::EventName::CALIBRATION_RECALIBRATING);
             break;
           case cereal::OnroadEventDEPRECATED::EventName::CONTROLS_MISMATCH:
             new_event.setName(cereal::OnroadEvent::EventName::CONTROLS_MISMATCH);
@@ -217,9 +204,6 @@ void LogReader::migrateOldEvents() {
             break;
           case cereal::OnroadEventDEPRECATED::EventName::JOYSTICK_DEBUG:
             new_event.setName(cereal::OnroadEvent::EventName::JOYSTICK_DEBUG);
-            break;
-          case cereal::OnroadEventDEPRECATED::EventName::LONGITUDINAL_MANEUVER:
-            new_event.setName(cereal::OnroadEvent::EventName::LONGITUDINAL_MANEUVER);
             break;
           case cereal::OnroadEventDEPRECATED::EventName::STEER_TEMP_UNAVAILABLE_SILENT:
             new_event.setName(cereal::OnroadEvent::EventName::STEER_TEMP_UNAVAILABLE_SILENT);
@@ -250,6 +234,9 @@ void LogReader::migrateOldEvents() {
             break;
           case cereal::OnroadEventDEPRECATED::EventName::LOW_BATTERY:
             new_event.setName(cereal::OnroadEvent::EventName::LOW_BATTERY);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::PARAMSD_TEMPORARY_ERROR:
+            new_event.setName(cereal::OnroadEvent::EventName::PARAMSD_TEMPORARY_ERROR);
             break;
           case cereal::OnroadEventDEPRECATED::EventName::ACC_FAULTED:
             new_event.setName(cereal::OnroadEvent::EventName::ACC_FAULTED);
@@ -299,6 +286,9 @@ void LogReader::migrateOldEvents() {
           case cereal::OnroadEventDEPRECATED::EventName::RELAY_MALFUNCTION:
             new_event.setName(cereal::OnroadEvent::EventName::RELAY_MALFUNCTION);
             break;
+          case cereal::OnroadEventDEPRECATED::EventName::PRE_ENABLE_STANDSTILL:
+            new_event.setName(cereal::OnroadEvent::EventName::PRE_ENABLE_STANDSTILL);
+            break;
           case cereal::OnroadEventDEPRECATED::EventName::STOCK_FCW:
             new_event.setName(cereal::OnroadEvent::EventName::STOCK_FCW);
             break;
@@ -310,9 +300,6 @@ void LogReader::migrateOldEvents() {
             break;
           case cereal::OnroadEventDEPRECATED::EventName::STARTUP_NO_CONTROL:
             new_event.setName(cereal::OnroadEvent::EventName::STARTUP_NO_CONTROL);
-            break;
-          case cereal::OnroadEventDEPRECATED::EventName::STARTUP_NO_SEC_OC_KEY:
-            new_event.setName(cereal::OnroadEvent::EventName::STARTUP_NO_SEC_OC_KEY);
             break;
           case cereal::OnroadEventDEPRECATED::EventName::STARTUP_MASTER:
             new_event.setName(cereal::OnroadEvent::EventName::STARTUP_MASTER);
@@ -356,14 +343,14 @@ void LogReader::migrateOldEvents() {
           case cereal::OnroadEventDEPRECATED::EventName::USB_ERROR:
             new_event.setName(cereal::OnroadEvent::EventName::USB_ERROR);
             break;
-          case cereal::OnroadEventDEPRECATED::EventName::CRUISE_MISMATCH:
-            new_event.setName(cereal::OnroadEvent::EventName::CRUISE_MISMATCH);
-            break;
           case cereal::OnroadEventDEPRECATED::EventName::LOCATIOND_TEMPORARY_ERROR:
             new_event.setName(cereal::OnroadEvent::EventName::LOCATIOND_TEMPORARY_ERROR);
             break;
-          case cereal::OnroadEventDEPRECATED::EventName::PARAMSD_TEMPORARY_ERROR:
-            new_event.setName(cereal::OnroadEvent::EventName::PARAMSD_TEMPORARY_ERROR);
+          case cereal::OnroadEventDEPRECATED::EventName::CRUISE_MISMATCH:
+            new_event.setName(cereal::OnroadEvent::EventName::CRUISE_MISMATCH);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::GAS_PRESSED_OVERRIDE:
+            new_event.setName(cereal::OnroadEvent::EventName::GAS_PRESSED_OVERRIDE);
             break;
           case cereal::OnroadEventDEPRECATED::EventName::COMM_ISSUE_AVG_FREQ:
             new_event.setName(cereal::OnroadEvent::EventName::COMM_ISSUE_AVG_FREQ);
@@ -380,11 +367,17 @@ void LogReader::migrateOldEvents() {
           case cereal::OnroadEventDEPRECATED::EventName::RESUME_BLOCKED:
             new_event.setName(cereal::OnroadEvent::EventName::RESUME_BLOCKED);
             break;
+          case cereal::OnroadEventDEPRECATED::EventName::STEER_OVERRIDE:
+            new_event.setName(cereal::OnroadEvent::EventName::STEER_OVERRIDE);
+            break;
           case cereal::OnroadEventDEPRECATED::EventName::STEER_TIME_LIMIT:
             new_event.setName(cereal::OnroadEvent::EventName::STEER_TIME_LIMIT);
             break;
           case cereal::OnroadEventDEPRECATED::EventName::VEHICLE_SENSORS_INVALID:
             new_event.setName(cereal::OnroadEvent::EventName::VEHICLE_SENSORS_INVALID);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::CALIBRATION_RECALIBRATING:
+            new_event.setName(cereal::OnroadEvent::EventName::CALIBRATION_RECALIBRATING);
             break;
           case cereal::OnroadEventDEPRECATED::EventName::LOCATIOND_PERMANENT_ERROR:
             new_event.setName(cereal::OnroadEvent::EventName::LOCATIOND_PERMANENT_ERROR);
@@ -403,6 +396,12 @@ void LogReader::migrateOldEvents() {
             break;
           case cereal::OnroadEventDEPRECATED::EventName::AEB:
             new_event.setName(cereal::OnroadEvent::EventName::AEB);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::LONGITUDINAL_MANEUVER:
+            new_event.setName(cereal::OnroadEvent::EventName::LONGITUDINAL_MANEUVER);
+            break;
+          case cereal::OnroadEventDEPRECATED::EventName::STARTUP_NO_SEC_OC_KEY:
+            new_event.setName(cereal::OnroadEvent::EventName::STARTUP_NO_SEC_OC_KEY);
             break;
           default:
             break;
