@@ -3,6 +3,7 @@ from typing import Optional
 import pyray as rl
 
 # TODO: actually use Widget, but theres a circular dependency
+# TODO: wrap all widgets with NavWidget here?
 
 class StackManager:
   def __init__(self, screen_rect: rl.Rectangle):
@@ -25,23 +26,6 @@ class StackManager:
       widget.hide_event()
 
     return widget
-
-  def clear(self) -> None:
-    while self._stack:
-      self.pop()
-
-  def replace(self, widget: object) -> None:
-    if self._stack:
-      self.pop()
-    self.push(widget)
-
-  @property
-  def top(self) -> Optional[object]:
-    return self._stack[-1] if self._stack else None
-
-  @property
-  def is_empty(self) -> bool:
-    return len(self._stack) == 0
 
   def render(self) -> None:
     if not self._stack:
