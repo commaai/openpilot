@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
+SUDO=""
+
+# Use sudo if not root
+if [[ ! $(id -u) -eq 0 ]]; then
+  if [[ -z $(which sudo) ]]; then
+    echo "Please install sudo or run as root"
+    exit 1
+  fi
+  SUDO="sudo"
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
 
@@ -10,6 +21,13 @@ ARCHNAME=$(uname -m)
 if [ -f /TICI ]; then
   ARCHNAME="larch64"
   RAYLIB_PLATFORM="PLATFORM_COMMA"
+elif [[ "$OSTYPE" == "linux"* ]]; then
+  # required dependencies on Linux PC
+  $SUDO apt install \
+    libxcursor-dev \
+    libxi-dev \
+    libxinerama-dev \
+    libxrandr-dev
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
