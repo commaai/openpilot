@@ -36,10 +36,11 @@ class MainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
+    gui_app.stack.push(self)
     # Start onboarding if terms or training not completed
     self._onboarding_window = OnboardingWindow()
     if not self._onboarding_window.completed:
-      gui_app.set_modal_overlay(self._onboarding_window)
+      gui_app.stack.push(self._onboarding_window)
 
   def _render(self, _):
     self._handle_onroad_transition()
