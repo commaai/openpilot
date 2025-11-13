@@ -498,7 +498,7 @@ def main():
   sock = messaging.sub_sock('ubloxRaw', timeout=100, conflate=False)
 
   while True:
-    msg = messaging.recv_one_or_none(sock)
+    msg = messaging.recv_one(sock)
     if msg is None:
       continue
 

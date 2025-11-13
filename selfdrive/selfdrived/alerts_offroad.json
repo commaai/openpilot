@@ -37,6 +37,10 @@
     "text": "openpilot detected a change in the device's mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.",
     "severity": 0
   },
+  "Offroad_DriverMonitoringUncertain": {
+    "text": "openpilot detected poor visibility for driver monitoring. Ensure the device has a clear view of the driver. This can be checked using Settings -> Device -> Driver Camera Preview. Extreme lighting conditions and/or unconventional mounting positions may also trigger this alert.",
+    "severity": 0
+  },
   "Offroad_ExcessiveActuation": {
     "text": "openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device's Dongle ID for troubleshooting.",
     "severity": 1,

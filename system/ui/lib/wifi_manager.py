@@ -746,8 +746,10 @@ class WifiManager:
   def stop(self):
     if not self._exit:
       self._exit = True
-      self._scan_thread.join()
-      self._state_thread.join()
+      if self._scan_thread.is_alive():
+        self._scan_thread.join()
+      if self._state_thread.is_alive():
+        self._state_thread.join()
 
       self._router_main.close()
       self._router_main.conn.close()
