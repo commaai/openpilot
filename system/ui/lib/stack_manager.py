@@ -14,12 +14,6 @@ class StackManager:
     self._stack.append(widget)
     self._top_shown = False
 
-    if hasattr(widget, 'set_rect'):
-      widget.set_rect(self._screen_rect)
-    if hasattr(widget, 'show_event'):
-      widget.show_event()
-    self._top_shown = True
-
   def pop(self) -> Optional[object]:
     if not self._stack:
       return None
