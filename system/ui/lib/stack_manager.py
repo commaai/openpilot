@@ -1,25 +1,35 @@
 from typing import Optional
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import pyray as rl
 
 # TODO: actually use Widget, but theres a circular dependency
 # TODO: wrap all widgets with NavWidget here?
 
+
+@dataclass
+class StackEntry:
+  widget: object
+  callback: Callable | None = None
+
+
 class StackManager:
   def __init__(self, screen_rect: rl.Rectangle):
-    self._stack: list[object] = []
+    self._stack: list[StackEntry] = []
     self._screen_rect = screen_rect
     self._top_shown = False
 
-  def push(self, widget: object) -> None:
-    self._stack.append(widget)
+  def push(self, widget: object, callback: Callable | None = None) -> None:
+    self._stack.append(StackEntry(widget=widget, callback=callback))
     self._top_shown = False
 
   def pop(self) -> Optional[object]:
     if not self._stack:
       return None
 
-    widget = self._stack.pop()
+    entry = self._stack.pop()
+    widget = entry.widget
     self._top_shown = False
 
     if hasattr(widget, 'hide_event'):
@@ -31,16 +41,31 @@ class StackManager:
     if not self._stack:
       return
 
-    top_widget = self._stack[-1]
+    entry = self._stack[-1]
+    widget = entry.widget
 
     if not self._top_shown:
-      top_widget.show_event()
+      print(f"Stack size: {len(self._stack)}")
+      print(f"Showing top widget: {widget}")
+
+      if hasattr(widget, 'show_event'):
+        widget.show_event()
       self._top_shown = True
 
-    if hasattr(top_widget, 'render'):
-      result = top_widget.render(self._screen_rect)
+    result = None
+    if hasattr(widget, 'render'):
+      result = widget.render(self._screen_rect)
+    elif callable(widget):
+      result = widget()
     else:
-      result = None
+      raise TypeError(f"Widget must have a render() method or be callable, got {type(widget)}")
 
-    if result is not None and result != -1:
-      self.pop()
+    if result is not None and result >= 0:
+      entry = self._stack.pop()
+      self._top_shown = False
+
+      if hasattr(entry.widget, 'hide_event'):
+        entry.widget.hide_event()
+
+      if entry.callback is not None:
+        entry.callback(result)
