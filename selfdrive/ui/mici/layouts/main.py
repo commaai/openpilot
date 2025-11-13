@@ -37,6 +37,7 @@ class MiciMainLayout(Widget):
     self._alerts_layout = MiciOffroadAlerts()
     self._settings_layout = SettingsLayout()
     self._onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
+    self._onboarding_window = OnboardingWindow()
 
     # Initialize widget rects
     for widget in (self._home_layout, self._settings_layout, self._alerts_layout, self._onroad_layout):
@@ -62,9 +63,9 @@ class MiciMainLayout(Widget):
     self._setup_callbacks()
 
     # Start onboarding if terms or training not completed
-    self._onboarding_window = OnboardingWindow()
+    gui_app.stack.push(self)
     if not self._onboarding_window.completed:
-      gui_app.set_modal_overlay(self._onboarding_window)
+      gui_app.stack.push(self._onboarding_window)
 
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=self._on_settings_clicked)
