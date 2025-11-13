@@ -16,8 +16,8 @@ class CommaApi:
     retries = 5
     for i in range(retries):
       with self.session.request(method, API_HOST + '/' + endpoint, **kwargs) as resp:
-        if 500 <= resp.status_code < 600 and i < (retries - 1):  # don't sleep on last attempt
-          print("API error, retrying in 1s")
+        if 500 <= resp.status_code < 600 and i < (retries - 1):  # don't sleep on last retry
+          print("API error, retrying in 1s...")
           time.sleep(1)
           continue
 
