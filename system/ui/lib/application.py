@@ -440,10 +440,9 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        # Render topmost stack frame (always)
         self._stack_manager.render()
 
-        # Handle modal overlay rendering and input processing (for backward compatibility)
+        # TODO: bye bye this
         if self._handle_modal_overlay():
           yield False
         else:
