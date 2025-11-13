@@ -17,6 +17,7 @@ from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import multilang
+from openpilot.system.ui.lib.stack_manager import StackManager
 from openpilot.common.realtime import Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
@@ -209,6 +210,7 @@ class GuiApplication:
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
     self._modal_overlay_shown = False
+    self._stack_manager = StackManager(rl.Rectangle(0, 0, width, height))
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -438,7 +440,10 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        # Handle modal overlay rendering and input processing
+        # Render topmost stack frame (always)
+        self._stack_manager.render()
+
+        # Handle modal overlay rendering and input processing (for backward compatibility)
         if self._handle_modal_overlay():
           yield False
         else:
@@ -487,6 +492,11 @@ class GuiApplication:
   @property
   def height(self):
     return self._height
+
+  @property
+  def stack(self) -> StackManager:
+    """Access the widget stack manager."""
+    return self._stack_manager
 
   def _handle_modal_overlay(self) -> bool:
     if self._modal_overlay.overlay:
