@@ -10,7 +10,6 @@ import platform
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
-from dataclasses import dataclass
 from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
@@ -105,12 +104,6 @@ def font_fallback(font: rl.Font) -> rl.Font:
   if multilang.requires_unifont():
     return gui_app.font(FontWeight.UNIFONT)
   return font
-
-
-@dataclass
-class ModalOverlay:
-  overlay: object = None
-  callback: Callable | None = None
 
 
 class MousePos(NamedTuple):
@@ -208,8 +201,6 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._trace_log_callback = None
-    self._modal_overlay = ModalOverlay()
-    self._modal_overlay_shown = False
     self._stack_manager = StackManager(rl.Rectangle(0, 0, width, height))
 
     self._mouse = MouseState(self._scale)
@@ -310,11 +301,12 @@ class GuiApplication:
     sys.exit(0)
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
-    if self._modal_overlay.overlay is not None:
-      if self._modal_overlay.callback is not None:
-        self._modal_overlay.callback(-1)
-
-    self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
+    if overlay is None:
+      # TODO: this is leaky!
+      if len(self._stack_manager._stack) > 1:
+        self._stack_manager.pop()
+    else:
+      self._stack_manager.push(overlay, callback=callback)
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -441,12 +433,7 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
 
         self._stack_manager.render()
-
-        # TODO: bye bye this
-        if self._handle_modal_overlay():
-          yield False
-        else:
-          yield True
+        yield True
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -497,30 +484,6 @@ class GuiApplication:
     """Access the widget stack manager."""
     return self._stack_manager
 
-  def _handle_modal_overlay(self) -> bool:
-    if self._modal_overlay.overlay:
-      if hasattr(self._modal_overlay.overlay, 'render'):
-        result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
-      elif callable(self._modal_overlay.overlay):
-        result = self._modal_overlay.overlay()
-      else:
-        raise Exception
-
-      # Send show event to Widget
-      if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
-        self._modal_overlay.overlay.show_event()
-        self._modal_overlay_shown = True
-
-      if result >= 0:
-        # Clear the overlay and execute the callback
-        original_modal = self._modal_overlay
-        self._modal_overlay = ModalOverlay()
-        if original_modal.callback is not None:
-          original_modal.callback(result)
-      return True
-    else:
-      self._modal_overlay_shown = False
-      return False
 
   def _load_fonts(self):
     for font_weight_file in FontWeight:
