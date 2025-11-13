@@ -287,22 +287,25 @@ class GuiApplication:
       rl.image_alpha_premultiply(image)
 
     if width is not None and height is not None:
+      same_dimensions = image.width == width and image.height == height
+
       # Resize with aspect ratio preservation if requested
-      if keep_aspect_ratio:
-        orig_width = image.width
-        orig_height = image.height
+      if not same_dimensions:
+        if keep_aspect_ratio:
+          orig_width = image.width
+          orig_height = image.height
 
-        scale_width = width / orig_width
-        scale_height = height / orig_height
+          scale_width = width / orig_width
+          scale_height = height / orig_height
 
-        # Calculate new dimensions
-        scale = min(scale_width, scale_height)
-        new_width = int(orig_width * scale)
-        new_height = int(orig_height * scale)
+          # Calculate new dimensions
+          scale = min(scale_width, scale_height)
+          new_width = int(orig_width * scale)
+          new_height = int(orig_height * scale)
 
-        rl.image_resize(image, new_width, new_height)
-      else:
-        rl.image_resize(image, width, height)
+          rl.image_resize(image, new_width, new_height)
+        else:
+          rl.image_resize(image, width, height)
     else:
       assert keep_aspect_ratio, "Cannot resize without specifying width and height"
     return image
