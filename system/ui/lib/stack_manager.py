@@ -45,9 +45,6 @@ class StackManager:
     widget = entry.widget
 
     if not self._top_shown:
-      print(f"Stack size: {len(self._stack)}")
-      print(f"Showing top widget: {widget}")
-
       if hasattr(widget, 'show_event'):
         widget.show_event()
       self._top_shown = True
