@@ -312,6 +312,8 @@ class GuiApplication:
     texture = rl.load_texture_from_image(image)
     # Set texture filtering to smooth the result
     rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+    # prevent artifacts from wrapping coordinates
+    rl.set_texture_wrap(texture, rl.TextureWrap.TEXTURE_WRAP_CLAMP)
 
     rl.unload_image(image)
     return texture
