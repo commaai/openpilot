@@ -81,7 +81,6 @@ def fill_driver_state(msg, model_output, output_slices, ds_suffix):
   msg.sunglassesProb = float(sigmoid(model_output[output_slices[f'sunglasses_prob_{ds_suffix}']][0]))
   msg.phoneProb = float(sigmoid(model_output[output_slices[f'using_phone_prob_{ds_suffix}']][0]))
 
-
 def get_driverstate_packet(model_output: np.ndarray, output_slices: dict[str, slice], frame_id: int, location_ts: int, exec_time: float, gpu_exec_time: float):
   msg = messaging.new_message('driverStateV2', valid=True)
   ds = msg.driverStateV2
@@ -132,7 +131,8 @@ def main():
     model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
 
-    pm.send("driverStateV2", get_driverstate_packet(model_output, model.output_slices, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
+    msg = get_driverstate_packet(model_output, model.output_slices, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time)
+    pm.send("driverStateV2", msg)
 
 
 if __name__ == "__main__":
