@@ -1,7 +1,5 @@
 import pyray as rl
-from collections.abc import Callable
 
-from openpilot.common.params import Params
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.toggles import TogglesLayoutMici
@@ -9,14 +7,13 @@ from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMi
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici, PairBigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayoutMici
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import NavWidget
 
 
 class SettingsLayout(NavWidget):
   def __init__(self):
     super().__init__()
-    self._params = Params()
 
     toggles_btn = BigButton("toggles", "", "icons_mici/settings/toggles_icon.png")
     toggles_btn.set_click_callback(lambda: gui_app.stack.push(TogglesLayoutMici(back_callback=lambda: gui_app.stack.pop())))
@@ -39,14 +36,6 @@ class SettingsLayout(NavWidget):
       developer_btn,
     ], snap_items=False)
 
-    # Set up back navigation
-    self.set_back_callback(self.close_settings)
-
-    self._font_medium = gui_app.font(FontWeight.MEDIUM)
-
-    # Callbacks
-    self._close_callback: Callable | None = None
-
   def show_event(self):
     super().show_event()
     self._scroller.show_event()
@@ -54,13 +43,5 @@ class SettingsLayout(NavWidget):
   def hide_event(self):
     super().hide_event()
 
-  def set_callbacks(self, on_close: Callable):
-    self._close_callback = on_close
-
   def _render(self, rect: rl.Rectangle):
     self._scroller.render(rect)
-
-  def close_settings(self):
-    if self._close_callback:
-      self._close_callback()
-    gui_app.stack.pop()
