@@ -57,8 +57,6 @@ class Key(Widget):
     if not self._position_initialized:
       self._x_filter.x = x
       self._y_filter.x = y
-      # keep track of original position so dragging around feels consistent. also move touch area down a bit
-      self.original_position = rl.Vector2(x, y + KEY_TOUCH_AREA_OFFSET)
       self._position_initialized = True
 
     if not smooth:
@@ -67,6 +65,11 @@ class Key(Widget):
 
     self._rect.x = self._x_filter.update(x)
     self._rect.y = self._y_filter.update(y)
+
+    # TODO: understand fix
+    # Update original_position every time so it stays in sync when dialog moves (e.g., NavWidget swipe-away)
+    # keep track of original position so dragging around feels consistent. also move touch area down a bit
+    self.original_position = rl.Vector2(self._rect.x, self._rect.y + KEY_TOUCH_AREA_OFFSET)
 
   def set_alpha(self, alpha: float):
     self._alpha_filter.update(alpha)
