@@ -80,7 +80,7 @@ def fill_driver_state(msg, model_output, output_slices, ds_suffix):
   msg.leftBlinkProb = float(sigmoid(model_output[output_slices[f'left_blink_prob_{ds_suffix}']][0]))
   msg.rightBlinkProb = float(sigmoid(model_output[output_slices[f'right_blink_prob_{ds_suffix}']][0]))
   msg.sunglassesProb = float(sigmoid(model_output[output_slices[f'sunglasses_prob_{ds_suffix}']][0]))
-  msg.notReadyProb = [float(sigmoid(model_output[output_slices[f'using_phone_prob_{ds_suffix}']][0])), 0.]
+  msg.phoneProb = float(sigmoid(model_output[output_slices[f'using_phone_prob_{ds_suffix}']][0]))
 
 
 def get_driverstate_packet(model_output: np.ndarray, output_slices: dict[str, slice], frame_id: int, location_ts: int, execution_time: float, gpu_execution_time: float):
