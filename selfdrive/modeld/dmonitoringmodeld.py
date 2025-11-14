@@ -36,7 +36,6 @@ class ModelState:
       model_metadata = pickle.load(f)
       self.input_shapes =  model_metadata['input_shapes']
       self.output_slices = model_metadata['output_slices']
-      output_size = model_metadata['output_shapes']['outputs'][1]
 
     self.frame = MonitoringModelFrame(cl_ctx)
     self.numpy_inputs = {
@@ -83,12 +82,12 @@ def fill_driver_state(msg, model_output, output_slices, ds_suffix):
   msg.phoneProb = float(sigmoid(model_output[output_slices[f'using_phone_prob_{ds_suffix}']][0]))
 
 
-def get_driverstate_packet(model_output: np.ndarray, output_slices: dict[str, slice], frame_id: int, location_ts: int, execution_time: float, gpu_execution_time: float):
+def get_driverstate_packet(model_output: np.ndarray, output_slices: dict[str, slice], frame_id: int, location_ts: int, exec_time: float, gpu_exec_time: float):
   msg = messaging.new_message('driverStateV2', valid=True)
   ds = msg.driverStateV2
   ds.frameId = frame_id
-  ds.modelExecutionTime = execution_time
-  ds.gpuExecutionTime = gpu_execution_time
+  ds.modelExecutionTime = exec_time
+  ds.gpuExecutionTime = gpu_exec_time
   ds.wheelOnRightProb = float(sigmoid(model_output[output_slices['wheel_on_right']][0]))
   ds.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
   fill_driver_state(ds.leftDriverData, model_output, output_slices, 'lhd')
