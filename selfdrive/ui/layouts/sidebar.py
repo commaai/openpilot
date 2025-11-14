@@ -139,9 +139,9 @@ class Sidebar(Widget):
 
   def _update_panda_status(self):
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
-      self._panda_status.update(tr_noop("NO"), tr_noop("PANDA"), Colors.DANGER)
+      self._panda_status.update(tr_noop("INTERFACE"), tr_noop("OFFLINE"), Colors.DANGER)
     else:
-      self._panda_status.update(tr_noop("VEHICLE"), tr_noop("ONLINE"), Colors.GOOD)
+      self._panda_status.update(tr_noop("INTERFACE"), tr_noop("ONLINE"), Colors.GOOD)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN):
