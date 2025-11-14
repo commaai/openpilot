@@ -1,4 +1,5 @@
 from typing import Optional
+import pprint
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -44,7 +45,6 @@ class StackManager:
     if not self._stack:
       return
 
-    print(f"Rendering stack: {self._stack}")
     entry = self._stack[-1]
     widget = entry.widget
 
@@ -52,6 +52,7 @@ class StackManager:
       if hasattr(widget, 'show_event'):
         widget.show_event()
       self._top_shown = True
+      print(f"Rendering stack: {pprint.pformat([x.widget.__class__.__name__ for x in self._stack], indent=2)}")
 
     result = None
     if hasattr(widget, 'render'):
