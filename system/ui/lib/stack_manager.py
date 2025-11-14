@@ -63,6 +63,7 @@ class StackManager:
       raise TypeError(f"Widget must have a render() method or be callable, got {type(widget)}")
 
     if result is not None and result >= 0:
+      print(f"popping class {entry.widget.__class__.__name__} with result {result}")
       entry = self._stack.pop()
       self._top_shown = False
 
