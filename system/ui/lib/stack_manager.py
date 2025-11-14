@@ -37,10 +37,14 @@ class StackManager:
 
     return widget
 
+  def depth(self) -> int:
+    return len(self._stack)
+
   def render(self) -> None:
     if not self._stack:
       return
 
+    print(f"Rendering stack: {self._stack}")
     entry = self._stack[-1]
     widget = entry.widget
 
