@@ -107,7 +107,13 @@ class MiciMainLayout(Widget):
 
   def _on_settings_clicked(self):
     settings_layout = SettingsLayout()
-    gui_app.stack.push(settings_layout)
+    def callback():
+      gui_app.stack.pop()
+      self._scroll_to(self._home_layout)
+    settings_layout.set_back_callback(callback)
+
+    # TODO: callback isnt working here
+    gui_app.stack.push(settings_layout, callback=callback)
 
   def _on_bookmark_clicked(self):
     user_bookmark = messaging.new_message('bookmarkButton')
