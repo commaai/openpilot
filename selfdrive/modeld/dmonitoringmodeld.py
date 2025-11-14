@@ -67,30 +67,32 @@ class ModelState:
     return output, t2 - t1
 
 
-def fill_driver_state(msg, ds_suffix):
-  msg.faceOrientation = list(ds_result.face_orientation)
-  msg.faceOrientationStd = [math.exp(x) for x in ds_result.face_orientation_std]
-  msg.facePosition = list(ds_result.face_position[:2])
-  msg.facePositionStd = [math.exp(x) for x in ds_result.face_position_std[:2]]
-  msg.faceProb = float(sigmoid(ds_result.face_prob))
-  msg.leftEyeProb = float(sigmoid(ds_result.left_eye_prob))
-  msg.rightEyeProb = float(sigmoid(ds_result.right_eye_prob))
-  msg.leftBlinkProb = float(sigmoid(ds_result.left_blink_prob))
-  msg.rightBlinkProb = float(sigmoid(ds_result.right_blink_prob))
-  msg.sunglassesProb = float(sigmoid(ds_result.sunglasses_prob))
-  msg.notReadyProb = [float(sigmoid(x)) for x in ds_result.not_ready_prob]
+def fill_driver_state(msg, model_output, output_slices, ds_suffix):
+  face_descs = model_output[output_slices[f'face_descs_{ds_suffix}']]
+  face_descs_std = face_descs[-6:]
+  msg.faceOrientation = [float(x) for x in face_descs[:3]]
+  msg.faceOrientationStd = [math.exp(x) for x in face_descs_std[:3]]
+  msg.facePosition = [float(x) for x in face_descs[3:5]]
+  msg.facePositionStd = [math.exp(x) for x in face_descs_std[3:5]]
+  msg.faceProb = float(sigmoid(model_output[output_slices[f'face_prob_{ds_suffix}']][0]))
+  msg.leftEyeProb = float(sigmoid(model_output[output_slices[f'left_eye_prob_{ds_suffix}']][0]))
+  msg.rightEyeProb = float(sigmoid(model_output[output_slices[f'right_eye_prob_{ds_suffix}']][0]))
+  msg.leftBlinkProb = float(sigmoid(model_output[output_slices[f'left_blink_prob_{ds_suffix}']][0]))
+  msg.rightBlinkProb = float(sigmoid(model_output[output_slices[f'right_blink_prob_{ds_suffix}']][0]))
+  msg.sunglassesProb = float(sigmoid(model_output[output_slices[f'sunglasses_prob_{ds_suffix}']][0]))
+  msg.notReadyProb = [float(sigmoid(model_output[output_slices[f'using_phone_prob_{ds_suffix}']][0])), 0.]
 
 
-def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, gpu_execution_time: float):
+def get_driverstate_packet(model_output: np.ndarray, output_slices: dict[str, slice], frame_id: int, location_ts: int, execution_time: float, gpu_execution_time: float):
   msg = messaging.new_message('driverStateV2', valid=True)
   ds = msg.driverStateV2
   ds.frameId = frame_id
   ds.modelExecutionTime = execution_time
   ds.gpuExecutionTime = gpu_execution_time
-  ds.wheelOnRightProb = float(sigmoid(model_result.wheel_on_right_prob))
+  ds.wheelOnRightProb = float(sigmoid(model_output[output_slices['wheel_on_right']][0]))
   ds.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
-  fill_driver_state(ds.leftDriverData, model_result.driver_state_lhd)
-  fill_driver_state(ds.rightDriverData, model_result.driver_state_rhd)
+  fill_driver_state(ds.leftDriverData, model_output, output_slices, 'lhd')
+  fill_driver_state(ds.rightDriverData, model_output, output_slices, 'rhd')
   return msg
 
 
@@ -131,7 +133,7 @@ def main():
     model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
 
-    pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
+    pm.send("driverStateV2", get_driverstate_packet(model_output, model.output_slices, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
 
 
 if __name__ == "__main__":
