@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pyray as rl
 
 # TODO: actually use Widget, but theres a circular dependency
-# TODO: wrap all widgets with NavWidget here?
+# TODO: wrap all widgets with NavWidget here
 
 
 @dataclass
