@@ -112,7 +112,7 @@ class MiciMainLayout(Widget):
       self._scroll_to(self._home_layout)
     settings_layout.set_back_callback(callback)
 
-    # TODO: callback isnt working here
+    # TODO: callback isn't working here
     gui_app.stack.push(settings_layout, callback=callback)
 
   def _on_bookmark_clicked(self):
