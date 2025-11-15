@@ -6,7 +6,7 @@ import pyray as rl
 
 # TODO: actually use Widget, but there is a circular dependency
 # TODO: wrap all widgets with NavWidget here
-# TODO: app shouldnt worry about stack.pop(), just define close behavior
+# TODO: app shouldn't worry about stack.pop(), just define close behavior
 # TODO: better define callbacks for results (dismiss, action)
 
 
