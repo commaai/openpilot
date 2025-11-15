@@ -203,7 +203,7 @@ class AdvancedNetworkSettings(Widget):
     self._keyboard.reset(min_text_size=0)
     self._keyboard.set_title(tr("Enter APN"), tr("leave blank for automatic configuration"))
     self._keyboard.set_text(current_apn)
-    gui_app.set_modal_overlay(self._keyboard, update_apn)
+    gui_app.stack.push(self._keyboard, callback=update_apn)
 
   def _toggle_cellular_metered(self):
     metered = self._cellular_metered_action.get_state()
@@ -235,11 +235,11 @@ class AdvancedNetworkSettings(Widget):
 
       self._keyboard.reset(min_text_size=0)
       self._keyboard.set_title(tr("Enter password"), tr("for \"{}\"").format(ssid))
-      gui_app.set_modal_overlay(self._keyboard, enter_password)
+      gui_app.stack.push(self._keyboard, callback=enter_password)
 
     self._keyboard.reset(min_text_size=1)
     self._keyboard.set_title(tr("Enter SSID"), "")
-    gui_app.set_modal_overlay(self._keyboard, connect_hidden)
+    gui_app.stack.push(self._keyboard, callback=connect_hidden)
 
   def _edit_tethering_password(self):
     def update_password(result):
@@ -253,7 +253,7 @@ class AdvancedNetworkSettings(Widget):
     self._keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
     self._keyboard.set_title(tr("Enter new tethering password"), "")
     self._keyboard.set_text(self._wifi_manager.tethering_password)
-    gui_app.set_modal_overlay(self._keyboard, update_password)
+    gui_app.stack.push(self._keyboard, callback=update_password)
 
   def _update_state(self):
     self._wifi_manager.process_callbacks()
@@ -313,12 +313,12 @@ class WifiManagerUI(Widget):
     if self.state == UIState.NEEDS_AUTH and self._state_network:
       self.keyboard.set_title(tr("Wrong password") if self._password_retry else tr("Enter password"), tr("for \"{}\"").format(self._state_network.ssid))
       self.keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
-      gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
+      gui_app.stack.push(self.keyboard, callback=lambda result: self._on_password_entered(cast(Network, self._state_network), result))
     elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
       confirm_dialog = ConfirmDialog("", tr("Forget"), tr("Cancel"))
       confirm_dialog.set_text(tr("Forget Wi-Fi Network \"{}\"?").format(self._state_network.ssid))
       confirm_dialog.reset()
-      gui_app.set_modal_overlay(confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
+      gui_app.stack.push(confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
     else:
       self._draw_network_list(rect)
 
