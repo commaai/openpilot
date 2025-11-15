@@ -1,11 +1,10 @@
-from typing import Optional
 import pprint
 from collections.abc import Callable
 from dataclasses import dataclass
 
 import pyray as rl
 
-# TODO: actually use Widget, but theres a circular dependency
+# TODO: actually use Widget, but there is a circular dependency
 # TODO: wrap all widgets with NavWidget here
 
 
@@ -25,9 +24,9 @@ class StackManager:
     self._stack.append(StackEntry(widget=widget, callback=callback))
     self._top_shown = False
 
-  def pop(self) -> Optional[object]:
+  def pop(self) -> None:
     if not self._stack:
-      return None
+      return
 
     entry = self._stack.pop()
     widget = entry.widget
@@ -35,8 +34,6 @@ class StackManager:
 
     if hasattr(widget, 'hide_event'):
       widget.hide_event()
-
-    return widget
 
   def depth(self) -> int:
     return len(self._stack)
