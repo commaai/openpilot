@@ -600,10 +600,10 @@ class GuiApplication:
     if self._mouse_history:
       mouse_pos = self._mouse_history[-1]
       rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 15, rl.RED)
-    for idx, mouse_pos in enumerate(self._mouse_history):
-      perc = idx / len(self._mouse_history)
-      color = rl.Color(min(int(255 * (1.5 - perc)), 255), int(min(255 * (perc + 0.5), 255)), 50, 255)
-      rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 5, color)
+      for idx, mouse_pos in enumerate(self._mouse_history):
+        perc = idx / len(self._mouse_history)
+        color = rl.Color(min(int(255 * (1.5 - perc)), 255), int(min(255 * (perc + 0.5), 255)), 50, 255)
+        rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 5, color)
 
   def _output_render_profile(self):
     import io
