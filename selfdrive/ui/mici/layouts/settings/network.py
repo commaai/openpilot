@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import pyray as rl
-from enum import IntEnum
 from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
