@@ -8,7 +8,6 @@ import pyray as rl
 import threading
 import platform
 from contextlib import contextmanager
-from collections.abc import Callable
 from collections import deque
 from enum import StrEnum
 from typing import NamedTuple
