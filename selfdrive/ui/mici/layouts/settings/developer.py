@@ -17,6 +17,7 @@ class DeveloperLayoutMici(NavWidget):
     super().__init__()
     self.set_back_callback(back_callback)
 
+    # TODO: bug! callback should dictate success/fail for nested dialogs
     def github_username_callback(username: str):
       if username:
         ssh_keys = SshKeyAction()
