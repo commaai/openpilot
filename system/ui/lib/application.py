@@ -300,14 +300,6 @@ class GuiApplication:
     print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
     sys.exit(0)
 
-  def set_modal_overlay(self, overlay, callback: Callable | None = None):
-    if overlay is None:
-      # TODO: this is leaky!
-      if len(self._stack_manager._stack) > 1:
-        self._stack_manager.pop()
-    else:
-      self._stack_manager.push(overlay, callback=callback)
-
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
 
