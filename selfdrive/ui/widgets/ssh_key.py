@@ -59,7 +59,7 @@ class SshKeyAction(ItemAction):
     # Show error dialog if there's an error
     if self._error_message:
       message = copy.copy(self._error_message)
-      gui_app.set_modal_overlay(alert_dialog(message))
+      gui_app.stack.push(alert_dialog(message))
       self._username = ""
       self._error_message = ""
 
@@ -87,7 +87,7 @@ class SshKeyAction(ItemAction):
     if self._state == SshKeyActionState.ADD:
       self._keyboard.reset()
       self._keyboard.set_title(tr("Enter your GitHub username"))
-      gui_app.set_modal_overlay(self._keyboard, callback=self._on_username_submit)
+      gui_app.stack.push(self._keyboard, callback=self._on_username_submit)
     elif self._state == SshKeyActionState.REMOVE:
       self._params.remove("GithubUsername")
       self._params.remove("GithubSshKeys")
