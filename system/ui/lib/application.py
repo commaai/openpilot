@@ -261,7 +261,8 @@ class GuiApplication:
       self._set_styles()
       self._load_fonts()
       self._patch_text_functions()
-      self._load_burn_in_shader()
+      if BURN_IN_MODE and self._burn_in_shader is None:
+        self._burn_in_shader = rl.load_shader_from_memory(BURN_IN_VERTEX_SHADER, BURN_IN_FRAGMENT_SHADER)
 
       if not PC:
         self._mouse.start()
@@ -439,7 +440,14 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
           src_rect = rl.Rectangle(0, 0, float(self._width), -float(self._height))
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
-          self._present_render_texture(src_rect, dst_rect)
+          texture = self._render_texture.texture
+          if texture:
+            if BURN_IN_MODE and self._burn_in_shader:
+              rl.begin_shader_mode(self._burn_in_shader)
+              rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+              rl.end_shader_mode()
+            else:
+              rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
         if self._show_fps:
           rl.draw_fps(10, 10)
@@ -520,13 +528,6 @@ class GuiApplication:
 
     rl.draw_text_ex = _draw_text_ex_scaled
 
-  def _load_burn_in_shader(self):
-    if not BURN_IN_MODE:
-      return
-    if self._burn_in_shader is not None and self._burn_in_shader.id:
-      return
-    self._burn_in_shader = rl.load_shader_from_memory(BURN_IN_VERTEX_SHADER, BURN_IN_FRAGMENT_SHADER)
-
   def _set_log_callback(self):
     ffi_libc = cffi.FFI()
     ffi_libc.cdef("""
@@ -601,22 +602,6 @@ class GuiApplication:
       perc = idx / len(self._mouse_history)
       color = rl.Color(min(int(255 * (1.5 - perc)), 255), int(min(255 * (perc + 0.5), 255)), 50, 255)
       rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 5, color)
-
-  def _present_render_texture(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle):
-    """Draw the main render texture, using a shader when burn-in mode is active."""
-    if not self._render_texture:
-      return
-
-    texture = self._render_texture.texture
-    if texture is None:
-      return
-
-    if BURN_IN_MODE and self._burn_in_shader:
-      rl.begin_shader_mode(self._burn_in_shader)
-      rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
-      rl.end_shader_mode()
-    else:
-      rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
   def _output_render_profile(self):
     import io
