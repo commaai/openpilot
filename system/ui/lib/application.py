@@ -34,6 +34,36 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
 
+BURN_IN_MODE = os.getenv("BURN_IN") == "1"
+if PC:
+  BURN_IN_SHADER_VERSION = "#version 330 core\n"
+  BURN_IN_FRAGMENT_PRECISION = ""
+else:
+  BURN_IN_SHADER_VERSION = "#version 300 es\n"
+  BURN_IN_FRAGMENT_PRECISION = "precision mediump float;\n"
+
+BURN_IN_VERTEX_SHADER = BURN_IN_SHADER_VERSION + """
+in vec3 vertexPosition;
+in vec2 vertexTexCoord;
+uniform mat4 mvp;
+out vec2 fragTexCoord;
+void main() {
+  fragTexCoord = vertexTexCoord;
+  gl_Position = mvp * vec4(vertexPosition, 1.0);
+}
+"""
+
+BURN_IN_FRAGMENT_SHADER = BURN_IN_SHADER_VERSION + BURN_IN_FRAGMENT_PRECISION + """
+in vec2 fragTexCoord;
+uniform sampler2D texture0;
+out vec4 fragColor;
+void main() {
+  vec4 sampled = texture(texture0, fragTexCoord);
+  float intensity = sampled.b;
+  fragColor = vec4(intensity, intensity, intensity, sampled.a);
+}
+"""
+
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
 
@@ -155,6 +185,7 @@ class GuiApplication:
     self._scaled_width = int(self._width * self._scale)
     self._scaled_height = int(self._height * self._scale)
     self._render_texture: rl.RenderTexture | None = None
+    self._burn_in_shader: rl.Shader | None = None
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
@@ -212,8 +243,10 @@ class GuiApplication:
       rl.set_config_flags(flags)
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
+      needs_render_texture = self._scale != 1.0 or BURN_IN_MODE
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
+      if needs_render_texture:
         self._render_texture = rl.load_render_texture(self._width, self._height)
         rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       rl.set_target_fps(fps)
@@ -222,6 +255,7 @@ class GuiApplication:
       self._set_styles()
       self._load_fonts()
       self._patch_text_functions()
+      self._load_burn_in_shader()
 
       if not PC:
         self._mouse.start()
@@ -337,6 +371,10 @@ class GuiApplication:
       rl.unload_render_texture(self._render_texture)
       self._render_texture = None
 
+    if self._burn_in_shader:
+      rl.unload_shader(self._burn_in_shader)
+      self._burn_in_shader = None
+
     if not PC:
       self._mouse.stop()
 
@@ -395,7 +433,7 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
           src_rect = rl.Rectangle(0, 0, float(self._width), -float(self._height))
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
-          rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+          self._present_render_texture(src_rect, dst_rect)
 
         if self._show_fps:
           rl.draw_fps(10, 10)
@@ -476,6 +514,13 @@ class GuiApplication:
 
     rl.draw_text_ex = _draw_text_ex_scaled
 
+  def _load_burn_in_shader(self):
+    if not BURN_IN_MODE:
+      return
+    if self._burn_in_shader is not None and self._burn_in_shader.id:
+      return
+    self._burn_in_shader = rl.load_shader_from_memory(BURN_IN_VERTEX_SHADER, BURN_IN_FRAGMENT_SHADER)
+
   def _set_log_callback(self):
     ffi_libc = cffi.FFI()
     ffi_libc.cdef("""
@@ -546,10 +591,26 @@ class GuiApplication:
     if self._mouse_history:
       mouse_pos = self._mouse_history[-1]
       rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 15, rl.RED)
-      for idx, mouse_pos in enumerate(self._mouse_history):
-        perc = idx / len(self._mouse_history)
-        color = rl.Color(min(int(255 * (1.5 - perc)), 255), int(min(255 * (perc + 0.5), 255)), 50, 255)
-        rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 5, color)
+    for idx, mouse_pos in enumerate(self._mouse_history):
+      perc = idx / len(self._mouse_history)
+      color = rl.Color(min(int(255 * (1.5 - perc)), 255), int(min(255 * (perc + 0.5), 255)), 50, 255)
+      rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 5, color)
+
+  def _present_render_texture(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle):
+    """Draw the main render texture, using a shader when burn-in mode is active."""
+    if not self._render_texture:
+      return
+
+    texture = self._render_texture.texture
+    if texture is None:
+      return
+
+    if BURN_IN_MODE and self._burn_in_shader:
+      rl.begin_shader_mode(self._burn_in_shader)
+      rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+      rl.end_shader_mode()
+    else:
+      rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
   def _output_render_profile(self):
     import io
