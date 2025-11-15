@@ -26,7 +26,7 @@ class PairingDialog(Widget):
     self.qr_texture: rl.Texture | None = None
     self.last_qr_generation = float('-inf')
     self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
-    self._close_btn.set_click_callback(lambda: gui_app.set_modal_overlay(None))
+    self._close_btn.set_click_callback(lambda: gui_app.stack.pop())
 
   def _get_pairing_url(self) -> str:
     try:
@@ -69,7 +69,7 @@ class PairingDialog(Widget):
 
   def _update_state(self):
     if ui_state.prime_state.is_paired():
-      gui_app.set_modal_overlay(None)
+      gui_app.stack.pop()
 
   def _render(self, rect: rl.Rectangle) -> int:
     rl.clear_background(rl.Color(224, 224, 224, 255))
