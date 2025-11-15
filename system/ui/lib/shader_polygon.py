@@ -1,9 +1,8 @@
-import platform
 import pyray as rl
 import numpy as np
 from dataclasses import dataclass
 from typing import Any, Optional, cast
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, GL_VERSION
 
 MAX_GRADIENT_COLORS = 20  # includes stops as well
 
@@ -29,16 +28,7 @@ class Gradient:
       self.stops = [i / max(1, color_count - 1) for i in range(color_count)]
 
 
-VERSION = """
-#version 300 es
-precision highp float;
-"""
-if platform.system() == "Darwin":
-  VERSION = """
-    #version 330 core
-  """
-
-FRAGMENT_SHADER = VERSION + """
+FRAGMENT_SHADER = GL_VERSION + """
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
@@ -83,7 +73,7 @@ void main() {
 """
 
 # Default vertex shader
-VERTEX_SHADER = VERSION + """
+VERTEX_SHADER = GL_VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 out vec2 fragTexCoord;

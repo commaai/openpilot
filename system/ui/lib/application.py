@@ -6,6 +6,7 @@ import signal
 import sys
 import pyray as rl
 import threading
+import platform
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
@@ -34,15 +35,17 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
 
-BURN_IN_MODE = os.getenv("BURN_IN") == "1"
-if PC:
-  BURN_IN_SHADER_VERSION = "#version 330 core\n"
-  BURN_IN_FRAGMENT_PRECISION = ""
-else:
-  BURN_IN_SHADER_VERSION = "#version 300 es\n"
-  BURN_IN_FRAGMENT_PRECISION = "precision mediump float;\n"
+GL_VERSION = """
+#version 300 es
+precision highp float;
+"""
+if platform.system() == "Darwin":
+  GL_VERSION = """
+    #version 330 core
+  """
 
-BURN_IN_VERTEX_SHADER = BURN_IN_SHADER_VERSION + """
+BURN_IN_MODE = os.getenv("BURN_IN") == "1"
+BURN_IN_VERTEX_SHADER = GL_VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 uniform mat4 mvp;
@@ -52,8 +55,7 @@ void main() {
   gl_Position = mvp * vec4(vertexPosition, 1.0);
 }
 """
-
-BURN_IN_FRAGMENT_SHADER = BURN_IN_SHADER_VERSION + BURN_IN_FRAGMENT_PRECISION + """
+BURN_IN_FRAGMENT_SHADER = GL_VERSION + """
 in vec2 fragTexCoord;
 uniform sampler2D texture0;
 out vec4 fragColor;
