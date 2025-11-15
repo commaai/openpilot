@@ -44,7 +44,7 @@ if platform.system() == "Darwin":
     #version 330 core
   """
 
-BURN_IN_MODE = os.getenv("BURN_IN") == "1"
+BURN_IN_MODE = "BURN_IN" in os.environ
 BURN_IN_VERTEX_SHADER = GL_VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
@@ -62,7 +62,7 @@ out vec4 fragColor;
 void main() {
   vec4 sampled = texture(texture0, fragTexCoord);
   float intensity = sampled.b;
-  // Map blue intensity to green→yellow→red to highlight burn-in risk.
+  // Map blue intensity to green -> yellow -> red to highlight burn-in risk.
   vec3 start = vec3(0.0, 1.0, 0.0);
   vec3 middle = vec3(1.0, 1.0, 0.0);
   vec3 end = vec3(1.0, 0.0, 0.0);
