@@ -151,6 +151,8 @@ class NoEntryAlert(Alert):
   def __init__(self, alert_text_2: str,
                alert_text_1: str = "openpilot Unavailable",
                visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none):
+    if HARDWARE.get_device_type() == 'tizi':
+      alert_text_1, alert_text_2 = alert_text_2, alert_text_1
     super().__init__(alert_text_2, alert_text_1, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
                      AudibleAlert.refuse, 3.)
@@ -196,8 +198,13 @@ class NormalPermanentAlert(Alert):
 
 class StartupAlert(Alert):
   def __init__(self, alert_text_1: str, alert_text_2: str = "", alert_status=AlertStatus.normal):
+    alert_size = AlertSize.small
+    if HARDWARE.get_device_type() == 'tizi':
+      if alert_text_2 == "":
+        alert_text_2 = "Always keep hands on wheel and eyes on road"
+      alert_size = AlertSize.mid
     super().__init__(alert_text_1, alert_text_2,
-                     alert_status, AlertSize.small,
+                     alert_status, alert_size,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
 
 
@@ -1019,7 +1026,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 }
 
 
-# Revert to original alerts for tizi
 if HARDWARE.get_device_type() == 'tizi':
   EVENTS.update({
     EventName.promptDriverUnresponsive: {
