@@ -72,6 +72,8 @@ class DRIVER_MONITOR_SETTINGS:
 
     self._WHEELPOS_CALIB_MIN_SPEED = 11
     self._WHEELPOS_THRESHOLD = 0.5
+    self._WHEELPOS_INIT_M = 0.5 # non informative prior
+    self._WHEELPOS_INIT_S = 0.25 # bernoulli variance
     self._WHEELPOS_FILTER_MIN_COUNT = int(15 / self._DT_DMON) # allow 15 seconds to converge wheel side
 
     self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
@@ -139,7 +141,7 @@ class DriverMonitoring:
     self.settings = settings
 
     # init driver status
-    self.wheelpos_learner = RunningStatFilter()
+    self.wheelpos_learner = RunningStatFilter(raw_priors=[self.settings._WHEELPOS_INIT_M, self.settings._WHEELPOS_INIT_S, 2])
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
     self.blink = DriverBlink()
     self.phone_prob = 0.
