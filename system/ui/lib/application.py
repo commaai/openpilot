@@ -32,6 +32,7 @@ SHOW_FPS = os.getenv("SHOW_FPS") == "1"
 SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == "1"
 STRICT_MODE = os.getenv("STRICT_MODE") == "1"
 SCALE = float(os.getenv("SCALE", "1.0"))
+GRID_SIZE = int(os.getenv("GRID", "0"))
 PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
 
@@ -213,6 +214,7 @@ class GuiApplication:
     self._mouse_history: deque[MousePosWithTime] = deque(maxlen=MOUSE_THREAD_RATE)
     self._show_touches = SHOW_TOUCHES
     self._show_fps = SHOW_FPS
+    self._grid_size = GRID_SIZE
     self._profile_render_frames = PROFILE_RENDER
     self._render_profiler = None
     self._render_profile_start_time = None
@@ -457,6 +459,9 @@ class GuiApplication:
         if self._show_touches:
           self._draw_touch_points()
 
+        if self._grid_size > 0:
+          self._draw_grid()
+
         rl.end_drawing()
         self._monitor_fps()
         self._frame += 1
@@ -604,6 +609,19 @@ class GuiApplication:
         perc = idx / len(self._mouse_history)
         color = rl.Color(min(int(255 * (1.5 - perc)), 255), int(min(255 * (perc + 0.5), 255)), 50, 255)
         rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 5, color)
+
+  def _draw_grid(self):
+    grid_color = rl.Color(60, 60, 60, 255)
+    # Draw vertical lines
+    x = 0
+    while x <= self._scaled_width:
+      rl.draw_line(x, 0, x, self._scaled_height, grid_color)
+      x += self._grid_size
+    # Draw horizontal lines
+    y = 0
+    while y <= self._scaled_height:
+      rl.draw_line(0, y, self._scaled_width, y, grid_color)
+      y += self._grid_size
 
   def _output_render_profile(self):
     import io
