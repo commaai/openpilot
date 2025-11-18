@@ -10,7 +10,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.widgets.label import gui_text_box, gui_label
+from openpilot.system.ui.widgets.label import Label, gui_label
 from openpilot.system.ui.widgets.network import WifiManagerUI
 
 # Constants
@@ -44,6 +44,9 @@ class Updater(Widget):
     self.process = None
     self.update_thread = None
     self.wifi_manager_ui = WifiManagerUI(WifiManager())
+
+    self._desc_label = Label("", BODY_FONT_SIZE, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+                             text_alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
 
     # Buttons
     self._wifi_button = Button("Connect to Wi-Fi", click_callback=lambda: self.set_current_screen(Screen.WIFI))
@@ -97,7 +100,8 @@ class Updater(Widget):
                  "The download size is approximately 1GB.")
 
     desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE * FONT_SCALE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * FONT_SCALE * 4)
-    gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)
+    self._desc_label.set_text(desc_text)
+    self._desc_label.render(desc_rect)
 
     # Buttons at the bottom
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
