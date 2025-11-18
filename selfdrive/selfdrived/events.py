@@ -151,9 +151,9 @@ class NoEntryAlert(Alert):
   def __init__(self, alert_text_2: str,
                alert_text_1: str = "openpilot Unavailable",
                visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none):
-    if HARDWARE.get_device_type() == 'tizi':
+    if HARDWARE.get_device_type() == 'mici':
       alert_text_1, alert_text_2 = alert_text_2, alert_text_1
-    super().__init__(alert_text_2, alert_text_1, AlertStatus.normal,
+    super().__init__(alert_text_1, alert_text_2, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
                      AudibleAlert.refuse, 3.)
 
@@ -197,12 +197,12 @@ class NormalPermanentAlert(Alert):
 
 
 class StartupAlert(Alert):
-  def __init__(self, alert_text_1: str, alert_text_2: str = "", alert_status=AlertStatus.normal):
-    alert_size = AlertSize.small
-    if HARDWARE.get_device_type() == 'tizi':
-      if alert_text_2 == "":
-        alert_text_2 = "Always keep hands on wheel and eyes on road"
-      alert_size = AlertSize.mid
+  def __init__(self, alert_text_1: str, alert_text_2: str = "Always keep hands on wheel and eyes on road", alert_status=AlertStatus.normal):
+    alert_size = AlertSize.mid
+    if HARDWARE.get_device_type() == 'mici':
+      if alert_text_2 == "Always keep hands on wheel and eyes on road":
+        alert_text_2 = ""
+      alert_size = AlertSize.small
     super().__init__(alert_text_1, alert_text_2,
                      alert_status, alert_size,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
@@ -517,7 +517,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Pay Attention",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 2),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.promptDriverDistracted: {
@@ -525,7 +525,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Pay Attention",
       "Driver Distracted",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, 1),
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, .1),
   },
 
   EventName.driverDistracted: {
@@ -570,7 +570,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.resumeRequired: {
     ET.WARNING: Alert(
-      "Press Resume",
+      "Press Resume to Exit Standstill",
       "",
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
@@ -582,23 +582,23 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.preLaneChangeLeft: {
     ET.WARNING: Alert(
-      "Steer Left",
-      "Confirm Lane Change",
-      AlertStatus.normal, AlertSize.mid,
+      "Steer Left to Start Lane Change Once Safe",
+      "",
+      AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.preLaneChangeRight: {
     ET.WARNING: Alert(
-      "Steer Right",
-      "Confirm Lane Change",
-      AlertStatus.normal, AlertSize.mid,
+      "Steer Right to Start Lane Change Once Safe",
+      "",
+      AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.laneChangeBlocked: {
     ET.WARNING: Alert(
-      "Car in Blindspot",
+      "Car Detected in Blindspot",
       "",
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .1),
@@ -613,7 +613,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.steerSaturated: {
-    ET.WARNING: steer_saturated_alert,
+    ET.WARNING: Alert(
+      "Take Control",
+      "Turn Exceeds Steering Limit",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 2.),
   },
 
   # Thrown when the fan is driven at >50% but is not rotating
@@ -813,7 +817,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.calibrationIncomplete: {
     ET.PERMANENT: calibration_incomplete_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
-    ET.NO_ENTRY: NoEntryAlert("Calibrating"),
+    ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
 
   EventName.calibrationRecalibrating: {
@@ -964,12 +968,12 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.reverseGear: {
     ET.PERMANENT: Alert(
-      "Reverse",
+      "Reverse\nGear",
       "",
       AlertStatus.normal, AlertSize.full,
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2, creation_delay=0.5),
-    ET.USER_DISABLE: ImmediateDisableAlert("Reverse"),
-    ET.NO_ENTRY: NoEntryAlert("Reverse"),
+    ET.USER_DISABLE: ImmediateDisableAlert("Reverse Gear"),
+    ET.NO_ENTRY: NoEntryAlert("Reverse Gear"),
   },
 
   # On cars that use stock ACC the car can decide to cancel ACC for various reasons.
@@ -1026,70 +1030,66 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 }
 
 
-if HARDWARE.get_device_type() == 'tizi':
+if HARDWARE.get_device_type() == 'mici':
   EVENTS.update({
-    EventName.promptDriverUnresponsive: {
+    EventName.preDriverDistracted: {
       ET.PERMANENT: Alert(
         "Pay Attention",
         "",
         AlertStatus.normal, AlertSize.small,
-        Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, 2),
     },
     EventName.promptDriverDistracted: {
       ET.PERMANENT: Alert(
         "Pay Attention",
         "Driver Distracted",
         AlertStatus.userPrompt, AlertSize.mid,
-        Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, .1),
+        Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, 1),
     },
     EventName.resumeRequired: {
       ET.WARNING: Alert(
-        "Press Resume to Exit Standstill",
+        "Press Resume",
         "",
         AlertStatus.userPrompt, AlertSize.small,
         Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
     },
     EventName.preLaneChangeLeft: {
       ET.WARNING: Alert(
-        "Steer Left to Start Lane Change Once Safe",
-        "",
-        AlertStatus.normal, AlertSize.small,
+        "Steer Left",
+        "Confirm Lane Change",
+        AlertStatus.normal, AlertSize.mid,
         Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
     },
     EventName.preLaneChangeRight: {
       ET.WARNING: Alert(
-        "Steer Right to Start Lane Change Once Safe",
-        "",
-        AlertStatus.normal, AlertSize.small,
+        "Steer Right",
+        "Confirm Lane Change",
+        AlertStatus.normal, AlertSize.mid,
         Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
     },
     EventName.laneChangeBlocked: {
       ET.WARNING: Alert(
-        "Car Detected in Blindspot",
+        "Car in Blindspot",
         "",
         AlertStatus.userPrompt, AlertSize.small,
         Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .1),
     },
     EventName.steerSaturated: {
-      ET.WARNING: Alert(
-        "Take Control",
-        "Turn Exceeds Steering Limit",
-        AlertStatus.userPrompt, AlertSize.mid,
-        Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 2.),
+      ET.WARNING: steer_saturated_alert,
     },
     EventName.calibrationIncomplete: {
       ET.PERMANENT: calibration_incomplete_alert,
       ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
-      ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
+      ET.NO_ENTRY: NoEntryAlert("Calibrating"),
     },
     EventName.reverseGear: {
       ET.PERMANENT: Alert(
-        "Reverse\nGear",
+        "Reverse",
         "",
         AlertStatus.normal, AlertSize.full,
         Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2, creation_delay=0.5),
-      ET.USER_DISABLE: ImmediateDisableAlert("Reverse Gear"),
-      ET.NO_ENTRY: NoEntryAlert("Reverse Gear"),
+      ET.USER_DISABLE: ImmediateDisableAlert("Reverse"),
+      ET.NO_ENTRY: NoEntryAlert("Reverse"),
     },
   })
 
