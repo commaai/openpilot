@@ -105,7 +105,7 @@ class Label(Widget):
                text_alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
                text_padding: int = 0,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
-               icon: Union[rl.Texture, None] = None,  # noqa: UP007
+               icon: Union[rl.Texture, None] = None,
                elide_right: bool = False,
                ):
 

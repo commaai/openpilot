@@ -235,6 +235,7 @@ lint.ignore = [
   "B027",
   "B024",
   "NPY002",  # new numpy random syntax is worse
+  "UP045", "UP007",  # these don't play nice with raylib atm
 ]
 line-length = 160
 target-version ="py311"
