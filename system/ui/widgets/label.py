@@ -110,6 +110,7 @@ class Label(Widget):
                ):
 
     super().__init__()
+    self.set_mouse_events_enabled(False)
     self._font_weight = font_weight
     self._font = gui_app.font(self._font_weight)
     self._font_size = font_size

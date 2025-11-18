@@ -60,6 +60,7 @@ class HtmlRenderer(Widget):
   def __init__(self, file_path: str | None = None, text: str | None = None,
                text_size: dict | None = None, text_color: rl.Color = rl.WHITE, center_text: bool = False):
     super().__init__()
+    self.set_mouse_events_enabled(False)
     self._text_color = text_color
     self._center_text = center_text
     self._normal_font = gui_app.font(FontWeight.NORMAL)
