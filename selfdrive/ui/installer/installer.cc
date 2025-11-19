@@ -57,6 +57,13 @@ void branchMigration() {
     } else if (BRANCH_STR == "release3-staging") {
       migrated_branch = "release-tizi-staging";
     }
+  } else if (device_type == cereal::InitData::DeviceType::MICI) {
+    // TODO: change to release-mici once pushed
+    if (BRANCH_STR == "release3") {
+      migrated_branch = "nightly";
+    } else if (BRANCH_STR == "release3-staging") {
+      migrated_branch = "nightly";
+    }
   }
 }
 
