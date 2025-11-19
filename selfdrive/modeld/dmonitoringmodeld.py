@@ -98,7 +98,7 @@ def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_t
   ds.modelExecutionTime = exec_time
   ds.gpuExecutionTime = gpu_exec_time
   ds.rawPredictions = model_output['raw_pred']
-  ds.wheelOnRightProb = sigmoid(model_output['wheel_on_right'])[0, 0].item()
+  ds.wheelOnRightProb = model_output['wheel_on_right'][0, 0].item()
   fill_driver_state(ds.leftDriverData, model_output, 'lhd')
   fill_driver_state(ds.rightDriverData, model_output, 'rhd')
   return msg
