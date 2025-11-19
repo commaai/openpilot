@@ -40,9 +40,8 @@ if __name__ == "__main__":
   print("Driver Camera Brightness Cycle Test")
   print("="*60)
   print("Controls:")
-  print("  RIGHT ARROW - Next setting")
-  print("  LEFT ARROW  - Previous setting")
-  print("  ESC         - Exit")
+  print("  TAP RIGHT SIDE - Next setting")
+  print("  TAP LEFT SIDE  - Previous setting")
   print("="*60 + "\n")
 
   gui_app.init_window("Driver Camera Cycle Test")
@@ -57,16 +56,16 @@ if __name__ == "__main__":
   new_index = current_index
 
   for _ in gui_app.render():
-    # Check for keyboard input
-    if rl.is_key_pressed(rl.KeyboardKey.KEY_RIGHT):
-      new_index = min(current_index + 1, len(configs) - 1)
-      needs_update = True
-    elif rl.is_key_pressed(rl.KeyboardKey.KEY_LEFT):
-      new_index = max(current_index - 1, 0)
-      needs_update = True
-    elif rl.is_key_pressed(rl.KeyboardKey.KEY_ESCAPE):
-      print("\nExiting...")
-      break
+    # Check for touch/mouse input
+    for event in gui_app.mouse_events:
+      if event.left_down:
+        # Right side = next, left side = previous
+        if event.x > gui_app.width / 2:
+          new_index = min(current_index + 1, len(configs) - 1)
+          needs_update = True
+        else:
+          new_index = max(current_index - 1, 0)
+          needs_update = True
 
     # Recreate camera if needed
     if needs_update and new_index != current_index:
