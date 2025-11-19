@@ -21,7 +21,7 @@ EventName = log.OnroadEvent.EventName
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS:
-  def __init__(self, device_type=HARDWARE.get_device_type()):
+  def __init__(self, device_type):
     self._DT_DMON = DT_DMON
     # ref (page15-16): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
     self._AWARENESS_TIME = 30. # passive wheeltouch total timeout
@@ -129,9 +129,9 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
 
 
 class DriverMonitoring:
-  def __init__(self, rhd_saved=False, settings=DRIVER_MONITOR_SETTINGS(), always_on=False):
+  def __init__(self, rhd_saved=False, settings=None, always_on=False):
     # init policy settings
-    self.settings = settings
+    self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
 
     # init driver status
     self.wheelpos_learner = RunningStatFilter()
