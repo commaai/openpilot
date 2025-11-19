@@ -27,6 +27,7 @@ MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
 MAX_TOUCH_SLOTS = 2
 TOUCH_HISTORY_TIMEOUT = 3.0  # Seconds before touch points fade out
 
+BIG_UI = os.getenv("BIG", "0") == "1"
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "0") == "1"
 SHOW_FPS = os.getenv("SHOW_FPS") == "1"
 SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == "1"
@@ -78,7 +79,7 @@ DEFAULT_TEXT_COLOR = rl.WHITE
 
 # Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
 # The real scales for the fonts below range from 1.212 to 1.266
-FONT_SCALE = 1.242
+FONT_SCALE = 1.242 if BIG_UI else 1.16
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
@@ -86,11 +87,16 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 class FontWeight(StrEnum):
   LIGHT = "Inter-Light.fnt"
-  NORMAL = "Inter-Regular.fnt"
+  NORMAL = "Inter-Regular.fnt" if BIG_UI else "Inter-Medium.fnt"
   MEDIUM = "Inter-Medium.fnt"
-  SEMI_BOLD = "Inter-SemiBold.fnt"
   BOLD = "Inter-Bold.fnt"
+  SEMI_BOLD = "Inter-SemiBold.fnt"
   UNIFONT = "unifont.fnt"
+
+  # Small UI fonts
+  DISPLAY_REGULAR = "Inter-Regular.fnt"
+  ROMAN = "Inter-Regular.fnt"
+  DISPLAY = "Inter-Bold.fnt"
 
 
 def font_fallback(font: rl.Font) -> rl.Font:
@@ -181,10 +187,10 @@ class MouseState:
 
 
 class GuiApplication:
-  def __init__(self, width: int, height: int):
+  def __init__(self, width: int | None = None, height: int | None = None):
     self._fonts: dict[FontWeight, rl.Font] = {}
-    self._width = width
-    self._height = height
+    self._width = width if width is not None else GuiApplication._default_width()
+    self._height = height if height is not None else GuiApplication._default_height()
 
     if PC and os.getenv("SCALE") is None:
       self._scale = self._calculate_auto_scale()
@@ -654,5 +660,17 @@ class GuiApplication:
     # Apply 0.95 factor for window decorations/taskbar margin
     return max(0.3, min(w / self._width, h / self._height) * 0.95)
 
+  @staticmethod
+  def _default_width() -> int:
+    return 2160 if GuiApplication.big_ui() else 536
 
-gui_app = GuiApplication(2160, 1080)
+  @staticmethod
+  def _default_height() -> int:
+    return 1080 if GuiApplication.big_ui() else 240
+
+  @staticmethod
+  def big_ui() -> bool:
+    return HARDWARE.get_device_type() in ('tici', 'tizi') or BIG_UI
+
+
+gui_app = GuiApplication()
