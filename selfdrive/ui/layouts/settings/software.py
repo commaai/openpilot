@@ -9,7 +9,7 @@ from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 # TODO: remove this. updater fails to respond on startup if time is not correct
 UPDATED_TIMEOUT = 10  # seconds to wait for updated to respond
