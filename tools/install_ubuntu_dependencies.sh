@@ -118,6 +118,11 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
 EOF
 
+    # Setup adb udev rules
+    $SUDO tee /etc/udev/rules.d/50-comma-adb.rules > /dev/null <<EOF
+SUBSYSTEM=="usb", ATTR{idVendor}=="04d8", ATTR{idProduct}=="1234", ENV{adb_user}="yes"
+EOF
+
     $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
   fi
 

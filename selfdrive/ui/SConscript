@@ -56,12 +56,16 @@ if GetOption('extras'):
                               "ld -r -b binary -o $TARGET $SOURCE")
     inter = raylib_env.Command("installer/inter_ttf.o", "installer/inter-ascii.ttf",
                                "ld -r -b binary -o $TARGET $SOURCE")
+    inter_bold = raylib_env.Command("installer/inter_bold.o", "../assets/fonts/Inter-Bold.ttf",
+                                "ld -r -b binary -o $TARGET $SOURCE")
+    inter_light = raylib_env.Command("installer/inter_light.o", "../assets/fonts/Inter-Light.ttf",
+                                "ld -r -b binary -o $TARGET $SOURCE")
     for name, branch in installers:
       d = {'BRANCH': f"'\"{branch}\"'"}
       if "internal" in name:
         d['INTERNAL'] = "1"
 
       obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
+      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter, inter_bold, inter_light], LIBS=raylib_libs)
       # keep installers small
       assert f[0].get_size() < 1900*1e3, f[0].get_size()

@@ -25,7 +25,7 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds.leftDriverData.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.leftDriverData.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
   # TODO: test both separately when e2e is used
-  ds.leftDriverData.notReadyProb = [0., 0.]
+  ds.leftDriverData.phoneProb = 0.
   return ds
 
 
@@ -53,7 +53,7 @@ class TestMonitoring:
     DM = DriverMonitoring()
     events = []
     for idx in range(len(msgs)):
-      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx])
+      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx], standstill[idx])
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
