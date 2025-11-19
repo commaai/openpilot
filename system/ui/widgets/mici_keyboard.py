@@ -123,8 +123,6 @@ class IconKey(Key):
       src_rec = rl.Rectangle(0, 0, self._icon.width, self._icon.height)
       rl.draw_texture_pro(self._icon, src_rec, dest_rec, rl.Vector2(0, 0), 0, self._color)
 
-      rl.draw_texture_pro(self._icon, src_rec, dest_rec, rl.Vector2(0, 0), 0, self._color)
-
     elif self._vertical_align == "bottom":
       dest_rec = rl.Rectangle(self._rect.x + (self._rect.width - self._icon.width * scale) / 2, self._rect.y,
                               self._icon.width * scale, self._icon.height * scale)
