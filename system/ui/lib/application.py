@@ -480,7 +480,7 @@ class GuiApplication:
 
 
 # Lazy factory to create the app
-def _create_gui_app(width=2160, height=1080):
+def _create_gui_app(width=None, height=None):
   is_release = Params().get_bool("IsReleaseBranch")
   if not is_release:
     from openpilot.system.ui.lib.debug_application import DebugGuiApplication
@@ -488,5 +488,4 @@ def _create_gui_app(width=2160, height=1080):
 
   return GuiApplication(width, height)
 
-gui_app = GuiApplication()
-gui_app = _create_gui_app(2160, 1080)
+gui_app = _create_gui_app()
