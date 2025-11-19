@@ -157,10 +157,4 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
 
 
 if __name__ == "__main__":
-  from openpilot.common.params import Params
-
-  params = Params()
-  params.put("TermsVersion", terms_version)
-  params.put("TrainingVersion", training_version)
-
   print(get_build_metadata())

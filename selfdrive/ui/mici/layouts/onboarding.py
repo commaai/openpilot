@@ -15,6 +15,7 @@ from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.version import terms_version, training_version
 
 
 class OnboardingState(IntEnum):
@@ -60,7 +61,7 @@ class TrainingGuideIntro(SetupTermsPage):
     self._title_header = TermsHeader("welcome to openpilot", gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 60, 60))
 
     self._dm_label = UnifiedLabel("Before we get on the road, let's review the " +
-                                  "functionality and limitations of openpilot.", 36,
+                                  "functionality and limitations of openpilot.", 42,
                                   FontWeight.ROMAN)
 
   @property
@@ -90,7 +91,7 @@ class TrainingGuidePreDMTutorial(SetupTermsPage):
 
     self._dm_label = UnifiedLabel("Next, we'll ensure comma four is mounted properly.\n\nIf it does not have a clear view of the driver, " +
                                   "simply unplug and remount before continuing.\n\n" +
-                                  "NOTE: the driver camera will have a purple tint due to the IR illumination used for seeing at night.", 36,
+                                  "NOTE: the driver camera will have a purple tint due to the IR illumination used for seeing at night.", 42,
                                   FontWeight.ROMAN)
 
   def show_event(self):
@@ -123,7 +124,14 @@ class TrainingGuideDMTutorial(Widget):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._dialog = DriverCameraSetupDialog(continue_callback)
+    self._original_continue_callback = continue_callback
+
+    # Wrap the continue callback to restore settings
+    def wrapped_continue_callback():
+      self._restore_settings()
+      continue_callback()
+
+    self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
 
     # Disable driver monitoring model when device times out for inactivity
     def inactivity_callback():
@@ -134,6 +142,13 @@ class TrainingGuideDMTutorial(Widget):
   def show_event(self):
     super().show_event()
     self._dialog.show_event()
+
+    device.set_offroad_brightness(100)
+    device.reset_interactive_timeout(300)  # 5 minutes
+
+  def _restore_settings(self):
+    device.set_offroad_brightness(None)
+    device.reset_interactive_timeout()
 
   def _update_state(self):
     super()._update_state()
@@ -168,7 +183,7 @@ class TrainingGuideRecordFront(SetupTermsPage):
     self._title_header = TermsHeader("improve driver monitoring", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
     self._dm_label = UnifiedLabel("Help improve driver monitoring by including your driving data in the training data set. " +
-                                  "Your preference can be changed at any time in Settings. Would you like to share your data?", 36,
+                                  "Your preference can be changed at any time in Settings. Would you like to share your data?", 42,
                                   FontWeight.ROMAN)
 
   def show_event(self):
@@ -200,7 +215,7 @@ class TrainingGuideAttentionNotice1(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("not a self driving car", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("THIS IS A DRIVER ASSISTANCE SYSTEM. A DRIVER ASSISTANCE SYSTEM IS NOT A SELF DRIVING CAR.", 36,
+    self._warning_label = UnifiedLabel("THIS IS A DRIVER ASSISTANCE SYSTEM. A DRIVER ASSISTANCE SYSTEM IS NOT A SELF-DRIVING CAR.", 42,
                                        FontWeight.ROMAN)
 
   @property
@@ -227,7 +242,8 @@ class TrainingGuideAttentionNotice2(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("attention is required", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("YOU MUST PAY ATTENTION AT ALL TIMES. YOU ARE FULLY RESPONSIBLE FOR DRIVING THE CAR.", 36,
+    self._warning_label = UnifiedLabel("1. You must pay attention at all times.\n\n2. You must be ready to take over at any time."+
+                                       "\n\n3. You are fully responsible for driving the car.", 42,
                                        FontWeight.ROMAN)
 
   @property
@@ -255,7 +271,7 @@ class TrainingGuideDisengaging(SetupTermsPage):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("disengaging openpilot", gui_app.texture("icons_mici/setup/green_pedal.png", 60, 60))
     self._warning_label = UnifiedLabel("You can disengage openpilot by either pressing the brake pedal or " +
-                                       "the cancel button on your steering wheel.", 36,
+                                       "the cancel button on your steering wheel.", 42,
                                        FontWeight.ROMAN)
 
   @property
@@ -288,7 +304,7 @@ class TrainingGuideConfidenceBall(SetupTermsPage):
 
     self._title_header = TermsHeader("confidence ball", gui_app.texture("icons_mici/setup/green_car.png", 60, 60))
     self._warning_label = UnifiedLabel("The ball on the right communicates how confident openpilot " +
-                                       "is about the road scene at any given time.", 36,
+                                       "is about the road scene at any given time.", 42,
                                        FontWeight.ROMAN)
 
   def show_event(self):
@@ -343,7 +359,7 @@ class TrainingGuideSteeringArc(SetupTermsPage):
     self._title_header = TermsHeader("steering arc", gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 60, 60))
     self._warning_label = UnifiedLabel("All cars limit the amount of steering that openpilot is able to apply. While driving, the " +
                                        "steering arc shows the current amount of force being applied in relation to the maximum available to openpilot. " +
-                                       "You may need to assist if you see the arc nearing its orange state.", 36,
+                                       "You may need to assist if you see the arc nearing its orange state.", 42,
                                        FontWeight.ROMAN)
 
   def show_event(self):
@@ -506,10 +522,8 @@ class TermsPage(SetupTermsPage):
 class OnboardingWindow(Widget):
   def __init__(self):
     super().__init__()
-    self._current_terms_version = ui_state.params.get("TermsVersion")
-    self._current_training_version = ui_state.params.get("TrainingVersion")
-    self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == self._current_terms_version
-    self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == self._current_training_version
+    self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
+    self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 
     self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
 
@@ -535,11 +549,11 @@ class OnboardingWindow(Widget):
     gui_app.set_modal_overlay(None)
 
   def _on_terms_accepted(self):
-    ui_state.params.put("HasAcceptedTerms", self._current_terms_version)
+    ui_state.params.put("HasAcceptedTerms", terms_version)
     self._state = OnboardingState.ONBOARDING
 
   def _on_completed_training(self):
-    ui_state.params.put("CompletedTrainingVersion", self._current_training_version)
+    ui_state.params.put("CompletedTrainingVersion", training_version)
     self.close()
 
   def _render(self, _):
