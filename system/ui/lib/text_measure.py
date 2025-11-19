@@ -5,9 +5,10 @@ from openpilot.system.ui.lib.emoji import find_emoji
 _cache: dict[int, rl.Vector2] = {}
 
 
-def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: int = 0) -> rl.Vector2:
+def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: float = 0) -> rl.Vector2:
   """Caches text measurements to avoid redundant calculations."""
   font = font_fallback(font)
+  spacing = round(spacing, 4)
   key = hash((font.texture.id, text, font_size, spacing))
   if key in _cache:
     return _cache[key]

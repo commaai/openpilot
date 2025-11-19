@@ -155,7 +155,7 @@ class AdvancedNetworkSettings(Widget):
       button_item(lambda: tr("Hidden Network"), lambda: tr("CONNECT"), callback=self._connect_to_hidden_network),
     ]
 
-    self._scroller = Scroller(items, line_separator=True, spacing=0)
+    self._scroller = Scroller(items, horizontal=False, line_separator=True, spacing=0)
 
     # Set initial config
     metered = self._params.get_bool("GsmMetered")

@@ -191,7 +191,9 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
 
   # TODO: consider deduping close screenspace points
   # interleave points to produce a triangle strip
-  assert len(pts) % 2 == 0, "Interleaving expects even number of points"
+  # assert len(pts) % 2 == 0, "Interleaving expects even number of points"
+  if len(pts) % 2 != 0:
+    pts = pts[:-1]
 
   tri_strip = []
   for i in range(len(pts) // 2):
