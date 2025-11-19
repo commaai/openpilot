@@ -5,8 +5,6 @@ import pyray as rl
 from openpilot.system.hardware import TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.selfdrive.ui.layouts.main import MainLayout
-from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 
@@ -16,8 +14,10 @@ def main():
 
   gui_app.init_window("UI")
   if gui_app.big_ui():
+    from openpilot.selfdrive.ui.layouts.main import MainLayout
     main_layout = MainLayout()
   else:
+    from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
     main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   for should_render in gui_app.render():
