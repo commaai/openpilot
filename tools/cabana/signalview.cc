@@ -265,7 +265,7 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
       text += item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);
       spacing += (option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1) * 2;
     }
-    width = std::min<int>(option.widget->size().width() / 3.0, option.fontMetrics.width(text) + spacing);
+    width = std::min<int>(option.widget->size().width() / 3.0, option.fontMetrics.horizontalAdvance(text) + spacing);
   }
   return {width, option.fontMetrics.height() + option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
 }
@@ -308,7 +308,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       // multiplexer indicator
       if (item->sig->type != cabana::Signal::Type::Normal) {
         QString indicator = item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);
-        QRect indicator_rect{rect.x(), rect.y(), option.fontMetrics.width(indicator), rect.height()};
+        QRect indicator_rect{rect.x(), rect.y(), option.fontMetrics.horizontalAdvance(indicator), rect.height()};
         painter->setBrush(Qt::gray);
         painter->setPen(Qt::NoPen);
         painter->drawRoundedRect(indicator_rect, 3, 3);
@@ -342,13 +342,13 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         painter->drawText(rect, Qt::AlignLeft | Qt::AlignTop, max);
         painter->drawText(rect, Qt::AlignLeft | Qt::AlignBottom, min);
         QFontMetrics fm(minmax_font);
-        value_adjust = std::max(fm.width(min), fm.width(max)) + 5;
+        value_adjust = std::max(fm.horizontalAdvance(min), fm.horizontalAdvance(max)) + 5;
       } else if (!item->sparkline.isEmpty() && item->sig->type == cabana::Signal::Type::Multiplexed) {
         // display freq of multiplexed signal
         painter->setFont(label_font);
         QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
         painter->drawText(rect.adjusted(5, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, freq);
-        value_adjust = QFontMetrics(label_font).width(freq) + 10;
+        value_adjust = QFontMetrics(label_font).horizontalAdvance(freq) + 10;
       }
       // signal value
       painter->setFont(option.font);
@@ -622,13 +622,13 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     double value = 0;
     if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {
       item->sig_val = item->sig->formatValue(value);
-      max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
+      max_value_width = std::max(max_value_width, fontMetrics().horizontalAdvance(item->sig_val));
     }
   }
 
   auto [first_visible, last_visible] = visibleSignalRange();
   if (first_visible.isValid() && last_visible.isValid()) {
-    const static int min_max_width = QFontMetrics(delegate->minmax_font).width("-000.00") + 5;
+    const static int min_max_width = QFontMetrics(delegate->minmax_font).horizontalAdvance("-000.00") + 5;
     int available_width = value_column_width - delegate->button_size.width();
     int value_width = std::min<int>(max_value_width + min_max_width, available_width / 2);
     QSize size(available_width - value_width,

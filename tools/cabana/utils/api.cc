@@ -1,7 +1,7 @@
 #include "tools/cabana/utils/api.h"
 
+#include <openssl/evp.h>
 #include <openssl/pem.h>
-#include <openssl/rsa.h>
 
 #include <QApplication>
 #include <QCryptographicHash>
@@ -39,29 +39,38 @@ std::optional<QString> getDongleId() {
 
 namespace CommaApi {
 
-RSA *get_rsa_private_key() {
-  static std::unique_ptr<RSA, decltype(&RSA_free)> rsa_private(nullptr, RSA_free);
-  if (!rsa_private) {
+EVP_PKEY *get_private_key() {
+  static std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> pkey(nullptr, EVP_PKEY_free);
+  if (!pkey) {
     FILE *fp = fopen(Path::rsa_file().c_str(), "rb");
     if (!fp) {
-      qDebug() << "No RSA private key found, please run manager.py or registration.py";
+      qDebug() << "No private key found, please run manager.py or registration.py";
       return nullptr;
     }
-    rsa_private.reset(PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL));
+    pkey.reset(PEM_read_PrivateKey(fp, nullptr, nullptr, nullptr));
     fclose(fp);
   }
-  return rsa_private.get();
+  return pkey.get();
 }
 
 QByteArray rsa_sign(const QByteArray &data) {
-  RSA *rsa_private = get_rsa_private_key();
-  if (!rsa_private) return {};
+  EVP_PKEY *pkey = get_private_key();
+  if (!pkey) return {};
 
-  QByteArray sig(RSA_size(rsa_private), Qt::Uninitialized);
-  unsigned int sig_len;
-  int ret = RSA_sign(NID_sha256, (unsigned char*)data.data(), data.size(), (unsigned char*)sig.data(), &sig_len, rsa_private);
-  assert(ret == 1);
-  assert(sig.size() == sig_len);
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  if (!mdctx) return {};
+
+  QByteArray sig(EVP_PKEY_size(pkey), Qt::Uninitialized);
+  size_t sig_len = sig.size();
+
+  int ret = EVP_DigestSignInit(mdctx, nullptr, EVP_sha256(), nullptr, pkey);
+  ret &= EVP_DigestSignUpdate(mdctx, data.data(), data.size());
+  ret &= EVP_DigestSignFinal(mdctx, (unsigned char*)sig.data(), &sig_len);
+
+  EVP_MD_CTX_free(mdctx);
+
+  if (ret != 1) return {};
+  sig.resize(sig_len);
   return sig;
 }
 

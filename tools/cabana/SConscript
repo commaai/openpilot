@@ -50,7 +50,6 @@ qt_flags = [
   "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
-qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 

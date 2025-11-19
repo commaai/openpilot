@@ -324,7 +324,8 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
       if (!can->liveStreaming()) {
         s.segment_tree.build(s.vals);
       }
-      s.series->replace(QVector<QPointF>::fromStdVector(series_type == SeriesType::StepLine ? s.step_vals : s.vals));
+      const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
+      s.series->replace(QVector<QPointF>(points.cbegin(), points.cend()));
     }
   }
   updateAxisY();
@@ -382,7 +383,7 @@ void ChartView::updateAxisY() {
     QFontMetrics fm(axis_y->labelsFont());
     for (int i = 0; i < tick_count; i++) {
       qreal value = min_y + (i * (max_y - min_y) / (tick_count - 1));
-      max_label_width = std::max(max_label_width, fm.width(QString::number(value, 'f', n)));
+      max_label_width = std::max(max_label_width, fm.horizontalAdvance(QString::number(value, 'f', n)));
     }
 
     int title_spacing = unit.isEmpty() ? 0 : QFontMetrics(axis_y->titleFont()).size(Qt::TextSingleLine, unit).height();
@@ -838,7 +839,8 @@ void ChartView::setSeriesType(SeriesType type) {
     }
     for (auto &s : sigs) {
       s.series = createSeries(series_type, s.sig->color);
-      s.series->replace(QVector<QPointF>::fromStdVector(series_type == SeriesType::StepLine ? s.step_vals : s.vals));
+      const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
+      s.series->replace(QVector<QPointF>(points.cbegin(), points.cend()));
     }
     updateSeriesPoints();
     updateTitle();
