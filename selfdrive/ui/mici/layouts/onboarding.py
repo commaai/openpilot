@@ -124,7 +124,14 @@ class TrainingGuideDMTutorial(Widget):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._dialog = DriverCameraSetupDialog(continue_callback)
+    self._original_continue_callback = continue_callback
+
+    # Wrap the continue callback to restore settings
+    def wrapped_continue_callback():
+      self._restore_settings()
+      continue_callback()
+
+    self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
 
     # Disable driver monitoring model when device times out for inactivity
     def inactivity_callback():
@@ -135,6 +142,13 @@ class TrainingGuideDMTutorial(Widget):
   def show_event(self):
     super().show_event()
     self._dialog.show_event()
+
+    device.set_offroad_brightness(100)
+    device.reset_interactive_timeout(300)  # 5 minutes
+
+  def _restore_settings(self):
+    device.set_offroad_brightness(None)
+    device.reset_interactive_timeout()
 
   def _update_state(self):
     super()._update_state()
