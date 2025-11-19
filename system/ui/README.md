@@ -3,6 +3,7 @@
 The user interfaces here are built with [raylib](https://www.raylib.com/).
 
 Quick start:
+* set `BIG=1` to run the comma 3X UI (comma four UI runs by default)
 * set `SHOW_FPS=1` to show the FPS
 * set `STRICT_MODE=1` to kill the app if it drops too much below 60fps
 * set `SCALE=1.5` to scale the entire UI by 1.5x

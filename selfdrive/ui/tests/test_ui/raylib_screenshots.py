@@ -246,6 +246,7 @@ CASES = {
 class TestUI:
   def __init__(self):
     os.environ["SCALE"] = os.getenv("SCALE", "1")
+    os.environ["BIG"] = "1"
     sys.modules["mouseinfo"] = False
 
   def setup(self):

@@ -35,7 +35,7 @@ except Exception:
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
-SCAN_PERIOD_SECONDS = 10
+SCAN_PERIOD_SECONDS = 5
 
 
 class SecurityType(IntEnum):
@@ -75,6 +75,7 @@ class Network:
   is_connected: bool
   security_type: SecurityType
   is_saved: bool
+  ip_address: str = ""  # TODO: implement
 
   @classmethod
   def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool) -> "Network":
@@ -137,6 +138,8 @@ class WifiManager:
       self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
     except FileNotFoundError:
       cloudlog.exception("Failed to connect to system D-Bus")
+      self._router_main = None
+      self._conn_monitor = None
       self._exit = True
 
     # Store wifi device path
@@ -627,7 +630,7 @@ class WifiManager:
 
       known_connections = self._get_connections()
       networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections) for ssid, ap_list in aps.items()]
-      networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
+      networks.sort(key=lambda n: (-n.is_connected, n.ssid.lower()))
       self._networks = networks
 
       self._update_ipv4_address()
@@ -751,6 +754,8 @@ class WifiManager:
       if self._state_thread.is_alive():
         self._state_thread.join()
 
-      self._router_main.close()
-      self._router_main.conn.close()
-      self._conn_monitor.close()
+      if self._router_main is not None:
+        self._router_main.close()
+        self._router_main.conn.close()
+      if self._conn_monitor is not None:
+        self._conn_monitor.close()
