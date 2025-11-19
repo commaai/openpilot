@@ -200,7 +200,7 @@ class TrainingGuideAttentionNotice1(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("not a self driving car", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("THIS IS A DRIVER ASSISTANCE SYSTEM. A DRIVER ASSISTANCE SYSTEM IS NOT A SELF DRIVING CAR.", 42,
+    self._warning_label = UnifiedLabel("THIS IS A DRIVER ASSISTANCE SYSTEM. A DRIVER ASSISTANCE SYSTEM IS NOT A SELF-DRIVING CAR.", 42,
                                        FontWeight.ROMAN)
 
   @property
@@ -227,7 +227,8 @@ class TrainingGuideAttentionNotice2(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("attention is required", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("YOU MUST PAY ATTENTION AT ALL TIMES. YOU ARE FULLY RESPONSIBLE FOR DRIVING THE CAR.", 42,
+    self._warning_label = UnifiedLabel("1. You must pay attention at all times.\n\n2. You must be ready to take over at any time."+
+                                       "\n\n3. You are fully responsible for driving the car.", 42,
                                        FontWeight.ROMAN)
 
   @property
