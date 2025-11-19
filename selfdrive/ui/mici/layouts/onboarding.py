@@ -287,8 +287,8 @@ class TrainingGuideConfidenceBall(SetupTermsPage):
     self._start_time = 0.0
 
     self._title_header = TermsHeader("confidence ball", gui_app.texture("icons_mici/setup/green_car.png", 60, 60))
-    self._warning_label = UnifiedLabel("The ball on the right communicates how confident the driving " +
-                                       "model is about the road scene at any given time.", 36,
+    self._warning_label = UnifiedLabel("The ball on the right communicates how confident openpilot " +
+                                       "is about the road scene at any given time.", 36,
                                        FontWeight.ROMAN)
 
   def show_event(self):
