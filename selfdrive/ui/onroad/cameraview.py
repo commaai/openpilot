@@ -46,9 +46,24 @@ if TICI:
     in vec2 fragTexCoord;
     uniform samplerExternalOES texture0;
     out vec4 fragColor;
+    uniform float brightness;
     void main() {
       vec4 color = texture(texture0, fragTexCoord);
-      fragColor = vec4(pow(color.rgb, vec3(1.0/1.28)), color.a);
+      color.rgb = pow(color.rgb, vec3(1.0/1.28));
+      // Apply brightness/contrast adjustment (for driver camera: brightness > 1.0 means boost contrast)
+      if (brightness > 1.0) {
+        // Lift shadows first to preserve dark detail
+        color.rgb = color.rgb + 0.15;
+        // Boost contrast: pull darks down and lights up around midpoint
+        color.rgb = clamp((color.rgb - 0.5) * (brightness * 0.8) + 0.5, 0.0, 1.0);
+        // Apply S-curve for more natural contrast with better shadow detail
+        color.rgb = color.rgb * color.rgb * (3.0 - 2.0 * color.rgb);
+        // Brighten overall
+        color.rgb = pow(color.rgb, vec3(0.8));
+      } else {
+        color.rgb *= brightness;
+      }
+      fragColor = vec4(color.rgb, color.a);
     }
     """
 else:
@@ -57,10 +72,25 @@ else:
     uniform sampler2D texture0;
     uniform sampler2D texture1;
     out vec4 fragColor;
+    uniform float brightness;
     void main() {
       float y = texture(texture0, fragTexCoord).r;
       vec2 uv = texture(texture1, fragTexCoord).ra - 0.5;
-      fragColor = vec4(y + 1.402*uv.y, y - 0.344*uv.x - 0.714*uv.y, y + 1.772*uv.x, 1.0);
+      vec3 rgb = vec3(y + 1.402*uv.y, y - 0.344*uv.x - 0.714*uv.y, y + 1.772*uv.x);
+      // Apply brightness/contrast adjustment (for driver camera: brightness > 1.0 means boost contrast)
+      if (brightness > 1.0) {
+        // Lift shadows first to preserve dark detail
+        rgb = rgb + 0.15;
+        // Boost contrast: pull darks down and lights up around midpoint
+        rgb = clamp((rgb - 0.5) * (brightness * 0.8) + 0.5, 0.0, 1.0);
+        // Apply S-curve for more natural contrast with better shadow detail
+        rgb = rgb * rgb * (3.0 - 2.0 * rgb);
+        // Brighten overall
+        rgb = pow(rgb, vec3(0.8));
+      } else {
+        rgb *= brightness;
+      }
+      fragColor = vec4(rgb, 1.0);
     }
     """
 
@@ -84,6 +114,12 @@ class CameraView(Widget):
     self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
     self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
+    self._brightness_loc = rl.get_shader_location(self.shader, "brightness")
+    cloudlog.warning(f"Shader brightness location for {stream_type}: {self._brightness_loc}")
+    # Driver camera gets 4.0x brightness boost, others get normal brightness (1.0)
+    self._brightness_val = rl.ffi.new("float[1]", [4.0 if stream_type == VisionStreamType.VISION_STREAM_DRIVER else 1.0])
+    if stream_type == VisionStreamType.VISION_STREAM_DRIVER:
+      cloudlog.warning(f"Driver camera initialized with brightness multiplier: {self._brightness_val[0]}")
 
     self.frame: VisionBuf | None = None
     self.texture_y: rl.Texture | None = None
@@ -255,6 +291,8 @@ class CameraView(Widget):
 
     # Render with shader
     rl.begin_shader_mode(self.shader)
+    if self._brightness_loc >= 0:
+      rl.set_shader_value(self.shader, self._brightness_loc, self._brightness_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
     rl.draw_texture_pro(self.egl_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
     rl.end_shader_mode()
 
@@ -274,6 +312,8 @@ class CameraView(Widget):
 
     # Render with shader
     rl.begin_shader_mode(self.shader)
+    if self._brightness_loc >= 0:
+      rl.set_shader_value(self.shader, self._brightness_loc, self._brightness_val, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
     rl.set_shader_value_texture(self.shader, self._texture1_loc, self.texture_uv)
     rl.draw_texture_pro(self.texture_y, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
     rl.end_shader_mode()
