@@ -78,7 +78,7 @@ def parse_model_output(model_output):
       parsed[f'{key}_{ds_suffix}'] = sigmoid(model_output[f'{key}_{ds_suffix}'])
   return parsed
 
-def fill_driver_state(msg, model_output, ds_suffix):
+def fill_driver_data(msg, model_output, ds_suffix):
   msg.faceOrientation = model_output[f'face_descs_{ds_suffix}'][0, :3].tolist()
   msg.faceOrientationStd = model_output[f'face_descs_{ds_suffix}_std'][0, :3].tolist()
   msg.facePosition = model_output[f'face_descs_{ds_suffix}'][0, 3:5].tolist()
@@ -99,8 +99,8 @@ def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_t
   ds.gpuExecutionTime = gpu_exec_time
   ds.rawPredictions = model_output['raw_pred']
   ds.wheelOnRightProb = model_output['wheel_on_right'][0, 0].item()
-  fill_driver_state(ds.leftDriverData, model_output, 'lhd')
-  fill_driver_state(ds.rightDriverData, model_output, 'rhd')
+  fill_driver_data(ds.leftDriverData, model_output, 'lhd')
+  fill_driver_data(ds.rightDriverData, model_output, 'rhd')
   return msg
 
 
