@@ -4,7 +4,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 # Constants
 MARGIN = 50
@@ -30,7 +30,7 @@ class MultiOptionDialog(Widget):
                                   font_weight=option_font_weight,
                                   text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, button_style=ButtonStyle.NORMAL,
                                   text_padding=50, elide_right=True) for option in options]
-    self.scroller = Scroller(self.option_buttons, horizontal=False, snap_items=False, spacing=LIST_ITEM_SPACING)
+    self.scroller = Scroller(self.option_buttons, spacing=LIST_ITEM_SPACING)
 
     self.cancel_button = Button(lambda: tr("Cancel"), click_callback=lambda: self._set_result(DialogResult.CANCEL))
     self.select_button = Button(lambda: tr("Select"), click_callback=lambda: self._set_result(DialogResult.CONFIRM), button_style=ButtonStyle.PRIMARY)
