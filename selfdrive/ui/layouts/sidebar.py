@@ -116,7 +116,7 @@ class Sidebar(Widget):
   def _update_network_status(self, device_state):
     self._net_type = NETWORK_TYPES.get(device_state.networkType.raw, tr_noop("Unknown"))
     strength = device_state.networkStrength
-    self._net_strength = max(0, min(5, strength.raw + 1)) if strength > 0 else 0
+    self._net_strength = max(0, min(5, strength.raw + 1)) if strength.raw > 0 else 0
 
   def _update_temperature_status(self, device_state):
     thermal_status = device_state.thermalStatus
