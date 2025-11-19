@@ -60,7 +60,7 @@ if __name__ == "__main__":
     for event in gui_app.mouse_events:
       if event.left_down:
         # Right side = next, left side = previous
-        if event.x > gui_app.width / 2:
+        if event.pos.x > gui_app.width / 2:
           new_index = min(current_index + 1, len(configs) - 1)
           needs_update = True
         else:
