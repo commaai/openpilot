@@ -1,6 +1,5 @@
 import platform
 import pyray as rl
-from typing import Any
 from openpilot.system.ui.lib.application import gui_app
 
 VERSION = """
@@ -56,7 +55,7 @@ UNIFORM_FLOAT = rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT
 
 
 class ShimmerShader:
-  _instance: Any = None
+  _instance: 'ShimmerShader' | None = None
 
   @classmethod
   def get_instance(cls) -> 'ShimmerShader':
