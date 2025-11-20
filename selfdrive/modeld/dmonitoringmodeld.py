@@ -16,7 +16,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, ModelFrame
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
@@ -36,7 +36,6 @@ class ModelState:
       self.input_shapes = model_metadata['input_shapes']
       self.output_slices = model_metadata['output_slices']
 
-    self.frame = ModelFrame(cl_ctx)
     self.numpy_inputs = {
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
     }
@@ -53,11 +52,11 @@ class ModelState:
 
     t1 = time.perf_counter()
 
+    frame_shape = ((buf.height * 3)//2, buf.width)
     if TICI:
-      new_frame = qcom_tensor_from_opencl_address(self.frame.cl_from_vision_buf(buf).mem_address, ((buf.height * 3)//2,buf.width), dtype=dtypes.uint8)
+      new_frame = qcom_tensor_from_opencl_address(buf.cl_mem_address, frame_shape, dtype=dtypes.uint8)
     else:
-      new_frame = self.frame.array_from_vision_buf(buf)
-      new_frame = Tensor(new_frame, dtype='uint8').realize().reshape((buf.height * 3)//2, buf.width)
+      new_frame = Tensor(buf.as_array(), dtype='uint8').realize().reshape(frame_shape)
 
     transform = Tensor(transform.astype(np.float32), device='NPY').realize()
     print(new_frame.shape)

@@ -29,7 +29,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, 
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
 Tensor.manual_seed(1337)
@@ -145,7 +145,6 @@ class InputQueues:
       return out
 
 class ModelState:
-  frames: dict[str, ModelFrame]
   inputs: dict[str, np.ndarray]
   output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
@@ -164,7 +163,6 @@ class ModelState:
       self.policy_output_slices = policy_metadata['output_slices']
       policy_output_size = policy_metadata['output_shapes']['outputs'][1]
 
-    self.frames = {name: ModelFrame(context) for name in self.vision_input_names}
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     # policy inputs
@@ -207,11 +205,12 @@ class ModelState:
     t0 = time.perf_counter()
     new_frames = {}
     for key in bufs.keys():
+      frame_shape = ((bufs[key].height * 3)//2, bufs[key].width)
       if TICI and not USBGPU:
-        new_frames[key] = qcom_tensor_from_opencl_address(self.frames[key].cl_from_vision_buf(bufs[key]).mem_address, ((bufs[key].height * 3)//2,bufs[key].width), dtype=dtypes.uint8)
+        cl_addr = bufs[key].cl_mem_address
+        new_frames[key] = qcom_tensor_from_opencl_address(cl_addr, frame_shape, dtype=dtypes.uint8)
       else:
-        new_frames[key] = self.frames[key].array_from_vision_buf(bufs[key])
-        new_frames[key] = Tensor(new_frames[key], dtype='uint8').realize().reshape((bufs[key].height * 3)//2, bufs[key].width)
+        new_frames[key] = Tensor(bufs[key].as_array(), dtype='uint8').realize().reshape(frame_shape)
     t1 = time.perf_counter()
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
