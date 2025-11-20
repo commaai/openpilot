@@ -36,6 +36,9 @@ cdef class ModelFrame:
   cdef cppModelFrame * frame
   cdef int buf_size
 
+  def __cinit__(self, CLContext context):
+    self.frame = new cppModelFrame(context.device_id, context.context)
+
   def __dealloc__(self):
     del self.frame
 

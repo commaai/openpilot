@@ -12,12 +12,10 @@ ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   single_frame_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, full_img_size, NULL, &err));
 }
 
-
 ModelFrame::~ModelFrame() {
   CL_CHECK(clReleaseMemObject(single_frame_cl));
   CL_CHECK(clReleaseCommandQueue(q));
 }
-
 
 uint8_t* ModelFrame::array_from_vision_buf(cl_mem *vision_buf) {
   CL_CHECK(clEnqueueReadBuffer(q, *vision_buf, CL_TRUE, 0, full_img_size * sizeof(uint8_t), &full_input_frame[0], 0, nullptr, nullptr));

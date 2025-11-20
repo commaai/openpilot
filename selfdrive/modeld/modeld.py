@@ -29,7 +29,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, 
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import DrivingModelFrame, CLContext
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
 Tensor.manual_seed(1337)
@@ -49,6 +49,8 @@ LAT_SMOOTH_SECONDS = 0.1
 LONG_SMOOTH_SECONDS = 0.3
 MIN_LAT_CONTROL_SPEED = 0.3
 
+# TODO use this somehow
+#ModelConstants.MODEL_RUN_FREQ//ModelConstants.MODEL_CONTEXT_FREQ
 IMG_QUEUE_SHAPE = (30, 128, 256)
 
 
@@ -143,7 +145,7 @@ class InputQueues:
       return out
 
 class ModelState:
-  frames: dict[str, DrivingModelFrame]
+  frames: dict[str, ModelFrame]
   inputs: dict[str, np.ndarray]
   output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
@@ -162,7 +164,7 @@ class ModelState:
       self.policy_output_slices = policy_metadata['output_slices']
       policy_output_size = policy_metadata['output_shapes']['outputs'][1]
 
-    self.frames = {name: DrivingModelFrame(context, ModelConstants.MODEL_RUN_FREQ//ModelConstants.MODEL_CONTEXT_FREQ) for name in self.vision_input_names}
+    self.frames = {name: ModelFrame(context) for name in self.vision_input_names}
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     # policy inputs

@@ -16,7 +16,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, ModelFrame
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
@@ -36,7 +36,7 @@ class ModelState:
       self.input_shapes = model_metadata['input_shapes']
       self.output_slices = model_metadata['output_slices']
 
-    self.frame = MonitoringModelFrame(cl_ctx)
+    self.frame = ModelFrame(cl_ctx)
     self.numpy_inputs = {
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
     }
