@@ -9,7 +9,7 @@ from libc.stdint cimport uintptr_t
 from msgq.visionipc.visionipc cimport cl_mem
 from msgq.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
 from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context, cl_release_context
-from .commonmodel cimport mat3, ModelFrame as cppModelFrame, DrivingModelFrame as cppDrivingModelFrame, MonitoringModelFrame as cppMonitoringModelFrame
+from .commonmodel cimport mat3, ModelFrame as cppModelFrame
 
 
 cdef class CLContext(BaseCLContext):
@@ -51,20 +51,3 @@ cdef class ModelFrame:
     cdef cl_mem * data4
     data4 = self.frame.cl_from_vision_buf(&vbuf.buf.buf_cl)
     return  CLMem.create(data4)
-
-cdef class DrivingModelFrame(ModelFrame):
-  cdef cppDrivingModelFrame * _frame
-
-  def __cinit__(self, CLContext context, int temporal_skip):
-    self._frame = new cppDrivingModelFrame(context.device_id, context.context, temporal_skip)
-    self.frame = <cppModelFrame*>(self._frame)
-    self.buf_size = self._frame.buf_size
-
-cdef class MonitoringModelFrame(ModelFrame):
-  cdef cppMonitoringModelFrame * _frame
-
-  def __cinit__(self, CLContext context):
-    self._frame = new cppMonitoringModelFrame(context.device_id, context.context)
-    self.frame = <cppModelFrame*>(self._frame)
-    self.buf_size = self._frame.buf_size
-

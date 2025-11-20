@@ -1,9 +1,6 @@
-#include "selfdrive/modeld/models/commonmodel.h"
-
 #include <cmath>
 #include <cstring>
-
-#include "common/clutil.h"
+#include "selfdrive/modeld/models/commonmodel.h"
 
 
 ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
@@ -27,17 +24,4 @@ cl_mem* ModelFrame::cl_from_vision_buf(cl_mem *vision_buf) {
   CL_CHECK(clEnqueueCopyBuffer(q, *vision_buf, single_frame_cl,  0, 0, full_img_size * sizeof(uint8_t), 0, nullptr, nullptr));
   clFinish(q);
   return &single_frame_cl;
-}
-  
-DrivingModelFrame::DrivingModelFrame(cl_device_id device_id, cl_context context, int _temporal_skip) : ModelFrame(device_id, context) {
-}
-
-DrivingModelFrame::~DrivingModelFrame() {
-}
-
-MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context context) : ModelFrame(device_id, context) {
-}
-
-
-MonitoringModelFrame::~MonitoringModelFrame() {
 }

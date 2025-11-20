@@ -18,11 +18,3 @@ cdef extern from "selfdrive/modeld/models/commonmodel.h":
     unsigned char * array_from_vision_buf(cl_mem *vision_buf)
     cl_mem * cl_from_vision_buf(cl_mem*)
     ModelFrame(cl_device_id, cl_context)
-
-  cppclass DrivingModelFrame:
-    int buf_size
-    DrivingModelFrame(cl_device_id, cl_context, int)
-
-  cppclass MonitoringModelFrame:
-    int buf_size
-    MonitoringModelFrame(cl_device_id, cl_context)

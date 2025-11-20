@@ -14,7 +14,8 @@
 #endif
 
 #include "common/mat.h"
-#include "selfdrive/modeld/transforms/loadyuv.h"
+#include "common/clutil.h"
+
 
 class ModelFrame {
 public:
@@ -37,29 +38,4 @@ protected:
   cl_command_queue q;
   cl_mem single_frame_cl;
   std::unique_ptr<uint8_t[]> full_input_frame;
-};
-
-class DrivingModelFrame : public ModelFrame {
-public:
-  DrivingModelFrame(cl_device_id device_id, cl_context context, int _temporal_skip);
-  ~DrivingModelFrame();
-
-  const int MODEL_WIDTH = 512;
-  const int MODEL_HEIGHT = 256;
-  const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
-  const int buf_size = MODEL_FRAME_SIZE * 2; // 2 frames are temporal_skip frames apart
-
-  const size_t frame_size_bytes = MODEL_FRAME_SIZE * sizeof(uint8_t);
-
-};
-
-class MonitoringModelFrame : public ModelFrame {
-public:
-  MonitoringModelFrame(cl_device_id device_id, cl_context context);
-  ~MonitoringModelFrame();
-
-  const int MODEL_WIDTH = 1440;
-  const int MODEL_HEIGHT = 960;
-  const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT;
-  const int buf_size = MODEL_FRAME_SIZE;
 };
