@@ -98,6 +98,12 @@ class DriverPose:
     self.cfactor_pitch = 1.
     self.cfactor_yaw = 1.
 
+class DriverPhone:
+  def __init__(self, max_trackable):
+    self.prob = 0.
+    self.prob_offseter = RunningStatFilter(max_trackable=max_trackable)
+    self.prob_calibrated = False
+
 class DriverBlink:
   def __init__(self):
     self.left = 0.
@@ -136,10 +142,8 @@ class DriverMonitoring:
     # init driver status
     self.wheelpos_learner = RunningStatFilter()
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
+    self.phone = DriverPhone(self.settings._POSE_OFFSET_MAX_COUNT)
     self.blink = DriverBlink()
-    self.phone_prob = 0.
-    self.phone_offseter = RunningStatFilter(max_trackable=self.settings._POSE_OFFSET_MAX_COUNT)
-    self.phone_calibrated = False
 
     self.always_on = always_on
     self.distracted_types = []
@@ -237,11 +241,10 @@ class DriverMonitoring:
     if (self.blink.left + self.blink.right)*0.5 > self.settings._BLINK_THRESHOLD:
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
-    if self.phone_calibrated:
-      using_phone = self.phone_prob > max(min(self.phone_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) \
-                              * self.settings._PHONE_THRESH2
+    if self.phone.prob_calibrated:
+      using_phone = self.phone.prob > max(min(self.phone.prob_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) * self.settings._PHONE_THRESH2
     else:
-      using_phone = self.phone_prob > self.settings._PHONE_THRESH
+      using_phone = self.phone.prob > self.settings._PHONE_THRESH
     if using_phone:
       distracted_types.append(DistractedType.DISTRACTED_PHONE)
 
@@ -274,15 +277,14 @@ class DriverMonitoring:
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
     self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD
-    self.blink.left = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) \
-                                                                  * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) \
-                                                                  * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.phone_prob = driver_data.phoneProb
+    self.blink.left = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.phone.prob = driver_data.phoneProb
 
     self.distracted_types = self._get_distracted_types()
-    self.driver_distracted = (DistractedType.DISTRACTED_PHONE in self.distracted_types or DistractedType.DISTRACTED_POSE in self.distracted_types
-                                or DistractedType.DISTRACTED_BLINK in self.distracted_types) \
+    self.driver_distracted = (DistractedType.DISTRACTED_PHONE in self.distracted_types
+                              or DistractedType.DISTRACTED_POSE in self.distracted_types
+                              or DistractedType.DISTRACTED_BLINK in self.distracted_types) \
                               and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
@@ -291,11 +293,10 @@ class DriverMonitoring:
     if self.face_detected and car_speed > self.settings._POSE_CALIB_MIN_SPEED and self.pose.low_std and (not op_engaged or not self.driver_distracted):
       self.pose.pitch_offseter.push_and_update(self.pose.pitch)
       self.pose.yaw_offseter.push_and_update(self.pose.yaw)
-      self.phone_offseter.push_and_update(self.phone_prob)
+      self.phone.prob_offseter.push_and_update(self.phone.prob)
 
-    self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and \
-                                       self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
-    self.phone_calibrated = self.phone_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+    self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+    self.phone.prob_calibrated = self.phone.prob_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
       if model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD:
@@ -401,6 +402,8 @@ class DriverMonitoring:
       "posePitchValidCount": self.pose.pitch_offseter.filtered_stat.n,
       "poseYawOffset": self.pose.yaw_offseter.filtered_stat.mean(),
       "poseYawValidCount": self.pose.yaw_offseter.filtered_stat.n,
+      "phoneProbOffset": self.phone.prob_offseter.filtered_stat.mean(),
+      "phoneProbalidCount": self.phone.prob_offseter.filtered_stat.n,
       "stepChange": self.step_change,
       "awarenessActive": self.awareness_active,
       "awarenessPassive": self.awareness_passive,
