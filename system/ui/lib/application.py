@@ -259,7 +259,7 @@ class GuiApplication:
       rl.set_config_flags(flags)
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
-      needs_render_texture = self._scale != 1.0 or BURN_IN_MODE
+      needs_render_texture = BURN_IN_MODE
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
       if needs_render_texture:
@@ -327,6 +327,8 @@ class GuiApplication:
       image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
       texture_obj = self._load_texture_from_image(image_obj)
     self._textures[cache_key] = texture_obj
+    self._textures[cache_key].width //= int(self._scale ** 2)
+    self._textures[cache_key].height //= int(self._scale ** 2)
     return texture_obj
 
   def _load_image_from_path(self, image_path: str, width: int | None = None, height: int | None = None,
@@ -339,6 +341,8 @@ class GuiApplication:
 
     if width is not None and height is not None:
       same_dimensions = image.width == width and image.height == height
+      width *= int(gui_app._scale ** 2)
+      height *= int(gui_app._scale ** 2)
 
       # Resize with aspect ratio preservation if requested
       if not same_dimensions:
@@ -355,8 +359,8 @@ class GuiApplication:
           new_height = int(orig_height * scale)
 
           rl.image_resize(image, new_width, new_height)
-        else:
-          rl.image_resize(image, width, height)
+      else:
+        rl.image_resize(image, width, height)
     else:
       assert keep_aspect_ratio, "Cannot resize without specifying width and height"
     return image
@@ -438,6 +442,9 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
+        rl.rl_push_matrix()
+        rl.rl_scalef(self._scale, self._scale, 1)
+
         # Handle modal overlay rendering and input processing
         if self._handle_modal_overlay():
           yield False
@@ -468,6 +475,7 @@ class GuiApplication:
         if self._grid_size > 0:
           self._draw_grid()
 
+        rl.rl_pop_matrix()
         rl.end_drawing()
         self._monitor_fps()
         self._frame += 1

@@ -177,7 +177,7 @@ class Scroller(Widget):
     scroll_offset = self._get_scroll(visible_items, content_size)
 
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
-                          int(self._rect.width), int(self._rect.height))
+                          int(self._rect.width * gui_app._scale), int(self._rect.height * gui_app._scale))
 
     self._item_pos_filter.update(scroll_offset)
 
