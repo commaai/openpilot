@@ -183,7 +183,7 @@ class TrainingGuideRecordFront(SetupTermsPage):
     self._title_header = TermsHeader("improve driver monitoring", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
     self._dm_label = UnifiedLabel("Help improve driver monitoring by including your driving data in the training data set. " +
-                                  "Your preference can be changed at any time in Settings. Would you like to share your data?", 42,
+                                  "Your preference can be changed at any time in Settings.\n\nWould you like to share your data?", 42,
                                   FontWeight.ROMAN)
 
   def show_event(self):
@@ -242,7 +242,7 @@ class TrainingGuideAttentionNotice2(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("attention is required", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("1. You must pay attention at all times.\n\n2. You must be ready to take over at any time."+
+    self._warning_label = UnifiedLabel("1. You must pay attention at all times.\n\n2. You must be ready to take over at any time." +
                                        "\n\n3. You are fully responsible for driving the car.", 42,
                                        FontWeight.ROMAN)
 
@@ -265,13 +265,69 @@ class TrainingGuideAttentionNotice2(SetupTermsPage):
       self._warning_label.get_content_height(int(self._rect.width - 32)),
     ))
 
+class TrainingGuideEngaging(SetupTermsPage):
+  def __init__(self, continue_callback):
+    super().__init__(continue_callback, continue_text="continue")
+    self._title_header = TermsHeader("engaging openpilot", gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 60, 60))
+    self._warning_label = UnifiedLabel("You can engage openpilot using your car's cruise control inputs.\n\n" +
+                                       "These are usually located on either the steering wheel or on a lever near the wheel.", 42,
+                                       FontWeight.ROMAN)
+
+  @property
+  def _content_height(self):
+    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
+
+  def _render_content(self, scroll_offset):
+    self._title_header.render(rl.Rectangle(
+      self._rect.x + 16,
+      self._rect.y + 16 + scroll_offset,
+      self._title_header.rect.width,
+      self._title_header.rect.height,
+    ))
+
+    self._warning_label.render(rl.Rectangle(
+      self._rect.x + 16,
+      self._title_header.rect.y + self._title_header.rect.height + 16,
+      self._rect.width - 32,
+      self._warning_label.get_content_height(int(self._rect.width - 32)),
+    ))
+
+
+class TrainingGuideEnd(SetupTermsPage):
+  def __init__(self, continue_callback):
+    super().__init__(continue_callback, continue_text="finish")
+    self._title_header = TermsHeader("training complete!", gui_app.texture("icons_mici/setup/green_info.png", 60, 60))
+    self._warning_label = UnifiedLabel("You have completed the openpilot training.\n\n" +
+                                       "This guide can be revisited at any time in Settings.", 42,
+                                       FontWeight.ROMAN)
+
+  @property
+  def _content_height(self):
+    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
+
+  def _render_content(self, scroll_offset):
+    self._title_header.render(rl.Rectangle(
+      self._rect.x + 16,
+      self._rect.y + 16 + scroll_offset,
+      self._title_header.rect.width,
+      self._title_header.rect.height,
+    ))
+
+    self._warning_label.render(rl.Rectangle(
+      self._rect.x + 16,
+      self._title_header.rect.y + self._title_header.rect.height + 16,
+      self._rect.width - 32,
+      self._warning_label.get_content_height(int(self._rect.width - 32)),
+    ))
+
+
 
 class TrainingGuideDisengaging(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("disengaging openpilot", gui_app.texture("icons_mici/setup/green_pedal.png", 60, 60))
     self._warning_label = UnifiedLabel("You can disengage openpilot by either pressing the brake pedal or " +
-                                       "the cancel button on your steering wheel.", 42,
+                                       "the cruise control cancel button.", 42,
                                        FontWeight.ROMAN)
 
   @property
@@ -352,7 +408,7 @@ class TrainingGuideSteeringArc(SetupTermsPage):
   TORQUE_BAR_HEIGHT = 100
 
   def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="finish")
+    super().__init__(continue_callback, continue_text="continue")
     self._torque_bar = TorqueBar(demo=True)
     self._start_time = 0.0
 
@@ -433,9 +489,11 @@ class TrainingGuide(Widget):
       TrainingGuidePreDMTutorial(continue_callback=self._advance_step),
       TrainingGuideDMTutorial(continue_callback=self._advance_step),
       TrainingGuideRecordFront(continue_callback=self._advance_step),
+      TrainingGuideEngaging(continue_callback=self._advance_step),
       TrainingGuideDisengaging(continue_callback=self._advance_step),
       TrainingGuideConfidenceBall(continue_callback=self._advance_step),
       TrainingGuideSteeringArc(continue_callback=self._advance_step),
+      TrainingGuideEnd(continue_callback=self._advance_step),
     ]
 
   def _advance_step(self):
@@ -497,7 +555,7 @@ class TermsPage(SetupTermsPage):
     super().__init__(on_accept, on_decline, "decline")
 
     info_txt = gui_app.texture("icons_mici/setup/green_info.png", 60, 60)
-    self._title_header = TermsHeader("scroll down to read &\n accept terms", info_txt)
+    self._title_header = TermsHeader("terms & conditions", info_txt)
 
     self._terms_label = UnifiedLabel("You must accept the Terms and Conditions to use openpilot. " +
                                      "Read the latest terms at https://comma.ai/terms before continuing.", 36,
