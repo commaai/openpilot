@@ -204,7 +204,7 @@ class BigInputDialog(BigDialogBase):
     if text_size.x > text_rect.width:
       text_x -= text_size.x - text_rect.width
 
-    rl.begin_scissor_mode(int(text_rect.x), int(text_rect.y), int(text_rect.width), int(text_rect.height))
+    rl.begin_scissor_mode(int(text_rect.x * 4), int(text_rect.y * 4), int(text_rect.width * 4), int(text_rect.height * 4))
     rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), text, rl.Vector2(text_x, text_rect.y), text_input_size, 0, rl.WHITE)
 
     # draw grayed out character user is hovering over

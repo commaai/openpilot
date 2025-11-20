@@ -214,7 +214,7 @@ class MiciKeyboard(Widget):
     return int(self._txt_bg.height)
 
   def _load_images(self):
-    self._txt_bg = gui_app.texture("icons_mici/settings/keyboard/keyboard_background.png", 520, 170, keep_aspect_ratio=False)
+    self._txt_bg = gui_app.texture("icons_mici/settings/keyboard/keyboard_background.png", 520, 170)
 
   def _set_keys(self, keys: list[list[Key]]):
     # inherit previous keys' positions to fix switching animation

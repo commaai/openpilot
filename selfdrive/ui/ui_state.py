@@ -1,4 +1,5 @@
 import pyray as rl
+import os
 import numpy as np
 import time
 import threading
@@ -151,6 +152,8 @@ class UIState:
         self.status = UIStatus.OVERRIDE
       else:
         self.status = UIStatus.ENGAGED if ss.enabled else UIStatus.DISENGAGED
+    if os.path.exists("/tmp/disengage"):
+      self.status = UIStatus.DISENGAGED
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:

@@ -221,11 +221,11 @@ class DriverStateRenderer(Widget):
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)
 
     self._fade_filter.update(1.0)
-    """
+    #"""
     if not self.should_draw:
       self._fade_filter.update(0.0)
     elif not self.effective_active:
       self._fade_filter.update(0.35)
     else:
       self._fade_filter.update(1.0)
-    """
+    #"""
