@@ -372,7 +372,7 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
   static int ir_pwr = 0;
   static int prev_ir_pwr = 999;
 
-  static FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
+  static FirstOrderFilter integ_lines_filter(0, 5.0, 0.05, false);
 
   {
     sm.update(0);
@@ -399,6 +399,7 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
       } else {
         ir_pwr = 100 * (cur_integ_lines - CUTOFF_IL) / (SATURATE_IL - CUTOFF_IL);
       }
+      printf("cur %d filter %d\n", event.getDriverCameraState().getIntegLines(), cur_integ_lines);
     }
 
     // Disable IR on input timeout

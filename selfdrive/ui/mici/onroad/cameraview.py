@@ -57,12 +57,12 @@ if TICI:
         color.rgb = clamp((color.rgb - 0.5) * 1.2 + 0.5, 0.0, 1.0);  // +20% contrast
         color.rgb = pow(color.rgb, vec3(1.0/1.28));
         fragColor = vec4(color.rgb, color.a);
-      } else {
+      } else if (enhance_driver == 0) {
         color.rgb *= 0.85;  // 85% opacity
       }
       if (enhance_driver == 1) {
         float brightness = 1.1;
-        color.rgb = color.rgb + 0.15;
+        color.rgb = color.rgb + 0.25;
         color.rgb = clamp((color.rgb - 0.5) * (brightness * 0.8) + 0.5, 0.0, 1.0);
         color.rgb = color.rgb * color.rgb * (3.0 - 2.0 * color.rgb);
         color.rgb = pow(color.rgb, vec3(0.8));

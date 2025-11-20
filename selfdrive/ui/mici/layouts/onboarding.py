@@ -60,9 +60,16 @@ class TrainingGuideIntro(SetupTermsPage):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("welcome to openpilot", gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 60, 60))
 
+    ui_state.params.put_bool("IsDriverViewEnabled", True)
     self._dm_label = UnifiedLabel("Before we get on the road, let's review the " +
                                   "functionality and limitations of openpilot.", 42,
                                   FontWeight.ROMAN)
+
+  def show_event(self):
+    super().show_event()
+    # Get driver monitoring model ready for next step
+    print("putting param")
+    ui_state.params.put_bool("IsDriverViewEnabled", True)
 
   @property
   def _content_height(self):
