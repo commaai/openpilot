@@ -206,19 +206,11 @@ class ModelState:
     self.prev_desire[:] = inputs['desire_pulse']
     import time
     new_frames = {}
-    for key in bufs.keys():
-      frame_shape = ((bufs[key].height * 3)//2, bufs[key].width)
-      if TICI and not USBGPU:
-        #new_frames[key] = Tensor(bufs[key].as_array(), dtype='uint8').realize().reshape(frame_shape)
-        #cl_addr = bufs[key].cl_mem_address
-        #new_frames[key] = qcom_tensor_from_opencl_address(cl_addr, frame_shape, dtype=dtypes.uint8)
-        new_frames[key] = bufs[key].as_array().reshape(frame_shape)
-      else:
-        new_frames[key] = bufs[key].as_array().reshape(frame_shape)
     t0 = time.perf_counter()
     for key in bufs.keys():
+      frame_shape = ((bufs[key].height * 3)//2, bufs[key].width)
+      new_frames[key] = bufs[key].as_array().reshape(frame_shape)
       self.full_frames_np[key][:] = new_frames[key][:]
-
     t1 = time.perf_counter()
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]

@@ -53,16 +53,9 @@ class ModelState:
     t1 = time.perf_counter()
 
     frame_shape = ((buf.height * 3)//2, buf.width)
-    if TICI:
-      new_frame = Tensor(buf.as_array(), dtype='uint8').realize().reshape(frame_shape)
-      #new_frame = qcom_tensor_from_opencl_address(buf.cl_mem_address, frame_shape, dtype=dtypes.uint8)
-    else:
-      new_frame = Tensor(buf.as_array(), dtype='uint8').realize().reshape(frame_shape)
+    new_frame = Tensor(buf.as_array(), dtype='uint8').realize().reshape(frame_shape)
 
     transform = Tensor(transform.astype(np.float32), device='NPY').realize()
-    print(new_frame.shape)
-    #transform = {k: np.zeros((3,3), dtype=np.float32) for k in self.img_queues}
-
     self.tensor_inputs['input_img'] = self.image_warp(new_frame, transform)
 
     output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy()
