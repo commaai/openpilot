@@ -242,7 +242,8 @@ class DriverMonitoring:
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
     if self.phone.prob_calibrated:
-      using_phone = self.phone.prob > max(min(self.phone.prob_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) * self.settings._PHONE_THRESH2
+      using_phone = self.phone.prob > max(min(self.phone_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) \
+                                      * self.settings._PHONE_THRESH2
     else:
       using_phone = self.phone.prob > self.settings._PHONE_THRESH
     if using_phone:
@@ -277,8 +278,10 @@ class DriverMonitoring:
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
     self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD
-    self.blink.left = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.blink.left = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) \
+                      * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) \
+                      * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.phone.prob = driver_data.phoneProb
 
     self.distracted_types = self._get_distracted_types()
@@ -295,7 +298,8 @@ class DriverMonitoring:
       self.pose.yaw_offseter.push_and_update(self.pose.yaw)
       self.phone.prob_offseter.push_and_update(self.phone.prob)
 
-    self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+    self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and \
+                           self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
     self.phone.prob_calibrated = self.phone.prob_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
