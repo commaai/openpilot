@@ -175,6 +175,9 @@ class ModelState:
     # img buffers are managed in openCL transform code
     self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),
                            'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),}
+    self.full_frames_np = {'img': np.zeros((1208*3//2, 1928), dtype=np.uint8),
+                        'big_img': np.zeros((1208*3//2, 1928), dtype=np.uint8),}
+    self.full_frames = {k: Tensor(v, device='NPY').realize() for k,v in self.full_frames_np.items()}
     self.transforms_np = {k: np.zeros((3,3), dtype=np.float32) for k in self.img_queues}
     self.transforms = {k: Tensor(v, device='NPY').realize() for k, v in self.transforms_np.items()}
     self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
@@ -202,7 +205,6 @@ class ModelState:
     new_desire = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
     import time
-    t0 = time.perf_counter()
     new_frames = {}
     for key in bufs.keys():
       frame_shape = ((bufs[key].height * 3)//2, bufs[key].width)
@@ -211,14 +213,18 @@ class ModelState:
         #cl_addr = bufs[key].cl_mem_address
         #new_frames[key] = qcom_tensor_from_opencl_address(cl_addr, frame_shape, dtype=dtypes.uint8)
       else:
-        new_frames[key] = Tensor(bufs[key].as_array(), dtype='uint8').realize().reshape(frame_shape)
+        new_frames[key] = bufs[key].as_array().reshape(frame_shape)
+    t0 = time.perf_counter()
+    for key in bufs.keys():
+      self.full_frames_np[key][:] = new_frames[key][:]
+
     t1 = time.perf_counter()
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
     t2 = time.perf_counter()
 
-    out = self.update_imgs(self.img_queues['img'], new_frames['img'], self.transforms['img'],
-                           self.img_queues['big_img'], new_frames['big_img'], self.transforms['big_img'])
+    out = self.update_imgs(self.img_queues['img'], self.full_frames['img'], self.transforms['img'],
+                           self.img_queues['big_img'], self.full_frames['big_img'], self.transforms['big_img'])
     self.img_queues['img'], self.img_queues['big_img'], = out[0].realize(), out[2].realize()
     t3 = time.perf_counter()
     vision_inputs = {'img': out[1], 'big_img': out[3]}

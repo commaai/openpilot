@@ -64,7 +64,7 @@ def frame_prepare_tinygrad(input_frame, M_inv):
   return tensor
 
 def update_img_input_tinygrad(tensor, frame, M_inv):
-  frame = frame.flatten()
+  frame = frame.flatten().to(Device.DEFAULT)
   M_inv = M_inv.to(Device.DEFAULT)
   new_img = frame_prepare_tinygrad(frame, M_inv)
   full_buffer = tensor[6:].cat(new_img, dim=0).contiguous()
@@ -144,10 +144,10 @@ def run_and_save_pickle():
   step_times = []
   for _ in range(10):
     img_inputs = [full_buffer,
-                  (32*Tensor.randn(H*3//2,W) + 128).cast(dtype='uint8').realize(),
+                  Tensor((32*Tensor.randn(H*3//2,W) + 128).cast(dtype='uint8').mul(8).realize().numpy(), device='NPY'),
                   Tensor(Tensor.randn(3,3).mul(8).realize().numpy(), device='NPY')]
     big_img_inputs = [big_full_buffer,
-                      (32*Tensor.randn(H*3//2,W) + 128).cast(dtype='uint8').realize(),
+                      Tensor((32*Tensor.randn(H*3//2,W) + 128).cast(dtype='uint8').mul(8).realize().numpy(), device='NPY'),
                       Tensor(Tensor.randn(3,3).mul(8).realize().numpy(), device='NPY')]
     inputs = img_inputs + big_img_inputs
     Device.default.synchronize()
