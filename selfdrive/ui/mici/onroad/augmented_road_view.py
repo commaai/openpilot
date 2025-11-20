@@ -195,10 +195,10 @@ class AugmentedRoadView(CameraView):
     # Enable scissor mode to clip all rendering within content rectangle boundaries
     # This creates a rendering viewport that prevents graphics from drawing outside the border
     rl.begin_scissor_mode(
-      int(self._content_rect.x),
-      int(self._content_rect.y),
-      int(self._content_rect.width),
-      int(self._content_rect.height)
+      int(self._content_rect.x * gui_app._scale),
+      int(self._content_rect.y * gui_app._scale),
+      int(self._content_rect.width * gui_app._scale),
+      int(self._content_rect.height * gui_app._scale)
     )
 
     # Render the base camera view
