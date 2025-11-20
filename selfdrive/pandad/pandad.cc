@@ -400,6 +400,7 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
         integ_lines_filter_driver_view.reset(0);
         driver_view = params.getBool("IsDriverViewEnabled");
       }
+      prev_frame_id = event.getDriverCameraState().getFrameId();
 
       cur_integ_lines = (driver_view ? integ_lines_filter_driver_view : integ_lines_filter).update(cur_integ_lines);
       last_driver_camera_t = event.getLogMonoTime();
