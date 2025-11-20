@@ -10,8 +10,6 @@ frameworks = []
 
 common_src = [
   "models/commonmodel.cc",
-  "transforms/loadyuv.cc",
-  "transforms/transform.cc",
 ]
 
 # OpenCL is a framework on Mac
@@ -19,11 +17,6 @@ if arch == "Darwin":
   frameworks += ['OpenCL']
 else:
   libs += ['OpenCL']
-
-# Set path definitions
-for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl'}.items():
-  for xenv in (lenv, lenvCython):
-    xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
 
 # Compile cython
 cython_libs = envCython["LIBS"] + libs
