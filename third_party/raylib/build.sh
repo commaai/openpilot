@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
+SUDO=""
+
+# Use sudo if not root
+if [[ ! $(id -u) -eq 0 ]]; then
+  if [[ -z $(which sudo) ]]; then
+    echo "Please install sudo or run as root"
+    exit 1
+  fi
+  SUDO="sudo"
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR
 
@@ -10,6 +21,13 @@ ARCHNAME=$(uname -m)
 if [ -f /TICI ]; then
   ARCHNAME="larch64"
   RAYLIB_PLATFORM="PLATFORM_COMMA"
+elif [[ "$OSTYPE" == "linux"* ]]; then
+  # required dependencies on Linux PC
+  $SUDO apt install \
+    libxcursor-dev \
+    libxi-dev \
+    libxinerama-dev \
+    libxrandr-dev
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -30,7 +48,7 @@ fi
 
 cd raylib_repo
 
-COMMIT=${1:-97dc6a9f1da2b5bbca6fee86b28ac79f7b28b573}
+COMMIT=${1:-3425bd9d1fb292ede4d80f97a1f4f258f614cffc}
 git fetch origin $COMMIT
 git reset --hard $COMMIT
 git clean -xdff .

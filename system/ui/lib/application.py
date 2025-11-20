@@ -6,6 +6,7 @@ import signal
 import sys
 import pyray as rl
 import threading
+import platform
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
@@ -26,19 +27,59 @@ MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
 MAX_TOUCH_SLOTS = 2
 TOUCH_HISTORY_TIMEOUT = 3.0  # Seconds before touch points fade out
 
+BIG_UI = os.getenv("BIG", "0") == "1"
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "0") == "1"
 SHOW_FPS = os.getenv("SHOW_FPS") == "1"
 SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == "1"
 STRICT_MODE = os.getenv("STRICT_MODE") == "1"
 SCALE = float(os.getenv("SCALE", "1.0"))
+GRID_SIZE = int(os.getenv("GRID", "0"))
 PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
+PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
+
+GL_VERSION = """
+#version 300 es
+precision highp float;
+"""
+if platform.system() == "Darwin":
+  GL_VERSION = """
+    #version 330 core
+  """
+
+BURN_IN_MODE = "BURN_IN" in os.environ
+BURN_IN_VERTEX_SHADER = GL_VERSION + """
+in vec3 vertexPosition;
+in vec2 vertexTexCoord;
+uniform mat4 mvp;
+out vec2 fragTexCoord;
+void main() {
+  fragTexCoord = vertexTexCoord;
+  gl_Position = mvp * vec4(vertexPosition, 1.0);
+}
+"""
+BURN_IN_FRAGMENT_SHADER = GL_VERSION + """
+in vec2 fragTexCoord;
+uniform sampler2D texture0;
+out vec4 fragColor;
+void main() {
+  vec4 sampled = texture(texture0, fragTexCoord);
+  float intensity = sampled.b;
+  // Map blue intensity to green -> yellow -> red to highlight burn-in risk.
+  vec3 start = vec3(0.0, 1.0, 0.0);
+  vec3 middle = vec3(1.0, 1.0, 0.0);
+  vec3 end = vec3(1.0, 0.0, 0.0);
+  vec3 gradient = mix(start, middle, clamp(intensity * 2.0, 0.0, 1.0));
+  gradient = mix(gradient, end, clamp((intensity - 0.5) * 2.0, 0.0, 1.0));
+  fragColor = vec4(gradient, sampled.a);
+}
+"""
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
 
 # Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
 # The real scales for the fonts below range from 1.212 to 1.266
-FONT_SCALE = 1.242
+FONT_SCALE = 1.242 if BIG_UI else 1.16
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
@@ -46,11 +87,16 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 class FontWeight(StrEnum):
   LIGHT = "Inter-Light.fnt"
-  NORMAL = "Inter-Regular.fnt"
+  NORMAL = "Inter-Regular.fnt" if BIG_UI else "Inter-Medium.fnt"
   MEDIUM = "Inter-Medium.fnt"
-  SEMI_BOLD = "Inter-SemiBold.fnt"
   BOLD = "Inter-Bold.fnt"
+  SEMI_BOLD = "Inter-SemiBold.fnt"
   UNIFONT = "unifont.fnt"
+
+  # Small UI fonts
+  DISPLAY_REGULAR = "Inter-Regular.fnt"
+  ROMAN = "Inter-Regular.fnt"
+  DISPLAY = "Inter-Bold.fnt"
 
 
 def font_fallback(font: rl.Font) -> rl.Font:
@@ -141,10 +187,10 @@ class MouseState:
 
 
 class GuiApplication:
-  def __init__(self, width: int, height: int):
+  def __init__(self, width: int | None = None, height: int | None = None):
     self._fonts: dict[FontWeight, rl.Font] = {}
-    self._width = width
-    self._height = height
+    self._width = width if width is not None else GuiApplication._default_width()
+    self._height = height if height is not None else GuiApplication._default_height()
 
     if PC and os.getenv("SCALE") is None:
       self._scale = self._calculate_auto_scale()
@@ -154,6 +200,7 @@ class GuiApplication:
     self._scaled_width = int(self._width * self._scale)
     self._scaled_height = int(self._height * self._scale)
     self._render_texture: rl.RenderTexture | None = None
+    self._burn_in_shader: rl.Shader | None = None
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
@@ -173,6 +220,7 @@ class GuiApplication:
     self._mouse_history: deque[MousePosWithTime] = deque(maxlen=MOUSE_THREAD_RATE)
     self._show_touches = SHOW_TOUCHES
     self._show_fps = SHOW_FPS
+    self._grid_size = GRID_SIZE
     self._profile_render_frames = PROFILE_RENDER
     self._render_profiler = None
     self._render_profile_start_time = None
@@ -211,8 +259,10 @@ class GuiApplication:
       rl.set_config_flags(flags)
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
+      needs_render_texture = self._scale != 1.0 or BURN_IN_MODE
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
+      if needs_render_texture:
         self._render_texture = rl.load_render_texture(self._width, self._height)
         rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       rl.set_target_fps(fps)
@@ -221,6 +271,8 @@ class GuiApplication:
       self._set_styles()
       self._load_fonts()
       self._patch_text_functions()
+      if BURN_IN_MODE and self._burn_in_shader is None:
+        self._burn_in_shader = rl.load_shader_from_memory(BURN_IN_VERTEX_SHADER, BURN_IN_FRAGMENT_SHADER)
 
       if not PC:
         self._mouse.start()
@@ -286,22 +338,25 @@ class GuiApplication:
       rl.image_alpha_premultiply(image)
 
     if width is not None and height is not None:
+      same_dimensions = image.width == width and image.height == height
+
       # Resize with aspect ratio preservation if requested
-      if keep_aspect_ratio:
-        orig_width = image.width
-        orig_height = image.height
+      if not same_dimensions:
+        if keep_aspect_ratio:
+          orig_width = image.width
+          orig_height = image.height
 
-        scale_width = width / orig_width
-        scale_height = height / orig_height
+          scale_width = width / orig_width
+          scale_height = height / orig_height
 
-        # Calculate new dimensions
-        scale = min(scale_width, scale_height)
-        new_width = int(orig_width * scale)
-        new_height = int(orig_height * scale)
+          # Calculate new dimensions
+          scale = min(scale_width, scale_height)
+          new_width = int(orig_width * scale)
+          new_height = int(orig_height * scale)
 
-        rl.image_resize(image, new_width, new_height)
-      else:
-        rl.image_resize(image, width, height)
+          rl.image_resize(image, new_width, new_height)
+        else:
+          rl.image_resize(image, width, height)
     else:
       assert keep_aspect_ratio, "Cannot resize without specifying width and height"
     return image
@@ -311,6 +366,8 @@ class GuiApplication:
     texture = rl.load_texture_from_image(image)
     # Set texture filtering to smooth the result
     rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+    # prevent artifacts from wrapping coordinates
+    rl.set_texture_wrap(texture, rl.TextureWrap.TEXTURE_WRAP_CLAMP)
 
     rl.unload_image(image)
     return texture
@@ -330,6 +387,10 @@ class GuiApplication:
     if self._render_texture is not None:
       rl.unload_render_texture(self._render_texture)
       self._render_texture = None
+
+    if self._burn_in_shader:
+      rl.unload_shader(self._burn_in_shader)
+      self._burn_in_shader = None
 
     if not PC:
       self._mouse.stop()
@@ -389,13 +450,23 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
           src_rect = rl.Rectangle(0, 0, float(self._width), -float(self._height))
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
-          rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+          texture = self._render_texture.texture
+          if texture:
+            if BURN_IN_MODE and self._burn_in_shader:
+              rl.begin_shader_mode(self._burn_in_shader)
+              rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+              rl.end_shader_mode()
+            else:
+              rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
         if self._show_fps:
           rl.draw_fps(10, 10)
 
         if self._show_touches:
           self._draw_touch_points()
+
+        if self._grid_size > 0:
+          self._draw_grid()
 
         rl.end_drawing()
         self._monitor_fps()
@@ -545,6 +616,19 @@ class GuiApplication:
         color = rl.Color(min(int(255 * (1.5 - perc)), 255), int(min(255 * (perc + 0.5), 255)), 50, 255)
         rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 5, color)
 
+  def _draw_grid(self):
+    grid_color = rl.Color(60, 60, 60, 255)
+    # Draw vertical lines
+    x = 0
+    while x <= self._scaled_width:
+      rl.draw_line(x, 0, x, self._scaled_height, grid_color)
+      x += self._grid_size
+    # Draw horizontal lines
+    y = 0
+    while y <= self._scaled_height:
+      rl.draw_line(0, y, self._scaled_width, y, grid_color)
+      y += self._grid_size
+
   def _output_render_profile(self):
     import io
     import pstats
@@ -554,7 +638,7 @@ class GuiApplication:
     avg_frame_time = elapsed_ms / self._frame if self._frame > 0 else 0
 
     stats_stream = io.StringIO()
-    pstats.Stats(self._render_profiler, stream=stats_stream).sort_stats("cumtime").print_stats(25)
+    pstats.Stats(self._render_profiler, stream=stats_stream).sort_stats("cumtime").print_stats(PROFILE_STATS)
     print("\n=== Render loop profile ===")
     print(stats_stream.getvalue().rstrip())
 
@@ -576,5 +660,17 @@ class GuiApplication:
     # Apply 0.95 factor for window decorations/taskbar margin
     return max(0.3, min(w / self._width, h / self._height) * 0.95)
 
+  @staticmethod
+  def _default_width() -> int:
+    return 2160 if GuiApplication.big_ui() else 536
 
-gui_app = GuiApplication(2160, 1080)
+  @staticmethod
+  def _default_height() -> int:
+    return 1080 if GuiApplication.big_ui() else 240
+
+  @staticmethod
+  def big_ui() -> bool:
+    return HARDWARE.get_device_type() in ('tici', 'tizi') or BIG_UI
+
+
+gui_app = GuiApplication()

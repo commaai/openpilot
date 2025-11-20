@@ -4,10 +4,8 @@ from openpilot.system.hardware import TICI
 os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
-import math
 import time
 import pickle
-import ctypes
 import numpy as np
 from pathlib import Path
 
@@ -16,47 +14,16 @@ from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process
-from openpilot.common.transformations.model import dmonitoringmodel_intrinsics, DM_INPUT_SIZE
+from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
-from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
+from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
-
-MODEL_WIDTH, MODEL_HEIGHT = DM_INPUT_SIZE
-CALIB_LEN = 3
-FEATURE_LEN = 512
-OUTPUT_SIZE = 83 + FEATURE_LEN
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
-
-# TODO: slice from meta
-class DriverStateResult(ctypes.Structure):
-  _fields_ = [
-    ("face_orientation", ctypes.c_float*3),
-    ("face_position", ctypes.c_float*3),
-    ("face_orientation_std", ctypes.c_float*3),
-    ("face_position_std", ctypes.c_float*3),
-    ("face_prob", ctypes.c_float),
-    ("_unused_a", ctypes.c_float*8),
-    ("left_eye_prob", ctypes.c_float),
-    ("_unused_b", ctypes.c_float*8),
-    ("right_eye_prob", ctypes.c_float),
-    ("left_blink_prob", ctypes.c_float),
-    ("right_blink_prob", ctypes.c_float),
-    ("sunglasses_prob", ctypes.c_float),
-    ("_unused_c", ctypes.c_float),
-    ("_unused_d", ctypes.c_float*4),
-    ("not_ready_prob", ctypes.c_float*2)]
-
-
-class DMonitoringModelResult(ctypes.Structure):
-  _fields_ = [
-    ("driver_state_lhd", DriverStateResult),
-    ("driver_state_rhd", DriverStateResult),
-    ("wheel_on_right_prob", ctypes.c_float),
-    ("features", ctypes.c_float*FEATURE_LEN)]
+METADATA_PATH = Path(__file__).parent / 'models/dmonitoring_model_metadata.pkl'
 
 
 class ModelState:
@@ -64,11 +31,14 @@ class ModelState:
   output: np.ndarray
 
   def __init__(self, cl_ctx):
-    assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
+    with open(METADATA_PATH, 'rb') as f:
+      model_metadata = pickle.load(f)
+      self.input_shapes = model_metadata['input_shapes']
+      self.output_slices = model_metadata['output_slices']
 
     self.frame = MonitoringModelFrame(cl_ctx)
     self.numpy_inputs = {
-      'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
+      'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
     }
 
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
@@ -84,9 +54,9 @@ class ModelState:
     if TICI:
       # The imgs tensors are backed by opencl memory, only need init once
       if 'input_img' not in self.tensor_inputs:
-        self.tensor_inputs['input_img'] = qcom_tensor_from_opencl_address(input_img_cl.mem_address, (1, MODEL_WIDTH*MODEL_HEIGHT), dtype=dtypes.uint8)
+        self.tensor_inputs['input_img'] = qcom_tensor_from_opencl_address(input_img_cl.mem_address, self.input_shapes['input_img'], dtype=dtypes.uint8)
     else:
-      self.tensor_inputs['input_img'] = Tensor(self.frame.buffer_from_cl(input_img_cl).reshape((1, MODEL_WIDTH*MODEL_HEIGHT)), dtype=dtypes.uint8).realize()
+      self.tensor_inputs['input_img'] = Tensor(self.frame.buffer_from_cl(input_img_cl).reshape(self.input_shapes['input_img']), dtype=dtypes.uint8).realize()
 
 
     output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy()
@@ -94,32 +64,43 @@ class ModelState:
     t2 = time.perf_counter()
     return output, t2 - t1
 
+def slice_outputs(model_outputs, output_slices):
+  return  {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
 
-def fill_driver_state(msg, ds_result: DriverStateResult):
-  msg.faceOrientation = list(ds_result.face_orientation)
-  msg.faceOrientationStd = [math.exp(x) for x in ds_result.face_orientation_std]
-  msg.facePosition = list(ds_result.face_position[:2])
-  msg.facePositionStd = [math.exp(x) for x in ds_result.face_position_std[:2]]
-  msg.faceProb = float(sigmoid(ds_result.face_prob))
-  msg.leftEyeProb = float(sigmoid(ds_result.left_eye_prob))
-  msg.rightEyeProb = float(sigmoid(ds_result.right_eye_prob))
-  msg.leftBlinkProb = float(sigmoid(ds_result.left_blink_prob))
-  msg.rightBlinkProb = float(sigmoid(ds_result.right_blink_prob))
-  msg.sunglassesProb = float(sigmoid(ds_result.sunglasses_prob))
-  msg.notReadyProb = [float(sigmoid(x)) for x in ds_result.not_ready_prob]
+def parse_model_output(model_output):
+  parsed = {}
+  parsed['wheel_on_right'] = sigmoid(model_output['wheel_on_right'])
+  for ds_suffix in ['lhd', 'rhd']:
+    face_descs = model_output[f'face_descs_{ds_suffix}']
+    parsed[f'face_descs_{ds_suffix}'] = face_descs[:, :-6]
+    parsed[f'face_descs_{ds_suffix}_std'] = safe_exp(face_descs[:, -6:])
+    for key in ['face_prob', 'left_eye_prob', 'right_eye_prob','left_blink_prob', 'right_blink_prob', 'sunglasses_prob', 'using_phone_prob']:
+      parsed[f'{key}_{ds_suffix}'] = sigmoid(model_output[f'{key}_{ds_suffix}'])
+  return parsed
 
+def fill_driver_data(msg, model_output, ds_suffix):
+  msg.faceOrientation = model_output[f'face_descs_{ds_suffix}'][0, :3].tolist()
+  msg.faceOrientationStd = model_output[f'face_descs_{ds_suffix}_std'][0, :3].tolist()
+  msg.facePosition = model_output[f'face_descs_{ds_suffix}'][0, 3:5].tolist()
+  msg.facePositionStd = model_output[f'face_descs_{ds_suffix}_std'][0, 3:5].tolist()
+  msg.faceProb = model_output[f'face_prob_{ds_suffix}'][0, 0].item()
+  msg.leftEyeProb = model_output[f'left_eye_prob_{ds_suffix}'][0, 0].item()
+  msg.rightEyeProb = model_output[f'right_eye_prob_{ds_suffix}'][0, 0].item()
+  msg.leftBlinkProb = model_output[f'left_blink_prob_{ds_suffix}'][0, 0].item()
+  msg.rightBlinkProb = model_output[f'right_blink_prob_{ds_suffix}'][0, 0].item()
+  msg.sunglassesProb = model_output[f'sunglasses_prob_{ds_suffix}'][0, 0].item()
+  msg.phoneProb = model_output[f'using_phone_prob_{ds_suffix}'][0, 0].item()
 
-def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, gpu_execution_time: float):
-  model_result = ctypes.cast(model_output.ctypes.data, ctypes.POINTER(DMonitoringModelResult)).contents
+def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_time: float, gpu_exec_time: float):
   msg = messaging.new_message('driverStateV2', valid=True)
   ds = msg.driverStateV2
   ds.frameId = frame_id
-  ds.modelExecutionTime = execution_time
-  ds.gpuExecutionTime = gpu_execution_time
-  ds.wheelOnRightProb = float(sigmoid(model_result.wheel_on_right_prob))
-  ds.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
-  fill_driver_state(ds.leftDriverData, model_result.driver_state_lhd)
-  fill_driver_state(ds.rightDriverData, model_result.driver_state_rhd)
+  ds.modelExecutionTime = exec_time
+  ds.gpuExecutionTime = gpu_exec_time
+  ds.rawPredictions = model_output['raw_pred']
+  ds.wheelOnRightProb = model_output['wheel_on_right'][0, 0].item()
+  fill_driver_data(ds.leftDriverData, model_output, 'lhd')
+  fill_driver_data(ds.rightDriverData, model_output, 'rhd')
   return msg
 
 
@@ -140,7 +121,7 @@ def main():
   sm = SubMaster(["liveCalibration"])
   pm = PubMaster(["driverStateV2"])
 
-  calib = np.zeros(CALIB_LEN, dtype=np.float32)
+  calib = np.zeros(model.numpy_inputs['calib'].size, dtype=np.float32)
   model_transform = None
 
   while True:
@@ -159,8 +140,12 @@ def main():
     t1 = time.perf_counter()
     model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
-
-    pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
+    raw_pred = model_output.tobytes() if SEND_RAW_PRED else b''
+    model_output = slice_outputs(model_output, model.output_slices)
+    model_output = parse_model_output(model_output)
+    model_output['raw_pred'] = raw_pred
+    msg = get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time)
+    pm.send("driverStateV2", msg)
 
 
 if __name__ == "__main__":

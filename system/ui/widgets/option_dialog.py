@@ -4,7 +4,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 # Constants
 MARGIN = 50
