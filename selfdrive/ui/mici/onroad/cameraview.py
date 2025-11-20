@@ -246,15 +246,20 @@ class CameraView(Widget):
       src_rect.width = -src_rect.width
 
     # Calculate scale
-    scale_x = rect.width * transform[0, 0]  # zx
-    scale_y = rect.height * transform[1, 1]  # zy
+    #scale_x = rect.width * transform[0, 0]  # zx
+    #scale_y = rect.height * transform[1, 1]  # zy
+    scale_x = rect.width
+    scale_y = rect.height
 
     # Calculate base position (centered)
-    x_offset = rect.x + (rect.width - scale_x) / 2
-    y_offset = rect.y + (rect.height - scale_y) / 2
+    #x_offset = rect.x + (rect.width - scale_x) / 2
+    #y_offset = rect.y + (rect.height - scale_y) / 2
 
-    x_offset += transform[0, 2] * rect.width / 2
-    y_offset += transform[1, 2] * rect.height / 2
+    #x_offset += transform[0, 2] * rect.width / 2
+    #y_offset += transform[1, 2] * rect.height / 2
+
+    x_offset = rect.x
+    y_offset = rect.y
 
     dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 
