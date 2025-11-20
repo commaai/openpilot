@@ -209,9 +209,10 @@ class ModelState:
     for key in bufs.keys():
       frame_shape = ((bufs[key].height * 3)//2, bufs[key].width)
       if TICI and not USBGPU:
-        new_frames[key] = Tensor(bufs[key].as_array(), dtype='uint8').realize().reshape(frame_shape)
+        #new_frames[key] = Tensor(bufs[key].as_array(), dtype='uint8').realize().reshape(frame_shape)
         #cl_addr = bufs[key].cl_mem_address
         #new_frames[key] = qcom_tensor_from_opencl_address(cl_addr, frame_shape, dtype=dtypes.uint8)
+        new_frames[key] = bufs[key].as_array().reshape(frame_shape)
       else:
         new_frames[key] = bufs[key].as_array().reshape(frame_shape)
     t0 = time.perf_counter()
