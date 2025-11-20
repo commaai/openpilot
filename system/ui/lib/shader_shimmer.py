@@ -59,7 +59,7 @@ class ShimmerShader:
   _instance: Any = None
 
   @classmethod
-  def get_instance(cls):
+  def get_instance(cls) -> 'ShimmerShader':
     if cls._instance is None:
       cls._instance = cls()
       cls._instance.initialize()
