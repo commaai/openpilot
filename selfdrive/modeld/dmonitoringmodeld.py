@@ -54,7 +54,8 @@ class ModelState:
 
     frame_shape = ((buf.height * 3)//2, buf.width)
     if TICI:
-      new_frame = qcom_tensor_from_opencl_address(buf.cl_mem_address, frame_shape, dtype=dtypes.uint8)
+      new_frame = Tensor(buf.as_array(), dtype='uint8').realize().reshape(frame_shape)
+      #new_frame = qcom_tensor_from_opencl_address(buf.cl_mem_address, frame_shape, dtype=dtypes.uint8)
     else:
       new_frame = Tensor(buf.as_array(), dtype='uint8').realize().reshape(frame_shape)
 
