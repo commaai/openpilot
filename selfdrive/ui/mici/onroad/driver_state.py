@@ -89,7 +89,7 @@ class DriverStateRenderer(Widget):
     rl.draw_texture(self._dm_person, int(self._rect.x), int(self._rect.y),
                     rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
-    if self.effective_active:
+    if self.effective_active or True:
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
       dest_rect = rl.Rectangle(
         self._rect.x + self._rect.width / 2,
@@ -153,6 +153,7 @@ class DriverStateRenderer(Widget):
               self._confirm_callback()
 
   def _draw_line(self, angle: int, f: FirstOrderFilter, grey: bool):
+    grey = False
     line_length = self._rect.width / 6
     line_length = round(np.interp(f.x, [0.0, 1.0], [0, line_length]))
     line_offset = self._rect.width / 2 - line_length * 2  # ensure line ends within rect
@@ -219,9 +220,12 @@ class DriverStateRenderer(Widget):
     angle_diff = ((angle_diff + 180) % 360) - 180
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)
 
+    self._fade_filter.update(1.0)
+    """
     if not self.should_draw:
       self._fade_filter.update(0.0)
     elif not self.effective_active:
       self._fade_filter.update(0.35)
     else:
       self._fade_filter.update(1.0)
+    """
