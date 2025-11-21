@@ -55,8 +55,8 @@ class ModelState:
 
     t1 = time.perf_counter()
 
-    frame_shape = ((buf.height * 3)//2, buf.width)
-    self.warp_inputs_np['frame'][:] = buf.data.reshape(frame_shape)
+    new_frame = buf.data.reshape((-1,buf.stride))
+    self.warp_inputs_np['frame'][:,:] = new_frame[:(buf.height * 3)//2, :buf.width]
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self.warp_inputs['frame'], self.warp_inputs['transform']).realize()
 
