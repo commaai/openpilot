@@ -242,7 +242,7 @@ class DriverMonitoring:
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
     if self.phone.prob_calibrated:
-      using_phone = self.phone.prob > max(min(self.phone_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) \
+      using_phone = self.phone.prob > max(min(self.phone.prob_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) \
                                       * self.settings._PHONE_THRESH2
     else:
       using_phone = self.phone.prob > self.settings._PHONE_THRESH
