@@ -3,10 +3,9 @@ import numpy as np
 from cereal import log
 from openpilot.common.realtime import DT_DMON
 from openpilot.selfdrive.monitoring.helpers import DriverMonitoring, DRIVER_MONITOR_SETTINGS
-from openpilot.system.hardware import HARDWARE
 
 EventName = log.OnroadEvent.EventName
-dm_settings = DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
+dm_settings = DRIVER_MONITOR_SETTINGS()
 
 TEST_TIMESPAN = 120  # seconds
 DISTRACTED_SECONDS_TO_ORANGE = dm_settings._DISTRACTED_TIME - dm_settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL + 1
