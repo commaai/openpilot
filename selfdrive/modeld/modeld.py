@@ -205,6 +205,7 @@ class ModelState:
     for key in bufs.keys():
       new_frames[key] = bufs[key].data.reshape((-1,bufs[key].stride))
       self.full_frames_np[key][:] = new_frames[key][:(bufs[key].height * 3)//2, :bufs[key].width]
+      np.save(f'/tmp/{key}_frame.npy', self.full_frames_np[key])
     t1 = time.perf_counter()
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
