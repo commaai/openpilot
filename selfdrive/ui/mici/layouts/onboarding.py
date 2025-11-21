@@ -182,7 +182,7 @@ class TrainingGuideAttentionNotice(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("driver assistance", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("1. openpilot is a driver assistance system.\n\n"+
+    self._warning_label = UnifiedLabel("1. openpilot is a driver assistance system.\n\n" +
                                        "2. You must pay attention at all times.\n\n" +
                                        "3. You must be ready to take over at any time.\n\n" +
                                        "4. You are fully responsible for driving the car.", 42,
