@@ -150,7 +150,7 @@ class TrainingGuideRecordFront(SetupTermsPage):
     super().__init__(on_continue, back_callback=on_back, back_text="no", continue_text="yes")
     self._title_header = TermsHeader("improve driver monitoring", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._dm_label = UnifiedLabel("Do you want to upload driver camera data to improve driver monitoring?", 42,
+    self._dm_label = UnifiedLabel("Do you want to upload driver camera data?", 42,
                                   FontWeight.ROMAN)
 
   def show_event(self):
