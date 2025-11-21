@@ -8,12 +8,10 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR, MousePos
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.text import wrap_text
-from openpilot.system.version import training_version
+from openpilot.system.version import training_version, RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8
-
-RELEASE_BRANCH = "release3"
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -187,9 +185,9 @@ class MiciHomeLayout(Widget):
 
     if self._version_text is not None:
       # release branch
-      if self._version_text[0] == RELEASE_BRANCH:
+      if self._version_text[1] in RELEASE_BRANCHES:
         version_pos = rl.Vector2(text_pos.x, text_pos.y + self._openpilot_label.font_size + 16)
-        self._large_version_label.set_text(self._version_text[0])
+        self._large_version_label.set_text("release")
         self._large_version_label.set_position(version_pos.x, version_pos.y)
         self._large_version_label.render()
 
