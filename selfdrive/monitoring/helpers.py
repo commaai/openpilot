@@ -407,7 +407,7 @@ class DriverMonitoring:
       "poseYawOffset": self.pose.yaw_offseter.filtered_stat.mean(),
       "poseYawValidCount": self.pose.yaw_offseter.filtered_stat.n,
       "phoneProbOffset": self.phone.prob_offseter.filtered_stat.mean(),
-      "phoneProbValidCount": self.phone.prob_offseter.filtered_stat.n,
+      "phoneProbalidCount": self.phone.prob_offseter.filtered_stat.n,
       "stepChange": self.step_change,
       "awarenessActive": self.awareness_active,
       "awarenessPassive": self.awareness_passive,
