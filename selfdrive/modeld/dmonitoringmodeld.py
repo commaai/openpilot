@@ -4,6 +4,7 @@ from openpilot.system.hardware import TICI
 os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
+import math
 import time
 import pickle
 import numpy as np
@@ -17,7 +18,7 @@ from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
-from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
+from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
@@ -33,7 +34,7 @@ class ModelState:
   def __init__(self, cl_ctx):
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
-      self.input_shapes = model_metadata['input_shapes']
+      self.input_shapes =  model_metadata['input_shapes']
       self.output_slices = model_metadata['output_slices']
 
     self.frame = MonitoringModelFrame(cl_ctx)
@@ -64,43 +65,32 @@ class ModelState:
     t2 = time.perf_counter()
     return output, t2 - t1
 
-def slice_outputs(model_outputs, output_slices):
-  return  {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
 
-def parse_model_output(model_output):
-  parsed = {}
-  parsed['wheel_on_right'] = sigmoid(model_output['wheel_on_right'])
-  for ds_suffix in ['lhd', 'rhd']:
-    face_descs = model_output[f'face_descs_{ds_suffix}']
-    parsed[f'face_descs_{ds_suffix}'] = face_descs[:, :-6]
-    parsed[f'face_descs_{ds_suffix}_std'] = safe_exp(face_descs[:, -6:])
-    for key in ['face_prob', 'left_eye_prob', 'right_eye_prob','left_blink_prob', 'right_blink_prob', 'sunglasses_prob', 'using_phone_prob']:
-      parsed[f'{key}_{ds_suffix}'] = sigmoid(model_output[f'{key}_{ds_suffix}'])
-  return parsed
+def fill_driver_state(msg, model_output, output_slices, ds_suffix):
+  face_descs = model_output[output_slices[f'face_descs_{ds_suffix}']]
+  face_descs_std = face_descs[-6:]
+  msg.faceOrientation = [float(x) for x in face_descs[:3]]
+  msg.faceOrientationStd = [math.exp(x) for x in face_descs_std[:3]]
+  msg.facePosition = [float(x) for x in face_descs[3:5]]
+  msg.facePositionStd = [math.exp(x) for x in face_descs_std[3:5]]
+  msg.faceProb = float(sigmoid(model_output[output_slices[f'face_prob_{ds_suffix}']][0]))
+  msg.leftEyeProb = float(sigmoid(model_output[output_slices[f'left_eye_prob_{ds_suffix}']][0]))
+  msg.rightEyeProb = float(sigmoid(model_output[output_slices[f'right_eye_prob_{ds_suffix}']][0]))
+  msg.leftBlinkProb = float(sigmoid(model_output[output_slices[f'left_blink_prob_{ds_suffix}']][0]))
+  msg.rightBlinkProb = float(sigmoid(model_output[output_slices[f'right_blink_prob_{ds_suffix}']][0]))
+  msg.sunglassesProb = float(sigmoid(model_output[output_slices[f'sunglasses_prob_{ds_suffix}']][0]))
+  msg.phoneProb = float(sigmoid(model_output[output_slices[f'using_phone_prob_{ds_suffix}']][0]))
 
-def fill_driver_data(msg, model_output, ds_suffix):
-  msg.faceOrientation = model_output[f'face_descs_{ds_suffix}'][0, :3].tolist()
-  msg.faceOrientationStd = model_output[f'face_descs_{ds_suffix}_std'][0, :3].tolist()
-  msg.facePosition = model_output[f'face_descs_{ds_suffix}'][0, 3:5].tolist()
-  msg.facePositionStd = model_output[f'face_descs_{ds_suffix}_std'][0, 3:5].tolist()
-  msg.faceProb = model_output[f'face_prob_{ds_suffix}'][0, 0].item()
-  msg.leftEyeProb = model_output[f'left_eye_prob_{ds_suffix}'][0, 0].item()
-  msg.rightEyeProb = model_output[f'right_eye_prob_{ds_suffix}'][0, 0].item()
-  msg.leftBlinkProb = model_output[f'left_blink_prob_{ds_suffix}'][0, 0].item()
-  msg.rightBlinkProb = model_output[f'right_blink_prob_{ds_suffix}'][0, 0].item()
-  msg.sunglassesProb = model_output[f'sunglasses_prob_{ds_suffix}'][0, 0].item()
-  msg.phoneProb = model_output[f'using_phone_prob_{ds_suffix}'][0, 0].item()
-
-def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_time: float, gpu_exec_time: float):
+def get_driverstate_packet(model_output: np.ndarray, output_slices: dict[str, slice], frame_id: int, location_ts: int, exec_time: float, gpu_exec_time: float):
   msg = messaging.new_message('driverStateV2', valid=True)
   ds = msg.driverStateV2
   ds.frameId = frame_id
   ds.modelExecutionTime = exec_time
   ds.gpuExecutionTime = gpu_exec_time
-  ds.rawPredictions = model_output['raw_pred']
-  ds.wheelOnRightProb = model_output['wheel_on_right'][0, 0].item()
-  fill_driver_data(ds.leftDriverData, model_output, 'lhd')
-  fill_driver_data(ds.rightDriverData, model_output, 'rhd')
+  ds.wheelOnRightProb = float(sigmoid(model_output[output_slices['wheel_on_right']][0]))
+  ds.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
+  fill_driver_state(ds.leftDriverData, model_output, output_slices, 'lhd')
+  fill_driver_state(ds.rightDriverData, model_output, output_slices, 'rhd')
   return msg
 
 
@@ -140,11 +130,8 @@ def main():
     t1 = time.perf_counter()
     model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
-    raw_pred = model_output.tobytes() if SEND_RAW_PRED else b''
-    model_output = slice_outputs(model_output, model.output_slices)
-    model_output = parse_model_output(model_output)
-    model_output['raw_pred'] = raw_pred
-    msg = get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time)
+
+    msg = get_driverstate_packet(model_output, model.output_slices, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time)
     pm.send("driverStateV2", msg)
 
 
