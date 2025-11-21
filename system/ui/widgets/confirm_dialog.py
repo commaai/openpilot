@@ -6,7 +6,7 @@ from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.label import Label
 from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 OUTER_MARGIN = 200
 RICH_OUTER_MARGIN = 100
