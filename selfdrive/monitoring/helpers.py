@@ -69,8 +69,6 @@ class DRIVER_MONITOR_SETTINGS:
 
     self._WHEELPOS_CALIB_MIN_SPEED = 11
     self._WHEELPOS_THRESHOLD = 0.5
-    self._WHEELPOS_INIT_M = 0.5 # non informative prior
-    self._WHEELPOS_INIT_S = 0.25 # bernoulli variance
     self._WHEELPOS_FILTER_MIN_COUNT = int(15 / self._DT_DMON) # allow 15 seconds to converge wheel side
 
     self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
@@ -93,8 +91,8 @@ class DriverPose:
     self.yaw_std = 0.
     self.pitch_std = 0.
     self.roll_std = 0.
-    self.pitch_offseter = RunningStatFilter(max_trackable=max_trackable)
-    self.yaw_offseter = RunningStatFilter(max_trackable=max_trackable)
+    self.pitch_offseter = RunningStatFilter(raw_priors=[0., 0.02, 2], max_trackable=max_trackable)
+    self.yaw_offseter = RunningStatFilter(raw_priors=[0., 0.03, 2], max_trackable=max_trackable)
     self.calibrated = False
     self.low_std = True
     self.cfactor_pitch = 1.
@@ -103,7 +101,7 @@ class DriverPose:
 class DriverPhone:
   def __init__(self, max_trackable):
     self.prob = 0.
-    self.prob_offseter = RunningStatFilter(max_trackable=max_trackable)
+    self.prob_offseter = RunningStatFilter(raw_priors=[0.5, 0.25, 2], max_trackable=max_trackable)
     self.prob_calibrated = False
 
 class DriverBlink:
@@ -142,7 +140,7 @@ class DriverMonitoring:
     self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
 
     # init driver status
-    self.wheelpos_learner = RunningStatFilter(raw_priors=[self.settings._WHEELPOS_INIT_M, self.settings._WHEELPOS_INIT_S, 2])
+    self.wheelpos_learner = RunningStatFilter(raw_priors=[0.5, 0.25, 2])
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
     self.phone = DriverPhone(self.settings._POSE_OFFSET_MAX_COUNT)
     self.blink = DriverBlink()
