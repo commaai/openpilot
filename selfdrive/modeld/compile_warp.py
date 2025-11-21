@@ -167,7 +167,7 @@ def run_and_save_pickle():
     full_buffer_np = out_np[0]
     big_full_buffer_np = out_np[2]
 
-    for a, b in zip(out_np, (x.numpy() for x in out)):
+    for a, b in zip(out_np, (x.numpy() for x in out), strict=True):
       mismatch = np.abs(a - b) > 0
       mismatch_percent = sum(mismatch.flatten()) / len(mismatch.flatten()) * 100
       mismatch_percent_tol = 1e-2
