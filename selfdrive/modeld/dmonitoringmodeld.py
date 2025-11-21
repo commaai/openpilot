@@ -40,6 +40,9 @@ class ModelState:
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
     }
 
+    self.full_img_np = np.zeros((1208*3//2, 1928), dtype=np.uint8)
+    self.full_img = Tensor(self.full_img_np, device='NPY').realize()
+
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     with open(MODEL_PKL_PATH, "rb") as f:
       self.model_run = pickle.load(f)
@@ -53,10 +56,10 @@ class ModelState:
     t1 = time.perf_counter()
 
     frame_shape = ((buf.height * 3)//2, buf.width)
-    new_frame = Tensor(buf.as_array(), dtype='uint8').realize().reshape(frame_shape)
+    self.full_img_np[:] = buf.as_array().reshape(frame_shape)
 
     transform = Tensor(transform.astype(np.float32), device='NPY').realize()
-    self.tensor_inputs['input_img'] = self.image_warp(new_frame, transform)
+    self.tensor_inputs['input_img'] = self.image_warp(self.full_img, transform)
 
     output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy()
 

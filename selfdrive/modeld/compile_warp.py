@@ -182,13 +182,13 @@ def run_and_save_pickle():
 
 
   def warp_dm(frame, M_inv):
-    frame = frame.reshape(H*3//2,W)
+    frame = frame.reshape(H*3//2,W).to(Device.DEFAULT)
     M_inv = M_inv.to(Device.DEFAULT)
     return warp_perspective_tinygrad(frame[:H,:W], M_inv, (1440, 960)).reshape(-1,960*1440)
   warp_dm_jit = TinyJit(warp_dm, prune=True)
   step_times = []
   for _ in range(10):
-    inputs = [(32*Tensor.randn(H*3//2,W) + 128).cast(dtype='uint8').realize(),
+    inputs = [Tensor(((32*Tensor.randn(H*3//2,W) + 128).cast(dtype='uint8').realize().numpy()), device='NPY'),
                   Tensor(Tensor.randn(3,3).mul(8).realize().numpy(), device='NPY')]
 
     Device.default.synchronize()
