@@ -18,7 +18,6 @@ from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
-from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
