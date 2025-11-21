@@ -209,7 +209,7 @@ class ModelState:
     t0 = time.perf_counter()
     for key in bufs.keys():
       frame_shape = ((bufs[key].height * 3)//2, bufs[key].width)
-      new_frames[key] = bufs[key].as_array().reshape(frame_shape)
+      new_frames[key] = bufs[key].data.reshape(frame_shape)
       self.full_frames_np[key][:] = new_frames[key][:]
     t1 = time.perf_counter()
     for key in bufs.keys():
