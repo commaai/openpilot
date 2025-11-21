@@ -53,35 +53,6 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     return -1
 
 
-class TrainingGuideIntro(SetupTermsPage):
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="continue")
-    self._title_header = TermsHeader("welcome to openpilot", gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 60, 60))
-
-    self._dm_label = UnifiedLabel("Before we get on the road, let's review the " +
-                                  "functionality and limitations of openpilot.", 42,
-                                  FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._dm_label.rect.y + self._dm_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._dm_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._dm_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-
 class TrainingGuidePreDMTutorial(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
@@ -207,34 +178,7 @@ class TrainingGuideRecordFront(SetupTermsPage):
     ))
 
 
-class TrainingGuideAttentionNotice1(SetupTermsPage):
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="continue")
-    self._title_header = TermsHeader("not a self driving car", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("THIS IS A DRIVER ASSISTANCE SYSTEM. A DRIVER ASSISTANCE SYSTEM IS NOT A SELF-DRIVING CAR.", 42,
-                                       FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._warning_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._warning_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-
-class TrainingGuideAttentionNotice2(SetupTermsPage):
+class TrainingGuideAttentionNotice(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("driver assistance", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
@@ -264,35 +208,6 @@ class TrainingGuideAttentionNotice2(SetupTermsPage):
     ))
 
 
-class TrainingGuideEnd(SetupTermsPage):
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="finish")
-    self._title_header = TermsHeader("training complete!", gui_app.texture("icons_mici/setup/green_info.png", 60, 60))
-    self._warning_label = UnifiedLabel("You have completed the openpilot training.\n\n" +
-                                       "This guide can be revisited at any time in Settings.", 42,
-                                       FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._warning_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._warning_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-
-
 class TrainingGuide(Widget):
   def __init__(self, completed_callback=None):
     super().__init__()
@@ -300,13 +215,10 @@ class TrainingGuide(Widget):
     self._step = 0
 
     self._steps = [
-      #TrainingGuideIntro(continue_callback=self._advance_step),
-      #TrainingGuideAttentionNotice1(continue_callback=self._advance_step),
-      TrainingGuideAttentionNotice2(continue_callback=self._advance_step),
+      TrainingGuideAttentionNotice(continue_callback=self._advance_step),
       TrainingGuidePreDMTutorial(continue_callback=self._advance_step),
-      #TrainingGuideDMTutorial(continue_callback=self._advance_step),
+      TrainingGuideDMTutorial(continue_callback=self._advance_step),
       TrainingGuideRecordFront(continue_callback=self._advance_step),
-      #TrainingGuideEnd(continue_callback=self._advance_step),
     ]
 
   def _advance_step(self):
