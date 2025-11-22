@@ -31,7 +31,7 @@ We'll run the `replay` tool with the demo route to get data streaming for testin
 tools/replay/replay --demo
 
 # in terminal 2
-selfdrive/ui/ui
+./selfdrive/ui/ui.py
 ```
 
 The openpilot UI should launch and show a replay of the demo route.
@@ -43,39 +43,41 @@ If you have your own comma device, you can replace `--demo` with one of your own
 
 Now let’s update the speed display color in the UI.
 
-Search for the function responsible for rendering UI text:
+Search for the function responsible for rendering the current speed:
 ```bash
-git grep "drawText" selfdrive/ui/qt/onroad/hud.cc
+git grep "_draw_current_speed" selfdrive/ui/onroad/hud_renderer.py
 ```
 
-You’ll find the relevant code inside `selfdrive/ui/qt/onroad/hud.cc`, in this function:
+You'll find the relevant code inside `selfdrive/ui/onroad/hud_renderer.py`, in this function:
 
-```cpp
-void HudRenderer::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
-  QRect real_rect = p.fontMetrics().boundingRect(text);
-  real_rect.moveCenter({x, y - real_rect.height() / 2});
-
-  p.setPen(QColor(0xff, 0xff, 0xff, alpha));  // <- this sets the speed text color
-  p.drawText(real_rect.x(), real_rect.bottom(), text);
-}
+```python
+def _draw_current_speed(self, rect: rl.Rectangle) -> None:
+    """Draw the current vehicle speed and unit."""
+    speed_text = str(round(self.speed))
+    speed_text_size = measure_text_cached(self._font_bold, speed_text, FONT_SIZES.current_speed)
+    speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
+    rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)  # <- this sets the speed text color
 ```
 
-Change the `QColor(...)` line to make it **blue** instead of white. A nice soft blue is `#8080FF`, which translates to:
+Change the `COLORS.white` to make it **blue** instead of white. A nice soft blue is `#8080FF`, which you can add to the COLORS section and use:
 
 ```diff
-- p.setPen(QColor(0xff, 0xff, 0xff, alpha));
-+ p.setPen(QColor(0x80, 0x80, 0xFF, alpha));
++ # Add this to the COLORS definition (usually at the top of the file)
++ blue: rl.Color = rl.Color(0x80, 0x80, 0xFF, 255)
++
+- rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)
++ rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.blue)
 ```
 
-This change will tint all speed-related UI text to blue with the same transparency (`alpha`).
+This change will make the speed display text blue.
 
 ---
 
-## 4. Rebuild the UI
+## 4. Re-run the UI
 
-After making changes, rebuild Openpilot so your new UI is compiled:
+After making changes, re-run the demo replay to see your new UI:
 ```bash
-scons -j$(nproc) && selfdrive/ui/ui
+./selfdrive/ui/ui.py
 ```
 ![](https://blog.comma.ai/img/blue_speed_ui.png)
 
