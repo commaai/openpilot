@@ -117,9 +117,45 @@ def setup_settings_developer(click, pm: PubMaster):
   click(278, 950)
 
 
+def keyboard_toggle_shift(click):
+  click(200, 800)
+
+def keyboard_toggle_numbers(click):
+  click(200, 900)
+
+def keyboard_type_text(click):
+  # Type top 6 keys: "qwerty"
+  x = 140
+  for _ in range(6):
+    click(x, 440)
+    time.sleep(0.05)
+    x += 200
+
 def setup_keyboard(click, pm: PubMaster):
   setup_settings_developer(click, pm)
   click(1930, 470)
+
+def setup_keyboard_with_text(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_type_text(click)
+
+def setup_keyboard_uppercase(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_shift(click)
+
+def setup_keyboard_caps_lock(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_shift(click)
+  keyboard_toggle_shift(click)  # press twice for caps lock
+
+def setup_keyboard_numbers(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_numbers(click)
+
+def setup_keyboard_symbols(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  keyboard_toggle_numbers(click)
+  keyboard_toggle_shift(click)  # symbols
 
 
 def setup_pair_device(click, pm: PubMaster):
@@ -228,7 +264,11 @@ CASES = {
   "settings_software_branch_switcher": setup_settings_software_branch_switcher,
   "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
+  "keyboard": setup_keyboard_with_text,
+  "keyboard_uppercase": setup_keyboard_uppercase,
+  "keyboard_caps_lock": setup_keyboard_caps_lock,
+  "keyboard_numbers": setup_keyboard_numbers,
+  "keyboard_symbols": setup_keyboard_symbols,
   "pair_device": setup_pair_device,
   "offroad_alert": setup_offroad_alert,
   "confirmation_dialog": setup_confirmation_dialog,
