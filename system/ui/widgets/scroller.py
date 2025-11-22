@@ -161,7 +161,6 @@ class Scroller(Widget):
     return self.scroll_panel.get_offset()
 
   def _render(self, _):
-    # TODO: don't draw items that are not in the viewport
     visible_items = [item for item in self._items if item.is_visible]
 
     # Add line separator between items
@@ -218,6 +217,10 @@ class Scroller(Widget):
       # Update item state
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
       item.set_parent_rect(self._rect)
+
+      # Skip rendering if not in viewport
+      if not rl.check_collision_recs(item.rect, self._rect):
+        continue
 
       # Scale each element around its own origin when scrolling
       scale = self._zoom_filter.x

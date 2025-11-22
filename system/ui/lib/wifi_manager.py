@@ -138,6 +138,8 @@ class WifiManager:
       self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
     except FileNotFoundError:
       cloudlog.exception("Failed to connect to system D-Bus")
+      self._router_main = None
+      self._conn_monitor = None
       self._exit = True
 
     # Store wifi device path
@@ -752,6 +754,8 @@ class WifiManager:
       if self._state_thread.is_alive():
         self._state_thread.join()
 
-      self._router_main.close()
-      self._router_main.conn.close()
-      self._conn_monitor.close()
+      if self._router_main is not None:
+        self._router_main.close()
+        self._router_main.conn.close()
+      if self._conn_monitor is not None:
+        self._conn_monitor.close()

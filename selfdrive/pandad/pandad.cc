@@ -365,14 +365,19 @@ void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool engag
 }
 
 void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) {
+  static Params params;
   static SubMaster sm({"deviceState", "driverCameraState"});
 
   static uint64_t last_driver_camera_t = 0;
   static uint16_t prev_fan_speed = 999;
   static int ir_pwr = 0;
   static int prev_ir_pwr = 999;
+  static uint32_t prev_frame_id = UINT32_MAX;
+  static bool driver_view = false;
 
+  // TODO: can we merge these?
   static FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
+  static FirstOrderFilter integ_lines_filter_driver_view(0, 5.0, 0.05);
 
   {
     sm.update(0);
@@ -389,7 +394,15 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
       auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
 
-      cur_integ_lines = integ_lines_filter.update(cur_integ_lines);
+      // reset the filter when camerad restarts
+      if (event.getDriverCameraState().getFrameId() < prev_frame_id) {
+        integ_lines_filter.reset(0);
+        integ_lines_filter_driver_view.reset(0);
+        driver_view = params.getBool("IsDriverViewEnabled");
+      }
+      prev_frame_id = event.getDriverCameraState().getFrameId();
+
+      cur_integ_lines = (driver_view ? integ_lines_filter_driver_view : integ_lines_filter).update(cur_integ_lines);
       last_driver_camera_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {

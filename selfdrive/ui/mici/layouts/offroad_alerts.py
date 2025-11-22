@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller
@@ -220,6 +221,7 @@ class MiciOffroadAlerts(Widget):
     update_alert_data = AlertData(key="UpdateAvailable", text="", severity=-1)
     self.sorted_alerts.append(update_alert_data)
     update_alert_item = AlertItem(update_alert_data)
+    update_alert_item.set_click_callback(lambda: HARDWARE.reboot())
     self.alert_items.append(update_alert_item)
     self._scroller.add_widget(update_alert_item)
 
@@ -244,18 +246,18 @@ class MiciOffroadAlerts(Widget):
 
     if update_alert_data:
       if update_available:
-        # Default text
-        update_alert_data.text = "update available. go to comma.ai/blog to read the release notes."
+        version_string = ""
 
         # Get new version description and parse version and date
         new_desc = self.params.get("UpdaterNewDescription") or ""
         if new_desc:
-          # Parse description (format: "version / branch / commit / date")
+          # format: "version / branch / commit / date"
           parts = new_desc.split(" / ")
           if len(parts) > 3:
             version, date = parts[0], parts[3]
-            update_alert_data.text = f"update available\n openpilot {version}, {date}. go to comma.ai/blog to read the release notes."
+            version_string = f"\nopenpilot {version}, {date}\n"
 
+        update_alert_data.text = f"Update available {version_string}. Click to update. Read the release notes at blog.comma.ai."
         update_alert_data.visible = True
         active_count += 1
       else:

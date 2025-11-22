@@ -8,12 +8,10 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR, MousePos
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.text import wrap_text
-from openpilot.system.version import training_version
+from openpilot.system.version import training_version, RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8
-
-RELEASE_BRANCH = "release3"
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -187,27 +185,22 @@ class MiciHomeLayout(Widget):
 
     if self._version_text is not None:
       # release branch
-      if self._version_text[0] == RELEASE_BRANCH:
-        version_pos = rl.Vector2(text_pos.x, text_pos.y + self._openpilot_label.font_size + 16)
-        self._large_version_label.set_text(self._version_text[0])
-        self._large_version_label.set_position(version_pos.x, version_pos.y)
-        self._large_version_label.render()
+      release_branch = self._version_text[1] in RELEASE_BRANCHES
+      version_pos = rl.Rectangle(text_pos.x, text_pos.y + self._openpilot_label.font_size + 16, 100, 44)
+      self._version_label.set_text(self._version_text[0])
+      self._version_label.set_position(version_pos.x, version_pos.y)
+      self._version_label.render()
 
-      else:
-        version_pos = rl.Rectangle(text_pos.x, text_pos.y + self._openpilot_label.font_size + 16, 100, 44)
-        self._version_label.set_text(self._version_text[0])
-        self._version_label.set_position(version_pos.x, version_pos.y)
-        self._version_label.render()
+      self._date_label.set_text(" " + self._version_text[3])
+      self._date_label.set_position(version_pos.x + self._version_label.rect.width + 10, version_pos.y)
+      self._date_label.render()
 
-        self._date_label.set_text(" " + self._version_text[3])
-        self._date_label.set_position(version_pos.x + self._version_label.rect.width + 10, version_pos.y)
-        self._date_label.render()
+      self._branch_label.set_width(gui_app.width - self._version_label.rect.width - self._date_label.rect.width - 32)
+      self._branch_label.set_text(" " + ("release" if release_branch else self._version_text[1]))
+      self._branch_label.set_position(version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20, version_pos.y)
+      self._branch_label.render()
 
-        self._branch_label.set_width(gui_app.width - self._version_label.rect.width - self._date_label.rect.width - 32)
-        self._branch_label.set_text(" " + self._version_text[1])
-        self._branch_label.set_position(version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20, version_pos.y)
-        self._branch_label.render()
-
+      if not release_branch:
         # 2nd line
         self._version_commit_label.set_text(self._version_text[2])
         self._version_commit_label.set_position(version_pos.x, version_pos.y + self._date_label.font_size + 7)
