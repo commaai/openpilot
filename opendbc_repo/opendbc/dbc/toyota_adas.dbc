@@ -1,0 +1,276 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+BO_ 528 TRACK_A_0: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 529 TRACK_A_1: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 530 TRACK_A_2: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 531 TRACK_A_3: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 532 TRACK_A_4: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 533 TRACK_A_5: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 534 TRACK_A_6: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 535 TRACK_A_7: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 536 TRACK_A_8: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 537 TRACK_A_9: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 538 TRACK_A_10: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 539 TRACK_A_11: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 540 TRACK_A_12: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 541 TRACK_A_13: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 542 TRACK_A_14: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 543 TRACK_A_15: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LAT_DIST : 31|11@0- (0.04,0) [-50|50] "m" XXX
+ SG_ LONG_DIST : 15|13@0+ (0.04,0) [0|300] "m" XXX
+ SG_ NEW_TRACK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ REL_SPEED : 47|12@0- (0.025,0) [-100|100] "m/s" XXX
+ SG_ VALID : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 544 TRACK_B_0: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 545 TRACK_B_1: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 546 TRACK_B_2: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 547 TRACK_B_3: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 548 TRACK_B_4: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 549 TRACK_B_5: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 550 TRACK_B_6: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 551 TRACK_B_7: 8 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 552 TRACK_B_8: 6 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 553 TRACK_B_9: 6 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 554 TRACK_B_10: 6 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 555 TRACK_B_11: 6 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 556 TRACK_B_12: 6 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 557 TRACK_B_13: 6 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 558 TRACK_B_14: 6 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 559 TRACK_B_15: 6 XXX
+ SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ REL_ACCEL : 15|7@0- (1,0) [-64|63] "" XXX
+ SG_ SCORE : 23|8@0+ (1,0) [0|100] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
