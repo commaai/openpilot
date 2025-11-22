@@ -1,0 +1,20 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+  <file alias="bootstrap-icons.svg">../../third_party/bootstrap/bootstrap-icons.svg</file>
+  <file>images/button_continue_triangle.svg</file>
+  <file>icons/circled_check.svg</file>
+  <file>icons/circled_slash.svg</file>
+  <file>icons/eye_open.svg</file>
+  <file>icons/eye_closed.svg</file>
+  <file>icons/close.svg</file>
+  <file>icons/lock_closed.svg</file>
+  <file>icons/checkmark.svg</file>
+  <file>icons/warning.png</file>
+  <file>icons/wifi_strength_low.svg</file>
+  <file>icons/wifi_strength_medium.svg</file>
+  <file>icons/wifi_strength_high.svg</file>
+  <file>icons/wifi_strength_full.svg</file>
+
+  <file alias="languages.json">../ui/translations/languages.json</file>
+</qresource>
+</RCC>

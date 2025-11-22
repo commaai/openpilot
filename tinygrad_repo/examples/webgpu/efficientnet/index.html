@@ -1,0 +1,124 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+#result {  font-size: 48px; }
+#time {  font-size: 16px;  color: grey; }
+#mybox {  padding: 20px; }
+#resultbox {  padding: 50px; }
+.bigggg {  font-size: 18px;  margin-top: 10px; }
+.bigg {  font-size: 18px; }
+#url {  font-size: 18px;  width: 70%; }
+a {  text-decoration: none; }
+h1 {  padding: 50px;  padding-bottom: 0px;  font-size: 36px;  font-weight: normal; }
+#imagebox {  height:224px;  width:224px;  border: 1px dotted black; }
+#video {  height:0px;  width:0px;  border: 1px dotted black;  object-fit: cover;}
+canvas {  display: none; }
+* {  text-align: center;  font-family: monospace; }
+</style>
+<title>tinygrad has WebGPU</title>
+<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/tinygrad/tinygrad/master/docs/logo.png">
+</head>
+<body>
+<h1>WebGPU <a href="https://github.com/geohot/tinygrad">tinygrad</a> EfficientNet!</h1>
+<div id="mybox">
+<input type="text" id="url" placeholder="put url here" value="https://upload.wikimedia.org/wikipedia/commons/d/da/Norwegian_hen.jpg">
+<input class="bigg" type="button" onclick="runNetWResource(document.getElementById('url').value)" value="Use URL">
+</div>
+<br/>
+<img id="imagebox"></img>
+<canvas id="canvas" width="200" height="200"> </canvas>
+<div id="resultbox">
+<div id="result">result will go here</div>
+<div id="time"></div>
+</div>
+<script>
+	const ctx = document.getElementById("canvas").getContext("2d", { willReadFrequently: true });
+	const resultText = document.getElementById('result');
+	let labels, net;
+
+	const error = (err) => {
+		resultText.innerHTML = `Error: ${err}`;
+		throw new Error(err);
+	}
+
+	const getDevice = async () => {
+		if (!navigator.gpu) error("WebGPU not supported.");
+		const adapter = await navigator.gpu.requestAdapter();
+		return await adapter.requestDevice({
+			requiredFeatures: ["shader-f16"],
+			powerPreference: "high-performance"
+		});
+	};
+
+	const timer = async (func, label = "") => {
+		document.getElementById('time').innerHTML = "";
+		const start = performance.now();
+		const out = await func();
+		const delta = (performance.now() - start).toFixed(1)
+		console.log(`${delta} ms ${label}`);
+		document.getElementById('time').innerHTML = `${delta} ms ${label}`;
+		return out;
+	}	
+
+	const getLabels = async () => (await fetch("https://raw.githubusercontent.com/anishathalye/imagenet-simple-labels/master/imagenet-simple-labels.json")).json();
+
+	const reorderChannelsAndRemoveAlpha = (data) => {
+		const out = [];
+		let i = 0;
+		for (let c = 0; c < 3; c++) {
+			for (let x = 0; x < 224 * 224; x++) {
+				out[i] = data[x * 4 + c];
+				i++;
+			}
+		}
+		return out;
+	};
+
+	const runNetWResource = async (resource) => {
+		resultText.innerHTML = "pending..."
+		if (resource == "") error("sir. please type in a URL");
+		const response = await fetch(resource)
+		if (!response.ok) error("sir. that is not a good URL. try a new one");
+		document.getElementById("imagebox").src = resource
+		
+		const img = new Image();
+		img.crossOrigin = "Anonymous";
+		img.onload = () => {
+			URL.revokeObjectURL(img.src);
+			ctx.drawImage(img, 0, 0, 224, 224);
+			const data = ctx.getImageData(0, 0, 224, 224).data;
+			runNet(data)
+		};
+		img.src = resource;
+	}
+
+	const loadLet = async () => {
+		try {
+			resultText.innerHTML = "loading..."
+			labels = await getLabels();
+			const device = await getDevice();
+			const model = (await import("../../net.js")).default;
+			net = await timer(() => model.load(device, '../../net.safetensors'), "(compilation)");
+			resultText.innerHTML = "ready"
+		} catch (e) {
+			error(e)
+		}
+	}
+
+	const runNet = async (data) => {
+		if (!net) error("Net not loaded yet.");
+
+		const input = reorderChannelsAndRemoveAlpha(Array.from(data).map((pix) => (pix / 255.0) * 0.45 - 0.225));
+		const out = await timer(() => net(new Float32Array(input)));
+
+		const arr = Array.from(new Float32Array(out[0]));
+		const index = arr.indexOf(Math.max(...arr));
+
+		resultText.textContent = labels[index];
+	};
+
+	loadLet();
+</script>
+</body>
+</html>
