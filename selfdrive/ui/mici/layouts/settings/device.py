@@ -166,8 +166,7 @@ class UpdateOpenpilotBigButton(BigButton):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not system_time_valid():
-      dlg = BigDialog(tr("Please connect to Wi-Fi to update"), "")
-      gui_app.set_modal_overlay(dlg)
+      gui_app.stack.push(BigDialog(tr("Please connect to Wi-Fi to update"), ""))
       return
 
     self.set_enabled(False)
