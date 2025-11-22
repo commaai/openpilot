@@ -1,4 +1,7 @@
+import os
 import platform
+import resource
+
 import numpy as np
 import pyray as rl
 
@@ -11,6 +14,8 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
+CAMERA_VIEW_MEMLEAK_DEBUG = "CAMERA_VIEW_MEMLEAK_DEBUG"
+CAMERA_VIEW_MEMLEAK_DEBUG_INTERVAL = "CAMERA_VIEW_MEMLEAK_DEBUG_INTERVAL"
 
 VERSION = """
 #version 300 es
@@ -137,6 +142,9 @@ class CameraView(Widget):
     self.egl_texture: rl.Texture | None = None
 
     self._placeholder_color: rl.Color | None = None
+    self._debug_memleak = os.environ.get(CAMERA_VIEW_MEMLEAK_DEBUG) == "1"
+    self._debug_reconnect_interval = float(os.environ.get(CAMERA_VIEW_MEMLEAK_DEBUG_INTERVAL, "2.0"))
+    self._debug_last_reconnect: float = 0.0
 
     # Initialize EGL for zero-copy rendering on TICI
     if TICI:
@@ -161,6 +169,35 @@ class CameraView(Widget):
       if self.client:
         del self.client
       self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
+
+  def _debug_reconnect_and_log(self):
+    """Force repeated reconnects and log EGL/memory stats when debugging leak."""
+    if not self._debug_memleak:
+      return
+
+    current_time = rl.get_time()
+    if current_time - self._debug_last_reconnect < self._debug_reconnect_interval:
+      return
+
+    self._debug_last_reconnect = current_time
+    self._log_egl_memory_stats()
+    self._simulate_client_reconnect()
+
+  def _log_egl_memory_stats(self):
+    usage_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    usage_mb = usage_kb / 1024.0
+    idxs = sorted(self.egl_images.keys())
+    idx_sample = ",".join(str(idx) for idx in idxs[:3])
+    cloudlog.info("CameraView leak debug: rss=%.1fMB, egl_images=%d%s",
+                  usage_mb, len(idxs), f", sample=[{idx_sample}]" if idx_sample else "")
+
+  def _simulate_client_reconnect(self):
+    """Drop and recreate the VisionIpcClient to trigger buffer index churn."""
+    if self.client:
+      self.frame = None
+      self.available_streams.clear()
+      del self.client
+    self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
 
   def _set_placeholder_color(self, color: rl.Color):
     """Set a placeholder color to be drawn when no frame is available."""
@@ -224,6 +261,8 @@ class CameraView(Widget):
   def _render(self, rect: rl.Rectangle):
     if self._switching:
       self._handle_switch()
+
+    self._debug_reconnect_and_log()
 
     if not self._ensure_connection():
       self._draw_placeholder(rect)
