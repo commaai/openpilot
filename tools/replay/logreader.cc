@@ -23,6 +23,8 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
 }
 
 bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
+  requires_controls_migration = true;
+
   try {
     events.reserve(65000);
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)data, size / sizeof(capnp::word));
@@ -33,7 +35,7 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
       auto event_data = kj::arrayPtr(words.begin(), reader.getEnd());
       words = kj::arrayPtr(reader.getEnd(), words.end());
       if (which == cereal::Event::Which::SELFDRIVE_STATE) {
-        requires_migration = false;
+        requires_controls_migration = false;
       }
 
       if (!filters_.empty()) {
@@ -61,9 +63,7 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
     rWarning("Failed to parse log : %s.\nRetrieved %zu events from corrupt log", e.getDescription().cStr(), events.size());
   }
 
-  if (requires_migration) {
-    migrateOldEvents();
-  }
+  migrateOldEvents();
 
   if (!events.empty() && !(abort && *abort)) {
     events.shrink_to_fit();
@@ -74,43 +74,82 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
 }
 
 void LogReader::migrateOldEvents() {
-  size_t events_size = events.size();
-  for (int i = 0; i < events_size; ++i) {
-    // Check if the event is of the old CONTROLS_STATE type
-    auto &event = events[i];
-    if (event.which == cereal::Event::CONTROLS_STATE) {
-      // Read the old event data
-      capnp::FlatArrayMessageReader reader(event.data);
-      auto old_evt = reader.getRoot<cereal::Event>();
-      auto old_state = old_evt.getControlsState();
-
-      // Migrate relevant fields from old CONTROLS_STATE to new SelfdriveState
-      MessageBuilder msg;
-      auto new_evt = msg.initEvent(old_evt.getValid());
-      new_evt.setLogMonoTime(old_evt.getLogMonoTime());
-      auto new_state = new_evt.initSelfdriveState();
-
-      new_state.setActive(old_state.getActiveDEPRECATED());
-      new_state.setAlertSize(old_state.getAlertSizeDEPRECATED());
-      new_state.setAlertSound(old_state.getAlertSound2DEPRECATED());
-      new_state.setAlertStatus(old_state.getAlertStatusDEPRECATED());
-      new_state.setAlertText1(old_state.getAlertText1DEPRECATED());
-      new_state.setAlertText2(old_state.getAlertText2DEPRECATED());
-      new_state.setAlertType(old_state.getAlertTypeDEPRECATED());
-      new_state.setEnabled(old_state.getEnabledDEPRECATED());
-      new_state.setEngageable(old_state.getEngageableDEPRECATED());
-      new_state.setExperimentalMode(old_state.getExperimentalModeDEPRECATED());
-      new_state.setPersonality(old_state.getPersonalityDEPRECATED());
-      new_state.setState(old_state.getStateDEPRECATED());
-
-      // Serialize the new event to the buffer
-      auto buf_size = msg.getSerializedSize();
-      auto buf = buffer_.allocate(buf_size);
-      msg.serializeToBuffer(reinterpret_cast<unsigned char *>(buf), buf_size);
-
-      // Store the migrated event in the events list
-      auto event_data = kj::arrayPtr(reinterpret_cast<const capnp::word *>(buf), buf_size);
-      events.emplace_back(new_evt.which(), new_evt.getLogMonoTime(), event_data);
+  for (const auto &event : events) {
+    if (event.which == cereal::Event::CONTROLS_STATE && requires_controls_migration) {
+      migrateControlsState(event.data);
+    } else if (event.which == cereal::Event::ONROAD_EVENTS_D_E_P_R_E_C_A_T_E_D) {
+      migrateOnroadEvents(event.data);
     }
   }
+}
+
+void LogReader::migrateControlsState(const kj::ArrayPtr<const capnp::word> &event_data) {
+  // Read the old event data
+  capnp::FlatArrayMessageReader reader(event_data);
+  auto old_evt = reader.getRoot<cereal::Event>();
+  auto old_state = old_evt.getControlsState();
+
+  // Migrate relevant fields from old CONTROLS_STATE to new SelfdriveState
+  MessageBuilder msg;
+  auto new_evt = msg.initEvent(old_evt.getValid());
+  new_evt.setLogMonoTime(old_evt.getLogMonoTime());
+  auto new_state = new_evt.initSelfdriveState();
+
+  new_state.setActive(old_state.getActiveDEPRECATED());
+  new_state.setAlertSize(old_state.getAlertSizeDEPRECATED());
+  new_state.setAlertSound(old_state.getAlertSound2DEPRECATED());
+  new_state.setAlertStatus(old_state.getAlertStatusDEPRECATED());
+  new_state.setAlertText1(old_state.getAlertText1DEPRECATED());
+  new_state.setAlertText2(old_state.getAlertText2DEPRECATED());
+  new_state.setAlertType(old_state.getAlertTypeDEPRECATED());
+  new_state.setEnabled(old_state.getEnabledDEPRECATED());
+  new_state.setEngageable(old_state.getEngageableDEPRECATED());
+  new_state.setExperimentalMode(old_state.getExperimentalModeDEPRECATED());
+  new_state.setPersonality(old_state.getPersonalityDEPRECATED());
+  new_state.setState(old_state.getStateDEPRECATED());
+
+  // Serialize the new event to the buffer
+  auto buf_size = msg.getSerializedSize();
+  auto buf = buffer_.allocate(buf_size);
+  msg.serializeToBuffer(reinterpret_cast<unsigned char *>(buf), buf_size);
+
+  // Store the migrated event in the events list
+  auto migrated_event_data = kj::arrayPtr(reinterpret_cast<const capnp::word *>(buf), buf_size);
+  events.emplace_back(new_evt.which(), new_evt.getLogMonoTime(), migrated_event_data);
+}
+
+void LogReader::migrateOnroadEvents(const kj::ArrayPtr<const capnp::word> &event_data) {
+  // Read the old event data
+  capnp::FlatArrayMessageReader reader(event_data);
+  auto old_evt = reader.getRoot<cereal::Event>();
+  auto old_state = old_evt.getOnroadEventsDEPRECATED();
+
+  MessageBuilder msg;
+  auto new_evt = msg.initEvent(old_evt.getValid());
+  new_evt.setLogMonoTime(old_evt.getLogMonoTime());
+
+  size_t new_onroad_events_size = old_state.size();
+  auto new_onroad_events = new_evt.initOnroadEvents(new_onroad_events_size);
+  for (size_t j = 0; j < new_onroad_events_size; j++) {
+    new_onroad_events[j].setName(ONROAD_EVENT_NAME_MAP.at(old_state[j].getName()));
+    new_onroad_events[j].setEnable(old_state[j].getEnable());
+    new_onroad_events[j].setNoEntry(old_state[j].getNoEntry());
+    new_onroad_events[j].setWarning(old_state[j].getWarning());
+    new_onroad_events[j].setUserDisable(old_state[j].getUserDisable());
+    new_onroad_events[j].setSoftDisable(old_state[j].getSoftDisable());
+    new_onroad_events[j].setImmediateDisable(old_state[j].getImmediateDisable());
+    new_onroad_events[j].setPreEnable(old_state[j].getPreEnable());
+    new_onroad_events[j].setPermanent(old_state[j].getPermanent());
+    new_onroad_events[j].setOverrideLateral(old_state[j].getOverrideLateral());
+    new_onroad_events[j].setOverrideLongitudinal(old_state[j].getOverrideLongitudinal());
+  }
+
+  // Serialize the new event to the buffer
+  auto buf_size = msg.getSerializedSize();
+  auto buf = buffer_.allocate(buf_size);
+  msg.serializeToBuffer(reinterpret_cast<unsigned char *>(buf), buf_size);
+
+  // Store the migrated event in the events list
+  auto migrated_event_data = kj::arrayPtr(reinterpret_cast<const capnp::word *>(buf), buf_size);
+  events.emplace_back(new_evt.which(), new_evt.getLogMonoTime(), migrated_event_data);
 }
