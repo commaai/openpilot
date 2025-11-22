@@ -1,0 +1,248 @@
+name: MetaDrive Simulation Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  metadrive-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: false
+
+      - name: Install Python 3.11 from deadsnakes PPA
+        run: |
+          sudo add-apt-repository ppa:deadsnakes/ppa -y
+          sudo apt-get update
+          sudo apt-get install -y python3.11 python3.11-venv python3.11-dev
+          sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
+          python --version
+          python3 --version
+
+      - name: Install pip for Python 3.11
+        run: |
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+          python3.11 -m pip --version
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+
+      - name: Install system dependencies
+        run: |
+          # Fix apt_pkg error by continuing on apt update failure
+          sudo apt-get update || true
+          sudo apt-get install -y --no-install-recommends \
+            libegl1-mesa \
+            libegl1-mesa-dev \
+            libgles2-mesa-dev \
+            libgl1-mesa-dev \
+            libgl1-mesa-dri \
+            libglx-mesa0 \
+            mesa-utils \
+            mesa-common-dev \
+            libglu1-mesa-dev \
+            xvfb \
+            x11-utils \
+            pulseaudio \
+            portaudio19-dev \
+            ffmpeg \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswscale-dev \
+            libcapnp-dev \
+            capnproto
+
+      - name: Configure environment for headless rendering
+        run: |
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> $GITHUB_ENV
+          echo "GALLIUM_DRIVER=llvmpipe" >> $GITHUB_ENV
+          echo "LP_NUM_THREADS=4" >> $GITHUB_ENV
+          echo "MESA_GL_VERSION_OVERRIDE=3.3" >> $GITHUB_ENV
+          echo "MESA_GLSL_VERSION_OVERRIDE=330" >> $GITHUB_ENV
+          echo "SKIP_FW_QUERY=1" >> $GITHUB_ENV
+          echo "PASSIVE=0" >> $GITHUB_ENV
+          echo "SIMULATION=1" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "CI_DISABLE_SOUNDD=1" >> $GITHUB_ENV
+          echo "PANDA_PRC_DIR=" >> $GITHUB_ENV
+
+      - name: Start Xvfb virtual display
+        run: |
+          echo "Starting Xvfb..."
+          Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset -nolisten tcp > /tmp/xvfb.log 2>&1 &
+          XVFB_PID=$!
+          echo "XVFB_PID=$XVFB_PID" >> $GITHUB_ENV
+          echo "Xvfb started with PID: $XVFB_PID"
+          sleep 5
+
+          if ps -p $XVFB_PID > /dev/null; then
+            echo "✅ Xvfb is running (PID: $XVFB_PID)"
+          else
+            echo "❌ Xvfb failed to start"
+            cat /tmp/xvfb.log
+            exit 1
+          fi
+
+      - name: Setup PulseAudio virtual sound device
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          sleep 2
+          pacmd load-module module-null-sink sink_name=virtual-speaker
+          pacmd set-default-sink virtual-speaker
+          pactl list sinks short
+          echo "✅ Virtual audio device configured"
+
+      - name: Verify OpenGL rendering setup
+        run: |
+          export DISPLAY=:99
+          echo "=== OpenGL Configuration ==="
+          glxinfo | grep "OpenGL renderer"
+          glxinfo | grep "OpenGL version"
+          echo ""
+          echo "=== Display Configuration ==="
+          echo "DISPLAY=$DISPLAY"
+
+      - name: Install openpilot dependencies
+        run: |
+          python3.11 -m pip install --upgrade pip setuptools wheel
+          python3.11 -m pip install --no-cache-dir -e .
+          echo "✅ Openpilot dependencies installed"
+
+      - name: Install MetaDrive
+        run: |
+          python3.11 -m pip install --no-cache-dir metadrive-simulator
+          python3.11 -m metadrive.pull_asset
+          echo "✅ MetaDrive installed"
+
+      - name: Verify MetaDrive headless installation
+        run: |
+          export DISPLAY=:99
+          timeout 60 python3.11 -m metadrive.examples.verify_headless_installation || {
+            echo "⚠️  Headless verification timed out or failed"
+            echo "Continuing anyway..."
+          }
+
+      - name: Create CI-specific manager configuration
+        run: |
+          echo "disable_soundd" > /tmp/ci_mode
+          mkdir -p tools/sim
+          cat > tools/sim/ci_config.sh << 'EOF'
+          #!/bin/bash
+          export CI_DISABLE_SOUNDD=1
+          export SIMULATION=1
+          export PASSIVE=0
+          EOF
+          chmod +x tools/sim/ci_config.sh
+          echo "✅ CI configuration created"
+
+      - name: Run MetaDrive simulation test
+        id: simulation_test
+        timeout-minutes: 12
+        run: |
+          export DISPLAY=:99
+          [ -f tools/sim/ci_config.sh ] && source tools/sim/ci_config.sh
+
+          echo "=== Starting MetaDrive Simulation Test ==="
+          echo "Timestamp: $(date -Iseconds)"
+          echo "Python: $(python3.11 --version)"
+          echo ""
+
+          cd tools/sim
+          python3.11 -m pytest \
+            tests/test_sim_bridge.py::TestMetaDriveBridge::test_driving \
+            -v \
+            --tb=short \
+            --timeout=600 \
+            --log-cli-level=INFO
+
+          TEST_RESULT=$?
+          echo ""
+          echo "=== Test Completed ==="
+          echo "Exit code: $TEST_RESULT"
+          exit $TEST_RESULT
+
+      - name: Collect simulation logs
+        if: always()
+        run: |
+          echo "=== Collecting Simulation Artifacts ==="
+          mkdir -p simulation_artifacts
+
+          LOG_LOCATIONS=("/tmp" "/tmp/comma" "$HOME/.comma" "$(pwd)/tools/sim")
+
+          for location in "${LOG_LOCATIONS[@]}"; do
+            if [ -d "$location" ]; then
+              find "$location" -name "*.qlog" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+              find "$location" -name "*.rlog" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+              find "$location" -name "*.hevc" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+              find "$location" -name "fcamera.hevc" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+              find "$location" -name "error.log" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+              find "$location" -name "crash.log" -type f -exec cp {} simulation_artifacts/ \; 2>/dev/null || true
+            fi
+          done
+
+          cat > simulation_artifacts/metadata.txt << EOF
+          Test Run Information
+          ====================
+          Timestamp: $(date -Iseconds)
+          GitHub Run ID: ${{ github.run_id }}
+          Commit SHA: ${{ github.sha }}
+          Test Result: ${{ steps.simulation_test.outcome }}
+
+          System Information
+          ==================
+          OS: $(uname -a)
+          Python: $(python3.11 --version 2>&1)
+          OpenGL: $(DISPLAY=:99 glxinfo 2>/dev/null | grep "OpenGL version" || echo "N/A")
+
+          Collected Files
+          ===============
+          EOF
+
+          ls -lh simulation_artifacts/ >> simulation_artifacts/metadata.txt
+          echo "✅ Artifact collection complete"
+          cat simulation_artifacts/metadata.txt
+
+      - name: Upload simulation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metadrive-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: simulation_artifacts/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Performance and reliability report
+        if: always()
+        run: |
+          echo "=== Performance & Reliability Report ==="
+          echo "Test Status: ${{ steps.simulation_test.outcome }}"
+
+          if [ "${{ steps.simulation_test.outcome }}" == "success" ]; then
+            echo "✅ Test PASSED - Simulation completed successfully"
+          else
+            echo "❌ Test FAILED - Review logs for details"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          pulseaudio --kill 2>/dev/null || true
+          [ -n "$XVFB_PID" ] && kill $XVFB_PID 2>/dev/null || true
+          echo "✅ Cleanup complete"
