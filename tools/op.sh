@@ -19,6 +19,10 @@ RC_FILE="${HOME}/.$(basename ${SHELL})rc"
 if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
   RC_FILE="$HOME/.bash_profile"
 fi
+
+OP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+source "$OP_DIR/scripts/lib/common.sh"
+
 function op_install() {
   echo "Installing op system-wide..."
   CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
@@ -52,22 +56,7 @@ function op_run_command() {
 # be default, assume openpilot dir is in current directory
 OPENPILOT_ROOT=$(pwd)
 function op_get_openpilot_dir() {
-  # First try traversing up the directory tree
-  while [[ "$OPENPILOT_ROOT" != '/' ]];
-  do
-    if find "$OPENPILOT_ROOT/launch_openpilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
-      return 0
-    fi
-    OPENPILOT_ROOT="$(readlink -f "$OPENPILOT_ROOT/"..)"
-  done
-
-  # Fallback to hardcoded directories if not found
-  for dir in "$HOME/openpilot" "/data/openpilot"; do
-    if [[ -f "$dir/launch_openpilot.sh" ]]; then
-      OPENPILOT_ROOT="$dir"
-      return 0
-    fi
-  done
+  OPENPILOT_ROOT="$(resolve_root_dir)"
 }
 
 function op_install_post_commit() {
@@ -352,6 +341,11 @@ function op_clip() {
   op_run_command tools/clip/run.py $@
 }
 
+function op_hot() {
+  op_before_cmd
+  op_run_command tools/scripts/hot.sh $@
+}
+
 function op_switch() {
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
@@ -419,6 +413,7 @@ function op_default() {
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
+  echo -e "  ${BOLD}hot${NC}          Hot reload a command when files in the openpilot directory change"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
   echo ""
@@ -472,6 +467,7 @@ function _op() {
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
     clip )          shift 1; op_clip "$@" ;;
+    hot )           shift 1; op_hot "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;

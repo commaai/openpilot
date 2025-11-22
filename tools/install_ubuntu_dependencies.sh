@@ -32,6 +32,7 @@ function install_ubuntu_common_requirements() {
     locales \
     git \
     git-lfs \
+    fswatch \
     xvfb
 
   # TODO: vendor the rest of these in third_party/
