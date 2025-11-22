@@ -183,7 +183,7 @@ class MiciLabel(Widget):
       if self._scroll_state != ScrollState.STARTING:
         rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), fade_width, int(rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
 
-    rl.end_scissor_mode()
+      rl.end_scissor_mode()
 
 
 # TODO: This should be a Widget class
