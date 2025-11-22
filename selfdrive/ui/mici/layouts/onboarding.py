@@ -329,7 +329,7 @@ class OnboardingWindow(Widget):
 
   def close(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    gui_app.set_modal_overlay(None)
+    gui_app.stack.pop()
 
   def _on_terms_accepted(self):
     ui_state.params.put("HasAcceptedTerms", terms_version)

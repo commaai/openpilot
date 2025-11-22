@@ -619,8 +619,7 @@ class Setup(Widget):
       if result == DialogResult.CANCEL:
         self._set_state(SetupState.SOFTWARE_SELECTION)
 
-    keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
-    gui_app.set_modal_overlay(keyboard, callback=handle_keyboard_exit)
+    gui_app.stack.push(BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result), callback=handle_keyboard_exit)
 
   def use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):

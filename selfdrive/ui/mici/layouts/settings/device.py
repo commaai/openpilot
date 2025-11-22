@@ -29,7 +29,7 @@ class MiciFccModal(NavWidget):
 
   def __init__(self, file_path: str | None = None, text: str | None = None):
     super().__init__()
-    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
+    self.set_back_callback(lambda: gui_app.stack.pop())
     self._content = HtmlRenderer(file_path=file_path, text=text)
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
     self._fcc_logo = gui_app.texture("icons_mici/settings/device/fcc_logo.png", 76, 64)
@@ -72,13 +72,11 @@ def _engaged_confirmation_callback(callback: Callable, action_text: str):
       # TODO: check
       icon = "icons_mici/settings/comma_icon.png"
 
-    dlg: BigConfirmationDialogV2 | BigDialog = BigConfirmationDialogV2(f"slide to\n{action_text.lower()}", icon, red=red,
-                                                                       exit_on_confirm=action_text == "reset",
-                                                                       confirm_callback=confirm_callback)
-    gui_app.set_modal_overlay(dlg)
+    gui_app.stack.push(BigConfirmationDialogV2(f"slide to\n{action_text.lower()}", icon, red=red,
+                                                exit_on_confirm=action_text == "reset",
+                                                confirm_callback=confirm_callback))
   else:
-    dlg = BigDialog(f"Disengage to {action_text}", "")
-    gui_app.set_modal_overlay(dlg)
+    gui_app.stack.push(BigConfirmationDialogV2(f"Disengage to {action_text}", ""))
 
 
 class DeviceInfoLayoutMici(Widget):
@@ -138,14 +136,12 @@ class PairBigButton(BigButton):
     # TODO: show ad dialog when clicked if not prime
     if ui_state.prime_state.is_paired():
       return
-    dlg: BigDialog | PairingDialog
     if not system_time_valid():
-      dlg = BigDialog(tr("Please connect to Wi-Fi to complete initial pairing"), "")
+      gui_app.stack.push(BigDialog(tr("Please connect to Wi-Fi to complete initial pairing"), ""))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):
-      dlg = BigDialog(tr("Device must be registered with the comma.ai backend to pair"), "")
+      gui_app.stack.push(BigDialog(tr("Device must be registered with the comma.ai backend to pair"), ""))
     else:
-      dlg = PairingDialog()
-    gui_app.set_modal_overlay(dlg)
+      gui_app.stack.push(PairingDialog())
 
 
 UPDATER_TIMEOUT = 10.0  # seconds to wait for updater to respond
@@ -170,8 +166,7 @@ class UpdateOpenpilotBigButton(BigButton):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not system_time_valid():
-      dlg = BigDialog(tr("Please connect to Wi-Fi to update"), "")
-      gui_app.set_modal_overlay(dlg)
+      gui_app.stack.push(BigDialog(tr("Please connect to Wi-Fi to update"), ""))
       return
 
     self.set_enabled(False)
@@ -314,7 +309,7 @@ class DeviceLayoutMici(NavWidget):
       current_language = next(name for name, lang in self._languages.items() if lang == current_language_name)
 
       dlg = BigMultiOptionDialog(list(self._languages), default=current_language, right_btn_callback=selected_language_callback)
-      gui_app.set_modal_overlay(dlg)
+      gui_app.stack.push(dlg)
 
     # lang_button = BigButton("change language", "", "icons_mici/settings/device/language.png")
     # lang_button.set_click_callback(language_callback)
@@ -351,17 +346,13 @@ class DeviceLayoutMici(NavWidget):
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _on_regulatory(self):
-    if not self._fcc_dialog:
-      self._fcc_dialog = MiciFccModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/mici_fcc.html"))
-    gui_app.set_modal_overlay(self._fcc_dialog, callback=setattr(self, '_fcc_dialog', None))
+    gui_app.stack.push(MiciFccModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/mici_fcc.html")))
 
   def _offroad_transition(self):
     self._power_off_btn.set_visible(ui_state.is_offroad())
 
   def _show_driver_camera(self):
-    if not self._driver_camera:
-      self._driver_camera = DriverCameraDialog()
-    gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
+    gui_app.stack.push(DriverCameraDialog())
 
   def _on_review_training_guide(self):
     if not self._training_guide:

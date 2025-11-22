@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import pyray as rl
-from enum import IntEnum
 from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
@@ -16,11 +15,6 @@ from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityT
 
 def normalize_ssid(ssid: str) -> str:
   return ssid.replace("’", "'")  # for iPhone hotspots
-
-
-class NetworkPanelType(IntEnum):
-  NONE = 0
-  WIFI = 1
 
 
 class LoadingAnimation(Widget):
@@ -188,9 +182,8 @@ class ForgetButton(Widget):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    dlg = BigConfirmationDialogV2("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
-                                  confirm_callback=self._forget_network)
-    gui_app.set_modal_overlay(dlg, callback=self._open_network_manage_page)
+    gui_app.stack.push(BigConfirmationDialogV2("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
+                                               confirm_callback=self._forget_network))
 
   def _render(self, _):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
@@ -219,7 +212,7 @@ class NetworkInfoPage(NavWidget):
     self._subtitle = UnifiedLabel("", 36, FontWeight.ROMAN, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                   alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
-    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
+    self.set_back_callback(lambda: gui_app.stack.pop())
 
     # State
     self._network: Network | None = None
@@ -233,7 +226,9 @@ class NetworkInfoPage(NavWidget):
         break
     else:
       # network disappeared, close page
-      gui_app.set_modal_overlay(None)
+      # TODO: causes weird bugs
+      # gui_app.stack.pop()
+      pass
 
   def _update_state(self):
     super()._update_state()
@@ -362,7 +357,7 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _open_network_manage_page(self, result=None):
     self._network_info_page.update_networks(self._networks)
-    gui_app.set_modal_overlay(self._network_info_page)
+    gui_app.stack.push(self._network_info_page)
 
   def _forget_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -424,10 +419,8 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _on_need_auth(self, ssid, incorrect_password=True):
     hint = "incorrect password..." if incorrect_password else "enter password..."
-    dlg = BigInputDialog(hint, "", minimum_length=8,
-                         confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
-    # go back to the manage network page
-    gui_app.set_modal_overlay(dlg, self._open_network_manage_page)
+    gui_app.stack.push(BigInputDialog(hint, "", minimum_length=8,
+                                      confirm_callback=lambda _password: self._connect_with_password(ssid, _password)))
 
   def _on_activated(self):
     self._connecting = None
@@ -439,6 +432,8 @@ class WifiUIMici(BigMultiOptionDialog):
     self._connecting = None
 
   def _render(self, _):
+    self._wifi_manager.process_callbacks()
+
     super()._render(_)
 
     if not self._networks:
@@ -449,12 +444,8 @@ class NetworkLayoutMici(NavWidget):
   def __init__(self, back_callback: Callable):
     super().__init__()
 
-    self._current_panel = NetworkPanelType.WIFI
-    self.set_back_enabled(lambda: self._current_panel == NetworkPanelType.NONE)
-
     self._wifi_manager = WifiManager()
     self._wifi_manager.set_active(False)
-    self._wifi_ui = WifiUIMici(self._wifi_manager, back_callback=lambda: self._switch_to_panel(NetworkPanelType.NONE))
 
     self._wifi_manager.add_callbacks(
       networks_updated=self._on_network_updated,
@@ -476,9 +467,8 @@ class NetworkLayoutMici(NavWidget):
 
     def tethering_password_clicked():
       tethering_password = self._wifi_manager.tethering_password
-      dlg = BigInputDialog("enter password...", tethering_password, minimum_length=8,
-                           confirm_callback=tethering_password_callback)
-      gui_app.set_modal_overlay(dlg)
+      gui_app.stack.push(BigInputDialog("enter password...", tethering_password, minimum_length=8,
+                                        confirm_callback=tethering_password_callback))
 
     txt_tethering = gui_app.texture(_tethering_icon, 64, 53)
     self._tethering_password_btn = BigButton("tethering password", "", txt_tethering)
@@ -503,7 +493,7 @@ class NetworkLayoutMici(NavWidget):
     self._network_metered_btn.set_enabled(False)
 
     wifi_button = BigButton("wi-fi")
-    wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
+    wifi_button.set_click_callback(lambda: gui_app.stack.push(WifiUIMici(self._wifi_manager, back_callback=lambda: gui_app.stack.pop())))
 
     # Main scroller ----------------------------------
     self._scroller = Scroller([
@@ -519,13 +509,11 @@ class NetworkLayoutMici(NavWidget):
 
   def show_event(self):
     super().show_event()
-    self._current_panel = NetworkPanelType.NONE
-    self._wifi_ui.show_event()
     self._scroller.show_event()
 
   def hide_event(self):
     super().hide_event()
-    self._wifi_ui.hide_event()
+    self._scroller.hide_event()
 
   def _on_network_updated(self, networks: list[Network]):
     # Update tethering state
@@ -546,13 +534,6 @@ class NetworkLayoutMici(NavWidget):
         MeteredType.NO: 'unmetered'
       }.get(self._wifi_manager.current_network_metered, 'default'))
 
-  def _switch_to_panel(self, panel_type: NetworkPanelType):
-    self._current_panel = panel_type
-
   def _render(self, rect: rl.Rectangle):
     self._wifi_manager.process_callbacks()
-
-    if self._current_panel == NetworkPanelType.WIFI:
-      self._wifi_ui.render(rect)
-    else:
-      self._scroller.render(rect)
+    self._scroller.render(rect)
