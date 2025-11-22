@@ -24,6 +24,7 @@ class DriverCameraDialog(NavWidget):
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
+    self._pm = messaging.PubMaster(['selfdriveState'])
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
@@ -49,12 +50,10 @@ class DriverCameraDialog(NavWidget):
     self._publish_alert_sound(None)
     device.reset_interactive_timeout(300)
     ui_state.params.remove("DriverTooDistracted")
-    self._pm = messaging.PubMaster(['selfdriveState'])
 
   def hide_event(self):
     super().hide_event()
     device.reset_interactive_timeout()
-    self._pm = None
 
   def _handle_mouse_release(self, _):
     ui_state.params.remove("DriverTooDistracted")

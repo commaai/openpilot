@@ -9,6 +9,7 @@ Quick start:
 * set `SCALE=1.5` to scale the entire UI by 1.5x
 * set `BURN_IN=1` to get a burn-in heatmap version of the UI
 * set `GRID=50` to show a 50-pixel alignment grid overlay
+* set `MAGIC_DEBUG=1` to show every dropped frames (only on device)
 * https://www.raylib.com/cheatsheet/cheatsheet.html
 * https://electronstudio.github.io/raylib-python-cffi/README.html#quickstart
 
