@@ -4,10 +4,13 @@ import sys
 import shutil
 import time
 import pathlib
-from collections import namedtuple
+import subprocess
 
 import pyautogui
 import pywinctl
+
+from collections import namedtuple
+from collections.abc import Callable
 
 from cereal import car, log
 from cereal import messaging
@@ -212,7 +215,7 @@ def setup_onroad_full_alert_long_text(click, pm: PubMaster):
   setup_onroad_alert(click, pm, AlertSize.full, "TAKE CONTROL IMMEDIATELY", "Calibration Invalid: Remount Device & Recalibrate", AlertStatus.userPrompt)
 
 
-CASES = {
+CASES: dict[str, Callable] = {
   "homescreen": setup_homescreen,
   "homescreen_paired": setup_homescreen,
   "homescreen_prime": setup_homescreen,
@@ -244,8 +247,58 @@ CASES = {
 }
 
 
+def fullscreen_click_primary_button(click, pm: PubMaster):
+  click(1950, 950)  # Bottom right button
+
+
+def fullscreen_click_secondary_button(click, pm: PubMaster):
+  click(150, 950)  # Bottom left button
+
+
+def software_setup_get_started_next(click, pm: PubMaster):
+  click(2000, 630)
+
+
+def software_setup_choose_software_click_openpilot(click, pm: PubMaster):
+  click(1200, 320)
+
+
+def software_setup_choose_software_click_custom(click, pm: PubMaster):
+  click(1200, 580)
+
+
+# These cases are for the setup, updater, and reset screens that have their own UI process.
+# The key is the name of the script.
+# Each case is a list of additional steps to perform and screenshot (after initial screenshot).
+# Each item can also be a group of steps to do, with the screenshot at the end.
+SOFTWARE_SETUP_CASES: dict[str, list | list[list]] = {
+  "setup": [
+    fullscreen_click_primary_button,  # Low voltage warning; click "Continue"
+    software_setup_get_started_next,  # Get started page; click arrow
+    [
+      # Take a screenshot of the custom software warning first, so we can go back
+      software_setup_choose_software_click_custom,  # Click "Custom" on choose software page
+      fullscreen_click_primary_button,  # Click "Continue"
+    ],
+    [fullscreen_click_secondary_button, software_setup_choose_software_click_openpilot],  # Go back to choose software page and click "openpilot"
+    [fullscreen_click_primary_button, lambda click, pm: time.sleep(1)],  # Click "Continue"; wait for networks to load
+    fullscreen_click_primary_button,  # "Download" button
+  ],
+  "updater": [
+    fullscreen_click_secondary_button,  # Click "Connect to Wi-Fi"
+    [fullscreen_click_secondary_button, fullscreen_click_primary_button],  # Click "Back", then "Install"
+  ],
+  "reset": [
+    fullscreen_click_primary_button,  # Click "Confirm" on initial confirmation
+    fullscreen_click_primary_button,  # Click "Confirm" on final warning
+  ],
+}
+
+
 class TestUI:
-  def __init__(self):
+  def __init__(self, window_title="UI"):
+    self.window_title = window_title
+
     os.environ["SCALE"] = os.getenv("SCALE", "1")
     os.environ["BIG"] = "1"
     sys.modules["mouseinfo"] = False
@@ -261,7 +314,7 @@ class TestUI:
       time.sleep(0.05)
     time.sleep(0.5)
     try:
-      self.ui = pywinctl.getWindowsWithTitle("UI")[0]
+      self.ui = pywinctl.getWindowsWithTitle(self.window_title)[0]
     except Exception as e:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
@@ -277,11 +330,45 @@ class TestUI:
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
 
   @with_processes(["ui"])
-  def test_ui(self, name, setup_case):
+  def test_ui(self, name, setup_case: Callable):
     self.setup()
     time.sleep(UI_DELAY)  # wait for UI to start
     setup_case(self.click, self.pm)
     self.screenshot(name)
+
+
+class TestScriptUI(TestUI):
+  def __init__(self, script_path: str, script_args: list[str] | None, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self._script_path = script_path
+    self._script_args = script_args or []
+    self._process = None
+
+  def __enter__(self):
+    self._process = subprocess.Popen([sys.executable, self._script_path] + self._script_args)
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    if self._process:
+      self._process.terminate()
+      try:
+        self._process.wait(timeout=5)
+      except subprocess.TimeoutExpired:
+        self._process.kill()
+      self._process = None
+
+  # Override the TestUI method to run multiple tests, and to avoid starting another UI process
+  def test_ui(self, name, setup_cases: list[Callable | list[Callable]]):
+    self.setup()
+    time.sleep(UI_DELAY)
+    self.screenshot(name)  # initial screenshot
+    # Run each setup case, taking a screenshot after each group
+    for i, case in enumerate(setup_cases):
+      group = case if isinstance(case, list) else [case]  # each case can be a single step or group of steps
+      for setup_case in group:
+        setup_case(self.click, self.pm)  # run each step in the group
+        time.sleep(0.1)  # allow UI to update between steps
+      self.screenshot(f"{name}_{i + 2}")  # take screenshot after each case group
 
 
 def create_screenshots():
@@ -311,6 +398,13 @@ def create_screenshots():
         params.put("LanguageSetting", "zh-CHT")  # Traditional Chinese
 
       t.test_ui(name, setup)
+
+  for name, setup_cases in SOFTWARE_SETUP_CASES.items():
+    with OpenpilotPrefix():
+      window_title = "System Reset" if name == "reset" else name.capitalize()
+      args = ["updater", "manifest"] if name == "updater" else None
+      with TestScriptUI(f"system/ui/{name}.py", args, window_title=window_title) as launcher:
+        launcher.test_ui(name, setup_cases)
 
 
 if __name__ == "__main__":
