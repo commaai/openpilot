@@ -2,72 +2,64 @@
 
 import logging
 import os
-import platform
 import shutil
 import sys
-import time
 from argparse import ArgumentParser, ArgumentTypeError
-from collections.abc import Sequence
+
+from contextlib import contextmanager
 from pathlib import Path
 from random import randint
-from subprocess import Popen
-from typing import Literal
+from subprocess import Popen, PIPE
 
-from cereal.messaging import SubMaster
+import pyray as rl
+import numpy as np
+
+from cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.common.utils import managed_proc
 from openpilot.tools.lib.route import Route
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.common.transformations.orientation import rot_from_euler
+from openpilot.selfdrive.ui import UI_BORDER_SIZE
+from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.shader_polygon import cleanup_shader_resources
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
 DEMO_END = 105
 DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
 FRAMERATE = 20
-PIXEL_DEPTH = '24'
-RESOLUTION = '2160x1080'
-SECONDS_TO_WARM = 2
-PROC_WAIT_SECONDS = 30*10
+UI_WIDTH, UI_HEIGHT = 2160, 1080
 
 OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
-REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
-UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
 
 logger = logging.getLogger('clip.py')
 
+def extract_frame_from_texture(render_texture: rl.RenderTexture, width: int, height: int) -> bytes:
+  image = rl.load_image_from_texture(render_texture.texture)
+  rl.image_flip_vertical(image)
+  rl.image_format(image, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8)
 
-def check_for_failure(procs: list[Popen]):
-  for proc in procs:
-    exit_code = proc.poll()
-    if exit_code is not None and exit_code != 0:
-      cmd = str(proc.args)
-      if isinstance(proc.args, str):
-        cmd = proc.args
-      elif isinstance(proc.args, Sequence):
-        cmd = str(proc.args[0])
-      msg = f'{cmd} failed, exit code {exit_code}'
-      logger.error(msg)
-      stdout, stderr = proc.communicate()
-      if stdout:
-        logger.error(stdout.decode())
-      if stderr:
-        logger.error(stderr.decode())
-      raise ChildProcessError(msg)
+  # image.data is now in RGB format
+  rgb_buffer = rl.ffi.buffer(image.data, width * height * 3)
+  frame_bytes = bytes(rgb_buffer)
 
+  rl.unload_image(image)
+  return frame_bytes
 
 def escape_ffmpeg_text(value: str):
-  special_chars = {',': '\\,', ':': '\\:', '=': '\\=', '[': '\\[', ']': '\\]'}
-  value = value.replace('\\', '\\\\\\\\\\\\\\\\')
+  special_chars = {',': r'\,', ':': r'\:', '=': r'\=', '[': r'\[', ']': r'\]'}
+  value = value.replace('\\', '\\\\\\\\')
   for char, escaped in special_chars.items():
     value = value.replace(char, escaped)
   return value
 
-
 def get_logreader(route: Route):
   return LogReader(route.qlog_paths()[0] if len(route.qlog_paths()) else route.name.canonical_name)
-
 
 def get_meta_text(lr: LogReader, route: Route):
   init_data = lr.first('initData')
@@ -84,14 +76,311 @@ def get_meta_text(lr: LogReader, route: Route):
     f"modified: {str(init_data.dirty).lower()}",
   ])
 
+def populate_car_params(lr: LogReader):
+  init_data = lr.first('initData')
+  assert init_data is not None
+
+  params = Params()
+  for cp in init_data.params.entries:
+    try:
+      params.put(cp.key, params.cpp2python(cp.key, cp.value))
+    except UnknownKeyName:
+      logger.warning(f"unknown Params key '{cp.key}', skipping")
+
+  car_params = lr.first('carParams')
+  if car_params:
+    params.put("CarParams", car_params.as_builder().to_bytes())
+  logger.debug('persisted CarParams')
+
+def patched_update_msgs(self, cur_time, msgs):
+  self.frame += 1
+  self.updated = dict.fromkeys(self.services, False)
+  for msg in msgs:
+    if msg is None:
+      continue
+    s = msg.which()
+    if s not in self.services:
+      continue
+    self.seen[s] = True
+    self.updated[s] = True
+    self.freq_tracker[s].record_recv_time(cur_time)
+    self.recv_time[s] = cur_time
+    self.recv_frame[s] = self.frame
+    self.data[s] = getattr(msg, s)
+    self.logMonoTime[s] = msg.logMonoTime
+    self.valid[s] = msg.valid
+  for s in self.static_freq_services:
+    self.alive[s] = (cur_time - self.recv_time[s]) < (10. / messaging.SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
+    self.freq_ok[s] = self.simulation or self.freq_tracker[s].valid
+
+
+class ClipGenerator:
+  def __init__(self, **kwargs):
+    self.args = kwargs
+    self.lr = get_logreader(self.args['route'])
+    self.init_data = self.lr.first('initData')
+    self.device_type = str(self.init_data.deviceType) if self.init_data.deviceType else 'tici'
+
+    if self.args['quality'] == 'high':
+      self.camera_paths = self.args['route'].camera_paths()
+    else:
+      # Doesn't work right now due to FrameReader
+      self.camera_paths = self.args['route'].qcamera_paths()
+
+    first_segment_path = next((p for p in self.camera_paths if p is not None), None)
+    if not first_segment_path:
+      raise RuntimeError("No camera segments found to determine resolution")
+    temp_fr = FrameReader(first_segment_path)
+    self.camera_width, self.camera_height = temp_fr.w, temp_fr.h
+    del temp_fr
+
+  def _get_camera_transform(self, sm, intrinsic_matrix):
+    x_offset_aug, y_offset_aug = 0, 0
+    zoom = 1.1
+    w, h = UI_WIDTH, UI_HEIGHT
+    cx, cy = intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
+
+    calib = sm['liveCalibration']
+    if len(calib.rpyCalib) == 3:
+      device_from_calib = rot_from_euler(calib.rpyCalib)
+      view_frame_from_device_frame = np.array([[0., 0., 1.], [1., 0., 0.], [0., 1., 0.]]).T
+      calibration = view_frame_from_device_frame @ device_from_calib
+      calib_transform = intrinsic_matrix @ calibration
+      kep = calib_transform @ np.array([1000.0, 0.0, 0.0])
+      max_x_offset, max_y_offset = cx * zoom - w / 2 - 5, cy * zoom - h / 2 - 5
+      if abs(kep[2]) > 1e-6:
+        x_offset_aug = np.clip((kep[0] / kep[2] - cx) * zoom, -max_x_offset, max_x_offset)
+        y_offset_aug = np.clip((kep[1] / kep[2] - cy) * zoom, -max_y_offset, max_y_offset)
+
+    return np.array([
+      [zoom * 2 * cx / w, 0, -x_offset_aug / w * 2],
+      [0, zoom * 2 * cy / h, -y_offset_aug / h * 2],
+      [0, 0, 1.0]
+    ])
+
+  @contextmanager
+  def _setup_environment(self):
+    original_vars = {
+      'SIMULATION': os.environ.get('SIMULATION'),
+      'SCALE': os.environ.get('SCALE'),
+      'HEADLESS': os.environ.get('HEADLESS'),
+    }
+    os.environ['SIMULATION'] = '1'
+    os.environ['SCALE'] = '2.0'
+    os.environ['HEADLESS'] = '1'
+
+    original_update_msgs = messaging.SubMaster.update_msgs
+    messaging.SubMaster.update_msgs = patched_update_msgs
+
+    try:
+      yield
+    finally:
+      for k, v in original_vars.items():
+        if v is not None:
+          os.environ[k] = v
+        else:
+          os.environ.pop(k, None)
+      messaging.SubMaster.update_msgs = original_update_msgs
+
+  def _get_ffmpeg_cmd(self):
+    duration = self.args['end'] - self.args['start']
+    bit_rate_kbps = int(round(self.args['target_mb'] * 8 * 1024 * 1024 / duration / 1000))
+    meta_text = get_meta_text(self.lr, self.args['route'])
+    box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
+    time_overlay = (
+      rf"drawtext=text='%{{eif\:floor(({self.args['start']}+t)/60)\:d\:2}}\:%{{eif\:mod({self.args['start']}+t,60)\:d\:2}}'" +
+      rf":fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
+    )
+    overlays = [
+      f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
+      time_overlay,
+    ]
+    if self.args['title']:
+      overlays.append(f"drawtext=text='{escape_ffmpeg_text(self.args['title'])}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
+    if self.args['speed'] > 1:
+      overlays += [f"setpts=PTS/{self.args['speed']}", "fps=60"]
+
+    return [
+      'ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{UI_WIDTH}x{UI_HEIGHT}',
+      '-r', str(FRAMERATE), '-i', 'pipe:0', '-c:v', 'libx264', '-maxrate', f'{bit_rate_kbps}k',
+      '-bufsize', f'{bit_rate_kbps*2}k', '-crf', '23', '-filter:v', ','.join(overlays),
+      '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+      '-f', 'mp4', '-t', str(duration), self.args['out'],
+    ]
+
+  def _get_draw_rect(self, transform):
+    scale_x, scale_y = UI_WIDTH * transform[0, 0], UI_HEIGHT * transform[1, 1]
+    x_offset, y_offset = (UI_WIDTH - scale_x) / 2 + transform[0, 2] * UI_WIDTH / 2, (UI_HEIGHT - scale_y) / 2 + transform[1, 2] * UI_HEIGHT / 2
+    if scale_x / UI_WIDTH > scale_y / UI_HEIGHT:
+      final_scale_y = scale_y * (UI_WIDTH * transform[0, 0]) / scale_x
+      final_x_offset, final_y_offset = x_offset, (UI_HEIGHT - final_scale_y) / 2
+    else:
+      final_scale_x = scale_x * (UI_HEIGHT * transform[1, 1]) / scale_y
+      final_x_offset, final_y_offset = (UI_WIDTH - final_scale_x) / 2, y_offset
+    return rl.Rectangle(final_x_offset, final_y_offset, scale_x, scale_y)
+
+  def _init_ui(self):
+    from openpilot.system.ui.lib.application import gui_app
+    rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
+    gui_app.init_window("Clip Renderer", fps=FRAMERATE)
+    gui_app._render_texture = rl.load_render_texture(UI_WIDTH, UI_HEIGHT)
+    rl.set_texture_filter(gui_app._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+
+    road_view = AugmentedRoadView()
+    road_view.set_rect(rl.Rectangle(0, 0, UI_WIDTH, UI_HEIGHT))
+    return road_view
+
+  def _load_and_prepare_msgs(self):
+    from openpilot.common.transformations.camera import DEVICE_CAMERAS
+    all_msgs = migrate_all([m for p in self.args['route'].log_paths() if p for m in LogReader(p)])
+    if not all_msgs:
+      raise RuntimeError("No messages found in logs")
+
+    services = {m.which() for m in all_msgs} | {'selfdriveState', 'radarState', 'longitudinalPlan'}
+    valid_services = [s for s in messaging.SERVICE_LIST if s in services]
+    ui_state.sm = messaging.SubMaster(valid_services)
+
+    start_mono_time = all_msgs[0].logMonoTime
+    start_filter_mono_time = start_mono_time + self.args['start'] * 1e9
+    end_filter_mono_time = start_mono_time + self.args['end'] * 1e9
+    messages_by_time = sorted(
+      [(m.logMonoTime, m) for m in all_msgs if start_filter_mono_time <= m.logMonoTime <= end_filter_mono_time],
+      key=lambda x: x[0],
+    )
+    camera_messages = [m for t, m in messages_by_time if m.which() == 'roadCameraState']
+    if not camera_messages:
+      raise RuntimeError(f"no roadCameraState messages found in time range {self.args['start']}-{self.args['end']}s")
+
+    first_cam_sensor = camera_messages[0].roadCameraState.sensor
+    camera = DEVICE_CAMERAS[(self.device_type, str(first_cam_sensor))]
+    intrinsic_matrix = camera.fcam.intrinsics
+
+    return all_msgs, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix
+
+  def _prime_state(self, all_msgs, start_mono_time):
+    prime_mono_time = start_mono_time + self.args['start'] * 1e9
+    prime_services = {'liveCalibration', 'modelV2', 'carParams', 'selfdriveState', 'radarState'}
+    prime_msgs = []
+    for s in prime_services:
+      m = next((m for m in reversed(all_msgs) if m.logMonoTime < prime_mono_time and m.which() == s), None)
+      if m:
+        prime_msgs.append(m)
+    if prime_msgs:
+      ui_state.sm.update_msgs(prime_mono_time / 1e9, prime_msgs)
+
+  def _render_frame(self, road_view, fr, camera_msg, intrinsic_matrix, frame_texture):
+    from openpilot.system.ui.lib.application import gui_app
+    frame_in_segment_idx = camera_msg.roadCameraState.frameId % (FRAMERATE * 60)
+    frame_np = fr.get(frame_in_segment_idx)
+    if frame_np is None:
+      return None
+
+    rl.update_texture(frame_texture, rl.ffi.cast("void *", frame_np.ctypes.data))
+
+    rl.begin_texture_mode(gui_app._render_texture)
+    rl.clear_background(rl.BLACK)
+
+    transform = self._get_camera_transform(ui_state.sm, intrinsic_matrix)
+    dst_rect = self._get_draw_rect(transform)
+    src_rect = rl.Rectangle(0, 0, self.camera_width, self.camera_height)
+    rl.draw_texture_pro(frame_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+
+    content_rect = rl.Rectangle(UI_BORDER_SIZE, UI_BORDER_SIZE, UI_WIDTH - 2 * UI_BORDER_SIZE, UI_HEIGHT - 2 * UI_BORDER_SIZE)
+    rl.begin_scissor_mode(int(content_rect.x), int(content_rect.y), int(content_rect.width), int(content_rect.height))
+    road_view._update_calibration()
+    road_view._content_rect = content_rect
+    road_view._calc_frame_matrix(content_rect)
+    road_view.model_renderer.render(road_view._content_rect)
+    road_view._hud_renderer.render(road_view._content_rect)
+    road_view.alert_renderer.render(road_view._content_rect)
+    road_view.driver_state_renderer.render(road_view._content_rect)
+    rl.end_scissor_mode()
+    road_view._draw_border(rl.Rectangle(0, 0, UI_WIDTH, UI_HEIGHT))
+    rl.end_texture_mode()
+
+    return extract_frame_from_texture(gui_app._render_texture, UI_WIDTH, UI_HEIGHT)
+
+  def _process_frames(self, road_view, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix):
+    ffmpeg_proc = Popen(self._get_ffmpeg_cmd(), stdin=PIPE, env=os.environ.copy())
+    current_segment, fr, msg_idx = -1, None, 0
+    ui_state.started = ui_state.ignition = True
+
+    # Create an image struct with the correct format and dimensions, but no data
+    image = rl.Image()
+    image.width = self.camera_width
+    image.height = self.camera_height
+    image.mipmaps = 1
+    image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8
+    image.data = rl.ffi.NULL
+
+    try:
+      # Create an empty texture from the image definition
+      frame_texture = rl.load_texture_from_image(image)
+
+      for camera_msg in camera_messages:
+        frame_mono_time = camera_msg.logMonoTime
+        messages_to_feed = []
+        while msg_idx < len(messages_by_time) and messages_by_time[msg_idx][0] <= frame_mono_time:
+          messages_to_feed.append(messages_by_time[msg_idx][1])
+          msg_idx += 1
+        if messages_to_feed:
+          ui_state.sm.update_msgs(frame_mono_time / 1e9, messages_to_feed)
+        ui_state._update_state()
+        ui_state._update_status()
+
+        elapsed_time = (frame_mono_time - start_mono_time) / 1e9
+        segment_num = int((elapsed_time - self.args['start']) // 60) + (self.args['start'] // 60)
+        if segment_num != current_segment:
+
+          current_segment = segment_num
+          if self.camera_paths[current_segment] is not None:
+            fr = FrameReader(self.camera_paths[current_segment], pix_fmt='rgb24')
+        if fr is None:
+          continue
+
+        frame_data = self._render_frame(road_view, fr, camera_msg, intrinsic_matrix, frame_texture)
+        if frame_data is not None:
+          try:
+            ffmpeg_proc.stdin.write(frame_data)
+            ffmpeg_proc.stdin.flush()
+          except (BrokenPipeError, ConnectionResetError):
+            break
+    finally:
+      rl.unload_image(image)
+      rl.unload_texture(frame_texture)
+
+      if ffmpeg_proc.stdin:
+        ffmpeg_proc.stdin.close()
+      ffmpeg_proc.wait()
+      if ffmpeg_proc.returncode not in (0, -15):  # -15 is SIGTERM
+        raise RuntimeError(f'ffmpeg failed with exit code {ffmpeg_proc.returncode}')
+
+  def clip(self):
+    logger.info(
+      f"clipping route {self.args['route'].name.canonical_name}, start={self.args['start']} end={self.args['end']} " +
+      f"quality={self.args['quality']} target_filesize={self.args['target_mb']}MB"
+    )
+    with OpenpilotPrefix(self.args['prefix'], shared_download_cache=True):
+      populate_car_params(self.lr)
+      with self._setup_environment():
+        try:
+          road_view = self._init_ui()
+          all_msgs, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix = self._load_and_prepare_msgs()
+          self._prime_state(all_msgs, start_mono_time)
+          self._process_frames(road_view, messages_by_time, camera_messages, start_mono_time, intrinsic_matrix)
+        finally:
+          if road_view:
+            road_view.close()
+          cleanup_shader_resources()
+      logger.info(f'recording complete: {Path(self.args["out"]).resolve()}')
+
 
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
   if args.demo:
     args.route = DEMO_ROUTE
     if args.start is None or args.end is None:
-      args.start = DEMO_START
-      args.end = DEMO_END
+      args.start, args.end = DEMO_START, DEMO_END
   elif args.route.count('/') == 1:
     if args.start is None or args.end is None:
       parser.error('must provide both start and end if timing is not in the route ID')
@@ -99,54 +388,19 @@ def parse_args(parser: ArgumentParser):
     if args.start is not None or args.end is not None:
       parser.error('don\'t provide timing when including it in the route ID')
     parts = args.route.split('/')
-    args.route = '/'.join(parts[:2])
-    args.start = int(parts[2])
-    args.end = int(parts[3])
+    args.route, args.start, args.end = '/'.join(parts[:2]), int(parts[2]), int(parts[3])
   if args.end <= args.start:
     parser.error(f'end ({args.end}) must be greater than start ({args.start})')
-  if args.start < SECONDS_TO_WARM:
-    parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
   try:
     args.route = Route(args.route, data_dir=args.data_dir)
   except Exception as e:
     parser.error(f'failed to get route: {e}')
 
-  # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
   length = round(args.route.max_seg_number * 60)
-  if args.start >= length:
-    parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
-  if args.end > length:
-    parser.error(f'end ({args.end}s) cannot be after end of route ({length}s)')
-
+  if args.start >= length or args.end > length:
+    parser.error(f'start/end ({args.start}/{args.end}) out of range for route length ({length}s)')
   return args
-
-
-def populate_car_params(lr: LogReader):
-  init_data = lr.first('initData')
-  assert init_data is not None
-
-  params = Params()
-  entries = init_data.params.entries
-  for cp in entries:
-    key, value = cp.key, cp.value
-    try:
-      params.put(key, params.cpp2python(key, value))
-    except UnknownKeyName:
-      # forks of openpilot may have other Params keys configured. ignore these
-      logger.warning(f"unknown Params key '{key}', skipping")
-  logger.debug('persisted CarParams')
-
-
-def validate_env(parser: ArgumentParser):
-  if platform.system() not in ['Linux']:
-    parser.exit(1, f'clip.py: error: {platform.system()} is not a supported operating system\n')
-  for proc in ['Xvfb', 'ffmpeg']:
-    if shutil.which(proc) is None:
-      parser.exit(1, f'clip.py: error: missing {proc} command, is it installed?\n')
-  for proc in [REPLAY, UI]:
-    if shutil.which(proc) is None:
-      parser.exit(1, f'clip.py: error: missing {proc} command, did you build openpilot yet?\n')
 
 
 def validate_output_file(output_file: str):
@@ -167,109 +421,11 @@ def validate_title(title: str):
   return title
 
 
-def wait_for_frames(procs: list[Popen]):
-  sm = SubMaster(['uiDebug'])
-  no_frames_drawn = True
-  while no_frames_drawn:
-    sm.update()
-    no_frames_drawn = sm['uiDebug'].drawTimeMillis == 0.
-    check_for_failure(procs)
-
-
-def clip(
-  data_dir: str | None,
-  quality: Literal['low', 'high'],
-  prefix: str,
-  route: Route,
-  out: str,
-  start: int,
-  end: int,
-  speed: int,
-  target_mb: int,
-  title: str | None,
-):
-  logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
-  lr = get_logreader(route)
-
-  begin_at = max(start - SECONDS_TO_WARM, 0)
-  duration = end - start
-  bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
-
-  # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
-  display = f':{randint(99, 999)}'
-
-  box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
-  meta_text = get_meta_text(lr, route)
-  overlays = [
-    # metadata overlay
-    f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
-    # route time overlay
-    f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
-  ]
-  if title:
-    overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
-
-  if speed > 1:
-    overlays += [
-      f"setpts=PTS/{speed}",
-      "fps=60",
-    ]
-
-  ffmpeg_cmd = [
-    'ffmpeg', '-y',
-    '-video_size', RESOLUTION,
-    '-framerate', str(FRAMERATE),
-    '-f', 'x11grab',
-    '-rtbufsize', '100M',
-    '-draw_mouse', '0',
-    '-i', display,
-    '-c:v', 'libx264',
-    '-maxrate', f'{bit_rate_kbps}k',
-    '-bufsize', f'{bit_rate_kbps*2}k',
-    '-crf', '23',
-    '-filter:v', ','.join(overlays),
-    '-preset', 'ultrafast',
-    '-tune', 'zerolatency',
-    '-pix_fmt', 'yuv420p',
-    '-movflags', '+faststart',
-    '-f', 'mp4',
-    '-t', str(duration),
-    out,
-  ]
-
-  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
-  if data_dir:
-    replay_cmd.extend(['--data_dir', data_dir])
-  if quality == 'low':
-    replay_cmd.append('--qcam')
-  replay_cmd.append(route.name.canonical_name)
-
-  ui_cmd = [UI, '-platform', 'xcb']
-  xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
-
-  with OpenpilotPrefix(prefix, shared_download_cache=True):
-    populate_car_params(lr)
-    env = os.environ.copy()
-    env['DISPLAY'] = display
-
-    with managed_proc(xvfb_cmd, env) as xvfb_proc, managed_proc(ui_cmd, env) as ui_proc, managed_proc(replay_cmd, env) as replay_proc:
-      procs = [xvfb_proc, ui_proc, replay_proc]
-      logger.info('waiting for replay to begin (loading segments, may take a while)...')
-      wait_for_frames(procs)
-      logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
-      time.sleep(SECONDS_TO_WARM)
-      check_for_failure(procs)
-      with managed_proc(ffmpeg_cmd, env) as ffmpeg_proc:
-        procs.append(ffmpeg_proc)
-        logger.info(f'recording in progress ({duration}s)...')
-        ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
-        check_for_failure(procs)
-        logger.info(f'recording complete: {Path(out).resolve()}')
-
-
 def main():
   p = ArgumentParser(prog='clip.py', description='clip your openpilot route.', epilog='comma.ai')
-  validate_env(p)
+  if shutil.which('ffmpeg') is None:
+    p.exit(1, 'clip.py: error: missing ffmpeg command, is it installed?\n')
+
   route_group = p.add_mutually_exclusive_group(required=True)
   route_group.add_argument('route', nargs='?', type=validate_route, help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
   route_group.add_argument('--demo', help='use the demo route', action='store_true')
@@ -281,28 +437,18 @@ def main():
   p.add_argument('-q', '--quality', help='quality of camera (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-x', '--speed', help='record the clip at this speed multiple', type=int, default=1)
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
-  p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
+  p.add_argument('-t', '--title', help='overlay this title on the video', type=validate_title)
   args = parse_args(p)
-  exit_code = 1
+
   try:
-    clip(
-      data_dir=args.data_dir,
-      quality=args.quality,
-      prefix=args.prefix,
-      route=args.route,
-      out=args.output,
-      start=args.start,
-      end=args.end,
-      speed=args.speed,
-      target_mb=args.file_size,
-      title=args.title,
-    )
-    exit_code = 0
-  except KeyboardInterrupt as e:
-    logger.exception('interrupted by user', exc_info=e)
-  except Exception as e:
+    ClipGenerator(
+      data_dir=args.data_dir, quality=args.quality, prefix=args.prefix, route=args.route,
+      out=args.output, start=args.start, end=args.end, speed=args.speed,
+      target_mb=args.file_size, title=args.title,
+    ).clip()
+  except (KeyboardInterrupt, Exception) as e:
     logger.exception('encountered error', exc_info=e)
-  sys.exit(exit_code)
+    sys.exit(1)
 
 
 if __name__ == '__main__':
