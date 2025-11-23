@@ -340,10 +340,10 @@ class AlertRenderer(Widget):
     if can_draw_second_line and alert_text2:
       last_line_h = self._alert_text1_label.rect.y + self._alert_text1_label.get_content_height(int(alert_layout.text_rect.width))
       last_line_h -= 4
-      if len(alert_text2) > 18:
-        small_font_size = 36
-      elif len(alert_text2) > 24:
+      if len(alert_text2) > 24:
         small_font_size = 32
+      elif len(alert_text2) > 18:
+        small_font_size = 36
       else:
         small_font_size = 40
       text_rect2 = rl.Rectangle(
