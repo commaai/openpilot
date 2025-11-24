@@ -344,7 +344,7 @@ class ModelRenderer(Widget):
       blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, blend_factor)
       gradient = Gradient(
         start=(0.0, 1.0),  # Bottom of path
-        end=(0.0, 0.0),  # Top of path
+        end=(1.0, 0.0),  # Top of path
         colors=blended_colors,
         stops=[0.0, 0.5, 1.0],
       )
