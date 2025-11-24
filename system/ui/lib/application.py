@@ -200,7 +200,7 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._trace_log_callback = None
-    self._stack_manager = StackManager(rl.Rectangle(0, 0, width, height))
+    self._stack_manager = StackManager(rl.Rectangle(0, 0, self._scaled_width, self._scaled_height))
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
