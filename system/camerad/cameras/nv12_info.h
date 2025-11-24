@@ -12,6 +12,6 @@ inline std::tuple<uint32_t, uint32_t, uint32_t> get_nv12_info(int width, int hei
   const uint32_t nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, height);
   assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, width));
   assert(nv12_height / 2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, height));
-  const uint32_t nv12_buffer_size = 2346 * nv12_width;  // Matches camera driver sizeimage
+  const uint32_t nv12_buffer_size = (width <= 1344 ? 2900 : 2346)*nv12_width;
   return {nv12_width, nv12_height, nv12_buffer_size};
 }
