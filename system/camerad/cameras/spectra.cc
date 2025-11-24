@@ -283,20 +283,13 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   buf.out_img_width = sensor->frame_width / sensor->out_scale;
   buf.out_img_height = (sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height) / sensor->out_scale;
+  auto [stride, y_height, yuv_size] = get_nv12_info(buf.out_img_width, buf.out_img_height);
 
-  // size is driven by all the HW that handles frames,
-  // the video encoder has certain alignment requirements in this case
-  stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, buf.out_img_width);
-  y_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, buf.out_img_height);
-  uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, buf.out_img_height);
-  uv_offset = stride*y_height;
-  yuv_size = uv_offset + stride*uv_height;
+  uv_offset = stride * y_height;
   if (cc.output_type != ISP_RAW_OUTPUT) {
     uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
     yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
   }
-  assert(stride == VENUS_UV_STRIDE(COLOR_FMT_NV12, buf.out_img_width));
-  assert(y_height/2 == uv_height);
 
   open = true;
   configISP();

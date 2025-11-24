@@ -7,17 +7,10 @@
 
 #include "third_party/linux/include/msm_media_info.h"
 #include "tools/replay/util.h"
+#include "system/camerad/cameras/nv12_info.h"
+
 
 const int BUFFER_COUNT = 40;
-
-std::tuple<size_t, size_t, size_t> get_nv12_info(int width, int height) {
-  int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, width);
-  int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, height);
-  assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, width));
-  assert(nv12_height / 2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, height));
-  size_t nv12_buffer_size = 2346 * nv12_width;  // comes from v4l2_format.fmt.pix_mp.plane_fmt[0].sizeimage
-  return {nv12_width, nv12_height, nv12_buffer_size};
-}
 
 CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS]) {
   for (int i = 0; i < MAX_CAMERAS; ++i) {
