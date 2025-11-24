@@ -291,6 +291,8 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
     yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
   }
 
+  size_t nv12_size = (buf.out_img_width <= 1344 ? 2900 : 2346)*stride;
+
   open = true;
   configISP();
   if (cc.output_type == ISP_BPS_PROCESSED) configICP();
