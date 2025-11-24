@@ -283,10 +283,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   buf.out_img_width = sensor->frame_width / sensor->out_scale;
   buf.out_img_height = (sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height) / sensor->out_scale;
-  auto [nv12_stride, nv12_y_height, nv12_yuv_size] = get_nv12_info(buf.out_img_width, buf.out_img_height);
-  stride = nv12_stride;
-  y_height = nv12_y_height;
-  yuv_size = nv12_yuv_size;
+  auto [stride, y_height, yuv_size] = get_nv12_info(buf.out_img_width, buf.out_img_height);
 
   uv_offset = stride * y_height;
   if (cc.output_type != ISP_RAW_OUTPUT) {
