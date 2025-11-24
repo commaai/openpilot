@@ -284,12 +284,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   buf.out_img_width = sensor->frame_width / sensor->out_scale;
   buf.out_img_height = (sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height) / sensor->out_scale;
   std::tie(stride, y_height, yuv_size) = get_nv12_info(buf.out_img_width, buf.out_img_height);
-
   uv_offset = stride * y_height;
-  //if (cc.output_type != ISP_RAW_OUTPUT) {
-  //  uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
-  //  yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
-  //}
 
   // the encoder HW tells us the size it wants after setting it up.
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
