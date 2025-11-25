@@ -7,6 +7,7 @@ if USBGPU:
   os.environ['DEV'] = 'AMD'
   os.environ['AMD_IFACE'] = 'USB'
 from tinygrad.tensor import Tensor
+from tinygrad.device import Device
 import time
 import pickle
 import numpy as np
@@ -171,6 +172,7 @@ class ModelState:
     self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),
                            'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),}
     self.full_frames = {}
+    self.full_frames_np = {}
     self.transforms_np = {k: np.zeros((3,3), dtype=np.float32) for k in self.img_queues}
     self.transforms = {k: Tensor(v, device='NPY').realize() for k, v in self.transforms_np.items()}
     self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
@@ -206,11 +208,14 @@ class ModelState:
       for key in bufs.keys():
         w, h = bufs[key].width, bufs[key].height
         self.frame_buf_params[key] = get_nv12_info(w, h)
+        self.full_frames_np[key] = np.zeros((self.frame_buf_params[key][0],), dtype=np.uint8)
+        self.full_frames[key] = Tensor(self.full_frames_np[key], device='NPY').realize()
       self.frame_init = True
 
 
     for key in bufs.keys():
-      self.full_frames[key] = Tensor.from_blob(bufs[key].data.data, (self.frame_buf_params[key][0],), dtype='uint8', device='NPY')
+      self.full_frames_np[key][:] = bufs[key].data[:]
+      #self.full_frames[key] = Tensor.from_blob(bufs[key].data.ctypes.data, (self.frame_buf_params[key][0],), dtype='uint8')
     t1 = time.perf_counter()
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
