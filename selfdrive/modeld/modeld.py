@@ -215,6 +215,7 @@ class ModelState:
 
     for key in bufs.keys():
       self.full_frames_np[key][:] = bufs[key].data[:]
+      self.full_frames[key] = Tensor(self.full_frames_np[key]).realize()
       #self.full_frames[key] = Tensor.from_blob(bufs[key].data.ctypes.data, (self.frame_buf_params[key][0],), dtype='uint8')
     t1 = time.perf_counter()
     for key in bufs.keys():

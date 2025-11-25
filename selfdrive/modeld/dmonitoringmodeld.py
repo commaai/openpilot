@@ -16,7 +16,7 @@ from msgq.visionipc.visionipc_pyx import CLContext
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
-from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
+from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye, get_nv12_info
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
@@ -39,12 +39,9 @@ class ModelState:
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
     }
 
-    self.warp_inputs_np = {'frame': np.zeros((1208*3//2, 1928), dtype=np.uint8),
-                           'transform': np.zeros((3,3), dtype=np.float32)}
+    self.warp_inputs_np = {'transform': np.zeros((3,3), dtype=np.float32)}
     self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
     self.frame_buf_params = None
-
-
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     with open(MODEL_PKL_PATH, "rb") as f:
       self.model_run = pickle.load(f)
@@ -59,8 +56,7 @@ class ModelState:
 
     if self.frame_buf_params is None:
       self.frame_buf_params = get_nv12_info(buf.width, buf.height)
-
-    self.warp_inputs['frame'] = Tensor.from_blob(buf.data.data, (self.frame_buf_params[0],), dtype='uint8', device='NPY')
+    self.warp_inputs['frame'] = Tensor(buf.data).realize()
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self.warp_inputs['frame'], self.warp_inputs['transform']).realize()
 
