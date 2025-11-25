@@ -24,7 +24,7 @@ UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
 
 
-def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape):
+def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, ratio):
   w_dst, h_dst = dst_shape
   h_src, w_src = src_shape
 
@@ -38,7 +38,7 @@ def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape):
 
   x_nn_clipped = Tensor.round(src_coords[0]).clip(0, w_src - 1).cast('int')
   y_nn_clipped = Tensor.round(src_coords[1]).clip(0, h_src - 1).cast('int')
-  idx = (y_nn_clipped * w_src + x_nn_clipped)
+  idx = y_nn_clipped * w_src + (y_nn_clipped * ratio).cast('int') * stride_pad + x_nn_clipped
 
   sampled = src_flat[idx]
   return sampled
@@ -63,9 +63,9 @@ def frame_prepare_tinygrad(input_frame, M_inv):
   tg_scale = Tensor(UV_SCALE_MATRIX)
   M_inv_uv = tg_scale @ M_inv @ Tensor(UV_SCALE_MATRIX_INV)
   with Context(SPLIT_REDUCEOP=0):
-    y = warp_perspective_tinygrad(yuv_reshape[:H*W], M_inv, (MODEL_WIDTH, MODEL_HEIGHT), (H, W)).realize()
-    u = warp_perspective_tinygrad(yuv_reshape[H*W:H*W+H*W//4], M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2)).realize()
-    v = warp_perspective_tinygrad(yuv_reshape[H*W+H*W//4:H*W+H*W//2], M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2)).realize()
+    y = warp_perspective_tinygrad(input_frame.flatten()[:H*STRIDE], M_inv, (MODEL_WIDTH, MODEL_HEIGHT), (H, W), STRIDE - W, 1).realize()
+    u = warp_perspective_tinygrad(input_frame.flatten()[UV_OFFSET:UV_OFFSET + (H//4)*STRIDE], M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2), STRIDE - W, 0.5).realize()
+    v = warp_perspective_tinygrad(input_frame.flatten()[UV_OFFSET + (H//4)*STRIDE:UV_OFFSET + (H//2)*STRIDE], M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2), STRIDE - W, 0.5).realize()
   yuv = y.cat(u).cat(v).reshape((MODEL_HEIGHT*3//2,MODEL_WIDTH))
   tensor = frames_to_tensor(yuv)
   return tensor
@@ -83,12 +83,10 @@ def update_both_imgs_tinygrad(calib_img_buffer, new_img, M_inv,
   calib_big_img_buffer, calib_big_img_pair = update_img_input_tinygrad(calib_big_img_buffer, new_big_img, M_inv_big)
   return calib_img_buffer, calib_img_pair, calib_big_img_buffer, calib_big_img_pair
 
-def warp_perspective_numpy(src, M_inv, dst_shape, src_shape):
+def warp_perspective_numpy(src, M_inv, dst_shape, src_shape, stride_pad, ratio):
     w_dst, h_dst = dst_shape
     h_src, w_src = src_shape
     xs, ys = np.meshgrid(np.arange(w_dst), np.arange(h_dst))
-    dst_x = xs.reshape(-1)
-    dst_y = ys.reshape(-1)
 
     ones = np.ones_like(xs)
     dst_hom = np.stack([xs, ys, ones], axis=0).reshape(3, -1)
@@ -98,7 +96,7 @@ def warp_perspective_numpy(src, M_inv, dst_shape, src_shape):
 
     src_x = np.clip(np.round(src_hom[0, :]).astype(int), 0, w_src - 1)
     src_y = np.clip(np.round(src_hom[1, :]).astype(int), 0, h_src - 1)
-    idx = src_y * w_src + src_x
+    idx = src_y * w_src + (src_y * ratio).astype(np.int32) * stride_pad + src_x
     return src[idx]
 
 
@@ -115,19 +113,13 @@ def frames_to_tensor_np(frames):
            .reshape((6, H//2, W//2))
 
 def frame_prepare_np(input_frame, M_inv):
-  input_frame = input_frame.reshape(-1, STRIDE)
-  yuv_reshape = np.zeros((H*3//2, W), dtype=np.uint8)
-  yuv_reshape[:H, :W] = input_frame[:H, :W]
-  yuv_reshape[H:, :W] = input_frame[UV_OFFSET//STRIDE:UV_OFFSET//STRIDE + H//2, :W]
-  yuv_reshape = yuv_reshape.flatten()
-
   M_inv_uv = UV_SCALE_MATRIX @ M_inv @ UV_SCALE_MATRIX_INV
-  y  = warp_perspective_numpy(yuv_reshape[:H*W],
-                                 M_inv, (MODEL_WIDTH, MODEL_HEIGHT), (H, W))
-  u  = warp_perspective_numpy(yuv_reshape[H*W:H*W+H*W//4],
-                                 M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2))
-  v  = warp_perspective_numpy(yuv_reshape[H*W+H*W//4:H*W+H*W//2],
-                                 M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2))
+  y  = warp_perspective_numpy(input_frame[:H*STRIDE],
+                                 M_inv, (MODEL_WIDTH, MODEL_HEIGHT), (H, W), STRIDE - W, 1)
+  u  = warp_perspective_numpy(input_frame[UV_OFFSET:UV_OFFSET + (H//4)*STRIDE],
+                                 M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2), STRIDE - W, 0.5)
+  v  = warp_perspective_numpy(input_frame[UV_OFFSET + (H//4)*STRIDE:UV_OFFSET + (H//2)*STRIDE],
+                                 M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2), STRIDE - W, 0.5)
   yuv = np.concatenate([y, u, v]).reshape( MODEL_HEIGHT*3//2, MODEL_WIDTH)
   return frames_to_tensor_np(yuv)
 
@@ -193,14 +185,9 @@ def run_and_save_pickle():
 
 
   def warp_dm(input_frame, M_inv):
-    input_frame = input_frame.reshape(-1, STRIDE).to(Device.DEFAULT)
-    yuv_reshape = Tensor.zeros((H*3//2, W), dtype='uint8').contiguous()
-    yuv_reshape[:H, :W] = input_frame[:H, :W]
-    yuv_reshape[H:, :W] = input_frame[UV_OFFSET//STRIDE:UV_OFFSET//STRIDE + H//2, :W]
-    yuv_reshape = yuv_reshape.flatten()
-
+    input_frame = input_frame.to(Device.DEFAULT)
     M_inv = M_inv.to(Device.DEFAULT)
-    return warp_perspective_tinygrad(yuv_reshape[: H*W], M_inv, (1440, 960), (H, W)).reshape(-1,960*1440)
+    return warp_perspective_tinygrad(input_frame[:H*STRIDE], M_inv, (1440, 960), (H, W), STRIDE - W, 1).reshape(-1,960*1440)
   warp_dm_jit = TinyJit(warp_dm, prune=True)
   step_times = []
   for _ in range(10):
