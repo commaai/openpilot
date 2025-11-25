@@ -6,7 +6,7 @@ from pathlib import Path
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import Context
 from tinygrad.device import Device
-from common.transformations.camera import get_nv12_info
+from openpilot.common.transformations.camera import get_nv12_info
 
 
 WARP_PKL_PATH = Path(__file__).parent / 'models/warp_tinygrad.pkl'
