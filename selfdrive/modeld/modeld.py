@@ -217,6 +217,8 @@ class ModelState:
       #self.full_frames_np[key][:] = bufs[key].data[:]
       #self.full_frames[key] = Tensor(self.full_frames_np[key]).realize()
       self.full_frames[key] = Tensor.from_blob(bufs[key].data.ctypes.data, (self.frame_buf_params[key][0],), dtype='uint8').contiguous().realize()
+      print(bufs[key].data[:10])
+      print(self.full_frames[key].numpy()[:10])
     t1 = time.perf_counter()
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
@@ -234,11 +236,11 @@ class ModelState:
 
     self.vision_output = self.vision_run(**vision_inputs).contiguous().realize().uop.base.buffer.numpy()
     t5 = time.perf_counter()
-    #print(f'img read took {1000*(t1-t0):.2f}ms')
-    #print(f'img sync took {1000*(t2-t1):.2f}ms')
-    #print(f'img warp took {1000*(t3-t2):.2f}ms')
-    #print(f'input prep took {1000*(t4-t3):.2f}ms')
-    #print(f'model run took {1000*(t5-t4):.2f}ms')
+    print(f'img read took {1000*(t1-t0):.2f}ms')
+    print(f'img sync took {1000*(t2-t1):.2f}ms')
+    print(f'img warp took {1000*(t3-t2):.2f}ms')
+    print(f'input prep took {1000*(t4-t3):.2f}ms')
+    print(f'model run took {1000*(t5-t4):.2f}ms')
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
     self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'], 'desire_pulse': new_desire})
