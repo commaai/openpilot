@@ -1,7 +1,7 @@
 import capnp
 import hypothesis.strategies as st
 from typing import Any
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from functools import cache
 
 from cereal import log
@@ -10,44 +10,73 @@ DrawType = Callable[[st.SearchStrategy], Any]
 
 
 class FuzzyGenerator:
-  def __init__(self, draw: DrawType, real_floats: bool):
-    self.draw = draw
+  _STRUCT_STRATEGY_CACHE: dict[tuple[int, bool, str | None], st.SearchStrategy] = {}
+  _LIST_MAX_SIZE = 6
+
+  def __init__(self, real_floats: bool):
+    self.real_floats = real_floats
     self.native_type_map = FuzzyGenerator._get_native_type_map(real_floats)
 
   def generate_native_type(self, field: str) -> st.SearchStrategy[bool | int | float | str | bytes]:
     value_func = self.native_type_map.get(field)
     if value_func is not None:
       return value_func
-    else:
-      raise NotImplementedError(f'Invalid type: {field}')
+    raise NotImplementedError(f'Invalid type: {field}')
 
   def generate_field(self, field: capnp.lib.capnp._StructSchemaField) -> st.SearchStrategy:
     def rec(field_type: capnp.lib.capnp._DynamicStructReader) -> st.SearchStrategy:
       type_which = field_type.which()
       if type_which == 'struct':
-        return self.generate_struct(field.schema.elementType if base_type == 'list' else field.schema)
-      elif type_which == 'list':
-        return st.lists(rec(field_type.list.elementType))
-      elif type_which == 'enum':
+        schema = field.schema.elementType if base_type == 'list' else field.schema
+        return self.generate_struct(schema)
+      if type_which == 'list':
+        return st.lists(rec(field_type.list.elementType), max_size=self._LIST_MAX_SIZE)
+      if type_which == 'enum':
         schema = field.schema.elementType if base_type == 'list' else field.schema
         return st.sampled_from(list(schema.enumerants.keys()))
-      else:
-        return self.generate_native_type(type_which)
+      return self.generate_native_type(type_which)
 
     try:
       if hasattr(field.proto, 'slot'):
-        slot_type =  field.proto.slot.type
+        slot_type = field.proto.slot.type
         base_type = slot_type.which()
         return rec(slot_type)
-      else:
-        return self.generate_struct(field.schema)
+      return self.generate_struct(field.schema)
     except capnp.lib.capnp.KjException:
       return self.generate_struct(field.schema)
 
   def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: str = None) -> st.SearchStrategy[dict[str, Any]]:
-    single_fill: tuple[str, ...] = (event,) if event else (self.draw(st.sampled_from(schema.union_fields)),) if schema.union_fields else ()
-    fields_to_generate = schema.non_union_fields + single_fill
-    return st.fixed_dictionaries({field: self.generate_field(schema.fields[field]) for field in fields_to_generate if not field.endswith('DEPRECATED')})
+    key = (schema.node.id, self.real_floats, event)
+    cached = self._STRUCT_STRATEGY_CACHE.get(key)
+    if cached is not None:
+      return cached
+
+    def _valid_fields(fields: Iterable[str]) -> list[str]:
+      return [field_name for field_name in fields if not field_name.endswith('DEPRECATED')]
+
+    non_union_fields = _valid_fields(schema.non_union_fields)
+    base_fields = {field_name: self.generate_field(schema.fields[field_name]) for field_name in non_union_fields}
+    base_strategy = st.fixed_dictionaries(base_fields)
+
+    if event is not None:
+      union_strategy = self.generate_field(schema.fields[event])
+      combined = st.builds(lambda base, union_value: {**base, event: union_value}, base_strategy, union_strategy)
+      self._STRUCT_STRATEGY_CACHE[key] = combined
+      return combined
+
+    union_fields = _valid_fields(schema.union_fields) if schema.union_fields else []
+    if union_fields:
+      union_field_strategies = [
+        st.builds(lambda value, name=name: (name, value), self.generate_field(schema.fields[name]))
+        for name in union_fields
+      ]
+      union_choice = st.one_of(union_field_strategies)
+      combined = st.builds(lambda base, union: {**base, union[0]: union[1]}, base_strategy, union_choice)
+      self._STRUCT_STRATEGY_CACHE[key] = combined
+      return combined
+
+    self._STRUCT_STRATEGY_CACHE[key] = base_strategy
+    return base_strategy
 
   @staticmethod
   @cache
@@ -66,16 +95,16 @@ class FuzzyGenerator:
       'float64': st.floats(width=64, allow_nan=not real_floats, allow_infinity=not real_floats),
       'text': st.text(max_size=1000),
       'data': st.binary(max_size=1000),
-      'anyPointer': st.text(),  # Note: No need to define a separate function for anyPointer
+      'anyPointer': st.text(),
     }
 
   @classmethod
   def get_random_msg(cls, draw: DrawType, struct: capnp.lib.capnp._StructModule, real_floats: bool = False) -> dict[str, Any]:
-    fg = cls(draw, real_floats=real_floats)
+    fg = cls(real_floats=real_floats)
     data: dict[str, Any] = draw(fg.generate_struct(struct.schema))
     return data
 
   @classmethod
   def get_random_event_msg(cls, draw: DrawType, events: list[str], real_floats: bool = False) -> list[dict[str, Any]]:
-    fg = cls(draw, real_floats=real_floats)
+    fg = cls(real_floats=real_floats)
     return [draw(fg.generate_struct(log.Event.schema, e)) for e in sorted(events)]
