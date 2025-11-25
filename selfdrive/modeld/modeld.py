@@ -21,7 +21,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process, DT_MDL
-from openpilot.common.transformations.camera import DEVICE_CAMERAS
+from openpilot.common.transformations.camera import DEVICE_CAMERAS, get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, smooth_value, get_curvature_from_plan
@@ -170,15 +170,15 @@ class ModelState:
     # img buffers are managed in openCL transform code
     self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),
                            'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),}
-    self.full_frames_np = {'img': np.zeros((1208*3//2, 1928), dtype=np.uint8),
-                        'big_img': np.zeros((1208*3//2, 1928), dtype=np.uint8),}
-    self.full_frames = {k: Tensor(v, device='NPY').realize() for k,v in self.full_frames_np.items()}
+    self.full_frames = {}
     self.transforms_np = {k: np.zeros((3,3), dtype=np.float32) for k in self.img_queues}
     self.transforms = {k: Tensor(v, device='NPY').realize() for k, v in self.transforms_np.items()}
     self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
     self.policy_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
     self.parser = Parser()
+    self.frame_init = False
+    self.frame_buf_params = {}
 
     with open(VISION_PKL_PATH, "rb") as f:
       self.vision_run = pickle.load(f)
@@ -202,10 +202,15 @@ class ModelState:
     import time
     new_frames = {}
     t0 = time.perf_counter()
+    if not self.frame_init:
+      for key in bufs.keys():
+        w, h = bufs[key].width, bufs[key].height
+        self.frame_buf_params[key] = get_nv12_info(w, h)
+      self.frame_init = True
+
+
     for key in bufs.keys():
-      new_frames[key] = bufs[key].data.reshape((-1,bufs[key].stride))
-      self.full_frames_np[key][:bufs[key].height] = new_frames[key][:bufs[key].height, :bufs[key].width]
-      self.full_frames_np[key][bufs[key].height:] = new_frames[key][bufs[key].uv_offset//bufs[key].stride:bufs[key].uv_offset//bufs[key].stride + bufs[key].height//2, :bufs[key].width]
+      self.full_frames[key] = Tensor.from_blob(bufs[key].data.data, (self.frame_buf_params[key][0],), dtype='uint8', device='NPY')
     t1 = time.perf_counter()
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]

@@ -24,6 +24,7 @@ from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
+from openpilot.common.transformations.camera import get_nv12_info
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
@@ -35,21 +36,6 @@ from openpilot.tools.lib.framereader import FrameReader
 NUMPY_TOLERANCE = 1e-2
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
-
-
-def get_nv12_info(width: int, height: int) -> tuple[int, int, int]:
-  if width == 1928 and height == 1208:
-    STRIDE = 2048
-    UV_OFFSET = 1216 * STRIDE
-    YUV_SIZE = 2346 * STRIDE
-    return YUV_SIZE, STRIDE, UV_OFFSET
-  elif width == 1344 and height == 760:
-    STRIDE = 1408
-    UV_OFFSET = 760 * STRIDE
-    YUV_SIZE = 2900 * STRIDE
-    return YUV_SIZE, STRIDE, UV_OFFSET
-  else:
-    raise NotImplementedError(f"Unsupported resolution for vipc: {width}x{height}")
 
 
 class LauncherWithCapture:

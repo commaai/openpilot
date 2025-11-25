@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from common.transformations.camera import get_nv12_info
 from openpilot.system.hardware import TICI
 os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
 from tinygrad.tensor import Tensor
@@ -41,6 +42,7 @@ class ModelState:
     self.warp_inputs_np = {'frame': np.zeros((1208*3//2, 1928), dtype=np.uint8),
                            'transform': np.zeros((3,3), dtype=np.float32)}
     self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
+    self.frame_buf_params = None
 
 
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
@@ -55,8 +57,10 @@ class ModelState:
 
     t1 = time.perf_counter()
 
-    new_frame = buf.data.reshape((-1,buf.stride))
-    self.warp_inputs_np['frame'][:,:] = new_frame[:(buf.height * 3)//2, :buf.width]
+    if self.frame_buf_params is None:
+      self.frame_buf_params = get_nv12_info(buf.width, buf.height)
+
+    self.warp_inputs['frame'] = Tensor.from_blob(buf.data.data, (self.frame_buf_params[0],), dtype='uint8', device='NPY')
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self.warp_inputs['frame'], self.warp_inputs['transform']).realize()
 
