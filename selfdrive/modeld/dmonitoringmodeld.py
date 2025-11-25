@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-from common.transformations.camera import get_nv12_info
 from openpilot.system.hardware import TICI
 os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
 from tinygrad.tensor import Tensor
@@ -8,7 +7,6 @@ import time
 import pickle
 import numpy as np
 from pathlib import Path
-from tinygrad.device import Device
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster

@@ -7,7 +7,6 @@ if USBGPU:
   os.environ['DEV'] = 'AMD'
   os.environ['AMD_IFACE'] = 'USB'
 from tinygrad.tensor import Tensor
-from tinygrad.device import Device
 import time
 import pickle
 import numpy as np

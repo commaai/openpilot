@@ -58,9 +58,15 @@ def frame_prepare_tinygrad(input_frame, M_inv):
   tg_scale = Tensor(UV_SCALE_MATRIX)
   M_inv_uv = tg_scale @ M_inv @ Tensor(UV_SCALE_MATRIX_INV)
   with Context(SPLIT_REDUCEOP=0):
-    y = warp_perspective_tinygrad(input_frame[:H*STRIDE], M_inv, (MODEL_WIDTH, MODEL_HEIGHT), (H, W), STRIDE - W, 1).realize()
-    u = warp_perspective_tinygrad(input_frame[UV_OFFSET:UV_OFFSET + (H//4)*STRIDE], M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2), STRIDE - W, 0.5).realize()
-    v = warp_perspective_tinygrad(input_frame[UV_OFFSET + (H//4)*STRIDE:UV_OFFSET + (H//2)*STRIDE], M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2), (H//2, W//2), STRIDE - W, 0.5).realize()
+    y = warp_perspective_tinygrad(input_frame[:H*STRIDE],
+                                  M_inv, (MODEL_WIDTH, MODEL_HEIGHT),
+                                  (H, W), STRIDE - W, 1).realize()
+    u = warp_perspective_tinygrad(input_frame[UV_OFFSET:UV_OFFSET + (H//4)*STRIDE],
+                                  M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2),
+                                  (H//2, W//2), STRIDE - W, 0.5).realize()
+    v = warp_perspective_tinygrad(input_frame[UV_OFFSET + (H//4)*STRIDE:UV_OFFSET + (H//2)*STRIDE],
+                                  M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2),
+                                  (H//2, W//2), STRIDE - W, 0.5).realize()
   yuv = y.cat(u).cat(v).reshape((MODEL_HEIGHT*3//2,MODEL_WIDTH))
   tensor = frames_to_tensor(yuv)
   return tensor
@@ -166,12 +172,12 @@ def run_and_save_pickle():
     full_buffer_np = out_np[0]
     big_full_buffer_np = out_np[2]
 
-    for a, b in zip(out_np, (x.numpy() for x in out), strict=True):
-      mismatch = np.abs(a - b) > 0
-      mismatch_percent = sum(mismatch.flatten()) / len(mismatch.flatten()) * 100
-      mismatch_percent_tol = 1e-2
-      # REACTIVATE
-      #assert mismatch_percent < mismatch_percent_tol, f"input mismatch percent {mismatch_percent} exceeds tolerance {mismatch_percent_tol}"
+    # TODO REACTIVATE  
+    #for a, b in zip(out_np, (x.numpy() for x in out), strict=True):
+    #  mismatch = np.abs(a - b) > 0
+    #  mismatch_percent = sum(mismatch.flatten()) / len(mismatch.flatten()) * 100
+    #  mismatch_percent_tol = 1e-2
+    #  assert mismatch_percent < mismatch_percent_tol, f"input mismatch percent {mismatch_percent} exceeds tolerance {mismatch_percent_tol}"
 
   with open(WARP_PKL_PATH, "wb") as f:
     pickle.dump(update_img_jit, f)
