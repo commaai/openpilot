@@ -18,30 +18,14 @@ DO_JELLO = False
 SCROLL_BAR = False
 
 
-class LineSeparator(Widget):
-  def __init__(self, height: int = 1):
-    super().__init__()
-    self._rect = rl.Rectangle(0, 0, 0, height)
-
-  def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
-    super().set_parent_rect(parent_rect)
-    self._rect.width = parent_rect.width
-
-  def _render(self, _):
-    rl.draw_line(int(self._rect.x) + LINE_PADDING, int(self._rect.y),
-                 int(self._rect.x + self._rect.width) - LINE_PADDING, int(self._rect.y),
-                 LINE_COLOR)
-
-
 class Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = True, spacing: int = ITEM_SPACING,
-               line_separator: bool = False, pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING):
+               pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
     self._snap_items = snap_items
     self._spacing = spacing
-    self._line_separator = LineSeparator() if line_separator else None
     self._pad_start = pad_start
     self._pad_end = pad_end
 
@@ -162,12 +146,6 @@ class Scroller(Widget):
 
   def _render(self, _):
     visible_items = [item for item in self._items if item.is_visible]
-
-    # Add line separator between items
-    if self._line_separator is not None:
-      l = len(visible_items)
-      for i in range(1, len(visible_items)):
-        visible_items.insert(l - i, self._line_separator)
 
     content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in visible_items)
     content_size += self._spacing * (len(visible_items) - 1)
