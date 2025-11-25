@@ -4,6 +4,7 @@ import time
 import copy
 import heapq
 import signal
+import numpy as np
 from collections import Counter
 from dataclasses import dataclass, field
 from itertools import islice
@@ -35,6 +36,12 @@ NUMPY_TOLERANCE = 1e-2
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
+
+W = 1928
+H = 1208
+STRIDE = 2048
+UV_OFFSET = 1216 * STRIDE
+YUV_SIZE = 2346 * STRIDE
 
 class LauncherWithCapture:
   def __init__(self, capture: ProcessOutputCapture, launcher: Callable):
@@ -203,7 +210,8 @@ class ProcessContainer:
       if meta.camera_state in self.cfg.vision_pubs:
         assert frs[meta.camera_state].pix_fmt == 'nv12'
         frame_size = (frs[meta.camera_state].w, frs[meta.camera_state].h)
-        vipc_server.create_buffers(meta.stream, 2, *frame_size)
+        # TODO don't hardcode!
+        vipc_server.create_buffers_with_sizes(meta.stream, 2, frame_size[0], frame_size[1], YUV_SIZE, STRIDE, UV_OFFSET)
     vipc_server.start_listener()
 
     self.vipc_server = vipc_server
@@ -300,7 +308,11 @@ class ProcessContainer:
             camera_meta = meta_from_camera_state(m.which())
             assert frs is not None
             img = frs[m.which()].get(camera_state.frameId)
-            self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
+            padded_img = np.zeros((YUV_SIZE), dtype=np.uint8).reshape((-1, STRIDE))
+            padded_img[:H, :W] = img[:H * W].reshape((-1, W))
+            padded_img[UV_OFFSET // STRIDE:UV_OFFSET // STRIDE + H // 2, :W] = img[H * W:].reshape((-1, W))
+
+            self.vipc_server.send(camera_meta.stream, padded_img.flatten().tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
