@@ -15,4 +15,4 @@ a = Tensor.from_blob(a_np.ctypes.data, (YUV_SIZE,), dtype='uint8').realize()
 
 print(a.numpy()[:10], a_np[:10])
 assert np.all(a.numpy() == a_np), "Initial tensor data does not match numpy data"
-assert np.all(a.clone().numpy() == a_np), "Initial tensor data does not match numpy data"
+assert np.all((a - 1).numpy() == a_np -1 ), "Initial tensor data does not match numpy data"
