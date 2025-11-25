@@ -339,7 +339,7 @@ class Setup(Widget):
 
     self.keyboard.reset(min_text_size=1)
     self.keyboard.set_title("Enter URL", "for Custom Software")
-    gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
+    gui_app.stack.push(self.keyboard, callback=handle_keyboard_result)
 
   def use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):

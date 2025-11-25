@@ -194,11 +194,11 @@ class OnboardingWindow(Widget):
     ui_state.params.put("HasAcceptedTerms", terms_version)
     self._state = OnboardingState.ONBOARDING
     if self._training_done:
-      gui_app.set_modal_overlay(None)
+      gui_app.stack.pop()
 
   def _on_completed_training(self):
     ui_state.params.put("CompletedTrainingVersion", training_version)
-    gui_app.set_modal_overlay(None)
+    gui_app.stack.pop()
 
   def _render(self, _):
     if self._training_guide is None:

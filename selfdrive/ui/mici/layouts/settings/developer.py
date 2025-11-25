@@ -17,6 +17,7 @@ class DeveloperLayoutMici(NavWidget):
     super().__init__()
     self.set_back_callback(back_callback)
 
+    # TODO: bug! callback should dictate success/fail for nested dialogs
     def github_username_callback(username: str):
       if username:
         ssh_keys = SshKeyAction()
@@ -24,17 +25,14 @@ class DeveloperLayoutMici(NavWidget):
         if not ssh_keys._error_message:
           self._ssh_keys_btn.set_value(username)
         else:
-          dlg = BigDialog("", ssh_keys._error_message)
-          gui_app.set_modal_overlay(dlg)
+          gui_app.stack.push(BigDialog("", ssh_keys._error_message))
 
     def ssh_keys_callback():
       github_username = ui_state.params.get("GithubUsername") or ""
-      dlg = BigInputDialog("enter GitHub username", github_username, confirm_callback=github_username_callback)
       if not system_time_valid():
-        dlg = BigDialog("Please connect to Wi-Fi to fetch your key", "")
-        gui_app.set_modal_overlay(dlg)
-        return
-      gui_app.set_modal_overlay(dlg)
+        gui_app.stack.push(BigDialog("Please connect to Wi-Fi to fetch your key", ""))
+      else:
+        gui_app.stack.push(BigInputDialog("enter GitHub username", github_username, confirm_callback=github_username_callback))
 
     txt_ssh = gui_app.texture("icons_mici/settings/developer/ssh.png", 77, 44)
     github_username = ui_state.params.get("GithubUsername") or ""

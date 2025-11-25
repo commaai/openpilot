@@ -8,15 +8,14 @@ import pyray as rl
 import threading
 import platform
 from contextlib import contextmanager
-from collections.abc import Callable
 from collections import deque
-from dataclasses import dataclass
 from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import multilang
+from openpilot.system.ui.lib.stack_manager import StackManager
 from openpilot.common.realtime import Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
@@ -104,12 +103,6 @@ def font_fallback(font: rl.Font) -> rl.Font:
   if multilang.requires_unifont():
     return gui_app.font(FontWeight.UNIFONT)
   return font
-
-
-@dataclass
-class ModalOverlay:
-  overlay: object = None
-  callback: Callable | None = None
 
 
 class MousePos(NamedTuple):
@@ -207,8 +200,7 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._trace_log_callback = None
-    self._modal_overlay = ModalOverlay()
-    self._modal_overlay_shown = False
+    self._stack_manager = StackManager(rl.Rectangle(0, 0, self._scaled_width, self._scaled_height))
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -306,13 +298,6 @@ class GuiApplication:
     reset = "\033[0m"
     print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
     sys.exit(0)
-
-  def set_modal_overlay(self, overlay, callback: Callable | None = None):
-    if self._modal_overlay.overlay is not None:
-      if self._modal_overlay.callback is not None:
-        self._modal_overlay.callback(-1)
-
-    self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -438,11 +423,8 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        # Handle modal overlay rendering and input processing
-        if self._handle_modal_overlay():
-          yield False
-        else:
-          yield True
+        self._stack_manager.render()
+        yield True
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -488,30 +470,11 @@ class GuiApplication:
   def height(self):
     return self._height
 
-  def _handle_modal_overlay(self) -> bool:
-    if self._modal_overlay.overlay:
-      if hasattr(self._modal_overlay.overlay, 'render'):
-        result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
-      elif callable(self._modal_overlay.overlay):
-        result = self._modal_overlay.overlay()
-      else:
-        raise Exception
+  @property
+  def stack(self) -> StackManager:
+    """Access the widget stack manager."""
+    return self._stack_manager
 
-      # Send show event to Widget
-      if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
-        self._modal_overlay.overlay.show_event()
-        self._modal_overlay_shown = True
-
-      if result >= 0:
-        # Clear the overlay and execute the callback
-        original_modal = self._modal_overlay
-        self._modal_overlay = ModalOverlay()
-        if original_modal.callback is not None:
-          original_modal.callback(result)
-      return True
-    else:
-      self._modal_overlay_shown = False
-      return False
 
   def _load_fonts(self):
     for font_weight_file in FontWeight:
