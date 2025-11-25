@@ -172,7 +172,7 @@ def run_and_save_pickle():
       mismatch = np.abs(a - b) > 0
       mismatch_percent = sum(mismatch.flatten()) / len(mismatch.flatten()) * 100
       mismatch_percent_tol = 1e-2
-      #assert mismatch_percent < mismatch_percent_tol, f"input mismatch percent {mismatch_percent} exceeds tolerance {mismatch_percent_tol}"
+      assert mismatch_percent < mismatch_percent_tol, f"input mismatch percent {mismatch_percent} exceeds tolerance {mismatch_percent_tol}"
 
   with open(WARP_PKL_PATH, "wb") as f:
     pickle.dump(update_img_jit, f)
