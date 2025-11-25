@@ -141,11 +141,14 @@ def run_and_save_pickle():
 
   step_times = []
   for _ in range(10):
+    new_frame_np = (32*np.random.randn(YUV_SIZE).astype(np.float32) + 128).clip(0,255).astype(np.uint8)
+    new_frame = Tensor.from_blob(new_frame_np.ctypes.data, (YUV_SIZE,), dtype='uint8').realize()
     img_inputs = [full_buffer,
-                  Tensor((32*Tensor.randn(YUV_SIZE,) + 128).cast(dtype='uint8').mul(8).realize().numpy()),
+                  Tensor.from_blob(new_frame_np.ctypes.data, (YUV_SIZE,), dtype='uint8').realize(),
                   Tensor(Tensor.randn(3,3).mul(8).realize().numpy(), device='NPY')]
+    new_big_frame_np = (32*np.random.randn(YUV_SIZE).astype(np.float32) + 128).clip(0,255).astype(np.uint8)
     big_img_inputs = [big_full_buffer,
-                      Tensor((32*Tensor.randn(YUV_SIZE,) + 128).cast(dtype='uint8').mul(8).realize().numpy()),
+                      Tensor.from_blob(new_big_frame_np.ctypes.data, (YUV_SIZE,), dtype='uint8').realize(),
                       Tensor(Tensor.randn(3,3).mul(8).realize().numpy(), device='NPY')]
     inputs = img_inputs + big_img_inputs
     Device.default.synchronize()
@@ -186,7 +189,7 @@ def run_and_save_pickle():
   warp_dm_jit = TinyJit(warp_dm, prune=True)
   step_times = []
   for _ in range(10):
-    inputs = [Tensor(((32*Tensor.randn(YUV_SIZE,) + 128).cast(dtype='uint8').realize().numpy())),
+    inputs = [Tensor.from_blob((32*Tensor.randn(YUV_SIZE,) + 128).cast(dtype='uint8').realize().numpy().ctypes.data, (YUV_SIZE,), dtype='uint8'),
                   Tensor(Tensor.randn(3,3).mul(8).realize().numpy(), device='NPY')]
 
     Device.default.synchronize()

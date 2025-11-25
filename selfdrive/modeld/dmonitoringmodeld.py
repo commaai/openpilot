@@ -8,6 +8,7 @@ import time
 import pickle
 import numpy as np
 from pathlib import Path
+from tinygrad.device import Device
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
@@ -56,7 +57,8 @@ class ModelState:
 
     if self.frame_buf_params is None:
       self.frame_buf_params = get_nv12_info(buf.width, buf.height)
-    self.warp_inputs['frame'] = Tensor(buf.data).realize()
+    self.warp_inputs['frame'] = Tensor.from_blob(buf.data.ctypes.data, (self.frame_buf_params[0],), dtype='uint8').realize()
+
     self.warp_inputs_np['transform'][:] = transform[:]
     self.tensor_inputs['input_img'] = self.image_warp(self.warp_inputs['frame'], self.warp_inputs['transform']).realize()
 
