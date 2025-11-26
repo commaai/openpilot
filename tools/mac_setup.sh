@@ -46,8 +46,9 @@ brew install \
   qt@5 \
   zeromq \
   portaudio \
-  gcc@13 \
-  arm-none-eabi-gcc
+  gcc@13
+
+brew install --cask gcc-arm-embedded
 
 echo "[ ] finished brew install t=$SECONDS"
 
