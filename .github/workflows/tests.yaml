@@ -109,7 +109,6 @@ jobs:
       run: |
         brew --version
         HOMEBREW_CACHE=/tmp/brew_cache \
-        HOMEBREW_NO_AUTO_UPDATE=1 \
         HOMEBREW_DOWNLOAD_CONCURRENCY=auto \
         HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 \
         ./tools/mac_setup.sh
