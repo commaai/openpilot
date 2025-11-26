@@ -32,23 +32,22 @@ else
     brew up
 fi
 
-brew bundle --file=- <<-EOS
-brew "git-lfs"
-brew "capnp"
-brew "coreutils"
-brew "eigen"
-brew "ffmpeg"
-brew "glfw"
-brew "libusb"
-brew "libtool"
-brew "llvm"
-brew "openssl@3.0"
-brew "qt@5"
-brew "zeromq"
-cask "gcc-arm-embedded"
-brew "portaudio"
-brew "gcc@13"
-EOS
+brew install \
+  git-lfs \
+  capnp \
+  coreutils \
+  eigen \
+  ffmpeg \
+  glfw \
+  libusb \
+  libtool \
+  llvm \
+  openssl@3 \
+  qt@5 \
+  zeromq \
+  portaudio \
+  gcc@13 \
+  arm-none-eabi-gcc
 
 echo "[ ] finished brew install t=$SECONDS"
 

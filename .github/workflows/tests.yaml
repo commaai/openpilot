@@ -106,7 +106,9 @@ jobs:
           brew-macos-${{ env.CACHE_COMMIT_DATE }}
           brew-macos
     - name: Install dependencies
-      run: HOMEBREW_CACHE=/tmp/brew_cache HOMEBREW_DOWNLOAD_CONCURRENCY=auto ./tools/mac_setup.sh
+      run: |
+        brew --version
+        HOMEBREW_CACHE=/tmp/brew_cache HOMEBREW_DOWNLOAD_CONCURRENCY=auto ./tools/mac_setup.sh
       env:
         PYTHONWARNINGS: default  # package install has DeprecationWarnings
         HOMEBREW_DISPLAY_INSTALL_TIMES: 1
