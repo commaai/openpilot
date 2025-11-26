@@ -16,7 +16,7 @@ MIN_ZOOM_ANIMATION_TIME = 0.075  # seconds
 DO_ZOOM = False
 DO_JELLO = False
 SCROLL_BAR = False
-
+SNAP_VELOCITY_THRESHOLD = 100.0
 
 class LineSeparator(Widget):
   def __init__(self, height: int = 1):
@@ -56,6 +56,7 @@ class Scroller(Widget):
 
     # when not pressed, snap to closest item to be center
     self._scroll_snap_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    self._last_snap_target_offset: float = 0.0
 
     self.scroll_panel = GuiScrollPanel2(self._horizontal, handle_out_of_bounds=not self._snap_items)
     self._scroll_enabled: bool | Callable[[], bool] = True
@@ -123,40 +124,44 @@ class Scroller(Widget):
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
     self.scroll_panel.set_enabled(scroll_enabled and self.enabled)
     self.scroll_panel.update(self._rect, content_size)
-    if not self._snap_items:
-      return self.scroll_panel.get_offset()
 
-    # Snap closest item to center
-    center_pos = self._rect.x + self._rect.width / 2 if self._horizontal else self._rect.y + self._rect.height / 2
-    closest_delta_pos = float('inf')
-    scroll_snap_idx: int | None = None
-    for idx, item in enumerate(visible_items):
-      if self._horizontal:
-        delta_pos = (item.rect.x + item.rect.width / 2) - center_pos
-      else:
-        delta_pos = (item.rect.y + item.rect.height / 2) - center_pos
-      if abs(delta_pos) < abs(closest_delta_pos):
-        closest_delta_pos = delta_pos
-        scroll_snap_idx = idx
+    current_offset = self.scroll_panel.get_offset()
+    if not self._snap_items or not visible_items:
+      return current_offset
 
-    if scroll_snap_idx is not None:
-      snap_item = visible_items[scroll_snap_idx]
-      if self.is_pressed:
-        # no snapping until released
-        self._scroll_snap_filter.x = 0
-      else:
-        # TODO: this doesn't handle two small buttons at the edges well
-        if self._horizontal:
-          snap_delta_pos = (center_pos - (snap_item.rect.x + snap_item.rect.width / 2)) / 10
-          snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
-          snap_delta_pos = max(snap_delta_pos, (self._rect.width - self.scroll_panel.get_offset() - content_size) / 10)
-        else:
-          snap_delta_pos = (center_pos - (snap_item.rect.y + snap_item.rect.height / 2)) / 10
-          snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
-          snap_delta_pos = max(snap_delta_pos, (self._rect.height - self.scroll_panel.get_offset() - content_size) / 10)
-        self._scroll_snap_filter.update(snap_delta_pos)
+    # Stable at target
+    if self.scroll_panel.state == ScrollState.STEADY and abs(current_offset - self._last_snap_target_offset) < 1.0:
+      self.scroll_panel.set_offset(self._last_snap_target_offset)  # Ensure offset is exactly the target
+      return self._last_snap_target_offset
 
-      self.scroll_panel.set_offset(self.scroll_panel.get_offset() + self._scroll_snap_filter.x)
+    # Interaction or fast fling disables snapping
+    is_interacting = self.is_pressed or self.scroll_panel.state == ScrollState.PRESSED
+    is_flinging = (self.scroll_panel.state == ScrollState.AUTO_SCROLL and abs(self.scroll_panel._velocity) > SNAP_VELOCITY_THRESHOLD)
+    if is_interacting or is_flinging:
+      self._scroll_snap_filter.x = current_offset  # Reset filter state to current offset during active motion
+      return current_offset
+
+    # Viewport center
+    if self._horizontal:
+      viewport_size, viewport_center = self._rect.width, self._rect.x + self._rect.width / 2
+      def get_center(r): return r.x + r.width / 2
+    else:
+      viewport_size, viewport_center = self._rect.height, self._rect.y + self._rect.height / 2
+      def get_center(r): return r.y + r.height / 2
+
+    # Find closest item to center
+    snap_item = min(visible_items, key=lambda w: abs(get_center(w.rect) - viewport_center))
+    item_center = get_center(snap_item.rect) - current_offset
+    target_offset = viewport_center - item_center
+
+    # Clamp offset
+    min_scroll = -(content_size - viewport_size)
+    target_offset = max(min_scroll, min(0.0, target_offset))
+
+    # Smooth snap
+    self._scroll_snap_filter.update(target_offset)
+    self._last_snap_target_offset = target_offset
+    self.scroll_panel.set_offset(self._scroll_snap_filter.x)
 
     return self.scroll_panel.get_offset()
 
