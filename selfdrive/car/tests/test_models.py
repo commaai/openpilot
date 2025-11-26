@@ -23,6 +23,7 @@ from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source, internal_source, comma_api_source
 from openpilot.tools.lib.route import SegmentName
+from openpilot.common.swaglog import cloudlog
 
 SafetyModel = car.CarParams.SafetyModel
 SteerControlType = structs.CarParams.SteerControlType
@@ -127,6 +128,7 @@ class TestCarModelBase(unittest.TestCase):
         lr = LogReader(segment_range, sources=sources, sort_by_time=True)
         return cls.get_testing_data_from_logreader(lr)
       except (LogsUnavailable, AssertionError):
+        cloudlog.error(f"TestCarModel: failed to get testing data for segment {segment_range}")
         pass
 
     raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
@@ -158,6 +160,9 @@ class TestCarModelBase(unittest.TestCase):
   @classmethod
   def tearDownClass(cls):
     del cls.can_msgs
+
+  def test_something(self):
+    pass
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP.copy())

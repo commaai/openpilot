@@ -183,7 +183,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
           return cast(list[str], list(valid_files.values()))
 
       except Exception as e:
-        exceptions[source.__name__] = e
+        exceptions[source.__name__] = e.__repr__()
 
     if fn == try_fns[0]:
       missing_logs = len(needed_seg_idxs)

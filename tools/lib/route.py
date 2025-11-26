@@ -306,13 +306,13 @@ class SegmentName:
 
 @cache
 def get_max_seg_number_cached(sr: 'SegmentRange') -> int:
-  try:
-    api = CommaApi(get_token())
-    max_seg_number = api.get("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]
-    assert isinstance(max_seg_number, int)
-    return max_seg_number
-  except Exception as e:
-    raise Exception("unable to get max_segment_number. ensure you have access to this route or the route is public.") from e
+  # try:
+  api = CommaApi(get_token())
+  max_seg_number = api.get("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]
+  assert isinstance(max_seg_number, int)
+  return max_seg_number
+  # except Exception as e:
+  #   raise Exception("unable to get max_segment_number. ensure you have access to this route or the route is public.") from e
 
 
 class SegmentRange:

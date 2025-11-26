@@ -13,9 +13,16 @@ class CommaApi:
 
   def request(self, method, endpoint, **kwargs):
     with self.session.request(method, API_HOST + '/' + endpoint, **kwargs) as resp:
+      print('got resp', resp.status_code, resp.text)
+
+      if resp.status_code == 503:
+        e = APIError(f"503: Service Temporarily Unavailable")
+        e.status_code = 503
+        raise e
+
       resp_json = resp.json()
       if isinstance(resp_json, dict) and resp_json.get('error'):
-        if resp.status_code in [401, 403]:
+        if resp.status_code in (401, 403):
           raise UnauthorizedError('Unauthorized. Authenticate with tools/lib/auth.py')
 
         e = APIError(str(resp.status_code) + ":" + resp_json.get('description', str(resp_json['error'])))
