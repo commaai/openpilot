@@ -148,15 +148,19 @@ class Scroller(Widget):
         # TODO: this doesn't handle two small buttons at the edges well
         if self._horizontal:
           snap_delta_pos = (center_pos - (snap_item.rect.x + snap_item.rect.width / 2)) / 10
-          snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
-          snap_delta_pos = max(snap_delta_pos, (self._rect.width - self.scroll_panel.get_offset() - content_size) / 10)
+          snap_delta_pos = min(snap_delta_pos, -self.scroll_panel._get_offset() / 10)
+          snap_delta_pos = max(snap_delta_pos, (self._rect.width - self.scroll_panel._get_offset() - content_size) / 10)
         else:
           snap_delta_pos = (center_pos - (snap_item.rect.y + snap_item.rect.height / 2)) / 10
-          snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
-          snap_delta_pos = max(snap_delta_pos, (self._rect.height - self.scroll_panel.get_offset() - content_size) / 10)
+          snap_delta_pos = min(snap_delta_pos, -self.scroll_panel._get_offset() / 10)
+          snap_delta_pos = max(snap_delta_pos, (self._rect.height - self.scroll_panel._get_offset() - content_size) / 10)
+        print(snap_delta_pos)
+        if abs(snap_delta_pos) < 1:
+          snap_delta_pos = 0
+          self.scroll_panel.set_offset(self.scroll_panel.get_offset() + snap_delta_pos)
         self._scroll_snap_filter.update(snap_delta_pos)
 
-      self.scroll_panel.set_offset(self.scroll_panel.get_offset() + self._scroll_snap_filter.x)
+      self.scroll_panel.set_offset(self.scroll_panel._get_offset() + self._scroll_snap_filter.x)
 
     return self.scroll_panel.get_offset()
 
