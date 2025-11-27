@@ -52,13 +52,19 @@ class RequestRepeater:
   def add_request_done_callback(self, callback: Callable[[str, bool], None]):
     self._request_done_callbacks.append(callback)
 
+  def _do_callbacks(self, response_text: str, success: bool):
+    for callback in self._request_done_callbacks:
+      try:
+        callback(response_text, success)
+      except Exception as e:
+        cloudlog.error(f"RequestRepeater callback error: {e}")
+
   def load_cache(self):
     # call callbacks with cached response
     if self._cache_key is not None:
       self._prev_response_text = self._params.get(self._cache_key)
       if self._prev_response_text:
-        for callback in self._request_done_callbacks:
-          callback(self._prev_response_text, True)
+        self._do_callbacks(self._prev_response_text, True)
 
   def start(self):
     if self._thread and self._thread.is_alive():
@@ -95,16 +101,11 @@ class RequestRepeater:
     try:
       identity_token = get_token(self._dongle_id)
       response = api_get(self._request_route, timeout=self.API_TIMEOUT, access_token=identity_token)
-
-      if response.status_code == 200:
-        for callback in self._request_done_callbacks:
-          callback(response.text, True)
-      else:
-        for callback in self._request_done_callbacks:
-          callback(response.text, False)
+      self._do_callbacks(response.text, 200 <= response.status_code < 300)
 
     except Exception as e:
       cloudlog.error(f"Failed to send request to {self._request_route}: {e}")
+      self._do_callbacks("", False)
 
   def __del__(self):
     self.stop()
