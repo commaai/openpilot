@@ -1,19 +1,16 @@
 import pyray as rl
-import time
-import threading
+import json
 
-from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.selfdrive.ui.lib.api_helpers import get_token
+from openpilot.selfdrive.ui.lib.api_helpers import RequestRepeater
 
 TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
@@ -33,7 +30,6 @@ INSTRUCTIONS = tr_noop(
 
 
 class FirehoseLayout(Widget):
-  PARAM_KEY = "ApiCache_FirehoseStats"
   GREEN = rl.Color(46, 204, 113, 255)
   RED = rl.Color(231, 76, 60, 255)
   GRAY = rl.Color(68, 68, 68, 255)
@@ -42,33 +38,28 @@ class FirehoseLayout(Widget):
 
   def __init__(self):
     super().__init__()
-    self.params = Params()
-    self.segment_count = self._get_segment_count()
+    self.segment_count = 0
     self.scroll_panel = GuiScrollPanel()
     self._content_height = 0
 
-    self.running = True
-    self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
-    self.update_thread.start()
-    self.last_update_time = 0
+    dongle_id = Params().get("DongleId")
+    self._request_repeater = RequestRepeater(dongle_id, f"v1/devices/{dongle_id}/firehose_stats", 30, "ApiCache_FirehoseStats")
+    self._request_repeater.add_request_done_callback(self._handle_reply)
+    self._request_repeater.load_cache()
+    self._request_repeater.start()
+
+  def _handle_reply(self, response: str, success: bool):
+    if not success:
+      return
+
+    try:
+      data = json.loads(response)
+      self.segment_count = data.get("firehose", 0)
+    except Exception as e:
+      cloudlog.error(f"Failed to parse firehose stats from response: {e}")
 
   def show_event(self):
     self.scroll_panel.set_offset(0)
-
-  def _get_segment_count(self) -> int:
-    stats = self.params.get(self.PARAM_KEY)
-    if not stats:
-      return 0
-    try:
-      return int(stats.get("firehose", 0))
-    except Exception:
-      cloudlog.exception(f"Failed to decode firehose stats: {stats}")
-      return 0
-
-  def __del__(self):
-    self.running = False
-    if self.update_thread and self.update_thread.is_alive():
-      self.update_thread.join(timeout=1.0)
 
   def _render(self, rect: rl.Rectangle):
     # Calculate content dimensions
@@ -139,22 +130,3 @@ class FirehoseLayout(Widget):
     else:
       return tr("INACTIVE: connect to an unmetered network"), self.RED
 
-  def _fetch_firehose_stats(self):
-    try:
-      dongle_id = self.params.get("DongleId")
-      if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
-        return
-      identity_token = get_token(dongle_id)
-      response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token)
-      if response.status_code == 200:
-        data = response.json()
-        self.segment_count = data.get("firehose", 0)
-        self.params.put(self.PARAM_KEY, data)
-    except Exception as e:
-      cloudlog.error(f"Failed to fetch firehose stats: {e}")
-
-  def _update_loop(self):
-    while self.running:
-      if not ui_state.started:
-        self._fetch_firehose_stats()
-      time.sleep(self.UPDATE_INTERVAL)
