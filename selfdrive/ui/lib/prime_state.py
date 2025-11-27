@@ -2,6 +2,7 @@ from enum import IntEnum
 import os
 import threading
 import time
+import json
 
 from openpilot.common.api import api_get
 from openpilot.common.params import Params
@@ -33,7 +34,7 @@ class PrimeState:
 
     dongle_id = self._params.get("DongleId")
     self._request_repeater = RequestRepeater(dongle_id, f"v1.1/devices/{dongle_id}", "ApiCache_Device", 5)
-    self._request_repeater.set_request_done_callback(self._handle_reply)
+    self._request_repeater.add_request_done_callback(self._handle_reply)
 
     self._running = False
     self._thread = None
@@ -49,12 +50,18 @@ class PrimeState:
 
   def _handle_reply(self, response: str, success: bool):
     print('response', response, 'success', success)
-
     if not success:
-    data = response.json()
-    is_paired = data.get("is_paired", False)
-    prime_type = data.get("prime_type", 0)
-    self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
+      return
+
+    try:
+      data = json.loads(response)
+      print()
+      print('got data json', data)
+      is_paired = data.get("is_paired", False)
+      prime_type = data.get("prime_type", 0)
+      self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
+    except Exception as e:
+      cloudlog.error(f"Failed to parse prime status from response: {e}")
 
   def _fetch_prime_status(self) -> None:
     dongle_id = self._params.get("DongleId")
