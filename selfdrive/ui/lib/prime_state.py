@@ -3,11 +3,11 @@ import os
 import threading
 import time
 
-from openpilot.common.api import api_get, RequestRepeater
+from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-from openpilot.selfdrive.ui.lib.api_helpers import get_token
+from openpilot.selfdrive.ui.lib.api_helpers import RequestRepeater, get_token
 
 
 class PrimeType(IntEnum):
@@ -32,7 +32,7 @@ class PrimeState:
     self.prime_type: PrimeType = self._load_initial_state()
 
     dongle_id = self._params.get("DongleId")
-    self._request_repeater = RequestRepeater(f"v1.1/devices/{dongle_id}", "ApiCache_Device", 5)
+    self._request_repeater = RequestRepeater(dongle_id, f"v1.1/devices/{dongle_id}", "ApiCache_Device", 5)
     self._request_repeater.set_request_done_callback(self._handle_reply)
 
     self._running = False
@@ -83,6 +83,7 @@ class PrimeState:
         time.sleep(self.SLEEP_INTERVAL)
 
   def start(self) -> None:
+    return
     if self._thread and self._thread.is_alive():
       return
     self._running = True

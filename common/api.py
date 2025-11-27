@@ -1,7 +1,10 @@
+import time
+
 import jwt
 import os
 import requests
 import threading
+from collections.abc import Callable
 from datetime import datetime, timedelta, UTC
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
@@ -59,16 +62,3 @@ def get_key_pair():
       with open(Paths.persist_root() + f'/comma/{key}') as private, open(Paths.persist_root() + f'/comma/{key}.pub') as public:
         return KEYS[key], private.read(), public.read()
   return None, None, None
-
-
-class RequestRepeater:
-  def __init__(self, request_route: str, cache_key: str, period: int):
-    self._request_route = request_route
-    self._cache_key = cache_key
-    self._period = period
-
-    # self._lock = threading.Lock()
-    # self._running = False
-    # self._thread = None
-    # self._data = None
-    # self._last_request_time = 0
