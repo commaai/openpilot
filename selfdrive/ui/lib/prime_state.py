@@ -67,8 +67,14 @@ class PrimeState:
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def _worker_thread(self) -> None:
+    # Import here to avoid circular dependency (ui_state imports PrimeState)
+    from openpilot.selfdrive.ui.ui_state import ui_state, device
+
     while self._running:
-      self._fetch_prime_status()
+      # Only fetch when offroad and awake (matching Qt RequestRepeater behavior)
+      # This reduces API calls by 2-4x by not polling while driving or sleeping
+      if not ui_state.started and device.awake:
+        self._fetch_prime_status()
 
       for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
         if not self._running:
