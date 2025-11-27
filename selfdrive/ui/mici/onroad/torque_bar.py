@@ -129,6 +129,7 @@ def arc_bar_pts(cx: float, cy: float,
   cap_start = get_cap(True, a0_deg)
 
   pts = np.vstack((outer, cap_end, inner, cap_start, outer[:1])).astype(np.float32)
+
   # Rotate to start from middle of cap for proper triangulation
   pts = np.roll(pts, cap_segs, axis=0)
 
