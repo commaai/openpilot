@@ -56,7 +56,7 @@ class FirehoseLayoutBase(Widget):
       data = json.loads(response)
       self._segment_count = data.get("firehose", 0)
     except Exception as e:
-      cloudlog.error(f"Failed to parse firehose stats from response: {e}")
+      cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
   def show_event(self):
     super().show_event()
