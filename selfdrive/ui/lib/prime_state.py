@@ -1,14 +1,10 @@
 from enum import IntEnum
 import os
-import threading
-import time
 import json
 
-from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-from openpilot.selfdrive.ui.lib.api_helpers import RequestRepeater, get_token
+from openpilot.selfdrive.ui.lib.api_helpers import RequestRepeater
 
 
 class PrimeType(IntEnum):
@@ -23,21 +19,14 @@ class PrimeType(IntEnum):
 
 
 class PrimeState:
-  FETCH_INTERVAL = 5.0  # seconds between API calls
-  API_TIMEOUT = 10.0  # seconds for API requests
-  SLEEP_INTERVAL = 0.5  # seconds to sleep between checks in the worker thread
-
   def __init__(self):
     self._params = Params()
-    self._lock = threading.Lock()
     self.prime_type: PrimeType = self._load_initial_state()
 
     dongle_id = self._params.get("DongleId")
     self._request_repeater = RequestRepeater(dongle_id, f"v1.1/devices/{dongle_id}", 5, "ApiCache_Device")
     self._request_repeater.add_request_done_callback(self._handle_reply)
-
-    self._running = False
-    self._thread = None
+    self._request_repeater.load_cache()
 
   def _load_initial_state(self) -> PrimeType:
     prime_type_str = os.getenv("PRIME_TYPE") or self._params.get("PrimeType")
@@ -64,32 +53,19 @@ class PrimeState:
       cloudlog.error(f"Failed to parse prime status from response: {e}")
 
   def set_type(self, prime_type: PrimeType) -> None:
-    with self._lock:
-      if prime_type != self.prime_type:
-        self.prime_type = prime_type
-        self._params.put("PrimeType", int(prime_type))
-        cloudlog.info(f"Prime type updated to {prime_type}")
-
-  def _worker_thread(self) -> None:
-    while self._running:
-      # self._fetch_prime_status()
-
-      for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
-        if not self._running:
-          break
-        time.sleep(self.SLEEP_INTERVAL)
+    if prime_type != self.prime_type:
+      self.prime_type = prime_type
+      self._params.put("PrimeType", int(prime_type))
+      cloudlog.info(f"Prime type updated to {prime_type}")
 
   def start(self) -> None:
     self._request_repeater.start()
 
   def get_type(self) -> PrimeType:
-    with self._lock:
-      return self.prime_type
+    return self.prime_type
 
   def is_prime(self) -> bool:
-    with self._lock:
-      return bool(self.prime_type > PrimeType.NONE)
+    return bool(self.prime_type > PrimeType.NONE)
 
   def is_paired(self) -> bool:
-    with self._lock:
-      return self.prime_type > PrimeType.UNPAIRED
+    return self.prime_type > PrimeType.UNPAIRED

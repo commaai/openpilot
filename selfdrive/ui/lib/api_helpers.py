@@ -37,49 +37,29 @@ class RequestRepeater:
 
     self._request_done_callbacks: list[Callable[[str, bool], None]] = []
     self._prev_response_text = None
-    self._lock = threading.Lock()
     self._running = False
     self._thread = None
-    self._data = None
     self._params = Params()
 
     if self._cache_key is not None:
-      """
-          if (!cacheKey.isEmpty()) {
-        prevResp = QString::fromStdString(params.get(cacheKey.toStdString()));
-        if (!prevResp.isEmpty()) {
-          QTimer::singleShot(500, [=]() { emit requestDone(prevResp, true, QNetworkReply::NoError); });
-        }
-        QObject::connect(this, &HttpRequest::requestDone, [=](const QString &resp, bool success) {
-          if (success && resp != prevResp) {
-            params.put(cacheKey.toStdString(), resp.toStdString());
-            prevResp = resp;
-          }
-        });
-      }
-      """
+      # Cache successful responses to params
+      def cache_response(response: str, success: bool):
+        if success and response != self._prev_response_text:
+          self._params.put(self._cache_key, response)
+          self._prev_response_text = response
 
-      print('checking cache for key', self._cache_key)
-      self._prev_response_text = self._params.get(self._cache_key)
-      if self._prev_response_text:
-        # Emit cached response after a short delay
-        def emit_cached_response():
-          print('calling cache!')
-          for callback in self._request_done_callbacks:
-            callback(self._prev_response_text, True)
-
-        threading.Timer(0.5, emit_cached_response).start()
-
-      self.add_request_done_callback(self._cache_response)
+      self.add_request_done_callback(cache_response)
 
   def add_request_done_callback(self, callback: Callable[[str, bool], None]):
     self._request_done_callbacks.append(callback)
 
-  def _cache_response(self, response: str, success: bool):
-    # Cache successful responses to params
-    if success and response != self._prev_response_text:
-      self._params.put(self._cache_key, response)
-      self._prev_response_text = response
+  def load_cache(self):
+    # call callbacks with cached response
+    if self._cache_key is not None:
+      self._prev_response_text = self._params.get(self._cache_key)
+      if self._prev_response_text:
+        for callback in self._request_done_callbacks:
+          callback(self._prev_response_text, True)
 
   def start(self):
     if self._thread and self._thread.is_alive():
