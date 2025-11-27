@@ -124,7 +124,7 @@ class Scroller(Widget):
     self.scroll_panel.set_enabled(scroll_enabled and self.enabled)
     self.scroll_panel.update(self._rect, content_size)
     if not self._snap_items:
-      return self.scroll_panel.get_offset()
+      return round(self.scroll_panel.get_offset())
 
     # Snap closest item to center
     center_pos = self._rect.x + self._rect.width / 2 if self._horizontal else self._rect.y + self._rect.height / 2

@@ -65,7 +65,7 @@ class FirehoseLayoutBase(Widget):
   def _render(self, rect: rl.Rectangle):
     # compute total content height for scrolling
     content_height = self._measure_content_height(rect)
-    scroll_offset = self._scroll_panel.update(rect, content_height)
+    scroll_offset = round(self._scroll_panel.update(rect, content_height))
 
     # start drawing with offset
     x = int(rect.x + 40)
