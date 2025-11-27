@@ -50,6 +50,12 @@ class PrimeState:
   def _handle_reply(self, response: str, success: bool):
     print('response', response, 'success', success)
 
+    if not success:
+    data = response.json()
+    is_paired = data.get("is_paired", False)
+    prime_type = data.get("prime_type", 0)
+    self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
+
   def _fetch_prime_status(self) -> None:
     dongle_id = self._params.get("DongleId")
     if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:

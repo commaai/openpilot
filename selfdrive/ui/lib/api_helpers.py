@@ -1,3 +1,4 @@
+# TODO: sort
 import time
 from functools import lru_cache
 from openpilot.common.api import Api, api_get
@@ -5,6 +6,7 @@ import threading
 from collections.abc import Callable
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.params import Params
 
 TOKEN_EXPIRY_HOURS = 2
 
@@ -32,15 +34,27 @@ class RequestRepeater:
     self._cache_key = cache_key
     self._period = period
 
-    self._request_done_callback: Callable[[str, bool], None] | None = None
+    self._request_done_callbacks: list[Callable[[str, bool], None]] = []
+    self.add_request_done_callback(self._handle_reply)
 
-    self.start()
-
+    self._prev_request_text = None
     self._lock = threading.Lock()
     self._running = False
     self._thread = None
     self._data = None
-    self._last_request_time = 0
+    self._last_request_time = 0.0
+    self._params = Params()
+
+    self.start()
+
+  def add_request_done_callback(self, callback: Callable[[str, bool], None]):
+    self._request_done_callbacks.append(callback)
+
+  def _handle_reply(self, response: str, success: bool):
+    # Cache successful responses to params
+    if success and response != self._prev_request_text:
+      self._params.put(self._cache_key, response)
+      self._prev_request_text = response
 
   def start(self):
     self._running = True
@@ -56,16 +70,24 @@ class RequestRepeater:
       time.sleep(0.5)
 
   def _send_request(self):
-    token = get_token(self._dongle_id)
+    print('dongle id', self._dongle_id)
 
     try:
       identity_token = get_token(self._dongle_id)
+      # print('identity token', identity_token)
       response = api_get(f"v1.1/devices/{self._dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token)
+
       if response.status_code == 200:
-        data = response.json()
-        is_paired = data.get("is_paired", False)
-        prime_type = data.get("prime_type", 0)
-        self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
+        for callback in self._request_done_callbacks:
+          callback(response.text, True)
+      else:
+        for callback in self._request_done_callbacks:
+          callback(response.text, False)
+
+      # if response.status_code == 200:
+      #   data = response.json()
+      #   is_paired = data.get("is_paired", False)
+      #   prime_type = data.get("prime_type", 0)
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
 

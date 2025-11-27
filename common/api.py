@@ -58,6 +58,7 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
 
 def get_key_pair():
   for key in KEYS:
+    # print('key', key, Paths.persist_root() + f'/comma/{key}')
     if os.path.isfile(Paths.persist_root() + f'/comma/{key}') and os.path.isfile(Paths.persist_root() + f'/comma/{key}.pub'):
       with open(Paths.persist_root() + f'/comma/{key}') as private, open(Paths.persist_root() + f'/comma/{key}.pub') as public:
         return KEYS[key], private.read(), public.read()
