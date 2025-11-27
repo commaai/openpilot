@@ -14,6 +14,13 @@ from openpilot.system.ui.widgets.scroller_tici import Scroller
 # TODO: remove this. updater fails to respond on startup if time is not correct
 UPDATED_TIMEOUT = 10  # seconds to wait for updated to respond
 
+# Mapping updater internal states to translated display strings
+STATE_TO_DISPLAY_TEXT = {
+  "checking...": tr("checking..."),
+  "downloading...": tr("downloading..."),
+  "finalizing update...": tr("finalizing update..."),
+}
+
 
 def time_ago(date: datetime.datetime | None) -> str:
   if not date:
@@ -100,14 +107,8 @@ class SoftwareLayout(Widget):
       # Updater responded
       self._waiting_for_updater = False
       self._download_btn.action_item.set_enabled(False)
-      # A mapping from the state string to the translated string
-      state_to_display_text = {
-        "checking...": tr("checking..."),
-        "downloading...": tr("downloading..."),
-        "finalizing update...": tr("finalizing update..."),
-        }
       # Use the mapping, with a fallback to the original state string
-      display_text = state_to_display_text.get(updater_state, updater_state)
+      display_text = STATE_TO_DISPLAY_TEXT.get(updater_state, updater_state)
       self._download_btn.action_item.set_value(display_text)
     else:
       if failed_count > 0:
