@@ -142,8 +142,6 @@ def arc_bar_pts(cx: float, cy: float,
       color = rl.Color(255, int(255 * (1 - t)), int(255 * t), 255)
       rl.draw_circle(int(x), int(y), 2, color)
 
-  # print(pts)
-
   return pts
 
 
