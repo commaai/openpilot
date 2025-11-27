@@ -67,7 +67,7 @@ class RequestRepeater:
       if now - self._last_request_time >= self._period:
         self._last_request_time = now
         self._send_request()
-      time.sleep(0.5)
+      time.sleep(self.SLEEP_INTERVAL)
 
   def _send_request(self):
     print('dongle id', self._dongle_id)
