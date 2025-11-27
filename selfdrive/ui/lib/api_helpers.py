@@ -7,9 +7,8 @@ from collections.abc import Callable
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.ui.ui_state import ui_state, device
-
-from system.athena.registration import UNREGISTERED_DONGLE_ID
 
 TOKEN_EXPIRY_HOURS = 2
 
@@ -31,15 +30,13 @@ class RequestRepeater:
   API_TIMEOUT = 10.0  # seconds for API requests
   SLEEP_INTERVAL = 0.5  # seconds to sleep between checks in the worker thread
 
-  def __init__(self, dongle_id: str, request_route: str, cache_key: str, period: int):
+  def __init__(self, dongle_id: str, request_route: str, period: int, cache_key: str | None = None):
     self._dongle_id = dongle_id
     self._request_route = request_route
-    self._cache_key = cache_key
     self._period = period  # seconds
+    self._cache_key = cache_key
 
     self._request_done_callbacks: list[Callable[[str, bool], None]] = []
-    self.add_request_done_callback(self._handle_reply)
-
     self._prev_response_text = None
     self._lock = threading.Lock()
     self._running = False
@@ -47,10 +44,37 @@ class RequestRepeater:
     self._data = None
     self._params = Params()
 
+    if self._cache_key is not None:
+      """
+          if (!cacheKey.isEmpty()) {
+        prevResp = QString::fromStdString(params.get(cacheKey.toStdString()));
+        if (!prevResp.isEmpty()) {
+          QTimer::singleShot(500, [=]() { emit requestDone(prevResp, true, QNetworkReply::NoError); });
+        }
+        QObject::connect(this, &HttpRequest::requestDone, [=](const QString &resp, bool success) {
+          if (success && resp != prevResp) {
+            params.put(cacheKey.toStdString(), resp.toStdString());
+            prevResp = resp;
+          }
+        });
+      }
+      """
+
+      self._prev_response_text = self._params.get(self._cache_key)
+      if self._prev_response_text:
+        # Emit cached response after a short delay
+        def emit_cached_response():
+          for callback in self._request_done_callbacks:
+            callback(self._prev_response_text, True)
+
+        threading.Timer(0.5, emit_cached_response).start()
+
+      self.add_request_done_callback(self._cache_response)
+
   def add_request_done_callback(self, callback: Callable[[str, bool], None]):
     self._request_done_callbacks.append(callback)
 
-  def _handle_reply(self, response: str, success: bool):
+  def _cache_response(self, response: str, success: bool):
     # Cache successful responses to params
     if success and response != self._prev_response_text:
       self._params.put(self._cache_key, response)
