@@ -32,6 +32,10 @@ else
     brew up
 fi
 
+# Clear any cached ARM toolchain pkg that occasionally ships with bad checksum on runners
+BREW_CACHE_DIR="$(brew --cache)"
+rm -f "${BREW_CACHE_DIR}/downloads"/*arm-gnu-toolchain* || true
+
 brew bundle --file=- <<-EOS
 brew "git-lfs"
 brew "capnp"
