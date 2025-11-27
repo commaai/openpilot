@@ -7,7 +7,6 @@ from openpilot.selfdrive.ui.mici.layouts.offroad_alerts import MiciOffroadAlerts
 from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.selfdrive.ui.mici.layouts.onboarding import OnboardingWindow
-from openpilot.system.hardware import PC
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app
@@ -64,7 +63,7 @@ class MiciMainLayout(Widget):
 
     # Start onboarding if terms or training not completed
     self._onboarding_window = OnboardingWindow()
-    if not self._onboarding_window.completed and not PC:
+    if not self._onboarding_window.completed:
       gui_app.set_modal_overlay(self._onboarding_window)
 
   def _setup_callbacks(self):
