@@ -38,7 +38,6 @@ class FirehoseLayoutMici(NavWidget):
   RED = rl.Color(231, 76, 60, 255)
   GRAY = rl.Color(68, 68, 68, 255)
   LIGHT_GRAY = rl.Color(228, 228, 228, 255)
-  UPDATE_INTERVAL = 30  # seconds
 
   def __init__(self, back_callback):
     super().__init__()
