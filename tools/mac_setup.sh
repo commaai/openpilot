@@ -51,12 +51,10 @@ brew "qt@5"
 brew "zeromq"
 brew "portaudio"
 brew "gcc@13"
+brew "arm-none-eabi-gcc"
 EOS
 
-# gcc-arm-embedded often fails checksum on CI mirrors; skip in CI to avoid flakes
-if [[ -z "$CI" ]]; then
-  echo 'cask "gcc-arm-embedded"' >> /tmp/op-brew-bundle
-fi
+# gcc-arm-embedded cask is flaky in CI mirrors; skip it
 
 brew bundle --file=/tmp/op-brew-bundle
 
