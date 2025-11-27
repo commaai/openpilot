@@ -1,3 +1,4 @@
+import re
 import logging
 import os
 import socket
@@ -158,6 +159,53 @@ class URLFile:
 
     self._pos += len(ret)
     return ret
+
+
+  def get_multi_range(self, ranges: list[tuple[int, int]]) -> list[bytes]:
+    # ranges are (start, end) with end exclusive
+    rs = [f"{s}-{e-1}" for s, e in ranges if e > s]
+    if not rs:
+      return [b"" for _ in ranges]
+
+    r = self._request("GET", self._url, headers={"Range": "bytes=" + ",".join(rs)})
+    if r.status != 206:
+      raise URLFileException(f"Expected 206 Partial Content, got {r.status} ({self._url})")
+
+    ctype = (r.headers.get("content-type") or "").lower()
+    data = r.data
+
+    # Single range response (not multipart)
+    if "multipart/byteranges" not in ctype:
+      if sum(e > s for s, e in ranges) != 1:
+        raise URLFileException(f"Server didn't return multipart/byteranges for multi-range ({self._url})")
+      out, used = [], False
+      for s, e in ranges:
+        if e <= s: out.append(b"")
+        else: out.append(data); used = True
+      return out
+
+    m = re.search(r'boundary="?([^";]+)"?', ctype)
+    if not m:
+      raise URLFileException(f"Missing multipart boundary ({self._url})")
+    boundary = m.group(1).encode()
+
+    parts = []
+    for chunk in data.split(b"--" + boundary):
+      if b"\r\n\r\n" not in chunk:
+        continue
+      payload = chunk.split(b"\r\n\r\n", 1)[1].rstrip(b"\r\n")
+      if payload and payload != b"--":
+        parts.append(payload)
+    if len(parts) != len(ranges):
+      raise URLFileException(f"Expected {len(ranges)} parts, got {len(parts)} ({self._url})")
+
+    out, i = [], 0
+    for s, e in ranges:
+      if e <= s: out.append(b"")
+      else:
+        out.append(parts[i])
+        i += 1
+    return out
 
   def seek(self, pos: int) -> None:
     self._pos = pos
