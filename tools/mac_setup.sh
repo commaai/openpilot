@@ -52,10 +52,11 @@ brew "zeromq"
 brew "portaudio"
 brew "gcc@13"
 brew "arm-none-eabi-gcc"
-brew "arm-none-eabi-newlib"
 EOS
 
-# gcc-arm-embedded cask is flaky in CI mirrors; skip it
+if brew info arm-none-eabi-newlib >/dev/null 2>&1; then
+  echo 'brew "arm-none-eabi-newlib"' >> /tmp/op-brew-bundle
+fi
 
 brew bundle --file=/tmp/op-brew-bundle
 
