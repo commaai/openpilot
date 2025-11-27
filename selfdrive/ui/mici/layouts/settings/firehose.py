@@ -8,8 +8,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
-from openpilot.selfdrive.ui.lib.api_helpers import RequestRepeater
 from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.selfdrive.ui.lib.api_helpers import RequestRepeater
 
 TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
