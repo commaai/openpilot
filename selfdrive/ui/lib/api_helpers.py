@@ -8,7 +8,6 @@ from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-# from openpilot.selfdrive.ui.ui_state import ui_state, device
 
 TOKEN_EXPIRY_HOURS = 2
 
@@ -95,11 +94,11 @@ class RequestRepeater:
       self._thread.join(timeout=1.0)
 
   def _worker_thread(self):
+    # Avoid circular imports
     from openpilot.selfdrive.ui.ui_state import ui_state, device
 
     while self._running:
-      active_request = False  # TODO: this
-      if not ui_state.started and device.awake and not active_request:
+      if not ui_state.started and device.awake:
         print('RUNNING REQUEST')
         self._send_request()
       else:
