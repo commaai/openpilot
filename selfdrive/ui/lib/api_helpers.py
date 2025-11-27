@@ -84,10 +84,7 @@ class RequestRepeater:
 
     while self._running:
       if not ui_state.started and device.awake:
-        print('RUNNING REQUEST', self._request_route)
         self._send_request()
-      else:
-        print('SKIPPING REQUEST')
 
       for _ in range(int(self._period / self.SLEEP_INTERVAL)):
         if not self._running:
