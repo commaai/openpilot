@@ -38,9 +38,7 @@ class FirehoseLayoutBase(Widget):
 
   def __init__(self):
     super().__init__()
-    self._params = Params()
     self._segment_count = 0
-
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
     self._content_height = 0
 
