@@ -1,19 +1,15 @@
-import threading
-import time
 import pyray as rl
+import json
 
-from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.ui.lib.api_helpers import get_token
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
-from openpilot.system.ui.widgets import NavWidget
-
+from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.selfdrive.ui.lib.api_helpers import RequestRepeater
 
 TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
@@ -34,56 +30,42 @@ FAQ_ITEMS = [
 ]
 
 
-class FirehoseLayoutMici(NavWidget):
-  BACK_TOUCH_AREA_PERCENTAGE = 0.1
-
-  PARAM_KEY = "ApiCache_FirehoseStats"
+class FirehoseLayoutBase(Widget):
   GREEN = rl.Color(46, 204, 113, 255)
   RED = rl.Color(231, 76, 60, 255)
   GRAY = rl.Color(68, 68, 68, 255)
   LIGHT_GRAY = rl.Color(228, 228, 228, 255)
-  UPDATE_INTERVAL = 30  # seconds
 
-  def __init__(self, back_callback):
+  def __init__(self):
     super().__init__()
-    self.set_back_callback(back_callback)
-
-    self.params = Params()
-    self.segment_count = self._get_segment_count()
-
+    self._segment_count = 0
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
     self._content_height = 0
 
-    self._running = True
-    self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
-    self._update_thread.start()
+    dongle_id = Params().get("DongleId")
+    self._request_repeater = RequestRepeater(dongle_id, f"v1/devices/{dongle_id}/firehose_stats", 30, "ApiCache_FirehoseStats")
+    self._request_repeater.add_request_done_callback(self._handle_reply)
+    self._request_repeater.load_cache()
+    self._request_repeater.start()
 
-  def __del__(self):
-    self._running = False
+  def _handle_reply(self, response: str, success: bool):
+    if not success:
+      return
+
     try:
-      if self._update_thread and self._update_thread.is_alive():
-        self._update_thread.join(timeout=1.0)
-    except Exception:
-      pass
+      data = json.loads(response)
+      self._segment_count = data.get("firehose", 0)
+    except Exception as e:
+      cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
   def show_event(self):
     super().show_event()
     self._scroll_panel.set_offset(0)
 
-  def _get_segment_count(self) -> int:
-    stats = self.params.get(self.PARAM_KEY)
-    if not stats:
-      return 0
-    try:
-      return int(stats.get("firehose", 0))
-    except Exception:
-      cloudlog.exception(f"Failed to decode firehose stats: {stats}")
-      return 0
-
   def _render(self, rect: rl.Rectangle):
     # compute total content height for scrolling
     content_height = self._measure_content_height(rect)
-    scroll_offset = self._scroll_panel.update(rect, content_height)
+    scroll_offset = round(self._scroll_panel.update(rect, content_height))
 
     # start drawing with offset
     x = int(rect.x + 40)
@@ -111,9 +93,9 @@ class FirehoseLayoutMici(NavWidget):
     y += 20
 
     # Contribution count (if available)
-    if self.segment_count > 0:
+    if self._segment_count > 0:
       contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self.segment_count).format(self.segment_count)
+                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
       y = self._draw_wrapped_text(x, y, w, contrib_text, gui_app.font(FontWeight.BOLD), 42, rl.WHITE)
       y += 20
 
@@ -165,9 +147,9 @@ class FirehoseLayoutMici(NavWidget):
     y += int(len(status_lines) * 48 * FONT_SCALE) + 20
 
     # Contribution count
-    if self.segment_count > 0:
+    if self._segment_count > 0:
       contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self.segment_count).format(self.segment_count)
+                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
       contrib_lines = wrap_text(gui_app.font(FontWeight.BOLD), contrib_text, 42, w)
       y += int(len(contrib_lines) * 42 * FONT_SCALE) + 20
 
@@ -202,22 +184,10 @@ class FirehoseLayoutMici(NavWidget):
     else:
       return tr("INACTIVE: connect to an unmetered network"), self.RED
 
-  def _fetch_firehose_stats(self):
-    try:
-      dongle_id = self.params.get("DongleId")
-      if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
-        return
-      identity_token = get_token(dongle_id)
-      response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token)
-      if response.status_code == 200:
-        data = response.json()
-        self.segment_count = data.get("firehose", 0)
-        self.params.put(self.PARAM_KEY, data)
-    except Exception as e:
-      cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
-  def _update_loop(self):
-    while self._running:
-      if not ui_state.started:
-        self._fetch_firehose_stats()
-      time.sleep(self.UPDATE_INTERVAL)
+class FirehoseLayout(FirehoseLayoutBase, NavWidget):
+  BACK_TOUCH_AREA_PERCENTAGE = 0.1
+
+  def __init__(self, back_callback):
+    super().__init__()
+    self.set_back_callback(back_callback)

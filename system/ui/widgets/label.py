@@ -183,7 +183,7 @@ class MiciLabel(Widget):
       if self._scroll_state != ScrollState.STARTING:
         rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), fade_width, int(rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
 
-    rl.end_scissor_mode()
+      rl.end_scissor_mode()
 
 
 # TODO: This should be a Widget class
@@ -446,7 +446,7 @@ class UnifiedLabel(Widget):
   def set_text(self, text: str | Callable[[], str]):
     """Update the text content."""
     self._text = text
-    self._cached_text = None  # Invalidate cache
+    # No need to update cache here, will be done on next render if needed
 
   @property
   def text(self) -> str:
@@ -463,15 +463,17 @@ class UnifiedLabel(Widget):
 
   def set_font_size(self, size: int):
     """Update the font size."""
-    self._font_size = size
-    self._spacing_pixels = size * self._letter_spacing  # Recalculate spacing
-    self._cached_text = None  # Invalidate cache
+    if self._font_size != size:
+      self._font_size = size
+      self._spacing_pixels = size * self._letter_spacing  # Recalculate spacing
+      self._cached_text = None  # Invalidate cache
 
   def set_letter_spacing(self, letter_spacing: float):
     """Update letter spacing (as percentage, e.g., 0.1 = 10%)."""
-    self._letter_spacing = letter_spacing
-    self._spacing_pixels = self._font_size * letter_spacing
-    self._cached_text = None  # Invalidate cache
+    if self._letter_spacing != letter_spacing:
+      self._letter_spacing = letter_spacing
+      self._spacing_pixels = self._font_size * letter_spacing
+      self._cached_text = None  # Invalidate cache
 
   def set_font_weight(self, font_weight: FontWeight):
     """Update the font weight."""
