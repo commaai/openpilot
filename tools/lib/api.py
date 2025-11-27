@@ -15,7 +15,8 @@ class CommaApi:
   def request(self, method, endpoint, **kwargs):
     url = API_HOST + '/' + endpoint
     print(f'[API REQUEST] {method} {url}')
-    with self.session.request(method, url, **kwargs) as resp:
+    # with self.session.request(method, url, **kwargs) as resp:
+    with self.session.request(method, API_HOST + '/' + endpoint, **kwargs) as resp:
       print(f'[API RESPONSE] {method} {url} -> {resp.status_code}')
       if resp.status_code == 503:
         # Check if it's from nginx (has Server header) or backend pod
