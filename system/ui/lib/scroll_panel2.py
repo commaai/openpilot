@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app, MouseEvent
 from openpilot.system.hardware import TICI
 from collections import deque
 
-MIN_VELOCITY = 2  # px/s, changes from auto scroll to steady state
+MIN_VELOCITY = 10  # px/s, changes from auto scroll to steady state
 MIN_VELOCITY_FOR_CLICKING = 2 * 60  # px/s, accepts clicks while auto scrolling below this velocity
 MIN_DRAG_PIXELS = 12
 AUTO_SCROLL_TC_SNAP = 0.025
@@ -87,6 +87,7 @@ class GuiScrollPanel2:
 
         # Steady once we are close enough to the target
         if abs(dist) < 1 and abs(self._velocity) < MIN_VELOCITY:
+          self._velocity = 0.0
           self.set_offset(target)
           self._state = ScrollState.STEADY
 
