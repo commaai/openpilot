@@ -1,7 +1,7 @@
 import os
 import requests
-API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
-# API_HOST = os.getenv('API_HOST', 'https://api.aks.comma.ai')
+# API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
+API_HOST = os.getenv('API_HOST', 'https://api.aks.comma.ai')
 
 # TODO: this should be merged into common.api
 
@@ -14,7 +14,7 @@ class CommaApi:
 
   def request(self, method, endpoint, **kwargs):
     url = API_HOST + '/' + endpoint
-    print(f'[API REQUEST] {method} {url}')
+    print(f'\n[API REQUEST] {method} {url}')
     # with self.session.request(method, url, **kwargs) as resp:
     with self.session.request(method, API_HOST + '/' + endpoint, **kwargs) as resp:
       print(f'[API RESPONSE] {method} {url} -> {resp.status_code}')
