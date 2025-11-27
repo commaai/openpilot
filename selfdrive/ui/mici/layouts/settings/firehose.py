@@ -14,7 +14,6 @@ from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
 from openpilot.system.ui.widgets import Widget, NavWidget
 
-
 TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
   "openpilot learns to drive by watching humans, like you, drive.\n\n"
