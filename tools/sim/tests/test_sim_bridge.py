@@ -90,6 +90,12 @@ class TestSimBridgeBase:
       p.terminate()
 
     for p in reversed(self.processes):
-      p.join(timeout=10)
-      if p.is_alive():
-        p.kill()
+      if hasattr(p, "join"):
+        p.join(timeout=10)
+        if getattr(p, "is_alive", lambda: False)():
+          p.kill()
+      else:  # subprocess.Popen
+        try:
+          p.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+          p.kill()

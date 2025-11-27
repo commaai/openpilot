@@ -36,7 +36,7 @@ fi
 BREW_CACHE_DIR="$(brew --cache)"
 rm -f "${BREW_CACHE_DIR}/downloads"/*arm-gnu-toolchain* || true
 
-brew bundle --file=- <<-EOS
+cat > /tmp/op-brew-bundle <<'EOS'
 brew "git-lfs"
 brew "capnp"
 brew "coreutils"
@@ -49,10 +49,16 @@ brew "llvm"
 brew "openssl@3.0"
 brew "qt@5"
 brew "zeromq"
-cask "gcc-arm-embedded"
 brew "portaudio"
 brew "gcc@13"
 EOS
+
+# gcc-arm-embedded often fails checksum on CI mirrors; skip in CI to avoid flakes
+if [[ -z "$CI" ]]; then
+  echo 'cask "gcc-arm-embedded"' >> /tmp/op-brew-bundle
+fi
+
+brew bundle --file=/tmp/op-brew-bundle
 
 echo "[ ] finished brew install t=$SECONDS"
 
