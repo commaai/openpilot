@@ -1,12 +1,12 @@
-# TODO: sort
 import time
-from functools import lru_cache
-from openpilot.common.api import Api, api_get
 import threading
 from collections.abc import Callable
-from openpilot.common.time_helpers import system_time_valid
-from openpilot.common.swaglog import cloudlog
+from functools import lru_cache
+
+from openpilot.common.api import Api, api_get
 from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
 TOKEN_EXPIRY_HOURS = 2
