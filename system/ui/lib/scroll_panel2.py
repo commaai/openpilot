@@ -204,6 +204,10 @@ class GuiScrollPanel2:
   def get_offset(self) -> int:
     return round(self._offset.x if self._horizontal else self._offset.y)
 
+  def get_offset_float(self) -> float:
+    """Get the raw float offset without rounding, for precise calculations."""
+    return self._offset.x if self._horizontal else self._offset.y
+
   def set_offset(self, value: float) -> None:
     if self._horizontal:
       self._offset.x = value

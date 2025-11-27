@@ -146,17 +146,29 @@ class Scroller(Widget):
         self._scroll_snap_filter.x = 0
       else:
         # TODO: this doesn't handle two small buttons at the edges well
+        # Use float offset to avoid rounding precision loss
+        current_offset_float = self.scroll_panel.get_offset_float()
         if self._horizontal:
-          snap_delta_pos = (center_pos - (snap_item.rect.x + snap_item.rect.width / 2)) / 10
-          snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
-          snap_delta_pos = max(snap_delta_pos, (self._rect.width - self.scroll_panel.get_offset() - content_size) / 10)
+          snap_target_delta = center_pos - (snap_item.rect.x + snap_item.rect.width / 2)
+          snap_delta_pos = min(snap_target_delta, -current_offset_float)
+          snap_delta_pos = max(snap_delta_pos, self._rect.width - current_offset_float - content_size)
         else:
-          snap_delta_pos = (center_pos - (snap_item.rect.y + snap_item.rect.height / 2)) / 10
-          snap_delta_pos = min(snap_delta_pos, -self.scroll_panel.get_offset() / 10)
-          snap_delta_pos = max(snap_delta_pos, (self._rect.height - self.scroll_panel.get_offset() - content_size) / 10)
-        self._scroll_snap_filter.update(snap_delta_pos)
+          snap_target_delta = center_pos - (snap_item.rect.y + snap_item.rect.height / 2)
+          snap_delta_pos = min(snap_target_delta, -current_offset_float)
+          snap_delta_pos = max(snap_delta_pos, self._rect.height - current_offset_float - content_size)
 
-      self.scroll_panel.set_offset(self.scroll_panel.get_offset() + self._scroll_snap_filter.x)
+        # If very close to target, snap directly to avoid deadzone
+        print(snap_target_delta)
+        if abs(snap_target_delta) < 1:
+          self._scroll_snap_filter.x = 0  # Reset filter when snapping directly
+          self.scroll_panel.set_offset(current_offset_float + snap_target_delta)
+        else:
+          # Use filtered movement for smooth snapping
+          # Ensure we always apply movement when significant to overcome STEADY state
+          self._scroll_snap_filter.update(snap_delta_pos / 10)
+          snap_adjustment = self._scroll_snap_filter.x
+          if abs(snap_adjustment) > 0.05:  # Only apply if movement is significant enough
+            self.scroll_panel.set_offset(current_offset_float + snap_adjustment)
 
     return self.scroll_panel.get_offset()
 
