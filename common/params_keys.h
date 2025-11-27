@@ -9,8 +9,8 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"AccessToken", {CLEAR_ON_MANAGER_START | DONT_LOG, STRING}},
     {"AdbEnabled", {PERSISTENT, BOOL}},
     {"AlwaysOnDM", {PERSISTENT, BOOL}},
-    {"ApiCache_Device", {PERSISTENT, STRING}},  // TODO: change to JSON? what happens if we change FirehoseStats to string? exception or silent  fail to load (good)?
-    {"ApiCache_FirehoseStats", {PERSISTENT, JSON}},
+    {"ApiCache_Device", {PERSISTENT, STRING}},
+    {"ApiCache_FirehoseStats", {PERSISTENT, STRING}},
     {"AssistNowToken", {PERSISTENT, STRING}},
     {"AthenadPid", {PERSISTENT, INT}},
     {"AthenadUploadQueue", {PERSISTENT, JSON}},
