@@ -1,6 +1,7 @@
 import os
 import requests
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
+# API_HOST = os.getenv('API_HOST', 'https://api.aks.comma.ai')
 
 # TODO: this should be merged into common.api
 
@@ -12,11 +13,15 @@ class CommaApi:
       self.session.headers['Authorization'] = 'JWT ' + token
 
   def request(self, method, endpoint, **kwargs):
-    with self.session.request(method, API_HOST + '/' + endpoint, **kwargs) as resp:
-      print('got resp', resp.status_code, resp.text)
-
+    url = API_HOST + '/' + endpoint
+    print(f'[API REQUEST] {method} {url}')
+    with self.session.request(method, url, **kwargs) as resp:
+      print(f'[API RESPONSE] {method} {url} -> {resp.status_code}')
       if resp.status_code == 503:
-        e = APIError(f"503: Service Temporarily Unavailable")
+        # Check if it's from nginx (has Server header) or backend pod
+        server_header = resp.headers.get('Server', 'unknown')
+        print(f'503 source: Server={server_header}, Headers={dict(resp.headers)}')
+        e = APIError(f"503: Service Temporarily Unavailable (from {server_header})")
         e.status_code = 503
         raise e
 

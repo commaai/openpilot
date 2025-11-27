@@ -30,6 +30,7 @@ class Route:
       self._segments = self._get_segments_local(data_dir)
     else:
       self._segments = self._get_segments_remote()
+    print(self._segments)
     self.max_seg_number = self._segments[-1].name.segment_num
 
   @property
