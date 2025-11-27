@@ -70,7 +70,7 @@ Change `COLORS.white` to make it **blue** instead of white. A nice soft blue is 
 
 ## 4. Re-run the UI
 
-After making changes, re-run the demo replay to see your new UI:
+After making changes, re-run the UI to see your new UI:
 ```bash
 ./selfdrive/ui/ui.py
 ```
