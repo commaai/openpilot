@@ -44,7 +44,7 @@ def quantized_lru_cache(maxsize=128):
   return decorator
 
 
-@quantized_lru_cache(maxsize=256)
+# @quantized_lru_cache(maxsize=256)
 def arc_bar_pts(cx: float, cy: float,
                 r_mid: float, thickness: float,
                 a0_deg: float, a1_deg: float,
@@ -129,6 +129,11 @@ def arc_bar_pts(cx: float, cy: float,
   cap_start = get_cap(True, a0_deg)
 
   pts = np.vstack((outer, cap_end, inner, cap_start, outer[:1])).astype(np.float32)
+  print(pts)
+  # Rotate to start from middle for proper triangulation
+  mid = len(pts) // 2
+  print(len(outer), len(cap_end), len(inner), len(cap_start), len(pts))
+  pts = np.roll(pts, 10, axis=0)
 
   if DEBUG:
     n = len(pts)
@@ -138,6 +143,8 @@ def arc_bar_pts(cx: float, cy: float,
       t = j / n
       color = rl.Color(255, int(255 * (1 - t)), int(255 * t), 255)
       rl.draw_circle(int(x), int(y), 2, color)
+
+  # print(pts)
 
   return pts
 
@@ -207,10 +214,10 @@ class TorqueBar(Widget):
     bg_pts = arc_bar_pts(cx, cy, mid_r, torque_line_height, torque_start_angle, torque_end_angle)
     draw_polygon(rect, bg_pts, color=torque_line_bg_color)
 
-    # draw torque indicator line
-    a0s = top_angle
-    a1s = a0s + torque_bg_angle_span / 2 * self._torque_filter.x
-    sl_pts = arc_bar_pts(cx, cy, mid_r, torque_line_height, a0s, a1s)
+    # # draw torque indicator line
+    # a0s = top_angle
+    # a1s = a0s + torque_bg_angle_span / 2 * self._torque_filter.x
+    # sl_pts = arc_bar_pts(cx, cy, mid_r, torque_line_height, a0s, a1s)
 
     # draw beautiful gradient from center to 65% of the bg torque bar width
     start_grad_pt = cx / rect.width
@@ -244,7 +251,7 @@ class TorqueBar(Widget):
       stops=[0.0, 1.0],
     )
 
-    draw_polygon(rect, sl_pts, gradient=gradient)
+    # draw_polygon(rect, sl_pts, gradient=gradient)
 
     # draw center torque bar dot
     if abs(self._torque_filter.x) < 0.5:
