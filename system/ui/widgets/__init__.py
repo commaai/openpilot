@@ -118,11 +118,11 @@ class Widget(abc.ABC):
       if not self._multi_touch and mouse_event.slot != 0:
         continue
 
-      in_rect = rl.check_collision_point_rec(mouse_event.pos, hit_rect)
+      mouse_in_rect = rl.check_collision_point_rec(mouse_event.pos, hit_rect)
       # Ignores touches/presses that start outside our rect
       # Allows touch to leave the rect and come back in focus if mouse did not release
       if mouse_event.left_pressed and touch_valid:
-        if in_rect:
+        if mouse_in_rect:
           self._handle_mouse_press(mouse_event.pos)
           self.__is_pressed[mouse_event.slot] = True
           self.__tracking_is_pressed[mouse_event.slot] = True
@@ -135,19 +135,19 @@ class Widget(abc.ABC):
 
       elif mouse_event.left_released:
         self._handle_mouse_event(mouse_event)
-        if self.__is_pressed[mouse_event.slot] and in_rect:
+        if self.__is_pressed[mouse_event.slot] and mouse_in_rect:
           self._handle_mouse_release(mouse_event.pos)
         self.__is_pressed[mouse_event.slot] = False
         self.__tracking_is_pressed[mouse_event.slot] = False
 
       # Mouse/touch is still within our rect
-      elif in_rect:
+      elif mouse_in_rect:
         if self.__tracking_is_pressed[mouse_event.slot]:
           self.__is_pressed[mouse_event.slot] = True
           self._handle_mouse_event(mouse_event)
 
       # Mouse/touch left our rect but may come back into focus later
-      elif not in_rect:
+      elif not mouse_in_rect:
         self.__is_pressed[mouse_event.slot] = False
         self._handle_mouse_event(mouse_event)
 
