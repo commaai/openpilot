@@ -66,8 +66,6 @@ Change `COLORS.white` to make it **blue** instead of white. A nice soft blue is 
 + rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, rl.Color(0x80, 0x80, 0xFF, 255))
 ```
 
-This change will make the speed display text blue.
-
 ---
 
 ## 4. Re-run the UI
