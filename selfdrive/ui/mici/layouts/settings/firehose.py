@@ -12,8 +12,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
-from openpilot.system.ui.widgets import NavWidget
-from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
+from openpilot.system.ui.widgets import Widget, NavWidget
 
 
 TITLE = tr_noop("Firehose Mode")
@@ -35,13 +34,16 @@ FAQ_ITEMS = [
 ]
 
 
-class FirehoseLayoutMici(FirehoseLayout, NavWidget):
-  BACK_TOUCH_AREA_PERCENTAGE = 0.1
+class FirehoseLayoutBase(Widget):
+  PARAM_KEY = "ApiCache_FirehoseStats"
+  GREEN = rl.Color(46, 204, 113, 255)
+  RED = rl.Color(231, 76, 60, 255)
+  GRAY = rl.Color(68, 68, 68, 255)
+  LIGHT_GRAY = rl.Color(228, 228, 228, 255)
+  UPDATE_INTERVAL = 30  # seconds
 
-  def __init__(self, back_callback):
+  def __init__(self):
     super().__init__()
-    self.set_back_callback(back_callback)
-
     self._params = Params()
     self._segment_count = self._get_segment_count()
 
@@ -215,3 +217,11 @@ class FirehoseLayoutMici(FirehoseLayout, NavWidget):
       if not ui_state.started:
         self._fetch_firehose_stats()
       time.sleep(self.UPDATE_INTERVAL)
+
+
+class FirehoseLayout(FirehoseLayoutBase, NavWidget):
+  BACK_TOUCH_AREA_PERCENTAGE = 0.1
+
+  def __init__(self, back_callback):
+    super().__init__()
+    self.set_back_callback(back_callback)
