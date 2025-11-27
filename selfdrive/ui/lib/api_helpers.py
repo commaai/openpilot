@@ -83,6 +83,7 @@ class RequestRepeater:
     from openpilot.selfdrive.ui.ui_state import ui_state, device
 
     while self._running:
+      # Don't run when device is asleep or onroad
       if not ui_state.started and device.awake:
         self._send_request()
 
