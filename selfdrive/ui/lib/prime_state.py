@@ -38,14 +38,11 @@ class PrimeState:
     return PrimeType.UNKNOWN
 
   def _handle_reply(self, response: str, success: bool):
-    print('response', response, 'success', success)
     if not success:
       return
 
     try:
       data = json.loads(response)
-      print()
-      print('got data json', data)
       is_paired = data.get("is_paired", False)
       prime_type = data.get("prime_type", 0)
       self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
