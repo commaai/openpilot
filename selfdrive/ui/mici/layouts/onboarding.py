@@ -9,8 +9,6 @@ from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import SmallSlider
 from openpilot.system.ui.mici_setup import TermsHeader, TermsPage as SetupTermsPage
 from openpilot.selfdrive.ui.ui_state import ui_state, device
-from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
-from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.system.ui.widgets.label import gui_label
@@ -55,43 +53,13 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     return -1
 
 
-class TrainingGuideIntro(SetupTermsPage):
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="continue")
-    self._title_header = TermsHeader("welcome to openpilot", gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 60, 60))
-
-    self._dm_label = UnifiedLabel("Before we get on the road, let's review the " +
-                                  "functionality and limitations of openpilot.", 42,
-                                  FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._dm_label.rect.y + self._dm_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._dm_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._dm_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-
 class TrainingGuidePreDMTutorial(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("driver monitoring setup", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
     self._dm_label = UnifiedLabel("Next, we'll ensure comma four is mounted properly.\n\nIf it does not have a clear view of the driver, " +
-                                  "simply unplug and remount before continuing.\n\n" +
-                                  "NOTE: the driver camera will have a purple tint due to the IR illumination used for seeing at night.", 42,
+                                  "unplug and remount before continuing.", 42,
                                   FontWeight.ROMAN)
 
   def show_event(self):
@@ -182,8 +150,7 @@ class TrainingGuideRecordFront(SetupTermsPage):
     super().__init__(on_continue, back_callback=on_back, back_text="no", continue_text="yes")
     self._title_header = TermsHeader("improve driver monitoring", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._dm_label = UnifiedLabel("Help improve driver monitoring by including your driving data in the training data set. " +
-                                  "Your preference can be changed at any time in Settings. Would you like to share your data?", 42,
+    self._dm_label = UnifiedLabel("Do you want to upload driver camera data?", 42,
                                   FontWeight.ROMAN)
 
   def show_event(self):
@@ -211,11 +178,14 @@ class TrainingGuideRecordFront(SetupTermsPage):
     ))
 
 
-class TrainingGuideAttentionNotice1(SetupTermsPage):
+class TrainingGuideAttentionNotice(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
-    self._title_header = TermsHeader("not a self driving car", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("THIS IS A DRIVER ASSISTANCE SYSTEM. A DRIVER ASSISTANCE SYSTEM IS NOT A SELF-DRIVING CAR.", 42,
+    self._title_header = TermsHeader("driver assistance", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
+    self._warning_label = UnifiedLabel("1. openpilot is a driver assistance system.\n\n" +
+                                       "2. You must pay attention at all times.\n\n" +
+                                       "3. You must be ready to take over at any time.\n\n" +
+                                       "4. You are fully responsible for driving the car.", 42,
                                        FontWeight.ROMAN)
 
   @property
@@ -236,188 +206,6 @@ class TrainingGuideAttentionNotice1(SetupTermsPage):
       self._rect.width - 32,
       self._warning_label.get_content_height(int(self._rect.width - 32)),
     ))
-
-
-class TrainingGuideAttentionNotice2(SetupTermsPage):
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="continue")
-    self._title_header = TermsHeader("attention is required", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("1. You must pay attention at all times.\n\n2. You must be ready to take over at any time."+
-                                       "\n\n3. You are fully responsible for driving the car.", 42,
-                                       FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._warning_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._warning_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-
-class TrainingGuideDisengaging(SetupTermsPage):
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="continue")
-    self._title_header = TermsHeader("disengaging openpilot", gui_app.texture("icons_mici/setup/green_pedal.png", 60, 60))
-    self._warning_label = UnifiedLabel("You can disengage openpilot by either pressing the brake pedal or " +
-                                       "the cancel button on your steering wheel.", 42,
-                                       FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._warning_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._warning_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-
-class TrainingGuideConfidenceBall(SetupTermsPage):
-  ANIMATION_PAUSE = 3.5
-
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="continue")
-    self._confidence_ball = ConfidenceBall(demo=True)
-    self._start_time = 0.0
-
-    self._title_header = TermsHeader("confidence ball", gui_app.texture("icons_mici/setup/green_car.png", 60, 60))
-    self._warning_label = UnifiedLabel("The ball on the right communicates how confident openpilot " +
-                                       "is about the road scene at any given time.", 42,
-                                       FontWeight.ROMAN)
-
-  def show_event(self):
-    super().show_event()
-    self._start_time = rl.get_time()
-
-  @property
-  def _content_height(self):
-    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    # room for confidence ball
-    label_width = self._rect.width - 32 - 60
-    self._warning_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      label_width,
-      self._warning_label.get_content_height(int(label_width)),
-    ))
-
-    duration = rl.get_time() - self._start_time
-    if duration > 5 + self.ANIMATION_PAUSE * 2:
-      # reset animation
-      self._start_time = rl.get_time()
-    if duration > 5 + self.ANIMATION_PAUSE:
-      self._confidence_ball.update_filter(0.1)
-    elif duration > 5:
-      self._confidence_ball.update_filter(0.4)
-    elif duration > 0.5:
-      self._confidence_ball.update_filter(0.9)
-
-    self._confidence_ball.render(self._rect)
-    self._rect.width -= 60
-
-
-class TrainingGuideSteeringArc(SetupTermsPage):
-  ANIMATION_PAUSE = 2
-  TORQUE_BAR_HEIGHT = 100
-
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="finish")
-    self._torque_bar = TorqueBar(demo=True)
-    self._start_time = 0.0
-
-    self._title_header = TermsHeader("steering arc", gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 60, 60))
-    self._warning_label = UnifiedLabel("All cars limit the amount of steering that openpilot is able to apply. While driving, the " +
-                                       "steering arc shows the current amount of force being applied in relation to the maximum available to openpilot. " +
-                                       "You may need to assist if you see the arc nearing its orange state.", 42,
-                                       FontWeight.ROMAN)
-
-  def show_event(self):
-    super().show_event()
-    self._start_time = rl.get_time()
-
-  @property
-  def _content_height(self):
-    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset() + self.TORQUE_BAR_HEIGHT
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._warning_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._warning_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-    duration = rl.get_time() - self._start_time
-    if duration > self.ANIMATION_PAUSE * 5:
-      # reset animation
-      self._start_time = rl.get_time()
-    elif duration > self.ANIMATION_PAUSE * 4:
-      self._torque_bar.update_filter(-1.0)
-    elif duration > self.ANIMATION_PAUSE * 3:
-      self._torque_bar.update_filter(-0.2)
-    elif duration > self.ANIMATION_PAUSE * 2:
-      self._torque_bar.update_filter(1.0)
-    elif duration > self.ANIMATION_PAUSE:
-      self._torque_bar.update_filter(0.7)
-    else:
-      self._torque_bar.update_filter(0.0)
-
-    # background gradient for torque bar legibility
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height * 0.6),
-                                 int(self._rect.width), int(self._rect.height * 0.2),
-                                 rl.BLANK, rl.Color(0, 0, 0, int(255 * 0.9)))
-    rl.draw_rectangle(int(self._rect.x), int(self._rect.y + self._rect.height * 0.8),
-                      int(self._rect.width), int(self._rect.height * 0.2),
-                      rl.Color(0, 0, 0, int(255 * 0.9)))
-
-    # scroll torque bar once we get to the bottom of content
-    torque_y_offset = min(0.0, self._warning_label.rect.y + self._warning_label.rect.height -
-                          self._rect.height + self.TORQUE_BAR_HEIGHT)
-    torque_rect = rl.Rectangle(
-      self._rect.x,
-      self._rect.y + torque_y_offset,
-      self._rect.width,
-      self._rect.height,
-    )
-    self._torque_bar.render(torque_rect)
 
 
 class TrainingGuide(Widget):
@@ -427,15 +215,10 @@ class TrainingGuide(Widget):
     self._step = 0
 
     self._steps = [
-      TrainingGuideIntro(continue_callback=self._advance_step),
-      TrainingGuideAttentionNotice1(continue_callback=self._advance_step),
-      TrainingGuideAttentionNotice2(continue_callback=self._advance_step),
+      TrainingGuideAttentionNotice(continue_callback=self._advance_step),
       TrainingGuidePreDMTutorial(continue_callback=self._advance_step),
       TrainingGuideDMTutorial(continue_callback=self._advance_step),
       TrainingGuideRecordFront(continue_callback=self._advance_step),
-      TrainingGuideDisengaging(continue_callback=self._advance_step),
-      TrainingGuideConfidenceBall(continue_callback=self._advance_step),
-      TrainingGuideSteeringArc(continue_callback=self._advance_step),
     ]
 
   def _advance_step(self):
@@ -497,7 +280,7 @@ class TermsPage(SetupTermsPage):
     super().__init__(on_accept, on_decline, "decline")
 
     info_txt = gui_app.texture("icons_mici/setup/green_info.png", 60, 60)
-    self._title_header = TermsHeader("scroll down to read &\n accept terms", info_txt)
+    self._title_header = TermsHeader("terms & conditions", info_txt)
 
     self._terms_label = UnifiedLabel("You must accept the Terms and Conditions to use openpilot. " +
                                      "Read the latest terms at https://comma.ai/terms before continuing.", 36,

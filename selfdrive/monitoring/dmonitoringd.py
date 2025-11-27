@@ -38,9 +38,9 @@ def dmonitoringd_thread():
       demo_mode = params.get_bool("IsDriverViewEnabled")
 
     # save rhd virtual toggle every 5 mins
-    if (sm['driverStateV2'].frameId % 6000 == 0 and
-     DM.wheelpos_learner.filtered_stat.n > DM.settings._WHEELPOS_FILTER_MIN_COUNT and
-     DM.wheel_on_right == (DM.wheelpos_learner.filtered_stat.M > DM.settings._WHEELPOS_THRESHOLD)):
+    if (sm['driverStateV2'].frameId % 6000 == 0 and not demo_mode and
+     DM.wheelpos.prob_offseter.filtered_stat.n > DM.settings._WHEELPOS_FILTER_MIN_COUNT and
+     DM.wheel_on_right == (DM.wheelpos.prob_offseter.filtered_stat.M > DM.settings._WHEELPOS_THRESHOLD)):
       params.put_bool_nonblocking("IsRhdDetected", DM.wheel_on_right)
 
 def main():

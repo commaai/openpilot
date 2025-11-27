@@ -366,6 +366,10 @@ class NavWidget(Widget, abc.ABC):
       self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
       self._nav_bar.render()
 
+      # draw black above widget when dismissing
+      if self._rect.y > 0:
+        rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
+
     return ret
 
   def show_event(self):

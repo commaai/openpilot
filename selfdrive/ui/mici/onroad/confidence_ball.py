@@ -16,7 +16,7 @@ def draw_circle_gradient(center_x: float, center_y: float, radius: int,
 
   # Paint over square with a ring
   outer_radius = math.ceil(radius * math.sqrt(2)) + 1
-  rl.draw_ring(rl.Vector2(center_x, center_y), radius, outer_radius,
+  rl.draw_ring(rl.Vector2(int(center_x), int(center_y)), radius, outer_radius,
                0.0, 360.0,
                20, rl.BLACK)
 

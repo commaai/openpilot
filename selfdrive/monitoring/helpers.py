@@ -98,6 +98,12 @@ class DriverPose:
     self.cfactor_pitch = 1.
     self.cfactor_yaw = 1.
 
+class DriverProb:
+  def __init__(self, max_trackable):
+    self.prob = 0.
+    self.prob_offseter = RunningStatFilter(max_trackable=max_trackable)
+    self.prob_calibrated = False
+
 class DriverBlink:
   def __init__(self):
     self.left = 0.
@@ -134,12 +140,10 @@ class DriverMonitoring:
     self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
 
     # init driver status
-    self.wheelpos_learner = RunningStatFilter()
+    self.wheelpos = DriverProb(-1)
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
+    self.phone = DriverProb(self.settings._POSE_OFFSET_MAX_COUNT)
     self.blink = DriverBlink()
-    self.phone_prob = 0.
-    self.phone_offseter = RunningStatFilter(max_trackable=self.settings._POSE_OFFSET_MAX_COUNT)
-    self.phone_calibrated = False
 
     self.always_on = always_on
     self.distracted_types = []
@@ -237,28 +241,31 @@ class DriverMonitoring:
     if (self.blink.left + self.blink.right)*0.5 > self.settings._BLINK_THRESHOLD:
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
-    if self.phone_calibrated:
-      using_phone = self.phone_prob > max(min(self.phone_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) \
-                              * self.settings._PHONE_THRESH2
+    if self.phone.prob_calibrated:
+      using_phone = self.phone.prob > max(min(self.phone.prob_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) \
+                                      * self.settings._PHONE_THRESH2
     else:
-      using_phone = self.phone_prob > self.settings._PHONE_THRESH
+      using_phone = self.phone.prob > self.settings._PHONE_THRESH
     if using_phone:
       distracted_types.append(DistractedType.DISTRACTED_PHONE)
 
     return distracted_types
 
-  def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill):
+  def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False):
     rhd_pred = driver_state.wheelOnRightProb
     # calibrates only when there's movement and either face detected
     if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
                                           driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
-      self.wheelpos_learner.push_and_update(rhd_pred)
-    if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
-      self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
+      self.wheelpos.prob_offseter.push_and_update(rhd_pred)
+
+    self.wheelpos.prob_calibrated = self.wheelpos.prob_offseter.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT
+
+    if self.wheelpos.prob_calibrated or demo_mode:
+      self.wheel_on_right = self.wheelpos.prob_offseter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
       self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
     # make sure no switching when engaged
-    if op_engaged and self.wheel_on_right_last is not None and self.wheel_on_right_last != self.wheel_on_right:
+    if op_engaged and self.wheel_on_right_last is not None and self.wheel_on_right_last != self.wheel_on_right and not demo_mode:
       self.wheel_on_right = self.wheel_on_right_last
     driver_data = driver_state.rightDriverData if self.wheel_on_right else driver_state.leftDriverData
     if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
@@ -275,14 +282,15 @@ class DriverMonitoring:
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
     self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD
     self.blink.left = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) \
-                                                                  * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+                      * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) \
-                                                                  * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.phone_prob = driver_data.phoneProb
+                      * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.phone.prob = driver_data.phoneProb
 
     self.distracted_types = self._get_distracted_types()
-    self.driver_distracted = (DistractedType.DISTRACTED_PHONE in self.distracted_types or DistractedType.DISTRACTED_POSE in self.distracted_types
-                                or DistractedType.DISTRACTED_BLINK in self.distracted_types) \
+    self.driver_distracted = (DistractedType.DISTRACTED_PHONE in self.distracted_types
+                              or DistractedType.DISTRACTED_POSE in self.distracted_types
+                              or DistractedType.DISTRACTED_BLINK in self.distracted_types) \
                               and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
@@ -291,11 +299,11 @@ class DriverMonitoring:
     if self.face_detected and car_speed > self.settings._POSE_CALIB_MIN_SPEED and self.pose.low_std and (not op_engaged or not self.driver_distracted):
       self.pose.pitch_offseter.push_and_update(self.pose.pitch)
       self.pose.yaw_offseter.push_and_update(self.pose.yaw)
-      self.phone_offseter.push_and_update(self.phone_prob)
+      self.phone.prob_offseter.push_and_update(self.phone.prob)
 
     self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and \
-                                       self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
-    self.phone_calibrated = self.phone_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+                           self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
+    self.phone.prob_calibrated = self.phone.prob_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
       if model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD:
@@ -401,6 +409,8 @@ class DriverMonitoring:
       "posePitchValidCount": self.pose.pitch_offseter.filtered_stat.n,
       "poseYawOffset": self.pose.yaw_offseter.filtered_stat.mean(),
       "poseYawValidCount": self.pose.yaw_offseter.filtered_stat.n,
+      "phoneProbOffset": self.phone.prob_offseter.filtered_stat.mean(),
+      "phoneProbValidCount": self.phone.prob_offseter.filtered_stat.n,
       "stepChange": self.step_change,
       "awarenessActive": self.awareness_active,
       "awarenessPassive": self.awareness_passive,
@@ -441,6 +451,7 @@ class DriverMonitoring:
       car_speed=highway_speed,
       op_engaged=enabled,
       standstill=standstill,
+      demo_mode=demo,
     )
 
     # Update distraction events
