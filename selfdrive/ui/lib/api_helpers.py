@@ -33,7 +33,7 @@ class RequestRepeater:
     self._dongle_id = dongle_id
     self._request_route = request_route
     self._cache_key = cache_key
-    self._period = period
+    self._period = period  # seconds
 
     self._request_done_callbacks: list[Callable[[str, bool], None]] = []
     self.add_request_done_callback(self._handle_reply)
@@ -68,24 +68,18 @@ class RequestRepeater:
       if now - self._last_request_time >= self._period:
         self._last_request_time = now
 
-        """
-        if ((!uiState()->scene.started || while_onroad) && device()->isAwake() && !active()) {
-          sendRequest(requestURL);
-        }
-        """
-        # TODO: this
-        active_request = False
+        active_request = False   # TODO: this
         if not ui_state.started and device.is_awake() and not active_request:
+          print('RUNNING REQUEST')
           self._send_request()
+        else:
+          print('SKIPPING REQUEST')
 
       time.sleep(self.SLEEP_INTERVAL)
 
   def _send_request(self):
-    print('dongle id', self._dongle_id)
-
     try:
       identity_token = get_token(self._dongle_id)
-      # print('identity token', identity_token)
       response = api_get(f"v1.1/devices/{self._dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token)
 
       if response.status_code == 200:
@@ -95,18 +89,5 @@ class RequestRepeater:
         for callback in self._request_done_callbacks:
           callback(response.text, False)
 
-      # if response.status_code == 200:
-      #   data = response.json()
-      #   is_paired = data.get("is_paired", False)
-      #   prime_type = data.get("prime_type", 0)
     except Exception as e:
       cloudlog.error(f"Failed to fetch prime status: {e}")
-
-    # try:
-    #   response = Api(self._dongle_id).request('GET', self._request_route, access_token=token, timeout=5)
-    #   success = response.status_code == 200
-    #   data = response.text if success else None
-    # except Exception as e:
-    #   cloudlog.error(f"RequestRepeater request failed: {e}")
-    #   success = False
-    #   data = None
