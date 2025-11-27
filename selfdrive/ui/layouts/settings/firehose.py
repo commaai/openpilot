@@ -1,4 +1,5 @@
 import pyray as rl
+
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
