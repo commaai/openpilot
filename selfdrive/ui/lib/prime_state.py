@@ -3,7 +3,7 @@ import os
 import threading
 import time
 
-from openpilot.common.api import api_get
+from openpilot.common.api import api_get, RequestRepeater
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
@@ -31,6 +31,10 @@ class PrimeState:
     self._lock = threading.Lock()
     self.prime_type: PrimeType = self._load_initial_state()
 
+    dongle_id = self._params.get("DongleId")
+    self._request_repeater = RequestRepeater(f"v1.1/devices/{dongle_id}", "ApiCache_Device", 5)
+    self._request_repeater.set_request_done_callback(self._handle_reply)
+
     self._running = False
     self._thread = None
 
@@ -42,6 +46,9 @@ class PrimeState:
     except (ValueError, TypeError):
       pass
     return PrimeType.UNKNOWN
+
+  def _handle_reply(self, response: str, success: bool):
+    print('response', response, 'success', success)
 
   def _fetch_prime_status(self) -> None:
     dongle_id = self._params.get("DongleId")
@@ -67,14 +74,8 @@ class PrimeState:
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def _worker_thread(self) -> None:
-    # Import here to avoid circular dependency (ui_state imports PrimeState)
-    from openpilot.selfdrive.ui.ui_state import ui_state, device
-
     while self._running:
-      # Only fetch when offroad and awake (matching Qt RequestRepeater behavior)
-      # This reduces API calls by 2-4x by not polling while driving or sleeping
-      if not ui_state.started and device.awake:
-        self._fetch_prime_status()
+      self._fetch_prime_status()
 
       for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
         if not self._running:
