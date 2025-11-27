@@ -42,21 +42,20 @@ class FirehoseLayout(Widget):
 
   def __init__(self):
     super().__init__()
-    self.params = Params()
-    self.segment_count = self._get_segment_count()
-    self.scroll_panel = GuiScrollPanel()
+    self._params = Params()
+    self._segment_count = self._get_segment_count()
+    self._scroll_panel = GuiScrollPanel()
     self._content_height = 0
 
-    self.running = True
-    self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
-    self.update_thread.start()
-    self.last_update_time = 0
+    self._running = True
+    self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
+    self._update_thread.start()
 
   def show_event(self):
-    self.scroll_panel.set_offset(0)
+    self._scroll_panel.set_offset(0)
 
   def _get_segment_count(self) -> int:
-    stats = self.params.get(self.PARAM_KEY)
+    stats = self._params.get(self.PARAM_KEY)
     if not stats:
       return 0
     try:
@@ -66,16 +65,16 @@ class FirehoseLayout(Widget):
       return 0
 
   def __del__(self):
-    self.running = False
-    if self.update_thread and self.update_thread.is_alive():
-      self.update_thread.join(timeout=1.0)
+    self._running = False
+    if self._update_thread and self._update_thread.is_alive():
+      self._update_thread.join(timeout=1.0)
 
   def _render(self, rect: rl.Rectangle):
     # Calculate content dimensions
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, self._content_height)
 
     # Handle scrolling and render with clipping
-    scroll_offset = self.scroll_panel.update(rect, content_rect)
+    scroll_offset = self._scroll_panel.update(rect, content_rect)
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._content_height = self._render_content(rect, scroll_offset)
     rl.end_scissor_mode()
@@ -107,9 +106,9 @@ class FirehoseLayout(Widget):
     y += 20 + 20
 
     # Contribution count (if available)
-    if self.segment_count > 0:
+    if self._segment_count > 0:
       contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self.segment_count).format(self.segment_count)
+                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
       y = self._draw_wrapped_text(x, y, w, contrib_text, gui_app.font(FontWeight.BOLD), 52, rl.WHITE)
       y += 20 + 20
 
@@ -121,7 +120,7 @@ class FirehoseLayout(Widget):
     y = self._draw_wrapped_text(x, y, w, tr(INSTRUCTIONS), gui_app.font(FontWeight.NORMAL), 40, self.LIGHT_GRAY)
 
     # bottom margin + remove effect of scroll offset
-    return int(round(y - self.scroll_panel.offset + 40))
+    return int(round(y - self._scroll_panel.offset + 40))
 
   def _draw_wrapped_text(self, x, y, width, text, font, font_size, color):
     wrapped = wrap_text(font, text, font_size, width)
@@ -141,20 +140,20 @@ class FirehoseLayout(Widget):
 
   def _fetch_firehose_stats(self):
     try:
-      dongle_id = self.params.get("DongleId")
+      dongle_id = self._params.get("DongleId")
       if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
         return
       identity_token = get_token(dongle_id)
       response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token)
       if response.status_code == 200:
         data = response.json()
-        self.segment_count = data.get("firehose", 0)
-        self.params.put(self.PARAM_KEY, data)
+        self._segment_count = data.get("firehose", 0)
+        self._params.put(self.PARAM_KEY, data)
     except Exception as e:
       cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
   def _update_loop(self):
-    while self.running:
+    while self._running:
       if not ui_state.started:
         self._fetch_firehose_stats()
       time.sleep(self.UPDATE_INTERVAL)
