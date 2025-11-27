@@ -8,9 +8,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
-from openpilot.system.ui.widgets import NavWidget
 from openpilot.selfdrive.ui.lib.api_helpers import RequestRepeater
-
+from openpilot.system.ui.widgets import Widget, NavWidget
 
 TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
@@ -31,19 +30,17 @@ FAQ_ITEMS = [
 ]
 
 
-class FirehoseLayoutMici(NavWidget):
-  BACK_TOUCH_AREA_PERCENTAGE = 0.1
-
+class FirehoseLayoutBase(Widget):
   GREEN = rl.Color(46, 204, 113, 255)
   RED = rl.Color(231, 76, 60, 255)
   GRAY = rl.Color(68, 68, 68, 255)
   LIGHT_GRAY = rl.Color(228, 228, 228, 255)
 
-  def __init__(self, back_callback):
+  def __init__(self):
     super().__init__()
-    self.set_back_callback(back_callback)
+    self._params = Params()
+    self._segment_count = 0
 
-    self.segment_count = 0
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
     self._content_height = 0
 
@@ -59,7 +56,7 @@ class FirehoseLayoutMici(NavWidget):
 
     try:
       data = json.loads(response)
-      self.segment_count = data.get("firehose", 0)
+      self._segment_count = data.get("firehose", 0)
     except Exception as e:
       cloudlog.error(f"Failed to parse firehose stats from response: {e}")
 
@@ -98,9 +95,9 @@ class FirehoseLayoutMici(NavWidget):
     y += 20
 
     # Contribution count (if available)
-    if self.segment_count > 0:
+    if self._segment_count > 0:
       contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self.segment_count).format(self.segment_count)
+                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
       y = self._draw_wrapped_text(x, y, w, contrib_text, gui_app.font(FontWeight.BOLD), 42, rl.WHITE)
       y += 20
 
@@ -152,9 +149,9 @@ class FirehoseLayoutMici(NavWidget):
     y += int(len(status_lines) * 48 * FONT_SCALE) + 20
 
     # Contribution count
-    if self.segment_count > 0:
+    if self._segment_count > 0:
       contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self.segment_count).format(self.segment_count)
+                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
       contrib_lines = wrap_text(gui_app.font(FontWeight.BOLD), contrib_text, 42, w)
       y += int(len(contrib_lines) * 42 * FONT_SCALE) + 20
 
@@ -188,3 +185,11 @@ class FirehoseLayoutMici(NavWidget):
       return tr("ACTIVE"), self.GREEN
     else:
       return tr("INACTIVE: connect to an unmetered network"), self.RED
+
+
+class FirehoseLayout(FirehoseLayoutBase, NavWidget):
+  BACK_TOUCH_AREA_PERCENTAGE = 0.1
+
+  def __init__(self, back_callback):
+    super().__init__()
+    self.set_back_callback(back_callback)
