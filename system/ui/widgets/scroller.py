@@ -224,12 +224,15 @@ class Scroller(Widget):
 
       # Scale each element around its own origin when scrolling
       scale = self._zoom_filter.x
-      rl.rl_push_matrix()
-      rl.rl_scalef(scale, scale, 1.0)
-      rl.rl_translatef((1 - scale) * (x + item.rect.width / 2) / scale,
-                       (1 - scale) * (y + item.rect.height / 2) / scale, 0)
-      item.render()
-      rl.rl_pop_matrix()
+      if scale != 1.0:
+        rl.rl_push_matrix()
+        rl.rl_scalef(scale, scale, 1.0)
+        rl.rl_translatef((1 - scale) * (x + item.rect.width / 2) / scale,
+                        (1 - scale) * (y + item.rect.height / 2) / scale, 0)
+        item.render()
+        rl.rl_pop_matrix()
+      else:
+        item.render()
 
     # Draw scroll indicator
     if SCROLL_BAR and not self._horizontal and len(visible_items) > 0:
