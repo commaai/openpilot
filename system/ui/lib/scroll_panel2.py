@@ -88,6 +88,7 @@ class GuiScrollPanel2:
         # Steady once we are close enough to the target
         if abs(dist) < 1 and abs(self._velocity) < MIN_VELOCITY:
           self.set_offset(target)
+          self._velocity = 0.0
           self._state = ScrollState.STEADY
 
       elif abs(self._velocity) < MIN_VELOCITY:
