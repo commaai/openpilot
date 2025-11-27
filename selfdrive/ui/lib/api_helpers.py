@@ -8,7 +8,7 @@ from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-from openpilot.selfdrive.ui.ui_state import ui_state, device
+# from openpilot.selfdrive.ui.ui_state import ui_state, device
 
 TOKEN_EXPIRY_HOURS = 2
 
@@ -60,10 +60,12 @@ class RequestRepeater:
       }
       """
 
+      print('checking cache for key', self._cache_key)
       self._prev_response_text = self._params.get(self._cache_key)
       if self._prev_response_text:
         # Emit cached response after a short delay
         def emit_cached_response():
+          print('calling cache!')
           for callback in self._request_done_callbacks:
             callback(self._prev_response_text, True)
 
@@ -93,9 +95,11 @@ class RequestRepeater:
       self._thread.join(timeout=1.0)
 
   def _worker_thread(self):
+    from openpilot.selfdrive.ui.ui_state import ui_state, device
+
     while self._running:
       active_request = False  # TODO: this
-      if not ui_state.started and device.is_awake() and not active_request:
+      if not ui_state.started and device.awake and not active_request:
         print('RUNNING REQUEST')
         self._send_request()
       else:

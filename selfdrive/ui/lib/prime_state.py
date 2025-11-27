@@ -33,7 +33,7 @@ class PrimeState:
     self.prime_type: PrimeType = self._load_initial_state()
 
     dongle_id = self._params.get("DongleId")
-    self._request_repeater = RequestRepeater(dongle_id, f"v1.1/devices/{dongle_id}", "ApiCache_Device", 5)
+    self._request_repeater = RequestRepeater(dongle_id, f"v1.1/devices/{dongle_id}", 5, "ApiCache_Device")
     self._request_repeater.add_request_done_callback(self._handle_reply)
 
     self._running = False
