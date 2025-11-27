@@ -25,7 +25,6 @@ def get_token(dongle_id: str):
 
 
 class RequestRepeater:
-  FETCH_INTERVAL = 5.0  # seconds between API calls
   API_TIMEOUT = 10.0  # seconds for API requests
   SLEEP_INTERVAL = 0.5  # seconds to sleep between checks in the worker thread
 
@@ -79,12 +78,12 @@ class RequestRepeater:
 
     while self._running:
       if not ui_state.started and device.awake:
-        print('RUNNING REQUEST')
+        print('RUNNING REQUEST', self._request_route)
         self._send_request()
       else:
         print('SKIPPING REQUEST')
 
-      for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
+      for _ in range(int(self._period / self.SLEEP_INTERVAL)):
         if not self._running:
           break
         time.sleep(self.SLEEP_INTERVAL)
