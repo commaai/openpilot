@@ -60,6 +60,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     wide_road_image = np.frombuffer(wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
 
   env = MetaDriveEnv(config)
+  step_every = max(1, int(round(config.get("physics_world_step_size", 0.05) * 100)))
 
   def get_current_lane_info(vehicle):
     _, lane_info, on_lane = vehicle.navigation._get_current_lane(vehicle)
@@ -124,7 +125,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     if is_engaged and start_time is None:
       start_time = time.monotonic()
 
-    if rk.frame % 5 == 0:
+    if rk.frame % step_every == 0:
       _, _, terminated, _, _ = env.step(vc)
       timeout = True if start_time is not None and time.monotonic() - start_time >= test_duration else False
       lane_idx_curr, on_lane = get_current_lane_info(env.vehicle)
