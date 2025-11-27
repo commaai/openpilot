@@ -26,7 +26,7 @@ class PrimeState:
     dongle_id = self._params.get("DongleId")
     self._request_repeater = RequestRepeater(dongle_id, f"v1.1/devices/{dongle_id}", 5, "ApiCache_Device")
     self._request_repeater.add_request_done_callback(self._handle_reply)
-    self._request_repeater.load_cache()
+    self._request_repeater.load_cache()  # sets prime_type from API response cache
 
   def _load_initial_state(self) -> PrimeType:
     prime_type_str = os.getenv("PRIME_TYPE") or self._params.get("PrimeType")
