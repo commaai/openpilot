@@ -80,3 +80,10 @@ class FirehoseLayout(FirehoseLayoutBase):
 
     # bottom margin + remove effect of scroll offset
     return int(round(y - self._scroll_panel.offset + 40))
+
+  def _draw_wrapped_text(self, x, y, width, text, font, font_size, color):
+    wrapped = wrap_text(font, text, font_size, width)
+    for line in wrapped:
+      rl.draw_text_ex(font, line, rl.Vector2(x, y), font_size, 0, color)
+      y += font_size * FONT_SCALE
+    return round(y)
