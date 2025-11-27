@@ -7,6 +7,7 @@ from collections.abc import Callable
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.selfdrive.ui.ui_state import ui_state, device
 
 TOKEN_EXPIRY_HOURS = 2
 
@@ -66,7 +67,17 @@ class RequestRepeater:
       now = time.monotonic()
       if now - self._last_request_time >= self._period:
         self._last_request_time = now
-        self._send_request()
+
+        """
+        if ((!uiState()->scene.started || while_onroad) && device()->isAwake() && !active()) {
+          sendRequest(requestURL);
+        }
+        """
+        # TODO: this
+        active_request = False
+        if not ui_state.started and device.is_awake() and not active_request:
+          self._send_request()
+
       time.sleep(self.SLEEP_INTERVAL)
 
   def _send_request(self):
