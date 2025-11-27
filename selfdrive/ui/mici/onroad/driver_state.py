@@ -3,6 +3,7 @@ from collections.abc import Callable
 import numpy as np
 import math
 from cereal import log
+from openpilot.system.hardware import PC
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
@@ -217,7 +218,10 @@ class DriverStateRenderer(Widget):
     rotation = math.degrees(math.atan2(pitch, yaw))
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
-    self._rotation_filter.update(self._rotation_filter.x + angle_diff)
+    if PC and self._confirm_mode:
+      self._rotation_filter.x += 2
+    else:
+      self._rotation_filter.update(self._rotation_filter.x + angle_diff)
 
     if not self.should_draw:
       self._fade_filter.update(0.0)
