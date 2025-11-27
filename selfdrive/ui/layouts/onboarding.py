@@ -11,6 +11,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import Label
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.version import terms_version, training_version
 
 DEBUG = False
 
@@ -169,10 +170,8 @@ class DeclinePage(Widget):
 class OnboardingWindow(Widget):
   def __init__(self):
     super().__init__()
-    self._current_terms_version = ui_state.params.get("TermsVersion")
-    self._current_training_version = ui_state.params.get("TrainingVersion")
-    self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == self._current_terms_version
-    self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == self._current_training_version
+    self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
+    self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 
     self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
 
@@ -192,13 +191,13 @@ class OnboardingWindow(Widget):
     self._state = OnboardingState.TERMS
 
   def _on_terms_accepted(self):
-    ui_state.params.put("HasAcceptedTerms", self._current_terms_version)
+    ui_state.params.put("HasAcceptedTerms", terms_version)
     self._state = OnboardingState.ONBOARDING
     if self._training_done:
       gui_app.set_modal_overlay(None)
 
   def _on_completed_training(self):
-    ui_state.params.put("CompletedTrainingVersion", self._current_training_version)
+    ui_state.params.put("CompletedTrainingVersion", training_version)
     gui_app.set_modal_overlay(None)
 
   def _render(self, _):

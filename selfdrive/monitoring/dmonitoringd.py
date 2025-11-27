@@ -13,6 +13,7 @@ def dmonitoringd_thread():
   sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'selfdriveState', 'modelV2'], poll='driverStateV2')
 
   DM = DriverMonitoring(rhd_saved=params.get_bool("IsRhdDetected"), always_on=params.get_bool("AlwaysOnDM"))
+  demo_mode=False
 
   # 20Hz <- dmonitoringmodeld
   while True:
@@ -22,8 +23,10 @@ def dmonitoringd_thread():
       continue
 
     valid = sm.all_checks()
-    if valid:
-      DM.run_step(sm)
+    if demo_mode and sm.valid['driverStateV2']:
+      DM.run_step(sm, demo=demo_mode)
+    elif valid:
+      DM.run_step(sm, demo=demo_mode)
 
     # publish
     dat = DM.get_state_packet(valid=valid)
@@ -32,11 +35,12 @@ def dmonitoringd_thread():
     # load live always-on toggle
     if sm['driverStateV2'].frameId % 40 == 1:
       DM.always_on = params.get_bool("AlwaysOnDM")
+      demo_mode = params.get_bool("IsDriverViewEnabled")
 
     # save rhd virtual toggle every 5 mins
-    if (sm['driverStateV2'].frameId % 6000 == 0 and
-     DM.wheelpos_learner.filtered_stat.n > DM.settings._WHEELPOS_FILTER_MIN_COUNT and
-     DM.wheel_on_right == (DM.wheelpos_learner.filtered_stat.M > DM.settings._WHEELPOS_THRESHOLD)):
+    if (sm['driverStateV2'].frameId % 6000 == 0 and not demo_mode and
+     DM.wheelpos.prob_offseter.filtered_stat.n > DM.settings._WHEELPOS_FILTER_MIN_COUNT and
+     DM.wheel_on_right == (DM.wheelpos.prob_offseter.filtered_stat.M > DM.settings._WHEELPOS_THRESHOLD)):
       params.put_bool_nonblocking("IsRhdDetected", DM.wheel_on_right)
 
 def main():

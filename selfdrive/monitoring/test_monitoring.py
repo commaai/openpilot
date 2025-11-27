@@ -3,9 +3,10 @@ import numpy as np
 from cereal import log
 from openpilot.common.realtime import DT_DMON
 from openpilot.selfdrive.monitoring.helpers import DriverMonitoring, DRIVER_MONITOR_SETTINGS
+from openpilot.system.hardware import HARDWARE
 
 EventName = log.OnroadEvent.EventName
-dm_settings = DRIVER_MONITOR_SETTINGS()
+dm_settings = DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
 
 TEST_TIMESPAN = 120  # seconds
 DISTRACTED_SECONDS_TO_ORANGE = dm_settings._DISTRACTED_TIME - dm_settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL + 1
@@ -25,7 +26,7 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds.leftDriverData.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.leftDriverData.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
   # TODO: test both separately when e2e is used
-  ds.leftDriverData.notReadyProb = [0., 0.]
+  ds.leftDriverData.phoneProb = 0.
   return ds
 
 
@@ -53,7 +54,7 @@ class TestMonitoring:
     DM = DriverMonitoring()
     events = []
     for idx in range(len(msgs)):
-      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx])
+      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx], standstill[idx])
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests

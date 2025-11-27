@@ -1,19 +1,11 @@
 import pyray as rl
-import time
-import threading
 
-from openpilot.common.api import api_get
-from openpilot.common.params import Params
-from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.widgets import Widget
-from openpilot.selfdrive.ui.lib.api_helpers import get_token
+from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayoutBase
 
 TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
@@ -32,50 +24,17 @@ INSTRUCTIONS = tr_noop(
 )
 
 
-class FirehoseLayout(Widget):
-  PARAM_KEY = "ApiCache_FirehoseStats"
-  GREEN = rl.Color(46, 204, 113, 255)
-  RED = rl.Color(231, 76, 60, 255)
-  GRAY = rl.Color(68, 68, 68, 255)
-  LIGHT_GRAY = rl.Color(228, 228, 228, 255)
-  UPDATE_INTERVAL = 30  # seconds
-
+class FirehoseLayout(FirehoseLayoutBase):
   def __init__(self):
     super().__init__()
-    self.params = Params()
-    self.segment_count = self._get_segment_count()
-    self.scroll_panel = GuiScrollPanel()
-    self._content_height = 0
-
-    self.running = True
-    self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
-    self.update_thread.start()
-    self.last_update_time = 0
-
-  def show_event(self):
-    self.scroll_panel.set_offset(0)
-
-  def _get_segment_count(self) -> int:
-    stats = self.params.get(self.PARAM_KEY)
-    if not stats:
-      return 0
-    try:
-      return int(stats.get("firehose", 0))
-    except Exception:
-      cloudlog.exception(f"Failed to decode firehose stats: {stats}")
-      return 0
-
-  def __del__(self):
-    self.running = False
-    if self.update_thread and self.update_thread.is_alive():
-      self.update_thread.join(timeout=1.0)
+    self._scroll_panel = GuiScrollPanel()
 
   def _render(self, rect: rl.Rectangle):
     # Calculate content dimensions
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, self._content_height)
 
     # Handle scrolling and render with clipping
-    scroll_offset = self.scroll_panel.update(rect, content_rect)
+    scroll_offset = self._scroll_panel.update(rect, content_rect)
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._content_height = self._render_content(rect, scroll_offset)
     rl.end_scissor_mode()
@@ -107,9 +66,9 @@ class FirehoseLayout(Widget):
     y += 20 + 20
 
     # Contribution count (if available)
-    if self.segment_count > 0:
+    if self._segment_count > 0:
       contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self.segment_count).format(self.segment_count)
+                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
       y = self._draw_wrapped_text(x, y, w, contrib_text, gui_app.font(FontWeight.BOLD), 52, rl.WHITE)
       y += 20 + 20
 
@@ -121,7 +80,7 @@ class FirehoseLayout(Widget):
     y = self._draw_wrapped_text(x, y, w, tr(INSTRUCTIONS), gui_app.font(FontWeight.NORMAL), 40, self.LIGHT_GRAY)
 
     # bottom margin + remove effect of scroll offset
-    return int(round(y - self.scroll_panel.offset + 40))
+    return int(round(y - self._scroll_panel.offset + 40))
 
   def _draw_wrapped_text(self, x, y, width, text, font, font_size, color):
     wrapped = wrap_text(font, text, font_size, width)
@@ -129,32 +88,3 @@ class FirehoseLayout(Widget):
       rl.draw_text_ex(font, line, rl.Vector2(x, y), font_size, 0, color)
       y += font_size * FONT_SCALE
     return round(y)
-
-  def _get_status(self) -> tuple[str, rl.Color]:
-    network_type = ui_state.sm["deviceState"].networkType
-    network_metered = ui_state.sm["deviceState"].networkMetered
-
-    if not network_metered and network_type != 0:  # Not metered and connected
-      return tr("ACTIVE"), self.GREEN
-    else:
-      return tr("INACTIVE: connect to an unmetered network"), self.RED
-
-  def _fetch_firehose_stats(self):
-    try:
-      dongle_id = self.params.get("DongleId")
-      if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
-        return
-      identity_token = get_token(dongle_id)
-      response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token)
-      if response.status_code == 200:
-        data = response.json()
-        self.segment_count = data.get("firehose", 0)
-        self.params.put(self.PARAM_KEY, data)
-    except Exception as e:
-      cloudlog.error(f"Failed to fetch firehose stats: {e}")
-
-  def _update_loop(self):
-    while self.running:
-      if not ui_state.started:
-        self._fetch_firehose_stats()
-      time.sleep(self.UPDATE_INTERVAL)
