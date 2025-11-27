@@ -44,7 +44,7 @@ def quantized_lru_cache(maxsize=128):
   return decorator
 
 
-# @quantized_lru_cache(maxsize=256)
+@quantized_lru_cache(maxsize=256)
 def arc_bar_pts(cx: float, cy: float,
                 r_mid: float, thickness: float,
                 a0_deg: float, a1_deg: float,
