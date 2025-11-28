@@ -224,11 +224,14 @@ class HudRenderer(Widget):
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
+    alpha = self._set_speed_alpha_filter.update(0 < rl.get_time() - self._set_speed_changed_time < SET_SPEED_PERSISTENCE and
+                                                self._can_draw_top_icons and self._engaged)
+    if alpha < 1e-2:
+      return
+
     x = rect.x
     y = rect.y
 
-    alpha = self._set_speed_alpha_filter.update(0 < rl.get_time() - self._set_speed_changed_time < SET_SPEED_PERSISTENCE and
-                                                self._can_draw_top_icons and self._engaged)
 
     # draw drop shadow
     circle_radius = 162 // 2
