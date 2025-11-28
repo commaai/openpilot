@@ -124,7 +124,7 @@ class Scroller(Widget):
     self.scroll_panel.set_enabled(scroll_enabled and self.enabled)
     self.scroll_panel.update(self._rect, content_size)
     if not self._snap_items:
-      return self.scroll_panel.get_offset()
+      return round(self.scroll_panel.get_offset())
 
     # Snap closest item to center
     center_pos = self._rect.x + self._rect.width / 2 if self._horizontal else self._rect.y + self._rect.height / 2
@@ -224,12 +224,15 @@ class Scroller(Widget):
 
       # Scale each element around its own origin when scrolling
       scale = self._zoom_filter.x
-      rl.rl_push_matrix()
-      rl.rl_scalef(scale, scale, 1.0)
-      rl.rl_translatef((1 - scale) * (x + item.rect.width / 2) / scale,
-                       (1 - scale) * (y + item.rect.height / 2) / scale, 0)
-      item.render()
-      rl.rl_pop_matrix()
+      if scale != 1.0:
+        rl.rl_push_matrix()
+        rl.rl_scalef(scale, scale, 1.0)
+        rl.rl_translatef((1 - scale) * (x + item.rect.width / 2) / scale,
+                        (1 - scale) * (y + item.rect.height / 2) / scale, 0)
+        item.render()
+        rl.rl_pop_matrix()
+      else:
+        item.render()
 
     # Draw scroll indicator
     if SCROLL_BAR and not self._horizontal and len(visible_items) > 0:

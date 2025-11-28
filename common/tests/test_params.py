@@ -123,8 +123,8 @@ class TestParams:
 
   def test_params_get_type(self):
     # json
-    self.params.put("ApiCache_FirehoseStats", {"a": 0})
-    assert self.params.get("ApiCache_FirehoseStats") == {"a": 0}
+    self.params.put("LiveParameters", {"a": 0})
+    assert self.params.get("LiveParameters") == {"a": 0}
 
     # int
     self.params.put("BootCount", 1441)

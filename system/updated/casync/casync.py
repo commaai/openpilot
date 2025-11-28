@@ -99,7 +99,7 @@ class DirectoryTarChunkReader(BinaryChunkReader):
     create_casync_tar_package(pathlib.Path(path), pathlib.Path(cache_file))
 
     self.f = open(cache_file, "rb")
-    return super().__init__(self.f)
+    super().__init__(self.f)
 
   def __del__(self):
     self.f.close()

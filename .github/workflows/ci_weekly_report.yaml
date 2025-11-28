@@ -38,7 +38,7 @@ jobs:
   report:
     needs: [ci_matrix_run]
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && github.repository == 'commaai/openpilot'
     steps:
       - name: Get job results
         uses: actions/github-script@v7

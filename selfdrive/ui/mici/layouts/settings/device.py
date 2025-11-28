@@ -39,7 +39,7 @@ class MiciFccModal(NavWidget):
     content_height += self._fcc_logo.height + 20
 
     scroll_content_rect = rl.Rectangle(rect.x, rect.y, rect.width, content_height)
-    scroll_offset = self._scroll_panel.update(rect, scroll_content_rect.height)
+    scroll_offset = round(self._scroll_panel.update(rect, scroll_content_rect.height))
 
     fcc_pos = rl.Vector2(rect.x + 20, rect.y + 20 + scroll_offset)
 
