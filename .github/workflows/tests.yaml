@@ -255,11 +255,16 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
-      - name: Create raylib UI Report
+      - name: Create raylib UI Report (BIG)
         run: >
           ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                           source selfdrive/test/setup_xvfb.sh &&
                           python3 selfdrive/ui/tests/test_ui/raylib_screenshots.py"
+      - name: Create raylib UI Report (MICI)
+        run: >
+          ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
+                          source selfdrive/test/setup_xvfb.sh &&
+                          python3 selfdrive/ui/tests/test_ui/raylib_screenshots_mici.py"
       - name: Upload Raylib UI Report
         uses: actions/upload-artifact@v4
         with:

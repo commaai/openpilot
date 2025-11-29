@@ -152,7 +152,8 @@ def setup_openpilot_long_confirmation_dialog(click, pm: PubMaster):
   click(2000, 960)  # toggle openpilot longitudinal control
 
 
-def setup_onroad(click, pm: PubMaster):
+def setup_onroad_state(pm: PubMaster):
+  """Shared helper to set up onroad state messages."""
   ds = messaging.new_message('deviceState')
   ds.deviceState.started = True
 
@@ -173,13 +174,17 @@ def setup_onroad(click, pm: PubMaster):
     time.sleep(0.05)
 
 
+def setup_onroad(click, pm: PubMaster):
+  setup_onroad_state(pm)
+
+
 def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad(click, pm)
   click(100, 100)  # open sidebar
 
 
-def setup_onroad_alert(click, pm: PubMaster, size: log.SelfdriveState.AlertSize, text1: str, text2: str, status: log.SelfdriveState.AlertStatus):
-  setup_onroad(click, pm)
+def setup_onroad_alert_state(pm: PubMaster, size: log.SelfdriveState.AlertSize, text1: str, text2: str, status: log.SelfdriveState.AlertStatus):
+  """Shared helper to set up onroad alert messages."""
   alert = messaging.new_message('selfdriveState')
   ss = alert.selfdriveState
   ss.alertSize = size
@@ -190,6 +195,11 @@ def setup_onroad_alert(click, pm: PubMaster, size: log.SelfdriveState.AlertSize,
     pm.send('selfdriveState', alert)
     alert.clear_write_flag()
     time.sleep(0.05)
+
+
+def setup_onroad_alert(click, pm: PubMaster, size: log.SelfdriveState.AlertSize, text1: str, text2: str, status: log.SelfdriveState.AlertStatus):
+  setup_onroad(click, pm)
+  setup_onroad_alert_state(pm, size, text1, text2, status)
 
 
 def setup_onroad_small_alert(click, pm: PubMaster):
@@ -243,11 +253,11 @@ CASES = {
   "onroad_full_alert_long_text": setup_onroad_full_alert_long_text,
 }
 
-
 class TestUI:
-  def __init__(self):
+  def __init__(self, big_ui: bool = True):
     os.environ["SCALE"] = os.getenv("SCALE", "1")
-    os.environ["BIG"] = "1"
+    os.environ["BIG"] = "1" if big_ui else "0"
+    self.big_ui = big_ui
     sys.modules["mouseinfo"] = False
 
   def setup(self):
@@ -264,7 +274,11 @@ class TestUI:
       self.ui = pywinctl.getWindowsWithTitle("UI")[0]
     except Exception as e:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
-      self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
+      # Default window size based on UI mode
+      if self.big_ui:
+        self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
+      else:
+        self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 536, 240)
 
   def screenshot(self, name: str):
     full_screenshot = pyautogui.screenshot()
@@ -289,7 +303,7 @@ def create_screenshots():
     shutil.rmtree(TEST_OUTPUT_DIR)
   SCREENSHOTS_DIR.mkdir(parents=True)
 
-  t = TestUI()
+  t = TestUI(big_ui=True)
   for name, setup in CASES.items():
     with OpenpilotPrefix():
       params = Params()
