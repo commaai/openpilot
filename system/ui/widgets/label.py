@@ -619,13 +619,13 @@ class UnifiedLabel(Widget):
       return self._cached_total_height
     return 0.0
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, _):
     """Render the label."""
-    if rect.width <= 0 or rect.height <= 0:
+    if self._rect.width <= 0 or self._rect.height <= 0:
       return
 
     # Determine available width
-    available_width = rect.width
+    available_width = self._rect.width
     if self._max_width is not None:
       available_width = min(available_width, self._max_width)
 
@@ -653,7 +653,7 @@ class UnifiedLabel(Widget):
       line_height_needed = size.y * self._line_height
 
       # Check if this line fits
-      if current_height + line_height_needed > rect.height:
+      if current_height + line_height_needed > self._rect.height:
         # This line doesn't fit
         if len(visible_lines) == 0:
           # First line doesn't fit by height - still show it (will be clipped by scissor if needed)
@@ -697,15 +697,15 @@ class UnifiedLabel(Widget):
 
     # Calculate vertical alignment offset
     if self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP:
-      start_y = rect.y
+      start_y = self._rect.y
     elif self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
-      start_y = rect.y + rect.height - total_visible_height
+      start_y = self._rect.y + self._rect.height - total_visible_height
     else:  # TEXT_ALIGN_MIDDLE
-      start_y = rect.y + (rect.height - total_visible_height) / 2
+      start_y = self._rect.y + (self._rect.height - total_visible_height) / 2
 
     # Only scissor when we know there is a single scrolling line
     if self._needs_scroll:
-      rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+      rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
 
     # Render each line
     current_y = start_y
@@ -727,26 +727,12 @@ class UnifiedLabel(Widget):
             self._scroll_state = ScrollState.STARTING
             self._scroll_pause_t = None
 
-      # Calculate horizontal position
-      if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
-        line_x = self._rect.x + self._text_padding
-      elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
-        line_x = self._rect.x + (self._rect.width - size.x) / 2
-      elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
-        line_x = self._rect.x + self._rect.width - size.x - self._text_padding
-      else:
-        line_x = self._rect.x + self._text_padding
-      line_x += self._scroll_offset
-
-      line_pos = rl.Vector2(line_x, current_y)
-
-      self._render_line(line, size, emojis, line_pos)
+      self._render_line(line, size, emojis, current_y)
 
       # Draw 2nd instance for scrolling
       if self._needs_scroll and self._scroll_state != ScrollState.STARTING:
         text2_scroll_offset = size.x + self._rect.width / 3
-        line_pos = rl.Vector2(line_x + text2_scroll_offset, current_y)
-        self._render_line(line, size, emojis, line_pos)
+        self._render_line(line, size, emojis, current_y, text2_scroll_offset)
 
       # Move to next line (if not last line)
       if idx < len(visible_lines) - 1:
@@ -756,15 +742,26 @@ class UnifiedLabel(Widget):
     if self._needs_scroll:
       # draw black fade on left and right
       fade_width = 20
-      rl.draw_rectangle_gradient_h(int(rect.x + rect.width - fade_width), int(rect.y), fade_width, int(rect.height), rl.Color(0, 0, 0, 0), rl.BLACK)
+      rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.Color(0, 0, 0, 0), rl.BLACK)
       if self._scroll_state != ScrollState.STARTING:
-        rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), fade_width, int(rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
+        rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
 
       rl.end_scissor_mode()
 
-  def _render_line(self, line, size, emojis, line_pos):
+  def _render_line(self, line, size, emojis, current_y, x_offset=0.0):
+    # Calculate horizontal position
+    if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
+      line_x = self._rect.x + self._text_padding
+    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+      line_x = self._rect.x + (self._rect.width - size.x) / 2
+    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+      line_x = self._rect.x + self._rect.width - size.x - self._text_padding
+    else:
+      line_x = self._rect.x + self._text_padding
+    line_x += x_offset
+
     # Render line with emojis
-    # line_pos = rl.Vector2(line_x, current_y)
+    line_pos = rl.Vector2(line_x, current_y)
     prev_index = 0
 
     for start, end, emoji in emojis:
