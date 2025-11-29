@@ -599,13 +599,13 @@ class UnifiedLabel(Widget):
       return self._cached_total_height
     return 0.0
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, _):
     """Render the label."""
-    if rect.width <= 0 or rect.height <= 0:
+    if self._rect.width <= 0 or self._rect.height <= 0:
       return
 
     # Determine available width
-    available_width = rect.width
+    available_width = self._rect.width
     if self._max_width is not None:
       available_width = min(available_width, self._max_width)
 
@@ -633,7 +633,7 @@ class UnifiedLabel(Widget):
       line_height_needed = size.y * self._line_height
 
       # Check if this line fits
-      if current_height + line_height_needed > rect.height:
+      if current_height + line_height_needed > self._rect.height:
         # This line doesn't fit
         if len(visible_lines) == 0:
           # First line doesn't fit by height - still show it (will be clipped by scissor if needed)
@@ -677,11 +677,11 @@ class UnifiedLabel(Widget):
 
     # Calculate vertical alignment offset
     if self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP:
-      start_y = rect.y
+      start_y = self._rect.y
     elif self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
-      start_y = rect.y + rect.height - total_visible_height
+      start_y = self._rect.y + self._rect.height - total_visible_height
     else:  # TEXT_ALIGN_MIDDLE
-      start_y = rect.y + (rect.height - total_visible_height) / 2
+      start_y = self._rect.y + (self._rect.height - total_visible_height) / 2
 
     # Render each line
     current_y = start_y
