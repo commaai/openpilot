@@ -763,17 +763,6 @@ class UnifiedLabel(Widget):
       rl.end_scissor_mode()
 
   def _render_line(self, line, size, emojis, line_pos):
-    # # Calculate horizontal position
-    # if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
-    #   line_x = self._rect.x + self._text_padding
-    # elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
-    #   line_x = self._rect.x + (self._rect.width - size.x) / 2
-    # elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
-    #   line_x = self._rect.x + self._rect.width - size.x - self._text_padding
-    # else:
-    #   line_x = self._rect.x + self._text_padding
-    # line_x += self._scroll_offset
-
     # Render line with emojis
     # line_pos = rl.Vector2(line_x, current_y)
     prev_index = 0
@@ -798,12 +787,3 @@ class UnifiedLabel(Widget):
     text_after = line[prev_index:]
     if text_after:
       rl.draw_text_ex(self._font, text_after, line_pos, self._font_size, self._spacing_pixels, self._text_color)
-
-    # # Draw 2nd instance for scrolling
-    # if self._needs_scroll and self._scroll_state != ScrollState.STARTING:
-    #   text2_scroll_offset = size.x + self._rect.width / 3
-    #   rl.draw_text_ex(self._font, text_after, rl.Vector2(round(line_pos.x + text2_scroll_offset), line_pos.y), self._font_size, self._spacing_pixels, self._text_color)
-    # if self.alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
-    #   text_y_offset -= self.line_height
-    # else:
-    #   text_y_offset += self.line_height
