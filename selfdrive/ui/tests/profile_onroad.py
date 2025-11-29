@@ -88,9 +88,9 @@ if __name__ == "__main__":
   print("Running...")
   patch_submaster(message_chunks)
 
-  W, H = 1928, 1208
+  W, H = 2048, 1216
   vipc = VisionIpcServer("camerad")
-  vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, 1928, 1208)
+  vipc.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, W, H)
   vipc.start_listener()
   yuv_buffer_size = W * H + (W // 2) * (H // 2) * 2
   yuv_data = np.random.randint(0, 256, yuv_buffer_size, dtype=np.uint8).tobytes()
