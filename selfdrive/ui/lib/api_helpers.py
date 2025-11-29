@@ -56,8 +56,8 @@ class RequestRepeater:
     for callback in self._request_done_callbacks:
       try:
         callback(response_text, success)
-      except Exception as e:
-        cloudlog.error(f"RequestRepeater callback error: {e}")
+      except Exception:
+        cloudlog.exception("RequestRepeater callback error")
 
   def load_cache(self):
     # call callbacks with cached response
@@ -100,9 +100,8 @@ class RequestRepeater:
       identity_token = get_token(self._dongle_id)
       response = api_get(self._request_route, timeout=self.API_TIMEOUT, access_token=identity_token)
       self._do_callbacks(response.text, 200 <= response.status_code < 300)
-
-    except Exception as e:
-      cloudlog.error(f"Failed to send request to {self._request_route}: {e}")
+    except Exception:
+      cloudlog.exception(f"Failed to send request to {self._request_route}")
       self._do_callbacks("", False)
 
   def __del__(self):
