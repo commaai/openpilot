@@ -576,6 +576,7 @@ class UnifiedLabel(Widget):
     if self._rect.width <= 0 or self._rect.height <= 0:
       return
 
+    t = time.monotonic()
     # Determine available width
     available_width = self._rect.width
     if self._max_width is not None:
@@ -693,3 +694,6 @@ class UnifiedLabel(Widget):
       if idx < len(visible_lines) - 1:
         # Use current line's height * line_height for spacing to next line
         current_y += size.y * self._line_height
+
+    dt = time.monotonic() - t
+    print(f"UnifiedLabel render time: {dt*1000:.2f} ms {1/dt:.1f} Hz, lines: {len(visible_lines)}")
