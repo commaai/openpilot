@@ -354,10 +354,7 @@ class DownloadingPage(Widget):
     return self._progress
 
   def set_progress(self, progress: int):
-    print('Download progress:', progress)
     self._raw_progress = progress
-    # self._progress = progress
-    # self._progress_label.set_text(f"{progress}%")
 
   def _update_state(self):
     self._progress = min(self._raw_progress, self._progress + 1)
@@ -617,7 +614,6 @@ class Setup(Widget):
     self._network_setup_page.set_has_internet(self._network_monitor.network_connected.is_set())
 
   def render_downloading(self, rect: rl.Rectangle):
-    # self._downloading_page.set_progress(self.download_progress)
     self._downloading_page.render(rect)
 
   def render_custom_software(self):
@@ -706,6 +702,7 @@ class Setup(Widget):
       with open(INSTALLER_URL_PATH, "w") as f:
         f.write(self.download_url)
 
+      # Wait for animation to complete
       while self._downloading_page.progress != 100:
         time.sleep(0.1)
         continue
