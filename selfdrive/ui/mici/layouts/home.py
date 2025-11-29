@@ -195,13 +195,10 @@ class MiciHomeLayout(Widget):
       self._date_label.set_position(version_pos.x + self._version_label.rect.width + 10, version_pos.y)
       self._date_label.render()
 
+      self._branch_label.set_max_width(gui_app.width - self._version_label.rect.width - self._date_label.rect.width - 32)
       self._branch_label.set_text(" " + ("release" if release_branch else self._version_text[1]))
-      self._branch_label.render(rl.Rectangle(
-        version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20,
-        version_pos.y,
-        gui_app.width - self._version_label.rect.width - self._date_label.rect.width - 32,
-        36,
-      ))
+      self._branch_label.set_position(version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20, version_pos.y)
+      self._branch_label.render()
 
       if not release_branch:
         # 2nd line
