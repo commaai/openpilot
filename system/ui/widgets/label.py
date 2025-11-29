@@ -751,9 +751,9 @@ class UnifiedLabel(Widget):
     if self._needs_scroll:
       # draw black fade on left and right
       fade_width = 20
-      rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.Color(0, 0, 0, 0), rl.BLACK)
+      rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.BLANK, rl.BLACK)
       if self._scroll_state != ScrollState.STARTING:
-        rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
+        rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.BLANK)
 
       rl.end_scissor_mode()
 
