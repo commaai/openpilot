@@ -207,7 +207,7 @@ class NetworkInfoPage(NavWidget):
     self._connect_btn.set_click_callback(lambda: connect_callback(self._network.ssid) if self._network is not None else None)
 
     self._title = UnifiedLabel("", 64, FontWeight.DISPLAY, rl.Color(255, 255, 255, int(255 * 0.9)),
-                               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+                               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, scroll=True)
     self._subtitle = UnifiedLabel("", 36, FontWeight.ROMAN, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                   alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
@@ -216,6 +216,10 @@ class NetworkInfoPage(NavWidget):
     # State
     self._network: Network | None = None
     self._connecting: Callable[[], str | None] | None = None
+
+  def show_event(self):
+    super().show_event()
+    self._title.reset_scroll()
 
   def update_networks(self, networks: dict[str, Network]):
     # update current network from latest scan results

@@ -411,8 +411,8 @@ class UnifiedLabel(Widget):
                text_padding: int = 0,
                max_width: int | None = None,
                elide: bool = True,
-               scroll: bool = False,
                wrap_text: bool = True,
+               scroll: bool = False,
                line_height: float = 1.0,
                letter_spacing: float = 0.0):
     super().__init__()
@@ -426,8 +426,8 @@ class UnifiedLabel(Widget):
     self._text_padding = text_padding
     self._max_width = max_width
     self._elide = elide
-    self._scroll = scroll
     self._wrap_text = wrap_text
+    self._scroll = scroll
     self._line_height = line_height * 0.9
     self._letter_spacing = letter_spacing  # 0.1 = 10%
     self._spacing_pixels = font_size * letter_spacing
@@ -439,8 +439,9 @@ class UnifiedLabel(Widget):
     self._scroll_pause_t: float | None = None
     self._scroll_state: ScrollState = ScrollState.STARTING
 
-    assert not (self._scroll and self._wrap_text), "Cannot enable both scroll and wrap_text"
-    assert not (self._scroll and self._elide), "Cannot enable both scroll and elide_right"
+    if self._scroll:
+      self._elide = False
+      self._wrap_text = False
 
     # Cached data
     self._cached_text: str | None = None
@@ -501,6 +502,12 @@ class UnifiedLabel(Widget):
   def set_alignment_vertical(self, alignment_vertical: int):
     """Update the vertical text alignment."""
     self._alignment_vertical = alignment_vertical
+
+  def reset_scroll(self):
+    """Reset scroll state to initial position."""
+    self._scroll_offset = 0
+    self._scroll_pause_t = None
+    self._scroll_state = ScrollState.STARTING
 
   def set_max_width(self, max_width: int | None):
     """Set the maximum width constraint for wrapping/eliding."""
@@ -726,6 +733,8 @@ class UnifiedLabel(Widget):
             self._scroll_offset = 0
             self._scroll_state = ScrollState.STARTING
             self._scroll_pause_t = None
+      else:
+        self.reset_scroll()
 
       self._render_line(line, size, emojis, current_y)
 
