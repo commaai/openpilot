@@ -282,7 +282,8 @@ class BigDialogOptionButton(Widget):
     self._selected = False
 
     self._label = UnifiedLabel(option, font_size=70, text_color=rl.Color(255, 255, 255, int(255 * 0.58)),
-                               font_weight=FontWeight.DISPLAY_REGULAR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+                               font_weight=FontWeight.DISPLAY_REGULAR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+                               scroll=True)
 
   def set_selected(self, selected: bool):
     self._selected = selected
