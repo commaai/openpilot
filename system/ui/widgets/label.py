@@ -439,6 +439,7 @@ class UnifiedLabel(Widget):
     self._scroll_pause_t: float | None = None
     self._scroll_state: ScrollState = ScrollState.STARTING
 
+    # Scroll mode does not support eliding or multiline wrapping
     if self._scroll:
       self._elide = False
       self._wrap_text = False
