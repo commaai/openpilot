@@ -4,8 +4,10 @@ from collections.abc import Callable
 
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigToggle, BigParamControl
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import NavWidget
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType
@@ -76,17 +78,50 @@ class NetworkLayoutMici(NavWidget):
     wifi_button = BigButton("wi-fi")
     wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
 
+    # ******** Advanced settings ********
+    # ******** Roaming toggle ********
+    # roaming_enabled = ui_state.params.get_bool("GsmRoaming")
+    # self._roaming_action = ToggleAction(initial_state=roaming_enabled)
+    # self._roaming_btn = ListItem(lambda: tr("Enable Roaming"), action_item=self._roaming_action, callback=self._toggle_roaming)
+    self._roaming_btn = BigParamControl("enable roaming", "GsmRoaming", toggle_callback=self._toggle_roaming)
+
+    # ******** APN settings ********
+    # self._apn_btn = button_item(lambda: tr("APN Setting"), lambda: tr("EDIT"), callback=self._edit_apn)
+    self._apn_btn = BigButton("apn settings", "edit")
+    self._apn_btn.set_click_callback(self._edit_apn)
+
+    # ******** Cellular metered toggle ********
+    # cellular_metered = ui_state.params.get_bool("GsmMetered")
+    # self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
+    # self._cellular_metered_btn = ListItem(lambda: tr("Cellular Metered"),
+    #                                       description=lambda: tr("Prevent large data uploads when on a metered cellular connection"),
+    #                                       action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
+    self._cellular_metered_btn = BigParamControl("cellular metered", "GsmMetered", toggle_callback=self._toggle_cellular_metered)
+
     # Main scroller ----------------------------------
     self._scroller = Scroller([
       wifi_button,
       self._network_metered_btn,
       self._tethering_toggle_btn,
       self._tethering_password_btn,
+      # /* Advanced settings
+      self._roaming_btn,
+      self._apn_btn,
+      self._cellular_metered_btn,
+      # */
       self._ip_address_btn,
     ], snap_items=False)
 
     # Set up back navigation
     self.set_back_callback(back_callback)
+
+  def _update_state(self):
+    # If not using prime SIM, show GSM settings and enable IPv4 forwarding
+    show_cell_settings = True  # ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    self._wifi_manager.set_ipv4_forward(show_cell_settings)
+    self._roaming_btn.set_visible(show_cell_settings)
+    self._apn_btn.set_visible(show_cell_settings)
+    self._cellular_metered_btn.set_visible(show_cell_settings)
 
   def show_event(self):
     super().show_event()
@@ -97,6 +132,26 @@ class NetworkLayoutMici(NavWidget):
   def hide_event(self):
     super().hide_event()
     self._wifi_ui.hide_event()
+
+  def _toggle_roaming(self, checked: bool):
+    print("roaming", checked)
+    self._wifi_manager.update_gsm_settings(checked, ui_state.params.get("GsmApn") or "", ui_state.params.get_bool("GsmMetered"))
+
+  def _edit_apn(self):
+    def update_apn(apn: str):
+      if apn == "":
+        ui_state.params.remove("GsmApn")
+      else:
+        ui_state.params.put("GsmApn", apn)
+
+      self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), apn, ui_state.params.get_bool("GsmMetered"))
+
+    current_apn = ui_state.params.get("GsmApn") or ""
+    dlg = BigInputDialog("enter APN", current_apn, minimum_length=0, confirm_callback=update_apn)
+    gui_app.set_modal_overlay(dlg)
+
+  def _toggle_cellular_metered(self, checked: bool):
+    self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), ui_state.params.get("GsmApn") or "", checked)
 
   def _on_network_updated(self, networks: list[Network]):
     # Update tethering state
