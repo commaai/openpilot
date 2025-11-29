@@ -80,22 +80,13 @@ class NetworkLayoutMici(NavWidget):
 
     # ******** Advanced settings ********
     # ******** Roaming toggle ********
-    # roaming_enabled = ui_state.params.get_bool("GsmRoaming")
-    # self._roaming_action = ToggleAction(initial_state=roaming_enabled)
-    # self._roaming_btn = ListItem(lambda: tr("Enable Roaming"), action_item=self._roaming_action, callback=self._toggle_roaming)
     self._roaming_btn = BigParamControl("enable roaming", "GsmRoaming", toggle_callback=self._toggle_roaming)
 
     # ******** APN settings ********
-    # self._apn_btn = button_item(lambda: tr("APN Setting"), lambda: tr("EDIT"), callback=self._edit_apn)
     self._apn_btn = BigButton("apn settings", "edit")
     self._apn_btn.set_click_callback(self._edit_apn)
 
     # ******** Cellular metered toggle ********
-    # cellular_metered = ui_state.params.get_bool("GsmMetered")
-    # self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
-    # self._cellular_metered_btn = ListItem(lambda: tr("Cellular Metered"),
-    #                                       description=lambda: tr("Prevent large data uploads when on a metered cellular connection"),
-    #                                       action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
     self._cellular_metered_btn = BigParamControl("cellular metered", "GsmMetered", toggle_callback=self._toggle_cellular_metered)
 
     # Main scroller ----------------------------------
@@ -122,7 +113,7 @@ class NetworkLayoutMici(NavWidget):
 
   def _update_state(self):
     # If not using prime SIM, show GSM settings and enable IPv4 forwarding
-    show_cell_settings = True  # ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
     self._wifi_manager.set_ipv4_forward(show_cell_settings)
     self._roaming_btn.set_visible(show_cell_settings)
     self._apn_btn.set_visible(show_cell_settings)
@@ -143,6 +134,7 @@ class NetworkLayoutMici(NavWidget):
 
   def _edit_apn(self):
     def update_apn(apn: str):
+      apn = apn.strip()
       if apn == "":
         ui_state.params.remove("GsmApn")
       else:
