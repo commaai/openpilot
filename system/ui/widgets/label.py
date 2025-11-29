@@ -430,6 +430,14 @@ class UnifiedLabel(Widget):
     self._letter_spacing = letter_spacing  # 0.1 = 10%
     self._spacing_pixels = font_size * letter_spacing
 
+    # Cached data
+    self._cached_text: str | None = None
+    self._cached_wrapped_lines: list[str] = []
+    self._cached_line_sizes: list[rl.Vector2] = []
+    self._cached_line_emojis: list[list[tuple[int, int, str]]] = []
+    self._cached_total_height: float | None = None
+    self._cached_width: int = -1
+
     # If max_width is set, initialize rect size for Scroller support
     if max_width is not None:
       self._rect.width = max_width
@@ -458,18 +466,21 @@ class UnifiedLabel(Widget):
     if self._font_size != size:
       self._font_size = size
       self._spacing_pixels = size * self._letter_spacing  # Recalculate spacing
+      self._cached_text = None  # Invalidate cache
 
   def set_letter_spacing(self, letter_spacing: float):
     """Update letter spacing (as percentage, e.g., 0.1 = 10%)."""
     if self._letter_spacing != letter_spacing:
       self._letter_spacing = letter_spacing
       self._spacing_pixels = self._font_size * letter_spacing
+      self._cached_text = None  # Invalidate cache
 
   def set_font_weight(self, font_weight: FontWeight):
     """Update the font weight."""
     if self._font_weight != font_weight:
       self._font_weight = font_weight
       self._font = gui_app.font(self._font_weight)
+      self._cached_text = None  # Invalidate cache
 
   def set_alignment(self, alignment: int):
     """Update the horizontal text alignment."""
@@ -483,58 +494,68 @@ class UnifiedLabel(Widget):
     """Set the maximum width constraint for wrapping/eliding."""
     if self._max_width != max_width:
       self._max_width = max_width
+      self._cached_text = None  # Invalidate cache
       # Update rect size for Scroller support
       if max_width is not None:
         self._rect.width = max_width
         self._rect.height = self.get_content_height(max_width)
 
-  def _content_width(self, available_width: int) -> int:
-    """Compute inner content width accounting for padding. Minimum of 1px."""
-    content_width = int(available_width - (self._text_padding * 2))
-    return content_width if content_width > 0 else 1
-
-  def _line_contribution(self, line_index: int, line_height_px: float) -> float:
-    """
-    Height contribution of a line within a block:
-    - First line contributes its full measured height
-    - Subsequent lines contribute measured height scaled by line_height
-    """
-    return line_height_px if line_index == 0 else line_height_px * self._line_height
-
-  def _compute_block_height(self, sizes: list[rl.Vector2]) -> float:
-    """Compute total block height from measured line sizes."""
-    total = 0.0
-    for idx, size in enumerate(sizes):
-      total += self._line_contribution(idx, size.y)
-    return total
-
-  def _shape_lines(self, available_width: int) -> tuple[list[str], list[rl.Vector2], list[list[tuple[int, int, str]]]]:
-    """Shape text into lines, returning (lines, sizes, emojis) with width constraints applied."""
+  def _update_text_cache(self, available_width: int):
+    """Update cached text processing data."""
     text = self.text
-    content_width = self._content_width(available_width)
 
-    # Wrap or split lines
+    # Check if cache is still valid
+    if (self._cached_text == text and
+        self._cached_width == available_width and
+        self._cached_wrapped_lines):
+      return
+
+    self._cached_text = text
+    self._cached_width = available_width
+
+    # Determine wrapping width
+    content_width = available_width - (self._text_padding * 2)
+    if content_width <= 0:
+      content_width = 1
+
+    # Wrap text if enabled
     if self._wrap_text:
-      lines = wrap_text(self._font, text, self._font_size, content_width, self._spacing_pixels)
+      self._cached_wrapped_lines = wrap_text(self._font, text, self._font_size, content_width, self._spacing_pixels)
     else:
-      lines = text.split('\n') if text else [""]
+      # Split by newlines but don't wrap
+      self._cached_wrapped_lines = text.split('\n') if text else [""]
 
-    # Elide lines to fit width
-    lines = [self._elide_line(line, content_width) for line in lines]
+    # Elide lines if needed (for width constraint)
+    self._cached_wrapped_lines = [self._elide_line(line, content_width) for line in self._cached_wrapped_lines]
 
-    # Measure and find emojis
-    sizes: list[rl.Vector2] = []
-    emojis: list[list[tuple[int, int, str]]] = []
-    for line in lines:
-      emojis_for_line = find_emoji(line)
-      emojis.append(emojis_for_line)
+    # Process each line: measure and find emojis
+    self._cached_line_sizes = []
+    self._cached_line_emojis = []
+
+    for line in self._cached_wrapped_lines:
+      emojis = find_emoji(line)
+      self._cached_line_emojis.append(emojis)
+      # Empty lines should still have height (use font size as line height)
       if not line:
         size = rl.Vector2(0, self._font_size * FONT_SCALE)
       else:
         size = measure_text_cached(self._font, line, self._font_size, self._spacing_pixels)
-      sizes.append(size)
+      self._cached_line_sizes.append(size)
 
-    return lines, sizes, emojis
+    # Calculate total height
+    # Each line contributes its measured height * line_height (matching Label's behavior)
+    # This includes spacing to the next line
+    if self._cached_line_sizes:
+      # Match the rendering logic: first line doesn't get line_height scaling
+      total_height = 0.0
+      for idx, size in enumerate(self._cached_line_sizes):
+        if idx == 0:
+          total_height += size.y
+        else:
+          total_height += size.y * self._line_height
+      self._cached_total_height = total_height
+    else:
+      self._cached_total_height = 0.0
 
   def _elide_line(self, line: str, max_width: int, force: bool = False) -> str:
     """Elide a single line if it exceeds max_width. If force is True, always elide even if it fits."""
@@ -572,8 +593,11 @@ class UnifiedLabel(Widget):
     """
     # Use max_width if provided, otherwise use self._max_width or a default
     width = max_width if max_width > 0 else (self._max_width if self._max_width else 1000)
-    lines, sizes, _ = self._shape_lines(width)
-    return self._compute_block_height(sizes) if lines else 0.0
+    self._update_text_cache(width)
+
+    if self._cached_total_height is not None:
+      return self._cached_total_height
+    return 0.0
 
   def _render(self, _):
     """Render the label."""
@@ -585,9 +609,10 @@ class UnifiedLabel(Widget):
     if self._max_width is not None:
       available_width = min(available_width, self._max_width)
 
-    # Shape lines for current width
-    shaped_lines, shaped_sizes, shaped_emojis = self._shape_lines(int(available_width))
-    if not shaped_lines:
+    # Update text cache
+    self._update_text_cache(int(available_width))
+
+    if not self._cached_wrapped_lines:
       return
 
     # Calculate which lines fit in the available height
@@ -598,14 +623,14 @@ class UnifiedLabel(Widget):
     current_height = 0.0
     broke_early = False
     for line, size, emojis in zip(
-      shaped_lines,
-      shaped_sizes,
-      shaped_emojis,
+      self._cached_wrapped_lines,
+      self._cached_line_sizes,
+      self._cached_line_emojis,
       strict=True):
 
-      # Height needed for this line (first line uses full height, subsequent use scaled height)
-      next_index = len(visible_lines)
-      line_height_needed = self._line_contribution(next_index, size.y)
+      # Calculate height needed for this line
+      # Each line contributes its height * line_height (matching Label's behavior)
+      line_height_needed = size.y * self._line_height
 
       # Check if this line fits
       if current_height + line_height_needed > self._rect.height:
@@ -627,7 +652,9 @@ class UnifiedLabel(Widget):
 
     # If we broke early (there are more lines that don't fit) and elide is enabled, elide the last visible line
     if broke_early and len(visible_lines) > 0 and self._elide:
-      content_width = self._content_width(int(available_width))
+      content_width = int(available_width - (self._text_padding * 2))
+      if content_width <= 0:
+        content_width = 1
 
       last_line_idx = len(visible_lines) - 1
       last_line = visible_lines[last_line_idx]
@@ -635,13 +662,18 @@ class UnifiedLabel(Widget):
       elided = self._elide_line(last_line, content_width, force=True)
       visible_lines[last_line_idx] = elided
       visible_sizes[last_line_idx] = measure_text_cached(self._font, elided, self._font_size, self._spacing_pixels)
-      visible_emojis[last_line_idx] = find_emoji(elided)
 
     if not visible_lines:
       return
 
     # Calculate total visible text block height
-    total_visible_height = self._compute_block_height(visible_sizes)
+    # First line is not changed by line_height scaling
+    total_visible_height = 0.0
+    for idx, size in enumerate(visible_sizes):
+      if idx == 0:
+        total_visible_height += size.y
+      else:
+        total_visible_height += size.y * self._line_height
 
     # Calculate vertical alignment offset
     if self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP:
