@@ -179,9 +179,9 @@ class MiciLabel(Widget):
     if self._needs_scroll:
       # draw black fade on left and right
       fade_width = 20
-      rl.draw_rectangle_gradient_h(int(rect.x + rect.width - fade_width), int(rect.y), fade_width, int(rect.height), rl.Color(0, 0, 0, 0), rl.BLACK)
+      rl.draw_rectangle_gradient_h(int(rect.x + rect.width - fade_width), int(rect.y), fade_width, int(rect.height), rl.BLANK, rl.BLACK)
       if self._scroll_state != ScrollState.STARTING:
-        rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), fade_width, int(rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
+        rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), fade_width, int(rect.height), rl.BLACK, rl.BLANK)
 
       rl.end_scissor_mode()
 
