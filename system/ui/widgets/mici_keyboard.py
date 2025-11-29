@@ -4,7 +4,7 @@ import numpy as np
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
-from openpilot.common.filter_simple import BounceFilter
+from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 
 CHAR_FONT_SIZE = 42
 CHAR_NEAR_FONT_SIZE = CHAR_FONT_SIZE * 2
@@ -204,6 +204,7 @@ class MiciKeyboard(Widget):
     self._text: str = ""
 
     self._bg_scale_filter = BounceFilter(1.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
+    self._selected_key_filter = FirstOrderFilter(0.0, 0.075 * ANIMATION_SCALE, 1 / gui_app.target_fps)
 
   def get_candidate_character(self) -> str:
     # return str of character about to be added to text
@@ -309,6 +310,9 @@ class MiciKeyboard(Widget):
     self._text += ' '
 
   def _update_state(self):
+    # update selected key filter
+    self._selected_key_filter.update(self._closest_key[0] is not None)
+
     # unselect key after animation plays
     if self._unselect_key_t is not None and rl.get_time() > self._unselect_key_t:
       self._closest_key = (None, float('inf'))
@@ -335,8 +339,9 @@ class MiciKeyboard(Widget):
           key.set_font_size(SELECTED_CHAR_FONT_SIZE)
 
           # draw black circle behind selected key
+          circle_alpha = int(self._selected_key_filter.x * 225)
           rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
-                                  SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, 225), rl.BLANK)
+                                  SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
         else:
           # move other keys away from selected key a bit
           dx = key.original_position.x - self._closest_key[0].original_position.x
