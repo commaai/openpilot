@@ -1,18 +1,14 @@
-import math
-import numpy as np
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
 
-from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigToggle
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigMultiOptionDialog, BigInputDialog, BigDialogOptionButton, BigConfirmationDialogV2
-from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
-from openpilot.system.ui.widgets import Widget, NavWidget
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType, MeteredType
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets import NavWidget
+from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType
 
 
 class NetworkPanelType(IntEnum):

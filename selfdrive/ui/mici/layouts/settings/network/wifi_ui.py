@@ -1,17 +1,14 @@
 import math
 import numpy as np
 import pyray as rl
-from enum import IntEnum
 from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigMultiOptionDialog, BigInputDialog, BigDialogOptionButton, BigConfirmationDialogV2
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType, MeteredType
+from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType
 
 
 def normalize_ssid(ssid: str) -> str:
@@ -387,7 +384,7 @@ class WifiUIMici(BigMultiOptionDialog):
           self._network_info_page.set_current_network(_network)
           self._should_open_network_info_page = True
 
-        network_button.set_click_callback(lambda _net=network,_button=network_button: _button._selected and show_network_info_page(_net))
+        network_button.set_click_callback(lambda _net=network, _button=network_button: _button._selected and show_network_info_page(_net))
 
       self.add_button(network_button)
 
