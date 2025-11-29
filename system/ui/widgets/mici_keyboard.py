@@ -338,8 +338,8 @@ class MiciKeyboard(Widget):
           key.set_alpha(1.0)
           key.set_font_size(SELECTED_CHAR_FONT_SIZE)
 
-          # draw black circle behind selected key, fade in smoothly
-          circle_alpha = int(self._selected_key_filter.x * 255)
+          # draw black circle behind selected key
+          circle_alpha = int(self._selected_key_filter.x * 225)
           rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
                                   SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
         else:
