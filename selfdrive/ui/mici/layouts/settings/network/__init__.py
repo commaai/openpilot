@@ -112,6 +112,11 @@ class NetworkLayoutMici(NavWidget):
       self._ip_address_btn,
     ], snap_items=False)
 
+    # Set initial config
+    roaming_enabled = ui_state.params.get_bool("GsmRoaming")
+    metered = ui_state.params.get_bool("GsmMetered")
+    self._wifi_manager.update_gsm_settings(roaming_enabled, ui_state.params.get("GsmApn") or "", metered)
+
     # Set up back navigation
     self.set_back_callback(back_callback)
 
@@ -134,7 +139,6 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_ui.hide_event()
 
   def _toggle_roaming(self, checked: bool):
-    print("roaming", checked)
     self._wifi_manager.update_gsm_settings(checked, ui_state.params.get("GsmApn") or "", ui_state.params.get_bool("GsmMetered"))
 
   def _edit_apn(self):
