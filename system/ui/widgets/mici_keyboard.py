@@ -204,7 +204,7 @@ class MiciKeyboard(Widget):
     self._text: str = ""
 
     self._bg_scale_filter = BounceFilter(1.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
-    self._selected_key_filter = FirstOrderFilter(0.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
+    self._selected_key_filter = FirstOrderFilter(0.0, 0.075 * ANIMATION_SCALE, 1 / gui_app.target_fps)
 
   def get_candidate_character(self) -> str:
     # return str of character about to be added to text
@@ -311,8 +311,7 @@ class MiciKeyboard(Widget):
 
   def _update_state(self):
     # update selected key filter
-    target_alpha = 255.0 if self._closest_key[0] is not None else 0.0
-    self._selected_key_filter.update(target_alpha)
+    self._selected_key_filter.update(self._closest_key[0] is not None)
 
     # unselect key after animation plays
     if self._unselect_key_t is not None and rl.get_time() > self._unselect_key_t:
@@ -340,7 +339,7 @@ class MiciKeyboard(Widget):
           key.set_font_size(SELECTED_CHAR_FONT_SIZE)
 
           # draw black circle behind selected key, fade in smoothly
-          circle_alpha = int(self._selected_key_filter.x)
+          circle_alpha = int(self._selected_key_filter.x * 255)
           rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
                                   SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
         else:
