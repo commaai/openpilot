@@ -2,6 +2,7 @@
 
 #include <bzlib.h>
 #include <curl/curl.h>
+#include <openssl/evp.h>
 #include <openssl/sha.h>
 
 #include <cassert>
@@ -383,10 +384,16 @@ void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &interrupt_reques
 
 std::string sha256(const std::string &str) {
   unsigned char hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, str.c_str(), str.size());
-  SHA256_Final(hash, &sha256);
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  if (mdctx == nullptr) return "";
+
+  if (EVP_DigestInit_ex(mdctx, EVP_sha256(), nullptr) != 1 ||
+      EVP_DigestUpdate(mdctx, str.c_str(), str.size()) != 1 ||
+      EVP_DigestFinal_ex(mdctx, hash, nullptr) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    return "";
+  }
+  EVP_MD_CTX_free(mdctx);
   return util::hexdump(hash, SHA256_DIGEST_LENGTH);
 }
 
