@@ -758,7 +758,7 @@ class UnifiedLabel(Widget):
       line_x = self._rect.x + self._rect.width - size.x - self._text_padding
     else:
       line_x = self._rect.x + self._text_padding
-    line_x += x_offset
+    line_x += self._scroll_offset + x_offset
 
     # Render line with emojis
     line_pos = rl.Vector2(line_x, current_y)
