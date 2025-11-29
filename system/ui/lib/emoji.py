@@ -8,6 +8,7 @@ from openpilot.system.ui.lib.application import FONT_DIR
 
 _emoji_font: ImageFont.FreeTypeFont | None = None
 _cache: dict[str, rl.Texture] = {}
+_emoji_find_cache: dict[int, list[tuple[int, int, str]]] = {}
 
 EMOJI_REGEX = re.compile(
 """[\U0001F600-\U0001F64F
@@ -40,7 +41,13 @@ def _load_emoji_font() -> ImageFont.FreeTypeFont | None:
   return _emoji_font
 
 def find_emoji(text):
-  return [(m.start(), m.end(), m.group()) for m in EMOJI_REGEX.finditer(text)]
+  key = hash(text)
+  if key in _emoji_find_cache:
+    return _emoji_find_cache[key]
+
+  result = [(m.start(), m.end(), m.group()) for m in EMOJI_REGEX.finditer(text)]
+  _emoji_find_cache[key] = result
+  return result
 
 def emoji_tex(emoji):
   if emoji not in _cache:

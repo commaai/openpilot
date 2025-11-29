@@ -9,7 +9,7 @@ def elide_line(font: rl.Font, line: str, font_size: int, max_width: int, spacing
   """Elide a single line if it exceeds max_width. If force is True, always elide even if it fits."""
   font = font_fallback(font)
   spacing = round(spacing, 4)
-  key = hash((font.texture.id, line, font_size, spacing))
+  key = hash((font.texture.id, line, font_size, spacing, max_width, force))
   if key in _cache:
     return _cache[key]
 
