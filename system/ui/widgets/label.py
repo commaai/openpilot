@@ -744,7 +744,14 @@ class UnifiedLabel(Widget):
       fade_width = 20
       rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.Color(0, 0, 0, 0), rl.BLACK)
       if self._scroll_state != ScrollState.STARTING:
-        rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
+        # Only show left gradient when first text is still visible
+        # First text starts at: rect.x + text_padding + scroll_offset
+        # First text ends at: rect.x + text_padding + scroll_offset + size.x
+        # First text is visible when: text_padding + scroll_offset + size.x > 0
+        if visible_sizes:
+          first_text_end = self._text_padding + self._scroll_offset + visible_sizes[0].x
+          if first_text_end > 0:
+            rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
 
       rl.end_scissor_mode()
 
