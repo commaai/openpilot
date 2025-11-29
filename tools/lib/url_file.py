@@ -6,6 +6,8 @@ from hashlib import sha256
 from urllib3 import PoolManager, Retry
 from urllib3.response import BaseHTTPResponse
 from urllib3.util import Timeout
+from urllib3.exceptions import MaxRetryError
+
 
 from openpilot.common.utils import atomic_write_in_dir
 from openpilot.system.hardware.hw import Paths
@@ -61,7 +63,10 @@ class URLFile:
     pass
 
   def _request(self, method: str, url: str, headers: dict[str, str] | None = None) -> BaseHTTPResponse:
-    return URLFile.pool_manager().request(method, url, timeout=self._timeout, headers=headers)
+    try:
+      return URLFile.pool_manager().request(method, url, timeout=self._timeout, headers=headers)
+    except MaxRetryError as e:
+      raise URLFileException(f"Failed to {method} {url}: {e}") from e
 
   def get_length_online(self) -> int:
     response = self._request('HEAD', self._url)
