@@ -295,6 +295,9 @@ class TestUI:
     self.setup()
     time.sleep(UI_DELAY)  # wait for UI to start
     setup_case(self.click, self.pm)
+    # Extra delay for MICI UI animations
+    if not self.big_ui:
+      time.sleep(0.5)
     self.screenshot(name)
 
 
