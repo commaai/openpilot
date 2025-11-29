@@ -20,10 +20,22 @@ def setup_mici_settings_toggles(click, pm: PubMaster):
   click(gui_app.width // 2, gui_app.height // 2)
 
 
+def setup_mici_settings_network(click, pm: PubMaster):
+  setup_mici_settings(click, pm)
+  click(gui_app.width - 50, gui_app.height // 2)
+
+
+def setup_mici_settings_wifi(click, pm: PubMaster):
+  setup_mici_settings_network(click, pm)
+  click(gui_app.width // 2, gui_app.height // 2)
+
+
 CASES = {
   "homescreen": setup_mici_homescreen,
   "settings": setup_mici_settings,
   "settings_toggles": setup_mici_settings_toggles,
+  "settings_network": setup_mici_settings_network,
+  "settings_wifi": setup_mici_settings_wifi,
 }
 
 

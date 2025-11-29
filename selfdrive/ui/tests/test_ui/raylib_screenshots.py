@@ -289,6 +289,8 @@ class TestUI:
     pyautogui.mouseDown(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(0.01)
     pyautogui.mouseUp(self.ui.left + x, self.ui.top + y, *args, **kwargs)
+    if not self.big_ui:
+      time.sleep(0.1)
 
   @with_processes(["ui"])
   def test_ui(self, name, setup_case):
