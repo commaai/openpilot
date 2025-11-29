@@ -347,10 +347,21 @@ class DownloadingPage(Widget):
     self._progress_label = UnifiedLabel("", 128, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.35)),
                                         font_weight=FontWeight.ROMAN, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
     self._progress = 0
+    self._raw_progress = 0
+
+  @property
+  def progress(self):
+    return self._progress
 
   def set_progress(self, progress: int):
-    self._progress = progress
-    self._progress_label.set_text(f"{progress}%")
+    print('Download progress:', progress)
+    self._raw_progress = progress
+    # self._progress = progress
+    # self._progress_label.set_text(f"{progress}%")
+
+  def _update_state(self):
+    self._progress = min(self._raw_progress, self._progress + 1)
+    self._progress_label.set_text(f"{self._progress}%")
 
   def _render(self, rect: rl.Rectangle):
     self._title_label.render(rl.Rectangle(
@@ -606,7 +617,7 @@ class Setup(Widget):
     self._network_setup_page.set_has_internet(self._network_monitor.network_connected.is_set())
 
   def render_downloading(self, rect: rl.Rectangle):
-    self._downloading_page.set_progress(self.download_progress)
+    # self._downloading_page.set_progress(self.download_progress)
     self._downloading_page.render(rect)
 
   def render_custom_software(self):
@@ -694,6 +705,10 @@ class Setup(Widget):
 
       with open(INSTALLER_URL_PATH, "w") as f:
         f.write(self.download_url)
+
+      while self._downloading_page.progress != 100:
+        time.sleep(0.1)
+        continue
 
       # give time for installer UI to take over
       time.sleep(0.1)
