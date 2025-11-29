@@ -5,20 +5,19 @@ MICI UI screenshot tests.
 This file imports common utilities from raylib_screenshots.py and defines
 MICI-specific test cases for the 536x240 resolution UI.
 """
-import pathlib
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.version import terms_version, training_version
 
 # Import common utilities and classes
 from selfdrive.ui.tests.test_ui.raylib_screenshots import (
-    TestUI, SCREENSHOTS_DIR, TEST_OUTPUT_DIR, UI_DELAY,
-    BRANCH_NAME, VERSION, OFFROAD_ALERTS,
-    put_update_params, setup_onroad_state, setup_onroad_alert_state,
-    AlertSize, AlertStatus, set_offroad_alert,
+  TestUI, SCREENSHOTS_DIR, TEST_OUTPUT_DIR, UI_DELAY,
+  BRANCH_NAME, VERSION, OFFROAD_ALERTS,
+  put_update_params, setup_onroad_state, setup_onroad_alert_state,
+  AlertSize, AlertStatus, set_offroad_alert,
 )
 from cereal.messaging import PubMaster
-from cereal import log
+
 
 # MICI UI setup functions (536x240 resolution)
 def setup_mici_homescreen(click, pm: PubMaster):
@@ -126,4 +125,3 @@ def create_screenshots():
 
 if __name__ == "__main__":
   create_screenshots()
-
