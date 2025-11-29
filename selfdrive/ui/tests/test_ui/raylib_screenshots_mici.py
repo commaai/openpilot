@@ -2,6 +2,7 @@
 from cereal.messaging import PubMaster
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
+from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.version import terms_version, training_version
 from openpilot.system.ui.lib.application import gui_app
 from selfdrive.ui.tests.test_ui.raylib_screenshots import TestUI, SCREENSHOTS_DIR, TEST_OUTPUT_DIR, VERSION
@@ -49,7 +50,7 @@ def create_screenshots():
   for name, setup in CASES.items():
     with OpenpilotPrefix():
       params = Params()
-      params.put("DongleId", "123456789012345")
+      params.put("DongleId", UNREGISTERED_DONGLE_ID)
 
       # Set branch name
       params.put("UpdaterCurrentDescription", VERSION)

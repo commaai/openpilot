@@ -19,6 +19,7 @@ from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.updated.updated import parse_release_notes
 from openpilot.system.version import terms_version, training_version
+from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -312,7 +313,7 @@ def create_screenshots():
   for name, setup in CASES.items():
     with OpenpilotPrefix():
       params = Params()
-      params.put("DongleId", "123456789012345")
+      params.put("DongleId", UNREGISTERED_DONGLE_ID)
 
       # Set branch name
       params.put("UpdaterCurrentDescription", VERSION)
