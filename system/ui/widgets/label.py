@@ -686,42 +686,45 @@ class UnifiedLabel(Widget):
     # Render each line
     current_y = start_y
     for idx, (line, size, emojis) in enumerate(zip(visible_lines, visible_sizes, visible_emojis, strict=True)):
-      # Calculate horizontal position
-      if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
-        line_x = rect.x + self._text_padding
-      elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
-        line_x = rect.x + (rect.width - size.x) / 2
-      elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
-        line_x = rect.x + rect.width - size.x - self._text_padding
-      else:
-        line_x = rect.x + self._text_padding
-
-      # Render line with emojis
-      line_pos = rl.Vector2(line_x, current_y)
-      prev_index = 0
-
-      for start, end, emoji in emojis:
-        # Draw text before emoji
-        text_before = line[prev_index:start]
-        if text_before:
-          rl.draw_text_ex(self._font, text_before, line_pos, self._font_size, self._spacing_pixels, self._text_color)
-          width_before = measure_text_cached(self._font, text_before, self._font_size, self._spacing_pixels)
-          line_pos.x += width_before.x
-
-        # Draw emoji
-        tex = emoji_tex(emoji)
-        emoji_scale = self._font_size / tex.height * FONT_SCALE
-        rl.draw_texture_ex(tex, line_pos, 0.0, emoji_scale, self._text_color)
-        # Emoji width is font_size * FONT_SCALE (as per measure_text_cached)
-        line_pos.x += self._font_size * FONT_SCALE
-        prev_index = end
-
-      # Draw remaining text after last emoji
-      text_after = line[prev_index:]
-      if text_after:
-        rl.draw_text_ex(self._font, text_after, line_pos, self._font_size, self._spacing_pixels, self._text_color)
+      self._render_line(line, size, emojis, current_y)
 
       # Move to next line (if not last line)
       if idx < len(visible_lines) - 1:
         # Use current line's height * line_height for spacing to next line
         current_y += size.y * self._line_height
+
+  def _render_line(self, line, size, emojis, current_y):
+    # Calculate horizontal position
+    if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
+      line_x = self._rect.x + self._text_padding
+    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+      line_x = self._rect.x + (self._rect.width - size.x) / 2
+    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+      line_x = self._rect.x + self._rect.width - size.x - self._text_padding
+    else:
+      line_x = self._rect.x + self._text_padding
+
+    # Render line with emojis
+    line_pos = rl.Vector2(line_x, current_y)
+    prev_index = 0
+
+    for start, end, emoji in emojis:
+      # Draw text before emoji
+      text_before = line[prev_index:start]
+      if text_before:
+        rl.draw_text_ex(self._font, text_before, line_pos, self._font_size, self._spacing_pixels, self._text_color)
+        width_before = measure_text_cached(self._font, text_before, self._font_size, self._spacing_pixels)
+        line_pos.x += width_before.x
+
+      # Draw emoji
+      tex = emoji_tex(emoji)
+      emoji_scale = self._font_size / tex.height * FONT_SCALE
+      rl.draw_texture_ex(tex, line_pos, 0.0, emoji_scale, self._text_color)
+      # Emoji width is font_size * FONT_SCALE (as per measure_text_cached)
+      line_pos.x += self._font_size * FONT_SCALE
+      prev_index = end
+
+    # Draw remaining text after last emoji
+    text_after = line[prev_index:]
+    if text_after:
+      rl.draw_text_ex(self._font, text_after, line_pos, self._font_size, self._spacing_pixels, self._text_color)
