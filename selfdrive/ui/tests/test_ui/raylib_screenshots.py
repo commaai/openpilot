@@ -305,9 +305,7 @@ class TestUI:
 
 
 def create_screenshots():
-  if TEST_OUTPUT_DIR.exists():
-    shutil.rmtree(TEST_OUTPUT_DIR)
-  SCREENSHOTS_DIR.mkdir(parents=True)
+  SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 
   t = TestUI(big_ui=True)
   for name, setup in CASES.items():
