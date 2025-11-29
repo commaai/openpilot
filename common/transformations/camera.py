@@ -177,3 +177,18 @@ def img_from_device(pt_device):
   pt_img = pt_view/pt_view[:, 2:3]
   return pt_img.reshape(input_shape)[:, :2]
 
+
+# Get venus stride buffer parameters based on resolution
+def get_nv12_info(width: int, height: int) -> tuple[int, int, int]:
+  if width == 1928 and height == 1208:
+    STRIDE = 2048
+    UV_OFFSET = 1216 * STRIDE
+    YUV_SIZE = 2346 * STRIDE
+    return YUV_SIZE, STRIDE, UV_OFFSET
+  elif width == 1344 and height == 760:
+    STRIDE = 1408
+    UV_OFFSET = 760 * STRIDE
+    YUV_SIZE = 2900 * STRIDE
+    return YUV_SIZE, STRIDE, UV_OFFSET
+  else:
+    raise NotImplementedError(f"Unsupported resolution for vipc: {width}x{height}")
