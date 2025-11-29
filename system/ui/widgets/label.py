@@ -8,6 +8,7 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.elide import elide_line
 from openpilot.system.ui.lib.utils import GuiStyleContext
 from openpilot.system.ui.lib.emoji import find_emoji, emoji_tex
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -501,7 +502,7 @@ class UnifiedLabel(Widget):
       wrapped_lines = text.split('\n') if text else [""]
 
     # Elide lines if needed (for width constraint)
-    wrapped_lines = [self._elide_line(line, content_width) for line in wrapped_lines]
+    wrapped_lines = [elide_line(self._font, line, self._font_size, content_width, self._spacing_pixels) if self._elide else line for line in wrapped_lines]
 
     # Process each line: measure and find emojis
     line_sizes = []
@@ -531,35 +532,6 @@ class UnifiedLabel(Widget):
           total_height += size.y * self._line_height
 
     return wrapped_lines, line_sizes, line_emojis, total_height
-
-  def _elide_line(self, line: str, max_width: int, force: bool = False) -> str:
-    """Elide a single line if it exceeds max_width. If force is True, always elide even if it fits."""
-    if not self._elide and not force:
-      return line
-
-    text_size = measure_text_cached(self._font, line, self._font_size, self._spacing_pixels)
-    if text_size.x <= max_width and not force:
-      return line
-
-    ellipsis = "..."
-    # If force=True and line fits, just append ellipsis without truncating
-    if force and text_size.x <= max_width:
-      ellipsis_size = measure_text_cached(self._font, ellipsis, self._font_size, self._spacing_pixels)
-      if text_size.x + ellipsis_size.x <= max_width:
-        return line + ellipsis
-      # If line + ellipsis doesn't fit, need to truncate
-      # Fall through to binary search below
-
-    left, right = 0, len(line)
-    while left < right:
-      mid = (left + right) // 2
-      candidate = line[:mid] + ellipsis
-      candidate_size = measure_text_cached(self._font, candidate, self._font_size, self._spacing_pixels)
-      if candidate_size.x <= max_width:
-        left = mid + 1
-      else:
-        right = mid
-    return line[:left - 1] + ellipsis if left > 0 else ellipsis
 
   def get_content_height(self, max_width: int) -> float:
     """
@@ -628,7 +600,9 @@ class UnifiedLabel(Widget):
       last_line_idx = len(visible_lines) - 1
       last_line = visible_lines[last_line_idx]
       # Force elide the last line to show "..." even if it fits in width (to indicate more content)
-      elided = self._elide_line(last_line, content_width, force=True)
+      elided = last_line
+      if self._elide:
+        elided = elide_line(self._font, last_line, self._font_size, content_width, self._spacing_pixels, force=True)
       visible_lines[last_line_idx] = elided
       visible_sizes[last_line_idx] = measure_text_cached(self._font, elided, self._font_size, self._spacing_pixels)
 
