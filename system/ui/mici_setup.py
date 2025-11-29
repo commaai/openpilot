@@ -26,7 +26,7 @@ from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRou
                                                 FullRoundedButton)
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import LargerSlider
-from openpilot.selfdrive.ui.mici.layouts.settings.network.network import WifiUIMici
+from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 
 NetworkType = log.DeviceState.NetworkType
