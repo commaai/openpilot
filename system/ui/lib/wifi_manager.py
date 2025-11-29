@@ -168,6 +168,9 @@ class WifiManager:
     self._networks_updated: list[Callable[[list[Network]], None]] = []
     self._disconnected: list[Callable[[], None]] = []
 
+    if self._router_main is None or self._conn_monitor is None or self._nm is None:
+      return
+
     self._lock = threading.Lock()
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
     self._state_thread = threading.Thread(target=self._monitor_state, daemon=True)
