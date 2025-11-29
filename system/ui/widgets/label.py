@@ -716,7 +716,6 @@ class UnifiedLabel(Widget):
 
     # Render each line
     current_y = start_y
-
     for idx, (line, size, emojis) in enumerate(zip(visible_lines, visible_sizes, visible_emojis, strict=True)):
       if self._needs_scroll:
         if self._scroll_state == ScrollState.STARTING:
