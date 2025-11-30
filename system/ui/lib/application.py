@@ -267,6 +267,7 @@ class GuiApplication:
       rl.set_config_flags(flags)
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
+
       if RECORD:
         # Start ffmpeg process for real-time video encoding
         width = self._width if self._render_texture else self._scaled_width
@@ -295,6 +296,7 @@ class GuiApplication:
           ],
           stdin=subprocess.PIPE,
         )
+
       needs_render_texture = self._scale != 1.0 or BURN_IN_MODE
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
