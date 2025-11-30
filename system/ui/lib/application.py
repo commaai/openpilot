@@ -39,7 +39,6 @@ PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
 RECORD = os.getenv("RECORD") == "1"
 RECORD_OUTPUT = os.getenv("RECORD_OUTPUT", "output.mp4")
-RECORD_FRAMES = int(os.getenv("RECORD_FRAMES", "0"))
 
 GL_VERSION = """
 #version 300 es
@@ -460,10 +459,6 @@ class GuiApplication:
         self._render_profiler.enable()
 
       while not (self._window_close_requested or rl.window_should_close()):
-        if RECORD and RECORD_FRAMES > 0 and self._frame >= RECORD_FRAMES:
-          self.close()
-          return
-
         if PC:
           # Thread is not used on PC, need to manually add mouse events
           self._mouse._handle_mouse_event()
