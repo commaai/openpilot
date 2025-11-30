@@ -9,6 +9,7 @@ import traceback
 from cereal import log
 import cereal.messaging as messaging
 import openpilot.system.sentry as sentry
+from openpilot.common.utils import atomic_write
 from openpilot.common.params import Params, ParamKeyFlag
 from openpilot.common.text_window import TextWindow
 from openpilot.system.hardware import HARDWARE
@@ -162,7 +163,7 @@ def manager_thread() -> None:
     # kick AGNOS power monitoring watchdog
     try:
       if sm.all_checks(['deviceState']):
-        with open("/var/tmp/power_watchdog", "w") as f:
+        with atomic_write("/var/tmp/power_watchdog", "w", overwrite=True) as f:
           f.write(str(time.monotonic()))
     except Exception:
       pass
