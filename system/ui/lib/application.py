@@ -201,12 +201,12 @@ class GuiApplication:
     else:
       self._scale = SCALE
 
+    # Scale, then ensure dimensions are even
     self._scaled_width = int(self._width * self._scale)
     self._scaled_height = int(self._height * self._scale)
-    if RECORD:
-      # Ensure dimensions are even for video encoding (libx264 requirement)
-      self._scaled_width = self._scaled_width if self._scaled_width % 2 == 0 else self._scaled_width + 1
-      self._scaled_height = self._scaled_height if self._scaled_height % 2 == 0 else self._scaled_height + 1
+    self._scaled_width += self._scaled_width % 2
+    self._scaled_height += self._scaled_height % 2
+
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
     self._ffmpeg_proc: subprocess.Popen | None = None
@@ -277,15 +277,13 @@ class GuiApplication:
         rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
       if RECORD:
-        # Use render texture dimensions for native resolution recording
-        size = f'{self._width}x{self._height}'
         ffmpeg_args = [
           'ffmpeg',
           '-v', 'warning',          # Reduce ffmpeg log spam
           '-stats',                 # Show encoding progress
           '-f', 'rawvideo',         # Input format
           '-pix_fmt', 'rgba',       # Input pixel format
-          '-s', size,               # Input resolution
+          '-s', f'{self._width}x{self._height}',  # Input resolution
           '-r', str(fps),           # Input frame rate
           '-i', 'pipe:0',           # Input from stdin
           '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert rgba to yuv420p
@@ -295,10 +293,7 @@ class GuiApplication:
           '-f', 'mp4',              # Output format
           RECORD_OUTPUT,            # Output file path
         ]
-        self._ffmpeg_proc = subprocess.Popen(
-          ffmpeg_args,
-          stdin=subprocess.PIPE,
-        )
+        self._ffmpeg_proc = subprocess.Popen(ffmpeg_args, stdin=subprocess.PIPE)
 
       rl.set_target_fps(fps)
 
@@ -408,9 +403,8 @@ class GuiApplication:
     return texture
 
   def close_ffmpeg(self):
-    """Close ffmpeg process if recording"""
     if self._ffmpeg_proc is not None:
-      self._ffmpeg_proc.stdin.flush()  # ensure all data is written (we flush each frame anyway, but just in case)
+      self._ffmpeg_proc.stdin.flush()
       self._ffmpeg_proc.stdin.close()
       try:
         self._ffmpeg_proc.wait(timeout=5)
@@ -519,7 +513,6 @@ class GuiApplication:
         rl.end_drawing()
 
         if RECORD:
-          # Capture and send every rendered frame from render texture
           image = rl.load_image_from_texture(self._render_texture.texture)
           data_size = image.width * image.height * 4
           data = bytes(rl.ffi.buffer(image.data, data_size))
