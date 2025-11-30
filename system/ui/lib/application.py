@@ -13,6 +13,7 @@ from collections.abc import Callable
 from collections import deque
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
@@ -38,7 +39,7 @@ GRID_SIZE = int(os.getenv("GRID", "0"))
 PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
 RECORD = os.getenv("RECORD") == "1"
-RECORD_OUTPUT = os.getenv("RECORD_OUTPUT", "output").rstrip(".mp4") + ".mp4"
+RECORD_OUTPUT = str(Path(os.getenv("RECORD_OUTPUT", "output")).with_suffix(".mp4"))
 
 GL_VERSION = """
 #version 300 es
