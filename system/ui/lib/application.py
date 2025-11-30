@@ -8,7 +8,6 @@ import pyray as rl
 import threading
 import platform
 import subprocess
-import itertools
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
@@ -281,24 +280,23 @@ class GuiApplication:
         # Start ffmpeg process for real-time video encoding
         size = f'{render_width}x{render_height}'
         ffmpeg_args = [
-          ['ffmpeg'],
-          ['-v', 'warning'],  # Reduce ffmpeg log spam
-          ['-stats'],  # Show encoding progress
-          ['-f', 'rawvideo'],  # Input format
-          ['-pix_fmt', 'rgba'],  # Input pixel format
-          ['-s', size],  # Input resolution
-          ['-r', str(fps)],  # Input frame rate
-          ['-i', 'pipe:0'],  # Input from stdin
-          ['-vf', 'format=yuv420p'],  # Explicitly convert rgba to yuv420p
-          ['-c:v', 'libx264'],  # Video codec
-          ['-preset', 'ultrafast'],  # Encoding speed
-          ['-y'],  # Overwrite existing file
-          ['-f', 'mp4'],  # Output format
-          [RECORD_OUTPUT],  # Output file path
+          'ffmpeg',
+          '-v', 'warning',          # Reduce ffmpeg log spam
+          '-stats',                 # Show encoding progress
+          '-f', 'rawvideo',         # Input format
+          '-pix_fmt', 'rgba',       # Input pixel format
+          '-s', size,               # Input resolution
+          '-r', str(fps),           # Input frame rate
+          '-i', 'pipe:0',           # Input from stdin
+          '-vf', 'format=yuv420p',  # Explicitly convert rgba to yuv420p
+          '-c:v', 'libx264',        # Video codec
+          '-preset', 'ultrafast',   # Encoding speed
+          '-y',                     # Overwrite existing file
+          '-f', 'mp4',              # Output format
+          RECORD_OUTPUT,            # Output file path
         ]
-        flattened_args = list(itertools.chain.from_iterable(ffmpeg_args))
         self._ffmpeg_proc = subprocess.Popen(
-          flattened_args,
+          ffmpeg_args,
           stdin=subprocess.PIPE,
         )
 
