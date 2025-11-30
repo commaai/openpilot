@@ -162,8 +162,17 @@ def manager_thread() -> None:
     # kick AGNOS power monitoring watchdog
     try:
       if sm.all_checks(['deviceState']):
-        with open("/var/tmp/power_watchdog", "w") as f:
-          f.write(str(time.monotonic()))
+        write_time = None
+        with open("/var/tmp/power_watchdog.tmp", "w") as f:
+          write_time = time.monotonic()
+          f.write(str(write_time))
+        os.rename("/var/tmp/power_watchdog.tmp", "/var/tmp/power_watchdog")
+        try:
+          read_time = float(open("/var/tmp/power_watchdog").read().strip())
+          if read_time < write_time - 0.5 or abs(read_time - write_time) > 0.5:
+            cloudlog.critical(f"power watchdog write/read time mismatch: {write_time} vs {read_time}")
+        except Exception as e:
+          cloudlog.critical(f"power watchdog read failed: {e}")
     except Exception:
       pass
 
