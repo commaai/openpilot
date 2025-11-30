@@ -204,6 +204,10 @@ class GuiApplication:
 
     self._scaled_width = int(self._width * self._scale)
     self._scaled_height = int(self._height * self._scale)
+    if RECORD:
+      # Ensure dimensions are even for video encoding (libx264 requirement)
+      self._scaled_width = self._scaled_width if self._scaled_width % 2 == 0 else self._scaled_width + 1
+      self._scaled_height = self._scaled_height if self._scaled_height % 2 == 0 else self._scaled_height + 1
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
     self._ffmpeg_proc: subprocess.Popen | None = None
