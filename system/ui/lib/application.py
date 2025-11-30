@@ -210,6 +210,9 @@ class GuiApplication:
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
+    self._last_frame_data = None
+    self._capture_interval = 1 / _DEFAULT_FPS
+    self._last_capture_time = time.monotonic()
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
@@ -301,6 +304,7 @@ class GuiApplication:
       rl.set_target_fps(fps)
 
       self._target_fps = fps
+      self._capture_interval = 1 / fps
       self._set_styles()
       self._load_fonts()
       self._patch_text_functions()
@@ -515,13 +519,28 @@ class GuiApplication:
         rl.end_drawing()
 
         if RECORD:
-          # Capture frame and send to ffmpeg for recording
-          image = rl.load_image_from_screen()
-          data_size = image.width * image.height * 4
-          data = bytes(rl.ffi.buffer(image.data, data_size))
-          self._ffmpeg_proc.stdin.write(data)
-          self._ffmpeg_proc.stdin.flush()
-          rl.unload_image(image)
+          # Capture frames at target FPS for consistent playback
+          current_time = time.monotonic()
+          frames_to_send = 0
+          while current_time - self._last_capture_time >= self._capture_interval:
+            frames_to_send += 1
+            self._last_capture_time += self._capture_interval
+
+          if frames_to_send > 0:
+            # Send duplicates for missed frames
+            if self._last_frame_data is not None:
+              for _ in range(frames_to_send - 1):
+                self._ffmpeg_proc.stdin.write(self._last_frame_data)
+                self._ffmpeg_proc.stdin.flush()
+
+            # Capture and send new frame
+            image = rl.load_image_from_screen()
+            data_size = image.width * image.height * 4
+            data = bytes(rl.ffi.buffer(image.data, data_size))
+            self._ffmpeg_proc.stdin.write(data)
+            self._ffmpeg_proc.stdin.flush()
+            self._last_frame_data = data
+            rl.unload_image(image)
 
         self._monitor_fps()
         self._frame += 1
