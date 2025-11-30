@@ -205,7 +205,7 @@ class GuiApplication:
     self._scaled_height = int(self._height * self._scale)
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
-    self._ffmpeg_proc = None
+    self._ffmpeg_proc: subprocess.Popen | None = None
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
