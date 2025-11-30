@@ -273,6 +273,7 @@ class GuiApplication:
         self._ffmpeg_proc = subprocess.Popen(
           [
             'ffmpeg',
+            '-hide_banner',
             '-y',
             '-f',
             'rawvideo',
