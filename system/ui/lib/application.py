@@ -270,8 +270,12 @@ class GuiApplication:
       rl.init_window(self._scaled_width, self._scaled_height, title)
 
       if RECORD:
+        # Get actual render buffer dimensions (may differ from window size on HiDPI displays)
+        render_width = rl.get_render_width()
+        render_height = rl.get_render_height()
+
         # Start ffmpeg process for real-time video encoding
-        size = f'{self._scaled_width}x{self._scaled_height}'
+        size = f'{render_width}x{render_height}'
         ffmpeg_args = [
           ['ffmpeg'],
           ['-v', 'warning'],  # Reduce ffmpeg log spam
@@ -281,9 +285,9 @@ class GuiApplication:
           ['-s', size],  # Input resolution
           ['-r', str(fps)],  # Input frame rate
           ['-i', 'pipe:0'],  # Input from stdin
+          ['-vf', 'format=yuv420p'],  # Explicitly convert rgba to yuv420p
           ['-c:v', 'libx264'],  # Video codec
           ['-preset', 'ultrafast'],  # Encoding speed
-          ['-vf', 'format=yuv420p'],  # Explicitly convert rgba to yuv420p
           ['-y'],  # Overwrite existing file
           ['-f', 'mp4'],  # Output format
           [RECORD_OUTPUT],  # Output file path
