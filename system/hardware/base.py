@@ -66,19 +66,11 @@ class ThermalConfig:
 
 class LPABase(ABC):
   @abstractmethod
-  def bootstrap(self) -> None:
-    pass
-
-  @abstractmethod
   def list_profiles(self) -> list[Profile]:
     pass
 
   @abstractmethod
   def get_active_profile(self) -> Profile | None:
-    pass
-
-  @abstractmethod
-  def delete_profile(self, iccid: str) -> None:
     pass
 
   @abstractmethod
@@ -92,9 +84,6 @@ class LPABase(ABC):
   @abstractmethod
   def switch_profile(self, iccid: str) -> None:
     pass
-
-  def is_comma_profile(self, iccid: str) -> bool:
-    return any(iccid.startswith(prefix) for prefix in ('8985235',))
 
 class HardwareBase(ABC):
   @staticmethod
