@@ -214,9 +214,6 @@ class GuiApplication:
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
-    self._last_frame_data = None
-    self._capture_interval = 1 / _DEFAULT_FPS
-    self._last_capture_time = time.monotonic()
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
@@ -272,13 +269,16 @@ class GuiApplication:
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
 
-      if RECORD:
-        # Get actual render buffer dimensions (may differ from window size on HiDPI displays)
-        render_width = rl.get_render_width()
-        render_height = rl.get_render_height()
+      needs_render_texture = self._scale != 1.0 or BURN_IN_MODE or RECORD
+      if self._scale != 1.0:
+        rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
+      if needs_render_texture:
+        self._render_texture = rl.load_render_texture(self._width, self._height)
+        rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
-        # Start ffmpeg process for real-time video encoding
-        size = f'{render_width}x{render_height}'
+      if RECORD:
+        # Use render texture dimensions for native resolution recording
+        size = f'{self._width}x{self._height}'
         ffmpeg_args = [
           'ffmpeg',
           '-v', 'warning',          # Reduce ffmpeg log spam
@@ -288,7 +288,7 @@ class GuiApplication:
           '-s', size,               # Input resolution
           '-r', str(fps),           # Input frame rate
           '-i', 'pipe:0',           # Input from stdin
-          '-vf', 'format=yuv420p',  # Explicitly convert rgba to yuv420p
+          '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert rgba to yuv420p
           '-c:v', 'libx264',        # Video codec
           '-preset', 'ultrafast',   # Encoding speed
           '-y',                     # Overwrite existing file
@@ -300,16 +300,9 @@ class GuiApplication:
           stdin=subprocess.PIPE,
         )
 
-      needs_render_texture = self._scale != 1.0 or BURN_IN_MODE
-      if self._scale != 1.0:
-        rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
-      if needs_render_texture:
-        self._render_texture = rl.load_render_texture(self._width, self._height)
-        rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       rl.set_target_fps(fps)
 
       self._target_fps = fps
-      self._capture_interval = 1 / fps
       self._set_styles()
       self._load_fonts()
       self._patch_text_functions()
@@ -526,28 +519,13 @@ class GuiApplication:
         rl.end_drawing()
 
         if RECORD:
-          # Capture frames at target FPS for consistent playback
-          current_time = time.monotonic()
-          frames_to_send = 0
-          while current_time - self._last_capture_time >= self._capture_interval:
-            frames_to_send += 1
-            self._last_capture_time += self._capture_interval
-
-          if frames_to_send > 0:
-            # Send duplicates for missed frames
-            if self._last_frame_data is not None:
-              for _ in range(frames_to_send - 1):
-                self._ffmpeg_proc.stdin.write(self._last_frame_data)
-                self._ffmpeg_proc.stdin.flush()
-
-            # Capture and send new frame
-            image = rl.load_image_from_screen()
-            data_size = image.width * image.height * 4
-            data = bytes(rl.ffi.buffer(image.data, data_size))
-            self._ffmpeg_proc.stdin.write(data)
-            self._ffmpeg_proc.stdin.flush()
-            self._last_frame_data = data
-            rl.unload_image(image)
+          # Capture and send every rendered frame from render texture
+          image = rl.load_image_from_texture(self._render_texture.texture)
+          data_size = image.width * image.height * 4
+          data = bytes(rl.ffi.buffer(image.data, data_size))
+          self._ffmpeg_proc.stdin.write(data)
+          self._ffmpeg_proc.stdin.flush()
+          rl.unload_image(image)
 
         self._monitor_fps()
         self._frame += 1
