@@ -271,17 +271,19 @@ class GuiApplication:
 
       if RECORD:
         # Start ffmpeg process for real-time video encoding
+        size = f'{self._scaled_width}x{self._scaled_height}'
         ffmpeg_args = [
           ['ffmpeg'],
           ['-v', 'warning'],  # Reduce ffmpeg log spam
           ['-stats'],  # Show encoding progress
           ['-f', 'rawvideo'],  # Input format
-          ['-pix_fmt', 'rgba'],  # Input pixel format )
-          ['-s', f'{self._scaled_width}x{self._scaled_height}'],  # Input resolution
+          ['-pix_fmt', 'rgba'],  # Input pixel format
+          ['-s', size],  # Input resolution
           ['-r', str(fps)],  # Input frame rate
           ['-i', 'pipe:0'],  # Input from stdin
           ['-c:v', 'libx264'],  # Video codec
           ['-preset', 'ultrafast'],  # Encoding speed
+          ['-vf', 'format=yuv420p'],  # Explicitly convert rgba to yuv420p
           ['-y'],  # Overwrite existing file
           ['-f', 'mp4'],  # Output format
           [RECORD_OUTPUT],  # Output file path
