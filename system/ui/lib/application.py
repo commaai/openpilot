@@ -412,6 +412,7 @@ class GuiApplication:
     """Close ffmpeg process if recording"""
     if self._ffmpeg_proc is not None:
       self._ffmpeg_proc.stdin.close()
+      self._ffmpeg_proc.wait(timeout=5)
 
   def close(self):
     if not rl.is_window_ready():
