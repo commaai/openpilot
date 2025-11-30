@@ -274,7 +274,9 @@ class GuiApplication:
           [
             'ffmpeg',
             '-hide_banner',
-            '-y',
+            '-v',
+            'warning',
+            '-stats',
             '-f',
             'rawvideo',
             '-pix_fmt',
@@ -289,6 +291,7 @@ class GuiApplication:
             'libx264',
             '-preset',
             'ultrafast',
+            '-y',  # Overwrite existing file
             '-f',
             'mp4',
             RECORD_OUTPUT,
