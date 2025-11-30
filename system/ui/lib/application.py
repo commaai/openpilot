@@ -7,6 +7,7 @@ import sys
 import pyray as rl
 import threading
 import platform
+import subprocess
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
@@ -36,6 +37,9 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 GRID_SIZE = int(os.getenv("GRID", "0"))
 PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
+RECORD = os.getenv("RECORD") == "1"
+RECORD_OUTPUT = os.getenv("RECORD_OUTPUT", "output.mp4")
+RECORD_FRAMES = int(os.getenv("RECORD_FRAMES", "0"))
 
 GL_VERSION = """
 #version 300 es
@@ -201,6 +205,7 @@ class GuiApplication:
     self._scaled_height = int(self._height * self._scale)
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
+    self._ffmpeg_proc = None
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
@@ -259,6 +264,34 @@ class GuiApplication:
       rl.set_config_flags(flags)
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
+      if RECORD:
+        # Start ffmpeg process for real-time video encoding
+        width = self._width if self._render_texture else self._scaled_width
+        height = self._height if self._render_texture else self._scaled_height
+        self._ffmpeg_proc = subprocess.Popen(
+          [
+            'ffmpeg',
+            '-y',
+            '-f',
+            'rawvideo',
+            '-pix_fmt',
+            'rgba',
+            '-s',
+            f'{width}x{height}',
+            '-r',
+            str(fps),
+            '-i',
+            'pipe:0',
+            '-c:v',
+            'libx264',
+            '-preset',
+            'ultrafast',
+            '-f',
+            'mp4',
+            RECORD_OUTPUT,
+          ],
+          stdin=subprocess.PIPE,
+        )
       needs_render_texture = self._scale != 1.0 or BURN_IN_MODE
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
@@ -372,6 +405,11 @@ class GuiApplication:
     rl.unload_image(image)
     return texture
 
+  def close_ffmpeg(self):
+    """Close ffmpeg process if recording"""
+    if self._ffmpeg_proc is not None:
+      self._ffmpeg_proc.stdin.close()
+
   def close(self):
     if not rl.is_window_ready():
       return
@@ -395,6 +433,8 @@ class GuiApplication:
     if not PC:
       self._mouse.stop()
 
+    self.close_ffmpeg()
+
     rl.close_window()
 
   @property
@@ -414,6 +454,10 @@ class GuiApplication:
         self._render_profiler.enable()
 
       while not (self._window_close_requested or rl.window_should_close()):
+        if RECORD and RECORD_FRAMES > 0 and self._frame >= RECORD_FRAMES:
+          self.close()
+          return
+
         if PC:
           # Thread is not used on PC, need to manually add mouse events
           self._mouse._handle_mouse_event()
@@ -469,6 +513,16 @@ class GuiApplication:
           self._draw_grid()
 
         rl.end_drawing()
+
+        if RECORD:
+          # Capture frame and send to ffmpeg for recording
+          image = rl.load_image_from_screen()
+          data_size = image.width * image.height * 4
+          data = bytes(rl.ffi.buffer(image.data, data_size))
+          self._ffmpeg_proc.stdin.write(data)
+          self._ffmpeg_proc.stdin.flush()
+          rl.unload_image(image)
+
         self._monitor_fps()
         self._frame += 1
 
@@ -594,6 +648,7 @@ class GuiApplication:
     # Strict mode: terminate UI if FPS drops too much
     if STRICT_MODE and fps < self._target_fps * FPS_CRITICAL_THRESHOLD:
       cloudlog.error(f"FPS dropped critically below {fps}. Shutting down UI.")
+      self.close_ffmpeg()
       os._exit(1)
 
   def _draw_touch_points(self):
