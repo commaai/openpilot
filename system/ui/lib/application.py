@@ -269,8 +269,6 @@ class GuiApplication:
 
       if RECORD:
         # Start ffmpeg process for real-time video encoding
-        width = self._width if self._render_texture else self._scaled_width
-        height = self._height if self._render_texture else self._scaled_height
         self._ffmpeg_proc = subprocess.Popen(
           [
             'ffmpeg',
@@ -280,7 +278,7 @@ class GuiApplication:
             '-pix_fmt',
             'rgba',
             '-s',
-            f'{width}x{height}',
+            f'{self._scaled_width}x{self._scaled_height}',
             '-r',
             str(fps),
             '-i',
