@@ -412,8 +412,13 @@ class GuiApplication:
   def close_ffmpeg(self):
     """Close ffmpeg process if recording"""
     if self._ffmpeg_proc is not None:
+      self._ffmpeg_proc.stdin.flush()  # ensure all data is written (we flush each frame anyway, but just in case)
       self._ffmpeg_proc.stdin.close()
-      self._ffmpeg_proc.wait(timeout=5)
+      try:
+        self._ffmpeg_proc.wait(timeout=5)
+      except subprocess.TimeoutExpired:
+        self._ffmpeg_proc.terminate()
+        self._ffmpeg_proc.wait()
 
   def close(self):
     if not rl.is_window_ready():
