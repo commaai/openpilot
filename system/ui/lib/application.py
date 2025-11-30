@@ -7,11 +7,13 @@ import sys
 import pyray as rl
 import threading
 import platform
+import subprocess
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
@@ -36,6 +38,8 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 GRID_SIZE = int(os.getenv("GRID", "0"))
 PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
+RECORD = os.getenv("RECORD") == "1"
+RECORD_OUTPUT = str(Path(os.getenv("RECORD_OUTPUT", "output")).with_suffix(".mp4"))
 
 GL_VERSION = """
 #version 300 es
@@ -197,10 +201,15 @@ class GuiApplication:
     else:
       self._scale = SCALE
 
+    # Scale, then ensure dimensions are even
     self._scaled_width = int(self._width * self._scale)
     self._scaled_height = int(self._height * self._scale)
+    self._scaled_width += self._scaled_width % 2
+    self._scaled_height += self._scaled_height % 2
+
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
+    self._ffmpeg_proc: subprocess.Popen | None = None
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
@@ -259,12 +268,33 @@ class GuiApplication:
       rl.set_config_flags(flags)
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
-      needs_render_texture = self._scale != 1.0 or BURN_IN_MODE
+
+      needs_render_texture = self._scale != 1.0 or BURN_IN_MODE or RECORD
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
       if needs_render_texture:
         self._render_texture = rl.load_render_texture(self._width, self._height)
         rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+
+      if RECORD:
+        ffmpeg_args = [
+          'ffmpeg',
+          '-v', 'warning',          # Reduce ffmpeg log spam
+          '-stats',                 # Show encoding progress
+          '-f', 'rawvideo',         # Input format
+          '-pix_fmt', 'rgba',       # Input pixel format
+          '-s', f'{self._width}x{self._height}',  # Input resolution
+          '-r', str(fps),           # Input frame rate
+          '-i', 'pipe:0',           # Input from stdin
+          '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert rgba to yuv420p
+          '-c:v', 'libx264',        # Video codec
+          '-preset', 'ultrafast',   # Encoding speed
+          '-y',                     # Overwrite existing file
+          '-f', 'mp4',              # Output format
+          RECORD_OUTPUT,            # Output file path
+        ]
+        self._ffmpeg_proc = subprocess.Popen(ffmpeg_args, stdin=subprocess.PIPE)
+
       rl.set_target_fps(fps)
 
       self._target_fps = fps
@@ -372,6 +402,16 @@ class GuiApplication:
     rl.unload_image(image)
     return texture
 
+  def close_ffmpeg(self):
+    if self._ffmpeg_proc is not None:
+      self._ffmpeg_proc.stdin.flush()
+      self._ffmpeg_proc.stdin.close()
+      try:
+        self._ffmpeg_proc.wait(timeout=5)
+      except subprocess.TimeoutExpired:
+        self._ffmpeg_proc.terminate()
+        self._ffmpeg_proc.wait()
+
   def close(self):
     if not rl.is_window_ready():
       return
@@ -394,6 +434,8 @@ class GuiApplication:
 
     if not PC:
       self._mouse.stop()
+
+    self.close_ffmpeg()
 
     rl.close_window()
 
@@ -469,6 +511,15 @@ class GuiApplication:
           self._draw_grid()
 
         rl.end_drawing()
+
+        if RECORD:
+          image = rl.load_image_from_texture(self._render_texture.texture)
+          data_size = image.width * image.height * 4
+          data = bytes(rl.ffi.buffer(image.data, data_size))
+          self._ffmpeg_proc.stdin.write(data)
+          self._ffmpeg_proc.stdin.flush()
+          rl.unload_image(image)
+
         self._monitor_fps()
         self._frame += 1
 
@@ -594,6 +645,7 @@ class GuiApplication:
     # Strict mode: terminate UI if FPS drops too much
     if STRICT_MODE and fps < self._target_fps * FPS_CRITICAL_THRESHOLD:
       cloudlog.error(f"FPS dropped critically below {fps}. Shutting down UI.")
+      self.close_ffmpeg()
       os._exit(1)
 
   def _draw_touch_points(self):
