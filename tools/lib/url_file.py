@@ -2,7 +2,6 @@ import re
 import logging
 import os
 import socket
-import time
 from hashlib import sha256
 from urllib3 import PoolManager, Retry
 from urllib3.response import BaseHTTPResponse
