@@ -179,11 +179,11 @@ class MiciLabel(Widget):
     if self._needs_scroll:
       # draw black fade on left and right
       fade_width = 20
-      rl.draw_rectangle_gradient_h(int(rect.x + rect.width - fade_width), int(rect.y), fade_width, int(rect.height), rl.Color(0, 0, 0, 0), rl.BLACK)
+      rl.draw_rectangle_gradient_h(int(rect.x + rect.width - fade_width), int(rect.y), fade_width, int(rect.height), rl.BLANK, rl.BLACK)
       if self._scroll_state != ScrollState.STARTING:
-        rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), fade_width, int(rect.height), rl.BLACK, rl.Color(0, 0, 0, 0))
+        rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), fade_width, int(rect.height), rl.BLACK, rl.BLANK)
 
-    rl.end_scissor_mode()
+      rl.end_scissor_mode()
 
 
 # TODO: This should be a Widget class
@@ -412,6 +412,7 @@ class UnifiedLabel(Widget):
                max_width: int | None = None,
                elide: bool = True,
                wrap_text: bool = True,
+               scroll: bool = False,
                line_height: float = 1.0,
                letter_spacing: float = 0.0):
     super().__init__()
@@ -426,9 +427,22 @@ class UnifiedLabel(Widget):
     self._max_width = max_width
     self._elide = elide
     self._wrap_text = wrap_text
+    self._scroll = scroll
     self._line_height = line_height * 0.9
     self._letter_spacing = letter_spacing  # 0.1 = 10%
     self._spacing_pixels = font_size * letter_spacing
+
+    # Scroll state
+    self._scroll = scroll
+    self._needs_scroll = False
+    self._scroll_offset = 0
+    self._scroll_pause_t: float | None = None
+    self._scroll_state: ScrollState = ScrollState.STARTING
+
+    # Scroll mode does not support eliding or multiline wrapping
+    if self._scroll:
+      self._elide = False
+      self._wrap_text = False
 
     # Cached data
     self._cached_text: str | None = None
@@ -446,7 +460,7 @@ class UnifiedLabel(Widget):
   def set_text(self, text: str | Callable[[], str]):
     """Update the text content."""
     self._text = text
-    self._cached_text = None  # Invalidate cache
+    # No need to update cache here, will be done on next render if needed
 
   @property
   def text(self) -> str:
@@ -463,15 +477,17 @@ class UnifiedLabel(Widget):
 
   def set_font_size(self, size: int):
     """Update the font size."""
-    self._font_size = size
-    self._spacing_pixels = size * self._letter_spacing  # Recalculate spacing
-    self._cached_text = None  # Invalidate cache
+    if self._font_size != size:
+      self._font_size = size
+      self._spacing_pixels = size * self._letter_spacing  # Recalculate spacing
+      self._cached_text = None  # Invalidate cache
 
   def set_letter_spacing(self, letter_spacing: float):
     """Update letter spacing (as percentage, e.g., 0.1 = 10%)."""
-    self._letter_spacing = letter_spacing
-    self._spacing_pixels = self._font_size * letter_spacing
-    self._cached_text = None  # Invalidate cache
+    if self._letter_spacing != letter_spacing:
+      self._letter_spacing = letter_spacing
+      self._spacing_pixels = self._font_size * letter_spacing
+      self._cached_text = None  # Invalidate cache
 
   def set_font_weight(self, font_weight: FontWeight):
     """Update the font weight."""
@@ -487,6 +503,12 @@ class UnifiedLabel(Widget):
   def set_alignment_vertical(self, alignment_vertical: int):
     """Update the vertical text alignment."""
     self._alignment_vertical = alignment_vertical
+
+  def reset_scroll(self):
+    """Reset scroll state to initial position."""
+    self._scroll_offset = 0
+    self._scroll_pause_t = None
+    self._scroll_state = ScrollState.STARTING
 
   def set_max_width(self, max_width: int | None):
     """Set the maximum width constraint for wrapping/eliding."""
@@ -526,6 +548,9 @@ class UnifiedLabel(Widget):
     # Elide lines if needed (for width constraint)
     self._cached_wrapped_lines = [self._elide_line(line, content_width) for line in self._cached_wrapped_lines]
 
+    if self._scroll:
+      self._cached_wrapped_lines = self._cached_wrapped_lines[:1]  # Only first line for scrolling
+
     # Process each line: measure and find emojis
     self._cached_line_sizes = []
     self._cached_line_emojis = []
@@ -538,6 +563,11 @@ class UnifiedLabel(Widget):
         size = rl.Vector2(0, self._font_size * FONT_SCALE)
       else:
         size = measure_text_cached(self._font, line, self._font_size, self._spacing_pixels)
+
+      # This is the only line
+      if self._scroll:
+        self._needs_scroll = size.x > content_width
+
       self._cached_line_sizes.append(size)
 
     # Calculate total height
@@ -597,13 +627,13 @@ class UnifiedLabel(Widget):
       return self._cached_total_height
     return 0.0
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, _):
     """Render the label."""
-    if rect.width <= 0 or rect.height <= 0:
+    if self._rect.width <= 0 or self._rect.height <= 0:
       return
 
     # Determine available width
-    available_width = rect.width
+    available_width = self._rect.width
     if self._max_width is not None:
       available_width = min(available_width, self._max_width)
 
@@ -631,7 +661,7 @@ class UnifiedLabel(Widget):
       line_height_needed = size.y * self._line_height
 
       # Check if this line fits
-      if current_height + line_height_needed > rect.height:
+      if current_height + line_height_needed > self._rect.height:
         # This line doesn't fit
         if len(visible_lines) == 0:
           # First line doesn't fit by height - still show it (will be clipped by scissor if needed)
@@ -675,51 +705,91 @@ class UnifiedLabel(Widget):
 
     # Calculate vertical alignment offset
     if self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP:
-      start_y = rect.y
+      start_y = self._rect.y
     elif self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
-      start_y = rect.y + rect.height - total_visible_height
+      start_y = self._rect.y + self._rect.height - total_visible_height
     else:  # TEXT_ALIGN_MIDDLE
-      start_y = rect.y + (rect.height - total_visible_height) / 2
+      start_y = self._rect.y + (self._rect.height - total_visible_height) / 2
+
+    # Only scissor when we know there is a single scrolling line
+    if self._needs_scroll:
+      rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
 
     # Render each line
     current_y = start_y
     for idx, (line, size, emojis) in enumerate(zip(visible_lines, visible_sizes, visible_emojis, strict=True)):
-      # Calculate horizontal position
-      if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
-        line_x = rect.x + self._text_padding
-      elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
-        line_x = rect.x + (rect.width - size.x) / 2
-      elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
-        line_x = rect.x + rect.width - size.x - self._text_padding
+      if self._needs_scroll:
+        if self._scroll_state == ScrollState.STARTING:
+          if self._scroll_pause_t is None:
+            self._scroll_pause_t = rl.get_time() + 2.0
+          if rl.get_time() >= self._scroll_pause_t:
+            self._scroll_state = ScrollState.SCROLLING
+            self._scroll_pause_t = None
+
+        elif self._scroll_state == ScrollState.SCROLLING:
+          self._scroll_offset -= 0.8 / 60. * gui_app.target_fps
+          # don't fully hide
+          if self._scroll_offset <= -size.x - self._rect.width / 3:
+            self._scroll_offset = 0
+            self._scroll_state = ScrollState.STARTING
+            self._scroll_pause_t = None
       else:
-        line_x = rect.x + self._text_padding
+        self.reset_scroll()
 
-      # Render line with emojis
-      line_pos = rl.Vector2(line_x, current_y)
-      prev_index = 0
+      self._render_line(line, size, emojis, current_y)
 
-      for start, end, emoji in emojis:
-        # Draw text before emoji
-        text_before = line[prev_index:start]
-        if text_before:
-          rl.draw_text_ex(self._font, text_before, line_pos, self._font_size, self._spacing_pixels, self._text_color)
-          width_before = measure_text_cached(self._font, text_before, self._font_size, self._spacing_pixels)
-          line_pos.x += width_before.x
-
-        # Draw emoji
-        tex = emoji_tex(emoji)
-        emoji_scale = self._font_size / tex.height * FONT_SCALE
-        rl.draw_texture_ex(tex, line_pos, 0.0, emoji_scale, self._text_color)
-        # Emoji width is font_size * FONT_SCALE (as per measure_text_cached)
-        line_pos.x += self._font_size * FONT_SCALE
-        prev_index = end
-
-      # Draw remaining text after last emoji
-      text_after = line[prev_index:]
-      if text_after:
-        rl.draw_text_ex(self._font, text_after, line_pos, self._font_size, self._spacing_pixels, self._text_color)
+      # Draw 2nd instance for scrolling
+      if self._needs_scroll and self._scroll_state != ScrollState.STARTING:
+        text2_scroll_offset = size.x + self._rect.width / 3
+        self._render_line(line, size, emojis, current_y, text2_scroll_offset)
 
       # Move to next line (if not last line)
       if idx < len(visible_lines) - 1:
         # Use current line's height * line_height for spacing to next line
         current_y += size.y * self._line_height
+
+    if self._needs_scroll:
+      # draw black fade on left and right
+      fade_width = 20
+      rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.BLANK, rl.BLACK)
+      if self._scroll_state != ScrollState.STARTING:
+        rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.BLANK)
+
+      rl.end_scissor_mode()
+
+  def _render_line(self, line, size, emojis, current_y, x_offset=0.0):
+    # Calculate horizontal position
+    if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
+      line_x = self._rect.x + self._text_padding
+    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+      line_x = self._rect.x + (self._rect.width - size.x) / 2
+    elif self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+      line_x = self._rect.x + self._rect.width - size.x - self._text_padding
+    else:
+      line_x = self._rect.x + self._text_padding
+    line_x += self._scroll_offset + x_offset
+
+    # Render line with emojis
+    line_pos = rl.Vector2(line_x, current_y)
+    prev_index = 0
+
+    for start, end, emoji in emojis:
+      # Draw text before emoji
+      text_before = line[prev_index:start]
+      if text_before:
+        rl.draw_text_ex(self._font, text_before, line_pos, self._font_size, self._spacing_pixels, self._text_color)
+        width_before = measure_text_cached(self._font, text_before, self._font_size, self._spacing_pixels)
+        line_pos.x += width_before.x
+
+      # Draw emoji
+      tex = emoji_tex(emoji)
+      emoji_scale = self._font_size / tex.height * FONT_SCALE
+      rl.draw_texture_ex(tex, line_pos, 0.0, emoji_scale, self._text_color)
+      # Emoji width is font_size * FONT_SCALE (as per measure_text_cached)
+      line_pos.x += self._font_size * FONT_SCALE
+      prev_index = end
+
+    # Draw remaining text after last emoji
+    text_after = line[prev_index:]
+    if text_after:
+      rl.draw_text_ex(self._font, text_after, line_pos, self._font_size, self._spacing_pixels, self._text_color)

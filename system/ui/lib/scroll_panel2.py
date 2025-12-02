@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app, MouseEvent
 from openpilot.system.hardware import TICI
 from collections import deque
 
-MIN_VELOCITY = 2  # px/s, changes from auto scroll to steady state
+MIN_VELOCITY = 10  # px/s, changes from auto scroll to steady state
 MIN_VELOCITY_FOR_CLICKING = 2 * 60  # px/s, accepts clicks while auto scrolling below this velocity
 MIN_DRAG_PIXELS = 12
 AUTO_SCROLL_TC_SNAP = 0.025
@@ -67,16 +67,18 @@ class GuiScrollPanel2:
       print()
     return self.get_offset()
 
+  def _get_offset_bounds(self, bounds_size: float, content_size: float) -> tuple[float, float]:
+    """Returns (max_offset, min_offset) for the given bounds and content size."""
+    return 0.0, min(0.0, bounds_size - content_size)
+
   def _update_state(self, bounds_size: float, content_size: float) -> None:
     """Runs per render frame, independent of mouse events. Updates auto-scrolling state and velocity."""
     if self._state == ScrollState.AUTO_SCROLL:
+      max_offset, min_offset = self._get_offset_bounds(bounds_size, content_size)
       # simple exponential return if out of bounds
-      out_of_bounds = self.get_offset() > 0 or self.get_offset() < (bounds_size - content_size)
+      out_of_bounds = self.get_offset() > max_offset or self.get_offset() < min_offset
       if out_of_bounds and self._handle_out_of_bounds:
-        if self.get_offset() < (bounds_size - content_size):  # too far right
-          target = bounds_size - content_size
-        else:  # too far left
-          target = 0.0
+        target = max_offset if self.get_offset() > max_offset else min_offset
 
         dt = rl.get_frame_time() or 1e-6
         factor = 1.0 - math.exp(-BOUNCE_RETURN_RATE * dt)
@@ -88,6 +90,7 @@ class GuiScrollPanel2:
         # Steady once we are close enough to the target
         if abs(dist) < 1 and abs(self._velocity) < MIN_VELOCITY:
           self.set_offset(target)
+          self._velocity = 0.0
           self._state = ScrollState.STEADY
 
       elif abs(self._velocity) < MIN_VELOCITY:
@@ -102,7 +105,9 @@ class GuiScrollPanel2:
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, bounds_size: float,
                           content_size: float) -> None:
-    out_of_bounds = self.get_offset() > 0 or self.get_offset() < (bounds_size - content_size)
+    max_offset, min_offset = self._get_offset_bounds(bounds_size, content_size)
+    # simple exponential return if out of bounds
+    out_of_bounds = self.get_offset() > max_offset or self.get_offset() < min_offset
     if DEBUG:
       print('Mouse event:', mouse_event)
 
@@ -201,8 +206,8 @@ class GuiScrollPanel2:
   def _get_mouse_pos(self, mouse_event: MouseEvent) -> float:
     return mouse_event.pos.x if self._horizontal else mouse_event.pos.y
 
-  def get_offset(self) -> int:
-    return round(self._offset.x if self._horizontal else self._offset.y)
+  def get_offset(self) -> float:
+    return self._offset.x if self._horizontal else self._offset.y
 
   def set_offset(self, value: float) -> None:
     if self._horizontal:

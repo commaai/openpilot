@@ -98,7 +98,7 @@ class DriverPose:
     self.cfactor_pitch = 1.
     self.cfactor_yaw = 1.
 
-class DriverPhone:
+class DriverProb:
   def __init__(self, max_trackable):
     self.prob = 0.
     self.prob_offseter = RunningStatFilter(max_trackable=max_trackable)
@@ -140,9 +140,9 @@ class DriverMonitoring:
     self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
 
     # init driver status
-    self.wheelpos_learner = RunningStatFilter()
+    self.wheelpos = DriverProb(-1)
     self.pose = DriverPose(self.settings._POSE_OFFSET_MAX_COUNT)
-    self.phone = DriverPhone(self.settings._POSE_OFFSET_MAX_COUNT)
+    self.phone = DriverProb(self.settings._POSE_OFFSET_MAX_COUNT)
     self.blink = DriverBlink()
 
     self.always_on = always_on
@@ -256,9 +256,12 @@ class DriverMonitoring:
     # calibrates only when there's movement and either face detected
     if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
                                           driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
-      self.wheelpos_learner.push_and_update(rhd_pred)
-    if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT or demo_mode:
-      self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
+      self.wheelpos.prob_offseter.push_and_update(rhd_pred)
+
+    self.wheelpos.prob_calibrated = self.wheelpos.prob_offseter.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT
+
+    if self.wheelpos.prob_calibrated or demo_mode:
+      self.wheel_on_right = self.wheelpos.prob_offseter.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
       self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
     # make sure no switching when engaged

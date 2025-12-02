@@ -91,7 +91,8 @@ bool SegmentManager::mergeSegments(const SegmentMap::iterator &begin, const Segm
   auto &merged_events = merged_event_data->events;
   merged_events.reserve(total_event_count);
 
-  rDebug("merging segments: %s", join(segments_to_merge, ", ").c_str());
+  std::string segments_str = join(segments_to_merge, ", ");
+  rDebug("merging segments: %s", segments_str.c_str());
   for (int n : segments_to_merge) {
     const auto &events = segments_.at(n)->log->events;
     if (events.empty()) continue;

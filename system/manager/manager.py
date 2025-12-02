@@ -9,6 +9,7 @@ import traceback
 from cereal import log
 import cereal.messaging as messaging
 import openpilot.system.sentry as sentry
+from openpilot.common.utils import atomic_write
 from openpilot.common.params import Params, ParamKeyFlag
 from openpilot.common.text_window import TextWindow
 from openpilot.system.hardware import HARDWARE
@@ -154,6 +155,10 @@ def manager_thread() -> None:
     print(running)
     cloudlog.debug(running)
 
+    if 'ui' in managed_processes and managed_processes['ui'].proc is not None and not managed_processes['ui'].proc.is_alive():
+      cloudlog.error(f'Restarting UI (exitcode {managed_processes["ui"].proc.exitcode})')
+      managed_processes['ui'].restart()
+
     # send managerState
     msg = messaging.new_message('managerState', valid=True)
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
@@ -162,7 +167,7 @@ def manager_thread() -> None:
     # kick AGNOS power monitoring watchdog
     try:
       if sm.all_checks(['deviceState']):
-        with open("/var/tmp/power_watchdog", "w") as f:
+        with atomic_write("/var/tmp/power_watchdog", "w", overwrite=True) as f:
           f.write(str(time.monotonic()))
     except Exception:
       pass
