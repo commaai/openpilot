@@ -119,7 +119,13 @@ class URLFile:
         return response
 
   def read_aux(self, ll: int | None = None) -> bytes:
-    end =  self._pos + ll if ll is not None else self.get_length()
+    if ll is None:
+      length = self.get_length()
+      if length == -1:
+        return b""
+      end = self.get_length()
+    else:
+      end = self._pos + ll
     data = self.get_multi_range([(self._pos, end)])
     self._pos += len(data[0])
     return data[0]
