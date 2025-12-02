@@ -1,0 +1,41 @@
+BO_ 401 GEARBOX_CVT: 8 PCM
+ SG_ SELECTED_P : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ SELECTED_R : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ SELECTED_N : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ SELECTED_D : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ FORWARD_DRIVING_MODE : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ CVT_UNKNOWN_1 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ CVT_UNKNOWN_2 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ GEAR_SHIFTER : 44|5@0+ (1,0) [0|31] "" XXX
+ SG_ SHIFTER_POSITION_VALID : 45|1@0+ (1,0) [0|1] "" XXX
+ SG_ NOT_FORWARD_GEAR : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CVT_UNKNOWN_3 : 53|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+
+BO_ 419 GEARBOX_AUTO: 8 PCM
+ SG_ TRANS_SHIFT_ACTIVITY : 7|8@0+ (1,0) [0|256] "" EON
+ SG_ TRANS_TARGET_GEAR : 11|4@0+ (1,0) [0|15] "" XXX
+ SG_ REGEN_STAGE_SELECTION : 14|3@0+ (1,0) [0|7] "Stage" XXX
+ SG_ REGEN_MEMORY : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ FORWARD_DRIVING_MODE : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ AUTO_UNKNOWN_1 : 27|2@0+ (1,0) [0|3] "" XXX
+ SG_ AUTO_UNKNOWN_2 : 29|1@0+ (1,0) [0|1] "" XXX
+ SG_ GEAR_SHIFTER : 35|4@0+ (1,0) [0|15] "" EON
+ SG_ REGEN_UNKNOWN : 50|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ AUTO_UNKNOWN_3 : 62|1@0+ (1,0) [0|1] "" XXX
+
+CM_ SG_ 401 CVT_UNKNOWN_1 "Probably measured/actual CVT ratio";
+CM_ SG_ 401 CVT_UNKNOWN_2 "Probably target/commanded CVT ratio";
+CM_ SG_ 419 TRANS_SHIFT_ACTIVITY "Tracks but trails TRANS_TARGET_GEAR with extra activity, probable solenoid activations or TC lockup";
+CM_ SG_ 419 REGEN_STAGE_SELECTION "Driver-selected regenerative braking threshold";
+CM_ SG_ 419 REGEN_MEMORY "Driver-selected persistence setting, M shown in instrument cluster";
+CM_ SG_ 419 REGEN_UNKNOWN "Both bits set when user enables regen, otherwise zero";
+
+VAL_ 401 GEAR_SHIFTER 1 "P" 2 "R" 3 "N" 4 "D" 7 "L" 10 "S";
+VAL_ 419 GEAR_SHIFTER 1 "P" 2 "R" 3 "N" 4 "D" 7 "L" 10 "S";
+VAL_ 419 TRANS_TARGET_GEAR 0 "None / Neutral / Park" 1 "1st" 2 "2nd" 3 "3rd" 4 "4th" 5 "5th" 6 "6th" 7 "7th" 8 "8th" 9 "9th" 10 "10th" 13 "Reverse";
+VAL_ 419 REGEN_STAGE_SELECTION 0 "disabled" 1 "stage_1" 2 "stage_2" 3 "stage_3" 4 "stage_4" 5 "stage_5" 6 "stage_6";
+VAL_ 419 REGEN_MEMORY 0 "disabled" 1 "persistent";
