@@ -7,8 +7,6 @@ from hashlib import sha256
 from urllib3 import PoolManager, Retry
 from urllib3.response import BaseHTTPResponse
 from urllib3.util import Timeout
-from urllib3.exceptions import MaxRetryError
-
 
 from openpilot.common.utils import atomic_write_in_dir
 from openpilot.system.hardware.hw import Paths
@@ -43,12 +41,11 @@ class URLFile:
       URLFile._pool_manager = PoolManager(num_pools=10, maxsize=100, socket_options=socket_options, retries=retries)
     return URLFile._pool_manager
 
-  def __init__(self, url: str, timeout: int = 10, debug: bool = False, cache: bool | None = None):
+  def __init__(self, url: str, timeout: int = 10, cache: bool | None = None):
     self._url = url
     self._timeout = Timeout(connect=timeout, read=timeout)
     self._pos = 0
     self._length: int | None = None
-    self._debug = debug
     #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
     self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
     if cache is not None:
@@ -64,10 +61,7 @@ class URLFile:
     pass
 
   def _request(self, method: str, url: str, headers: dict[str, str] | None = None) -> BaseHTTPResponse:
-    try:
-      return URLFile.pool_manager().request(method, url, timeout=self._timeout, headers=headers)
-    except MaxRetryError as e:
-      raise URLFileException(f"Failed to {method} {url}: {e}") from e
+    return URLFile.pool_manager().request(method, url, timeout=self._timeout, headers=headers)
 
   def get_length_online(self) -> int:
     response = self._request('HEAD', self._url)
@@ -126,63 +120,23 @@ class URLFile:
         return response
 
   def read_aux(self, ll: int | None = None) -> bytes:
-    download_range = False
-    headers = {}
-    if self._pos != 0 or ll is not None:
-      if ll is None:
-        end = self.get_length() - 1
-      else:
-        end = min(self._pos + ll, self.get_length()) - 1
-      if self._pos >= end:
-        return b""
-      headers['Range'] = f"bytes={self._pos}-{end}"
-      download_range = True
-
-    if self._debug:
-      t1 = time.monotonic()
-
-    response = self._request('GET', self._url, headers=headers)
-    ret = response.data
-
-    if self._debug:
-      t2 = time.monotonic()
-      if t2 - t1 > 0.1:
-        print(f"get {self._url} {headers!r} {t2 - t1:.3f} slow")
-
-    response_code = response.status
-    if response_code == 416:  # Requested Range Not Satisfiable
-      raise URLFileException(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(ret)[:500]}")
-    if download_range and response_code != 206:  # Partial Content
-      raise URLFileException(f"Error, requested range but got unexpected response {response_code} {headers} ({self._url}): {repr(ret)[:500]}")
-    if (not download_range) and response_code != 200:  # OK
-      raise URLFileException(f"Error {response_code} {headers} ({self._url}): {repr(ret)[:500]}")
-
-    self._pos += len(ret)
-    return ret
-
+    end =  self._pos + ll if ll is not None else self.get_length()
+    data = self.get_multi_range([(self._pos, end)])
+    self._pos += len(data[0])
+    return data[0]
 
   def get_multi_range(self, ranges: list[tuple[int, int]]) -> list[bytes]:
-    # ranges are (start, end) with end exclusive
+    # HTTP range requests are inclusive
+    assert all(e > s for s, e in ranges), "Range end must be greater than start"
     rs = [f"{s}-{e-1}" for s, e in ranges if e > s]
-    if not rs:
-      return [b"" for _ in ranges]
 
     r = self._request("GET", self._url, headers={"Range": "bytes=" + ",".join(rs)})
-    if r.status != 206:
-      raise URLFileException(f"Expected 206 Partial Content, got {r.status} ({self._url})")
+    if r.status not in [200, 206]:
+      raise URLFileException(f"Expected 206 or 200 response {r.status} ({self._url})")
 
     ctype = (r.headers.get("content-type") or "").lower()
-    data = r.data
-
-    # Single range response (not multipart)
     if "multipart/byteranges" not in ctype:
-      if sum(e > s for s, e in ranges) != 1:
-        raise URLFileException(f"Server didn't return multipart/byteranges for multi-range ({self._url})")
-      out, used = [], False
-      for s, e in ranges:
-        if e <= s: out.append(b"")
-        else: out.append(data); used = True
-      return out
+      return [r.data,]
 
     m = re.search(r'boundary="?([^";]+)"?', ctype)
     if not m:
@@ -190,7 +144,7 @@ class URLFile:
     boundary = m.group(1).encode()
 
     parts = []
-    for chunk in data.split(b"--" + boundary):
+    for chunk in r.data.split(b"--" + boundary):
       if b"\r\n\r\n" not in chunk:
         continue
       payload = chunk.split(b"\r\n\r\n", 1)[1].rstrip(b"\r\n")
@@ -198,14 +152,7 @@ class URLFile:
         parts.append(payload)
     if len(parts) != len(ranges):
       raise URLFileException(f"Expected {len(ranges)} parts, got {len(parts)} ({self._url})")
-
-    out, i = [], 0
-    for s, e in ranges:
-      if e <= s: out.append(b"")
-      else:
-        out.append(parts[i])
-        i += 1
-    return out
+    return parts
 
   def seek(self, pos: int) -> None:
     self._pos = pos
