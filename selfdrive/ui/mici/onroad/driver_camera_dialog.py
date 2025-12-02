@@ -24,7 +24,7 @@ class DriverCameraDialog(NavWidget):
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
-    self._pm = messaging.PubMaster(['selfdriveState'])
+    # self._pm = messaging.PubMaster(['selfdriveState'])
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
