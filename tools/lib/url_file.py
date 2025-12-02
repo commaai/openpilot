@@ -122,8 +122,8 @@ class URLFile:
     if ll is None:
       length = self.get_length()
       if length == -1:
-        return b""
-      end = self.get_length()
+        raise URLFileException(f"Remote file is empty or doesn't exist: {self._url}")
+      end = length
     else:
       end = self._pos + ll
     data = self.get_multi_range([(self._pos, end)])
