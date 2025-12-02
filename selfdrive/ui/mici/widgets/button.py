@@ -245,7 +245,7 @@ class BigButton(Widget):
       x = self._rect.x + self._rect.width - 30 - self._txt_icon.width / 2
       y = self._rect.y + 30 + self._txt_icon.height / 2
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
-      dest_rec = rl.Rectangle(int(x), int(y), self._txt_icon.width, self._txt_icon.height)
+      dest_rec = rl.Rectangle(x, y, self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
       rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.WHITE)
 
@@ -275,9 +275,9 @@ class BigToggle(BigButton):
   def _draw_pill(self, x: float, y: float, checked: bool):
     # draw toggle icon top right
     if checked:
-      rl.draw_texture(self._txt_enabled_toggle, int(x), int(y), rl.WHITE)
+      rl.draw_texture_ex(self._txt_enabled_toggle, (x, y), 0, 1.0, rl.WHITE)
     else:
-      rl.draw_texture(self._txt_disabled_toggle, int(x), int(y), rl.WHITE)
+      rl.draw_texture_ex(self._txt_disabled_toggle, (x, y), 0, 1.0, rl.WHITE)
 
   def _render(self, _):
     super()._render(_)
