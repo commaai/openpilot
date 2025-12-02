@@ -6,7 +6,7 @@ from openpilot.common.api import api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -213,7 +213,7 @@ class FirehoseLayoutBase(Widget):
 
   def _update_loop(self):
     while self._running:
-      if not ui_state.started:
+      if not ui_state.started and device._awake:
         self._fetch_firehose_stats()
       time.sleep(self.UPDATE_INTERVAL)
 
