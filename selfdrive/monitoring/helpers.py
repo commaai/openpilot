@@ -47,9 +47,9 @@ class DRIVER_MONITOR_SETTINGS:
     self._POSE_YAW_THRESHOLD = 0.4020
     self._POSE_YAW_THRESHOLD_SLACK = 0.5042
     self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
-    self._PITCH_NATURAL_OFFSET = 0.029 # initial value before offset is learned
+    self._PITCH_NATURAL_OFFSET = 0.011 # initial value before offset is learned
     self._PITCH_NATURAL_THRESHOLD = 0.449
-    self._YAW_NATURAL_OFFSET = 0.097 # initial value before offset is learned
+    self._YAW_NATURAL_OFFSET = 0.075 # initial value before offset is learned
     self._PITCH_MAX_OFFSET = 0.124
     self._PITCH_MIN_OFFSET = -0.0881
     self._YAW_MAX_OFFSET = 0.289
@@ -234,8 +234,11 @@ class DriverMonitoring:
                                                     self.settings._YAW_MIN_OFFSET), self.settings._YAW_MAX_OFFSET)
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
     yaw_error = abs(yaw_error)
-    if pitch_error > (self.settings._POSE_PITCH_THRESHOLD*self.pose.cfactor_pitch if self.pose.calibrated else self.settings._PITCH_NATURAL_THRESHOLD) or \
-       yaw_error > self.settings._POSE_YAW_THRESHOLD*self.pose.cfactor_yaw:
+
+    pitch_threshold = self.settings._POSE_PITCH_THRESHOLD * self.pose.cfactor_pitch if self.pose.calibrated else self.settings._PITCH_NATURAL_THRESHOLD
+    yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
+
+    if pitch_error > pitch_threshold or yaw_error > yaw_threshold:
       distracted_types.append(DistractedType.DISTRACTED_POSE)
 
     if (self.blink.left + self.blink.right)*0.5 > self.settings._BLINK_THRESHOLD:
