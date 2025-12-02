@@ -189,7 +189,7 @@ class BigInputDialog(BigDialogBase):
 
     # text needs to move left if we're at the end where right button is
     text_rect = rl.Rectangle(text_x,
-                             int(self._rect.y + PADDING),
+                             self._rect.y + PADDING,
                              # clip width to right button when in view
                              int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width + 5),  # TODO: why 5?
                              int(text_size.y))
@@ -225,14 +225,16 @@ class BigInputDialog(BigDialogBase):
     if text:
       blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
       cursor_x = min(text_x + text_size.x + 3, text_rect.x + text_rect.width)
-      rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_rect.y), 4, int(text_size.y)),
+      rl.draw_rectangle_rounded(rl.Rectangle(cursor_x, text_rect.y, 4, int(text_size.y)),
                                 1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
 
     # draw backspace icon with nice fade
     self._backspace_img_alpha.update(255 * bool(text))
     if self._backspace_img_alpha.x > 1:
       color = rl.Color(255, 255, 255, int(self._backspace_img_alpha.x))
-      rl.draw_texture(self._backspace_img, int(self._rect.width - self._enter_img.width - 15), int(text_field_rect.y), color)
+      rl.draw_texture_ex(self._backspace_img,
+                         rl.Vector2(self._rect.width - self._enter_img.width - 15, text_field_rect.y),
+                         0.0, 1.0, color)
 
     if not text and self._hint_label.text and not candidate_char:
       # draw description if no text entered yet and not drawing candidate char
@@ -247,7 +249,9 @@ class BigInputDialog(BigDialogBase):
     self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 255 * 0.35)
     if self._enter_img_alpha.x > 1:
       color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
-      rl.draw_texture(self._enter_img, int(self._rect.x + 15), int(text_field_rect.y), color)
+      rl.draw_texture_ex(self._enter_img,
+                         rl.Vector2(self._rect.x + 15, text_field_rect.y),
+                         0.0, 1.0, color)
 
     # keyboard goes over everything
     self._keyboard.render(self._rect)

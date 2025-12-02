@@ -92,7 +92,7 @@ class Key(Widget):
     self._size_filter.update(size)
 
   def _get_font_size(self) -> int:
-    return int(round(self._size_filter.x))
+    return self._size_filter.x
 
 
 class SmallKey(Key):
