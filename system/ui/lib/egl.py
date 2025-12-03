@@ -128,8 +128,12 @@ def init_egl() -> bool:
 def create_egl_image(width: int, height: int, stride: int, fd: int, uv_offset: int) -> EGLImage | None:
   assert _egl.initialized, "EGL not initialized"
 
-  # Duplicate fd since EGL needs it
-  dup_fd = os.dup(fd)
+  try:
+    # Duplicate fd since EGL needs it
+    dup_fd = os.dup(fd)
+  except OSError as e:
+    cloudlog.exception(f"Failed to duplicate frame fd when creating EGL image: {e}")
+    return None
 
   # Create image attributes for EGL
   img_attrs = [
