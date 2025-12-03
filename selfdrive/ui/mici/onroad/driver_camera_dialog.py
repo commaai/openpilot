@@ -38,6 +38,8 @@ class DriverCameraDialog(NavWidget):
     self._glasses_texture = None
     self._glasses_size = 171
 
+    self._ret = 0
+
     self._load_eye_textures()
 
   def __del__(self):
@@ -46,15 +48,16 @@ class DriverCameraDialog(NavWidget):
   def stop_dmonitoringmodeld(self):
     print('stop!')
     self._pm = None
-    del self._eye_fill_texture
-    del self._eye_orange_texture
-    del self._glasses_texture
-    del self.driver_state_renderer
+    # del self._eye_fill_texture
+    # del self._eye_orange_texture
+    # del self._glasses_texture
+    # del self.driver_state_renderer
     if self._camera_view:
       self._camera_view.close()
     # device.remove_interactive_timeout_callback(self.stop_dmonitoringmodeld)
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    gui_app.set_modal_overlay(None)
+    self._ret = 1
+    # gui_app.set_modal_overlay(None)
 
   def show_event(self):
     super().show_event()
@@ -76,9 +79,6 @@ class DriverCameraDialog(NavWidget):
 
   def close(self):
     print('close')
-    # if self._camera_view and hasattr(self, '_original_calc_frame_matrix'):
-    #   self._camera_view._calc_frame_matrix = self._original_calc_frame_matrix
-
     if self._camera_view:
       self._camera_view.close()
 
@@ -91,6 +91,9 @@ class DriverCameraDialog(NavWidget):
     super()._update_state()
 
   def _render(self, rect):
+    if self._ret != 0:
+      return self._ret
+
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._camera_view._render(rect)
 
