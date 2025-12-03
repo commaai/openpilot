@@ -243,14 +243,14 @@ class SelfdriveD:
       device_pose = Pose.from_live_pose(self.sm['livePose'])
       self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
 
-    if self.calibrated_pose is not None:
-      excessive_actuation = self.excessive_actuation_check.update(self.sm, CS, self.calibrated_pose)
-      if not self.excessive_actuation and excessive_actuation is not None:
-        set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text=str(excessive_actuation))
-        self.excessive_actuation = True
+    #if self.calibrated_pose is not None:
+      #excessive_actuation = self.excessive_actuation_check.update(self.sm, CS, self.calibrated_pose)
+      #if not self.excessive_actuation and excessive_actuation is not None:
+        #set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text=str(excessive_actuation))
+        #self.excessive_actuation = True
 
-    if self.excessive_actuation:
-      self.events.add(EventName.excessiveActuation)
+    #if self.excessive_actuation:
+      #self.events.add(EventName.excessiveActuation)
     # ******************************************************************************************
 
     # Handle lane change
