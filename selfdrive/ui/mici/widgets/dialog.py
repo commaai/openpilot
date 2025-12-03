@@ -1,5 +1,6 @@
 import abc
 import math
+import weakref
 import pyray as rl
 from typing import Union
 from collections.abc import Callable
@@ -26,7 +27,13 @@ class BigDialogBase(NavWidget, abc.ABC):
     super().__init__()
     self._ret = DialogResult.NO_ACTION
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
+
+    dialog_ref = weakref.ref(self)
+    def back_clicked_callback():
+      if dlg := dialog_ref():
+        dlg._ret = DialogResult.CANCEL
+    self._back_callback_impl = back_clicked_callback
+    self.set_back_callback(self._back_callback_impl)
 
     self._right_btn = None
     if right_btn:
@@ -157,10 +164,13 @@ class BigInputDialog(BigDialogBase):
     self._top_left_button_rect = rl.Rectangle(0, 0, 0, 0)
     self._top_right_button_rect = rl.Rectangle(0, 0, 0, 0)
 
+    dialog_ref = weakref.ref(self)
     def confirm_callback_wrapper():
-      self._ret = DialogResult.CONFIRM
-      if confirm_callback:
-        confirm_callback(self._keyboard.text())
+      if dlg := dialog_ref():
+        dlg._ret = DialogResult.CONFIRM
+        if confirm_callback:
+          confirm_callback(dlg._keyboard.text())
+
     self._confirm_callback = confirm_callback_wrapper
 
   def _update_state(self):
