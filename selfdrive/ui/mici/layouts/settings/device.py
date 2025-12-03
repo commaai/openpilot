@@ -359,9 +359,16 @@ class DeviceLayoutMici(NavWidget):
     self._power_off_btn.set_visible(ui_state.is_offroad())
 
   def _show_driver_camera(self):
-    if not self._driver_camera:
-      self._driver_camera = DriverCameraDialog()
-    gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
+    # if not self._driver_camera:
+    #   self._driver_camera = DriverCameraDialog()
+    dlg = DriverCameraDialog()
+
+    def close(result):
+      nonlocal dlg
+      del dlg
+
+    # gui_app.set_modal_overlay(dlg)#, callback=lambda result: setattr(self, '_driver_camera', None))
+    gui_app.set_modal_overlay(dlg, callback=close)
 
   def _on_review_training_guide(self):
     if not self._training_guide:

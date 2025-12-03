@@ -25,9 +25,9 @@ class DriverCameraDialog(NavWidget):
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
     self._pm = messaging.PubMaster(['selfdriveState'])
-    if not no_escape:
-      # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
+    # if not no_escape:
+    #   # TODO: this can grow unbounded, should be given some thought
+    #   device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
     self.set_back_callback(self._dismiss)
     self.set_back_enabled(not no_escape)
 
@@ -40,7 +40,19 @@ class DriverCameraDialog(NavWidget):
 
     self._load_eye_textures()
 
+  def __del__(self):
+    print('hello')
+
   def stop_dmonitoringmodeld(self):
+    print('stop!')
+    self._pm = None
+    del self._eye_fill_texture
+    del self._eye_orange_texture
+    del self._glasses_texture
+    del self.driver_state_renderer
+    if self._camera_view:
+      self._camera_view.close()
+    # device.remove_interactive_timeout_callback(self.stop_dmonitoringmodeld)
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
 
@@ -54,6 +66,7 @@ class DriverCameraDialog(NavWidget):
   def hide_event(self):
     super().hide_event()
     device.reset_interactive_timeout()
+    print('hide event')
 
   def _handle_mouse_release(self, _):
     ui_state.params.remove("DriverTooDistracted")
@@ -62,6 +75,10 @@ class DriverCameraDialog(NavWidget):
     self.stop_dmonitoringmodeld()
 
   def close(self):
+    print('close')
+    # if self._camera_view and hasattr(self, '_original_calc_frame_matrix'):
+    #   self._camera_view._calc_frame_matrix = self._original_calc_frame_matrix
+
     if self._camera_view:
       self._camera_view.close()
 
@@ -108,7 +125,8 @@ class DriverCameraDialog(NavWidget):
       event_name = EVENT_TO_INT[dm_state.events[0].name]
       if event_name is not None and event_name in EVENTS and ET.PERMANENT in EVENTS[event_name]:
         msg.selfdriveState.alertSound = EVENTS[event_name][ET.PERMANENT].audible_alert
-    self._pm.send('selfdriveState', msg)
+    if self._pm:
+      self._pm.send('selfdriveState', msg)
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
     """Render driver monitoring event names"""
