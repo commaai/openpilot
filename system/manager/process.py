@@ -67,6 +67,7 @@ class ManagerProcess(ABC):
   enabled = True
   name = ""
   shutting_down = False
+  restart_if_crash = False
 
   @abstractmethod
   def prepare(self) -> None:
@@ -167,13 +168,14 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, should_run, enabled=True, sigkill=False):
+  def __init__(self, name, module, should_run, enabled=True, sigkill=False, restart_if_crash=False):
     self.name = name
     self.module = module
     self.should_run = should_run
     self.enabled = enabled
     self.sigkill = sigkill
     self.launcher = launcher
+    self.restart_if_crash = restart_if_crash
 
   def prepare(self) -> None:
     if self.enabled:
@@ -252,6 +254,9 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
   running = []
   for p in procs:
     if p.enabled and p.name not in not_run and p.should_run(started, params, CP):
+      if p.restart_if_crash and p.proc is not None and not p.proc.is_alive():
+        cloudlog.error(f'Restarting {p.name} (exitcode {p.proc.exitcode})')
+        p.restart()
       running.append(p)
     else:
       p.stop(block=False)
