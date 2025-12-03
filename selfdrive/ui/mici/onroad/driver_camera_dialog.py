@@ -1,4 +1,5 @@
 import pyray as rl
+import weakref
 from cereal import log, messaging
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
@@ -14,21 +15,39 @@ EventName = log.OnroadEvent.EventName
 
 EVENT_TO_INT = EventName.schema.enumerants
 
+class DriverCameraView(CameraView):
+  def __init__(self):
+    super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
+
+  def _calc_frame_matrix(self, rect: rl.Rectangle):
+    base = super()._calc_frame_matrix(rect)
+    driver_view_ratio = 1.5
+    base[0, 0] *= driver_view_ratio
+    base[1, 1] *= driver_view_ratio
+    return base
+
 
 class DriverCameraDialog(NavWidget):
   def __init__(self, no_escape=False):
     super().__init__()
-    self._camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
-    self._original_calc_frame_matrix = self._camera_view._calc_frame_matrix
-    self._camera_view._calc_frame_matrix = self._calc_driver_frame_matrix
+    self._camera_view = DriverCameraView()
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
     self._pm = messaging.PubMaster(['selfdriveState'])
+
+    dialog_ref = weakref.ref(self)
+    def _stop_dmonitoringmodeld():
+      if dlg := dialog_ref():
+        dlg.stop_dmonitoringmodeld()
+
+    self._stop_dmonitoringmodeld_callback = _stop_dmonitoringmodeld
+
     if not no_escape:
-      # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
-    self.set_back_callback(self._dismiss)
+      #TODO: this can grow unbounded, should be given some thought
+      device.add_interactive_timeout_callback(self._stop_dmonitoringmodeld_callback)
+
+    self.set_back_callback(self._stop_dmonitoringmodeld_callback)
     self.set_back_enabled(not no_escape)
 
     # Load eye icons
@@ -39,6 +58,10 @@ class DriverCameraDialog(NavWidget):
     self._glasses_size = 171
 
     self._load_eye_textures()
+
+  def __del__(self):
+    device.remove_interactive_timeout_callback(self._stop_dmonitoringmodeld_callback)
+    self.close()
 
   def stop_dmonitoringmodeld(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
@@ -220,13 +243,6 @@ class DriverCameraDialog(NavWidget):
     glasses_pos = rl.Vector2(glasses_x, glasses_y)
     glasses_prob = driver_data.sunglassesProb
     rl.draw_texture_v(self._glasses_texture, glasses_pos, rl.Color(70, 80, 161, int(255 * glasses_prob)))
-
-  def _calc_driver_frame_matrix(self, rect: rl.Rectangle):
-    base = self._original_calc_frame_matrix(rect)
-    driver_view_ratio = 1.5
-    base[0, 0] *= driver_view_ratio
-    base[1, 1] *= driver_view_ratio
-    return base
 
 
 if __name__ == "__main__":
