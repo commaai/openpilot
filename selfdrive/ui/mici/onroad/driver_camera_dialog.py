@@ -44,7 +44,6 @@ class DriverCameraDialog(NavWidget):
     self._stop_dmonitoringmodeld_callback = _stop_dmonitoringmodeld
 
     if not no_escape:
-      #TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(self._stop_dmonitoringmodeld_callback)
 
     self.set_back_callback(self._stop_dmonitoringmodeld_callback)
