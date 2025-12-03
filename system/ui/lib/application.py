@@ -273,7 +273,11 @@ class GuiApplication:
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
       if needs_render_texture:
-        self._render_texture = rl.load_render_texture(self._width, self._height)
+        # For RECORD, use scaled dimensions since we render at scale
+        # For BURN_IN_MODE, use unscaled dimensions to match original behavior
+        render_width = self._scaled_width if RECORD else self._width
+        render_height = self._scaled_height if RECORD else self._height
+        self._render_texture = rl.load_render_texture(render_width, render_height)
         rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
       if RECORD:
@@ -283,7 +287,7 @@ class GuiApplication:
           '-stats',                 # Show encoding progress
           '-f', 'rawvideo',         # Input format
           '-pix_fmt', 'rgba',       # Input pixel format
-          '-s', f'{self._width}x{self._height}',  # Input resolution
+          '-s', f'{self._scaled_width}x{self._scaled_height}',  # Input resolution (scaled)
           '-r', str(fps),           # Input frame rate
           '-i', 'pipe:0',           # Input from stdin
           '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert rgba to yuv420p
@@ -480,12 +484,15 @@ class GuiApplication:
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
           rl.clear_background(rl.BLACK)
+          rl.rl_push_matrix()
+          # Always apply scale transform - widgets use unscaled coordinates
+          # Texture size matches scaled output dimensions
+          rl.rl_scalef(self._scale, self._scale, 1)
         else:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
-
-        rl.rl_push_matrix()
-        rl.rl_scalef(self._scale, self._scale, 1)
+          rl.rl_push_matrix()
+          rl.rl_scalef(self._scale, self._scale, 1)
 
         # Handle modal overlay rendering and input processing
         if self._handle_modal_overlay():
@@ -493,11 +500,16 @@ class GuiApplication:
         else:
           yield True
 
+        rl.rl_pop_matrix()
+
         if self._render_texture:
           rl.end_texture_mode()
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
-          src_rect = rl.Rectangle(0, 0, float(self._width), -float(self._height))
+          # Use appropriate source rect based on whether we're recording (scaled) or burn-in (unscaled)
+          src_width = self._scaled_width if RECORD else self._width
+          src_height = self._scaled_height if RECORD else self._height
+          src_rect = rl.Rectangle(0, 0, float(src_width), -float(src_height))
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
           texture = self._render_texture.texture
           if texture:
@@ -507,6 +519,8 @@ class GuiApplication:
               rl.end_shader_mode()
             else:
               rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+          rl.rl_push_matrix()
+          rl.rl_scalef(self._scale, self._scale, 1)
 
         if self._show_fps:
           rl.draw_fps(10, 10)
@@ -517,7 +531,10 @@ class GuiApplication:
         if self._grid_size > 0:
           self._draw_grid()
 
-        rl.rl_pop_matrix()
+        if self._render_texture:
+          rl.rl_pop_matrix()
+        else:
+          rl.rl_pop_matrix()
         rl.end_drawing()
 
         if RECORD:
