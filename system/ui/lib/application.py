@@ -192,6 +192,10 @@ class MouseState:
 
 class GuiApplication:
   def __init__(self, width: int | None = None, height: int | None = None):
+    # raylib default is INFO, which is spammy
+    rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
+    self._set_log_callback()
+
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width if width is not None else GuiApplication._default_width()
     self._height = height if height is not None else GuiApplication._default_height()
@@ -234,6 +238,7 @@ class GuiApplication:
     self._render_profiler = None
     self._render_profile_start_time = None
 
+
   @property
   def frame(self):
     return self._frame
@@ -259,8 +264,6 @@ class GuiApplication:
       signal.signal(signal.SIGINT, _close)
       atexit.register(self.close)
 
-      self._set_log_callback()
-      rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
 
       flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
       if ENABLE_VSYNC:
