@@ -94,14 +94,16 @@ class DistractedType:
 
 class DriverPose:
   def __init__(self, settings):
+    pitch_filter_raw_priors = (settings._PITCH_NATURAL_OFFSET, settings._PITCH_NATURAL_VAR, 2)
+    yaw_filter_raw_priors = (settings._YAW_NATURAL_OFFSET, settings._YAW_NATURAL_VAR, 2)
     self.yaw = 0.
     self.pitch = 0.
     self.roll = 0.
     self.yaw_std = 0.
     self.pitch_std = 0.
     self.roll_std = 0.
-    self.pitch_offseter = RunningStatFilter(raw_priors=(settings._PITCH_NATURAL_OFFSET, settings._PITCH_NATURAL_VAR, 2), max_trackable=settings._POSE_OFFSET_MAX_COUNT)
-    self.yaw_offseter = RunningStatFilter(raw_priors=(settings._YAW_NATURAL_OFFSET, settings._YAW_NATURAL_VAR, 2), max_trackable=settings._POSE_OFFSET_MAX_COUNT)
+    self.pitch_offseter = RunningStatFilter(raw_priors=pitch_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
+    self.yaw_offseter = RunningStatFilter(raw_priors=yaw_filter_raw_priors, max_trackable=settings._POSE_OFFSET_MAX_COUNT)
     self.calibrated = False
     self.low_std = True
     self.cfactor_pitch = 1.
@@ -149,9 +151,11 @@ class DriverMonitoring:
     self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS(device_type=HARDWARE.get_device_type())
 
     # init driver status
-    self.wheelpos = DriverProb(raw_priors=(self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2), max_trackable=self.settings._WHEELPOS_MAX_COUNT)
+    wheelpos_filter_raw_priors = (self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2)
+    phone_filter_raw_priors = (self.settings._PHONE_DATA_AVG, self.settings._PHONE_DATA_VAR, 2)
+    self.wheelpos = DriverProb(raw_priors=wheelpos_filter_raw_priors, max_trackable=self.settings._WHEELPOS_MAX_COUNT)
+    self.phone = DriverProb(raw_priors=phone_filter_raw_priors, max_trackable=self.settings._PHONE_MAX_COUNT)
     self.pose = DriverPose(settings=self.settings)
-    self.phone = DriverProb(raw_priors=(self.settings._PHONE_DATA_AVG, self.settings._PHONE_DATA_VAR, 2), max_trackable=self.settings._PHONE_MAX_COUNT)
     self.blink = DriverBlink()
 
     self.always_on = always_on
