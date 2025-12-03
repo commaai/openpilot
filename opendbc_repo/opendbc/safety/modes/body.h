@@ -6,6 +6,14 @@ static void body_rx_hook(const CANPacket_t *msg) {
   if (msg->addr == 0x201U) {
     controls_allowed = true;
   }
+
+  #ifdef PANDA_BODY
+  if ((msg->addr == 0x250U) && (GET_LEN(msg) >= 4U)) {
+    int16_t left_target_deci_rpm = (int16_t)((msg->data[0] << 8U) | msg->data[1]);
+    int16_t right_target_deci_rpm = (int16_t)((msg->data[2] << 8U) | msg->data[3]);
+    body_can_process_target(left_target_deci_rpm, right_target_deci_rpm);
+  }
+  #endif
 }
 
 static bool body_tx_hook(const CANPacket_t *msg) {
@@ -26,11 +34,15 @@ static bool body_tx_hook(const CANPacket_t *msg) {
 
 static safety_config body_init(uint16_t param) {
   static RxCheck body_rx_checks[] = {
-    {.msg = {{0x201, 0, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{0x201, 2, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+
+    #ifdef PANDA_BODY
+    {.msg = {{0x250, 0, 6, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    #endif
   };
 
-  static const CanMsg BODY_TX_MSGS[] = {{0x250, 0, 8, .check_relay = false}, {0x250, 0, 6, .check_relay = false}, {0x251, 0, 5, .check_relay = false},  // body
-                                        {0x1, 0, 8, .check_relay = false}};  // CAN flasher
+  static const CanMsg BODY_TX_MSGS[] = {{0x250, 2, 8, .check_relay = false}, {0x250, 2, 6, .check_relay = false}, {0x251, 2, 5, .check_relay = false},  // body
+                                        {0x1, 2, 8, .check_relay = false}};  // CAN flasher
 
   SAFETY_UNUSED(param);
   safety_config ret = BUILD_SAFETY_CFG(body_rx_checks, BODY_TX_MSGS);

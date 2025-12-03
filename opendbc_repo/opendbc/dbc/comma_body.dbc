@@ -6,7 +6,6 @@ BO_ 513 MOTORS_DATA: 8 XXX
   SG_ ELEC_ANGLE_L : 39|8@0+ (1,0) [0|0] "deprecated" XXX
   SG_ ELEC_ANGLE_R : 47|8@0+ (1,0) [0|0] "deprecated" XXX
   SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
-  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 514 VAR_VALUES: 3 XXX
   SG_ IGNITION : 0|1@0+ (1,0) [0|1] "" XXX

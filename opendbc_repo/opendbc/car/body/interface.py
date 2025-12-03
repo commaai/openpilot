@@ -4,7 +4,7 @@ from opendbc.car.body.carcontroller import CarController
 from opendbc.car.body.carstate import CarState
 from opendbc.car.body.values import SPEED_FROM_RPM
 from opendbc.car.interfaces import CarInterfaceBase
-
+from opendbc.car.can_definitions import CanData
 
 class CarInterface(CarInterfaceBase):
   CarState = CarState
@@ -26,5 +26,10 @@ class CarInterface(CarInterfaceBase):
     ret.radarUnavailable = True
     ret.openpilotLongitudinalControl = True
     ret.steerControlType = structs.CarParams.SteerControlType.angle
-
+    return ret
+  
+  def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
+    ret = super().update(can_packets)
+    ret.canValid = True
+    ret.canTimeout = False
     return ret

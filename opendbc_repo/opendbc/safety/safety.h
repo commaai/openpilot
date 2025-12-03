@@ -20,7 +20,6 @@
 #include "opendbc/safety/modes/subaru_preglobal.h"
 #include "opendbc/safety/modes/mazda.h"
 #include "opendbc/safety/modes/nissan.h"
-#include "opendbc/safety/modes/volkswagen_mlb.h"
 #include "opendbc/safety/modes/volkswagen_mqb.h"
 #include "opendbc/safety/modes/volkswagen_pq.h"
 #include "opendbc/safety/modes/elm327.h"
@@ -406,7 +405,6 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
 #ifdef ALLOW_DEBUG
     {SAFETY_PSA, &psa_hooks},
     {SAFETY_SUBARU_PREGLOBAL, &subaru_preglobal_hooks},
-    {SAFETY_VOLKSWAGEN_MLB, &volkswagen_mlb_hooks},
     {SAFETY_VOLKSWAGEN_PQ, &volkswagen_pq_hooks},
     {SAFETY_ALLOUTPUT, &alloutput_hooks},
 #endif

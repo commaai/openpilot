@@ -741,14 +741,14 @@ class Panda:
 
   # ******************* serial *******************
 
-  def serial_read(self, port_number):
-    ret = []
+  def serial_read(self, port_number, maxlen=1024):
+    ret = b''
     while 1:
-      lret = bytes(self._handle.controlRead(Panda.REQUEST_IN, 0xe0, port_number, 0, 0x40))
-      if len(lret) == 0:
+      r = bytes(self._handle.controlRead(Panda.REQUEST_IN, 0xe0, port_number, 0, 0x40))
+      if len(r) == 0 or len(ret) >= maxlen:
         break
-      ret.append(lret)
-    return b''.join(ret)
+      ret += r
+    return ret
 
   def serial_write(self, port_number, ln):
     ret = 0

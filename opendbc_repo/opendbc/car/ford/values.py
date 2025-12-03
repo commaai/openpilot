@@ -6,7 +6,8 @@ from enum import Enum, IntFlag
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
 from opendbc.car.lateral import AngleSteeringLimits
 from opendbc.car.structs import CarParams
-from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
+from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
+                                                     Device
 from opendbc.car.fw_query_definitions import FwQueryConfig, LiveFwVersions, OfflineFwVersions, Request, StdQueries, p16
 
 Ecu = CarParams.Ecu
@@ -74,7 +75,10 @@ class FordCarDocs(CarDocs):
 
   def init_make(self, CP: CarParams):
     harness = CarHarness.ford_q4 if CP.flags & FordFlags.CANFD else CarHarness.ford_q3
-    self.car_parts = CarParts.common([harness])
+    if CP.carFingerprint in (CAR.FORD_BRONCO_SPORT_MK1, CAR.FORD_MAVERICK_MK1, CAR.FORD_F_150_MK14, CAR.FORD_F_150_LIGHTNING_MK1):
+      self.car_parts = CarParts([Device.threex_angled_mount, harness])
+    else:
+      self.car_parts = CarParts([Device.threex, harness])
 
     if harness == CarHarness.ford_q4:
       self.setup_video = "https://www.youtube.com/watch?v=uUGkH6C_EQU"

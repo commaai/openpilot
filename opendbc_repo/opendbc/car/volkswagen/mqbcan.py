@@ -185,8 +185,8 @@ def volkswagen_mqb_meb_checksum(address: int, sig, d: bytearray) -> int:
   return crc ^ 0xFF
 
 
-def xor_checksum(address: int, sig, d: bytearray, initial_value: int = 0) -> int:
-  checksum = initial_value
+def xor_checksum(address: int, sig, d: bytearray) -> int:
+  checksum = 0
   checksum_byte = sig.start_bit // 8
   for i in range(len(d)):
     if i != checksum_byte:

@@ -67,7 +67,7 @@ At its most basic, a car port will control the steering on a car. A "complete" c
 
 ### Connect to the Car
 
-The first step is to get connected to the car with a comma four and a car harness.
+The first step is to get connected to the car with a comma 3X and a car harness.
 The car harness gets you connected to two different CAN buses and splits one of those buses to send our own actuation messages.
 
 If you're lucky, a harness compatible with your car will already be designed and sold on comma.ai/shop.
@@ -151,7 +151,7 @@ In addition to the standard bounties, we also offer higher value bounties for mo
 
 ## FAQ
 
-***How do I use this?*** A [comma four](https://comma.ai/shop/comma-four) is custom-designed to be the best way to run and develop opendbc and openpilot.
+***How do I use this?*** A [comma 3X](https://comma.ai/shop/comma-3x) is custom-designed to be the best way to run and develop opendbc and openpilot.
 
 ***Which cars are supported?*** See the [supported cars list](docs/CARS.md).
 
@@ -179,7 +179,7 @@ In addition to the standard bounties, we also offer higher value bounties for mo
 * **[DBC file](https://en.wikipedia.org/wiki/CAN_bus#DBC)**: contains definitions for messages on a CAN bus
 * **[openpilot](https://github.com/commaai/openpilot)**: an ADAS system for cars supported by opendbc
 * **[comma](https://github.com/commaai)**: the company behind opendbc
-* **[comma four](https://comma.ai/shop/comma-four)**: the hardware used to run openpilot
+* **[comma 3X](https://comma.ai/shop/comma-3x)**: the hardware used to run openpilot
 
 ### More resources
 

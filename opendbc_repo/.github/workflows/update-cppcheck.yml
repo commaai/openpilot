@@ -1,0 +1,37 @@
+name: Update cppcheck
+
+on:
+  #push:
+  schedule:
+    - cron: "0 14 * * 1" # every Monday at 2am UTC (6am PST)
+  workflow_dispatch:
+
+jobs:
+  update-cppcheck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get latest cppcheck version
+        id: version
+        run: |
+          LATEST=$(curl -fsSL https://api.github.com/repos/danmar/cppcheck/releases/latest | jq -r .tag_name)
+          echo "vers=$LATEST" >> "$GITHUB_OUTPUT"
+      - name: Update VERS in install.sh
+        run: |
+          sed -i "s/^VERS=\".*\"/VERS=\"${{ steps.version.outputs.vers }}\"/" opendbc/safety/tests/misra/install.sh
+          grep VERS opendbc/safety/tests/misra/install.sh
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
+        with:
+          author: Vehicle Researcher <user@comma.ai>
+          token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
+          commit-message: "[bot] Update cppcheck to ${{ steps.version.outputs.vers }}"
+          title: "[bot] Update cppcheck to ${{ steps.version.outputs.vers }}"
+          body: "See all cppcheck releases: https://github.com/danmar/cppcheck/releases"
+          branch: "update-cppcheck"
+          base: "master"
+          delete-branch: true
+          labels: bot

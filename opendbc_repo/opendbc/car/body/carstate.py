@@ -17,12 +17,6 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = False
 
-    ret.steerFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
-                                   cp.vl['VAR_VALUES']['FAULT']])
-
-    ret.charging = cp.vl["BODY_DATA"]["CHARGER_CONNECTED"] == 1
-    ret.fuelGauge = cp.vl["BODY_DATA"]["BATT_PERCENTAGE"] / 100
-
     # irrelevant for non-car
     ret.gearShifter = structs.CarState.GearShifter.drive
     ret.cruiseState.enabled = True
@@ -32,4 +26,4 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parsers(CP):
-    return {Bus.main: CANParser(DBC[CP.carFingerprint][Bus.main], [], 0)}
+    return {Bus.main: CANParser(DBC[CP.carFingerprint][Bus.main], [], 2)}

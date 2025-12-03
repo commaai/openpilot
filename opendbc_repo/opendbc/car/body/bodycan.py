@@ -4,7 +4,7 @@ def create_control(packer, torque_l, torque_r):
     "TORQUE_R": torque_r,
   }
 
-  return packer.make_can_msg("TORQUE_CMD", 0, values)
+  return packer.make_can_msg("TORQUE_CMD", 2, values)
 
 
 def body_checksum(address: int, sig, d: bytearray) -> int:

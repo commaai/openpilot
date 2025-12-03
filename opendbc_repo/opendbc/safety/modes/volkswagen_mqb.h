@@ -3,6 +3,10 @@
 #include "opendbc/safety/declarations.h"
 #include "opendbc/safety/modes/volkswagen_common.h"
 
+static bool volkswagen_mqb_brake_pedal_switch = false;
+static bool volkswagen_mqb_brake_pressure_detected = false;
+
+
 static safety_config volkswagen_mqb_init(uint16_t param) {
   // Transmit of GRA_ACC_01 is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
   // MSG_LH_EPS_03: openpilot needs to replace apparent driver steering input torque to pacify VW Emergency Assist
@@ -22,14 +26,17 @@ static safety_config volkswagen_mqb_init(uint16_t param) {
     {.msg = {{MSG_GRA_ACC_01, 0, 8, 33U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
   };
 
-  volkswagen_common_init();
+  SAFETY_UNUSED(param);
+
+  volkswagen_set_button_prev = false;
+  volkswagen_resume_button_prev = false;
+  volkswagen_mqb_brake_pedal_switch = false;
+  volkswagen_mqb_brake_pressure_detected = false;
 
 #ifdef ALLOW_DEBUG
   volkswagen_longitudinal = GET_FLAG(param, FLAG_VOLKSWAGEN_LONG_CONTROL);
-#else
-  SAFETY_UNUSED(param);
 #endif
-
+  gen_crc_lookup_table_8(0x2F, volkswagen_crc8_lut_8h2f);
   return volkswagen_longitudinal ? BUILD_SAFETY_CFG(volkswagen_mqb_rx_checks, VOLKSWAGEN_MQB_LONG_TX_MSGS) : \
                                    BUILD_SAFETY_CFG(volkswagen_mqb_rx_checks, VOLKSWAGEN_MQB_STOCK_TX_MSGS);
 }
@@ -52,7 +59,12 @@ static void volkswagen_mqb_rx_hook(const CANPacket_t *msg) {
     // Signal: LH_EPS_03.EPS_Lenkmoment (absolute torque)
     // Signal: LH_EPS_03.EPS_VZ_Lenkmoment (direction)
     if (msg->addr == MSG_LH_EPS_03) {
-      update_sample(&torque_driver, volkswagen_mlb_mqb_driver_input_torque(msg));
+      int torque_driver_new = msg->data[5] | ((msg->data[6] & 0x1FU) << 8);
+      int sign = (msg->data[6] & 0x80U) >> 7;
+      if (sign == 1) {
+        torque_driver_new *= -1;
+      }
+      update_sample(&torque_driver, torque_driver_new);
     }
 
     if (msg->addr == MSG_TSK_06) {
@@ -99,15 +111,15 @@ static void volkswagen_mqb_rx_hook(const CANPacket_t *msg) {
 
     // Signal: Motor_14.MO_Fahrer_bremst (ECU detected brake pedal switch F63)
     if (msg->addr == MSG_MOTOR_14) {
-      volkswagen_brake_pedal_switch = GET_BIT(msg, 28U);
+      volkswagen_mqb_brake_pedal_switch = (msg->data[3] & 0x10U) >> 4;
     }
 
     // Signal: ESP_05.ESP_Fahrer_bremst (ESP detected driver brake pressure above platform specified threshold)
     if (msg->addr == MSG_ESP_05) {
-      volkswagen_brake_pressure_detected = GET_BIT(msg, 26U);
+      volkswagen_mqb_brake_pressure_detected = (msg->data[3] & 0x4U) >> 2;
     }
 
-    brake_pressed = volkswagen_brake_pedal_switch || volkswagen_brake_pressure_detected;
+    brake_pressed = volkswagen_mqb_brake_pedal_switch || volkswagen_mqb_brake_pressure_detected;
   }
 }
 
@@ -134,8 +146,15 @@ static bool volkswagen_mqb_tx_hook(const CANPacket_t *msg) {
   bool tx = true;
 
   // Safety check for HCA_01 Heading Control Assist torque
+  // Signal: HCA_01.HCA_01_LM_Offset (absolute torque)
+  // Signal: HCA_01.HCA_01_LM_OffSign (direction)
   if (msg->addr == MSG_HCA_01) {
-    int desired_torque = volkswagen_mlb_mqb_steering_control_torque(msg);
+    int desired_torque = msg->data[2] | ((msg->data[3] & 0x1U) << 8);
+    bool sign = GET_BIT(msg, 31U);
+    if (sign) {
+      desired_torque *= -1;
+    }
+
     bool steer_req = GET_BIT(msg, 30U);
 
     if (steer_torque_cmd_checks(desired_torque, steer_req, VOLKSWAGEN_MQB_STEERING_LIMITS)) {

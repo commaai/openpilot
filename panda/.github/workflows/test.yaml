@@ -1,0 +1,83 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref != 'refs/heads/master' && github.ref || github.run_id }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  RUN: source .venv/bin/activate && /bin/bash -c
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./setup.sh
+      - name: Test python package installer
+        run: ${{ env.RUN }} "pip install --break-system-packages .[dev]"
+      - name: Build panda images and bootstub
+        run: ${{ env.RUN }} "scons -j4"
+      - name: Build with UBSan
+        run: ${{ env.RUN }} "scons -j4 --ubsan"
+      - name: Build jungle firmware with FINAL_PROVISIONING support
+        run: ${{ env.RUN }} "FINAL_PROVISIONING=1 scons -j4 board/jungle"
+      - name: Build panda in release mode
+        run: ${{ env.RUN }} "CERT=certs/debug RELEASE=1 scons -j4"
+
+  test:
+    name: ./test.sh
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['macos-latest', 'ubuntu-latest']
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./test.sh
+
+  misra_linter:
+    name: MISRA C:2012 Linter
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache cppcheck
+        id: cppcheck-cache
+        uses: actions/cache@v4
+        with:
+          path: tests/misra/cppcheck
+          key: cppcheck-${{ hashFiles('tests/misra/*') }}
+      - run: ./setup.sh
+      - name: Build FW
+        run: ${{ env.RUN }} "scons -j$(nproc)"
+      - name: Run MISRA C:2012 analysis
+        run: ${{ env.RUN }} "cd tests/misra && ./test_misra.sh"
+
+  misra_mutation:
+    name: MISRA C:2012 Mutation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache cppcheck
+        id: cppcheck-cache
+        uses: actions/cache@v4
+        with:
+          path: tests/misra/cppcheck
+          key: cppcheck-${{ hashFiles('tests/misra/*') }}
+      - run: ./setup.sh
+      - name: Build FW
+        run: ${{ env.RUN }} "scons -j$(nproc)"
+      - name: tests/misra/install.sh
+        run: ${{ env.RUN }} "cd tests/misra && ./install.sh"
+      - name: MISRA mutation tests
+        run: ${{ env.RUN }} "cd tests/misra && pytest test_mutation.py"

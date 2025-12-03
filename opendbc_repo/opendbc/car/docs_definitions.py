@@ -72,6 +72,7 @@ class EnumBase(Enum):
 
 class Mount(EnumBase):
   mount = BasePart("mount")
+  angled_mount_8_degrees = BasePart("angled mount (8 degrees)")
 
 
 class Cable(EnumBase):
@@ -79,7 +80,8 @@ class Cable(EnumBase):
   usb_a_2_a_cable = BasePart("USB A-A cable")
   usbc_otg_cable = BasePart("USB C OTG cable")
   usbc_coupler = BasePart("USB-C coupler")
-  obd_c_cable_2ft = BasePart("OBD-C cable (2 ft)")
+  obd_c_cable_1_5ft = BasePart("OBD-C cable (1.5 ft)")
+  right_angle_obd_c_cable_1_5ft = BasePart("right angle OBD-C cable (1.5 ft)")
 
 
 class Accessory(EnumBase):
@@ -147,7 +149,9 @@ class CarHarness(EnumBase):
 
 
 class Device(EnumBase):
-  four = BasePart("comma four", parts=[Mount.mount, Cable.obd_c_cable_2ft])
+  threex = BasePart("comma 3X", parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
+  # variant of comma 3X with angled mounts
+  threex_angled_mount = BasePart("comma 3X", parts=[Mount.angled_mount_8_degrees, Cable.right_angle_obd_c_cable_1_5ft])
 
 
 class PartType(Enum):
@@ -159,7 +163,7 @@ class PartType(Enum):
   tool = Tool
 
 
-DEFAULT_CAR_PARTS: list[EnumBase] = [Device.four]
+DEFAULT_CAR_PARTS: list[EnumBase] = [Device.threex]
 
 
 @dataclass
@@ -258,7 +262,6 @@ class CarDocs:
   def init(self, CP: CarParams, all_footnotes=None):
     self.brand = CP.brand
     self.car_fingerprint = CP.carFingerprint
-    self.longitudinal_control = CP.openpilotLongitudinalControl and not CP.alphaLongitudinalAvailable
 
     if self.merged and CP.dashcamOnly:
       if self.support_type != SupportType.REVIEW:
