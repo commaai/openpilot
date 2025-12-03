@@ -163,6 +163,13 @@ class BigInputDialog(BigDialogBase):
         confirm_callback(self._keyboard.text())
     self._confirm_callback = confirm_callback_wrapper
 
+  def show_event(self):
+    """Initialize keyboard when dialog is shown."""
+    super().show_event()
+    # Set keyboard rect and initialize layout so mouse events work correctly
+    self._keyboard.set_rect(self._rect)
+    self._keyboard.show_event()
+
   def _update_state(self):
     super()._update_state()
 

@@ -233,6 +233,17 @@ class MiciKeyboard(Widget):
   def text(self) -> str:
     return self._text
 
+  def show_event(self):
+    """Initialize keyboard layout when shown, so mouse events work correctly."""
+    super().show_event()
+    # Initialize layout if rect is set and not already initialized
+    if self._rect.width > 0 and self._rect.height > 0 and not self._initialized:
+      bg_x = self._rect.x + (self._rect.width - self._txt_bg.width) / 2
+      bg_y = self._rect.y + self._rect.height - self._txt_bg.height
+      for keys in (self._lower_keys, self._upper_keys, self._special_keys, self._super_special_keys):
+        self._lay_out_keys(bg_x, bg_y, keys)
+      self._initialized = True
+
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     keyboard_pos_y = self._rect.y + self._rect.height - self._txt_bg.height
     if mouse_event.left_pressed:
