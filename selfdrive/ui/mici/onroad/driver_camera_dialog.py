@@ -15,12 +15,19 @@ EventName = log.OnroadEvent.EventName
 EVENT_TO_INT = EventName.schema.enumerants
 
 
+class DriverCameraView(CameraView):
+  def _calc_frame_matrix(self, rect: rl.Rectangle):
+    base = super()._calc_frame_matrix(rect)
+    driver_view_ratio = 1.5
+    base[0, 0] *= driver_view_ratio
+    base[1, 1] *= driver_view_ratio
+    return base
+
+
 class DriverCameraDialog(NavWidget):
   def __init__(self, no_escape=False):
     super().__init__()
-    self._camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
-    self._original_calc_frame_matrix = self._camera_view._calc_frame_matrix
-    self._camera_view._calc_frame_matrix = self._calc_driver_frame_matrix
+    self._camera_view = DriverCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
@@ -217,13 +224,6 @@ class DriverCameraDialog(NavWidget):
     glasses_pos = rl.Vector2(glasses_x, glasses_y)
     glasses_prob = driver_data.sunglassesProb
     rl.draw_texture_v(self._glasses_texture, glasses_pos, rl.Color(70, 80, 161, int(255 * glasses_prob)))
-
-  def _calc_driver_frame_matrix(self, rect: rl.Rectangle):
-    base = self._original_calc_frame_matrix(rect)
-    driver_view_ratio = 1.5
-    base[0, 0] *= driver_view_ratio
-    base[1, 1] *= driver_view_ratio
-    return base
 
 
 if __name__ == "__main__":
