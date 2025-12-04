@@ -3,6 +3,7 @@
 pkill -f watch3
 pkill -f compressed_vipc
 
+touch /tmp/new_cam
 BIG=1 /home/batman/openpilot/selfdrive/ui/watch3.py &
 
 while true; do
@@ -20,9 +21,6 @@ while true; do
 
   adb push camera.sh /data
   adb shell 'su - comma -c "source /etc/profile && sudo chown comma: /data/camera.sh && chmod +x /data/camera.sh"'
-
-  adb push continue.sh /data
-  adb shell 'su - comma -c "source /etc/profile && sudo chown comma: /data/continue.sh && chmod +x /data/continue.sh"'
 
   adb shell 'su - comma -c "source /etc/profile && /data/camera.sh"'
   touch /tmp/new_cam
