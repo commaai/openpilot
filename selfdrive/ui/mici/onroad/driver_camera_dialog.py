@@ -225,13 +225,6 @@ class DriverCameraDialog(NavWidget):
     glasses_prob = driver_data.sunglassesProb
     rl.draw_texture_v(self._glasses_texture, glasses_pos, rl.Color(70, 80, 161, int(255 * glasses_prob)))
 
-  def _calc_driver_frame_matrix(self, rect: rl.Rectangle):
-    base = self._original_calc_frame_matrix(rect)
-    driver_view_ratio = 1.5
-    base[0, 0] *= driver_view_ratio
-    base[1, 1] *= driver_view_ratio
-    return base
-
 
 if __name__ == "__main__":
   gui_app.init_window("Driver Camera View (mici)")
