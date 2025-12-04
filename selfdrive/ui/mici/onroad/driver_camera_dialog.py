@@ -1,5 +1,5 @@
-import pyray as rl
 import weakref
+import pyray as rl
 from cereal import log, messaging
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
@@ -14,6 +14,7 @@ from openpilot.system.ui.widgets.label import gui_label
 EventName = log.OnroadEvent.EventName
 
 EVENT_TO_INT = EventName.schema.enumerants
+
 
 class DriverCameraView(CameraView):
   def __init__(self):
@@ -37,6 +38,7 @@ class DriverCameraDialog(NavWidget):
     self._pm = messaging.PubMaster(['selfdriveState'])
 
     dialog_ref = weakref.ref(self)
+
     def _stop_dmonitoringmodeld():
       if dlg := dialog_ref():
         dlg.stop_dmonitoringmodeld()
