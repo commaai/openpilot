@@ -43,6 +43,7 @@ class DriverCameraDialog(NavWidget):
   def stop_dmonitoringmodeld(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
+    device.remove_interactive_timeout_callback(self.stop_dmonitoringmodeld)
 
   def show_event(self):
     super().show_event()
