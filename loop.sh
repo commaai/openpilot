@@ -11,8 +11,12 @@ while true; do
 
   adb shell 'su - comma -c "source /etc/profile && tmux kill-server"'
 
-  while :; do ip=$(adb shell "ifconfig wlan0" 2>/dev/null | awk '/inet / {print $2}' | sed 's/addr://'); [ -n "$ip" ] && { echo "$ip"; break; }; sleep 1 && echo 'waiting for wifi...'; done
-  /home/batman/openpilot/tools/camerastream/compressed_vipc.py "$ip" &
+  PORTS="51336 57332 42305"
+  for p in $PORTS; do
+    adb forward tcp:$p tcp:$p
+  done
+
+  /home/batman/openpilot/tools/camerastream/compressed_vipc.py 127.0.0.1 &
 
   adb push camera.sh /data
   adb shell 'su - comma -c "source /etc/profile && sudo chown comma: /data/camera.sh && chmod +x /data/camera.sh"'
