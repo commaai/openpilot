@@ -1,6 +1,7 @@
 from enum import IntEnum
 from collections.abc import Callable
 
+import weakref
 import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
@@ -209,11 +210,17 @@ class TrainingGuide(Widget):
     self._completed_callback = completed_callback
     self._step = 0
 
+    self_ref = weakref.ref(self)
+
+    def on_continue():
+      if obj := self_ref():
+        obj._advance_step()
+
     self._steps = [
-      TrainingGuideAttentionNotice(continue_callback=self._advance_step),
-      TrainingGuidePreDMTutorial(continue_callback=self._advance_step),
-      TrainingGuideDMTutorial(continue_callback=self._advance_step),
-      TrainingGuideRecordFront(continue_callback=self._advance_step),
+      TrainingGuideAttentionNotice(continue_callback=on_continue),
+      TrainingGuidePreDMTutorial(continue_callback=on_continue),
+      TrainingGuideDMTutorial(continue_callback=on_continue),
+      TrainingGuideRecordFront(continue_callback=on_continue),
     ]
 
   def _advance_step(self):
