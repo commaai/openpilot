@@ -16,9 +16,6 @@ EVENT_TO_INT = EventName.schema.enumerants
 
 
 class DriverCameraView(CameraView):
-  def __init__(self):
-    super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
-
   def _calc_frame_matrix(self, rect: rl.Rectangle):
     base = super()._calc_frame_matrix(rect)
     driver_view_ratio = 1.5
@@ -30,7 +27,7 @@ class DriverCameraView(CameraView):
 class DriverCameraDialog(NavWidget):
   def __init__(self, no_escape=False):
     super().__init__()
-    self._camera_view = DriverCameraView()
+    self._camera_view = DriverCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
@@ -115,7 +112,7 @@ class DriverCameraDialog(NavWidget):
       event_name = EVENT_TO_INT[dm_state.events[0].name]
       if event_name is not None and event_name in EVENTS and ET.PERMANENT in EVENTS[event_name]:
         msg.selfdriveState.alertSound = EVENTS[event_name][ET.PERMANENT].audible_alert
-    # self._pm.send('selfdriveState', msg)
+    self._pm.send('selfdriveState', msg)
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
     """Render driver monitoring event names"""
