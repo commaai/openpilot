@@ -102,10 +102,10 @@ class TrainingGuideDMTutorial(Widget):
     self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
 
     # Disable driver monitoring model when device times out for inactivity
-    def inactivity_callback():
-      ui_state.params.put_bool("IsDriverViewEnabled", False)
+    device.add_interactive_timeout_callback(self.inactivity_callback)
 
-    device.add_interactive_timeout_callback(inactivity_callback)
+  def inactivity_callback(self):
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
 
   def show_event(self):
     super().show_event()
