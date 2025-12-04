@@ -83,9 +83,6 @@ class DriverCameraDialog(NavWidget):
   def _handle_mouse_release(self, _):
     ui_state.params.remove("DriverTooDistracted")
 
-  def _dismiss(self):
-    self.stop_dmonitoringmodeld()
-
   def close(self):
     if self._camera_view:
       self._camera_view.close()
