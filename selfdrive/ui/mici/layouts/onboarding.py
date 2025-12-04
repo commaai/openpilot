@@ -1,6 +1,7 @@
 from enum import IntEnum
 from collections.abc import Callable
 
+import weakref
 import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
@@ -92,11 +93,10 @@ class TrainingGuideDMTutorial(Widget):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._original_continue_callback = continue_callback
-
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
-      self._restore_settings()
+      device.set_offroad_brightness(None)
+      device.reset_interactive_timeout()
       continue_callback()
 
     self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
@@ -113,10 +113,6 @@ class TrainingGuideDMTutorial(Widget):
 
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
-
-  def _restore_settings(self):
-    device.set_offroad_brightness(None)
-    device.reset_interactive_timeout()
 
   def _update_state(self):
     super()._update_state()
@@ -214,11 +210,17 @@ class TrainingGuide(Widget):
     self._completed_callback = completed_callback
     self._step = 0
 
+    self_ref = weakref.ref(self)
+
+    def on_continue():
+      if obj := self_ref():
+        obj._advance_step()
+
     self._steps = [
-      TrainingGuideAttentionNotice(continue_callback=self._advance_step),
-      TrainingGuidePreDMTutorial(continue_callback=self._advance_step),
-      TrainingGuideDMTutorial(continue_callback=self._advance_step),
-      TrainingGuideRecordFront(continue_callback=self._advance_step),
+      TrainingGuideAttentionNotice(continue_callback=on_continue),
+      TrainingGuidePreDMTutorial(continue_callback=on_continue),
+      TrainingGuideDMTutorial(continue_callback=on_continue),
+      TrainingGuideRecordFront(continue_callback=on_continue),
     ]
 
   def _advance_step(self):
