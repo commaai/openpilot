@@ -92,11 +92,10 @@ class TrainingGuideDMTutorial(Widget):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._original_continue_callback = continue_callback
-
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
-      self._restore_settings()
+      device.set_offroad_brightness(None)
+      device.reset_interactive_timeout()
       continue_callback()
 
     self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
@@ -113,10 +112,6 @@ class TrainingGuideDMTutorial(Widget):
 
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
-
-  def _restore_settings(self):
-    device.set_offroad_brightness(None)
-    device.reset_interactive_timeout()
 
   def _update_state(self):
     super()._update_state()
