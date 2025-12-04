@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+
 import pyray as rl
 
 from msgq.visionipc import VisionStreamType
@@ -19,7 +21,8 @@ if __name__ == "__main__":
       cam = (driver, 'D')
     elif rl.is_key_pressed(rl.KEY_THREE):
       cam = (wide, 'E')
-    elif rl.is_key_pressed(rl.KEY_ESCAPE):
+    elif rl.is_key_pressed(rl.KEY_ESCAPE) or os.path.exists('/tmp/new_cam'):
+      os.system('rm -f /tmp/new_cam')
       cam = None
 
     if cam:

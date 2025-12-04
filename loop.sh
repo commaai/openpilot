@@ -18,6 +18,7 @@ while true; do
   adb shell 'su - comma -c "source /etc/profile && sudo chown comma: /data/camera.sh && chmod +x /data/camera.sh"'
 
   adb shell 'su - comma -c "source /etc/profile && /data/camera.sh"'
+  touch /tmp/new_cam
   pkill -f compressed_vipc
   echo -e "\n\nDevice disconnected..."
   sleep 1
