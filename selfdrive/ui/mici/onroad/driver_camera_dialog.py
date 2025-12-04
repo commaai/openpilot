@@ -60,6 +60,7 @@ class DriverCameraDialog(NavWidget):
 
   def hide_event(self):
     super().hide_event()
+    print('hide event called')
     device.reset_interactive_timeout()
 
   def _handle_mouse_release(self, _):
@@ -78,6 +79,7 @@ class DriverCameraDialog(NavWidget):
     super()._update_state()
 
   def _render(self, rect):
+    print('render!')
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._camera_view._render(rect)
 
