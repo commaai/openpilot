@@ -339,6 +339,9 @@ class GuiApplication:
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:
+      if hasattr(self._modal_overlay.overlay, 'hide_event'):
+        self._modal_overlay.overlay.hide_event()
+
       if self._modal_overlay.callback is not None:
         self._modal_overlay.callback(-1)
 
@@ -559,6 +562,8 @@ class GuiApplication:
         if hasattr(original_modal.overlay, 'hide_event'):
           original_modal.overlay.hide_event()
         self._modal_overlay = ModalOverlay()
+        if hasattr(original_modal.overlay, 'hide_event'):
+          original_modal.overlay.hide_event()
         if original_modal.callback is not None:
           original_modal.callback(result)
       return True
