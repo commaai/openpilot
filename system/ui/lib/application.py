@@ -455,7 +455,7 @@ class GuiApplication:
         self._render_profile_start_time = time.monotonic()
         self._render_profiler.enable()
 
-      while not (self._window_close_requested or rl.window_should_close()):
+      while not (self._window_close_requested):
         if PC:
           # Thread is not used on PC, need to manually add mouse events
           self._mouse._handle_mouse_event()

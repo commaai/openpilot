@@ -19,6 +19,13 @@ if __name__ == "__main__":
       cam = (driver, 'D')
     elif rl.is_key_pressed(rl.KEY_THREE):
       cam = (wide, 'E')
+    elif rl.is_key_pressed(rl.KEY_ESCAPE):
+      cam = None
 
-    rl.draw_text(cam[1], 10, 10, 80, rl.GREEN)
-    cam[0].render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    if cam:
+      rl.draw_text(cam[1], 10, 10, 80, rl.GREEN)
+      cam[0].render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    else:
+      road.render(rl.Rectangle(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2))
+      driver.render(rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
+      wide.render(rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
