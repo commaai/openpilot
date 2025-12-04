@@ -230,6 +230,10 @@ class TermsPage(Widget):
     super().show_event()
     device.reset_interactive_timeout(300)
 
+  def hide_event(self):
+    super().hide_event()
+    self._continue_button.set_click_callback(None)
+
   @property
   @abstractmethod
   def _content_height(self):

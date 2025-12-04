@@ -63,6 +63,7 @@ class DriverCameraDialog(NavWidget):
     ui_state.params.remove("DriverTooDistracted")
 
   def __del__(self):
+    print('del called!')
     self.close()
 
   def close(self):
@@ -70,6 +71,7 @@ class DriverCameraDialog(NavWidget):
       self._camera_view.close()
 
   def _update_state(self):
+    return
     if self._camera_view:
       self._camera_view._update_state()
     # Enable driver state renderer to show Dmoji in preview

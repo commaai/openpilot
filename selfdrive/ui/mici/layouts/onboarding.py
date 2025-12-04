@@ -25,11 +25,12 @@ class OnboardingState(IntEnum):
 class DriverCameraSetupDialog(DriverCameraDialog):
   def __init__(self, confirm_callback: Callable):
     super().__init__(no_escape=True)
-    self.driver_state_renderer = DriverStateRenderer(confirm_mode=True, confirm_callback=confirm_callback)
-    self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
-    self.driver_state_renderer.load_icons()
+    # self.driver_state_renderer = DriverStateRenderer(confirm_mode=True)
+    # self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
+    # self.driver_state_renderer.load_icons()
 
   def _render(self, rect):
+    # return
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._camera_view._render(rect)
 
@@ -92,20 +93,19 @@ class TrainingGuideDMTutorial(Widget):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._original_continue_callback = continue_callback
-
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
-      self._restore_settings()
+      device.set_offroad_brightness(None)
+      device.reset_interactive_timeout()
       continue_callback()
 
     self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
 
-    # Disable driver monitoring model when device times out for inactivity
-    def inactivity_callback():
-      ui_state.params.put_bool("IsDriverViewEnabled", False)
-
-    device.add_interactive_timeout_callback(inactivity_callback)
+    # # Disable driver monitoring model when device times out for inactivity
+    # def inactivity_callback():
+    #   ui_state.params.put_bool("IsDriverViewEnabled", False)
+    #
+    # device.add_interactive_timeout_callback(inactivity_callback)
 
   def show_event(self):
     super().show_event()
@@ -114,9 +114,9 @@ class TrainingGuideDMTutorial(Widget):
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
 
-  def _restore_settings(self):
-    device.set_offroad_brightness(None)
-    device.reset_interactive_timeout()
+  def hide_event(self):
+    super().hide_event()
+    self._dialog.hide_event()
 
   def _update_state(self):
     super()._update_state()
@@ -188,6 +188,9 @@ class TrainingGuideAttentionNotice(SetupTermsPage):
                                        "4. You are fully responsible for driving the car.", 42,
                                        FontWeight.ROMAN)
 
+  def __del__(self):
+    print("TrainingGuideAttentionNotice del called")
+
   @property
   def _content_height(self):
     return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
@@ -221,14 +224,19 @@ class TrainingGuide(Widget):
       TrainingGuideRecordFront(continue_callback=self._advance_step),
     ]
 
+  def hide_event(self):
+    super().hide_event()
+    for step in self._steps:
+      step.hide_event()
+
   def _advance_step(self):
-    if self._step < len(self._steps) - 1:
-      self._step += 1
-      self._steps[self._step].show_event()
-    else:
-      self._step = 0
-      if self._completed_callback:
-        self._completed_callback()
+    # if self._step < len(self._steps) - 1:
+    #   self._step += 1
+    #   self._steps[self._step].show_event()
+    # else:
+    self._step = 0
+    if self._completed_callback:
+      self._completed_callback()
 
   def _render(self, _):
     if self._step < len(self._steps):
