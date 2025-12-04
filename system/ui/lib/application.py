@@ -220,7 +220,6 @@ class GuiApplication:
     self._modal_overlay = ModalOverlay()
     self._new_modal_overlay = ModalOverlay()
     self._dialog_result = -1
-    # self._modal_overlay_shown = False
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -569,7 +568,6 @@ class GuiApplication:
         self.set_modal_overlay(None)
       return True
     else:
-      self._modal_overlay_shown = False
       return False
 
   def _load_fonts(self):
