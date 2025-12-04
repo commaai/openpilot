@@ -34,7 +34,7 @@ class DriverCameraDialog(NavWidget):
     self._pm: messaging.PubMaster | None = None
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(lambda: gui_app.set_modal_overlay(None))
+      device.add_interactive_timeout_callback(self.close_dialog)
     self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
     self.set_back_enabled(not no_escape)
 
@@ -59,6 +59,9 @@ class DriverCameraDialog(NavWidget):
     super().hide_event()
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     device.reset_interactive_timeout()
+
+  def close_dialog(self):
+    gui_app.set_modal_overlay(None)
 
   def _handle_mouse_release(self, _):
     ui_state.params.remove("DriverTooDistracted")
