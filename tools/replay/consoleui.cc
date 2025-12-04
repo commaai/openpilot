@@ -117,7 +117,7 @@ void ConsoleUI::initWindows() {
   }
   if (max_height >= 23) {
     w[Win::Help] = newwin(5, max_width - (2 * BORDER_SIZE), max_height - 6, BORDER_SIZE);
-  } else if (max_height >= 16) {
+  } else if (max_height >= 17) {
     w[Win::Help] = newwin(1, max_width - (2 * BORDER_SIZE), max_height - 1, BORDER_SIZE);
     mvwprintw(w[Win::Help], 0, 0, "Enlarge screen to list available commands");
   }
