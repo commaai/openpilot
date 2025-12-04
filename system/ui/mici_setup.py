@@ -207,7 +207,12 @@ class TermsPage(Widget):
     self._continue_button.set_enabled(False)
     self._continue_button.set_opacity(0.0)
     self._continue_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
-    self._continue_button.set_click_callback(continue_callback)
+
+    def continue_callback_wrapper():
+      continue_callback()
+      self._continue_button.set_click_callback(None)
+
+    self._continue_button.set_click_callback(continue_callback_wrapper)
 
     self._enable_back = back_callback is not None
     self._back_button = SmallButton(back_text)

@@ -92,22 +92,20 @@ class TrainingGuideDMTutorial(Widget):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._original_continue_callback = continue_callback
-
     # Wrap the continue callback to restore settings
-    def wrapped_continue_callback():
-      # self._restore_settings()
-      device.set_offroad_brightness(None)
-      device.reset_interactive_timeout()
-      continue_callback()
-
-    self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
-
-    # Disable driver monitoring model when device times out for inactivity
-    def inactivity_callback():
-      ui_state.params.put_bool("IsDriverViewEnabled", False)
-
-    device.add_interactive_timeout_callback(inactivity_callback)
+    # def wrapped_continue_callback():
+    #   # self._restore_settings()
+    #   device.set_offroad_brightness(None)
+    #   device.reset_interactive_timeout()
+    #   continue_callback()
+    #
+    # self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
+    #
+    # # Disable driver monitoring model when device times out for inactivity
+    # def inactivity_callback():
+    #   ui_state.params.put_bool("IsDriverViewEnabled", False)
+    #
+    # device.add_interactive_timeout_callback(inactivity_callback)
 
   def show_event(self):
     super().show_event()
@@ -115,10 +113,6 @@ class TrainingGuideDMTutorial(Widget):
 
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
-
-  def _restore_settings(self):
-    device.set_offroad_brightness(None)
-    device.reset_interactive_timeout()
 
   def _update_state(self):
     super()._update_state()
@@ -213,20 +207,27 @@ class TrainingGuideAttentionNotice(SetupTermsPage):
 class TrainingGuide(Widget):
   def __init__(self, completed_callback=None):
     super().__init__()
-    # self._completed_callback = completed_callback
-    # self._step = 0
+    self._completed_callback = completed_callback
+    self._step = 0
 
     def test():
       pass
 
+    # self._dm_tutorial_step = TrainingGuideDMTutorial(continue_callback=lambda: None),
+
     self._steps = [
-      # TrainingGuideAttentionNotice(continue_callback=test),
-      # TrainingGuidePreDMTutorial(continue_callback=test),
-      TrainingGuideDMTutorial(continue_callback=test),
-      # TrainingGuideRecordFront(continue_callback=test),
+      TrainingGuideAttentionNotice(continue_callback=self._advance_step),
+      # TrainingGuidePreDMTutorial(continue_callback=self._advance_step),
+      # self._dm_tutorial_step,
+      # TrainingGuideRecordFront(continue_callback=self._advance_step),
     ]
 
-  # def _advance_step(self):
+  def hide_event(self):
+    super().hide_event()
+
+
+  def _advance_step(self):
+    pass
   #   # if self._step < len(self._steps) - 1:
   #   #   self._step += 1
   #   #   self._steps[self._step].show_event()
@@ -236,7 +237,7 @@ class TrainingGuide(Widget):
   #     self._completed_callback()
 
   def _render(self, _):
-    return
+    # return
     if self._step < len(self._steps):
       self._steps[self._step].render(self._rect)
     return -1
