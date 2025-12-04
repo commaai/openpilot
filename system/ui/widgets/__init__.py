@@ -255,9 +255,6 @@ class NavWidget(Widget, abc.ABC):
   def set_back_callback(self, callback: Callable[[], None]) -> None:
     self._back_callback = callback
 
-  def __del__(self):
-    print("NavWidget deleted!")
-
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     super()._handle_mouse_event(mouse_event)
 
