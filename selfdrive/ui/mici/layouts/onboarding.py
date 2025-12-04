@@ -96,7 +96,9 @@ class TrainingGuideDMTutorial(Widget):
 
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
-      self._restore_settings()
+      # self._restore_settings()
+      device.set_offroad_brightness(None)
+      device.reset_interactive_timeout()
       continue_callback()
 
     self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
@@ -211,26 +213,30 @@ class TrainingGuideAttentionNotice(SetupTermsPage):
 class TrainingGuide(Widget):
   def __init__(self, completed_callback=None):
     super().__init__()
-    self._completed_callback = completed_callback
-    self._step = 0
+    # self._completed_callback = completed_callback
+    # self._step = 0
+
+    def test():
+      pass
 
     self._steps = [
-      TrainingGuideAttentionNotice(continue_callback=self._advance_step),
-      TrainingGuidePreDMTutorial(continue_callback=self._advance_step),
-      TrainingGuideDMTutorial(continue_callback=self._advance_step),
-      TrainingGuideRecordFront(continue_callback=self._advance_step),
+      # TrainingGuideAttentionNotice(continue_callback=test),
+      # TrainingGuidePreDMTutorial(continue_callback=test),
+      TrainingGuideDMTutorial(continue_callback=test),
+      # TrainingGuideRecordFront(continue_callback=test),
     ]
 
-  def _advance_step(self):
-    if self._step < len(self._steps) - 1:
-      self._step += 1
-      self._steps[self._step].show_event()
-    else:
-      self._step = 0
-      if self._completed_callback:
-        self._completed_callback()
+  # def _advance_step(self):
+  #   # if self._step < len(self._steps) - 1:
+  #   #   self._step += 1
+  #   #   self._steps[self._step].show_event()
+  #   # else:
+  #   self._step = 0
+  #   if self._completed_callback:
+  #     self._completed_callback()
 
   def _render(self, _):
+    return
     if self._step < len(self._steps):
       self._steps[self._step].render(self._rect)
     return -1

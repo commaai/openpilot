@@ -380,4 +380,5 @@ class DeviceLayoutMici(NavWidget):
     self._scroller.show_event()
 
   def _render(self, rect: rl.Rectangle):
+    TrainingGuide()
     self._scroller.render(rect)
