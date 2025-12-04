@@ -29,11 +29,12 @@ class BigDialogBase(NavWidget, abc.ABC):
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     dialog_ref = weakref.ref(self)
+
     def back_clicked_callback():
       if dlg := dialog_ref():
         dlg._ret = DialogResult.CANCEL
-    self._back_callback_impl = back_clicked_callback
-    self.set_back_callback(self._back_callback_impl)
+
+    self.set_back_callback(back_clicked_callback)
 
     self._right_btn = None
     if right_btn:
@@ -165,6 +166,7 @@ class BigInputDialog(BigDialogBase):
     self._top_right_button_rect = rl.Rectangle(0, 0, 0, 0)
 
     dialog_ref = weakref.ref(self)
+
     def confirm_callback_wrapper():
       if dlg := dialog_ref():
         dlg._ret = DialogResult.CONFIRM
