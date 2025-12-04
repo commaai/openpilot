@@ -1,8 +1,8 @@
 from enum import IntEnum
 from collections.abc import Callable
 
-import pyray as rl
 import weakref
+import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallButton
@@ -211,6 +211,7 @@ class TrainingGuide(Widget):
     self._step = 0
 
     self_ref = weakref.ref(self)
+
     def on_continue():
       if obj := self_ref():
         obj._advance_step()
