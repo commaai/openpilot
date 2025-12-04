@@ -62,9 +62,8 @@ class MiciMainLayout(Widget):
     self._setup_callbacks()
 
     # Start onboarding if terms or training not completed
-    self._onboarding_window = OnboardingWindow()
-    if not self._onboarding_window.completed:
-      gui_app.set_modal_overlay(self._onboarding_window)
+    if not OnboardingWindow.completed():
+      gui_app.set_modal_overlay(OnboardingWindow())
 
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=self._on_settings_clicked)

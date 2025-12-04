@@ -305,11 +305,20 @@ class TermsPage(SetupTermsPage):
 
 
 class OnboardingWindow(Widget):
+  @classmethod
+  def completed(cls) -> bool:
+    accepted, trained = cls._get_status()
+    return accepted and trained
+
+  @staticmethod
+  def _get_status() -> tuple[bool, bool]:
+    accepted = ui_state.params.get("HasAcceptedTerms") == terms_version
+    trained = ui_state.params.get("CompletedTrainingVersion") == training_version
+    return accepted, trained
+
   def __init__(self):
     super().__init__()
-    self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
-    self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
-
+    self._accepted_terms, self._training_done = self._get_status()
     self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
 
     self.set_rect(rl.Rectangle(0, 0, 458, gui_app.height))
@@ -318,10 +327,6 @@ class OnboardingWindow(Widget):
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_terms_declined)
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
     self._decline_page = DeclinePage(back_callback=self._on_decline_back)
-
-  @property
-  def completed(self) -> bool:
-    return self._accepted_terms and self._training_done
 
   def _on_terms_declined(self):
     self._state = OnboardingState.DECLINE
