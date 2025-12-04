@@ -1,3 +1,4 @@
+import weakref
 import pyray as rl
 from cereal import log, messaging
 from msgq.visionipc import VisionStreamType
@@ -19,16 +20,24 @@ class DriverCameraDialog(NavWidget):
   def __init__(self, no_escape=False):
     super().__init__()
     self._camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
-    self._original_calc_frame_matrix = self._camera_view._calc_frame_matrix
-    self._camera_view._calc_frame_matrix = self._calc_driver_frame_matrix
+    # self._original_calc_frame_matrix = self._camera_view._calc_frame_matrix
+    # self._camera_view._calc_frame_matrix = self._calc_driver_frame_matrix
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
     self._pm = messaging.PubMaster(['selfdriveState'])
-    if not no_escape:
-      # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
-    self.set_back_callback(self.stop_dmonitoringmodeld)
+    # if not no_escape:
+    #   # TODO: this can grow unbounded, should be given some thought
+    #   device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
+    # self.set_back_callback(self.stop_dmonitoringmodeld)
+
+    dialog_ref = weakref.ref(self)
+
+    def _stop_dmonitoringmodeld():
+      if dlg := dialog_ref():
+        dlg.stop_dmonitoringmodeld()
+
+    self.set_back_callback(_stop_dmonitoringmodeld)
     self.set_back_enabled(not no_escape)
 
     # Load eye icons
@@ -43,6 +52,9 @@ class DriverCameraDialog(NavWidget):
   def stop_dmonitoringmodeld(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
+
+  def __del__(self):
+    self.close()
 
   def show_event(self):
     super().show_event()
