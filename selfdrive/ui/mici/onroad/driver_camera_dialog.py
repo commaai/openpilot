@@ -63,6 +63,9 @@ class DriverCameraDialog(NavWidget):
     ui_state.params.remove("DriverTooDistracted")
 
   def __del__(self):
+    self.close()
+
+  def close(self):
     if self._camera_view:
       self._camera_view.close()
 
