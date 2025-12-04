@@ -150,6 +150,11 @@ class CameraView(Widget):
 
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
+  # def hide_event(self):
+  #   super().hide_event()
+  #   # Clean up circular reference
+  #   ui_state.remove_offroad_transition_callback(self._offroad_transition)
+
   def _offroad_transition(self):
     # Reconnect if not first time going onroad
     if ui_state.is_onroad() and self.frame is not None:
@@ -203,6 +208,7 @@ class CameraView(Widget):
     self.client = None
 
   def __del__(self):
+    print('camera view cleaned up properly')
     self.close()
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
