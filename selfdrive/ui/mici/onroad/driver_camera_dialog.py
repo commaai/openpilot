@@ -31,6 +31,7 @@ class DriverCameraView(CameraView):
 class DriverCameraDialog(NavWidget):
   def __init__(self, no_escape=False):
     super().__init__()
+    # TODO: clean up offroad_transition_callback
     self._camera_view = DriverCameraView()
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
