@@ -34,9 +34,7 @@ class DriverCameraDialog(NavWidget):
     self._pm = messaging.PubMaster(['selfdriveState'])
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
-      # device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
       device.add_interactive_timeout_callback(lambda: gui_app.set_modal_overlay(None))
-    # self.set_back_callback(self.stop_dmonitoringmodeld)
     self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
     self.set_back_enabled(not no_escape)
 
@@ -48,9 +46,6 @@ class DriverCameraDialog(NavWidget):
     self._glasses_size = 171
 
     self._load_eye_textures()
-
-  # def stop_dmonitoringmodeld(self):
-  #   gui_app.set_modal_overlay(None)
 
   def show_event(self):
     super().show_event()

@@ -33,8 +33,8 @@ class Widget(abc.ABC):
     self._multi_touch = False
     self.__was_awake = True
 
-  def __del__(self):
-    print(f"Widget {self.__class__.__name__} deleted")
+  # def __del__(self):
+  #   print(f"Widget {self.__class__.__name__} deleted")
 
   @property
   def rect(self) -> rl.Rectangle:
