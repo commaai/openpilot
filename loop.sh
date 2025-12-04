@@ -3,7 +3,6 @@
 pkill -f watch3
 pkill -f compressed_vipc
 
-touch /tmp/new_cam
 BIG=1 /home/batman/openpilot/selfdrive/ui/watch3.py &
 
 while true; do
