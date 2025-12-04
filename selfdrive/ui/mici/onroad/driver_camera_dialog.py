@@ -47,6 +47,10 @@ class DriverCameraDialog(NavWidget):
 
     self._load_eye_textures()
 
+  def __del__(self):
+    print('del!')
+    self.close()
+
   def stop_dmonitoringmodeld(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
@@ -61,6 +65,8 @@ class DriverCameraDialog(NavWidget):
   def hide_event(self):
     super().hide_event()
     device.reset_interactive_timeout()
+    device.remove_interactive_timeout_callback(self.stop_dmonitoringmodeld)
+    self.set_back_callback(None)
 
   def _handle_mouse_release(self, _):
     ui_state.params.remove("DriverTooDistracted")
