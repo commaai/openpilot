@@ -77,6 +77,11 @@ function launch {
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
+  # set USBGPU if egpu detected.
+  if lsusb -d "${USBDEV:-add1:0001}"; then
+    export USBGPU=1
+  fi
+
   # start manager
   cd system/manager
   if [ ! -f $DIR/prebuilt ]; then
