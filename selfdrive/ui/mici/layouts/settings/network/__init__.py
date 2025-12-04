@@ -5,7 +5,7 @@ from collections.abc import Callable
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigToggle, BigParamControl
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
@@ -51,6 +51,8 @@ class NetworkLayoutMici(NavWidget):
       tethering_password = self._wifi_manager.tethering_password
       dlg = BigInputDialog("enter password...", tethering_password, minimum_length=8,
                            confirm_callback=tethering_password_callback)
+      # dlg = BigDialog("test", "test")
+      # del dlg
       gui_app.set_modal_overlay(dlg)
 
     txt_tethering = gui_app.texture(_tethering_icon, 64, 53)
@@ -174,6 +176,16 @@ class NetworkLayoutMici(NavWidget):
     self._current_panel = panel_type
 
   def _render(self, rect: rl.Rectangle):
+    # def tethering_password_callback(password: str):
+    #   if password:
+    #     self._wifi_manager.set_tethering_password(password)
+
+    # while True:
+    #   dlg = BigInputDialog("enter password...", "123", minimum_length=8,
+    #                        )
+    #   # dlg = BigDialog("test", "test")
+    #   del dlg
+
     self._wifi_manager.process_callbacks()
 
     if self._current_panel == NetworkPanelType.WIFI:
