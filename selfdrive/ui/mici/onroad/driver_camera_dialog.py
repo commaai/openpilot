@@ -18,17 +18,18 @@ EVENT_TO_INT = EventName.schema.enumerants
 class DriverCameraDialog(NavWidget):
   def __init__(self, no_escape=False):
     super().__init__()
-    self._camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
-    self._original_calc_frame_matrix = self._camera_view._calc_frame_matrix
-    self._camera_view._calc_frame_matrix = self._calc_driver_frame_matrix
+    self._camera_view = None  # CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
+    # self._original_calc_frame_matrix = self._camera_view._calc_frame_matrix
+    # self._camera_view._calc_frame_matrix = self._calc_driver_frame_matrix
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
     self._pm = messaging.PubMaster(['selfdriveState'])
-    if not no_escape:
-      # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
-    self.set_back_callback(self.stop_dmonitoringmodeld)
+    # if not no_escape:
+    #   # TODO: this can grow unbounded, should be given some thought
+    #   device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
+    # self.set_back_callback(self.stop_dmonitoringmodeld)
+    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
     self.set_back_enabled(not no_escape)
 
     # Load eye icons
@@ -38,21 +39,31 @@ class DriverCameraDialog(NavWidget):
     self._glasses_texture = None
     self._glasses_size = 171
 
+    self._ret = 0
+
     self._load_eye_textures()
+
+  def __del__(self):
+    print('del successful!')
 
   def stop_dmonitoringmodeld(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    gui_app.set_modal_overlay(None)
+    # gui_app.set_modal_overlay(None)
+    self._ret = 1
+    # self.close()
 
   def show_event(self):
     super().show_event()
     ui_state.params.put_bool("IsDriverViewEnabled", True)
     self._publish_alert_sound(None)
-    device.reset_interactive_timeout(300)
+    device.reset_interactive_timeout(1)
     ui_state.params.remove("DriverTooDistracted")
 
   def hide_event(self):
     super().hide_event()
+    print('hide event')
+    self.close()
+    self.stop_dmonitoringmodeld()
     device.reset_interactive_timeout()
 
   def _handle_mouse_release(self, _):
@@ -71,6 +82,12 @@ class DriverCameraDialog(NavWidget):
     super()._update_state()
 
   def _render(self, rect):
+    if self._ret != 0:
+      return self._ret
+
+    if self._camera_view is None:
+      return -1
+
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._camera_view._render(rect)
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import gc
 import os
 import pyray as rl
 

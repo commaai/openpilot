@@ -148,7 +148,7 @@ class CameraView(Widget):
       self.egl_texture = rl.load_texture_from_image(temp_image)
       rl.unload_image(temp_image)
 
-    ui_state.add_offroad_transition_callback(self._offroad_transition)
+    # ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _offroad_transition(self):
     # Reconnect if not first time going onroad
