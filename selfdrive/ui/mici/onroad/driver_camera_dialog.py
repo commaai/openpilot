@@ -34,8 +34,8 @@ class DriverCameraDialog(NavWidget):
     self._pm = messaging.PubMaster(['selfdriveState'])
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
-    self.set_back_callback(self.stop_dmonitoringmodeld)
+      device.add_interactive_timeout_callback(lambda: gui_app.set_modal_overlay(None))
+    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
     self.set_back_enabled(not no_escape)
 
     # Load eye icons
@@ -47,10 +47,6 @@ class DriverCameraDialog(NavWidget):
 
     self._load_eye_textures()
 
-  def stop_dmonitoringmodeld(self):
-    ui_state.params.put_bool("IsDriverViewEnabled", False)
-    gui_app.set_modal_overlay(None)
-
   def show_event(self):
     super().show_event()
     ui_state.params.put_bool("IsDriverViewEnabled", True)
@@ -60,10 +56,14 @@ class DriverCameraDialog(NavWidget):
 
   def hide_event(self):
     super().hide_event()
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
     device.reset_interactive_timeout()
 
   def _handle_mouse_release(self, _):
     ui_state.params.remove("DriverTooDistracted")
+
+  def __del__(self):
+    self.close()
 
   def close(self):
     if self._camera_view:
