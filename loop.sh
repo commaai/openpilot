@@ -13,7 +13,7 @@ while true; do
 
   sleep 1
 
-  ip=$(adb shell "ifconfig wlan0" | awk '/inet / {print $2}' | sed 's/addr://')
+  while :; do ip=$(adb shell "ifconfig wlan0" 2>/dev/null | awk '/inet / {print $2}' | sed 's/addr://'); [ -n "$ip" ] && { echo "$ip"; break; }; sleep 1 && echo 'waiting for wifi...'; done
   /home/batman/openpilot/tools/camerastream/compressed_vipc.py "$ip" &
 
   adb push camera.sh /data
