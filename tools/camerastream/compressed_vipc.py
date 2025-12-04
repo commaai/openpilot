@@ -112,7 +112,11 @@ class CompressedVipc:
     os.environ["ZMQ"] = "1"
     messaging.reset_context()
     sm = messaging.SubMaster([ENCODE_SOCKETS[s] for s in vision_streams], addr=addr)
+    st = time.monotonic()
     while min(sm.recv_frame.values()) == 0:
+      if (time.monotonic() - st) > 5:
+        print('restarting compressed_vipc...')
+        os.system('/home/batman/openpilot/tools/camerastream/compressed_vipc.py 127.0.0.1')
       sm.update(100)
     os.environ.pop("ZMQ")
     messaging.reset_context()
