@@ -216,8 +216,11 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._trace_log_callback = None
+    # storing two handles transitions
     self._modal_overlay = ModalOverlay()
-    self._modal_overlay_shown = False
+    self._new_modal_overlay = ModalOverlay()
+    self._dialog_result = -1
+    # self._modal_overlay_shown = False
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -338,11 +341,7 @@ class GuiApplication:
     sys.exit(0)
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
-    if self._modal_overlay.overlay is not None:
-      if self._modal_overlay.callback is not None:
-        self._modal_overlay.callback(-1)
-
-    self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
+    self._new_modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -540,25 +539,34 @@ class GuiApplication:
     return self._height
 
   def _handle_modal_overlay(self) -> bool:
+    # Swap in new overlay
+    if self._new_modal_overlay.overlay != self._modal_overlay.overlay:
+      # Call hide event and callback for previous overlay
+      if self._modal_overlay.overlay is not None:
+        if hasattr(self._modal_overlay.overlay, 'hide_event'):
+          self._modal_overlay.overlay.hide_event()
+
+        if self._modal_overlay.callback is not None:
+          self._modal_overlay.callback(self._dialog_result)
+
+      # If new overlay is present, call show event
+      if self._new_modal_overlay.overlay is not None:
+        if hasattr(self._new_modal_overlay.overlay, 'show_event'):
+          self._new_modal_overlay.overlay.show_event()
+        self._dialog_result = -1
+
+      self._modal_overlay = self._new_modal_overlay
+
     if self._modal_overlay.overlay:
       if hasattr(self._modal_overlay.overlay, 'render'):
-        result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
+        self._dialog_result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
       elif callable(self._modal_overlay.overlay):
-        result = self._modal_overlay.overlay()
+        self._dialog_result = self._modal_overlay.overlay()
       else:
         raise Exception
 
-      # Send show event to Widget
-      if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
-        self._modal_overlay.overlay.show_event()
-        self._modal_overlay_shown = True
-
-      if result >= 0:
-        # Clear the overlay and execute the callback
-        original_modal = self._modal_overlay
-        self._modal_overlay = ModalOverlay()
-        if original_modal.callback is not None:
-          original_modal.callback(result)
+      if self._dialog_result >= 0:
+        self.set_modal_overlay(None)
       return True
     else:
       self._modal_overlay_shown = False
