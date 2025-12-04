@@ -11,7 +11,13 @@ if __name__ == "__main__":
   road = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
   driver = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
   wide = CameraView("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD)
+  cam = road
   for _ in gui_app.render():
-    road.render(rl.Rectangle(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2))
-    driver.render(rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
-    wide.render(rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
+    if rl.is_key_pressed(rl.KEY_ONE):
+      cam = road
+    elif rl.is_key_pressed(rl.KEY_TWO):
+      cam = driver
+    elif rl.is_key_pressed(rl.KEY_THREE):
+      cam = wide
+
+    cam.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
