@@ -33,6 +33,9 @@ class Widget(abc.ABC):
     self._multi_touch = False
     self.__was_awake = True
 
+  def __del__(self):
+    print(f"Widget {self.__class__.__name__} deleted")
+
   @property
   def rect(self) -> rl.Rectangle:
     return self._rect
@@ -180,6 +183,9 @@ class Widget(abc.ABC):
 
   def hide_event(self):
     """Optionally handle hide event. Parent must manually call this"""
+
+  def close(self):
+    """Optionally handle cleanup when Widget is about to be deleted"""
 
 
 SWIPE_AWAY_THRESHOLD = 80  # px to dismiss after releasing

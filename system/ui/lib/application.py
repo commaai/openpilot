@@ -112,6 +112,7 @@ def font_fallback(font: rl.Font) -> rl.Font:
 
 @dataclass
 class ModalOverlay:
+  # TODO: type hint this as Widget and remove the hasattr checks
   overlay: object = None
   callback: Callable | None = None
 
@@ -341,6 +342,8 @@ class GuiApplication:
     if self._modal_overlay.overlay is not None:
       if self._modal_overlay.callback is not None:
         self._modal_overlay.callback(-1)
+      if hasattr(self._modal_overlay.overlay, 'close'):
+        self._modal_overlay.overlay.close()
 
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
@@ -559,6 +562,8 @@ class GuiApplication:
         self._modal_overlay = ModalOverlay()
         if original_modal.callback is not None:
           original_modal.callback(result)
+        if hasattr(original_modal.overlay, 'close'):
+          original_modal.overlay.close()
       return True
     else:
       self._modal_overlay_shown = False
