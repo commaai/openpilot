@@ -93,8 +93,6 @@ class TrainingGuideDMTutorial(Widget):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._original_continue_callback = continue_callback
-
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
       device.set_offroad_brightness(None)
