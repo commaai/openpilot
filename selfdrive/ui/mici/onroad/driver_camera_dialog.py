@@ -31,7 +31,7 @@ class DriverCameraDialog(NavWidget):
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
-    self._pm = messaging.PubMaster(['selfdriveState'])
+    self._pm: messaging.PubMaster | None = None
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(lambda: gui_app.set_modal_overlay(None))
@@ -53,6 +53,7 @@ class DriverCameraDialog(NavWidget):
     self._publish_alert_sound(None)
     device.reset_interactive_timeout(300)
     ui_state.params.remove("DriverTooDistracted")
+    self._pm = messaging.PubMaster(['selfdriveState'])
 
   def hide_event(self):
     super().hide_event()
@@ -107,6 +108,9 @@ class DriverCameraDialog(NavWidget):
 
   def _publish_alert_sound(self, dm_state):
     """Publish selfdriveState with only alertSound field set"""
+    if self._pm is None:
+      return
+
     msg = messaging.new_message('selfdriveState')
     if dm_state is not None and len(dm_state.events):
       event_name = EVENT_TO_INT[dm_state.events[0].name]
