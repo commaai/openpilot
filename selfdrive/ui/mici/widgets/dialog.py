@@ -26,6 +26,7 @@ class BigDialogBase(NavWidget, abc.ABC):
     super().__init__()
     self._ret = DialogResult.NO_ACTION
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
 
     self._right_btn = None
     if right_btn:
@@ -39,16 +40,8 @@ class BigDialogBase(NavWidget, abc.ABC):
       # move to right side
       self._right_btn._rect.x = self._rect.x + self._rect.width - self._right_btn._rect.width
 
-  def _on_back(self):
-    hi = 1
-    # self._ret = DialogResult.CANCEL
-
-  def show_event(self):
-    super().show_event()
-    print("BigDialogBase show_event")
-    self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
-
   def hide_event(self):
+    # Free reference to self to allow refcount to go to zero
     super().hide_event()
     self.set_back_callback(None)
 
@@ -169,11 +162,16 @@ class BigInputDialog(BigDialogBase):
     self._top_left_button_rect = rl.Rectangle(0, 0, 0, 0)
     self._top_right_button_rect = rl.Rectangle(0, 0, 0, 0)
 
-    # def confirm_callback_wrapper():
-    #   self._ret = DialogResult.CONFIRM
-    #   if confirm_callback:
-    #     confirm_callback(self._keyboard.text())
-    # self._confirm_callback = confirm_callback_wrapper
+    def confirm_callback_wrapper():
+      self._ret = DialogResult.CONFIRM
+      if confirm_callback:
+        confirm_callback(self._keyboard.text())
+    self._confirm_callback = confirm_callback_wrapper
+
+  def hide_event(self):
+    # Free reference to self to allow refcount to go to zero
+    super().hide_event()
+    self._confirm_callback = None
 
   # def _update_state(self):
   #   super()._update_state()
@@ -274,16 +272,16 @@ class BigInputDialog(BigDialogBase):
 
     return self._ret
 
-  # def _handle_mouse_press(self, mouse_pos: MousePos):
-  #   super()._handle_mouse_press(mouse_pos)
-  #   # TODO: need to track where press was so enter and back can activate on release rather than press
-  #   #  or turn into icon widgets :eyes_open:
-  #   # handle backspace icon click
-  #   if rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
-  #     self._keyboard.backspace()
-  #   elif rl.check_collision_point_rec(mouse_pos, self._top_left_button_rect) and self._enter_img_alpha.x > 254:
-  #     # handle enter icon click
-  #     self._confirm_callback()
+  def _handle_mouse_press(self, mouse_pos: MousePos):
+    super()._handle_mouse_press(mouse_pos)
+    # TODO: need to track where press was so enter and back can activate on release rather than press
+    #  or turn into icon widgets :eyes_open:
+    # handle backspace icon click
+    if rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
+      self._keyboard.backspace()
+    elif rl.check_collision_point_rec(mouse_pos, self._top_left_button_rect) and self._enter_img_alpha.x > 254:
+      # handle enter icon click
+      self._confirm_callback()
 
 
 class BigDialogOptionButton(Widget):
