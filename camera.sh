@@ -3,8 +3,6 @@ pkill -9 -f 'camerad'
 pkill -9 -f 'bridge'
 pkill -9 -f 'encoderd'
 
-sleep 1
-
 cd /data/openpilot/cereal/messaging/
 ./bridge &
 

@@ -11,8 +11,6 @@ while true; do
 
   adb shell 'su - comma -c "source /etc/profile && tmux kill-server"'
 
-  sleep 1
-
   while :; do ip=$(adb shell "ifconfig wlan0" 2>/dev/null | awk '/inet / {print $2}' | sed 's/addr://'); [ -n "$ip" ] && { echo "$ip"; break; }; sleep 1 && echo 'waiting for wifi...'; done
   /home/batman/openpilot/tools/camerastream/compressed_vipc.py "$ip" &
 
