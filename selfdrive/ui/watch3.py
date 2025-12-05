@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 
 SERVERS = ["focusing_1", "focusing_2", "focusing_3"]
-ROW_COLORS = [rl.GREEN, rl.ORANGE, rl.BLUE]
+ROW_COLORS = [rl.ORANGE, rl.BLUE, rl.GREEN]
 MAX_SAME = 60
 
 def render_na(rect: rl.Rectangle, font_size: int = 32):

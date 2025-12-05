@@ -13,9 +13,9 @@ on_device() {
   adb -s "$serial" shell 'su - comma -c "source /etc/profile && tmux kill-server"'
 
   case "$serial" in
-    94990d4b) n=1 ;;
-    e3c845e)  n=2 ;;
-    xxxxxxx)  n=3 ;;
+    cdea8611) n=1 ;;
+    e3a64917)  n=2 ;;
+    63c61c84)  n=3 ;;
     *)        n=0 ;;
   esac
 
