@@ -116,7 +116,7 @@ class CompressedVipc:
     while min(sm.recv_frame.values()) == 0:
       if (time.monotonic() - st) > 5:
         print('restarting compressed_vipc...')
-        os.system('/home/batman/openpilot/tools/camerastream/compressed_vipc.py 127.0.0.1')
+        os.system(f'PORT_OFFSET={os.environ['PORT_OFFSET']} /home/batman/openpilot/tools/camerastream/compressed_vipc.py 127.0.0.1 --server={server_name}')
       sm.update(100)
     os.environ.pop("ZMQ")
     messaging.reset_context()
