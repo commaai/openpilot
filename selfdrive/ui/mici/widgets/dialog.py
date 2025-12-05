@@ -40,11 +40,6 @@ class BigDialogBase(NavWidget, abc.ABC):
       # move to right side
       self._right_btn._rect.x = self._rect.x + self._rect.width - self._right_btn._rect.width
 
-  def hide_event(self):
-    # Free reference to self to allow refcount to go to zero
-    super().hide_event()
-    self.set_back_callback(None)
-
   def _render(self, _) -> DialogResult:
     """
     Allows `gui_app.set_modal_overlay(BigDialog(...))`.
@@ -167,11 +162,6 @@ class BigInputDialog(BigDialogBase):
       if confirm_callback:
         confirm_callback(self._keyboard.text())
     self._confirm_callback = confirm_callback_wrapper
-
-  def hide_event(self):
-    # Free reference to self to allow refcount to go to zero
-    super().hide_event()
-    self._confirm_callback = None
 
   def _update_state(self):
     super()._update_state()

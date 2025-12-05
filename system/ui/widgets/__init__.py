@@ -252,7 +252,7 @@ class NavWidget(Widget, abc.ABC):
   def set_back_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     self._back_enabled = enabled
 
-  def set_back_callback(self, callback: Callable[[], None] | None) -> None:
+  def set_back_callback(self, callback: Callable[[], None]) -> None:
     self._back_callback = callback
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
