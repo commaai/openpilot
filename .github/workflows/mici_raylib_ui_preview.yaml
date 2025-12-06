@@ -138,6 +138,9 @@ jobs:
           git commit -m "mici raylib video for PR #${{ github.event.number }}"
           git push origin ${{ env.BRANCH_NAME }} --force
 
+          # cp agian
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/diff.html ${{ github.workspace }}/pr_ui/
+
           # Push just diff.html, don't overwrite other reports
           git fetch origin ${{ env.REPORT_FILES_BRANCH_NAME }}
           git checkout ${{ env.REPORT_FILES_BRANCH_NAME }}
