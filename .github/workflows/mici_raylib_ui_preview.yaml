@@ -106,7 +106,8 @@ jobs:
 
           echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
 
-          cp -r ${{ github.workspace }}/selfdrive/ui/tests/diff/report/* ${{ github.workspace }}/pr_ui/ 2>/dev/null || true
+          ls -lah ${{ github.workspace }}/selfdrive/ui/tests/diff/report/
+          cp -r ${{ github.workspace }}/selfdrive/ui/tests/diff/report/* ${{ github.workspace }}/pr_ui/
 
       - name: Saving proposed ui
         if: github.event_name == 'pull_request'
