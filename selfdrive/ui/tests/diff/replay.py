@@ -48,7 +48,7 @@ def inject_click(x, y):
 
 def run_replay():
   setup_state()
-  os.makedirs(os.path.dirname(os.environ['RECORD_OUTPUT']), exist_ok=True)
+  os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
   if not HEADLESS:
     rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)

@@ -162,6 +162,8 @@ def main():
 
   args = parser.parse_args()
 
+  os.makedirs(DIFF_OUT_DIR, exist_ok=True)
+
   print("=" * 60)
   print("VIDEO DIFF - HTML REPORT")
   print("=" * 60)

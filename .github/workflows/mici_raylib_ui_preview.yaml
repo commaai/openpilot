@@ -96,7 +96,7 @@ jobs:
           master_video="${{ github.workspace }}/master_ui_raylib/mici_ui_replay.mp4"
 
           if [ ! -f "$master_video" ]; then
-            master_video=pr_video
+            master_video="$pr_video"
           fi
 
           #            DIFF="<p>✅ New video: <a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/mici_ui_replay.mp4\">View Video</a></p>"
