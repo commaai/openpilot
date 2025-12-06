@@ -95,6 +95,9 @@ jobs:
           pr_video="${{ github.workspace }}/pr_ui/mici_ui_replay.mp4"
           master_video="${{ github.workspace }}/master_ui_raylib/mici_ui_replay.mp4"
 
+          ls -lah ${{ github.workspace }}/pr_ui
+          ls -lah ${{ github.workspace }}/master_ui_raylib
+
           if [ ! -f "$master_video" ]; then
             master_video="$pr_video"
           fi
