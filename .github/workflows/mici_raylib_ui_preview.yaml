@@ -1,4 +1,4 @@
-name: "raylib ui preview"
+name: "mici raylib ui preview"
 on:
   push:
     branches:
