@@ -287,7 +287,7 @@ class NetworkInfoPage(NavWidget):
       self._rect.x + self._wifi_icon.rect.width + 32 + 32,
       self._rect.y + 32 - 16,
       self._rect.width - (self._wifi_icon.rect.width + 32 + 32),
-      64,
+      self._title.get_content_height(48),
     ))
 
     self._subtitle.render(rl.Rectangle(
