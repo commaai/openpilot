@@ -713,9 +713,8 @@ class UnifiedLabel(Widget):
 
     # Only scissor when we know there is a single scrolling line
     # Pad a little since descenders like g or j may overflow below rect
-    rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
     if self._needs_scroll:
-      rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
+      rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y - self._font_size / 2), int(self._rect.width), int(self._rect.height + self._font_size))
 
     # Render each line
     current_y = start_y
