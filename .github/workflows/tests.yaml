@@ -290,4 +290,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mici-raylib-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
-          path: selfdrive/ui/tests/test_ui/raylib_report/screenshotsnputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
+          path: selfdrive/ui/tests/diff/report

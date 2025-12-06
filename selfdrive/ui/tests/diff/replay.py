@@ -3,10 +3,13 @@ import os
 import time
 import coverage
 import pyray as rl
+from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
 
 os.environ["RECORD"] = "1"
 if "RECORD_OUTPUT" not in os.environ:
   os.environ["RECORD_OUTPUT"] = "mici_ui_replay.mp4"
+
+os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ["RECORD_OUTPUT"])
 
 from openpilot.common.params import Params
 from openpilot.system.version import terms_version, training_version
@@ -45,6 +48,7 @@ def inject_click(x, y):
 
 def run_replay():
   setup_state()
+  os.makedirs(os.path.dirname(os.environ['RECORD_OUTPUT']), exist_ok=True)
 
   if not HEADLESS:
     rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)

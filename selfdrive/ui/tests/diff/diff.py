@@ -7,6 +7,9 @@ import base64
 import webbrowser
 import argparse
 from pathlib import Path
+from openpilot.common.basedir import BASEDIR
+
+DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
 
 
 def extract_frames(video_path, output_dir):
@@ -168,7 +171,7 @@ def main():
   print()
 
   # Create diff video
-  diff_video_path = os.path.join(os.path.dirname(args.output), "diff.mp4")
+  diff_video_path = os.path.join(os.path.dirname(args.output), DIFF_OUT_DIR / "diff.mp4")
   create_diff_video(args.video1, args.video2, diff_video_path)
 
   different_frames, frame_data, total_frames = find_differences(args.video1, args.video2)
@@ -180,13 +183,13 @@ def main():
   print("Generating HTML report...")
   html = generate_html_report(args.video1, args.video2, different_frames, frame_data, total_frames)
 
-  with open(args.output, 'w') as f:
+  with open(DIFF_OUT_DIR / args.output, 'w') as f:
     f.write(html)
 
   # Open in browser by default
   if not args.no_open:
     print(f"Opening {args.output} in browser...")
-    webbrowser.open(f'file://{os.path.abspath(args.output)}')
+    webbrowser.open(f'file://{os.path.abspath(DIFF_OUT_DIR / args.output)}')
 
 
 if __name__ == "__main__":
