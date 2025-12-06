@@ -84,70 +84,20 @@ jobs:
         if: github.event_name == 'pull_request_target'
         id: find_diff
         run: >-
-          sudo apt-get update && sudo apt-get install -y imagemagick
+          # sudo apt-get update && sudo apt-get install -y imagemagick
 
-          scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1 | grep -v 'pair_device')
-          A=($scenes)
+          # Find the video file from PR
+          pr_video="${{ github.workspace }}/pr_ui/mici_ui_replay.mp4"
+          master_video="${{ github.workspace }}/master_ui_raylib/mici_ui_replay.mp4"
 
-          DIFF=""
-          TABLE="<details><summary>All Screenshots</summary>"
-          TABLE="${TABLE}<table>"
+          if [ ! -f "$master_video" ]; then
+            DIFF="<p>✅ New video: <a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/mici_ui_replay.mp4\">View Video</a></p>"
+          else
+            python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "$master_video" "$pr_video" "diff.html" --no-open || true
+            DIFF="<p><a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/diff.html\">View HTML Diff Report</a></p>"
+          fi
 
-          for ((i=0; i<${#A[*]}; i=i+1));
-          do
-            # Check if the master file exists
-            if [ ! -f "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png" ]; then
-              # This is a new file in PR UI that doesn't exist in master
-              DIFF="${DIFF}<details open>"
-              DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{cyan}\\text{NEW}}\$\$</summary>"
-              DIFF="${DIFF}<table>"
-
-              DIFF="${DIFF}<tr>"
-              DIFF="${DIFF}  <td> <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
-              DIFF="${DIFF}</tr>"
-
-              DIFF="${DIFF}</table>"
-              DIFF="${DIFF}</details>"
-            elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
-              convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
-              composite mask.png ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png
-              convert -delay 100 ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
-
-              mv ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_master_ref.png
-
-              DIFF="${DIFF}<details open>"
-              DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{red}\\text{DIFFERENT}}\$\$</summary>"
-              DIFF="${DIFF}<table>"
-
-              DIFF="${DIFF}<tr>"
-              DIFF="${DIFF}  <td> master <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_master_ref.png\"> </td>"
-              DIFF="${DIFF}  <td> proposed <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
-              DIFF="${DIFF}</tr>"
-
-              DIFF="${DIFF}<tr>"
-              DIFF="${DIFF}  <td> diff <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_diff.png\"> </td>"
-              DIFF="${DIFF}  <td> composite diff <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_diff.gif\"> </td>"
-              DIFF="${DIFF}</tr>"
-
-              DIFF="${DIFF}</table>"
-              DIFF="${DIFF}</details>"
-            else
-              rm -f ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png
-            fi
-
-            INDEX=$(($i % 2))
-            if [[ $INDEX -eq 0 ]]; then
-              TABLE="${TABLE}<tr>"
-            fi
-            TABLE="${TABLE}  <td> <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
-            if [[ $INDEX -eq 1 || $(($i + 1)) -eq ${#A[*]} ]]; then
-              TABLE="${TABLE}</tr>"
-            fi
-          done
-
-          TABLE="${TABLE}</table></details>"
-
-          echo "DIFF=$DIFF$TABLE" >> "$GITHUB_OUTPUT"
+          echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
 
       - name: Saving proposed ui
         if: github.event_name == 'pull_request_target'
