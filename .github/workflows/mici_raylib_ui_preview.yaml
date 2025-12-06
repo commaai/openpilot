@@ -139,7 +139,7 @@ jobs:
           git push origin ${{ env.BRANCH_NAME }} --force
 
           # Push just diff.html, don't overwrite other reports
-          git fetch ${{ env.REPORT_FILES_BRANCH_NAME }}
+          git fetch origin ${{ env.REPORT_FILES_BRANCH_NAME }}
           git checkout ${{ env.REPORT_FILES_BRANCH_NAME }}
           cp ${{ github.workspace }}/pr_ui/diff.html diff_pr_${{ github.event.number }}.html
           git add diff_pr_${{ github.event.number }}.html
