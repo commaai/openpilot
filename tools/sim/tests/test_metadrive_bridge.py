@@ -12,7 +12,8 @@ from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 class TestMetaDriveBridge(TestSimBridgeBase):
   @pytest.fixture(autouse=True)
   def setup_create_bridge(self, test_duration):
-    self.test_duration = 30
+    # match pytest option (default 60s) so wall-clock runtime equals simulated drive time
+    self.test_duration = test_duration
 
   def create_bridge(self):
     return MetaDriveBridge(False, False, self.test_duration, True)
