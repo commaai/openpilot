@@ -284,7 +284,7 @@ jobs:
       - name: Create mici raylib UI Report
         run: >
           ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
-                          python3 selfdrive/ui/tests/diff/replay.py"
+                          WINDOWED=1 python3 selfdrive/ui/tests/diff/replay.py"
       - name: Upload Raylib UI Report
         uses: actions/upload-artifact@v4
         with:
