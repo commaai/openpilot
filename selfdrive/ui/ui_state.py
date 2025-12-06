@@ -10,6 +10,7 @@ from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.callback_manager import CallbackManager
 from openpilot.system.hardware import HARDWARE, PC
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
@@ -82,16 +83,16 @@ class UIState:
     self._param_update_time: float = 0.0
 
     # Callbacks
-    self._offroad_transition_callbacks: list[Callable[[], None]] = []
-    self._engaged_transition_callbacks: list[Callable[[], None]] = []
+    self._offroad_transition_callbacks = CallbackManager()
+    self._engaged_transition_callbacks = CallbackManager()
 
     self.update_params()
 
   def add_offroad_transition_callback(self, callback: Callable[[], None]):
-    self._offroad_transition_callbacks.append(callback)
+    self._offroad_transition_callbacks.add(callback)
 
   def add_engaged_transition_callback(self, callback: Callable[[], None]):
-    self._engaged_transition_callbacks.append(callback)
+    self._engaged_transition_callbacks.add(callback)
 
   @property
   def engaged(self) -> bool:
@@ -154,8 +155,7 @@ class UIState:
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:
-      for callback in self._engaged_transition_callbacks:
-        callback()
+      self._offroad_transition_callbacks()
       self._engaged_prev = self.engaged
 
     # Handle onroad/offroad transition
@@ -165,8 +165,7 @@ class UIState:
         self.started_frame = self.sm.frame
         self.started_time = time.monotonic()
 
-      for callback in self._offroad_transition_callbacks:
-        callback()
+      self._offroad_transition_callbacks()
 
       self._started_prev = self.started
 
@@ -187,7 +186,7 @@ class Device:
   def __init__(self):
     self._ignition = False
     self._interaction_time: float = -1
-    self._interactive_timeout_callbacks: list[Callable] = []
+    self._interactive_timeout_callbacks = CallbackManager()
     self._prev_timed_out = False
     self._awake: bool = True
 
@@ -207,7 +206,7 @@ class Device:
     self._interaction_time = time.monotonic() + timeout
 
   def add_interactive_timeout_callback(self, callback: Callable):
-    self._interactive_timeout_callbacks.append(callback)
+    self._interactive_timeout_callbacks.add(callback)
 
   def update(self):
     # do initial reset
@@ -256,8 +255,7 @@ class Device:
 
     interaction_timeout = time.monotonic() > self._interaction_time
     if interaction_timeout and not self._prev_timed_out:
-      for callback in self._interactive_timeout_callbacks:
-        callback()
+      self._interactive_timeout_callbacks()
     self._prev_timed_out = interaction_timeout
 
     self._set_awake(ui_state.ignition or not interaction_timeout or PC)
