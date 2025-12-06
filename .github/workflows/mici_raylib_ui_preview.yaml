@@ -87,9 +87,11 @@ jobs:
         # TODO: change back to pull_request_target
         if: github.event_name == 'pull_request'
         id: find_diff
-        run: >-
+        run: |
+          # TODO: needed?
           sudo apt-get update && sudo apt-get install -y ffmpeg
 
+          # Find the video file from PR
           pr_video="${{ github.workspace }}/pr_ui/mici_ui_replay.mp4"
           master_video="${{ github.workspace }}/master_ui_raylib/mici_ui_replay.mp4"
 
@@ -97,8 +99,11 @@ jobs:
             master_video=pr_video
           fi
 
+          #            DIFF="<p>✅ New video: <a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/mici_ui_replay.mp4\">View Video</a></p>"
+          #          else
           python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "$master_video" "$pr_video" "diff.html" --no-open || true
           DIFF="<p><a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/diff.html\">View HTML Diff Report</a></p>"
+          #          fi
 
           echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
 
