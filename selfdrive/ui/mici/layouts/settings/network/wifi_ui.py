@@ -253,7 +253,7 @@ class NetworkInfoPage(NavWidget):
       self._connect_btn.set_label("connect")
       self._connect_btn.set_enabled(True)
 
-    self._title.set_text(normalize_ssid(self._network.ssid))
+    self._title.set_text('freaking jest123')
     if self._network.security_type == SecurityType.OPEN:
       self._subtitle.set_text("open")
     elif self._network.security_type == SecurityType.UNSUPPORTED:
