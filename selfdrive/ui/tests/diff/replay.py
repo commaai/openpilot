@@ -14,7 +14,6 @@ from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 
-
 FPS = 60
 HEADLESS = os.getenv("WINDOWED", "0") == "1"
 
@@ -88,6 +87,7 @@ def main():
   cov.report()
   cov.html_report(directory='htmlcov')
   print("HTML report: htmlcov/index.html")
+
 
 if __name__ == "__main__":
   main()
