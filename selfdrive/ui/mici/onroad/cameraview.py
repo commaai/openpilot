@@ -1,7 +1,7 @@
 import platform
 import numpy as np
 import pyray as rl
-
+from dataclasses import dataclass
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import TICI
@@ -103,27 +103,26 @@ else:
     }
     """
 
+@dataclass
+class Frame:
+  frame: VisionBuf
+  _client: VisionIpcClient  # reference to keep buffers valid
+
 
 class BaseCameraView(Widget):
   def __init__(self, name: str, stream_type: VisionStreamType, fragment_shader: str):
     super().__init__()
     self._name = name
-    # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)
     self._stream_type = stream_type
     self.available_streams: list[VisionStreamType] = []
-
-    # Target stream for switching
-    self._target_client: VisionIpcClient | None = None
-    self._target_stream_type: VisionStreamType | None = None
-    self._switching: bool = False
 
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, fragment_shader)
     self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
 
-    self.frame: VisionBuf | None = None
+    self.frame: Frame | None = None
     self.texture_y: rl.Texture | None = None
     self.texture_uv: rl.Texture | None = None
 
@@ -143,39 +142,22 @@ class BaseCameraView(Widget):
       self.egl_texture = rl.load_texture_from_image(temp_image)
       rl.unload_image(temp_image)
 
+    #TODO: move to AugmentedCameraView, CameraView should be generic, no dependency on ui_state
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _offroad_transition(self):
-    # Reconnect if not first time going onroad
-    if ui_state.is_onroad() and self.frame is not None:
-      # Prevent old frames from showing when going onroad. Qt has a separate thread
-      # which drains the VisionIpcClient SubSocket for us. Re-connecting is not enough
-      # and only clears internal buffers, not the message queue.
-      self.frame = None
-      self.available_streams.clear()
-      if self.client:
-        del self.client
-      self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
+    self.frame = None
+    self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
 
   def _set_placeholder_color(self, color: rl.Color):
     """Set a placeholder color to be drawn when no frame is available."""
     self._placeholder_color = color
 
   def switch_stream(self, stream_type: VisionStreamType) -> None:
-    if self._stream_type == stream_type:
-      return
-
-    if self._switching and self._target_stream_type == stream_type:
-      return
-
-    cloudlog.debug(f'Preparing switch from {self._stream_type} to {stream_type}')
-
-    if self._target_client:
-      del self._target_client
-
-    self._target_stream_type = stream_type
-    self._target_client = VisionIpcClient(self._name, stream_type, conflate=True)
-    self._switching = True
+    if self._stream_type != stream_type:
+      cloudlog.debug(f'Switching from {self._stream_type} to {stream_type}')
+      self._stream_type = stream_type
+      self.client = VisionIpcClient(self._name, stream_type, conflate=True)
 
   @property
   def stream_type(self) -> VisionStreamType:
@@ -184,12 +166,10 @@ class BaseCameraView(Widget):
   def close(self) -> None:
     self._clear_textures()
 
-    # Clean up EGL texture
     if TICI and self.egl_texture:
       rl.unload_texture(self.egl_texture)
       self.egl_texture = None
 
-    # Clean up shader
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
       self.shader.id = 0
@@ -207,7 +187,7 @@ class BaseCameraView(Widget):
 
     # Calculate aspect ratios
     widget_aspect_ratio = rect.width / rect.height
-    frame_aspect_ratio = self.frame.width / self.frame.height
+    frame_aspect_ratio = self.frame.frame.width / self.frame.frame.height
 
     # Calculate scaling factors to maintain aspect ratio
     zx = min(frame_aspect_ratio / widget_aspect_ratio, 1.0)
@@ -220,28 +200,17 @@ class BaseCameraView(Widget):
     ])
 
   def _render(self, rect: rl.Rectangle):
-    if self._switching:
-      self._handle_switch()
-
-    if not self._ensure_connection():
-      self._draw_placeholder(rect)
-      return
-
-    # Try to get a new buffer without blocking
-    buffer = self.client.recv(timeout_ms=0)
-    if buffer:
-      self._texture_needs_update = True
-      self.frame = buffer
-    elif not self.client.is_connected():
-      # ensure we clear the displayed frame when the connection is lost
-      self.frame = None
+    if self._ensure_connection():
+      if buffer := self.client.recv(timeout_ms=0):
+        self._texture_needs_update = True
+        self.frame = Frame(buffer, self.client)
 
     if not self.frame:
       self._draw_placeholder(rect)
       return
 
     transform = self._calc_frame_matrix(rect)
-    src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
+    src_rect = rl.Rectangle(0, 0, float(self.frame.frame.width), float(self.frame.frame.height))
     # Flip driver camera horizontally
     if self._stream_type == VisionStreamType.VISION_STREAM_DRIVER:
       src_rect.width = -src_rect.width
@@ -271,23 +240,20 @@ class BaseCameraView(Widget):
 
   def _render_egl(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
     """Render using EGL for direct buffer access"""
-    if self.frame is None or self.egl_texture is None:
-      return
-
-    idx = self.frame.idx
-    egl_image = self.egl_images.get(idx)
+    assert self.frame and self.egl_texture
+    frame = self.frame.frame
 
     # Create EGL image if needed
+    egl_image = self.egl_images.get(frame.idx)
     if egl_image is None:
-      egl_image = create_egl_image(self.frame.width, self.frame.height, self.frame.stride, self.frame.fd, self.frame.uv_offset)
-      if egl_image:
-        self.egl_images[idx] = egl_image
-      else:
+      egl_image = create_egl_image(frame.width, frame.height, frame.stride, frame.fd, frame.uv_offset)
+      if not egl_image:
         return
+      self.egl_images[frame.idx] = egl_image
 
     # Update texture dimensions to match current frame
-    self.egl_texture.width = self.frame.width
-    self.egl_texture.height = self.frame.height
+    self.egl_texture.width = frame.width
+    self.egl_texture.height = frame.height
 
     # Bind the EGL image to our texture
     bind_egl_image_to_texture(self.egl_texture.id, egl_image)
@@ -300,16 +266,13 @@ class BaseCameraView(Widget):
 
   def _render_textures(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
     """Render using texture copies"""
-    if not self.texture_y or not self.texture_uv or self.frame is None:
-      return
+    assert self.frame and self.texture_y and self.texture_uv
 
     # Update textures with new frame data
     if self._texture_needs_update:
-      y_data = self.frame.data[: self.frame.uv_offset]
-      uv_data = self.frame.data[self.frame.uv_offset:]
-
-      rl.update_texture(self.texture_y, rl.ffi.cast("void *", y_data.ctypes.data))
-      rl.update_texture(self.texture_uv, rl.ffi.cast("void *", uv_data.ctypes.data))
+      frame = self.frame.frame
+      rl.update_texture(self.texture_y, rl.ffi.cast("void *", frame.data[: frame.uv_offset].ctypes.data))
+      rl.update_texture(self.texture_uv, rl.ffi.cast("void *", frame.data[frame.uv_offset:].ctypes.data))
       self._texture_needs_update = False
 
     # Render with shader
@@ -324,14 +287,15 @@ class BaseCameraView(Widget):
 
   def _ensure_connection(self) -> bool:
     if not self.client.is_connected():
-      self.frame = None
-      self.available_streams.clear()
-
       # Throttle connection attempts
       current_time = rl.get_time()
       if current_time - self.last_connection_attempt < CONNECTION_RETRY_INTERVAL:
         return False
       self.last_connection_attempt = current_time
+
+      # Only clear frame if it uses the current client to avoid invalid buffer access
+      if self.frame and self.client is self.frame._client:
+        self.frame = None
 
       if not self.client.connect(False) or not self.client.num_buffers:
         return False
@@ -341,44 +305,6 @@ class BaseCameraView(Widget):
       self.available_streams = self.client.available_streams(self._name, block=False)
 
     return True
-
-  def _handle_switch(self) -> None:
-    """Check if target stream is ready and switch immediately."""
-    if not self._target_client or not self._switching:
-      return
-
-    # Try to connect target if needed
-    if not self._target_client.is_connected():
-      if not self._target_client.connect(False) or not self._target_client.num_buffers:
-        return
-
-      cloudlog.debug(f"Target stream connected: {self._target_stream_type}")
-
-    # Check if target has frames ready
-    target_frame = self._target_client.recv(timeout_ms=0)
-    if target_frame:
-      self.frame = target_frame  # Update current frame to target frame
-      self._complete_switch()
-
-  def _complete_switch(self) -> None:
-    """Instantly switch to target stream."""
-    cloudlog.debug(f"Switching to {self._target_stream_type}")
-    # Clean up current resources
-    if self.client:
-      del self.client
-
-    # Switch to target
-    self.client = self._target_client
-    self._stream_type = self._target_stream_type
-    self._texture_needs_update = True
-
-    # Reset state
-    self._target_client = None
-    self._target_stream_type = None
-    self._switching = False
-
-    # Initialize textures for new stream
-    self._initialize_textures()
 
   def _initialize_textures(self):
       self._clear_textures()
@@ -397,7 +323,6 @@ class BaseCameraView(Widget):
       rl.unload_texture(self.texture_uv)
       self.texture_uv = None
 
-    # Clean up EGL resources
     if TICI:
       for data in self.egl_images.values():
         destroy_egl_image(data)
