@@ -85,13 +85,16 @@ jobs:
           git commit -m "mici raylib video for commit ${{ env.SHA }}"
           git push origin openpilot_master_ui_mici_raylib --force
 
+      - name: Setup FFmpeg
+        uses: AnimMouse/setup-ffmpeg@v1
+
       - name: Finding diff
         # TODO: change back to pull_request_target
         if: github.event_name == 'pull_request'
         id: find_diff
         run: |
           # TODO: needed?
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+          # sudo apt-get update && sudo apt-get install -y ffmpeg
 
           # Find the video file from PR
           pr_video="${{ github.workspace }}/pr_ui/mici_ui_replay.mp4"
@@ -136,6 +139,7 @@ jobs:
           git push origin ${{ env.BRANCH_NAME }} --force
 
           # Push just diff.html, don't overwrite other reports
+          git fetch ${{ env.REPORT_FILES_BRANCH_NAME }}
           git checkout ${{ env.REPORT_FILES_BRANCH_NAME }}
           cp ${{ github.workspace }}/pr_ui/diff.html diff_pr_${{ github.event.number }}.html
           git add diff_pr_${{ github.event.number }}.html
