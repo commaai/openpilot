@@ -117,9 +117,9 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            <!-- _(run_id_video_raylib **${{ github.run_id }}**)_ -->
+            <!-- _(run_id_video_mici_raylib **${{ github.run_id }}**)_ -->
             ## mici raylib UI Preview
             ${{ steps.find_diff.outputs.DIFF }}
-          comment_tag: run_id_video_raylib
+          comment_tag: run_id_video_mici_raylib
           pr_number: ${{ github.event.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
