@@ -63,22 +63,22 @@ jobs:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
           path: ${{ github.workspace }}/master_ui_raylib
-          ref: openpilot_master_ui_raylib
+          ref: openpilot_master_ui_mici_raylib
 
       - name: Saving new master ui
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         working-directory: ${{ github.workspace }}/master_ui_raylib
         run: |
-          git checkout --orphan=new_master_ui_raylib
+          git checkout --orphan=new_master_ui_mici_raylib
           git rm -rf *
-          git branch -D openpilot_master_ui_raylib
-          git branch -m openpilot_master_ui_raylib
+          git branch -D openpilot_master_ui_mici_raylib
+          git branch -m openpilot_master_ui_mici_raylib
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
           mv ${{ github.workspace }}/pr_ui/* .
           git add .
           git commit -m "mici raylib video for commit ${{ env.SHA }}"
-          git push origin openpilot_master_ui_raylib --force
+          git push origin openpilot_master_ui_mici_raylib --force
 
       - name: Finding diff
         if: github.event_name == 'pull_request_target'
