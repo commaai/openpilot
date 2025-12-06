@@ -95,13 +95,18 @@ jobs:
           master_video="${{ github.workspace }}/master_ui_raylib/mici_ui_replay.mp4"
 
           if [ ! -f "$master_video" ]; then
-            DIFF="<p>✅ New video: <a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/mici_ui_replay.mp4\">View Video</a></p>"
-          else
-            python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "$master_video" "$pr_video" "diff.html" --no-open || true
-            DIFF="<p><a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/diff.html\">View HTML Diff Report</a></p>"
+            master_video=pr_video
           fi
 
+          #            DIFF="<p>✅ New video: <a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/mici_ui_replay.mp4\">View Video</a></p>"
+          #          else
+          python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "$master_video" "$pr_video" "diff.html" --no-open || true
+          DIFF="<p><a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/diff.html\">View HTML Diff Report</a></p>"
+          #          fi
+
           echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
+
+          cp -r ${{ github.workspace }}/selfdrive/ui/tests/diff/report/* ${{ github.workspace }}/pr_ui/ 2>/dev/null || true
 
       - name: Saving proposed ui
         if: github.event_name == 'pull_request'
