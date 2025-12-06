@@ -4,6 +4,7 @@ from enum import IntEnum
 from collections.abc import Callable
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS, MouseEvent
+from openpilot.system.ui.lib.callback_manager import SingleCallback
 
 try:
   from openpilot.selfdrive.ui.ui_state import device
@@ -230,7 +231,7 @@ class NavWidget(Widget, abc.ABC):
 
   def __init__(self):
     super().__init__()
-    self._back_callback: Callable[[], None] | None = None
+    self._back_callback: SingleCallback | None = None
     self._back_button_start_pos: MousePos | None = None
     self._swiping_away = False  # currently swiping away
     self._can_swipe_away = True  # swipe away is blocked after certain horizontal movement
@@ -253,7 +254,7 @@ class NavWidget(Widget, abc.ABC):
     self._back_enabled = enabled
 
   def set_back_callback(self, callback: Callable[[], None]) -> None:
-    self._back_callback = callback
+    self._back_callback = SingleCallback(callback)
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     super()._handle_mouse_event(mouse_event)

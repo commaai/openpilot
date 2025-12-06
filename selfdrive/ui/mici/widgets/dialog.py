@@ -8,6 +8,7 @@ from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
+from openpilot.system.ui.lib.callback_manager import SingleCallback
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
@@ -15,6 +16,7 @@ from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+
 
 DEBUG = False
 
@@ -26,7 +28,7 @@ class BigDialogBase(NavWidget, abc.ABC):
     super().__init__()
     self._ret = DialogResult.NO_ACTION
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
+    self.set_back_callback(self._on_back_pressed)
 
     self._right_btn = None
     if right_btn:
@@ -39,6 +41,9 @@ class BigDialogBase(NavWidget, abc.ABC):
       self._right_btn.set_click_callback(right_btn_callback_wrapper)
       # move to right side
       self._right_btn._rect.x = self._rect.x + self._rect.width - self._right_btn._rect.width
+
+  def _on_back_pressed(self):
+    self._ret = DialogResult.CANCEL
 
   def _render(self, _) -> DialogResult:
     """
@@ -102,7 +107,7 @@ class BigConfirmationDialogV2(BigDialogBase):
                exit_on_confirm: bool = True,
                confirm_callback: Callable | None = None):
     super().__init__()
-    self._confirm_callback = confirm_callback
+    self._confirm_callback = SingleCallback(confirm_callback)
     self._exit_on_confirm = exit_on_confirm
 
     icon_txt = gui_app.texture(icon, 64, 53)
