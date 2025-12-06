@@ -33,7 +33,6 @@ class DriverCameraDialog(NavWidget):
     self.driver_state_renderer.load_icons()
     self._pm: messaging.PubMaster | None = None
     if not no_escape:
-      # TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(self.close_dialog)
     self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
     self.set_back_enabled(not no_escape)
