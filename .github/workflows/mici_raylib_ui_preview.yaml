@@ -89,7 +89,7 @@ jobs:
         id: find_diff
         run: |
           # TODO: needed?
-          # sudo apt-get update && sudo apt-get install -y ffmpeg
+          sudo apt-get update && sudo apt-get install -y ffmpeg
 
           # Find the video file from PR
           pr_video="${{ github.workspace }}/pr_ui/mici_ui_replay.mp4"
