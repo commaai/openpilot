@@ -20,6 +20,12 @@ struct MessageId {
     return QString("%1:%2").arg(source).arg(QString::number(address, 16).toUpper());
   }
 
+  inline static MessageId fromString(const QString &str) {
+    auto parts = str.split(':');
+    if (parts.size() != 2) return {};
+    return MessageId{.source = uint8_t(parts[0].toUInt()), .address = parts[1].toUInt(nullptr, 16)};
+  }
+
   bool operator==(const MessageId &other) const {
     return source == other.source && address == other.address;
   }

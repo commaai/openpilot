@@ -275,16 +275,13 @@ void BinaryViewModel::refresh() {
     row_count = can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
   }
-  int valid_rows = std::min<int>(can->lastMessage(msg_id).dat.size(), row_count);
-  for (int i = 0; i < valid_rows * column_count; ++i) {
-    items[i].valid = true;
-  }
   endResetModel();
   updateState();
 }
 
 void BinaryViewModel::updateItem(int row, int col, uint8_t val, const QColor &color) {
   auto &item = items[row * column_count + col];
+  item.valid = true;
   if (item.val != val || item.bg_color != color) {
     item.val = val;
     item.bg_color = color;

@@ -34,9 +34,12 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const MessageId &message_id);
   void refresh();
+  std::pair<QString, QStringList> serializeMessageIds() const;
+  void restoreTabs(const QString active_msg_id, const QStringList &msg_ids);
 
 private:
   void createToolBar();
+  int findOrAddTab(const MessageId& message_id);
   void showTabBarContextMenu(const QPoint &pt);
   void editMsg();
   void removeMsg();
@@ -60,7 +63,9 @@ class CenterWidget : public QWidget {
   Q_OBJECT
 public:
   CenterWidget(QWidget *parent);
-  void setMessage(const MessageId &msg_id);
+  void setMessage(const MessageId &message_id) { ensureDetailWidget()->setMessage(message_id); }
+  DetailWidget* getDetailWidget() { return detail_widget; }
+  DetailWidget* ensureDetailWidget();
   void clear();
 
 private:

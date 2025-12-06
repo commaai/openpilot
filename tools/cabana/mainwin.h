@@ -72,6 +72,8 @@ protected:
   void updateLoadSaveMenus();
   void createDockWidgets();
   void eventsMerged();
+  void saveSessionState();
+  void restoreSessionState();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;

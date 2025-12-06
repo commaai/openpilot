@@ -46,6 +46,12 @@ public:
   QByteArray message_header_state;
   DragDirection drag_direction = MsbFirst;
 
+  // session data
+  QString recent_dbc_file;
+  QString active_msg_id;
+  QStringList selected_msg_ids;
+  QStringList active_charts;
+
 signals:
   void changed();
 };
