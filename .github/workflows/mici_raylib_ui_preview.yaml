@@ -69,7 +69,7 @@ jobs:
           ref: openpilot_master_ui_mici_raylib
 
       - name: Saving new master ui
-        #if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         working-directory: ${{ github.workspace }}/master_ui_raylib
         run: |
           git checkout --orphan=new_master_ui_mici_raylib
@@ -89,7 +89,7 @@ jobs:
         id: find_diff
         run: |
           # TODO: needed?
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+          # sudo apt-get update && sudo apt-get install -y ffmpeg
 
           # Find the video file from PR
           pr_video="${{ github.workspace }}/pr_ui/mici_ui_replay.mp4"
