@@ -106,13 +106,78 @@ jobs:
           #          else
           export PYTHONPATH=${{ github.workspace }}
           python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "$master_video" "$pr_video" "diff.html" --no-open || true
-          DIFF="<p><a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/diff.html\">View HTML Diff Report</a></p>"
+
+          # Copy videos with renamed filenames to prevent overwriting in future PRs
+          cp "$master_video" "${{ github.workspace }}/pr_ui/mici_ui_replay_master.mp4"
+          cp "$pr_video" "${{ github.workspace }}/pr_ui/mici_ui_replay_proposed.mp4"
+
+          # Copy diff report files
+          ls -lah ${{ github.workspace }}/selfdrive/ui/tests/diff/report/
+          # TODO: includes duplicate proposed file?
+          # cp -r ${{ github.workspace }}/selfdrive/ui/tests/diff/report/* ${{ github.workspace }}/pr_ui/
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/diff.html ${{ github.workspace }}/pr_ui/
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/diff.mp4 ${{ github.workspace }}/pr_ui/
+
+          # Generate markdown matching diff.py HTML style
+          DIFF="<h2>UI Diff</h2>"
+          DIFF="${DIFF}<table>"
+          DIFF="${DIFF}<tr>"
+          DIFF="${DIFF}<td width='33%'>"
+          DIFF="${DIFF}  <p><strong>Master</strong></p>"
+          DIFF="${DIFF}  <video id='video1' width='100%' autoplay muted loop onplay='syncVideos()'>"
+          DIFF="${DIFF}    <source src='https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/mici_ui_replay_master.mp4' type='video/mp4'>"
+          DIFF="${DIFF}    Your browser does not support the video tag."
+          DIFF="${DIFF}  </video>"
+          DIFF="${DIFF}</td>"
+          DIFF="${DIFF}<td width='33%'>"
+          DIFF="${DIFF}  <p><strong>Proposed</strong></p>"
+          DIFF="${DIFF}  <video id='video2' width='100%' autoplay muted loop onplay='syncVideos()'>"
+          DIFF="${DIFF}    <source src='https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/mici_ui_replay_proposed.mp4' type='video/mp4'>"
+          DIFF="${DIFF}    Your browser does not support the video tag."
+          DIFF="${DIFF}  </video>"
+          DIFF="${DIFF}</td>"
+          DIFF="${DIFF}<td width='33%'>"
+          DIFF="${DIFF}  <p><strong>Pixel Diff</strong></p>"
+          DIFF="${DIFF}  <video id='diffVideo' width='100%' autoplay muted loop>"
+          DIFF="${DIFF}    <source src='https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/diff.mp4' type='video/mp4'>"
+          DIFF="${DIFF}    Your browser does not support the video tag."
+          DIFF="${DIFF}  </video>"
+          DIFF="${DIFF}</td>"
+          DIFF="${DIFF}</tr>"
+          DIFF="${DIFF}</table>"
+          DIFF="${DIFF}<script>"
+          DIFF="${DIFF}function syncVideos() {"
+          DIFF="${DIFF}  const video1 = document.getElementById('video1');"
+          DIFF="${DIFF}  const video2 = document.getElementById('video2');"
+          DIFF="${DIFF}  const diffVideo = document.getElementById('diffVideo');"
+          DIFF="${DIFF}  video1.currentTime = video2.currentTime = diffVideo.currentTime;"
+          DIFF="${DIFF}}"
+          DIFF="${DIFF}video1.addEventListener('timeupdate', () => {"
+          DIFF="${DIFF}  if (Math.abs(video1.currentTime - video2.currentTime) > 0.1) {"
+          DIFF="${DIFF}    video2.currentTime = video1.currentTime;"
+          DIFF="${DIFF}  }"
+          DIFF="${DIFF}  if (Math.abs(video1.currentTime - diffVideo.currentTime) > 0.1) {"
+          DIFF="${DIFF}    diffVideo.currentTime = video1.currentTime;"
+          DIFF="${DIFF}  }"
+          DIFF="${DIFF}});"
+          DIFF="${DIFF}video2.addEventListener('timeupdate', () => {"
+          DIFF="${DIFF}  if (Math.abs(video2.currentTime - video1.currentTime) > 0.1) {"
+          DIFF="${DIFF}    video1.currentTime = video2.currentTime;"
+          DIFF="${DIFF}  }"
+          DIFF="${DIFF}  if (Math.abs(video2.currentTime - diffVideo.currentTime) > 0.1) {"
+          DIFF="${DIFF}    diffVideo.currentTime = video2.currentTime;"
+          DIFF="${DIFF}  }"
+          DIFF="${DIFF}});"
+          DIFF="${DIFF}diffVideo.addEventListener('timeupdate', () => {"
+          DIFF="${DIFF}  if (Math.abs(diffVideo.currentTime - video1.currentTime) > 0.1) {"
+          DIFF="${DIFF}    video1.currentTime = diffVideo.currentTime;"
+          DIFF="${DIFF}    video2.currentTime = diffVideo.currentTime;"
+          DIFF="${DIFF}  }"
+          DIFF="${DIFF}});"
+          DIFF="${DIFF}</script>"
           #          fi
 
           echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
-
-          ls -lah ${{ github.workspace }}/selfdrive/ui/tests/diff/report/
-          cp -r ${{ github.workspace }}/selfdrive/ui/tests/diff/report/* ${{ github.workspace }}/pr_ui/
 
       - name: Saving proposed ui
         if: github.event_name == 'pull_request'
