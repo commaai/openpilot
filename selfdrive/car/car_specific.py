@@ -25,29 +25,33 @@ class MockCarState:
 
     return CS
 
+BRAND_EXTRA_GEARS = {
+  'ford': [GearShifter.low, GearShifter.manumatic],
+  'nissan': [GearShifter.brake],
+  'chrysler': [GearShifter.low],
+  'honda': [GearShifter.sport],
+  'toyota': [GearShifter.sport],
+  'gm': [GearShifter.sport, GearShifter.low, GearShifter.eco, GearShifter.manumatic],
+  'volkswagen': [GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
+  'hyundai': [GearShifter.sport, GearShifter.manumatic]
+}
 
 class CarSpecificEvents:
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
-
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
   def update(self, CS: car.CarState, CS_prev: car.CarState, CC: car.CarControl):
+    extra_gears = BRAND_EXTRA_GEARS.get(self.CP.brand, None)
+    events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears)
+
     if self.CP.brand in ('body', 'mock'):
       events = Events()
 
-    elif self.CP.brand == 'ford':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.low, GearShifter.manumatic])
-
-    elif self.CP.brand == 'nissan':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.brake])
-
     elif self.CP.brand == 'chrysler':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.low])
-
       # Low speed steer alert hysteresis logic
       if self.CP.minSteerSpeed > 0. and CS.vEgo < (self.CP.minSteerSpeed + 0.5):
         self.low_speed_alert = True
@@ -57,7 +61,7 @@ class CarSpecificEvents:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.brand == 'honda':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.sport], pcm_enable=False)
+      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears, pcm_enable=False)
 
       if self.CP.pcmCruise and CS.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.belowEngageSpeed)
@@ -79,8 +83,6 @@ class CarSpecificEvents:
 
     elif self.CP.brand == 'toyota':
       # TODO: when we check for unexpected disengagement, check gear not S1, S2, S3
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.sport])
-
       if self.CP.openpilotLongitudinalControl:
         if CS.cruiseState.standstill and not CS.brakePressed:
           events.add(EventName.resumeRequired)
@@ -94,9 +96,7 @@ class CarSpecificEvents:
             events.add(EventName.manualRestart)
 
     elif self.CP.brand == 'gm':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.sport, GearShifter.low,
-                                                                   GearShifter.eco, GearShifter.manumatic],
-                                         pcm_enable=self.CP.pcmCruise)
+      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears, pcm_enable=self.CP.pcmCruise)
 
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
@@ -107,8 +107,7 @@ class CarSpecificEvents:
         events.add(EventName.resumeRequired)
 
     elif self.CP.brand == 'volkswagen':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
-                                         pcm_enable=self.CP.pcmCruise)
+      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears,pcm_enable=self.CP.pcmCruise)
 
       if self.CP.openpilotLongitudinalControl:
         if CS.vEgo < self.CP.minEnableSpeed + 0.5:
@@ -121,8 +120,7 @@ class CarSpecificEvents:
       #   events.add(EventName.steerTimeLimit)
 
     elif self.CP.brand == 'hyundai':
-      events = self.create_common_events(CS, CS_prev, extra_gears=(GearShifter.sport, GearShifter.manumatic),
-                                         pcm_enable=self.CP.pcmCruise, allow_button_cancel=False)
+      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears, pcm_enable=self.CP.pcmCruise, allow_button_cancel=False)
 
     else:
       events = self.create_common_events(CS, CS_prev)
