@@ -152,7 +152,7 @@ jobs:
           git checkout ${{ env.REPORT_FILES_BRANCH_NAME }}
           cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/diff.html diff_pr_${{ github.event.number }}.html
           git add diff_pr_${{ github.event.number }}.html
-          git commit -m "mici raylib ui diff report for PR #${{ github.event.number }}"
+          git commit -m "mici raylib ui diff report for PR #${{ github.event.number }}" || echo "No changes to commit"
           git push origin ${{ env.REPORT_FILES_BRANCH_NAME }}
 
       - name: Comment Video on PR
