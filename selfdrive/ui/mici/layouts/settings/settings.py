@@ -36,7 +36,7 @@ class SettingsLayout(NavWidget):
     self._params = Params()
     self._current_panel = None  # PanelType.DEVICE
 
-    toggles_btn = BigButton("device", "", "icons_mici/settings/toggles_icon.png")
+    toggles_btn = BigButton("123", "", "icons_mici/settings/toggles_icon.png")
     toggles_btn.set_click_callback(lambda: self._set_current_panel(PanelType.TOGGLES))
     network_btn = BigButton("network", "", "icons_mici/settings/network/wifi_strength_full.png")
     network_btn.set_click_callback(lambda: self._set_current_panel(PanelType.NETWORK))
