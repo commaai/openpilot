@@ -73,7 +73,7 @@ def find_differences(video1, video2):
     return different_frames, frame_data, len(frames1)
 
 
-def generate_html_report(video1, video2, different_frames, frame_data, total_frames):
+def generate_html_report(video1, video2, basedir, different_frames, frame_data, total_frames):
   chunks = []
   if different_frames:
     current_chunk = [different_frames[0]]
@@ -97,21 +97,21 @@ def generate_html_report(video1, video2, different_frames, frame_data, total_fra
 <td width='33%'>
   <p><strong>Video 1</strong></p>
   <video id='video1' width='100%' autoplay muted loop onplay='syncVideos()'>
-    <source src='{os.path.basename(video1)}' type='video/mp4'>
+    <source src='{os.path.join(basedir, os.path.basename(video1))}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
 </td>
 <td width='33%'>
   <p><strong>Video 2</strong></p>
   <video id='video2' width='100%' autoplay muted loop onplay='syncVideos()'>
-    <source src='{os.path.basename(video2)}' type='video/mp4'>
+    <source src='{os.path.join(basedir, os.path.basename(video2))}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
 </td>
 <td width='33%'>
   <p><strong>Pixel Diff</strong></p>
   <video id='diffVideo' width='100%' autoplay muted loop>
-    <source src='diff.mp4' type='video/mp4'>
+    <source src='{os.path.join(basedir, 'diff.mp4')}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
 </td>
@@ -158,6 +158,7 @@ def main():
   parser.add_argument('video1', help='First video file')
   parser.add_argument('video2', help='Second video file')
   parser.add_argument('output', nargs='?', default='diff.html', help='Output HTML file (default: diff.html)')
+  parser.add_argument("--basedir", type=str, help="Base directory for output", default="")
   parser.add_argument('--no-open', action='store_true', help='Do not open HTML report in browser')
 
   args = parser.parse_args()
@@ -183,7 +184,7 @@ def main():
 
   print()
   print("Generating HTML report...")
-  html = generate_html_report(args.video1, args.video2, different_frames, frame_data, total_frames)
+  html = generate_html_report(args.video1, args.video2, args.basedir, different_frames, frame_data, total_frames)
 
   with open(DIFF_OUT_DIR / args.output, 'w') as f:
     f.write(html)
