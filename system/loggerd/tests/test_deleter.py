@@ -1,5 +1,6 @@
 import time
 import threading
+import os
 from collections import namedtuple
 from pathlib import Path
 from collections.abc import Sequence
@@ -7,6 +8,7 @@ from collections.abc import Sequence
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from openpilot.system.hardware.hw import Paths
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 
@@ -65,30 +67,34 @@ class TestDeleter(UploaderTestCase):
     assert deleted_order == f_paths, "Files not deleted in expected order"
 
   def test_delete_order(self):
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
-    ])
+    self.assertDeleteOrder(
+      [
+        self.make_file_with_data(self.seg_format.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(1), self.f_type),
+        self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+      ]
+    )
 
   def test_delete_many_preserved(self):
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(1), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
-      self.make_file_with_data(self.seg_format.format(2), self.f_type),
-    ] + [
-      self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
-      for i in range(5)
-    ])
+    self.assertDeleteOrder(
+      [
+        self.make_file_with_data(self.seg_format.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(1), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+        self.make_file_with_data(self.seg_format.format(2), self.f_type),
+      ]
+      + [self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE) for i in range(5)]
+    )
 
   def test_delete_last(self):
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
-      self.make_file_with_data("boot", self.seg_format[:-4]),
-      self.make_file_with_data("crash", self.seg_format2[:-4]),
-    ])
+    self.assertDeleteOrder(
+      [
+        self.make_file_with_data(self.seg_format.format(1), self.f_type),
+        self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+        self.make_file_with_data("boot", self.seg_format[:-4]),
+        self.make_file_with_data("crash", self.seg_format2[:-4]),
+      ]
+    )
 
   def test_no_delete_when_available_space(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)
@@ -115,3 +121,32 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  def test_delete_stray_files(self):
+    fake_seg = os.path.join(Paths.log_root(), "2024-05-20--12-00-00--0")
+    with open(fake_seg, 'w') as f:
+      f.write("I am not a directory")
+
+    broken_link = os.path.join(Paths.log_root(), "broken_link")
+    try:
+      os.symlink("does_not_exist", broken_link)
+    except OSError:
+      pass  # Symlinks might fail on some filesystems/permissions
+
+    real_dir = os.path.join(Paths.log_root(), "real_dir")
+    os.mkdir(real_dir)
+    dir_link = os.path.join(Paths.log_root(), "link_to_dir")
+    try:
+      os.symlink(real_dir, dir_link)
+    except OSError:
+      pass
+
+    self.start_thread()
+
+    time.sleep(1)
+
+    assert self.del_thread.is_alive(), "Deleter thread crashed!"
+    self.join_thread()
+
+    assert not os.path.exists(fake_seg), "Deleter ignored the fake segment file!"
+    assert not os.path.exists(broken_link), "Deleter ignored the broken symlink!"

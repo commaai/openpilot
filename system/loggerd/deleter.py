@@ -51,6 +51,26 @@ def deleter_thread(exit_event: threading.Event):
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
+      # delete stray files or broken symlinks first
+      # fixes issue where non-directories take up space but get ignored
+      all_items = os.listdir(Paths.log_root())
+      file_deleted = False
+
+      for item in all_items:
+        item_path = os.path.join(Paths.log_root(), item)
+        if not os.path.isdir(item_path) and not item.endswith(".lock"):
+          try:
+            cloudlog.info(f"deleting stray item {item_path}")
+            os.remove(item_path)
+            file_deleted = True
+            break    # re-evaluate space usage upon file deletion
+          except OSError:
+            cloudlog.exception(f"issue deleting stray {item_path}")
+
+      if file_deleted:
+        exit_event.wait(.1)
+        continue
+
       dirs = listdir_by_creation(Paths.log_root())
       preserved_dirs = get_preserved_segments(dirs)
 
