@@ -353,7 +353,7 @@ class DeviceLayoutMici(NavWidget):
   def _on_regulatory(self):
     if not self._fcc_dialog:
       self._fcc_dialog = MiciFccModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/mici_fcc.html"))
-    gui_app.set_modal_overlay(self._fcc_dialog, callback=setattr(self, '_fcc_dialog', None))
+    gui_app.set_modal_overlay(self._fcc_dialog, callback=lambda result=None: setattr(self, '_fcc_dialog', None))
 
   def _offroad_transition(self):
     self._power_off_btn.set_visible(ui_state.is_offroad())
