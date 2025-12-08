@@ -145,8 +145,8 @@ class TestDeleter(UploaderTestCase):
 
     time.sleep(1)
 
-    assert self.del_thread.is_alive(), "Deleter thread crashed!"
+    assert self.del_thread.is_alive(), "Deleter thread crashed"
     self.join_thread()
 
-    assert not os.path.exists(fake_seg), "Deleter ignored the fake segment file!"
-    assert not os.path.exists(broken_link), "Deleter ignored the broken symlink!"
+    assert not os.path.exists(fake_seg), "Deleter ignored the fake sesgment file"
+    assert not os.path.exists(broken_link), "Deleter ignored the broken symlink"
