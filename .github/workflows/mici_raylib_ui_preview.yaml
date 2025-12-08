@@ -18,6 +18,7 @@ env:
   REPORT_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
   SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
   BRANCH_NAME: "openpilot/pr-${{ github.event.number }}-mici-raylib-ui"
+  MASTER_BRANCH_NAME: "openpilot_master_ui_mici_raylib"
   # All report files are pushed here
   REPORT_FILES_BRANCH_NAME: "mici-raylib-ui-reports"
 
@@ -52,7 +53,7 @@ jobs:
         run: |
           echo "run_id=$(curl https://api.github.com/repos/${{ github.repository }}/commits/${{ env.SHA }}/check-runs | jq -r '.check_runs[] | select(.name == "${{ env.UI_JOB_NAME }}") | .html_url | capture("(?<number>[0-9]+)") | .number')" >> $GITHUB_OUTPUT
 
-      - name: Getting proposed ui
+      - name: Getting proposed ui  # filename: pr_ui/mici_ui_replay.mp4
         id: download-artifact
         uses: dawidd6/action-download-artifact@v6
         with:
@@ -62,13 +63,13 @@ jobs:
           name: mici-raylib-report-1-${{ env.REPORT_NAME }}
           path: ${{ github.workspace }}/pr_ui
 
-      - name: Getting master ui
+      - name: Getting master ui  # filename: master_ui_raylib/mici_ui_replay.mp4
         uses: actions/checkout@v4
         with:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
           path: ${{ github.workspace }}/master_ui_raylib
-          ref: openpilot_master_ui_mici_raylib
+          ref: ${{ env.MASTER_BRANCH_NAME }}
 
       - name: Saving new master ui
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -76,14 +77,14 @@ jobs:
         run: |
           git checkout --orphan=new_master_ui_mici_raylib
           git rm -rf *
-          git branch -D openpilot_master_ui_mici_raylib
-          git branch -m openpilot_master_ui_mici_raylib
+          git branch -D ${{ env.MASTER_BRANCH_NAME }}
+          git branch -m ${{ env.MASTER_BRANCH_NAME }}
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
           mv ${{ github.workspace }}/pr_ui/* .
           git add .
           git commit -m "mici raylib video for commit ${{ env.SHA }}"
-          git push origin openpilot_master_ui_mici_raylib --force
+          git push origin ${{ env.MASTER_BRANCH_NAME }} --force
 
       - name: Setup FFmpeg
         uses: AnimMouse/setup-ffmpeg@v1
