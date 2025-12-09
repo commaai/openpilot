@@ -123,37 +123,56 @@ class TestDeleter(UploaderTestCase):
     assert f_path.exists(), "File deleted when locked"
 
   def test_delete_mixed_contents(self):
-      fake_seg_path = os.path.join(Paths.log_root(), "2024-05-20--12-00-00--0")
-      with open(fake_seg_path, 'w') as f:
-        f.write("file masquerading as a directory")
+    fake_seg_path = os.path.join(Paths.log_root(), "2024-05-20--12-00-00--0")
+    with open(fake_seg_path, 'w') as f:
+      f.write("file masquerading as a directory")
 
-      broken_link_path = os.path.join(Paths.log_root(), "broken_link")
-      try:
-        os.symlink("does_not_exist", broken_link_path)
-      except OSError:
-        pass
+    stray_log_path = os.path.join(Paths.log_root(), "random.log")
+    with open(stray_log_path, 'w') as f:
+      f.write("data")
 
-      real_dir = os.path.join(Paths.log_root(), "real_dir")
-      os.mkdir(real_dir)
-      valid_link_path = os.path.join(Paths.log_root(), "valid_link")
-      try:
-        os.symlink(real_dir, valid_link_path)
-      except OSError:
-        pass
+    broken_link_path = os.path.join(Paths.log_root(), "broken_link")
+    try:
+      os.symlink("does_not_exist", broken_link_path)
+    except OSError:
+      pass
 
-      valid_seg_path = self.make_file_with_data(self.seg_format.format(1), self.f_type, 1)
+    real_dir = os.path.join(Paths.log_root(), "real_dir")
+    os.mkdir(real_dir)
 
-      self.start_thread()
+    nested = os.path.join(real_dir, "a", "b", "c")
+    os.makedirs(nested, exist_ok=True)
+    for i in range(2):
+      with open(os.path.join(real_dir, f"root_{i}.txt"), "w") as f:
+        f.write("x")
+      with open(os.path.join(nested, f"leaf_{i}.txt"), "w") as f:
+        f.write("y")
 
-      try:
-        with Timeout(5, "Timeout waiting for mixed contents to be deleted"):
-          while os.path.exists(fake_seg_path) or os.path.exists(broken_link_path) or valid_seg_path.exists():
-            time.sleep(0.01)
-      finally:
-        self.join_thread()
+    valid_link_path = os.path.join(Paths.log_root(), "valid_link")
+    try:
+      os.symlink(real_dir, valid_link_path)
+    except OSError:
+      pass
 
-      assert not os.path.exists(fake_seg_path), "The deleter failed to remove the fake segment file"
-      assert not os.path.exists(broken_link_path), "The deleter failed to remove the broken symlink"
-      assert not valid_seg_path.exists(), "The deleter failed to remove the valid segment"
+    valid_seg_path = self.make_file_with_data(self.seg_format.format(1), self.f_type, 1)
 
-      assert os.path.exists(valid_link_path), "The deleter incorrectly removed a valid symlink"
+    self.start_thread()
+    try:
+      with Timeout(5, "Timeout waiting for mixed deletions"):
+        while (
+          os.path.exists(fake_seg_path)
+          or os.path.exists(stray_log_path)
+          or os.path.exists(broken_link_path)
+          or valid_seg_path.exists()
+        ):
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+
+    assert not os.path.exists(fake_seg_path)
+    assert not os.path.exists(stray_log_path)
+    assert not os.path.exists(broken_link_path)
+    assert not valid_seg_path.exists()
+
+    # valid alias should remain as the target is a real directory tree
+    assert os.path.exists(valid_link_path)
