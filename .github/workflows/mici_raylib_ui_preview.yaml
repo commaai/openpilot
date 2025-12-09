@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-  pull_request:
+  pull_request_target:
     types: [assigned, opened, synchronize, reopened, edited]
     branches:
       - 'master'
@@ -88,8 +88,7 @@ jobs:
         uses: AnimMouse/setup-ffmpeg@ae28d57dabbb148eff63170b6bf7f2b60062cbae
 
       - name: Finding diff
-        # TODO: change back to pull_request_target
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         id: find_diff
         run: |
           # Find the video file from PR
@@ -117,7 +116,7 @@ jobs:
           cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/diff.mp4 ${{ github.workspace }}/pr_ui/
 
       - name: Saving proposed ui
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         working-directory: ${{ github.workspace }}/master_ui_raylib
         run: |
           # Overwrite PR branch w/ proposed ui, and master ui at this point in time for future reference
@@ -139,7 +138,7 @@ jobs:
           git push origin ${{ env.REPORT_FILES_BRANCH_NAME }}
 
       - name: Comment Video on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
