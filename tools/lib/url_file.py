@@ -9,6 +9,7 @@ from urllib3.util import Timeout
 
 from openpilot.common.utils import atomic_write
 from openpilot.system.hardware.hw import Paths
+from urllib3.exceptions import MaxRetryError
 
 #  Cache chunk size
 K = 1000
@@ -60,7 +61,10 @@ class URLFile:
     pass
 
   def _request(self, method: str, url: str, headers: dict[str, str] | None = None) -> BaseHTTPResponse:
-    return URLFile.pool_manager().request(method, url, timeout=self._timeout, headers=headers)
+    try:
+      return URLFile.pool_manager().request(method, url, timeout=self._timeout, headers=headers)
+    except MaxRetryError as e:
+      raise URLFileException(f"Failed to {method} {url}: {e}") from e
 
   def get_length_online(self) -> int:
     response = self._request('HEAD', self._url)
