@@ -36,8 +36,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-#      - name: Waiting for ui generation to start
-#        run: sleep 30
 
       - name: Waiting for ui generation to end
         uses: lewagon/wait-on-check-action@v1.3.4
@@ -99,21 +97,7 @@ jobs:
           mv "${{ github.workspace }}/pr_ui/mici_ui_replay.mp4" "$pr_video"
 
           master_video="${{ github.workspace }}/pr_ui/mici_ui_replay_master.mp4"
-          mv "${{ github.workspace }}/master_ui_raylib/mici_ui_replay.mp4" "$master_video" || true  # ignore if not exists
-
-          ls -lah ${{ github.workspace }}/pr_ui
-          ls -lah ${{ github.workspace }}/master_ui_raylib
-
-          # todo: remove handling?
-          if [ ! -f "$master_video" ]; then
-            master_video="$pr_video"
-          fi
-
-          #            DIFF="<p>✅ New video: <a href=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/mici_ui_replay.mp4\">View Video</a></p>"
-          #          else
-
-          #cp "$master_video" "${{ github.workspace }}/pr_ui/mici_ui_replay_master.mp4"
-          #cp "$pr_video" "${{ github.workspace }}/pr_ui/mici_ui_replay_proposed.mp4"
+          mv "${{ github.workspace }}/master_ui_raylib/mici_ui_replay.mp4" "$master_video"
 
           export PYTHONPATH=${{ github.workspace }}
           baseurl="https://github.com/commaai/ci-artifacts/raw/refs/heads/${{ env.BRANCH_NAME }}"
@@ -122,24 +106,15 @@ jobs:
 
           REPORT_URL="https://commaai.github.io/ci-artifacts/diff_pr_${{ github.event.number }}.html"
           if [ $diff_exit_code -eq 0 ]; then
-            DIFF="<p>✅ Videos are identical! <a href=\"$REPORT_URL\">View Diff Report</a></p>"
+            DIFF="✅ Videos are identical! [View Diff Report]($REPORT_URL)"
           else
-            DIFF="<p>❌ <strong>Videos differ!</strong> <a href=\"$REPORT_URL\">View Diff Report</a></p>"
+            DIFF="❌ <strong>Videos differ!</strong> [View Diff Report]($REPORT_URL)"
           fi
-
-          # Copy videos with renamed filenames to prevent overwriting in future PRs
-
+          echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
 
           # Copy diff report files
-          echo "report files:"
-          ls -lah ${{ github.workspace }}/selfdrive/ui/tests/diff/report/
-          # TODO: includes duplicate proposed file?
-          # cp -r ${{ github.workspace }}/selfdrive/ui/tests/diff/report/* ${{ github.workspace }}/pr_ui/
           cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/diff.html ${{ github.workspace }}/pr_ui/
           cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/diff.mp4 ${{ github.workspace }}/pr_ui/
-          # cp ${{ github.workspace }}/master_ui_raylib/mici_ui_replay.mp4 ${{ github.workspace }}/pr_ui/mici_ui_replay_master.mp4
-
-          echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
 
       - name: Saving proposed ui
         if: github.event_name == 'pull_request'
