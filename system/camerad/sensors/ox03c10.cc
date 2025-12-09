@@ -42,7 +42,7 @@ OX03C10::OX03C10() {
   bits_per_pixel = 12;
   mipi_format = CAM_FORMAT_MIPI_RAW_12;
   frame_data_type = CSI_RAW12;
-  mclk_frequency = 24000000; //Hz
+  mclk_frequency = 24000000; // Hz
 
   readout_time_ns = 14697000;
 
