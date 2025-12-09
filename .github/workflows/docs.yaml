@@ -20,9 +20,9 @@ jobs:
     name: build docs
     runs-on: ubuntu-24.04
     steps:
-    - uses: commaai/timeout@v1
+    - uses: commaai/timeout@f5fff8e951788f6417fde14c3aaa4f8fbc8ebc73 # v1
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       with:
         submodules: true
 
@@ -34,7 +34,7 @@ jobs:
         mkdocs build
 
     # Push to docs.comma.ai
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       with:
         path: openpilot-docs

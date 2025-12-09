@@ -11,12 +11,12 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       with:
         submodules: false
 
     # Label PRs
-    - uses: actions/labeler@v5.0.0
+    - uses: actions/labeler@8558fd74291d67161a8a78ce36a881fa63b766a9 # v5.0.0
       with:
         dot: true
         configuration-path: .github/labeler.yaml
@@ -36,7 +36,7 @@ jobs:
 
     # Welcome comment
     - name: "First timers PR"
-      uses: actions/first-interaction@v1
+      uses: actions/first-interaction@3c71ce730280171fd1cfb57c00c774f8998586f7 # v1
       if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}

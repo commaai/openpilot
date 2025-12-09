@@ -34,7 +34,7 @@ jobs:
         run: sleep 30
 
       - name: Waiting for ui generation to end
-        uses: lewagon/wait-on-check-action@v1.3.4
+        uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc # v1.3.4
         with:
           ref: ${{ env.SHA }}
           check-name: ${{ env.UI_JOB_NAME }}
@@ -49,7 +49,7 @@ jobs:
 
       - name: Getting proposed ui
         id: download-artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@bf251b5aa9c2f7eeb574a96ee720e24f801b7c11 # v6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           run_id: ${{ steps.get_run_id.outputs.run_id }}
@@ -58,7 +58,7 @@ jobs:
           path: ${{ github.workspace }}/pr_ui
 
       - name: Getting master ui
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
@@ -164,7 +164,7 @@ jobs:
 
       - name: Comment Screenshots on PR
         if: github.event_name == 'pull_request_target'
-        uses: thollander/actions-comment-pull-request@v2
+        uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6 # v2.5.0
         with:
           message: |
             <!-- _(run_id_screenshots_raylib **${{ github.run_id }}**)_ -->
