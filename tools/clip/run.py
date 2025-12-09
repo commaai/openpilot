@@ -251,6 +251,7 @@ def clip(
     populate_car_params(lr)
     env = os.environ.copy()
     #env['DISPLAY'] = display
+    env['BIG'] = '1'
 
     with managed_proc(xvfb_cmd, env) as xvfb_proc, managed_proc(ui_cmd, env) as ui_proc, managed_proc(replay_cmd, env) as replay_proc:
       procs = [xvfb_proc, ui_proc, replay_proc]
