@@ -129,6 +129,9 @@ class BookmarkIcon(Widget):
       rl.draw_texture(self._icon, int(icon_x), int(icon_y), rl.WHITE)
 
 
+times = {}
+
+
 class AugmentedRoadView(CameraView):
   def __init__(self, bookmark_callback=None, stream_type: VisionStreamType = VisionStreamType.VISION_STREAM_ROAD):
     super().__init__("camerad", stream_type)
@@ -183,11 +186,24 @@ class AugmentedRoadView(CameraView):
       super()._handle_mouse_release(mouse_pos)
 
   def _render(self, _):
+    def tlog(uid):
+      nonlocal t
+      now = time.monotonic()
+      if uid not in times:
+        times[uid] = [now - t]
+      else:
+        times[uid].append(now - t)
+      t = now
+
     start_draw = time.monotonic()
+    t = time.monotonic()
     self._switch_stream_if_needed(ui_state.sm)
+    tlog("switch_stream")
+    # print(f"{(time.monotonic() - t) * 1000:.2f} ms - switch stream check")
 
     # Update calibration before rendering
     self._update_calibration()
+    tlog("update_calib")
 
     # Create inner content area with border padding
     self._content_rect = rl.Rectangle(
@@ -208,9 +224,11 @@ class AugmentedRoadView(CameraView):
 
     # Render the base camera view
     super()._render(self._content_rect)
+    tlog("camera render")
 
     # Draw all UI overlays
     self._model_renderer.render(self._content_rect)
+    tlog("model render")
 
     # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
@@ -232,6 +250,8 @@ class AugmentedRoadView(CameraView):
       self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
 
+    tlog("UI overlays")
+
     # Draw fake rounded border
     rl.draw_rectangle_rounded_lines_ex(self._content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
 
@@ -248,6 +268,14 @@ class AugmentedRoadView(CameraView):
     if not ui_state.started:
       rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))
       self._offroad_label.render(self._content_rect)
+
+    tlog("final overlays")
+
+    # print("*** AugmentedRoadView timing ***")
+    # for uid, tlist in times.items():
+    #   max_time = max(tlist) * 1000
+    #   avg_time = sum(tlist) / len(tlist) * 1000
+    #   print(f"  {uid}: max {max_time:.2f} ms, avg {avg_time:.2f} ms over {len(tlist)} calls")
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')

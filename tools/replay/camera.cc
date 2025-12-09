@@ -8,7 +8,7 @@
 #include "third_party/linux/include/msm_media_info.h"
 #include "tools/replay/util.h"
 
-const int BUFFER_COUNT = 40;
+const int BUFFER_COUNT = 127;
 
 std::tuple<size_t, size_t, size_t> get_nv12_info(int width, int height) {
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, width);
