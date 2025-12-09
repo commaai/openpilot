@@ -313,11 +313,19 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
 }
 
 void MainWindow::openStream(AbstractStream *stream, const QString &dbc_file) {
+  if (can) {
+    QObject::connect(can, &QObject::destroyed, this, [=]() { startStream(stream, dbc_file); });
+    can->deleteLater();
+  } else {
+    startStream(stream, dbc_file);
+  }
+}
+
+void MainWindow::startStream(AbstractStream *stream, QString dbc_file) {
   center_widget->clear();
   delete messages_widget;
   delete video_splitter;
 
-  delete can;
   can = stream;
   can->setParent(this);  // take ownership
   can->start();
