@@ -117,8 +117,8 @@ jobs:
 
           export PYTHONPATH=${{ github.workspace }}
           baseurl="https://github.com/commaai/ci-artifacts/raw/refs/heads/${{ env.BRANCH_NAME }}"
-          python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "${{ github.workspace }}/pr_ui/mici_ui_replay_master.mp4" "${{ github.workspace }}/pr_ui/mici_ui_replay_proposed.mp4" "diff.html" --basedir "$baseurl" --no-open
-          diff_exit_code=$?
+          diff_exit_code=0
+          python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "${{ github.workspace }}/pr_ui/mici_ui_replay_master.mp4" "${{ github.workspace }}/pr_ui/mici_ui_replay_proposed.mp4" "diff.html" --basedir "$baseurl" --no-open || diff_exit_code=$?
 
           REPORT_URL="https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.REPORT_FILES_BRANCH_NAME }}/diff_pr_${{ github.event.number }}.html"
           if [ $diff_exit_code -eq 0 ]; then
