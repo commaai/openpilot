@@ -3,6 +3,7 @@ import os
 import time
 import coverage
 import pyray as rl
+from dataclasses import dataclass
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
 
 os.environ["RECORD"] = "1"
@@ -20,11 +21,30 @@ from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 FPS = 60
 HEADLESS = os.getenv("WINDOWED", "0") == "1"
 
+
+@dataclass
+class DummyEvent:
+  click: bool = False
+  # TODO: add some kind of intensity
+  swipe_left: bool = False
+  swipe_right: bool = False
+  swipe_down: bool = False
+  onroad: bool = False
+  offroad: bool = False
+
+
 SCRIPT = [
-  (0, None),
-  (FPS * 1, [(100, 100)]),
-  (FPS * 2, [(200, 100), (100, 100), (0, 100)]),
-  (FPS * 3, None),
+  (0, DummyEvent()),
+  (FPS * 1, DummyEvent(swipe_right=True)),
+  (FPS * 2, DummyEvent(swipe_left=True)),
+  (FPS * 3, DummyEvent(swipe_left=True)),
+  (FPS * 4, DummyEvent(click=True)),
+  (FPS * 5, DummyEvent(click=True)),
+  (FPS * 6, DummyEvent(swipe_left=True)),
+  (FPS * 7, DummyEvent(swipe_left=True)),
+  (FPS * 8, DummyEvent(swipe_right=True)),
+  (FPS * 9, DummyEvent(swipe_down=True)),
+  (FPS * 10, DummyEvent()),
 ]
 
 
@@ -39,17 +59,33 @@ def setup_state():
 
 def inject_click(coords):
   x, y = coords[0]
-  events = [MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=True, left_released=False, left_down=False, t=time.monotonic())]
+  gui_app._mouse._events.append(MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=True, left_released=False, left_down=False, t=time.monotonic()))
   for x, y in coords[1:]:
-    events.append(MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=False, left_released=False, left_down=True, t=time.monotonic()))
-
+    gui_app._mouse._events.append(MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=False, left_released=False, left_down=True, t=time.monotonic()))
   x, y = coords[-1]
-  events.append(MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=False, left_released=True, left_down=False, t=time.monotonic()))
+  gui_app._mouse._events.append(MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=False, left_released=True, left_down=False, t=time.monotonic()))
 
-  print(events)
 
-  with gui_app._mouse._lock:
-    gui_app._mouse._events.extend(events)
+def handle_event(event: DummyEvent):
+  if event.click:
+    inject_click([(gui_app.width // 2, gui_app.height // 2)])
+  # swipes need three events!
+  if event.swipe_left:
+    inject_click([(gui_app.width * 3 // 4, gui_app.height // 2),
+                  (gui_app.width // 4, gui_app.height // 2),
+                  (0, gui_app.height // 2)])
+  if event.swipe_right:
+    inject_click([(gui_app.width // 4, gui_app.height // 2),
+                  (gui_app.width * 3 // 4, gui_app.height // 2),
+                  (gui_app.width, gui_app.height // 2)])
+  if event.swipe_down:
+    inject_click([(gui_app.width // 2, gui_app.height // 4),
+                  (gui_app.width // 2, gui_app.height * 3 // 4),
+                  (gui_app.width // 2, gui_app.height)])
+  if event.onroad:
+    ui_state.started = True
+  if event.offroad:
+    ui_state.started = False
 
 
 def run_replay():
@@ -67,9 +103,8 @@ def run_replay():
 
   for should_render in gui_app.render():
     while script_index < len(SCRIPT) and SCRIPT[script_index][0] == frame:
-      _, coords = SCRIPT[script_index]
-      if coords is not None:
-        inject_click(coords)
+      _, event = SCRIPT[script_index]
+      handle_event(event)
       script_index += 1
 
     ui_state.update()
