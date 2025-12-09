@@ -43,26 +43,26 @@ if __name__ == "__main__":
           cc[i][2] = 0
         cc[i][1] = cc[i][0].client.frame_id
 
-    if rl.is_key_pressed(rl.KEY_ONE):
+    if rl.is_key_pressed(rl.KEY_ONE) or rl.is_key_pressed(rl.KEY_KP_1):
       if current_device == -1:
         current_device = 0
       else:
         cam = (roads[current_device], 'F')
         zoom = 1.0
-    elif rl.is_key_pressed(rl.KEY_TWO):
+    elif rl.is_key_pressed(rl.KEY_TWO) or rl.is_key_pressed(rl.KEY_KP_2):
       if current_device == -1:
         current_device = 1
       else:
         cam = (drivers[current_device], 'D')
         zoom = 1.0
-    elif rl.is_key_pressed(rl.KEY_THREE):
+    elif rl.is_key_pressed(rl.KEY_THREE) or rl.is_key_pressed(rl.KEY_KP_3):
       if current_device == -1:
         current_device = 2
       else:
         cam = (wides[current_device], 'E')
         zoom = 1.0
 
-    if cam and (rl.is_key_pressed(rl.KEY_LEFT_SHIFT) or rl.is_key_pressed(rl.KEY_RIGHT_SHIFT)):
+    if cam and (rl.is_key_pressed(rl.KEY_LEFT_SHIFT) or rl.is_key_pressed(rl.KEY_RIGHT_SHIFT) or rl.is_key_pressed(rl.KEY_KP_ADD)):
       zoom = 4.0 if zoom == 1.0 else 1.0
 
     if rl.is_key_pressed(rl.KEY_ESCAPE):
