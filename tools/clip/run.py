@@ -33,7 +33,7 @@ PROC_WAIT_SECONDS = 30*10
 
 OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
-UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
+UI = str(Path(BASEDIR, 'selfdrive/ui/ui.py').resolve())
 
 logger = logging.getLogger('clip.py')
 
@@ -250,7 +250,7 @@ def clip(
   with OpenpilotPrefix(prefix, shared_download_cache=True):
     populate_car_params(lr)
     env = os.environ.copy()
-    env['DISPLAY'] = display
+    #env['DISPLAY'] = display
 
     with managed_proc(xvfb_cmd, env) as xvfb_proc, managed_proc(ui_cmd, env) as ui_proc, managed_proc(replay_cmd, env) as replay_proc:
       procs = [xvfb_proc, ui_proc, replay_proc]
