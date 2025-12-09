@@ -194,6 +194,8 @@ def main():
     print(f"Opening {args.output} in browser...")
     webbrowser.open(f'file://{os.path.abspath(DIFF_OUT_DIR / args.output)}')
 
+  return 0 if len(different_frames) == 0 else 1
+
 
 if __name__ == "__main__":
-  main()
+  sys.exit(main())
