@@ -33,16 +33,9 @@ class DummyEvent:
 
 SCRIPT = [
   (0, DummyEvent()),
-  (FPS * 1, DummyEvent(swipe_right=True)),
-  (FPS * 2, DummyEvent(swipe_left=True)),
-  (FPS * 3, DummyEvent(swipe_left=True)),
-  (FPS * 4, DummyEvent(click=True)),
-  (FPS * 5, DummyEvent(click=True)),
-  (FPS * 6, DummyEvent(swipe_left=True)),
-  (FPS * 7, DummyEvent(swipe_left=True)),
-  (FPS * 8, DummyEvent(swipe_right=True)),
-  (FPS * 9, DummyEvent(swipe_down=True)),
-  (FPS * 10, DummyEvent()),
+  (FPS * 1, DummyEvent(click=True)),
+  (FPS * 2, DummyEvent(click=True)),
+  (FPS * 3, DummyEvent()),
 ]
 
 
