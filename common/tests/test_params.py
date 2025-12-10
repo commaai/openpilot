@@ -139,3 +139,21 @@ class TestParams:
     now = datetime.datetime.now(datetime.UTC)
     self.params.put("InstallDate", now)
     assert self.params.get("InstallDate") == now
+
+  def test_params_type_conversion_errors(self):
+    p = self.params.get_param_path("LongitudinalPersonality")
+    with open(p, "w") as f:
+      f.write("not an int")
+
+    val = self.params.get("LongitudinalPersonality", return_default=True)
+    assert isinstance(val, int)
+
+    val = self.params.get("LongitudinalPersonality", return_default=False)
+    assert isinstance(val, int)
+
+    p = self.params.get_param_path("ApiCache_FirehoseStats")
+    with open(p, "w") as f:
+      f.write("{ invalid json")
+
+    val = self.params.get("ApiCache_FirehoseStats")
+    assert val is None
