@@ -102,3 +102,29 @@ class TestNED:
     np.testing.assert_allclose(converter.ned2ecef(ned_offsets_batch),
                                                            ecef_positions_offset_batch,
                                                            rtol=1e-9, atol=1e-7)
+
+  def test_errors(self):
+    # Test wrong length
+    with np.testing.assert_raises(ValueError):
+      coord.geodetic2ecef([0, 0])
+
+    with np.testing.assert_raises(ValueError):
+      coord.geodetic2ecef([0, 0, 0, 0])
+
+    # Test wrong type (scalar causes IndexError in numpy_wrap)
+    with np.testing.assert_raises(IndexError):
+      coord.geodetic2ecef(1)
+
+    # Test invalid element types (valid length but strings)
+    with np.testing.assert_raises(TypeError):
+      coord.geodetic2ecef(['a', 'b', 'c'])
+
+    # Test LocalCoord constructor errors
+    with np.testing.assert_raises(ValueError):
+      coord.LocalCoord.from_geodetic([0, 0])
+
+    with np.testing.assert_raises(ValueError):
+      coord.LocalCoord.from_geodetic(1)
+
+    with np.testing.assert_raises(TypeError):
+      coord.LocalCoord.from_geodetic(['a', 'b', 'c'])
