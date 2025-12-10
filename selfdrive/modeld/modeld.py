@@ -8,7 +8,7 @@ USBGPU = int(os.environ.get("USBGPU", "0"))
 VISION_DEV = os.environ['DEV']
 if USBGPU:
   import subprocess
-  VISION_DEV = 'AMD'
+  VISION_DEV = 'NPY'
   op_dir = Path(__file__).parent.parent.parent
   subprocess.run(
       ["scons", "-j1"],
@@ -201,6 +201,7 @@ class ModelState:
     imgs_cl = {name: self.frames[name].prepare(bufs[name], transforms[name].flatten()) for name in self.vision_input_names}
 
 
+    t0 = time.perf_counter()
     if TICI and not USBGPU:
       # The imgs tensors are backed by opencl memory, only need init once
       for key in imgs_cl:
@@ -211,9 +212,11 @@ class ModelState:
         frame_input = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.vision_input_shapes[key])
         self.vision_inputs[key] = Tensor(frame_input, dtype=dtypes.uint8, device=VISION_DEV).realize()
 
+    t1 = time.perf_counter()
     if prepare_only:
       return None
     self.vision_output = self.vision_run(**self.vision_inputs).contiguous().realize().uop.base.buffer.numpy()
+    t2 = time.perf_counter()
 
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
     
@@ -228,6 +231,8 @@ class ModelState:
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
     if SEND_RAW_PRED:
       combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy()])
+    t3 = time.perf_counter()
+    print(f'Model timings: prepare {1000*(t1 - t0):.2f} ms, vision run {1000*(t2 - t1):.2f} ms, policy run {1000*(t3 - t2):.2f} ms')
 
     return combined_outputs_dict
 
