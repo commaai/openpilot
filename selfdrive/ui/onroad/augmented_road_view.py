@@ -30,6 +30,8 @@ WIDE_CAM_MAX_SPEED = 10.0  # m/s (22 mph)
 ROAD_CAM_MIN_SPEED = 15.0  # m/s (34 mph)
 INF_POINT = np.array([1000.0, 0.0, 0.0])
 
+times = {}
+
 
 class AugmentedRoadView(CameraView):
   def __init__(self, stream_type: VisionStreamType = VisionStreamType.VISION_STREAM_ROAD):
@@ -53,15 +55,27 @@ class AugmentedRoadView(CameraView):
     self._pm = messaging.PubMaster(['uiDebug'])
 
   def _render(self, rect):
+    def tlog(uid):
+      nonlocal t
+      now = time.monotonic()
+      if uid not in times:
+        times[uid] = [now - t]
+      else:
+        times[uid].append(now - t)
+      t = now
+
     # Only render when system is started to avoid invalid data access
     start_draw = time.monotonic()
     if not ui_state.started:
       return
 
+    t = time.monotonic()
     self._switch_stream_if_needed(ui_state.sm)
+    tlog("switch_stream")
 
     # Update calibration before rendering
     self._update_calibration()
+    tlog("update_calib")
 
     # Create inner content area with border padding
     self._content_rect = rl.Rectangle(
@@ -82,12 +96,15 @@ class AugmentedRoadView(CameraView):
 
     # Render the base camera view
     super()._render(rect)
+    tlog("camera render")
 
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
+    tlog("model render")
     self._hud_renderer.render(self._content_rect)
     self.alert_renderer.render(self._content_rect)
     self.driver_state_renderer.render(self._content_rect)
+    tlog("UI overlays")
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
@@ -97,6 +114,13 @@ class AugmentedRoadView(CameraView):
 
     # Draw colored border based on driving state
     self._draw_border(rect)
+    tlog("final overlays")
+
+    print("*** AugmentedRoadView timing ***")
+    for uid, tlist in times.items():
+      max_time = max(tlist) * 1000
+      avg_time = sum(tlist) / len(tlist) * 1000
+      print(f"  {uid}: max {max_time:.2f} ms, avg {avg_time:.2f} ms over {len(tlist)} calls")
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
