@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
 import os
+from pathlib import Path
 from openpilot.system.hardware import TICI
-os.environ['DEV'] = 'AMD' if TICI else 'CPU'
+os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
 os.environ['AMD_IFACE'] = 'USB'
+USBGPU = int(os.environ.get("USBGPU", "0"))
+VISION_DEV = os.environ['DEV']
+if USBGPU:
+  import subprocess
+  VISION_DEV = 'AMD'
+  op_dir = Path(__file__).parent.parent.parent
+  subprocess.run(
+      ["scons", "-j1"],
+      cwd=op_dir,
+      check=True
+  )
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 import time
@@ -10,7 +22,6 @@ import pickle
 import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
-from pathlib import Path
 from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
@@ -189,25 +200,22 @@ class ModelState:
     imgs_cl = {name: self.frames[name].prepare(bufs[name], transforms[name].flatten()) for name in self.vision_input_names}
 
 
-    t0 = time.perf_counter()
-    frame_inputs = {}
-    for key in imgs_cl:
-      frame_inputs[key] = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.vision_input_shapes[key])
+    if TICI and not USBGPU:
+      # The imgs tensors are backed by opencl memory, only need init once
+      for key in imgs_cl:
+        if key not in self.vision_inputs:
+          self.vision_inputs[key] = qcom_tensor_from_opencl_address(imgs_cl[key].mem_address, self.vision_input_shapes[key], dtype=dtypes.uint8)
+    else:
+      for key in imgs_cl:
+        frame_input = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.vision_input_shapes[key])
+        self.vision_inputs[key] = Tensor(frame_input, dtype=dtypes.uint8).realize()
 
-    t1 = time.perf_counter()
-    for key in imgs_cl:
-      self.vision_inputs[key] = Tensor(frame_inputs[key], dtype=dtypes.uint8, device='NPY').realize()
-
-    t2 = time.perf_counter()
     if prepare_only:
       return None
-    self.vision_output = self.vision_run(**self.vision_inputs).contiguous().realize().uop.base.buffer.numpy().astype(np.float32)
-    t3 = time.perf_counter()
-    #print(f'ran vision model: write inputs to USBGPU took {(t2-t1)*1000:.1f}ms, run and copy back took {(t3-t2)*1000:.1f}ms')
-    os.environ['DEV'] = 'QCOM'
-    vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
-    os.environ['DEV'] = 'AMD'
+    self.vision_output = self.vision_run(**self.vision_inputs).contiguous().realize().uop.base.buffer.numpy()
 
+    vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
+    
     self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'], 'desire_pulse': new_desire})
     for k in ['desire_pulse', 'features_buffer']:
       self.numpy_inputs[k][:] = self.full_input_queues.get(k)[k]
@@ -226,9 +234,10 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  # USB GPU currently saturates a core so can't do this yet,
-  # also need to move the aux USB interrupts for good timings
-  config_realtime_process(7, 54)
+  if not USBGPU:
+    # USB GPU currently saturates a core so can't do this yet,
+    # also need to move the aux USB interrupts for good timings
+    config_realtime_process(7, 54)
 
   st = time.monotonic()
   cloudlog.warning("setting up CL context")
