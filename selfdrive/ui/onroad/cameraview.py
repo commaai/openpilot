@@ -312,30 +312,48 @@ class CameraView(Widget):
     rl.end_shader_mode()
 
   def _ensure_connection(self) -> bool:
+    t_start = time.monotonic()
+    t = t_start
+
+    def tlog(uid):
+      nonlocal t
+      now = time.monotonic()
+      if uid not in times:
+        times[uid] = [now - t]
+      else:
+        times[uid].append(now - t)
+      t = now
+
     if self._connecting:
+      tlog("ensure_conn_check_connecting")
       return False
 
+    tlog("ensure_conn_check_connecting_done")
+
     now_connected = self.client.is_connected()
+    tlog("ensure_conn_is_connected")
+
     if now_connected != self._prev_connected:
-      t = time.monotonic()
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
       self._initialize_textures()
-      print(f"Initialized textures in {(time.monotonic() - t) * 1000:.2f} ms")
-      t = time.monotonic()
+      tlog("ensure_conn_init_textures")
       self.available_streams = self.client.available_streams(self._name, block=False)
-      print(f"Fetched available streams in {(time.monotonic() - t) * 1000:.2f} ms")
+      tlog("ensure_conn_get_streams")
 
     self._prev_connected = now_connected
 
     if not now_connected:
       self.frame = None
       self.available_streams.clear()
+      tlog("ensure_conn_clear_state")
 
       # Throttle connection attempts
       current_time = rl.get_time()
       if current_time - self.last_connection_attempt < CONNECTION_RETRY_INTERVAL:
+        tlog("ensure_conn_throttled")
         return False
       self.last_connection_attempt = current_time
+      tlog("ensure_conn_throttle_check")
 
       self._connecting = True
 
@@ -355,6 +373,10 @@ class CameraView(Widget):
       # self._initialize_textures()
       # self.available_streams = self.client.available_streams(self._name, block=False)
 
+      tlog("ensure_conn_start_thread")
+      return False
+
+    tlog("ensure_conn_done")
     return True
 
   def _handle_switch(self) -> None:
