@@ -206,8 +206,9 @@ class TestOnroad:
     result += "-------------- UI Draw Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    # skip first few frames -- connecting to vipc
-    ts = self.ts['uiDebug']['drawTimeMillis'][15:]
+    # other processes preempt ui while starting up
+    offset = int(20 * LOG_OFFSET)
+    ts = self.ts['uiDebug']['drawTimeMillis'][offset:]
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"
