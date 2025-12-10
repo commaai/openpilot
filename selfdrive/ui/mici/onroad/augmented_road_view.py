@@ -271,11 +271,11 @@ class AugmentedRoadView(CameraView):
 
     tlog("final overlays")
 
-    # print("*** AugmentedRoadView timing ***")
-    # for uid, tlist in times.items():
-    #   max_time = max(tlist) * 1000
-    #   avg_time = sum(tlist) / len(tlist) * 1000
-    #   print(f"  {uid}: max {max_time:.2f} ms, avg {avg_time:.2f} ms over {len(tlist)} calls")
+    print("*** AugmentedRoadView timing ***")
+    for uid, tlist in times.items():
+      max_time = max(tlist) * 1000
+      avg_time = sum(tlist) / len(tlist) * 1000
+      print(f"  {uid}: max {max_time:.2f} ms, avg {avg_time:.2f} ms over {len(tlist)} calls")
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
