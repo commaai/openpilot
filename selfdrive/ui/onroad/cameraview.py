@@ -1,3 +1,4 @@
+import time
 import platform
 import numpy as np
 import pyray as rl
@@ -11,6 +12,8 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
+
+times = {}
 
 VERSION = """
 #version 300 es
@@ -181,12 +184,26 @@ class CameraView(Widget):
     ])
 
   def _render(self, rect: rl.Rectangle):
+    def tlog(uid):
+      nonlocal t
+      now = time.monotonic()
+      if uid not in times:
+        times[uid] = [now - t]
+      else:
+        times[uid].append(now - t)
+      t = now
+
+    t = time.monotonic()
     if self._switching:
       self._handle_switch()
+
+    tlog("switch")
 
     if not self._ensure_connection():
       self._draw_placeholder(rect)
       return
+
+    tlog("connect")
 
     # Try to get a new buffer without blocking
     buffer = self.client.recv(timeout_ms=0)
@@ -200,6 +217,8 @@ class CameraView(Widget):
     if not self.frame:
       self._draw_placeholder(rect)
       return
+
+    tlog("recv")
 
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
@@ -220,11 +239,21 @@ class CameraView(Widget):
 
     dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 
+    tlog("calc rects")
+
     # Render with appropriate method
     if TICI:
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
+
+    tlog("render")
+
+    print("*** CameraView timings ***")
+    for uid, tlist in times.items():
+      max_time = max(tlist) * 1000
+      avg_time = sum(tlist) / len(tlist) * 1000
+      print(f"  {uid}: max {max_time:.2f} ms, avg {avg_time:.2f} ms over {len(tlist)} calls")
 
   def _draw_placeholder(self, rect: rl.Rectangle):
     if self._placeholder_color:
