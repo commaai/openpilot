@@ -43,8 +43,9 @@ from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
-POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
+VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl' if not USBGPU else Path(__file__).parent / 'models/big_driving_vision_tinygrad.pkl'
+POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl' if not USBGPU else Path(__file__).parent / 'models/big_driving_policy_tinygrad.pkl'
+
 VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
 POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
 
@@ -208,7 +209,7 @@ class ModelState:
     else:
       for key in imgs_cl:
         frame_input = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.vision_input_shapes[key])
-        self.vision_inputs[key] = Tensor(frame_input, dtype=dtypes.uint8).realize()
+        self.vision_inputs[key] = Tensor(frame_input, dtype=dtypes.uint8, device=VISION_DEV).realize()
 
     if prepare_only:
       return None
