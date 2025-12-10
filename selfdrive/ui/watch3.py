@@ -12,6 +12,7 @@ ROW_COLORS = [rl.ORANGE, rl.BLUE, rl.GREEN]
 MAX_SAME = 60
 
 def render_na(rect: rl.Rectangle, font_size: int = 32):
+  rect.width *= 0.8
   rl.draw_rectangle_rec(rect, rl.BLACK)
 
   text = "N/A"
