@@ -25,10 +25,9 @@ for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transfor
   for xenv in (lenv, lenvCython):
     xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
 
-# Compile cython
-cython_libs = envCython["LIBS"] + libs
+# Compile C++ module
 commonmodel_lib = lenv.Library('commonmodel', common_src)
-lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
+lenvCython.SharedLibrary('models/_commonmodel_module.so', ['models/commonmodel_module.cc'], LIBS=libs + [commonmodel_lib], FRAMEWORKS=frameworks, SHLIBPREFIX="")
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x]
 
 # Get model metadata
