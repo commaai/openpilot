@@ -1,4 +1,5 @@
 import time
+import threading
 import platform
 import numpy as np
 import pyray as rl
@@ -82,6 +83,9 @@ class CameraView(Widget):
     self._target_client: VisionIpcClient | None = None
     self._target_stream_type: VisionStreamType | None = None
     self._switching: bool = False
+    self._connecting: bool = False
+    self._prev_connected: bool = False
+    # self._connect_thread: threading.Thread | None = None
 
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
@@ -308,7 +312,18 @@ class CameraView(Widget):
     rl.end_shader_mode()
 
   def _ensure_connection(self) -> bool:
-    if not self.client.is_connected():
+    if self._connecting:
+      return False
+
+    now_connected = self.client.is_connected()
+    if now_connected != self._prev_connected:
+      cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
+      self._initialize_textures()
+      self.available_streams = self.client.available_streams(self._name, block=False)
+
+    self._prev_connected = now_connected
+
+    if not now_connected:
       self.frame = None
       self.available_streams.clear()
 
@@ -318,12 +333,23 @@ class CameraView(Widget):
         return False
       self.last_connection_attempt = current_time
 
-      if not self.client.connect(False) or not self.client.num_buffers:
-        return False
+      self._connecting = True
 
-      cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
-      self._initialize_textures()
-      self.available_streams = self.client.available_streams(self._name, block=False)
+      def do_connect():
+        try:
+          self.client.connect(False)
+        finally:
+          self._connecting = False
+
+      connect_thread = threading.Thread(target=do_connect, daemon=True)
+      connect_thread.start()
+
+      # if not self.client.connect(False) or not self.client.num_buffers:
+      #   return False
+
+      # cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
+      # self._initialize_textures()
+      # self.available_streams = self.client.available_streams(self._name, block=False)
 
     return True
 
