@@ -16,8 +16,8 @@ EVENT_TO_INT = EventName.schema.enumerants
 
 
 class DriverCameraView(CameraView):
-  def _calc_frame_matrix(self, rect: rl.Rectangle):
-    base = super()._calc_frame_matrix(rect)
+  def _calc_frame_matrix(self, frame_width: int, frame_height: int, rect: rl.Rectangle):
+    base = super()._calc_frame_matrix(frame_width, frame_height, rect)
     driver_view_ratio = 1.5
     base[0, 0] *= driver_view_ratio
     base[1, 1] *= driver_view_ratio
@@ -49,6 +49,7 @@ class DriverCameraDialog(NavWidget):
 
   def show_event(self):
     super().show_event()
+    self._camera_view.start()
     ui_state.params.put_bool("IsDriverViewEnabled", True)
     self._publish_alert_sound(None)
     device.reset_interactive_timeout(300)
@@ -57,6 +58,7 @@ class DriverCameraDialog(NavWidget):
 
   def hide_event(self):
     super().hide_event()
+    self._camera_view.stop()
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     device.reset_interactive_timeout()
 
@@ -82,7 +84,7 @@ class DriverCameraDialog(NavWidget):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._camera_view._render(rect)
 
-    if not self._camera_view.frame:
+    if not self._camera_view.connected:
       gui_label(rect, tr("camera starting"), font_size=54, font_weight=FontWeight.BOLD,
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       rl.end_scissor_mode()

@@ -158,7 +158,7 @@ class AugmentedRoadView(CameraView):
       wide_from_device = rot_from_euler(calib.wideFromDeviceEuler)
       self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
 
-  def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+  def _calc_frame_matrix(self, frame_width: int, frame_height: int, rect: rl.Rectangle) -> np.ndarray:
     # Check if we can use cached matrix
     cache_key = (
       ui_state.sm.recv_frame['liveCalibration'],

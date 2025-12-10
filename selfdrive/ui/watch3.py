@@ -11,6 +11,9 @@ if __name__ == "__main__":
   road = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
   driver = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
   wide = CameraView("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD)
+  road.start()
+  driver.start()
+  wide.start()
   for _ in gui_app.render():
     road.render(rl.Rectangle(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2))
     driver.render(rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))

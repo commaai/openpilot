@@ -34,7 +34,7 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._camera_view._render(rect)
 
-    if not self._camera_view.frame:
+    if not self._camera_view.connected:
       gui_label(rect, tr("camera starting"), font_size=64, font_weight=FontWeight.BOLD,
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       rl.end_scissor_mode()

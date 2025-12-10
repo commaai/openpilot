@@ -16,8 +16,10 @@ class DriverCameraDialog(CameraView):
     # TODO: this can grow unbounded, should be given some thought
     device.add_interactive_timeout_callback(self.stop_dmonitoringmodeld)
     ui_state.params.put_bool("IsDriverViewEnabled", True)
+    self.start()
 
   def stop_dmonitoringmodeld(self):
+    self.stop()
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
 
@@ -28,7 +30,7 @@ class DriverCameraDialog(CameraView):
   def _render(self, rect):
     super()._render(rect)
 
-    if not self.frame:
+    if not self.connected:
       gui_label(
         rect,
         tr("camera starting"),
@@ -73,17 +75,11 @@ class DriverCameraDialog(CameraView):
       line_color,
     )
 
-  def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+  def _calc_frame_matrix(self, frame_width:int, frame_height: int, rect: rl.Rectangle) -> np.ndarray:
     driver_view_ratio = 2.0
 
-    # Get stream dimensions
-    if self.frame:
-      stream_width = self.frame.width
-      stream_height = self.frame.height
-    else:
-      # Default values if frame not available
-      stream_width = 1928
-      stream_height = 1208
+    stream_width = frame_width
+    stream_height = frame_height
 
     yscale = stream_height * driver_view_ratio / stream_width
     xscale = yscale * rect.height / rect.width * stream_width / stream_height
