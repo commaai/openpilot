@@ -57,7 +57,7 @@ for model_name in ['driving_policy', 'dmonitoring_model']:
 
 for model_name in ['driving_vision',]:
   flags = {
-    'larch64': 'DEV=AMD AMD_IFACE=USB GRAPH_ONE_KERNEL=1 NOLOCALS=0 IMAGE=0 NPY_IMG=1',
+    'larch64': 'DEV=AMD AMD_IFACE=USB AMD_LLVM=1 GRAPH_ONE_KERNEL=1 NOLOCALS=0 IMAGE=0 NPY_IMG=1',
     'Darwin': f'DEV=CPU HOME={os.path.expanduser("~")} IMAGE=0', # tinygrad calls brew which needs a $HOME in the env
   }.get(arch, 'DEV=CPU CPU_LLVM=1 IMAGE=0')
   tg_compile(flags, model_name)
