@@ -47,19 +47,19 @@ if __name__ == "__main__":
       if current_device == -1:
         current_device = 0
       else:
-        cam = (roads[current_device], 'F')
+        cam = (wides[current_device], 'E')
         zoom = 1.0
     elif rl.is_key_pressed(rl.KEY_TWO) or rl.is_key_pressed(rl.KEY_KP_2):
       if current_device == -1:
         current_device = 1
       else:
-        cam = (drivers[current_device], 'D')
+        cam = (roads[current_device], 'F')
         zoom = 1.0
     elif rl.is_key_pressed(rl.KEY_THREE) or rl.is_key_pressed(rl.KEY_KP_3):
       if current_device == -1:
         current_device = 2
       else:
-        cam = (wides[current_device], 'E')
+        cam = (drivers[current_device], 'D')
         zoom = 1.0
 
     if cam and (rl.is_key_pressed(rl.KEY_LEFT_SHIFT) or rl.is_key_pressed(rl.KEY_RIGHT_SHIFT) or rl.is_key_pressed(rl.KEY_KP_ADD)):
@@ -90,18 +90,18 @@ if __name__ == "__main__":
       #rl.draw_text('SHIFT TO ZOOM', 10, 90, 30, ROW_COLORS[current_device])
     elif current_device != -1:
       roads[current_device][0].render(rl.Rectangle(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2))
-      rl.draw_text("1", gui_app.width // 2 + gui_app.width // 4 - 100, 0, 80, ROW_COLORS[current_device])
+      rl.draw_text("2", gui_app.width // 2 + gui_app.width // 4 - 100, 0, 80, ROW_COLORS[current_device])
       if roads[current_device][2] > MAX_SAME:
         render_na(rl.Rectangle(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2))
 
-      drivers[current_device][0].render(rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
-      rl.draw_text("2", gui_app.height - 120, gui_app.height // 2, 80, ROW_COLORS[current_device])
-      if drivers[current_device][2] > MAX_SAME:
+      wides[current_device][0].render(rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
+      rl.draw_text("1", gui_app.height - 120, gui_app.height // 2, 80, ROW_COLORS[current_device])
+      if wides[current_device][2] > MAX_SAME:
         render_na(rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
 
-      wides[current_device][0].render(rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
+      drivers[current_device][0].render(rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
       rl.draw_text("3", gui_app.width - 120, gui_app.height // 2, 80, ROW_COLORS[current_device])
-      if wides[current_device][2] > MAX_SAME:
+      if drivers[current_device][2] > MAX_SAME:
         render_na(rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
 
       rl.draw_text(f"DEVICE {current_device + 1}", 10, 10, 80, ROW_COLORS[current_device])
@@ -146,16 +146,16 @@ if __name__ == "__main__":
         r1 = rl.Rectangle(inner_x + cam_w * 1, inner_y, cam_w, inner_h)
         r2 = rl.Rectangle(inner_x + cam_w * 2, inner_y, cam_w, inner_h)
 
-        roads[i][0].render(inset_rect(r0.x + 250, r0.y, r0.width, r0.height, pad_inner))
-        if roads[i][2] > MAX_SAME:
+        wides[i][0].render(inset_rect(r0.x + 250, r0.y, r0.width, r0.height, pad_inner))
+        if wides[i][2] > MAX_SAME:
           render_na(inset_rect(r0.x + 250, r0.y, r0.width, r0.height, pad_inner))
 
-        drivers[i][0].render(inset_rect(r1.x + 150, r1.y, r1.width, r1.height, pad_inner))
-        if drivers[i][2] > MAX_SAME:
+        roads[i][0].render(inset_rect(r1.x + 150, r1.y, r1.width, r1.height, pad_inner))
+        if roads[i][2] > MAX_SAME:
           render_na(inset_rect(r1.x + 150, r1.y, r1.width, r1.height, pad_inner))
 
-        wides[i][0].render(inset_rect(r2.x + 50, r2.y, r2.width, r2.height, pad_inner))
-        if wides[i][2] > MAX_SAME:
+        drivers[i][0].render(inset_rect(r2.x + 50, r2.y, r2.width, r2.height, pad_inner))
+        if drivers[i][2] > MAX_SAME:
           render_na(inset_rect(r2.x + 50, r2.y, r2.width, r2.height, pad_inner))
 
         label = f"Device {i+1}"
