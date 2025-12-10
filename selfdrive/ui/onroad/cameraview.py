@@ -317,9 +317,13 @@ class CameraView(Widget):
 
     now_connected = self.client.is_connected()
     if now_connected != self._prev_connected:
+      t = time.monotonic()
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
       self._initialize_textures()
+      print(f"Initialized textures in {(time.monotonic() - t) * 1000:.2f} ms")
+      t = time.monotonic()
       self.available_streams = self.client.available_streams(self._name, block=False)
+      print(f"Fetched available streams in {(time.monotonic() - t) * 1000:.2f} ms")
 
     self._prev_connected = now_connected
 
