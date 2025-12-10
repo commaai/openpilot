@@ -1,4 +1,5 @@
 import atexit
+import queue
 import threading
 import time
 import uuid
@@ -153,7 +154,7 @@ class WifiManager:
     self._ipv4_forward = False
 
     self._last_network_update: float = 0.0
-    self._callback_queue: list[Callable] = []
+    self._callback_queue: queue.Queue[Callable] = queue.Queue()
 
     self._tethering_ssid = "weedle"
     if Params is not None:
@@ -219,13 +220,19 @@ class WifiManager:
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
-      self._callback_queue.append(lambda _cb=cb: _cb(*args))
+      self._callback_queue.put(lambda _cb=cb: _cb(*args))
 
   def process_callbacks(self):
     # Call from UI thread to run any pending callbacks
-    to_run, self._callback_queue = self._callback_queue, []
-    for cb in to_run:
-      cb()
+    while not self._callback_queue.empty():
+      try:
+        cb = self._callback_queue.get_nowait()
+        cb()
+        self._callback_queue.task_done()
+      except queue.Empty:
+        break
+      except Exception as e:
+        cloudlog.exception(f"Error processing WifiManager callback: {e}")
 
   def set_active(self, active: bool):
     self._active = active
