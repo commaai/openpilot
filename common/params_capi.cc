@@ -75,10 +75,6 @@ char* params_get_param_path(void* p, const char* key) {
 
 // all_keys returns a NULL-terminated array of strings.
 // The caller must free each string and the array itself.
-// Actually, to make it easier for ctypes, let's return a single buffer with null-separated strings, ended by double null?
-// Or just handle the vector locally. A simpler way for ctypes might be to implementation iteration,
-// but replicating the list return is safer.
-// Let's stick to C-style array of strings.
 char** params_all_keys(void* p, size_t* out_len) {
   Params* params = (Params*)p;
   std::vector<std::string> keys = params->allKeys();
