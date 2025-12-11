@@ -20,20 +20,13 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 
 FPS = 60
-HEADLESS = False  # os.getenv("WINDOWED", "0") == "1"
-STARTED = False
-
-# patch ui_state to set onroad/offroad based on our script events
-# _original_update_state = ui_state._update_state
+HEADLESS = os.getenv("WINDOWED", "0") == "1"
 
 
-# @patch('ui_state._update_state', autospec=True)
 def _update_state():
-  # _original_update_state(self)
-  ui_state.started = STARTED
+  """We manually update state"""
 
 
-# ui_state.update_state = _update_state.__get__(ui_state, type(ui_state))
 ui_state._update_state = _update_state
 
 
@@ -83,7 +76,6 @@ def inject_click(coords):
 
 
 def handle_event(event: DummyEvent):
-  global STARTED
   if event.click:
     inject_click([(gui_app.width // 2, gui_app.height // 2)])
   if event.swipe_left:
@@ -99,11 +91,9 @@ def handle_event(event: DummyEvent):
                   (gui_app.width // 2, gui_app.height * 3 // 4),
                   (gui_app.width // 2, gui_app.height)])
   if event.onroad:
-    # ui_state.started = True
-    STARTED = True
+    ui_state.started = True
   if event.offroad:
-    # ui_state.started = False
-    STARTED = False
+    ui_state.started = False
 
 
 def run_replay():
