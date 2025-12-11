@@ -19,8 +19,6 @@ try:
 except OSError:
   _lib = None
 
-# ... Struct definitions ...
-# Function to set argtypes is below structs
 
 # Constants
 PANDA_BUS_OFFSET = 4
@@ -42,7 +40,7 @@ class CanFrame_Flat(ctypes.Structure):
     ("src", ctypes.c_long),
   ]
 
-# Helpers for backward compatibility - Defined after struct
+
 def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   if not isinstance(can_msgs, list):
     raise TypeError("can_msgs must be a list")
@@ -56,8 +54,6 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
     c_frames[i].src = src
 
   out_len = ctypes.c_size_t()
-  # void* can_list_to_capnp(const CanFrame_C* frames, size_t len, bool sendcan, bool valid, size_t* out_len)
-  # Need to set argtypes for this new function if using it
 
   ret_ptr = _lib.can_list_to_capnp(c_frames, count, sendcan, valid, ctypes.byref(out_len))
   if not ret_ptr:
@@ -71,7 +67,6 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
 def can_capnp_to_list(strings, msgtype='can'):
   sendcan = (msgtype == 'sendcan')
   if not isinstance(strings, list):
-    # This might catch TypeError like original module
     raise TypeError("strings must be a list")
 
   ret = []
@@ -274,7 +269,6 @@ def pandad_main(pandas):
         evt = msg.initEvent()
         evt.valid = True
         evt.initPeripheralState()
-        # TODO: Implement peripheral state reading
         pm.send("peripheralState", msg)
 
       rk.keep_time()
@@ -352,7 +346,7 @@ class Panda:
     for i in range(cnt):
       f = c_frames[i]
       dat = bytes(f.dat[:f.dat_len])
-      ret.append((f.address, 0, dat, f.src)) # address, ex, dat, src
+      ret.append((f.address, 0, dat, f.src))
     return ret
 
   @staticmethod
@@ -362,7 +356,6 @@ class Panda:
 
 
 def comms_checks(pandas):
-  # Check connections
   if any(not p.connected() for p in pandas):
     return False
   return True
@@ -379,27 +372,15 @@ def can_send_thread(pandas, stop_event):
     if msg is None:
       continue
 
-    # Parse sendcan
-    # In C++ we parsed capnp. Here we receive bytes.
-    # We need to parse capnp to get frames.
-    # Performance critical?
-    # Ideally we'd pass raw bytes to C++ and parse there.
-    # But `libpandad` doesn't expose event parsing helpers yet (except implicit in can_send discussion before).
-    # I implemented `panda_can_send` taking struct list.
-
     evt = log.Event.from_bytes(msg)
     if evt.which() == 'sendcan':
       for p in pandas:
-        # We need to convert sendcan frames to format needed by Panda.can_send
-        # sendcan is list of CanData.
         frames = []
         for c in evt.sendcan:
             frames.append((c.address, c.dat, c.src))
         p.can_send(frames)
 
 def main():
-  # Connect to pandas
-  # Use pymod for listing to avoid re-implementing USB discovery in C
   from panda import Panda as PyPanda
   serials = PyPanda.list()
 
