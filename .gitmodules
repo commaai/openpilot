@@ -6,7 +6,8 @@
   url = ../../commaai/opendbc.git
 [submodule "msgq"]
   path = msgq_repo
-  url = ../../commaai/msgq.git
+  url = ../../mpurnell1/msgq.git
+  branch = remove-ipc-cython
 [submodule "rednose_repo"]
   path = rednose_repo
   url = ../../commaai/rednose.git
