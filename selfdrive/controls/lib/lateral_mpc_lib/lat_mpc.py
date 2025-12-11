@@ -7,10 +7,8 @@ from casadi import SX, vertcat, sin, cos
 # WARNING: imports outside of constants will not trigger a rebuild
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
-if __name__ == '__main__':  # generating code
-  from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
-else:
-  from openpilot.selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
+from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+from openpilot.selfdrive.controls.lib.acados_setup import acados_preload, prepare_acados_ocp_json
 
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
@@ -132,7 +130,14 @@ class LateralMpc:
   def __init__(self, x0=None):
     if x0 is None:
       x0 = np.zeros(X_DIM)
-    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
+    acados_preload()
+    # Fixup JSON for current architecture
+    json_path = prepare_acados_ocp_json(JSON_FILE)
+    try:
+      self.solver = AcadosOcpSolver(gen_lat_ocp(), json_file=json_path, generate=False, build=False)
+    finally:
+      if os.path.exists(json_path):
+        os.remove(json_path)
     self.reset(x0)
 
   def reset(self, x0=None):
@@ -196,4 +201,4 @@ class LateralMpc:
 if __name__ == "__main__":
   ocp = gen_lat_ocp()
   AcadosOcpSolver.generate(ocp, json_file=JSON_FILE)
-  # AcadosOcpSolver.build(ocp.code_export_directory, with_cython=True)
+
