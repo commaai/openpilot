@@ -41,6 +41,7 @@ BRAND_EXTRA_GEARS = {
 class CarSpecificEvents:
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
+
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.no_steer_warning = False
@@ -84,6 +85,7 @@ class CarSpecificEvents:
     elif self.CP.brand == 'toyota':
       # TODO: when we check for unexpected disengagement, check gear not S1, S2, S3
       events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears)
+
       if self.CP.openpilotLongitudinalControl:
         if CS.cruiseState.standstill and not CS.brakePressed:
           events.add(EventName.resumeRequired)
@@ -137,7 +139,7 @@ class CarSpecificEvents:
     if CS.seatbeltUnlatched:
       events.add(EventName.seatbeltNotLatched)
     if CS.gearShifter != GearShifter.drive and (extra_gears is None or
-                                                CS.gearShifter not in extra_gears):
+       CS.gearShifter not in extra_gears):
       events.add(EventName.wrongGear)
     if CS.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
