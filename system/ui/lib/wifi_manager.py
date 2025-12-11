@@ -154,7 +154,7 @@ class WifiManager:
     self._ipv4_forward = False
 
     self._last_network_update: float = 0.0
-    self._callback_queue: queue.Queue[Callable] = queue.Queue()
+    self._callback_queue: queue.Queue[Callable] = queue.Queue(maxsize=100)
 
     self._tethering_ssid = "weedle"
     if Params is not None:
@@ -219,8 +219,11 @@ class WifiManager:
     return self._tethering_password
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
-    for cb in cbs:
-      self._callback_queue.put(lambda _cb=cb: _cb(*args))
+    try:
+      for cb in cbs:
+        self._callback_queue.put_nowait(lambda _cb=cb: _cb(*args))
+    except queue.Full:
+      cloudlog.warning("WifiManager callback queue full, dropping callbacks")
 
   def process_callbacks(self):
     # Call from UI thread to run any pending callbacks
