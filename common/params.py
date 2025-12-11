@@ -5,16 +5,13 @@ from enum import IntEnum, IntFlag
 
 # Load library
 def get_libpath():
-  # Try strict path relative to this file
   path = os.path.dirname(os.path.realpath(__file__))
   libname = "libparams_c.so"
   return os.path.join(path, libname)
 
 try:
-  _libparams = ctypes.CDLL(get_libpath())
-  _libc = ctypes.CDLL("libc.so.6")
+  _libparams: ctypes.CDLL | None = ctypes.CDLL(get_libpath())
 except OSError:
-  # Fallback for testing or if not built yet
   _libparams = None
 
 class ParamKeyType(IntEnum):
@@ -57,7 +54,10 @@ if _libparams:
   _libparams.params_get_key_type.restype = c_int
 
   _libparams.params_get.argtypes = [c_void_p, c_char_p, c_bool, POINTER(c_size_t)]
-  _libparams.params_get.restype = c_void_p  # returns malloc'd buffer
+  _libparams.params_get.restype = c_void_p
+
+  _libparams.params_free_str.argtypes = [c_void_p]
+  _libparams.params_free_str.restype = None
 
   _libparams.params_put.argtypes = [c_void_p, c_char_p, c_char_p, c_size_t]
   _libparams.params_put.restype = c_int
@@ -72,7 +72,7 @@ if _libparams:
   _libparams.params_put_bool_nonblocking.restype = None
 
   _libparams.params_get_param_path.argtypes = [c_void_p, c_char_p]
-  _libparams.params_get_param_path.restype = c_void_p # char*
+  _libparams.params_get_param_path.restype = c_void_p
 
   _libparams.params_all_keys.argtypes = [c_void_p, POINTER(c_size_t)]
   _libparams.params_all_keys.restype = POINTER(c_char_p)
@@ -81,7 +81,7 @@ if _libparams:
   _libparams.params_free_str_array.restype = None
 
   _libparams.params_get_default_value.argtypes = [c_void_p, c_char_p]
-  _libparams.params_get_default_value.restype = c_void_p # char*
+  _libparams.params_get_default_value.restype = c_void_p
 
   _libparams.params_remove.argtypes = [c_void_p, c_char_p]
   _libparams.params_remove.restype = c_int
@@ -127,7 +127,7 @@ class Params:
       try:
         data = ctypes.string_at(ret_ptr, size.value)
       finally:
-        _libc.free(ret_ptr)
+        _libparams.params_free_str(ret_ptr)
 
     if data is None and return_default:
        ptr = _libparams.params_get_default_value(self.ptr, key_bytes)
@@ -135,7 +135,7 @@ class Params:
          try:
            data = ctypes.string_at(ptr)
          finally:
-           _libc.free(ptr)
+           _libparams.params_free_str(ptr)
 
     if data is None:
       return None
@@ -189,12 +189,12 @@ class Params:
     elif isinstance(val, dict):
       import json
       val_bytes = json.dumps(val).encode('utf-8')
-    elif hasattr(val, "isoformat"): # datetime
+    elif hasattr(val, "isoformat"):
       val_bytes = val.isoformat().encode('utf-8')
     elif isinstance(val, bytes):
       val_bytes = val
     else:
-      val_bytes = val # Try direct if ctypes accepts it (or conversion fails later)
+      val_bytes = val
 
     return _libparams.params_put(self.ptr, key_bytes, val_bytes, len(val_bytes))
 
@@ -246,7 +246,7 @@ class Params:
     try:
       return ctypes.string_at(ptr).decode('utf-8')
     finally:
-      _libc.free(ptr)
+      _libparams.params_free_str(ptr)
 
   def all_keys(self):
     size = c_size_t(0)
@@ -258,7 +258,7 @@ class Params:
       keys = []
       for i in range(size.value):
         k = keys_ptr[i]
-        keys.append(k) # Return bytes, as k is C-string bytes
+        keys.append(k)
       return keys
     finally:
       _libparams.params_free_str_array(keys_ptr, size)
@@ -271,7 +271,12 @@ class Params:
       return None
     try:
       data = ctypes.string_at(ptr)
+      return self.cpp2python(key, data)
+    finally:
+      _libparams.params_free_str(ptr)
 
+  def cpp2python(self, key, data):
+    try:
       key_type = self.get_key_type(key)
       if key_type == ParamKeyType.STRING:
           return data.decode('utf-8')
@@ -289,8 +294,8 @@ class Params:
           return json.loads(data)
       else:
           return data
-    finally:
-      _libc.free(ptr)
+    except Exception:
+      return data
 
 if __name__ == "__main__":
   import sys
