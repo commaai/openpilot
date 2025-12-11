@@ -17,7 +17,7 @@ if GetOption('extras'):
               LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
 # C++ bindings
-params_python = envCython.SharedLibrary('_params', 'params_module.cc', SHLIBPREFIX="", LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+params_python = envCython.Program('_params.so', 'params_module.cc', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
 
 SConscript([
   'transformations/SConscript',
