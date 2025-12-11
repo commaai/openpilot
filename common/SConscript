@@ -16,8 +16,8 @@ if GetOption('extras'):
               ['tests/test_runner.cc', 'tests/test_params.cc', 'tests/test_util.cc', 'tests/test_swaglog.cc'],
               LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
-# Cython bindings
-params_python = envCython.SharedLibrary('params_pyx', 'params_pyx.cc', SHLIBPREFIX="", LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+# C++ bindings
+params_python = envCython.SharedLibrary('_params', 'params_module.cc', SHLIBPREFIX="", LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
 
 SConscript([
   'transformations/SConscript',

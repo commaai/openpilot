@@ -420,7 +420,7 @@ static PyMethodDef Params_methods[] = {
 
 static PyTypeObject ParamsType = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  .tp_name = "params_pyx.Params",
+  .tp_name = "_params.Params",
   .tp_basicsize = sizeof(ParamsObject),
   .tp_dealloc = (destructor)Params_dealloc,
   .tp_flags = Py_TPFLAGS_DEFAULT,
@@ -435,13 +435,13 @@ static PyMethodDef params_functions[] = {
 
 static struct PyModuleDef params_module = {
   PyModuleDef_HEAD_INIT,
-  "params_pyx",
+  "_params",
   NULL,
   -1,
   params_functions
 };
 
-PyMODINIT_FUNC PyInit_params_pyx(void) {
+PyMODINIT_FUNC PyInit__params(void) {
   PyObject *m;
   if (PyType_Ready(&ParamsType) < 0)
     return NULL;
@@ -458,7 +458,7 @@ PyMODINIT_FUNC PyInit_params_pyx(void) {
   }
 
   // Initialize ParamKeyFlagType
-  ParamKeyFlagType.tp_name = "params_pyx.ParamKeyFlag";
+  ParamKeyFlagType.tp_name = "_params.ParamKeyFlag";
   ParamKeyFlagType.tp_basicsize = sizeof(PyObject);
   ParamKeyFlagType.tp_flags = Py_TPFLAGS_DEFAULT;
   ParamKeyFlagType.tp_doc = "ParamKeyFlag";
@@ -482,7 +482,7 @@ PyMODINIT_FUNC PyInit_params_pyx(void) {
   }
 
   // Initialize ParamKeyTypeType
-  ParamKeyTypeType.tp_name = "params_pyx.ParamKeyType";
+  ParamKeyTypeType.tp_name = "_params.ParamKeyType";
   ParamKeyTypeType.tp_basicsize = sizeof(PyObject);
   ParamKeyTypeType.tp_flags = Py_TPFLAGS_DEFAULT;
   ParamKeyTypeType.tp_doc = "ParamKeyType";
@@ -505,7 +505,7 @@ PyMODINIT_FUNC PyInit_params_pyx(void) {
       return NULL;
   }
 
-  UnknownKeyName = PyErr_NewException("params_pyx.UnknownKeyName", NULL, NULL);
+  UnknownKeyName = PyErr_NewException("_params.UnknownKeyName", NULL, NULL);
   Py_INCREF(UnknownKeyName);
   PyModule_AddObject(m, "UnknownKeyName", UnknownKeyName);
 
