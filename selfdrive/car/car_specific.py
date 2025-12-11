@@ -25,6 +25,7 @@ class MockCarState:
 
     return CS
 
+
 BRAND_EXTRA_GEARS = {
   'ford': [GearShifter.low, GearShifter.manumatic],
   'nissan': [GearShifter.brake],
@@ -35,6 +36,7 @@ BRAND_EXTRA_GEARS = {
   'volkswagen': [GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
   'hyundai': [GearShifter.sport, GearShifter.manumatic]
 }
+
 
 class CarSpecificEvents:
   def __init__(self, CP: structs.CarParams):
@@ -111,7 +113,7 @@ class CarSpecificEvents:
         events.add(EventName.resumeRequired)
 
     elif self.CP.brand == 'volkswagen':
-      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears,pcm_enable=self.CP.pcmCruise)
+      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears, pcm_enable=self.CP.pcmCruise)
 
       if self.CP.openpilotLongitudinalControl:
         if CS.vEgo < self.CP.minEnableSpeed + 0.5:
@@ -140,7 +142,7 @@ class CarSpecificEvents:
     if CS.seatbeltUnlatched:
       events.add(EventName.seatbeltNotLatched)
     if CS.gearShifter != GearShifter.drive and (extra_gears is None or
-       CS.gearShifter not in extra_gears):
+                                                CS.gearShifter not in extra_gears):
       events.add(EventName.wrongGear)
     if CS.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
