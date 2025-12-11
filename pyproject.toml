@@ -16,18 +16,14 @@ dependencies = [
   "sympy",        # rednose + friends
   "crcmod",       # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
-
   # hardwared
   "smbus2", # configuring amp
-
   # core
   "cffi",
   "scons",
   "pycapnp==2.1.0",
-  "Cython",
   "setuptools",
   "numpy >=2.0",
-
   # body / webrtcd
   "aiohttp",
   "aiortc",
@@ -35,42 +31,32 @@ dependencies = [
   # with the latest release
   "pyopenssl < 24.3.0",
   "pyaudio",
-
   # ubloxd (TODO: just use struct)
   "kaitaistruct",
-
   # panda
   "libusb1",
   "spidev; platform_system == 'Linux'",
-
   # modeld
   "onnx >= 1.14.0",
-
   # logging
   "pyzmq",
   "sentry-sdk",
   "xattr", # used in place of 'os.getxattr' for macos compatibility
-
   # athena
   "PyJWT",
   "json-rpc",
   "websocket_client",
-
   # acados deps
   "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
   "future-fstrings",
-
   # joystickd
   "inputs",
-
   # these should be removed
   "psutil",
   "pycryptodome", # used in updated/casync, panda, body, and a test
   "setproctitle",
-
   # logreader
   "zstandard",
-
   # ui
   "raylib < 5.5.0.3", # TODO: unpin when they fix https://github.com/electronstudio/raylib-python-cffi/issues/186
   "qrcode",
@@ -238,6 +224,7 @@ lint.ignore = [
   "NPY002",  # new numpy random syntax is worse
   "UP045", "UP007",  # these don't play nice with raylib atm
 ]
+lint.flake8-implicit-str-concat.allow-multiline = false
 line-length = 160
 target-version ="py311"
 exclude = [
@@ -254,7 +241,6 @@ exclude = [
   "*.ipynb",
   "generated",
 ]
-lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "selfdrive".msg = "Use openpilot.selfdrive"
