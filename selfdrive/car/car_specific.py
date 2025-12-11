@@ -52,11 +52,6 @@ class CarSpecificEvents:
     if self.CP.brand in ('body', 'mock'):
       events = Events()
 
-    elif self.CP.brand == 'ford' or self.CP.brand == 'nissan':
-      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears)
-
-    elif self.CP.brand == 'chrysler':
-      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears)
       # Low speed steer alert hysteresis logic
       if self.CP.minSteerSpeed > 0. and CS.vEgo < (self.CP.minSteerSpeed + 0.5):
         self.low_speed_alert = True
@@ -129,7 +124,7 @@ class CarSpecificEvents:
       events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears, pcm_enable=self.CP.pcmCruise, allow_button_cancel=False)
 
     else:
-      events = self.create_common_events(CS, CS_prev)
+      events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears)
 
     return events
 
