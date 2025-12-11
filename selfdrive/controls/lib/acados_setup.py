@@ -51,7 +51,7 @@ def prepare_acados_ocp_json(json_file):
   import json
   import tempfile
 
-  with open(json_file, 'r') as f:
+  with open(json_file) as f:
     data = json.load(f)
 
   data['acados_lib_path'] = get_acados_lib_path()
