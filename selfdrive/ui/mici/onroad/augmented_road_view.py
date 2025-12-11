@@ -245,6 +245,7 @@ class AugmentedRoadView(CameraView):
     self._bookmark_icon.render(self.rect)
 
     # Draw darkened background and text if not onroad
+    print("ui_state.started:", ui_state.started)
     if not ui_state.started:
       rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))
       self._offroad_label.render(self._content_rect)

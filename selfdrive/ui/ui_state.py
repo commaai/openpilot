@@ -113,6 +113,7 @@ class UIState:
     device.update()
 
   def _update_state(self) -> None:
+    print("UIState update")
     # Handle panda states updates
     if self.sm.updated["pandaStates"]:
       panda_states = self.sm["pandaStates"]
