@@ -1,174 +1,423 @@
 #!/usr/bin/env python3
 # simple pandad wrapper that updates the panda first
 import os
-import usb1
-import time
-import signal
-import subprocess
+import ctypes
+import threading
 
-from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
-from openpilot.common.basedir import BASEDIR
-from openpilot.common.params import Params
-from openpilot.system.hardware import HARDWARE
+
 from openpilot.common.swaglog import cloudlog
+import msgq
+from cereal import log
 
+# Load library
+def get_libpath():
+  path = os.path.dirname(os.path.abspath(__file__))
+  return os.path.join(path, "libpandad.so")
 
-def get_expected_signature(panda: Panda) -> bytes:
-  try:
-    fn = os.path.join(FW_PATH, panda.get_mcu_type().config.app_fn)
-    return Panda.get_signature_from_firmware(fn)
-  except Exception:
-    cloudlog.exception("Error computing expected signature")
+try:
+  _lib: ctypes.CDLL | None = ctypes.CDLL(get_libpath())
+except OSError:
+  _lib = None
+
+# ... Struct definitions ...
+# Function to set argtypes is below structs
+
+# Constants
+PANDA_BUS_OFFSET = 4
+PANDA_CAN_CNT = 3
+
+class CanFrame_C(ctypes.Structure):
+  _fields_ = [
+    ("address", ctypes.c_long),
+    ("dat", ctypes.POINTER(ctypes.c_uint8)),
+    ("dat_len", ctypes.c_size_t),
+    ("src", ctypes.c_long),
+  ]
+
+class CanFrame_Flat(ctypes.Structure):
+  _fields_ = [
+    ("address", ctypes.c_long),
+    ("dat", ctypes.c_uint8 * 64),
+    ("dat_len", ctypes.c_size_t),
+    ("src", ctypes.c_long),
+  ]
+
+# Helpers for backward compatibility - Defined after struct
+def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
+  if not isinstance(can_msgs, list):
+    raise TypeError("can_msgs must be a list")
+  sendcan = (msgtype == 'sendcan')
+  count = len(can_msgs)
+  c_frames = (CanFrame_C * count)()
+  for i, (addr, dat, src) in enumerate(can_msgs):
+    c_frames[i].address = addr
+    c_frames[i].dat = ctypes.cast(ctypes.c_char_p(dat), ctypes.POINTER(ctypes.c_uint8))
+    c_frames[i].dat_len = len(dat)
+    c_frames[i].src = src
+
+  out_len = ctypes.c_size_t()
+  # void* can_list_to_capnp(const CanFrame_C* frames, size_t len, bool sendcan, bool valid, size_t* out_len)
+  # Need to set argtypes for this new function if using it
+
+  ret_ptr = _lib.can_list_to_capnp(c_frames, count, sendcan, valid, ctypes.byref(out_len))
+  if not ret_ptr:
     return b""
 
-def flash_panda(panda_serial: str) -> Panda:
   try:
-    panda = Panda(panda_serial)
-  except PandaProtocolMismatch:
-    cloudlog.warning("detected protocol mismatch, reflashing panda")
-    HARDWARE.recover_internal_panda()
-    raise
+    return ctypes.string_at(ret_ptr, out_len.value)
+  finally:
+    _lib.panda_free_str(ret_ptr)
 
-  fw_signature = get_expected_signature(panda)
-  internal_panda = panda.is_internal()
+def can_capnp_to_list(strings, msgtype='can'):
+  sendcan = (msgtype == 'sendcan')
+  if not isinstance(strings, list):
+    # This might catch TypeError like original module
+    raise TypeError("strings must be a list")
 
-  panda_version = "bootstub" if panda.bootstub else panda.get_version()
-  panda_signature = b"" if panda.bootstub else panda.get_signature()
-  cloudlog.warning(f"Panda {panda_serial} connected, version: {panda_version}, signature {panda_signature.hex()[:16]}, expected {fw_signature.hex()[:16]}")
+  ret = []
+  for s in strings:
+    ptr = _lib.can_capnp_to_list_create(s, len(s), sendcan)
+    if not ptr:
+      continue
 
-  if panda.bootstub or panda_signature != fw_signature:
-    cloudlog.info("Panda firmware out of date, update required")
-    panda.flash()
-    cloudlog.info("Done flashing")
-
-  if panda.bootstub:
-    bootstub_version = panda.get_version()
-    cloudlog.info(f"Flashed firmware not booting, flashing development bootloader. {bootstub_version=}, {internal_panda=}")
-    if internal_panda:
-      HARDWARE.recover_internal_panda()
-    panda.recover(reset=(not internal_panda))
-    cloudlog.info("Done flashing bootstub")
-
-  if panda.bootstub:
-    cloudlog.info("Panda still not booting, exiting")
-    raise AssertionError
-
-  panda_signature = panda.get_signature()
-  if panda_signature != fw_signature:
-    cloudlog.info("Version mismatch after flashing, exiting")
-    raise AssertionError
-
-  return panda
-
-
-def main() -> None:
-  # signal pandad to close the relay and exit
-  def signal_handler(signum, frame):
-    cloudlog.info(f"Caught signal {signum}, exiting")
-    nonlocal do_exit
-    do_exit = True
-    if process is not None:
-      process.send_signal(signal.SIGINT)
-
-  process = None
-  do_exit = False
-  signal.signal(signal.SIGINT, signal_handler)
-
-  count = 0
-  first_run = True
-  params = Params()
-  no_internal_panda_count = 0
-
-  while not do_exit:
     try:
-      count += 1
-      cloudlog.event("pandad.flash_and_connect", count=count)
-      params.remove("PandaSignatures")
+      count = _lib.can_capnp_handler_size(ptr)
+      for i in range(count):
+        nanos = _lib.can_capnp_handler_get_nanos(ptr, i)
+        frame_cnt = _lib.can_capnp_handler_get_frame_count(ptr, i)
+        frames = []
+        c_frame = CanFrame_Flat()
+        for j in range(frame_cnt):
+            _lib.can_capnp_handler_get_frame(ptr, i, j, ctypes.byref(c_frame))
+            dat = bytes(c_frame.dat[:c_frame.dat_len])
+            frames.append((c_frame.address, dat, c_frame.src))
+        ret.append((nanos, frames))
+    finally:
+      _lib.can_capnp_handler_free(ptr)
 
-      # Handle missing internal panda
-      if no_internal_panda_count > 0:
-        if no_internal_panda_count == 3:
-          cloudlog.info("No pandas found, putting internal panda into DFU")
-          HARDWARE.recover_internal_panda()
-        else:
-          cloudlog.info("No pandas found, resetting internal panda")
-          HARDWARE.reset_internal_panda()
-        time.sleep(3)  # wait to come back up
+  return ret
 
-      # Flash all Pandas in DFU mode
-      dfu_serials = PandaDFU.list()
-      if len(dfu_serials) > 0:
-        for serial in dfu_serials:
-          cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
-          PandaDFU(serial).recover()
-        time.sleep(1)
+# Set CAPI types for helpers
+if _lib:
+  _lib.can_list_to_capnp.argtypes = [ctypes.POINTER(CanFrame_C), ctypes.c_size_t, ctypes.c_bool, ctypes.c_bool, ctypes.POINTER(ctypes.c_size_t)]
+  _lib.can_list_to_capnp.restype = ctypes.c_void_p
 
-      panda_serials = Panda.list()
-      if len(panda_serials) == 0:
-        no_internal_panda_count += 1
-        continue
+  _lib.can_capnp_to_list_create.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.c_bool]
+  _lib.can_capnp_to_list_create.restype = ctypes.c_void_p
 
-      cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
+  _lib.can_capnp_handler_size.argtypes = [ctypes.c_void_p]
+  _lib.can_capnp_handler_size.restype = ctypes.c_size_t
 
-      # Flash pandas
-      pandas: list[Panda] = []
-      for serial in panda_serials:
-        pandas.append(flash_panda(serial))
+  _lib.can_capnp_handler_get_nanos.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+  _lib.can_capnp_handler_get_nanos.restype = ctypes.c_uint64
 
-      # Ensure internal panda is present if expected
-      internal_pandas = [panda for panda in pandas if panda.is_internal()]
-      if HARDWARE.has_internal_panda() and len(internal_pandas) == 0:
-        cloudlog.error("Internal panda is missing, trying again")
-        no_internal_panda_count += 1
-        continue
-      no_internal_panda_count = 0
+  _lib.can_capnp_handler_get_frame_count.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+  _lib.can_capnp_handler_get_frame_count.restype = ctypes.c_size_t
 
-      # sort pandas to have deterministic order
-      # * the internal one is always first
-      # * then sort by hardware type
-      # * as a last resort, sort by serial number
-      pandas.sort(key=lambda x: (not x.is_internal(), x.get_type(), x.get_usb_serial()))
-      panda_serials = [p.get_usb_serial() for p in pandas]
+  _lib.can_capnp_handler_get_frame.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_size_t, ctypes.POINTER(CanFrame_Flat)]
 
-      # log panda fw versions
-      params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))
+  _lib.can_capnp_handler_free.argtypes = [ctypes.c_void_p]
 
-      for panda in pandas:
-        # check health for lost heartbeat
-        health = panda.health()
-        if health["heartbeat_lost"]:
-          params.put_bool("PandaHeartbeatLost", True)
-          cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
-        if health["som_reset_triggered"]:
-          params.put_bool("PandaSomResetTriggered", True)
-          cloudlog.event("panda.som_reset_triggered", health=health, serial=panda.get_usb_serial())
 
-        if first_run:
-          # reset panda to ensure we're in a good state
-          cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-          panda.reset(reconnect=True)
 
+
+class PandaHealth_C(ctypes.Structure):
+  _fields_ = [
+    ("voltage_pkt", ctypes.c_uint16),
+    ("current_pkt", ctypes.c_uint16),
+    ("uptime_pkt", ctypes.c_uint32),
+    ("rx_buffer_overflow_pkt", ctypes.c_uint32),
+    ("tx_buffer_overflow_pkt", ctypes.c_uint32),
+    ("faults_pkt", ctypes.c_uint32),
+    ("ignition_line_pkt", ctypes.c_uint8),
+    ("ignition_can_pkt", ctypes.c_uint8),
+    ("controls_allowed_pkt", ctypes.c_uint8),
+    ("safety_mode_pkt", ctypes.c_uint8),
+    ("safety_param_pkt", ctypes.c_uint16),
+    ("fault_status_pkt", ctypes.c_uint8),
+    ("power_save_enabled_pkt", ctypes.c_uint8),
+    ("heartbeat_lost_pkt", ctypes.c_uint8),
+    ("alternative_experience_pkt", ctypes.c_uint16),
+    ("car_harness_status_pkt", ctypes.c_uint8),
+    ("safety_tx_blocked_pkt", ctypes.c_uint8),
+    ("safety_rx_invalid_pkt", ctypes.c_uint8),
+    ("safety_rx_checks_invalid_pkt", ctypes.c_uint8),
+    ("interrupt_load_pkt", ctypes.c_uint32),
+    ("fan_power", ctypes.c_uint16),
+    ("spi_error_count_pkt", ctypes.c_uint32),
+    ("sbu1_voltage_mV", ctypes.c_uint16),
+    ("sbu2_voltage_mV", ctypes.c_uint16),
+  ]
+
+# Set return types
+if _lib:
+  _lib.panda_create.argtypes = [ctypes.c_char_p, ctypes.c_uint32]
+  _lib.panda_create.restype = ctypes.c_void_p
+  _lib.panda_delete.argtypes = [ctypes.c_void_p]
+
+  _lib.panda_connected.argtypes = [ctypes.c_void_p]
+  _lib.panda_connected.restype = ctypes.c_bool
+
+  _lib.panda_comms_healthy.argtypes = [ctypes.c_void_p]
+  _lib.panda_comms_healthy.restype = ctypes.c_bool
+
+  _lib.panda_get_serial.argtypes = [ctypes.c_void_p]
+  _lib.panda_get_serial.restype = ctypes.c_void_p # char* needed to free
+
+  _lib.panda_free_str.argtypes = [ctypes.c_void_p]
+
+  _lib.panda_set_safety_model.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_uint16]
+
+  _lib.panda_get_state.argtypes = [ctypes.c_void_p, ctypes.POINTER(PandaHealth_C)]
+  _lib.panda_get_state.restype = ctypes.c_bool
+
+  _lib.panda_can_send.argtypes = [ctypes.c_void_p, ctypes.POINTER(CanFrame_C), ctypes.c_size_t]
+
+  _lib.panda_can_receive.argtypes = [ctypes.c_void_p, ctypes.POINTER(CanFrame_Flat), ctypes.c_size_t]
+  _lib.panda_can_receive.restype = ctypes.c_int
+
+  _lib.panda_send_heartbeat.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+  _lib.panda_set_power_saving.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+
+  _lib.panda_get_type.argtypes = [ctypes.c_void_p]
+  _lib.panda_get_type.restype = ctypes.c_uint16
+
+
+def pandad_main(pandas):
+  if not pandas:
+    return
+
+  # Start send thread
+  stop_event = threading.Event()
+  send_t = threading.Thread(target=can_send_thread, args=(pandas, stop_event))
+  send_t.start()
+
+  pm = msgq.PubMaster(["can", "pandaStates", "peripheralState"])
+  sm = msgq.SubMaster(["deviceState", "controlsState"])
+
+  # Rate keepers
+  rk = msgq.Ratekeeper(100, print_delay_threshold=None)
+
+  try:
+    while True:
+      # Check connections
+      if not comms_checks(pandas):
+        break
+
+      sm.update(0)
+
+      # CAN Recv
+      all_frames = []
       for p in pandas:
-        p.close()
-    # TODO: wrap all panda exceptions in a base panda exception
-    except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
-      # a panda was disconnected while setting everything up. let's try again
-      cloudlog.exception("Panda USB exception while setting up")
+        frames = p.can_receive()
+        if frames:
+          all_frames.extend(frames)
+
+      # Publish raw CAN
+      if all_frames:
+        msg = msgq.MessageBuilder()
+        evt = msg.initEvent()
+        evt.valid = True
+        can_data = evt.initCan(len(all_frames))
+        for i, (addr, _, dat, src) in enumerate(all_frames):
+          can_data[i].address = addr
+          can_data[i].dat = dat
+          can_data[i].src = src
+        pm.send("can", msg)
+
+      # 10 Hz - PandaState
+      if rk.frame % 10 == 0:
+        msg = msgq.MessageBuilder()
+        evt = msg.initEvent()
+        evt.valid = True
+        ps = evt.initPandaStates(len(pandas))
+
+        for i, p in enumerate(pandas):
+          s = p.get_state()
+          if s:
+            ps[i].voltage = s.voltage_pkt
+            ps[i].current = s.current_pkt
+            ps[i].uptime = s.uptime_pkt
+            ps[i].rxBufferOverflow = s.rx_buffer_overflow_pkt
+            ps[i].txBufferOverflow = s.tx_buffer_overflow_pkt
+            ps[i].faults = s.faults_pkt
+            ps[i].ignitionLine = bool(s.ignition_line_pkt)
+            ps[i].ignitionCan = bool(s.ignition_can_pkt)
+            ps[i].controlsAllowed = bool(s.controls_allowed_pkt)
+            ps[i].safetyModel = int(s.safety_mode_pkt)
+            ps[i].safetyParam = s.safety_param_pkt
+            ps[i].faultStatus = int(s.fault_status_pkt)
+            ps[i].powerSaveEnabled = bool(s.power_save_enabled_pkt)
+            ps[i].heartbeatLost = bool(s.heartbeat_lost_pkt)
+            ps[i].alternativeExperience = s.alternative_experience_pkt
+            ps[i].carHarnessStatus = int(s.car_harness_status_pkt)
+            ps[i].safetyTxBlocked = bool(s.safety_tx_blocked_pkt)
+            ps[i].safetyRxInvalid = bool(s.safety_rx_invalid_pkt)
+            ps[i].safetyRxChecksInvalid = bool(s.safety_rx_checks_invalid_pkt)
+            ps[i].interruptLoad = s.interrupt_load_pkt
+            ps[i].fanPower = s.fan_power
+            ps[i].spiErrorCount = s.spi_error_count_pkt
+            ps[i].sbu1Voltage = s.sbu1_voltage_mV
+            ps[i].sbu2Voltage = s.sbu2_voltage_mV
+            ps[i].pandaType = p.get_type()
+
+        pm.send("pandaStates", msg)
+
+        # Heartbeat
+        engaged = sm['controlsState'].enabled
+        for p in pandas:
+          p.send_heartbeat(engaged)
+
+      # 2 Hz - PeripheralState
+      if rk.frame % 50 == 0:
+        msg = msgq.MessageBuilder()
+        evt = msg.initEvent()
+        evt.valid = True
+        evt.initPeripheralState()
+        # TODO: Implement peripheral state reading
+        pm.send("peripheralState", msg)
+
+      rk.keep_time()
+
+  finally:
+    stop_event.set()
+    send_t.join()
+
+
+class Panda:
+  def __init__(self, serial=None, index=0):
+    if serial is not None:
+      serial = serial.encode('utf-8')
+    self.ptr = _lib.panda_create(serial, index * PANDA_BUS_OFFSET)
+    if not self.ptr:
+      raise Exception("Failed to create Panda")
+    self.serial = serial.decode('utf-8') if serial else self.get_serial()
+
+  def __del__(self):
+    if self.ptr:
+      _lib.panda_delete(self.ptr)
+
+  def connected(self):
+    return _lib.panda_connected(self.ptr)
+
+  def comms_healthy(self):
+    return _lib.panda_comms_healthy(self.ptr)
+
+  def get_type(self):
+    return _lib.panda_get_type(self.ptr)
+
+  def get_serial(self):
+    ptr = _lib.panda_get_serial(self.ptr)
+    if not ptr:
+      return ""
+    try:
+      return ctypes.cast(ptr, ctypes.c_char_p).value.decode('utf-8')
+    finally:
+      _lib.panda_free_str(ptr)
+
+  def set_safety_model(self, mode, param=0):
+    _lib.panda_set_safety_model(self.ptr, int(mode), param)
+
+  def get_state(self):
+    h = PandaHealth_C()
+    if _lib.panda_get_state(self.ptr, ctypes.byref(h)):
+      return h
+    return None
+
+  def send_heartbeat(self, engaged):
+    _lib.panda_send_heartbeat(self.ptr, engaged)
+
+  def set_power_saving(self, enable):
+    _lib.panda_set_power_saving(self.ptr, enable)
+
+  def can_send(self, frames):
+    # frames = list of (addr, dat, src)
+    count = len(frames)
+    c_frames = (CanFrame_C * count)()
+    for i, (addr, dat, src) in enumerate(frames):
+      c_frames[i].address = addr
+      c_frames[i].dat = ctypes.cast(ctypes.c_char_p(dat), ctypes.POINTER(ctypes.c_uint8))
+      c_frames[i].dat_len = len(dat)
+      c_frames[i].src = src
+    _lib.panda_can_send(self.ptr, c_frames, count)
+
+  def can_receive(self):
+    max_len = 512
+    c_frames = (CanFrame_Flat * max_len)()
+    cnt = _lib.panda_can_receive(self.ptr, c_frames, max_len)
+    if cnt < 0:
+      return None
+
+    ret = []
+    for i in range(cnt):
+      f = c_frames[i]
+      dat = bytes(f.dat[:f.dat_len])
+      ret.append((f.address, 0, dat, f.src)) # address, ex, dat, src
+    return ret
+
+  @staticmethod
+  def list():
+    from panda import Panda as PyPanda
+    return PyPanda.list()
+
+
+def comms_checks(pandas):
+  # Check connections
+  if any(not p.connected() for p in pandas):
+    return False
+  return True
+
+def can_send_thread(pandas, stop_event):
+  sm = msgq.SubSocket(msgq.Context(), "sendcan")
+  sm.setTimeout(100)
+
+  while not stop_event.is_set():
+    if not comms_checks(pandas):
+      break
+
+    msg = sm.receive(True)
+    if msg is None:
       continue
-    except PandaProtocolMismatch:
-      cloudlog.exception("pandad.protocol_mismatch")
-      continue
+
+    # Parse sendcan
+    # In C++ we parsed capnp. Here we receive bytes.
+    # We need to parse capnp to get frames.
+    # Performance critical?
+    # Ideally we'd pass raw bytes to C++ and parse there.
+    # But `libpandad` doesn't expose event parsing helpers yet (except implicit in can_send discussion before).
+    # I implemented `panda_can_send` taking struct list.
+
+    evt = log.Event.from_bytes(msg)
+    if evt.which() == 'sendcan':
+      for p in pandas:
+        # We need to convert sendcan frames to format needed by Panda.can_send
+        # sendcan is list of CanData.
+        frames = []
+        for c in evt.sendcan:
+            frames.append((c.address, c.dat, c.src))
+        p.can_send(frames)
+
+def main():
+  # Connect to pandas
+  # Use pymod for listing to avoid re-implementing USB discovery in C
+  from panda import Panda as PyPanda
+  serials = PyPanda.list()
+
+  if not serials:
+    cloudlog.warning("no pandas found, exiting")
+    return
+
+  cloudlog.warning(f"connecting to pandas: {serials}")
+  pandas = []
+  for i, s in enumerate(serials):
+    try:
+      p = Panda(s, i)
+      pandas.append(p)
     except Exception:
-      cloudlog.exception("pandad.uncaught_exception")
-      continue
+      cloudlog.exception(f"failed to connect to {s}")
 
-    first_run = False
-
-    # run pandad with all connected serials as arguments
-    os.environ['MANAGER_DAEMON'] = 'pandad'
-    process = subprocess.Popen(["./pandad", *panda_serials], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
-    process.wait()
-
+  if pandas:
+    pandad_main(pandas)
 
 if __name__ == "__main__":
   main()

@@ -1,13 +1,21 @@
-Import('env', 'envCython', 'common', 'messaging')
+Import('env', 'envCython', 'common', 'messaging', 'arch')
 
 libs = ['usb-1.0', common, messaging, 'pthread']
 panda = env.Library('panda', ['panda.cc', 'panda_comms.cc', 'spi.cc'])
 
-env.Program('pandad', ['main.cc', 'pandad.cc', 'panda_safety.cc'], LIBS=[panda] + libs)
+link_flags = []
+if arch == "Darwin":
+  link_flags = ["-bundle", "-undefined", "dynamic_lookup"]
+else:
+  link_flags = ["-shared"]
+
+libpandad = env.Program('libpandad.so', ['pandad_capi.cc'],
+                        LIBS=[panda, 'can_list_to_can_capnp', 'capnp', 'kj'] + libs,
+                        LINKFLAGS=link_flags)
+
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
 
-pandad_python = envCython.Program('_pandad_api_impl.so', 'pandad_api_impl.cc', LIBS=["can_list_to_can_capnp", 'capnp', 'kj'] + envCython["LIBS"])
-Export('pandad_python')
+Export('libpandad')
 
 if GetOption('extras'):
   env.Program('tests/test_pandad_usbprotocol', ['tests/test_pandad_usbprotocol.cc'], LIBS=[panda] + libs)
