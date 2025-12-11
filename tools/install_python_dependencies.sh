@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # Increase the pip timeout to handle TimeoutError
 export PIP_DEFAULT_TIMEOUT=200
