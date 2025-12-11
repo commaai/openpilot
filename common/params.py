@@ -102,23 +102,33 @@ class Params:
       _libparams.params_destroy(self.ptr)
 
   def check_key(self, key):
-    return _libparams.params_check_key(self.ptr, key.encode('utf-8'))
+    if isinstance(key, str):
+      key = key.encode('utf-8')
+    return _libparams.params_check_key(self.ptr, key)
 
   def get_key_flag(self, key):
     if not self.check_key(key):
       raise UnknownKeyName(key)
-    return _libparams.params_get_key_flag(self.ptr, key.encode('utf-8'))
+    if isinstance(key, str):
+      key = key.encode('utf-8')
+    return _libparams.params_get_key_flag(self.ptr, key)
 
   def get_key_type(self, key):
     if not self.check_key(key):
       raise UnknownKeyName(key)
-    return _libparams.params_get_key_type(self.ptr, key.encode('utf-8'))
+    if isinstance(key, str):
+      key = key.encode('utf-8')
+    return _libparams.params_get_key_type(self.ptr, key)
 
   def get(self, key, block=False, encoding='utf_8', return_default=False):
     if not self.check_key(key):
       raise UnknownKeyName(key)
 
-    key_bytes = key.encode('utf-8')
+    if isinstance(key, str):
+      key_bytes = key.encode('utf-8')
+    else:
+      key_bytes = key
+
     size = c_size_t(0)
     ret_ptr = _libparams.params_get(self.ptr, key_bytes, block, ctypes.byref(size))
 
@@ -179,14 +189,18 @@ class Params:
     if not self.check_key(key):
       raise UnknownKeyName(key)
 
-    key_bytes = key.encode('utf-8')
+    if isinstance(key, str):
+      key_bytes = key.encode('utf-8')
+    else:
+      key_bytes = key
+
     if isinstance(val, str):
       val_bytes = val.encode('utf-8')
     elif isinstance(val, bool):
       return self.put_bool(key, val)
     elif isinstance(val, (int, float)):
       val_bytes = str(val).encode('utf-8')
-    elif isinstance(val, dict):
+    elif isinstance(val, (dict, list)):
       import json
       val_bytes = json.dumps(val).encode('utf-8')
     elif hasattr(val, "isoformat"):
@@ -201,13 +215,19 @@ class Params:
   def put_bool(self, key, val):
     if not self.check_key(key):
       raise UnknownKeyName(key)
-    return _libparams.params_put_bool(self.ptr, key.encode('utf-8'), val)
+    if isinstance(key, str):
+      key = key.encode('utf-8')
+    return _libparams.params_put_bool(self.ptr, key, val)
 
   def put_nonblocking(self, key, val):
     if not self.check_key(key):
       raise UnknownKeyName(key)
 
-    key_bytes = key.encode('utf-8')
+    if isinstance(key, str):
+      key_bytes = key.encode('utf-8')
+    else:
+      key_bytes = key
+
     if isinstance(val, str):
       val_bytes = val.encode('utf-8')
     elif isinstance(val, bool):
@@ -215,7 +235,7 @@ class Params:
       return
     elif isinstance(val, (int, float)):
       val_bytes = str(val).encode('utf-8')
-    elif isinstance(val, dict):
+    elif isinstance(val, (dict, list)):
       import json
       val_bytes = json.dumps(val).encode('utf-8')
     elif hasattr(val, "isoformat"):
@@ -230,18 +250,25 @@ class Params:
   def put_bool_nonblocking(self, key, val):
     if not self.check_key(key):
       raise UnknownKeyName(key)
-    _libparams.params_put_bool_nonblocking(self.ptr, key.encode('utf-8'), val)
+    if isinstance(key, str):
+      key = key.encode('utf-8')
+    _libparams.params_put_bool_nonblocking(self.ptr, key, val)
 
   def remove(self, key):
     if not self.check_key(key):
       raise UnknownKeyName(key)
-    return _libparams.params_remove(self.ptr, key.encode('utf-8'))
+    if isinstance(key, str):
+      key = key.encode('utf-8')
+    return _libparams.params_remove(self.ptr, key)
 
   def clear_all(self, flag=ParamKeyFlag.ALL):
     _libparams.params_clear_all(self.ptr, int(flag))
 
   def get_param_path(self, key=None):
-    key_bytes = key.encode('utf-8') if key else None
+    if key and isinstance(key, str):
+      key_bytes = key.encode('utf-8')
+    else:
+      key_bytes = key
     ptr = _libparams.params_get_param_path(self.ptr, key_bytes)
     try:
       return ctypes.string_at(ptr).decode('utf-8')
@@ -266,7 +293,9 @@ class Params:
   def get_default_value(self, key):
     if not self.check_key(key):
       raise UnknownKeyName(key)
-    ptr = _libparams.params_get_default_value(self.ptr, key.encode('utf-8'))
+    if isinstance(key, str):
+      key = key.encode('utf-8')
+    ptr = _libparams.params_get_default_value(self.ptr, key)
     if not ptr:
       return None
     try:
@@ -299,13 +328,14 @@ class Params:
 
 if __name__ == "__main__":
   import sys
+
   params = Params()
-  if len(sys.argv) > 1:
-      key = sys.argv[1]
-      assert params.check_key(key), f"unknown param: {key}"
-      if len(sys.argv) == 3:
-          val = sys.argv[2]
-          print(f"SET: {key} = {val}")
-          params.put(key, val)
-      elif len(sys.argv) == 2:
-          print(f"GET: {key} = {params.get(key)}")
+  key = sys.argv[1]
+  assert params.check_key(key), f"unknown param: {key}"
+
+  if len(sys.argv) == 3:
+    val = sys.argv[2]
+    print(f"SET: {key} = {val}")
+    params.put(key, val)
+  elif len(sys.argv) == 2:
+    print(f"GET: {key} = {params.get(key)}")
