@@ -27,7 +27,7 @@ for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transfor
 
 # Compile C++ module
 commonmodel_lib = lenv.Library('commonmodel', common_src)
-lenvCython.SharedLibrary('models/_commonmodel_module.so', ['models/commonmodel_module.cc'], LIBS=libs + [commonmodel_lib], FRAMEWORKS=frameworks, SHLIBPREFIX="")
+lenvCython.Program('models/_commonmodel_module.so', ['models/commonmodel_module.cc'], LIBS=libs + [commonmodel_lib], FRAMEWORKS=frameworks)
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x]
 
 # Get model metadata
