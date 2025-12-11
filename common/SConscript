@@ -23,7 +23,7 @@ SConscript([
   'transformations/SConscript',
 ])
 
-Import('transformations_python')
-common_python = [params_python, transformations_python]
+Import('libtransformations')
+common_python = [params_python, libtransformations]
 
 Export('common_python')
