@@ -1,10 +1,7 @@
-Import('env', 'envCython')
-
-import numpy as np
+Import('env')
 
 transformations = env.Library('transformations', ['orientation.cc', 'coordinates.cc'])
 
-envCython.Append(CPPPATH=[np.get_include()])
-transformations_python = envCython.Program('transformations.so', ['transformations_module.cc'],
-                                           LIBS=[transformations])
-Export('transformations', 'transformations_python')
+libtransformations = env.Program('libtransformations_c.so', ['transformations.cpp', 'transformations_capi.cc'],
+                                 LIBS=[transformations])
+Export('transformations', 'libtransformations')
