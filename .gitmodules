@@ -10,7 +10,8 @@
   branch = remove-ipc-cython
 [submodule "rednose_repo"]
   path = rednose_repo
-  url = ../../commaai/rednose.git
+  url = ../../mpurnell1/rednose.git
+  branch = remove-ekf-cython
 [submodule "teleoprtc_repo"]
   path = teleoprtc_repo
   url = ../../commaai/teleoprtc
