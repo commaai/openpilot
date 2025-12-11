@@ -17,13 +17,21 @@ if GetOption('extras'):
               LIBS=[_common, 'json11', 'zmq', 'pthread'])
 
 # C++ bindings
-params_python = envCython.Program('_params.so', 'params_module.cc', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+import platform
+
+params_c_linkflags = []
+if platform.system() == "Darwin":
+  params_c_linkflags = ["-bundle", "-undefined", "dynamic_lookup"]
+else:
+  params_c_linkflags = ["-shared"]
+
+params_c = env.Program('libparams_c.so', ['params_capi.cc'], LIBS=[_common, 'zmq', 'json11'], LINKFLAGS=params_c_linkflags)
 
 SConscript([
   'transformations/SConscript',
 ])
 
 Import('transformations_python')
-common_python = [params_python, transformations_python]
+common_python = [params_c, transformations_python]
 
 Export('common_python')
