@@ -110,8 +110,6 @@ void panda_set_alternative_experience(Panda* p, uint16_t alt_exp) {
   p->set_alternative_experience(alt_exp);
 }
 
-
-
 void panda_set_fan_speed(Panda* p, uint16_t speed) {
   p->set_fan_speed(speed);
 }
@@ -213,8 +211,6 @@ int panda_can_receive(Panda* p, CanFrame_Flat* out_frames, size_t max_len) {
   return (int)cnt; // Return number of frames read
 }
 
-// --- Helpers for can_list_to_can_capnp ---
-
 void* can_list_to_capnp(const CanFrame_C* frames, size_t len, bool sendcan, bool valid, size_t* out_len) {
   std::vector<CanFrame> cpp_frames = c_to_cpp_frames(frames, len);
   std::string out;
@@ -225,9 +221,6 @@ void* can_list_to_capnp(const CanFrame_C* frames, size_t len, bool sendcan, bool
   memcpy(res, out.data(), out.size());
   return res;
 }
-
-// capnp to list
-// Helpers for can_capnp_to_list
 
 void* can_capnp_to_list_create(const char* data, size_t len, bool sendcan) {
   std::vector<std::string> strings;

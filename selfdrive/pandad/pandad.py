@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# simple pandad wrapper that updates the panda first
 import os
 import ctypes
 import threading
@@ -112,8 +111,6 @@ if _lib:
   _lib.can_capnp_handler_get_frame.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_size_t, ctypes.POINTER(CanFrame_Flat)]
 
   _lib.can_capnp_handler_free.argtypes = [ctypes.c_void_p]
-
-
 
 
 class PandaHealth_C(ctypes.Structure):
