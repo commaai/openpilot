@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # Increase the pip timeout to handle TimeoutError
 export PIP_DEFAULT_TIMEOUT=200
@@ -10,7 +10,7 @@ cd "$ROOT"
 
 if ! command -v "uv" > /dev/null 2>&1; then
   echo "installing uv..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+  curl -LsSf --retry 5 --retry-delay 5 --retry-all-errors https://astral.sh/uv/install.sh | sh
   UV_BIN="$HOME/.local/bin"
   PATH="$UV_BIN:$PATH"
 fi
