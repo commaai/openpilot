@@ -19,7 +19,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 
 FPS = 60
-HEADLESS = os.getenv("WINDOWED", "0") == "1"
+HEADLESS = False  # os.getenv("WINDOWED", "0") == "1"
 
 
 @dataclass
@@ -29,13 +29,18 @@ class DummyEvent:
   swipe_left: bool = False
   swipe_right: bool = False
   swipe_down: bool = False
+  onroad: bool = False
+  offroad: bool = False
 
 
 SCRIPT = [
   (0, DummyEvent()),
   (FPS * 1, DummyEvent(click=True)),
   (FPS * 2, DummyEvent(click=True)),
-  (FPS * 3, DummyEvent()),
+  (FPS * 3, DummyEvent(swipe_down=True)),
+  (FPS * 4, DummyEvent(swipe_down=True)),
+  (FPS * 5, DummyEvent(swipe_left=True, onroad=True)),
+  (FPS * 10, DummyEvent()),
 ]
 
 
@@ -76,13 +81,17 @@ def handle_event(event: DummyEvent):
     inject_click([(gui_app.width // 2, gui_app.height // 4),
                   (gui_app.width // 2, gui_app.height * 3 // 4),
                   (gui_app.width // 2, gui_app.height)])
+  if event.onroad:
+    ui_state.started = True
+  if event.offroad:
+    ui_state.started = False
 
 
 def run_replay():
   setup_state()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
-  if not HEADLESS:
+  if HEADLESS:
     rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)
   gui_app.init_window("ui diff test", fps=FPS)
   main_layout = MiciMainLayout()
