@@ -27,7 +27,7 @@ def get_libpath():
 try:
   _lib = ctypes.CDLL(get_libpath())
 except OSError:
-  _lib = None
+  _lib = None  # type: ignore
 
 def _check_lib():
   if _lib is None:
