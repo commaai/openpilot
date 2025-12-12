@@ -29,11 +29,12 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
-from openpilot.selfdrive.selfdrived.events import EVENTS, ET, Events
-from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
+from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 
 EventName = log.OnroadEvent.EventName
 SelfdriveState = log.SelfdriveState
+
+EVENT_TO_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 
 FPS = 60
 HEADLESS = os.getenv("WINDOWED", "0") == "1"
@@ -196,17 +197,8 @@ def cycle_alerts_step(pm: messaging.PubMaster, frame: int):
   sm = FakeSubMaster(['carControl'])
   sm['carControl'].actuators.torque = 1.0
 
-  ev = Events()
-  ev.add(event)
-  alerts = ev.create_alerts([ET.WARNING, ET.PERMANENT, ET.SOFT_DISABLE], [None, None, sm, None, 1.0, None])
-
   if callable(alert):
     alert = alert(None, None, sm, None, 1.0, None)
-
-  AM = AlertManager()
-  AM.add_many(frame, alerts)
-  AM.process_alerts(frame, set())
-  print('AM.current_alert', AM.current_alert)
 
   # for et in ET:
   #   if et in EVENTS[event]:
@@ -215,11 +207,11 @@ def cycle_alerts_step(pm: messaging.PubMaster, frame: int):
 
   msg = messaging.new_message("selfdriveState")
   ss = msg.selfdriveState
-  ss.alertText1 = AM.current_alert.alert_text_1
-  ss.alertText2 = AM.current_alert.alert_text_2
-  ss.alertSize = AM.current_alert.alert_size
-  ss.alertStatus = AM.current_alert.alert_status
-  ss.alertType = AM.current_alert.alert_type
+  ss.alertText1 = alert.alert_text_1
+  ss.alertText2 = alert.alert_text_2
+  ss.alertSize = alert.alert_size
+  ss.alertStatus = alert.alert_status
+  ss.alertType = f"{EVENT_TO_NAME[event]}/"
 
   pm.send("selfdriveState", msg)
 
