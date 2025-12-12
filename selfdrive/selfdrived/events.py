@@ -255,7 +255,9 @@ def below_steer_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.S
 
 
 def steer_saturated_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  steer_text2 = "Steer Left" if sm['carControl'].actuators.torque > 0 else "Steer Right"
+  a = sm['carControl'].actuators
+  steer_cmd = max([a.torque, a.steeringAngleDeg, a.curvature], key=lambda x: abs(x))
+  steer_text2 = "Steer Left" if steer_cmd > 0 else "Steer Right"
   return Alert(
     "Take Control",
     steer_text2,
