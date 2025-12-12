@@ -104,18 +104,16 @@ class TestNED:
                                                            rtol=1e-9, atol=1e-7)
 
   def test_errors(self):
-    # Test wrong length
-    with np.testing.assert_raises(ValueError):
+    # Test wrong shape/type for geodetic2ecef
+    with np.testing.assert_raises_regex(ValueError, "Geodetic must be a sequence of length 3"):
+      coord.geodetic2ecef(1.0)
+
+    with np.testing.assert_raises_regex(ValueError, "Geodetic must be size 3"):
       coord.geodetic2ecef([0, 0])
 
-    with np.testing.assert_raises(ValueError):
+    with np.testing.assert_raises_regex(ValueError, "Geodetic must be size 3"):
       coord.geodetic2ecef([0, 0, 0, 0])
 
-    # Test wrong type (scalar causes IndexError in numpy_wrap)
-    with np.testing.assert_raises(IndexError):
-      coord.geodetic2ecef(1)
-
-    # Test invalid element types (valid length but strings)
     with np.testing.assert_raises(TypeError):
       coord.geodetic2ecef(['a', 'b', 'c'])
 
@@ -128,3 +126,11 @@ class TestNED:
 
     with np.testing.assert_raises(TypeError):
       coord.LocalCoord.from_geodetic(['a', 'b', 'c'])
+
+    # Test wrong shape/type for ecef2geodetic
+    with np.testing.assert_raises(ValueError):
+      coord.ecef2geodetic([1, 2])
+    with np.testing.assert_raises(ValueError):
+      coord.ecef2geodetic([1, 2, 3, 4])
+    with np.testing.assert_raises(TypeError):
+      coord.ecef2geodetic(1.0)
