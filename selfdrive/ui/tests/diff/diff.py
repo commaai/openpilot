@@ -70,6 +70,7 @@ def find_differences(video1, video2):
       if i < 10 or i >= len(frames1) - 10 or is_different:
         frame_data.append({'index': i, 'different': is_different, 'frame1_url': frame_to_data_url(f1), 'frame2_url': frame_to_data_url(f2)})
 
+    print(different_frames, len(frames1))
     return different_frames, frame_data, len(frames1)
 
 

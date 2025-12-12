@@ -3,6 +3,7 @@ import os
 import time
 import coverage
 import pyray as rl
+import pickle
 from unittest.mock import patch
 from dataclasses import dataclass
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
@@ -13,15 +14,23 @@ if "RECORD_OUTPUT" not in os.environ:
 
 os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ["RECORD_OUTPUT"])
 
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.system.version import terms_version, training_version
 from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
+from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE
+from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
 
 FPS = 60
 HEADLESS = os.getenv("WINDOWED", "0") == "1"
 
+STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
 
 def _update_state():
   """We manually update state"""
@@ -38,14 +47,15 @@ class DummyEvent:
   swipe_right: bool = False
   swipe_down: bool = False
   onroad: bool = False
+  onroad_frame: bool = False  # send a single visionipc camerad frame + all necessary submaster services
   offroad: bool = False
 
 
 SCRIPT = [
-  (0, DummyEvent()),
-  (FPS * 1, DummyEvent(swipe_left=True, onroad=True)),
-  # (FPS * 1, DummyEvent(click=True)),
-  # (FPS * 2, DummyEvent(click=True)),
+  (0, DummyEvent(onroad=True)),
+  (FPS * 1, DummyEvent(click=True)),
+  (FPS * 2, DummyEvent(click=True)),
+  (FPS * 3, DummyEvent(onroad_frame=True)),
   # (FPS * 3, DummyEvent(swipe_down=True)),
   # (FPS * 4, DummyEvent(swipe_down=True)),
   # (FPS * 5, DummyEvent(swipe_left=True, onroad=True)),
@@ -59,7 +69,44 @@ def setup_state():
   params.put("CompletedTrainingVersion", training_version)
   params.put("DongleId", "test123456789")
   params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
-  return None
+
+
+def setup_visionipc():
+  cam = DEVICE_CAMERAS[("tici", "ar0231")]
+
+  route = Route(DEMO_ROUTE)
+  segnum = 2
+  # lr = LogReader(route.qlog_paths()[segnum])
+
+  frames_cache = f'{DEFAULT_CACHE_DIR}/ui_frames'
+  if os.path.isfile(frames_cache):
+    with open(frames_cache, 'rb') as f:
+      frames = pickle.load(f)
+      road_img = frames[0]
+      wide_road_img = frames[1]
+      driver_img = frames[2]
+  else:
+    with open(frames_cache, 'wb') as f:
+      road_img = FrameReader(route.camera_paths()[segnum], pix_fmt="nv12").get(0)
+      wide_road_img = FrameReader(route.ecamera_paths()[segnum], pix_fmt="nv12").get(0)
+      driver_img = FrameReader(route.dcamera_paths()[segnum], pix_fmt="nv12").get(0)
+      pickle.dump([road_img, wide_road_img, driver_img], f)
+
+  STREAMS.append((VisionStreamType.VISION_STREAM_ROAD, cam.fcam, road_img.flatten().tobytes()))
+  STREAMS.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, cam.ecam, wide_road_img.flatten().tobytes()))
+  STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
+
+  vipc_server = VisionIpcServer("camerad")
+  for stream_type, cam, _ in STREAMS:
+    vipc_server.create_buffers(stream_type, 5, cam.width, cam.height)
+  vipc_server.start_listener()
+  return vipc_server
+
+
+def send_vipc_frame(vipc_server: VisionIpcServer, packet_id: int):
+  for stream_type, _, image in STREAMS:
+    vipc_server.send(stream_type, image, packet_id, packet_id, packet_id)
+  packet_id += 1
 
 
 def inject_click(coords):
@@ -75,7 +122,7 @@ def inject_click(coords):
     gui_app._mouse._events.extend(events)
 
 
-def handle_event(event: DummyEvent):
+def handle_event(event: DummyEvent, vipc_server: VisionIpcServer):
   if event.click:
     inject_click([(gui_app.width // 2, gui_app.height // 2)])
   if event.swipe_left:
@@ -94,6 +141,9 @@ def handle_event(event: DummyEvent):
     ui_state.started = True
   if event.offroad:
     ui_state.started = False
+  # if event.onroad_frame:
+  #   ui_state.started = True
+  #   ui_state.update_vision_ipc()
 
 
 def run_replay():
@@ -106,13 +156,16 @@ def run_replay():
   main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
+  vipc_server = setup_visionipc()
+
   frame = 0
   script_index = 0
 
   for should_render in gui_app.render():
+    send_vipc_frame(vipc_server, frame)
     while script_index < len(SCRIPT) and SCRIPT[script_index][0] == frame:
       _, event = SCRIPT[script_index]
-      handle_event(event)
+      handle_event(event, vipc_server)
       script_index += 1
 
     ui_state.update()
