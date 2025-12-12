@@ -8,7 +8,7 @@ API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 # TODO: this should be merged into common.api
 
 
-class CallbackRetry(Retry):
+class LogCallbackRetry(Retry):
   def increment(self, method=None, url=None, *args, **kwargs):
     if url:
       cloudlog.warning(f"[API Failure] Retrying {method} {url}")
@@ -21,7 +21,7 @@ class CommaApi:
     if token:
       self.session.headers['Authorization'] = 'JWT ' + token
 
-      retries = CallbackRetry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+      retries = LogCallbackRetry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
       self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
   def request(self, method, endpoint, **kwargs):
