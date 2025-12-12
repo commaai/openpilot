@@ -47,6 +47,11 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
+  @staticmethod
+  def add_if_below_engage_speed(speed: float, threshold: float, events: Events):
+    if speed < threshold:
+      events.add(EventName.belowEngageSpeed)
+
   def update(self, CS: car.CarState, CS_prev: car.CarState, CC: car.CarControl):
     extra_gears = BRAND_EXTRA_GEARS.get(self.CP.brand, None)
 
@@ -67,10 +72,8 @@ class CarSpecificEvents:
     elif self.CP.brand == 'honda':
       events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears, pcm_enable=False)
 
-      if self.CP.pcmCruise and CS.vEgo < self.CP.minEnableSpeed:
-        events.add(EventName.belowEngageSpeed)
-
       if self.CP.pcmCruise:
+        CarSpecificEvents.add_if_below_engage_speed(CS.vEgo, self.CP.minEnableSpeed, events)
         # we engage when pcm is active (rising edge)
         if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
           events.add(EventName.pcmEnable)
@@ -78,7 +81,7 @@ class CarSpecificEvents:
           # it can happen that car cruise disables while comma system is enabled: need to
           # keep braking if needed or if the speed is very low
           if CS.vEgo < self.CP.minEnableSpeed + 2.:
-            # non loud alert if cruise disables below 25mph as expected (+ a little margin)
+            # non-loud alert if cruise disables below 25mph as expected (+ a little margin)
             events.add(EventName.speedTooLow)
           else:
             events.add(EventName.cruiseDisabled)
@@ -92,23 +95,21 @@ class CarSpecificEvents:
       if self.CP.openpilotLongitudinalControl:
         if CS.cruiseState.standstill and not CS.brakePressed:
           events.add(EventName.resumeRequired)
-        if CS.vEgo < self.CP.minEnableSpeed:
-          events.add(EventName.belowEngageSpeed)
-          if CC.actuators.accel > 0.3:
-            # some margin on the actuator to not false trigger cancellation while stopping
-            events.add(EventName.speedTooLow)
-          if CS.vEgo < 0.001:
-            # while in standstill, send a user alert
-            events.add(EventName.manualRestart)
+        CarSpecificEvents.add_if_below_engage_speed(CS.vEgo, self.CP.minEnableSpeed, events)
+        if CC.actuators.accel > 0.3:
+          # some margin on the actuator to not false trigger cancellation while stopping
+          events.add(EventName.speedTooLow)
+        if CS.vEgo < 0.001:
+          # while in standstill, send a user alert
+          events.add(EventName.manualRestart)
 
     elif self.CP.brand == 'gm':
       events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears, pcm_enable=self.CP.pcmCruise)
 
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
-      if CS.vEgo < self.CP.minEnableSpeed and not (CS.standstill and CS.brake >= 20 and
-                                                   self.CP.networkLocation == NetworkLocation.fwdCamera):
-        events.add(EventName.belowEngageSpeed)
+      if not (CS.standstill and CS.brake >= 20 and self.CP.networkLocation == NetworkLocation.fwdCamera):
+        CarSpecificEvents.add_if_below_engage_speed(CS.vEgo, self.CP.minEnableSpeed, events)
       if CS.cruiseState.standstill:
         events.add(EventName.resumeRequired)
 
@@ -116,8 +117,7 @@ class CarSpecificEvents:
       events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears, pcm_enable=self.CP.pcmCruise)
 
       if self.CP.openpilotLongitudinalControl:
-        if CS.vEgo < self.CP.minEnableSpeed + 0.5:
-          events.add(EventName.belowEngageSpeed)
+        CarSpecificEvents.add_if_below_engage_speed(CS.vEgo, (self.CP.minEnableSpeed + 0.5), events)
         if CC.enabled and CS.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
