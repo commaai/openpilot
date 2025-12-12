@@ -7,6 +7,9 @@ import pickle
 from unittest.mock import patch
 from dataclasses import dataclass
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
+from openpilot.system.hardware import HARDWARE
+
+HARDWARE.get_device_type = lambda: "mici"
 
 os.environ["RECORD"] = "1"
 if "RECORD_OUTPUT" not in os.environ:
@@ -14,6 +17,7 @@ if "RECORD_OUTPUT" not in os.environ:
 
 os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ["RECORD_OUTPUT"])
 
+from cereal import messaging, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.system.version import terms_version, training_version
@@ -26,17 +30,33 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
+from openpilot.selfdrive.selfdrived.events import EVENTS, ET
+
+EventName = log.OnroadEvent.EventName
+SelfdriveState = log.SelfdriveState
 
 FPS = 60
 HEADLESS = os.getenv("WINDOWED", "0") == "1"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
 
+alert_cycle_start_frame = None
+ALERTS = [EventName.preLaneChangeRight, EventName.steerSaturated, EventName.steerUnavailable]
+
+
 def _update_state():
   """We manually update state"""
 
 
 ui_state._update_state = _update_state
+
+
+class FakeSubMaster:
+  def __init__(self, names):
+    self.data = {name: getattr(messaging.new_message(name), name) for name in names}
+
+  def __getitem__(self, name):
+    return self.data[name]
 
 
 @dataclass
@@ -47,7 +67,7 @@ class DummyEvent:
   swipe_right: bool = False
   swipe_down: bool = False
   onroad: bool = False
-  onroad_frame: bool = False  # send a single visionipc camerad frame + all necessary submaster services
+  cycle_alerts: bool = False
   offroad: bool = False
 
 
@@ -55,7 +75,7 @@ SCRIPT = [
   (0, DummyEvent(onroad=True)),
   (FPS * 1, DummyEvent(click=True)),
   (FPS * 2, DummyEvent(click=True)),
-  (FPS * 3, DummyEvent(onroad_frame=True)),
+  (FPS * 3, DummyEvent(cycle_alerts=True)),
   # (FPS * 3, DummyEvent(swipe_down=True)),
   # (FPS * 4, DummyEvent(swipe_down=True)),
   # (FPS * 5, DummyEvent(swipe_left=True, onroad=True)),
@@ -122,7 +142,9 @@ def inject_click(coords):
     gui_app._mouse._events.extend(events)
 
 
-def handle_event(event: DummyEvent, vipc_server: VisionIpcServer):
+def handle_event(event: DummyEvent, pm: messaging.PubMaster, frame: int):
+  global alert_cycle_start_frame
+
   if event.click:
     inject_click([(gui_app.width // 2, gui_app.height // 2)])
   if event.swipe_left:
@@ -141,22 +163,71 @@ def handle_event(event: DummyEvent, vipc_server: VisionIpcServer):
     ui_state.started = True
   if event.offroad:
     ui_state.started = False
-  # if event.onroad_frame:
-  #   ui_state.started = True
-  #   ui_state.update_vision_ipc()
+  if event.cycle_alerts:
+    alert_cycle_start_frame = frame
+
+
+def cycle_alerts_step(pm: messaging.PubMaster, frame: int):
+  # alerts = [
+  #   ("High Beam On", "Turn off high beam", 5.0),
+  #   ("Speed Limit Ahead", "Reduce speed to 45 mph", 5.0),
+  #   ("Steering Required", "Please steer the vehicle", 5.0),
+  #   ("System Malfunction", "Contact support", 5.0),
+  # ]
+
+  global alert_cycle_start_frame
+  if alert_cycle_start_frame is None:
+    return
+  elapsed_frames = frame - alert_cycle_start_frame
+  alert_index = (elapsed_frames // (FPS * 2)) % (len(ALERTS) + 1)
+
+  event = ALERTS[alert_index] if alert_index < len(ALERTS) else None
+  if event is None:
+    alert_cycle_start_frame = None
+    return
+
+  alert = None
+  for et, _alert in EVENTS[event].items():
+    alert = _alert
+    break
+
+  assert alert is not None, f"Alert data for {event} not found"
+
+  sm = FakeSubMaster(['carControl'])
+  sm['carControl'].actuators.torque = 1.0
+
+  if callable(alert):
+    alert = alert(None, None, sm, None, 1.0, None)
+
+  # for et in ET:
+  #   if et in EVENTS[event]:
+  #     alert = EVENTS[event][et]
+  #     break
+
+  msg = messaging.new_message("selfdriveState")
+  ss = msg.selfdriveState
+  ss.alertText1 = alert.alert_text_1
+  ss.alertText2 = alert.alert_text_2
+  ss.alertSize = alert.alert_size
+  ss.alertStatus = alert.alert_status
+
+  pm.send("selfdriveState", msg)
 
 
 def run_replay():
   setup_state()
+  vipc_server = setup_visionipc()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
+
+  pm = messaging.PubMaster([
+    "selfdriveState",
+  ])
 
   if HEADLESS:
     rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)
   gui_app.init_window("ui diff test", fps=FPS)
   main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-
-  vipc_server = setup_visionipc()
 
   frame = 0
   script_index = 0
@@ -165,8 +236,11 @@ def run_replay():
     send_vipc_frame(vipc_server, frame)
     while script_index < len(SCRIPT) and SCRIPT[script_index][0] == frame:
       _, event = SCRIPT[script_index]
-      handle_event(event, vipc_server)
+      handle_event(event, pm, frame)
       script_index += 1
+
+    if alert_cycle_start_frame is not None:
+      cycle_alerts_step(pm, frame)
 
     ui_state.update()
 
