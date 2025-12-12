@@ -52,7 +52,7 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
   return requests.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
 
 
-def get_key_pair():
+def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:
   for key in KEYS:
     if os.path.isfile(Paths.persist_root() + f'/comma/{key}') and os.path.isfile(Paths.persist_root() + f'/comma/{key}.pub'):
       with open(Paths.persist_root() + f'/comma/{key}') as private, open(Paths.persist_root() + f'/comma/{key}.pub') as public:
