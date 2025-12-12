@@ -159,6 +159,7 @@ class AlertRenderer(Widget):
     icon_margin_y = 18
 
     # alert_type format is "EventName/eventType" (e.g., "preLaneChangeLeft/warning")
+    print(alert, alert.alert_type)
     event_name = alert.alert_type.split('/')[0] if alert.alert_type else ''
 
     if event_name == 'preLaneChangeLeft':
@@ -170,6 +171,7 @@ class AlertRenderer(Widget):
     elif event_name == 'preLaneChangeRight':
       icon_side = IconSide.right
       txt_icon = self._txt_turn_signal_right
+      print("RIGHT TURN SIGNAL")
       icon_margin_x = 2
       icon_margin_y = 5
 
@@ -200,11 +202,11 @@ class AlertRenderer(Widget):
     text_x = self._rect.x + ALERT_MARGIN
     text_width = self._rect.width - ALERT_MARGIN
     if icon_side == 'left':
-      text_x = self._rect.x + self._txt_turn_signal_right.width + 20 * 2
-      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width - 20 * 2
+      text_x = self._rect.x + self._txt_turn_signal_right.width# + 20 * 2
+      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width# - 20 * 2
     elif icon_side == 'right':
       text_x = self._rect.x + ALERT_MARGIN
-      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width - 20 * 2
+      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width# - 20 * 2
 
     text_rect = rl.Rectangle(
       text_x,
@@ -310,6 +312,8 @@ class AlertRenderer(Widget):
       font_size -= 10
 
     color = rl.Color(255, 255, 255, int(255 * 0.9 * self._alpha_filter.x))
+
+    rl.draw_rectangle_lines_ex(alert_layout.text_rect, 1, rl.RED)
 
     text1_y_offset = 11 if font_size >= 70 else 4
     text_rect1 = rl.Rectangle(
