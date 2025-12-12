@@ -1,232 +1,342 @@
-import os
-import ctypes
 import numpy as np
 
-from ctypes import c_double, c_void_p, Structure, POINTER
 
-# Types
-class ECEF_C(Structure):
-  _fields_ = [("x", c_double), ("y", c_double), ("z", c_double)]
-
-class NED_C(Structure):
-  _fields_ = [("n", c_double), ("e", c_double), ("d", c_double)]
-
-class Geodetic_C(Structure):
-  _fields_ = [("lat", c_double), ("lon", c_double), ("alt", c_double), ("radians", ctypes.c_bool)]
-
-class Quaternion_C(Structure):
-  _fields_ = [("w", c_double), ("x", c_double), ("y", c_double), ("z", c_double)]
+# Constants
+a = 6378137.0
+b = 6356752.3142
+esq = 6.69437999014e-3
+e1sq = 6.73949674228e-3
 
 
-# Load Library
-def get_libpath():
-  # Assuming shared lib is in the same directory
-  dir_path = os.path.dirname(os.path.realpath(__file__))
-  return os.path.join(dir_path, "libtransformations_c.so")
-
-try:
-  _lib = ctypes.CDLL(get_libpath())
-except OSError:
-  _lib = None  # type: ignore
-
-def _check_lib():
-  if _lib is None:
-    raise OSError("libtransformations_c.so not found")
-
-# Function signatures
-if _lib:
-  _lib.geodetic2ecef.argtypes = [Geodetic_C, POINTER(ECEF_C)]
-  _lib.ecef2geodetic.argtypes = [ECEF_C, POINTER(Geodetic_C)]
-
-  _lib.euler2quat.argtypes = [POINTER(c_double), POINTER(Quaternion_C)]
-  _lib.quat2euler.argtypes = [Quaternion_C, POINTER(c_double)]
-  _lib.quat2rot.argtypes = [Quaternion_C, POINTER(c_double)]
-  _lib.rot2quat.argtypes = [POINTER(c_double), POINTER(Quaternion_C)]
-  _lib.euler2rot.argtypes = [POINTER(c_double), POINTER(c_double)]
-  _lib.rot2euler.argtypes = [POINTER(c_double), POINTER(c_double)]
-  _lib.rot_matrix.argtypes = [c_double, c_double, c_double, POINTER(c_double)]
-  _lib.ecef_euler_from_ned.argtypes = [ECEF_C, POINTER(c_double), POINTER(c_double)]
-  _lib.ned_euler_from_ecef.argtypes = [ECEF_C, POINTER(c_double), POINTER(c_double)]
-
-  _lib.localcoord_create.argtypes = [Geodetic_C]
-  _lib.localcoord_create.restype = c_void_p
-  _lib.localcoord_create_from_ecef.argtypes = [ECEF_C]
-  _lib.localcoord_create_from_ecef.restype = c_void_p
-  _lib.localcoord_destroy.argtypes = [c_void_p]
-
-  _lib.localcoord_ecef2ned.argtypes = [c_void_p, ECEF_C, POINTER(NED_C)]
-  _lib.localcoord_ned2ecef.argtypes = [c_void_p, NED_C, POINTER(ECEF_C)]
-  _lib.localcoord_geodetic2ned.argtypes = [c_void_p, Geodetic_C, POINTER(NED_C)]
-  _lib.localcoord_ned2geodetic.argtypes = [c_void_p, NED_C, POINTER(Geodetic_C)]
-
-  _lib.localcoord_get_ned2ecef_matrix.argtypes = [c_void_p, POINTER(c_double)]
-  _lib.localcoord_get_ecef2ned_matrix.argtypes = [c_void_p, POINTER(c_double)]
-
-
-# Helpers
-def _arr(data):
-  return (c_double * len(data))(*data)
-
-def _to_list(c_arr, size):
-  return [c_arr[i] for i in range(size)]
-
-
-def _geo_to_c(g):
+def geodetic2ecef_single(g):
+  """
+  Convert geodetic coordinates (latitude, longitude, altitude) to ECEF.
+  """
   try:
     if len(g) != 3:
       raise ValueError("Geodetic must be size 3")
   except TypeError:
-    raise ValueError("Geodetic must be a sequence") from None
-  return Geodetic_C(g[0], g[1], g[2], False)
+    raise ValueError("Geodetic must be a sequence of length 3") from None
 
-def _ecef_to_c(e):
-  try:
-    if len(e) != 3:
-      raise ValueError("ECEF must be size 3")
-  except TypeError:
-    raise ValueError("ECEF must be a sequence") from None
-  return ECEF_C(e[0], e[1], e[2])
+  lat, lon, alt = g
+  lat = np.radians(lat)
+  lon = np.radians(lon)
+  xi = np.sqrt(1.0 - esq * np.sin(lat)**2)
+  x = (a / xi + alt) * np.cos(lat) * np.cos(lon)
+  y = (a / xi + alt) * np.cos(lat) * np.sin(lon)
+  z = (a / xi * (1.0 - esq) + alt) * np.sin(lat)
+  return np.array([x, y, z])
 
-def _ned_to_c(n):
-  try:
-    if len(n) != 3:
-      raise ValueError("NED must be size 3")
-  except TypeError:
-    raise ValueError("NED must be a sequence") from None
-  return NED_C(n[0], n[1], n[2])
-
-
-# Exposed API
-def geodetic2ecef_single(g):
-  _check_lib()
-  res = ECEF_C()
-  _lib.geodetic2ecef(_geo_to_c(g), ctypes.byref(res))
-  return [res.x, res.y, res.z]
 
 def ecef2geodetic_single(e):
-  _check_lib()
-  res = Geodetic_C()
-  _lib.ecef2geodetic(_ecef_to_c(e), ctypes.byref(res))
-  return [res.lat, res.lon, res.alt]
+  """
+  Convert ECEF to geodetic coordinates using Ferrari's solution.
+  """
+  x, y, z = e
+  r = np.sqrt(x**2 + y**2)
+  Esq = a**2 - b**2
+  F = 54 * b**2 * z**2
+  G = r**2 + (1 - esq) * z**2 - esq * Esq
+  C = (esq**2 * F * r**2) / (G**3)
+  S = np.cbrt(1 + C + np.sqrt(C**2 + 2 * C))
+  P = F / (3 * (S + 1 / S + 1)**2 * G**2)
+  Q = np.sqrt(1 + 2 * esq**2 * P)
+  r_0 = -(P * esq * r) / (1 + Q) + np.sqrt(0.5 * a**2 * (1 + 1.0 / Q) - P * (1 - esq) * z**2 / (Q * (1 + Q)) - 0.5 * P * r**2)
+  U = np.sqrt((r - esq * r_0)**2 + z**2)
+  V = np.sqrt((r - esq * r_0)**2 + (1 - esq) * z**2)
+  Z_0 = b**2 * z / (a * V)
+  h = U * (1 - b**2 / (a * V))
+  lat = np.arctan((z + e1sq * Z_0) / r)
+  lon = np.arctan2(y, x)
+  return np.array([np.degrees(lat), np.degrees(lon), h])
 
-def euler2quat_single(e):
-  _check_lib()
-  res = Quaternion_C()
-  _lib.euler2quat(_arr(e), ctypes.byref(res))
-  return [res.w, res.x, res.y, res.z]
+
+def euler2quat_single(euler):
+  """
+  Convert Euler angles (roll, pitch, yaw) to a quaternion.
+  Rotation order: Z-Y-X (yaw, pitch, roll).
+  """
+  phi, theta, psi = euler
+
+  c_phi, s_phi = np.cos(phi / 2), np.sin(phi / 2)
+  c_theta, s_theta = np.cos(theta / 2), np.sin(theta / 2)
+  c_psi, s_psi = np.cos(psi / 2), np.sin(psi / 2)
+
+  w = c_phi * c_theta * c_psi + s_phi * s_theta * s_psi
+  x = s_phi * c_theta * c_psi - c_phi * s_theta * s_psi
+  y = c_phi * s_theta * c_psi + s_phi * c_theta * s_psi
+  z = c_phi * c_theta * s_psi - s_phi * s_theta * c_psi
+
+  if w < 0:
+    return np.array([-w, -x, -y, -z])
+  return np.array([w, x, y, z])
+
 
 def quat2euler_single(q):
-  _check_lib()
-  res = (c_double * 3)()
-  qc = Quaternion_C(q[0], q[1], q[2], q[3])
-  _lib.quat2euler(qc, res)
-  return _to_list(res, 3)
+  """
+  Convert a quaternion to Euler angles (roll, pitch, yaw).
+  """
+  w, x, y, z = q
+  gamma = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
+  sin_arg = 2 * (w * y - z * x)
+  sin_arg = np.clip(sin_arg, -1.0, 1.0)
+  theta = np.arcsin(sin_arg)
+  psi = np.arctan2(2 * (w * z + x * y), 1 - 2 * (y**2 + z**2))
+  return np.array([gamma, theta, psi])
+
 
 def quat2rot_single(q):
-  _check_lib()
-  res = (c_double * 9)()
-  qc = Quaternion_C(q[0], q[1], q[2], q[3])
-  _lib.quat2rot(qc, res)
-  return np.array(_to_list(res, 9)).reshape((3, 3))
+  """
+  Convert a quaternion to a 3x3 rotation matrix.
+  """
+  w, x, y, z = q
+  xx, yy, zz = x * x, y * y, z * z
+  xy, xz, yz = x * y, x * z, y * z
+  wx, wy, wz = w * x, w * y, w * z
 
-def rot2quat_single(r):
-  _check_lib()
-  res = Quaternion_C()
-  r_flat = np.array(r).flatten()
-  _lib.rot2quat(_arr(r_flat), ctypes.byref(res))
-  return [res.w, res.x, res.y, res.z]
+  mat = np.array([
+    [1 - 2 * (yy + zz), 2 * (xy - wz), 2 * (xz + wy)],
+    [2 * (xy + wz), 1 - 2 * (xx + zz), 2 * (yz - wx)],
+    [2 * (xz - wy), 2 * (yz + wx), 1 - 2 * (xx + yy)]
+  ])
+  return mat
 
-def euler2rot_single(e):
-  _check_lib()
-  res = (c_double * 9)()
-  _lib.euler2rot(_arr(e), res)
-  return np.array(_to_list(res, 9)).reshape((3, 3))
 
-def rot2euler_single(r):
-  _check_lib()
-  res = (c_double * 3)()
-  r_flat = np.array(r).flatten()
-  _lib.rot2euler(_arr(r_flat), res)
-  return _to_list(res, 3)
+def rot2quat_single(rot):
+  """
+  Convert a 3x3 rotation matrix to a quaternion.
+  """
+  trace = np.trace(rot)
+  if trace > 0:
+    s = 0.5 / np.sqrt(trace + 1.0)
+    w = 0.25 / s
+    x = (rot[2, 1] - rot[1, 2]) * s
+    y = (rot[0, 2] - rot[2, 0]) * s
+    z = (rot[1, 0] - rot[0, 1]) * s
+  else:
+    if rot[0, 0] > rot[1, 1] and rot[0, 0] > rot[2, 2]:
+      s = 2.0 * np.sqrt(1.0 + rot[0, 0] - rot[1, 1] - rot[2, 2])
+      w = (rot[2, 1] - rot[1, 2]) / s
+      x = 0.25 * s
+      y = (rot[0, 1] + rot[1, 0]) / s
+      z = (rot[0, 2] + rot[2, 0]) / s
+    elif rot[1, 1] > rot[2, 2]:
+      s = 2.0 * np.sqrt(1.0 + rot[1, 1] - rot[0, 0] - rot[2, 2])
+      w = (rot[0, 2] - rot[2, 0]) / s
+      x = (rot[0, 1] + rot[1, 0]) / s
+      y = 0.25 * s
+      z = (rot[1, 2] + rot[2, 1]) / s
+    else:
+      s = 2.0 * np.sqrt(1.0 + rot[2, 2] - rot[0, 0] - rot[1, 1])
+      w = (rot[1, 0] - rot[0, 1]) / s
+      x = (rot[0, 2] + rot[2, 0]) / s
+      y = (rot[1, 2] + rot[2, 1]) / s
+      z = 0.25 * s
+
+  if w < 0:
+    return np.array([-w, -x, -y, -z])
+  return np.array([w, x, y, z])
+
+
+def euler2rot_single(euler):
+  """
+  Convert Euler angles (roll, pitch, yaw) to a 3x3 rotation matrix.
+  Rotation order: Z-Y-X (yaw, pitch, roll).
+  """
+  phi, theta, psi = euler
+
+  cx, sx = np.cos(phi), np.sin(phi)
+  cy, sy = np.cos(theta), np.sin(theta)
+  cz, sz = np.cos(psi), np.sin(psi)
+
+  Rx = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
+  Ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
+  Rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
+
+  return Rz @ Ry @ Rx
+
+
+def rot2euler_single(rot):
+  """
+  Convert a 3x3 rotation matrix to Euler angles (roll, pitch, yaw).
+  """
+  return quat2euler_single(rot2quat_single(rot))
+
 
 def rot_matrix(roll, pitch, yaw):
-  _check_lib()
-  res = (c_double * 9)()
-  _lib.rot_matrix(roll, pitch, yaw, res)
-  return np.array(_to_list(res, 9)).reshape((3, 3))
+  """
+  Create a 3x3 rotation matrix from roll, pitch, and yaw angles.
+  """
+  return euler2rot_single([roll, pitch, yaw])
 
-def ecef_euler_from_ned_single(ecef_init, ned_pose):
-  _check_lib()
-  res = (c_double * 3)()
-  _lib.ecef_euler_from_ned(_ecef_to_c(ecef_init), _arr(ned_pose), res)
-  return _to_list(res, 3)
 
-def ned_euler_from_ecef_single(ecef_init, ecef_pose):
-  _check_lib()
-  res = (c_double * 3)()
-  _lib.ned_euler_from_ecef(_ecef_to_c(ecef_init), _arr(ecef_pose), res)
-  return _to_list(res, 3)
+def axis_angle_to_rot(axis, angle):
+  """
+  Convert an axis-angle representation to a 3x3 rotation matrix.
+  """
+  c = np.cos(angle / 2)
+  s = np.sin(angle / 2)
+  q = np.array([c, s*axis[0], s*axis[1], s*axis[2]])
+  return quat2rot_single(q)
 
 
 class LocalCoord:
+  """
+  A class to handle conversions between ECEF and local NED coordinates.
+  """
   def __init__(self, geodetic=None, ecef=None):
-    _check_lib()
+    """
+    Initialize LocalCoord with either geodetic or ECEF coordinates.
+    """
     if geodetic is not None:
-      self.lc = _lib.localcoord_create(_geo_to_c(geodetic))
+      self.init_ecef = geodetic2ecef_single(geodetic)
+      lat, lon, _ = geodetic
     elif ecef is not None:
-      self.lc = _lib.localcoord_create_from_ecef(_ecef_to_c(ecef))
+      self.init_ecef = np.array(ecef)
+      lat, lon, _ = ecef2geodetic_single(ecef)
     else:
       raise ValueError("Must provide geodetic or ecef")
 
-  def __del__(self):
-    if hasattr(self, 'lc') and self.lc and _lib:
-      _lib.localcoord_destroy(self.lc)
-      self.lc = None
+    lat = np.radians(lat)
+    lon = np.radians(lon)
+
+    self.ned2ecef_matrix = np.array([
+      [-np.sin(lat) * np.cos(lon), -np.sin(lon), -np.cos(lat) * np.cos(lon)],
+      [-np.sin(lat) * np.sin(lon), np.cos(lon), -np.cos(lat) * np.sin(lon)],
+      [np.cos(lat), 0, -np.sin(lat)]
+    ])
+    self.ecef2ned_matrix = self.ned2ecef_matrix.T
 
   @classmethod
   def from_geodetic(cls, geodetic):
+    """
+    Create a LocalCoord instance from geodetic coordinates.
+    """
     return cls(geodetic=geodetic)
 
   @classmethod
   def from_ecef(cls, ecef):
+    """
+    Create a LocalCoord instance from ECEF coordinates.
+    """
     return cls(ecef=ecef)
 
   def ecef2ned_single(self, ecef):
-    res = NED_C()
-    _lib.localcoord_ecef2ned(self.lc, _ecef_to_c(ecef), ctypes.byref(res))
-    return [res.n, res.e, res.d]
+    """
+    Convert a single ECEF point to NED coordinates relative to the origin.
+    """
+    return self.ecef2ned_matrix @ (ecef - self.init_ecef)
 
   def ned2ecef_single(self, ned):
-    res = ECEF_C()
-    _lib.localcoord_ned2ecef(self.lc, _ned_to_c(ned), ctypes.byref(res))
-    return [res.x, res.y, res.z]
+    """
+    Convert a single NED point to ECEF coordinates.
+    """
+    return self.ned2ecef_matrix @ ned + self.init_ecef
 
   def geodetic2ned_single(self, geodetic):
-    res = NED_C()
-    _lib.localcoord_geodetic2ned(self.lc, _geo_to_c(geodetic), ctypes.byref(res))
-    return [res.n, res.e, res.d]
+    """
+    Convert a single geodetic point to NED coordinates.
+    """
+    ecef = geodetic2ecef_single(geodetic)
+    return self.ecef2ned_single(ecef)
 
   def ned2geodetic_single(self, ned):
-    res = Geodetic_C()
-    _lib.localcoord_ned2geodetic(self.lc, _ned_to_c(ned), ctypes.byref(res))
-    return [res.lat, res.lon, res.alt]
-
-  @property
-  def ned2ecef_matrix(self):
-    res = (c_double * 9)()
-    _lib.localcoord_get_ned2ecef_matrix(self.lc, res)
-    return np.array(_to_list(res, 9)).reshape((3, 3))
-
-  @property
-  def ecef2ned_matrix(self):
-    res = (c_double * 9)()
-    _lib.localcoord_get_ecef2ned_matrix(self.lc, res)
-    return np.array(_to_list(res, 9)).reshape((3, 3))
+    """
+    Convert a single NED point to geodetic coordinates.
+    """
+    ecef = self.ned2ecef_single(ned)
+    return ecef2geodetic_single(ecef)
 
   @property
   def ned_from_ecef_matrix(self):
+    """
+    Returns the rotation matrix from ECEF to NED coordinates.
+    """
     return self.ecef2ned_matrix
 
   @property
   def ecef_from_ned_matrix(self):
+    """
+    Returns the rotation matrix from NED to ECEF coordinates.
+    """
     return self.ned2ecef_matrix
+
+
+def ecef_euler_from_ned_single(ecef_init, ned_pose):
+  """
+  Convert NED Euler angles (roll, pitch, yaw) at a given ECEF origin
+  to equivalent ECEF Euler angles.
+  """
+  converter = LocalCoord(ecef=ecef_init)
+  zero = np.array(ecef_init)
+
+  x0 = converter.ned2ecef_single([1, 0, 0]) - zero
+  y0 = converter.ned2ecef_single([0, 1, 0]) - zero
+  z0 = converter.ned2ecef_single([0, 0, 1]) - zero
+
+  phi, theta, psi = ned_pose
+
+  x1 = axis_angle_to_rot(z0, psi) @ x0
+  y1 = axis_angle_to_rot(z0, psi) @ y0
+  z1 = axis_angle_to_rot(z0, psi) @ z0
+
+  x2 = axis_angle_to_rot(y1, theta) @ x1
+  y2 = axis_angle_to_rot(y1, theta) @ y1
+  z2 = axis_angle_to_rot(y1, theta) @ z1
+
+  x3 = axis_angle_to_rot(x2, phi) @ x2
+  y3 = axis_angle_to_rot(x2, phi) @ y2
+
+  x0 = np.array([1.0, 0, 0])
+  y0 = np.array([0, 1.0, 0])
+  z0 = np.array([0, 0, 1.0])
+
+  psi_out = np.arctan2(np.dot(x3, y0), np.dot(x3, x0))
+  theta_out = np.arctan2(-np.dot(x3, z0), np.sqrt(np.dot(x3, x0)**2 + np.dot(x3, y0)**2))
+
+  y2 = axis_angle_to_rot(z0, psi_out) @ y0
+  z2 = axis_angle_to_rot(y2, theta_out) @ z0
+
+  phi_out = np.arctan2(np.dot(y3, z2), np.dot(y3, y2))
+
+  return np.array([phi_out, theta_out, psi_out])
+
+
+def ned_euler_from_ecef_single(ecef_init, ecef_pose):
+  """
+  Convert ECEF Euler angles (roll, pitch, yaw) at a given ECEF origin
+  to equivalent NED Euler angles.
+  """
+  converter = LocalCoord(ecef=ecef_init)
+
+  x0 = np.array([1.0, 0, 0])
+  y0 = np.array([0, 1.0, 0])
+  z0 = np.array([0, 0, 1.0])
+
+  phi, theta, psi = ecef_pose
+
+  x1 = axis_angle_to_rot(z0, psi) @ x0
+  y1 = axis_angle_to_rot(z0, psi) @ y0
+  z1 = axis_angle_to_rot(z0, psi) @ z0
+
+  x2 = axis_angle_to_rot(y1, theta) @ x1
+  y2 = axis_angle_to_rot(y1, theta) @ y1
+  z2 = axis_angle_to_rot(y1, theta) @ z1
+
+  x3 = axis_angle_to_rot(x2, phi) @ x2
+  y3 = axis_angle_to_rot(x2, phi) @ y2
+
+  zero = np.array(ecef_init)
+  x0 = converter.ned2ecef_single([1, 0, 0]) - zero
+  y0 = converter.ned2ecef_single([0, 1, 0]) - zero
+  z0 = converter.ned2ecef_single([0, 0, 1]) - zero
+
+  psi_out = np.arctan2(np.dot(x3, y0), np.dot(x3, x0))
+  theta_out = np.arctan2(-np.dot(x3, z0), np.sqrt(np.dot(x3, x0)**2 + np.dot(x3, y0)**2))
+
+  y2 = axis_angle_to_rot(z0, psi_out) @ y0
+  z2 = axis_angle_to_rot(y2, theta_out) @ z0
+
+  phi_out = np.arctan2(np.dot(y3, z2), np.dot(y3, y2))
+
+  return np.array([phi_out, theta_out, psi_out])
