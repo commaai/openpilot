@@ -159,6 +159,7 @@ class AlertRenderer(Widget):
     icon_margin_y = 18
 
     # alert_type format is "EventName/eventType" (e.g., "preLaneChangeLeft/warning")
+    print(alert, alert.alert_type)
     event_name = alert.alert_type.split('/')[0] if alert.alert_type else ''
 
     if event_name == 'preLaneChangeLeft':
@@ -170,6 +171,7 @@ class AlertRenderer(Widget):
     elif event_name == 'preLaneChangeRight':
       icon_side = IconSide.right
       txt_icon = self._txt_turn_signal_right
+      print("RIGHT TURN SIGNAL")
       icon_margin_x = 2
       icon_margin_y = 5
 
