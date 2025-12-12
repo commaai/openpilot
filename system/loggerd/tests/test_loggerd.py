@@ -16,6 +16,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware.hw import Paths
+from openpilot.system.hardware import TICI
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.system.manager.process_config import managed_processes
@@ -221,13 +222,16 @@ class TestLoggerd:
     assert abs(boot.wallTimeNanos - time.time_ns()) < 5*1e9 # within 5s
     assert boot.launchLog == launch_log
 
-    for fn in ["console-ramoops", "pmsg-ramoops-0"]:
-      path = Path(os.path.join("/sys/fs/pstore/", fn))
-      if path.is_file():
-        with open(path, "rb") as f:
-          expected_val = f.read()
-        bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
-        assert expected_val == bootlog_val
+    if TICI:
+      for fn in ["console-ramoops", "pmsg-ramoops-0"]:
+        path = Path(os.path.join("/sys/fs/pstore/", fn))
+        if path.is_file():
+          with open(path, "rb") as f:
+            expected_val = f.read()
+          bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
+          assert expected_val == bootlog_val
+    else:
+      assert len(boot.pstore.entries) == 0
 
     # next one should increment by one
     bl1 = re.match(RE.LOG_ID_V2, bootlog_path.name)
