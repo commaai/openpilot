@@ -114,6 +114,8 @@ class NetworkLayoutMici(NavWidget):
   def _update_state(self):
     super()._update_state()
 
+    # print('is_pressed:', self.is_pressed)
+
     # If not using prime SIM, show GSM settings and enable IPv4 forwarding
     show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
     self._wifi_manager.set_ipv4_forward(show_cell_settings)

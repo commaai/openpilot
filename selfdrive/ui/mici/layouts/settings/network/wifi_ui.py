@@ -9,6 +9,7 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigMultiOptionDialog, Big
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType
+from openpilot.system.ui.lib.scroll_panel2 import ScrollState
 
 
 def normalize_ssid(ssid: str) -> str:
@@ -366,6 +367,12 @@ class WifiUIMici(BigMultiOptionDialog):
     self._network_info_page.update_networks(self._networks)
 
   def _update_buttons(self):
+    # Don't update buttons while user is actively scrolling
+    scroll_state = self._scroller.scroll_panel.state
+    print('scroll_state:', scroll_state)
+    if scroll_state != ScrollState.STEADY:
+      return
+
     for network in self._networks.values():
       # pop and re-insert to eliminate stuttering on update (prevents position lost for a frame)
       network_button_idx = next((i for i, btn in enumerate(self._scroller._items) if btn.option == network.ssid), None)
@@ -430,6 +437,8 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _render(self, _):
     super()._render(_)
+
+    print(self._scroller.scroll_panel.state, self.is_pressed)
 
     if not self._networks:
       self._loading_animation.render(self._rect)
