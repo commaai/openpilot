@@ -389,12 +389,6 @@ class WifiUIMici(BigMultiOptionDialog):
       else:
         network_button = WifiItem(network)
 
-        def show_network_info_page(_network):
-          self._network_info_page.set_current_network(_network)
-          self._should_open_network_info_page = True
-
-        network_button.set_click_callback(lambda _net=network, _button=network_button: _button._selected and show_network_info_page(_net))
-
       self.add_button(network_button)
 
     # remove networks no longer present
@@ -405,6 +399,14 @@ class WifiUIMici(BigMultiOptionDialog):
       self._connecting = ssid
       self._wifi_manager.connect_to_network(ssid, password)
       self._update_buttons()
+
+  def _on_option_selected(self, option: str):
+    super()._on_option_selected(option)
+
+    # only open if button is already selected
+    if option in self._networks and option == self._selected_option:
+      self._network_info_page.set_current_network(self._networks[option])
+      self._should_open_network_info_page = True
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
