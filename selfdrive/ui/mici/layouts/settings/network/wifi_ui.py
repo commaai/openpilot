@@ -369,7 +369,6 @@ class WifiUIMici(BigMultiOptionDialog):
   def _update_buttons(self):
     # Don't update buttons while user is actively scrolling
     scroll_state = self._scroller.scroll_panel.state
-    print('scroll_state:', scroll_state)
     if scroll_state != ScrollState.STEADY:
       return
 
@@ -437,8 +436,6 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _render(self, _):
     super()._render(_)
-
-    print(self._scroller.scroll_panel.state, self.is_pressed)
 
     if not self._networks:
       self._loading_animation.render(self._rect)
