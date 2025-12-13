@@ -1,0 +1,85 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    {
+      "id": "python_process",
+      "type": "pickString",
+      "description": "Select the process to debug",
+      "options": [
+        "selfdrive/controls/controlsd.py",
+        "system/timed/timed.py",
+        "tools/sim/run_bridge.py"
+      ]
+    },
+    {
+      "id": "cpp_process",
+      "type": "pickString",
+      "description": "Select the process to debug",
+      "options": [
+        "selfdrive/ui/ui"
+      ]
+    },
+    {
+      "id": "args",
+      "description": "Arguments to pass to the process",
+      "type": "promptString"
+    },
+    {
+      "id": "replayArg",
+      "type": "promptString",
+      "description": "Enter route or segment to replay."
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Python: openpilot Process",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${input:python_process}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": "${input:args}"
+    },
+    {
+      "name": "C++: openpilot Process",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/${input:cpp_process}",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Attach LLDB to Replay drive",
+      "type": "lldb",
+      "request": "attach",
+      "pid": "${command:pickMyProcess}",
+      "initCommands": [
+        "script import time; time.sleep(3)"
+      ]
+    },
+    {
+      "name": "Replay drive",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/opendbc/safety/tests/safety_replay/replay_drive.py",
+      "args": [
+        "${input:replayArg}"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "subProcess": true,
+      "stopOnEntry": false
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Replay drive + Safety LLDB",
+      "configurations": [
+        "Replay drive",
+        "Attach LLDB to Replay drive"
+      ]
+    }
+  ]
+}
