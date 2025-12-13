@@ -153,14 +153,14 @@ class Widget(abc.ABC):
         self._handle_mouse_event(mouse_event)
 
   def _layout(self) -> None:
-    """Optionally layout child widgets. This is called before rendering."""
+    """Optionally lay out child widgets separately. This is called before rendering."""
+
+  def _update_state(self):
+    """Optionally update the widget's non-layout state. This is called before rendering."""
 
   @abc.abstractmethod
   def _render(self, rect: rl.Rectangle) -> bool | int | None:
     """Render the widget within the given rectangle."""
-
-  def _update_state(self):
-    """Optionally update the widget's non-layout state. This is called before rendering."""
 
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
