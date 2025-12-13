@@ -392,7 +392,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # remove networks no longer present
     self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
 
-    # try to restore previous selection to prevent jumps
+    # try to restore previous selection to prevent jumping from adding/removing/reordering buttons
     self._restore_selection = True
 
   def _connect_with_password(self, ssid: str, password: str):
