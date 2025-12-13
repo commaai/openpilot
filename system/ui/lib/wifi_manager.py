@@ -1,5 +1,4 @@
 import atexit
-import random
 import threading
 import time
 import uuid
@@ -36,7 +35,7 @@ except Exception:
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
-SCAN_PERIOD_SECONDS = 2
+SCAN_PERIOD_SECONDS = 5
 
 
 class SecurityType(IntEnum):
