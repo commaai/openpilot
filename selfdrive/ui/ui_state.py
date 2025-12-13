@@ -86,6 +86,7 @@ class UIState:
     self._engaged_transition_callbacks: list[Callable[[], None]] = []
 
     self.update_params()
+    self.prime_state.start()
 
   def add_offroad_transition_callback(self, callback: Callable[[], None]):
     self._offroad_transition_callbacks.append(callback)
@@ -104,7 +105,6 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
-    self.prime_state.start()  # start thread after manager forks ui
     self.sm.update(0)
     self._update_state()
     self._update_status()
@@ -270,6 +270,17 @@ class Device:
       gui_app.set_should_render(on)
 
 
-# Global instance
-ui_state = UIState()
-device = Device()
+
+class _LazyProxy:
+  def __init__(self, factory):
+    self._factory = factory
+    self._instance = None
+
+  def __getattr__(self, name):
+    if self._instance is None:
+      self._instance = self._factory()
+    return getattr(self._instance, name)
+
+
+ui_state = _LazyProxy(lambda: UIState())
+device = _LazyProxy(lambda: Device())
