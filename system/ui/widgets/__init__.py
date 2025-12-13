@@ -100,6 +100,7 @@ class Widget(abc.ABC):
     if not self.is_visible:
       return None
 
+    self._layout()
     ret = self._render(self._rect)
 
     # Keep track of whether mouse down started within the widget's rectangle
@@ -151,12 +152,15 @@ class Widget(abc.ABC):
         self.__is_pressed[mouse_event.slot] = False
         self._handle_mouse_event(mouse_event)
 
-  @abc.abstractmethod
-  def _render(self, rect: rl.Rectangle) -> bool | int | None:
-    """Render the widget within the given rectangle."""
+  def _layout(self) -> None:
+    """Optionally lay out child widgets separately. This is called before rendering."""
 
   def _update_state(self):
     """Optionally update the widget's non-layout state. This is called before rendering."""
+
+  @abc.abstractmethod
+  def _render(self, rect: rl.Rectangle) -> bool | int | None:
+    """Render the widget within the given rectangle."""
 
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
