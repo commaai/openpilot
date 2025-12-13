@@ -1040,7 +1040,7 @@ void SpectraCamera::configISP() {
     .lane_num = 4,
     .lane_cfg = 0x3210,
 
-    .vc = 0x0,
+    .vc = 0x1,
     .dt = sensor->frame_data_type,
     .format = sensor->mipi_format,
 
