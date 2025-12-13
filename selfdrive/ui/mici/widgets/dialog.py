@@ -335,14 +335,10 @@ class BigMultiOptionDialog(BigDialogBase):
       self.add_button(BigDialogOptionButton(option))
 
   def add_button(self, button: BigDialogOptionButton):
-    og_callback = button._click_callback
+    def click_callback(_btn=button):
+      self._on_option_selected(_btn.option)
 
-    def wrapped_callback(btn=button):
-      self._on_option_selected(btn.option)
-      if og_callback:
-        og_callback()
-
-    button.set_click_callback(wrapped_callback)
+    button.set_click_callback(click_callback)
     self._scroller.add_widget(button)
 
   def show_event(self):
