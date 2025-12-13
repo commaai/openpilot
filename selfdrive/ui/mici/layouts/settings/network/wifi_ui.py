@@ -83,7 +83,7 @@ class WifiIcon(Widget):
 
 class WifiItem(BigDialogOptionButton):
   LEFT_MARGIN = 20
-  HEIGHT = 64
+  HEIGHT = 54
   SELECTED_HEIGHT = 74
 
   def __init__(self, network: Network):
@@ -106,8 +106,6 @@ class WifiItem(BigDialogOptionButton):
     self._wifi_icon.set_current_network(network)
 
   def _render(self, _):
-    rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
-
     if self._network.is_connected:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
@@ -122,7 +120,7 @@ class WifiItem(BigDialogOptionButton):
     ))
 
     if self._selected:
-      self._label.set_font_size(70)
+      self._label.set_font_size(74)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
       self._label.set_font_weight(FontWeight.DISPLAY)
     else:
