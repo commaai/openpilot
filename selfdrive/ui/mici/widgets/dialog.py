@@ -274,10 +274,13 @@ class BigInputDialog(BigDialogBase):
 
 
 class BigDialogOptionButton(Widget):
+  HEIGHT = 54
+  SELECTED_HEIGHT = 74
+
   def __init__(self, option: str):
     super().__init__()
     self.option = option
-    self.set_rect(rl.Rectangle(0, 0, int(gui_app.width / 2 + 220), 64))
+    self.set_rect(rl.Rectangle(0, 0, int(gui_app.width / 2 + 220), self.HEIGHT))
 
     self._selected = False
 
@@ -291,6 +294,7 @@ class BigDialogOptionButton(Widget):
 
   def set_selected(self, selected: bool):
     self._selected = selected
+    self._rect.height = self.SELECTED_HEIGHT if selected else self.HEIGHT
 
   def _render(self, _):
     if DEBUG:
@@ -302,7 +306,7 @@ class BigDialogOptionButton(Widget):
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
       self._label.set_font_weight(FontWeight.DISPLAY)
     else:
-      self._label.set_font_size(70)
+      self._label.set_font_size(54)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.58)))
       self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
 
@@ -323,7 +327,7 @@ class BigMultiOptionDialog(BigDialogBase):
     self._selected_option: str = self._default_option
     self._last_selected_option: str = self._selected_option
 
-    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0)
+    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
@@ -348,10 +352,20 @@ class BigMultiOptionDialog(BigDialogBase):
   def _on_option_selected(self, option: str):
     y_pos = 0.0
     for btn in self._scroller._items:
-      if cast(BigDialogOptionButton, btn).option == option:
-        y_pos = btn.rect.y
+      btn = cast(BigDialogOptionButton, btn)
+      if btn.option == option:
+        rect_center_y = self._rect.y + self._rect.height / 2
+        if btn._selected:
+          height = btn.rect.height
+        else:
+          # when selecting an option under current, account for changing heights
+          btn_center_y = btn.rect.y + btn.rect.height / 2  # not accurate, just to determine direction
+          height_offset = BigDialogOptionButton.SELECTED_HEIGHT - BigDialogOptionButton.HEIGHT
+          height = (BigDialogOptionButton.HEIGHT - height_offset) if rect_center_y < btn_center_y else BigDialogOptionButton.SELECTED_HEIGHT
+        y_pos = rect_center_y - (btn.rect.y + height / 2)
+        break
 
-    self._scroller.scroll_to(y_pos, smooth=True)
+    self._scroller.scroll_to(-y_pos, smooth=True)
 
   def _selected_option_changed(self):
     pass
