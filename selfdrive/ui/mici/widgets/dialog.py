@@ -323,7 +323,7 @@ class BigMultiOptionDialog(BigDialogBase):
     self._selected_option: str = self._default_option
     self._last_selected_option: str = self._selected_option
 
-    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0)
+    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=False)
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
@@ -349,7 +349,17 @@ class BigMultiOptionDialog(BigDialogBase):
     y_pos = 0.0
     for btn in self._scroller._items:
       if cast(BigDialogOptionButton, btn).option == option:
-        y_pos = btn.rect.y
+        rect_center_y = self._rect.y + self._rect.height / 2
+
+        btn_center_y = btn.rect.y + btn.rect.height / 2
+
+        btn_height = 74
+        if btn_center_y > rect_center_y:
+          btn_height = 54 - 20
+
+        y_pos = btn.rect.y - (rect_center_y - btn_height / 2)
+        break
+        # y_pos = btn.rect.y - 100
 
     self._scroller.scroll_to(y_pos, smooth=True)
 
