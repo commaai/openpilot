@@ -51,7 +51,6 @@ class Scroller(Widget):
     self._scroll_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
-    self._content_size: float = 0.0
 
     # layout state
     self._visible_items: list[Widget] = []
