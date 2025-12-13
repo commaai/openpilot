@@ -1,3 +1,5 @@
+from collections.abc import Callable
+from functools import partial
 from importlib.resources import files
 import os
 import json
@@ -82,6 +84,8 @@ multilang.setup()
 
 tr, trn = multilang.tr, multilang.trn
 
+def tr_lazy(text: str) -> Callable[[], str]:
+  return partial(tr, text)
 
 # no-op marker for static strings translated later
 def tr_noop(s: str) -> str:

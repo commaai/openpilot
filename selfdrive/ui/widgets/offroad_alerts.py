@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr, tr_lazy
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -101,15 +101,15 @@ class AbstractAlert(Widget, ABC):
       if self.dismiss_callback:
         self.dismiss_callback()
 
-    self.dismiss_btn = ActionButton(lambda: tr("Close"))
+    self.dismiss_btn = ActionButton(tr_lazy("Close"))
 
-    self.snooze_btn = ActionButton(lambda: tr("Snooze Update"), style=ButtonStyle.DARK)
+    self.snooze_btn = ActionButton(tr_lazy("Snooze Update"), style=ButtonStyle.DARK)
     self.snooze_btn.set_click_callback(snooze_callback)
 
-    self.excessive_actuation_btn = ActionButton(lambda: tr("Acknowledge Excessive Actuation"), style=ButtonStyle.DARK, min_width=800)
+    self.excessive_actuation_btn = ActionButton(tr_lazy("Acknowledge Excessive Actuation"), style=ButtonStyle.DARK, min_width=800)
     self.excessive_actuation_btn.set_click_callback(excessive_actuation_callback)
 
-    self.reboot_btn = ActionButton(lambda: tr("Reboot and Update"), min_width=600)
+    self.reboot_btn = ActionButton(tr_lazy("Reboot and Update"), min_width=600)
     self.reboot_btn.set_click_callback(lambda: HARDWARE.reboot())
 
     # TODO: just use a Scroller?

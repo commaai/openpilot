@@ -3,7 +3,7 @@ from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr, tr_lazy
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
@@ -16,10 +16,10 @@ class SetupWidget(Widget):
     super().__init__()
     self._open_settings_callback = None
     self._pairing_dialog: PairingDialog | None = None
-    self._pair_device_btn = Button(lambda: tr("Pair device"), self._show_pairing, button_style=ButtonStyle.PRIMARY)
-    self._open_settings_btn = Button(lambda: tr("Open"), lambda: self._open_settings_callback() if self._open_settings_callback else None,
+    self._pair_device_btn = Button(tr_lazy("Pair device"), self._show_pairing, button_style=ButtonStyle.PRIMARY)
+    self._open_settings_btn = Button(tr_lazy("Open"), lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
-    self._firehose_label = Label(lambda: tr("🔥 Firehose Mode 🔥"), font_weight=FontWeight.MEDIUM, font_size=64)
+    self._firehose_label = Label(tr_lazy("🔥 Firehose Mode 🔥"), font_weight=FontWeight.MEDIUM, font_size=64)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback

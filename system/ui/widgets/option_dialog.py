@@ -1,6 +1,6 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr_lazy
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label
@@ -32,8 +32,8 @@ class MultiOptionDialog(Widget):
                                   text_padding=50, elide_right=True) for option in options]
     self.scroller = Scroller(self.option_buttons, spacing=LIST_ITEM_SPACING)
 
-    self.cancel_button = Button(lambda: tr("Cancel"), click_callback=lambda: self._set_result(DialogResult.CANCEL))
-    self.select_button = Button(lambda: tr("Select"), click_callback=lambda: self._set_result(DialogResult.CONFIRM), button_style=ButtonStyle.PRIMARY)
+    self.cancel_button = Button(tr_lazy("Cancel"), click_callback=lambda: self._set_result(DialogResult.CANCEL))
+    self.select_button = Button(tr_lazy("Select"), click_callback=lambda: self._set_result(DialogResult.CONFIRM), button_style=ButtonStyle.PRIMARY)
 
   def _set_result(self, result: DialogResult):
     self._result = result

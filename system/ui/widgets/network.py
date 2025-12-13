@@ -4,7 +4,7 @@ from typing import cast
 
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.lib.multilang import tr, tr_lazy
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
 from openpilot.system.ui.widgets import Widget
@@ -117,42 +117,42 @@ class AdvancedNetworkSettings(Widget):
 
     # Tethering
     self._tethering_action = ToggleAction(initial_state=False)
-    tethering_btn = ListItem(lambda: tr("Enable Tethering"), action_item=self._tethering_action, callback=self._toggle_tethering)
+    tethering_btn = ListItem(tr_lazy("Enable Tethering"), action_item=self._tethering_action, callback=self._toggle_tethering)
 
     # Edit tethering password
-    self._tethering_password_action = ButtonAction(lambda: tr("EDIT"))
-    tethering_password_btn = ListItem(lambda: tr("Tethering Password"), action_item=self._tethering_password_action, callback=self._edit_tethering_password)
+    self._tethering_password_action = ButtonAction(tr_lazy("EDIT"))
+    tethering_password_btn = ListItem(tr_lazy("Tethering Password"), action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
     # Roaming toggle
     roaming_enabled = self._params.get_bool("GsmRoaming")
     self._roaming_action = ToggleAction(initial_state=roaming_enabled)
-    self._roaming_btn = ListItem(lambda: tr("Enable Roaming"), action_item=self._roaming_action, callback=self._toggle_roaming)
+    self._roaming_btn = ListItem(tr_lazy("Enable Roaming"), action_item=self._roaming_action, callback=self._toggle_roaming)
 
     # Cellular metered toggle
     cellular_metered = self._params.get_bool("GsmMetered")
     self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
-    self._cellular_metered_btn = ListItem(lambda: tr("Cellular Metered"),
-                                          description=lambda: tr("Prevent large data uploads when on a metered cellular connection"),
+    self._cellular_metered_btn = ListItem(tr_lazy("Cellular Metered"),
+                                          description=tr_lazy("Prevent large data uploads when on a metered cellular connection"),
                                           action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
 
     # APN setting
-    self._apn_btn = button_item(lambda: tr("APN Setting"), lambda: tr("EDIT"), callback=self._edit_apn)
+    self._apn_btn = button_item(tr_lazy("APN Setting"), tr_lazy("EDIT"), callback=self._edit_apn)
 
     # Wi-Fi metered toggle
-    self._wifi_metered_action = MultipleButtonAction([lambda: tr("default"), lambda: tr("metered"), lambda: tr("unmetered")], 255, 0,
+    self._wifi_metered_action = MultipleButtonAction([tr_lazy("default"), tr_lazy("metered"), tr_lazy("unmetered")], 255, 0,
                                                      callback=self._toggle_wifi_metered)
-    wifi_metered_btn = ListItem(lambda: tr("Wi-Fi Network Metered"), description=lambda: tr("Prevent large data uploads when on a metered Wi-Fi connection"),
+    wifi_metered_btn = ListItem(tr_lazy("Wi-Fi Network Metered"), description=tr_lazy("Prevent large data uploads when on a metered Wi-Fi connection"),
                                 action_item=self._wifi_metered_action)
 
     items: list[Widget] = [
       tethering_btn,
       tethering_password_btn,
-      text_item(lambda: tr("IP Address"), lambda: self._wifi_manager.ipv4_address),
+      text_item(tr_lazy("IP Address"), lambda: self._wifi_manager.ipv4_address),
       self._roaming_btn,
       self._apn_btn,
       self._cellular_metered_btn,
       wifi_metered_btn,
-      button_item(lambda: tr("Hidden Network"), lambda: tr("CONNECT"), callback=self._connect_to_hidden_network),
+      button_item(tr_lazy("Hidden Network"), tr_lazy("CONNECT"), callback=self._connect_to_hidden_network),
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
