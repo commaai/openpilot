@@ -444,6 +444,13 @@ class WifiManagerUI(Widget):
 
   def _on_network_updated(self, networks: list[Network]):
     self._networks = networks
+
+    # remove buttons for networks that disappeared
+    new_ssids = {n.ssid for n in networks}
+    for ssid in self._networks_buttons.keys() - new_ssids:
+      self._networks_buttons.pop(ssid, None)
+      self._forget_networks_buttons.pop(ssid, None)
+
     for n in self._networks:
       self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55,
                                               text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
