@@ -16,7 +16,6 @@ EventName = log.OnroadEvent.EventName
 SET_SPEED_NA = 255
 KM_TO_MILE = 0.621371
 CRUISE_DISABLED_CHAR = '–'
-
 SET_SPEED_PERSISTENCE = 2.5  # seconds
 
 
@@ -32,10 +31,6 @@ class FontSizes:
 class Colors:
   WHITE = rl.WHITE
   WHITE_TRANSLUCENT = rl.Color(255, 255, 255, 200)
-
-
-FONT_SIZES = FontSizes()
-COLORS = Colors()
 
 
 class TurnIntent(Widget):
@@ -249,7 +244,7 @@ class HudRenderer(Widget):
       self._font_display,
       set_speed_text,
       rl.Vector2(x + 13 + 4, y + 3 - 8 - 3 + 4),
-      FONT_SIZES.set_speed,
+      FontSizes.set_speed,
       0,
       set_speed_color,
     )
@@ -258,8 +253,8 @@ class HudRenderer(Widget):
     rl.draw_text_ex(
       self._font_semi_bold,
       max_text,
-      rl.Vector2(x + 25, y + FONT_SIZES.set_speed - 7 + 4),
-      FONT_SIZES.max_speed,
+      rl.Vector2(x + 25, y + FontSizes.set_speed - 7 + 4),
+      FontSizes.max_speed,
       0,
       max_color,
     )
@@ -267,11 +262,11 @@ class HudRenderer(Widget):
   def _draw_current_speed(self, rect: rl.Rectangle) -> None:
     """Draw the current vehicle speed and unit."""
     speed_text = str(round(self.speed))
-    speed_text_size = measure_text_cached(self._font_bold, speed_text, FONT_SIZES.current_speed)
+    speed_text_size = measure_text_cached(self._font_bold, speed_text, FontSizes.current_speed)
     speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
-    rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.WHITE)
+    rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FontSizes.current_speed, 0, Colors.WHITE)
 
     unit_text = tr("km/h") if ui_state.is_metric else tr("mph")
-    unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
+    unit_text_size = measure_text_cached(self._font_medium, unit_text, FontSizes.speed_unit)
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
-    rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.WHITE_TRANSLUCENT)
+    rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FontSizes.speed_unit, 0, Colors.WHITE_TRANSLUCENT)
