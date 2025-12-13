@@ -442,7 +442,7 @@ class WifiUIMici(BigMultiOptionDialog):
 
     # Restore selection after scroller renders (positions are now correct)
     if self._next_selected_button is not None:
-      BigMultiOptionDialog._on_option_selected(self, self._next_selected_button, smooth=False)
+      BigMultiOptionDialog._on_option_selected(self, self._next_selected_button, smooth=True)
       # self._on_option_selected(self._next_selected_button, smooth=False)
       self._next_selected_button = None
 
