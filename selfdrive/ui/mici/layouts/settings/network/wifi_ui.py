@@ -100,11 +100,6 @@ class WifiItem(BigDialogOptionButton):
     self._wifi_icon.set_current_network(network)
 
   def _render(self, _):
-    if self._selected:
-      print('Pos:', self._rect.y, 'middle', self._rect.y + self._rect.height / 2)
-
-    rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
-
     if self._network.is_connected:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
@@ -398,7 +393,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # only open if button is already selected
     if option in self._networks and option == self._selected_option:
       self._network_info_page.set_current_network(self._networks[option])
-      # self._open_network_manage_page()
+      self._open_network_manage_page()
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
