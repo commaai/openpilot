@@ -65,7 +65,6 @@ class GuiScrollPanel2:
       print('Offset X:', self._offset.x, 'Y:', self._offset.y)
       print('New state:', self._state)
       print()
-    print('scroll offset:', self.get_offset())
     return self.get_offset()
 
   def _get_offset_bounds(self, bounds_size: float, content_size: float) -> tuple[float, float]:
@@ -211,7 +210,6 @@ class GuiScrollPanel2:
     return self._offset.x if self._horizontal else self._offset.y
 
   def set_offset(self, value: float) -> None:
-    print('set_offset:', value)
     if self._horizontal:
       self._offset.x = value
     else:

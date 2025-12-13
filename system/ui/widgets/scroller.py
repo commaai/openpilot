@@ -74,7 +74,7 @@ class Scroller(Widget):
       return
 
     # FIXME: the padding correction doesn't seem correct
-    scroll_offset = self.scroll_panel.get_offset() - pos #-+ self._pad_end
+    scroll_offset = self.scroll_panel.get_offset() - pos + self._pad_end
     if smooth:
       self._scrolling_to = scroll_offset
     else:
