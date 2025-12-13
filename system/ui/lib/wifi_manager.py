@@ -109,8 +109,8 @@ class AccessPoint:
   def from_dbus(cls, ap_props: dict[str, tuple[str, Any]], ap_path: str, active_ap_path: str) -> "AccessPoint":
     ssid = bytes(ap_props['Ssid'][1]).decode("utf-8", "replace")
     bssid = str(ap_props['HwAddress'][1])
-    strength = random.randint(0, 100)
-    # strength = int(ap_props['Strength'][1])
+    # strength = random.randint(0, 100)
+    strength = int(ap_props['Strength'][1])
     flags = int(ap_props['Flags'][1])
     wpa_flags = int(ap_props['WpaFlags'][1])
     rsn_flags = int(ap_props['RsnFlags'][1])
@@ -633,7 +633,7 @@ class WifiManager:
       known_connections = self._get_connections()
       networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections) for ssid, ap_list in aps.items()]
       # sort with quantized strength to reduce jumping
-      networks.sort(key=lambda n: (-n.is_connected, -round(n.strength / 100 * 4), n.ssid.lower()))
+      networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
       self._networks = networks
 
       self._update_ipv4_address()
