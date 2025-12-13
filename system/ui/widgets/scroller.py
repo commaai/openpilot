@@ -245,7 +245,6 @@ class Scroller(Widget):
 
   def show_event(self):
     super().show_event()
-    print('scroller show, scrolling to offset', self.scroll_panel.get_offset())
     if self._reset_scroll_at_show:
       self.scroll_to(self.scroll_panel.get_offset())
 

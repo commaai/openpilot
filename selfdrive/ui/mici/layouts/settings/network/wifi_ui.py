@@ -346,17 +346,15 @@ class WifiUIMici(BigMultiOptionDialog):
       disconnected=self._on_disconnected,
     )
 
-  def set_active(self, active: bool):
-    self._wifi_manager.set_active(active)
-
   def show_event(self):
+    # Call super to prepare scroller; selection scroll is handled dynamically
     super().show_event()
-    print('wiifi show event!')
+    self._wifi_manager.set_active(True)
+    self._scroller.show_event()
 
   def hide_event(self):
     super().hide_event()
-    # self._wifi_manager.set_active(False)
-    print('wifi hide event!')
+    self._wifi_manager.set_active(False)
 
   def _update_state(self):
     super()._update_state()
