@@ -111,11 +111,7 @@ class WifiItem(BigDialogOptionButton):
     if self._network.is_connected:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
-      # rl.draw_texture(self._selected_txt, selected_x, selected_y, rl.WHITE)
-      # rl.draw_texture_ex(self._selected_txt, (selected_x, selected_y), 0.0, 1, rl.WHITE)
-      rl.draw_texture_pro(self._selected_txt, rl.Rectangle(0, 0, self._selected_txt.width, self._selected_txt.height),
-                          rl.Rectangle(selected_x, selected_y, self._selected_txt.width, self._rect.height * 1.5),
-                          (0, 0), 0.0, rl.WHITE)
+      rl.draw_texture(self._selected_txt, selected_x, selected_y, rl.WHITE)
 
     self._wifi_icon.set_scale((1.0 if self._selected else 0.65) * 0.7)
     self._wifi_icon.render(rl.Rectangle(
