@@ -83,17 +83,23 @@ class WifiIcon(Widget):
 
 class WifiItem(BigDialogOptionButton):
   LEFT_MARGIN = 20
+  HEIGHT = 54
+  SELECTED_HEIGHT = 70
 
   def __init__(self, network: Network):
     super().__init__(network.ssid)
 
-    self.set_rect(rl.Rectangle(0, 0, gui_app.width, 64))
+    self.set_rect(rl.Rectangle(0, 0, gui_app.width, self.HEIGHT))
 
     self._selected_txt = gui_app.texture("icons_mici/settings/network/new/wifi_selected.png", 48, 96)
 
     self._network = network
     self._wifi_icon = WifiIcon()
     self._wifi_icon.set_current_network(network)
+
+  def set_selected(self, selected: bool):
+    super().set_selected(selected)
+    self._rect.height = self.SELECTED_HEIGHT if selected else self.HEIGHT
 
   def set_current_network(self, network: Network):
     self._network = network
@@ -116,11 +122,11 @@ class WifiItem(BigDialogOptionButton):
     ))
 
     if self._selected:
-      self._label.set_font_size(74)
+      self._label.set_font_size(70)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
       self._label.set_font_weight(FontWeight.DISPLAY)
     else:
-      self._label.set_font_size(70)
+      self._label.set_font_size(54)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.58)))
       self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
 
