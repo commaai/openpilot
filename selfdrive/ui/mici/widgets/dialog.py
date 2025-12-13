@@ -355,7 +355,7 @@ class BigMultiOptionDialog(BigDialogBase):
       if cast(BigDialogOptionButton, btn).option == option:
         y_pos = btn.rect.y
 
-    self._scroller.scroll_to(y_pos, smooth=False)
+    self._scroller.scroll_to(y_pos, smooth=True)
 
   def _selected_option_changed(self):
     pass
