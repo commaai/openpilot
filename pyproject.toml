@@ -224,7 +224,7 @@ possibly-missing-import = "ignore"     # 2 warnings
 missing-argument = "ignore"            # 2 errors
 unknown-argument = "ignore"            # 1 error
 invalid-type-form = "ignore"           # 1 error
-invalid-return-type = "ignore"         # 1 error
+invalid-return-type = "error"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
