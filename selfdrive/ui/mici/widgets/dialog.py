@@ -289,8 +289,8 @@ class BigDialogOptionButton(Widget):
     self._selected = selected
 
   def _render(self, _):
-    if DEBUG:
-      rl.draw_rectangle_lines_ex(self._rect, 1, rl.Color(0, 255, 0, 255))
+    # if DEBUG:
+    rl.draw_rectangle_lines_ex(self._rect, 1, rl.Color(0, 255, 0, 255))
 
     # FIXME: offset x by -45 because scroller centers horizontally
     if self._selected:

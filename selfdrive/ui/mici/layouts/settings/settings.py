@@ -34,7 +34,7 @@ class SettingsLayout(NavWidget):
   def __init__(self):
     super().__init__()
     self._params = Params()
-    self._current_panel = None  # PanelType.DEVICE
+    self._current_panel = PanelType.NETWORK  # PanelType.DEVICE
 
     toggles_btn = BigButton("toggles", "", "icons_mici/settings/toggles_icon.png")
     toggles_btn.set_click_callback(lambda: self._set_current_panel(PanelType.TOGGLES))
@@ -77,7 +77,7 @@ class SettingsLayout(NavWidget):
 
   def show_event(self):
     super().show_event()
-    self._set_current_panel(None)
+    self._set_current_panel(PanelType.NETWORK)
     self._scroller.show_event()
     if self._current_panel is not None:
       self._panels[self._current_panel].instance.show_event()

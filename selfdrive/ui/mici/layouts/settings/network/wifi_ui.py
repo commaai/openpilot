@@ -100,6 +100,8 @@ class WifiItem(BigDialogOptionButton):
     self._wifi_icon.set_current_network(network)
 
   def _render(self, _):
+    rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
+
     if self._network.is_connected:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
@@ -374,6 +376,7 @@ class WifiUIMici(BigMultiOptionDialog):
     self._network_info_page.update_networks(self._networks)
 
   def _update_buttons(self):
+    print(self.get_selected_option())
     for network in self._networks.values():
       # pop and re-insert to eliminate stuttering on update (prevents position lost for a frame)
       network_button_idx = next((i for i, btn in enumerate(self._scroller._items) if btn.option == network.ssid), None)
@@ -394,6 +397,9 @@ class WifiUIMici(BigMultiOptionDialog):
 
     # remove networks no longer present
     self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
+
+    self._on_option_selected(self.get_selected_option())
+    print(self.get_selected_option())
 
   def _connect_with_password(self, ssid: str, password: str):
     if password:

@@ -1,3 +1,4 @@
+import random
 import atexit
 import threading
 import time
@@ -86,7 +87,8 @@ class Network:
 
     return cls(
       ssid=ssid,
-      strength=strongest_ap.strength,
+      # strength=strongest_ap.strength,
+      strength=random.randint(0, 100),
       is_connected=is_connected and is_saved,
       security_type=security_type,
       is_saved=is_saved,
@@ -630,7 +632,8 @@ class WifiManager:
 
       known_connections = self._get_connections()
       networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections) for ssid, ap_list in aps.items()]
-      networks.sort(key=lambda n: (-n.is_connected, n.ssid.lower()))
+      # networks.sort(key=lambda n: (-n.is_connected, n.ssid.lower()))
+      networks.sort(key=lambda n: (-n.is_connected, n.strength))
       self._networks = networks
 
       self._update_ipv4_address()
