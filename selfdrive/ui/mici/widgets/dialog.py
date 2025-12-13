@@ -352,7 +352,8 @@ class BigMultiOptionDialog(BigDialogBase):
   def _on_option_selected(self, option: str):
     y_pos = 0.0
     for btn in self._scroller._items:
-      if cast(BigDialogOptionButton, btn).option == option:
+      btn = cast(BigDialogOptionButton, btn)
+      if btn.option == option:
         rect_center_y = self._rect.y + self._rect.height / 2
         if btn._selected:
           height = btn.rect.height
