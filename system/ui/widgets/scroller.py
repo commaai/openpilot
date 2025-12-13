@@ -209,14 +209,14 @@ class Scroller(Widget):
         if self._horizontal:
           cx = self._rect.x + self._rect.width / 2
           jello_offset = self._scroll_offset - np.interp(x + item.rect.width / 2,
-                                                   [self._rect.x, cx, self._rect.x + self._rect.width],
-                                                   [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
+                                                         [self._rect.x, cx, self._rect.x + self._rect.width],
+                                                         [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           x -= np.clip(jello_offset, -20, 20)
         else:
           cy = self._rect.y + self._rect.height / 2
           jello_offset = self._scroll_offset - np.interp(y + item.rect.height / 2,
-                                                   [self._rect.y, cy, self._rect.y + self._rect.height],
-                                                   [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
+                                                         [self._rect.y, cy, self._rect.y + self._rect.height],
+                                                         [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
       # Update item state
