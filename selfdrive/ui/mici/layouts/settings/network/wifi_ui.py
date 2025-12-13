@@ -114,11 +114,11 @@ class WifiItem(BigDialogOptionButton):
     ))
 
     if self._selected:
-      self._label.set_font_size(74)
+      self._label.set_font_size(self.SELECTED_HEIGHT)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
       self._label.set_font_weight(FontWeight.DISPLAY)
     else:
-      self._label.set_font_size(54)
+      self._label.set_font_size(self.HEIGHT)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.58)))
       self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
 
