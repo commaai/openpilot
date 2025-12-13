@@ -180,8 +180,10 @@ ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,w
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
 skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
 
-[tool.ty]
+[tool.ty.environment]
 python-version = "3.11"
+
+[tool.ty.src]
 exclude = [
   "cereal/",
   "msgq/",
@@ -197,6 +199,32 @@ exclude = [
   "teleoprtc_repo/",
   "third_party/",
 ]
+
+[tool.ty.rules]
+# third-party packages (maps to mypy's ignore_missing_imports)
+unresolved-import = "ignore"
+
+# helpful warnings (maps to mypy's warn_* options)
+redundant-cast = "warn"
+unused-ignore-comment = "warn"
+
+# TODO: fix and remove these
+possibly-missing-attribute = "ignore"  # 260 warnings
+invalid-argument-type = "ignore"       # 111 errors
+unresolved-attribute = "ignore"        # 96 errors
+invalid-method-override = "ignore"     # 69 errors
+invalid-parameter-default = "ignore"   # 55 errors
+invalid-assignment = "ignore"          # 15 errors
+no-matching-overload = "ignore"        # 11 errors
+call-non-callable = "ignore"           # 10 errors
+unsupported-operator = "ignore"        # 7 errors
+non-subscriptable = "ignore"           # 6 errors
+not-iterable = "ignore"                # 4 errors
+possibly-missing-import = "ignore"     # 2 warnings
+missing-argument = "ignore"            # 2 errors
+unknown-argument = "ignore"            # 1 error
+invalid-type-form = "ignore"           # 1 error
+invalid-return-type = "ignore"         # 1 error
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
