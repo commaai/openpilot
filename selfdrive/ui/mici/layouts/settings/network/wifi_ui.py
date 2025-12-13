@@ -330,7 +330,6 @@ class WifiUIMici(BigMultiOptionDialog):
 
     self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network, self._open_network_manage_page)
     self._network_info_page.set_connecting(lambda: self._connecting)
-    self._should_open_network_info_page = False  # wait for scroll_to animation
 
     self._loading_animation = LoadingAnimation()
 
@@ -354,12 +353,6 @@ class WifiUIMici(BigMultiOptionDialog):
   def hide_event(self):
     super().hide_event()
     self._wifi_manager.set_active(False)
-
-  def _update_state(self):
-    super()._update_state()
-    if self._should_open_network_info_page:
-      self._should_open_network_info_page = False
-      self._open_network_manage_page()
 
   def _open_network_manage_page(self, result=None):
     self._network_info_page.update_networks(self._networks)
@@ -406,7 +399,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # only open if button is already selected
     if option in self._networks and option == self._selected_option:
       self._network_info_page.set_current_network(self._networks[option])
-      self._should_open_network_info_page = True
+      self._open_network_manage_page()
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
