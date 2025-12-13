@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib', 'cereal')
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib', 'cereal', 'envCython')
 
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
@@ -95,3 +95,6 @@ generate_dbc = cabana_env.Command('#' + output_json_file,
                                   ['dbc/generate_dbc_json.py'],
                                   "python3 tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
 cabana_env.Depends(generate_dbc, ["#common", '#opendbc_repo', "#cereal", "#msgq_repo"])
+
+# pycabana - for now, just provide a Python wrapper that execs the cabana binary
+# A proper shared library binding is complex due to Qt MOC and -fPIC requirements
