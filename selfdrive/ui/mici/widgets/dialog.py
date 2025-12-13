@@ -285,6 +285,10 @@ class BigDialogOptionButton(Widget):
                                font_weight=FontWeight.DISPLAY_REGULAR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
                                scroll=True)
 
+  def show_event(self):
+    super().show_event()
+    self._label.reset_scroll()
+
   def set_selected(self, selected: bool):
     self._selected = selected
 
