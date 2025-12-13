@@ -111,7 +111,11 @@ class WifiItem(BigDialogOptionButton):
     if self._network.is_connected:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
-      rl.draw_texture(self._selected_txt, selected_x, selected_y, rl.WHITE)
+      # rl.draw_texture(self._selected_txt, selected_x, selected_y, rl.WHITE)
+      # rl.draw_texture_ex(self._selected_txt, (selected_x, selected_y), 0.0, 1, rl.WHITE)
+      rl.draw_texture_pro(self._selected_txt, rl.Rectangle(0, 0, self._selected_txt.width, self._selected_txt.height),
+                          rl.Rectangle(selected_x, selected_y, self._selected_txt.width, self._rect.height * 1.5),
+                          (0, 0), 0.0, rl.WHITE)
 
     self._wifi_icon.set_scale((1.0 if self._selected else 0.65) * 0.7)
     self._wifi_icon.render(rl.Rectangle(
@@ -380,6 +384,8 @@ class WifiUIMici(BigMultiOptionDialog):
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
     self._network_info_page.update_networks(self._networks)
+    self.render()
+    self._on_option_selected(self.get_selected_option())
 
   def _update_buttons(self):
     print(self.get_selected_option())
@@ -404,7 +410,6 @@ class WifiUIMici(BigMultiOptionDialog):
     # remove networks no longer present
     self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
 
-    self._on_option_selected(self.get_selected_option())
     print(self.get_selected_option())
 
   def _connect_with_password(self, ssid: str, password: str):
