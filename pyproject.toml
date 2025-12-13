@@ -220,10 +220,10 @@ call-non-callable = "ignore"           # 10 errors
 unsupported-operator = "ignore"        # 7 errors
 non-subscriptable = "ignore"           # 6 errors
 not-iterable = "ignore"                # 4 errors
-possibly-missing-import = "ignore"     # 2 warnings
-missing-argument = "ignore"            # 2 errors
-unknown-argument = "ignore"            # 1 error
-invalid-type-form = "ignore"           # 1 error
+possibly-missing-import = "error"
+missing-argument = "error"
+unknown-argument = "error"
+invalid-type-form = "error"
 invalid-return-type = "error"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml

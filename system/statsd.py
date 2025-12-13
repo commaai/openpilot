@@ -177,7 +177,7 @@ def main() -> NoReturn:
     ctx.term()
 
 
+statlog = StatLog()
+
 if __name__ == "__main__":
   main()
-else:
-  statlog = StatLog()
