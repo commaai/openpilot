@@ -7,7 +7,7 @@ from openpilot.tools.lib.logreader import LogReader, ReadMode
 def get_fingerprint(lr):
   # TODO: make this a nice tool for car ports. should also work with qlogs for FW
 
-  fw = None
+  fw = []
   vin = None
   msgs = {}
   for msg in lr:
