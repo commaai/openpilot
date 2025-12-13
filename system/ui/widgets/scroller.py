@@ -51,7 +51,11 @@ class Scroller(Widget):
     self._scroll_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
+
+    # layout state
+    self._visible_items: list[Widget] = []
     self._content_size: float = 0.0
+    self._scroll_offset: float = 0.0
 
     self._item_pos_filter = BounceFilter(0.0, 0.05, 1 / gui_app.target_fps)
 
@@ -162,27 +166,27 @@ class Scroller(Widget):
     return self.scroll_panel.get_offset()
 
   def _layout(self):
-    visible_items = [item for item in self._items if item.is_visible]
+    self._visible_items = [item for item in self._items if item.is_visible]
 
     # Add line separator between items
     if self._line_separator is not None:
-      l = len(visible_items)
-      for i in range(1, len(visible_items)):
-        visible_items.insert(l - i, self._line_separator)
+      l = len(self._visible_items)
+      for i in range(1, len(self._visible_items)):
+        self._visible_items.insert(l - i, self._line_separator)
 
-    self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in visible_items)
-    self._content_size += self._spacing * (len(visible_items) - 1)
+    self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in self._visible_items)
+    self._content_size += self._spacing * (len(self._visible_items) - 1)
     self._content_size += self._pad_start + self._pad_end
 
-    scroll_offset = self._get_scroll(visible_items, self._content_size)
+    self._scroll_offset = self._get_scroll(self._visible_items, self._content_size)
 
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
-    self._item_pos_filter.update(scroll_offset)
+    self._item_pos_filter.update(self._scroll_offset)
 
     cur_pos = 0
-    for idx, item in enumerate(visible_items):
+    for idx, item in enumerate(self._visible_items):
       spacing = self._spacing if (idx > 0) else self._pad_start
       # Nicely lay out items horizontally/vertically
       if self._horizontal:
@@ -196,23 +200,23 @@ class Scroller(Widget):
 
       # Consider scroll
       if self._horizontal:
-        x += scroll_offset
+        x += self._scroll_offset
       else:
-        y += scroll_offset
+        y += self._scroll_offset
 
       # Add some jello effect when scrolling
       if DO_JELLO:
         if self._horizontal:
           cx = self._rect.x + self._rect.width / 2
-          jello_offset = scroll_offset - np.interp(x + item.rect.width / 2,
+          jello_offset = self._scroll_offset - np.interp(x + item.rect.width / 2,
                                                    [self._rect.x, cx, self._rect.x + self._rect.width],
-                                                   [self._item_pos_filter.x, scroll_offset, self._item_pos_filter.x])
+                                                   [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           x -= np.clip(jello_offset, -20, 20)
         else:
           cy = self._rect.y + self._rect.height / 2
-          jello_offset = scroll_offset - np.interp(y + item.rect.height / 2,
+          jello_offset = self._scroll_offset - np.interp(y + item.rect.height / 2,
                                                    [self._rect.y, cy, self._rect.y + self._rect.height],
-                                                   [self._item_pos_filter.x, scroll_offset, self._item_pos_filter.x])
+                                                   [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
       # Update item state
@@ -220,9 +224,7 @@ class Scroller(Widget):
       item.set_parent_rect(self._rect)
 
   def _render(self, _):
-    visible_items = [item for item in self._items if item.is_visible]
-    scroll_offset = self._get_scroll(visible_items, self._content_size)
-    for item in visible_items:
+    for item in self._visible_items:
       # Skip rendering if not in viewport
       if not rl.check_collision_recs(item.rect, self._rect):
         continue
@@ -240,9 +242,9 @@ class Scroller(Widget):
         item.render()
 
     # Draw scroll indicator
-    if SCROLL_BAR and not self._horizontal and len(visible_items) > 0:
+    if SCROLL_BAR and not self._horizontal and len(self._visible_items) > 0:
       _real_content_size = self._content_size - self._rect.height + self._txt_scroll_indicator.height
-      scroll_bar_y = -scroll_offset / _real_content_size * self._rect.height
+      scroll_bar_y = -self._scroll_offset / _real_content_size * self._rect.height
       scroll_bar_y = min(max(scroll_bar_y, self._rect.y), self._rect.y + self._rect.height - self._txt_scroll_indicator.height)
       rl.draw_texture_ex(self._txt_scroll_indicator, rl.Vector2(self._rect.x, scroll_bar_y), 0, 1.0, rl.WHITE)
 
