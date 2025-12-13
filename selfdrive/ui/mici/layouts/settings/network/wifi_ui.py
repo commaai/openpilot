@@ -9,7 +9,6 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigMultiOptionDialog, Big
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType
-from openpilot.system.ui.lib.scroll_panel2 import ScrollState
 
 
 def normalize_ssid(ssid: str) -> str:
@@ -317,6 +316,9 @@ class NetworkInfoPage(NavWidget):
 
 
 class WifiUIMici(BigMultiOptionDialog):
+  # Wait this long after user interacts with widget to update network list
+  INACTIVITY_TIMEOUT = 1
+
   def __init__(self, wifi_manager: WifiManager, back_callback: Callable):
     super().__init__([], None, None, right_btn_callback=None)
 
@@ -331,6 +333,8 @@ class WifiUIMici(BigMultiOptionDialog):
     self._wifi_manager = wifi_manager
     self._connecting: str | None = None
     self._networks: dict[str, Network] = {}
+
+    self._last_interaction_time = rl.get_time()
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -367,9 +371,8 @@ class WifiUIMici(BigMultiOptionDialog):
     self._network_info_page.update_networks(self._networks)
 
   def _update_buttons(self):
-    # Don't update buttons while user is actively scrolling
-    scroll_state = self._scroller.scroll_panel.state
-    if scroll_state != ScrollState.STEADY:
+    # Don't update buttons while user is actively interacting
+    if rl.get_time() - self._last_interaction_time < self.INACTIVITY_TIMEOUT:
       return
 
     for network in self._networks.values():
@@ -433,6 +436,11 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _on_disconnected(self):
     self._connecting = None
+
+  def _update_state(self):
+    super()._update_state()
+    if self.is_pressed:
+      self._last_interaction_time = rl.get_time()
 
   def _render(self, _):
     super()._render(_)
