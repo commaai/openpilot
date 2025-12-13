@@ -387,7 +387,6 @@ class WifiUIMici(BigMultiOptionDialog):
         # Update network on existing button
         network_button.set_current_network(network)
       else:
-        # new button, wrap click callback
         network_button = WifiItem(network)
 
       self.add_button(network_button)
