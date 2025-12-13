@@ -354,8 +354,6 @@ class BigMultiOptionDialog(BigDialogBase):
     for btn in self._scroller._items:
       if cast(BigDialogOptionButton, btn).option == option:
         y_pos = btn.rect.y
-        print()
-        break
 
     self._scroller.scroll_to(y_pos, smooth=False)
 
