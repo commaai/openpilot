@@ -350,7 +350,6 @@ class WifiUIMici(BigMultiOptionDialog):
     # Call super to prepare scroller; selection scroll is handled dynamically
     super().show_event()
     self._wifi_manager.set_active(True)
-    self._scroller.show_event()
 
   def hide_event(self):
     super().hide_event()
