@@ -279,6 +279,12 @@ jobs:
         with:
           submodules: true
       - uses: ./.github/workflows/setup-with-retry
+      - name: caching frames
+        id: frames-cache
+        uses: actions/cache@v4
+        with:
+          path: .ci_cache/comma_download_cache
+          key: ui_raylib_video_test_${{ hashFiles('selfdrive/ui/tests/diff/replay.py') }}
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
       - name: Create mici raylib UI Report
