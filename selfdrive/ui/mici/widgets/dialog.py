@@ -247,9 +247,7 @@ class BigInputDialog(BigDialogBase):
     self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 255 * 0.35)
     if self._enter_img_alpha.x > 1:
       color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
-      rl.draw_texture_ex(self._enter_img,
-                         rl.Vector2(self._rect.x + 15, text_field_rect.y),
-                         0.0, 1.0, color)
+      rl.draw_texture(self._enter_img, int(self._rect.x + 15), int(text_field_rect.y), color)
 
     # keyboard goes over everything
     self._keyboard.render(self._rect)
