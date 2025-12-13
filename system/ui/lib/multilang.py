@@ -8,7 +8,7 @@ from openpilot.common.swaglog import cloudlog
 try:
   from openpilot.common.params import Params
 except ImportError:
-  Params = None
+  Params = None  # type: ignore
 
 SYSTEM_UI_DIR = os.path.join(BASEDIR, "system", "ui")
 UI_DIR = files("openpilot.selfdrive.ui")
