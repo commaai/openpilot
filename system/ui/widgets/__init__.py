@@ -270,13 +270,16 @@ class NavWidget(Widget, abc.ABC):
       in_dismiss_area = mouse_event.pos.y < self._rect.height * self.BACK_TOUCH_AREA_PERCENTAGE
 
       scroller_at_top = False
+      vertical_scroller = False
       # TODO: -20? snapping in WiFi dialog can make offset not be positive at the top
       if hasattr(self, '_scroller'):
         scroller_at_top = self._scroller.scroll_panel.get_offset() >= -20 and not self._scroller._horizontal
+        vertical_scroller = not self._scroller._horizontal
       elif hasattr(self, '_scroll_panel'):
         scroller_at_top = self._scroll_panel.get_offset() >= -20 and not self._scroll_panel._horizontal
+        vertical_scroller = not self._scroll_panel._horizontal
 
-      if in_dismiss_area or scroller_at_top:
+      if (not vertical_scroller and in_dismiss_area) or scroller_at_top:
         self._can_swipe_away = True
         self._back_button_start_pos = mouse_event.pos
 
