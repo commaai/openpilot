@@ -448,7 +448,7 @@ class WifiUIMici(BigMultiOptionDialog):
       self._last_interaction_time = rl.get_time()
 
   def _render(self, _):
-    # Update button positions and restore selection whenever buttons are updated
+    # Update button positions and restore selection whenever buttons are updated, before first render
     if self._restore_selection is not None and self._restore_selection in self._networks:
       self._scroller._layout()
       BigMultiOptionDialog._on_option_selected(self, self._restore_selection, smooth_scroll=False)
