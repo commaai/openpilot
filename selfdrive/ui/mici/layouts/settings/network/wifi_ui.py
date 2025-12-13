@@ -398,7 +398,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # only open if button is already selected
     if option in self._networks and option == self._selected_option:
       self._network_info_page.set_current_network(self._networks[option])
-      self._open_network_manage_page()
+      # self._open_network_manage_page()
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)

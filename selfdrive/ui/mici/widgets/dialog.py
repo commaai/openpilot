@@ -361,12 +361,9 @@ class BigMultiOptionDialog(BigDialogBase):
           # when selecting an option under current, account for changing heights
           height_offset = BigDialogOptionButton.SELECTED_HEIGHT - BigDialogOptionButton.HEIGHT
           height = (BigDialogOptionButton.HEIGHT - height_offset) if rect_center_y < btn_center_y else BigDialogOptionButton.SELECTED_HEIGHT
-        print('using height', height)
-        y_pos = (self._rect.y + self._rect.height / 2) - (btn.rect.y + height / 2)
-        print()
+        y_pos = rect_center_y - (btn.rect.y + height / 2)
         break
 
-    print('Scrolling to', y_pos)
     self._scroller.scroll_to(-y_pos, smooth=True)
 
   def _selected_option_changed(self):
