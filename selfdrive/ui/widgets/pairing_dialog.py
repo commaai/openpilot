@@ -28,6 +28,9 @@ class PairingDialog(Widget):
     self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
     self._close_btn.set_click_callback(lambda: gui_app.set_modal_overlay(None))
 
+  def close_event(self):
+    self._close_btn.set_click_callback(None)
+
   def _get_pairing_url(self) -> str:
     try:
       dongle_id = self.params.get("DongleId") or ""

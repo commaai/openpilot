@@ -33,12 +33,6 @@ class DeviceLayout(Widget):
     super().__init__()
 
     self._params = Params()
-    self._select_language_dialog: MultiOptionDialog | None = None
-    self._driver_camera: DriverCameraDialog | None = None
-    self._pair_device_dialog: PairingDialog | None = None
-    self._fcc_dialog: HtmlModal | None = None
-    self._training_guide: TrainingGuide | None = None
-
     items = self._initialize_items()
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
@@ -81,22 +75,20 @@ class DeviceLayout(Widget):
     self._scroller.render(rect)
 
   def _show_language_dialog(self):
+    dlg = MultiOptionDialog(tr("Select a language"), multilang.languages, multilang.codes[multilang.language],
+                            option_font_weight=FontWeight.UNIFONT)
+
     def handle_language_selection(result: int):
-      if result == 1 and self._select_language_dialog:
-        selected_language = multilang.languages[self._select_language_dialog.selection]
+      if result == 1:
+        selected_language = multilang.languages[dlg.selection]
         multilang.change_language(selected_language)
         self._update_calib_description()
-      self._select_language_dialog = None
 
-    self._select_language_dialog = MultiOptionDialog(tr("Select a language"), multilang.languages, multilang.codes[multilang.language],
-                                                     option_font_weight=FontWeight.UNIFONT)
-    gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
+    gui_app.set_modal_overlay(dlg, callback=handle_language_selection)
 
   def _show_driver_camera(self):
-    if not self._driver_camera:
-      self._driver_camera = DriverCameraDialog()
-
-    gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
+    driver_camera = DriverCameraDialog()
+    gui_app.set_modal_overlay(driver_camera)
 
   def _reset_calibration_prompt(self):
     if ui_state.engaged:
@@ -192,19 +184,14 @@ class DeviceLayout(Widget):
       self._params.put_bool_nonblocking("DoShutdown", True)
 
   def _pair_device(self):
-    if not self._pair_device_dialog:
-      self._pair_device_dialog = PairingDialog()
-    gui_app.set_modal_overlay(self._pair_device_dialog, callback=lambda result: setattr(self, '_pair_device_dialog', None))
+    gui_app.set_modal_overlay(PairingDialog())
 
   def _on_regulatory(self):
-    if not self._fcc_dialog:
-      self._fcc_dialog = HtmlModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
-    gui_app.set_modal_overlay(self._fcc_dialog)
+    fcc_dialog = HtmlModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
+    gui_app.set_modal_overlay(fcc_dialog)
 
   def _on_review_training_guide(self):
-    if not self._training_guide:
-      def completed_callback():
-        gui_app.set_modal_overlay(None)
-
-      self._training_guide = TrainingGuide(completed_callback=completed_callback)
-    gui_app.set_modal_overlay(self._training_guide)
+    def completed_callback():
+      gui_app.set_modal_overlay(None)
+    training_guide = TrainingGuide(completed_callback=completed_callback)
+    gui_app.set_modal_overlay(training_guide)

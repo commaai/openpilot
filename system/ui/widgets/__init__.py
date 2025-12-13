@@ -185,6 +185,9 @@ class Widget(abc.ABC):
   def hide_event(self):
     """Optionally handle hide event. Parent must manually call this"""
 
+  def close_event(self):
+    """Optionally handle close event. Parent must manually call this"""
+
 
 SWIPE_AWAY_THRESHOLD = 80  # px to dismiss after releasing
 START_DISMISSING_THRESHOLD = 40  # px to start dismissing while dragging

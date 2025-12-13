@@ -38,6 +38,12 @@ class MultiOptionDialog(Widget):
   def _set_result(self, result: DialogResult):
     self._result = result
 
+  def close_event(self):
+    self.cancel_button.set_click_callback(None)
+    self.select_button.set_click_callback(None)
+    for opt in self.option_buttons:
+      opt.set_click_callback(None)
+
   def _on_option_clicked(self, option):
     self.selection = option
 
