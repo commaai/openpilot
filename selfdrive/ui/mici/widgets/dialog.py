@@ -354,11 +354,11 @@ class BigMultiOptionDialog(BigDialogBase):
     for btn in self._scroller._items:
       if cast(BigDialogOptionButton, btn).option == option:
         rect_center_y = self._rect.y + self._rect.height / 2
-        btn_center_y = btn.rect.y + btn.rect.height / 2
         if btn._selected:
           height = btn.rect.height
         else:
           # when selecting an option under current, account for changing heights
+          btn_center_y = btn.rect.y + btn.rect.height / 2  # not accurate, just to determine direction
           height_offset = BigDialogOptionButton.SELECTED_HEIGHT - BigDialogOptionButton.HEIGHT
           height = (BigDialogOptionButton.HEIGHT - height_offset) if rect_center_y < btn_center_y else BigDialogOptionButton.SELECTED_HEIGHT
         y_pos = rect_center_y - (btn.rect.y + height / 2)
