@@ -438,16 +438,13 @@ class WifiUIMici(BigMultiOptionDialog):
     self._connecting = None
 
   def _render(self, _):
+    super()._render(_)
 
     # Restore selection after scroller renders (positions are now correct)
     if self._next_selected_button is not None:
-      self._scroller._layout()
       BigMultiOptionDialog._on_option_selected(self, self._next_selected_button, smooth=False)
       # self._on_option_selected(self._next_selected_button, smooth=False)
       self._next_selected_button = None
-
-    super()._render(_)
-
 
     if not self._networks:
       self._loading_animation.render(self._rect)

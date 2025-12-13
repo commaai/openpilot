@@ -51,7 +51,6 @@ class Scroller(Widget):
     self._scroll_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
-    self._content_size: float = 0.0
 
     self._item_pos_filter = BounceFilter(0.0, 0.05, 1 / gui_app.target_fps)
 
@@ -161,7 +160,7 @@ class Scroller(Widget):
 
     return self.scroll_panel.get_offset()
 
-  def _layout(self):
+  def _render(self, _):
     visible_items = [item for item in self._items if item.is_visible]
 
     # Add line separator between items
@@ -170,11 +169,11 @@ class Scroller(Widget):
       for i in range(1, len(visible_items)):
         visible_items.insert(l - i, self._line_separator)
 
-    self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in visible_items)
-    self._content_size += self._spacing * (len(visible_items) - 1)
-    self._content_size += self._pad_start + self._pad_end
+    content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in visible_items)
+    content_size += self._spacing * (len(visible_items) - 1)
+    content_size += self._pad_start + self._pad_end
 
-    scroll_offset = self._get_scroll(visible_items, self._content_size)
+    scroll_offset = self._get_scroll(visible_items, content_size)
 
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
@@ -219,10 +218,6 @@ class Scroller(Widget):
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
       item.set_parent_rect(self._rect)
 
-  def _render(self, _):
-    visible_items = [item for item in self._items if item.is_visible]
-    scroll_offset = self._get_scroll(visible_items, self._content_size)
-    for item in visible_items:
       # Skip rendering if not in viewport
       if not rl.check_collision_recs(item.rect, self._rect):
         continue
@@ -232,8 +227,8 @@ class Scroller(Widget):
       if scale != 1.0:
         rl.rl_push_matrix()
         rl.rl_scalef(scale, scale, 1.0)
-        rl.rl_translatef((1 - scale) * (item.rect.x + item.rect.width / 2) / scale,
-                         (1 - scale) * (item.rect.y + item.rect.height / 2) / scale, 0)
+        rl.rl_translatef((1 - scale) * (x + item.rect.width / 2) / scale,
+                        (1 - scale) * (y + item.rect.height / 2) / scale, 0)
         item.render()
         rl.rl_pop_matrix()
       else:
@@ -241,7 +236,7 @@ class Scroller(Widget):
 
     # Draw scroll indicator
     if SCROLL_BAR and not self._horizontal and len(visible_items) > 0:
-      _real_content_size = self._content_size - self._rect.height + self._txt_scroll_indicator.height
+      _real_content_size = content_size - self._rect.height + self._txt_scroll_indicator.height
       scroll_bar_y = -scroll_offset / _real_content_size * self._rect.height
       scroll_bar_y = min(max(scroll_bar_y, self._rect.y), self._rect.y + self._rect.height - self._txt_scroll_indicator.height)
       rl.draw_texture_ex(self._txt_scroll_indicator, rl.Vector2(self._rect.x, scroll_bar_y), 0, 1.0, rl.WHITE)
