@@ -368,16 +368,8 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _on_network_updated(self, networks: list[Network]):
     self._networks = {network.ssid: network for network in networks}
-
-    # Save current selection before updating buttons
-    current_selection = self.get_selected_option()
-
     self._update_buttons()
     self._network_info_page.update_networks(self._networks)
-
-    # Set flag to restore selection only if network still exists (don't scroll if it disappeared)
-    if current_selection and current_selection in self._networks:
-      self._next_selected_button = current_selection
 
   def _update_buttons(self):
     # Don't update buttons while user is actively interacting
@@ -398,6 +390,9 @@ class WifiUIMici(BigMultiOptionDialog):
 
     # remove networks no longer present
     self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
+
+    # Try to restore previous selection
+    self._next_selected_button = self.get_selected_option()
 
   def _connect_with_password(self, ssid: str, password: str):
     if password:
@@ -454,14 +449,12 @@ class WifiUIMici(BigMultiOptionDialog):
   def _render(self, _):
 
     # Restore selection after scroller renders (positions are now correct)
-    if self._next_selected_button is not None:
+    if self._next_selected_button is not None and self._next_selected_button in self._networks:
       self._scroller._layout()
       BigMultiOptionDialog._on_option_selected(self, self._next_selected_button, smooth_scroll=False)
-      # self._on_option_selected(self._next_selected_button, smooth=False)
       self._next_selected_button = None
 
     super()._render(_)
-
 
     if not self._networks:
       self._loading_animation.render(self._rect)
