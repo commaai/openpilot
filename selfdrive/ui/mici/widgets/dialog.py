@@ -358,7 +358,7 @@ class BigMultiOptionDialog(BigDialogBase):
         print('found option button for option:', option, ' at y=', btn.rect.y)
         btn_center_y = (btn.rect.y + btn.rect.height / 2) - (self._rect.y + self._rect.height / 2) # + btn.rect.height / 2
         print('scrolling to option:', option, 'at y=', btn_center_y)
-        self._scroller.scroll_to(btn_center_y, smooth=True)
+        self._scroller.scroll_to(btn_center_y, smooth=False)
         break
 
   def _selected_option_changed(self):
