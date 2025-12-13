@@ -334,7 +334,9 @@ class WifiUIMici(BigMultiOptionDialog):
     self._connecting: str | None = None
     self._networks: dict[str, Network] = {}
 
+    # widget state
     self._last_interaction_time = rl.get_time()
+    self._restore_selection = False
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -390,14 +392,17 @@ class WifiUIMici(BigMultiOptionDialog):
     # remove networks no longer present
     self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
 
+    # try to restore previous selection to prevent jumping from adding/removing/reordering buttons
+    self._restore_selection = True
+
   def _connect_with_password(self, ssid: str, password: str):
     if password:
       self._connecting = ssid
       self._wifi_manager.connect_to_network(ssid, password)
       self._update_buttons()
 
-  def _on_option_selected(self, option: str):
-    super()._on_option_selected(option)
+  def _on_option_selected(self, option: str, smooth_scroll: bool = True):
+    super()._on_option_selected(option, smooth_scroll)
 
     # only open if button is already selected
     if option in self._networks and option == self._selected_option:
@@ -443,6 +448,13 @@ class WifiUIMici(BigMultiOptionDialog):
       self._last_interaction_time = rl.get_time()
 
   def _render(self, _):
+    # Update Scroller layout and restore current selection whenever buttons are updated, before first render
+    current_selection = self.get_selected_option()
+    if self._restore_selection and current_selection in self._networks:
+      self._scroller._layout()
+      BigMultiOptionDialog._on_option_selected(self, current_selection, smooth_scroll=False)
+      self._restore_selection = None
+
     super()._render(_)
 
     if not self._networks:
