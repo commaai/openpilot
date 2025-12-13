@@ -83,8 +83,6 @@ class WifiIcon(Widget):
 
 class WifiItem(BigDialogOptionButton):
   LEFT_MARGIN = 20
-  HEIGHT = 54
-  SELECTED_HEIGHT = 74
 
   def __init__(self, network: Network):
     super().__init__(network.ssid)
@@ -97,15 +95,16 @@ class WifiItem(BigDialogOptionButton):
     self._wifi_icon = WifiIcon()
     self._wifi_icon.set_current_network(network)
 
-  def set_selected(self, selected: bool):
-    super().set_selected(selected)
-    self._rect.height = self.SELECTED_HEIGHT if selected else self.HEIGHT
-
   def set_current_network(self, network: Network):
     self._network = network
     self._wifi_icon.set_current_network(network)
 
   def _render(self, _):
+    if self._selected:
+      print('Pos:', self._rect.y, 'middle', self._rect.y + self._rect.height / 2)
+
+    rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
+
     if self._network.is_connected:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
