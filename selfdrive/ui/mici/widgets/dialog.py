@@ -323,7 +323,7 @@ class BigMultiOptionDialog(BigDialogBase):
     self._selected_option: str = self._default_option
     self._last_selected_option: str = self._selected_option
 
-    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=False)
+    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0)
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
@@ -334,7 +334,6 @@ class BigMultiOptionDialog(BigDialogBase):
     og_callback = button._click_callback
 
     def wrapped_callback(btn=button):
-      print('Option selected:', btn.option)
       self._on_option_selected(btn.option)
       if og_callback:
         og_callback()
@@ -354,12 +353,11 @@ class BigMultiOptionDialog(BigDialogBase):
     y_pos = 0.0
     for btn in self._scroller._items:
       if cast(BigDialogOptionButton, btn).option == option:
-        y_pos = (self._rect.y + self._rect.height / 2) - (btn.rect.y + 74 / 2)# - (self._rect.y + self._rect.height / 2)  # + btn.rect.height / 2
+        y_pos = btn.rect.y
         print()
         break
 
-    print('Scrolling to', y_pos)
-    self._scroller.scroll_to(-y_pos, smooth=False)
+    self._scroller.scroll_to(y_pos, smooth=False)
 
   def _selected_option_changed(self):
     pass
