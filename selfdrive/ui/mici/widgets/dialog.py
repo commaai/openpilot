@@ -351,7 +351,7 @@ class BigMultiOptionDialog(BigDialogBase):
   def get_selected_option(self) -> str:
     return self._selected_option
 
-  def _on_option_selected(self, option: str, smooth: bool = True):
+  def _on_option_selected(self, option: str):
     y_pos = 0.0
     for btn in self._scroller._items:
       btn = cast(BigDialogOptionButton, btn)
@@ -367,7 +367,7 @@ class BigMultiOptionDialog(BigDialogBase):
         y_pos = rect_center_y - (btn.rect.y + height / 2)
         break
 
-    self._scroller.scroll_to(-y_pos, smooth=smooth)
+    self._scroller.scroll_to(-y_pos, smooth=True)
 
   def _selected_option_changed(self):
     pass
