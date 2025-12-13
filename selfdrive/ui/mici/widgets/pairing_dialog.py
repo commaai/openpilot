@@ -35,7 +35,7 @@ class PairingDialog(NavWidget):
     except Exception as e:
       cloudlog.warning(f"Failed to get pairing token: {e}")
       token = ""
-    return f"https://connect.comma.ai/?pair={token}"
+    return f"connect.comma.ai/?pair={token}"
 
   def _generate_qr_code(self) -> None:
     try:
