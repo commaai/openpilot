@@ -1,0 +1,71 @@
+import os
+import re
+import json
+from pathlib import Path
+Import('env', 'arch', 'common')
+
+# build the fonts
+generator = File("#selfdrive/assets/fonts/process.py")
+source_files = Glob("#selfdrive/assets/fonts/*.ttf") + Glob("#selfdrive/assets/fonts/*.otf")
+output_files = [
+  (f.abspath.split('.')[0] + ".fnt", f.abspath.split('.')[0] + ".png")
+  for f in source_files
+  if "NotoColor" not in f.name
+]
+env.Command(
+  target=output_files,
+  source=[generator, source_files],
+  action=f"python3 {generator}",
+)
+
+# compile gettext .po -> .mo translations
+with open(File("translations/languages.json").abspath) as f:
+  languages = json.loads(f.read())
+
+po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
+po_sources = [src for src in po_sources if os.path.exists(File(src).abspath)]
+mo_targets = [src.replace(".po", ".mo") for src in po_sources]
+mo_build = []
+for src, tgt in zip(po_sources, mo_targets):
+  mo_build.append(env.Command(tgt, src, "msgfmt -o $TARGET $SOURCE"))
+mo_alias = env.Alias('mo', mo_build)
+env.AlwaysBuild(mo_alias)
+
+if GetOption('extras'):
+  # build installers
+  if arch != "Darwin":
+    raylib_env = env.Clone()
+    raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+    raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
+
+    raylib_libs = common + ["raylib"]
+    if arch == "larch64":
+      raylib_libs += ["GLESv2", "EGL", "gbm", "drm"]
+    else:
+      raylib_libs += ["GL"]
+
+    release = "release3"
+    installers = [
+      ("openpilot", release),
+      ("openpilot_test", f"{release}-staging"),
+      ("openpilot_nightly", "nightly"),
+      ("openpilot_internal", "nightly-dev"),
+    ]
+
+    cont = raylib_env.Command("installer/continue_openpilot.o", "installer/continue_openpilot.sh",
+                              "ld -r -b binary -o $TARGET $SOURCE")
+    inter = raylib_env.Command("installer/inter_ttf.o", "installer/inter-ascii.ttf",
+                               "ld -r -b binary -o $TARGET $SOURCE")
+    inter_bold = raylib_env.Command("installer/inter_bold.o", "../assets/fonts/Inter-Bold.ttf",
+                                "ld -r -b binary -o $TARGET $SOURCE")
+    inter_light = raylib_env.Command("installer/inter_light.o", "../assets/fonts/Inter-Light.ttf",
+                                "ld -r -b binary -o $TARGET $SOURCE")
+    for name, branch in installers:
+      d = {'BRANCH': f"'\"{branch}\"'"}
+      if "internal" in name:
+        d['INTERNAL'] = "1"
+
+      obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
+      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter, inter_bold, inter_light], LIBS=raylib_libs)
+      # keep installers small
+      assert f[0].get_size() < 1900*1e3, f[0].get_size()
