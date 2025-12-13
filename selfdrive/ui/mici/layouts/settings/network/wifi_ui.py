@@ -117,8 +117,8 @@ class WifiItem(BigDialogOptionButton):
     self._wifi_icon.render(rl.Rectangle(
       self._rect.x + self.LEFT_MARGIN,
       self._rect.y,
+      self.SELECTED_HEIGHT,
       self._rect.height,
-      self._rect.height
     ))
 
     if self._selected:
