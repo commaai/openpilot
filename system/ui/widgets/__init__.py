@@ -279,6 +279,7 @@ class NavWidget(Widget, abc.ABC):
         scroller_at_top = self._scroll_panel.get_offset() >= -20 and not self._scroll_panel._horizontal
         vertical_scroller = not self._scroll_panel._horizontal
 
+      # Vertical scrollers need to be at the top to swipe away to prevent erroneous swipes
       if (not vertical_scroller and in_dismiss_area) or scroller_at_top:
         self._can_swipe_away = True
         self._back_button_start_pos = mouse_event.pos
