@@ -74,6 +74,7 @@ class MiciMainLayout(Widget):
 
   def _scroll_to(self, layout: Widget):
     layout_x = int(layout.rect.x)
+    print(f"Scrolling to layout at x={layout_x}")
     self._scroller.scroll_to(layout_x, smooth=True)
 
   def _render(self, _):

@@ -346,12 +346,16 @@ class BigMultiOptionDialog(BigDialogBase):
     return self._selected_option
 
   def _on_option_selected(self, option: str):
-    y_pos = 0.0
+    # Find the button and scroll to center it
+    # scroll_to now accepts screen position and calculates the correct scroll offset
     for btn in self._scroller._items:
       if cast(BigDialogOptionButton, btn).option == option:
-        y_pos = btn.rect.y
-
-    self._scroller.scroll_to(y_pos, smooth=True)
+        # Use button center for better centering
+        print('found option button for option:', option, ' at y=', btn.rect.y)
+        btn_center_y = (btn.rect.y + btn.rect.height / 2) - (self._rect.y + self._rect.height / 2) # + btn.rect.height / 2
+        print('scrolling to option:', option, 'at y=', btn_center_y)
+        self._scroller.scroll_to(btn_center_y, smooth=True)
+        break
 
   def _selected_option_changed(self):
     pass

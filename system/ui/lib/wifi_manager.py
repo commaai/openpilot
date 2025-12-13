@@ -634,6 +634,7 @@ class WifiManager:
       networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections) for ssid, ap_list in aps.items()]
       # networks.sort(key=lambda n: (-n.is_connected, n.ssid.lower()))
       networks.sort(key=lambda n: (-n.is_connected, n.strength))
+      # networks = networks * 2
       self._networks = networks
 
       self._update_ipv4_address()
