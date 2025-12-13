@@ -12,7 +12,7 @@ if __name__=="__main__":
   from rednose.helpers.ekf_sym import gen_code
   from rednose.helpers.sympy_helpers import euler_rotate, rot_to_euler
 else:
-  from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx
+  from rednose.helpers import EKFSym
 
 EARTH_G = 9.81
 
@@ -102,7 +102,7 @@ class PoseKalman(KalmanFilter):
 
   def __init__(self, generated_dir, max_rewind_age):
     dim_state, dim_state_err = PoseKalman.initial_x.shape[0], PoseKalman.initial_P.shape[0]
-    self.filter = EKF_sym_pyx(generated_dir, self.name, PoseKalman.Q, PoseKalman.initial_x, PoseKalman.initial_P,
+    self.filter = EKFSym(generated_dir, self.name, PoseKalman.Q, PoseKalman.initial_x, PoseKalman.initial_P,
                               dim_state, dim_state_err, max_rewind_age=max_rewind_age)
 
 
