@@ -396,8 +396,8 @@ class WifiUIMici(BigMultiOptionDialog):
       self._wifi_manager.connect_to_network(ssid, password)
       self._update_buttons()
 
-  def _on_option_selected(self, option: str):
-    super()._on_option_selected(option)
+  def _on_option_selected(self, option: str, smooth: bool = True):
+    super()._on_option_selected(option, smooth)
 
     # only open if button is already selected
     if option in self._networks and option == self._selected_option:
@@ -442,7 +442,8 @@ class WifiUIMici(BigMultiOptionDialog):
 
     # Restore selection after scroller renders (positions are now correct)
     if self._next_selected_button is not None:
-      self._on_option_selected(self._next_selected_button, smooth=False)
+      BigMultiOptionDialog._on_option_selected(self, self._next_selected_button, smooth=False)
+      # self._on_option_selected(self._next_selected_button, smooth=False)
       self._next_selected_button = None
 
     if not self._networks:
