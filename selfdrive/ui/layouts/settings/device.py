@@ -1,5 +1,4 @@
 import os
-import json
 import math
 
 from cereal import messaging, log
@@ -11,20 +10,21 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.hardware import TICI
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import FontWeight, gui_app
+from openpilot.system.ui.lib.multilang import multilang, tr, tr_noop
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog, alert_dialog
 from openpilot.system.ui.widgets.html_render import HtmlModal
 from openpilot.system.ui.widgets.list_view import text_item, button_item, dual_button_item
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 # Description constants
 DESCRIPTIONS = {
-  'pair_device': "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
-  'driver_camera': "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)",
-  'reset_calibration': "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.",
-  'review_guide': "Review the rules, features, and limitations of openpilot",
+  'pair_device': tr_noop("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."),
+  'driver_camera': tr_noop("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"),
+  'reset_calibration': tr_noop("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."),
+  'review_guide': tr_noop("Review the rules, features, and limitations of openpilot"),
 }
 
 
@@ -45,27 +45,27 @@ class DeviceLayout(Widget):
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
   def _initialize_items(self):
-    dongle_id = self._params.get("DongleId") or "N/A"
-    serial = self._params.get("HardwareSerial") or "N/A"
-
-    self._pair_device_btn = button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device)
+    self._pair_device_btn = button_item(lambda: tr("Pair Device"), lambda: tr("PAIR"), lambda: tr(DESCRIPTIONS['pair_device']), callback=self._pair_device)
     self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
-    self._reset_calib_btn = button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt)
+    self._reset_calib_btn = button_item(lambda: tr("Reset Calibration"), lambda: tr("RESET"), lambda: tr(DESCRIPTIONS['reset_calibration']),
+                                        callback=self._reset_calibration_prompt)
     self._reset_calib_btn.set_description_opened_callback(self._update_calib_description)
 
-    self._power_off_btn = dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt)
+    self._power_off_btn = dual_button_item(lambda: tr("Reboot"), lambda: tr("Power Off"),
+                                           left_callback=self._reboot_prompt, right_callback=self._power_off_prompt)
 
     items = [
-      text_item("Dongle ID", dongle_id),
-      text_item("Serial", serial),
+      text_item(lambda: tr("Dongle ID"), self._params.get("DongleId") or (lambda: tr("N/A"))),
+      text_item(lambda: tr("Serial"), self._params.get("HardwareSerial") or (lambda: tr("N/A"))),
       self._pair_device_btn,
-      button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
+      button_item(lambda: tr("Driver Camera"), lambda: tr("PREVIEW"), lambda: tr(DESCRIPTIONS['driver_camera']),
+                  callback=self._show_driver_camera, enabled=ui_state.is_offroad),
       self._reset_calib_btn,
-      button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide, enabled=ui_state.is_offroad),
-      regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory, enabled=ui_state.is_offroad),
-      # TODO: implement multilang
-      # button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
+      button_item(lambda: tr("Review Training Guide"), lambda: tr("REVIEW"), lambda: tr(DESCRIPTIONS['review_guide']),
+                  self._on_review_training_guide, enabled=ui_state.is_offroad),
+      regulatory_btn := button_item(lambda: tr("Regulatory"), lambda: tr("VIEW"), callback=self._on_regulatory, enabled=ui_state.is_offroad),
+      button_item(lambda: tr("Change Language"), lambda: tr("CHANGE"), callback=self._show_language_dialog),
       self._power_off_btn,
     ]
     regulatory_btn.set_visible(TICI)
@@ -80,23 +80,17 @@ class DeviceLayout(Widget):
   def _render(self, rect):
     self._scroller.render(rect)
 
-  def _show_language_selection(self):
-    try:
-      languages_file = os.path.join(BASEDIR, "selfdrive/ui/translations/languages.json")
-      with open(languages_file, encoding='utf-8') as f:
-        languages = json.load(f)
+  def _show_language_dialog(self):
+    def handle_language_selection(result: int):
+      if result == 1 and self._select_language_dialog:
+        selected_language = multilang.languages[self._select_language_dialog.selection]
+        multilang.change_language(selected_language)
+        self._update_calib_description()
+      self._select_language_dialog = None
 
-      self._select_language_dialog = MultiOptionDialog("Select a language", languages)
-      gui_app.set_modal_overlay(self._select_language_dialog, callback=self._handle_language_selection)
-    except FileNotFoundError:
-      pass
-
-  def _handle_language_selection(self, result: int):
-    if result == 1 and self._select_language_dialog:
-      selected_language = self._select_language_dialog.selection
-      self._params.put("LanguageSetting", selected_language)
-
-    self._select_language_dialog = None
+    self._select_language_dialog = MultiOptionDialog(tr("Select a language"), multilang.languages, multilang.codes[multilang.language],
+                                                     option_font_weight=FontWeight.UNIFONT)
+    gui_app.set_modal_overlay(self._select_language_dialog, callback=handle_language_selection)
 
   def _show_driver_camera(self):
     if not self._driver_camera:
@@ -106,7 +100,7 @@ class DeviceLayout(Widget):
 
   def _reset_calibration_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(alert_dialog("Disengage to Reset Calibration"))
+      gui_app.set_modal_overlay(alert_dialog(tr("Disengage to Reset Calibration")))
       return
 
     def reset_calibration(result: int):
@@ -122,11 +116,11 @@ class DeviceLayout(Widget):
       self._params.put_bool("OnroadCycleRequested", True)
       self._update_calib_description()
 
-    dialog = ConfirmDialog("Are you sure you want to reset calibration?", "Reset")
+    dialog = ConfirmDialog(tr("Are you sure you want to reset calibration?"), tr("Reset"))
     gui_app.set_modal_overlay(dialog, callback=reset_calibration)
 
   def _update_calib_description(self):
-    desc = DESCRIPTIONS['reset_calibration']
+    desc = tr(DESCRIPTIONS['reset_calibration'])
 
     calib_bytes = self._params.get("CalibrationParams")
     if calib_bytes:
@@ -136,7 +130,8 @@ class DeviceLayout(Widget):
         if calib.calStatus != log.LiveCalibrationData.Status.uncalibrated:
           pitch = math.degrees(calib.rpyCalib[1])
           yaw = math.degrees(calib.rpyCalib[2])
-          desc += f" Your device is pointed {abs(pitch):.1f}° {'down' if pitch > 0 else 'up'} and {abs(yaw):.1f}° {'left' if yaw > 0 else 'right'}."
+          desc += tr(" Your device is pointed {:.1f}° {} and {:.1f}° {}.").format(abs(pitch), tr("down") if pitch > 0 else tr("up"),
+                                                                                  abs(yaw), tr("left") if yaw > 0 else tr("right"))
       except Exception:
         cloudlog.exception("invalid CalibrationParams")
 
@@ -148,9 +143,9 @@ class DeviceLayout(Widget):
       except Exception:
         cloudlog.exception("invalid LiveDelay")
     if lag_perc < 100:
-      desc += f"<br><br>Steering lag calibration is {lag_perc}% complete."
+      desc += tr("<br><br>Steering lag calibration is {}% complete.").format(lag_perc)
     else:
-      desc += "<br><br>Steering lag calibration is complete."
+      desc += tr("<br><br>Steering lag calibration is complete.")
 
     torque_bytes = self._params.get("LiveTorqueParameters")
     if torque_bytes:
@@ -160,24 +155,24 @@ class DeviceLayout(Widget):
         if torque.useParams:
           torque_perc = torque.calPerc
           if torque_perc < 100:
-            desc += f" Steering torque response calibration is {torque_perc}% complete."
+            desc += tr(" Steering torque response calibration is {}% complete.").format(torque_perc)
           else:
-            desc += " Steering torque response calibration is complete."
+            desc += tr(" Steering torque response calibration is complete.")
       except Exception:
         cloudlog.exception("invalid LiveTorqueParameters")
 
     desc += "<br><br>"
-    desc += ("openpilot is continuously calibrating, resetting is rarely required. " +
-             "Resetting calibration will restart openpilot if the car is powered on.")
+    desc += tr("openpilot is continuously calibrating, resetting is rarely required. " +
+               "Resetting calibration will restart openpilot if the car is powered on.")
 
     self._reset_calib_btn.set_description(desc)
 
   def _reboot_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(alert_dialog("Disengage to Reboot"))
+      gui_app.set_modal_overlay(alert_dialog(tr("Disengage to Reboot")))
       return
 
-    dialog = ConfirmDialog("Are you sure you want to reboot?", "Reboot")
+    dialog = ConfirmDialog(tr("Are you sure you want to reboot?"), tr("Reboot"))
     gui_app.set_modal_overlay(dialog, callback=self._perform_reboot)
 
   def _perform_reboot(self, result: int):
@@ -186,10 +181,10 @@ class DeviceLayout(Widget):
 
   def _power_off_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(alert_dialog("Disengage to Power Off"))
+      gui_app.set_modal_overlay(alert_dialog(tr("Disengage to Power Off")))
       return
 
-    dialog = ConfirmDialog("Are you sure you want to power off?", "Power Off")
+    dialog = ConfirmDialog(tr("Are you sure you want to power off?"), tr("Power Off"))
     gui_app.set_modal_overlay(dialog, callback=self._perform_power_off)
 
   def _perform_power_off(self, result: int):
@@ -210,5 +205,6 @@ class DeviceLayout(Widget):
     if not self._training_guide:
       def completed_callback():
         gui_app.set_modal_overlay(None)
+
       self._training_guide = TrainingGuide(completed_callback=completed_callback)
     gui_app.set_modal_overlay(self._training_guide)

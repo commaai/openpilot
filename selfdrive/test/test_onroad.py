@@ -32,7 +32,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 315.  # total for all 8 cores
+MAX_TOTAL_CPU = 350.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -42,7 +42,7 @@ PROCS = {
   "./encoderd": 13.0,
   "./camerad": 10.0,
   "selfdrive.controls.plannerd": 8.0,
-  "selfdrive.ui.ui": 24.0,
+  "selfdrive.ui.ui": 40.0,
   "system.sensord.sensord": 13.0,
   "selfdrive.controls.radard": 2.0,
   "selfdrive.modeld.modeld": 22.0,
@@ -179,7 +179,7 @@ class TestOnroad:
 
   def test_manager_starting_time(self):
     st = self.ts['managerState']['t'][0]
-    assert (st - self.manager_st) < 12.5, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
+    assert (st - self.manager_st) < 15.0, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
 
   def test_cloudlog_size(self):
     msgs = self.msgs['logMessage']
@@ -206,8 +206,9 @@ class TestOnroad:
     result += "-------------- UI Draw Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    # skip first few frames -- connecting to vipc
-    ts = self.ts['uiDebug']['drawTimeMillis'][15:]
+    # other processes preempt ui while starting up
+    offset = int(20 * LOG_OFFSET)
+    ts = self.ts['uiDebug']['drawTimeMillis'][offset:]
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"

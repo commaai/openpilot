@@ -3,9 +3,10 @@ from enum import IntEnum
 
 import pyray as rl
 
-from openpilot.system.ui.lib.application import FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, UnifiedLabel
+from openpilot.common.filter_simple import FirstOrderFilter
 
 
 class ButtonStyle(IntEnum):
@@ -47,7 +48,7 @@ BUTTON_DISABLED_TEXT_COLORS = {
 BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.NORMAL: rl.Color(51, 51, 51, 255),
   ButtonStyle.PRIMARY: rl.Color(70, 91, 234, 255),
-  ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
+  ButtonStyle.DANGER: rl.Color(226, 44, 44, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
   ButtonStyle.TRANSPARENT_WHITE_TEXT: rl.BLANK,
   ButtonStyle.TRANSPARENT_WHITE_BORDER: rl.BLACK,
@@ -79,7 +80,7 @@ BUTTON_DISABLED_BACKGROUND_COLORS = {
 
 class Button(Widget):
   def __init__(self,
-               text: str,
+               text: str | Callable[[], str],
                click_callback: Callable[[], None] | None = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
                font_weight: FontWeight = FontWeight.MEDIUM,
@@ -88,6 +89,7 @@ class Button(Widget):
                text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                text_padding: int = 20,
                icon=None,
+               elide_right: bool = False,
                multi_touch: bool = False,
                ):
 
@@ -97,7 +99,7 @@ class Button(Widget):
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
 
     self._label = Label(text, font_size, font_weight, text_alignment, text_padding=text_padding,
-                        text_color=BUTTON_TEXT_COLOR[self._button_style], icon=icon)
+                        text_color=BUTTON_TEXT_COLOR[self._button_style], icon=icon, elide_right=elide_right)
 
     self._click_callback = click_callback
     self._multi_touch = multi_touch
@@ -168,3 +170,127 @@ class ButtonRadio(Button):
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
       icon_x = self._rect.x + self._rect.width - self._icon.width - self._text_padding - ICON_PADDING
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE if self.enabled else rl.Color(255, 255, 255, 100))
+
+
+class IconButton(Widget):
+  def __init__(self, texture: rl.Texture):
+    super().__init__()
+    self._texture = texture
+    self._opacity_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self.set_rect(rl.Rectangle(0, 0, self._texture.width, self._texture.height))
+
+  def set_opacity(self, opacity: float, smooth: bool = False):
+    if smooth:
+      self._opacity_filter.update(opacity)
+    else:
+      self._opacity_filter.x = opacity
+
+  def _render(self, rect: rl.Rectangle):
+    color = rl.Color(180, 180, 180, int(150 * self._opacity_filter.x)) if self.is_pressed else rl.WHITE
+    if not self.enabled:
+      color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.35 * self._opacity_filter.x))
+    draw_x = rect.x + (rect.width - self._texture.width) / 2
+    draw_y = rect.y + (rect.height - self._texture.height) / 2
+    rl.draw_texture(self._texture, int(draw_x), int(draw_y), color)
+
+
+class SmallCircleIconButton(Widget):
+  def __init__(self, icon_txt: rl.Texture):
+    super().__init__()
+    self.set_rect(rl.Rectangle(0, 0, 100, 100))
+    self._opacity_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._icon_bg_txt = gui_app.texture("icons_mici/setup/small_button.png", 100, 100)
+    self._icon_bg_pressed_txt = gui_app.texture("icons_mici/setup/small_button_pressed.png", 100, 100)
+    self._icon_txt = icon_txt
+
+  def set_opacity(self, opacity: float, smooth: bool = False):
+    if smooth:
+      self._opacity_filter.update(opacity)
+    else:
+      self._opacity_filter.x = opacity
+
+  def _render(self, _):
+    bg_txt = self._icon_bg_pressed_txt if self.is_pressed else self._icon_bg_txt
+    white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
+    rl.draw_texture(bg_txt, int(self.rect.x), int(self.rect.y), white)
+    icon_x = self.rect.x + (self.rect.width - self._icon_txt.width) / 2
+    icon_y = self.rect.y + (self.rect.height - self._icon_txt.height) / 2
+    rl.draw_texture(self._icon_txt, int(icon_x), int(icon_y), white)
+
+
+class SmallButton(Widget):
+  def __init__(self, text: str):
+    super().__init__()
+    self._opacity_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+
+    self._load_assets()
+
+    self._label = UnifiedLabel(text, 36, font_weight=FontWeight.MEDIUM,
+                               text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                               alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+
+    self._bg_disabled_txt = None
+
+  def _load_assets(self):
+    self.set_rect(rl.Rectangle(0, 0, 194, 100))
+    self._bg_txt = gui_app.texture("icons_mici/setup/reset/small_button.png", 194, 100)
+    self._bg_pressed_txt = gui_app.texture("icons_mici/setup/reset/small_button_pressed.png", 194, 100)
+
+  def set_text(self, text: str):
+    self._label.set_text(text)
+
+  def set_opacity(self, opacity: float, smooth: bool = False):
+    if smooth:
+      self._opacity_filter.update(opacity)
+    else:
+      self._opacity_filter.x = opacity
+
+  def _render(self, _):
+    if not self.enabled and self._bg_disabled_txt is not None:
+      rl.draw_texture(self._bg_disabled_txt, int(self.rect.x), int(self.rect.y), rl.Color(255, 255, 255, int(255 * self._opacity_filter.x)))
+    elif self.is_pressed:
+      rl.draw_texture(self._bg_pressed_txt, int(self.rect.x), int(self.rect.y), rl.Color(255, 255, 255, int(255 * self._opacity_filter.x)))
+    else:
+      rl.draw_texture(self._bg_txt, int(self.rect.x), int(self.rect.y), rl.Color(255, 255, 255, int(255 * self._opacity_filter.x)))
+
+    opacity = 0.9 if self.enabled else 0.35
+    self._label.set_color(rl.Color(255, 255, 255, int(255 * opacity * self._opacity_filter.x)))
+    self._label.render(self._rect)
+
+
+class SmallRedPillButton(SmallButton):
+  def _load_assets(self):
+    self.set_rect(rl.Rectangle(0, 0, 194, 100))
+    self._bg_txt = gui_app.texture("icons_mici/setup/small_red_pill.png", 194, 100)
+    self._bg_pressed_txt = gui_app.texture("icons_mici/setup/small_red_pill_pressed.png", 194, 100)
+
+
+class SmallerRoundedButton(SmallButton):
+  def _load_assets(self):
+    self.set_rect(rl.Rectangle(0, 0, 150, 100))
+    self._bg_txt = gui_app.texture("icons_mici/setup/smaller_button.png", 150, 100)
+    self._bg_disabled_txt = gui_app.texture("icons_mici/setup/smaller_button_disabled.png", 150, 100)
+    self._bg_pressed_txt = gui_app.texture("icons_mici/setup/smaller_button_pressed.png", 150, 100)
+
+
+class WideRoundedButton(SmallButton):
+  def _load_assets(self):
+    self.set_rect(rl.Rectangle(0, 0, 316, 100))
+    self._bg_txt = gui_app.texture("icons_mici/setup/medium_button_bg.png", 316, 100)
+    self._bg_pressed_txt = gui_app.texture("icons_mici/setup/medium_button_pressed_bg.png", 316, 100)
+
+
+class WidishRoundedButton(SmallButton):
+  def _load_assets(self):
+    self.set_rect(rl.Rectangle(0, 0, 250, 100))
+    self._bg_txt = gui_app.texture("icons_mici/setup/widish_button.png", 250, 100)
+    self._bg_pressed_txt = gui_app.texture("icons_mici/setup/widish_button_pressed.png", 250, 100)
+    self._bg_disabled_txt = gui_app.texture("icons_mici/setup/widish_button_disabled.png", 250, 100)
+
+
+class FullRoundedButton(SmallButton):
+  def _load_assets(self):
+    self.set_rect(rl.Rectangle(0, 0, 520, 100))
+    self._bg_txt = gui_app.texture("icons_mici/setup/reset/wide_button.png", 520, 100)
+    self._bg_pressed_txt = gui_app.texture("icons_mici/setup/reset/wide_button_pressed.png", 520, 100)

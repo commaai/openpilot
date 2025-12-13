@@ -5,12 +5,65 @@ import requests
 import xml.etree.ElementTree as ET
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.ui.tests.test_translations import UNFINISHED_TRANSLATION_TAG
 from openpilot.selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 
-TRANSLATION_TAG = "<translation"
 BADGE_HEIGHT = 20 + 8
 SHIELDS_URL = "https://img.shields.io/badge"
+
+def parse_po_file(file_path):
+  """
+  Parse a .po file and count total and unfinished translations.
+  Returns: (total_translations, unfinished_translations)
+  """
+  with open(file_path) as f:
+    content = f.read()
+
+  total_translations = 0
+  unfinished_translations = 0
+
+  # Split into entries (separated by blank lines)
+  entries = content.split('\n\n')
+
+  for entry in entries:
+    # Skip header entry (contains Project-Id-Version)
+    if 'Project-Id-Version' in entry:
+      continue
+
+    # Check if this entry has a msgid (translation entry)
+    # After skipping header, any entry with msgid " is a translation
+    # (both msgid "content" and msgid "" for multiline contain msgid ")
+    if 'msgid "' not in entry:
+      continue
+
+    total_translations += 1
+
+    # Check if msgstr is empty (unfinished translation)
+    if 'msgstr ""' in entry:
+      # Check if there are continuation lines with content after msgstr ""
+      lines = entry.split('\n')
+      msgstr_idx = None
+      for i, line in enumerate(lines):
+        if line.strip().startswith('msgstr ""'):
+          msgstr_idx = i
+          break
+
+      if msgstr_idx is not None:
+        # Check if any continuation lines have content
+        has_content = False
+        for line in lines[msgstr_idx + 1:]:
+          stripped = line.strip()
+          # Continuation line with content
+          if stripped.startswith('"') and len(stripped) > 2:
+            has_content = True
+            break
+          # End of entry
+          if stripped.startswith(('msgid', '#')) or not stripped:
+            break
+
+        if not has_content:
+          unfinished_translations += 1
+
+  return (total_translations, unfinished_translations)
 
 if __name__ == "__main__":
   with open(LANGUAGES_FILE) as f:
@@ -19,18 +72,11 @@ if __name__ == "__main__":
   badge_svg = []
   max_badge_width = 0  # keep track of max width to set parent element
   for idx, (name, file) in enumerate(translation_files.items()):
-    with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")) as tr_f:
-      tr_file = tr_f.read()
+    po_file_path = os.path.join(str(TRANSLATIONS_DIR), f"app_{file}.po")
 
-    total_translations = 0
-    unfinished_translations = 0
-    for line in tr_file.splitlines():
-      if TRANSLATION_TAG in line:
-        total_translations += 1
-      if UNFINISHED_TRANSLATION_TAG in line:
-        unfinished_translations += 1
+    total_translations, unfinished_translations = parse_po_file(po_file_path)
 
-    percent_finished = int(100 - (unfinished_translations / total_translations * 100.))
+    percent_finished = int(100 - (unfinished_translations / total_translations * 100.)) if total_translations > 0 else 0
     color = f"rgb{(94, 188, 0) if percent_finished == 100 else (248, 255, 50) if percent_finished > 90 else (204, 55, 27)}"
 
     # Download badge

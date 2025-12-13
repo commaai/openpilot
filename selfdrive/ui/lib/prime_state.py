@@ -33,7 +33,6 @@ class PrimeState:
 
     self._running = False
     self._thread = None
-    self.start()
 
   def _load_initial_state(self) -> PrimeType:
     prime_type_str = os.getenv("PRIME_TYPE") or self._params.get("PrimeType")
@@ -68,8 +67,10 @@ class PrimeState:
         cloudlog.info(f"Prime type updated to {prime_type}")
 
   def _worker_thread(self) -> None:
+    from openpilot.selfdrive.ui.ui_state import ui_state, device
     while self._running:
-      self._fetch_prime_status()
+      if not ui_state.started and device._awake:
+        self._fetch_prime_status()
 
       for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
         if not self._running:

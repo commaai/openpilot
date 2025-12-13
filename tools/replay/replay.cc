@@ -20,7 +20,7 @@ Replay::Replay(const std::string &route, std::vector<std::string> allow, std::ve
   std::signal(SIGUSR1, interrupt_sleep_handler);
 
   if (!(flags_ & REPLAY_FLAG_ALL_SERVICES)) {
-    block.insert(block.end(), {"uiDebug", "userBookmark"});
+    block.insert(block.end(), {"bookmarkButton", "uiDebug", "userBookmark"});
   }
   setupServices(allow, block);
   setupSegmentManager(!allow.empty() || !block.empty());
@@ -31,6 +31,8 @@ void Replay::setupServices(const std::vector<std::string> &allow, const std::vec
   sockets_.resize(event_schema.getUnionFields().size(), nullptr);
 
   std::vector<const char *> active_services;
+  active_services.reserve(services.size());
+
   for (const auto &[name, _] : services) {
     bool is_blocked = std::find(block.begin(), block.end(), name) != block.end();
     bool is_allowed = allow.empty() || std::find(allow.begin(), allow.end(), name) != allow.end();
@@ -40,7 +42,9 @@ void Replay::setupServices(const std::vector<std::string> &allow, const std::vec
       active_services.push_back(name.c_str());
     }
   }
-  rInfo("active services: %s", join(active_services, ", ").c_str());
+
+  std::string services_str = join(active_services, ", ");
+  rInfo("active services: %s", services_str.c_str());
   if (!sm_) {
     pm_ = std::make_unique<PubMaster>(active_services);
   }
@@ -59,7 +63,6 @@ void Replay::setupSegmentManager(bool has_filters) {
 }
 
 Replay::~Replay() {
-  seg_mgr_.reset();
   if (stream_thread_.joinable()) {
     rInfo("shutdown: in progress...");
     interruptStream([this]() {
@@ -70,6 +73,7 @@ Replay::~Replay() {
     rInfo("shutdown: done");
   }
   camera_server_.reset();
+  seg_mgr_.reset();
 }
 
 bool Replay::load() {

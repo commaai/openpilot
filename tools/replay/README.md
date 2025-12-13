@@ -88,7 +88,7 @@ To visualize the replay within the openpilot UI, run the following commands:
 
 ```bash
 tools/replay/replay <route-name>
-cd selfdrive/ui && ./ui
+cd selfdrive/ui && ./ui.py
 ```
 
 ## Work with plotjuggler
@@ -110,7 +110,7 @@ simply replay a route using the `--dcam` and `--ecam` flags:
 cd tools/replay && ./replay --demo --dcam --ecam
 
 # then start watch3
-cd selfdrive/ui && ./watch3
+cd selfdrive/ui && ./watch3.py
 ```
 
 ![](https://i.imgur.com/IeaOdAb.png)

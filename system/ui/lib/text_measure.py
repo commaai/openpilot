@@ -1,12 +1,14 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import FONT_SCALE
+from openpilot.system.ui.lib.application import FONT_SCALE, font_fallback
 from openpilot.system.ui.lib.emoji import find_emoji
 
 _cache: dict[int, rl.Vector2] = {}
 
 
-def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: int = 0) -> rl.Vector2:
+def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: float = 0) -> rl.Vector2:
   """Caches text measurements to avoid redundant calculations."""
+  font = font_fallback(font)
+  spacing = round(spacing, 4)
   key = hash((font.texture.id, text, font_size, spacing))
   if key in _cache:
     return _cache[key]
@@ -19,6 +21,7 @@ def measure_text_cached(font: rl.Font, text: str, font_size: int, spacing: int =
     for start, end, _ in emoji:
       non_emoji_text += text[last_index:start]
       last_index = end
+    non_emoji_text += text[last_index:]
   else:
     non_emoji_text = text
 

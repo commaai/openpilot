@@ -30,8 +30,8 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.api import Api
-from openpilot.common.file_helpers import CallbackReader, get_upload_stream
+from openpilot.common.api import Api, get_key_pair
+from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC
@@ -523,11 +523,8 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 @dispatcher.add_method
 def getPublicKey() -> str | None:
-  if not os.path.isfile(Paths.persist_root() + '/comma/id_rsa.pub'):
-    return None
-
-  with open(Paths.persist_root() + '/comma/id_rsa.pub') as f:
-    return f.read()
+  _, _, public_key = get_key_pair()
+  return public_key
 
 
 @dispatcher.add_method

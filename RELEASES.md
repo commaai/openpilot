@@ -1,6 +1,13 @@
+Version 0.10.3 (2025-12-10)
+========================
+
+Version 0.10.2 (2025-11-19)
+========================
+* comma four support
+
 Version 0.10.1 (2025-09-08)
 ========================
-* New driving model #36114
+* New driving model #36276
   * World Model: removed global localization inputs
   * World Model: 2x the number of parameters
   * World Model: trained on 4x the number of segments

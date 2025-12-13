@@ -3,6 +3,7 @@
 #include <QFormLayout>
 #include <QMenu>
 #include <QRadioButton>
+#include <QPushButton>
 #include <QToolBar>
 
 #include "tools/cabana/commands.h"
@@ -117,10 +118,7 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
   }
 }
 
-void DetailWidget::setMessage(const MessageId &message_id) {
-  if (std::exchange(msg_id, message_id) == message_id) return;
-
-  tabbar->blockSignals(true);
+int DetailWidget::findOrAddTab(const MessageId& message_id) {
   int index = tabbar->count() - 1;
   for (/**/; index >= 0; --index) {
     if (tabbar->tabData(index).value<MessageId>() == message_id) break;
@@ -130,6 +128,14 @@ void DetailWidget::setMessage(const MessageId &message_id) {
     tabbar->setTabData(index, QVariant::fromValue(message_id));
     tabbar->setTabToolTip(index, msgName(message_id));
   }
+  return index;
+}
+
+void DetailWidget::setMessage(const MessageId &message_id) {
+  if (std::exchange(msg_id, message_id) == message_id) return;
+
+  tabbar->blockSignals(true);
+  int index = findOrAddTab(message_id);
   tabbar->setCurrentIndex(index);
   tabbar->blockSignals(false);
 
@@ -139,6 +145,29 @@ void DetailWidget::setMessage(const MessageId &message_id) {
   history_log->setMessage(msg_id);
   refresh();
   setUpdatesEnabled(true);
+}
+
+std::pair<QString, QStringList> DetailWidget::serializeMessageIds() const {
+  QStringList msgs;
+  for (int i = 0; i < tabbar->count(); ++i) {
+    MessageId id = tabbar->tabData(i).value<MessageId>();
+    msgs.append(id.toString());
+  }
+  return std::make_pair(msg_id.toString(), msgs);
+}
+
+void DetailWidget::restoreTabs(const QString active_msg_id, const QStringList& msg_ids) {
+  tabbar->blockSignals(true);
+  for (const auto& str_id : msg_ids) {
+    MessageId id = MessageId::fromString(str_id);
+    if (dbc()->msg(id) != nullptr)
+      findOrAddTab(id);
+  }
+  tabbar->blockSignals(false);
+
+  auto active_id = MessageId::fromString(active_msg_id);
+  if (dbc()->msg(active_id) != nullptr)
+    setMessage(active_id);
 }
 
 void DetailWidget::refresh() {
@@ -243,13 +272,13 @@ CenterWidget::CenterWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(welcome_widget = createWelcomeWidget());
 }
 
-void CenterWidget::setMessage(const MessageId &msg_id) {
+DetailWidget* CenterWidget::ensureDetailWidget() {
   if (!detail_widget) {
     delete welcome_widget;
     welcome_widget = nullptr;
     layout()->addWidget(detail_widget = new DetailWidget(((MainWindow*)parentWidget())->charts_widget, this));
   }
-  detail_widget->setMessage(msg_id);
+  return detail_widget;
 }
 
 void CenterWidget::clear() {

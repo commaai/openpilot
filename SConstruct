@@ -22,7 +22,7 @@ AddOption('--ccflags', action='store', type='string', default='', help='pass arb
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.exists(File('#.lfsconfig').abspath), # minimal by default on release branch (where there's no LFS)
+          default=os.path.exists(File('#.gitattributes').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 # Detect platform
@@ -165,57 +165,7 @@ else:
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-# ********** Qt build environment **********
-qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
-
-qt_libs = []
-if arch == "Darwin":
-  qt_env['QTDIR'] = f"{brew_prefix}/opt/qt@5"
-  qt_dirs = [
-    os.path.join(qt_env['QTDIR'], "include"),
-  ]
-  qt_dirs += [f"{qt_env['QTDIR']}/include/Qt{m}" for m in qt_modules]
-  qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
-  qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
-  qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
-else:
-  qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
-  qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
-
-  qt_env['QTDIR'] = qt_install_prefix
-  qt_dirs = [
-    f"{qt_install_headers}",
-  ]
-
-  qt_gui_path = os.path.join(qt_install_headers, "QtGui")
-  qt_gui_dirs = [d for d in os.listdir(qt_gui_path) if os.path.isdir(os.path.join(qt_gui_path, d))]
-  qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
-  qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
-
-  qt_libs = [f"Qt5{m}" for m in qt_modules]
-  if arch == "larch64":
-    qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
-  elif arch != "Darwin":
-    qt_libs += ["GL"]
-qt_env['QT3DIR'] = qt_env['QTDIR']
-qt_env.Tool('qt3')
-
-qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode"]
-qt_flags = [
-  "-D_REENTRANT",
-  "-DQT_NO_DEBUG",
-  "-DQT_WIDGETS_LIB",
-  "-DQT_GUI_LIB",
-  "-DQT_CORE_LIB",
-  "-DQT_MESSAGELOGCONTEXT",
-]
-qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui', ]
-qt_env['LIBS'] = qt_libs
-
-Export('env', 'qt_env', 'arch')
+Export('env', 'arch')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'

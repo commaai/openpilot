@@ -13,7 +13,7 @@ from cereal.messaging import SubMaster
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
-from openpilot.common.file_helpers import atomic_write_in_dir
+from openpilot.common.utils import atomic_write
 from openpilot.system.version import get_build_metadata
 from openpilot.system.loggerd.config import STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
 
@@ -167,7 +167,7 @@ def main() -> NoReturn:
         if len(os.listdir(STATS_DIR)) < STATS_DIR_FILE_LIMIT:
           if len(result) > 0:
             stats_path = os.path.join(STATS_DIR, f"{boot_uid}_{idx}")
-            with atomic_write_in_dir(stats_path) as f:
+            with atomic_write(stats_path) as f:
               f.write(result)
             idx += 1
         else:

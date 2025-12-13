@@ -9,6 +9,7 @@ from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.multilang import tr, trn
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets import Widget
 
@@ -18,8 +19,6 @@ CONTENT_MARGIN = 40
 SPACING = 25
 RIGHT_COLUMN_WIDTH = 750
 REFRESH_INTERVAL = 10.0
-
-PRIME_BG_COLOR = rl.Color(51, 51, 51, 255)
 
 
 class HomeLayoutState(IntEnum):
@@ -44,6 +43,7 @@ class HomeLayout(Widget):
 
     self.update_available = False
     self.alert_count = 0
+    self._version_text = ""
     self._prev_update_available = False
     self._prev_alerts_present = False
 
@@ -151,7 +151,7 @@ class HomeLayout(Widget):
       highlight_color = rl.Color(75, 95, 255, 255) if self.current_state == HomeLayoutState.UPDATE else rl.Color(54, 77, 239, 255)
       rl.draw_rectangle_rounded(self.update_notif_rect, 0.3, 10, highlight_color)
 
-      text = "UPDATE"
+      text = tr("UPDATE")
       text_size = measure_text_cached(font, text, HEAD_BUTTON_FONT_SIZE)
       text_x = self.update_notif_rect.x + (self.update_notif_rect.width - text_size.x) // 2
       text_y = self.update_notif_rect.y + (self.update_notif_rect.height - text_size.y) // 2
@@ -165,7 +165,7 @@ class HomeLayout(Widget):
       highlight_color = rl.Color(255, 70, 70, 255) if self.current_state == HomeLayoutState.ALERTS else rl.Color(226, 44, 44, 255)
       rl.draw_rectangle_rounded(self.alert_notif_rect, 0.3, 10, highlight_color)
 
-      alert_text = f"{self.alert_count} ALERT{'S' if self.alert_count > 1 else ''}"
+      alert_text = trn("{} ALERT", "{} ALERTS", self.alert_count).format(self.alert_count)
       text_size = measure_text_cached(font, alert_text, HEAD_BUTTON_FONT_SIZE)
       text_x = self.alert_notif_rect.x + (self.alert_notif_rect.width - text_size.x) // 2
       text_y = self.alert_notif_rect.y + (self.alert_notif_rect.height - text_size.y) // 2
@@ -177,7 +177,7 @@ class HomeLayout(Widget):
 
     version_rect = rl.Rectangle(self.header_rect.x + self.header_rect.width - version_text_width, self.header_rect.y,
                                 version_text_width, self.header_rect.height)
-    gui_label(version_rect, self._get_version_text(), 48, rl.WHITE, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT)
+    gui_label(version_rect, self._version_text, 48, rl.WHITE, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT)
 
   def _render_home_content(self):
     self._render_left_column()
@@ -208,7 +208,7 @@ class HomeLayout(Widget):
     self._setup_widget.render(setup_rect)
 
   def _refresh(self):
-    # TODO: implement _update_state with a timer
+    self._version_text = self._get_version_text()
     update_available = self.update_alert.refresh()
     alert_count = self.offroad_alert.refresh()
     alerts_present = alert_count > 0

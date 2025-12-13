@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
@@ -30,6 +31,10 @@ class ElementType(Enum):
 TAG_NAMES = '|'.join([t.value for t in ElementType])
 START_TAG_RE = re.compile(f'<({TAG_NAMES})>')
 END_TAG_RE = re.compile(f'</({TAG_NAMES})>')
+COMMENT_RE = re.compile(r'<!--.*?-->', flags=re.DOTALL)
+DOCTYPE_RE = re.compile(r'<!DOCTYPE[^>]*>')
+HTML_BODY_TAGS_RE = re.compile(r'</?(?:html|head|body)[^>]*>')
+TOKEN_RE = re.compile(r'</[^>]+>|<[^>]+>|[^<\s]+')
 
 
 def is_tag(token: str) -> tuple[bool, bool, ElementType | None]:
@@ -64,6 +69,9 @@ class HtmlRenderer(Widget):
     if text_size is None:
       text_size = {}
 
+    self._cached_height: float | None = None
+    self._cached_width: int = -1
+
     # Base paragraph size (Qt stylesheet default is 48px in offroad alerts)
     base_p_size = int(text_size.get(ElementType.P, 48))
 
@@ -96,16 +104,18 @@ class HtmlRenderer(Widget):
 
   def parse_html_content(self, html_content: str) -> None:
     self.elements.clear()
+    self._cached_height = None
+    self._cached_width = -1
 
     # Remove HTML comments
-    html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
+    html_content = COMMENT_RE.sub('', html_content)
 
     # Remove DOCTYPE, html, head, body tags but keep their content
-    html_content = re.sub(r'<!DOCTYPE[^>]*>', '', html_content)
-    html_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', html_content)
+    html_content = DOCTYPE_RE.sub('', html_content)
+    html_content = HTML_BODY_TAGS_RE.sub('', html_content)
 
     # Parse HTML
-    tokens = re.findall(r'</[^>]+>|<[^>]+>|[^<\s]+', html_content)
+    tokens = TOKEN_RE.findall(html_content)
 
     def close_tag():
       nonlocal current_content
@@ -210,6 +220,9 @@ class HtmlRenderer(Widget):
     return current_y - rect.y
 
   def get_total_height(self, content_width: int) -> float:
+    if self._cached_height is not None and self._cached_width == content_width:
+      return self._cached_height
+
     total_height = 0.0
     padding = 20
     usable_width = content_width - (padding * 2)
@@ -230,6 +243,10 @@ class HtmlRenderer(Widget):
 
       total_height += element.margin_bottom
 
+    # Store result in cache
+    self._cached_height = total_height
+    self._cached_width = content_width
+
     return total_height
 
   def _get_font(self, weight: FontWeight):
@@ -243,7 +260,7 @@ class HtmlModal(Widget):
     super().__init__()
     self._content = HtmlRenderer(file_path=file_path, text=text)
     self._scroll_panel = GuiScrollPanel()
-    self._ok_button = Button("OK", click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
+    self._ok_button = Button(tr("OK"), click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
 
   def _render(self, rect: rl.Rectangle):
     margin = 50

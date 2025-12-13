@@ -134,7 +134,7 @@ void VideoWidget::createSpeedDropdown(QToolBar *toolbar) {
   QFont font = speed_btn->font();
   font.setBold(true);
   speed_btn->setFont(font);
-  speed_btn->setMinimumWidth(speed_btn->fontMetrics().width("0.05x  ") + style()->pixelMetric(QStyle::PM_MenuButtonIndicator));
+  speed_btn->setMinimumWidth(speed_btn->fontMetrics().horizontalAdvance("0.05x  ") + style()->pixelMetric(QStyle::PM_MenuButtonIndicator));
 }
 
 QWidget *VideoWidget::createCameraWidget() {
