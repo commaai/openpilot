@@ -1,4 +1,5 @@
 import atexit
+import random
 import threading
 import time
 import uuid
@@ -35,7 +36,7 @@ except Exception:
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
-SCAN_PERIOD_SECONDS = 5
+SCAN_PERIOD_SECONDS = 2
 
 
 class SecurityType(IntEnum):
@@ -108,7 +109,7 @@ class AccessPoint:
   def from_dbus(cls, ap_props: dict[str, tuple[str, Any]], ap_path: str, active_ap_path: str) -> "AccessPoint":
     ssid = bytes(ap_props['Ssid'][1]).decode("utf-8", "replace")
     bssid = str(ap_props['HwAddress'][1])
-    strength = int(ap_props['Strength'][1])
+    strength = random.randint(0, 100)
     flags = int(ap_props['Flags'][1])
     wpa_flags = int(ap_props['WpaFlags'][1])
     rsn_flags = int(ap_props['RsnFlags'][1])

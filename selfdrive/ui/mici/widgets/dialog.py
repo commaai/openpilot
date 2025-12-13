@@ -247,7 +247,9 @@ class BigInputDialog(BigDialogBase):
     self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 255 * 0.35)
     if self._enter_img_alpha.x > 1:
       color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
-      rl.draw_texture(self._enter_img, int(self._rect.x + 15), int(text_field_rect.y), color)
+      rl.draw_texture_ex(self._enter_img,
+                         rl.Vector2(self._rect.x + 15, text_field_rect.y),
+                         0.0, 1.0, color)
 
     # keyboard goes over everything
     self._keyboard.render(self._rect)
@@ -349,13 +351,13 @@ class BigMultiOptionDialog(BigDialogBase):
   def get_selected_option(self) -> str:
     return self._selected_option
 
-  def _on_option_selected(self, option: str):
+  def _on_option_selected(self, option: str, smooth: bool = True):
     y_pos = 0.0
     for btn in self._scroller._items:
       if cast(BigDialogOptionButton, btn).option == option:
         y_pos = btn.rect.y
 
-    self._scroller.scroll_to(y_pos, smooth=True)
+    self._scroller.scroll_to(y_pos, smooth=smooth)
 
   def _selected_option_changed(self):
     pass
