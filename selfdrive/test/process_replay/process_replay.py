@@ -211,7 +211,7 @@ class ProcessContainer:
 
   def _start_process(self):
     if self.capture is not None:
-      setattr(self.process, 'launcher', LauncherWithCapture(self.capture, self.process.launcher))
+      self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)  # type: ignore[assignment]  # monkeypatch
     self.process.prepare()
     self.process.start()
 

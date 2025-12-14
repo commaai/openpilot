@@ -33,20 +33,20 @@ def apply_metadrive_patches(arrive_dest_done=True):
     assert isinstance(sensor, ImageBuffer), "This API is for adding image sensor"
     self.sensors[name] = sensor
 
-  setattr(EngineCore, 'add_image_sensor', add_image_sensor_patched)
+  EngineCore.add_image_sensor = add_image_sensor_patched  # type: ignore[assignment]  # monkeypatch
 
   # we aren't going to use the built-in observation stack, so disable it to save time
   def observe_patched(self, *args, **kwargs):
     return self.state
 
-  setattr(ImageObservation, 'observe', observe_patched)
+  ImageObservation.observe = observe_patched  # type: ignore[assignment]  # monkeypatch
 
   # disable destination, we want to loop forever
   def arrive_destination_patch(self, *args, **kwargs):
     return False
 
   if not arrive_dest_done:
-    setattr(MetaDriveEnv, '_is_arrive_destination', arrive_destination_patch)
+    MetaDriveEnv._is_arrive_destination = arrive_destination_patch  # type: ignore[assignment]  # monkeypatch
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,

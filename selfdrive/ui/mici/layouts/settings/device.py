@@ -20,7 +20,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets.label import MiciLabel
-from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
 

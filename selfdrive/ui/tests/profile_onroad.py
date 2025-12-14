@@ -49,7 +49,7 @@ def patch_submaster(message_chunks):
         sm.recv_frame[service] = sm.frame
         sm.valid[service] = True
     sm.frame += 1
-  setattr(ui_state.sm, 'update', mock_update)
+  ui_state.sm.update = mock_update  # type: ignore[assignment]  # monkeypatch for profiling
 
 
 if __name__ == "__main__":

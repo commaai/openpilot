@@ -6,7 +6,8 @@ class PIDController:
   _k_i: list[list[float]]
   _k_d: list[list[float]]
 
-  def __init__(self, k_p: float | list[list[float]], k_i: float | list[list[float]], k_d: float | list[list[float]] = 0., pos_limit=1e308, neg_limit=-1e308, rate=100):
+  def __init__(self, k_p: float | list[list[float]], k_i: float | list[list[float]],
+               k_d: float | list[list[float]] = 0., pos_limit=1e308, neg_limit=-1e308, rate=100):
     self._k_p: list[list[float]] = [[0.0], [float(k_p)]] if isinstance(k_p, Number) else k_p
     self._k_i: list[list[float]] = [[0.0], [float(k_i)]] if isinstance(k_i, Number) else k_i
     self._k_d: list[list[float]] = [[0.0], [float(k_d)]] if isinstance(k_d, Number) else k_d

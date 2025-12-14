@@ -63,10 +63,10 @@ class UploaderTestCase:
   seg_dir: str
 
   def set_ignore(self):
-    setattr(uploader, 'Api', MockApiIgnore)
+    uploader.Api = MockApiIgnore  # type: ignore[assignment]  # monkeypatch for testing
 
   def setup_method(self):
-    setattr(uploader, 'Api', MockApi)
+    uploader.Api = MockApi  # type: ignore[assignment]  # monkeypatch for testing
     uploader.fake_upload = True
     uploader.force_wifi = True
     uploader.allow_sleep = False
