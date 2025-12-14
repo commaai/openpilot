@@ -121,6 +121,7 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
+  "pyside2",
 ]
 
 tools = [

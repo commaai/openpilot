@@ -1,7 +1,9 @@
 # pycabana: Python Qt Rewrite Plan
 
 ## Overview
+
 Rewrite `tools/cabana` from C++ Qt (~9k LOC) to Python using PySide6, maintaining 100% feature parity.
+This should be a simple mechanical translation of C++ Qt to PySide6, aside from using some existing openpilot functionality where possible.
 
 **Guiding principle: when in doubt, match C++ cabana.**
 
