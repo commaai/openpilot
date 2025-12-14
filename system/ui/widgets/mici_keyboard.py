@@ -77,7 +77,7 @@ class Key(Widget):
   def _update_state(self):
     self._color.a = min(int(255 * self._alpha_filter.x), 255)
 
-  def _render(self, _):
+  def _render(self, rect):
     # center char at rect position
     text_size = measure_text_cached(self._font, self.char, self._get_font_size())
     x = self._rect.x + self._rect.width / 2 - text_size.x / 2
@@ -113,7 +113,7 @@ class IconKey(Key):
   def set_icon(self, icon: str):
     self._icon = gui_app.texture(icon, 38, 38)
 
-  def _render(self, _):
+  def _render(self, rect):
     scale = np.interp(self._size_filter.x, [CHAR_FONT_SIZE, CHAR_NEAR_FONT_SIZE], [1, 1.5])
 
     if self._vertical_align == "center":
@@ -367,7 +367,7 @@ class MiciKeyboard(Widget):
         # TODO: I like the push amount, so we should clip the pos inside the keyboard rect
         key.set_position(key_x, key_y)
 
-  def _render(self, _):
+  def _render(self, rect):
     # draw bg
     bg_x = self._rect.x + (self._rect.width - self._txt_bg.width) / 2
     bg_y = self._rect.y + self._rect.height - self._txt_bg.height

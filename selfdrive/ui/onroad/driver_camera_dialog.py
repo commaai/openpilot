@@ -21,8 +21,8 @@ class DriverCameraDialog(CameraView):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     gui_app.set_modal_overlay(None)
 
-  def _handle_mouse_release(self, _):
-    super()._handle_mouse_release(_)
+  def _handle_mouse_release(self, mouse_pos):
+    super()._handle_mouse_release(mouse_pos)
     self.stop_dmonitoringmodeld()
 
   def _render(self, rect):

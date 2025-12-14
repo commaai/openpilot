@@ -217,7 +217,7 @@ class NavBar(Widget):
     self._alpha_filter.x = 1.0
     self._fade_time = rl.get_time()
 
-  def _render(self, _):
+  def _render(self, rect):
     if rl.get_time() - self._fade_time > DISMISS_TIME_SECONDS:
       self._alpha = 0.0
     alpha = self._alpha_filter.update(self._alpha)

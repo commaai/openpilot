@@ -58,7 +58,7 @@ class DeviceStatus(Widget):
     network_type = NETWORK_TYPES[ui_state.sm['deviceState'].networkType.raw]
     self._network_status = f"{network_type} {strength_text}"
 
-  def _render(self, _):
+  def _render(self, rect):
     # draw status
     status_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, 40)
     gui_label(status_rect, self._system_status, font_size=HEAD_BUTTON_FONT_SIZE, color=DEFAULT_TEXT_COLOR,
@@ -177,7 +177,7 @@ class MiciHomeLayout(Widget):
 
     return None
 
-  def _render(self, _):
+  def _render(self, rect):
     # TODO: why is there extra space here to get it to be flush?
     text_pos = rl.Vector2(self.rect.x - 2 + HOME_PADDING, self.rect.y - 16)
     self._openpilot_label.set_position(text_pos.x, text_pos.y)

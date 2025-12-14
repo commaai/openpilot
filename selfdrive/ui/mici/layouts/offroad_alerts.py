@@ -131,7 +131,7 @@ class AlertItem(Widget):
     self.alert_data = alert_data
     self._update_content()
 
-  def _render(self, _):
+  def _render(self, rect):
     if not self.alert_data.visible or not self.alert_data.text:
       return
 

@@ -114,7 +114,7 @@ class SmallSlider(Widget):
       # not activated yet, keep movement 1:1
       self._scroll_x_circle_filter.x = self._scroll_x_circle
 
-  def _render(self, _):
+  def _render(self, rect):
     # TODO: iOS text shimmering animation
 
     white = rl.Color(255, 255, 255, int(255 * self._opacity))

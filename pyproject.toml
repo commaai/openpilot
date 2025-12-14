@@ -212,7 +212,6 @@ unused-ignore-comment = "warn"
 possibly-missing-attribute = "ignore"  # 260 warnings
 invalid-argument-type = "ignore"       # 111 errors
 unresolved-attribute = "ignore"        # 96 errors
-invalid-method-override = "ignore"     # 69 errors
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]

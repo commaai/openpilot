@@ -338,7 +338,7 @@ class Label(Widget):
       self._emojis.append(find_emoji(t))
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
-  def _render(self, _):
+  def _render(self, rect):
     # Text can be a callable
     # TODO: cache until text changed
     self._update_text(self._text)
@@ -627,7 +627,7 @@ class UnifiedLabel(Widget):
       return self._cached_total_height
     return 0.0
 
-  def _render(self, _):
+  def _render(self, rect):
     """Render the label."""
     if self._rect.width <= 0 or self._rect.height <= 0:
       return

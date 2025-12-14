@@ -97,7 +97,7 @@ class DeviceInfoLayoutMici(Widget):
     self._serial_number_label = MiciLabel("serial", 48, color=header_color, font_weight=FontWeight.DISPLAY)
     self._serial_number_text_label = MiciLabel(params.get("HardwareSerial") or 'N/A', 32, width=max_width, color=subheader_color, font_weight=FontWeight.ROMAN)
 
-  def _render(self, _):
+  def _render(self, rect):
     self._dongle_id_label.set_position(self._rect.x + 20, self._rect.y - 10)
     self._dongle_id_label.render()
 

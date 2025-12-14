@@ -338,7 +338,7 @@ class ListItem(Widget):
     if new_description != self._prev_description:
       self._parse_description(new_description)
 
-  def _render(self, _):
+  def _render(self, rect):
     if not self.is_visible:
       return
 

@@ -59,7 +59,7 @@ class NavButton(Widget):
     self.text = text
     self.set_rect(rl.Rectangle(0, 0, 400, 100))
 
-  def _render(self, _):
+  def _render(self, rect):
     color = rl.Color(74, 74, 74, 255) if self.is_pressed else rl.Color(57, 57, 57, 255)
     rl.draw_rectangle_rounded(self._rect, 0.6, 10, color)
     gui_label(self.rect, self.text, font_size=60, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
@@ -88,7 +88,7 @@ class NetworkUI(Widget):
     else:
       self._set_current_panel(PanelType.WIFI)
 
-  def _render(self, _):
+  def _render(self, rect):
     # subtract button
     content_rect = rl.Rectangle(self._rect.x, self._rect.y + self._nav_button.rect.height + 40,
                                 self._rect.width, self._rect.height - self._nav_button.rect.height - 40)
@@ -267,7 +267,7 @@ class AdvancedNetworkSettings(Widget):
     self._apn_btn.set_visible(show_cell_settings)
     self._cellular_metered_btn.set_visible(show_cell_settings)
 
-  def _render(self, _):
+  def _render(self, rect):
     self._scroller.render(self._rect)
 
 

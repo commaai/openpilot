@@ -52,7 +52,7 @@ class TurnIntent(Widget):
     self._txt_turn_intent_left: rl.Texture = gui_app.texture('icons_mici/turn_intent_left.png', 50, 19)
     self._txt_turn_intent_right: rl.Texture = gui_app.texture('icons_mici/turn_intent_right.png', 50, 19)
 
-  def _render(self, _):
+  def _render(self, rect):
     if self._turn_intent_alpha_filter.x > 1e-2:
       turn_intent_texture = self._txt_turn_intent_right if self._turn_intent_direction == 1 else self._txt_turn_intent_left
       src_rect = rl.Rectangle(0, 0, turn_intent_texture.width, turn_intent_texture.height)

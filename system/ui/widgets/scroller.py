@@ -27,7 +27,7 @@ class LineSeparator(Widget):
     super().set_parent_rect(parent_rect)
     self._rect.width = parent_rect.width
 
-  def _render(self, _):
+  def _render(self, rect):
     rl.draw_line(int(self._rect.x) + LINE_PADDING, int(self._rect.y),
                  int(self._rect.x + self._rect.width) - LINE_PADDING, int(self._rect.y),
                  LINE_COLOR)
@@ -223,7 +223,7 @@ class Scroller(Widget):
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
       item.set_parent_rect(self._rect)
 
-  def _render(self, _):
+  def _render(self, rect):
     for item in self._visible_items:
       # Skip rendering if not in viewport
       if not rl.check_collision_recs(item.rect, self._rect):

@@ -40,7 +40,7 @@ class BigDialogBase(NavWidget, abc.ABC):
       # move to right side
       self._right_btn._rect.x = self._rect.x + self._rect.width - self._right_btn._rect.width
 
-  def _render(self, _) -> DialogResult:
+  def _render(self, rect) -> DialogResult:
     """
     Allows `gui_app.set_modal_overlay(BigDialog(...))`.
     The overlay runner keeps calling until result != NO_ACTION.
@@ -62,8 +62,8 @@ class BigDialog(BigDialogBase):
     self._title = title
     self._description = description
 
-  def _render(self, _) -> DialogResult:
-    super()._render(_)
+  def _render(self, rect) -> DialogResult:
+    super()._render(rect)
 
     # draw title
     # TODO: we desperately need layouts
@@ -124,7 +124,7 @@ class BigConfirmationDialogV2(BigDialogBase):
     if self._swiping_away and not self._slider.confirmed:
       self._slider.reset()
 
-  def _render(self, _) -> DialogResult:
+  def _render(self, rect) -> DialogResult:
     self._slider.render(self._rect)
     return self._ret
 
@@ -178,7 +178,7 @@ class BigInputDialog(BigDialogBase):
     else:
       self._backspace_held_time = None
 
-  def _render(self, _):
+  def _render(self, rect):
     text_input_size = 35
 
     # draw current text so far below everything. text floats left but always stays in view
@@ -296,7 +296,7 @@ class BigDialogOptionButton(Widget):
     self._selected = selected
     self._rect.height = self.SELECTED_HEIGHT if selected else self.HEIGHT
 
-  def _render(self, _):
+  def _render(self, rect):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.Color(0, 255, 0, 255))
 
@@ -391,8 +391,8 @@ class BigMultiOptionDialog(BigDialogBase):
       self._selected_option_changed()
       self._last_selected_option = self._selected_option
 
-  def _render(self, _):
-    super()._render(_)
+  def _render(self, rect):
+    super()._render(rect)
     self._scroller.render(self._rect)
 
     return self._ret
