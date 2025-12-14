@@ -101,6 +101,7 @@ class Updater(Widget):
     cmd = [self.updater, "--swap", self.manifest]
     self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     text=True, bufsize=1, universal_newlines=True)
+    assert self.process.stdout is not None
 
     for line in self.process.stdout:
       parts = line.strip().split(":")

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# type: ignore
 
 from collections import defaultdict
 import argparse

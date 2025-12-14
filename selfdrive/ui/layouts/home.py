@@ -39,7 +39,7 @@ class HomeLayout(Widget):
 
     self.current_state = HomeLayoutState.HOME
     self.last_refresh = 0
-    self.settings_callback: callable | None = None
+    self.settings_callback: Callable[[], None] | None = None
 
     self.update_available = False
     self.alert_count = 0

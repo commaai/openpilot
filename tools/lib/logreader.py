@@ -13,7 +13,6 @@ import warnings
 import zstandard as zstd
 
 from collections.abc import Iterable, Iterator
-from typing import cast
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
@@ -180,7 +179,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
         # We've found all files, return them
         if len(needed_seg_idxs) == 0:
-          return cast(list[str], list(valid_files.values()))
+          return list(valid_files.values())
         else:
           raise FileNotFoundError(f"Did not find {fn} for seg idxs {needed_seg_idxs} of {sr.route_name}")
 
