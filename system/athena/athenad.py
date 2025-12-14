@@ -314,7 +314,7 @@ def upload_handler(end_event: threading.Event) -> None:
       cloudlog.exception("athena.upload_handler.exception")
 
 
-def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.Response:
+def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> requests.Response:
   path = upload_item.path
   compress = False
 
@@ -805,7 +805,7 @@ def backoff(retries: int) -> int:
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def main(exit_event: threading.Event = None):
+def main(exit_event: threading.Event | None = None):
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:

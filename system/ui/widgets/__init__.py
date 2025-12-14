@@ -91,7 +91,7 @@ class Widget(abc.ABC):
       return self._rect
     return rl.get_collision_rec(self._rect, self._parent_rect)
 
-  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     if rect is not None:
       self.set_rect(rect)
 
@@ -361,7 +361,7 @@ class NavWidget(Widget, abc.ABC):
 
     self.set_position(self._rect.x, new_y)
 
-  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
 
     if self.back_enabled:

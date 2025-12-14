@@ -213,8 +213,7 @@ possibly-missing-attribute = "ignore"  # 260 warnings
 invalid-argument-type = "ignore"       # 111 errors
 unresolved-attribute = "ignore"        # 96 errors
 invalid-method-override = "ignore"     # 69 errors
-invalid-parameter-default = "ignore"   # 55 errors
-invalid-assignment = "ignore"          # 15 errors
+invalid-assignment = "ignore"          # 24 errors
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]

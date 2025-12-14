@@ -137,7 +137,7 @@ class BigInputDialog(BigDialogBase):
                hint: str,
                default_text: str = "",
                minimum_length: int = 1,
-               confirm_callback: Callable[[str], None] = None):
+               confirm_callback: Callable[[str], None] | None = None):
     super().__init__(None, None)
     self._hint_label = UnifiedLabel(hint, font_size=35, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
                                     font_weight=FontWeight.MEDIUM)
@@ -317,7 +317,7 @@ class BigMultiOptionDialog(BigDialogBase):
   BACK_TOUCH_AREA_PERCENTAGE = 0.1
 
   def __init__(self, options: list[str], default: str | None,
-               right_btn: str | None = 'check', right_btn_callback: Callable[[], None] = None):
+               right_btn: str | None = 'check', right_btn_callback: Callable[[], None] | None = None):
     super().__init__(right_btn, right_btn_callback=right_btn_callback)
     self._options = options
     if default is not None:
