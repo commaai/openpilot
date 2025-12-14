@@ -8,9 +8,10 @@ from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLO
 try:
   from openpilot.selfdrive.ui.ui_state import device
 except ImportError:
-  class Device:
+  # Fallback when ui_state not available (standalone UI apps)
+  class _FallbackDevice:
     awake = True
-  device = Device()
+  device = _FallbackDevice()  # type: ignore[assignment]  # ty limitation: conditional import fallback
 
 
 class DialogResult(IntEnum):

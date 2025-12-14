@@ -76,9 +76,9 @@ if __name__ == "__main__":
 
       cur_proclog_t: int = sm.logMonoTime['procLog']
       if args.cpu and prev_proclog is not None and prev_proclog_t is not None:
-        prev_t: int = prev_proclog_t
+        assert prev_proclog_t is not None
         procs: dict[str, float] = defaultdict(float)
-        dt = (cur_proclog_t - prev_t) / 1e9
+        dt = (cur_proclog_t - prev_proclog_t) / 1e9
         for proc in m.procs:
           try:
             name = proc_name(proc)

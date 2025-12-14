@@ -60,8 +60,8 @@ class TimeSeriesPanel(ViewPanel):
     self._update_lock = threading.RLock()
     self._results_deque: deque[tuple[str, list, list]] = deque()
     self._new_data = False
-    self._last_x_limits = (0.0, 0.0)
-    self._queued_x_sync: tuple | None = None
+    self._last_x_limits: tuple[float, float] = (0.0, 0.0)
+    self._queued_x_sync: tuple[float, float] | None = None
     self._queued_reallow_x_zoom = False
     self._total_segments = self.playback_manager.num_segments
 
@@ -124,15 +124,16 @@ class TimeSeriesPanel(ViewPanel):
           self.add_series(series_path, update=True)
 
       current_limits = dpg.get_axis_limits(self.x_axis_tag)
+      current_limits_tuple: tuple[float, float] = (float(current_limits[0]), float(current_limits[1]))
       # downsample if plot zoom changed significantly
-      plot_duration = current_limits[1] - current_limits[0]
+      plot_duration = current_limits_tuple[1] - current_limits_tuple[0]
       if plot_duration > self._last_plot_duration * 2 or plot_duration < self._last_plot_duration * 0.5:
         self._downsample_all_series(plot_duration)
       # sync x-axis if changed by user
-      if self._last_x_limits != current_limits:
-        self.playback_manager.set_x_axis_bounds(current_limits[0], current_limits[1], source_panel=self)
-        self._last_x_limits = current_limits
-        self._fit_y_axis(current_limits[0], current_limits[1])
+      if self._last_x_limits != current_limits_tuple:
+        self.playback_manager.set_x_axis_bounds(current_limits_tuple[0], current_limits_tuple[1], source_panel=self)
+        self._last_x_limits = current_limits_tuple
+        self._fit_y_axis(current_limits_tuple[0], current_limits_tuple[1])
 
       while self._results_deque:  # handle downsampled results in main thread
         results = self._results_deque.popleft()

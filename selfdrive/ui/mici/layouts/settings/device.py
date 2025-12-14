@@ -269,7 +269,7 @@ class DeviceLayoutMici(NavWidget):
   def __init__(self, back_callback: Callable):
     super().__init__()
 
-    self._fcc_dialog: HtmlModal | None = None
+    self._fcc_dialog: MiciFccModal | None = None
     self._driver_camera: DriverCameraDialog | None = None
     self._training_guide: TrainingGuide | None = None
 

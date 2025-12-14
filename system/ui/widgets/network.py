@@ -21,9 +21,10 @@ try:
   from openpilot.selfdrive.ui.ui_state import ui_state
   from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 except Exception:
+  # Fallback for standalone apps - ty limitation: conditional import fallback
   Params = None
-  ui_state = None
-  PrimeType = None
+  ui_state = None  # type: ignore[assignment]
+  PrimeType = None  # type: ignore[assignment]
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8

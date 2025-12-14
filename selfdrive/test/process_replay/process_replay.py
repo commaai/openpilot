@@ -211,7 +211,7 @@ class ProcessContainer:
 
   def _start_process(self):
     if self.capture is not None:
-      self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)
+      setattr(self.process, 'launcher', LauncherWithCapture(self.capture, self.process.launcher))
     self.process.prepare()
     self.process.start()
 

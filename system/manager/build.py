@@ -2,6 +2,7 @@
 import os
 import subprocess
 from pathlib import Path
+from typing import cast
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from openpilot.common.basedir import BASEDIR
@@ -62,7 +63,8 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
   if scons.returncode != 0:
     # Read remaining output
     if scons.stderr is not None:
-      remaining: bytes = scons.stderr.read()
+      # ty bug: Popen without text=True returns bytes, but ty infers str
+      remaining = cast(bytes, scons.stderr.read())
       compile_output += remaining.split(b'\n')
 
     # Build failed log errors
