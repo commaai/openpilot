@@ -72,6 +72,7 @@ if __name__ == "__main__":
     print("Timeout fetching data from EPS")
     quit()
 
+  assert current_coding is not None
   coding_variant, current_coding_array, coding_byte, coding_bit = None, None, 0, 0
   coding_length = len(current_coding)
 

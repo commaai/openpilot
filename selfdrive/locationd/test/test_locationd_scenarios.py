@@ -33,9 +33,9 @@ class Scenario(Enum):
 
 def get_select_fields_data(logs):
   def get_nested_keys(msg, keys):
-    val = None
+    val = msg
     for key in keys:
-      val = getattr(msg if val is None else val, key) if isinstance(key, str) else val[key]
+      val = getattr(val, key) if isinstance(key, str) else val[key]
     return val
   lp = [x.livePose for x in logs if x.which() == 'livePose']
   data = defaultdict(list)
