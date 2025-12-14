@@ -2,221 +2,246 @@
 
 ## Overview
 
-Rewrite `tools/cabana` from C++ Qt (~9k LOC) to Python using PySide6, maintaining 100% feature parity.
-This should be a simple mechanical translation of C++ Qt to PySide6, aside from using some existing openpilot functionality where possible.
+Rewrite `tools/cabana` from C++ Qt (~9k LOC) to Python using PySide2, maintaining 100% feature parity.
+
+**Strategy: Incremental migration** - Use `shiboken2.wrapInstance()` to wrap existing C++ widgets, then replace them one-by-one with pure PySide2 implementations. This keeps the app working at every step.
 
 **Guiding principle: when in doubt, match C++ cabana.**
 
 ## Tech Stack
+
 | Component | Choice | Rationale |
 |-----------|--------|-----------|
-| Qt Binding | **PySide6** | pip-installable, LGPL, official Qt binding |
-| Charting | **vispy** | GPU-accelerated, handles real-time data well |
+| Qt Binding | **PySide2** | pip-installable, LGPL, official Qt binding |
+| C++ Interop | **shiboken2 + Cython** | `wrapInstance()` wraps C++ QWidgets as Python objects |
+| Charting | **vispy** (later) | GPU-accelerated, for when we rewrite ChartsWidget |
 | DBC | **opendbc.can** | Already exists: `DBC`, `CANParser`, `get_raw_value` |
 | Messaging | **cereal.messaging** | Already exists: `SubMaster`, `PubMaster` |
 | Video | **msgq.visionipc** | Already exists: `VisionIpcClient` + OpenGL |
 | Arrays | **NumPy** | Fast signal decoding, chart data buffers |
-| Package | **root pyproject.toml** | Use existing openpilot packaging, no separate pyproject |
+| Package | **root pyproject.toml** | Use existing openpilot packaging |
 
-## Architecture
+## Migration Strategy
+
+### The Key Insight
+
+PySide2 and C++ Qt are the same thing under the hood. A C++ `QMainWindow*` can be wrapped as a Python `QMainWindow` using `shiboken2.wrapInstance(ptr, QMainWindow)`. This means:
+
+1. Python controls the app lifecycle (QApplication, event loop)
+2. C++ widgets work inside Python's Qt world
+3. We can replace widgets incrementally - swap a C++ widget for a PySide2 one, the rest keeps working
+
+### Phase 0: Python Launches C++ Cabana (THIS PR)
+
+**Goal:** `python -m openpilot.tools.cabana.pycabana` launches the full cabana UI, with Python in control.
+
+**Files to create:**
+
+```
+tools/cabana/pycabana/
+├── __init__.py          # Package init
+├── __main__.py          # Entry point for `python -m`
+├── main.py              # Main function, orchestrates everything
+├── _cabana.cpp          # C helper: creates QApp, streams, MainWindow
+└── bindings.pyx         # Cython bindings to _cabana.cpp
+```
+
+**_cabana.cpp** exposes simple C functions:
+
+```cpp
+extern "C" {
+    // Initialize QApplication, parse args, return stream pointer (or 0 on failure)
+    void* pycabana_init(int argc, char** argv, const char** dbc_out);
+
+    // Create MainWindow with stream, return pointer (or 0 on failure)
+    void* pycabana_create_main_window(void* stream, const char* dbc);
+
+    // Run Qt event loop, return exit code
+    int pycabana_exec();
+}
+```
+
+**bindings.pyx** wraps these for Python:
+
+```cython
+def init(args: list[str]) -> tuple[int, str]:
+    """Initialize app, return (stream_ptr, dbc_file)"""
+
+def create_main_window(stream_ptr: int, dbc: str = "") -> int:
+    """Create MainWindow, return pointer"""
+
+def run() -> int:
+    """Run event loop"""
+```
+
+**main.py** ties it together:
+
+```python
+import sys
+from PySide2.QtWidgets import QMainWindow
+import shiboken2
+from .bindings import init, create_main_window, run
+
+def main():
+    stream_ptr, dbc = init(sys.argv)
+    if not stream_ptr:
+        return 1
+
+    win_ptr = create_main_window(stream_ptr, dbc)
+    if not win_ptr:
+        return 1
+
+    # Wrap C++ MainWindow as PySide2 QMainWindow
+    window = shiboken2.wrapInstance(win_ptr, QMainWindow)
+    window.show()
+
+    return run()
+```
+
+**SConscript changes:**
+- Build `_cabana.cpp` as shared library, linked against `cabana_lib`
+- Build `bindings.pyx` via existing Cython tooling
+
+**Success criteria for Phase 0:**
+- [ ] `python -m openpilot.tools.cabana.pycabana --demo` opens cabana
+- [ ] All existing functionality works (it's the same C++ code)
+- [ ] Python has a reference to MainWindow as a PySide2 object
+
+### Phase 1: First Python Widget
+
+Pick the simplest widget to rewrite in pure PySide2. Good candidates:
+- `HelpOverlay` - just draws text, minimal logic
+- `StatusBar` components - simple labels
+
+**Pattern for replacement:**
+1. Write PySide2 version of widget
+2. In Python, after getting MainWindow, find the C++ widget and replace it:
+   ```python
+   # Example: replace a dock widget's contents
+   old_widget = main_window.findChild(QDockWidget, "messages_dock")
+   new_widget = MyPySide2MessagesWidget()
+   old_widget.setWidget(new_widget)
+   ```
+
+### Phase 2+: Widget-by-Widget Migration
+
+Rough order (simplest to hardest):
+1. **HelpOverlay** - overlay widget, standalone
+2. **StatusBar** - labels and progress bar
+3. **MessagesWidget** - QTreeView + model (medium complexity)
+4. **DetailWidget** - container for tabs
+5. **BinaryView** - custom painting
+6. **SignalView** - QTreeView + custom delegate
+7. **HistoryLog** - QTableView + model
+8. **VideoWidget** - OpenGL, keep C++ longer
+9. **ChartsWidget** - complex, replace with vispy last
+
+### Final State
+
+Eventually all widgets are pure PySide2. At that point:
+- Remove C++ widget code
+- Remove Cython bindings (no longer needed)
+- Keep only Python code
+
+## Architecture (Target State)
 
 ```
 pycabana/
 ├── __init__.py
+├── __main__.py
 ├── main.py                 # Entry point, MainWindow
 ├── streams/
 │   ├── __init__.py
 │   ├── abstract.py         # AbstractStream base class
-│   ├── replay.py           # ReplayStream (LogReader-based)
+│   ├── replay.py           # ReplayStream (wraps tools/replay)
 │   ├── device.py           # DeviceStream (ZMQ/SubMaster)
-│   ├── panda.py            # PandaStream (USB via python-panda)
-│   └── socketcan.py        # SocketCanStream (python-can)
+│   └── panda.py            # PandaStream (USB via python-panda)
 ├── dbc/
 │   ├── __init__.py
-│   ├── manager.py          # DBCManager (wraps opendbc.can.DBC)
-│   └── models.py           # Extended Signal/Msg if needed
+│   └── manager.py          # DBCManager (wraps opendbc.can.DBC)
 ├── chart/
 │   ├── __init__.py
 │   ├── widget.py           # ChartsWidget container
-│   ├── view.py             # ChartView (vispy-based)
-│   ├── segment_tree.py     # SegmentTree for O(log n) min/max
-│   └── sparkline.py        # Sparkline mini-charts
+│   └── view.py             # ChartView (vispy-based)
 ├── widgets/
 │   ├── __init__.py
-│   ├── messages.py         # MessagesWidget (message list)
-│   ├── signals.py          # SignalView (signal tree)
-│   ├── binary.py           # BinaryView (bit visualization)
-│   ├── history.py          # HistoryLog (time-series table)
-│   └── video.py            # VideoWidget + CameraWidget (OpenGL)
-├── tools/
-│   ├── __init__.py
-│   ├── find_signal.py      # Signal discovery tool
-│   ├── find_similar.py     # Find similar bits tool
-│   └── route_info.py       # Route metadata display
-├── utils/
-│   ├── __init__.py
-│   ├── settings.py         # Settings (QSettings-based)
-│   ├── theme.py            # Dark/light theme support
-│   └── helpers.py          # Formatting, icons, etc.
-└── commands.py             # Undo/redo command classes
+│   ├── messages.py         # MessagesWidget
+│   ├── signals.py          # SignalView
+│   ├── binary.py           # BinaryView
+│   ├── history.py          # HistoryLog
+│   └── video.py            # VideoWidget
+└── utils/
+    ├── __init__.py
+    ├── settings.py         # QSettings wrapper
+    └── helpers.py          # Formatting, colors, etc.
 ```
 
-## Component Mapping (C++ → Python)
+## Build Integration
 
-### Core Data Flow
+### SConscript additions
+
+```python
+# Build pycabana C++ helper
+pycabana_env = cabana_env.Clone()
+pycabana_env.Append(CXXFLAGS=['-fPIC'])
+
+pycabana_helper = pycabana_env.SharedLibrary(
+    'pycabana/_cabana',
+    ['pycabana/_cabana.cpp', cabana_lib],
+    LIBS=cabana_libs,
+    FRAMEWORKS=base_frameworks
+)
+
+# Build Cython bindings
+envCython.CythonModule(
+    'pycabana/bindings',
+    'pycabana/bindings.pyx',
+    LIBS=['_cabana'] + cabana_libs
+)
 ```
-C++: AbstractStream → events_ (MessageEventsMap) → ChartView
-Python: AbstractStream → events (dict[MessageId, list[CanEvent]]) → ChartView (vispy)
-```
-
-### Key Classes
-
-| C++ Class | Python Class | Notes |
-|-----------|--------------|-------|
-| `AbstractStream` | `streams.AbstractStream` | Base class, same interface |
-| `ReplayStream` | `streams.ReplayStream` | Use `LogReader` from tools/lib |
-| `DeviceStream` | `streams.DeviceStream` | Use `SubMaster(['can', 'sendcan'])` |
-| `PandaStream` | `streams.PandaStream` | Use `panda` Python package |
-| `DBCManager` | `dbc.DBCManager` | Wrap `opendbc.can.DBC` |
-| `cabana::Signal` | Extend `opendbc.can.dbc.Signal` | Add color, UI state |
-| `ChartView` | `chart.ChartView` | vispy.scene.SceneCanvas |
-| `SegmentTree` | `chart.SegmentTree` | Pure Python + NumPy |
-| `CameraWidget` | `widgets.CameraWidget` | QOpenGLWidget + visionipc |
-| `BinaryView` | `widgets.BinaryView` | Custom QWidget paint |
-
-## Implementation Phases
-
-### Phase 1: Core Infrastructure
-- [ ] `AbstractStream` base class with threading model
-- [ ] `CanEvent` / `CanData` data structures (dataclasses + NumPy)
-- [ ] `DBCManager` wrapping opendbc
-- [ ] Basic `MainWindow` shell
-
-### Phase 2: Replay Stream
-- [ ] `ReplayStream` using `LogReader`
-- [ ] Event buffering and time-range filtering
-- [ ] Playback controls (play/pause/seek/speed)
-
-### Phase 3: Message & Signal Views
-- [ ] `MessagesWidget` - QTableView with model
-- [ ] `SignalView` - QTreeView with model
-- [ ] `BinaryView` - Custom paint, bit selection
-- [ ] `HistoryLog` - Time-series table
-
-### Phase 4: Charting (vispy)
-- [ ] `ChartView` - vispy SceneCanvas
-- [ ] Line/step/scatter series types
-- [ ] `SegmentTree` for efficient Y-axis scaling
-- [ ] Zoom/pan with rubber band selection
-- [ ] `ChartsWidget` - Multi-chart container with tabs
-- [ ] `Sparkline` - Mini inline charts
-
-### Phase 5: Video Integration
-- [ ] `CameraWidget` - QOpenGLWidget subclass
-- [ ] VisionIPC client in separate QThread
-- [ ] YUV→RGB shader (port from C++)
-- [ ] Timeline sync with CAN data
-- [ ] Thumbnail generation
-
-### Phase 6: Live Streams
-- [ ] `DeviceStream` - SubMaster integration
-- [ ] `PandaStream` - USB via panda package
-- [ ] `SocketCanStream` - python-can integration
-
-### Phase 7: DBC Editing
-- [ ] Signal add/edit/remove dialogs
-- [ ] Message add/edit/remove
-- [ ] Undo/redo stack (QUndoStack)
-- [ ] DBC file save/load
-- [ ] Mask editing
-
-### Phase 8: Analysis Tools
-- [ ] Find Signal tool
-- [ ] Find Similar Bits tool
-- [ ] Route Info dialog
-- [ ] CSV export
-
-### Phase 9: Polish
-- [ ] Settings dialog
-- [ ] Dark/light themes
-- [ ] Keyboard shortcuts
-- [ ] Window state persistence
-- [ ] Performance optimization pass
-
-## Performance Considerations
-
-### Hot Paths
-1. **Signal Decoding** - Use NumPy vectorized ops or keep `get_raw_value` from opendbc
-2. **Chart Updates** - vispy handles GPU rendering; limit point density
-3. **Event Storage** - Pre-allocate NumPy arrays, avoid Python list appends
-4. **SegmentTree** - NumPy-based implementation for O(log n) queries
-
-### Threading Model
-```
-Main Thread (Qt Event Loop)
-├── UI rendering
-├── User interaction
-└── Timer-based updates (10 Hz default)
-
-Stream Thread(s)
-├── ReplayStream: LogReader iteration
-├── DeviceStream: SubMaster.update()
-├── PandaStream: USB polling
-└── SocketCanStream: can.Bus.recv()
-
-Video Thread
-└── VisionIpcClient frame reception
-```
-
-### Memory Management
-- Use `collections.deque(maxlen=N)` for bounded event history
-- NumPy structured arrays for CanEvent storage
-- Lazy loading for replay segments (already in LogReader)
 
 ## Dependencies
 
-Add to root pyproject.toml if not already present:
-- `PySide6>=6.5`
-- `vispy>=0.14`
-- `python-can>=4.0` (for SocketCAN)
+Already in pyproject.toml:
+- `pyside2` (includes `shiboken2`)
 
-Already available from openpilot ecosystem:
+Already available from openpilot:
 - `numpy`
-- `opendbc` (DBC parsing)
-- `cereal` (messaging)
-- `msgq` (visionipc)
-- `panda` (USB)
+- `opendbc`
+- `cereal`
+- `msgq`
+- `panda`
+
+Add later (for chart rewrite):
+- `vispy>=0.14`
 
 ## Resolved Decisions
 
-1. **Signal color assignment** - Match C++ exactly:
+1. **Migration strategy** - Incremental via `shiboken2.wrapInstance()`, not full rewrite
+
+2. **C++ interop** - Cython + simple `extern "C"` functions (not full Shiboken bindings)
+
+3. **Arg parsing** - Keep in C++ for now, pass `sys.argv` through
+
+4. **Error handling** - Return `nullptr`/`0` on failure, Python checks
+
+5. **Signal colors** - Match C++ exactly when we rewrite:
    ```python
-   # From dbc.cc:136-142
    h = (19 * lsb / 64.0) % 1.0
    s = 0.25 + 0.25 * (hash(name) & 0xff) / 255.0
    v = 0.75 + 0.25 * ((hash(name) >> 8) & 0xff) / 255.0
-   color = QColor.fromHsvF(h, s, v)
    ```
 
-2. **Package setup** - Use root pyproject.toml, no separate package.
-
-3. **When in doubt** - Match C++ cabana behavior exactly.
-
-## Open Questions
-
-1. **DBC editing persistence** - C++ tracks modified DBCs in memory. Same approach or auto-save?
-
-2. **Chart library fallback** - If vispy causes issues, pyqtgraph is a solid backup.
-
-3. **Test strategy** - Port existing C++ tests or write new pytest suite?
-
-## File Count Estimate
-- C++ original: ~71 files, ~9,095 lines
-- Python target: ~30-40 files, ~4,000-5,000 lines (Python is more concise)
-
 ## Success Criteria
+
+### Phase 0 (This PR)
+- [ ] `python -m openpilot.tools.cabana.pycabana --demo` works
+- [ ] `python -m openpilot.tools.cabana.pycabana <route>` works
+- [ ] All C++ functionality preserved
+
+### Final
+- [ ] All widgets pure PySide2
 - [ ] All C++ features working
-- [ ] UI refresh at 10+ FPS with active charting
-- [ ] Handle 1-hour replay smoothly
-- [ ] Live streams work at full CAN bus rates
-- [ ] Video syncs correctly with CAN data
+- [ ] 10+ FPS with active charting
+- [ ] 1-hour replay handles smoothly
+- [ ] Live streams at full CAN bus rate
