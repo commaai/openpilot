@@ -332,6 +332,7 @@ class BigMultiParamToggle(BigMultiToggle):
     super().__init__(text, options, toggle_callback, select_callback)
     self._param = param
 
+    assert Params is not None
     self._params = Params()
     self._load_value()
 
@@ -348,6 +349,7 @@ class BigParamControl(BigToggle):
   def __init__(self, text: str, param: str, toggle_callback: Callable = None):
     super().__init__(text, "", toggle_callback=toggle_callback)
     self.param = param
+    assert Params is not None
     self.params = Params()
     self.set_checked(self.params.get_bool(self.param, False))
 
@@ -364,6 +366,7 @@ class BigCircleParamControl(BigCircleToggle):
   def __init__(self, icon: str, param: str, toggle_callback: Callable = None):
     super().__init__(icon, toggle_callback)
     self._param = param
+    assert Params is not None
     self.params = Params()
     self.set_checked(self.params.get_bool(self._param, False))
 

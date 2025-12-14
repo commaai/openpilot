@@ -340,8 +340,9 @@ class GuiApplication:
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:
-      if hasattr(self._modal_overlay.overlay, 'hide_event'):
-        self._modal_overlay.overlay.hide_event()
+      hide_event = getattr(self._modal_overlay.overlay, 'hide_event', None)
+      if hide_event is not None:
+        hide_event()
 
       if self._modal_overlay.callback is not None:
         self._modal_overlay.callback(-1)
@@ -545,24 +546,27 @@ class GuiApplication:
 
   def _handle_modal_overlay(self) -> bool:
     if self._modal_overlay.overlay:
-      if hasattr(self._modal_overlay.overlay, 'render'):
-        result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
+      render_fn = getattr(self._modal_overlay.overlay, 'render', None)
+      if render_fn is not None:
+        result = render_fn(rl.Rectangle(0, 0, self.width, self.height))
       elif callable(self._modal_overlay.overlay):
         result = self._modal_overlay.overlay()
       else:
         raise Exception
 
       # Send show event to Widget
-      if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
-        self._modal_overlay.overlay.show_event()
+      show_event = getattr(self._modal_overlay.overlay, 'show_event', None)
+      if not self._modal_overlay_shown and show_event is not None:
+        show_event()
         self._modal_overlay_shown = True
 
       if result >= 0:
         # Clear the overlay and execute the callback
         original_modal = self._modal_overlay
         self._modal_overlay = ModalOverlay()
-        if hasattr(original_modal.overlay, 'hide_event'):
-          original_modal.overlay.hide_event()
+        hide_event = getattr(original_modal.overlay, 'hide_event', None)
+        if hide_event is not None:
+          hide_event()
         if original_modal.callback is not None:
           original_modal.callback(result)
       return True

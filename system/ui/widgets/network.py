@@ -111,6 +111,7 @@ class AdvancedNetworkSettings(Widget):
     super().__init__()
     self._wifi_manager = wifi_manager
     self._wifi_manager.add_callbacks(networks_updated=self._on_network_updated)
+    assert Params is not None
     self._params = Params()
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)

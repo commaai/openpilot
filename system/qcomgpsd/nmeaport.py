@@ -30,7 +30,8 @@ class GnssClockNmeaPort:
   def __post_init__(self):
     for field in fields(self):
       val = getattr(self, field.name)
-      setattr(self, field.name, field.type(val) if val else None)
+      if val and callable(field.type):
+        setattr(self, field.name, field.type(val))
 
 @dataclass
 class GnssMeasNmeaPort:
@@ -73,7 +74,8 @@ class GnssMeasNmeaPort:
   def __post_init__(self):
     for field in fields(self):
       val = getattr(self, field.name)
-      setattr(self, field.name, field.type(val) if val else None)
+      if val and callable(field.type):
+        setattr(self, field.name, field.type(val))
 
 def nmea_checksum_ok(s):
   checksum = 0

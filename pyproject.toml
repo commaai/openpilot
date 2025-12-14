@@ -216,7 +216,6 @@ invalid-method-override = "ignore"     # 69 errors
 invalid-parameter-default = "ignore"   # 55 errors
 invalid-assignment = "ignore"          # 15 errors
 no-matching-overload = "ignore"        # 11 errors
-call-non-callable = "ignore"           # 10 errors
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
