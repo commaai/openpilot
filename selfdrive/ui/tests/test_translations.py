@@ -53,7 +53,7 @@ class TestTranslations:
       - that translation is not empty
       - that translation format arguments are consistent
     """
-    tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts"))
+    tr_xml = ET.parse(TRANSLATIONS_DIR / f"{self.file}.ts")
 
     for context in tr_xml.getroot():
       for message in context.iterfind("message"):
@@ -75,8 +75,8 @@ class TestTranslations:
         else:
           assert translation.text is not None, f"Ensure translation is completed: {source_text}"
 
-          source_args = FORMAT_ARG.findall(source_text)
-          translation_args = FORMAT_ARG.findall(translation.text)
+          source_args = FORMAT_ARG.findall(source_text or "")
+          translation_args = FORMAT_ARG.findall(translation.text or "")
           assert sorted(source_args) == sorted(translation_args), \
                            f"Ensure format arguments are consistent: `{source_text}` vs. `{translation.text}`"
 
@@ -108,13 +108,13 @@ class TestTranslations:
 
     banned_words = {line.strip() for line in response.text.splitlines()}
 
-    for context in ET.parse(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")).getroot():
+    for context in ET.parse(TRANSLATIONS_DIR / f"{self.file}.ts").getroot():
       for message in context.iterfind("message"):
         translation = message.find("translation")
         if translation.get("type") == "unfinished":
           continue
 
-        translation_text = " ".join([t.text for t in translation.findall("numerusform")]) if message.get("numerus") == "yes" else translation.text
+        translation_text = " ".join([t.text or "" for t in translation.findall("numerusform")]) if message.get("numerus") == "yes" else translation.text
 
         if not translation_text:
           continue

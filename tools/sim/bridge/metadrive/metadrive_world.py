@@ -18,11 +18,11 @@ class MetaDriveWorld(World):
     super().__init__(dual_camera)
     self.status_q = status_q
     self.camera_array = Array(ctypes.c_uint8, W*H*3)
-    self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+    self.road_image = np.frombuffer(memoryview(self.camera_array.get_obj()), dtype=np.uint8).reshape((H, W, 3))
     self.wide_camera_array = None
     if dual_camera:
       self.wide_camera_array = Array(ctypes.c_uint8, W*H*3)
-      self.wide_road_image = np.frombuffer(self.wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+      self.wide_road_image = np.frombuffer(memoryview(self.wide_camera_array.get_obj()), dtype=np.uint8).reshape((H, W, 3))
 
     self.controls_send, self.controls_recv = Pipe()
     self.simulation_state_send, self.simulation_state_recv = Pipe()
