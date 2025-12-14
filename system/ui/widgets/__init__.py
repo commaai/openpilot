@@ -100,6 +100,7 @@ class Widget(abc.ABC):
     if not self.is_visible:
       return None
 
+    self._layout()
     ret = self._render(self._rect)
 
     # Keep track of whether mouse down started within the widget's rectangle
@@ -151,12 +152,15 @@ class Widget(abc.ABC):
         self.__is_pressed[mouse_event.slot] = False
         self._handle_mouse_event(mouse_event)
 
-  @abc.abstractmethod
-  def _render(self, rect: rl.Rectangle) -> bool | int | None:
-    """Render the widget within the given rectangle."""
+  def _layout(self) -> None:
+    """Optionally lay out child widgets separately. This is called before rendering."""
 
   def _update_state(self):
     """Optionally update the widget's non-layout state. This is called before rendering."""
+
+  @abc.abstractmethod
+  def _render(self, rect: rl.Rectangle) -> bool | int | None:
+    """Render the widget within the given rectangle."""
 
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
@@ -270,13 +274,17 @@ class NavWidget(Widget, abc.ABC):
       in_dismiss_area = mouse_event.pos.y < self._rect.height * self.BACK_TOUCH_AREA_PERCENTAGE
 
       scroller_at_top = False
+      vertical_scroller = False
       # TODO: -20? snapping in WiFi dialog can make offset not be positive at the top
       if hasattr(self, '_scroller'):
         scroller_at_top = self._scroller.scroll_panel.get_offset() >= -20 and not self._scroller._horizontal
+        vertical_scroller = not self._scroller._horizontal
       elif hasattr(self, '_scroll_panel'):
         scroller_at_top = self._scroll_panel.get_offset() >= -20 and not self._scroll_panel._horizontal
+        vertical_scroller = not self._scroll_panel._horizontal
 
-      if in_dismiss_area or scroller_at_top:
+      # Vertical scrollers need to be at the top to swipe away to prevent erroneous swipes
+      if (not vertical_scroller and in_dismiss_area) or scroller_at_top:
         self._can_swipe_away = True
         self._back_button_start_pos = mouse_event.pos
 
