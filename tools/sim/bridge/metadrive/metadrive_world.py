@@ -97,7 +97,7 @@ class MetaDriveWorld(World):
         self.op_engaged.set()
 
       # check moving 5 seconds after engaged, doesn't move right away
-      after_engaged_check = is_engaged and time.monotonic() - self.first_engage >= 5 and self.test_run
+      after_engaged_check = is_engaged and self.first_engage is not None and time.monotonic() - self.first_engage >= 5 and self.test_run
 
       x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
       y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])

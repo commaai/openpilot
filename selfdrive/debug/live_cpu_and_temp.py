@@ -74,9 +74,11 @@ if __name__ == "__main__":
 
       print(f"CPU {100.0 * np.mean(cores):.2f}% - RAM: {last_mem:.2f}% - Temp {last_temp:.2f}C")
 
+      cur_proclog_t: int = sm.logMonoTime['procLog']
       if args.cpu and prev_proclog is not None and prev_proclog_t is not None:
+        prev_t: int = prev_proclog_t
         procs: dict[str, float] = defaultdict(float)
-        dt = (sm.logMonoTime['procLog'] - prev_proclog_t) / 1e9
+        dt = (cur_proclog_t - prev_t) / 1e9
         for proc in m.procs:
           try:
             name = proc_name(proc)
@@ -103,4 +105,4 @@ if __name__ == "__main__":
         print()
 
       prev_proclog = m
-      prev_proclog_t = sm.logMonoTime['procLog']
+      prev_proclog_t = cur_proclog_t

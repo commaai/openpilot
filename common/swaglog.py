@@ -18,6 +18,8 @@ def get_file_handler():
   return handler
 
 class SwaglogRotatingFileHandler(BaseRotatingHandler):
+  last_rollover: float
+
   def __init__(self, base_filename, interval=60, max_bytes=1024*256, backup_count=2500, encoding=None):
     super().__init__(base_filename, mode="a", encoding=encoding, delay=True)
     self.base_filename = base_filename
@@ -27,7 +29,6 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
     self.log_files = self.get_existing_logfiles()
     log_indexes = [f.split(".")[-1] for f in self.log_files]
     self.last_file_idx = max([int(i) for i in log_indexes if i.isdigit()] or [-1])
-    self.last_rollover = None
     self.doRollover()
 
   def _open(self):

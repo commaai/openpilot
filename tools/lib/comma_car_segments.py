@@ -74,7 +74,7 @@ def get_repo_url(path):
 
   response = requests.head(get_repo_raw_url(path))
 
-  if "text/plain" in response.headers.get("content-type"):
+  if "text/plain" in response.headers.get("content-type", ""):
     # This is an LFS pointer, so download the raw data from lfs
     response = requests.get(get_repo_raw_url(path))
     assert response.status_code == 200

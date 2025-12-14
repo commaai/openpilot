@@ -217,14 +217,6 @@ invalid-parameter-default = "ignore"   # 55 errors
 invalid-assignment = "ignore"          # 15 errors
 no-matching-overload = "ignore"        # 11 errors
 call-non-callable = "ignore"           # 10 errors
-unsupported-operator = "ignore"        # 7 errors
-non-subscriptable = "error"
-not-iterable = "error"
-possibly-missing-import = "error"
-missing-argument = "error"
-unknown-argument = "error"
-invalid-type-form = "error"
-invalid-return-type = "error"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
