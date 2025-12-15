@@ -30,7 +30,7 @@ def main():
   )
   parser.add_argument(
     "--dbc",
-    help="DBC file to use for decoding (not yet implemented)",
+    help="DBC file to use for decoding",
   )
   parser.add_argument(
     "--strict",
@@ -67,7 +67,7 @@ def main():
 
   signal.signal(signal.SIGINT, sigint_handler)
 
-  window = MainWindow(stream)
+  window = MainWindow(stream, dbc_name=args.dbc or "")
   window.show()
 
   # Strict mode: detect UI thread blocking (only after loading completes)

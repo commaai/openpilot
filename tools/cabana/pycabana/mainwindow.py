@@ -7,22 +7,24 @@ from PySide6.QtWidgets import (
   QLabel,
   QStatusBar,
   QProgressBar,
-  QWidget,
-  QVBoxLayout,
 )
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId
+from openpilot.tools.cabana.pycabana.dbc.dbcmanager import dbc_manager
 from openpilot.tools.cabana.pycabana.streams.abstract import AbstractStream
 from openpilot.tools.cabana.pycabana.streams.replay import ReplayStream
 from openpilot.tools.cabana.pycabana.widgets.messages import MessagesWidget
+from openpilot.tools.cabana.pycabana.widgets.signal import SignalView
 
 
 class MainWindow(QMainWindow):
   """Main application window."""
 
-  def __init__(self, stream: AbstractStream, parent=None):
+  def __init__(self, stream: AbstractStream, dbc_name: str = "", parent=None):
     super().__init__(parent)
     self.stream = stream
+    self._dbc_name = dbc_name
+    self._selected_msg_id: MessageId | None = None
 
     self.setWindowTitle("pycabana")
     self.resize(1200, 800)
@@ -30,25 +32,21 @@ class MainWindow(QMainWindow):
     self._setup_ui()
     self._connect_signals()
 
+    # Load DBC if provided
+    if dbc_name:
+      dbc_manager().load(dbc_name)
+
   def _setup_ui(self):
-    # Central widget - placeholder for now
-    central = QWidget()
-    layout = QVBoxLayout(central)
-    layout.setContentsMargins(20, 20, 20, 20)
-
-    self.welcome_label = QLabel("Select a message from the list")
-    self.welcome_label.setAlignment(Qt.AlignCenter)
-    self.welcome_label.setStyleSheet("color: gray; font-size: 14px;")
-    layout.addWidget(self.welcome_label)
-
-    self.setCentralWidget(central)
+    # Central widget - signal view
+    self.signal_view = SignalView()
+    self.setCentralWidget(self.signal_view)
 
     # Messages dock (left)
     self.messages_widget = MessagesWidget(self.stream)
     self.messages_dock = QDockWidget("Messages", self)
     self.messages_dock.setWidget(self.messages_widget)
-    self.messages_dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
-    self.addDockWidget(Qt.LeftDockWidgetArea, self.messages_dock)
+    self.messages_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable | QDockWidget.DockWidgetFeature.DockWidgetFloatable)
+    self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.messages_dock)
 
     # Status bar
     self.status_bar = QStatusBar()
@@ -79,20 +77,20 @@ class MainWindow(QMainWindow):
 
   def _on_msg_selected(self, msg_id: MessageId | None):
     """Handle message selection."""
-    if msg_id:
-      can_data = self.stream.last_msgs.get(msg_id)
-      if can_data:
-        self.welcome_label.setText(f"Selected: {msg_id}\nCount: {can_data.count}\nFreq: {can_data.freq:.1f} Hz\nData: {can_data.dat.hex(' ').upper()}")
-      else:
-        self.welcome_label.setText(f"Selected: {msg_id}")
-    else:
-      self.welcome_label.setText("Select a message from the list")
+    self._selected_msg_id = msg_id
+    can_data = self.stream.last_msgs.get(msg_id) if msg_id else None
+    self.signal_view.setMessage(msg_id, can_data)
 
   def _on_msgs_received(self, msg_ids: set[MessageId], has_new: bool):
     """Handle stream message updates."""
     total_msgs = len(self.stream.last_msgs)
     total_events = sum(d.count for d in self.stream.last_msgs.values())
     self.msg_count_label.setText(f"{total_msgs} messages, {total_events} events")
+
+    # Update signal view if showing a message
+    if self._selected_msg_id:
+      can_data = self.stream.last_msgs.get(self._selected_msg_id)
+      self.signal_view.updateValues(can_data)
 
   def _on_load_progress(self, can_msgs: int, total_msgs: int):
     """Handle loading progress."""
@@ -116,3 +114,17 @@ class MainWindow(QMainWindow):
         if fingerprint:
           title += f" ({fingerprint})"
         self.setWindowTitle(title)
+
+      # Auto-load DBC from fingerprint if no DBC was specified
+      if fingerprint and not self._dbc_name:
+        self._try_load_dbc_for_fingerprint(fingerprint)
+
+  def _try_load_dbc_for_fingerprint(self, fingerprint: str):
+    """Try to load a DBC file based on car fingerprint."""
+    # Common DBC name patterns based on fingerprint
+    # Fingerprints are typically like "TOYOTA RAV4 2019" -> "toyota_rav4_2019"
+    dbc_name = fingerprint.lower().replace(" ", "_") + "_pt_generated"
+    if dbc_manager().load(dbc_name):
+      self.status_label.setText(f"Loaded DBC: {dbc_name}")
+      # Refresh the messages table to show names
+      self.messages_widget.model.layoutChanged.emit()

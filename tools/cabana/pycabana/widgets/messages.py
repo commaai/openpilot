@@ -13,18 +13,20 @@ from PySide6.QtWidgets import (
 )
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId
+from openpilot.tools.cabana.pycabana.dbc.dbcmanager import dbc_manager
 from openpilot.tools.cabana.pycabana.streams.abstract import AbstractStream
 
 
 class MessageListModel(QAbstractTableModel):
   """Model for the messages table."""
 
-  COLUMNS = ['Bus', 'Address', 'Count', 'Freq', 'Data']
+  COLUMNS = ['Bus', 'Address', 'Name', 'Count', 'Freq', 'Data']
   COL_BUS = 0
   COL_ADDRESS = 1
-  COL_COUNT = 2
-  COL_FREQ = 3
-  COL_DATA = 4
+  COL_NAME = 2
+  COL_COUNT = 3
+  COL_FREQ = 4
+  COL_DATA = 5
 
   def __init__(self, stream: AbstractStream, parent=None):
     super().__init__(parent)
@@ -63,6 +65,8 @@ class MessageListModel(QAbstractTableModel):
         return str(msg_id.source)
       elif col == self.COL_ADDRESS:
         return f"0x{msg_id.address:X}"
+      elif col == self.COL_NAME:
+        return dbc_manager().msgName(msg_id)
       elif col == self.COL_COUNT:
         return str(can_data.count) if can_data else "0"
       elif col == self.COL_FREQ:
@@ -144,6 +148,12 @@ class MessageFilterProxyModel(QSortFilterProxyModel):
     if address and self.filter_text in address.lower():
       return True
 
+    # Check name column
+    name_index = source_model.index(source_row, MessageListModel.COL_NAME)
+    name = source_model.data(name_index, Qt.ItemDataRole.DisplayRole)
+    if name and self.filter_text in name.lower():
+      return True
+
     return False
 
 
@@ -169,7 +179,7 @@ class MessagesWidget(QWidget):
     filter_layout.setContentsMargins(4, 4, 4, 0)
 
     self.filter_input = QLineEdit()
-    self.filter_input.setPlaceholderText("Filter by address...")
+    self.filter_input.setPlaceholderText("Filter by address or name...")
     self.filter_input.setClearButtonEnabled(True)
     filter_layout.addWidget(self.filter_input)
 
@@ -194,11 +204,13 @@ class MessagesWidget(QWidget):
 
     # Column sizing
     header = self.table_view.horizontalHeader()
-    header.setSectionResizeMode(MessageListModel.COL_BUS, QHeaderView.ResizeToContents)
-    header.setSectionResizeMode(MessageListModel.COL_ADDRESS, QHeaderView.ResizeToContents)
-    header.setSectionResizeMode(MessageListModel.COL_COUNT, QHeaderView.ResizeToContents)
-    header.setSectionResizeMode(MessageListModel.COL_FREQ, QHeaderView.ResizeToContents)
-    header.setSectionResizeMode(MessageListModel.COL_DATA, QHeaderView.Stretch)
+    header.setSectionResizeMode(MessageListModel.COL_BUS, QHeaderView.ResizeMode.ResizeToContents)
+    header.setSectionResizeMode(MessageListModel.COL_ADDRESS, QHeaderView.ResizeMode.ResizeToContents)
+    header.setSectionResizeMode(MessageListModel.COL_NAME, QHeaderView.ResizeMode.Interactive)
+    header.setSectionResizeMode(MessageListModel.COL_COUNT, QHeaderView.ResizeMode.ResizeToContents)
+    header.setSectionResizeMode(MessageListModel.COL_FREQ, QHeaderView.ResizeMode.ResizeToContents)
+    header.setSectionResizeMode(MessageListModel.COL_DATA, QHeaderView.ResizeMode.Stretch)
+    header.resizeSection(MessageListModel.COL_NAME, 150)
 
     layout.addWidget(self.table_view)
 

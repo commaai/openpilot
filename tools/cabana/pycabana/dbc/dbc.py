@@ -1,6 +1,10 @@
 """Core data structures for pycabana."""
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from opendbc.can.dbc import Signal
 
 
 @dataclass(frozen=True)
@@ -59,3 +63,30 @@ class CanData:
         self.freq = (self.count - self._freq_count) / (self.ts - self._freq_ts)
       self._freq_ts = self.ts
       self._freq_count = self.count
+
+
+def decode_signal(sig: "Signal", data: bytes) -> float:
+  """Decode a signal value from CAN data bytes."""
+  if len(data) == 0:
+    return 0.0
+
+  # Build bit array from data
+  bits = []
+  for byte in data:
+    for i in range(8):
+      bits.append((byte >> i) & 1)
+
+  # Extract signal bits
+  value = 0
+  for i in range(sig.size):
+    bit_idx = sig.lsb + i
+    if bit_idx < len(bits):
+      value |= bits[bit_idx] << i
+
+  # Handle signed values
+  if sig.is_signed and sig.size > 0:
+    if value & (1 << (sig.size - 1)):
+      value -= 1 << sig.size
+
+  # Apply factor and offset
+  return value * sig.factor + sig.offset
