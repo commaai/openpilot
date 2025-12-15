@@ -4,6 +4,7 @@ import time
 import numpy as np
 from cereal import log
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.swaglog import cloudlog
 # WARNING: imports outside of constants will not trigger a rebuild
@@ -63,7 +64,15 @@ LEAD_STOP_DISTANCE = 3.0
 # when converting a moving lead into a virtual "stopped obstacle" for the MPC.
 LEAD_EQUIV_BRAKE = 3.5
 CRUISE_MIN_ACCEL = -1.2
-CRUISE_MAX_ACCEL = 1.6
+CRUISE_MAX_ACCEL = 2.0
+
+# After a lead has recently decelerated (while both vehicles are moving),
+# cap acceleration for a short period to avoid "surge then harsh brake" behavior
+# when the lead briefly releases brakes (common on ramps/rolling traffic).
+LEAD_BRAKE_CAUTION_DECAY_SEC = 3.0
+LEAD_BRAKE_CAUTION_A_LEAD_TH = -0.3
+LEAD_BRAKE_CAUTION_V_LEAD_MIN = 3.0
+LEAD_BRAKE_CAUTION_ACCEL_CAP = 1.2
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
@@ -236,6 +245,7 @@ class LongitudinalMpc:
     self.mode = mode
     self.dt = dt
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
+    self.lead_brake_caution = FirstOrderFilter(0.0, LEAD_BRAKE_CAUTION_DECAY_SEC, self.dt)
     self.reset()
     self.source = SOURCES[2]
 
@@ -266,6 +276,7 @@ class LongitudinalMpc:
     self.time_linearization = 0.0
     self.time_integrator = 0.0
     self.x0 = np.zeros(X_DIM)
+    self.lead_brake_caution.x = 0.0
     self.set_weights()
 
   def set_cost_weights(self, cost_weights, constraint_cost_weights):
@@ -370,6 +381,37 @@ class LongitudinalMpc:
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = ACCEL_MAX
 
+    # Lead brake caution: if the closest lead has recently decelerated (while moving),
+    # temporarily reduce max acceleration to avoid over-accelerating into a lead that
+    # is likely to brake again (e.g., ramps, rolling traffic).
+    if self.status:
+      # pick the closer lead obstacle at t0
+      if lead_0_obstacle[0] <= lead_1_obstacle[0]:
+        lead = radarstate.leadOne
+        lead_obstacle_0 = lead_0_obstacle[0]
+      else:
+        lead = radarstate.leadTwo
+        lead_obstacle_0 = lead_1_obstacle[0]
+
+      if lead is not None and lead.status:
+        # only consider when the lead is within a reasonable interaction range
+        lead_close = lead.dRel < 120.0
+        lead_moving = lead.vLead > LEAD_BRAKE_CAUTION_V_LEAD_MIN
+        lead_decel = lead.aLeadK < LEAD_BRAKE_CAUTION_A_LEAD_TH
+        if lead_close and lead_moving and lead_decel:
+          # snap on caution immediately, decay slowly
+          self.lead_brake_caution.x = 1.0
+        else:
+          self.lead_brake_caution.update(0.0)
+
+        # Don't let the caution create an impossible constraint when a close obstacle exists
+        # (keep at least some room for acceleration, but still cap it).
+        cap = float(np.interp(self.lead_brake_caution.x, [0.0, 1.0], [ACCEL_MAX, LEAD_BRAKE_CAUTION_ACCEL_CAP]))
+        # If the selected lead is the limiting obstacle right now, apply the cap.
+        # (When cruise is the limiting source, user doesn't care about this constraint.)
+        if lead_obstacle_0 < 1e7:
+          self.params[:,1] = np.minimum(self.params[:,1], cap)
+
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
       self.params[:,5] = LEAD_DANGER_FACTOR
@@ -378,7 +420,8 @@ class LongitudinalMpc:
       # when the leads are no factor.
       v_lower = v_ego + (T_IDXS * CRUISE_MIN_ACCEL * 1.05)
       # TODO does this make sense when max_a is negative?
-      v_upper = v_ego + (T_IDXS * CRUISE_MAX_ACCEL * 1.05)
+      cruise_max_a = min(CRUISE_MAX_ACCEL, float(self.params[0,1]))
+      v_upper = v_ego + (T_IDXS * cruise_max_a * 1.05)
       v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                  v_lower,
                                  v_upper)
