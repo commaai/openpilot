@@ -56,6 +56,8 @@ def joystickd_thread():
       actuators.torque = float(np.clip(joystick_axes[1], -1, 1))
       actuators.steeringAngleDeg, actuators.curvature = actuators.torque * max_angle, actuators.torque * -max_curvature
 
+    CC.cruiseControl.resume = CC.enabled and CC.actuators.accel > 0.0
+
     pm.send('carControl', cc_msg)
 
     cs_msg = messaging.new_message('controlsState')
