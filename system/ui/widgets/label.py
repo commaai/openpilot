@@ -711,52 +711,50 @@ class UnifiedLabel(Widget):
     else:  # TEXT_ALIGN_MIDDLE
       start_y = self._rect.y + (self._rect.height - total_visible_height) / 2
 
-    # Only scissor when we know there is a single scrolling line
-    # Pad a little since descenders like g or j may overflow below rect from font_scale
     if self._needs_scroll:
-      rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y - self._font_size / 2), int(self._rect.width), int(self._rect.height + self._font_size))
+      # Scroll mode only supports a single line
+      self._render_scrolling_text(visible_lines[0], visible_sizes[0], visible_emojis[0], start_y)
+      return
 
     # Render each line
     current_y = start_y
     for idx, (line, size, emojis) in enumerate(zip(visible_lines, visible_sizes, visible_emojis, strict=True)):
-      if self._needs_scroll:
-        if self._scroll_state == ScrollState.STARTING:
-          if self._scroll_pause_t is None:
-            self._scroll_pause_t = rl.get_time() + 2.0
-          if rl.get_time() >= self._scroll_pause_t:
-            self._scroll_state = ScrollState.SCROLLING
-            self._scroll_pause_t = None
-
-        elif self._scroll_state == ScrollState.SCROLLING:
-          self._scroll_offset -= 0.8 / 60. * gui_app.target_fps
-          # don't fully hide
-          if self._scroll_offset <= -size.x - self._rect.width / 3:
-            self._scroll_offset = 0
-            self._scroll_state = ScrollState.STARTING
-            self._scroll_pause_t = None
-      else:
-        self.reset_scroll()
-
       self._render_line(line, size, emojis, current_y)
-
-      # Draw 2nd instance for scrolling
-      if self._needs_scroll and self._scroll_state != ScrollState.STARTING:
-        text2_scroll_offset = size.x + self._rect.width / 3
-        self._render_line(line, size, emojis, current_y, text2_scroll_offset)
-
       # Move to next line (if not last line)
       if idx < len(visible_lines) - 1:
         # Use current line's height * line_height for spacing to next line
         current_y += size.y * self._line_height
 
-    if self._needs_scroll:
-      # draw black fade on left and right
-      fade_width = 20
-      rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.BLANK, rl.BLACK)
-      if self._scroll_state != ScrollState.STARTING:
-        rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.BLANK)
+  def _render_scrolling_text(self, line, size, emojis, current_y, x_offset=0.0):
+    rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y - self._font_size / 2), int(self._rect.width), int(self._rect.height + self._font_size))
 
-      rl.end_scissor_mode()
+    if self._scroll_state == ScrollState.STARTING:
+      if self._scroll_pause_t is None:
+        self._scroll_pause_t = rl.get_time() + 2.0
+      if rl.get_time() >= self._scroll_pause_t:
+        self._scroll_state = ScrollState.SCROLLING
+        self._scroll_pause_t = None
+
+    elif self._scroll_state == ScrollState.SCROLLING:
+      self._scroll_offset -= 0.8 / 60. * gui_app.target_fps
+      # don't fully hide
+      if self._scroll_offset <= -size.x - self._rect.width / 3:
+        self.reset_scroll()
+
+    self._render_line(line, size, emojis, current_y)
+
+    # Draw 2nd instance for scrolling
+    if self._scroll_state != ScrollState.STARTING:
+      text2_scroll_offset = size.x + self._rect.width / 3
+      self._render_line(line, size, emojis, current_y, text2_scroll_offset)
+
+    # draw black fade on left and right
+    fade_width = 20
+    rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.BLANK, rl.BLACK)
+    if self._scroll_state != ScrollState.STARTING:
+      rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.BLANK)
+
+    rl.end_scissor_mode()
 
   def _render_line(self, line, size, emojis, current_y, x_offset=0.0):
     # Calculate horizontal position
