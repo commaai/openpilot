@@ -81,8 +81,8 @@ class DriverCameraDialog(CameraView):
 
     # Get stream dimensions
     if self.frame:
-      stream_width = self.frame.width
-      stream_height = self.frame.height
+      stream_width = self.frame.frame.width
+      stream_height = self.frame.frame.height
     else:
       # Default values if frame not available
       stream_width = 1928
