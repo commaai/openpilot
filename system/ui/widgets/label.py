@@ -1,5 +1,6 @@
 from enum import IntEnum
 from collections.abc import Callable
+from dataclasses import dataclass
 from itertools import zip_longest
 from typing import Union
 import pyray as rl
@@ -390,6 +391,14 @@ class Label(Widget):
       text_pos.y += (text_size.y or self._font_size * FONT_SCALE) * self._line_scale
 
 
+@dataclass
+class TextLineLayout:
+  text: str
+  elided_text: str
+  size: rl.Vector2
+  emojis: list[tuple[int, int, str]]
+
+
 class UnifiedLabel(Widget):
   """
   Unified label widget that combines functionality from gui_label, gui_text_box, Label, and MiciLabel.
@@ -446,10 +455,8 @@ class UnifiedLabel(Widget):
 
     # Cached data
     self._cached_text: str | None = None
-    self._cached_wrapped_lines: list[str] = []
-    self._cached_line_sizes: list[rl.Vector2] = []
-    self._cached_line_emojis: list[list[tuple[int, int, str]]] = []
-    self._cached_total_height: float | None = None
+    self._cached_text_lines: list[TextLineLayout] = []
+    self._cached_total_height: float = 0.0
     self._cached_width: int = -1
 
     # If max_width is set, initialize rect size for Scroller support
@@ -527,7 +534,7 @@ class UnifiedLabel(Widget):
     # Check if cache is still valid
     if (self._cached_text == text and
         self._cached_width == available_width and
-        self._cached_wrapped_lines):
+        self._cached_text_lines):
       return
 
     self._cached_text = text
@@ -540,24 +547,20 @@ class UnifiedLabel(Widget):
 
     # Wrap text if enabled
     if self._wrap_text:
-      self._cached_wrapped_lines = wrap_text(self._font, text, self._font_size, content_width, self._spacing_pixels)
+      wrapper_lines = wrap_text(self._font, text, self._font_size, content_width, self._spacing_pixels)
     else:
       # Split by newlines but don't wrap
-      self._cached_wrapped_lines = text.split('\n') if text else [""]
-
-    # Elide lines if needed (for width constraint)
-    self._cached_wrapped_lines = [self._elide_line(line, content_width) for line in self._cached_wrapped_lines]
+      wrapper_lines = text.split('\n') if text else [""]
 
     if self._scroll:
-      self._cached_wrapped_lines = self._cached_wrapped_lines[:1]  # Only first line for scrolling
+      wrapper_lines = wrapper_lines[:1]  # Only first line for scrolling
 
     # Process each line: measure and find emojis
-    self._cached_line_sizes = []
-    self._cached_line_emojis = []
+    self._cached_text_lines.clear()
+    self._cached_total_height = 0
 
-    for line in self._cached_wrapped_lines:
+    for idx, line in enumerate(wrapper_lines):
       emojis = find_emoji(line)
-      self._cached_line_emojis.append(emojis)
       # Empty lines should still have height (use font size as line height)
       if not line:
         size = rl.Vector2(0, self._font_size * FONT_SCALE)
@@ -568,22 +571,10 @@ class UnifiedLabel(Widget):
       if self._scroll:
         self._needs_scroll = size.x > content_width
 
-      self._cached_line_sizes.append(size)
+      elided_text = self._elide_line(line, content_width)
+      self._cached_text_lines.append(TextLineLayout(text=line, elided_text=elided_text, size=size, emojis=emojis))
+      self._cached_total_height += (size.y if idx == 0 else size.y * self._line_height)
 
-    # Calculate total height
-    # Each line contributes its measured height * line_height (matching Label's behavior)
-    # This includes spacing to the next line
-    if self._cached_line_sizes:
-      # Match the rendering logic: first line doesn't get line_height scaling
-      total_height = 0.0
-      for idx, size in enumerate(self._cached_line_sizes):
-        if idx == 0:
-          total_height += size.y
-        else:
-          total_height += size.y * self._line_height
-      self._cached_total_height = total_height
-    else:
-      self._cached_total_height = 0.0
 
   def _elide_line(self, line: str, max_width: int, force: bool = False) -> str:
     """Elide a single line if it exceeds max_width. If force is True, always elide even if it fits."""
@@ -623,9 +614,7 @@ class UnifiedLabel(Widget):
     width = max_width if max_width > 0 else (self._max_width if self._max_width else 1000)
     self._update_text_cache(width)
 
-    if self._cached_total_height is not None:
-      return self._cached_total_height
-    return 0.0
+    return self._cached_total_height
 
   def _render(self, _):
     """Render the label."""
@@ -640,94 +629,46 @@ class UnifiedLabel(Widget):
     # Update text cache
     self._update_text_cache(int(available_width))
 
-    if not self._cached_wrapped_lines:
+    if not self._cached_text_lines:
       return
 
-    # Calculate which lines fit in the available height
-    visible_lines: list[str] = []
-    visible_sizes: list[rl.Vector2] = []
-    visible_emojis: list[list[tuple[int, int, str]]] = []
-
-    current_height = 0.0
-    broke_early = False
-    for line, size, emojis in zip(
-      self._cached_wrapped_lines,
-      self._cached_line_sizes,
-      self._cached_line_emojis,
-      strict=True):
-
-      # Calculate height needed for this line
-      # Each line contributes its height * line_height (matching Label's behavior)
-      line_height_needed = size.y * self._line_height
-
-      # Check if this line fits
-      if current_height + line_height_needed > self._rect.height:
-        # This line doesn't fit
-        if len(visible_lines) == 0:
-          # First line doesn't fit by height - still show it (will be clipped by scissor if needed)
-          # Continue to add this line below
-          pass
-        else:
-          # We have visible lines and this one doesn't fit - mark that we broke early
-          broke_early = True
-          break
-
-      visible_lines.append(line)
-      visible_sizes.append(size)
-      visible_emojis.append(emojis)
-
-      current_height += line_height_needed
-
-    # If we broke early (there are more lines that don't fit) and elide is enabled, elide the last visible line
-    if broke_early and len(visible_lines) > 0 and self._elide:
-      content_width = int(available_width - (self._text_padding * 2))
-      if content_width <= 0:
-        content_width = 1
-
-      last_line_idx = len(visible_lines) - 1
-      last_line = visible_lines[last_line_idx]
-      # Force elide the last line to show "..." even if it fits in width (to indicate more content)
-      elided = self._elide_line(last_line, content_width, force=True)
-      visible_lines[last_line_idx] = elided
-      visible_sizes[last_line_idx] = measure_text_cached(self._font, elided, self._font_size, self._spacing_pixels)
-
-    if not visible_lines:
-      return
-
-    # Calculate total visible text block height
-    # First line is not changed by line_height scaling
-    total_visible_height = 0.0
-    for idx, size in enumerate(visible_sizes):
-      if idx == 0:
-        total_visible_height += size.y
-      else:
-        total_visible_height += size.y * self._line_height
-
-    # Calculate vertical alignment offset
+    # Vertical clipping & alignment
+    visible_block_height = min(self._rect.height, self._cached_total_height)
     if self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP:
       start_y = self._rect.y
     elif self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
-      start_y = self._rect.y + self._rect.height - total_visible_height
+      start_y = self._rect.y + self._rect.height - visible_block_height
     else:  # TEXT_ALIGN_MIDDLE
-      start_y = self._rect.y + (self._rect.height - total_visible_height) / 2
+      start_y = self._rect.y + (self._rect.height - visible_block_height) / 2
 
-    if self._needs_scroll:
-      # Scroll mode only supports a single line
-      self._render_scrolling_text(visible_lines[0], visible_sizes[0], visible_emojis[0], start_y)
-      return
-
-    # Render each line
+    # Scissor for scrolling
     current_y = start_y
-    for idx, (line, size, emojis) in enumerate(zip(visible_lines, visible_sizes, visible_emojis, strict=True)):
-      self._render_line(line, size, emojis, current_y)
-      # Move to next line (if not last line)
-      if idx < len(visible_lines) - 1:
-        # Use current line's height * line_height for spacing to next line
-        current_y += size.y * self._line_height
+    if self._needs_scroll:
+      self._render_scrolling_text(current_y)
+    else:
+      self._render_multiple_lines(current_y)
 
-  def _render_scrolling_text(self, line, size, emojis, current_y, x_offset=0.0):
+  def _render_multiple_lines(self, current_y: float):
+    max_visible_index = len(self._cached_text_lines) - 1
+    if self._cached_total_height > self._rect.height:
+      h = 0.0
+      for i, line in enumerate(self._cached_text_lines):
+        h += line.size.y * (1.0 if i == 0 else self._line_height)
+        if h > self._rect.height:
+          max_visible_index = max(0, i - 1)
+          break
+
+    for idx, text_line in enumerate(self._cached_text_lines):
+      if idx > max_visible_index:
+        break
+      # If last visible line is clipped, show elided text
+      text = line.elided_text if idx == max_visible_index and self._elide else line.text
+      self._render_line(text, text_line.size, text_line.emojis, current_y)
+      current_y += text_line.size.y * self._line_height
+
+  def _render_scrolling_text(self, y: float):
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y - self._font_size / 2), int(self._rect.width), int(self._rect.height + self._font_size))
-
+    text_line = self._cached_text_lines[0]
     if self._scroll_state == ScrollState.STARTING:
       if self._scroll_pause_t is None:
         self._scroll_pause_t = rl.get_time() + 2.0
@@ -738,15 +679,15 @@ class UnifiedLabel(Widget):
     elif self._scroll_state == ScrollState.SCROLLING:
       self._scroll_offset -= 0.8 / 60. * gui_app.target_fps
       # don't fully hide
-      if self._scroll_offset <= -size.x - self._rect.width / 3:
+      if self._scroll_offset <= -text_line.size.x - self._rect.width / 3:
         self.reset_scroll()
 
-    self._render_line(line, size, emojis, current_y)
+    self._render_line(text_line.text, text_line.size, text_line.emojis, y)
 
     # Draw 2nd instance for scrolling
     if self._scroll_state != ScrollState.STARTING:
-      text2_scroll_offset = size.x + self._rect.width / 3
-      self._render_line(line, size, emojis, current_y, text2_scroll_offset)
+      text2_scroll_offset = text_line.size.x + self._rect.width / 3
+      self._render_line(text_line.text, text_line.size, text_line.emojis, y, text2_scroll_offset)
 
     # draw black fade on left and right
     fade_width = 20
