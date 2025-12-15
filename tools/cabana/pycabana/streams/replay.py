@@ -1,5 +1,7 @@
 """ReplayStream - loads CAN data from openpilot routes."""
 
+import time
+
 from PySide6.QtCore import QThread, Signal as QtSignal, Qt
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId, CanData
@@ -14,6 +16,7 @@ class LogLoaderThread(QThread):
   finished = QtSignal(str)  # fingerprint
 
   BATCH_SIZE = 10000
+  YIELD_INTERVAL = 1000  # Yield GIL every N messages
 
   def __init__(self, route: str, parent=None):
     super().__init__(parent)
@@ -24,13 +27,14 @@ class LogLoaderThread(QThread):
     fingerprint = ""
     try:
       from openpilot.tools.lib.logreader import LogReader
-
       lr = LogReader(self.route)
+      time.sleep(0.001)  # Yield GIL after LogReader init
       total_msgs = 0
       can_msgs = 0
       last_msgs: dict[MessageId, CanData] = {}
       start_ts = 0
       last_emit_count = 0
+      last_yield = 0
 
       for msg in lr:
         if self._stop_requested:
@@ -63,6 +67,12 @@ class LogLoaderThread(QThread):
               self.dataReady.emit(snapshot, set(last_msgs.keys()))
               self.progress.emit(can_msgs, total_msgs)
               last_emit_count = can_msgs
+              time.sleep(0.01)  # Give main thread time to process
+
+            # Periodically yield GIL to allow main thread to process events
+            if can_msgs - last_yield >= self.YIELD_INTERVAL:
+              time.sleep(0)
+              last_yield = can_msgs
 
       snapshot = {k: CanData(v.ts, v.count, v.freq, v.dat) for k, v in last_msgs.items()}
       self.dataReady.emit(snapshot, set(last_msgs.keys()))
@@ -111,9 +121,9 @@ class ReplayStream(AbstractStream):
     self.start_ts = 0
 
     self._loader_thread = LogLoaderThread(route, self)
-    self._loader_thread.dataReady.connect(self._onDataReady, Qt.QueuedConnection)
-    self._loader_thread.progress.connect(self._onProgress, Qt.QueuedConnection)
-    self._loader_thread.finished.connect(self._onLoadFinished, Qt.QueuedConnection)
+    self._loader_thread.dataReady.connect(self._onDataReady, Qt.ConnectionType.QueuedConnection)
+    self._loader_thread.progress.connect(self._onProgress, Qt.ConnectionType.QueuedConnection)
+    self._loader_thread.finished.connect(self._onLoadFinished, Qt.ConnectionType.QueuedConnection)
     self._loader_thread.start()
 
     return True

@@ -1,6 +1,6 @@
 """MessagesWidget - displays CAN messages in a table."""
 
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Signal, QTimer
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QPersistentModelIndex, QSortFilterProxyModel, Signal, QTimer
 from PySide6.QtWidgets import (
   QWidget,
   QVBoxLayout,
@@ -50,14 +50,14 @@ class MessageListModel(QAbstractTableModel):
       return 0
     return len(self.COLUMNS)
 
-  def data(self, index: QModelIndex, role=Qt.DisplayRole):
+  def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole):
     if not index.isValid() or index.row() >= len(self.msg_ids):
       return None
 
     msg_id = self.msg_ids[index.row()]
     can_data = self.stream.last_msgs.get(msg_id)
 
-    if role == Qt.DisplayRole:
+    if role == Qt.ItemDataRole.DisplayRole:
       col = index.column()
       if col == self.COL_BUS:
         return str(msg_id.source)
@@ -72,20 +72,20 @@ class MessageListModel(QAbstractTableModel):
           return can_data.dat.hex(' ').upper()
         return ""
 
-    elif role == Qt.TextAlignmentRole:
+    elif role == Qt.ItemDataRole.TextAlignmentRole:
       col = index.column()
       if col in (self.COL_COUNT, self.COL_FREQ):
-        return Qt.AlignRight | Qt.AlignVCenter
-      return Qt.AlignLeft | Qt.AlignVCenter
+        return Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+      return Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
-    elif role == Qt.UserRole:
+    elif role == Qt.ItemDataRole.UserRole:
       # Return MessageId for selection handling
       return msg_id
 
     return None
 
-  def headerData(self, section, orientation, role=Qt.DisplayRole):
-    if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+  def headerData(self, section, orientation, role: int = Qt.ItemDataRole.DisplayRole):
+    if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
       if 0 <= section < len(self.COLUMNS):
         return self.COLUMNS[section]
     return None
@@ -133,14 +133,14 @@ class MessageFilterProxyModel(QSortFilterProxyModel):
     self.filter_text = text.lower()
     self.invalidateFilter()
 
-  def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
+  def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex | QPersistentModelIndex) -> bool:
     if not self.filter_text:
       return True
 
     source_model = self.sourceModel()
     # Check address column
     address_index = source_model.index(source_row, MessageListModel.COL_ADDRESS)
-    address = source_model.data(address_index, Qt.DisplayRole)
+    address = source_model.data(address_index, Qt.ItemDataRole.DisplayRole)
     if address and self.filter_text in address.lower():
       return True
 

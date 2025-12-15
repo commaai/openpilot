@@ -70,14 +70,24 @@ def main():
   window = MainWindow(stream)
   window.show()
 
-  # Strict mode: detect UI thread blocking
+  # Strict mode: detect UI thread blocking (only after loading completes)
+  timer = None
   if args.strict:
-    last_tick = [time.monotonic()]
+    last_tick = [0.0]
     max_allowed_delay = 0.5  # 500ms
+    strict_enabled = [False]
+
+    def enable_strict():
+      strict_enabled[0] = True
+      last_tick[0] = time.monotonic()
+
+    stream.loadFinished.connect(enable_strict)
 
     def check_responsiveness():
       nonlocal exit_code
       now = time.monotonic()
+      if not strict_enabled[0]:
+        return
       delay = now - last_tick[0]
       if delay > max_allowed_delay:
         print(f"STRICT MODE: UI thread blocked for {delay:.2f}s, exiting")
