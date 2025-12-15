@@ -15,6 +15,7 @@ A complete Python rewrite of cabana using PySide6 and existing openpilot Python 
 - **Type hints** where helpful
 - only use comments where absolutely necessary
 - **Dataclasses** for data structures
+- make sure to run "tools/op.sh lint" periodically to make sure the linter still passes
 
 ---
 
