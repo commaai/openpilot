@@ -35,7 +35,6 @@ class AbstractStream(QObject):
 
   def stop(self) -> None:
     """Stop the stream. Subclasses should override."""
-    pass
 
   def lastMessage(self, msg_id: MessageId) -> CanData | None:
     """Get the last processed data for a message."""

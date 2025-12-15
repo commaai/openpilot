@@ -90,7 +90,7 @@ class ReplayStream(AbstractStream):
     self._route: str = ""
     self._fingerprint: str = ""
     self._loader_thread: LogLoaderThread | None = None
-    self._loading = False
+    self._loading: bool = False
 
   def __del__(self):
     try:

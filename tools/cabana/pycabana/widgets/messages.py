@@ -1,6 +1,6 @@
 """MessagesWidget - displays CAN messages in a table."""
 
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Signal
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Signal, QTimer
 from PySide6.QtWidgets import (
   QWidget,
   QVBoxLayout,
@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
   QPushButton,
 )
 
-from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId, CanData
+from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId
 from openpilot.tools.cabana.pycabana.streams.abstract import AbstractStream
 
 
@@ -30,13 +30,22 @@ class MessageListModel(QAbstractTableModel):
     super().__init__(parent)
     self.stream = stream
     self.msg_ids: list[MessageId] = []
+    self._data_changed_pending = False
+    self._data_changed_timer = QTimer(self)
+    self._data_changed_timer.setSingleShot(True)
+    self._data_changed_timer.setInterval(50)  # 50ms debounce
+    self._data_changed_timer.timeout.connect(self._emitDataChanged)
 
-  def rowCount(self, parent=QModelIndex()):
+  def rowCount(self, parent=None):
+    if parent is None:
+      parent = QModelIndex()
     if parent.isValid():
       return 0
     return len(self.msg_ids)
 
-  def columnCount(self, parent=QModelIndex()):
+  def columnCount(self, parent=None):
+    if parent is None:
+      parent = QModelIndex()
     if parent.isValid():
       return 0
     return len(self.COLUMNS)
@@ -93,8 +102,15 @@ class MessageListModel(QAbstractTableModel):
         self.msg_ids.extend(sorted(new_ids))
         self.endInsertRows()
 
-    # Emit dataChanged for all rows to update counts/freq/data
-    if self.msg_ids:
+    # Schedule debounced dataChanged emission
+    self._data_changed_pending = True
+    if not self._data_changed_timer.isActive():
+      self._data_changed_timer.start()
+
+  def _emitDataChanged(self):
+    """Emit dataChanged signal (debounced)."""
+    if self._data_changed_pending and self.msg_ids:
+      self._data_changed_pending = False
       top_left = self.index(0, self.COL_COUNT)
       bottom_right = self.index(len(self.msg_ids) - 1, self.COL_DATA)
       self.dataChanged.emit(top_left, bottom_right)
