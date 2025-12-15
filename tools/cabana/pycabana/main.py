@@ -6,14 +6,13 @@ Usage:
 """
 
 import argparse
+import signal
 import sys
 
-# Demo route for testing
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 
 def main():
-  # Parse arguments BEFORE importing Qt (so --help works without Qt)
   parser = argparse.ArgumentParser(
     description="pycabana - PySide6 CAN bus analyzer",
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -35,7 +34,6 @@ def main():
 
   args = parser.parse_args()
 
-  # Determine route to load
   route = args.route
   if args.demo:
     route = DEMO_ROUTE
@@ -44,32 +42,29 @@ def main():
     print("\nNo route specified. Use --demo to load a demo route.")
     return 1
 
-  # Now import Qt (after arg parsing succeeds)
+  from PySide6.QtCore import QTimer
   from PySide6.QtWidgets import QApplication
 
   from openpilot.tools.cabana.pycabana.mainwindow import MainWindow
   from openpilot.tools.cabana.pycabana.streams.replay import ReplayStream
 
-  # Create Qt application
   app = QApplication(sys.argv)
   app.setApplicationName("pycabana")
   app.setOrganizationName("comma.ai")
 
-  # Create stream and start loading
-  stream = ReplayStream()
+  # Handle ctrl-c
+  signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-  # Create main window
+  stream = ReplayStream()
   window = MainWindow(stream)
   window.show()
 
-  # Start loading route (async via QThread)
   print(f"Loading route: {route}")
   if not stream.loadRoute(route):
     print(f"Failed to start loading route: {route}")
     return 1
 
-  # Run event loop
-  return app.exec_()
+  return app.exec()
 
 
 if __name__ == "__main__":

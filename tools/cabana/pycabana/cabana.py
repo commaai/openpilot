@@ -8,12 +8,7 @@ Usage:
 
 import sys
 
-
-def main():
-  from openpilot.tools.cabana.pycabana.main import main as _main
-
-  return _main()
-
+from openpilot.tools.cabana.pycabana.main import main
 
 if __name__ == "__main__":
   sys.exit(main())
