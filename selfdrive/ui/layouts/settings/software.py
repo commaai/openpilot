@@ -4,7 +4,7 @@ import datetime
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.multilang import tr, trn
+from openpilot.system.ui.lib.multilang import tr, tr_lazy, trn
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item, text_item, ListItem
@@ -52,12 +52,12 @@ class SoftwareLayout(Widget):
   def __init__(self):
     super().__init__()
 
-    self._onroad_label = ListItem(lambda: tr("Updates are only downloaded while the car is off."))
-    self._version_item = text_item(lambda: tr("Current Version"), ui_state.params.get("UpdaterCurrentDescription") or "")
-    self._download_btn = button_item(lambda: tr("Download"), lambda: tr("CHECK"), callback=self._on_download_update)
+    self._onroad_label = ListItem(tr_lazy("Updates are only downloaded while the car is off."))
+    self._version_item = text_item(tr_lazy("Current Version"), ui_state.params.get("UpdaterCurrentDescription") or "")
+    self._download_btn = button_item(tr_lazy("Download"), tr_lazy("CHECK"), callback=self._on_download_update)
 
     # Install button is initially hidden
-    self._install_btn = button_item(lambda: tr("Install Update"), lambda: tr("INSTALL"), callback=self._on_install_update)
+    self._install_btn = button_item(tr_lazy("Install Update"), tr_lazy("INSTALL"), callback=self._on_install_update)
     self._install_btn.set_visible(False)
 
     # Track waiting-for-updater transition to avoid brief re-enable while still idle
@@ -65,7 +65,7 @@ class SoftwareLayout(Widget):
     self._waiting_start_ts: float = 0.0
 
     # Branch switcher
-    self._branch_btn = button_item(lambda: tr("Target Branch"), lambda: tr("SELECT"), callback=self._on_select_branch)
+    self._branch_btn = button_item(tr_lazy("Target Branch"), tr_lazy("SELECT"), callback=self._on_select_branch)
     self._branch_btn.set_visible(not ui_state.params.get_bool("IsTestedBranch"))
     self._branch_btn.action_item.set_value(ui_state.params.get("UpdaterTargetBranch") or "")
 
@@ -75,7 +75,7 @@ class SoftwareLayout(Widget):
       self._download_btn,
       self._install_btn,
       self._branch_btn,
-      button_item(lambda: tr("Uninstall"), lambda: tr("UNINSTALL"), callback=self._on_uninstall),
+      button_item(tr_lazy("Uninstall"), tr_lazy("UNINSTALL"), callback=self._on_uninstall),
     ], line_separator=True, spacing=0)
 
   def show_event(self):

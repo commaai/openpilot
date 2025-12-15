@@ -19,7 +19,7 @@ def update_translations():
         files.append(os.path.relpath(os.path.join(root, filename), BASEDIR))
 
   # Create main translation file
-  cmd = ("xgettext -L Python --keyword=tr --keyword=trn:1,2 --keyword=tr_noop --from-code=UTF-8 " +
+  cmd = ("xgettext -L Python --keyword=tr --keyword=trn:1,2 --keyword=tr_noop --keyword=tr_lazy --from-code=UTF-8 " +
          "--flag=tr:1:python-brace-format --flag=trn:1:python-brace-format --flag=trn:2:python-brace-format " +
          f"-D {BASEDIR} -o {POT_FILE} {' '.join(files)}")
 
