@@ -1,4 +1,5 @@
 import os
+import queue
 import re
 import threading
 from enum import IntEnum
@@ -45,7 +46,7 @@ class TrainingGuide(Widget):
 
     # Load first image now so we show something immediately
     self._textures = [gui_app.texture(self._image_paths[0])]
-    self._image_objs = []
+    self._image_queue = queue.Queue()
 
     threading.Thread(target=self._preload_thread, daemon=True).start()
 
@@ -58,7 +59,7 @@ class TrainingGuide(Widget):
     # PNG loading is slow in raylib, so we preload in a thread and upload to GPU in main thread
     # We've already loaded the first image on init
     for path in self._image_paths[1:]:
-      self._image_objs.append(gui_app._load_image_from_path(path))
+      self._image_queue.put(gui_app._load_image_from_path(path))
 
   def _handle_mouse_release(self, mouse_pos):
     if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
@@ -82,8 +83,11 @@ class TrainingGuide(Widget):
           self._completed_callback()
 
   def _update_state(self):
-    if len(self._image_objs):
-      self._textures.append(gui_app._load_texture_from_image(self._image_objs.pop(0)))
+    try:
+      img = self._image_queue.get_nowait()
+      self._textures.append(gui_app._load_texture_from_image(img))
+    except queue.Empty:
+      pass
 
   def _render(self, _):
     # Safeguard against fast tapping
