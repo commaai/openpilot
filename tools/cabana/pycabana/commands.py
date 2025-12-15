@@ -140,10 +140,8 @@ class AddSigCommand(QUndoCommand):
         ""
       )
 
-    # Update signal name and max value
+    # Update signal name
     self.signal.name = dbc_manager().newSignalName(self.id)
-    # Calculate max value: 2^size - 1
-    max_val = (2 ** self.signal.size) - 1
     # Create a new signal with updated values
     updated_signal = Signal(
       name=self.signal.name,
@@ -258,3 +256,8 @@ class UndoStack:
   def push(cls, cmd: QUndoCommand) -> None:
     """Push a command onto the undo stack."""
     cls.instance().push(cmd)
+
+
+def undo_stack() -> QUndoStack:
+  """Get the global undo stack instance."""
+  return UndoStack.instance()

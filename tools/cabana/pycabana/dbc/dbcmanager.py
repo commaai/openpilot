@@ -44,6 +44,28 @@ class DBCManager(QObject):
       print(f"Failed to load DBC {dbc_name}: {e}")
       return False
 
+  def save(self, filename: str) -> bool:
+    """Save the DBC to a file."""
+    if self._dbc is None:
+      return False
+    try:
+      from openpilot.tools.cabana.pycabana.dbc.dbcfile import DBCFile
+      dbc_file = DBCFile(self._dbc)
+      dbc_string = dbc_file.to_dbc_string()
+      with open(filename, 'w') as f:
+        f.write(dbc_string)
+      self._name = filename
+      return True
+    except Exception as e:
+      print(f"Failed to save DBC to {filename}: {e}")
+      return False
+
+  def clear(self) -> None:
+    """Clear the current DBC and create an empty one."""
+    self._dbc = DBC("")
+    self._name = ""
+    self.DBCFileChanged.emit()
+
   @property
   def name(self) -> str:
     return self._name
@@ -75,7 +97,6 @@ class DBCManager(QObject):
     """Update a signal in a message."""
     msg = self.msg(msg_id)
     if msg and sig_name in msg.sigs:
-      old_sig = msg.sigs[sig_name]
       # If name changed, remove old and add new
       if sig_name != new_sig.name:
         del msg.sigs[sig_name]

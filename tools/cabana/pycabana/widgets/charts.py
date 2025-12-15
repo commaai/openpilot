@@ -17,7 +17,6 @@ from PySide6.QtGui import (
   QFontMetrics,
   QPixmap,
   QMouseEvent,
-  QWheelEvent,
 )
 from PySide6.QtWidgets import (
   QWidget,
@@ -36,10 +35,10 @@ from PySide6.QtWidgets import (
   QMenu,
   QToolButton,
   QSizePolicy,
-  QRubberBand,
 )
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId
+from openpilot.tools.cabana.pycabana.dbc.dbcmanager import dbc_manager
 
 
 # Constants
@@ -519,7 +518,7 @@ class ChartView(QFrame):
 
       text_list.append(
         f"<span style='color:{signal.color.name()};'>■ </span>"
-        f"{signal.signal_name}: <b>{value_str}</b> ({min_str}, {max_str})"
+        + f"{signal.signal_name}: <b>{value_str}</b> ({min_str}, {max_str})"
       )
 
     text = "<p style='white-space:pre'>" + "<br/>".join(text_list) + "</p>"
@@ -553,7 +552,6 @@ class ChartView(QFrame):
 
   def _manage_signals(self):
     """Show signal management dialog."""
-    from openpilot.tools.cabana.pycabana.dbc.dbcmanager import dbc_manager
 
     dlg = SignalSelector("Manage Chart", self.dbc, self)
 
@@ -589,8 +587,10 @@ class ChartView(QFrame):
     for signal in self.signals:
       msg = self.dbc.msg(signal.msg_id)
       msg_name = msg.name if msg else "Unknown"
-      parts.append(f"<span style='color:{signal.color.name()};'><b>{signal.signal_name}</b></span> "
-                   f"<font color='gray'>{msg_name}</font>")
+      parts.append(
+        f"<span style='color:{signal.color.name()};'><b>{signal.signal_name}</b></span> "
+        + f"<font color='gray'>{msg_name}</font>"
+      )
 
     self.title_label.setText(" | ".join(parts))
 
@@ -901,9 +901,9 @@ class ChartCanvas(QWidget):
 class ChartsWidget(QFrame):
   """Container for multiple chart views."""
 
-  def __init__(self, dbc, parent: Optional[QWidget] = None):
+  def __init__(self, dbc=None, parent: Optional[QWidget] = None):
     super().__init__(parent)
-    self.dbc = dbc
+    self.dbc = dbc if dbc is not None else dbc_manager()
     self.charts: list[ChartView] = []
     self.display_range = (0.0, 30.0)
     self.max_chart_range = 30
@@ -1040,3 +1040,31 @@ class ChartsWidget(QFrame):
 
     for chart in self.charts:
       chart.update_plot_area(max_width)
+
+  def setEvents(self, events: list):
+    """Set CAN events for all charts.
+
+    This converts the flat event list to a per-message dict for update_events.
+    """
+    if not events:
+      return
+
+    # Group events by message ID
+    events_by_msg: dict[MessageId, list] = {}
+    for event in events:
+      msg_id = event.msg_id
+      if msg_id not in events_by_msg:
+        events_by_msg[msg_id] = []
+      events_by_msg[msg_id].append(event)
+
+    self._events = events_by_msg
+    self.update_events(events_by_msg)
+
+  def setCurrentTime(self, time_sec: float):
+    """Set the current playback time and update chart display range."""
+    # Use a window around the current time
+    half_range = self.max_chart_range / 2
+    min_sec = max(0, time_sec - half_range)
+    max_sec = time_sec + half_range
+
+    self.update_state(time_sec, min_sec, max_sec)

@@ -29,7 +29,7 @@ absolutely none of these should ever happen
 as you work, make sure to run these to make sure they continue passing:
 - fast lint: ruff check
 - full lint: tools/op.sh lint
-- cabana smoketest: tools/cabana/pycabana/test_smoke.py
+- cabana smoketest: source .venv/bin/activate && tools/cabana/pycabana/test_smoke.py
 
 ---
 

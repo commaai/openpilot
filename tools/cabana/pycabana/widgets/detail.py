@@ -1,6 +1,6 @@
 """DetailWidget - displays detailed information about a selected CAN message."""
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
   QWidget,
   QVBoxLayout,
@@ -13,13 +13,13 @@ from PySide6.QtWidgets import (
   QTabBar,
   QMenu,
   QSizePolicy,
-  QFrame,
 )
-from PySide6.QtGui import QPixmap, QPainter, QIcon, QAction
+from PySide6.QtGui import QPainter, QAction
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId
 from openpilot.tools.cabana.pycabana.dbc.dbcmanager import dbc_manager
 from openpilot.tools.cabana.pycabana.widgets.binary import BinaryView
+from openpilot.tools.cabana.pycabana.widgets.history import HistoryLogWidget
 from openpilot.tools.cabana.pycabana.widgets.signal import SignalView
 from openpilot.tools.cabana.pycabana.streams.abstract import AbstractStream
 
@@ -62,33 +62,6 @@ class TabBar(QTabBar):
   def _updateVisibility(self):
     if self._auto_hide:
       self.setVisible(self.count() > 0)
-
-
-class HistoryLog(QWidget):
-  """Placeholder for history log widget."""
-
-  def __init__(self, parent: QWidget | None = None):
-    super().__init__(parent)
-    layout = QVBoxLayout(self)
-    self._msg_id: MessageId | None = None
-    self._stream: AbstractStream | None = None
-
-    label = QLabel("History Log - Not yet implemented")
-    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    label.setStyleSheet("color: gray; font-style: italic; font-size: 14px;")
-    layout.addWidget(label)
-
-  def setMessage(self, msg_id: MessageId):
-    """Set the message to display history for."""
-    self._msg_id = msg_id
-
-  def setStream(self, stream: AbstractStream):
-    """Set the stream to read events from."""
-    self._stream = stream
-
-  def updateState(self):
-    """Update the history log state."""
-    pass
 
 
 class DetailWidget(QWidget):
@@ -157,8 +130,7 @@ class DetailWidget(QWidget):
 
     self._tab_widget.addTab(splitter, "&Msg")
 
-    self._history_log = HistoryLog(self)
-    self._history_log.setStream(self._stream)
+    self._history_log = HistoryLogWidget(self._stream, self)
     self._tab_widget.addTab(self._history_log, "&Logs")
 
     main_layout.addWidget(self._tab_widget)
@@ -166,8 +138,6 @@ class DetailWidget(QWidget):
   def _create_toolbar(self):
     """Create the toolbar with message name and controls."""
     self._toolbar = QToolBar(self)
-    icon_size = self.style().pixelMetric(self.style().PixelMetric.PM_SmallIconSize)
-    self._toolbar.setIconSize(self._toolbar.iconSize())
 
     # Message name label
     self._name_label = ElidedLabel("", self)
@@ -241,7 +211,7 @@ class DetailWidget(QWidget):
     index = self._tabbar.tabAt(pos)
     if index >= 0:
       menu = QMenu(self)
-      action = menu.addAction("Close Other Tabs")
+      menu.addAction("Close Other Tabs")
       if menu.exec(self._tabbar.mapToGlobal(pos)):
         # Move selected tab to front
         self._tabbar.moveTab(index, 0)
@@ -331,6 +301,15 @@ class DetailWidget(QWidget):
     else:
       self._warning_widget.hide()
 
+  def updateState(self):
+    """Update the display with latest data from stream."""
+    if not self._msg_id:
+      return
+
+    can_data = self._stream.lastMessage(self._msg_id)
+    self._binary_view.updateData(can_data)
+    self._signal_view.updateValues(can_data)
+
   def _update_state(self):
     """Update the current view based on tab selection."""
     if not self._msg_id:
@@ -349,13 +328,46 @@ class DetailWidget(QWidget):
 
   def _edit_msg(self):
     """Open edit message dialog."""
-    # TODO: Implement edit message dialog
-    print(f"Edit message: {self._msg_id}")
+    if not self._msg_id:
+      return
+    from PySide6.QtWidgets import QInputDialog, QMessageBox
+    msg = dbc_manager().msg(self._msg_id)
+    if not msg:
+      QMessageBox.warning(self, "Edit Message", "Message not found in DBC.")
+      return
+
+    # Simple edit dialog for message name
+    new_name, ok = QInputDialog.getText(
+      self, "Edit Message", "Message name:", text=msg.name
+    )
+    if ok and new_name and new_name != msg.name:
+      from openpilot.tools.cabana.pycabana.commands import EditMsgCommand, UndoStack
+      cmd = EditMsgCommand(
+        self._msg_id, new_name, msg.size,
+        getattr(msg, 'transmitter', ''),
+        getattr(msg, 'comment', '')
+      )
+      UndoStack.push(cmd)
 
   def _remove_msg(self):
     """Remove message from DBC."""
-    # TODO: Implement remove message
-    print(f"Remove message: {self._msg_id}")
+    if not self._msg_id:
+      return
+    from PySide6.QtWidgets import QMessageBox
+    msg = dbc_manager().msg(self._msg_id)
+    msg_name = msg.name if msg else f"0x{self._msg_id.address:X}"
+
+    reply = QMessageBox.question(
+      self, "Remove Message",
+      f"Are you sure you want to remove '{msg_name}'?\n\nThis will also remove all its signals.",
+      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+      QMessageBox.StandardButton.No
+    )
+
+    if reply == QMessageBox.StandardButton.Yes:
+      from openpilot.tools.cabana.pycabana.commands import RemoveMsgCommand, UndoStack
+      cmd = RemoveMsgCommand(self._msg_id)
+      UndoStack.push(cmd)
 
   def serializeMessageIds(self) -> tuple[str, list[str]]:
     """Serialize tab state for saving."""
@@ -460,7 +472,7 @@ class CenterWidget(QWidget):
       key_label = QLabel(key)
       key_label.setStyleSheet(
         "background-color: #e0e0e0; padding: 4px 8px; "
-        "border-radius: 4px; color: #404040; margin-left: 8px;"
+        + "border-radius: 4px; color: #404040; margin-left: 8px;"
       )
       row.addWidget(key_label)
       row.addStretch()

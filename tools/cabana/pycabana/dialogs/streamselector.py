@@ -2,7 +2,6 @@
 
 from typing import Optional
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
   QDialog,
   QWidget,
@@ -49,8 +48,6 @@ class OpenReplayWidget(AbstractOpenStreamWidget):
 
   def __init__(self, parent: Optional[QWidget] = None):
     super().__init__(parent)
-
-    settings = Settings()
 
     layout = QGridLayout(self)
 
@@ -105,7 +102,6 @@ class OpenReplayWidget(AbstractOpenStreamWidget):
   def _browse_remote_route(self) -> None:
     """Browse for a remote route (not implemented yet)."""
     # TODO: Implement remote route browser dialog
-    pass
 
   def open(self) -> Optional[AbstractStream]:
     """Open a replay stream from the specified route."""
@@ -157,7 +153,6 @@ class OpenPandaWidget(AbstractOpenStreamWidget):
 
   def _on_serial_changed(self, serial: str) -> None:
     """Handle serial selection change."""
-    pass
 
   def open(self) -> Optional[AbstractStream]:
     """Open a Panda stream (not yet implemented)."""
@@ -209,7 +204,6 @@ class OpenSocketCanWidget(AbstractOpenStreamWidget):
 
   def _on_device_changed(self, device: str) -> None:
     """Handle device selection change."""
-    pass
 
   def open(self) -> Optional[AbstractStream]:
     """Open a SocketCAN stream (not yet implemented)."""

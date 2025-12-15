@@ -1,7 +1,7 @@
 """BinaryView - displays CAN message bytes as bits with signal coloring."""
 
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QPersistentModelIndex
-from PySide6.QtGui import QColor, QPainter, QFont, QFontDatabase
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QPersistentModelIndex, Signal as QtSignal
+from PySide6.QtGui import QColor, QPainter, QFont, QFontDatabase, QMouseEvent
 from PySide6.QtWidgets import (
   QWidget,
   QVBoxLayout,
@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId, CanData
 from openpilot.tools.cabana.pycabana.dbc.dbcmanager import dbc_manager
+from openpilot.tools.cabana.pycabana.settings import Settings, DragDirection
 
 # Signal colors - same palette as C++ cabana
 SIGNAL_COLORS = [
@@ -29,6 +30,16 @@ SIGNAL_COLORS = [
 CELL_HEIGHT = 36
 
 
+def flip_bit_pos(pos: int) -> int:
+  """Flip bit position for big endian calculation."""
+  return (pos // 8) * 8 + 7 - (pos % 8)
+
+
+def get_bit_pos(row: int, col: int) -> int:
+  """Get absolute bit position from row and column."""
+  return row * 8 + (7 - col)
+
+
 class BinaryViewModel(QAbstractTableModel):
   """Model for the binary view - 8 bit columns + 1 hex column per row."""
 
@@ -36,7 +47,7 @@ class BinaryViewModel(QAbstractTableModel):
 
   def __init__(self, parent=None):
     super().__init__(parent)
-    self._msg_id: MessageId | None = None
+    self.msg_id: MessageId | None = None
     self._data: bytes = b''
     self._row_count = 0
     # items[row][col] = (bit_value, signal_indices, is_msb, is_lsb)
@@ -45,7 +56,7 @@ class BinaryViewModel(QAbstractTableModel):
   def setMessage(self, msg_id: MessageId | None, can_data: CanData | None):
     """Set the message to display."""
     self.beginResetModel()
-    self._msg_id = msg_id
+    self.msg_id = msg_id
     self._data = can_data.dat if can_data else b''
     self._rebuild()
     self.endResetModel()
@@ -81,9 +92,9 @@ class BinaryViewModel(QAbstractTableModel):
   def _rebuild(self):
     """Rebuild the signal mapping for each bit."""
     self._row_count = len(self._data) if self._data else 0
-    if self._msg_id is None:
+    if self.msg_id is not None:
       # Check DBC for message size
-      msg = dbc_manager().msg(self._msg_id) if self._msg_id else None
+      msg = dbc_manager().msg(self.msg_id)
       if msg:
         self._row_count = max(self._row_count, msg.size)
 
@@ -95,8 +106,8 @@ class BinaryViewModel(QAbstractTableModel):
       self._items.append(row)
 
     # Map signals to bits
-    if self._msg_id:
-      msg = dbc_manager().msg(self._msg_id)
+    if self.msg_id:
+      msg = dbc_manager().msg(self.msg_id)
       if msg:
         for sig_idx, sig in enumerate(msg.sigs.values()):
           for j in range(sig.size):
@@ -253,14 +264,126 @@ class BinaryItemDelegate(QStyledItemDelegate):
     painter.restore()
 
 
+class BinaryTableView(QTableView):
+  """Custom table view with mouse handling for signal creation."""
+
+  signalCreated = QtSignal(int, int, bool)  # start_bit, size, is_little_endian
+
+  def __init__(self, model: BinaryViewModel, parent=None):
+    super().__init__(parent)
+    self._model = model
+    self._anchor_index: QModelIndex | None = None
+    self._resize_sig = None  # Signal being resized (not implemented yet)
+
+  def mousePressEvent(self, event: QMouseEvent):
+    """Handle mouse press - start selection."""
+    if event.button() == Qt.MouseButton.LeftButton:
+      index = self.indexAt(event.pos())
+      if index.isValid() and index.column() != 8:  # Not hex column
+        self._anchor_index = index
+        self._resize_sig = None
+        # TODO: Check if clicking on signal edge for resize
+        event.accept()
+        return
+    super().mousePressEvent(event)
+
+  def mouseMoveEvent(self, event: QMouseEvent):
+    """Handle mouse move - update selection."""
+    if self._anchor_index is not None and self._anchor_index.isValid():
+      index = self.indexAt(event.pos())
+      if index.isValid() and index.column() != 8:
+        # Update selection between anchor and current
+        self._updateSelection(index)
+    super().mouseMoveEvent(event)
+
+  def mouseReleaseEvent(self, event: QMouseEvent):
+    """Handle mouse release - create signal from selection."""
+    if event.button() == Qt.MouseButton.LeftButton and self._anchor_index is not None:
+      release_index = self.indexAt(event.pos())
+      if release_index.isValid() and self._anchor_index.isValid():
+        selection = self.selectionModel().selectedIndexes()
+        if selection:
+          # Calculate signal parameters from selection
+          start_bit, size, is_le = self._getSelectionParams(release_index)
+          if size > 0:
+            self.signalCreated.emit(start_bit, size, is_le)
+      self.clearSelection()
+      self._anchor_index = None
+      self._resize_sig = None
+    super().mouseReleaseEvent(event)
+
+  def _updateSelection(self, current_index: QModelIndex):
+    """Update selection between anchor and current index."""
+    if not self._anchor_index or not current_index.isValid():
+      return
+
+    # Clear and set new selection
+    self.clearSelection()
+    selection = self.selectionModel()
+
+    # Get range of cells to select
+    start_row = min(self._anchor_index.row(), current_index.row())
+    end_row = max(self._anchor_index.row(), current_index.row())
+    start_col = min(self._anchor_index.column(), current_index.column())
+    end_col = max(self._anchor_index.column(), current_index.column())
+
+    # For simple rectangular selection
+    for row in range(start_row, end_row + 1):
+      for col in range(start_col, min(end_col + 1, 8)):  # Exclude hex column
+        idx = self._model.index(row, col)
+        selection.select(idx, selection.SelectionFlag.Select)
+
+  def _getSelectionParams(self, release_index: QModelIndex) -> tuple[int, int, bool]:
+    """Calculate start_bit, size, and endianness from selection."""
+    settings = Settings()
+
+    # Determine endianness based on drag direction setting
+    is_le = True
+    if settings.drag_direction == DragDirection.MsbFirst:
+      is_le = release_index.row() < self._anchor_index.row() or (
+        release_index.row() == self._anchor_index.row() and release_index.column() > self._anchor_index.column()
+      )
+    elif settings.drag_direction == DragDirection.LsbFirst:
+      is_le = not (release_index.row() < self._anchor_index.row() or (
+        release_index.row() == self._anchor_index.row() and release_index.column() > self._anchor_index.column()
+      ))
+    elif settings.drag_direction == DragDirection.AlwaysLE:
+      is_le = True
+    elif settings.drag_direction == DragDirection.AlwaysBE:
+      is_le = False
+
+    # Get bit positions
+    anchor_bit = get_bit_pos(self._anchor_index.row(), self._anchor_index.column())
+    release_bit = get_bit_pos(release_index.row(), release_index.column())
+
+    if is_le:
+      # Little endian: start_bit is the LSB
+      start_bit = min(anchor_bit, release_bit)
+      size = abs(anchor_bit - release_bit) + 1
+    else:
+      # Big endian: start_bit is MSB, calculate flipped positions
+      anchor_flipped = flip_bit_pos(anchor_bit)
+      release_flipped = flip_bit_pos(release_bit)
+      start_bit = get_bit_pos(
+        min(self._anchor_index.row(), release_index.row()),
+        min(self._anchor_index.column(), release_index.column())
+      )
+      size = abs(anchor_flipped - release_flipped) + 1
+
+    return start_bit, size, is_le
+
+
 class BinaryView(QWidget):
   """Widget showing CAN message bytes as colored bits."""
+
+  signalCreated = QtSignal(int, int, bool)  # start_bit, size, is_little_endian
 
   def __init__(self, parent=None):
     super().__init__(parent)
     self._msg_id: MessageId | None = None
 
     self._setup_ui()
+    self._connect_signals()
 
   def _setup_ui(self):
     layout = QVBoxLayout(self)
@@ -269,13 +392,14 @@ class BinaryView(QWidget):
     self._model = BinaryViewModel()
     self._delegate = BinaryItemDelegate()
 
-    self._table = QTableView()
+    self._table = BinaryTableView(self._model)
     self._table.setModel(self._model)
     self._table.setItemDelegate(self._delegate)
 
     # Configure table appearance
     self._table.setShowGrid(False)
     self._table.setAlternatingRowColors(False)
+    self._table.setSelectionMode(QTableView.SelectionMode.ContiguousSelection)
 
     # Horizontal header (bit positions)
     h_header = self._table.horizontalHeader()
@@ -292,6 +416,35 @@ class BinaryView(QWidget):
     self._table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     layout.addWidget(self._table)
+
+  def _connect_signals(self):
+    """Connect internal signals."""
+    self._table.signalCreated.connect(self._on_signal_created)
+
+  def _on_signal_created(self, start_bit: int, size: int, is_le: bool):
+    """Handle signal creation from table view."""
+    if self._msg_id is None:
+      return
+
+    from opendbc.can.dbc import Signal
+    from openpilot.tools.cabana.pycabana.commands import AddSigCommand, UndoStack
+
+    # Create a new signal
+    sig = Signal(
+      name="",  # Will be assigned by AddSigCommand
+      start_bit=start_bit,
+      size=size,
+      is_signed=False,
+      factor=1.0,
+      offset=0.0,
+      is_little_endian=is_le,
+    )
+
+    cmd = AddSigCommand(self._msg_id, sig)
+    UndoStack.push(cmd)
+
+    # Re-emit for parent widgets
+    self.signalCreated.emit(start_bit, size, is_le)
 
   def setMessage(self, msg_id: MessageId | None, can_data: CanData | None):
     """Set the message to display."""

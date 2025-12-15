@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 from enum import Enum
 
-from PySide6.QtCore import QObject, Signal as QSignal
+from PySide6.QtCore import QObject
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId
 
@@ -70,7 +70,7 @@ class Signal:
     self.val_desc: list[tuple[float, str]] = []
     self.precision: int = 0
     self.multiplex_value: int = 0
-    self.multiplexor: Optional['Signal'] = None
+    self.multiplexor: Optional[Signal] = None
 
   def update(self) -> None:
     """Update signal properties after changes."""
@@ -232,7 +232,7 @@ class DBCFile(QObject):
         raise RuntimeError("Failed to open file.")
       self.name_ = path.stem
       self.filename = str(path)
-      with open(path, 'r', encoding='utf-8') as f:
+      with open(path, encoding='utf-8') as f:
         self._parse(f.read())
 
   def save(self) -> bool:
@@ -331,7 +331,7 @@ class DBCFile(QObject):
         else:
           seen = False
       except Exception as e:
-        raise RuntimeError(f"[{self.filename}:{line_num}]{e}: {line}")
+        raise RuntimeError(f"[{self.filename}:{line_num}]{e}: {line}") from e
 
       if seen:
         seen_first = True
@@ -516,10 +516,12 @@ class DBCFile(QObject):
         sign_char = '-' if sig.is_signed else '+'
         receiver = DEFAULT_NODE_NAME if not sig.receiver_name else sig.receiver_name
 
-        dbc_string += (f" SG_ {sig.name} {multiplexer_indicator}: {sig.start_bit}|{sig.size}@{endian_char}{sign_char} "
-                       f"({double_to_string(sig.factor)},{double_to_string(sig.offset)}) "
-                       f"[{double_to_string(sig.min)}|{double_to_string(sig.max)}] "
-                       f'"{sig.unit}" {receiver}\n')
+        dbc_string += (
+          f" SG_ {sig.name} {multiplexer_indicator}: {sig.start_bit}|{sig.size}@{endian_char}{sign_char} "
+          + f"({double_to_string(sig.factor)},{double_to_string(sig.offset)}) "
+          + f"[{double_to_string(sig.min)}|{double_to_string(sig.max)}] "
+          + f'"{sig.unit}" {receiver}\n'
+        )
 
         if sig.comment:
           escaped_comment = sig.comment.replace('"', '\\"')

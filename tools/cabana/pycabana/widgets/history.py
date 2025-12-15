@@ -1,7 +1,7 @@
 """HistoryLog - displays individual CAN message events over time."""
 
 from collections import deque
-from typing import Callable
+from collections.abc import Callable
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QPersistentModelIndex, QSize, QRect
 from PySide6.QtGui import QColor, QPainter, QBrush, QPalette
 from PySide6.QtWidgets import (
@@ -109,7 +109,7 @@ class HistoryLogModel(QAbstractTableModel):
     min_time = self.messages[0].mono_time if self.messages else 0
     self._fetchData(0, current_time, min_time)
 
-  def canFetchMore(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> bool:
+  def canFetchMore(self, parent: QModelIndex | QPersistentModelIndex | None = None) -> bool:
     """Check if more data can be fetched."""
     if not self.msg_id or len(self.messages) == 0:
       return False
@@ -118,7 +118,7 @@ class HistoryLogModel(QAbstractTableModel):
       return False
     return self.messages[-1].mono_time > events[0].mono_time
 
-  def fetchMore(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()):
+  def fetchMore(self, parent: QModelIndex | QPersistentModelIndex | None = None):
     """Fetch more historical data."""
     if len(self.messages) > 0:
       self._fetchData(len(self.messages), self.messages[-1].mono_time, 0)
@@ -165,13 +165,13 @@ class HistoryLogModel(QAbstractTableModel):
         self.messages.insert(insert_pos + i, msg)
       self.endInsertRows()
 
-  def rowCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
-    if parent.isValid():
+  def rowCount(self, parent: QModelIndex | QPersistentModelIndex | None = None) -> int:
+    if parent is not None and parent.isValid():
       return 0
     return len(self.messages)
 
-  def columnCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
-    if parent.isValid():
+  def columnCount(self, parent: QModelIndex | QPersistentModelIndex | None = None) -> int:
+    if parent is not None and parent.isValid():
       return 0
     return 2 if self.isHexMode() else len(self.sigs) + 1
 
@@ -233,7 +233,7 @@ class HeaderView(QHeaderView):
 
   def __init__(self, orientation: Qt.Orientation, parent=None):
     super().__init__(orientation, parent)
-    self.setDefaultAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.TextWordWrap)
+    self.setDefaultAlignment(Qt.AlignmentFlag.AlignRight | Qt.TextFlag.TextWordWrap)
 
   def sectionSizeFromContents(self, logicalIndex: int) -> QSize:
     """Calculate section size with word wrapping."""
@@ -285,7 +285,7 @@ class MessageBytesDelegate(QStyledItemDelegate):
   def __init__(self, parent=None):
     super().__init__(parent)
     # Pre-compute font metrics for fixed-width font
-    from PySide6.QtGui import QFontDatabase, QFont
+    from PySide6.QtGui import QFontDatabase
     self.fixed_font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
     from PySide6.QtGui import QFontMetricsF
     fm = QFontMetricsF(self.fixed_font)
