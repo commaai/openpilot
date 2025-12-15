@@ -11,7 +11,7 @@ class LogLoaderThread(QThread):
 
   dataReady = QtSignal(object, object)
   progress = QtSignal(int, int)
-  finished = QtSignal()
+  finished = QtSignal(str)  # fingerprint
 
   BATCH_SIZE = 10000
 
@@ -21,6 +21,7 @@ class LogLoaderThread(QThread):
     self._stop_requested = False
 
   def run(self):
+    fingerprint = ""
     try:
       from openpilot.tools.lib.logreader import LogReader
 
@@ -36,7 +37,12 @@ class LogLoaderThread(QThread):
           break
 
         total_msgs += 1
-        if msg.which() == 'can':
+        which = msg.which()
+
+        if which == 'carParams' and not fingerprint:
+          fingerprint = msg.carParams.carFingerprint
+
+        if which == 'can':
           for c in msg.can:
             msg_id = MessageId(c.src, c.address)
             mono_time = msg.logMonoTime
@@ -67,7 +73,7 @@ class LogLoaderThread(QThread):
       print(f"Error loading route: {e}")
       traceback.print_exc()
     finally:
-      self.finished.emit()
+      self.finished.emit(fingerprint)
 
   def stop(self):
     self._stop_requested = True
@@ -87,7 +93,10 @@ class ReplayStream(AbstractStream):
     self._loading = False
 
   def __del__(self):
-    self.stop()
+    try:
+      self.stop()
+    except RuntimeError:
+      pass
 
   def loadRoute(self, route: str) -> bool:
     if self._loading:
@@ -118,22 +127,10 @@ class ReplayStream(AbstractStream):
   def _onProgress(self, can_msgs: int, total_msgs: int):
     self.loadProgress.emit(can_msgs, total_msgs)
 
-  def _onLoadFinished(self):
+  def _onLoadFinished(self, fingerprint: str):
     self._loading = False
+    self._fingerprint = fingerprint
     self.loadFinished.emit()
-    self._extractFingerprint()
-
-  def _extractFingerprint(self):
-    try:
-      from openpilot.tools.lib.logreader import LogReader
-
-      lr = LogReader(self._route)
-      for msg in lr:
-        if msg.which() == 'carParams':
-          self._fingerprint = msg.carParams.carFingerprint
-          break
-    except Exception:
-      pass
 
   def stop(self):
     if self._loader_thread is not None:

@@ -8,6 +8,7 @@ Usage:
 import argparse
 import signal
 import sys
+import time
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
@@ -31,6 +32,11 @@ def main():
     "--dbc",
     help="DBC file to use for decoding (not yet implemented)",
   )
+  parser.add_argument(
+    "--strict",
+    action="store_true",
+    help="Exit with error if UI thread is blocked (for testing)",
+  )
 
   args = parser.parse_args()
 
@@ -52,19 +58,45 @@ def main():
   app.setApplicationName("pycabana")
   app.setOrganizationName("comma.ai")
 
-  # Handle ctrl-c
-  signal.signal(signal.SIGINT, signal.SIG_DFL)
-
   stream = ReplayStream()
+  exit_code = 0
+
+  def sigint_handler(*_):
+    stream.stop()
+    app.quit()
+
+  signal.signal(signal.SIGINT, sigint_handler)
+
   window = MainWindow(stream)
   window.show()
+
+  # Strict mode: detect UI thread blocking
+  if args.strict:
+    last_tick = [time.monotonic()]
+    max_allowed_delay = 0.5  # 500ms
+
+    def check_responsiveness():
+      nonlocal exit_code
+      now = time.monotonic()
+      delay = now - last_tick[0]
+      if delay > max_allowed_delay:
+        print(f"STRICT MODE: UI thread blocked for {delay:.2f}s, exiting")
+        exit_code = 2
+        stream.stop()
+        app.quit()
+      last_tick[0] = now
+
+    timer = QTimer()
+    timer.timeout.connect(check_responsiveness)
+    timer.start(100)  # Check every 100ms
 
   print(f"Loading route: {route}")
   if not stream.loadRoute(route):
     print(f"Failed to start loading route: {route}")
     return 1
 
-  return app.exec()
+  app.exec()
+  return exit_code
 
 
 if __name__ == "__main__":

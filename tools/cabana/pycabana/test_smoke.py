@@ -17,24 +17,22 @@ ERROR_PATTERNS = [
   "Segmentation fault",
   "Aborted",
   "core dumped",
+  "UI thread blocked",
 ]
 
 
 def main():
-  env = {**os.environ, }#"QT_QPA_PLATFORM": "offscreen"}
-  cmd = [sys.executable, "tools/cabana/pycabana/cabana.py", TEST_ROUTE]
+  env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
+  cmd = [sys.executable, "-m", "openpilot.tools.cabana.pycabana.cabana", "--strict", TEST_ROUTE]
 
   print(f"Starting pycabana with route {TEST_ROUTE}")
   proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=REPO_ROOT, env=env)
 
-  # Let it run for a few seconds
   time.sleep(5)
 
-  # Send ctrl-c
   print("Sending SIGINT...")
   os.kill(proc.pid, signal.SIGINT)
 
-  # Wait for exit
   try:
     stdout, stderr = proc.communicate(timeout=5)
   except subprocess.TimeoutExpired:
@@ -43,23 +41,23 @@ def main():
     print("FAILED: Process hung after SIGINT")
     return 1
 
-  # Check for error patterns
   output = stdout + stderr
   errors = [p for p in ERROR_PATTERNS if p in output]
   if errors:
     print(f"FAILED: Found error patterns: {errors}")
+    print("--- stdout ---")
+    print(stdout)
     print("--- stderr ---")
     print(stderr)
     return 1
 
-  # Check exit code (0 or -2/SIGINT are OK)
-  if proc.returncode not in (0, -2, -signal.SIGINT):
+  if proc.returncode != 0:
     print(f"FAILED: Bad exit code {proc.returncode}")
     print("--- stderr ---")
     print(stderr)
     return 1
 
-  print(f"OK (exit code {proc.returncode})")
+  print("OK")
   return 0
 
 
