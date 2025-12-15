@@ -212,7 +212,11 @@ class ReplayStream(AbstractStream):
     if self._loader_thread is not None:
       self._loader_thread.stop()
       if self._loader_thread.isRunning():
-        self._loader_thread.wait(5000)
+        if not self._loader_thread.wait(2000):
+          # Force terminate if thread doesn't stop gracefully
+          self._loader_thread.terminate()
+          self._loader_thread.wait(1000)
+      self._loader_thread = None
 
   @property
   def routeName(self) -> str:

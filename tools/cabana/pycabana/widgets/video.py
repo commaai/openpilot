@@ -188,6 +188,7 @@ class VideoWidget(QFrame):
   def _on_slider_released(self):
     time = self.slider.currentSecond()
     self._current_time = time
+    self.camera_view.seekToTime(time)
     self.seeked.emit(time)
     if self._was_playing:
       self._playback_timer.start()
@@ -213,6 +214,7 @@ class VideoWidget(QFrame):
     self._current_time = 0
     self.slider.setCurrentSecond(0)
     self._update_time_display()
+    self.camera_view.seekToTime(0)
     self.seeked.emit(0)
 
   def _on_playback_tick(self):
@@ -225,6 +227,7 @@ class VideoWidget(QFrame):
     self._current_time = min(self._current_time + dt, self._duration)
     self.slider.setCurrentSecond(self._current_time)
     self._update_time_display()
+    self.camera_view.seekToTime(self._current_time)
     self.seeked.emit(self._current_time)
 
   def _decrease_speed(self):

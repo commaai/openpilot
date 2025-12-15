@@ -7,6 +7,7 @@ Usage:
 
 import argparse
 import signal
+import socket
 import sys
 import time
 
@@ -48,7 +49,7 @@ def main():
     print("\nNo route specified. Use --demo to load a demo route.")
     return 1
 
-  from PySide6.QtCore import QTimer
+  from PySide6.QtCore import QSocketNotifier, QTimer
   from PySide6.QtWidgets import QApplication
 
   from openpilot.tools.cabana.pycabana.mainwindow import MainWindow
@@ -58,16 +59,44 @@ def main():
   app.setApplicationName("pycabana")
   app.setOrganizationName("comma.ai")
 
-  stream = ReplayStream()
-  exit_code = 0
+  # Set up signal handling with socket notifier to properly integrate with Qt event loop
+  rsock, wsock = socket.socketpair()
+  rsock.setblocking(False)
+  wsock.setblocking(False)
 
   def sigint_handler(*_):
-    stream.stop()
-    app.quit()
+    wsock.send(b'\x00')
 
   signal.signal(signal.SIGINT, sigint_handler)
 
+  stream = ReplayStream()
+  exit_code = 0
+
   window = MainWindow(stream, dbc_name=args.dbc or "")
+
+  def handle_signal():
+    try:
+      rsock.recv(1)
+    except BlockingIOError:
+      pass
+    # Stop stream and camera threads before closing
+    stream.stop()
+    window.video_widget.camera_view.stop()
+    # Process pending events to ensure cleanup completes
+    app.processEvents()
+    window.close()
+    # Delay quit to allow cleanup
+    QTimer.singleShot(200, app.quit)
+
+  notifier = QSocketNotifier(rsock.fileno(), QSocketNotifier.Type.Read)
+  notifier.activated.connect(handle_signal)
+
+  def cleanup_on_quit():
+    """Ensure threads are stopped before Qt destroys objects."""
+    stream.stop()
+    window.video_widget.camera_view.stop()
+
+  app.aboutToQuit.connect(cleanup_on_quit)
   window.show()
 
   # Strict mode: detect UI thread blocking (only after loading completes)
