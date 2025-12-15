@@ -104,8 +104,8 @@ else:
     """
 
 
-class CameraView(Widget):
-  def __init__(self, name: str, stream_type: VisionStreamType):
+class BaseCameraView(Widget):
+  def __init__(self, name: str, stream_type: VisionStreamType, fragment_shader: str):
     super().__init__()
     self._name = name
     # Primary stream
@@ -120,12 +120,8 @@ class CameraView(Widget):
 
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
-    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
+    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, fragment_shader)
     self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
-    self._engaged_loc = rl.get_shader_location(self.shader, "engaged")
-    self._engaged_val = rl.ffi.new("int[1]", [1])
-    self._enhance_driver_loc = rl.get_shader_location(self.shader, "enhance_driver")
-    self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_DRIVER else 0])
 
     self.frame: VisionBuf | None = None
     self.texture_y: rl.Texture | None = None
@@ -298,7 +294,7 @@ class CameraView(Widget):
 
     # Render with shader
     rl.begin_shader_mode(self.shader)
-    self._update_texture_color_filtering()
+    self._update_shader_uniforms()
     rl.draw_texture_pro(self.egl_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
     rl.end_shader_mode()
 
@@ -318,15 +314,13 @@ class CameraView(Widget):
 
     # Render with shader
     rl.begin_shader_mode(self.shader)
-    self._update_texture_color_filtering()
+    self._update_shader_uniforms()
     rl.set_shader_value_texture(self.shader, self._texture1_loc, self.texture_uv)
     rl.draw_texture_pro(self.texture_y, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
     rl.end_shader_mode()
 
-  def _update_texture_color_filtering(self):
-    self._engaged_val[0] = 1 if ui_state.status != UIStatus.DISENGAGED else 0
-    rl.set_shader_value(self.shader, self._engaged_loc, self._engaged_val, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
-    rl.set_shader_value(self.shader, self._enhance_driver_loc, self._enhance_driver_val, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
+  def _update_shader_uniforms(self):
+    pass
 
   def _ensure_connection(self) -> bool:
     if not self.client.is_connected():
@@ -408,6 +402,21 @@ class CameraView(Widget):
       for data in self.egl_images.values():
         destroy_egl_image(data)
       self.egl_images = {}
+
+
+class CameraView(BaseCameraView):
+  def __init__(self, name: str, stream_type: VisionStreamType):
+    super().__init__(name, stream_type, FRAME_FRAGMENT_SHADER)
+    self._engaged_loc = rl.get_shader_location(self.shader, "engaged")
+    self._engaged_val = rl.ffi.new("int[1]", [1])
+    self._enhance_driver_loc = rl.get_shader_location(self.shader, "enhance_driver")
+    self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_DRIVER else 0])
+
+  def _update_shader_uniforms(self):
+    """Update shader uniforms based on UI state."""
+    self._engaged_val[0] = 1 if ui_state.status != UIStatus.DISENGAGED else 0
+    rl.set_shader_value(self.shader, self._engaged_loc, self._engaged_val, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
+    rl.set_shader_value(self.shader, self._enhance_driver_loc, self._enhance_driver_val, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
 
 
 if __name__ == "__main__":
