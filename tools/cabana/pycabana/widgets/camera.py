@@ -24,7 +24,9 @@ class FrameLoaderThread(QThread):
       from openpilot.tools.lib.framereader import FrameReader
       from openpilot.tools.lib.route import Route
 
-      route = Route(self.route)
+      # Strip segment number if present (e.g., "route_name/0" -> "route_name")
+      route_name = self.route.rsplit('/', 1)[0] if '/' in self.route else self.route
+      route = Route(route_name)
 
       # Get camera paths based on camera type
       if self.camera == "fcamera":
@@ -40,13 +42,15 @@ class FrameLoaderThread(QThread):
         return
 
       # For now, just load the first segment
-      self._frame_reader = FrameReader(paths[0])
+      self._frame_reader = FrameReader(paths[0], pix_fmt="rgb24")
       total_frames = self._frame_reader.frame_count
 
       self.loadComplete.emit(total_frames)
 
     except Exception as e:
-      print(f"Error initializing FrameReader: {e}")
+      import traceback
+      print(f"Error initializing FrameReader for route '{self.route}': {e}")
+      traceback.print_exc()
 
   def getFrame(self, frame_idx: int):
     """Request a frame to be loaded."""
@@ -54,9 +58,9 @@ class FrameLoaderThread(QThread):
       return
 
     try:
-      frame = self._frame_reader.get(frame_idx, pix_fmt="rgb24")
+      frame = self._frame_reader.get(frame_idx)
       if frame is not None:
-        self.frameReady.emit(frame_idx, frame[0])
+        self.frameReady.emit(frame_idx, frame)
     except Exception as e:
       print(f"Error getting frame {frame_idx}: {e}")
 
@@ -81,6 +85,9 @@ class CameraView(QFrame):
     self._duration: float = 0.0
 
     self._setup_ui()
+
+  def __del__(self):
+    self.stop()
 
   def _setup_ui(self):
     self.setFrameShape(QFrame.Shape.StyledPanel)
@@ -168,7 +175,9 @@ class CameraView(QFrame):
     """Stop the frame loader."""
     if self._loader_thread is not None:
       self._loader_thread.stop()
-      self._loader_thread.wait()
+      if self._loader_thread.isRunning():
+        self._loader_thread.wait(2000)  # Wait up to 2 seconds
+      self._loader_thread = None
 
   @property
   def duration(self) -> float:

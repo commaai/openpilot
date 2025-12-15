@@ -185,9 +185,11 @@ class MainWindow(QMainWindow):
       route = self.stream.routeName
       fingerprint = self.stream.carFingerprint
 
-      # Set video widget duration
+      # Set video widget duration and load video
       self.video_widget.setDuration(self.stream.duration)
       self.video_widget.setCurrentTime(0)
+      if route:
+        self.video_widget.loadRoute(route)
 
       # Pass events to charts widget
       self.charts_widget.setEvents(self.stream._all_events)
@@ -202,7 +204,7 @@ class MainWindow(QMainWindow):
       if fingerprint and not self._dbc_name:
         self._try_load_dbc_for_fingerprint(fingerprint)
 
-  def _on_dbc_loaded(self):
+  def _on_dbc_loaded(self, dbc_name: str = ""):
     """Handle DBC file loaded."""
     self.messages_widget.model.layoutChanged.emit()
     if self._selected_msg_id:
@@ -210,6 +212,24 @@ class MainWindow(QMainWindow):
 
   def _try_load_dbc_for_fingerprint(self, fingerprint: str):
     """Try to load a DBC file based on car fingerprint."""
+    # Try to load from fingerprint-to-DBC mapping
+    import json
+    from pathlib import Path
+
+    json_path = Path(__file__).parent.parent / "dbc" / "car_fingerprint_to_dbc.json"
+    if json_path.exists():
+      try:
+        with open(json_path) as f:
+          mapping = json.load(f)
+        if fingerprint in mapping:
+          dbc_name = mapping[fingerprint]
+          if dbc_manager().load(dbc_name):
+            self.status_label.setText(f"Loaded DBC: {dbc_name}")
+            return
+      except Exception as e:
+        print(f"Error loading fingerprint mapping: {e}")
+
+    # Fallback: try generated name
     dbc_name = fingerprint.lower().replace(" ", "_") + "_pt_generated"
     if dbc_manager().load(dbc_name):
       self.status_label.setText(f"Loaded DBC: {dbc_name}")
@@ -437,3 +457,13 @@ class MainWindow(QMainWindow):
         + "comma.ai"
       )
     )
+
+  def closeEvent(self, event):
+    """Clean up resources on close."""
+    # Stop video/camera threads
+    self.video_widget.camera_view.stop()
+
+    # Stop stream
+    self.stream.stop()
+
+    super().closeEvent(event)

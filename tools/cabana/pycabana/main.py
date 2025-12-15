@@ -10,7 +10,7 @@ import signal
 import sys
 import time
 
-DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19/0"
 
 
 def main():

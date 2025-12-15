@@ -1,4 +1,4 @@
-"""VideoWidget - timeline slider and playback controls."""
+"""VideoWidget - timeline slider, playback controls, and camera view."""
 
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtWidgets import (
@@ -9,7 +9,10 @@ from PySide6.QtWidgets import (
   QPushButton,
   QStyle,
   QFrame,
+  QComboBox,
 )
+
+from openpilot.tools.cabana.pycabana.widgets.camera import CameraView
 
 
 class TimelineSlider(QSlider):
@@ -31,7 +34,7 @@ class TimelineSlider(QSlider):
 
 
 class VideoWidget(QFrame):
-  """Widget with timeline slider and playback controls."""
+  """Widget with camera view, timeline slider and playback controls."""
 
   seeked = Signal(float)  # Emitted when user seeks to a time (seconds)
 
@@ -41,6 +44,7 @@ class VideoWidget(QFrame):
     self._current_time = 0.0
     self._playing = False
     self._playback_speed = 1.0
+    self._route: str = ""
 
     self._setup_ui()
     self._connect_signals()
@@ -55,6 +59,21 @@ class VideoWidget(QFrame):
     layout = QVBoxLayout(self)
     layout.setContentsMargins(8, 8, 8, 8)
     layout.setSpacing(8)
+
+    # Camera selector and view
+    camera_header = QHBoxLayout()
+    camera_header.addWidget(QLabel("Camera:"))
+    self.camera_combo = QComboBox()
+    self.camera_combo.addItems(["Road Camera", "Wide Camera", "Driver Camera"])
+    self.camera_combo.setCurrentIndex(0)
+    camera_header.addWidget(self.camera_combo)
+    camera_header.addStretch()
+    layout.addLayout(camera_header)
+
+    # Camera view
+    self.camera_view = CameraView()
+    self.camera_view.setMinimumHeight(200)
+    layout.addWidget(self.camera_view, 1)
 
     # Time display
     time_layout = QHBoxLayout()
@@ -111,6 +130,24 @@ class VideoWidget(QFrame):
     self.stop_btn.clicked.connect(self._stop_playback)
     self.slower_btn.clicked.connect(self._decrease_speed)
     self.faster_btn.clicked.connect(self._increase_speed)
+    self.camera_combo.currentIndexChanged.connect(self._on_camera_changed)
+
+  def loadRoute(self, route: str):
+    """Load video from a route."""
+    self._route = route
+    camera = self._get_camera_name()
+    self.camera_view.loadRoute(route, camera)
+
+  def _get_camera_name(self) -> str:
+    """Get the camera name from combo box selection."""
+    idx = self.camera_combo.currentIndex()
+    return ["fcamera", "ecamera", "dcamera"][idx]
+
+  def _on_camera_changed(self, index: int):
+    """Handle camera selection change."""
+    if self._route:
+      camera = self._get_camera_name()
+      self.camera_view.loadRoute(self._route, camera)
 
   def setDuration(self, duration: float):
     """Set the total duration in seconds."""
@@ -124,6 +161,8 @@ class VideoWidget(QFrame):
     if not self.slider.isSliderDown():
       self.slider.setCurrentSecond(time)
     self._update_time_display()
+    # Update camera frame
+    self.camera_view.seekToTime(time)
 
   def _update_time_display(self):
     current = self._format_time(self._current_time)

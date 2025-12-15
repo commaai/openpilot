@@ -66,7 +66,8 @@ class HistoryLogModel(QAbstractTableModel):
     if self.msg_id:
       msg = dbc_manager().msg(self.msg_id)
       if msg:
-        self.sigs = msg.sigs
+        # Convert dict values to list
+        self.sigs = list(msg.sigs.values())
     self.messages.clear()
     self.endResetModel()
     self.setFilter(0, "", None)
