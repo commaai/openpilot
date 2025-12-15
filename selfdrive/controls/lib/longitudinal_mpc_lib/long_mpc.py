@@ -55,6 +55,13 @@ FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
+# More humanlike standstill distance when following a lead (implemented by shifting the
+# lead "obstacle" backward at low lead speeds, without reducing the global STOP_DISTANCE).
+LEAD_STOP_DISTANCE = 3.0
+# Lead stopping equivalence is a modeling assumption for how much decel the lead can
+# reasonably sustain while braking to a stop. This is not "ego comfort"; it's only used
+# when converting a moving lead into a virtual "stopped obstacle" for the MPC.
+LEAD_EQUIV_BRAKE = 3.5
 CRUISE_MIN_ACCEL = -1.2
 CRUISE_MAX_ACCEL = 1.6
 
@@ -81,6 +88,9 @@ def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
 
 def get_stopped_equivalence_factor(v_lead):
   return (v_lead**2) / (2 * COMFORT_BRAKE)
+
+def get_lead_stopped_equivalence_factor(v_lead):
+  return (v_lead**2) / (2 * LEAD_EQUIV_BRAKE)
 
 def get_safe_obstacle_distance(v_ego, t_follow):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
@@ -338,8 +348,24 @@ class LongitudinalMpc:
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
+    # Humans accept a smaller standstill gap behind a lead, but we keep STOP_DISTANCE
+    # conservative for non-lead cases. Implement this by shifting the lead obstacle
+    # backward at low lead speeds, but only when ego is closing (so it won't block starts).
+    stop_dist_offset_max = (STOP_DISTANCE - LEAD_STOP_DISTANCE)
+    v_fade = 6.0  # fade-in below ~6 m/s lead speed
+    lead_0_low_speed = np.clip((v_fade - lead_xv_0[:,1]) / v_fade, 0.0, 1.0)
+    lead_1_low_speed = np.clip((v_fade - lead_xv_1[:,1]) / v_fade, 0.0, 1.0)
+    # v_rel < 0 => closing, v_rel > 0 => lead pulling away; suppress offset when pulling away
+    lead_0_closing = np.clip((- (lead_xv_0[:,1] - v_ego)) / 2.0, 0.0, 1.0)
+    lead_1_closing = np.clip((- (lead_xv_1[:,1] - v_ego)) / 2.0, 0.0, 1.0)
+    lead_0_stop_offset = stop_dist_offset_max * lead_0_low_speed * lead_0_closing
+    lead_1_stop_offset = stop_dist_offset_max * lead_1_low_speed * lead_1_closing
+    # Avoid placing the virtual obstacle behind ego by more than a small margin
+    lead_0_stop_offset = np.minimum(lead_0_stop_offset, np.maximum(0.0, lead_xv_0[:,0] - 1.0))
+    lead_1_stop_offset = np.minimum(lead_1_stop_offset, np.maximum(0.0, lead_xv_1[:,0] - 1.0))
+
+    lead_0_obstacle = lead_xv_0[:,0] + get_lead_stopped_equivalence_factor(lead_xv_0[:,1]) - lead_0_stop_offset
+    lead_1_obstacle = lead_xv_1[:,0] + get_lead_stopped_equivalence_factor(lead_xv_1[:,1]) - lead_1_stop_offset
 
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = ACCEL_MAX

@@ -16,6 +16,40 @@ from openpilot.common.simple_kalman import KF1D
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
 
+# Lead accel extrapolation in the long MPC uses:
+#   a(t) = a0 * exp(-tau * t^2 / 2)
+# Smaller tau => acceleration persists longer (more predictive for sustained braking),
+# Larger tau  => acceleration decays to 0 faster (more conservative for transients/noise).
+def compute_a_lead_tau(a_lead: float, v_lead: float, v_rel: float) -> float:
+  a_lead = float(a_lead)
+  v_lead = max(float(v_lead), 0.0)
+  v_rel = float(v_rel)
+
+  # Default: assume acceleration is transient and will decay quickly.
+  tau = _LEAD_ACCEL_TAU
+
+  # Strong braking: assume it persists (this helps avoid late/hard braking by ego).
+  if a_lead < -1.0:
+    return 0.0
+
+  # For mild/moderate braking, make tau depend on context:
+  # - lower lead speed -> more likely braking continues to a stop
+  # - closing speed (ego faster than lead) -> more likely continued slowing is relevant
+  # This intentionally reduces tau even when measured |a| is small/noisy near a stop.
+  low_speed = np.clip((8.0 - v_lead) / 8.0, 0.0, 1.0)         # 1 at 0 m/s, 0 at 8 m/s
+  closing = np.clip((-v_rel) / 3.0, 0.0, 1.0)                # 1 at -3 m/s, 0 at >=0
+  braking = np.clip((-a_lead - 0.10) / 0.60, 0.0, 1.0)        # 0 at -0.10, 1 at -0.70
+
+  if (a_lead < -0.10) or (low_speed > 0.5 and closing > 0.2 and a_lead < 0.2):
+    # Low-speed stopping situations should strongly favor persistent decel.
+    persist = np.clip(0.55 * low_speed + 0.30 * closing + 0.15 * braking, 0.0, 1.0)
+    tau = _LEAD_ACCEL_TAU * (1.0 - persist)
+    # Cap so we always get *some* persistence when in braking context.
+    tau = min(tau, 1.0)
+
+  return float(np.clip(tau, 0.0, _LEAD_ACCEL_TAU))
+
+
 # radar tracks
 SPEED, ACCEL = 0, 1     # Kalman filter states enum
 
@@ -73,11 +107,8 @@ class Track:
     self.vLeadK = float(self.kf.x[SPEED][0])
     self.aLeadK = float(self.kf.x[ACCEL][0])
 
-    # Learn if constant acceleration
-    if abs(self.aLeadK) < 0.5:
-      self.aLeadTau.x = _LEAD_ACCEL_TAU
-    else:
-      self.aLeadTau.update(0.0)
+    # Learn lead acceleration persistence (used by longitudinal MPC lead extrapolation)
+    self.aLeadTau.update(compute_a_lead_tau(self.aLeadK, self.vLeadK, self.vRel))
 
     self.cnt += 1
 
@@ -140,14 +171,16 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
 
 def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
   lead_v_rel_pred = lead_msg.v[0] - model_v_ego
+  v_lead = v_ego + lead_v_rel_pred
+  a_lead = lead_msg.a[0]
   return {
     "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
     "yRel": float(-lead_msg.y[0]),
     "vRel": float(lead_v_rel_pred),
-    "vLead": float(v_ego + lead_v_rel_pred),
-    "vLeadK": float(v_ego + lead_v_rel_pred),
-    "aLeadK": float(lead_msg.a[0]),
-    "aLeadTau": 0.3,
+    "vLead": float(v_lead),
+    "vLeadK": float(v_lead),
+    "aLeadK": float(a_lead),
+    "aLeadTau": compute_a_lead_tau(a_lead, v_lead, lead_v_rel_pred),
     "fcw": False,
     "modelProb": float(lead_msg.prob),
     "status": True,
