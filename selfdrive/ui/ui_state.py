@@ -220,6 +220,10 @@ class Device:
   def add_interactive_timeout_callback(self, callback: Callable):
     self._interactive_timeout_callbacks.append(callback)
 
+  def remove_interactive_timeout_callback(self, callback: Callable):
+    if callback in self._interactive_timeout_callbacks:
+      self._interactive_timeout_callbacks.remove(callback)
+
   def update(self):
     # do initial reset
     if self._interaction_time <= 0:

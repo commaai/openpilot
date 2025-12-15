@@ -50,6 +50,9 @@ class TrainingGuide(Widget):
 
     threading.Thread(target=self._preload_thread, daemon=True).start()
 
+  def close_event(self):
+    self._completed_callback = None
+
   def _load_image_paths(self):
     paths = [fn for fn in os.listdir(os.path.join(BASEDIR, "selfdrive/assets/training")) if re.match(r'^step\d*\.png$', fn)]
     paths = sorted(paths, key=lambda x: int(re.search(r'\d+', x).group()))

@@ -30,6 +30,10 @@ class ConfirmDialog(Widget):
     self._cancel_text = cancel_text
     self._scroller = Scroller([self._html_renderer], line_separator=False, spacing=0)
 
+  def close_event(self):
+    self._cancel_button.set_click_callback(None)
+    self._confirm_button.set_click_callback(None)
+
   def set_text(self, text):
     if not self._rich:
       self._label.set_text(text)

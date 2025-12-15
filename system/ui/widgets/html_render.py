@@ -262,6 +262,9 @@ class HtmlModal(Widget):
     self._scroll_panel = GuiScrollPanel()
     self._ok_button = Button(tr("OK"), click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
 
+  def close_event(self):
+    self._ok_button.set_click_callback(None)
+
   def _render(self, rect: rl.Rectangle):
     margin = 50
     content_rect = rl.Rectangle(rect.x + margin, rect.y + margin, rect.width - (margin * 2), rect.height - (margin * 2))
