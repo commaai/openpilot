@@ -9,7 +9,7 @@ from openpilot.system.hardware import TICI
 from collections import deque
 
 MIN_VELOCITY = 10  # px/s, changes from auto scroll to steady state
-MIN_VELOCITY_FOR_CLICKING = 2 * 60  # px/s, accepts clicks while auto scrolling below this velocity
+MIN_VELOCITY_FOR_CLICKING = 2 * 45  # px/s, accepts clicks while auto scrolling below this velocity
 MIN_DRAG_PIXELS = 6
 AUTO_SCROLL_TC_SNAP = 0.025
 AUTO_SCROLL_TC = 0.18
@@ -221,4 +221,5 @@ class GuiScrollPanel2:
     return self._state
 
   def is_touch_valid(self) -> bool:
-    return bool(self._state in (ScrollState.STEADY, ScrollState.PRESSED))
+    # MIN_VELOCITY_FOR_CLICKING is checked in auto-scroll state
+    return bool(self._state != ScrollState.MANUAL_SCROLL)
