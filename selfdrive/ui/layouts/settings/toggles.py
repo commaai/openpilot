@@ -5,7 +5,7 @@ from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_i
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.multilang import tr, tr_noop
+from openpilot.system.ui.lib.multilang import tr, tr_lazy, tr_noop
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -43,49 +43,49 @@ class TogglesLayout(Widget):
     # param, title, desc, icon, needs_restart
     self._toggle_defs = {
       "OpenpilotEnabledToggle": (
-        lambda: tr("Enable openpilot"),
+        tr_lazy("Enable openpilot"),
         DESCRIPTIONS["OpenpilotEnabledToggle"],
         "chffr_wheel.png",
         True,
       ),
       "ExperimentalMode": (
-        lambda: tr("Experimental Mode"),
+        tr_lazy("Experimental Mode"),
         "",
         "experimental_white.png",
         False,
       ),
       "DisengageOnAccelerator": (
-        lambda: tr("Disengage on Accelerator Pedal"),
+        tr_lazy("Disengage on Accelerator Pedal"),
         DESCRIPTIONS["DisengageOnAccelerator"],
         "disengage_on_accelerator.png",
         False,
       ),
       "IsLdwEnabled": (
-        lambda: tr("Enable Lane Departure Warnings"),
+        tr_lazy("Enable Lane Departure Warnings"),
         DESCRIPTIONS["IsLdwEnabled"],
         "warning.png",
         False,
       ),
       "AlwaysOnDM": (
-        lambda: tr("Always-On Driver Monitoring"),
+        tr_lazy("Always-On Driver Monitoring"),
         DESCRIPTIONS["AlwaysOnDM"],
         "monitoring.png",
         False,
       ),
       "RecordFront": (
-        lambda: tr("Record and Upload Driver Camera"),
+        tr_lazy("Record and Upload Driver Camera"),
         DESCRIPTIONS["RecordFront"],
         "monitoring.png",
         True,
       ),
       "RecordAudio": (
-        lambda: tr("Record and Upload Microphone Audio"),
+        tr_lazy("Record and Upload Microphone Audio"),
         DESCRIPTIONS["RecordAudio"],
         "microphone.png",
         True,
       ),
       "IsMetric": (
-        lambda: tr("Use Metric System"),
+        tr_lazy("Use Metric System"),
         DESCRIPTIONS["IsMetric"],
         "metric.png",
         False,
@@ -93,9 +93,9 @@ class TogglesLayout(Widget):
     }
 
     self._long_personality_setting = multiple_button_item(
-      lambda: tr("Driving Personality"),
-      lambda: tr(DESCRIPTIONS["LongitudinalPersonality"]),
-      buttons=[lambda: tr("Aggressive"), lambda: tr("Standard"), lambda: tr("Relaxed")],
+      tr_lazy("Driving Personality"),
+      tr_lazy(DESCRIPTIONS["LongitudinalPersonality"]),
+      buttons=[tr_lazy("Aggressive"), tr_lazy("Standard"), tr_lazy("Relaxed")],
       button_width=255,
       callback=self._set_longitudinal_personality,
       selected_index=self._params.get("LongitudinalPersonality", return_default=True),
