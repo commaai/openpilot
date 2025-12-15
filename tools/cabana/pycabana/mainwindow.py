@@ -1,7 +1,7 @@
 """MainWindow - main application window for pycabana."""
 
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import (
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
   QMainWindow,
   QDockWidget,
   QLabel,

@@ -1,10 +1,10 @@
-# pycabana - Pure PySide2 Rewrite of Cabana
+# pycabana - Pure PySide6 Rewrite of Cabana
 
-A complete Python rewrite of cabana using PySide2 and existing openpilot Python tools.
+A complete Python rewrite of cabana using PySide6 and existing openpilot Python tools.
 
 ## Approach
 
-- **Pure PySide2** - No C++ interop, no shiboken2 wrapping
+- **Pure PySide6** - No C++ interop, no shiboken2 wrapping
 - **Leverage existing tools** - Use `LogReader`, `FrameReader`, `Route`, `opendbc.can.dbc`
 - **1:1 translation** - Mechanical port of C++ widgets to Python equivalents
 - **Piecemeal development** - Build and test widget by widget
@@ -13,6 +13,7 @@ A complete Python rewrite of cabana using PySide2 and existing openpilot Python 
 
 - **2-space indentation** (matches openpilot Python code)
 - **Type hints** where helpful
+- only use comments where absolutely necessary
 - **Dataclasses** for data structures
 
 ---
@@ -469,7 +470,7 @@ class MainWindow(QMainWindow):
 ## Dependencies
 
 ```
-PySide2
+PySide6
 numpy
 ```
 

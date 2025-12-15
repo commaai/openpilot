@@ -1,6 +1,6 @@
 """Abstract base class for CAN data streams."""
 
-from PySide2.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import MessageId, CanEvent, CanData
 

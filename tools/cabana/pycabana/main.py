@@ -1,27 +1,21 @@
-"""pycabana - PySide2 CAN bus analyzer.
+"""pycabana - PySide6 CAN bus analyzer.
 
 Usage:
-  python -m openpilot.tools.cabana.pycabana [route]
-  python -m openpilot.tools.cabana.pycabana --demo
+  python cabana.py [route]
+  python cabana.py --demo
 """
 
 import argparse
 import sys
-
-from PySide2.QtWidgets import QApplication
-
-from openpilot.tools.cabana.pycabana.mainwindow import MainWindow
-from openpilot.tools.cabana.pycabana.streams.replay import ReplayStream
-
 
 # Demo route for testing
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 
 def main():
-  # Parse arguments
+  # Parse arguments BEFORE importing Qt (so --help works without Qt)
   parser = argparse.ArgumentParser(
-    description="pycabana - PySide2 CAN bus analyzer",
+    description="pycabana - PySide6 CAN bus analyzer",
     formatter_class=argparse.RawDescriptionHelpFormatter,
   )
   parser.add_argument(
@@ -46,10 +40,15 @@ def main():
   if args.demo:
     route = DEMO_ROUTE
   elif not route:
-    print("Usage: python -m openpilot.tools.cabana.pycabana [route]")
-    print("       python -m openpilot.tools.cabana.pycabana --demo")
+    parser.print_help()
     print("\nNo route specified. Use --demo to load a demo route.")
     return 1
+
+  # Now import Qt (after arg parsing succeeds)
+  from PySide6.QtWidgets import QApplication
+
+  from openpilot.tools.cabana.pycabana.mainwindow import MainWindow
+  from openpilot.tools.cabana.pycabana.streams.replay import ReplayStream
 
   # Create Qt application
   app = QApplication(sys.argv)

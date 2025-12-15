@@ -1,4 +1,4 @@
-"""pycabana - Pure PySide2 rewrite of cabana CAN bus analyzer"""
+"""pycabana - Pure PySide6 rewrite of cabana CAN bus analyzer"""
 
 __all__ = ["main"]
 

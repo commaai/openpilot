@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""pycabana - PySide2 CAN bus analyzer.
+"""pycabana - PySide6 CAN bus analyzer.
 
 Usage:
   python cabana.py [route]

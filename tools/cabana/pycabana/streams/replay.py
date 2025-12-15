@@ -1,6 +1,6 @@
 """ReplayStream - loads CAN data from openpilot routes."""
 
-from PySide2.QtCore import QThread, Signal as QtSignal
+from PySide6.QtCore import QThread, Signal as QtSignal
 
 from openpilot.tools.cabana.pycabana.dbc.dbc import CanEvent
 from openpilot.tools.cabana.pycabana.streams.abstract import AbstractStream

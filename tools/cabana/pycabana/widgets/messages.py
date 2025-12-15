@@ -1,7 +1,7 @@
 """MessagesWidget - displays CAN messages in a table."""
 
-from PySide2.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Signal
-from PySide2.QtWidgets import (
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Signal
+from PySide6.QtWidgets import (
   QWidget,
   QVBoxLayout,
   QHBoxLayout,
