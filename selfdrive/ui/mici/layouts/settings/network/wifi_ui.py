@@ -385,7 +385,10 @@ class WifiUIMici(BigMultiOptionDialog):
       self._scroller.add_widget(network_button)
 
     # remove networks no longer present
-    self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
+    to_remove = [btn for btn in self._scroller._items if btn.option not in self._networks]
+    for btn in to_remove:
+      btn.set_click_callback(None)
+      self._scroller._items.remove(btn)
 
     # try to restore previous selection to prevent jumping from adding/removing/reordering buttons
     self._restore_selection = True
