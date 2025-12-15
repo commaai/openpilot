@@ -647,7 +647,7 @@ class WifiManager:
       self._update_ipv4_address()
       self._update_current_network_metered()
 
-      self._enqueue_callbacks(self._networks_updated, self._networks)
+      self._enqueue_callbacks(self._networks_updated, self._networks.copy())
 
   def _update_ipv4_address(self):
     if self._wifi_device is None:
