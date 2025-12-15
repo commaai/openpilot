@@ -17,6 +17,20 @@ A complete Python rewrite of cabana using PySide6 and existing openpilot Python 
 - **Dataclasses** for data structures
 - make sure to run "tools/op.sh lint" periodically to make sure the linter still passes
 
+## evaluating your progress
+
+some bugs i've found
+- blocking the main thread
+- ctrl-c doesn't work and just hangs
+- random console errors when running cabana
+
+absolutely none of these should ever happen
+
+as you work, make sure to run these to make sure they continue passing:
+- fast lint: ruff check
+- full lint: tools/op.sh lint
+- cabana smoketest: tools/cabana/pycabana/test_smoke.py
+
 ---
 
 ## v0.1 Roadmap
