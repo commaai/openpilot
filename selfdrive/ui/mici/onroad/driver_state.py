@@ -218,7 +218,7 @@ class DriverStateRenderer(Widget):
     rotation = math.degrees(math.atan2(pitch, yaw))
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
-    if PC and self._confirm_mode:
+    if False and PC and self._confirm_mode:
       self._rotation_filter.x += 2
     else:
       self._rotation_filter.update(self._rotation_filter.x + angle_diff)

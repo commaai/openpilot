@@ -88,10 +88,19 @@ class TrainingGuidePreDMTutorial(SetupTermsPage):
     ))
 
 
+class DMState(IntEnum):
+  STARTING = 0
+  FACE_DETECTED = 1
+  LOOK_RIGHT = 2
+  LOOK_LEFT = 3
+
+
 class TrainingGuideDMTutorial(Widget):
   def __init__(self, continue_callback):
     super().__init__()
-    self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
+    self._title_header = TermsHeader("starting...", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
+    self._state: DMState = DMState.STARTING
+    self._state_time = 0.0
 
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
@@ -111,6 +120,9 @@ class TrainingGuideDMTutorial(Widget):
     super().show_event()
     self._dialog.show_event()
 
+    self._state = DMState.STARTING
+    self._state_time = rl.get_time()
+
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
 
@@ -118,6 +130,34 @@ class TrainingGuideDMTutorial(Widget):
     super()._update_state()
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
+
+    if self._state == DMState.STARTING:
+      self._title_header.set_text("starting...")
+      if rl.get_time() - self._state_time > 3.0:
+        self._state = DMState.FACE_DETECTED
+        self._state_time = rl.get_time()
+    elif self._state == DMState.FACE_DETECTED:
+      self._title_header.set_text("face detected")
+      if rl.get_time() - self._state_time > 3.0:
+        self._state = DMState.LOOK_RIGHT
+        self._state_time = rl.get_time()
+    elif self._state == DMState.LOOK_RIGHT:
+      self._title_header.set_text("look right")
+      ds = ui_state.sm["driverMonitoringState"]
+      if ds.faceOrientationDeg[1] > 15.0:
+        self._state = DMState.LOOK_LEFT
+        self._state_time = rl.get_time()
+    elif self._state == DMState.LOOK_LEFT:
+      self._title_header.set_text("look left")
+      ds = ui_state.sm["driverMonitoringState"]
+      if ds.faceOrientationDeg[1] < -15.0:
+        # Done!
+        self._title_header.set_text("setup complete")
+        self._dialog.driver_state_renderer.set_confirmed()
+        # Keep the state for a bit before finishing
+        if rl.get_time() - self._state_time > 2.0:
+          self._dialog.driver_state_renderer.set_confirmed()
+
 
   def _render(self, _):
     self._dialog.render(self._rect)
