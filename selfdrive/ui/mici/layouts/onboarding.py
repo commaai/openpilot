@@ -203,6 +203,7 @@ class TrainingGuideDMTutorial(Widget):
           self._not_looking_start_time = rl.get_time()
           self._show_ok_screen = False
         else:
+          # completed
           if not self._finish_called:
             self._finish_called = True
             self._finish_callback()
@@ -219,6 +220,7 @@ class TrainingGuideDMTutorial(Widget):
       if rl.get_time() - self._not_looking_start_time > self.LOOK_DURATION:
         self._state = DmState.FACE_DETECTED
         self._state_time = rl.get_time()
+        self._not_looking_start_time = rl.get_time()
         self._title.set_text("face detected")
 
     elif self._state == DmState.FACE_DETECTED:
@@ -226,7 +228,7 @@ class TrainingGuideDMTutorial(Widget):
         self._state = DmState.LOOK_RIGHT
         self._state_time = rl.get_time()
         self._not_looking_start_time = rl.get_time()
-        self._title.set_text("look right")
+        self._title.set_text("now, look right")
 
     elif self._state == DmState.LOOK_RIGHT:
       yaw_ok = yaw < math.radians(-self.LOOK_YAW_THRESHOLD)
