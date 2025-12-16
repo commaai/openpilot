@@ -89,14 +89,6 @@ class TrainingGuidePreDMTutorial(SetupTermsPage):
     ))
 
 
-class DmState(IntEnum):
-  STARTING = 0
-  FACE_DETECTED = 1
-  LOOK_RIGHT = 2
-  LOOK_LEFT = 3
-  COMPLETE = 4
-
-
 class DmOkScreen(Widget):
   def __init__(self):
     super().__init__()
@@ -126,6 +118,13 @@ class DmOkScreen(Widget):
       self._rect.width,
       title_height,
     ))
+
+
+class DmState(IntEnum):
+  STARTING = 0
+  FACE_DETECTED = 1
+  LOOK_RIGHT = 2
+  LOOK_LEFT = 3
 
 
 class TrainingGuideDMTutorial(Widget):
@@ -198,7 +197,7 @@ class TrainingGuideDMTutorial(Widget):
 
     if self._show_ok_screen:
       if rl.get_time() - self._state_time > self.STATE_DURATION:
-        if self._state < DmState.COMPLETE:
+        if self._state < DmState.LOOK_LEFT:
           self._state += 1
           self._state_time = rl.get_time()
           self._not_looking_start_time = rl.get_time()
@@ -244,10 +243,6 @@ class TrainingGuideDMTutorial(Widget):
         self._show_ok_screen = True
         self._state_time = rl.get_time()
         self._dm_ok_screen.set_title("completed")
-
-    elif self._state == DmState.COMPLETE:
-      self._show_ok_screen = True
-      self._state_time = rl.get_time()
 
   def _render(self, _):
     if self._show_ok_screen:
