@@ -129,10 +129,10 @@ class DmOkScreen(Widget):
 
 
 class TrainingGuideDMTutorial(Widget):
-  LOOK_YAW_THRESHOLD = 15  # 40
-  LOOK_PITCH_THRESHOLD = 15
+  LOOK_YAW_THRESHOLD = 40
+  LOOK_PITCH_THRESHOLD = 30
   STATE_DURATION = 2.0
-  LOOK_DURATION = 1.0
+  LOOK_DURATION = 2.0
 
   def __init__(self, continue_callback):
     super().__init__()
@@ -200,8 +200,13 @@ class TrainingGuideDMTutorial(Widget):
       if rl.get_time() - self._state_time > self.STATE_DURATION:
         if self._state < DmState.COMPLETE:
           self._state += 1
-        self._state_time = rl.get_time()
-        self._show_ok_screen = False
+          self._state_time = rl.get_time()
+          self._not_looking_start_time = rl.get_time()
+          self._show_ok_screen = False
+        else:
+          if not self._finish_called:
+            self._finish_called = True
+            self._finish_callback()
       return
 
     pitch, yaw = self._get_driver_orientation()
@@ -217,6 +222,7 @@ class TrainingGuideDMTutorial(Widget):
       if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DmState.LOOK_RIGHT
         self._state_time = rl.get_time()
+        self._not_looking_start_time = rl.get_time()
         self._title.set_text("look right")
 
     elif self._state == DmState.LOOK_RIGHT:
@@ -240,12 +246,8 @@ class TrainingGuideDMTutorial(Widget):
         self._dm_ok_screen.set_title("completed")
 
     elif self._state == DmState.COMPLETE:
-      if not self._show_ok_screen:
-        self._show_ok_screen = True
-        self._state_time = rl.get_time()
-      elif not self._finish_called and (rl.get_time() - self._state_time > self.STATE_DURATION):
-        self._finish_called = True
-        self._finish_callback()
+      self._show_ok_screen = True
+      self._state_time = rl.get_time()
 
   def _render(self, _):
     if self._show_ok_screen:
