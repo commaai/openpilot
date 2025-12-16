@@ -89,12 +89,32 @@ class TrainingGuidePreDMTutorial(SetupTermsPage):
     ))
 
 
-class DMState(IntEnum):
+class DmState(IntEnum):
   STARTING = 0
   FACE_DETECTED = 1
   LOOK_RIGHT = 2
   LOOK_LEFT = 3
   COMPLETE = 4
+
+
+class DmOkScreen(Widget):
+  def __init__(self):
+    super().__init__()
+    self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+
+    self._title_header = TermsHeader("OK", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
+
+  def _render(self):
+    # full screen linear gradient rgba(0, 255, 64, 1) to rgba(0, 166, 8, 1) from 1/3 height to height - 1/3 height
+    rl.draw_rectangle_gradient_v(0, int(self._rect.height / 3), int(self._rect.width), int(self._rect.height * 2 / 3),
+                                 rl.Color(0, 255, 64, 255), rl.Color(0, 166, 8, 255))
+
+    self._title_header.render(rl.Rectangle(
+      self._rect.x + 16,
+      self._rect.y + self._rect.height - self._title_header.rect.height - 16,
+      self._title_header.rect.width,
+      self._title_header.rect.height,
+    ))
 
 
 class TrainingGuideDMTutorial(Widget):
@@ -105,9 +125,11 @@ class TrainingGuideDMTutorial(Widget):
   def __init__(self, continue_callback):
     super().__init__()
     self._title_header = TermsHeader("starting...", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
-    self._state: DMState = DMState.STARTING
+    self._state: DmState = DmState.STARTING
     self._state_time = 0.0
     self._look_start_time = 0.0
+
+    self._dm_ok_screen = DmOkScreen()
 
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
@@ -129,7 +151,7 @@ class TrainingGuideDMTutorial(Widget):
     super().show_event()
     self._dialog.show_event()
 
-    self._state = DMState.STARTING
+    self._state = DmState.STARTING
     self._state_time = rl.get_time()
 
     device.set_offroad_brightness(100)
@@ -154,42 +176,42 @@ class TrainingGuideDMTutorial(Widget):
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
-    if self._state == DMState.STARTING:
+    if self._state == DmState.STARTING:
       self._title_header.set_title("starting...")
       if rl.get_time() - self._state_time > self.STATE_DURATION:
-        self._state = DMState.FACE_DETECTED
+        self._state = DmState.FACE_DETECTED
         self._state_time = rl.get_time()
-    elif self._state == DMState.FACE_DETECTED:
+    elif self._state == DmState.FACE_DETECTED:
       self._title_header.set_title("face detected")
       if rl.get_time() - self._state_time > self.STATE_DURATION:
-        self._state = DMState.LOOK_RIGHT
+        self._state = DmState.LOOK_RIGHT
         self._state_time = rl.get_time()
         self._look_start_time = 0.0
-    elif self._state == DMState.LOOK_RIGHT:
+    elif self._state == DmState.LOOK_RIGHT:
       self._title_header.set_title("look right")
       yaw = self._get_driver_yaw()
       if yaw > math.radians(self.LOOK_YAW_THRESHOLD):
         if self._look_start_time == 0.0:
           self._look_start_time = rl.get_time()
         elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
-          self._state = DMState.LOOK_LEFT
+          self._state = DmState.LOOK_LEFT
           self._state_time = rl.get_time()
           self._look_start_time = 0.0
       else:
         self._look_start_time = 0.0
-    elif self._state == DMState.LOOK_LEFT:
+    elif self._state == DmState.LOOK_LEFT:
       self._title_header.set_title("look left")
       yaw = self._get_driver_yaw()
       if yaw < math.radians(-self.LOOK_YAW_THRESHOLD):
         if self._look_start_time == 0.0:
           self._look_start_time = rl.get_time()
         elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
-          self._state = DMState.COMPLETE
+          self._state = DmState.COMPLETE
           self._state_time = rl.get_time()
       else:
         self._look_start_time = 0.0
-    elif self._state == DMState.COMPLETE:
-      self._title_header.set_title("setup complete")
+    elif self._state == DmState.COMPLETE:
+      self._title_header.set_title("completed")
       if not self._finish_called and (rl.get_time() - self._state_time > self.STATE_DURATION):
         self._finish_called = True
         self._finish_callback()
