@@ -212,7 +212,11 @@ class TrainingGuideDMTutorial(Widget):
     pitch_ok = abs(pitch) < math.radians(self.LOOK_PITCH_THRESHOLD)
 
     if self._state == DmState.STARTING:
-      if rl.get_time() - self._state_time > self.STATE_DURATION:
+      face_ok = ui_state.sm["driverMonitoringState"].faceDetected
+      if not face_ok:
+        self._not_looking_start_time = rl.get_time()
+
+      if rl.get_time() - self._not_looking_start_time > self.LOOK_DURATION:
         self._state = DmState.FACE_DETECTED
         self._state_time = rl.get_time()
         self._title.set_text("face detected")
