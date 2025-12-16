@@ -141,7 +141,7 @@ class TrainingGuideDMTutorial(Widget):
                                line_height=0.8)
     self._state: DmState = DmState.STARTING
     self._state_time = 0.0
-    self._look_start_time = 0.0
+    self._not_looking_start_time = 0.0
     self._show_ok_screen = False
 
     self._dm_ok_screen = DmOkScreen()
@@ -170,6 +170,7 @@ class TrainingGuideDMTutorial(Widget):
     self._title.set_text("starting...")
     self._state_time = rl.get_time()
     self._show_ok_screen = False
+    self._dm_ok_screen.set_title("OK")
 
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
@@ -193,6 +194,16 @@ class TrainingGuideDMTutorial(Widget):
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
+    if self._show_ok_screen:
+      if rl.get_time() - self._state_time > self.STATE_DURATION:
+        self._state += 1
+        self._state_time = rl.get_time()
+        self._show_ok_screen = False
+      return
+
+    pitch, yaw = self._get_driver_orientation()
+    pitch_ok = abs(pitch) < math.radians(self.LOOK_PITCH_THRESHOLD)
+
     if self._state == DmState.STARTING:
       if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DmState.FACE_DETECTED
@@ -203,51 +214,27 @@ class TrainingGuideDMTutorial(Widget):
       if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DmState.LOOK_RIGHT
         self._state_time = rl.get_time()
-        self._look_start_time = 0.0
         self._title.set_text("look right")
 
     elif self._state == DmState.LOOK_RIGHT:
-      if self._show_ok_screen:
-        if rl.get_time() - self._state_time > self.STATE_DURATION:
-          self._state = DmState.LOOK_LEFT
-          self._state_time = rl.get_time()
-          self._look_start_time = 0.0
-          self._show_ok_screen = False
-      else:
-        pitch, yaw = self._get_driver_orientation()
-        pitch_ok = abs(pitch) < math.radians(self.LOOK_PITCH_THRESHOLD)
-        yaw_ok = yaw > math.radians(self.LOOK_YAW_THRESHOLD)
-        if pitch_ok and yaw_ok:
-          if self._look_start_time == 0.0:
-            self._look_start_time = rl.get_time()
-          elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
-            self._dm_ok_screen.set_title("OK")
-            self._show_ok_screen = True
-            self._state_time = rl.get_time()
-            self._title.set_text("look left")
-        else:
-          self._look_start_time = 0.0
+      yaw_ok = yaw > math.radians(self.LOOK_YAW_THRESHOLD)
+      if not pitch_ok and not yaw_ok:
+        self._not_looking_start_time = rl.get_time()
+
+      if rl.get_time() - self._not_looking_start_time > self.LOOK_DURATION:
+        self._show_ok_screen = True
+        self._state_time = rl.get_time()
+        self._title.set_text("look left")
 
     elif self._state == DmState.LOOK_LEFT:
-      if self._show_ok_screen:
-        if rl.get_time() - self._state_time > self.STATE_DURATION:
-          self._state = DmState.COMPLETE
-          self._state_time = rl.get_time()
-          self._show_ok_screen = False
-      else:
-        pitch, yaw = self._get_driver_orientation()
-        pitch_ok = abs(pitch) < math.radians(self.LOOK_PITCH_THRESHOLD)
-        yaw_ok = yaw < math.radians(-self.LOOK_YAW_THRESHOLD)
-        if pitch_ok and yaw_ok:
-          if self._look_start_time == 0.0:
-            self._look_start_time = rl.get_time()
-          elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
-            self._dm_ok_screen.set_title("OK")
-            self._show_ok_screen = True
-            self._state_time = rl.get_time()
-            self._dm_ok_screen.set_title("completed")
-        else:
-          self._look_start_time = 0.0
+      yaw_ok = yaw < math.radians(-self.LOOK_YAW_THRESHOLD)
+      if not pitch_ok and not yaw_ok:
+        self._not_looking_start_time = rl.get_time()
+
+      if rl.get_time() - self._not_looking_start_time > self.LOOK_DURATION:
+        self._show_ok_screen = True
+        self._state_time = rl.get_time()
+        self._dm_ok_screen.set_title("completed")
 
     elif self._state == DmState.COMPLETE:
       if not self._show_ok_screen:
