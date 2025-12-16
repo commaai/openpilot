@@ -238,7 +238,7 @@ void loggerd_thread() {
     if (it.should_log || (encoder && !livestream_encoder) || record_audio) {
       LOGD("logging %s", it.name.c_str());
 
-      SubSocket * sock = SubSocket::create(ctx.get(), it.name);
+      SubSocket * sock = SubSocket::create(ctx.get(), it.name, "127.0.0.1", false, true, it.queue_size);
       assert(sock != NULL);
       poller->registerSocket(sock);
       service_state[sock] = {
