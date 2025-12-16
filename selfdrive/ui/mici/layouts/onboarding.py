@@ -168,6 +168,7 @@ class TrainingGuideDMTutorial(Widget):
     self._state = DmState.STARTING
     self._title.set_text("starting...")
     self._state_time = rl.get_time()
+    self._not_looking_start_time = rl.get_time()
     self._show_ok_screen = False
     self._dm_ok_screen.set_title("OK")
 
