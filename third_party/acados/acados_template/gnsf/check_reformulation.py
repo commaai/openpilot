@@ -28,7 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.;
 #
 
-from acados_template.utils import casadi_length
+from ..utils import casadi_length
 from casadi import *
 import numpy as np
 

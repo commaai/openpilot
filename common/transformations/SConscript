@@ -1,5 +1,10 @@
 Import('env', 'envCython')
 
+import numpy as np
+
 transformations = env.Library('transformations', ['orientation.cc', 'coordinates.cc'])
-transformations_python = envCython.Program('transformations.so', 'transformations.pyx')
+
+envCython.Append(CPPPATH=[np.get_include()])
+transformations_python = envCython.Program('transformations.so', ['transformations_module.cc'],
+                                           LIBS=[transformations])
 Export('transformations', 'transformations_python')

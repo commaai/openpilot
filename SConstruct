@@ -86,10 +86,10 @@ env = Environment(
     f"#third_party/acados/{arch}/lib",
   ],
   RPATH=[],
-  CYTHONCFILESUFFIX=".cpp",
+
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#",
-  tools=["default", "cython", "compilation_db", "rednose_filter"],
+  tools=["default", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
 
@@ -149,7 +149,7 @@ def progress_function(node):
 if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
-# ********** Cython build environment **********
+# ********** Python build environment **********
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
