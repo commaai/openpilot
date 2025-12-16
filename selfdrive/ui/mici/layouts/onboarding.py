@@ -99,12 +99,15 @@ class DMState(IntEnum):
 
 class TrainingGuideDMTutorial(Widget):
   LOOK_YAW_THRESHOLD = 30
+  STATE_DURATION = 2.0
+  LOOK_DURATION = 1.0
 
   def __init__(self, continue_callback):
     super().__init__()
     self._title_header = TermsHeader("starting...", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
     self._state: DMState = DMState.STARTING
     self._state_time = 0.0
+    self._look_start_time = 0.0
 
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
@@ -153,30 +156,41 @@ class TrainingGuideDMTutorial(Widget):
 
     if self._state == DMState.STARTING:
       self._title_header.set_title("starting...")
-      if rl.get_time() - self._state_time > 3.0:
+      if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DMState.FACE_DETECTED
         self._state_time = rl.get_time()
     elif self._state == DMState.FACE_DETECTED:
       self._title_header.set_title("face detected")
-      if rl.get_time() - self._state_time > 3.0:
+      if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DMState.LOOK_RIGHT
         self._state_time = rl.get_time()
+        self._look_start_time = 0.0
     elif self._state == DMState.LOOK_RIGHT:
       self._title_header.set_title("look right")
       yaw = self._get_driver_yaw()
       if yaw > math.radians(self.LOOK_YAW_THRESHOLD):
-        self._state = DMState.LOOK_LEFT
-        self._state_time = rl.get_time()
+        if self._look_start_time == 0.0:
+          self._look_start_time = rl.get_time()
+        elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
+          self._state = DMState.LOOK_LEFT
+          self._state_time = rl.get_time()
+          self._look_start_time = 0.0
+      else:
+        self._look_start_time = 0.0
     elif self._state == DMState.LOOK_LEFT:
       self._title_header.set_title("look left")
       yaw = self._get_driver_yaw()
       if yaw < math.radians(-self.LOOK_YAW_THRESHOLD):
-        self._state = DMState.COMPLETE
-        self._state_time = rl.get_time()
+        if self._look_start_time == 0.0:
+          self._look_start_time = rl.get_time()
+        elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
+          self._state = DMState.COMPLETE
+          self._state_time = rl.get_time()
+      else:
+        self._look_start_time = 0.0
     elif self._state == DMState.COMPLETE:
       self._title_header.set_title("setup complete")
-      # Keep the state for a bit before finishing
-      if not self._finish_called and (rl.get_time() - self._state_time > 2.0):
+      if not self._finish_called and (rl.get_time() - self._state_time > self.STATE_DURATION):
         self._finish_called = True
         self._finish_callback()
 
