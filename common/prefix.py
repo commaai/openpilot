@@ -11,7 +11,7 @@ from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 class OpenpilotPrefix:
   def __init__(self, prefix: str = None, create_dirs_on_enter: bool = True, clean_dirs_on_exit: bool = True, shared_download_cache: bool = False):
     self.prefix = prefix if prefix else str(uuid.uuid4().hex[0:15])
-    self.msgq_path = os.path.join(Paths.shm_path(), self.prefix)
+    self.msgq_path = os.path.join(Paths.shm_path(), "msgq_" + self.prefix)
     self.create_dirs_on_enter = create_dirs_on_enter
     self.clean_dirs_on_exit = clean_dirs_on_exit
     self.shared_download_cache = shared_download_cache
