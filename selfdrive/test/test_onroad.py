@@ -121,6 +121,7 @@ class TestOnroad:
     params.put_bool("RecordFront", True)
     set_params_enabled()
     os.environ['REPLAY'] = '1'
+    os.environ['MSGQ_PREALLOC'] = '1'
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
