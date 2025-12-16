@@ -100,31 +100,41 @@ class DmState(IntEnum):
 class DmOkScreen(Widget):
   def __init__(self):
     super().__init__()
-    self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    self._title = UnifiedLabel("OK", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                               font_weight=FontWeight.BOLD, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+                               line_height=0.8)
 
-    self._title_header = TermsHeader("OK", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
+    self._check_texture = gui_app.texture("icons_mici/setup/dm_check.png", 200, 200)
 
-  def _render(self):
-    # full screen linear gradient rgba(0, 255, 64, 1) to rgba(0, 166, 8, 1) from 1/3 height to height - 1/3 height
-    rl.draw_rectangle_gradient_v(0, int(self._rect.height / 3), int(self._rect.width), int(self._rect.height * 2 / 3),
+  def _render(self, _):
+    # TODO: rounded corners
+    rl.draw_rectangle_gradient_v(0, int(self._rect.height / 4), int(self._rect.width), int(self._rect.height / 2),
                                  rl.Color(0, 255, 64, 255), rl.Color(0, 166, 8, 255))
+    rl.draw_rectangle(0, 0, int(self._rect.width), int(self._rect.height / 4), rl.Color(0, 255, 64, 255))
+    rl.draw_rectangle(0, int(self._rect.height * 3 / 4), int(self._rect.width), int(self._rect.height / 4), rl.Color(0, 166, 8, 255))
 
-    self._title_header.render(rl.Rectangle(
+    rl.draw_texture(self._check_texture, int(self._rect.x + self._rect.width - self._check_texture.width - 20),
+                    int(self._rect.y + 20), rl.Color(255, 255, 255, int(255 * 0.9)))
+
+    title_height = self._title.get_content_height(int(self._rect.width))
+    self._title.render(rl.Rectangle(
       self._rect.x + 16,
-      self._rect.y + self._rect.height - self._title_header.rect.height - 16,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
+      self._rect.y + self._rect.height - title_height - 16,
+      self._rect.width,
+      title_height,
     ))
 
 
 class TrainingGuideDMTutorial(Widget):
-  LOOK_YAW_THRESHOLD = 30
+  LOOK_YAW_THRESHOLD = 15  # 40
   STATE_DURATION = 2.0
   LOOK_DURATION = 1.0
 
   def __init__(self, continue_callback):
     super().__init__()
-    self._title_header = TermsHeader("starting...", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
+    self._title = UnifiedLabel("starting...", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                               font_weight=FontWeight.BOLD, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+                               line_height=0.8)
     self._state: DmState = DmState.STARTING
     self._state_time = 0.0
     self._look_start_time = 0.0
@@ -177,18 +187,18 @@ class TrainingGuideDMTutorial(Widget):
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
     if self._state == DmState.STARTING:
-      self._title_header.set_title("starting...")
+      self._title.set_text("starting...")
       if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DmState.FACE_DETECTED
         self._state_time = rl.get_time()
     elif self._state == DmState.FACE_DETECTED:
-      self._title_header.set_title("face detected")
+      self._title.set_text("face detected")
       if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DmState.LOOK_RIGHT
         self._state_time = rl.get_time()
         self._look_start_time = 0.0
     elif self._state == DmState.LOOK_RIGHT:
-      self._title_header.set_title("look right")
+      self._title.set_text("look right")
       yaw = self._get_driver_yaw()
       if yaw > math.radians(self.LOOK_YAW_THRESHOLD):
         if self._look_start_time == 0.0:
@@ -200,7 +210,7 @@ class TrainingGuideDMTutorial(Widget):
       else:
         self._look_start_time = 0.0
     elif self._state == DmState.LOOK_LEFT:
-      self._title_header.set_title("look left")
+      self._title.set_text("look left")
       yaw = self._get_driver_yaw()
       if yaw < math.radians(-self.LOOK_YAW_THRESHOLD):
         if self._look_start_time == 0.0:
@@ -211,22 +221,25 @@ class TrainingGuideDMTutorial(Widget):
       else:
         self._look_start_time = 0.0
     elif self._state == DmState.COMPLETE:
-      self._title_header.set_title("completed")
+      self._title.set_text("completed")
       if not self._finish_called and (rl.get_time() - self._state_time > self.STATE_DURATION):
         self._finish_called = True
         self._finish_callback()
 
   def _render(self, _):
+    # self._dm_ok_screen.render(self._rect)
+    # return
     self._dialog.render(self._rect)
 
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - self._title_header.rect.height * 1.5 - 32),
-                                 int(self._rect.width), int(self._title_header.rect.height * 1.5 + 32),
+    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - self._title.rect.height * 1.5 - 32),
+                                 int(self._rect.width), int(self._title.rect.height * 1.5 + 32),
                                  rl.BLANK, rl.Color(0, 0, 0, 150))
-    self._title_header.render(rl.Rectangle(
+    title_height = self._title.get_content_height(int(self._rect.width))
+    self._title.render(rl.Rectangle(
       self._rect.x + 16,
-      self._rect.y + self._rect.height - self._title_header.rect.height - 16,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
+      self._rect.y + self._rect.height - title_height - 16,
+      self._rect.width,
+      title_height,
     ))
 
 
