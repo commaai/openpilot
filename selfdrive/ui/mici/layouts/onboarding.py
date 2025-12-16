@@ -129,8 +129,8 @@ class DmOkScreen(Widget):
 
 
 class TrainingGuideDMTutorial(Widget):
-  LOOK_YAW_THRESHOLD = 40
-  LOOK_PITCH_THRESHOLD = 30
+  LOOK_YAW_THRESHOLD = 25
+  LOOK_PITCH_THRESHOLD = 25
   STATE_DURATION = 2.0
   LOOK_DURATION = 2.0
 
