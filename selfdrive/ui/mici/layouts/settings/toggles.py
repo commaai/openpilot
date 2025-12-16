@@ -78,13 +78,13 @@ class TogglesLayoutMici(NavWidget):
     # CP gating for experimental mode
     if ui_state.CP is not None:
       if ui_state.has_longitudinal_control:
-        self._experimental_btn.set_enabled(True)
-        self._personality_toggle.set_enabled(True)
+        self._experimental_btn.set_visible(True)
+        self._personality_toggle.set_visible(True)
       else:
         # no long for now
-        self._experimental_btn.set_enabled(False)
+        self._experimental_btn.set_visible(False)
         self._experimental_btn.set_checked(False)
-        self._personality_toggle.set_enabled(False)
+        self._personality_toggle.set_visible(False)
         ui_state.params.remove("ExperimentalMode")
 
     # Refresh toggles from params to mirror external changes
