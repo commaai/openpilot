@@ -284,7 +284,8 @@ class TestOnroad:
     print("------------------------------------------------")
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
-    print("Memory usage: ", mems)
+    print("Overall memory usage: ", mems)
+    print("MSGQ (/dev/shm/) usage: ", subprocess.check_output(["du", "-hs", "/dev/shm"]).split()[0].decode())
 
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
