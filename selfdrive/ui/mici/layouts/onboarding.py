@@ -128,8 +128,8 @@ class DmState(IntEnum):
 
 
 class TrainingGuideDMTutorial(Widget):
-  LOOK_YAW_THRESHOLD = 15
-  LOOK_PITCH_THRESHOLD = 30
+  LOOK_YAW_THRESHOLD = 30
+  LOOK_PITCH_THRESHOLD = 15
   STATE_DURATION = 2.0
   LOOK_DURATION = 1.0
 
