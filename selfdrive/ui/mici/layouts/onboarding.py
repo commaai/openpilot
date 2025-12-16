@@ -102,11 +102,11 @@ class DmOkScreen(Widget):
     self._title.set_text(text)
 
   def _render(self, _):
-    # TODO: rounded corners
     rl.draw_rectangle_gradient_v(0, int(self._rect.height / 4), int(self._rect.width), int(self._rect.height / 2),
                                  rl.Color(0, 255, 64, 255), rl.Color(0, 166, 8, 255))
     rl.draw_rectangle(0, 0, int(self._rect.width), int(self._rect.height / 4), rl.Color(0, 255, 64, 255))
     rl.draw_rectangle(0, int(self._rect.height * 3 / 4), int(self._rect.width), int(self._rect.height / 4), rl.Color(0, 166, 8, 255))
+    rl.draw_rectangle_rounded_lines_ex(self._rect, 0.2 * 1.02, 10, 50, rl.BLACK)
 
     rl.draw_texture(self._check_texture, int(self._rect.x + self._rect.width - self._check_texture.width - 20),
                     int(self._rect.y + 20), rl.Color(255, 255, 255, int(255 * 0.9)))
