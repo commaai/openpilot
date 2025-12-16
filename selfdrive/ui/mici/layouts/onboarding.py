@@ -186,7 +186,7 @@ class TrainingGuideDMTutorial(Widget):
       return 0.0, 0.0
 
     pitch, yaw, _ = orient
-    print(yaw, math.radians(self.LOOK_YAW_THRESHOLD))
+    print(pitch, yaw, math.radians(self.LOOK_YAW_THRESHOLD))
     return pitch, yaw
 
   def _update_state(self):
@@ -194,9 +194,12 @@ class TrainingGuideDMTutorial(Widget):
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
+    print('_show_ok_screen', self._show_ok_screen)
+
     if self._show_ok_screen:
       if rl.get_time() - self._state_time > self.STATE_DURATION:
-        self._state += 1
+        if self._state < DmState.COMPLETE:
+          self._state += 1
         self._state_time = rl.get_time()
         self._show_ok_screen = False
       return
@@ -218,7 +221,7 @@ class TrainingGuideDMTutorial(Widget):
 
     elif self._state == DmState.LOOK_RIGHT:
       yaw_ok = yaw > math.radians(self.LOOK_YAW_THRESHOLD)
-      if not pitch_ok and not yaw_ok:
+      if not pitch_ok or not yaw_ok:
         self._not_looking_start_time = rl.get_time()
 
       if rl.get_time() - self._not_looking_start_time > self.LOOK_DURATION:
@@ -228,7 +231,7 @@ class TrainingGuideDMTutorial(Widget):
 
     elif self._state == DmState.LOOK_LEFT:
       yaw_ok = yaw < math.radians(-self.LOOK_YAW_THRESHOLD)
-      if not pitch_ok and not yaw_ok:
+      if not pitch_ok or not yaw_ok:
         self._not_looking_start_time = rl.get_time()
 
       if rl.get_time() - self._not_looking_start_time > self.LOOK_DURATION:
