@@ -4,7 +4,6 @@ set -u
 pkill -f watch3
 pkill -f compressed_vipc
 
-touch /tmp/new_cam
 BIG=1 /home/batman/openpilot/selfdrive/ui/watch3.py &
 
 on_device() {
@@ -29,7 +28,6 @@ on_device() {
   adb -s "$serial" push camera.sh /data
   adb -s "$serial" shell 'su - comma -c "source /etc/profile && sudo chown comma: /data/camera.sh && chmod +x /data/camera.sh"'
   adb -s "$serial" shell 'su - comma -c "source /etc/profile && /data/camera.sh"'
-  touch /tmp/new_cam
   pkill -f "focusing_$n"
 }
 
