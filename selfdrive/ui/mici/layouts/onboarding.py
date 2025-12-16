@@ -1,6 +1,7 @@
 from enum import IntEnum
 from collections.abc import Callable
 
+import math
 import weakref
 import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight, gui_app
@@ -93,9 +94,12 @@ class DMState(IntEnum):
   FACE_DETECTED = 1
   LOOK_RIGHT = 2
   LOOK_LEFT = 3
+  COMPLETE = 4
 
 
 class TrainingGuideDMTutorial(Widget):
+  LOOK_YAW_THRESHOLD = 30
+
   def __init__(self, continue_callback):
     super().__init__()
     self._title_header = TermsHeader("starting...", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
@@ -108,6 +112,8 @@ class TrainingGuideDMTutorial(Widget):
       device.reset_interactive_timeout()
       continue_callback()
 
+    self._finish_callback = wrapped_continue_callback
+    self._finish_called = False
     self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
 
     # Disable driver monitoring model when device times out for inactivity
@@ -126,38 +132,53 @@ class TrainingGuideDMTutorial(Widget):
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
 
+  def _get_driver_yaw(self) -> float:
+    dm_state = ui_state.sm["driverMonitoringState"]
+    if not dm_state.faceDetected:
+      return 0.0
+
+    driver_data = self._dialog.driver_state_renderer.get_driver_data()
+    orient = driver_data.faceOrientation
+    if len(orient) != 3:
+      return 0.0
+
+    _, yaw, _ = orient
+    print(yaw, math.radians(self.LOOK_YAW_THRESHOLD))
+    return float(yaw)
+
   def _update_state(self):
     super()._update_state()
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
     if self._state == DMState.STARTING:
-      self._title_header.set_text("starting...")
+      self._title_header.set_title("starting...")
       if rl.get_time() - self._state_time > 3.0:
         self._state = DMState.FACE_DETECTED
         self._state_time = rl.get_time()
     elif self._state == DMState.FACE_DETECTED:
-      self._title_header.set_text("face detected")
+      self._title_header.set_title("face detected")
       if rl.get_time() - self._state_time > 3.0:
         self._state = DMState.LOOK_RIGHT
         self._state_time = rl.get_time()
     elif self._state == DMState.LOOK_RIGHT:
-      self._title_header.set_text("look right")
-      ds = ui_state.sm["driverMonitoringState"]
-      if ds.faceOrientationDeg[1] > 15.0:
+      self._title_header.set_title("look right")
+      yaw = self._get_driver_yaw()
+      if yaw > math.radians(self.LOOK_YAW_THRESHOLD):
         self._state = DMState.LOOK_LEFT
         self._state_time = rl.get_time()
     elif self._state == DMState.LOOK_LEFT:
-      self._title_header.set_text("look left")
-      ds = ui_state.sm["driverMonitoringState"]
-      if ds.faceOrientationDeg[1] < -15.0:
-        # Done!
-        self._title_header.set_text("setup complete")
-        self._dialog.driver_state_renderer.set_confirmed()
-        # Keep the state for a bit before finishing
-        if rl.get_time() - self._state_time > 2.0:
-          self._dialog.driver_state_renderer.set_confirmed()
-
+      self._title_header.set_title("look left")
+      yaw = self._get_driver_yaw()
+      if yaw < math.radians(-self.LOOK_YAW_THRESHOLD):
+        self._state = DMState.COMPLETE
+        self._state_time = rl.get_time()
+    elif self._state == DMState.COMPLETE:
+      self._title_header.set_title("setup complete")
+      # Keep the state for a bit before finishing
+      if not self._finish_called and (rl.get_time() - self._state_time > 2.0):
+        self._finish_called = True
+        self._finish_callback()
 
   def _render(self, _):
     self._dialog.render(self._rect)

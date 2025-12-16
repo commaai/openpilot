@@ -73,6 +73,12 @@ class DriverStateRenderer(Widget):
     """Force the dmoji to always appear active (green) regardless of actual state"""
     self._force_active = force_active
 
+  def get_driver_data(self, driverstate=None):
+    """Return the active `DriverStateV2.DriverData` (left vs right) for this renderer."""
+    if driverstate is None:
+      driverstate = ui_state.sm["driverStateV2"]
+    return driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
+
   @property
   def effective_active(self) -> bool:
     """Returns True if dmoji should appear active (either actually active or forced)"""
