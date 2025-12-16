@@ -132,7 +132,7 @@ class TrainingGuideDMTutorial(Widget):
   LOOK_YAW_THRESHOLD = 25
   LOOK_PITCH_THRESHOLD = 25
   STATE_DURATION = 2.0
-  LOOK_DURATION = 2.0
+  LOOK_DURATION = 1.0
 
   def __init__(self, continue_callback):
     super().__init__()
@@ -226,7 +226,7 @@ class TrainingGuideDMTutorial(Widget):
         self._title.set_text("look right")
 
     elif self._state == DmState.LOOK_RIGHT:
-      yaw_ok = yaw > math.radians(self.LOOK_YAW_THRESHOLD)
+      yaw_ok = yaw < math.radians(-self.LOOK_YAW_THRESHOLD)
       if not pitch_ok or not yaw_ok:
         self._not_looking_start_time = rl.get_time()
 
@@ -236,7 +236,7 @@ class TrainingGuideDMTutorial(Widget):
         self._title.set_text("look left")
 
     elif self._state == DmState.LOOK_LEFT:
-      yaw_ok = yaw < math.radians(-self.LOOK_YAW_THRESHOLD)
+      yaw_ok = yaw > math.radians(self.LOOK_YAW_THRESHOLD)
       if not pitch_ok or not yaw_ok:
         self._not_looking_start_time = rl.get_time()
 
