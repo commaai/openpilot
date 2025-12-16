@@ -13,13 +13,10 @@ _services: dict[str, tuple] = {
   # service: (should_log, frequency, qlog decimation (optional))
   # note: the "EncodeIdx" packets will still be in the log
   "gyroscope": (True, 104., 104),
-  "gyroscope2": (True, 100., 100),
   "accelerometer": (True, 104., 104),
-  "accelerometer2": (True, 100., 100),
   "magnetometer": (True, 25.),
   "lightSensor": (True, 100., 100),
   "temperatureSensor": (True, 2., 200),
-  "temperatureSensor2": (True, 2., 200),
   "gpsNMEA": (True, 9.),
   "deviceState": (True, 2., 1),
   "touch": (True, 20., 1),
