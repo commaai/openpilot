@@ -22,15 +22,10 @@ class DriverStateRenderer(Widget):
   LINES_ANGLE_INCREMENT = 5
   LINES_STALE_ANGLES = 3.0  # seconds
 
-  def __init__(self, lines: bool = False, confirm_mode: bool = False, confirm_callback: Callable | None = None):
+  def __init__(self, lines: bool = False):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, self.BASE_SIZE, self.BASE_SIZE))
-    self._lines = lines or confirm_mode
-
-    # In confirm mode, user must fill out the circle to confirm some action in the UI
-    self._confirm_mode = confirm_mode
-    self._confirm_callback = confirm_callback
-    self._confirm_angles: dict[int, float] = {}  # angle: timestamp
+    self._lines = lines
 
     # In line mode, track smoothed angles
     assert 360 % self.LINES_ANGLE_INCREMENT == 0
@@ -125,39 +120,18 @@ class DriverStateRenderer(Widget):
         )
 
       else:
-        # remove old angles
-        now = rl.get_time()
-        self._confirm_angles = {angle: t for angle, t in self._confirm_angles.items() if now - t < self.LINES_STALE_ANGLES}
-
-        looking_center = self._looking_center_filter.x > 0.2
         for angle, f in self._head_angles.items():
           dst_from_current = ((angle - self._rotation_filter.x) % 360) - 180
           target = 1.0 if abs(dst_from_current) <= self.LINES_ANGLE_INCREMENT * 5 else 0.0
           if not self._face_detected:
             target = 0.0
 
-          if self._confirm_mode:
-            # Extra careful to not add angles when looking near center
-            if target > 0 and not looking_center:
-              self._confirm_angles[angle] = now
-
-            # User is looking at area already confirmed, reduce target to indicate where they are
-            if angle in self._confirm_angles and target == 0:
-              target = 0.65
-
           # Reduce all line lengths when looking center
           if self._looking_center:
             target = np.interp(self._looking_center_filter.x, [0.0, 1.0], [target, 0.45])
 
           f.update(target)
-          self._draw_line(angle, f, self._looking_center and angle not in self._confirm_angles)
-
-        # if all lines placed, reset for next time and call callback
-        if self._confirm_mode:
-          if len(self._confirm_angles) >= 360 // self.LINES_ANGLE_INCREMENT:
-            self._confirm_angles = {}
-            if self._confirm_callback is not None:
-              self._confirm_callback()
+          self._draw_line(angle, f, self._looking_center)
 
   def _draw_line(self, angle: int, f: FirstOrderFilter, grey: bool):
     line_length = self._rect.width / 6
@@ -224,10 +198,7 @@ class DriverStateRenderer(Widget):
     rotation = math.degrees(math.atan2(pitch, yaw))
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
-    if False and PC and self._confirm_mode:
-      self._rotation_filter.x += 2
-    else:
-      self._rotation_filter.update(self._rotation_filter.x + angle_diff)
+    self._rotation_filter.update(self._rotation_filter.x + angle_diff)
 
     if not self.should_draw:
       self._fade_filter.update(0.0)
