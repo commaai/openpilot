@@ -38,7 +38,7 @@ OS04C10::OS04C10() {
   pixel_size_mm = 0.004;
   data_word = false;
 
-  //hdr_offset = 64 * 2 + 8; // stagger
+  // hdr_offset = 64 * 2 + 8; // stagger
   frame_width = 1344;
   frame_height = 760; //760 * 2 + hdr_offset;
   frame_stride = (frame_width * 10 / 8); // no alignment
