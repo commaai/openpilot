@@ -106,6 +106,9 @@ class DmOkScreen(Widget):
 
     self._check_texture = gui_app.texture("icons_mici/setup/dm_check.png", 200, 200)
 
+  def set_title(self, text: str):
+    self._title.set_text(text)
+
   def _render(self, _):
     # TODO: rounded corners
     rl.draw_rectangle_gradient_v(0, int(self._rect.height / 4), int(self._rect.width), int(self._rect.height / 2),
@@ -127,6 +130,7 @@ class DmOkScreen(Widget):
 
 class TrainingGuideDMTutorial(Widget):
   LOOK_YAW_THRESHOLD = 15  # 40
+  LOOK_PITCH_THRESHOLD = 15
   STATE_DURATION = 2.0
   LOOK_DURATION = 1.0
 
@@ -138,6 +142,7 @@ class TrainingGuideDMTutorial(Widget):
     self._state: DmState = DmState.STARTING
     self._state_time = 0.0
     self._look_start_time = 0.0
+    self._show_ok_screen = False
 
     self._dm_ok_screen = DmOkScreen()
 
@@ -162,24 +167,26 @@ class TrainingGuideDMTutorial(Widget):
     self._dialog.show_event()
 
     self._state = DmState.STARTING
+    self._title.set_text("starting...")
     self._state_time = rl.get_time()
+    self._show_ok_screen = False
 
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
 
-  def _get_driver_yaw(self) -> float:
+  def _get_driver_orientation(self) -> tuple[float, float]:
     dm_state = ui_state.sm["driverMonitoringState"]
     if not dm_state.faceDetected:
-      return 0.0
+      return 0.0, 0.0
 
     driver_data = self._dialog.driver_state_renderer.get_driver_data()
     orient = driver_data.faceOrientation
     if len(orient) != 3:
-      return 0.0
+      return 0.0, 0.0
 
-    _, yaw, _ = orient
+    pitch, yaw, _ = orient
     print(yaw, math.radians(self.LOOK_YAW_THRESHOLD))
-    return float(yaw)
+    return pitch, yaw
 
   def _update_state(self):
     super()._update_state()
@@ -187,48 +194,74 @@ class TrainingGuideDMTutorial(Widget):
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
     if self._state == DmState.STARTING:
-      self._title.set_text("starting...")
       if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DmState.FACE_DETECTED
         self._state_time = rl.get_time()
+        self._title.set_text("face detected")
+
     elif self._state == DmState.FACE_DETECTED:
-      self._title.set_text("face detected")
       if rl.get_time() - self._state_time > self.STATE_DURATION:
         self._state = DmState.LOOK_RIGHT
         self._state_time = rl.get_time()
         self._look_start_time = 0.0
+        self._title.set_text("look right")
+
     elif self._state == DmState.LOOK_RIGHT:
-      self._title.set_text("look right")
-      yaw = self._get_driver_yaw()
-      if yaw > math.radians(self.LOOK_YAW_THRESHOLD):
-        if self._look_start_time == 0.0:
-          self._look_start_time = rl.get_time()
-        elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
+      if self._show_ok_screen:
+        if rl.get_time() - self._state_time > self.STATE_DURATION:
           self._state = DmState.LOOK_LEFT
           self._state_time = rl.get_time()
           self._look_start_time = 0.0
+          self._show_ok_screen = False
       else:
-        self._look_start_time = 0.0
+        pitch, yaw = self._get_driver_orientation()
+        pitch_ok = abs(pitch) < math.radians(self.LOOK_PITCH_THRESHOLD)
+        yaw_ok = yaw > math.radians(self.LOOK_YAW_THRESHOLD)
+        if pitch_ok and yaw_ok:
+          if self._look_start_time == 0.0:
+            self._look_start_time = rl.get_time()
+          elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
+            self._dm_ok_screen.set_title("OK")
+            self._show_ok_screen = True
+            self._state_time = rl.get_time()
+            self._title.set_text("look left")
+        else:
+          self._look_start_time = 0.0
+
     elif self._state == DmState.LOOK_LEFT:
-      self._title.set_text("look left")
-      yaw = self._get_driver_yaw()
-      if yaw < math.radians(-self.LOOK_YAW_THRESHOLD):
-        if self._look_start_time == 0.0:
-          self._look_start_time = rl.get_time()
-        elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
+      if self._show_ok_screen:
+        if rl.get_time() - self._state_time > self.STATE_DURATION:
           self._state = DmState.COMPLETE
           self._state_time = rl.get_time()
+          self._show_ok_screen = False
       else:
-        self._look_start_time = 0.0
+        pitch, yaw = self._get_driver_orientation()
+        pitch_ok = abs(pitch) < math.radians(self.LOOK_PITCH_THRESHOLD)
+        yaw_ok = yaw < math.radians(-self.LOOK_YAW_THRESHOLD)
+        if pitch_ok and yaw_ok:
+          if self._look_start_time == 0.0:
+            self._look_start_time = rl.get_time()
+          elif rl.get_time() - self._look_start_time > self.LOOK_DURATION:
+            self._dm_ok_screen.set_title("OK")
+            self._show_ok_screen = True
+            self._state_time = rl.get_time()
+            self._dm_ok_screen.set_title("completed")
+        else:
+          self._look_start_time = 0.0
+
     elif self._state == DmState.COMPLETE:
-      self._title.set_text("completed")
-      if not self._finish_called and (rl.get_time() - self._state_time > self.STATE_DURATION):
+      if not self._show_ok_screen:
+        self._show_ok_screen = True
+        self._state_time = rl.get_time()
+      elif not self._finish_called and (rl.get_time() - self._state_time > self.STATE_DURATION):
         self._finish_called = True
         self._finish_callback()
 
   def _render(self, _):
-    # self._dm_ok_screen.render(self._rect)
-    # return
+    if self._show_ok_screen:
+      self._dm_ok_screen.render(self._rect)
+      return
+
     self._dialog.render(self._rect)
 
     rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - self._title.rect.height * 1.5 - 32),
