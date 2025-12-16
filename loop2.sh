@@ -24,12 +24,39 @@ on_device() {
     adb -s $serial forward tcp:$((p + n)) tcp:$p
   done
 
-  PORT_OFFSET=$n /home/batman/openpilot/tools/camerastream/compressed_vipc.py 127.0.0.1 --server="focusing_$n" &
-
   adb -s "$serial" push camera.sh /data
   adb -s "$serial" shell 'su - comma -c "source /etc/profile && sudo chown comma: /data/camera.sh && chmod +x /data/camera.sh"'
-  adb -s "$serial" shell 'su - comma -c "source /etc/profile && /data/camera.sh"'
-  touch /tmp/new_cam
+
+  camera_kill() {
+    pkill -f "focusing_$n"
+    adb -s "$serial" shell 'pkill -9 -f camerad'
+    adb -s "$serial" shell 'pkill -9 -f encoderd'
+    adb -s "$serial" shell 'pkill -9 -f bridge'
+    adb -s "$serial" shell 'pkill -9 -f camera.sh'
+  }
+
+  camera_start() {
+    camera_kill
+    PORT_OFFSET=$n /home/batman/openpilot/tools/camerastream/compressed_vipc.py 127.0.0.1 --server="focusing_$n" &
+    adb -s "$serial" shell 'su - comma -c "source /etc/profile && /data/camera.sh"' &
+  }
+
+  camera_start
+
+  while :; do
+    if [ -e "/tmp/kill_camera_$n" ]; then
+      rm -f "/tmp/kill_camera_$n"
+      echo "KILLING CAMERA $n"
+      camera_kill
+    fi
+    if [ -e "/tmp/restart_camera_$n" ]; then
+      rm -f "/tmp/restart_camera_$n"
+      echo "STARTING CAMERA $n"
+      camera_start
+    fi
+    sleep 0.2
+  done
+
   pkill -f "focusing_$n"
 }
 
