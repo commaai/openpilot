@@ -54,6 +54,8 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     )
     self.driver_state_renderer.render()
 
+    self._draw_face_detection(rect)
+
     rl.end_scissor_mode()
     return -1
 
