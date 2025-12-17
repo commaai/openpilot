@@ -97,9 +97,8 @@ class TrainingGuidePreDMTutorial(SetupTermsPage):
 class DMBadFaceDetected(SetupTermsPage):
   def __init__(self, continue_callback, back_callback):
     super().__init__(continue_callback, back_callback, continue_text="power off")
-    self._title_header = TermsHeader("ensure clear view of face", gui_app.texture("icons_mici/setup/orange_dm.png", 60, 60))
-    self._dm_label = UnifiedLabel("Make sure the camera has a clear view of your face.\n\n" +
-                                  "Remount if your face is occluded or driver monitoring has difficulty tracking your face.", 42, FontWeight.ROMAN)
+    self._title_header = TermsHeader("make sure comma four can see your face", gui_app.texture("icons_mici/setup/orange_dm.png", 60, 60))
+    self._dm_label = UnifiedLabel("Re-mount if your face is occluded or driver monitoring has difficulty tracking your face.", 42, FontWeight.ROMAN)
 
   @property
   def _content_height(self):

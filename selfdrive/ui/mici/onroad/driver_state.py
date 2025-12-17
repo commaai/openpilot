@@ -88,7 +88,7 @@ class DriverStateRenderer(Widget):
     return bool(self._force_active or self._is_active)
 
   def _render(self, _):
-    if DEBUG or 1:
+    if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
     # rl.draw_texture(self._dm_background,
