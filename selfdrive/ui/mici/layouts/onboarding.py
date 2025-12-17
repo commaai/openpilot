@@ -135,7 +135,7 @@ class TrainingGuideDMTutorial(Widget):
     self._good_button.set_click_callback(continue_callback)
     self._good_button.set_enabled(False)
 
-    self._progress = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._progress = FirstOrderFilter(0.0, 1.0, 1 / gui_app.target_fps)
 
     self._bad_face_page = DMBadFaceDetected(HARDWARE.reboot, self._hide_bad_face_page)
 
