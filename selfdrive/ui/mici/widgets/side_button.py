@@ -22,7 +22,7 @@ class SideButton(Widget):
     btn_img_pressed_path = f"icons_mici/buttons/button_side_{btn_type}_pressed.png"
     self._txt_btn, self._txt_btn_back = gui_app.texture(btn_img_path, 100, 224), gui_app.texture(btn_img_pressed_path, 100, 224)
 
-  def _render(self, _) -> bool:
+  def _render(self, rect) -> bool:
     x = int(self._rect.x + 12)
     y = int(self._rect.y + (self._rect.height - self._txt_btn.height) / 2)
     rl.draw_texture(self._txt_btn if not self.is_pressed else self._txt_btn_back,

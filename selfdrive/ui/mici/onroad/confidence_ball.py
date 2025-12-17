@@ -41,7 +41,7 @@ class ConfidenceBall(Widget):
       self._confidence_filter.update((1 - max(ui_state.sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs or [1])) *
                                                         (1 - max(ui_state.sm['modelV2'].meta.disengagePredictions.steerOverrideProbs or [1])))
 
-  def _render(self, _):
+  def _render(self, rect):
     content_rect = rl.Rectangle(
       self.rect.x + self.rect.width - SIDE_PANEL_WIDTH,
       self.rect.y,

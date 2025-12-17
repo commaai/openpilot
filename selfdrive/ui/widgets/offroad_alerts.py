@@ -65,7 +65,7 @@ class ActionButton(Widget):
   def text(self) -> str:
     return self._text() if callable(self._text) else self._text
 
-  def _render(self, _):
+  def _render(self, rect):
     text_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), self.text, AlertConstants.FONT_SIZE)
     self._rect.width = max(text_size.x + 60 * 2, self._min_width)
     self._rect.height = AlertConstants.BUTTON_HEIGHT

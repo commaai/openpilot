@@ -16,7 +16,7 @@ class LineSeparator(Widget):
     super().set_parent_rect(parent_rect)
     self._rect.width = parent_rect.width
 
-  def _render(self, _):
+  def _render(self, rect):
     rl.draw_line(int(self._rect.x) + LINE_PADDING, int(self._rect.y),
                  int(self._rect.x + self._rect.width) - LINE_PADDING, int(self._rect.y),
                  LINE_COLOR)
@@ -39,7 +39,7 @@ class Scroller(Widget):
     self._items.append(item)
     item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
-  def _render(self, _):
+  def _render(self, rect):
     # TODO: don't draw items that are not in the viewport
     visible_items = [item for item in self._items if item.is_visible]
 

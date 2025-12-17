@@ -78,7 +78,7 @@ class DriverStateRenderer(Widget):
     """Returns True if dmoji should appear active (either actually active or forced)"""
     return bool(self._force_active or self._is_active)
 
-  def _render(self, _):
+  def _render(self, rect):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 

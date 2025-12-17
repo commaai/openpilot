@@ -1,8 +1,8 @@
 from collections import defaultdict
-from collections.abc import Callable
 import capnp
 import functools
 import traceback
+from typing import Protocol
 
 from cereal import messaging, car, log
 from opendbc.car.fingerprints import MIGRATION
@@ -19,11 +19,16 @@ from openpilot.tools.lib.logreader import LogIterable
 
 MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
 MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
-MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
+
+
+class MigrationCallable(Protocol):
+  inputs: list[str]
+  product: str | None
+  def __call__(self, msgs: list[MessageWithIndex]) -> MigrationOps: ...
 
 
 # rules for migration functions
-# 1. must use the decorator @migration(inputs=[...], product="...") and MigrationFunc signature
+# 1. must use the decorator @migration(inputs=[...], product="...") and MigrationCallable signature
 # 2. it only gets the messages that are in the inputs list
 # 3. product is the message type created by the migration function, and the function will be skipped if product type already exists in lr
 # 4. it must return a list of operations to be applied to the logreader (replace, add, delete)
@@ -55,7 +60,7 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
   return migrate(lr, migrations)
 
 
-def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
+def migrate(lr: LogIterable, migration_funcs: list[MigrationCallable]):
   lr = list(lr)
   grouped = defaultdict(list)
   for i, msg in enumerate(lr):

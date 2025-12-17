@@ -173,7 +173,7 @@ class TermsHeader(Widget):
   def set_icon(self, icon_texture: rl.Texture):
     self._icon_texture = icon_texture
 
-  def _render(self, _):
+  def _render(self, rect):
     rl.draw_texture_ex(self._icon_texture, rl.Vector2(self._rect.x, self._rect.y),
                        0.0, 1.0, rl.WHITE)
 
@@ -243,7 +243,7 @@ class TermsPage(Widget):
   def _render_content(self, scroll_offset):
     pass
 
-  def _render(self, _):
+  def _render(self, rect):
     scroll_offset = round(self._scroll_panel.update(self._rect, self._content_height + self._continue_button.rect.height + 16))
 
     if scroll_offset <= self._scrolled_down_offset:
@@ -466,7 +466,7 @@ class NetworkSetupPage(Widget):
     super().hide_event()
     self._wifi_ui.hide_event()
 
-  def _render(self, _):
+  def _render(self, rect):
     if self._state == NetworkSetupState.MAIN:
       self._network_header.render(rl.Rectangle(
         self._rect.x + 16,

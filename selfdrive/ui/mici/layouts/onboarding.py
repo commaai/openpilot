@@ -119,7 +119,7 @@ class TrainingGuideDMTutorial(Widget):
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
-  def _render(self, _):
+  def _render(self, rect):
     self._dialog.render(self._rect)
 
     rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - self._title_header.rect.height * 1.5 - 32),
@@ -232,7 +232,7 @@ class TrainingGuide(Widget):
       if self._completed_callback:
         self._completed_callback()
 
-  def _render(self, _):
+  def _render(self, rect):
     if self._step < len(self._steps):
       self._steps[self._step].render(self._rect)
     return -1
@@ -253,7 +253,7 @@ class DeclinePage(Widget):
     ui_state.params.put_bool("DoUninstall", True)
     gui_app.request_close()
 
-  def _render(self, _):
+  def _render(self, rect):
     self._warning_header.render(rl.Rectangle(
       self._rect.x + 16,
       self._rect.y + 16,
@@ -341,7 +341,7 @@ class OnboardingWindow(Widget):
     ui_state.params.put("CompletedTrainingVersion", training_version)
     self.close()
 
-  def _render(self, _):
+  def _render(self, rect):
     if self._state == OnboardingState.TERMS:
       self._terms.render(self._rect)
     elif self._state == OnboardingState.ONBOARDING:

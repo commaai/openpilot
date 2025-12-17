@@ -87,7 +87,7 @@ docs = [
 testing = [
   "coverage",
   "hypothesis ==6.47.*",
-  "mypy",
+  "ty",
   "pytest",
   "pytest-cpp",
   "pytest-subtests",
@@ -180,8 +180,10 @@ ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,w
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
 skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
 
-[tool.mypy]
-python_version = "3.11"
+[tool.ty.environment]
+python-version = "3.11"
+
+[tool.ty.src]
 exclude = [
   "cereal/",
   "msgq/",
@@ -198,23 +200,18 @@ exclude = [
   "third_party/",
 ]
 
-# third-party packages
-ignore_missing_imports=true
+[tool.ty.rules]
+# third-party packages (maps to mypy's ignore_missing_imports)
+unresolved-import = "ignore"
 
-# helpful warnings
-warn_redundant_casts=true
-warn_unreachable=true
-warn_unused_ignores=true
+# helpful warnings (maps to mypy's warn_* options)
+redundant-cast = "warn"
+unused-ignore-comment = "warn"
 
-# restrict dynamic typing
-warn_return_any=true
-
-# allow implicit optionals for default args
-implicit_optional = true
-
-local_partial_types=true
-explicit_package_bases=true
-disable_error_code = "annotation-unchecked"
+# TODO: fix and remove these
+possibly-missing-attribute = "ignore"  # 260 warnings
+invalid-argument-type = "ignore"       # 111 errors
+unresolved-attribute = "ignore"        # 96 errors
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]

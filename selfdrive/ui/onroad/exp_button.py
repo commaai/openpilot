@@ -32,8 +32,8 @@ class ExpButton(Widget):
     self._experimental_mode = selfdrive_state.experimentalMode
     self._engageable = selfdrive_state.engageable or selfdrive_state.enabled
 
-  def _handle_mouse_release(self, _):
-    super()._handle_mouse_release(_)
+  def _handle_mouse_release(self, mouse_pos):
+    super()._handle_mouse_release(mouse_pos)
     if self._is_toggle_allowed():
       new_mode = not self._experimental_mode
       self._params.put_bool("ExperimentalMode", new_mode)

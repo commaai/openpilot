@@ -30,7 +30,8 @@ class GnssClockNmeaPort:
   def __post_init__(self):
     for field in fields(self):
       val = getattr(self, field.name)
-      setattr(self, field.name, field.type(val) if val else None)
+      if val and callable(field.type):
+        setattr(self, field.name, field.type(val))
 
 @dataclass
 class GnssMeasNmeaPort:
@@ -73,7 +74,8 @@ class GnssMeasNmeaPort:
   def __post_init__(self):
     for field in fields(self):
       val = getattr(self, field.name)
-      setattr(self, field.name, field.type(val) if val else None)
+      if val and callable(field.type):
+        setattr(self, field.name, field.type(val))
 
 def nmea_checksum_ok(s):
   checksum = 0
@@ -107,11 +109,11 @@ def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
           match fields[0]:
             case "$GNCLK":
               # fields at end are reserved (not used)
-              gnss_clock = GnssClockNmeaPort(*fields[1:10]) # type: ignore[arg-type]
+              gnss_clock = GnssClockNmeaPort(*fields[1:10])
               print(gnss_clock)
             case "$GNMEAS":
               # fields at end are reserved (not used)
-              gnss_meas = GnssMeasNmeaPort(*fields[1:14]) # type: ignore[arg-type]
+              gnss_meas = GnssMeasNmeaPort(*fields[1:14])
               print(gnss_meas)
     except Exception as e:
       print(e)

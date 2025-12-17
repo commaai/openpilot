@@ -85,7 +85,7 @@ class Joystick:
 
       norm = -float(np.interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.]))
       norm = norm if abs(norm) > 0.03 else 0.  # center can be noisy, deadzone of 3%
-      self.axes_values[event[0]] = EXPO * norm ** 3 + (1 - EXPO) * norm  # less action near center for fine control
+      self.axes_values[event[0]] = float(EXPO * norm ** 3 + (1 - EXPO) * norm)  # less action near center for fine control
     else:
       return False
     return True

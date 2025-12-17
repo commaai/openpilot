@@ -85,7 +85,7 @@ class TrainingGuide(Widget):
     if len(self._image_objs):
       self._textures.append(gui_app._load_texture_from_image(self._image_objs.pop(0)))
 
-  def _render(self, _):
+  def _render(self, rect):
     # Safeguard against fast tapping
     step = min(self._step, len(self._textures) - 1)
     rl.draw_texture(self._textures[step], 0, 0, rl.WHITE)
@@ -116,7 +116,7 @@ class TermsPage(Widget):
     self._decline_btn = Button(tr("Decline"), click_callback=on_decline)
     self._accept_btn = Button(tr("Agree"), button_style=ButtonStyle.PRIMARY, click_callback=on_accept)
 
-  def _render(self, _):
+  def _render(self, rect):
     welcome_x = self._rect.x + 165
     welcome_y = self._rect.y + 165
     welcome_rect = rl.Rectangle(welcome_x, welcome_y, self._rect.width - welcome_x, 90)
@@ -153,7 +153,7 @@ class DeclinePage(Widget):
     ui_state.params.put_bool("DoUninstall", True)
     gui_app.request_close()
 
-  def _render(self, _):
+  def _render(self, rect):
     btn_y = self._rect.y + self._rect.height - 160 - 45
     btn_width = (self._rect.width - 45 * 3) / 2
     self._back_btn.render(rl.Rectangle(self._rect.x + 45, btn_y, btn_width, 160))
@@ -200,7 +200,7 @@ class OnboardingWindow(Widget):
     ui_state.params.put("CompletedTrainingVersion", training_version)
     gui_app.set_modal_overlay(None)
 
-  def _render(self, _):
+  def _render(self, rect):
     if self._training_guide is None:
       self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
 

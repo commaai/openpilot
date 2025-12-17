@@ -31,13 +31,13 @@ class MiciLabel(Widget):
   def __init__(self,
                text: str,
                font_size: int = DEFAULT_TEXT_SIZE,
-               width: int = None,
+               width: int | None = None,
                color: rl.Color = DEFAULT_TEXT_COLOR,
                font_weight: FontWeight = FontWeight.NORMAL,
                alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
                alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
                spacing: int = 0,
-               line_height: int = None,
+               line_height: int | None = None,
                elide_right: bool = True,
                wrap_text: bool = False,
                scroll: bool = False):
@@ -338,7 +338,7 @@ class Label(Widget):
       self._emojis.append(find_emoji(t))
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
-  def _render(self, _):
+  def _render(self, rect):
     # Text can be a callable
     # TODO: cache until text changed
     self._update_text(self._text)
@@ -627,7 +627,7 @@ class UnifiedLabel(Widget):
       return self._cached_total_height
     return 0.0
 
-  def _render(self, _):
+  def _render(self, rect):
     """Render the label."""
     if self._rect.width <= 0 or self._rect.height <= 0:
       return

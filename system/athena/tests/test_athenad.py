@@ -60,7 +60,7 @@ class TestAthenadMethods:
   @classmethod
   def setup_class(cls):
     cls.SOCKET_PORT = 45454
-    athenad.Api = MockApi
+    athenad.Api = MockApi  # type: ignore[assignment]  # monkeypatch for testing
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
 
   def setup_method(self):
@@ -97,7 +97,7 @@ class TestAthenadMethods:
         break
 
   @staticmethod
-  def _create_file(file: str, parent: str = None, data: bytes = b'') -> str:
+  def _create_file(file: str, parent: str | None = None, data: bytes = b'') -> str:
     fn = os.path.join(Paths.log_root() if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     with open(fn, 'wb') as f:

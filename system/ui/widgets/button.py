@@ -123,7 +123,7 @@ class Button(Widget):
       self._background_color = BUTTON_DISABLED_BACKGROUND_COLORS.get(self._button_style, rl.Color(51, 51, 51, 255))
       self._label.set_text_color(BUTTON_DISABLED_TEXT_COLORS.get(self._button_style, rl.Color(228, 228, 228, 51)))
 
-  def _render(self, _):
+  def _render(self, rect):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
     if self._button_style == ButtonStyle.TRANSPARENT_WHITE_BORDER:
       rl.draw_rectangle_rounded(self._rect, roundness, 10, rl.BLACK)
@@ -161,7 +161,7 @@ class ButtonRadio(Button):
     else:
       self._background_color = BUTTON_BACKGROUND_COLORS[ButtonStyle.NORMAL]
 
-  def _render(self, _):
+  def _render(self, rect):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
     rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
     self._label.render(self._rect)
@@ -209,7 +209,7 @@ class SmallCircleIconButton(Widget):
     else:
       self._opacity_filter.x = opacity
 
-  def _render(self, _):
+  def _render(self, rect):
     bg_txt = self._icon_bg_pressed_txt if self.is_pressed else self._icon_bg_txt
     white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
     rl.draw_texture(bg_txt, int(self.rect.x), int(self.rect.y), white)
@@ -246,7 +246,7 @@ class SmallButton(Widget):
     else:
       self._opacity_filter.x = opacity
 
-  def _render(self, _):
+  def _render(self, rect):
     if not self.enabled and self._bg_disabled_txt is not None:
       rl.draw_texture(self._bg_disabled_txt, int(self.rect.x), int(self.rect.y), rl.Color(255, 255, 255, int(255 * self._opacity_filter.x)))
     elif self.is_pressed:

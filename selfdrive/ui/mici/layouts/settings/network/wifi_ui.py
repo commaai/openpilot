@@ -16,7 +16,7 @@ def normalize_ssid(ssid: str) -> str:
 
 
 class LoadingAnimation(Widget):
-  def _render(self, _):
+  def _render(self, rect):
     cx = int(self._rect.x + 70)
     cy = int(self._rect.y + self._rect.height / 2 - 50)
 
@@ -52,7 +52,7 @@ class WifiIcon(Widget):
   def set_scale(self, scale: float):
     self._scale = scale
 
-  def _render(self, _):
+  def _render(self, rect):
     if self._network is None:
       return
 
@@ -99,7 +99,7 @@ class WifiItem(BigDialogOptionButton):
     self._network = network
     self._wifi_icon.set_current_network(network)
 
-  def _render(self, _):
+  def _render(self, rect):
     if self._network.is_connected:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
@@ -153,7 +153,7 @@ class ConnectButton(Widget):
   def set_label(self, text: str):
     self._label.set_text(text)
 
-  def _render(self, _):
+  def _render(self, rect):
     if self._full:
       bg_txt = self._bg_full_pressed_txt if self.is_pressed and self.enabled else self._bg_full_txt
     else:
@@ -184,7 +184,7 @@ class ForgetButton(Widget):
                                   confirm_callback=self._forget_network)
     gui_app.set_modal_overlay(dlg, callback=self._open_network_manage_page)
 
-  def _render(self, _):
+  def _render(self, rect):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
     rl.draw_texture(bg_txt, int(self._rect.x + self.HORIZONTAL_MARGIN), int(self._rect.y), rl.WHITE)
 
@@ -275,7 +275,7 @@ class NetworkInfoPage(NavWidget):
     is_connecting = self._connecting() == self._network.ssid
     return is_connecting
 
-  def _render(self, _):
+  def _render(self, rect):
     self._wifi_icon.render(rl.Rectangle(
       self._rect.x + 32,
       self._rect.y + (self._rect.height - self._connect_btn.rect.height - self._wifi_icon.rect.height) / 2,
@@ -447,7 +447,7 @@ class WifiUIMici(BigMultiOptionDialog):
     if self.is_pressed:
       self._last_interaction_time = rl.get_time()
 
-  def _render(self, _):
+  def _render(self, rect):
     # Update Scroller layout and restore current selection whenever buttons are updated, before first render
     current_selection = self.get_selected_option()
     if self._restore_selection and current_selection in self._networks:
@@ -455,7 +455,7 @@ class WifiUIMici(BigMultiOptionDialog):
       BigMultiOptionDialog._on_option_selected(self, current_selection, smooth_scroll=False)
       self._restore_selection = None
 
-    super()._render(_)
+    super()._render(rect)
 
     if not self._networks:
       self._loading_animation.render(self._rect)

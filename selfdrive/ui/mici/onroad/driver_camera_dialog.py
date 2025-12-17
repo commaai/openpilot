@@ -60,7 +60,7 @@ class DriverCameraDialog(NavWidget):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     device.reset_interactive_timeout()
 
-  def _handle_mouse_release(self, _):
+  def _handle_mouse_release(self, mouse_pos):
     ui_state.params.remove("DriverTooDistracted")
 
   def __del__(self):

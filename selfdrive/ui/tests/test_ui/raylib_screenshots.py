@@ -248,7 +248,8 @@ class TestUI:
   def __init__(self):
     os.environ["SCALE"] = os.getenv("SCALE", "1")
     os.environ["BIG"] = "1"
-    sys.modules["mouseinfo"] = False
+    # Prevent mouseinfo import by setting to a falsy value (intentional hack)
+    sys.modules["mouseinfo"] = False  # type: ignore[invalid-assignment]
 
   def setup(self):
     # Seed minimal offroad state

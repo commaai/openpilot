@@ -57,7 +57,7 @@ class MetaDriveBridge(SimulatorBridge):
     self.test_run = test_run
     self.test_duration = test_duration if self.test_run else math.inf
 
-  def spawn_world(self, queue: Queue):
+  def spawn_world(self, q: Queue):
     sensors = {
       "rgb_road": (RGBCameraRoad, W, H, )
     }
@@ -90,4 +90,4 @@ class MetaDriveBridge(SimulatorBridge):
       anisotropic_filtering=False
     )
 
-    return MetaDriveWorld(queue, config, self.test_duration, self.test_run, self.dual_camera)
+    return MetaDriveWorld(q, config, self.test_duration, self.test_run, self.dual_camera)

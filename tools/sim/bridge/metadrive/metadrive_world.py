@@ -18,11 +18,11 @@ class MetaDriveWorld(World):
     super().__init__(dual_camera)
     self.status_q = status_q
     self.camera_array = Array(ctypes.c_uint8, W*H*3)
-    self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+    self.road_image = np.frombuffer(memoryview(self.camera_array.get_obj()), dtype=np.uint8).reshape((H, W, 3))
     self.wide_camera_array = None
     if dual_camera:
       self.wide_camera_array = Array(ctypes.c_uint8, W*H*3)
-      self.wide_road_image = np.frombuffer(self.wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+      self.wide_road_image = np.frombuffer(memoryview(self.wide_camera_array.get_obj()), dtype=np.uint8).reshape((H, W, 3))
 
     self.controls_send, self.controls_recv = Pipe()
     self.simulation_state_send, self.simulation_state_recv = Pipe()
@@ -58,9 +58,9 @@ class MetaDriveWorld(World):
     self.reset_time = 0
     self.should_reset = False
 
-  def apply_controls(self, steer_angle, throttle_out, brake_out):
+  def apply_controls(self, steer_sim, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 2:
-      self.vc[0] = steer_angle
+      self.vc[0] = steer_sim
 
       if throttle_out:
         self.vc[1] = throttle_out
@@ -80,24 +80,24 @@ class MetaDriveWorld(World):
         self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, md_state.done_info))
         self.exit_event.set()
 
-  def read_sensors(self, state: SimulatorState):
+  def read_sensors(self, simulator_state: SimulatorState):
     while self.vehicle_state_recv.poll(0):
       md_vehicle: metadrive_vehicle_state = self.vehicle_state_recv.recv()
       curr_pos = md_vehicle.position
 
-      state.velocity = md_vehicle.velocity
-      state.bearing = md_vehicle.bearing
-      state.steering_angle = md_vehicle.steering_angle
-      state.gps.from_xy(curr_pos)
-      state.valid = True
+      simulator_state.velocity = md_vehicle.velocity
+      simulator_state.bearing = md_vehicle.bearing
+      simulator_state.steering_angle = md_vehicle.steering_angle
+      simulator_state.gps.from_xy(curr_pos)
+      simulator_state.valid = True
 
-      is_engaged = state.is_engaged
+      is_engaged = simulator_state.is_engaged
       if is_engaged and self.first_engage is None:
         self.first_engage = time.monotonic()
         self.op_engaged.set()
 
       # check moving 5 seconds after engaged, doesn't move right away
-      after_engaged_check = is_engaged and time.monotonic() - self.first_engage >= 5 and self.test_run
+      after_engaged_check = is_engaged and self.first_engage is not None and time.monotonic() - self.first_engage >= 5 and self.test_run
 
       x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
       y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])

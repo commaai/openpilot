@@ -51,7 +51,7 @@ class BigCircleButton(Widget):
   def set_enable_pressed_state(self, pressed: bool):
     self._press_state_enabled = pressed
 
-  def _render(self, _):
+  def _render(self, rect):
     # draw background
     txt_bg = self._txt_btn_bg if not self._red else self._txt_btn_red_bg
     if not self.enabled:
@@ -71,7 +71,7 @@ class BigCircleButton(Widget):
 
 
 class BigCircleToggle(BigCircleButton):
-  def __init__(self, icon: str, toggle_callback: Callable = None):
+  def __init__(self, icon: str, toggle_callback: Callable | None = None):
     super().__init__(icon, False)
     self._toggle_callback = toggle_callback
 
@@ -92,8 +92,8 @@ class BigCircleToggle(BigCircleButton):
     if self._toggle_callback:
       self._toggle_callback(self._checked)
 
-  def _render(self, _):
-    super()._render(_)
+  def _render(self, rect):
+    super()._render(rect)
 
     # draw status icon
     rl.draw_texture(self._txt_toggle_enabled if self._checked else self._txt_toggle_disabled,
@@ -208,7 +208,7 @@ class BigButton(Widget):
         self._scroll_timer = 0
         self._scroll_offset = 0
 
-  def _render(self, _):
+  def _render(self, rect):
     # draw _txt_default_bg
     txt_bg = self._txt_default_bg
     if not self.enabled:
@@ -251,7 +251,7 @@ class BigButton(Widget):
 
 
 class BigToggle(BigButton):
-  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable = None):
+  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable | None = None):
     super().__init__(text, value, "")
     self._checked = initial_state
     self._toggle_callback = toggle_callback
@@ -279,8 +279,8 @@ class BigToggle(BigButton):
     else:
       rl.draw_texture(self._txt_disabled_toggle, int(x), int(y), rl.WHITE)
 
-  def _render(self, _):
-    super()._render(_)
+  def _render(self, rect):
+    super()._render(rect)
 
     x = self._rect.x + self._rect.width - self._txt_enabled_toggle.width
     y = self._rect.y
@@ -288,8 +288,8 @@ class BigToggle(BigButton):
 
 
 class BigMultiToggle(BigToggle):
-  def __init__(self, text: str, options: list[str], toggle_callback: Callable = None,
-               select_callback: Callable = None):
+  def __init__(self, text: str, options: list[str], toggle_callback: Callable | None = None,
+               select_callback: Callable | None = None):
     super().__init__(text, "", toggle_callback=toggle_callback)
     assert len(options) > 0
     self._options = options
@@ -313,8 +313,8 @@ class BigMultiToggle(BigToggle):
     if self._select_callback:
       self._select_callback(self.value)
 
-  def _render(self, _):
-    BigButton._render(self, _)
+  def _render(self, rect):
+    BigButton._render(self, rect)
 
     checked_idx = self._options.index(self.value)
 
@@ -327,11 +327,12 @@ class BigMultiToggle(BigToggle):
 
 
 class BigMultiParamToggle(BigMultiToggle):
-  def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable = None,
-               select_callback: Callable = None):
+  def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable | None = None,
+               select_callback: Callable | None = None):
     super().__init__(text, options, toggle_callback, select_callback)
     self._param = param
 
+    assert Params is not None
     self._params = Params()
     self._load_value()
 
@@ -345,9 +346,10 @@ class BigMultiParamToggle(BigMultiToggle):
 
 
 class BigParamControl(BigToggle):
-  def __init__(self, text: str, param: str, toggle_callback: Callable = None):
+  def __init__(self, text: str, param: str, toggle_callback: Callable | None = None):
     super().__init__(text, "", toggle_callback=toggle_callback)
     self.param = param
+    assert Params is not None
     self.params = Params()
     self.set_checked(self.params.get_bool(self.param, False))
 
@@ -361,9 +363,10 @@ class BigParamControl(BigToggle):
 
 # TODO: param control base class
 class BigCircleParamControl(BigCircleToggle):
-  def __init__(self, icon: str, param: str, toggle_callback: Callable = None):
+  def __init__(self, icon: str, param: str, toggle_callback: Callable | None = None):
     super().__init__(icon, toggle_callback)
     self._param = param
+    assert Params is not None
     self.params = Params()
     self.set_checked(self.params.get_bool(self._param, False))
 

@@ -76,7 +76,7 @@ class MiciMainLayout(Widget):
     layout_x = int(layout.rect.x)
     self._scroller.scroll_to(layout_x, smooth=True)
 
-  def _render(self, _):
+  def _render(self, rect):
     # Initial show event
     if self._current_mode is None:
       self._set_mode(MainState.MAIN)

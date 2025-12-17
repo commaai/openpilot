@@ -20,7 +20,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets.label import MiciLabel
-from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
 
@@ -97,7 +97,7 @@ class DeviceInfoLayoutMici(Widget):
     self._serial_number_label = MiciLabel("serial", 48, color=header_color, font_weight=FontWeight.DISPLAY)
     self._serial_number_text_label = MiciLabel(params.get("HardwareSerial") or 'N/A', 32, width=max_width, color=subheader_color, font_weight=FontWeight.ROMAN)
 
-  def _render(self, _):
+  def _render(self, rect):
     self._dongle_id_label.set_position(self._rect.x + 20, self._rect.y - 10)
     self._dongle_id_label.render()
 
@@ -269,7 +269,7 @@ class DeviceLayoutMici(NavWidget):
   def __init__(self, back_callback: Callable):
     super().__init__()
 
-    self._fcc_dialog: HtmlModal | None = None
+    self._fcc_dialog: MiciFccModal | None = None
     self._driver_camera: DriverCameraDialog | None = None
     self._training_guide: TrainingGuide | None = None
 

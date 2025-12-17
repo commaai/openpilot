@@ -121,7 +121,7 @@ class BookmarkIcon(Widget):
         self._is_swiping = False
         self._is_swiping_left = False
 
-  def _render(self, _):
+  def _render(self, rect):
     """Render the bookmark icon."""
     if self._offset_filter.x > 0:
       icon_x = self.rect.x + self.rect.width - round(self._offset_filter.x)
@@ -182,7 +182,7 @@ class AugmentedRoadView(CameraView):
     if not self._bookmark_icon.interacting():
       super()._handle_mouse_release(mouse_pos)
 
-  def _render(self, _):
+  def _render(self, rect):
     start_draw = time.monotonic()
     self._switch_stream_if_needed(ui_state.sm)
 

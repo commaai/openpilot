@@ -81,7 +81,7 @@ class ManagerProcess(ABC):
     self.stop(sig=signal.SIGKILL)
     self.start()
 
-  def stop(self, retry: bool = True, block: bool = True, sig: signal.Signals = None) -> int | None:
+  def stop(self, retry: bool = True, block: bool = True, sig: signal.Signals | None = None) -> int | None:
     if self.proc is None:
       return None
 

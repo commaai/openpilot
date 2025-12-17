@@ -184,7 +184,8 @@ class MouseState:
         time.monotonic(),
       )
       # Only add changes
-      if self._prev_mouse_event[slot] is None or ev[:-1] != self._prev_mouse_event[slot][:-1]:
+      prev = self._prev_mouse_event[slot]
+      if prev is None or ev[:-1] != prev[:-1]:
         with self._lock:
           self._events.append(ev)
         self._prev_mouse_event[slot] = ev
@@ -339,8 +340,9 @@ class GuiApplication:
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:
-      if hasattr(self._modal_overlay.overlay, 'hide_event'):
-        self._modal_overlay.overlay.hide_event()
+      hide_event = getattr(self._modal_overlay.overlay, 'hide_event', None)
+      if hide_event is not None:
+        hide_event()
 
       if self._modal_overlay.callback is not None:
         self._modal_overlay.callback(-1)
@@ -544,24 +546,27 @@ class GuiApplication:
 
   def _handle_modal_overlay(self) -> bool:
     if self._modal_overlay.overlay:
-      if hasattr(self._modal_overlay.overlay, 'render'):
-        result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
+      render_fn = getattr(self._modal_overlay.overlay, 'render', None)
+      if render_fn is not None:
+        result = render_fn(rl.Rectangle(0, 0, self.width, self.height))
       elif callable(self._modal_overlay.overlay):
         result = self._modal_overlay.overlay()
       else:
         raise Exception
 
       # Send show event to Widget
-      if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
-        self._modal_overlay.overlay.show_event()
+      show_event = getattr(self._modal_overlay.overlay, 'show_event', None)
+      if not self._modal_overlay_shown and show_event is not None:
+        show_event()
         self._modal_overlay_shown = True
 
       if result >= 0:
         # Clear the overlay and execute the callback
         original_modal = self._modal_overlay
         self._modal_overlay = ModalOverlay()
-        if hasattr(original_modal.overlay, 'hide_event'):
-          original_modal.overlay.hide_event()
+        hide_event = getattr(original_modal.overlay, 'hide_event', None)
+        if hide_event is not None:
+          hide_event()
         if original_modal.callback is not None:
           original_modal.callback(result)
       return True
@@ -595,7 +600,7 @@ class GuiApplication:
       font = font_fallback(font)
       return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
 
-    rl.draw_text_ex = _draw_text_ex_scaled
+    rl.draw_text_ex = _draw_text_ex_scaled  # type: ignore[assignment]  # monkeypatch pyray
 
   def _set_log_callback(self):
     ffi_libc = cffi.FFI()
@@ -691,6 +696,7 @@ class GuiApplication:
     import pstats
 
     self._render_profiler.disable()
+    assert self._render_profile_start_time is not None
     elapsed_ms = (time.monotonic() - self._render_profile_start_time) * 1e3
     avg_frame_time = elapsed_ms / self._frame if self._frame > 0 else 0
 

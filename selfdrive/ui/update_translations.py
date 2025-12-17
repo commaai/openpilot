@@ -11,9 +11,9 @@ POT_FILE = os.path.join(str(TRANSLATIONS_DIR), "app.pot")
 def update_translations():
   files = []
   for root, _, filenames in chain(os.walk(SYSTEM_UI_DIR),
-                                  os.walk(os.path.join(UI_DIR, "widgets")),
-                                  os.walk(os.path.join(UI_DIR, "layouts")),
-                                  os.walk(os.path.join(UI_DIR, "onroad"))):
+                                  os.walk(UI_DIR / "widgets"),
+                                  os.walk(UI_DIR / "layouts"),
+                                  os.walk(UI_DIR / "onroad")):
     for filename in filenames:
       if filename.endswith(".py"):
         files.append(os.path.relpath(os.path.join(root, filename), BASEDIR))
@@ -28,7 +28,7 @@ def update_translations():
 
   # Generate/update translation files for each language
   for name in multilang.languages.values():
-    if os.path.exists(os.path.join(TRANSLATIONS_DIR, f"app_{name}.po")):
+    if os.path.exists(TRANSLATIONS_DIR / f"app_{name}.po"):
       cmd = f"msgmerge --update --no-fuzzy-matching --backup=none --sort-output {TRANSLATIONS_DIR}/app_{name}.po {POT_FILE}"
       ret = os.system(cmd)
       assert ret == 0

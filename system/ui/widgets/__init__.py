@@ -8,9 +8,10 @@ from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLO
 try:
   from openpilot.selfdrive.ui.ui_state import device
 except ImportError:
-  class Device:
+  # Fallback when ui_state not available (standalone UI apps)
+  class _FallbackDevice:
     awake = True
-  device = Device()  # type: ignore
+  device = _FallbackDevice()  # type: ignore[assignment]  # ty limitation: conditional import fallback
 
 
 class DialogResult(IntEnum):
@@ -97,7 +98,7 @@ class Widget(abc.ABC):
       return self._rect
     return rl.get_collision_rec(self._rect, self._parent_rect)
 
-  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     if rect is not None:
       self.set_rect(rect)
 
@@ -242,7 +243,7 @@ class NavBar(Widget):
     self._alpha_filter.x = 1.0
     self._fade_time = rl.get_time()
 
-  def _render(self, _):
+  def _render(self, rect):
     if rl.get_time() - self._fade_time > DISMISS_TIME_SECONDS:
       self._alpha = 0.0
     alpha = self._alpha_filter.update(self._alpha)
@@ -325,7 +326,7 @@ class NavWidget(Widget, abc.ABC):
 
         # block horizontal swiping if now swiping away
         if self._can_swipe_away:
-          if mouse_event.pos.y - self._back_button_start_pos.y > START_DISMISSING_THRESHOLD:  # type: ignore
+          if mouse_event.pos.y - self._back_button_start_pos.y > START_DISMISSING_THRESHOLD:
             self._swiping_away = True
 
     elif mouse_event.left_released:
@@ -387,7 +388,7 @@ class NavWidget(Widget, abc.ABC):
 
     self.set_position(self._rect.x, new_y)
 
-  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
 
     if self.back_enabled:

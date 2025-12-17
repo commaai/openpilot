@@ -44,7 +44,7 @@ class FuzzyGenerator:
     except capnp.lib.capnp.KjException:
       return self.generate_struct(field.schema)
 
-  def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: str = None) -> st.SearchStrategy[dict[str, Any]]:
+  def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: str | None = None) -> st.SearchStrategy[dict[str, Any]]:
     single_fill: tuple[str, ...] = (event,) if event else (self.draw(st.sampled_from(schema.union_fields)),) if schema.union_fields else ()
     fields_to_generate = schema.non_union_fields + single_fill
     return st.fixed_dictionaries({field: self.generate_field(schema.fields[field]) for field in fields_to_generate if not field.endswith('DEPRECATED')})
