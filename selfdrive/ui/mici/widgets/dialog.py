@@ -391,12 +391,12 @@ class BigMultiOptionDialog(BigDialogBase):
 
     if mouse_pos.y < self._rect.y + self._rect.height * 0.25:
       next_option = self._get_next_option(-1)
-      if next_option:
+      if next_option is not None:
         self._on_option_selected(next_option)
 
     elif mouse_pos.y > self._rect.y + self._rect.height * 0.75:
       next_option = self._get_next_option(1)
-      if next_option:
+      if next_option is not None:
         self._on_option_selected(next_option)
 
     else:
