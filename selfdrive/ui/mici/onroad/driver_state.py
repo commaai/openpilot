@@ -53,12 +53,13 @@ class DriverStateRenderer(Widget):
 
   def load_icons(self):
     """Load or reload the driver face icon texture"""
-    self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", self._rect.width, self._rect.height)
-    self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", self._rect.width, self._rect.height)
+    cone_and_person_size = round(52 / self.BASE_SIZE * self._rect.width)
+    self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size, cone_and_person_size)
+    self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
     center_size = round(36 / self.BASE_SIZE * self._rect.width)
     self._dm_center = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_center.png", center_size, center_size)
     background_size = round(52 / self.BASE_SIZE * self._rect.width)
-    self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", background_size, background_size)
+    self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", self._rect.width, self._rect.height)
 
   def set_should_draw(self, should_draw: bool):
     self._should_draw = should_draw
@@ -78,15 +79,21 @@ class DriverStateRenderer(Widget):
     return bool(self._force_active or self._is_active)
 
   def _render(self, _):
-    if DEBUG:
+    if DEBUG or 1:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
+    # rl.draw_texture(self._dm_background,
+    #                 int(self._rect.x + (self._rect.width - self._dm_background.width) / 2),
+    #                 int(self._rect.y + (self._rect.height - self._dm_background.height) / 2),
+    #                 rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
     rl.draw_texture(self._dm_background,
-                    int(self._rect.x + (self._rect.width - self._dm_background.width) / 2),
-                    int(self._rect.y + (self._rect.height - self._dm_background.height) / 2),
+                    int(self._rect.x),
+                    int(self._rect.y),
                     rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
 
-    rl.draw_texture(self._dm_person, int(self._rect.x), int(self._rect.y),
+    rl.draw_texture(self._dm_person,
+                                    int(self._rect.x + (self._rect.width - self._dm_person.width) / 2),
+                                    int(self._rect.y + (self._rect.height - self._dm_person.height) / 2),
                     rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     if self.effective_active:
@@ -202,9 +209,9 @@ class DriverStateRenderer(Widget):
     angle_diff = ((angle_diff + 180) % 360) - 180
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)
 
-    if not self.should_draw:
-      self._fade_filter.update(0.0)
-    elif not self.effective_active:
+    if self.effective_active:
+      self._fade_filter.update(1.0)
+    elif self.should_draw:
       self._fade_filter.update(0.35)
     else:
-      self._fade_filter.update(1.0)
+      self._fade_filter.update(0.0)

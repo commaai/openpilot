@@ -28,8 +28,9 @@ class DriverCameraSetupDialog(DriverCameraDialog):
   def __init__(self, confirm_callback: Callable):
     super().__init__(no_escape=True)
     self.driver_state_renderer = DriverStateRenderer(confirm_callback=confirm_callback)
-    self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
+    self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 120, 120))
     self.driver_state_renderer.load_icons()
+    self.driver_state_renderer.set_force_active(True)
 
   def _render(self, rect):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
@@ -44,11 +45,10 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     # Position dmoji on opposite side from driver
     # TODO: we don't have design for RHD yet
     is_rhd = False
-    driver_state_rect = (
+    self.driver_state_renderer.set_position(
       rect.x if is_rhd else rect.x + rect.width - self.driver_state_renderer.rect.width,
-      rect.y + (rect.height - self.driver_state_renderer.rect.height) / 2,
+      rect.y,
     )
-    self.driver_state_renderer.set_position(*driver_state_rect)
     self.driver_state_renderer.render()
 
     rl.end_scissor_mode()
@@ -286,8 +286,8 @@ class TrainingGuide(Widget):
         obj._advance_step()
 
     self._steps = [
-      TrainingGuideAttentionNotice(continue_callback=on_continue),
-      TrainingGuidePreDMTutorial(continue_callback=on_continue),
+      # TrainingGuideAttentionNotice(continue_callback=on_continue),
+      # TrainingGuidePreDMTutorial(continue_callback=on_continue),
       TrainingGuideDMTutorial(continue_callback=on_continue),
       TrainingGuideRecordFront(continue_callback=on_continue),
     ]
