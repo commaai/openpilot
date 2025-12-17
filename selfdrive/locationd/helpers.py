@@ -172,7 +172,7 @@ class PoseCalibrator:
     ned_from_calib_euler = self._ned_from_calib(pose.orientation)
     angular_velocity_calib = self._transform_calib_from_device(pose.angular_velocity)
     acceleration_calib = self._transform_calib_from_device(pose.acceleration)
-    velocity_calib = self._transform_calib_from_device(pose.angular_velocity)
+    velocity_calib = self._transform_calib_from_device(pose.velocity)
 
     return Pose(ned_from_calib_euler, velocity_calib, acceleration_calib, angular_velocity_calib)
 

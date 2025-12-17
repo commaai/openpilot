@@ -85,6 +85,7 @@ docs = [
 ]
 
 testing = [
+  "coverage",
   "hypothesis ==6.47.*",
   "mypy",
   "pytest",
@@ -115,7 +116,7 @@ dev = [
   "pyautogui",
   "pygame",
   "pyopencl; platform_machine != 'aarch64'", # broken on arm64
-  "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
+  "pytools>=2025.1.6; platform_machine != 'aarch64'",
   "pywinctl",
   "pyprof2calltree",
   "tabulate",

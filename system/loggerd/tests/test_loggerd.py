@@ -16,6 +16,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware.hw import Paths
+from openpilot.system.hardware import TICI
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.system.manager.process_config import managed_processes
@@ -23,7 +24,6 @@ from openpilot.system.version import get_version
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
 SentinelType = log.Sentinel.SentinelType
 
@@ -98,13 +98,17 @@ class TestLoggerd:
     return sent_msgs
 
   def _publish_camera_and_audio_messages(self, num_segs=1, segment_length=5):
-    d = DEVICE_CAMERAS[("tici", "ar0231")]
+    # Use small frame sizes for testing (width, height, size, stride, uv_offset)
+    # NV12 format: size = stride * height * 1.5, uv_offset = stride * height
+    w, h = 320, 240
+    frame_spec = (w, h, w * h * 3 // 2, w, w * h)
     streams = [
-      (VisionStreamType.VISION_STREAM_ROAD, (d.fcam.width, d.fcam.height, 2048 * 2346, 2048, 2048 * 1216), "roadCameraState"),
-      (VisionStreamType.VISION_STREAM_DRIVER, (d.dcam.width, d.dcam.height, 2048 * 2346, 2048, 2048 * 1216), "driverCameraState"),
-      (VisionStreamType.VISION_STREAM_WIDE_ROAD, (d.ecam.width, d.ecam.height, 2048 * 2346, 2048, 2048 * 1216), "wideRoadCameraState"),
+      (VisionStreamType.VISION_STREAM_ROAD, frame_spec, "roadCameraState"),
+      (VisionStreamType.VISION_STREAM_DRIVER, frame_spec, "driverCameraState"),
+      (VisionStreamType.VISION_STREAM_WIDE_ROAD, frame_spec, "wideRoadCameraState"),
     ]
 
+    sm = messaging.SubMaster(["roadEncodeData"])
     pm = messaging.PubMaster([s for _, _, s in streams] + ["rawAudioData"])
     vipc_server = VisionIpcServer("camerad")
     for stream_type, frame_spec, _ in streams:
@@ -137,6 +141,8 @@ class TestLoggerd:
 
       for _, _, state in streams:
         assert pm.wait_for_readers_to_update(state, timeout=5, dt=0.001)
+
+      sm.update(100)  # wait for encode data publish
 
     managed_processes["loggerd"].stop()
     managed_processes["encoderd"].stop()
@@ -221,13 +227,16 @@ class TestLoggerd:
     assert abs(boot.wallTimeNanos - time.time_ns()) < 5*1e9 # within 5s
     assert boot.launchLog == launch_log
 
-    for fn in ["console-ramoops", "pmsg-ramoops-0"]:
-      path = Path(os.path.join("/sys/fs/pstore/", fn))
-      if path.is_file():
-        with open(path, "rb") as f:
-          expected_val = f.read()
-        bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
-        assert expected_val == bootlog_val
+    if TICI:
+      for fn in ["console-ramoops", "pmsg-ramoops-0"]:
+        path = Path(os.path.join("/sys/fs/pstore/", fn))
+        if path.is_file():
+          with open(path, "rb") as f:
+            expected_val = f.read()
+          bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
+          assert expected_val == bootlog_val
+    else:
+      assert len(boot.pstore.entries) == 0
 
     # next one should increment by one
     bl1 = re.match(RE.LOG_ID_V2, bootlog_path.name)

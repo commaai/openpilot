@@ -44,6 +44,7 @@ signals:
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
+  void startStream(AbstractStream *stream, QString dbc_file);
   bool eventFilter(QObject *obj, QEvent *event) override;
   void remindSaveChanges();
   void closeFile(SourceSet s = SOURCE_ALL);
@@ -72,6 +73,8 @@ protected:
   void updateLoadSaveMenus();
   void createDockWidgets();
   void eventsMerged();
+  void saveSessionState();
+  void restoreSessionState();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
