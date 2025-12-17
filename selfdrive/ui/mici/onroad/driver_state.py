@@ -1,5 +1,4 @@
 import pyray as rl
-from collections.abc import Callable
 import numpy as np
 import math
 from cereal import log
@@ -62,7 +61,6 @@ class DriverStateRenderer(Widget):
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
     center_size = round(36 / self.BASE_SIZE * self._rect.width)
     self._dm_center = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_center.png", center_size, center_size)
-    background_size = round(52 / self.BASE_SIZE * self._rect.width)
     self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", self._rect.width, self._rect.height)
 
   def set_should_draw(self, should_draw: bool):
@@ -130,8 +128,6 @@ class DriverStateRenderer(Widget):
 
       else:
         # remove old angles
-        now = rl.get_time()
-
         for angle, f in self._head_angles.items():
           dst_from_current = ((angle - self._rotation_filter.x) % 360) - 180
           target = 1.0 if abs(dst_from_current) <= self.LINES_ANGLE_INCREMENT * 5 else 0.0
