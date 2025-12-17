@@ -331,6 +331,8 @@ class BigMultiOptionDialog(BigDialogBase):
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
+    self.set_touch_valid_callback(self._scroller.scroll_panel.is_touch_valid)
+
     for option in options:
       self._scroller.add_widget(BigDialogOptionButton(option))
 
