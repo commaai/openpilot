@@ -388,7 +388,7 @@ class WifiUIMici(BigMultiOptionDialog):
       else:
         network_button = WifiItem(network)
 
-      self.add_button(network_button)
+      self._scroller.add_widget(network_button)
 
     # remove networks no longer present
     self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]

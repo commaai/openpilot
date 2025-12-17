@@ -296,9 +296,6 @@ class BigDialogOptionButton(Widget):
     self._selected = selected
     self._rect.height = self.SELECTED_HEIGHT if selected else self.HEIGHT
 
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    return False
-
   def _render(self, _):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.Color(0, 255, 0, 255))
@@ -335,14 +332,7 @@ class BigMultiOptionDialog(BigDialogBase):
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
     for option in options:
-      self.add_button(BigDialogOptionButton(option))
-
-  def add_button(self, button: BigDialogOptionButton):
-    def click_callback(_btn=button):
-      self._on_option_selected(_btn.option)
-
-    button.set_click_callback(click_callback)
-    self._scroller.add_widget(button)
+      self._scroller.add_widget(BigDialogOptionButton(option))
 
   def show_event(self):
     super().show_event()
@@ -420,9 +410,8 @@ class BigMultiOptionDialog(BigDialogBase):
       return True
 
     elif 0.25 <= relative_y <= 0.75:
-      selected_btn = self._get_current_selected_button()
-      if selected_btn and selected_btn._click_callback:
-        selected_btn._click_callback()
+      if self._selected_option:
+        self._on_option_selected(self._selected_option)
       return True
 
     return super()._handle_mouse_release(mouse_pos)
