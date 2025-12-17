@@ -1,5 +1,3 @@
-import time
-
 from cereal import log
 import pyray as rl
 from collections.abc import Callable
