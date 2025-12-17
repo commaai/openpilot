@@ -157,10 +157,12 @@ class TrainingGuideDMTutorial(Widget):
 
   def _show_bad_face_page(self):
     self._bad_face_page.show_event()
+    self.hide_event()
     self._show_bad_face_page = True
 
   def _hide_bad_face_page(self):
     self._bad_face_page.hide_event()
+    self.show_event()
     self._show_bad_face_page = False
 
   def show_event(self):
