@@ -454,9 +454,12 @@ class NetworkSetupPage(Widget):
     self._continue_button.set_click_callback(continue_callback)
 
     self._state = NetworkSetupState.MAIN
+    self._prev_has_internet = False
 
   def set_state(self, state: NetworkSetupState):
     self._state = state
+    if state == NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.show_event()
 
   def set_has_internet(self, has_internet: bool):
     if has_internet:
@@ -467,6 +470,10 @@ class NetworkSetupPage(Widget):
       self._network_header.set_title(self._waiting_text)
       self._network_header.set_icon(self._no_wifi_txt)
       self._continue_button.set_enabled(False)
+
+    if has_internet and not self._prev_has_internet:
+      self.set_state(NetworkSetupState.MAIN)
+    self._prev_has_internet = has_internet
 
   def show_event(self):
     super().show_event()
@@ -524,6 +531,8 @@ class Setup(Widget):
     self._network_monitor = NetworkConnectivityMonitor(
       lambda: self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
     )
+    self._prev_has_internet = False
+    gui_app.set_modal_overlay_tick(self._modal_overlay_tick)
 
     self._start_page = StartPage()
     self._start_page.set_click_callback(self._getting_started_button_callback)
@@ -540,6 +549,12 @@ class Setup(Widget):
                                                                    self._custom_software_warning_back_button_callback)
 
     self._downloading_page = DownloadingPage()
+
+  def _modal_overlay_tick(self):
+    has_internet = self._network_monitor.network_connected.is_set()
+    if has_internet and not self._prev_has_internet:
+      gui_app.set_modal_overlay(None)
+    self._prev_has_internet = has_internet
 
   def _update_state(self):
     self._wifi_manager.process_callbacks()
@@ -614,7 +629,9 @@ class Setup(Widget):
 
   def render_network_setup(self, rect: rl.Rectangle):
     self._network_setup_page.render(rect)
-    self._network_setup_page.set_has_internet(self._network_monitor.network_connected.is_set())
+    has_internet = self._network_monitor.network_connected.is_set()
+    self._prev_has_internet = has_internet
+    self._network_setup_page.set_has_internet(has_internet)
 
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_page.set_progress(self.download_progress)
