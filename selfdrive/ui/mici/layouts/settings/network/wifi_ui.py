@@ -2,6 +2,7 @@ import math
 import numpy as np
 import pyray as rl
 from collections.abc import Callable
+from enum import IntEnum
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -168,10 +169,9 @@ class ConnectButton(Widget):
 class ForgetButton(Widget):
   HORIZONTAL_MARGIN = 8
 
-  def __init__(self, forget_network: Callable, open_network_manage_page):
+  def __init__(self, forget_network: Callable):
     super().__init__()
     self._forget_network = forget_network
-    self._open_network_manage_page = open_network_manage_page
 
     self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", 100, 100)
     self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", 100, 100)
@@ -182,7 +182,7 @@ class ForgetButton(Widget):
     super()._handle_mouse_release(mouse_pos)
     dlg = BigConfirmationDialogV2("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
                                   confirm_callback=self._forget_network)
-    gui_app.set_modal_overlay(dlg, callback=self._open_network_manage_page)
+    gui_app.set_modal_overlay(dlg)
 
   def _render(self, _):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
@@ -194,15 +194,14 @@ class ForgetButton(Widget):
 
 
 class NetworkInfoPage(NavWidget):
-  def __init__(self, wifi_manager, connect_callback: Callable, forget_callback: Callable, open_network_manage_page: Callable):
+  def __init__(self, wifi_manager, connect_callback: Callable, forget_callback: Callable):
     super().__init__()
     self._wifi_manager = wifi_manager
 
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     self._wifi_icon = WifiIcon()
-    self._forget_btn = ForgetButton(lambda: forget_callback(self._network.ssid) if self._network is not None else None,
-                                    open_network_manage_page)
+    self._forget_btn = ForgetButton(lambda: forget_callback(self._network.ssid) if self._network is not None else None)
     self._connect_btn = ConnectButton()
     self._connect_btn.set_click_callback(lambda: connect_callback(self._network.ssid) if self._network is not None else None)
 
@@ -312,7 +311,10 @@ class NetworkInfoPage(NavWidget):
         self._forget_btn.rect.height,
       ))
 
-    return -1
+
+class WifiPanel(IntEnum):
+  LIST = 0
+  INFO = 1
 
 
 class WifiUIMici(BigMultiOptionDialog):
@@ -325,7 +327,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # Set up back navigation
     self.set_back_callback(back_callback)
 
-    self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network, self._open_network_manage_page)
+    self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network)
     self._network_info_page.set_connecting(lambda: self._connecting)
 
     self._loading_animation = LoadingAnimation()
@@ -337,6 +339,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # widget state
     self._last_interaction_time = -float('inf')
     self._restore_selection = False
+    self._current_panel: WifiPanel = WifiPanel.LIST
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -449,14 +452,17 @@ class WifiUIMici(BigMultiOptionDialog):
       self._last_interaction_time = rl.get_time()
 
   def _render(self, _):
-    # Update Scroller layout and restore current selection whenever buttons are updated, before first render
-    current_selection = self.get_selected_option()
-    if self._restore_selection and current_selection in self._networks:
-      self._scroller._layout()
-      BigMultiOptionDialog._on_option_selected(self, current_selection, smooth_scroll=False)
-      self._restore_selection = None
+    if self._current_panel == WifiPanel.LIST:
+      # Update Scroller layout and restore current selection whenever buttons are updated, before first render
+      current_selection = self.get_selected_option()
+      if self._restore_selection and current_selection in self._networks:
+        self._scroller._layout()
+        BigMultiOptionDialog._on_option_selected(self, current_selection, smooth_scroll=False)
+        self._restore_selection = None
 
-    super()._render(_)
+      super()._render(_)
 
-    if not self._networks:
-      self._loading_animation.render(self._rect)
+      if not self._networks:
+        self._loading_animation.render(self._rect)
+    else:
+      self._network_info_page.render(self._rect)
