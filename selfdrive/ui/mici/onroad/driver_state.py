@@ -188,8 +188,6 @@ class DriverStateRenderer(Widget):
     return driver_data
 
   def _update_state(self):
-    sm = ui_state.sm
-
     # Get monitoring state
     driver_data = self.get_driver_data()
     driver_orient = driver_data.faceOrientation
