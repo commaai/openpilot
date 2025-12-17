@@ -37,7 +37,7 @@ class DriverStateRenderer(Widget):
     self._head_angles = {i * self.LINES_ANGLE_INCREMENT: FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps) for i in range(360 // self.LINES_ANGLE_INCREMENT)}
 
     self._is_active = False
-    self.is_rhd = False
+    self._is_rhd = False
     self._face_detected = False
     self._should_draw = False
     self._force_active = False
@@ -77,6 +77,10 @@ class DriverStateRenderer(Widget):
   def effective_active(self) -> bool:
     """Returns True if dmoji should appear active (either actually active or forced)"""
     return bool(self._force_active or self._is_active)
+
+  @property
+  def is_rhd(self) -> bool:
+    return self._is_rhd
 
   def _render(self, _):
     if DEBUG:
@@ -176,11 +180,11 @@ class DriverStateRenderer(Widget):
 
     dm_state = sm["driverMonitoringState"]
     self._is_active = dm_state.isActiveMode
-    self.is_rhd = dm_state.isRHD
+    self._is_rhd = dm_state.isRHD
     self._face_detected = dm_state.faceDetected
 
     driverstate = sm["driverStateV2"]
-    driver_data = driverstate.rightDriverData if self.is_rhd else driverstate.leftDriverData
+    driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
     return driver_data
 
   def _update_state(self):
