@@ -350,7 +350,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # Call super to prepare scroller; selection scroll is handled dynamically
     super().show_event()
     self._wifi_manager.set_active(True)
-    self._last_interaction_time = -float('inf')
+    self._last_interaction_time = rl.get_time()
 
   def hide_event(self):
     super().hide_event()
@@ -375,7 +375,7 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _update_buttons(self):
     # Don't update buttons while user is actively interacting
-    if rl.get_time() - self._last_interaction_time < self.INACTIVITY_TIMEOUT:
+    if rl.get_time() - self._last_interaction_time < self.INACTIVITY_TIMEOUT and len(self._scroller._items) > 0:
       return
 
     for network in self._networks.values():
@@ -452,6 +452,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # Update Scroller layout and restore current selection whenever buttons are updated, before first render
     current_selection = self.get_selected_option()
     if self._restore_selection and current_selection in self._networks:
+      print('scrolling to', current_selection)
       self._scroller._layout()
       BigMultiOptionDialog._on_option_selected(self, current_selection, smooth_scroll=False)
       self._restore_selection = None
