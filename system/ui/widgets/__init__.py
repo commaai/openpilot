@@ -1,6 +1,5 @@
 import abc
 import pyray as rl
-import time
 from enum import IntEnum
 from collections.abc import Callable
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
