@@ -28,7 +28,7 @@ class OnboardingState(IntEnum):
 class DriverCameraSetupDialog(DriverCameraDialog):
   def __init__(self, confirm_callback: Callable):
     super().__init__(no_escape=True)
-    self.driver_state_renderer = DriverStateRenderer(confirm_callback=confirm_callback)
+    self.driver_state_renderer = DriverStateRenderer(confirm_callback=confirm_callback, inset=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 120, 120))
     self.driver_state_renderer.load_icons()
     self.driver_state_renderer.set_force_active(True)
@@ -212,8 +212,8 @@ class TrainingGuideDMTutorial(Widget):
     dm_center_x = self._rect.x + self._rect.width - dm_size / 2 - 8
     dm_center_y = self._rect.y + dm_size / 2 + 8
     icon_edge_radius = dm_size / 2
-    outer_radius = icon_edge_radius + ring_thickness / 2  # Half outside
-    inner_radius = icon_edge_radius - ring_thickness / 2  # Half inside
+    outer_radius = icon_edge_radius + 2  # 2px outward from icon edge
+    inner_radius = outer_radius - ring_thickness  # Inset by ring_thickness
     start_angle = 90.0  # Start from bottom
     end_angle = start_angle + self._progress.x * 360.0  # Clockwise
 

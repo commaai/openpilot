@@ -22,10 +22,11 @@ class DriverStateRenderer(Widget):
   LINES_ANGLE_INCREMENT = 5
   LINES_STALE_ANGLES = 3.0  # seconds
 
-  def __init__(self, lines: bool = False, confirm_callback: Callable | None = None):
+  def __init__(self, lines: bool = False, inset: bool = False, confirm_callback: Callable | None = None):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, self.BASE_SIZE, self.BASE_SIZE))
     self._lines = lines
+    self._inset = inset
 
     # In confirm mode, user must fill out the circle to confirm some action in the UI
     self._confirm_callback = confirm_callback
