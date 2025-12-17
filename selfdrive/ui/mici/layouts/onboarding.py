@@ -144,7 +144,7 @@ class TrainingGuideDMTutorial(Widget):
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
       device.set_offroad_brightness(None)
-      device.reset_interactive_timeout()
+      device.set_override_interactive_timeout(None)
       continue_callback()
 
     self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
@@ -173,12 +173,19 @@ class TrainingGuideDMTutorial(Widget):
     self._dm_alive = False
 
     device.set_offroad_brightness(100)
-    device.reset_interactive_timeout(300)  # 5 minutes
+    device.set_override_interactive_timeout(300)  # 5 minutes
 
   def _update_state(self):
     super()._update_state()
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
+
+      # Reset DM alive when screen turns back on
+      if not self._was_awake:
+        self._dm_alive = False
+      self._was_awake = True
+    else:
+      self._was_awake = False
 
     sm = ui_state.sm
     if sm.updated["driverMonitoringState"] and sm.updated["driverStateV2"]:
