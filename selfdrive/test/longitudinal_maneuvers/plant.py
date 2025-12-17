@@ -8,7 +8,7 @@ from openpilot.common.realtime import Ratekeeper, DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from openpilot.selfdrive.controls.radard import compute_a_lead_tau
+from openpilot.selfdrive.controls.radard import LeadTauEstimator
 
 
 class Plant:
@@ -27,6 +27,7 @@ class Plant:
       Plant.messaging_initialized = True
 
     self.v_lead_prev = 0.0
+    self._lead_tau_estimator = LeadTauEstimator(DT_MDL)
 
     self.distance = 0.
     self.speed = speed
@@ -93,7 +94,7 @@ class Plant:
     lead.vLead = float(v_lead)
     lead.vLeadK = float(v_lead)
     lead.aLeadK = float(a_lead)
-    lead.aLeadTau = float(compute_a_lead_tau(a_lead, v_lead, v_rel))
+    lead.aLeadTau = float(self._lead_tau_estimator.update(a_lead, v_lead, v_rel))
     lead.status = status
     lead.modelProb = float(prob_lead)
     if not self.only_lead2:

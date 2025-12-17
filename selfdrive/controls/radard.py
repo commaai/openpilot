@@ -20,6 +20,11 @@ _LEAD_ACCEL_TAU = 1.5
 #   a(t) = a0 * exp(-tau * t^2 / 2)
 # Smaller tau => acceleration persists longer (more predictive for sustained braking),
 # Larger tau  => acceleration decays to 0 faster (more conservative for transients/noise).
+#
+# This file implements a stateful estimator to avoid flapping on noisy accel. The goal:
+# - React quickly when the lead is *really* braking (so ego doesn't brake late/hard)
+# - Decay slowly when braking stops (prevents surge-then-brake oscillations)
+# - Avoid treating mild/transient decel as persistent braking (prevents early braking / big gaps)
 def compute_a_lead_tau(a_lead: float, v_lead: float, v_rel: float) -> float:
   a_lead = float(a_lead)
   v_lead = max(float(v_lead), 0.0)
@@ -53,6 +58,89 @@ def compute_a_lead_tau(a_lead: float, v_lead: float, v_rel: float) -> float:
     tau = min(tau, 1.0)
 
   return float(np.clip(tau, 0.0, _LEAD_ACCEL_TAU))
+
+class LeadTauEstimator:
+  """Stateful estimator for lead accel persistence (aLeadTau) with hysteresis.
+
+  Internally maintains a braking intent in [0, 1] that is driven by:
+  - lead accel magnitude (more negative -> higher intent)
+  - closing speed (ego faster than lead) increases intent
+  - lead jerk (becoming more negative) increases intent
+
+  The intent rises quickly and decays slowly to avoid jitter.
+  """
+  # Intent dynamics (seconds)
+  _RISE_TC = 0.25
+  _FALL_TC = 1.50
+
+  # Evidence thresholds
+  _A_STRONG = -1.0
+  _A_MILD = -0.25
+  _J_STRONG = -1.2  # m/s^3 (more negative => increasing braking)
+  _CLOSING_TH = -0.5  # m/s (negative v_rel means closing)
+
+  # Tau mapping
+  _TAU_MIN = 0.25
+
+  def __init__(self, dt: float):
+    self.dt = float(dt)
+    self.intent = 0.0
+    self._prev_a: float | None = None
+
+  def reset(self) -> None:
+    self.intent = 0.0
+    self._prev_a = None
+
+  def update(self, a_lead: float, v_lead: float, v_rel: float) -> float:
+    a_lead = float(a_lead)
+    v_lead = max(float(v_lead), 0.0)
+    v_rel = float(v_rel)
+
+    # Lead jerk estimate (finite diff of filtered accel)
+    if self._prev_a is None:
+      jerk = 0.0
+    else:
+      jerk = (a_lead - self._prev_a) / max(self.dt, 1e-3)
+    self._prev_a = a_lead
+
+    # Base braking evidence from accel in [0, 1]
+    if a_lead <= self._A_STRONG:
+      a_ev = 1.0
+    elif a_lead >= self._A_MILD:
+      a_ev = 0.0
+    else:
+      a_ev = float(np.interp(a_lead, [self._A_MILD, self._A_STRONG], [0.0, 1.0]))
+
+    # Jerk evidence: only count if braking is increasing (jerk negative)
+    j_ev = float(np.clip((-jerk - 0.2) / (-self._J_STRONG - 0.2), 0.0, 1.0)) if jerk < -0.2 else 0.0
+
+    # Closing evidence (only when ego is closing on the lead)
+    c_ev = float(np.clip((-(v_rel) - 0.1) / (-(self._CLOSING_TH) - 0.1), 0.0, 1.0)) if v_rel < -0.1 else 0.0
+
+    # Low-speed stopping context: mild accel noise near stop shouldn't clear intent instantly
+    low_speed = float(np.clip((8.0 - v_lead) / 8.0, 0.0, 1.0))
+
+    # Combine evidence (weighted; accel dominates)
+    target = np.clip(0.75 * a_ev + 0.15 * c_ev + 0.10 * j_ev, 0.0, 1.0)
+
+    # If we're very low speed and closing, bias toward keeping some intent
+    if low_speed > 0.6 and c_ev > 0.2:
+      target = float(max(target, 0.25 * low_speed))
+
+    # Hysteretic smoothing
+    rise_alpha = self.dt / (self._RISE_TC + self.dt)
+    fall_alpha = self.dt / (self._FALL_TC + self.dt)
+    alpha = rise_alpha if target > self.intent else fall_alpha
+    self.intent = float((1.0 - alpha) * self.intent + alpha * target)
+
+    # Strong braking: allow tau to go very small (persistent)
+    if a_lead <= self._A_STRONG:
+      tau = 0.0
+    else:
+      tau = _LEAD_ACCEL_TAU * (1.0 - self.intent)
+      tau = float(np.clip(tau, self._TAU_MIN, _LEAD_ACCEL_TAU))
+
+    return tau
 
 
 # radar tracks
@@ -91,7 +179,8 @@ class Track:
   def __init__(self, identifier: int, v_lead: float, kalman_params: KalmanParams):
     self.identifier = identifier
     self.cnt = 0
-    self.aLeadTau = FirstOrderFilter(_LEAD_ACCEL_TAU, 0.45, DT_MDL)
+    self.tau_estimator = LeadTauEstimator(DT_MDL)
+    self.aLeadTau = _LEAD_ACCEL_TAU
     self.K_A = kalman_params.A
     self.K_C = kalman_params.C
     self.K_K = kalman_params.K
@@ -113,7 +202,7 @@ class Track:
     self.aLeadK = float(self.kf.x[ACCEL][0])
 
     # Learn lead acceleration persistence (used by longitudinal MPC lead extrapolation)
-    self.aLeadTau.update(compute_a_lead_tau(self.aLeadK, self.vLeadK, self.vRel))
+    self.aLeadTau = float(self.tau_estimator.update(self.aLeadK, self.vLeadK, self.vRel))
 
     self.cnt += 1
 
@@ -125,7 +214,7 @@ class Track:
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
       "aLeadK": float(self.aLeadK),
-      "aLeadTau": float(self.aLeadTau.x),
+      "aLeadTau": float(self.aLeadTau),
       "status": True,
       "fcw": self.is_potential_fcw(model_prob),
       "modelProb": model_prob,
