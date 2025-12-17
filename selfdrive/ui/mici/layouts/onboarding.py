@@ -3,6 +3,7 @@ from collections.abc import Callable
 
 import weakref
 import pyray as rl
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
@@ -46,8 +47,8 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     # TODO: we don't have design for RHD yet
     is_rhd = False
     self.driver_state_renderer.set_position(
-      rect.x if is_rhd else rect.x + rect.width - self.driver_state_renderer.rect.width,
-      rect.y,
+      rect.x + 8 if is_rhd else rect.x + rect.width - self.driver_state_renderer.rect.width - 8,
+      rect.y + 8,
     )
     self.driver_state_renderer.render()
 
@@ -121,8 +122,9 @@ class DMBadFaceDetected(SetupTermsPage):
     ))
 
 
-
 class TrainingGuideDMTutorial(Widget):
+  PROGRESS_DURATION = 5
+
   def __init__(self, continue_callback):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
@@ -131,6 +133,9 @@ class TrainingGuideDMTutorial(Widget):
     self._back_button.set_click_callback(self._show_bad_face_page)
     self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 49, 36))
     self._good_button.set_click_callback(continue_callback)
+    self._good_button.set_enabled(False)
+
+    self._progress = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     self._bad_face_page = DMBadFaceDetected(HARDWARE.reboot, self._hide_bad_face_page)
 
@@ -160,6 +165,7 @@ class TrainingGuideDMTutorial(Widget):
 
   def show_event(self):
     super().show_event()
+    self._progress.x = 0.0
     self._dialog.show_event()
 
     device.set_offroad_brightness(100)
@@ -170,6 +176,20 @@ class TrainingGuideDMTutorial(Widget):
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
+    # Update progress based on face detection
+    sm = ui_state.sm
+    if sm.recv_frame.get("driverMonitoringState", 0) > 0:
+      dm_state = sm["driverMonitoringState"]
+
+      if dm_state.faceDetected or self._progress.x > 0.99:
+        self._progress.x += 1.0 / (self.PROGRESS_DURATION * gui_app.target_fps)
+        self._progress.x = min(1.0, self._progress.x)
+      else:
+        self._progress.update(0.0)
+
+      # Enable continue button only when progress reaches 100%
+      self._good_button.set_enabled(self._progress.x >= 0.999)
+
   def _render(self, _):
     if self._show_bad_face_page:
       return self._bad_face_page.render(self._rect)
@@ -179,6 +199,30 @@ class TrainingGuideDMTutorial(Widget):
     rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - self._title_header.rect.height * 1.5 - 32),
                                  int(self._rect.width), int(self._title_header.rect.height * 1.5 + 32),
                                  rl.BLANK, rl.Color(0, 0, 0, 150))
+
+    # draw white ring around dm icon to indicate progress
+    ring_thickness = 8
+
+    # DM icon is 120x120, positioned at top-right with 8px padding
+    dm_size = 120
+    dm_center_x = self._rect.x + self._rect.width - dm_size / 2 - 8
+    dm_center_y = self._rect.y + dm_size / 2 + 8
+    icon_edge_radius = dm_size / 2
+    outer_radius = icon_edge_radius + ring_thickness / 2  # Half outside
+    inner_radius = icon_edge_radius - ring_thickness / 2  # Half inside
+    start_angle = 90.0  # Start from bottom
+    end_angle = start_angle + self._progress.x * 360.0  # Clockwise
+
+    rl.draw_ring(
+      rl.Vector2(dm_center_x, dm_center_y),
+      inner_radius,
+      outer_radius,
+      start_angle,
+      end_angle,
+      36,  # segments for smooth arc
+      rl.WHITE,
+    )
+
     # self._title_header.render(rl.Rectangle(
     #   self._rect.x + 16,
     #   self._rect.y + self._rect.height - self._title_header.rect.height - 16,

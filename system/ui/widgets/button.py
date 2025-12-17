@@ -201,6 +201,7 @@ class SmallCircleIconButton(Widget):
     self._opacity_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._icon_bg_txt = gui_app.texture("icons_mici/setup/small_button.png", 100, 100)
     self._icon_bg_pressed_txt = gui_app.texture("icons_mici/setup/small_button_pressed.png", 100, 100)
+    self._icon_bg_disabled_txt = gui_app.texture("icons_mici/setup/small_button_disabled.png", 100, 100)
     self._icon_txt = icon_txt
 
   def set_opacity(self, opacity: float, smooth: bool = False):
@@ -210,12 +211,18 @@ class SmallCircleIconButton(Widget):
       self._opacity_filter.x = opacity
 
   def _render(self, _):
-    bg_txt = self._icon_bg_pressed_txt if self.is_pressed else self._icon_bg_txt
     white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
+    if not self.enabled:
+      bg_txt = self._icon_bg_disabled_txt
+      icon_white = rl.Color(255, 255, 255, int(white.a * 0.35))
+    else:
+      bg_txt = self._icon_bg_pressed_txt if self.is_pressed else self._icon_bg_txt
+      icon_white = white
+
     rl.draw_texture(bg_txt, int(self.rect.x), int(self.rect.y), white)
     icon_x = self.rect.x + (self.rect.width - self._icon_txt.width) / 2
     icon_y = self.rect.y + (self.rect.height - self._icon_txt.height) / 2
-    rl.draw_texture(self._icon_txt, int(icon_x), int(icon_y), white)
+    rl.draw_texture(self._icon_txt, int(icon_x), int(icon_y), icon_white)
 
 
 class SmallButton(Widget):
