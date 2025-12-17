@@ -138,6 +138,7 @@ class TrainingGuideDMTutorial(Widget):
     self._progress = FirstOrderFilter(0.0, 1.0, 1 / gui_app.target_fps)
 
     self._bad_face_page = DMBadFaceDetected(HARDWARE.reboot, self._hide_bad_face_page)
+    self._show_time = 0.0
 
     self._show_bad_face_page = False
 
@@ -169,6 +170,7 @@ class TrainingGuideDMTutorial(Widget):
     super().show_event()
     self._progress.x = 0.0
     self._dialog.show_event()
+    self._show_time = rl.get_time()
 
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
@@ -183,7 +185,7 @@ class TrainingGuideDMTutorial(Widget):
     if sm.recv_frame.get("driverMonitoringState", 0) > 0:
       dm_state = sm["driverMonitoringState"]
 
-      if dm_state.faceDetected or self._progress.x > 0.99:
+      if (dm_state.faceDetected and rl.get_time() - self._show_time > 2) or self._progress.x > 0.99:
         self._progress.x += 1.0 / (self.PROGRESS_DURATION * gui_app.target_fps)
         self._progress.x = min(1.0, self._progress.x)
       else:
