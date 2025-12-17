@@ -339,8 +339,8 @@ class TrainingGuide(Widget):
         obj._advance_step()
 
     self._steps = [
-      # TrainingGuideAttentionNotice(continue_callback=on_continue),
-      # TrainingGuidePreDMTutorial(continue_callback=on_continue),
+      TrainingGuideAttentionNotice(continue_callback=on_continue),
+      TrainingGuidePreDMTutorial(continue_callback=on_continue),
       TrainingGuideDMTutorial(continue_callback=on_continue),
       TrainingGuideRecordFront(continue_callback=on_continue),
     ]

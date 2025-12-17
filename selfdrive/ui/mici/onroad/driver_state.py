@@ -91,18 +91,14 @@ class DriverStateRenderer(Widget):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
-    # rl.draw_texture(self._dm_background,
-    #                 int(self._rect.x + (self._rect.width - self._dm_background.width) / 2),
-    #                 int(self._rect.y + (self._rect.height - self._dm_background.height) / 2),
-    #                 rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
     rl.draw_texture(self._dm_background,
                     int(self._rect.x),
                     int(self._rect.y),
                     rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
 
     rl.draw_texture(self._dm_person,
-                                    int(self._rect.x + (self._rect.width - self._dm_person.width) / 2),
-                                    int(self._rect.y + (self._rect.height - self._dm_person.height) / 2),
+                    int(self._rect.x + (self._rect.width - self._dm_person.width) / 2),
+                    int(self._rect.y + (self._rect.height - self._dm_person.height) / 2),
                     rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     if self.effective_active:

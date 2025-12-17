@@ -189,7 +189,6 @@ class Device:
     self._interaction_time: float = -1
     self._override_interactive_timeout: int | None = None
     self._interactive_timeout_callbacks: list[Callable] = []
-    self._override_interactive_timeout: int | None = None
     self._prev_timed_out = False
     self._awake: bool = True
 
