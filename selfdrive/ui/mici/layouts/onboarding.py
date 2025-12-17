@@ -134,6 +134,7 @@ class TrainingGuideDMTutorial(Widget):
     self._good_button.set_enabled(False)
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
+    self._dm_alive = False
 
     self._bad_face_page = DMBadFaceDetected(HARDWARE.reboot, self._hide_bad_face_page)
     self._show_time = 0.0
@@ -169,6 +170,7 @@ class TrainingGuideDMTutorial(Widget):
     self._progress.x = 0.0
     self._dialog.show_event()
     self._show_time = rl.get_time()
+    self._dm_alive = False
 
     device.set_offroad_brightness(100)
     device.reset_interactive_timeout(300)  # 5 minutes
@@ -178,27 +180,30 @@ class TrainingGuideDMTutorial(Widget):
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
-    # Update progress based on face detection
     sm = ui_state.sm
-    if sm.recv_frame.get("driverMonitoringState", 0) > 0:
-      dm_state = sm["driverMonitoringState"]
-      driver_data = self._dialog.driver_state_renderer.get_driver_data()
+    if sm.updated["driverMonitoringState"] and sm.updated["driverStateV2"]:
+      self._dm_alive = True
 
-      # Check if driver is looking within threshold degrees
-      if len(driver_data.faceOrientation) == 3:
-        pitch, yaw, roll = driver_data.faceOrientation
-        looking_center = abs(math.degrees(pitch)) < self.LOOKING_THRESHOLD_DEG and abs(math.degrees(yaw)) < self.LOOKING_THRESHOLD_DEG
-      else:
-        looking_center = False
+    if not self._dm_alive:
+      return
 
-      if (dm_state.faceDetected and looking_center and rl.get_time() - self._show_time > 2) or self._progress.x > 0.99:
-        self._progress.x += 1.0 / (self.PROGRESS_DURATION * gui_app.target_fps)
-        self._progress.x = min(1.0, self._progress.x)
-      else:
-        self._progress.update(0.0)
+    dm_state = sm["driverMonitoringState"]
+    driver_data = self._dialog.driver_state_renderer.get_driver_data()
 
-      # Enable continue button only when progress reaches 100%
-      self._good_button.set_enabled(self._progress.x >= 0.999)
+    if len(driver_data.faceOrientation) == 3:
+      pitch, yaw, roll = driver_data.faceOrientation
+      looking_center = abs(math.degrees(pitch)) < self.LOOKING_THRESHOLD_DEG and abs(math.degrees(yaw)) < self.LOOKING_THRESHOLD_DEG
+    else:
+      looking_center = False
+
+    # stay at 100% once reached
+    if (dm_state.faceDetected and looking_center and rl.get_time() - self._show_time > 2) or self._progress.x > 0.99:
+      self._progress.x += 1.0 / (self.PROGRESS_DURATION * gui_app.target_fps)
+      self._progress.x = min(1.0, self._progress.x)
+    else:
+      self._progress.update(0.0)
+
+    self._good_button.set_enabled(self._progress.x >= 0.999)
 
   def _render(self, _):
     if self._show_bad_face_page:
