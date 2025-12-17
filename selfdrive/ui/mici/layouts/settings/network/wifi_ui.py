@@ -194,11 +194,9 @@ class ForgetButton(Widget):
 
 
 class NetworkInfoPage(NavWidget):
-  def __init__(self, wifi_manager, connect_callback: Callable, forget_callback: Callable, open_network_manage_page: Callable,
-               should_close: Callable | None = None):
+  def __init__(self, wifi_manager, connect_callback: Callable, forget_callback: Callable, open_network_manage_page: Callable):
     super().__init__()
     self._wifi_manager = wifi_manager
-    self._should_close = should_close
 
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
@@ -235,9 +233,6 @@ class NetworkInfoPage(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-    if self._should_close is not None and self._should_close():
-      gui_app.set_modal_overlay(None)
-      return
 
     # Modal overlays stop main UI rendering, so we need to call here
     self._wifi_manager.process_callbacks()
@@ -325,14 +320,13 @@ class WifiUIMici(BigMultiOptionDialog):
   # Wait this long after user interacts with widget to update network list
   INACTIVITY_TIMEOUT = 1
 
-  def __init__(self, wifi_manager: WifiManager, back_callback: Callable, should_close: Callable | None = None):
+  def __init__(self, wifi_manager: WifiManager, back_callback: Callable):
     super().__init__([], None, None, right_btn_callback=None)
 
     # Set up back navigation
     self.set_back_callback(back_callback)
 
-    self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network, self._open_network_manage_page,
-                                              should_close)
+    self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network, self._open_network_manage_page)
     self._network_info_page.set_connecting(lambda: self._connecting)
 
     self._loading_animation = LoadingAnimation()

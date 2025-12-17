@@ -439,8 +439,7 @@ class NetworkSetupPage(Widget):
     super().__init__()
     self._network_monitor = network_monitor
 
-    self._wifi_ui = WifiUIMici(wifi_manager, back_callback=lambda: self.set_state(NetworkSetupState.MAIN),
-                               should_close=self._should_close_wifi)
+    self._wifi_ui = WifiUIMici(wifi_manager, back_callback=lambda: self.set_state(NetworkSetupState.MAIN))
 
     self._no_wifi_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 58, 50)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 58, 50)
@@ -460,7 +459,6 @@ class NetworkSetupPage(Widget):
 
     self._state = NetworkSetupState.MAIN
     self._prev_has_internet = False
-    self._close_wifi = False
 
   def set_state(self, state: NetworkSetupState):
     self._state = state
@@ -468,15 +466,6 @@ class NetworkSetupPage(Widget):
       self._wifi_ui.show_event()
     elif state == NetworkSetupState.MAIN:
       self.show_event()
-
-  def _should_close_wifi(self) -> bool:
-    has_internet = self._network_monitor.network_connected.is_set()
-    close_wifi = False
-    if has_internet and not self._prev_has_internet:
-      close_wifi = True
-      self.set_state(NetworkSetupState.MAIN)
-    self._prev_has_internet = has_internet
-    return close_wifi
 
   def set_has_internet(self, has_internet: bool):
     if has_internet:
@@ -489,10 +478,8 @@ class NetworkSetupPage(Widget):
       self._continue_button.set_enabled(False)
 
     if has_internet and not self._prev_has_internet:
-      self._close_wifi = True
       print('SET STATE')
       self.set_state(NetworkSetupState.MAIN)
-      gui_app.set_modal_overlay(None)
     self._prev_has_internet = has_internet
 
   def show_event(self):
@@ -553,6 +540,8 @@ class Setup(Widget):
     self._network_monitor = NetworkConnectivityMonitor(
       lambda: self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
     )
+    self._prev_has_internet = False
+    gui_app.set_modal_overlay_tick(self._modal_overlay_tick)
 
     self._start_page = StartPage()
     self._start_page.set_click_callback(self._getting_started_button_callback)
@@ -569,6 +558,13 @@ class Setup(Widget):
                                                                    self._custom_software_warning_back_button_callback)
 
     self._downloading_page = DownloadingPage()
+
+  def _modal_overlay_tick(self):
+    has_internet = self._network_monitor.network_connected.is_set()
+    print(has_internet, self._prev_has_internet)
+    if has_internet and not self._prev_has_internet:
+      gui_app.set_modal_overlay(None)
+    self._prev_has_internet = has_internet
 
   def _update_state(self):
     self._wifi_manager.process_callbacks()
