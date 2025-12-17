@@ -28,9 +28,9 @@ class OnboardingState(IntEnum):
 
 
 class DriverCameraSetupDialog(DriverCameraDialog):
-  def __init__(self, confirm_callback: Callable):
+  def __init__(self):
     super().__init__(no_escape=True)
-    self.driver_state_renderer = DriverStateRenderer(confirm_callback=confirm_callback, inset=True)
+    self.driver_state_renderer = DriverStateRenderer(inset=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 120, 120))
     self.driver_state_renderer.load_icons()
     self.driver_state_renderer.set_force_active(True)
@@ -129,20 +129,20 @@ class TrainingGuideDMTutorial(Widget):
     self._back_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_no_person.png", 48, 48))
     self._back_button.set_click_callback(self._show_bad_face_page)
     self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 48, 35))
-    self._good_button.set_click_callback(continue_callback)
-    self._good_button.set_enabled(False)
-
-    self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
-    self._show_time = 0.0
-    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, self._hide_bad_face_page)
-    self._should_show_bad_face_page = False
 
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
       device.set_offroad_brightness(None)
       continue_callback()
 
-    self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
+    self._good_button.set_click_callback(wrapped_continue_callback)
+    self._good_button.set_enabled(False)
+
+    self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
+    self._show_time = 0.0
+    self._dialog = DriverCameraSetupDialog()
+    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, self._hide_bad_face_page)
+    self._should_show_bad_face_page = False
 
     # Disable driver monitoring model when device times out for inactivity
     def inactivity_callback():

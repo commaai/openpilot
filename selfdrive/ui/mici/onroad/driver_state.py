@@ -22,15 +22,11 @@ class DriverStateRenderer(Widget):
   LINES_ANGLE_INCREMENT = 5
   LINES_STALE_ANGLES = 3.0  # seconds
 
-  def __init__(self, lines: bool = False, inset: bool = False, confirm_callback: Callable | None = None):
+  def __init__(self, lines: bool = False, inset: bool = False):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, self.BASE_SIZE, self.BASE_SIZE))
     self._lines = lines
     self._inset = inset
-
-    # In confirm mode, user must fill out the circle to confirm some action in the UI
-    self._confirm_callback = confirm_callback
-    self._confirm_angles: dict[int, float] = {}  # angle: timestamp
 
     # In line mode, track smoothed angles
     assert 360 % self.LINES_ANGLE_INCREMENT == 0
@@ -132,7 +128,6 @@ class DriverStateRenderer(Widget):
       else:
         # remove old angles
         now = rl.get_time()
-        self._confirm_angles = {angle: t for angle, t in self._confirm_angles.items() if now - t < self.LINES_STALE_ANGLES}
 
         for angle, f in self._head_angles.items():
           dst_from_current = ((angle - self._rotation_filter.x) % 360) - 180
@@ -145,7 +140,7 @@ class DriverStateRenderer(Widget):
             target = np.interp(self._looking_center_filter.x, [0.0, 1.0], [target, 0.45])
 
           f.update(target)
-          self._draw_line(angle, f, self._looking_center and angle not in self._confirm_angles)
+          self._draw_line(angle, f, self._looking_center)
 
   def _draw_line(self, angle: int, f: FirstOrderFilter, grey: bool):
     line_length = self._rect.width / 6
