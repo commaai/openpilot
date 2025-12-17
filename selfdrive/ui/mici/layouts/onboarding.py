@@ -168,7 +168,6 @@ class TrainingGuideDMTutorial(Widget):
     self._progress.x = 0.0
     self._dialog.show_event()
     self._show_time = rl.get_time()
-    self._dm_alive = False
 
     device.set_offroad_brightness(100)
 
