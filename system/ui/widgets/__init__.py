@@ -170,9 +170,6 @@ class Widget(abc.ABC):
           self._long_press_start_t = None
           self._long_press_fired = False
         self._handle_mouse_event(mouse_event)
-        if mouse_event.slot == 0:
-          self._long_press_start_t = None
-          self._long_press_fired = False
 
     # Long press detection (fire once per press). Note: long presses can occur without new mouse events.
     if self._long_press_start_t is not None and not self._long_press_fired:
