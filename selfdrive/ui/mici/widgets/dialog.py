@@ -385,25 +385,23 @@ class BigMultiOptionDialog(BigDialogBase):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    if self._right_btn and rl.check_collision_point_rec(mouse_pos, self._right_btn._rect):
+    if self._right_btn and rl.check_collision_point_rec(mouse_pos, self._right_btn.rect):
       return
 
     if mouse_pos.y < self._rect.y + self._rect.height * 0.25:
       next_option = self._get_next_option(-1)
       if next_option:
-        self._on_option_selected(next_option, smooth_scroll=True)
-      return True
+        self._on_option_selected(next_option)
 
     elif mouse_pos.y > self._rect.y + self._rect.height * 0.75:
       next_option = self._get_next_option(1)
       if next_option:
-        self._on_option_selected(next_option, smooth_scroll=True)
-      return True
+        self._on_option_selected(next_option)
 
     else:
+      # Select current option
       if self._selected_option:
         self._on_option_selected(self._selected_option)
-      return True
 
   def _update_state(self):
     super()._update_state()
