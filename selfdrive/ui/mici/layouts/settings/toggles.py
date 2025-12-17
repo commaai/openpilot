@@ -17,6 +17,9 @@ class TogglesLayoutMici(NavWidget):
     super().__init__()
     self.set_back_callback(back_callback)
 
+    enable_openpilot_desc = ("Use the openpilot system for adaptive cruise control and lane keep driver assistance. "
+                             "Your attention is required at all times to use this feature.")
+
     self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"])
     self._experimental_btn = BigParamControl("experimental mode", "ExperimentalMode")
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
@@ -24,7 +27,8 @@ class TogglesLayoutMici(NavWidget):
     always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM")
     record_front = BigParamControl("record & upload driver camera", "RecordFront", toggle_callback=restart_needed_callback)
     record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback)
-    enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
+    enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle",
+                                       toggle_callback=restart_needed_callback, description=enable_openpilot_desc)
 
     self._scroller = Scroller([
       self._personality_toggle,

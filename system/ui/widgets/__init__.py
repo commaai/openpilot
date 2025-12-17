@@ -1,5 +1,6 @@
 import abc
 import pyray as rl
+import time
 from enum import IntEnum
 from collections.abc import Callable
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
@@ -172,7 +173,7 @@ class Widget(abc.ABC):
 
     # Long press detection (fire once per press). Note: long presses can occur without new mouse events.
     if self._long_press_start_t is not None and not self._long_press_fired:
-      if (gui_app.last_mouse_event.t - self._long_press_start_t) >= self.LONG_PRESS_THRESHOLD_S:
+      if (time.monotonic() - self._long_press_start_t) >= self.LONG_PRESS_THRESHOLD_S:
         self._long_press_fired = True
         self._handle_long_press(gui_app.last_mouse_event.pos)
 
