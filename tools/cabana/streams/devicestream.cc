@@ -3,6 +3,8 @@
 #include <memory>
 #include <string>
 
+#include "cereal/services.h"
+
 #include <QButtonGroup>
 #include <QFormLayout>
 #include <QRadioButton>
@@ -20,7 +22,7 @@ void DeviceStream::streamThread() {
 
   std::unique_ptr<Context> context(Context::create());
   std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
-  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
+  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address, false, true, services.at("can").queue_size));
   assert(sock != NULL);
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {

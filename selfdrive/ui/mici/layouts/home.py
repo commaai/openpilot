@@ -1,5 +1,3 @@
-import time
-
 from cereal import log
 import pyray as rl
 from collections.abc import Callable
@@ -120,6 +118,12 @@ class MiciHomeLayout(Widget):
 
   def _update_params(self):
     self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
+
+  def _handle_long_press(self, _):
+    # long gating for experimental mode - only allow toggle if longitudinal control is available
+    if ui_state.has_longitudinal_control:
+      self._experimental_mode = not self._experimental_mode
+      ui_state.params.put("ExperimentalMode", self._experimental_mode)
 
   def _update_state(self):
     if rl.get_time() - self._last_refresh > 5.0:

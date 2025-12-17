@@ -21,7 +21,7 @@ class DialogResult(IntEnum):
 
 
 class Widget(abc.ABC):
-  LONG_PRESS_THRESHOLD_S = 0.5
+  LONG_PRESS_TIME = 0.5
 
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
@@ -135,7 +135,7 @@ class Widget(abc.ABC):
           self.__is_pressed[mouse_event.slot] = True
           self.__tracking_is_pressed[mouse_event.slot] = True
           if mouse_event.slot == 0:
-            self._long_press_start_t = mouse_event.t
+            self._long_press_start_t = rl.get_time()
             self._long_press_fired = False
           self._handle_mouse_event(mouse_event)
 
@@ -166,6 +166,9 @@ class Widget(abc.ABC):
       # Mouse/touch left our rect but may come back into focus later
       elif not mouse_in_rect:
         self.__is_pressed[mouse_event.slot] = False
+        if mouse_event.slot == 0:
+          self._long_press_start_t = None
+          self._long_press_fired = False
         self._handle_mouse_event(mouse_event)
         if mouse_event.slot == 0:
           self._long_press_start_t = None
@@ -174,6 +177,12 @@ class Widget(abc.ABC):
     # Long press detection (fire once per press). Note: long presses can occur without new mouse events.
     if self._long_press_start_t is not None and not self._long_press_fired:
       if (time.monotonic() - self._long_press_start_t) >= self.LONG_PRESS_THRESHOLD_S:
+        self._long_press_fired = True
+        self._handle_long_press(gui_app.last_mouse_event.pos)
+
+    # Long press detection
+    if self._long_press_start_t is not None and not self._long_press_fired:
+      if (rl.get_time() - self._long_press_start_t) >= self.LONG_PRESS_TIME:
         self._long_press_fired = True
         self._handle_long_press(gui_app.last_mouse_event.pos)
 
@@ -201,11 +210,10 @@ class Widget(abc.ABC):
     return False
 
   def _handle_long_press(self, mouse_pos: MousePos) -> None:
-    """Optionally handle a long-press (press-and-hold) gesture."""
+    """Optionally handle a long-press gesture."""
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
-    # Default implementation does nothing, can be overridden by subclasses
 
   def show_event(self):
     """Optionally handle show event. Parent must manually call this"""
