@@ -1,5 +1,7 @@
-Version 0.10.3 (2025-12-10)
+Version 0.10.3 (2025-12-17)
 ========================
+* New driving model
+* New driver monitoring model
 
 Version 0.10.2 (2025-11-19)
 ========================
