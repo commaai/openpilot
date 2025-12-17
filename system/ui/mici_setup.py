@@ -470,7 +470,9 @@ class NetworkSetupPage(Widget):
       self._network_header.set_icon(self._no_wifi_txt)
       self._continue_button.set_enabled(False)
 
+    print(has_internet)
     if has_internet and not self._prev_has_internet:
+      print('SET STATE')
       self.set_state(NetworkSetupState.MAIN)
       gui_app.set_modal_overlay(None)
     self._prev_has_internet = has_internet
