@@ -18,14 +18,13 @@ from openpilot.common.utils import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
-from openpilot.selfdrive.ui.ui_state import device
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRoundedButton, SmallerRoundedButton,
                                                 SmallCircleIconButton, WidishRoundedButton, SmallRedPillButton,
                                                 FullRoundedButton)
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.slider import LargerSlider
+from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 
@@ -199,15 +198,20 @@ class TermsPage(Widget):
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
 
     self._continue_text = continue_text
-    self._continue_button: WideRoundedButton | FullRoundedButton
-    if back_callback is not None:
+    self._continue_slider: bool = continue_text in ("reboot", "power off")
+    self._continue_button: WideRoundedButton | FullRoundedButton | SmallSlider
+    if self._continue_slider:
+      self._continue_button = SmallSlider(continue_text, confirm_callback=continue_callback)
+      self._scroll_panel.set_enabled(lambda: not self._continue_button.is_pressed)
+    elif back_callback is not None:
       self._continue_button = WideRoundedButton(continue_text)
     else:
       self._continue_button = FullRoundedButton(continue_text)
     self._continue_button.set_enabled(False)
     self._continue_button.set_opacity(0.0)
     self._continue_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
-    self._continue_button.set_click_callback(continue_callback)
+    if not self._continue_slider:
+      self._continue_button.set_click_callback(continue_callback)
 
     self._enable_back = back_callback is not None
     self._back_button = SmallButton(back_text)
@@ -228,7 +232,7 @@ class TermsPage(Widget):
 
   def show_event(self):
     super().show_event()
-    device.reset_interactive_timeout(300)
+    self.reset()
 
   @property
   @abstractmethod
@@ -270,6 +274,11 @@ class TermsPage(Widget):
     rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - 20),
                                  int(self._rect.width), 20, rl.BLANK, rl.BLACK)
 
+    # fade out back button as slider is moved
+    if self._continue_slider and scroll_offset <= self._scrolled_down_offset:
+      self._back_button.set_opacity(1.0 - self._continue_button.slider_percentage)
+      self._back_button.set_visible(self._continue_button.slider_percentage < 0.99)
+
     self._back_button.render(rl.Rectangle(
       self._rect.x + 8,
       self._rect.y + self._rect.height - self._back_button.rect.height,
@@ -280,6 +289,8 @@ class TermsPage(Widget):
     continue_x = self._rect.x + 8
     if self._enable_back:
       continue_x = self._rect.x + self._rect.width - self._continue_button.rect.width - 8
+    if self._continue_slider:
+      continue_x += 8
     self._continue_button.render(rl.Rectangle(
       continue_x,
       self._rect.y + self._rect.height - self._continue_button.rect.height,
@@ -443,9 +454,12 @@ class NetworkSetupPage(Widget):
     self._continue_button.set_click_callback(continue_callback)
 
     self._state = NetworkSetupState.MAIN
+    self._prev_has_internet = False
 
   def set_state(self, state: NetworkSetupState):
     self._state = state
+    if state == NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.show_event()
 
   def set_has_internet(self, has_internet: bool):
     if has_internet:
@@ -456,6 +470,10 @@ class NetworkSetupPage(Widget):
       self._network_header.set_title(self._waiting_text)
       self._network_header.set_icon(self._no_wifi_txt)
       self._continue_button.set_enabled(False)
+
+    if has_internet and not self._prev_has_internet:
+      self.set_state(NetworkSetupState.MAIN)
+    self._prev_has_internet = has_internet
 
   def show_event(self):
     super().show_event()
@@ -513,6 +531,8 @@ class Setup(Widget):
     self._network_monitor = NetworkConnectivityMonitor(
       lambda: self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
     )
+    self._prev_has_internet = False
+    gui_app.set_modal_overlay_tick(self._modal_overlay_tick)
 
     self._start_page = StartPage()
     self._start_page.set_click_callback(self._getting_started_button_callback)
@@ -529,6 +549,12 @@ class Setup(Widget):
                                                                    self._custom_software_warning_back_button_callback)
 
     self._downloading_page = DownloadingPage()
+
+  def _modal_overlay_tick(self):
+    has_internet = self._network_monitor.network_connected.is_set()
+    if has_internet and not self._prev_has_internet:
+      gui_app.set_modal_overlay(None)
+    self._prev_has_internet = has_internet
 
   def _update_state(self):
     self._wifi_manager.process_callbacks()
@@ -603,7 +629,9 @@ class Setup(Widget):
 
   def render_network_setup(self, rect: rl.Rectangle):
     self._network_setup_page.render(rect)
-    self._network_setup_page.set_has_internet(self._network_monitor.network_connected.is_set())
+    has_internet = self._network_monitor.network_connected.is_set()
+    self._prev_has_internet = has_internet
+    self._network_setup_page.set_has_internet(has_internet)
 
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_page.set_progress(self.download_progress)

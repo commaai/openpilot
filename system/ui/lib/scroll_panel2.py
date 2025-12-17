@@ -175,7 +175,8 @@ class GuiScrollPanel2:
         # Do not update velocity on the same frame the mouse was released
         previous_mouse_pos = self._get_mouse_pos(cast(MouseEvent, self._previous_mouse_event))
         delta_x = mouse_pos - previous_mouse_pos
-        self._velocity = delta_x / (mouse_event.t - cast(MouseEvent, self._previous_mouse_event).t)
+        delta_t = max((mouse_event.t - cast(MouseEvent, self._previous_mouse_event).t), 1e-6)
+        self._velocity = delta_x / delta_t
         self._velocity = max(-MAX_SPEED, min(MAX_SPEED, self._velocity))
         self._velocity_buffer.append(self._velocity)
 

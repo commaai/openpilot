@@ -56,8 +56,7 @@ def get_irq_count(irq: int):
     return sum(per_cpu)
 
 def read_sensor_events(duration_sec):
-  sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
-                  'gyroscope2', 'temperatureSensor', 'temperatureSensor2']
+  sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'temperatureSensor',]
   socks = {}
   poller = messaging.Poller()
   events = defaultdict(list)

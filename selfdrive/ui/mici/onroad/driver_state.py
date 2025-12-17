@@ -1,9 +1,7 @@
 import pyray as rl
-from collections.abc import Callable
 import numpy as np
 import math
 from cereal import log
-from openpilot.system.hardware import PC
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
@@ -22,15 +20,11 @@ class DriverStateRenderer(Widget):
   LINES_ANGLE_INCREMENT = 5
   LINES_STALE_ANGLES = 3.0  # seconds
 
-  def __init__(self, lines: bool = False, confirm_mode: bool = False, confirm_callback: Callable | None = None):
+  def __init__(self, lines: bool = False, inset: bool = False):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, self.BASE_SIZE, self.BASE_SIZE))
-    self._lines = lines or confirm_mode
-
-    # In confirm mode, user must fill out the circle to confirm some action in the UI
-    self._confirm_mode = confirm_mode
-    self._confirm_callback = confirm_callback
-    self._confirm_angles: dict[int, float] = {}  # angle: timestamp
+    self._lines = lines
+    self._inset = inset
 
     # In line mode, track smoothed angles
     assert 360 % self.LINES_ANGLE_INCREMENT == 0
@@ -54,12 +48,20 @@ class DriverStateRenderer(Widget):
 
   def load_icons(self):
     """Load or reload the driver face icon texture"""
-    self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", self._rect.width, self._rect.height)
-    self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", self._rect.width, self._rect.height)
+    cone_and_person_size = round(52 / self.BASE_SIZE * self._rect.width)
+
+    # If inset is enabled, push cone and person smaller by 2x the current inset space
+    if self._inset:
+      # Current inset space = (rect.width - cone_and_person_size) / 2
+      current_inset = (self._rect.width - cone_and_person_size) / 2
+      # Reduce size by 2x the current inset (1x on each side)
+      cone_and_person_size = round(cone_and_person_size - current_inset * 2)
+
+    self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size, cone_and_person_size)
+    self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
     center_size = round(36 / self.BASE_SIZE * self._rect.width)
     self._dm_center = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_center.png", center_size, center_size)
-    background_size = round(52 / self.BASE_SIZE * self._rect.width)
-    self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", background_size, background_size)
+    self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", self._rect.width, self._rect.height)
 
   def set_should_draw(self, should_draw: bool):
     self._should_draw = should_draw
@@ -78,16 +80,22 @@ class DriverStateRenderer(Widget):
     """Returns True if dmoji should appear active (either actually active or forced)"""
     return bool(self._force_active or self._is_active)
 
+  @property
+  def is_rhd(self) -> bool:
+    return self._is_rhd
+
   def _render(self, _):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
     rl.draw_texture(self._dm_background,
-                    int(self._rect.x + (self._rect.width - self._dm_background.width) / 2),
-                    int(self._rect.y + (self._rect.height - self._dm_background.height) / 2),
+                    int(self._rect.x),
+                    int(self._rect.y),
                     rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
 
-    rl.draw_texture(self._dm_person, int(self._rect.x), int(self._rect.y),
+    rl.draw_texture(self._dm_person,
+                    int(self._rect.x + (self._rect.width - self._dm_person.width) / 2),
+                    int(self._rect.y + (self._rect.height - self._dm_person.height) / 2),
                     rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     if self.effective_active:
@@ -120,38 +128,18 @@ class DriverStateRenderer(Widget):
 
       else:
         # remove old angles
-        now = rl.get_time()
-        self._confirm_angles = {angle: t for angle, t in self._confirm_angles.items() if now - t < self.LINES_STALE_ANGLES}
-
-        looking_center = self._looking_center_filter.x > 0.2
         for angle, f in self._head_angles.items():
           dst_from_current = ((angle - self._rotation_filter.x) % 360) - 180
           target = 1.0 if abs(dst_from_current) <= self.LINES_ANGLE_INCREMENT * 5 else 0.0
           if not self._face_detected:
             target = 0.0
 
-          if self._confirm_mode:
-            # Extra careful to not add angles when looking near center
-            if target > 0 and not looking_center:
-              self._confirm_angles[angle] = now
-
-            # User is looking at area already confirmed, reduce target to indicate where they are
-            if angle in self._confirm_angles and target == 0:
-              target = 0.65
-
           # Reduce all line lengths when looking center
           if self._looking_center:
             target = np.interp(self._looking_center_filter.x, [0.0, 1.0], [target, 0.45])
 
           f.update(target)
-          self._draw_line(angle, f, self._looking_center and angle not in self._confirm_angles)
-
-        # if all lines placed, reset for next time and call callback
-        if self._confirm_mode:
-          if len(self._confirm_angles) >= 360 // self.LINES_ANGLE_INCREMENT:
-            self._confirm_angles = {}
-            if self._confirm_callback is not None:
-              self._confirm_callback()
+          self._draw_line(angle, f, self._looking_center)
 
   def _draw_line(self, angle: int, f: FirstOrderFilter, grey: bool):
     line_length = self._rect.width / 6
@@ -171,10 +159,9 @@ class DriverStateRenderer(Widget):
     if f.x > 0.01:
       rl.draw_line_ex((start_x, start_y), (end_x, end_y), 12, color)
 
-  def _update_state(self):
+  def get_driver_data(self):
     sm = ui_state.sm
 
-    # Get monitoring state
     dm_state = sm["driverMonitoringState"]
     self._is_active = dm_state.isActiveMode
     self._is_rhd = dm_state.isRHD
@@ -182,6 +169,11 @@ class DriverStateRenderer(Widget):
 
     driverstate = sm["driverStateV2"]
     driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
+    return driver_data
+
+  def _update_state(self):
+    # Get monitoring state
+    driver_data = self.get_driver_data()
     driver_orient = driver_data.faceOrientation
 
     if len(driver_orient) != 3:
@@ -218,10 +210,7 @@ class DriverStateRenderer(Widget):
     rotation = math.degrees(math.atan2(pitch, yaw))
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
-    if PC and self._confirm_mode:
-      self._rotation_filter.x += 2
-    else:
-      self._rotation_filter.update(self._rotation_filter.x + angle_diff)
+    self._rotation_filter.update(self._rotation_filter.x + angle_diff)
 
     if not self.should_draw:
       self._fade_filter.update(0.0)
