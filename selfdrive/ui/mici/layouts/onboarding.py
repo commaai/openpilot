@@ -209,7 +209,7 @@ class TrainingGuideDMTutorial(Widget):
     # DM icon is 120x120, positioned on opposite side from driver
     dm_size = 120
     is_rhd = self._dialog.driver_state_renderer._is_rhd
-    dm_center_x = self._rect.x + dm_size / 2 + 8 if is_rhd else self._rect.x + self._rect.width - dm_size / 2 - 8
+    dm_center_x = (self._rect.x + dm_size / 2 + 8) if is_rhd else (self._rect.x + self._rect.width - dm_size / 2 - 8)
     dm_center_y = self._rect.y + dm_size / 2 + 8
     icon_edge_radius = dm_size / 2
     outer_radius = icon_edge_radius + 1  # 2px outward from icon edge
