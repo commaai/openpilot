@@ -178,7 +178,7 @@ class TrainingGuideDMTutorial(Widget):
     driver_data = self._dialog.driver_state_renderer.get_driver_data()
 
     if len(driver_data.faceOrientation) == 3:
-      pitch, yaw, roll = driver_data.faceOrientation
+      pitch, yaw, _ = driver_data.faceOrientation
       looking_center = abs(math.degrees(pitch)) < self.LOOKING_THRESHOLD_DEG and abs(math.degrees(yaw)) < self.LOOKING_THRESHOLD_DEG
     else:
       looking_center = False
