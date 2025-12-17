@@ -3,7 +3,8 @@ import time
 from cereal import log
 import pyray as rl
 from collections.abc import Callable
-from openpilot.system.ui.widgets.label import gui_label, MiciLabel, ScrollableLabel
+from openpilot.system.ui.widgets.label import gui_label, MiciLabel
+from openpilot.system.ui.widgets.scrollable_label import ScrollableLabel
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR, MousePos
 from openpilot.selfdrive.ui.ui_state import ui_state

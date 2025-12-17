@@ -4,7 +4,8 @@ import pyray as rl
 from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.widgets.label import UnifiedLabel, ScrollableLabel
+from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.scrollable_label import ScrollableLabel
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigMultiOptionDialog, BigInputDialog, BigDialogOptionButton, BigConfirmationDialogV2
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
