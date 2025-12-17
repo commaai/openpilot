@@ -470,6 +470,7 @@ class NetworkSetupPage(Widget):
       self._continue_button.set_enabled(False)
 
     if has_internet and not self._prev_has_internet:
+      print('set state')
       self.set_state(NetworkSetupState.MAIN)
     self._prev_has_internet = has_internet
 
