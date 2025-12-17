@@ -389,12 +389,12 @@ class BigMultiOptionDialog(BigDialogBase):
     if self._right_btn and rl.check_collision_point_rec(mouse_pos, self._right_btn.rect):
       return
 
-    if mouse_pos.y < self._rect.y + self._rect.height * 0.275:
+    if mouse_pos.y < self._rect.y + self._rect.height * 0.3:
       next_option = self._get_next_option(-1)
       if next_option is not None:
         self._on_option_selected(next_option)
 
-    elif mouse_pos.y > self._rect.y + self._rect.height * 0.725:
+    elif mouse_pos.y > self._rect.y + self._rect.height * 0.7:
       next_option = self._get_next_option(1)
       if next_option is not None:
         self._on_option_selected(next_option)
