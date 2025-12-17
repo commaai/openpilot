@@ -544,7 +544,7 @@ class Setup(Widget):
     self._start_page.set_click_callback(self._getting_started_button_callback)
 
     self._network_setup_page = NetworkSetupPage(self._wifi_manager, self._network_setup_continue_button_callback,
-                                                self._network_setup_back_button_callback, self._network_monitor)
+                                                self._network_setup_back_button_callback)
 
     self._software_selection_page = SoftwareSelectionPage(self._software_selection_continue_button_callback,
                                                           self._software_selection_custom_software_button_callback)
