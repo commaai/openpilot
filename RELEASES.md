@@ -1,7 +1,9 @@
 Version 0.10.3 (2025-12-17)
 ========================
-* New driving model
-* New driver monitoring model
+* New driving model #36249
+  * minor changes in the temporal policy architecture and on-policy training physics noise model
+* New driver monitoring model #36409
+  * trained with a new driver monitoring dataset including comma four data
 
 Version 0.10.2 (2025-11-19)
 ========================
