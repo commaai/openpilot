@@ -55,8 +55,8 @@ class Joystick:
       steer_axis = 'ABS_Z'
       self.flip_map = {'ABS_RY': accel_axis}
 
-    self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
-    self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
+    self.min_axis_value = {accel_axis: 0, steer_axis: 0}
+    self.max_axis_value = {accel_axis: 255, steer_axis: 255}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
     self.axes_order = [accel_axis, steer_axis]
     self.cancel = False
