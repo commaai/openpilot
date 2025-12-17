@@ -161,7 +161,7 @@ class DriverCameraDialog(NavWidget):
     if self._glasses_texture is None:
       self._glasses_texture = gui_app.texture("icons_mici/onroad/glasses.png", self._glasses_size, self._glasses_size)
 
-  def _draw_face_detection(self, rect: rl.Rectangle) -> None:
+  def _draw_face_detection(self, rect: rl.Rectangle):
     driver_state = ui_state.sm["driverStateV2"]
     is_rhd = driver_state.wheelOnRightProb > 0.5
     driver_data = driver_state.rightDriverData if is_rhd else driver_state.leftDriverData
