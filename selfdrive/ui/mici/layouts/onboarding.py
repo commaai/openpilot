@@ -123,7 +123,7 @@ class DMBadFaceDetected(SetupTermsPage):
 
 
 class TrainingGuideDMTutorial(Widget):
-  PROGRESS_DURATION = 5
+  PROGRESS_DURATION = 4
 
   def __init__(self, continue_callback):
     super().__init__()
@@ -220,6 +220,13 @@ class TrainingGuideDMTutorial(Widget):
     # Fade in
     current_angle = end_angle - start_angle
     alpha = int((current_angle / 30.0) * 255) if current_angle <= 30.0 else 255
+
+    # Turn green at 99% progress
+    if self._progress.x >= 0.99:
+      ring_color = rl.Color(0, 255, 64, alpha)
+    else:
+      ring_color = rl.Color(255, 255, 255, alpha)
+
     rl.draw_ring(
       rl.Vector2(dm_center_x, dm_center_y),
       inner_radius,
@@ -227,7 +234,7 @@ class TrainingGuideDMTutorial(Widget):
       start_angle,
       end_angle,
       36,  # segments for smooth arc
-      rl.Color(255, 255, 255, alpha),
+      ring_color,
     )
 
     # self._title_header.render(rl.Rectangle(
