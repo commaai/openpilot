@@ -461,8 +461,6 @@ class NetworkSetupPage(Widget):
     self._state = state
     if state == NetworkSetupState.WIFI_PANEL:
       self._wifi_ui.show_event()
-    elif state == NetworkSetupState.MAIN:
-      self.show_event()
 
   def set_has_internet(self, has_internet: bool):
     if has_internet:
