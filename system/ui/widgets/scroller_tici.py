@@ -7,29 +7,12 @@ LINE_COLOR = rl.GRAY
 LINE_PADDING = 40
 
 
-class LineSeparator(Widget):
-  def __init__(self, height: int = 1):
-    super().__init__()
-    self._rect = rl.Rectangle(0, 0, 0, height)
-
-  def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
-    super().set_parent_rect(parent_rect)
-    self._rect.width = parent_rect.width
-
-  def _render(self, _):
-    rl.draw_line(int(self._rect.x) + LINE_PADDING, int(self._rect.y),
-                 int(self._rect.x + self._rect.width) - LINE_PADDING, int(self._rect.y),
-                 LINE_COLOR)
-
-
 class Scroller(Widget):
-  def __init__(self, items: list[Widget], spacing: int = ITEM_SPACING, line_separator: bool = False, pad_end: bool = True):
+  def __init__(self, items: list[Widget], spacing: int = ITEM_SPACING, line_separator: bool = False):
     super().__init__()
     self._items: list[Widget] = []
     self._spacing = spacing
-    self._line_separator = LineSeparator() if line_separator else None
-    self._pad_end = pad_end
-
+    self._line_separator = line_separator
     self.scroll_panel = GuiScrollPanel()
 
     for item in items:
@@ -40,40 +23,39 @@ class Scroller(Widget):
     item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
   def _render(self, _):
-    # TODO: don't draw items that are not in the viewport
-    visible_items = [item for item in self._items if item.is_visible]
+    items = [item for item in self._items if item.is_visible]
+    if not items:
+      return
 
-    # Add line separator between items
-    if self._line_separator is not None:
-      l = len(visible_items)
-      for i in range(1, len(visible_items)):
-        visible_items.insert(l - i, self._line_separator)
+    # 1. Geometry Setup
+    line_h = 1 if self._line_separator else 0
+    item_gap = self._spacing + line_h
+    content_height = sum(i.rect.height for i in items) + item_gap * (len(items) - 1)
 
-    content_height = sum(item.rect.height for item in visible_items) + self._spacing * (len(visible_items))
-    if not self._pad_end:
-      content_height -= self._spacing
-    scroll = self.scroll_panel.update(self._rect, rl.Rectangle(0, 0, self._rect.width, content_height))
+    scroll_y = self.scroll_panel.update(self._rect, rl.Rectangle(0, 0, self._rect.width, content_height))
+    rect_x, rect_y = int(self._rect.x), int(self._rect.y)
+    rect_w, rect_h = int(self._rect.width), int(self._rect.height)
 
-    rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
-                          int(self._rect.width), int(self._rect.height))
+    rl.begin_scissor_mode(rect_x, rect_y, rect_w, rect_h)
 
-    cur_height = 0
-    for idx, item in enumerate(visible_items):
-      if not item.is_visible:
-        continue
+    cur_y = self._rect.y + scroll_y
+    view_bottom = self._rect.y + self._rect.height
 
-      # Nicely lay out items vertically
-      x = self._rect.x
-      y = self._rect.y + cur_height + self._spacing * (idx != 0)
-      cur_height += item.rect.height + self._spacing * (idx != 0)
+    for i, item in enumerate(items):
+      if cur_y > view_bottom:
+        break
 
-      # Consider scroll
-      y += scroll
+      item_h = item.rect.height
+      if cur_y + item_h > self._rect.y:
+        item.set_position(self._rect.x, cur_y)
+        item.set_parent_rect(self._rect)
+        item.render()
 
-      # Update item state
-      item.set_position(x, y)
-      item.set_parent_rect(self._rect)
-      item.render()
+        if self._line_separator and i < len(items) - 1:
+          line_y = int(cur_y + item_h + self._spacing // 2)
+          rl.draw_line(rect_x + LINE_PADDING, line_y, rect_x + rect_w - LINE_PADDING, line_y, LINE_COLOR)
+
+      cur_y += item_h + item_gap
 
     rl.end_scissor_mode()
 
