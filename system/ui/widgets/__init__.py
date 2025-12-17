@@ -20,6 +20,8 @@ class DialogResult(IntEnum):
 
 
 class Widget(abc.ABC):
+  LONG_PRESS_TIME = 0.5
+
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle | None = None
@@ -32,6 +34,10 @@ class Widget(abc.ABC):
     self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
     self.__was_awake = True
+
+    # Long press state (single touch only, slot 0)
+    self._long_press_start_t: float | None = None
+    self._long_press_fired: bool = False
 
   @property
   def rect(self) -> rl.Rectangle:
@@ -127,19 +133,28 @@ class Widget(abc.ABC):
           self._handle_mouse_press(mouse_event.pos)
           self.__is_pressed[mouse_event.slot] = True
           self.__tracking_is_pressed[mouse_event.slot] = True
+          if mouse_event.slot == 0:
+            self._long_press_start_t = mouse_event.t
+            self._long_press_fired = False
           self._handle_mouse_event(mouse_event)
 
       # Callback such as scroll panel signifies user is scrolling
       elif not touch_valid:
         self.__is_pressed[mouse_event.slot] = False
         self.__tracking_is_pressed[mouse_event.slot] = False
+        if mouse_event.slot == 0:
+          self._long_press_start_t = None
+          self._long_press_fired = False
 
       elif mouse_event.left_released:
         self._handle_mouse_event(mouse_event)
-        if self.__is_pressed[mouse_event.slot] and mouse_in_rect:
+        if self.__is_pressed[mouse_event.slot] and mouse_in_rect and not (mouse_event.slot == 0 and self._long_press_fired):
           self._handle_mouse_release(mouse_event.pos)
         self.__is_pressed[mouse_event.slot] = False
         self.__tracking_is_pressed[mouse_event.slot] = False
+        if mouse_event.slot == 0:
+          self._long_press_start_t = None
+          self._long_press_fired = False
 
       # Mouse/touch is still within our rect
       elif mouse_in_rect:
@@ -150,6 +165,9 @@ class Widget(abc.ABC):
       # Mouse/touch left our rect but may come back into focus later
       elif not mouse_in_rect:
         self.__is_pressed[mouse_event.slot] = False
+        if mouse_event.slot == 0:
+          self._long_press_start_t = None
+          self._long_press_fired = False
         self._handle_mouse_event(mouse_event)
 
   def _layout(self) -> None:
@@ -175,9 +193,11 @@ class Widget(abc.ABC):
       self._click_callback()
     return False
 
+  def _handle_long_press(self, mouse_pos: MousePos) -> None:
+    """Optionally handle a long-press gesture."""
+
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
-    # Default implementation does nothing, can be overridden by subclasses
 
   def show_event(self):
     """Optionally handle show event. Parent must manually call this"""
