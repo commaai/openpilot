@@ -252,6 +252,7 @@ class TrainingGuideDMTutorial(Widget):
       self._good_button.rect.height,
     ))
 
+    # rounded border
     rl.draw_rectangle_rounded_lines_ex(self._rect, 0.2 * 1.02, 10, 50, rl.BLACK)
 
 
