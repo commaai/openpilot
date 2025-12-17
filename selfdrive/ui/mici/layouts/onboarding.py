@@ -138,7 +138,6 @@ class TrainingGuideDMTutorial(Widget):
     self._good_button.set_enabled(False)
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
-    self._show_time = 0.0
     self._dialog = DriverCameraSetupDialog()
     self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, self._hide_bad_face_page)
     self._should_show_bad_face_page = False
@@ -163,7 +162,6 @@ class TrainingGuideDMTutorial(Widget):
     super().show_event()
     self._dialog.show_event()
     self._progress.x = 0.0
-    self._show_time = rl.get_time()
 
     device.set_offroad_brightness(100)
 
@@ -186,8 +184,10 @@ class TrainingGuideDMTutorial(Widget):
       looking_center = False
 
     # stay at 100% once reached
-    if (dm_state.faceDetected and looking_center and rl.get_time() - self._show_time > 2) or self._progress.x > 0.99:
-      self._progress.x += 1.0 / (self.PROGRESS_DURATION * gui_app.target_fps)
+    if (dm_state.faceDetected and looking_center) or self._progress.x > 0.99:
+      slow = self._progress.x < 0.25
+      duration = self.PROGRESS_DURATION * 2 if slow else self.PROGRESS_DURATION
+      self._progress.x += 1.0 / (duration * gui_app.target_fps)
       self._progress.x = min(1.0, self._progress.x)
     else:
       self._progress.update(0.0)
