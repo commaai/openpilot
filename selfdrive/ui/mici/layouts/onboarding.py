@@ -127,11 +127,9 @@ class TrainingGuideDMTutorial(Widget):
 
   def __init__(self, continue_callback):
     super().__init__()
-    self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
-
     self._back_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_no_person.png", 48, 48))
     self._back_button.set_click_callback(self._show_bad_face_page)
-    self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 49, 36))
+    self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 48, 35))
     self._good_button.set_click_callback(continue_callback)
     self._good_button.set_enabled(False)
 
@@ -206,9 +204,8 @@ class TrainingGuideDMTutorial(Widget):
 
     self._dialog.render(self._rect)
 
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - self._title_header.rect.height * 1.5 - 32),
-                                 int(self._rect.width), int(self._title_header.rect.height * 1.5 + 32),
-                                 rl.BLANK, rl.Color(0, 0, 0, 150))
+    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - 80),
+                                 int(self._rect.width), 80, rl.BLANK, rl.BLACK)
 
     # draw white ring around dm icon to indicate progress
     ring_thickness = 8
@@ -244,13 +241,6 @@ class TrainingGuideDMTutorial(Widget):
       ring_color,
     )
 
-    # self._title_header.render(rl.Rectangle(
-    #   self._rect.x + 16,
-    #   self._rect.y + self._rect.height - self._title_header.rect.height - 16,
-    #   self._title_header.rect.width,
-    #   self._title_header.rect.height,
-    # ))
-
     # back button bottom left, 8 px from left 0 px from bottom. continue btn is right same
     self._back_button.render(rl.Rectangle(
       self._rect.x + 8,
@@ -265,6 +255,8 @@ class TrainingGuideDMTutorial(Widget):
       self._good_button.rect.width,
       self._good_button.rect.height,
     ))
+
+    rl.draw_rectangle_rounded_lines_ex(self._rect, 0.2 * 1.02, 10, 50, rl.BLACK)
 
 
 class TrainingGuideRecordFront(SetupTermsPage):
