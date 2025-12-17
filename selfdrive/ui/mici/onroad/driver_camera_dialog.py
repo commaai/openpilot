@@ -89,7 +89,9 @@ class DriverCameraDialog(NavWidget):
       self._publish_alert_sound(None)
       return -1
 
-    self._draw_face_detection(rect)
+    driver_data = self._draw_face_detection(rect)
+    if driver_data is not None:
+      self._draw_eyes(rect, driver_data)
 
     # Position dmoji on opposite side from driver
     dm_state = ui_state.sm["driverMonitoringState"]
@@ -159,12 +161,10 @@ class DriverCameraDialog(NavWidget):
     if self._glasses_texture is None:
       self._glasses_texture = gui_app.texture("icons_mici/onroad/glasses.png", self._glasses_size, self._glasses_size)
 
-  def _draw_face_detection(self, rect: rl.Rectangle) -> None:
-    driver_state = ui_state.sm["driverStateV2"]
-    is_rhd = driver_state.wheelOnRightProb > 0.5
-    driver_data = driver_state.rightDriverData if is_rhd else driver_state.leftDriverData
-    face_detect = driver_data.faceProb > 0.7
-    if not face_detect:
+  def _draw_face_detection(self, rect: rl.Rectangle):
+    dm_state = ui_state.sm["driverMonitoringState"]
+    driver_data = self.driver_state_renderer.get_driver_data()
+    if not dm_state.faceDetected:
       return
 
     # Get face position and orientation
@@ -188,7 +188,7 @@ class DriverCameraDialog(NavWidget):
     scale_y = rect.height / 1080.0
     fbox_x = rect.x + rect.width / 2 + offset_x * scale_x
     fbox_y = rect.y + rect.height / 2 + offset_y * scale_y
-    box_size = 50
+    box_size = 75
     line_thickness = 3
 
     line_color = rl.Color(255, 255, 255, int(alpha * 255))
@@ -199,7 +199,9 @@ class DriverCameraDialog(NavWidget):
       line_thickness,
       line_color,
     )
+    return driver_data
 
+  def _draw_eyes(self, rect: rl.Rectangle, driver_data):
     # Draw eye indicators based on eye probabilities
     eye_offset_x = 10
     eye_offset_y = 10

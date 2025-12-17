@@ -41,14 +41,15 @@ class DriverCameraSetupDialog(DriverCameraDialog):
       return -1
 
     # Position dmoji on opposite side from driver
-    # TODO: we don't have design for RHD yet
-    is_rhd = False
+    is_rhd = self.driver_state_renderer.is_rhd
     driver_state_rect = (
       rect.x if is_rhd else rect.x + rect.width - self.driver_state_renderer.rect.width,
       rect.y + (rect.height - self.driver_state_renderer.rect.height) / 2,
     )
     self.driver_state_renderer.set_position(*driver_state_rect)
     self.driver_state_renderer.render()
+
+    self._draw_face_detection(rect)
 
     rl.end_scissor_mode()
     return -1
