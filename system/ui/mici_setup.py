@@ -18,7 +18,6 @@ from openpilot.common.utils import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
-from openpilot.selfdrive.ui.ui_state import device
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRoundedButton, SmallerRoundedButton,
@@ -225,10 +224,6 @@ class TermsPage(Widget):
     self._back_button.set_enabled(False)
     self._back_button.set_opacity(0.0)
     self._scroll_down_indicator.set_opacity(1.0)
-
-  def show_event(self):
-    super().show_event()
-    device.reset_interactive_timeout(300)
 
   @property
   @abstractmethod
