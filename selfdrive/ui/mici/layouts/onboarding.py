@@ -94,14 +94,9 @@ class TrainingGuidePreDMTutorial(SetupTermsPage):
 class DMBadFaceDetected(SetupTermsPage):
   def __init__(self, continue_callback, back_callback):
     super().__init__(continue_callback, back_callback, continue_text="reboot")
-    # normal page like the rest with scroller and header that says "driver monitor couldn't detect a face" and then
-    # say some things like "make sure the camera has a clear view of your face" and "ensure you're sitting upright"
-    # and to remount. then show reboot btn at the bottom along with back button
-
-    self._title_header = TermsHeader("driver monitor couldn't detect a face", gui_app.texture("icons_mici/setup/orange_dm.png", 60, 60))
-    self._dm_label = UnifiedLabel("make sure the camera has a clear view of your face.\n\n" +
-                                  "ensure you're sitting upright and remount if necessary.", 42,
-                                  FontWeight.ROMAN)
+    self._title_header = TermsHeader("ensure clear view of face", gui_app.texture("icons_mici/setup/orange_dm.png", 60, 60))
+    self._dm_label = UnifiedLabel("Make sure the camera has a clear view of your face.\n\n" +
+                                  "Remount if your face is occluded or driver monitoring has a hard time tracking your face.", 42, FontWeight.ROMAN)
 
   @property
   def _content_height(self):
