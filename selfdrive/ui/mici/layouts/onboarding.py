@@ -133,10 +133,8 @@ class TrainingGuideDMTutorial(Widget):
     self._good_button.set_enabled(False)
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
-
-    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, self._hide_bad_face_page)
     self._show_time = 0.0
-
+    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, self._hide_bad_face_page)
     self._should_show_bad_face_page = False
 
     # Wrap the continue callback to restore settings
@@ -236,11 +234,10 @@ class TrainingGuideDMTutorial(Widget):
       outer_radius,
       start_angle,
       end_angle,
-      36,  # segments for smooth arc
+      36,
       ring_color,
     )
 
-    # back button bottom left, 8 px from left 0 px from bottom. continue btn is right same
     self._back_button.render(rl.Rectangle(
       self._rect.x + 8,
       self._rect.y + self._rect.height - self._back_button.rect.height,
