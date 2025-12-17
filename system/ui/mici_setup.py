@@ -228,6 +228,7 @@ class TermsPage(Widget):
 
   def show_event(self):
     super().show_event()
+    self.reset()
     device.reset_interactive_timeout(300)
 
   @property

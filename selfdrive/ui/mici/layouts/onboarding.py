@@ -3,9 +3,10 @@ from collections.abc import Callable
 
 import weakref
 import pyray as rl
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import SmallButton
+from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import SmallSlider
 from openpilot.system.ui.mici_setup import TermsHeader, TermsPage as SetupTermsPage
@@ -88,10 +89,52 @@ class TrainingGuidePreDMTutorial(SetupTermsPage):
     ))
 
 
+class DMBadFaceDetected(SetupTermsPage):
+  def __init__(self, continue_callback, back_callback):
+    super().__init__(continue_callback, back_callback, continue_text="reboot")
+    # normal page like the rest with scroller and header that says "driver monitor couldn't detect a face" and then
+    # say some things like "make sure the camera has a clear view of your face" and "ensure you're sitting upright"
+    # and to remount. then show reboot btn at the bottom along with back button
+
+    self._title_header = TermsHeader("driver monitor couldn't detect a face", gui_app.texture("icons_mici/setup/orange_dm.png", 60, 60))
+    self._dm_label = UnifiedLabel("make sure the camera has a clear view of your face.\n\n" +
+                                  "ensure you're sitting upright and remount if necessary.", 42,
+                                  FontWeight.ROMAN)
+
+  @property
+  def _content_height(self):
+    return self._dm_label.rect.y + self._dm_label.rect.height - self._scroll_panel.get_offset()
+
+  def _render_content(self, scroll_offset):
+    self._title_header.render(rl.Rectangle(
+      self._rect.x + 16,
+      self._rect.y + 16 + scroll_offset,
+      self._title_header.rect.width,
+      self._title_header.rect.height,
+    ))
+
+    self._dm_label.render(rl.Rectangle(
+      self._rect.x + 16,
+      self._title_header.rect.y + self._title_header.rect.height + 16,
+      self._rect.width - 32,
+      self._dm_label.get_content_height(int(self._rect.width - 32)),
+    ))
+
+
+
 class TrainingGuideDMTutorial(Widget):
   def __init__(self, continue_callback):
     super().__init__()
     self._title_header = TermsHeader("fill the circle to continue", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
+
+    self._back_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_no_person.png", 48, 48))
+    self._back_button.set_click_callback(self._show_bad_face_page)
+    self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 49, 36))
+    self._good_button.set_click_callback(continue_callback)
+
+    self._bad_face_page = DMBadFaceDetected(HARDWARE.reboot, self._hide_bad_face_page)
+
+    self._show_bad_face_page = False
 
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
@@ -107,6 +150,14 @@ class TrainingGuideDMTutorial(Widget):
 
     device.add_interactive_timeout_callback(inactivity_callback)
 
+  def _show_bad_face_page(self):
+    self._bad_face_page.show_event()
+    self._show_bad_face_page = True
+
+  def _hide_bad_face_page(self):
+    self._bad_face_page.hide_event()
+    self._show_bad_face_page = False
+
   def show_event(self):
     super().show_event()
     self._dialog.show_event()
@@ -120,16 +171,34 @@ class TrainingGuideDMTutorial(Widget):
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
   def _render(self, _):
+    if self._show_bad_face_page:
+      return self._bad_face_page.render(self._rect)
+
     self._dialog.render(self._rect)
 
     rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - self._title_header.rect.height * 1.5 - 32),
                                  int(self._rect.width), int(self._title_header.rect.height * 1.5 + 32),
                                  rl.BLANK, rl.Color(0, 0, 0, 150))
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + self._rect.height - self._title_header.rect.height - 16,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
+    # self._title_header.render(rl.Rectangle(
+    #   self._rect.x + 16,
+    #   self._rect.y + self._rect.height - self._title_header.rect.height - 16,
+    #   self._title_header.rect.width,
+    #   self._title_header.rect.height,
+    # ))
+
+    # back button bottom left, 8 px from left 0 px from bottom. continue btn is right same
+    self._back_button.render(rl.Rectangle(
+      self._rect.x + 8,
+      self._rect.y + self._rect.height - self._back_button.rect.height,
+      self._back_button.rect.width,
+      self._back_button.rect.height,
+    ))
+
+    self._good_button.render(rl.Rectangle(
+      self._rect.x + self._rect.width - self._good_button.rect.width - 8,
+      self._rect.y + self._rect.height - self._good_button.rect.height,
+      self._good_button.rect.width,
+      self._good_button.rect.height,
     ))
 
 
