@@ -35,7 +35,7 @@ VERSION = 1
 
 # Damping term on lateral-accel error rate (helps reduce steering oscillation).
 # Units: seconds (since error_rate is m/s^3 and controller output is m/s^2).
-KD = 0.12
+KD = 0.18
 
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI, dt):

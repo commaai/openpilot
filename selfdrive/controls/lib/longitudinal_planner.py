@@ -125,7 +125,10 @@ class LongitudinalPlanner:
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
       self.a_desired = np.clip(sm['carState'].aEgo, accel_clip[0], accel_clip[1])
 
-    # Prevent divergence, smooth in current v_ego
+    # Prevent divergence, smooth in current v_ego.
+    # Reduce lag at low speeds (takeoff / stop-and-go) while keeping high-speed smoothing.
+    v_rc = float(np.interp(v_ego, [0.0, 5.0, 15.0], [0.5, 0.8, 2.0]))
+    self.v_desired_filter.update_alpha(v_rc)
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
     x, v, a, j, throttle_prob = self.parse_model(sm['modelV2'])
     # Don't clip at low speeds since throttle_prob doesn't account for creep
@@ -139,7 +142,15 @@ class LongitudinalPlanner:
     if force_slow_decel:
       v_cruise = 0.0
 
-    self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
+    # Reduce accel-change smoothing when braking needs to respond quickly to a lead.
+    # This makes decel more responsive without making general cruising jerkier.
+    lead = sm['radarState'].leadOne if sm['radarState'].leadOne.status else sm['radarState'].leadTwo
+    lead_braking = False
+    if lead is not None and lead.status:
+      lead_braking = (lead.aLeadK < -0.3) and (lead.vRel < -0.2) and (lead.dRel < 90.0)
+    a_change_cost_mult = 0.35 if lead_braking else 1.0
+
+    self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality, a_change_cost_mult=a_change_cost_mult)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=sm['selfdriveState'].personality)
 

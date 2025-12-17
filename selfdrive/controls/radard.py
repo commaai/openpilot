@@ -40,7 +40,12 @@ def compute_a_lead_tau(a_lead: float, v_lead: float, v_rel: float) -> float:
   closing = np.clip((-v_rel) / 3.0, 0.0, 1.0)                # 1 at -3 m/s, 0 at >=0
   braking = np.clip((-a_lead - 0.10) / 0.60, 0.0, 1.0)        # 0 at -0.10, 1 at -0.70
 
-  if (a_lead < -0.10) or (low_speed > 0.5 and closing > 0.2 and a_lead < 0.2):
+  # Only assume persistence when there's clear evidence the lead is actually braking
+  # (or we're in a low-speed closing-to-stop scenario). Avoid making mild/transient
+  # decel always look persistent, which can cause early braking and excessive gaps.
+  braking_evidence = (a_lead < -0.40) or (closing > 0.2 and a_lead < -0.20)
+  low_speed_stop_context = (low_speed > 0.5 and closing > 0.2 and a_lead < 0.2)
+  if braking_evidence or low_speed_stop_context:
     # Low-speed stopping situations should strongly favor persistent decel.
     persist = np.clip(0.55 * low_speed + 0.30 * closing + 0.15 * braking, 0.0, 1.0)
     tau = _LEAD_ACCEL_TAU * (1.0 - persist)
