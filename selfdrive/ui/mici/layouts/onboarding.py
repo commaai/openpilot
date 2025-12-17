@@ -97,7 +97,7 @@ class DMBadFaceDetected(SetupTermsPage):
     super().__init__(continue_callback, back_callback, continue_text="reboot")
     self._title_header = TermsHeader("ensure clear view of face", gui_app.texture("icons_mici/setup/orange_dm.png", 60, 60))
     self._dm_label = UnifiedLabel("Make sure the camera has a clear view of your face.\n\n" +
-                                  "Remount if your face is occluded or driver monitoring has a hard time tracking your face.", 42, FontWeight.ROMAN)
+                                  "Remount if your face is occluded or driver monitoring has difficulty tracking your face.", 42, FontWeight.ROMAN)
 
   @property
   def _content_height(self):
