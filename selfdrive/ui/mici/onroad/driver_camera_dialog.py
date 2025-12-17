@@ -162,6 +162,7 @@ class DriverCameraDialog(NavWidget):
   def _draw_face_detection(self, rect: rl.Rectangle) -> None:
     driver_state = ui_state.sm["driverStateV2"]
     is_rhd = driver_state.wheelOnRightProb > 0.5
+    is_rhd = self.driver_state_renderer._is_rhd
     driver_data = driver_state.rightDriverData if is_rhd else driver_state.leftDriverData
     face_detect = driver_data.faceProb > 0.7
     if not face_detect:
