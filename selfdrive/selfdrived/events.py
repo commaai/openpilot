@@ -1074,9 +1074,9 @@ if HARDWARE.get_device_type() == 'mici':
         AlertStatus.userPrompt, AlertSize.small,
         Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .1),
     },
-    EventName.steerSaturated: {
-      ET.WARNING: steer_saturated_alert,
-    },
+    # EventName.steerSaturated: {
+    #   ET.WARNING: steer_saturated_alert,
+    # },
     EventName.calibrationIncomplete: {
       ET.PERMANENT: calibration_incomplete_alert,
       ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
