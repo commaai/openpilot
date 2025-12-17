@@ -473,19 +473,16 @@ class NetworkSetupPage(Widget):
       self._continue_button.set_enabled(False)
 
     if has_internet and not self._prev_has_internet:
-      print('SET STATE')
       self.set_state(NetworkSetupState.MAIN)
     self._prev_has_internet = has_internet
 
   def show_event(self):
     super().show_event()
     self._state = NetworkSetupState.MAIN
-    print('SHOW EVENT')
     self._wifi_ui.show_event()
 
   def hide_event(self):
     super().hide_event()
-    print('HIDE EVENT')
     self._wifi_ui.hide_event()
 
   def _render(self, _):
@@ -556,7 +553,6 @@ class Setup(Widget):
 
   def _modal_overlay_tick(self):
     has_internet = self._network_monitor.network_connected.is_set()
-    print(has_internet, self._prev_has_internet)
     if has_internet and not self._prev_has_internet:
       gui_app.set_modal_overlay(None)
     self._prev_has_internet = has_internet
