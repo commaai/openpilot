@@ -169,17 +169,24 @@ class DriverStateRenderer(Widget):
     if f.x > 0.01:
       rl.draw_line_ex((start_x, start_y), (end_x, end_y), 12, color)
 
+  def get_driver_data(self):
+    sm = ui_state.sm
+    dm_state = sm["driverMonitoringState"]
+    self._is_rhd = dm_state.isRHD
+    self._face_detected = dm_state.faceDetected
+
+    driverstate = sm["driverStateV2"]
+    driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
+    return driver_data
+
   def _update_state(self):
     sm = ui_state.sm
 
     # Get monitoring state
     dm_state = sm["driverMonitoringState"]
     self._is_active = dm_state.isActiveMode
-    self._is_rhd = dm_state.isRHD
-    self._face_detected = dm_state.faceDetected
 
-    driverstate = sm["driverStateV2"]
-    driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
+    driver_data = self.get_driver_data()
     driver_orient = driver_data.faceOrientation
 
     if len(driver_orient) != 3:
