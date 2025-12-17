@@ -26,7 +26,7 @@ class OnboardingState(IntEnum):
 class DriverCameraSetupDialog(DriverCameraDialog):
   def __init__(self, confirm_callback: Callable):
     super().__init__(no_escape=True)
-    self.driver_state_renderer = DriverStateRenderer(confirm_mode=True, confirm_callback=confirm_callback)
+    self.driver_state_renderer = DriverStateRenderer(confirm_callback=confirm_callback)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
 
