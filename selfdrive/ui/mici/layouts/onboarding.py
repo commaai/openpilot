@@ -221,6 +221,14 @@ class TrainingGuide(Widget):
       TrainingGuideRecordFront(continue_callback=on_continue),
     ]
 
+  def show_event(self):
+    super().show_event()
+    device.set_override_interactive_timeout(300)
+
+  def hide_event(self):
+    super().hide_event()
+    device.set_override_interactive_timeout(None)
+
   def _advance_step(self):
     if self._step < len(self._steps) - 1:
       self._step += 1
