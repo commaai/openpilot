@@ -19,7 +19,6 @@ class DriverCameraDialog(CameraView):
 
   def hide_event(self):
     super().hide_event()
-    print('hide driver camera view')
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     self.close()
 
@@ -28,7 +27,6 @@ class DriverCameraDialog(CameraView):
     gui_app.set_modal_overlay(None)
 
   def __del__(self):
-    print('del!')
     self.close()
 
   def _render(self, rect):
