@@ -434,11 +434,8 @@ class NetworkSetupState(IntEnum):
 
 
 class NetworkSetupPage(Widget):
-  def __init__(self, wifi_manager, continue_callback: Callable, back_callback: Callable,
-               network_monitor: NetworkConnectivityMonitor):
+  def __init__(self, wifi_manager, continue_callback: Callable, back_callback: Callable):
     super().__init__()
-    self._network_monitor = network_monitor
-
     self._wifi_ui = WifiUIMici(wifi_manager, back_callback=lambda: self.set_state(NetworkSetupState.MAIN))
 
     self._no_wifi_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 58, 50)
