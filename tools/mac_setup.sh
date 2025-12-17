@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 set -e
-set -x
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
 ARCH=$(uname -m)
 
 # homebrew update is slow
-#export HOMEBREW_NO_AUTO_UPDATE=1
-brew update
-brew doctor
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
