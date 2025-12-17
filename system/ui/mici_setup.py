@@ -629,7 +629,9 @@ class Setup(Widget):
 
   def render_network_setup(self, rect: rl.Rectangle):
     self._network_setup_page.render(rect)
-    self._network_setup_page.set_has_internet(self._network_monitor.network_connected.is_set())
+    has_internet = self._network_monitor.network_connected.is_set()
+    self._prev_has_internet = has_internet
+    self._network_setup_page.set_has_internet(has_internet)
 
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_page.set_progress(self.download_progress)
