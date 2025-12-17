@@ -99,9 +99,10 @@ class Button(Widget):
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
 
     self._label = Label(text, font_size, font_weight, text_alignment, text_padding=text_padding,
-                        text_color=BUTTON_TEXT_COLOR[self._button_style], icon=icon, elide_right=elide_right)
+                        text_color=BUTTON_TEXT_COLOR[self._button_style], elide_right=elide_right)
 
     self._click_callback = click_callback
+    self._icon = icon
     self._multi_touch = multi_touch
 
   def set_text(self, text):
@@ -130,7 +131,13 @@ class Button(Widget):
       rl.draw_rectangle_rounded_lines_ex(self._rect, roundness, 10, 2, rl.WHITE)
     else:
       rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
-    self._label.render(self._rect)
+
+    if self._icon:
+      icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
+      icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
+      rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE if self.enabled else rl.Color(255, 255, 255, 100))
+    else:
+      self._label.render(self._rect)
 
 
 class ButtonRadio(Button):

@@ -2,7 +2,6 @@ from enum import IntEnum
 from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import zip_longest
-from typing import Union
 import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE
@@ -221,7 +220,6 @@ class Label(Widget):
                text_alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
                text_padding: int = 0,
                text_color: rl.Color = DEFAULT_TEXT_COLOR,
-               icon: Union[rl.Texture, None] = None,
                elide_right: bool = False,
                line_scale=1.0,
                ):
@@ -234,7 +232,6 @@ class Label(Widget):
     self._text_alignment_vertical = text_alignment_vertical
     self._text_padding = text_padding
     self._text_color = text_color
-    self._icon = icon
     self._elide_right = elide_right
     self._line_scale = line_scale
 
@@ -263,8 +260,6 @@ class Label(Widget):
       # Elide text to fit within the rectangle
       text_size = measure_text_cached(self._font, text, self._font_size)
       content_width = self._rect.width - self._text_padding * 2
-      if self._icon:
-        content_width -= self._icon.width + ICON_PADDING
       if text_size.x > content_width:
         _ellipsis = "..."
         left, right = 0, len(text)
@@ -297,22 +292,6 @@ class Label(Widget):
       text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - total_text_height) // 2))
     else:
       text_pos = rl.Vector2(self._rect.x, self._rect.y)
-
-    if self._icon:
-      icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
-      if len(self._text_wrapped) > 0:
-        if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
-          icon_x = self._rect.x + self._text_padding
-          text_pos.x = self._icon.width + ICON_PADDING
-        elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
-          total_width = self._icon.width + ICON_PADDING + text_size.x
-          icon_x = self._rect.x + (self._rect.width - total_width) / 2
-          text_pos.x = self._icon.width + ICON_PADDING
-        else:
-          icon_x = (self._rect.x + self._rect.width - text_size.x - self._text_padding) - ICON_PADDING - self._icon.width
-      else:
-        icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
-      rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
 
     for text, text_size, emojis in zip_longest(self._text_wrapped, self._text_size, self._emojis, fillvalue=[]):
       line_pos = rl.Vector2(text_pos.x, text_pos.y)
