@@ -134,7 +134,6 @@ class TrainingGuideDMTutorial(Widget):
     self._good_button.set_enabled(False)
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
-    self._dm_alive = False
 
     self._bad_face_page = DMBadFaceDetected(HARDWARE.reboot, self._hide_bad_face_page)
     self._show_time = 0.0
@@ -178,18 +177,8 @@ class TrainingGuideDMTutorial(Widget):
     if device.awake:
       ui_state.params.put_bool("IsDriverViewEnabled", True)
 
-      # Reset DM alive when screen turns back on
-      if not self._was_awake:
-        self._dm_alive = False
-      self._was_awake = True
-    else:
-      self._was_awake = False
-
     sm = ui_state.sm
-    if sm.updated["driverMonitoringState"] and sm.updated["driverStateV2"]:
-      self._dm_alive = True
-
-    if not self._dm_alive:
+    if sm.recv_frame.get("driverMonitoringState", 0) == 0:
       return
 
     dm_state = sm["driverMonitoringState"]
