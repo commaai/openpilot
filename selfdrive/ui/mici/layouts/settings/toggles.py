@@ -6,6 +6,7 @@ from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import NavWidget
+from openpilot.selfdrive.ui.layouts.settings.toggles import DESCRIPTIONS
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -17,9 +18,6 @@ class TogglesLayoutMici(NavWidget):
     super().__init__()
     self.set_back_callback(back_callback)
 
-    enable_openpilot_desc = ("Use the openpilot system for adaptive cruise control and lane keep driver assistance. "
-                             "Your attention is required at all times to use this feature.")
-
     self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"])
     self._experimental_btn = BigParamControl("experimental mode", "ExperimentalMode")
     is_metric_toggle = BigParamControl("use metric units", "IsMetric")
@@ -28,7 +26,7 @@ class TogglesLayoutMici(NavWidget):
     record_front = BigParamControl("record & upload driver camera", "RecordFront", toggle_callback=restart_needed_callback)
     record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback)
     enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle",
-                                       toggle_callback=restart_needed_callback, description=enable_openpilot_desc)
+                                       toggle_callback=restart_needed_callback, description=DESCRIPTIONS["OpenpilotEnabledToggle"])
 
     self._scroller = Scroller([
       self._personality_toggle,

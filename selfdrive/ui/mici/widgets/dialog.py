@@ -400,11 +400,10 @@ class BigMultiOptionDialog(BigDialogBase):
 
 class BigDialogButton(BigButton):
   def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", description: str = ""):
-    super().__init__(text, value, icon)
-    self._description = description
+    super().__init__(text, value, icon, description=description)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    dlg = BigDialog(self.text, self._description)
+    dlg = BigDialog(self.text, self.description)
     gui_app.set_modal_overlay(dlg)
