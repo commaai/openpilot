@@ -363,21 +363,15 @@ class BigMultiOptionDialog(BigDialogBase):
   def _selected_option_changed(self):
     pass
 
-  def _get_current_selected_button(self) -> BigDialogOptionButton | None:
-    for btn in self._scroller._items:
-      btn = cast(BigDialogOptionButton, btn)
-      if btn.option == self._selected_option:
-        return btn
-    return None
-
-  def _get_next_option(self, direction: int) -> str | None:
-    current_idx = None
+  def _get_current_selected_button_index(self) -> int | None:
     for idx, btn in enumerate(self._scroller._items):
       btn = cast(BigDialogOptionButton, btn)
       if btn.option == self._selected_option:
-        current_idx = idx
-        break
+        return idx
+    return None
 
+  def _get_next_option(self, direction: int) -> str | None:
+    current_idx = self._get_current_selected_button_index()
     if current_idx is None:
       return None
 
@@ -389,32 +383,27 @@ class BigMultiOptionDialog(BigDialogBase):
     return None
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if not rl.check_collision_point_rec(mouse_pos, self._rect):
-      return super()._handle_mouse_release(mouse_pos)
+    super()._handle_mouse_release(mouse_pos)
 
     if self._right_btn and rl.check_collision_point_rec(mouse_pos, self._right_btn._rect):
-      return super()._handle_mouse_release(mouse_pos)
+      return
 
-    relative_y = (mouse_pos.y - self._rect.y) / self._rect.height
-
-    if relative_y < 0.25:
+    if mouse_pos.y < self._rect.y + self._rect.height * 0.25:
       next_option = self._get_next_option(-1)
       if next_option:
         self._on_option_selected(next_option, smooth_scroll=True)
       return True
 
-    elif relative_y > 0.75:
+    elif mouse_pos.y > self._rect.y + self._rect.height * 0.75:
       next_option = self._get_next_option(1)
       if next_option:
         self._on_option_selected(next_option, smooth_scroll=True)
       return True
 
-    elif 0.25 <= relative_y <= 0.75:
+    else:
       if self._selected_option:
         self._on_option_selected(self._selected_option)
       return True
-
-    return super()._handle_mouse_release(mouse_pos)
 
   def _update_state(self):
     super()._update_state()
