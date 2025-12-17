@@ -134,7 +134,7 @@ class Widget(abc.ABC):
           self.__is_pressed[mouse_event.slot] = True
           self.__tracking_is_pressed[mouse_event.slot] = True
           if mouse_event.slot == 0:
-            self._long_press_start_t = mouse_event.t
+            self._long_press_start_t = rl.get_time()
             self._long_press_fired = False
           self._handle_mouse_event(mouse_event)
 
@@ -169,6 +169,12 @@ class Widget(abc.ABC):
           self._long_press_start_t = None
           self._long_press_fired = False
         self._handle_mouse_event(mouse_event)
+
+    # Long press detection (fire once per press). Note: long presses can occur without new mouse events.
+    if self._long_press_start_t is not None and not self._long_press_fired:
+      if (rl.get_time() - self._long_press_start_t) >= self.LONG_PRESS_TIME:
+        self._long_press_fired = True
+        self._handle_long_press(gui_app.last_mouse_event.pos)
 
   def _layout(self) -> None:
     """Optionally lay out child widgets separately. This is called before rendering."""
