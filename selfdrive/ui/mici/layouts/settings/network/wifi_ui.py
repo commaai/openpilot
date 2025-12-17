@@ -335,7 +335,7 @@ class WifiUIMici(BigMultiOptionDialog):
     self._networks: dict[str, Network] = {}
 
     # widget state
-    self._last_interaction_time = rl.get_time()
+    self._last_interaction_time = -float('inf')
     self._restore_selection = False
 
     self._wifi_manager.add_callbacks(
@@ -350,6 +350,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # Call super to prepare scroller; selection scroll is handled dynamically
     super().show_event()
     self._wifi_manager.set_active(True)
+    self._last_interaction_time = -float('inf')
 
   def hide_event(self):
     super().hide_event()
