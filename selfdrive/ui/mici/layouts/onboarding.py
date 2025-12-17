@@ -212,11 +212,14 @@ class TrainingGuideDMTutorial(Widget):
     dm_center_x = self._rect.x + self._rect.width - dm_size / 2 - 8
     dm_center_y = self._rect.y + dm_size / 2 + 8
     icon_edge_radius = dm_size / 2
-    outer_radius = icon_edge_radius + 2  # 2px outward from icon edge
+    outer_radius = icon_edge_radius + 1  # 2px outward from icon edge
     inner_radius = outer_radius - ring_thickness  # Inset by ring_thickness
     start_angle = 90.0  # Start from bottom
     end_angle = start_angle + self._progress.x * 360.0  # Clockwise
 
+    # Fade in
+    current_angle = end_angle - start_angle
+    alpha = int((current_angle / 30.0) * 255) if current_angle <= 30.0 else 255
     rl.draw_ring(
       rl.Vector2(dm_center_x, dm_center_y),
       inner_radius,
@@ -224,7 +227,7 @@ class TrainingGuideDMTutorial(Widget):
       start_angle,
       end_angle,
       36,  # segments for smooth arc
-      rl.WHITE,
+      rl.Color(255, 255, 255, alpha),
     )
 
     # self._title_header.render(rl.Rectangle(

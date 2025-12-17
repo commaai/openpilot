@@ -55,6 +55,14 @@ class DriverStateRenderer(Widget):
   def load_icons(self):
     """Load or reload the driver face icon texture"""
     cone_and_person_size = round(52 / self.BASE_SIZE * self._rect.width)
+
+    # If inset is enabled, push cone and person smaller by 2x the current inset space
+    if self._inset:
+      # Current inset space = (rect.width - cone_and_person_size) / 2
+      current_inset = (self._rect.width - cone_and_person_size) / 2
+      # Reduce size by 2x the current inset (1x on each side)
+      cone_and_person_size = round(cone_and_person_size - current_inset * 2)
+
     self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size, cone_and_person_size)
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
     center_size = round(36 / self.BASE_SIZE * self._rect.width)
