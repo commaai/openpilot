@@ -137,7 +137,7 @@ class TrainingGuideDMTutorial(Widget):
     self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, self._hide_bad_face_page)
     self._show_time = 0.0
 
-    self._show_bad_face_page = False
+    self._should_show_bad_face_page = False
 
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
@@ -155,12 +155,12 @@ class TrainingGuideDMTutorial(Widget):
   def _show_bad_face_page(self):
     self._bad_face_page.show_event()
     self.hide_event()
-    self._show_bad_face_page = True
+    self._should_show_bad_face_page = True
 
   def _hide_bad_face_page(self):
     self._bad_face_page.hide_event()
     self.show_event()
-    self._show_bad_face_page = False
+    self._should_show_bad_face_page = False
 
   def show_event(self):
     super().show_event()
@@ -198,7 +198,7 @@ class TrainingGuideDMTutorial(Widget):
     self._good_button.set_enabled(self._progress.x >= 0.999)
 
   def _render(self, _):
-    if self._show_bad_face_page:
+    if self._should_show_bad_face_page:
       return self._bad_face_page.render(self._rect)
 
     self._dialog.render(self._rect)
