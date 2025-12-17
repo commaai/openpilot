@@ -83,9 +83,6 @@ class MiciHomeLayout(Widget):
     self._on_settings_click: Callable | None = None
 
     self._last_refresh = 0
-    self._mouse_down_t: None | float = None
-    self._did_long_press = False
-    self._is_pressed_prev = False
 
     self._version_text = None
     self._experimental_mode = False
@@ -124,23 +121,14 @@ class MiciHomeLayout(Widget):
   def _update_params(self):
     self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
 
+  def _handle_long_press(self, _):
+    print('long press!')
+    # long gating for experimental mode - only allow toggle if longitudinal control is available
+    if ui_state.has_longitudinal_control:
+      self._experimental_mode = not self._experimental_mode
+      ui_state.params.put("ExperimentalMode", self._experimental_mode)
+
   def _update_state(self):
-    if self.is_pressed and not self._is_pressed_prev:
-      self._mouse_down_t = time.monotonic()
-    elif not self.is_pressed and self._is_pressed_prev:
-      self._mouse_down_t = None
-      self._did_long_press = False
-    self._is_pressed_prev = self.is_pressed
-
-    if self._mouse_down_t is not None:
-      if time.monotonic() - self._mouse_down_t > 0.5:
-        # long gating for experimental mode - only allow toggle if longitudinal control is available
-        if ui_state.has_longitudinal_control:
-          self._experimental_mode = not self._experimental_mode
-          ui_state.params.put("ExperimentalMode", self._experimental_mode)
-        self._mouse_down_t = None
-        self._did_long_press = True
-
     if rl.get_time() - self._last_refresh > 5.0:
       device_state = ui_state.sm['deviceState']
       self._update_network_status(device_state)
@@ -159,10 +147,8 @@ class MiciHomeLayout(Widget):
     self._on_settings_click = on_settings
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if not self._did_long_press:
-      if self._on_settings_click:
-        self._on_settings_click()
-    self._did_long_press = False
+    if self._on_settings_click:
+      self._on_settings_click()
 
   def _get_version_text(self) -> tuple[str, str, str, str] | None:
     description = ui_state.params.get("UpdaterCurrentDescription")
