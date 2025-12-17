@@ -119,12 +119,6 @@ class MiciHomeLayout(Widget):
   def _update_params(self):
     self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
 
-  def _handle_long_press(self, _):
-    # long gating for experimental mode - only allow toggle if longitudinal control is available
-    if ui_state.has_longitudinal_control:
-      self._experimental_mode = not self._experimental_mode
-      ui_state.params.put("ExperimentalMode", self._experimental_mode)
-
   def _update_state(self):
     if rl.get_time() - self._last_refresh > 5.0:
       device_state = ui_state.sm['deviceState']
@@ -143,7 +137,7 @@ class MiciHomeLayout(Widget):
   def set_callbacks(self, on_settings: Callable | None = None):
     self._on_settings_click = on_settings
 
-  def _handle_long_press(self, mouse_pos: MousePos) -> None:
+  def _handle_long_press(self, _):
     # long gating for experimental mode - only allow toggle if longitudinal control is available
     if ui_state.has_longitudinal_control:
       self._experimental_mode = not self._experimental_mode
