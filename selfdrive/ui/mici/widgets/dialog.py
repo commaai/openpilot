@@ -16,7 +16,7 @@ from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 
-DEBUG = True
+DEBUG = False
 
 PADDING = 20
 
@@ -429,31 +429,6 @@ class BigMultiOptionDialog(BigDialogBase):
   def _render(self, _):
     super()._render(_)
     self._scroller.render(self._rect)
-
-    if DEBUG:
-      top_zone = rl.Rectangle(
-        self._rect.x,
-        self._rect.y,
-        self._rect.width,
-        self._rect.height * 0.25
-      )
-      rl.draw_rectangle_lines_ex(top_zone, 1, rl.Color(255, 0, 0, 255))
-
-      middle_zone = rl.Rectangle(
-        self._rect.x,
-        self._rect.y + self._rect.height * 0.25,
-        self._rect.width,
-        self._rect.height * 0.5
-      )
-      rl.draw_rectangle_lines_ex(middle_zone, 1, rl.Color(0, 255, 0, 255))
-
-      bottom_zone = rl.Rectangle(
-        self._rect.x,
-        self._rect.y + self._rect.height * 0.75,
-        self._rect.width,
-        self._rect.height * 0.25
-      )
-      rl.draw_rectangle_lines_ex(bottom_zone, 1, rl.Color(0, 0, 255, 255))
 
     return self._ret
 
