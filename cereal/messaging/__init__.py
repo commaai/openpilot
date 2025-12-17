@@ -2,7 +2,7 @@
 from msgq.ipc_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, \
                                 set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event
 from msgq.ipc_pyx import MultiplePublishersError, IpcError
-from msgq import fake_event_handle, pub_sock, sub_sock, drain_sock_raw
+from msgq import fake_event_handle, drain_sock_raw
 import msgq
 
 import os
@@ -16,6 +16,20 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.util import MovingAverage
 
 NO_TRAVERSAL_LIMIT = 2**64-1
+
+
+def pub_sock(endpoint: str) -> PubSocket:
+  service = SERVICE_LIST.get(endpoint)
+  segment_size = service.queue_size if service else 0
+  return msgq.pub_sock(endpoint, segment_size)
+
+
+def sub_sock(endpoint: str, poller: Optional[Poller] = None, addr: str = "127.0.0.1",
+             conflate: bool = False, timeout: Optional[int] = None) -> SubSocket:
+  service = SERVICE_LIST.get(endpoint)
+  segment_size = service.queue_size if service else 0
+  return msgq.sub_sock(endpoint, poller=poller, addr=addr, conflate=conflate,
+                       timeout=timeout, segment_size=segment_size)
 
 
 def reset_context():

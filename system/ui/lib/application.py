@@ -79,7 +79,7 @@ void main() {
 """
 
 DEFAULT_TEXT_SIZE = 60
-DEFAULT_TEXT_COLOR = rl.WHITE
+DEFAULT_TEXT_COLOR = rl.Color(255, 255, 255, int(255 * 0.9))
 
 # Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
 # The real scales for the fonts below range from 1.212 to 1.266
@@ -218,6 +218,7 @@ class GuiApplication:
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
     self._modal_overlay_shown = False
+    self._modal_overlay_tick: Callable[[], None] | None = None
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -346,6 +347,9 @@ class GuiApplication:
         self._modal_overlay.callback(-1)
 
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
+
+  def set_modal_overlay_tick(self, tick_function: Callable | None):
+    self._modal_overlay_tick = tick_function
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -485,6 +489,9 @@ class GuiApplication:
 
         # Handle modal overlay rendering and input processing
         if self._handle_modal_overlay():
+          # Allow a Widget to still run a function while overlay is shown
+          if self._modal_overlay_tick is not None:
+            self._modal_overlay_tick()
           yield False
         else:
           yield True
