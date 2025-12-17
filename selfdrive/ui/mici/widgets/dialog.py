@@ -5,7 +5,7 @@ from typing import Union
 from collections.abc import Callable
 from typing import cast
 from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
-from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
+from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label, ScrollableLabel
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -284,9 +284,8 @@ class BigDialogOptionButton(Widget):
 
     self._selected = False
 
-    self._label = UnifiedLabel(option, font_size=70, text_color=rl.Color(255, 255, 255, int(255 * 0.58)),
-                               font_weight=FontWeight.DISPLAY_REGULAR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-                               scroll=True)
+    self._label = ScrollableLabel(option, font_size=70, text_color=rl.Color(255, 255, 255, int(255 * 0.58)),
+                               font_weight=FontWeight.DISPLAY_REGULAR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
   def show_event(self):
     super().show_event()
