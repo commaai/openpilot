@@ -233,7 +233,6 @@ class NetworkInfoPage(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-
     # Modal overlays stop main UI rendering, so we need to call here
     self._wifi_manager.process_callbacks()
 
@@ -352,7 +351,6 @@ class WifiUIMici(BigMultiOptionDialog):
     super().show_event()
     self._wifi_manager.set_active(True)
     self._last_interaction_time = -float('inf')
-    print("Wifi UI shown")
 
   def hide_event(self):
     super().hide_event()
