@@ -289,6 +289,8 @@ class TermsPage(Widget):
     continue_x = self._rect.x + 8
     if self._enable_back:
       continue_x = self._rect.x + self._rect.width - self._continue_button.rect.width - 8
+    if self._continue_slider:
+      continue_x += 8
     self._continue_button.render(rl.Rectangle(
       continue_x,
       self._rect.y + self._rect.height - self._continue_button.rect.height,
