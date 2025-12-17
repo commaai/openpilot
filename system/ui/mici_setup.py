@@ -77,7 +77,6 @@ class NetworkConnectivityMonitor:
     while not self._stop_event.is_set():
       if self._should_check():
         try:
-          time.sleep(2)
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=0.5)
           self.network_connected.set()
@@ -470,7 +469,7 @@ class NetworkSetupPage(Widget):
       self._network_header.set_icon(self._no_wifi_txt)
       self._continue_button.set_enabled(False)
 
-    if has_internet and self._prev_has_internet:
+    if has_internet and not self._prev_has_internet:
       self.set_state(NetworkSetupState.MAIN)
     self._prev_has_internet = has_internet
 
