@@ -142,10 +142,9 @@ class AlertRenderer(Widget):
     if ss.alertSize == 0:
       return None
 
-    # Return current alert (mocked steerSaturated for testing)
-    ret = Alert(text1="take control", text2="turn exceeds limit",
-                size=AlertSize.mid, status=AlertStatus.userPrompt,
-                visual_alert=ss.alertHudVisual, alert_type="steerSaturated/warning")
+    # Return current alert
+    ret = Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw,
+                visual_alert=ss.alertHudVisual, alert_type=ss.alertType)
     self._prev_alert = ret
     return ret
 
