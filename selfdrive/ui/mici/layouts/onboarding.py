@@ -222,7 +222,7 @@ class TrainingGuideDMTutorial(Widget):
     alpha = int(np.interp(current_angle, [0.0, 45.0], [0, 255]))
 
     # White to green
-    color_t = np.clip(np.interp(current_angle, [180.0, 360.0], [0.0, 1.0]), 0.0, 1.0)
+    color_t = np.clip(np.interp(current_angle, [45.0, 360.0], [0.0, 1.0]), 0.0, 1.0)
     r = int(np.interp(color_t, [0.0, 1.0], [255, 0]))
     g = int(np.interp(color_t, [0.0, 1.0], [255, 255]))
     b = int(np.interp(color_t, [0.0, 1.0], [255, 64]))
