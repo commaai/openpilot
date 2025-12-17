@@ -359,9 +359,18 @@ class WifiUIMici(BigMultiOptionDialog):
     super().hide_event()
     self._wifi_manager.set_active(False)
 
-  def _open_network_manage_page(self, result=None):
-    self._network_info_page.update_networks(self._networks)
-    gui_app.set_modal_overlay(self._network_info_page)
+  # def _open_network_manage_page(self, result=None):
+  #   self._network_info_page.update_networks(self._networks)
+  #   gui_app.set_modal_overlay(self._network_info_page)
+
+  def _set_current_panel(self, panel: WifiPanel):
+    if self._current_panel == panel:
+      return
+
+    self._current_panel = panel
+    if self._current_panel == WifiPanel.INFO:
+      self._network_info_page.show_event()
+      self._network_info_page.update_networks(self._networks)
 
   def _forget_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -411,7 +420,8 @@ class WifiUIMici(BigMultiOptionDialog):
     # only open if button is already selected
     if option in self._networks and option == self._selected_option:
       self._network_info_page.set_current_network(self._networks[option])
-      self._open_network_manage_page()
+      self._set_current_panel(WifiPanel.INFO)
+      # self._open_network_manage_page()
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -434,8 +444,7 @@ class WifiUIMici(BigMultiOptionDialog):
     hint = "incorrect password..." if incorrect_password else "enter password..."
     dlg = BigInputDialog(hint, "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
-    # go back to the manage network page
-    gui_app.set_modal_overlay(dlg, self._open_network_manage_page)
+    gui_app.set_modal_overlay(dlg)
 
   def _on_activated(self):
     self._connecting = None
