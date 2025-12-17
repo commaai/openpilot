@@ -79,6 +79,7 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=0.5)
+          time.sleep(5)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -472,6 +473,7 @@ class NetworkSetupPage(Widget):
     if has_internet and not self._prev_has_internet:
       print('set state')
       self.set_state(NetworkSetupState.MAIN)
+      gui_app.set_modal_overlay(None)
     self._prev_has_internet = has_internet
 
   def show_event(self):
