@@ -24,7 +24,7 @@ from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRou
                                                 SmallCircleIconButton, WidishRoundedButton, SmallRedPillButton,
                                                 FullRoundedButton)
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.slider import LargerSlider
+from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 
@@ -198,15 +198,20 @@ class TermsPage(Widget):
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
 
     self._continue_text = continue_text
-    self._continue_button: WideRoundedButton | FullRoundedButton
-    if back_callback is not None:
+    self._continue_slider: bool = continue_text in ("reboot", "power off")
+    self._continue_button: WideRoundedButton | FullRoundedButton | SmallSlider
+    if self._continue_slider:
+      self._continue_button = SmallSlider(continue_text, confirm_callback=continue_callback)
+      self._scroll_panel.set_enabled(lambda: not self._continue_button.is_pressed)
+    elif back_callback is not None:
       self._continue_button = WideRoundedButton(continue_text)
     else:
       self._continue_button = FullRoundedButton(continue_text)
     self._continue_button.set_enabled(False)
     self._continue_button.set_opacity(0.0)
     self._continue_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
-    self._continue_button.set_click_callback(continue_callback)
+    if not self._continue_slider:
+      self._continue_button.set_click_callback(continue_callback)
 
     self._enable_back = back_callback is not None
     self._back_button = SmallButton(back_text)
@@ -268,6 +273,11 @@ class TermsPage(Widget):
                                  int(self._rect.width), 20, rl.BLACK, rl.BLANK)
     rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - 20),
                                  int(self._rect.width), 20, rl.BLANK, rl.BLACK)
+
+    # fade out back button as slider is moved
+    if self._continue_slider and scroll_offset <= self._scrolled_down_offset:
+      self._back_button.set_opacity(1.0 - self._continue_button.slider_percentage)
+      self._back_button.set_visible(self._continue_button.slider_percentage < 0.99)
 
     self._back_button.render(rl.Rectangle(
       self._rect.x + 8,

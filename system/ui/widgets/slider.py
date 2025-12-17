@@ -134,7 +134,7 @@ class SmallSlider(Widget):
       label_rect = rl.Rectangle(
         self._rect.x + 20,
         self._rect.y,
-        self._rect.width - self._circle_bg_txt.width - 20 * 3,
+        self._rect.width - self._circle_bg_txt.width - 20 * 2.5,
         self._rect.height,
       )
       self._label.render(label_rect)
