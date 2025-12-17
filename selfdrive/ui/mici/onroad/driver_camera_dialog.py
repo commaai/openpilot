@@ -94,9 +94,8 @@ class DriverCameraDialog(NavWidget):
       self._draw_eyes(rect, driver_data)
 
     # Position dmoji on opposite side from driver
-    dm_state = ui_state.sm["driverMonitoringState"]
     driver_state_rect = (
-      rect.x if dm_state.isRHD else rect.x + rect.width - self.driver_state_renderer.rect.width,
+      rect.x if self.driver_state_renderer.is_rhd else rect.x + rect.width - self.driver_state_renderer.rect.width,
       rect.y + (rect.height - self.driver_state_renderer.rect.height) / 2,
     )
     self.driver_state_renderer.set_position(*driver_state_rect)
@@ -140,7 +139,7 @@ class DriverCameraDialog(NavWidget):
 
     # Show first event (only one should be active at a time)
     event_name_str = str(dm_state.events[0].name).split('.')[-1]
-    alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if dm_state.isRHD else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
+    alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if self.driver_state_renderer.is_rhd else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
 
     shadow_rect = rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height)
     gui_label(shadow_rect, event_name_str, font_size=40, font_weight=FontWeight.BOLD,
