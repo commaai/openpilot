@@ -1,5 +1,4 @@
 from enum import IntEnum
-from collections.abc import Callable
 
 import weakref
 import math
