@@ -434,9 +434,13 @@ class NetworkSetupState(IntEnum):
 
 
 class NetworkSetupPage(Widget):
-  def __init__(self, wifi_manager, continue_callback: Callable, back_callback: Callable):
+  def __init__(self, wifi_manager, continue_callback: Callable, back_callback: Callable,
+               network_monitor: NetworkConnectivityMonitor):
     super().__init__()
-    self._wifi_ui = WifiUIMici(wifi_manager, back_callback=lambda: self.set_state(NetworkSetupState.MAIN))
+    self._network_monitor = network_monitor
+
+    self._wifi_ui = WifiUIMici(wifi_manager, back_callback=lambda: self.set_state(NetworkSetupState.MAIN),
+                               should_close=self._should_close_wifi)
 
     self._no_wifi_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 58, 50)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 58, 50)
@@ -456,9 +460,23 @@ class NetworkSetupPage(Widget):
 
     self._state = NetworkSetupState.MAIN
     self._prev_has_internet = False
+    self._close_wifi = False
 
   def set_state(self, state: NetworkSetupState):
     self._state = state
+    if state == NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.show_event()
+    elif state == NetworkSetupState.MAIN:
+      self.show_event()
+
+  def _should_close_wifi(self) -> bool:
+    has_internet = self._network_monitor.network_connected.is_set()
+    close_wifi = False
+    if has_internet and not self._prev_has_internet:
+      close_wifi = True
+      self.set_state(NetworkSetupState.MAIN)
+    self._prev_has_internet = has_internet
+    return close_wifi
 
   def set_has_internet(self, has_internet: bool):
     if has_internet:
@@ -470,8 +488,8 @@ class NetworkSetupPage(Widget):
       self._network_header.set_icon(self._no_wifi_txt)
       self._continue_button.set_enabled(False)
 
-    print(has_internet)
     if has_internet and not self._prev_has_internet:
+      self._close_wifi = True
       print('SET STATE')
       self.set_state(NetworkSetupState.MAIN)
       gui_app.set_modal_overlay(None)
@@ -480,10 +498,12 @@ class NetworkSetupPage(Widget):
   def show_event(self):
     super().show_event()
     self._state = NetworkSetupState.MAIN
+    print('SHOW EVENT')
     self._wifi_ui.show_event()
 
   def hide_event(self):
     super().hide_event()
+    print('HIDE EVENT')
     self._wifi_ui.hide_event()
 
   def _render(self, _):
@@ -538,7 +558,7 @@ class Setup(Widget):
     self._start_page.set_click_callback(self._getting_started_button_callback)
 
     self._network_setup_page = NetworkSetupPage(self._wifi_manager, self._network_setup_continue_button_callback,
-                                                self._network_setup_back_button_callback)
+                                                self._network_setup_back_button_callback, self._network_monitor)
 
     self._software_selection_page = SoftwareSelectionPage(self._software_selection_continue_button_callback,
                                                           self._software_selection_custom_software_button_callback)
