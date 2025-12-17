@@ -21,7 +21,6 @@ class DriverCameraDialog(CameraView):
     super().hide_event()
     print('hide driver camera view')
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    device.reset_interactive_timeout()
     self.close()
 
   def _handle_mouse_release(self, _):
