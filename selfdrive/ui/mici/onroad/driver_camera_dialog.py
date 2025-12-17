@@ -162,11 +162,9 @@ class DriverCameraDialog(NavWidget):
       self._glasses_texture = gui_app.texture("icons_mici/onroad/glasses.png", self._glasses_size, self._glasses_size)
 
   def _draw_face_detection(self, rect: rl.Rectangle):
-    driver_state = ui_state.sm["driverStateV2"]
-    is_rhd = driver_state.wheelOnRightProb > 0.5
-    driver_data = driver_state.rightDriverData if is_rhd else driver_state.leftDriverData
-    face_detect = driver_data.faceProb > 0.7
-    if not face_detect:
+    dm_state = ui_state.sm["driverMonitoringState"]
+    driver_data = self.driver_state_renderer.get_driver_data()
+    if not dm_state.faceDetected:
       return
 
     # Get face position and orientation
@@ -203,7 +201,7 @@ class DriverCameraDialog(NavWidget):
     )
     return driver_data
 
-  def _draw_eyes(self, rect, driver_data):
+  def _draw_eyes(self, rect: rl.Rectangle, driver_data):
     # Draw eye indicators based on eye probabilities
     eye_offset_x = 10
     eye_offset_y = 10

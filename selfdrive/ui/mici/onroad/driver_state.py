@@ -82,6 +82,10 @@ class DriverStateRenderer(Widget):
     """Returns True if dmoji should appear active (either actually active or forced)"""
     return bool(self._force_active or self._is_active)
 
+  @property
+  def is_rhd(self) -> bool:
+    return self._is_rhd
+
   def _render(self, _):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
@@ -161,21 +165,16 @@ class DriverStateRenderer(Widget):
 
   def get_driver_data(self):
     sm = ui_state.sm
+
     dm_state = sm["driverMonitoringState"]
-    self._is_rhd = dm_state.isRHD
-    self._face_detected = dm_state.faceDetected
+    self._is_active = dm_state.isActiveMode
 
     driverstate = sm["driverStateV2"]
     driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
     return driver_data
 
   def _update_state(self):
-    sm = ui_state.sm
-
     # Get monitoring state
-    dm_state = sm["driverMonitoringState"]
-    self._is_active = dm_state.isActiveMode
-
     driver_data = self.get_driver_data()
     driver_orient = driver_data.faceOrientation
 
