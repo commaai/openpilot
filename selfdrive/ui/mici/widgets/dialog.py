@@ -365,15 +365,14 @@ class BigMultiOptionDialog(BigDialogBase):
   def _selected_option_changed(self):
     pass
 
-  def _get_current_selected_button_index(self) -> int | None:
+  def _get_next_option(self, direction: int) -> str | None:
+    current_idx = None
     for idx, btn in enumerate(self._scroller._items):
       btn = cast(BigDialogOptionButton, btn)
       if btn.option == self._selected_option:
-        return idx
-    return None
+        current_idx = idx
+        break
 
-  def _get_next_option(self, direction: int) -> str | None:
-    current_idx = self._get_current_selected_button_index()
     if current_idx is None:
       return None
 
