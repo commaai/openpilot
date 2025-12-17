@@ -41,27 +41,40 @@ class VCruiseHelper:
   def v_cruise_initialized(self):
     return self.v_cruise_kph != V_CRUISE_UNSET
 
+  def set_openpilot_v_cruise(self, CS, enabled, is_metric):
+    self._update_v_cruise_non_pcm(CS, enabled, is_metric)
+    self.v_cruise_cluster_kph = self.v_cruise_kph
+    self.update_button_timers(CS, enabled)
+
+  def set_pcm_v_cruise(self,CS):
+    if CS.cruiseState.speed == 0:
+      self.unset_v_cruise()
+      return
+
+    if CS.cruiseState.speed == -1:
+      self.v_cruise_kph = -1
+      self.v_cruise_cluster_kph = -1
+      return
+
+    self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+    self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
+
+  def unset_v_cruise(self):
+    self.v_cruise_kph = V_CRUISE_UNSET
+    self.v_cruise_cluster_kph = V_CRUISE_UNSET
+
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
 
-    if CS.cruiseState.available:
-      if not self.CP.pcmCruise:
-        # if stock cruise is completely disabled, then we can use our own set speed logic
-        self._update_v_cruise_non_pcm(CS, enabled, is_metric)
-        self.v_cruise_cluster_kph = self.v_cruise_kph
-        self.update_button_timers(CS, enabled)
-      else:
-        self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
-        self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
-        if CS.cruiseState.speed == 0:
-          self.v_cruise_kph = V_CRUISE_UNSET
-          self.v_cruise_cluster_kph = V_CRUISE_UNSET
-        elif CS.cruiseState.speed == -1:
-          self.v_cruise_kph = -1
-          self.v_cruise_cluster_kph = -1
+    if not CS.cruiseState.available:
+      self.unset_v_cruise()
+      return
+
+    if self.CP.pcmCruise:
+      self.set_pcm_v_cruise(CS)
+
     else:
-      self.v_cruise_kph = V_CRUISE_UNSET
-      self.v_cruise_cluster_kph = V_CRUISE_UNSET
+      self.set_openpilot_v_cruise(CS, enabled, is_metric)
 
   def _update_v_cruise_non_pcm(self, CS, enabled, is_metric):
     # handle button presses. TODO: this should be in state_control, but a decelCruise press
