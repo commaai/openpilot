@@ -96,7 +96,6 @@ class TrainingGuideDMTutorial(Widget):
     # Wrap the continue callback to restore settings
     def wrapped_continue_callback():
       device.set_offroad_brightness(None)
-      device.reset_interactive_timeout()
       continue_callback()
 
     self._dialog = DriverCameraSetupDialog(wrapped_continue_callback)
@@ -112,7 +111,6 @@ class TrainingGuideDMTutorial(Widget):
     self._dialog.show_event()
 
     device.set_offroad_brightness(100)
-    device.reset_interactive_timeout(300)  # 5 minutes
 
   def _update_state(self):
     super()._update_state()
@@ -223,6 +221,14 @@ class TrainingGuide(Widget):
       TrainingGuideRecordFront(continue_callback=on_continue),
     ]
 
+  def show_event(self):
+    super().show_event()
+    device.set_override_interactive_timeout(300)
+
+  def hide_event(self):
+    super().hide_event()
+    device.set_override_interactive_timeout(None)
+
   def _advance_step(self):
     if self._step < len(self._steps) - 1:
       self._step += 1
@@ -318,6 +324,14 @@ class OnboardingWindow(Widget):
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_terms_declined)
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
     self._decline_page = DeclinePage(back_callback=self._on_decline_back)
+
+  def show_event(self):
+    super().show_event()
+    device.set_override_interactive_timeout(300)
+
+  def hide_event(self):
+    super().hide_event()
+    device.set_override_interactive_timeout(None)
 
   @property
   def completed(self) -> bool:
