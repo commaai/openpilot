@@ -275,7 +275,7 @@ class BigInputDialog(BigDialogBase):
 
 class BigDialogOptionButton(Widget):
   HEIGHT = 64
-  SELECTED_HEIGHT = 74
+  SELECTED_HEIGHT = 90
 
   def __init__(self, option: str):
     super().__init__()
