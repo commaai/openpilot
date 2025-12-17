@@ -2,6 +2,7 @@ from enum import IntEnum
 from collections.abc import Callable
 
 import weakref
+import numpy as np
 import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
@@ -217,15 +218,16 @@ class TrainingGuideDMTutorial(Widget):
     start_angle = 90.0  # Start from bottom
     end_angle = start_angle + self._progress.x * 360.0  # Clockwise
 
-    # Fade in
+    # Fade in alpha
     current_angle = end_angle - start_angle
-    alpha = int((current_angle / 30.0) * 255) if current_angle <= 30.0 else 255
+    alpha = int(np.interp(current_angle, [0.0, 45.0], [0, 255]))
 
-    # Turn green at 99% progress
-    if self._progress.x >= 0.99:
-      ring_color = rl.Color(0, 255, 64, alpha)
-    else:
-      ring_color = rl.Color(255, 255, 255, alpha)
+    # White to green
+    color_t = np.clip(np.interp(current_angle, [180.0, 360.0], [0.0, 1.0]), 0.0, 1.0)
+    r = int(np.interp(color_t, [0.0, 1.0], [255, 0]))
+    g = int(np.interp(color_t, [0.0, 1.0], [255, 255]))
+    b = int(np.interp(color_t, [0.0, 1.0], [255, 64]))
+    ring_color = rl.Color(r, g, b, alpha)
 
     rl.draw_ring(
       rl.Vector2(dm_center_x, dm_center_y),
