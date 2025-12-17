@@ -167,7 +167,7 @@ class DriverCameraDialog(NavWidget):
     driver_data = driver_state.rightDriverData if is_rhd else driver_state.leftDriverData
     face_detect = driver_data.faceProb > 0.7
     if not face_detect:
-      return None
+      return
 
     # Get face position and orientation
     face_x, face_y = driver_data.facePosition
