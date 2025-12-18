@@ -594,6 +594,7 @@ class WifiManager:
       cloudlog.warning(f"Failed to request scan: {reply}")
 
   def _update_networks(self):
+    print('IN _UPDATE_NETWORKS')
     # Get wifi_device outside lock (fast read)
     with self._lock:
       wifi_device = self._wifi_device
