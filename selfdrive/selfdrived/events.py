@@ -935,7 +935,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Vehicle Configuration Error"),
     ET.PERMANENT: Alert(
       "Vehicle Configuration Error",
-      "Unexpected CAN Messages",
+      "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 1., creation_delay=1.),
     ET.NO_ENTRY: NoEntryAlert("Vehicle Configuration Error"),
