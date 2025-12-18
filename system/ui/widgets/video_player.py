@@ -132,9 +132,9 @@ class VideoPlayer(Widget):
         rgba_view = np.frombuffer(frame_bytes, dtype=np.uint8).reshape(
           self.frame_height, self.frame_width, 4
         )
-        # Copy flipped directly into pre-allocated buffer (flip Y axis)
+        # Copy directly - no flip (test if this fixes orientation)
         with self.frame_lock:
-          np.copyto(rgba_buffer, rgba_view[::-1])  # Flip vertically during copy
+          np.copyto(rgba_buffer, rgba_view)
           self.current_frame = rgba_buffer[:, :, :3]  # RGB slice for compatibility
         rgba_time = time.monotonic() - rgba_start
         if _benchmark_enabled and len(_benchmark_times['rgb_to_rgba']) < 1000:
@@ -206,6 +206,7 @@ class VideoPlayer(Widget):
         draw_x = rect.x + (rect.width - draw_width) / 2
         dst_rect = rl.Rectangle(draw_x, rect.y, draw_width, rect.height)
 
+      # Normal source rect (data is already flipped)
       src_rect = rl.Rectangle(0, 0, self.frame_width, self.frame_height)
       rl.draw_texture_pro(texture_ref, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
