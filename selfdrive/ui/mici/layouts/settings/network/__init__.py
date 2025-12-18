@@ -22,6 +22,8 @@ class NetworkLayoutMici(NavWidget):
   def __init__(self, back_callback: Callable):
     super().__init__()
 
+    self._t = rl.get_time()
+
     self._current_panel = NetworkPanelType.WIFI
     self.set_back_enabled(lambda: self._current_panel == NetworkPanelType.NONE)
 
@@ -123,6 +125,7 @@ class NetworkLayoutMici(NavWidget):
 
   def show_event(self):
     super().show_event()
+    self._t = rl.get_time()
     self._current_panel = NetworkPanelType.NONE
     self._wifi_ui.show_event()
     self._scroller.show_event()
@@ -176,7 +179,9 @@ class NetworkLayoutMici(NavWidget):
     self._current_panel = panel_type
 
   def _render(self, rect: rl.Rectangle):
-    self._wifi_manager.process_callbacks()
+    if rl.get_time() - self._t < 5:
+      print('PROCESS CALLBACKS', rl.get_time())
+      self._wifi_manager.process_callbacks()
 
     if self._current_panel == NetworkPanelType.WIFI:
       self._wifi_ui.render(rect)
