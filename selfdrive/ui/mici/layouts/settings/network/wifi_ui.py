@@ -402,11 +402,10 @@ class WifiUIMici(BigMultiOptionDialog):
       self._wifi_manager.connect_to_network(ssid, password)
       self._update_buttons()
 
-  def _on_option_selected(self, option: str, smooth_scroll: bool = True):
-    super()._on_option_selected(option, smooth_scroll)
+  def _on_option_selected(self, option: str):
+    super()._on_option_selected(option)
 
-    # only open if button is already selected
-    if option in self._networks and option == self._selected_option:
+    if option in self._networks:
       self._network_info_page.set_current_network(self._networks[option])
       self._open_network_manage_page()
 
@@ -453,7 +452,7 @@ class WifiUIMici(BigMultiOptionDialog):
     current_selection = self.get_selected_option()
     if self._restore_selection and current_selection in self._networks:
       self._scroller._layout()
-      BigMultiOptionDialog._on_option_selected(self, current_selection, smooth_scroll=False)
+      BigMultiOptionDialog._on_option_selected(self, current_selection)
       self._restore_selection = None
 
     super()._render(_)
