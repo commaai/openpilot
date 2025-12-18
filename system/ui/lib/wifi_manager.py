@@ -268,6 +268,7 @@ class WifiManager:
 
         elif new_state == NMDeviceState.ACTIVATED:
           if len(self._activated):
+            print('ACITVATED UPDATE NETWORKS')
             self._update_networks()
           self._enqueue_callbacks(self._activated)
           self._connecting_to_ssid = ""
@@ -281,9 +282,11 @@ class WifiManager:
       if self._active:
         if time.monotonic() - self._start > 5:
           time.sleep(1/2)
+          continue
         if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
           # Scan for networks every 10 seconds
           # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
+          print('NETWORK SCANNER UPDATE NETWORKS')
           self._update_networks()
           self._request_scan()
           self._last_network_update = time.monotonic()
@@ -422,6 +425,7 @@ class WifiManager:
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
         if len(self._forgotten):
+          print('FORGOTTEN UPDATE NETWORKS')
           self._update_networks()
         self._enqueue_callbacks(self._forgotten)
 
