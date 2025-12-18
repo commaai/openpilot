@@ -43,7 +43,7 @@ class LeadVehicle:
 
 class ModelRenderer(Widget):
   def __init__(self):
-    super().__init__()
+    super().__init__(transparent_for_input=True)
     self._longitudinal_control = False
     self._experimental_mode = False
     self._blend_filter = FirstOrderFilter(1.0, 0.25, 1 / gui_app.target_fps)

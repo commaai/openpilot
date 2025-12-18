@@ -58,7 +58,7 @@ COLORS = Colors()
 
 class HudRenderer(Widget):
   def __init__(self):
-    super().__init__()
+    super().__init__(transparent_for_input=True)
     """Initialize the HUD renderer."""
     self.is_cruise_set: bool = False
     self.is_cruise_available: bool = True

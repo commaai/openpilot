@@ -63,7 +63,7 @@ class Label(Widget):
     elide: bool = False,
     emojis: bool = False,
   ):
-    super().__init__()
+    super().__init__(transparent_for_input=True)
     self._text_source = text
     self._font_size = size
     self._font_weight = weight
