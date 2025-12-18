@@ -104,7 +104,7 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
-    self.prime_state.start()  # start thread after manager forks ui
+    # self.prime_state.start()  # start thread after manager forks ui
     self.sm.update(0)
     self._update_state()
     self._update_status()
