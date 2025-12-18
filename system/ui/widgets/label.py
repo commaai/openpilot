@@ -440,7 +440,7 @@ class UnifiedLabel(Widget):
       if idx > max_visible_index:
         break
       # If last visible line is clipped, show elided text
-      text = line.elided_text if idx == max_visible_index and self._elide else line.text
+      text = text_line.elided_text if idx == max_visible_index and self._elide else text_line.text
       self._render_line(text, text_line.size, text_line.emojis, current_y)
       current_y += text_line.size.y * self._line_height
 
