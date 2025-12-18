@@ -59,12 +59,15 @@ class VideoPlayer(Widget):
     if self.ffmpeg_proc is not None:
       return
 
+    # Try hardware acceleration first, fallback to software
     cmd = [
-      'ffmpeg', '-i', self.video_path,
+      'ffmpeg', '-hwaccel', 'auto',  # Try hardware acceleration
+      '-i', self.video_path,
       '-f', 'rawvideo',
       '-pix_fmt', 'rgb24',
       '-vcodec', 'rawvideo',
       '-an', '-sn',  # No audio, no subtitles
+      '-threads', '2',  # Limit threads for better performance
       '-'
     ]
 
@@ -73,7 +76,7 @@ class VideoPlayer(Widget):
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
-        bufsize=self.frame_width * self.frame_height * 3
+        bufsize=self.frame_width * self.frame_height * 3 * 2  # Larger buffer
       )
       self.playing = True
       self.start_time = time.monotonic()
@@ -89,22 +92,37 @@ class VideoPlayer(Widget):
       return
 
     current_time = time.monotonic()
-    # Only read new frame if enough time has passed
-    if current_time - self.last_frame_time < self.frame_duration:
+    elapsed = current_time - self.last_frame_time
+
+    # Skip frames if we're behind to catch up
+    if elapsed < self.frame_duration:
       return
+
+    # Calculate how many frames we should skip if behind
+    frames_to_skip = int(elapsed / self.frame_duration) - 1
+    frames_to_skip = min(frames_to_skip, 5)  # Max skip 5 frames at once
 
     frame_size = self.frame_width * self.frame_height * 3
     try:
+      # Skip frames if we're behind
+      for _ in range(frames_to_skip):
+        self.ffmpeg_proc.stdout.read(frame_size)
+
       frame_data = self.ffmpeg_proc.stdout.read(frame_size)
       if len(frame_data) == frame_size:
         frame = np.frombuffer(frame_data, dtype=np.uint8).reshape(
           self.frame_height, self.frame_width, 3
         )
-        # Flip vertically (OpenGL convention)
-        frame = np.flipud(frame)
+        # Flip vertically (OpenGL convention) - use view instead of copy when possible
+        frame = np.ascontiguousarray(np.flipud(frame))
 
         with self.frame_lock:
           self.current_frame = frame
+          # Pre-convert to RGBA for faster rendering
+          if self.rgba_frame is None:
+            self.rgba_frame = np.zeros((self.frame_height, self.frame_width, 4), dtype=np.uint8)
+          self.rgba_frame[:, :, :3] = frame
+          self.rgba_frame[:, :, 3] = 255  # Alpha channel
         self.last_frame_time = current_time
       else:
         # End of video, restart
@@ -137,16 +155,9 @@ class VideoPlayer(Widget):
 
     # Render current frame
     with self.frame_lock:
-      if self.current_frame is not None and self.texture is not None:
-        # Ensure frame is contiguous
-        frame = np.ascontiguousarray(self.current_frame)
-        # Convert RGB to RGBA (raylib expects RGBA)
-        rgba_frame = np.zeros((self.frame_height, self.frame_width, 4), dtype=np.uint8)
-        rgba_frame[:, :, :3] = frame
-        rgba_frame[:, :, 3] = 255  # Alpha channel
-        
-        # Update texture with RGBA frame data
-        rl.update_texture(self.texture, rl.ffi.cast("void *", rgba_frame.ctypes.data))
+      if self.rgba_frame is not None and self.texture is not None:
+        # Update texture with pre-converted RGBA frame data
+        rl.update_texture(self.texture, rl.ffi.cast("void *", self.rgba_frame.ctypes.data))
 
         # Calculate aspect ratio preserving rect
         video_aspect = self.frame_width / self.frame_height
