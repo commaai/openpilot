@@ -327,6 +327,7 @@ class BigMultiOptionDialog(BigDialogBase):
     self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
     self._last_selected_option: str = self._selected_option
 
+    # Widget doesn't differentiate between click and drag
     self._can_click = True
 
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
