@@ -323,7 +323,7 @@ class BigMultiOptionDialog(BigDialogBase):
     if default is not None:
       assert default in options
 
-    self._default_option: str | None = default ##or (options[0] if len(options) > 0 else "")
+    self._default_option: str | None = default
     self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
     self._last_selected_option: str = self._selected_option
 
