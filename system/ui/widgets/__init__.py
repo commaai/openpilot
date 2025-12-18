@@ -180,10 +180,9 @@ class Widget(abc.ABC):
       self._click_callback()
     return False
 
-  def _handle_mouse_click(self, mouse_pos: MousePos) -> bool:
+  def _handle_mouse_click(self, mouse_pos: MousePos) -> None:
     """This is different from _handle_mouse_release in that it checks for MIN_DRAG_PIXELS."""
     # TODO: move click_callback here, but needs testing
-    return False
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
