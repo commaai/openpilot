@@ -20,7 +20,7 @@ class DialogResult(IntEnum):
 
 
 class Widget(abc.ABC):
-  def __init__(self):
+  def __init__(self, transparent_for_input: bool = False):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle | None = None
     self.__is_pressed = [False] * MAX_TOUCH_SLOTS
@@ -32,6 +32,7 @@ class Widget(abc.ABC):
     self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
     self.__was_awake = True
+    self._transparent_for_input = transparent_for_input
 
   @property
   def rect(self) -> rl.Rectangle:
@@ -104,7 +105,7 @@ class Widget(abc.ABC):
     ret = self._render(self._rect)
 
     # Keep track of whether mouse down started within the widget's rectangle
-    if self.enabled and self.__was_awake:
+    if not self._transparent_for_input and self.enabled and self.__was_awake:
       self._process_mouse_events()
 
     self.__was_awake = device.awake
