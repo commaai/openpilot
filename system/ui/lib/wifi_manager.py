@@ -153,6 +153,7 @@ class WifiManager:
     self._ipv4_forward = False
 
     self._last_network_update: float = 0.0
+    self._start: float = time.monotonic()
     self._callback_queue: list[Callable] = []
 
     self._tethering_ssid = "weedle"
@@ -278,12 +279,14 @@ class WifiManager:
   def _network_scanner(self):
     while not self._exit:
       if self._active:
+        if time.monotonic() - self._start > 5:
+          continue
         if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
           # Scan for networks every 10 seconds
           # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
           self._update_networks()
           self._request_scan()
-          # self._last_network_update = time.monotonic()
+          self._last_network_update = time.monotonic()
       time.sleep(1 / 2.)
 
   def _wait_for_wifi_device(self):
