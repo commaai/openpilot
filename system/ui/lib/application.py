@@ -139,7 +139,9 @@ class MouseEvent(NamedTuple):
 class MouseState:
   def __init__(self, scale: float = 1.0):
     self._scale = scale
-    self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
+    # Use larger deque to avoid dropping events during UI stalls
+    # 140Hz * 3 seconds = 420 events max, round up to 500 for safety
+    self._events: deque[MouseEvent] = deque(maxlen=500)
     self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
 
     self._rk = Ratekeeper(MOUSE_THREAD_RATE, print_delay_threshold=None)
@@ -148,10 +150,18 @@ class MouseState:
     self._thread = None
 
   def get_events(self) -> list[MouseEvent]:
-    with self._lock:
-      events = list(self._events)
-      self._events.clear()
-    return events
+    # Use trylock to avoid blocking if touch thread is busy
+    # This prevents UI thread from blocking on touch events during stutters
+    if self._lock.acquire(blocking=False):
+      try:
+        events = list(self._events)
+        self._events.clear()
+        return events
+      finally:
+        self._lock.release()
+    else:
+      # Lock busy, return empty list rather than blocking
+      return []
 
   def start(self):
     self._exit_event.clear()
@@ -185,8 +195,15 @@ class MouseState:
       )
       # Only add changes
       if self._prev_mouse_event[slot] is None or ev[:-1] != self._prev_mouse_event[slot][:-1]:
-        with self._lock:
-          self._events.append(ev)
+        # Use trylock to avoid blocking touch thread if UI thread is holding lock
+        # This prevents touch thread from blocking during UI stutters
+        if self._lock.acquire(blocking=False):
+          try:
+            self._events.append(ev)
+          finally:
+            self._lock.release()
+        # If lock is busy, we drop this event rather than blocking the touch thread
+        # This is acceptable since we're sampling at 140Hz and only storing changes
         self._prev_mouse_event[slot] = ev
 
 
@@ -692,10 +709,19 @@ class GuiApplication:
   def _draw_touch_points(self):
     current_time = time.monotonic()
 
-    for mouse_event in self._mouse_events:
-      if mouse_event.left_pressed:
-        self._mouse_history.clear()
-      self._mouse_history.append(MousePosWithTime(mouse_event.pos.x * self._scale, mouse_event.pos.y * self._scale, current_time))
+    # If we have events, use them. Otherwise, fall back to raylib's current state
+    # to avoid missing touches during UI stalls
+    if self._mouse_events:
+      for mouse_event in self._mouse_events:
+        if mouse_event.left_pressed:
+          self._mouse_history.clear()
+        self._mouse_history.append(MousePosWithTime(mouse_event.pos.x * self._scale, mouse_event.pos.y * self._scale, current_time))
+    else:
+      # Fallback: check raylib directly if no events (handles case where events were dropped)
+      for slot in range(MAX_TOUCH_SLOTS):
+        if rl.is_mouse_button_down(slot):
+          pos = rl.get_touch_position(slot)
+          self._mouse_history.append(MousePosWithTime(pos.x, pos.y, current_time))
 
     # Remove old touch points that exceed the timeout
     while self._mouse_history and (current_time - self._mouse_history[0].t) > TOUCH_HISTORY_TIMEOUT:
