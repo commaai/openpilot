@@ -512,7 +512,7 @@ class GuiApplication:
               rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
         if self._show_fps:
-          rl.draw_fps(10, 10)
+          self._draw_fps()
 
         if self._show_touches:
           self._draw_touch_points()
@@ -644,8 +644,30 @@ class GuiApplication:
     self._trace_log_callback = trace_log_callback
     rl.set_trace_log_callback(self._trace_log_callback)
 
+  def _draw_fps(self):
+    """Draw custom FPS counter with instant updates."""
+    frame_time = rl.get_frame_time()
+    if frame_time > 0:
+      fps = 1.0 / frame_time
+      frame_time_ms = frame_time * 1000.0
+    else:
+      fps = 0.0
+      frame_time_ms = 0.0
+
+    fps_text = f"FPS: {fps:.1f}"
+    time_text = f"{frame_time_ms:.1f}ms"
+
+    # Draw background rectangle for readability
+    text_width = rl.measure_text(fps_text, 20)
+    rl.draw_rectangle(8, 8, text_width + 80, 50, rl.Color(0, 0, 0, 180))
+
+    # Draw FPS text
+    rl.draw_text(fps_text, 10, 10, 20, rl.GREEN if fps >= self._target_fps * FPS_DROP_THRESHOLD else rl.RED)
+    rl.draw_text(time_text, 10, 32, 16, rl.WHITE)
+
   def _monitor_fps(self):
-    fps = rl.get_fps()
+    frame_time = rl.get_frame_time()
+    fps = 1.0 / frame_time if frame_time > 0 else 0.0
 
     # Log FPS drop below threshold at regular intervals
     if fps < self._target_fps * FPS_DROP_THRESHOLD:
