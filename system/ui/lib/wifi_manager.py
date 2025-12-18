@@ -640,8 +640,8 @@ class WifiManager:
     # with self._lock:
     self._networks = networks
 
-    self._update_ipv4_address()
-    self._update_current_network_metered()
+    # self._update_ipv4_address()
+    # self._update_current_network_metered()
 
     self._enqueue_callbacks(self._networks_updated, self._networks)
 
