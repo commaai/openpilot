@@ -14,6 +14,7 @@ class VideoPlayer(Widget):
     self.texture: rl.Texture | None = None
     self.ffmpeg_proc: subprocess.Popen | None = None
     self.current_frame: np.ndarray | None = None
+    self.rgba_frame: np.ndarray | None = None  # Pre-allocated RGBA buffer
     self.frame_width = 0
     self.frame_height = 0
     self.playing = False
