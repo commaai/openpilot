@@ -148,9 +148,9 @@ class MouseState:
     self._thread = None
 
   def get_events(self) -> list[MouseEvent]:
-    with self._lock:
-      events = list(self._events)
-      self._events.clear()
+    # with self._lock:
+    events = list(self._events)
+    self._events.clear()
     return events
 
   def start(self):
@@ -185,8 +185,8 @@ class MouseState:
       )
       # Only add changes
       if self._prev_mouse_event[slot] is None or ev[:-1] != self._prev_mouse_event[slot][:-1]:
-        with self._lock:
-          self._events.append(ev)
+        # with self._lock:
+        self._events.append(ev)
         self._prev_mouse_event[slot] = ev
 
 
