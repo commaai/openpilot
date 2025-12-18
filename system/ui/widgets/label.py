@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from itertools import zip_longest
 import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE
@@ -9,8 +8,6 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.utils import GuiStyleContext
 from openpilot.system.ui.lib.emoji import find_emoji, emoji_tex
 from openpilot.system.ui.lib.wrap_text import wrap_text
-
-ICON_PADDING = 15
 
 
 # TODO: make this common
@@ -202,114 +199,6 @@ def gui_text_box(
 
   if font_weight != FontWeight.NORMAL:
     rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
-
-
-# Non-interactive text area. Can render emojis and an optional specified icon.
-class Label(Widget):
-  def __init__(self,
-               text: str | Callable[[], str],
-               font_size: int = DEFAULT_TEXT_SIZE,
-               font_weight: FontWeight = FontWeight.NORMAL,
-               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-               text_alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-               text_padding: int = 0,
-               text_color: rl.Color = DEFAULT_TEXT_COLOR,
-               elide_right: bool = False,
-               line_scale=1.0,
-               ):
-
-    super().__init__()
-    self._font_weight = font_weight
-    self._font = gui_app.font(self._font_weight)
-    self._font_size = font_size
-    self._text_alignment = text_alignment
-    self._text_alignment_vertical = text_alignment_vertical
-    self._text_padding = text_padding
-    self._text_color = text_color
-    self._elide_right = elide_right
-    self._line_scale = line_scale
-
-    self._text = text
-    self.set_text(text)
-
-  def set_text(self, text):
-    self._text = text
-    self._update_text(self._text)
-
-  def set_text_color(self, color):
-    self._text_color = color
-
-  def set_font_size(self, size):
-    self._font_size = size
-    self._update_text(self._text)
-
-  def _update_text(self, text):
-    self._emojis = []
-    self._text_size = []
-    text = _resolve_value(text)
-
-    if self._elide_right:
-      display_text = text
-
-      # Elide text to fit within the rectangle
-      text_size = measure_text_cached(self._font, text, self._font_size)
-      content_width = self._rect.width - self._text_padding * 2
-      if text_size.x > content_width:
-        _ellipsis = "..."
-        left, right = 0, len(text)
-        while left < right:
-          mid = (left + right) // 2
-          candidate = text[:mid] + _ellipsis
-          candidate_size = measure_text_cached(self._font, candidate, self._font_size)
-          if candidate_size.x <= content_width:
-            left = mid + 1
-          else:
-            right = mid
-        display_text = text[: left - 1] + _ellipsis if left > 0 else _ellipsis
-
-      self._text_wrapped = [display_text]
-    else:
-      self._text_wrapped = wrap_text(self._font, text, self._font_size, round(self._rect.width - (self._text_padding * 2)))
-
-    for t in self._text_wrapped:
-      self._emojis.append(find_emoji(t))
-      self._text_size.append(measure_text_cached(self._font, t, self._font_size))
-
-  def _render(self, _):
-    # Text can be a callable
-    # TODO: cache until text changed
-    self._update_text(self._text)
-
-    text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
-    if self._text_alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
-      total_text_height = sum(ts.y for ts in self._text_size) or self._font_size * FONT_SCALE
-      text_pos = rl.Vector2(self._rect.x, (self._rect.y + (self._rect.height - total_text_height) // 2))
-    else:
-      text_pos = rl.Vector2(self._rect.x, self._rect.y)
-
-    for text, text_size, emojis in zip_longest(self._text_wrapped, self._text_size, self._emojis, fillvalue=[]):
-      line_pos = rl.Vector2(text_pos.x, text_pos.y)
-      if self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
-        line_pos.x += self._text_padding
-      elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
-        line_pos.x += (self._rect.width - text_size.x) // 2
-      elif self._text_alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
-        line_pos.x += self._rect.width - text_size.x - self._text_padding
-
-      prev_index = 0
-      for start, end, emoji in emojis:
-        text_before = text[prev_index:start]
-        width_before = measure_text_cached(self._font, text_before, self._font_size)
-        rl.draw_text_ex(self._font, text_before, line_pos, self._font_size, 0, self._text_color)
-        line_pos.x += width_before.x
-
-        tex = emoji_tex(emoji)
-        rl.draw_texture_ex(tex, line_pos, 0.0, self._font_size / tex.height * FONT_SCALE, self._text_color)
-        line_pos.x += self._font_size * FONT_SCALE
-        prev_index = end
-      rl.draw_text_ex(self._font, text[prev_index:], line_pos, self._font_size, 0, self._text_color)
-      text_pos.y += (text_size.y or self._font_size * FONT_SCALE) * self._line_scale
-
 
 @dataclass
 class TextLineLayout:

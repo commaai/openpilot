@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label_tici import Label
 
 
 class SetupWidget(Widget):
@@ -19,7 +19,7 @@ class SetupWidget(Widget):
     self._pair_device_btn = Button(tr_lazy("Pair device"), self._show_pairing, button_style=ButtonStyle.PRIMARY)
     self._open_settings_btn = Button(tr_lazy("Open"), lambda: self._open_settings_callback() if self._open_settings_callback else None,
                                      button_style=ButtonStyle.PRIMARY)
-    self._firehose_label = Label(tr_lazy("🔥 Firehose Mode 🔥"), font_weight=FontWeight.MEDIUM, font_size=64)
+    self._firehose_label = Label(tr_lazy("🔥 Firehose Mode 🔥"), weight=FontWeight.MEDIUM, size=64, emojis=True)
 
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback

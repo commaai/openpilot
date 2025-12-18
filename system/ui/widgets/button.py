@@ -5,7 +5,8 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Label, UnifiedLabel
+from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.label_tici import Label
 from openpilot.common.filter_simple import FirstOrderFilter
 
 
@@ -98,8 +99,8 @@ class Button(Widget):
     self._border_radius = border_radius
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
 
-    self._label = Label(text, font_size, font_weight, text_alignment, text_padding=text_padding,
-                        text_color=BUTTON_TEXT_COLOR[self._button_style], elide_right=elide_right)
+    self._label = Label(text, font_size, font_weight, text_alignment, padding=text_padding,
+                        color=BUTTON_TEXT_COLOR[self._button_style], elide=elide_right)
 
     self._click_callback = click_callback
     self._icon = icon
