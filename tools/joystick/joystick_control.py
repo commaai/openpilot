@@ -3,7 +3,7 @@ import os
 import argparse
 import threading
 import numpy as np
-from inputs import UnpluggedError, get_gamepad
+from inputs import UnpluggedError, get_gamepad, devices
 
 from cereal import messaging
 from openpilot.common.params import Params
@@ -42,14 +42,26 @@ class Keyboard:
 
 class Joystick:
   def __init__(self):
-    # This class supports a PlayStation 5 DualSense controller on the comma 3X
-    # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
-    if HARDWARE.get_device_type() == 'pc':
-      self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
+    self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
+
+    gamepad_name = ''
+    if devices.gamepads:
+      gp0 = devices.gamepads[0]
+      gamepad_name = getattr(gp0, 'name', '') or str(gp0)
+      print(f"Detected: {gamepad_name}\n")
+
+    if 'Stadia' in gamepad_name:
+      print("Google Stadia axes mapping")
+      steer_axis = 'ABS_X'
+      accel_axis = 'ABS_GAS'
+      self.flip_map = {'ABS_BRAKE': accel_axis}
+    elif HARDWARE.get_device_type() == 'pc':
+      print("PlayStation 5 DualSense (PC) axes mapping")
       accel_axis = 'ABS_RZ'
       steer_axis = 'ABS_RX'
       self.flip_map = {'ABS_Z': accel_axis}
     else:
+      print("PlayStation 5 DualSense axes mapping")
       accel_axis = 'ABS_RY'
       steer_axis = 'ABS_Z'
       self.flip_map = {'ABS_RX': accel_axis}
