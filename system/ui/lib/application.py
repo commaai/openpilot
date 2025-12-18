@@ -519,7 +519,7 @@ class GuiApplication:
 
           self._fps_filter.update(1 / max(rl.get_frame_time(), 1e-3))
           print(self._fps_filter.x)
-          rl.draw_text(f"{self._fps_filter.x:.1f} FPS", 10, 10, 25, rl.GREEN)
+          rl.draw_text(f"{round(self._fps_filter.x)} FPS", 10, 10, 25, rl.GREEN)
           # rl.draw_fps(10, 10)
 
         if self._show_touches:
