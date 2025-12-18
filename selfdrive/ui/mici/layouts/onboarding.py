@@ -237,19 +237,20 @@ class TrainingGuideDMTutorial(Widget):
       ring_color,
     )
 
-    self._back_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._back_button.rect.height,
-      self._back_button.rect.width,
-      self._back_button.rect.height,
-    ))
+    if self._dialog._camera_view.frame:
+      self._back_button.render(rl.Rectangle(
+        self._rect.x + 8,
+        self._rect.y + self._rect.height - self._back_button.rect.height,
+        self._back_button.rect.width,
+        self._back_button.rect.height,
+      ))
 
-    self._good_button.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._good_button.rect.width - 8,
-      self._rect.y + self._rect.height - self._good_button.rect.height,
-      self._good_button.rect.width,
-      self._good_button.rect.height,
-    ))
+      self._good_button.render(rl.Rectangle(
+        self._rect.x + self._rect.width - self._good_button.rect.width - 8,
+        self._rect.y + self._rect.height - self._good_button.rect.height,
+        self._good_button.rect.width,
+        self._good_button.rect.height,
+      ))
 
     # rounded border
     rl.draw_rectangle_rounded_lines_ex(self._rect, 0.2 * 1.02, 10, 50, rl.BLACK)
