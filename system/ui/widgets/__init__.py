@@ -4,6 +4,7 @@ from enum import IntEnum
 from collections.abc import Callable
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS, MouseEvent
+from openpilot.system.ui.lib.scroll_panel2 import MIN_DRAG_PIXELS
 
 try:
   from openpilot.selfdrive.ui.ui_state import device
@@ -138,6 +139,10 @@ class Widget(abc.ABC):
         self._handle_mouse_event(mouse_event)
         if self.__is_pressed[mouse_event.slot] and mouse_in_rect:
           self._handle_mouse_release(mouse_event.pos)
+          is_swipe = (abs(mouse_event.pos.y - mouse_event.start_pos.y) > MIN_DRAG_PIXELS or
+                      abs(mouse_event.pos.x - mouse_event.start_pos.x) > MIN_DRAG_PIXELS)
+          if not is_swipe:
+            self._handle_mouse_click(mouse_event.pos)
         self.__is_pressed[mouse_event.slot] = False
         self.__tracking_is_pressed[mouse_event.slot] = False
 
@@ -174,6 +179,9 @@ class Widget(abc.ABC):
     if self._click_callback:
       self._click_callback()
     return False
+
+  def _handle_mouse_click(self, mouse_pos: MousePos) -> bool:
+    """This is different from _handle_mouse_release in that it checks for MIN_DRAG_PIXELS."""
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
@@ -325,7 +333,7 @@ class NavWidget(Widget, abc.ABC):
       elif hasattr(self, '_scroll_panel'):
         original_enabled = self._scroll_panel.enabled
         self._scroll_panel.set_enabled(lambda: not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                          original_enabled))
+                                                                           original_enabled))
 
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
