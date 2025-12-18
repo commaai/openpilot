@@ -141,7 +141,6 @@ class Widget(abc.ABC):
         self._handle_mouse_event(mouse_event)
         if self.__is_pressed[mouse_event.slot] and mouse_in_rect:
           self._handle_mouse_release(mouse_event.pos)
-
         self.__mouse_events[mouse_event.slot] = None
         self.__is_pressed[mouse_event.slot] = False
         self.__tracking_is_pressed[mouse_event.slot] = False
