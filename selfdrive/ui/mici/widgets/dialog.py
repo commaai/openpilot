@@ -328,10 +328,9 @@ class BigMultiOptionDialog(BigDialogBase):
     self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
     self._last_selected_option: str = self._selected_option
 
-    self._press_pos: MousePos | None = None
+    self._start_press_pos: MousePos | None = None
 
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
-    # self.set_touch_valid_callback(self._scroller.scroll_panel.is_touch_valid)
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
@@ -370,18 +369,18 @@ class BigMultiOptionDialog(BigDialogBase):
 
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
-    self._press_pos = mouse_pos
+    self._start_press_pos = mouse_pos
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    if self._press_pos is None:
+    if self._start_press_pos is None:
       return
 
     # TODO: add generic _handle_mouse_click handler to Widget
-    dist_x = abs(mouse_pos.x - self._press_pos.x)
-    dist_y = abs(mouse_pos.y - self._press_pos.y)
-    self._press_pos = None
+    dist_x = abs(mouse_pos.x - self._start_press_pos.x)
+    dist_y = abs(mouse_pos.y - self._start_press_pos.y)
+    self._start_press_pos = None
     if dist_x > MIN_DRAG_PIXELS or dist_y > MIN_DRAG_PIXELS:
       return
 
