@@ -323,8 +323,8 @@ class BigMultiOptionDialog(BigDialogBase):
     if default is not None:
       assert default in options
 
-    self._default_option: str = default or (options[0] if len(options) > 0 else "")
-    self._selected_option: str = self._default_option
+    self._default_option: str | None = default
+    self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
     self._last_selected_option: str = self._selected_option
 
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
@@ -344,7 +344,8 @@ class BigMultiOptionDialog(BigDialogBase):
   def show_event(self):
     super().show_event()
     self._scroller.show_event()
-    self._on_option_selected(self._default_option)
+    if self._default_option is not None:
+      self._on_option_selected(self._default_option)
 
   def get_selected_option(self) -> str:
     return self._selected_option
