@@ -48,7 +48,7 @@ class PrimeState:
     dongle_id = self._params.get("DongleId")
     t1 = time.monotonic()
     print(f"[PRIME_STATE] get dongle_id: {(t1-t0)*1000:.2f}ms")
-
+    
     if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
       return
 
@@ -57,27 +57,31 @@ class PrimeState:
       identity_token = get_token(dongle_id)
       t3 = time.monotonic()
       print(f"[PRIME_STATE] get_token: {(t3-t2)*1000:.2f}ms")
-
+      
       t4 = time.monotonic()
       response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token)
       t5 = time.monotonic()
       print(f"[PRIME_STATE] api_get: {(t5-t4)*1000:.2f}ms")
-
+      
       if response.status_code == 200:
         t6 = time.monotonic()
         data = response.json()
         t7 = time.monotonic()
         print(f"[PRIME_STATE] response.json(): {(t7-t6)*1000:.2f}ms")
-
+        
         is_paired = data.get("is_paired", False)
         prime_type = data.get("prime_type", 0)
         t8 = time.monotonic()
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
         t9 = time.monotonic()
         print(f"[PRIME_STATE] set_type: {(t9-t8)*1000:.2f}ms")
-
-      print(f"[PRIME_STATE] _fetch_prime_status TOTAL: {(t9-t0)*1000:.2f}ms")
+        print(f"[PRIME_STATE] _fetch_prime_status TOTAL: {(t9-t0)*1000:.2f}ms")
+      else:
+        t_end = time.monotonic()
+        print(f"[PRIME_STATE] _fetch_prime_status TOTAL (non-200): {(t_end-t0)*1000:.2f}ms")
     except Exception as e:
+      t_end = time.monotonic()
+      print(f"[PRIME_STATE] _fetch_prime_status TOTAL (error): {(t_end-t0)*1000:.2f}ms")
       cloudlog.error(f"Failed to fetch prime status: {e}")
 
   def set_type(self, prime_type: PrimeType) -> None:
