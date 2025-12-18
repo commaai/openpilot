@@ -283,7 +283,7 @@ class WifiManager:
           # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
           self._update_networks()
           self._request_scan()
-          self._last_network_update = time.monotonic()
+          # self._last_network_update = time.monotonic()
       time.sleep(1 / 2.)
 
   def _wait_for_wifi_device(self):
