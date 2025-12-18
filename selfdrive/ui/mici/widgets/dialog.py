@@ -328,18 +328,12 @@ class BigMultiOptionDialog(BigDialogBase):
     self._last_selected_option: str = self._selected_option
 
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
+    self.set_touch_valid_callback(self._scroller.scroll_panel.is_touch_valid)
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
     for option in options:
-      self.add_button(BigDialogOptionButton(option))
-
-  def add_button(self, button: BigDialogOptionButton):
-    def click_callback(_btn=button):
-      self._on_option_selected(_btn.option)
-
-    button.set_click_callback(click_callback)
-    self._scroller.add_widget(button)
+      self._scroller.add_widget(BigDialogOptionButton(option))
 
   def show_event(self):
     super().show_event()
@@ -350,7 +344,7 @@ class BigMultiOptionDialog(BigDialogBase):
   def get_selected_option(self) -> str:
     return self._selected_option
 
-  def _on_option_selected(self, option: str, smooth_scroll: bool = True):
+  def _on_option_selected(self, option: str):
     y_pos = 0.0
     for btn in self._scroller._items:
       btn = cast(BigDialogOptionButton, btn)
@@ -366,10 +360,20 @@ class BigMultiOptionDialog(BigDialogBase):
         y_pos = rect_center_y - (btn.rect.y + height / 2)
         break
 
-    self._scroller.scroll_to(-y_pos, smooth=smooth_scroll)
+    self._scroller.scroll_to(-y_pos)
 
   def _selected_option_changed(self):
     pass
+
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+
+    # select current option
+    for btn in self._scroller._items:
+      btn = cast(BigDialogOptionButton, btn)
+      if btn.option == self._selected_option:
+        self._on_option_selected(btn.option)
+        break
 
   def _update_state(self):
     super()._update_state()
