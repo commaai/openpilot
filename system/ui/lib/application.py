@@ -214,6 +214,7 @@ class GuiApplication:
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
+    self._frame_times_history: deque[float] = deque(maxlen=180)  # 1% low tracking
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
@@ -645,25 +646,26 @@ class GuiApplication:
     rl.set_trace_log_callback(self._trace_log_callback)
 
   def _draw_fps(self):
-    """Draw custom FPS counter with instant updates."""
+    """Draw custom FPS counter with instant updates and 1% low."""
     frame_time = rl.get_frame_time()
-    if frame_time > 0:
-      fps = 1.0 / frame_time
-      frame_time_ms = frame_time * 1000.0
-    else:
-      fps = 0.0
-      frame_time_ms = 0.0
+    fps = 1.0 / frame_time if frame_time > 0 else 0.0
+    self._frame_times_history.append(frame_time)
+
+    # Calculate 1% low (average of worst 1% frame times)
+    fps_1pct_low = 0.0
+    if len(self._frame_times_history) >= 10:
+      worst_times = sorted(self._frame_times_history)[-max(1, len(self._frame_times_history)//100):]
+      avg_worst = sum(worst_times) / len(worst_times)
+      fps_1pct_low = 1.0 / avg_worst if avg_worst > 0 else 0.0
 
     fps_text = f"FPS: {fps:.1f}"
-    time_text = f"{frame_time_ms:.1f}ms"
+    low_text = f"1% Low: {fps_1pct_low:.1f}" if fps_1pct_low > 0 else "1% Low: --"
+    time_text = f"{frame_time*1000:.1f}ms"
 
-    # Draw background rectangle for readability
-    text_width = rl.measure_text(fps_text, 20)
-    rl.draw_rectangle(8, 8, text_width + 80, 50, rl.Color(0, 0, 0, 180))
-
-    # Draw FPS text
+    rl.draw_rectangle(8, 8, max(rl.measure_text(fps_text, 20), rl.measure_text(low_text, 16)) + 20, 70, rl.Color(0, 0, 0, 180))
     rl.draw_text(fps_text, 10, 10, 20, rl.GREEN if fps >= self._target_fps * FPS_DROP_THRESHOLD else rl.RED)
-    rl.draw_text(time_text, 10, 32, 16, rl.WHITE)
+    rl.draw_text(low_text, 10, 32, 16, rl.YELLOW if fps_1pct_low >= self._target_fps * FPS_DROP_THRESHOLD else rl.ORANGE)
+    rl.draw_text(time_text, 10, 50, 16, rl.WHITE)
 
   def _monitor_fps(self):
     frame_time = rl.get_frame_time()
