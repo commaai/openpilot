@@ -596,11 +596,10 @@ class WifiManager:
   def _update_networks(self):
     print('IN _UPDATE_NETWORKS')
     # Get wifi_device outside lock (fast read)
-    with self._lock:
-      wifi_device = self._wifi_device
-      if wifi_device is None:
-        cloudlog.warning("No WiFi device found")
-        return
+    wifi_device = self._wifi_device
+    if wifi_device is None:
+      cloudlog.warning("No WiFi device found")
+      return
 
     # Do all DBus calls OUTSIDE the lock to avoid GIL contention
     # returns '/' if no active AP
@@ -638,8 +637,8 @@ class WifiManager:
     networks.sort(key=lambda n: (-n.is_connected, -round(n.strength / 100 * 2), n.ssid.lower()))
 
     # Only hold lock for the actual assignment
-    with self._lock:
-      self._networks = networks
+    # with self._lock:
+    self._networks = networks
 
     self._update_ipv4_address()
     self._update_current_network_metered()
