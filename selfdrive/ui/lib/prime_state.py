@@ -70,6 +70,7 @@ class PrimeState:
     from openpilot.selfdrive.ui.ui_state import ui_state, device
     while self._running:
       if not ui_state.started and device._awake:
+        print('FETCH PRIME STATUS')
         self._fetch_prime_status()
 
       for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
