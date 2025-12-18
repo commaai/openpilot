@@ -4,7 +4,6 @@ import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from typing import cast
-from openpilot.system.ui.lib.scroll_panel2 import MIN_DRAG_PIXELS
 from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
@@ -379,13 +378,6 @@ class BigMultiOptionDialog(BigDialogBase):
     # # TODO: add generic _handle_mouse_click handler to Widget
     if not self._scroller.scroll_panel.is_touch_valid():
       self._can_click = False
-      return
-
-    # if self._start_press_pos is not None:
-    #   dist_x = abs(mouse_event.pos.x - self._start_press_pos.x)
-    #   dist_y = abs(mouse_event.pos.y - self._start_press_pos.y)
-    #   if dist_x > MIN_DRAG_PIXELS or dist_y > MIN_DRAG_PIXELS:
-    #     self._can_click = False
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
