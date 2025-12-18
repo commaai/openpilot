@@ -21,6 +21,8 @@ from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import multilang
 from openpilot.common.realtime import Ratekeeper
 
+from common.filter_simple import FirstOrderFilter
+
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
@@ -200,6 +202,8 @@ class GuiApplication:
       self._scale = self._calculate_auto_scale()
     else:
       self._scale = SCALE
+
+    self._fps_filter = FirstOrderFilter(0.0, 0.1, 1 / 60)
 
     # Scale, then ensure dimensions are even
     self._scaled_width = int(self._width * self._scale)
@@ -512,7 +516,11 @@ class GuiApplication:
               rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
         if self._show_fps:
-          rl.draw_fps(10, 10)
+
+          self._fps_filter.update(1 / max(rl.get_frame_time(), 1e-3))
+          print(self._fps_filter.x)
+          rl.draw_text(f"{self._fps_filter.x:.1f} FPS", 10, 10, 25, rl.GREEN)
+          # rl.draw_fps(10, 10)
 
         if self._show_touches:
           self._draw_touch_points()
