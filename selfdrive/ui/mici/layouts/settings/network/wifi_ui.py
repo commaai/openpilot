@@ -36,8 +36,6 @@ class WifiIcon(Widget):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 89, 64))
 
-    self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 89, 64)
-    self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 89, 64)
     self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 89, 64)
     self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 89, 64)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 89, 64)
