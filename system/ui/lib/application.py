@@ -214,6 +214,7 @@ class GuiApplication:
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
+    self._last_frame_time: float = time.monotonic()
     self._frame_times_history: deque[float] = deque(maxlen=180)  # 1% low tracking
     self._window_close_requested = False
     self._trace_log_callback = None
@@ -647,7 +648,10 @@ class GuiApplication:
 
   def _draw_fps(self):
     """Draw custom FPS counter with instant updates and 1% low."""
-    frame_time = rl.get_frame_time()
+    current_time = time.monotonic()
+    frame_time = current_time - self._last_frame_time
+    self._last_frame_time = current_time
+
     fps = 1.0 / frame_time if frame_time > 0 else 0.0
     self._frame_times_history.append(frame_time)
 
@@ -668,7 +672,8 @@ class GuiApplication:
     rl.draw_text(time_text, 10, 50, 16, rl.WHITE)
 
   def _monitor_fps(self):
-    frame_time = rl.get_frame_time()
+    # Use tracked frame time instead of raylib's
+    frame_time = self._frame_times_history[-1] if self._frame_times_history else 0.0
     fps = 1.0 / frame_time if frame_time > 0 else 0.0
 
     # Log FPS drop below threshold at regular intervals
