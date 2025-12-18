@@ -6,6 +6,16 @@ import numpy as np
 import pyray as rl
 from openpilot.system.ui.widgets import Widget
 
+# Benchmarking
+_benchmark_enabled = True
+_benchmark_times = {
+  'frame_read': [],
+  'rgb_to_rgba': [],
+  'texture_update': [],
+  'render': [],
+  'total_frame': []
+}
+
 
 class VideoPlayer(Widget):
   def __init__(self, video_path: str):
@@ -95,36 +105,53 @@ class VideoPlayer(Widget):
     current_time = time.monotonic()
     elapsed = current_time - self.last_frame_time
 
-    # Skip frames if we're behind to catch up
+    # Only read new frame if enough time has passed
     if elapsed < self.frame_duration:
       return
 
-    # Calculate how many frames we should skip if behind
-    frames_to_skip = int(elapsed / self.frame_duration) - 1
-    frames_to_skip = min(frames_to_skip, 5)  # Max skip 5 frames at once
-
+    frame_start = time.monotonic()
     frame_size = self.frame_width * self.frame_height * 3
-    try:
-      # Skip frames if we're behind
-      for _ in range(frames_to_skip):
-        self.ffmpeg_proc.stdout.read(frame_size)
 
+    try:
+      read_start = time.monotonic()
       frame_data = self.ffmpeg_proc.stdout.read(frame_size)
+      read_time = time.monotonic() - read_start
+      if _benchmark_enabled and len(_benchmark_times['frame_read']) < 1000:
+        _benchmark_times['frame_read'].append(read_time)
+
       if len(frame_data) == frame_size:
-        frame = np.frombuffer(frame_data, dtype=np.uint8).reshape(
+        reshape_start = time.monotonic()
+        # Initialize RGBA buffer if needed
+        if self.rgba_frame is None:
+          self.rgba_frame = np.zeros((self.frame_height, self.frame_width, 4), dtype=np.uint8)
+
+        # Read RGB data
+        rgb_frame = np.frombuffer(frame_data, dtype=np.uint8).reshape(
           self.frame_height, self.frame_width, 3
         )
-        # Flip vertically (OpenGL convention) - use view instead of copy when possible
-        frame = np.ascontiguousarray(np.flipud(frame))
+        reshape_time = time.monotonic() - reshape_start
 
+        rgba_start = time.monotonic()
+        # Convert RGB to RGBA - reuse buffer, do work outside lock when possible
+        rgb_flipped = rgb_frame[::-1]
+
+        # Only lock for the final assignment
         with self.frame_lock:
-          self.current_frame = frame
-          # Pre-convert to RGBA for faster rendering
           if self.rgba_frame is None:
             self.rgba_frame = np.zeros((self.frame_height, self.frame_width, 4), dtype=np.uint8)
-          self.rgba_frame[:, :, :3] = frame
-          self.rgba_frame[:, :, 3] = 255  # Alpha channel
+          # Copy RGB channels (flipped)
+          self.rgba_frame[:, :, :3] = rgb_flipped
+          # Set alpha channel
+          self.rgba_frame[:, :, 3] = 255
+          self.current_frame = rgb_flipped
+        rgba_time = time.monotonic() - rgba_start
+        if _benchmark_enabled and len(_benchmark_times['rgb_to_rgba']) < 1000:
+          _benchmark_times['rgb_to_rgba'].append(rgba_time)
+
         self.last_frame_time = current_time
+        total_frame_time = time.monotonic() - frame_start
+        if _benchmark_enabled and len(_benchmark_times['total_frame']) < 1000:
+          _benchmark_times['total_frame'].append(total_frame_time)
       else:
         # End of video, restart
         print("Video ended, restarting...")
@@ -155,31 +182,71 @@ class VideoPlayer(Widget):
       self._update_frame()
 
     # Render current frame
+    render_start = time.monotonic()
+    rgba_frame_copy = None
+    texture_ref = None
     with self.frame_lock:
       if self.rgba_frame is not None and self.texture is not None:
-        # Update texture with pre-converted RGBA frame data
-        rl.update_texture(self.texture, rl.ffi.cast("void *", self.rgba_frame.ctypes.data))
+        # Copy reference to avoid holding lock during texture update
+        rgba_frame_copy = self.rgba_frame
+        texture_ref = self.texture
 
-        # Calculate aspect ratio preserving rect
-        video_aspect = self.frame_width / self.frame_height
-        rect_aspect = rect.width / rect.height
+    if rgba_frame_copy is not None and texture_ref is not None:
+      # Update texture outside lock to reduce contention
+      texture_start = time.monotonic()
+      rl.update_texture(texture_ref, rl.ffi.cast("void *", rgba_frame_copy.ctypes.data))
+      texture_time = time.monotonic() - texture_start
+      if _benchmark_enabled and len(_benchmark_times['texture_update']) < 1000:
+        _benchmark_times['texture_update'].append(texture_time)
 
-        if video_aspect > rect_aspect:
-          # Video is wider, fit to width
-          draw_height = rect.width / video_aspect
-          draw_y = rect.y + (rect.height - draw_height) / 2
-          dst_rect = rl.Rectangle(rect.x, draw_y, rect.width, draw_height)
-        else:
-          # Video is taller, fit to height
-          draw_width = rect.height * video_aspect
-          draw_x = rect.x + (rect.width - draw_width) / 2
-          dst_rect = rl.Rectangle(draw_x, rect.y, draw_width, rect.height)
+      # Calculate aspect ratio preserving rect
+      video_aspect = self.frame_width / self.frame_height
+      rect_aspect = rect.width / rect.height
 
-        src_rect = rl.Rectangle(0, 0, self.frame_width, -self.frame_height)
-        rl.draw_texture_pro(self.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+      if video_aspect > rect_aspect:
+        # Video is wider, fit to width
+        draw_height = rect.width / video_aspect
+        draw_y = rect.y + (rect.height - draw_height) / 2
+        dst_rect = rl.Rectangle(rect.x, draw_y, rect.width, draw_height)
       else:
-        # Draw loading/black screen
-        rl.draw_rectangle_rec(rect, rl.BLACK)
+        # Video is taller, fit to height
+        draw_width = rect.height * video_aspect
+        draw_x = rect.x + (rect.width - draw_width) / 2
+        dst_rect = rl.Rectangle(draw_x, rect.y, draw_width, rect.height)
+
+      src_rect = rl.Rectangle(0, 0, self.frame_width, -self.frame_height)
+      rl.draw_texture_pro(texture_ref, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+
+      render_time = time.monotonic() - render_start
+      if _benchmark_enabled and len(_benchmark_times['render']) < 1000:
+        _benchmark_times['render'].append(render_time)
+
+        # Print stats every 60 frames
+        if len(_benchmark_times['render']) % 60 == 0:
+          self._print_benchmark_stats()
+    else:
+      # Draw loading/black screen
+      rl.draw_rectangle_rec(rect, rl.BLACK)
+
+  def _print_benchmark_stats(self):
+    """Print benchmark statistics"""
+    if not _benchmark_enabled:
+      return
+
+    print("\n=== Benchmark Stats (last 60 frames) ===")
+    for key, times in _benchmark_times.items():
+      if times:
+        recent = times[-60:]  # Last 60 frames
+        avg = sum(recent) / len(recent) * 1000  # Convert to ms
+        max_time = max(recent) * 1000
+        min_time = min(recent) * 1000
+        print(f"{key:20s}: avg={avg:6.2f}ms, min={min_time:6.2f}ms, max={max_time:6.2f}ms")
+    print("=" * 50)
+
+    # Clear old data to prevent memory growth
+    for key in _benchmark_times:
+      if len(_benchmark_times[key]) > 120:
+        _benchmark_times[key] = _benchmark_times[key][-60:]
 
   def __del__(self):
     """Cleanup"""
@@ -189,4 +256,7 @@ class VideoPlayer(Widget):
       self.ffmpeg_proc = None
     if self.texture is not None:
       rl.unload_texture(self.texture)
+    # Print final stats
+    if _benchmark_enabled:
+      self._print_benchmark_stats()
 
