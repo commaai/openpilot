@@ -58,8 +58,10 @@ class VideoPlayer(Widget):
       else:
         self.fps = float(fps_str) if fps_str else 30.0
 
+      # Hardcode playback to 20fps for consistent performance
+      self.fps = 20.0
       self.frame_duration = 1.0 / self.fps
-      print(f"Video info: {self.frame_width}x{self.frame_height} @ {self.fps} fps")
+      print(f"Video info: {self.frame_width}x{self.frame_height} @ {self.fps} fps (playback hardcoded to 20fps)")
       return True
     except Exception as e:
       print(f"Failed to probe video: {e}")
