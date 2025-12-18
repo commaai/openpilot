@@ -1,6 +1,7 @@
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
+import time
 
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
@@ -155,6 +156,7 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), ui_state.params.get("GsmApn") or "", checked)
 
   def _on_network_updated(self, networks: list[Network]):
+    t = time.monotonic()
     # Update tethering state
     tethering_active = self._wifi_manager.is_tethering_active()
     # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
@@ -172,6 +174,8 @@ class NetworkLayoutMici(NavWidget):
         MeteredType.YES: 'metered',
         MeteredType.NO: 'unmetered'
       }.get(self._wifi_manager.current_network_metered, 'default'))
+
+    print(f'Network update processed in {time.monotonic() - t:.3f} seconds')
 
   def _switch_to_panel(self, panel_type: NetworkPanelType):
     if panel_type == NetworkPanelType.WIFI:

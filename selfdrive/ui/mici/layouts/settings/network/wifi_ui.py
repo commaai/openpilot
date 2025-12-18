@@ -1,4 +1,5 @@
 import math
+import time
 import numpy as np
 import pyray as rl
 from collections.abc import Callable
@@ -363,9 +364,12 @@ class WifiUIMici(BigMultiOptionDialog):
     self._wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[Network]):
+    t = time.monotonic()
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
+    print(f"WifiUIMici: button update took {(time.monotonic() - t) * 1000:.2f}ms")
     self._network_info_page.update_networks(self._networks)
+    print(f"WifiUIMici: network info page update took {(time.monotonic() - t) * 1000:.2f}ms")
 
   def _update_buttons(self):
     # Don't update buttons while user is actively interacting
