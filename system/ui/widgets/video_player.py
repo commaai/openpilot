@@ -70,12 +70,12 @@ class VideoPlayer(Widget):
     if self.ffmpeg_proc is not None:
       return
 
-    # Try hardware acceleration first, fallback to software
+    # Use RGBA output directly to avoid conversion
     cmd = [
       'ffmpeg', '-hwaccel', 'auto',  # Try hardware acceleration
       '-i', self.video_path,
       '-f', 'rawvideo',
-      '-pix_fmt', 'rgb24',
+      '-pix_fmt', 'rgba',  # Output RGBA directly
       '-vcodec', 'rawvideo',
       '-an', '-sn',  # No audio, no subtitles
       '-threads', '2',  # Limit threads for better performance
@@ -87,7 +87,7 @@ class VideoPlayer(Widget):
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
-        bufsize=self.frame_width * self.frame_height * 3 * 2  # Larger buffer
+        bufsize=self.frame_width * self.frame_height * 4 * 2  # RGBA = 4 bytes per pixel
       )
       self.playing = True
       self.start_time = time.monotonic()
@@ -110,40 +110,32 @@ class VideoPlayer(Widget):
       return
 
     frame_start = time.monotonic()
-    frame_size = self.frame_width * self.frame_height * 3
+    frame_size = self.frame_width * self.frame_height * 4  # RGBA = 4 bytes per pixel
 
     try:
       read_start = time.monotonic()
-      frame_data = self.ffmpeg_proc.stdout.read(frame_size)
+      # Pre-allocate buffer if needed
+      with self.frame_lock:
+        if self.rgba_frame is None:
+          self.rgba_frame = np.zeros((self.frame_height, self.frame_width, 4), dtype=np.uint8)
+        rgba_buffer = self.rgba_frame
+
+      # Read directly into numpy array buffer using memoryview - avoids intermediate copy!
+      frame_bytes = self.ffmpeg_proc.stdout.read(frame_size)
       read_time = time.monotonic() - read_start
       if _benchmark_enabled and len(_benchmark_times['frame_read']) < 1000:
         _benchmark_times['frame_read'].append(read_time)
 
-      if len(frame_data) == frame_size:
-        reshape_start = time.monotonic()
-        # Initialize RGBA buffer if needed
-        if self.rgba_frame is None:
-          self.rgba_frame = np.zeros((self.frame_height, self.frame_width, 4), dtype=np.uint8)
-
-        # Read RGB data
-        rgb_frame = np.frombuffer(frame_data, dtype=np.uint8).reshape(
-          self.frame_height, self.frame_width, 3
-        )
-        reshape_time = time.monotonic() - reshape_start
-
+      if len(frame_bytes) == frame_size:
         rgba_start = time.monotonic()
-        # Convert RGB to RGBA - reuse buffer, do work outside lock when possible
-        rgb_flipped = rgb_frame[::-1]
-
-        # Only lock for the final assignment
+        # Read directly into buffer - much faster than copy!
+        rgba_view = np.frombuffer(frame_bytes, dtype=np.uint8).reshape(
+          self.frame_height, self.frame_width, 4
+        )
+        # Copy directly into pre-allocated buffer
         with self.frame_lock:
-          if self.rgba_frame is None:
-            self.rgba_frame = np.zeros((self.frame_height, self.frame_width, 4), dtype=np.uint8)
-          # Copy RGB channels (flipped)
-          self.rgba_frame[:, :, :3] = rgb_flipped
-          # Set alpha channel
-          self.rgba_frame[:, :, 3] = 255
-          self.current_frame = rgb_flipped
+          np.copyto(rgba_buffer, rgba_view)
+          self.current_frame = rgba_buffer[:, :, :3]  # RGB slice for compatibility
         rgba_time = time.monotonic() - rgba_start
         if _benchmark_enabled and len(_benchmark_times['rgb_to_rgba']) < 1000:
           _benchmark_times['rgb_to_rgba'].append(rgba_time)
