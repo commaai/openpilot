@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -329,6 +329,7 @@ class BigMultiOptionDialog(BigDialogBase):
     self._last_selected_option: str = self._selected_option
 
     self._start_press_pos: MousePos | None = None
+    self._touch_valid = True
 
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
     if self._right_btn is not None:
@@ -370,18 +371,22 @@ class BigMultiOptionDialog(BigDialogBase):
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
     self._start_press_pos = mouse_pos
+    self._touch_valid = True
+
+  def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
+    super()._handle_mouse_event(mouse_event)
+
+    # TODO: add generic _handle_mouse_click handler to Widget
+    if self._start_press_pos is not None:
+      dist_x = abs(mouse_event.pos.x - self._start_press_pos.x)
+      dist_y = abs(mouse_event.pos.y - self._start_press_pos.y)
+      if dist_x > MIN_DRAG_PIXELS or dist_y > MIN_DRAG_PIXELS:
+        self._touch_valid = False
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    if self._start_press_pos is None:
-      return
-
-    # TODO: add generic _handle_mouse_click handler to Widget
-    dist_x = abs(mouse_pos.x - self._start_press_pos.x)
-    dist_y = abs(mouse_pos.y - self._start_press_pos.y)
-    self._start_press_pos = None
-    if dist_x > MIN_DRAG_PIXELS or dist_y > MIN_DRAG_PIXELS:
+    if not self._touch_valid:
       return
 
     # select current option
