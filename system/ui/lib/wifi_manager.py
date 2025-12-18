@@ -280,7 +280,7 @@ class WifiManager:
     while not self._exit:
       if self._active:
         if time.monotonic() - self._start > 5:
-          continue
+          time.sleep(1/2)
         if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
           # Scan for networks every 10 seconds
           # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
