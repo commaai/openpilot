@@ -327,7 +327,6 @@ class BigMultiOptionDialog(BigDialogBase):
     self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
     self._last_selected_option: str = self._selected_option
 
-    self._start_press_pos: MousePos | None = None
     self._can_click = True
 
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
@@ -369,7 +368,6 @@ class BigMultiOptionDialog(BigDialogBase):
 
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
-    self._start_press_pos = mouse_pos
     self._can_click = True
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
