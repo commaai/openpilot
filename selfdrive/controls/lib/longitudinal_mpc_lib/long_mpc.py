@@ -4,7 +4,6 @@ import time
 import numpy as np
 from cereal import log
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
-from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.swaglog import cloudlog
 # WARNING: imports outside of constants will not trigger a rebuild
@@ -37,7 +36,7 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
-A_CHANGE_COST = 200.
+A_CHANGE_COST = 150.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .25
 LEAD_DANGER_FACTOR = 0.75
@@ -56,23 +55,8 @@ FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
-# More humanlike standstill distance when following a lead (implemented by shifting the
-# lead "obstacle" backward at low lead speeds, without reducing the global STOP_DISTANCE).
-LEAD_STOP_DISTANCE = 3.0
-# Lead stopping equivalence is a modeling assumption for how much decel the lead can
-# reasonably sustain while braking to a stop. This is not "ego comfort"; it's only used
-# when converting a moving lead into a virtual "stopped obstacle" for the MPC.
-LEAD_EQUIV_BRAKE = 3.5
 CRUISE_MIN_ACCEL = -1.2
 CRUISE_MAX_ACCEL = 2.0
-
-# After a lead has recently decelerated (while both vehicles are moving),
-# cap acceleration for a short period to avoid "surge then harsh brake" behavior
-# when the lead briefly releases brakes (common on ramps/rolling traffic).
-LEAD_BRAKE_CAUTION_DECAY_SEC = 3.0
-LEAD_BRAKE_CAUTION_A_LEAD_TH = -0.3
-LEAD_BRAKE_CAUTION_V_LEAD_MIN = 3.0
-LEAD_BRAKE_CAUTION_ACCEL_CAP = 1.2
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
@@ -87,19 +71,16 @@ def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
 
 def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
-    return 1.60
+    return 1.2
   elif personality==log.LongitudinalPersonality.standard:
-    return 1.20
+    return 1.0
   elif personality==log.LongitudinalPersonality.aggressive:
-    return 1.00
+    return 0.8
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
 def get_stopped_equivalence_factor(v_lead):
   return (v_lead**2) / (2 * COMFORT_BRAKE)
-
-def get_lead_stopped_equivalence_factor(v_lead):
-  return (v_lead**2) / (2 * LEAD_EQUIV_BRAKE)
 
 def get_safe_obstacle_distance(v_ego, t_follow):
   return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
@@ -245,7 +226,6 @@ class LongitudinalMpc:
     self.mode = mode
     self.dt = dt
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
-    self.lead_brake_caution = FirstOrderFilter(0.0, LEAD_BRAKE_CAUTION_DECAY_SEC, self.dt)
     self.reset()
     self.source = SOURCES[2]
 
@@ -276,7 +256,6 @@ class LongitudinalMpc:
     self.time_linearization = 0.0
     self.time_integrator = 0.0
     self.x0 = np.zeros(X_DIM)
-    self.lead_brake_caution.x = 0.0
     self.set_weights()
 
   def set_cost_weights(self, cost_weights, constraint_cost_weights):
@@ -295,14 +274,14 @@ class LongitudinalMpc:
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
-  def set_weights(self, prev_accel_constraint=True, personality=log.LongitudinalPersonality.standard, a_change_cost_mult: float = 1.0):
+  def set_weights(self, prev_accel_constraint=True, personality=log.LongitudinalPersonality.standard):
     jerk_factor = get_jerk_factor(personality)
     if self.mode == 'acc':
-      a_change_cost = (A_CHANGE_COST * float(a_change_cost_mult)) if prev_accel_constraint else 0
+      a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
       cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, jerk_factor * a_change_cost, jerk_factor * J_EGO_COST]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
     elif self.mode == 'blended':
-      a_change_cost = (40.0 * float(a_change_cost_mult)) if prev_accel_constraint else 0
+      a_change_cost = 40.0 if prev_accel_constraint else 0
       cost_weights = [0., 0.1, 0.2, 5.0, a_change_cost, 1.0]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
     else:
@@ -359,58 +338,11 @@ class LongitudinalMpc:
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    # Humans accept a smaller standstill gap behind a lead, but we keep STOP_DISTANCE
-    # conservative for non-lead cases. Implement this by shifting the lead obstacle
-    # backward at low lead speeds, but only when ego is closing (so it won't block starts).
-    stop_dist_offset_max = (STOP_DISTANCE - LEAD_STOP_DISTANCE)
-    v_fade = 6.0  # fade-in below ~6 m/s lead speed
-    lead_0_low_speed = np.clip((v_fade - lead_xv_0[:,1]) / v_fade, 0.0, 1.0)
-    lead_1_low_speed = np.clip((v_fade - lead_xv_1[:,1]) / v_fade, 0.0, 1.0)
-    # v_rel < 0 => closing, v_rel > 0 => lead pulling away; suppress offset when pulling away
-    lead_0_closing = np.clip((- (lead_xv_0[:,1] - v_ego)) / 2.0, 0.0, 1.0)
-    lead_1_closing = np.clip((- (lead_xv_1[:,1] - v_ego)) / 2.0, 0.0, 1.0)
-    lead_0_stop_offset = stop_dist_offset_max * lead_0_low_speed * lead_0_closing
-    lead_1_stop_offset = stop_dist_offset_max * lead_1_low_speed * lead_1_closing
-    # Avoid placing the virtual obstacle behind ego by more than a small margin
-    lead_0_stop_offset = np.minimum(lead_0_stop_offset, np.maximum(0.0, lead_xv_0[:,0] - 1.0))
-    lead_1_stop_offset = np.minimum(lead_1_stop_offset, np.maximum(0.0, lead_xv_1[:,0] - 1.0))
-
-    lead_0_obstacle = lead_xv_0[:,0] + get_lead_stopped_equivalence_factor(lead_xv_0[:,1]) - lead_0_stop_offset
-    lead_1_obstacle = lead_xv_1[:,0] + get_lead_stopped_equivalence_factor(lead_xv_1[:,1]) - lead_1_stop_offset
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = ACCEL_MAX
-
-    # Lead brake caution: if the closest lead has recently decelerated (while moving),
-    # temporarily reduce max acceleration to avoid over-accelerating into a lead that
-    # is likely to brake again (e.g., ramps, rolling traffic).
-    if self.status:
-      # pick the closer lead obstacle at t0
-      if lead_0_obstacle[0] <= lead_1_obstacle[0]:
-        lead = radarstate.leadOne
-        lead_obstacle_0 = lead_0_obstacle[0]
-      else:
-        lead = radarstate.leadTwo
-        lead_obstacle_0 = lead_1_obstacle[0]
-
-      if lead is not None and lead.status:
-        # only consider when the lead is within a reasonable interaction range
-        lead_close = lead.dRel < 120.0
-        lead_moving = lead.vLead > LEAD_BRAKE_CAUTION_V_LEAD_MIN
-        lead_decel = lead.aLeadK < LEAD_BRAKE_CAUTION_A_LEAD_TH
-        if lead_close and lead_moving and lead_decel:
-          # snap on caution immediately, decay slowly
-          self.lead_brake_caution.x = 1.0
-        else:
-          self.lead_brake_caution.update(0.0)
-
-        # Don't let the caution create an impossible constraint when a close obstacle exists
-        # (keep at least some room for acceleration, but still cap it).
-        cap = float(np.interp(self.lead_brake_caution.x, [0.0, 1.0], [ACCEL_MAX, LEAD_BRAKE_CAUTION_ACCEL_CAP]))
-        # If the selected lead is the limiting obstacle right now, apply the cap.
-        # (When cruise is the limiting source, user doesn't care about this constraint.)
-        if lead_obstacle_0 < 1e7:
-          self.params[:,1] = np.minimum(self.params[:,1], cap)
 
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
@@ -420,8 +352,7 @@ class LongitudinalMpc:
       # when the leads are no factor.
       v_lower = v_ego + (T_IDXS * CRUISE_MIN_ACCEL * 1.05)
       # TODO does this make sense when max_a is negative?
-      cruise_max_a = min(CRUISE_MAX_ACCEL, float(self.params[0,1]))
-      v_upper = v_ego + (T_IDXS * cruise_max_a * 1.05)
+      v_upper = v_ego + (T_IDXS * CRUISE_MAX_ACCEL * 1.05)
       v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                  v_lower,
                                  v_upper)
