@@ -327,6 +327,11 @@ class NavWidget(Widget, abc.ABC):
         self._scroll_panel.set_enabled(lambda: not self._swiping_away and (original_enabled() if callable(original_enabled) else
                                                                           original_enabled))
 
+      # original_touch_valid = self._touch_valid_callback
+      # print(self.__class__.__name__, "original_touch_valid:", original_touch_valid)
+      # self.set_touch_valid_callback(lambda: not self._swiping_away and (original_touch_valid() if original_touch_valid is not None else
+      #                                                                     True))
+
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
       self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
