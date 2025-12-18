@@ -26,6 +26,7 @@ class Widget(abc.ABC):
     self.__is_pressed = [False] * MAX_TOUCH_SLOTS
     # if current mouse/touch down started within the widget's rectangle
     self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
+    self.__mouse_events: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
@@ -125,12 +126,14 @@ class Widget(abc.ABC):
       if mouse_event.left_pressed and touch_valid:
         if mouse_in_rect:
           self._handle_mouse_press(mouse_event.pos)
+          self.__mouse_events[mouse_event.slot] = mouse_event
           self.__is_pressed[mouse_event.slot] = True
           self.__tracking_is_pressed[mouse_event.slot] = True
           self._handle_mouse_event(mouse_event)
 
       # Callback such as scroll panel signifies user is scrolling
       elif not touch_valid:
+        self.__mouse_events[mouse_event.slot] = None
         self.__is_pressed[mouse_event.slot] = False
         self.__tracking_is_pressed[mouse_event.slot] = False
 
@@ -138,17 +141,20 @@ class Widget(abc.ABC):
         self._handle_mouse_event(mouse_event)
         if self.__is_pressed[mouse_event.slot] and mouse_in_rect:
           self._handle_mouse_release(mouse_event.pos)
+        self.__mouse_events[mouse_event.slot] = None
         self.__is_pressed[mouse_event.slot] = False
         self.__tracking_is_pressed[mouse_event.slot] = False
 
       # Mouse/touch is still within our rect
       elif mouse_in_rect:
         if self.__tracking_is_pressed[mouse_event.slot]:
+          self.__mouse_events[mouse_event.slot] = mouse_event
           self.__is_pressed[mouse_event.slot] = True
           self._handle_mouse_event(mouse_event)
 
       # Mouse/touch left our rect but may come back into focus later
       elif not mouse_in_rect:
+        self.__mouse_events[mouse_event.slot] = None
         self.__is_pressed[mouse_event.slot] = False
         self._handle_mouse_event(mouse_event)
 
