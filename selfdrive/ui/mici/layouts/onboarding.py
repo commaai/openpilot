@@ -2,7 +2,6 @@ from enum import IntEnum
 
 import weakref
 import math
-import time
 import numpy as np
 import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -166,46 +165,23 @@ class TrainingGuideDMTutorial(Widget):
     device.set_offroad_brightness(100)
 
   def _update_state(self):
-    t0 = time.monotonic()
     super()._update_state()
-    t1 = time.monotonic()
-    print(f"TrainingGuideDMTutorial._update_state: super()._update_state() took {(t1 - t0) * 1000:.2f}ms")
-
-    t0 = time.monotonic()
     if device.awake and not ui_state.params.get_bool("IsDriverViewEnabled"):
       ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
-    t1 = time.monotonic()
-    print(f"TrainingGuideDMTutorial._update_state: device.awake check + params.put took {(t1 - t0) * 1000:.2f}ms")
 
-    t0 = time.monotonic()
     sm = ui_state.sm
-    t1 = time.monotonic()
-    print(f"TrainingGuideDMTutorial._update_state: sm access took {(t1 - t0) * 1000:.2f}ms")
-
-    t0 = time.monotonic()
     if sm.recv_frame.get("driverMonitoringState", 0) == 0:
-      t1 = time.monotonic()
-      print(f"TrainingGuideDMTutorial._update_state: recv_frame check took {(t1 - t0) * 1000:.2f}ms (early return)")
       return
-    t1 = time.monotonic()
-    print(f"TrainingGuideDMTutorial._update_state: recv_frame check took {(t1 - t0) * 1000:.2f}ms")
 
-    t0 = time.monotonic()
     dm_state = sm["driverMonitoringState"]
     driver_data = self._dialog.driver_state_renderer.get_driver_data()
-    t1 = time.monotonic()
-    print(f"TrainingGuideDMTutorial._update_state: dm_state + driver_data fetch took {(t1 - t0) * 1000:.2f}ms")
 
-    t0 = time.monotonic()
     if len(driver_data.faceOrientation) == 3:
       pitch, yaw, _ = driver_data.faceOrientation
       looking_center = abs(math.degrees(pitch)) < self.LOOKING_THRESHOLD_DEG and abs(math.degrees(yaw)) < self.LOOKING_THRESHOLD_DEG
     else:
       looking_center = False
-    t1 = time.monotonic()
-    print(f"TrainingGuideDMTutorial._update_state: looking_center calculation took {(t1 - t0) * 1000:.2f}ms")
 
-    t0 = time.monotonic()
     # stay at 100% once reached
     if (dm_state.faceDetected and looking_center) or self._progress.x > 0.99:
       slow = self._progress.x < 0.25
@@ -214,13 +190,8 @@ class TrainingGuideDMTutorial(Widget):
       self._progress.x = min(1.0, self._progress.x)
     else:
       self._progress.update(0.0)
-    t1 = time.monotonic()
-    print(f"TrainingGuideDMTutorial._update_state: progress update took {(t1 - t0) * 1000:.2f}ms")
 
-    t0 = time.monotonic()
     self._good_button.set_enabled(self._progress.x >= 0.999)
-    t1 = time.monotonic()
-    print(f"TrainingGuideDMTutorial._update_state: button set_enabled took {(t1 - t0) * 1000:.2f}ms")
 
   def _render(self, _):
     if self._should_show_bad_face_page:
