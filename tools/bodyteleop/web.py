@@ -215,8 +215,9 @@ async def gemini_loop():
   genai.configure(api_key=api_key)
 
   # Try known working flash models first (cheapest), then discover dynamically
-  # Prefer the fastest/cheapest flash variants first.
-  preferred_models = ['gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
+  # Prefer Pro first (better reasoning), then fall back to Flash variants.
+  # Note: model availability can vary by account/region; we try in order and fall back gracefully.
+  preferred_models = ['gemini-2.5-pro', 'gemini-2.0-pro', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
   model = None
   model_name = None
 
@@ -308,6 +309,8 @@ Stuck handling / repeated view:
   Recommended: start with S for 0.4-0.8s, then a short turn (A/D 0.1-0.3s), then reassess/continue.
 - If the view looks essentially unchanged from the previous request(s) (same frame / same scene), assume you're not moving and DO NOT keep pushing forward.
   Instead: S (0.4-0.8s) + small turn (A/D 0.1-0.3s) + brief stop (0.1-0.3s), then proceed.
+- If you are facing a mostly solid color / textureless close-up (e.g., a wall very close, overexposed surface, or you can't see the environment), treat that as stuck:
+  immediately back up (S 0.6-1.0s), then turn (A/D 0.2-0.4s), then stop briefly to reassess.
 
 Output format (EXACTLY):
 summary: <one short sentence (<= 140 chars, no newlines) describing your intention + anything noteworthy (e.g. obstacle, stuck, turning, exploring)>
