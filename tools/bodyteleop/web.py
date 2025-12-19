@@ -190,13 +190,17 @@ async def gemini_loop():
 
   logger.info("Gemini loop starting...")
 
-  if genai is None:
-    logger.error("google-generativeai not available - install with: pip install google-generativeai")
-    return
+  try:
+    if genai is None:
+      logger.warning("google-generativeai not available - Gemini control disabled")
+      return
 
-  api_key = os.getenv("GEMINI_API_KEY")
-  if not api_key:
-    logger.error("GEMINI_API_KEY environment variable not set")
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+      logger.warning("GEMINI_API_KEY environment variable not set - Gemini control disabled")
+      return
+  except Exception as e:
+    logger.error(f"Error checking Gemini prerequisites: {e}", exc_info=True)
     return
 
   logger.info("Configuring Gemini API...")
@@ -261,7 +265,7 @@ async def gemini_loop():
 
   joystick_rk = Ratekeeper(100, print_delay_threshold=None)
   last_gemini_call_time = 0.0
-  gemini_call_interval = 5.0
+  gemini_call_interval = 10.0  # Send frame every 10 seconds
 
   logger.info("Gemini loop ready, waiting for enable...")
 
@@ -329,11 +333,12 @@ Analyze the image and respond with the appropriate movement command."""
             logger.warning("Failed to get camera frame")
 
         # Publish joystick messages continuously at 100Hz
-        joystick_msg = messaging.new_message('testJoystick')
-        joystick_msg.valid = True
-        joystick_msg.testJoystick.axes = [gemini_current_x, gemini_current_y]
-        joystick_msg.testJoystick.buttons = [False]
-        gemini_pm.send('testJoystick', joystick_msg)
+        if gemini_pm is not None:
+          joystick_msg = messaging.new_message('testJoystick')
+          joystick_msg.valid = True
+          joystick_msg.testJoystick.axes = [gemini_current_x, gemini_current_y]
+          joystick_msg.testJoystick.buttons = [False]
+          gemini_pm.send('testJoystick', joystick_msg)
 
         joystick_rk.keep_time()
       else:
@@ -341,11 +346,12 @@ Analyze the image and respond with the appropriate movement command."""
           logger.info("Gemini disabled, resetting joystick to zero")
           gemini_current_x = 0.0
           gemini_current_y = 0.0
-          joystick_msg = messaging.new_message('testJoystick')
-          joystick_msg.valid = True
-          joystick_msg.testJoystick.axes = [0.0, 0.0]
-          joystick_msg.testJoystick.buttons = [False]
-          gemini_pm.send('testJoystick', joystick_msg)
+          if gemini_pm is not None:
+            joystick_msg = messaging.new_message('testJoystick')
+            joystick_msg.valid = True
+            joystick_msg.testJoystick.axes = [0.0, 0.0]
+            joystick_msg.testJoystick.buttons = [False]
+            gemini_pm.send('testJoystick', joystick_msg)
 
         await asyncio.sleep(0.1)
         joystick_rk.keep_time()
@@ -497,35 +503,50 @@ async def offer(request: 'web.Request'):
 def main():
   global gemini_pm, gemini_task
 
-  # Enable joystick debug mode
-  from openpilot.common.params import Params
-  Params().put_bool("JoystickDebugMode", True)
+  try:
+    # Enable joystick debug mode
+    from openpilot.common.params import Params
+    Params().put_bool("JoystickDebugMode", True)
 
-  # Initialize messaging for Gemini
-  gemini_pm = messaging.PubMaster(['testJoystick'])
+    # Initialize messaging for Gemini (don't fail if this fails)
+    try:
+      gemini_pm = messaging.PubMaster(['testJoystick'])
+      logger.info("Messaging initialized for Gemini")
+    except Exception as e:
+      logger.error(f"Failed to initialize messaging: {e}", exc_info=True)
+      gemini_pm = None
 
-  # App needs to be HTTPS for microphone and audio autoplay to work on the browser
-  ssl_context = create_ssl_context()
+    # App needs to be HTTPS for microphone and audio autoplay to work on the browser
+    ssl_context = create_ssl_context()
 
-  app = web.Application()
-  app.router.add_get("/", index)
-  app.router.add_get("/ping", ping, allow_head=True)
-  app.router.add_post("/offer", offer)
-  app.router.add_post("/sound", sound)
-  app.router.add_get("/gemini", gemini_control)
-  app.router.add_post("/gemini", gemini_control)
-  app.router.add_get("/gemini/prompt", gemini_prompt)
-  app.router.add_post("/gemini/prompt", gemini_prompt)
-  app.router.add_static('/static', os.path.join(TELEOPDIR, 'static'))
+    app = web.Application()
+    app.router.add_get("/", index)
+    app.router.add_get("/ping", ping, allow_head=True)
+    app.router.add_post("/offer", offer)
+    app.router.add_post("/sound", sound)
+    app.router.add_get("/gemini", gemini_control)
+    app.router.add_post("/gemini", gemini_control)
+    app.router.add_get("/gemini/prompt", gemini_prompt)
+    app.router.add_post("/gemini/prompt", gemini_prompt)
+    app.router.add_static('/static', os.path.join(TELEOPDIR, 'static'))
 
-  # Start Gemini background task when app starts
-  async def startup_background_tasks(app):
-    global gemini_task
-    gemini_task = asyncio.create_task(gemini_loop())
+    # Start Gemini background task when app starts
+    async def startup_background_tasks(app):
+      global gemini_task
+      try:
+        gemini_task = asyncio.create_task(gemini_loop())
+        logger.info("Gemini background task started")
+      except Exception as e:
+        logger.error(f"Failed to start Gemini background task: {e}", exc_info=True)
+        # Don't fail startup if Gemini fails - web server should still work
 
-  app.on_startup.append(startup_background_tasks)
+    app.on_startup.append(startup_background_tasks)
 
-  web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
+    logger.info("Starting web server on https://0.0.0.0:5000")
+    web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
+  except Exception as e:
+    logger.exception(f"Fatal error starting web server: {e}")
+    raise
 
 
 if __name__ == "__main__":
