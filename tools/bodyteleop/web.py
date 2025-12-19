@@ -1,4 +1,5 @@
 import asyncio
+import collections
 import dataclasses
 import json
 import logging
@@ -45,6 +46,9 @@ gemini_prompt = ""  # In-memory prompt
 gemini_plan = None  # Current plan being executed [(w, a, s, d, end_time), ...]
 gemini_plan_start_time = None  # When the current plan started
 gemini_plan_id = 0  # increments every time we receive a new plan
+# Gemini chat session (for continuity across frames). We keep a sliding window to limit cost/latency.
+gemini_chat = None
+gemini_chat_context_key = None
 
 
 ## GEMINI UTILS
@@ -357,6 +361,11 @@ Format: w,a,s,d,t where:
 Do NOT describe the image. Output ONLY the summary line and the plan."""
 
   global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y, gemini_plan_id, gemini_last_summary
+  global gemini_chat, gemini_chat_context_key
+
+  # How many *turns* (user+model pairs) to keep in the chat session history.
+  # Keeping images in history improves continuity but can get expensive; keep this small.
+  chat_window_turns = int(os.getenv("GEMINI_CHAT_WINDOW_TURNS", "3"))
 
   while True:
     loop_start_t = time.monotonic()
@@ -399,21 +408,34 @@ plan
             if frame is not None:
               logger.info(f"Got frame: {frame.shape}")
               custom_prompt = gemini_get_prompt()
-              # Append custom prompt to default prompt if provided
-              if custom_prompt:
-                active_prompt = default_prompt + "\n\nAdditional instructions: " + custom_prompt
-                logger.info(f"Using default + custom prompt (custom length: {len(custom_prompt)})")
+              # Use a chat session so the model can see recent past frames/outputs.
+              # Reset chat if instructions changed.
+              context_key = f"{model_name}|{custom_prompt}"
+              if gemini_chat is None or gemini_chat_context_key != context_key:
+                gemini_chat_context_key = context_key
+                gemini_chat = model.start_chat()
+                base_prompt = default_prompt
+                if custom_prompt:
+                  base_prompt = base_prompt + "\n\nAdditional instructions: " + custom_prompt
+                  logger.info(f"Starting new Gemini chat session (custom length: {len(custom_prompt)})")
+                else:
+                  logger.info("Starting new Gemini chat session (no custom prompt)")
+                # Prime the session with the full instructions once.
+                await asyncio.to_thread(gemini_chat.send_message, base_prompt)
               else:
-                active_prompt = default_prompt
-                logger.info(f"Using default prompt (length: {len(active_prompt)})")
+                logger.debug("Reusing Gemini chat session")
 
               pil_image = await asyncio.to_thread(image_to_pil, frame)
               logger.info(f"Image prepared: {pil_image.size}")
 
               logger.info("Sending frame to Gemini API...")
               try:
+                # Provide the current frame and a short per-turn reminder.
+                # Keep this short; the main rules live in the chat history from the priming message.
+                turn_text = "Return output in the exact `summary:` + `plan` format described earlier."
+
                 # Offload the blocking Gemini SDK call to a thread to avoid stalling the event loop.
-                response = await asyncio.to_thread(model.generate_content, [active_prompt, pil_image])
+                response = await asyncio.to_thread(gemini_chat.send_message, [pil_image, turn_text])
                 response_text = response.text
                 gemini_last_response = response_text
                 gemini_last_summary = extract_gemini_summary(response_text)
@@ -423,6 +445,17 @@ plan
                 logger.info(f"{response_text}")
 
                 plan = parse_gemini_response(response_text)
+
+                # Enforce a sliding window on chat history to limit cost/latency.
+                # ChatSession.history contains alternating user/model contents.
+                try:
+                  max_history_items = 2 + (chat_window_turns * 2)  # keep last N turns (+ a bit)
+                  if gemini_chat is not None and hasattr(gemini_chat, "history") and len(gemini_chat.history) > max_history_items:
+                    trimmed = list(gemini_chat.history)[-max_history_items:]
+                    gemini_chat = model.start_chat(history=trimmed)
+                    logger.debug(f"Trimmed Gemini chat history to {len(trimmed)} items")
+                except Exception as e:
+                  logger.debug(f"Failed trimming chat history: {e}")
               except Exception as e:
                 logger.error(f"✗ Error calling Gemini API: {e}", exc_info=True)
             else:
@@ -482,6 +515,9 @@ plan
         # Clear plan when disabled
         gemini_plan = None
         gemini_plan_start_time = None
+        # Also reset chat state when disabled (fresh session next enable)
+        gemini_chat = None
+        gemini_chat_context_key = None
 
         if gemini_current_x != 0.0 or gemini_current_y != 0.0:
           logger.info("Gemini disabled, resetting joystick to zero")
