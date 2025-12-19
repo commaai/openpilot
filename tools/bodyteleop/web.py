@@ -318,6 +318,15 @@ plan
 <w,a,s,d,t>
 ...
 
+STRICT OUTPUT RULES (MUST FOLLOW):
+- Do NOT describe the image. Do NOT write bullet points. Do NOT write markdown. Do NOT add numbering.
+- The line must be exactly `plan` (no colon, no extra whitespace).
+- After the `plan` line, output ONLY CSV lines of exactly: w,a,s,d,t (4 commas). No labels, no extra text.
+- If you are uncertain, output a safe minimal plan:
+  summary: uncertain, pausing
+  plan
+  0,0,0,0,0.1
+
 EXAMPLE OUTPUT (copy this structure exactly, but choose actions based on the current image):
 summary: exploring forward, slight right to avoid obstacle on left, pause to reassess
 plan
@@ -409,15 +418,15 @@ plan
               context_key = f"{model_name}|{custom_prompt}"
               if gemini_chat is None or gemini_chat_context_key != context_key:
                 gemini_chat_context_key = context_key
-                gemini_chat = model.start_chat()
                 base_prompt = default_prompt
                 if custom_prompt:
                   base_prompt = base_prompt + "\n\nAdditional instructions: " + custom_prompt
                   logger.info(f"Starting new Gemini chat session (custom length: {len(custom_prompt)})")
                 else:
                   logger.info("Starting new Gemini chat session (no custom prompt)")
-                # Prime the session with the full instructions once.
-                await asyncio.to_thread(gemini_chat.send_message, base_prompt)
+                # Prime the session WITHOUT generating a model response (avoid polluting history).
+                # The SDK keeps chat history client-side; we seed it with a single user message containing the instructions.
+                gemini_chat = model.start_chat(history=[{"role": "user", "parts": [base_prompt]}])
               else:
                 logger.debug("Reusing Gemini chat session")
 
@@ -431,7 +440,13 @@ plan
               try:
                 # Provide the current frame and a short per-turn reminder.
                 # Keep this short; the main rules live in the chat history from the priming message.
-                turn_text = "Return output in the exact `summary:` + `plan` format described earlier."
+                turn_text = (
+                  "Return ONLY:\n"
+                  "summary: <one short intention>\n"
+                  "plan\n"
+                  "w,a,s,d,t\n"
+                  "(CSV lines only after plan; no bullets/markdown/extra text)."
+                )
 
                 # Offload the blocking Gemini SDK call to a thread to avoid stalling the event loop.
                 response = await asyncio.to_thread(gemini_chat.send_message, [image_part, turn_text])
