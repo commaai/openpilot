@@ -7,19 +7,19 @@ from opendbc.car.body import bodycan
 from opendbc.car.body.values import SPEED_FROM_RPM
 from opendbc.car.interfaces import CarControllerBase
 
-MAX_TORQUE = 1000
+MAX_TORQUE = 2000
 MAX_TORQUE_RATE = 50
 MAX_ANGLE_ERROR = np.radians(7)
 ACCEL_INPUT_MAX = 4.0      # expected acceleration command range (m/s^2)
-TORQUE_SLEW_ACCEL = 400.0  # torque units per second when ramping up
-TORQUE_SLEW_DECEL = 800.0  # torque units per second when ramping down
-TORQUE_SLEW_ZERO = 1500.0   # torque units per second when releasing to zero
+TORQUE_SLEW_ACCEL = 1000.0  # torque units per second when ramping up
+TORQUE_SLEW_DECEL = 10000000000000.0  # torque units per second when ramping down
+TORQUE_SLEW_ZERO = 10000000000000.0   # torque units per second when releasing to zero
 ACCEL_TO_TORQUE = MAX_TORQUE / ACCEL_INPUT_MAX
-MAX_TURN_INTEGRATOR = 0.1  # meters
+MAX_TURN_INTEGRATOR = 2.0  # meters
 TURN_GAIN_BP = [0.0, 1.0, 3.0]   # m/s breakpoints for steering scaling
 TURN_GAIN_V = [20.0, 15, 12.5]    # gain multipliers (high gain at low speed)
-TURN_TORQUE_SLEW_ACCEL = 600.0  # torque units per second when increasing steering differential
-TURN_TORQUE_SLEW_DECEL = 1000.0  # torque units per second when unwinding steering differential
+TURN_TORQUE_SLEW_ACCEL = 2000.0  # torque units per second when increasing steering differential
+TURN_TORQUE_SLEW_DECEL = 10000000000.0  # torque units per second when unwinding steering differential
 
 
 class CarController(CarControllerBase):
