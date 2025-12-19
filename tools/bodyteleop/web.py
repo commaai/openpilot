@@ -97,20 +97,23 @@ def image_to_pil(image: np.ndarray, max_size: tuple[int, int] = (640, 480)) -> I
   return pil_image
 
 
-def parse_gemini_response(response_text: str) -> Tuple[Optional[dict], Optional[list]]:
-  """Parse Gemini response to extract movement commands or plan
-  Returns: (commands_dict, plan_list)
-  - commands_dict: {"forward": bool, "backward": bool, "left": bool, "right": bool} or None
-  - plan_list: [(w, a, s, d, end_time), ...] or None if no plan
+def parse_gemini_response(response_text: str) -> Optional[list]:
+  """Parse Gemini response to extract movement plan
+  Returns: plan_list: [(w, a, s, d, end_time), ...] or None if no plan
   """
   response_text = response_text.strip()
-
-  # Check for plan format first (lines with w,a,s,d,t)
+  
+  # Look for plan format (lines with w,a,s,d,t after "plan" keyword)
   plan_lines = []
   lines = response_text.split('\n')
+  found_plan_keyword = False
+  
   for line in lines:
     line = line.strip()
-    if ',' in line and line.count(',') == 4:
+    if 'plan' in line.lower():
+      found_plan_keyword = True
+      continue
+    if found_plan_keyword and ',' in line and line.count(',') == 4:
       parts = line.split(',')
       try:
         w, a, s, d, t = [int(float(p.strip())) if '.' not in p.strip() else float(p.strip()) for p in parts]
@@ -118,7 +121,20 @@ def parse_gemini_response(response_text: str) -> Tuple[Optional[dict], Optional[
           plan_lines.append((w, a, s, d, t))
       except (ValueError, IndexError):
         pass
-
+  
+  # Also try to find plan lines even without "plan" keyword
+  if not plan_lines:
+    for line in lines:
+      line = line.strip()
+      if ',' in line and line.count(',') == 4:
+        parts = line.split(',')
+        try:
+          w, a, s, d, t = [int(float(p.strip())) if '.' not in p.strip() else float(p.strip()) for p in parts]
+          if w in [0, 1] and a in [0, 1] and s in [0, 1] and d in [0, 1] and t >= 0:
+            plan_lines.append((w, a, s, d, t))
+        except (ValueError, IndexError):
+          pass
+  
   if plan_lines:
     # Convert to cumulative timestamps
     plan = []
@@ -126,47 +142,10 @@ def parse_gemini_response(response_text: str) -> Tuple[Optional[dict], Optional[
     for w, a, s, d, duration in plan_lines:
       cumulative_time += duration
       plan.append((w, a, s, d, cumulative_time))
-    return (None, plan)
-
-  # Try to parse as JSON
-  json_start = response_text.find('{')
-  json_end = response_text.rfind('}')
-  if json_start != -1 and json_end != -1:
-    json_str = response_text[json_start:json_end+1]
-    try:
-      data = json.loads(json_str)
-      commands = {
-        "forward": bool(data.get("forward", False)),
-        "backward": bool(data.get("backward", False)),
-        "left": bool(data.get("left", False)),
-        "right": bool(data.get("right", False)),
-      }
-      # Only return commands if at least one is True
-      if any(commands.values()):
-        return (commands, None)
-    except json.JSONDecodeError:
-      pass
-
-  # Look for explicit command words at start of response or after "command:" etc
-  response_upper = response_text.upper()
-
-  # Only parse if response is very short (likely a command) or contains explicit markers
-  is_short_response = len(response_text.split()) <= 5
-  has_command_marker = any(marker in response_upper for marker in ["COMMAND:", "RESPONSE:", "ACTION:", "MOVE:"])
-
-  if is_short_response or has_command_marker:
-    # Look for exact command words, not just letters
-    commands = {
-      "forward": bool(re.search(r'\b(W|FORWARD)\b', response_upper)),
-      "backward": bool(re.search(r'\b(S|BACKWARD)\b', response_upper)),
-      "left": bool(re.search(r'\b(A|LEFT)\b', response_upper)),
-      "right": bool(re.search(r'\b(D|RIGHT)\b', response_upper)),
-    }
-    if any(commands.values()):
-      return (commands, None)
-
-  # No valid commands found
-  return ({"forward": False, "backward": False, "left": False, "right": False}, None)
+    return plan
+  
+  # No valid plan found
+  return None
 
 
 def commands_to_joystick_axes(commands: dict) -> tuple[float, float]:
@@ -306,20 +285,27 @@ async def gemini_loop():
 
   logger.info("Gemini loop ready, waiting for enable...")
 
-  default_prompt = """You are controlling a robot. Analyze the image and output ONLY a JSON object with movement commands. NO TEXT EXPLANATIONS. NO DESCRIPTIONS.
+  default_prompt = """You are controlling a robot. Analyze the image and output ONLY a movement plan. NO TEXT EXPLANATIONS. NO DESCRIPTIONS.
 
 Movement controls (only ONE direction at a time):
-- W/forward: Move forward (~5 mph)
-- S/backward: Move backward (~5 mph)
-- A/left: Rotate left (~360 deg/s, keep turns SHORT: 0.1-0.3s)
-- D/right: Rotate right (~360 deg/s, keep turns SHORT: 0.1-0.3s)
+- W: Move forward (~5 mph)
+- S: Move backward (~5 mph)
+- A: Rotate left (~360 deg/s, keep turns SHORT: 0.1-0.3s)
+- D: Rotate right (~360 deg/s, keep turns SHORT: 0.1-0.3s)
 
-Output ONLY this JSON format (nothing else):
-{"forward": false, "backward": false, "left": false, "right": false}
+Output ONLY this plan format (nothing else):
+plan
+1,0,0,0,0.5
+0,1,0,0,1.0
+0,0,0,0,1.1
 
-Set exactly ONE to true based on what action to take. If no movement needed, set all to false.
+Format: w,a,s,d,t where:
+- w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
+- t is duration in seconds (cumulative time from start)
+- Maximum plan duration: 5 seconds
+- If no movement needed, output: plan\n0,0,0,0,0.1
 
-DO NOT write any text explanations. DO NOT describe the image. Output ONLY the JSON object."""
+DO NOT write any text explanations. DO NOT describe the image. Output ONLY the plan lines starting with "plan"."""
 
   global gemini_plan, gemini_plan_start_time, gemini_pm, gemini_current_x, gemini_current_y
 
@@ -348,23 +334,24 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the J
               response = model.generate_content([active_prompt, pil_image])
               response_text = response.text
               gemini_last_response = response_text
-              logger.info(f"✓ Gemini response received: {response_text}")
-
-              commands, plan = parse_gemini_response(response_text)
-
+              
+              # Print full response in terminal
+              logger.info(f"✓ Gemini response received:")
+              logger.info(f"{response_text}")
+              
+              plan = parse_gemini_response(response_text)
+              
               if plan is not None:
                 # Start executing plan
                 gemini_plan = plan
                 gemini_plan_start_time = time.monotonic()
-                logger.info(f"✓ Parsed plan with {len(plan)} steps: {plan}")
-              elif commands is not None:
-                logger.info(f"Parsed commands: {commands}")
-                gemini_current_x, gemini_current_y = commands_to_joystick_axes(commands)
-                logger.info(f"✓ Updated joystick command: x={gemini_current_x:.2f}, y={gemini_current_y:.2f}")
-                # Clear any existing plan when we get a direct command
-                gemini_plan = None
+                plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
+                logger.info(f"✓ Parsed plan with {len(plan)} steps:")
+                logger.info(f"{plan_str}")
               else:
-                logger.info("No valid commands or plan parsed from response")
+                logger.warning("No valid plan parsed from response")
+                gemini_plan = None
+                gemini_plan_start_time = None
 
             except Exception as e:
               logger.error(f"✗ Error calling Gemini API: {e}", exc_info=True)
@@ -521,7 +508,8 @@ async def gemini_control(request: 'web.Request'):
       "genai_available": genai is not None,
       "current_x": gemini_current_x,
       "current_y": gemini_current_y,
-      "last_response": gemini_last_response[:100] if gemini_last_response else "",  # Truncate for display
+      "last_response": gemini_last_response if gemini_last_response else "",  # Full response
+      "current_plan": gemini_plan if gemini_plan else None,
     }
     return web.json_response(status_info)
   else:

@@ -70,6 +70,17 @@ function updateGeminiStatus() {
     $("#gemini-api-key-status").text(data.api_key_set ? "✓ Set" : "✗ Not Set");
     $("#gemini-command-status").text(`x=${(data.current_x || 0).toFixed(2)}, y=${(data.current_y || 0).toFixed(2)}`);
     $("#gemini-response-status").text(data.last_response || "-");
+    
+    // Display current plan
+    if (data.current_plan && data.current_plan.length > 0) {
+      const planStr = data.current_plan.map((step, idx) => {
+        const [w, a, s, d, t] = step;
+        return `${idx + 1}. W=${w} A=${a} S=${s} D=${d} until ${t.toFixed(2)}s`;
+      }).join('\n');
+      $("#gemini-plan-status").text(planStr);
+    } else {
+      $("#gemini-plan-status").text("-");
+    }
 
     // Load prompt if available
     if (data.prompt) {
