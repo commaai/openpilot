@@ -243,7 +243,7 @@ async def gemini_loop():
   loop_hz = 100.0
   loop_dt = 1.0 / loop_hz
   last_gemini_call_time = 0.0
-  gemini_call_interval = 10.0  # Minimum time between frames (seconds)
+  gemini_call_interval = 5.0  # Minimum time between frames (seconds)
 
   logger.info("Gemini loop ready, waiting for enable...")
 
@@ -255,6 +255,10 @@ Movement controls (only ONE direction at a time):
 - A: Rotate left (~360 deg/s, keep turns SHORT: 0.1-0.3s)
 - D: Rotate right (~360 deg/s, keep turns SHORT: 0.1-0.3s)
 
+Stuck handling / repeated view:
+- If you appear stuck (no progress, blocked, or not moving), prefer SHORT backup motions (S for 0.2-0.6s) and/or SHORT turns (A/D for 0.1-0.3s) to unstick.
+- If the view looks essentially unchanged from the previous request (same frame / same scene), assume you're not moving and do the same unstick behavior (backup + small turn), then reassess.
+
 Output ONLY this plan format (nothing else):
 plan
 1,0,0,0,0.5
@@ -264,7 +268,8 @@ plan
 Format: w,a,s,d,t where:
 - w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
 - t is cumulative time in seconds from plan start (not duration)
-- Maximum plan duration: 5 seconds
+- Target plan duration: ~5 seconds when movement is needed (use multiple short steps that add up close to 5.0s)
+- Maximum plan duration: 5 seconds (never exceed)
 - Example: "1,0,0,0,1.0" means W until 1.0s, then "0,0,0,1,1.3" means D until 1.3s total
 - If no movement needed, output: plan\n0,0,0,0,0.1
 
@@ -306,7 +311,8 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
             logger.info(f"✓ Parsed plan result: {plan}")
           else:
             logger.info("Getting camera frame...")
-            frame = get_camera_frame()
+            # Offload potentially-blocking vision IPC + image handling to a thread to keep aiohttp responsive.
+            frame = await asyncio.to_thread(get_camera_frame)
             if frame is not None:
               logger.info(f"Got frame: {frame.shape}")
               custom_prompt = gemini_get_prompt()
@@ -318,7 +324,7 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
                 active_prompt = default_prompt
                 logger.info(f"Using default prompt (length: {len(active_prompt)})")
 
-              pil_image = image_to_pil(frame)
+              pil_image = await asyncio.to_thread(image_to_pil, frame)
               logger.info(f"Image prepared: {pil_image.size}")
 
               logger.info("Sending frame to Gemini API...")
@@ -372,16 +378,11 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
               break
 
           if not plan_active:
-            # Plan finished - but keep it visible for 5 seconds so browser can see it
-            # Clear it after 5 seconds of being finished
-            plan_end_time = gemini_plan[-1][4] if gemini_plan else 0
-            elapsed_since_finish = elapsed - plan_end_time
-            if elapsed_since_finish > 5.0:
-              logger.info(f"Plan finished {elapsed_since_finish:.2f}s ago, clearing it")
-              gemini_plan = None
-              gemini_plan_start_time = None
-            else:
-              logger.debug(f"Plan finished but keeping visible for browser (finished {elapsed_since_finish:.2f}s ago)")
+            # Plan finished: clear immediately so we can request the next plan right away.
+            # The browser should have already fetched the plan during execution (it polls frequently).
+            logger.info("Plan finished, clearing it (ready for next plan)")
+            gemini_plan = None
+            gemini_plan_start_time = None
             current_commands = {"forward": False, "backward": False, "left": False, "right": False}
 
           gemini_current_x, gemini_current_y = commands_to_joystick_axes(current_commands)
@@ -502,7 +503,7 @@ async def gemini_control(request: 'web.Request'):
     if plan_at_request:
       try:
         current_plan_list = [[w, a, s, d, t] for w, a, s, d, t in plan_at_request]
-        logger.info(f"GET /gemini: Built plan list with {len(current_plan_list)} steps")
+        logger.debug(f"GET /gemini: Built plan list with {len(current_plan_list)} steps")
       except Exception as e:
         logger.error(f"GET /gemini: Error building plan list: {e}", exc_info=True)
         current_plan_list = None
@@ -521,14 +522,15 @@ async def gemini_control(request: 'web.Request'):
       "plan_elapsed": (time.monotonic() - plan_start_at_request) if (plan_start_at_request is not None) else None,
     }
     plan_steps = len(plan_at_request) if plan_at_request else 0
-    logger.info(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={plan_at_request is not None}, plan_steps={plan_steps}")
+    # This endpoint is polled frequently (200ms when enabled), so keep logging at debug to avoid log spam.
+    logger.debug(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={plan_at_request is not None}, plan_steps={plan_steps}")
     if plan_at_request:
-      logger.info(f"  ✓ SENDING PLAN TO BROWSER: plan_id={plan_id}, steps={plan_steps}")
-      logger.info(f"  Plan steps (first 3): {[f'{w},{a},{s},{d},{t:.2f}' for w,a,s,d,t in plan_at_request[:3]]}")
-      logger.info(f"  current_plan in JSON: {status_info['current_plan'] is not None}, length={len(status_info['current_plan']) if status_info['current_plan'] else 0}")
-      logger.info(f"  JSON serialized plan type: {type(status_info['current_plan'])}")
+      logger.debug(f"  ✓ SENDING PLAN TO BROWSER: plan_id={plan_id}, steps={plan_steps}")
+      logger.debug(f"  Plan steps (first 3): {[f'{w},{a},{s},{d},{t:.2f}' for w,a,s,d,t in plan_at_request[:3]]}")
+      logger.debug(f"  current_plan in JSON: {status_info['current_plan'] is not None}, length={len(status_info['current_plan']) if status_info['current_plan'] else 0}")
+      logger.debug(f"  JSON serialized plan type: {type(status_info['current_plan'])}")
     else:
-      logger.info(f"  ✗ NO PLAN TO SEND (gemini_plan is None at request time)")
+      logger.debug("  ✗ NO PLAN TO SEND (gemini_plan is None at request time)")
     return web.json_response(status_info)
   else:
     # POST: Toggle or set status
