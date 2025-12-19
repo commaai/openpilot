@@ -30,7 +30,7 @@ class PrimeState:
   def __init__(self):
     self._params = Params()
     self._lock = threading.Lock()
-    self._session = requests.Session()
+    self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self.prime_type: PrimeType = self._load_initial_state()
 
     self._running = False
