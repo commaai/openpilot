@@ -15,15 +15,16 @@ if gui_app.big_ui():
   TEXTURE_SIZE = 360
   WRAPPED_SPACING = 50
   CENTERED_SPACING = 150
+  FONT_SIZE = 96
 else:
   PROGRESS_BAR_WIDTH = 268
   PROGRESS_BAR_HEIGHT = 10
   TEXTURE_SIZE = 140
   WRAPPED_SPACING = 10
   CENTERED_SPACING = 20
+  FONT_SIZE = 48
 DEGREES_PER_SECOND = 360.0  # one full rotation per second
 MARGIN_H = 100
-FONT_SIZE = 96
 LINE_HEIGHT = 104
 DARKGRAY = (55, 55, 55, 255)
 
@@ -53,7 +54,7 @@ class Spinner(Widget):
     if self._wrapped_lines:
       # Calculate total height required for spinner and text
       spacing = WRAPPED_SPACING
-      total_height = TEXTURE_SIZE + spacing + len(self._wrapped_lines) * LINE_HEIGHT
+      total_height = TEXTURE_SIZE - spacing * 4 + len(self._wrapped_lines) * LINE_HEIGHT
       center_y = (rect.height - total_height) / 2.0 + TEXTURE_SIZE / 2.0
     else:
       # Center spinner vertically
