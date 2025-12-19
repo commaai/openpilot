@@ -1,6 +1,7 @@
 import asyncio
 import collections
 import dataclasses
+import io
 import json
 import logging
 import os
@@ -107,6 +108,17 @@ def image_to_pil(image: np.ndarray, max_size: tuple[int, int] = (640, 480)) -> I
   return pil_image
 
 
+def pil_to_jpeg_part(pil_image: Image.Image, quality: int = 65) -> tuple[dict, int]:
+  """
+  Convert PIL image to a compact JPEG payload for Gemini.
+  Returns (part_dict, nbytes).
+  """
+  buf = io.BytesIO()
+  pil_image.convert("RGB").save(buf, format="JPEG", quality=quality, optimize=True)
+  data = buf.getvalue()
+  return ({"mime_type": "image/jpeg", "data": data}, len(data))
+
+
 def parse_gemini_response(response_text: str) -> Optional[list]:
   # Kept for backwards compatibility within this module
   return parse_plan_from_text(response_text)
@@ -207,7 +219,8 @@ async def gemini_loop():
   genai.configure(api_key=api_key)
 
   # Try known working flash models first (cheapest), then discover dynamically
-  preferred_models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
+  # Prefer the fastest/cheapest flash variants first.
+  preferred_models = ['gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
   model = None
   model_name = None
 
@@ -268,7 +281,7 @@ async def gemini_loop():
   loop_hz = 100.0
   loop_dt = 1.0 / loop_hz
   last_gemini_call_time = 0.0
-  gemini_call_interval = 10.0  # Minimum time between frames (seconds)
+  gemini_call_interval = 5.0  # Minimum time between Gemini calls (seconds)
 
   logger.info("Gemini loop ready, waiting for enable...")
 
@@ -285,7 +298,7 @@ Movement controls (only ONE direction at a time):
 
 Default behavior (unless overridden by Additional instructions):
 - Explore and move around to see more of the environment. Prefer safe, gentle exploration rather than standing still.
-- If there is a clear open path, make progress forward with short bursts and occasional small turns to look around.
+- If there is a clear open path, make progress forward and occasionally do small turns to look around.
 
 Planning quality / nuance requirements:
 - Do NOT output a trivial plan like "all W until 5.0s" unless the scene is extremely open and safe.
@@ -325,42 +338,25 @@ plan
 0,0,0,0,4.30
 0,1,0,0,4.50
 0,0,0,0,4.65
-1,0,0,0,5.25
-0,0,0,0,5.40
-0,0,0,1,5.60
-0,0,0,0,5.75
-1,0,0,0,6.35
-0,0,0,0,6.50
-0,1,0,0,6.70
-0,0,0,0,6.85
-1,0,0,0,7.45
-0,0,0,0,7.60
-0,0,0,1,7.80
-0,0,0,0,7.95
-1,0,0,0,8.55
-0,0,0,0,8.70
-0,1,0,0,8.90
-0,0,0,0,9.05
-1,0,0,0,9.65
-0,0,0,0,9.80
-1,0,0,0,9.90
-0,0,0,0,10.00
+1,0,0,0,4.90
+0,0,0,0,5.00
 
 Format: w,a,s,d,t where:
 - w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
 - t is cumulative time in seconds from plan start (not duration)
-- The plan MUST start near t=0: the FIRST line's t should be a small positive value (e.g. 0.2-0.6), not 10.0
-- The plan MUST end at t=10.0: the LAST line's t must be exactly 10.0 (unless no movement needed)
+- The plan MUST start near t=0: the FIRST line's t should be a small positive value (e.g. 0.2-0.6), not 5.0
+- The plan MUST end at t=5.0: the LAST line's t must be exactly 5.0 (unless no movement needed)
 - Times must be strictly increasing each line (cumulative)
-- When movement is needed, output AT LEAST 5 steps (5+ lines after "plan"). Use small increments (e.g. 0.2-1.0s per step) and end exactly at 10.0.
-- Target plan duration: ~10 seconds when movement is needed (use multiple short steps that add up close to 10.0s)
-- Maximum plan duration: 10 seconds (never exceed)
+- When movement is needed, output AT LEAST 5 steps (5+ lines after "plan"). Use small increments (e.g. 0.2-1.0s per step) and end exactly at 5.0.
+- Target plan duration: ~5 seconds when movement is needed (use multiple short steps that add up close to 5.0s)
+- Maximum plan duration: 5 seconds (never exceed)
 - Example: "1,0,0,0,1.0" means W until 1.0s, then "0,0,0,1,1.3" means D until 1.3s total
 - If no movement needed, output: plan\n0,0,0,0,0.1
 
 Do NOT describe the image. Output ONLY the summary line and the plan."""
 
-  global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y, gemini_plan_id, gemini_last_summary
+  global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y, gemini_plan_id
+  global gemini_last_summary
   global gemini_chat, gemini_chat_context_key
 
   # How many *turns* (user+model pairs) to keep in the chat session history.
@@ -426,7 +422,10 @@ plan
                 logger.debug("Reusing Gemini chat session")
 
               pil_image = await asyncio.to_thread(image_to_pil, frame)
-              logger.info(f"Image prepared: {pil_image.size}")
+              # Compress image to JPEG to reduce upload + latency.
+              jpeg_quality = int(os.getenv("GEMINI_JPEG_QUALITY", "65"))
+              image_part, image_nbytes = await asyncio.to_thread(pil_to_jpeg_part, pil_image, jpeg_quality)
+              logger.info(f"Image prepared: {pil_image.size}, jpeg_bytes={image_nbytes}, q={jpeg_quality}")
 
               logger.info("Sending frame to Gemini API...")
               try:
@@ -435,13 +434,13 @@ plan
                 turn_text = "Return output in the exact `summary:` + `plan` format described earlier."
 
                 # Offload the blocking Gemini SDK call to a thread to avoid stalling the event loop.
-                response = await asyncio.to_thread(gemini_chat.send_message, [pil_image, turn_text])
+                response = await asyncio.to_thread(gemini_chat.send_message, [image_part, turn_text])
                 response_text = response.text
                 gemini_last_response = response_text
                 gemini_last_summary = extract_gemini_summary(response_text)
 
                 # Print full response in terminal
-                logger.info(f"✓ Gemini response received:")
+                logger.info("✓ Gemini response received:")
                 logger.info(f"{response_text}")
 
                 plan = parse_gemini_response(response_text)
