@@ -1,0 +1,29 @@
+BO_ 829 LKAS_HUD: 8 ADAS
+ SG_ LKAS_READY : 0|1@0+ (1,0) [0|127] "" BDY
+ SG_ LKAS_STATE_CHANGE : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_HUD : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_HUD_2 : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ RDM_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_ON : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ RDM_ON_2 : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LANE_ASSIST_BEEP_OFF : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ LANE_LINES : 36|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnings etc...";
+CM_ SG_ 829 CAM_TEMP_HIGH "Some Driver Assist Systems Cannot Operate: Camera Temperature Too High";
+CM_ SG_ 829 CAMERA_OVERHEAT "Lane Keeping Assist Cannot Operate: Camera Too Hot";
+
+VAL_ 829 BEEP 5 "solid_beep" 4 "double_beep" 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep";
+VAL_ 829 LANE_LINES 7 "both_lines_green" 6 "both_lines_white" 2 "left_line_white" 0 "no_lines";
