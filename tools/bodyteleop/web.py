@@ -464,6 +464,9 @@ async def gemini_control(request: 'web.Request'):
     # Get current status and prompt
     enabled = gemini_is_enabled()
     prompt = gemini_get_prompt()
+    # Ensure plan_id is always an integer
+    plan_id = gemini_plan_id if gemini_plan_id is not None else 0
+
     status_info = {
       "enabled": enabled,
       "prompt": prompt,
@@ -473,10 +476,11 @@ async def gemini_control(request: 'web.Request'):
       "current_y": gemini_current_y,
       "last_response": gemini_last_response if gemini_last_response else "",  # Full response
       "current_plan": [[w, a, s, d, t] for w, a, s, d, t in gemini_plan] if gemini_plan else None,
-      "current_plan_id": gemini_plan_id,
+      "current_plan_id": plan_id,
       "plan_active": gemini_plan is not None and gemini_plan_start_time is not None,
       "plan_elapsed": (time.monotonic() - gemini_plan_start_time) if (gemini_plan_start_time is not None) else None,
     }
+    logger.debug(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={gemini_plan is not None}, plan_steps={len(gemini_plan) if gemini_plan else 0}")
     return web.json_response(status_info)
   else:
     # POST: Toggle or set status
@@ -562,13 +566,28 @@ def main():
     async def startup_background_tasks(app):
       global gemini_task
       try:
+        # Start in background - don't await, let it run independently
         gemini_task = asyncio.create_task(gemini_loop())
         logger.info("Gemini background task started")
       except Exception as e:
         logger.error(f"Failed to start Gemini background task: {e}", exc_info=True)
         # Don't fail startup if Gemini fails - web server should still work
+        gemini_task = None
 
     app.on_startup.append(startup_background_tasks)
+    
+    # Also handle shutdown
+    async def shutdown_background_tasks(app):
+      global gemini_task
+      if gemini_task:
+        gemini_task.cancel()
+        try:
+          await gemini_task
+        except asyncio.CancelledError:
+          pass
+        logger.info("Gemini background task stopped")
+    
+    app.on_shutdown.append(shutdown_background_tasks)
 
     logger.info("Starting web server on https://0.0.0.0:5000")
     logger.info("Web server ready - Gemini will start disabled by default")

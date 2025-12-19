@@ -30,10 +30,16 @@ function stopGeminiPlanExecution() {
 
 function startGeminiPlanExecution(plan) {
   // plan: [[w,a,s,d,t], ...] where t is cumulative seconds from plan start
+  console.log(`startGeminiPlanExecution called with plan:`, plan);
   stopGeminiPlanExecution();
+  if (!plan || plan.length === 0) {
+    console.error("startGeminiPlanExecution: empty plan!");
+    return;
+  }
   currentGeminiPlan = plan;
   currentGeminiPlanStartMs = performance.now();
   setPlanExecStatus(`started\nsteps=${plan.length}\nplanId=${lastGeminiPlanId}`);
+  console.log(`Plan execution started: ${plan.length} steps, start time=${currentGeminiPlanStartMs}`);
 
   geminiPlanTimer = setInterval(() => {
     if (!geminiEnabled || !currentGeminiPlan || currentGeminiPlan.length === 0) {
@@ -149,7 +155,7 @@ function updateGeminiStatus() {
     $("#gemini-api-key-status").text(data.api_key_set ? "✓ Set" : "✗ Not Set");
     $("#gemini-command-status").text(`x=${(data.current_x || 0).toFixed(2)}, y=${(data.current_y || 0).toFixed(2)}`);
     $("#gemini-response-status").text(data.last_response || "-");
-    
+
     // Debug info
     console.log("Gemini status update:", {
       enabled,
@@ -166,12 +172,17 @@ function updateGeminiStatus() {
       // This drives getXY() at WebRTC send rate (50ms) without requiring server polling.
       if (data.current_plan && data.current_plan.length > 0) {
         const planId = data.current_plan_id;
+        console.log(`Plan check: planId=${planId}, lastGeminiPlanId=${lastGeminiPlanId}, plan.length=${data.current_plan.length}`);
         if (lastGeminiPlanId === null || planId !== lastGeminiPlanId) {
+          console.log(`Starting plan execution! planId=${planId}`);
           lastGeminiPlanId = planId;
           startGeminiPlanExecution(data.current_plan);
+        } else {
+          console.log(`Plan already running, planId=${planId}`);
         }
       } else {
         // No plan: ensure we aren't running an old one
+        console.log("No plan in response, stopping execution");
         stopGeminiPlanExecution();
       }
     } else {
