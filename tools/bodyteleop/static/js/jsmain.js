@@ -1,9 +1,65 @@
-import { handleKeyX, executePlan, setGeminiXY, setGeminiEnabled } from "./controls.js";
+import { handleKeyX, executePlan, setGeminiXY, setGeminiEnabled, getXY } from "./controls.js";
 import { start, stop, lastChannelMessageTime, playSoundRequest, getGeminiStatus, setGeminiStatus, getGeminiPrompt, setGeminiPrompt } from "./webrtc.js";
 
 export var pc = null;
 export var dc = null;
 export var geminiEnabled = false;
+
+// Execute the current Gemini plan locally in the browser.
+// This is required because joystick commands are sent via WebRTC data channel (getXY() every 50ms).
+let lastGeminiPlanId = null;
+let geminiPlanTimer = null;
+let currentGeminiPlan = null;
+let currentGeminiPlanStartMs = null;
+
+function stopGeminiPlanExecution() {
+  if (geminiPlanTimer !== null) {
+    clearInterval(geminiPlanTimer);
+    geminiPlanTimer = null;
+  }
+  currentGeminiPlan = null;
+  currentGeminiPlanStartMs = null;
+  setGeminiXY(0, 0);
+}
+
+function startGeminiPlanExecution(plan) {
+  // plan: [[w,a,s,d,t], ...] where t is cumulative seconds from plan start
+  stopGeminiPlanExecution();
+  currentGeminiPlan = plan;
+  currentGeminiPlanStartMs = performance.now();
+
+  geminiPlanTimer = setInterval(() => {
+    if (!geminiEnabled || !currentGeminiPlan || currentGeminiPlan.length === 0) {
+      stopGeminiPlanExecution();
+      return;
+    }
+
+    const elapsedS = (performance.now() - currentGeminiPlanStartMs) / 1000.0;
+
+    // Find current step
+    let step = null;
+    for (let i = 0; i < currentGeminiPlan.length; i++) {
+      const s = currentGeminiPlan[i];
+      const t = s[4];
+      if (elapsedS <= t) {
+        step = s;
+        break;
+      }
+    }
+
+    if (step === null) {
+      // Finished
+      stopGeminiPlanExecution();
+      return;
+    }
+
+    const [w, a, s, d, _t] = step;
+    const x = (w || 0) - (s || 0);
+    const y = (d || 0) - (a || 0);
+    setGeminiXY(x, y);
+    $("#pos-vals").text(`${x},${y}`);
+  }, 50);
+}
 
 // Keyboard input handler - disabled when Gemini is enabled
 function handleKeyboardInput(e, value) {
@@ -48,6 +104,8 @@ $("#gemini-toggle").change(function() {
       handleKeyX('d', 0);
       $("#key-w, #key-a, #key-s, #key-d").css('background', '#333');
       $("#pos-vals").text("0,0");
+    } else {
+      stopGeminiPlanExecution();
     }
   }).catch(function(err) {
     console.error("Error toggling Gemini control:", err);
@@ -55,6 +113,7 @@ $("#gemini-toggle").change(function() {
     toggle.prop('checked', !enabled);
     geminiEnabled = false;
     setGeminiEnabled(false);
+    stopGeminiPlanExecution();
     $("#gemini-status-text").text("✗ Error");
   });
 });
@@ -73,13 +132,28 @@ function updateGeminiStatus() {
     $("#gemini-api-key-status").text(data.api_key_set ? "✓ Set" : "✗ Not Set");
     $("#gemini-command-status").text(`x=${(data.current_x || 0).toFixed(2)}, y=${(data.current_y || 0).toFixed(2)}`);
     $("#gemini-response-status").text(data.last_response || "-");
-    
+
     // Update Gemini XY values for controls.js
     if (enabled) {
-      setGeminiXY(data.current_x || 0, data.current_y || 0);
-      $("#pos-vals").text(`${(data.current_x || 0).toFixed(2)},${(data.current_y || 0).toFixed(2)}`);
+      // Start executing the plan client-side when a new plan arrives.
+      // This drives getXY() at WebRTC send rate (50ms) without requiring server polling.
+      if (data.current_plan && data.current_plan.length > 0) {
+        const planId = data.current_plan_id;
+        if (lastGeminiPlanId === null || planId !== lastGeminiPlanId) {
+          lastGeminiPlanId = planId;
+          startGeminiPlanExecution(data.current_plan);
+        }
+      } else {
+        // No plan: ensure we aren't running an old one
+        stopGeminiPlanExecution();
+      }
+    } else {
+      // When disabled, update pos-vals from keyboard input
+      stopGeminiPlanExecution();
+      const {x, y} = getXY();
+      $("#pos-vals").text(`${x},${y}`);
     }
-    
+
     // Display current plan
     if (data.current_plan && data.current_plan.length > 0) {
       const planStr = data.current_plan.map((step, idx) => {

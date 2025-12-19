@@ -43,6 +43,7 @@ gemini_enabled = False  # In-memory state, starts disabled
 gemini_prompt = ""  # In-memory prompt
 gemini_plan = None  # Current plan being executed [(w, a, s, d, end_time), ...]
 gemini_plan_start_time = None  # When the current plan started
+gemini_plan_id = 0  # increments every time we receive a new plan
 
 
 ## GEMINI UTILS
@@ -134,12 +135,24 @@ def parse_gemini_response(response_text: str) -> Optional[list]:
           pass
 
   if plan_lines:
-    # Convert to cumulative timestamps
+    # Validate:
+    # - t is cumulative time from start, increasing
+    # - <= 5s total
+    # - only one of w/a/s/d may be 1 per row
+    last_t = -1.0
+    for w, a, s, d, t in plan_lines:
+      if (w + a + s + d) > 1:
+        return None
+      if t < 0 or t > 5.0:
+        return None
+      if t <= last_t:
+        return None
+      last_t = t
+
+    # t is already cumulative time from start, use it directly
     plan = []
-    cumulative_time = 0.0
-    for w, a, s, d, duration in plan_lines:
-      cumulative_time += duration
-      plan.append((w, a, s, d, cumulative_time))
+    for w, a, s, d, t in plan_lines:
+      plan.append((w, a, s, d, float(t)))
     return plan
 
   # No valid plan found
@@ -279,7 +292,7 @@ async def gemini_loop():
 
   joystick_rk = Ratekeeper(100, print_delay_threshold=None)
   last_gemini_call_time = 0.0
-  gemini_call_interval = 10.0  # Send frame every 10 seconds
+  gemini_call_interval = 10.0  # Minimum time between frames (seconds)
 
   logger.info("Gemini loop ready, waiting for enable...")
 
@@ -299,8 +312,9 @@ plan
 
 Format: w,a,s,d,t where:
 - w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
-- t is duration in seconds (cumulative time from start)
+- t is cumulative time in seconds from plan start (not duration)
 - Maximum plan duration: 5 seconds
+- Example: "1,0,0,0,1.0" means W until 1.0s, then "0,0,0,1,1.3" means D until 1.3s total
 - If no movement needed, output: plan\n0,0,0,0,0.1
 
 DO NOT write any text explanations. DO NOT describe the image. Output ONLY the plan lines starting with "plan"."""
@@ -313,7 +327,18 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
 
       if gemini_enabled:
         current_time = time.monotonic()
-        if current_time - last_gemini_call_time >= gemini_call_interval:
+
+        # Wait until current plan finishes before requesting another frame.
+        # Also enforce a minimum interval between calls.
+        plan_end_time = None
+        if gemini_plan is not None and gemini_plan_start_time is not None and len(gemini_plan) > 0:
+          plan_end_time = gemini_plan_start_time + float(gemini_plan[-1][4])
+
+        next_allowed_call_time = last_gemini_call_time + gemini_call_interval
+        if plan_end_time is not None:
+          next_allowed_call_time = max(next_allowed_call_time, plan_end_time)
+
+        if current_time >= next_allowed_call_time and gemini_plan is None:
           last_gemini_call_time = current_time
 
           logger.info("Getting camera frame...")
@@ -346,8 +371,10 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
 
               if plan is not None:
                 # Start executing plan
+                global gemini_plan_id
                 gemini_plan = plan
                 gemini_plan_start_time = time.monotonic()
+                gemini_plan_id += 1
                 plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
                 logger.info(f"✓ Parsed plan with {len(plan)} steps:")
                 logger.info(f"{plan_str}")
@@ -364,22 +391,26 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
         # Execute plan if active
         if gemini_plan is not None and gemini_plan_start_time is not None:
           elapsed = time.monotonic() - gemini_plan_start_time
-          # Find current step in plan
+          # Find current step in plan (times are cumulative from start)
           current_commands = {"forward": False, "backward": False, "left": False, "right": False}
+          plan_active = False
           for w, a, s, d, end_time in gemini_plan:
             if elapsed <= end_time:
               current_commands["forward"] = bool(w)
               current_commands["backward"] = bool(s)
               current_commands["left"] = bool(a)
               current_commands["right"] = bool(d)
+              plan_active = True
               break
-          else:
+
+          if not plan_active:
             # Plan finished
             gemini_plan = None
             gemini_plan_start_time = None
             current_commands = {"forward": False, "backward": False, "left": False, "right": False}
 
           gemini_current_x, gemini_current_y = commands_to_joystick_axes(current_commands)
+          logger.debug(f"Plan execution: elapsed={elapsed:.2f}s, x={gemini_current_x:.2f}, y={gemini_current_y:.2f}")
 
         # Gemini values are sent via WebRTC data channel from the browser
         # The browser polls /gemini endpoint and updates getXY() in controls.js
@@ -491,6 +522,7 @@ async def gemini_control(request: 'web.Request'):
       "current_y": gemini_current_y,
       "last_response": gemini_last_response if gemini_last_response else "",  # Full response
       "current_plan": [[w, a, s, d, t] for w, a, s, d, t in gemini_plan] if gemini_plan else None,
+      "current_plan_id": gemini_plan_id,
     }
     return web.json_response(status_info)
   else:
