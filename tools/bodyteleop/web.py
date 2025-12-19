@@ -351,7 +351,7 @@ plan
 
 Keep responses SHORT. Just output the JSON or plan, no explanations."""
 
-  global gemini_plan, gemini_plan_start_time
+  global gemini_plan, gemini_plan_start_time, gemini_pm, gemini_current_x, gemini_current_y
   
   while True:
     try:
