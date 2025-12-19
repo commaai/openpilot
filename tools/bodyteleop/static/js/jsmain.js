@@ -96,6 +96,7 @@ $("#gemini-toggle").change(function() {
   setGeminiStatus(enabled).then(function(data) {
     $("#gemini-status").text(enabled ? "Enabled" : "Disabled");
     updateGeminiStatus(); // Refresh status display
+    scheduleGeminiStatusPoll();
     if (enabled) {
       // Clear keyboard input when Gemini takes over
       handleKeyX('w', 0);
@@ -114,6 +115,7 @@ $("#gemini-toggle").change(function() {
     geminiEnabled = false;
     setGeminiEnabled(false);
     stopGeminiPlanExecution();
+    scheduleGeminiStatusPoll();
     $("#gemini-status-text").text("✗ Error");
   });
 });
@@ -178,8 +180,21 @@ function updateGeminiStatus() {
 // Load initial Gemini status and prompt
 updateGeminiStatus();
 
-// Update status every 2 seconds
-setInterval(updateGeminiStatus, 2000);
+// Update status frequently when Gemini is enabled so we don't miss short plans.
+// When disabled, keep it slower.
+let geminiStatusPollTimer = null;
+function scheduleGeminiStatusPoll() {
+  if (geminiStatusPollTimer !== null) {
+    clearTimeout(geminiStatusPollTimer);
+    geminiStatusPollTimer = null;
+  }
+  const intervalMs = geminiEnabled ? 200 : 2000;
+  geminiStatusPollTimer = setTimeout(() => {
+    updateGeminiStatus();
+    scheduleGeminiStatusPoll();
+  }, intervalMs);
+}
+scheduleGeminiStatusPoll();
 
 // Load prompt separately in case status doesn't include it
 getGeminiPrompt().then(function(data) {

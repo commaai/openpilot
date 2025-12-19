@@ -86,8 +86,14 @@ def get_camera_frame():
 
 
 def image_to_pil(image: np.ndarray, max_size: tuple[int, int] = (640, 480)) -> Image.Image:
-  """Convert numpy image array to PIL Image and downscale if needed"""
+  """Convert numpy image array to PIL Image and downscale before sending to Gemini"""
   pil_image = Image.fromarray(image)
+
+  # Always downscale by half to reduce tokens + latency (area becomes ~1/4)
+  w, h = pil_image.size
+  half_size = (max(1, w // 2), max(1, h // 2))
+  if half_size != (w, h):
+    pil_image = pil_image.resize(half_size, Image.Resampling.LANCZOS)
 
   if pil_image.size[0] > max_size[0] or pil_image.size[1] > max_size[1]:
     pil_image.thumbnail(max_size, Image.Resampling.LANCZOS)
