@@ -232,6 +232,8 @@ class TogglesLayout(Widget):
       self._params.put_bool("ExperimentalMode", state)
 
   def _toggle_callback(self, state: bool, param: str):
+    ui_state.update_toggle_params()
+
     if param == "ExperimentalMode":
       self._handle_experimental_mode_toggle(state)
       return

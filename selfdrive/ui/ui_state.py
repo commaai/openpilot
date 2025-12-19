@@ -68,12 +68,9 @@ class UIState:
     self._started_prev: bool = False
 
     # Core state variables
-    self.is_metric: bool = self.params.get_bool("IsMetric")
     self.is_release = self.params.get_bool("IsReleaseBranch")
-    self.always_on_dm: bool = self.params.get_bool("AlwaysOnDM")
     self.started: bool = False
     self.ignition: bool = False
-    self.recording_audio: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
@@ -86,6 +83,7 @@ class UIState:
     self._engaged_transition_callbacks: list[Callable[[], None]] = []
 
     self.update_params()
+    self.update_toggle_params()
     self.prime_state.start()
 
   def add_offroad_transition_callback(self, callback: Callable[[], None]):
@@ -136,12 +134,6 @@ class UIState:
     # Update started state
     self.started = self.sm["deviceState"].started and self.ignition
 
-    # Update recording audio state
-    self.recording_audio = self.params.get_bool("RecordAudio") and self.started
-
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.always_on_dm = self.params.get_bool("AlwaysOnDM")
-
   def _update_status(self) -> None:
     if self.started and self.sm.updated["selfdriveState"]:
       ss = self.sm["selfdriveState"]
@@ -181,6 +173,15 @@ class UIState:
       else:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
     self._param_update_time = time.monotonic()
+
+  def update_toggle_params(self):
+    self.is_metric = self.params.get_bool("IsMetric")
+    self.always_on_dm = self.params.get_bool("AlwaysOnDM")
+    self._recording_audio = self.params.get_bool("RecordAudio")
+
+  @property
+  def recording_audio(self) -> bool:
+    return self._recording_audio and self.started
 
 
 class Device:

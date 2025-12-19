@@ -17,13 +17,20 @@ class TogglesLayoutMici(NavWidget):
     super().__init__()
     self.set_back_callback(back_callback)
 
+    def update_toggles_callback(_):
+      ui_state.update_toggle_params()
+
+    def update_recording_audio_callback(_):
+      ui_state.update_toggle_params()
+      restart_needed_callback()
+
     self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"])
     self._experimental_btn = BigParamControl("experimental mode", "ExperimentalMode")
-    is_metric_toggle = BigParamControl("use metric units", "IsMetric")
+    is_metric_toggle = BigParamControl("use metric units", "IsMetric", toggle_callback=update_toggles_callback)
     ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled")
-    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM")
+    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", toggle_callback=update_toggles_callback)
     record_front = BigParamControl("record & upload driver camera", "RecordFront", toggle_callback=restart_needed_callback)
-    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback)
+    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=update_recording_audio_callback)
     enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
 
     self._scroller = Scroller([
