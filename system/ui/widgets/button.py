@@ -5,8 +5,7 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.label_tici import Label
+from openpilot.system.ui.widgets.label import Label
 from openpilot.common.filter_simple import FirstOrderFilter
 
 
@@ -240,10 +239,10 @@ class SmallButton(Widget):
 
     self._load_assets()
 
-    self._label = UnifiedLabel(text, 36, font_weight=FontWeight.MEDIUM,
-                               text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                               alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+    self._label = Label(text, 36, weight=FontWeight.MEDIUM,
+                               color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                               align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                               valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
     self._bg_disabled_txt = None
 

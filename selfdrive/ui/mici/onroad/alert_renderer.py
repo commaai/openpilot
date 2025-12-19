@@ -11,7 +11,7 @@ from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.label import Label
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -90,9 +90,9 @@ class AlertRenderer(Widget):
   def __init__(self):
     super().__init__()
 
-    self._alert_text1_label = UnifiedLabel(text="", font_size=ALERT_FONT_BIG, font_weight=FontWeight.DISPLAY, line_height=0.86,
+    self._alert_text1_label = Label(text="", size=ALERT_FONT_BIG, weight=FontWeight.DISPLAY, line_height=0.86,
                                            letter_spacing=-0.02)
-    self._alert_text2_label = UnifiedLabel(text="", font_size=ALERT_FONT_SMALL, font_weight=FontWeight.ROMAN, line_height=0.86,
+    self._alert_text2_label = Label(text="", size=ALERT_FONT_SMALL, weight=FontWeight.ROMAN, line_height=0.86,
                                            letter_spacing=0.025)
 
     self._prev_alert: Alert | None = None

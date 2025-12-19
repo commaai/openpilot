@@ -9,7 +9,7 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
-from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.label import Label
 from openpilot.system.ui.widgets.slider import SmallSlider
 from openpilot.system.ui.mici_setup import TermsHeader, TermsPage as SetupTermsPage
 from openpilot.selfdrive.ui.ui_state import ui_state, device
@@ -63,7 +63,7 @@ class TrainingGuidePreDMTutorial(SetupTermsPage):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("driver monitoring setup", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._dm_label = UnifiedLabel("Next, we'll ensure comma four is mounted properly.\n\nIf it does not have a clear view of the driver, " +
+    self._dm_label = Label("Next, we'll ensure comma four is mounted properly.\n\nIf it does not have a clear view of the driver, " +
                                   "unplug and remount before continuing.", 42,
                                   FontWeight.ROMAN)
 
@@ -96,7 +96,7 @@ class DMBadFaceDetected(SetupTermsPage):
   def __init__(self, continue_callback, back_callback):
     super().__init__(continue_callback, back_callback, continue_text="power off")
     self._title_header = TermsHeader("make sure comma four can see your face", gui_app.texture("icons_mici/setup/orange_dm.png", 60, 60))
-    self._dm_label = UnifiedLabel("Re-mount if your face is occluded or driver monitoring has difficulty tracking your face.", 42, FontWeight.ROMAN)
+    self._dm_label = Label("Re-mount if your face is occluded or driver monitoring has difficulty tracking your face.", 42, FontWeight.ROMAN)
 
   @property
   def _content_height(self):
@@ -269,7 +269,7 @@ class TrainingGuideRecordFront(SetupTermsPage):
     super().__init__(on_continue, back_callback=on_back, back_text="no", continue_text="yes")
     self._title_header = TermsHeader("improve driver monitoring", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
 
-    self._dm_label = UnifiedLabel("Do you want to upload driver camera data?", 42,
+    self._dm_label = Label("Do you want to upload driver camera data?", 42,
                                   FontWeight.ROMAN)
 
   def show_event(self):
@@ -301,7 +301,7 @@ class TrainingGuideAttentionNotice(SetupTermsPage):
   def __init__(self, continue_callback):
     super().__init__(continue_callback, continue_text="continue")
     self._title_header = TermsHeader("driver assistance", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("1. openpilot is a driver assistance system.\n\n" +
+    self._warning_label = Label("1. openpilot is a driver assistance system.\n\n" +
                                        "2. You must pay attention at all times.\n\n" +
                                        "3. You must be ready to take over at any time.\n\n" +
                                        "4. You are fully responsible for driving the car.", 42,
@@ -415,7 +415,7 @@ class TermsPage(SetupTermsPage):
     info_txt = gui_app.texture("icons_mici/setup/green_info.png", 60, 60)
     self._title_header = TermsHeader("terms & conditions", info_txt)
 
-    self._terms_label = UnifiedLabel("You must accept the Terms and Conditions to use openpilot. " +
+    self._terms_label = Label("You must accept the Terms and Conditions to use openpilot. " +
                                      "Read the latest terms at https://comma.ai/terms before continuing.", 36,
                                      FontWeight.ROMAN)
 

@@ -3,7 +3,7 @@ import time
 from cereal import log
 import pyray as rl
 from collections.abc import Callable
-from openpilot.system.ui.widgets.label import gui_label, MiciLabel
+from openpilot.system.ui.widgets.label import gui_label, Label
 from openpilot.system.ui.widgets.scrollable_label import ScrollableLabel
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR, MousePos
@@ -110,13 +110,12 @@ class MiciHomeLayout(Widget):
     self._cell_high_txt = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 55, 35)
     self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 55, 35)
 
-    self._openpilot_label = MiciLabel("openpilot", font_size=96, color=rl.Color(255, 255, 255, int(255 * 0.9)), font_weight=FontWeight.DISPLAY)
-    self._version_label = MiciLabel("", font_size=36, font_weight=FontWeight.ROMAN)
-    self._large_version_label = MiciLabel("", font_size=64, color=rl.GRAY, font_weight=FontWeight.ROMAN)
-    self._date_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
+    self._openpilot_label = Label("openpilot", size=96, color=rl.Color(255, 255, 255, int(255 * 0.9)), weight=FontWeight.DISPLAY)
+    self._version_label = Label("", size=36, weight=FontWeight.ROMAN)
+    self._large_version_label = Label("", size=64, color=rl.GRAY, weight=FontWeight.ROMAN)
+    self._date_label = Label("", size=36, color=rl.GRAY, weight=FontWeight.ROMAN)
     self._branch_label = ScrollableLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN)
-    self._version_commit_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
-
+    self._version_commit_label = Label("", size=36, color=rl.GRAY, weight=FontWeight.ROMAN)
   def show_event(self):
     self._version_text = self._get_version_text()
     self._update_network_status(ui_state.sm['deviceState'])

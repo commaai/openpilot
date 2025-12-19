@@ -12,7 +12,7 @@ from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent
-from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.label import Label
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
@@ -154,10 +154,10 @@ class AugmentedRoadView(CameraView):
     self._alert_renderer = AlertRenderer()
     self._driver_state_renderer = DriverStateRenderer()
     self._confidence_ball = ConfidenceBall()
-    self._offroad_label = UnifiedLabel("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
-                                       text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                                       alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                                       alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+    self._offroad_label = Label("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
+                                       color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                                       align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                                       valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 

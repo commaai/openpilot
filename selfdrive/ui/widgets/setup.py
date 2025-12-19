@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.widgets.label_tici import Label
+from openpilot.system.ui.widgets.label import Label
 
 
 class SetupWidget(Widget):

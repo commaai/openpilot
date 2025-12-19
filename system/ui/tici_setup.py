@@ -19,7 +19,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label_tici import Label
+from openpilot.system.ui.widgets.label import Label
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManager
 
 NetworkType = log.DeviceState.NetworkType

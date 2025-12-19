@@ -7,7 +7,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.label import Label
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -59,13 +59,13 @@ class AlertItem(Widget):
     self._icon_red = gui_app.texture("icons_mici/offroad_alerts/red_warning.png", self.ICON_SIZE, self.ICON_SIZE)
     self._icon_green = gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", self.ICON_SIZE, self.ICON_SIZE)
 
-    self._title_label = UnifiedLabel(text="", font_size=32, font_weight=FontWeight.SEMI_BOLD, text_color=self.TEXT_COLOR,
-                                     alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                     alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP, line_height=0.95)
+    self._title_label = Label(text="", size=32, weight=FontWeight.SEMI_BOLD, color=self.TEXT_COLOR,
+                                     align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+                                     valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP, line_height=0.95)
 
-    self._body_label = UnifiedLabel(text="", font_size=28, font_weight=FontWeight.ROMAN, text_color=self.TEXT_COLOR,
-                                    alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                    alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=0.95)
+    self._body_label = Label(text="", size=28, weight=FontWeight.ROMAN, color=self.TEXT_COLOR,
+                                    align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+                                    valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=0.95)
 
     self._title_text = ""
     self._body_text = ""
@@ -200,9 +200,9 @@ class MiciOffroadAlerts(Widget):
     self._scroller = Scroller([], horizontal=False, spacing=12, pad_start=0, pad_end=0, snap_items=False)
 
     # Create empty state label
-    self._empty_label = UnifiedLabel(tr("no alerts"), 65, FontWeight.DISPLAY, rl.WHITE,
-                                     alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                                     alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+    self._empty_label = Label(tr("no alerts"), size=65, weight=FontWeight.DISPLAY, color=rl.WHITE,
+                                     align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                                     valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
     # Build initial alert list
     self._build_alerts()

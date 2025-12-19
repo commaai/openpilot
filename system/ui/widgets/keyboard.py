@@ -9,7 +9,7 @@ from openpilot.system.ui.lib.multilang import tr_lazy
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.inputbox import InputBox
-from openpilot.system.ui.widgets.label_tici import Label
+from openpilot.system.ui.widgets.label import Label
 
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds

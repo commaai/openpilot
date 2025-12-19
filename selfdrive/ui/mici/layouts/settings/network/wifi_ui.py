@@ -4,7 +4,7 @@ import pyray as rl
 from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.label import Label
 from openpilot.system.ui.widgets.scrollable_label import ScrollableLabel
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigMultiOptionDialog, BigInputDialog, BigDialogOptionButton, BigConfirmationDialogV2
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
@@ -133,9 +133,9 @@ class ConnectButton(Widget):
 
     self._full: bool = False
 
-    self._label = UnifiedLabel("", 36, FontWeight.MEDIUM, rl.Color(255, 255, 255, int(255 * 0.9)),
-                               alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+    self._label = Label("", size=36, weight=FontWeight.MEDIUM, color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                               align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                               valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
   @property
   def full(self) -> bool:
@@ -203,8 +203,8 @@ class NetworkInfoPage(NavWidget):
 
     self._title = ScrollableLabel("", 64, FontWeight.DISPLAY, rl.Color(255, 255, 255, int(255 * 0.9)),
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
-    self._subtitle = UnifiedLabel("", 36, FontWeight.ROMAN, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
-                                  alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+    self._subtitle = Label("", size=36, weight=FontWeight.ROMAN, color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
+                                  valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
     self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
 

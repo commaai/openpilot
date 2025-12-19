@@ -10,7 +10,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_text_box, gui_label, UnifiedLabel
+from openpilot.system.ui.widgets.label import gui_text_box, gui_label, Label
 from openpilot.system.ui.widgets.button import FullRoundedButton
 from openpilot.system.ui.mici_setup import NetworkSetupPage, FailedPage, NetworkConnectivityMonitor
 
@@ -48,12 +48,11 @@ class Updater(Widget):
     self._continue_button = FullRoundedButton("continue")
     self._continue_button.set_click_callback(lambda: self.set_current_screen(Screen.WIFI))
 
-    self._title_label = UnifiedLabel("update required", 48, text_color=rl.Color(255, 115, 0, 255),
-                                     font_weight=FontWeight.DISPLAY)
-    self._subtitle_label = UnifiedLabel("The download size is approximately 1GB.", 36,
-                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                                        font_weight=FontWeight.ROMAN)
-
+    self._title_label = Label("update required", 48, color=rl.Color(255, 115, 0, 255),
+                                     weight=FontWeight.DISPLAY)
+    self._subtitle_label = Label("The download size is approximately 1GB.", 36,
+                                        color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                                        weight=FontWeight.ROMAN)
     self._update_failed_page = FailedPage(HARDWARE.reboot, self._update_failed_retry_callback,
                                           title="update failed")
 
