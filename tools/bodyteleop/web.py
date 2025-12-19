@@ -201,8 +201,25 @@ async def gemini_loop():
 
   logger.info("Configuring Gemini API...")
   genai.configure(api_key=api_key)
-  model = genai.GenerativeModel('gemini-1.5-flash')
-  logger.info("Gemini model initialized: gemini-1.5-flash")
+  
+  # Try flash models only (cheapest)
+  model_names = ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-flash-001']
+  model = None
+  model_name = None
+  
+  for name in model_names:
+    try:
+      model = genai.GenerativeModel(name)
+      model_name = name
+      logger.info(f"✓ Gemini Flash model initialized: {name}")
+      break
+    except Exception as e:
+      logger.debug(f"Failed to load {name}: {e}")
+      continue
+  
+  if model is None:
+    logger.error("Failed to initialize any Gemini Flash model. Available models may have changed.")
+    return
 
   joystick_rk = Ratekeeper(100, print_delay_threshold=None)
   last_gemini_call_time = 0.0
