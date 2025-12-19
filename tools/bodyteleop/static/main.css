@@ -30,7 +30,7 @@ i {
   .jumbo {
       display: none;
   }
-  
+
 }
 
 #main {
@@ -182,4 +182,16 @@ video {
 .details {
   display: flex;
   padding: 0px 10px 0px 10px;
+}
+
+#gemini-status-info {
+  color: #000 !important;
+}
+
+#gemini-status-info div {
+  color: #000 !important;
+}
+
+#gemini-status-info span {
+  color: #000 !important;
 }

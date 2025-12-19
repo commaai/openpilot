@@ -3,10 +3,11 @@ import dataclasses
 import json
 import logging
 import os
+import re
 import ssl
 import subprocess
 import time
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -42,6 +43,10 @@ gemini_task = None
 gemini_last_response = ""
 gemini_enabled = False  # In-memory state, starts disabled
 gemini_prompt = ""  # In-memory prompt
+gemini_plan = None  # Current plan being executed [(w, a, s, d, end_time), ...]
+gemini_plan_start_time = None  # When the current plan started
+gemini_plan = None  # Current plan being executed [(w, a, s, d, end_time), ...]
+gemini_plan_start_time = None  # When the current plan started
 
 
 ## GEMINI UTILS
@@ -94,28 +99,76 @@ def image_to_pil(image: np.ndarray, max_size: tuple[int, int] = (640, 480)) -> I
   return pil_image
 
 
-def parse_gemini_response(response_text: str) -> dict:
-  """Parse Gemini response to extract movement commands"""
+def parse_gemini_response(response_text: str) -> Tuple[Optional[dict], Optional[list]]:
+  """Parse Gemini response to extract movement commands or plan
+  Returns: (commands_dict, plan_list)
+  - commands_dict: {"forward": bool, "backward": bool, "left": bool, "right": bool} or None
+  - plan_list: [(w, a, s, d, end_time), ...] or None if no plan
+  """
   response_text = response_text.strip()
 
-  try:
-    data = json.loads(response_text)
-    return {
-      "forward": data.get("forward", False),
-      "backward": data.get("backward", False),
-      "left": data.get("left", False),
-      "right": data.get("right", False),
-    }
-  except json.JSONDecodeError:
-    pass
+  # Check for plan format first (lines with w,a,s,d,t)
+  plan_lines = []
+  lines = response_text.split('\n')
+  for line in lines:
+    line = line.strip()
+    if ',' in line and line.count(',') == 4:
+      parts = line.split(',')
+      try:
+        w, a, s, d, t = [int(float(p.strip())) if '.' not in p.strip() else float(p.strip()) for p in parts]
+        if w in [0, 1] and a in [0, 1] and s in [0, 1] and d in [0, 1] and t >= 0:
+          plan_lines.append((w, a, s, d, t))
+      except (ValueError, IndexError):
+        pass
 
+  if plan_lines:
+    # Convert to cumulative timestamps
+    plan = []
+    cumulative_time = 0.0
+    for w, a, s, d, duration in plan_lines:
+      cumulative_time += duration
+      plan.append((w, a, s, d, cumulative_time))
+    return (None, plan)
+
+  # Try to parse as JSON
+  json_start = response_text.find('{')
+  json_end = response_text.rfind('}')
+  if json_start != -1 and json_end != -1:
+    json_str = response_text[json_start:json_end+1]
+    try:
+      data = json.loads(json_str)
+      commands = {
+        "forward": bool(data.get("forward", False)),
+        "backward": bool(data.get("backward", False)),
+        "left": bool(data.get("left", False)),
+        "right": bool(data.get("right", False)),
+      }
+      # Only return commands if at least one is True
+      if any(commands.values()):
+        return (commands, None)
+    except json.JSONDecodeError:
+      pass
+
+  # Look for explicit command words at start of response or after "command:" etc
   response_upper = response_text.upper()
-  return {
-    "forward": "W" in response_upper,
-    "backward": "S" in response_upper,
-    "left": "A" in response_upper,
-    "right": "D" in response_upper,
-  }
+
+  # Only parse if response is very short (likely a command) or contains explicit markers
+  is_short_response = len(response_text.split()) <= 5
+  has_command_marker = any(marker in response_upper for marker in ["COMMAND:", "RESPONSE:", "ACTION:", "MOVE:"])
+
+  if is_short_response or has_command_marker:
+    # Look for exact command words, not just letters
+    commands = {
+      "forward": bool(re.search(r'\b(W|FORWARD)\b', response_upper)),
+      "backward": bool(re.search(r'\b(S|BACKWARD)\b', response_upper)),
+      "left": bool(re.search(r'\b(A|LEFT)\b', response_upper)),
+      "right": bool(re.search(r'\b(D|RIGHT)\b', response_upper)),
+    }
+    if any(commands.values()):
+      return (commands, None)
+
+  # No valid commands found
+  return ({"forward": False, "backward": False, "left": False, "right": False}, None)
 
 
 def commands_to_joystick_axes(commands: dict) -> tuple[float, float]:
@@ -256,29 +309,47 @@ async def gemini_loop():
   logger.info("Gemini loop ready, waiting for enable...")
 
   default_prompt = """You are controlling a robot with two motors in a side-by-side configuration.
-Based on the camera image, determine what movement actions to take.
+IMPORTANT: Do NOT crop or modify the image. Analyze the full image as provided. Respond quickly and keep your response SHORT.
 
-Movement controls:
-- W: Move forward (both motors forward)
-- S: Move backward (both motors backward)
-- A: Rotate left in place (left motor backward, right motor forward)
-- D: Rotate right in place (left motor forward, right motor backward)
-- WA: Move forward while turning left (left motor slower, right motor faster)
-- SD: Move backward while turning right (left motor faster, right motor slower)
+Movement controls (you can only actuate ONE direction at a time - forward/backward OR left/right, not both):
+- W: Move forward (both motors forward) - moves at ~5 mph
+- S: Move backward (both motors backward) - moves at ~5 mph
+- A: Rotate left in place (left motor backward, right motor forward) - rotates at ~360 deg/s, so turns must be VERY SHORT
+- D: Rotate right in place (left motor forward, right motor backward) - rotates at ~360 deg/s, so turns must be VERY SHORT
 
-You can combine W+A or S+D, but NOT forward+backward or left+right.
+You CANNOT combine forward+backward or left+right. Only one WASD direction at a time.
 
-Respond with ONLY a JSON object in this format:
+RESPONSE FORMAT OPTIONS:
+
+Option 1 - Simple JSON (for immediate single command):
 {
   "forward": true/false,
   "backward": true/false,
   "left": true/false,
   "right": true/false
 }
+Only ONE of these should be true at a time.
 
-Or respond with text commands like "W", "S", "A", "D", "WA", "SD", etc.
+Option 2 - Plan format (for timed sequence up to 5 seconds):
+plan
+1,0,0,0,0.5
+0,1,0,0,1.0
+0,0,0,0,0.1
 
-Analyze the image and respond with the appropriate movement command."""
+Format: w,a,s,d,t where:
+- w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
+- t is duration in seconds (cumulative time from start)
+- Example: "1,0,0,0,0.5" means W is actuated for 0.5s, then "0,1,0,0,1.0" means A is actuated until 1.0s total
+- Maximum plan duration: 5 seconds
+- Remember: rotations are ~360 deg/s, so keep turn durations SHORT (0.1-0.3s typically)
+
+Example plan for "turn left 90 degrees then go forward":
+plan
+0,1,0,0,0.25
+1,0,0,0,1.0
+0,0,0,0,1.1
+
+Keep responses SHORT. Just output the JSON or plan, no explanations."""
 
   while True:
     try:
@@ -307,37 +378,85 @@ Analyze the image and respond with the appropriate movement command."""
               gemini_last_response = response_text
               logger.info(f"✓ Gemini response received: {response_text}")
 
-              commands = parse_gemini_response(response_text)
-              logger.info(f"Parsed commands: {commands}")
+              commands, plan = parse_gemini_response(response_text)
 
-              gemini_current_x, gemini_current_y = commands_to_joystick_axes(commands)
-              logger.info(f"✓ Updated joystick command: x={gemini_current_x:.2f}, y={gemini_current_y:.2f}")
+              if plan is not None:
+                # Start executing plan
+                global gemini_plan, gemini_plan_start_time
+                gemini_plan = plan
+                gemini_plan_start_time = time.monotonic()
+                logger.info(f"✓ Parsed plan with {len(plan)} steps: {plan}")
+              elif commands is not None:
+                logger.info(f"Parsed commands: {commands}")
+                gemini_current_x, gemini_current_y = commands_to_joystick_axes(commands)
+                logger.info(f"✓ Updated joystick command: x={gemini_current_x:.2f}, y={gemini_current_y:.2f}")
+                # Clear any existing plan when we get a direct command
+                gemini_plan = None
+              else:
+                logger.info("No valid commands or plan parsed from response")
 
             except Exception as e:
               logger.error(f"✗ Error calling Gemini API: {e}", exc_info=True)
           else:
             logger.warning("Failed to get camera frame")
 
+        # Execute plan if active
+        global gemini_plan, gemini_plan_start_time
+        if gemini_plan is not None and gemini_plan_start_time is not None:
+          elapsed = time.monotonic() - gemini_plan_start_time
+          # Find current step in plan
+          current_commands = {"forward": False, "backward": False, "left": False, "right": False}
+          for w, a, s, d, end_time in gemini_plan:
+            if elapsed <= end_time:
+              current_commands["forward"] = bool(w)
+              current_commands["backward"] = bool(s)
+              current_commands["left"] = bool(a)
+              current_commands["right"] = bool(d)
+              break
+          else:
+            # Plan finished
+            gemini_plan = None
+            gemini_plan_start_time = None
+            current_commands = {"forward": False, "backward": False, "left": False, "right": False}
+
+          gemini_current_x, gemini_current_y = commands_to_joystick_axes(current_commands)
+
         # Publish joystick messages continuously at 100Hz
         if gemini_pm is not None:
-          joystick_msg = messaging.new_message('testJoystick')
-          joystick_msg.valid = True
-          joystick_msg.testJoystick.axes = [gemini_current_x, gemini_current_y]
-          joystick_msg.testJoystick.buttons = [False]
-          gemini_pm.send('testJoystick', joystick_msg)
+          try:
+            joystick_msg = messaging.new_message('testJoystick')
+            joystick_msg.valid = True
+            joystick_msg.testJoystick.axes = [gemini_current_x, gemini_current_y]
+            joystick_msg.testJoystick.buttons = [False]
+            gemini_pm.send('testJoystick', joystick_msg)
+          except Exception as e:
+            logger.error(f"Failed to send joystick message: {e}")
+            # Try to reinitialize messaging only if it's None
+            if gemini_pm is None:
+              try:
+                gemini_pm = messaging.PubMaster(['testJoystick'])
+              except Exception as e2:
+                logger.error(f"Failed to reinitialize messaging: {e2}")
 
         joystick_rk.keep_time()
       else:
+        # Clear plan when disabled
+        gemini_plan = None
+        gemini_plan_start_time = None
+
         if gemini_current_x != 0.0 or gemini_current_y != 0.0:
           logger.info("Gemini disabled, resetting joystick to zero")
           gemini_current_x = 0.0
           gemini_current_y = 0.0
           if gemini_pm is not None:
-            joystick_msg = messaging.new_message('testJoystick')
-            joystick_msg.valid = True
-            joystick_msg.testJoystick.axes = [0.0, 0.0]
-            joystick_msg.testJoystick.buttons = [False]
-            gemini_pm.send('testJoystick', joystick_msg)
+            try:
+              joystick_msg = messaging.new_message('testJoystick')
+              joystick_msg.valid = True
+              joystick_msg.testJoystick.axes = [0.0, 0.0]
+              joystick_msg.testJoystick.buttons = [False]
+              gemini_pm.send('testJoystick', joystick_msg)
+            except Exception as e:
+              logger.error(f"Failed to send zero joystick message: {e}")
 
         await asyncio.sleep(0.1)
         joystick_rk.keep_time()
@@ -499,12 +618,17 @@ def main():
     Params().put_bool("JoystickDebugMode", True)
 
     # Initialize messaging for Gemini (don't fail if this fails)
-    try:
-      gemini_pm = messaging.PubMaster(['testJoystick'])
-      logger.info("Messaging initialized for Gemini")
-    except Exception as e:
-      logger.error(f"Failed to initialize messaging: {e}", exc_info=True)
-      gemini_pm = None
+    # Note: Only create one publisher - reuse if it already exists
+    global gemini_pm
+    if gemini_pm is None:
+      try:
+        gemini_pm = messaging.PubMaster(['testJoystick'])
+        logger.info("Messaging initialized for Gemini")
+      except Exception as e:
+        logger.error(f"Failed to initialize messaging: {e}", exc_info=True)
+        gemini_pm = None
+    else:
+      logger.info("Messaging already initialized, reusing existing publisher")
 
     # App needs to be HTTPS for microphone and audio autoplay to work on the browser
     ssl_context = create_ssl_context()
