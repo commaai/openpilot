@@ -579,11 +579,11 @@ def main():
     # Also handle shutdown
     async def shutdown_background_tasks(app):
       global gemini_task
-      if gemini_task:
+      if gemini_task is not None and isinstance(gemini_task, asyncio.Task):
         gemini_task.cancel()
         try:
           await gemini_task
-        except asyncio.CancelledError:
+        except (asyncio.CancelledError, AttributeError, TypeError):
           pass
         logger.info("Gemini background task stopped")
     
