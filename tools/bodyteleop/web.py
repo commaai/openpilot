@@ -39,6 +39,7 @@ gemini_pm = None
 gemini_current_x = 0.0
 gemini_current_y = 0.0
 gemini_task = None
+gemini_last_response = ""
 
 # File paths for Gemini state (avoiding params)
 GEMINI_ENABLED_FILE = os.path.join(TELEOPDIR, ".gemini_enabled")
@@ -185,10 +186,12 @@ def gemini_set_prompt(prompt: str):
 
 async def gemini_loop():
   """Background task for Gemini control"""
-  global gemini_current_x, gemini_current_y
+  global gemini_current_x, gemini_current_y, gemini_last_response
+
+  logger.info("Gemini loop starting...")
 
   if genai is None:
-    logger.error("google-generativeai not available")
+    logger.error("google-generativeai not available - install with: pip install google-generativeai")
     return
 
   api_key = os.getenv("GEMINI_API_KEY")
@@ -196,12 +199,16 @@ async def gemini_loop():
     logger.error("GEMINI_API_KEY environment variable not set")
     return
 
+  logger.info("Configuring Gemini API...")
   genai.configure(api_key=api_key)
   model = genai.GenerativeModel('gemini-1.5-flash')
+  logger.info("Gemini model initialized: gemini-1.5-flash")
 
   joystick_rk = Ratekeeper(100, print_delay_threshold=None)
   last_gemini_call_time = 0.0
   gemini_call_interval = 5.0
+
+  logger.info("Gemini loop ready, waiting for enable...")
 
   default_prompt = """You are controlling a robot with two motors in a side-by-side configuration.
 Based on the camera image, determine what movement actions to take.
@@ -237,25 +244,34 @@ Analyze the image and respond with the appropriate movement command."""
         if current_time - last_gemini_call_time >= gemini_call_interval:
           last_gemini_call_time = current_time
 
+          logger.info("Getting camera frame...")
           frame = get_camera_frame()
           if frame is not None:
+            logger.info(f"Got frame: {frame.shape}")
             custom_prompt = gemini_get_prompt()
             active_prompt = custom_prompt if custom_prompt else default_prompt
+            logger.info(f"Using {'custom' if custom_prompt else 'default'} prompt (length: {len(active_prompt)})")
 
             pil_image = image_to_pil(frame)
+            logger.info(f"Image prepared: {pil_image.size}")
 
-            logger.info("Sending frame to Gemini...")
+            logger.info("Sending frame to Gemini API...")
             try:
               response = model.generate_content([active_prompt, pil_image])
               response_text = response.text
-              logger.info(f"Gemini response: {response_text}")
+              gemini_last_response = response_text
+              logger.info(f"✓ Gemini response received: {response_text}")
 
               commands = parse_gemini_response(response_text)
+              logger.info(f"Parsed commands: {commands}")
+
               gemini_current_x, gemini_current_y = commands_to_joystick_axes(commands)
-              logger.info(f"Updated joystick command: x={gemini_current_x:.2f}, y={gemini_current_y:.2f}")
+              logger.info(f"✓ Updated joystick command: x={gemini_current_x:.2f}, y={gemini_current_y:.2f}")
 
             except Exception as e:
-              logger.error(f"Error calling Gemini API: {e}")
+              logger.error(f"✗ Error calling Gemini API: {e}", exc_info=True)
+          else:
+            logger.warning("Failed to get camera frame")
 
         # Publish joystick messages continuously at 100Hz
         joystick_msg = messaging.new_message('testJoystick')
@@ -267,6 +283,7 @@ Analyze the image and respond with the appropriate movement command."""
         joystick_rk.keep_time()
       else:
         if gemini_current_x != 0.0 or gemini_current_y != 0.0:
+          logger.info("Gemini disabled, resetting joystick to zero")
           gemini_current_x = 0.0
           gemini_current_y = 0.0
           joystick_msg = messaging.new_message('testJoystick')
@@ -361,7 +378,16 @@ async def gemini_control(request: 'web.Request'):
     # Get current status and prompt
     enabled = gemini_is_enabled()
     prompt = gemini_get_prompt()
-    return web.json_response({"enabled": enabled, "prompt": prompt})
+    status_info = {
+      "enabled": enabled,
+      "prompt": prompt,
+      "api_key_set": bool(os.getenv("GEMINI_API_KEY")),
+      "genai_available": genai is not None,
+      "current_x": gemini_current_x,
+      "current_y": gemini_current_y,
+      "last_response": gemini_last_response[:100] if gemini_last_response else "",  # Truncate for display
+    }
+    return web.json_response(status_info)
   else:
     # POST: Toggle or set status
     data = await request.json()
@@ -369,14 +395,18 @@ async def gemini_control(request: 'web.Request'):
 
     if enabled is not None:
       gemini_set_enabled(enabled)
-      logger.info(f"Gemini control {'enabled' if enabled else 'disabled'}")
+      logger.info(f"✓ Gemini control {'ENABLED' if enabled else 'DISABLED'}")
+      if enabled:
+        logger.info("  - Waiting for next camera frame (every 5 seconds)")
+        logger.info(f"  - API key: {'set' if os.getenv('GEMINI_API_KEY') else 'NOT SET'}")
+        logger.info(f"  - GenAI library: {'available' if genai else 'NOT AVAILABLE'}")
       return web.json_response({"status": "ok", "enabled": enabled})
     else:
       # Toggle if no value provided
       current = gemini_is_enabled()
       new_value = not current
       gemini_set_enabled(new_value)
-      logger.info(f"Gemini control toggled to {'enabled' if new_value else 'disabled'}")
+      logger.info(f"✓ Gemini control toggled to {'ENABLED' if new_value else 'DISABLED'}")
       return web.json_response({"status": "ok", "enabled": new_value})
 
 

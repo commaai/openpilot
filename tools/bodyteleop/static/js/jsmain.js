@@ -35,8 +35,10 @@ $("#gemini-toggle").change(function() {
   const toggle = $(this);
   const enabled = toggle.is(':checked');
   geminiEnabled = enabled;
+  $("#gemini-status-text").text(enabled ? "⏳ Enabling..." : "⏳ Disabling...");
   setGeminiStatus(enabled).then(function(data) {
     $("#gemini-status").text(enabled ? "Enabled" : "Disabled");
+    updateGeminiStatus(); // Refresh status display
     if (enabled) {
       // Clear keyboard input when Gemini takes over
       handleKeyX('w', 0);
@@ -51,23 +53,39 @@ $("#gemini-toggle").change(function() {
     // Revert toggle on error
     toggle.prop('checked', !enabled);
     geminiEnabled = false;
+    $("#gemini-status-text").text("✗ Error");
   });
 });
 
-// Load initial Gemini status and prompt
-getGeminiStatus().then(function(data) {
-  const enabled = data.enabled || false;
-  geminiEnabled = enabled;
-  $("#gemini-toggle").prop('checked', enabled);
-  $("#gemini-status").text(enabled ? "Enabled" : "Disabled");
+// Function to update Gemini status display
+function updateGeminiStatus() {
+  getGeminiStatus().then(function(data) {
+    const enabled = data.enabled || false;
+    geminiEnabled = enabled;
+    $("#gemini-toggle").prop('checked', enabled);
+    $("#gemini-status").text(enabled ? "Enabled" : "Disabled");
 
-  // Load prompt if available
-  if (data.prompt) {
-    $("#gemini-prompt").val(data.prompt);
-  }
-}).catch(function(err) {
-  console.error("Error getting Gemini status:", err);
-});
+    // Update status display
+    $("#gemini-status-text").text(enabled ? "✓ Active" : "✗ Inactive");
+    $("#gemini-api-key-status").text(data.api_key_set ? "✓ Set" : "✗ Not Set");
+    $("#gemini-command-status").text(`x=${(data.current_x || 0).toFixed(2)}, y=${(data.current_y || 0).toFixed(2)}`);
+    $("#gemini-response-status").text(data.last_response || "-");
+
+    // Load prompt if available
+    if (data.prompt) {
+      $("#gemini-prompt").val(data.prompt);
+    }
+  }).catch(function(err) {
+    console.error("Error getting Gemini status:", err);
+    $("#gemini-status-text").text("✗ Error");
+  });
+}
+
+// Load initial Gemini status and prompt
+updateGeminiStatus();
+
+// Update status every 2 seconds
+setInterval(updateGeminiStatus, 2000);
 
 // Load prompt separately in case status doesn't include it
 getGeminiPrompt().then(function(data) {

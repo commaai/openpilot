@@ -116,6 +116,19 @@
       </div>
       <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
         <div class="panel row">
+          <div class="col-sm-12">
+            <p style="margin-bottom: 5px;"><strong>Gemini Status:</strong></p>
+            <div id="gemini-status-info" style="font-family: monospace; font-size: 12px; background: #f5f5f5; padding: 10px; border-radius: 4px;">
+              <div>Status: <span id="gemini-status-text">Loading...</span></div>
+              <div>API Key: <span id="gemini-api-key-status">-</span></div>
+              <div>Current Command: <span id="gemini-command-status">x=0.00, y=0.00</span></div>
+              <div>Last Response: <span id="gemini-response-status">-</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
+        <div class="panel row">
           <div class="col-sm-6"><canvas id="chart-ping"></canvas></div>
           <div class="col-sm-6"><canvas id="chart-battery"></canvas></div>
         </div>
