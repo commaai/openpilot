@@ -1,5 +1,6 @@
 import asyncio
 import dataclasses
+import functools
 import json
 import logging
 import os
@@ -264,7 +265,7 @@ async def gemini_loop():
   loop_hz = 100.0
   loop_dt = 1.0 / loop_hz
   last_gemini_call_time = 0.0
-  gemini_call_interval = 5.0  # Minimum time between frames (seconds)
+  gemini_call_interval = 10.0  # Minimum time between frames (seconds)
 
   logger.info("Gemini loop ready, waiting for enable...")
 
@@ -285,7 +286,7 @@ Default behavior (unless overridden by Additional instructions):
 
 Planning quality / nuance requirements:
 - Do NOT output a trivial plan like "all W until 5.0s" unless the scene is extremely open and safe.
-- Prefer SHORT forward bursts (W for 0.2-0.8s) separated by brief reassessment/stop steps (0,0,0,0 for 0.1-0.3s).
+- You do NOT need to use only short forward bursts; longer forward segments are OK when the path is clearly open and safe.
 - Use short turns (A/D 0.1-0.3s) to re-center in corridors/lanes, avoid nearby obstacles, and aim around corners; make these adjustments proactively.
 - If forward motion looks risky/blocked/uncertain, slow down: use stop steps and/or short turns instead of committing to long forward motion.
 - Obstacle avoidance is the top priority: if any obstacle/person/object is close ahead or to the side, DO NOT drive into it. Instead stop, turn away, or back up briefly to create clearance, then proceed.
@@ -321,18 +322,36 @@ plan
 0,0,0,0,4.30
 0,1,0,0,4.50
 0,0,0,0,4.65
-1,0,0,0,4.90
-0,0,0,0,5.00
+1,0,0,0,5.25
+0,0,0,0,5.40
+0,0,0,1,5.60
+0,0,0,0,5.75
+1,0,0,0,6.35
+0,0,0,0,6.50
+0,1,0,0,6.70
+0,0,0,0,6.85
+1,0,0,0,7.45
+0,0,0,0,7.60
+0,0,0,1,7.80
+0,0,0,0,7.95
+1,0,0,0,8.55
+0,0,0,0,8.70
+0,1,0,0,8.90
+0,0,0,0,9.05
+1,0,0,0,9.65
+0,0,0,0,9.80
+1,0,0,0,9.90
+0,0,0,0,10.00
 
 Format: w,a,s,d,t where:
 - w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
 - t is cumulative time in seconds from plan start (not duration)
-- The plan MUST start near t=0: the FIRST line's t should be a small positive value (e.g. 0.2-0.6), not 5.0
-- The plan MUST end at t=5.0: the LAST line's t must be exactly 5.0 (unless no movement needed)
+- The plan MUST start near t=0: the FIRST line's t should be a small positive value (e.g. 0.2-0.6), not 10.0
+- The plan MUST end at t=10.0: the LAST line's t must be exactly 10.0 (unless no movement needed)
 - Times must be strictly increasing each line (cumulative)
-- When movement is needed, output AT LEAST 5 steps (5+ lines after "plan"). Use small increments (e.g. 0.2-1.0s per step) and end exactly at 5.0.
-- Target plan duration: ~5 seconds when movement is needed (use multiple short steps that add up close to 5.0s)
-- Maximum plan duration: 5 seconds (never exceed)
+- When movement is needed, output AT LEAST 5 steps (5+ lines after "plan"). Use small increments (e.g. 0.2-1.0s per step) and end exactly at 10.0.
+- Target plan duration: ~10 seconds when movement is needed (use multiple short steps that add up close to 10.0s)
+- Maximum plan duration: 10 seconds (never exceed)
 - Example: "1,0,0,0,1.0" means W until 1.0s, then "0,0,0,1,1.3" means D until 1.3s total
 - If no movement needed, output: plan\n0,0,0,0,0.1
 
@@ -394,8 +413,21 @@ plan
 
               logger.info("Sending frame to Gemini API...")
               try:
+                # NOTE: The deprecated `google-generativeai` SDK does not expose "thinkingBudget"/thinking controls.
+                # Best we can do for latency is keep output short + deterministic via GenerationConfig knobs.
+                max_out = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "512"))
+                temperature = float(os.getenv("GEMINI_TEMPERATURE", "0.2"))
+                top_p = float(os.getenv("GEMINI_TOP_P", "0.95"))
+                gen_cfg = genai.types.GenerationConfig(
+                  max_output_tokens=max_out,
+                  temperature=temperature,
+                  top_p=top_p,
+                  response_mime_type="text/plain",
+                )
+
                 # Offload the blocking Gemini SDK call to a thread to avoid stalling the event loop.
-                response = await asyncio.to_thread(model.generate_content, [active_prompt, pil_image])
+                call = functools.partial(model.generate_content, [active_prompt, pil_image], generation_config=gen_cfg)
+                response = await asyncio.to_thread(call)
                 response_text = response.text
                 gemini_last_response = response_text
                 gemini_last_summary = extract_gemini_summary(response_text)

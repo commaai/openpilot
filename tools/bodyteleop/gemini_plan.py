@@ -88,7 +88,7 @@ def validate_plan(plan):
   - non-empty
   - each row has at most one of w/a/s/d == 1
   - t strictly increasing
-  - final t <= 5.0 seconds
+  - final t <= 10.0 seconds
   """
   if not plan:
     return False
@@ -101,7 +101,7 @@ def validate_plan(plan):
       return False
     last_t = t
 
-  if last_t > 5.0:
+  if last_t > 10.0:
     return False
 
   return True
