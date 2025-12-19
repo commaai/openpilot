@@ -268,7 +268,7 @@ Format: w,a,s,d,t where:
 
 DO NOT write any text explanations. DO NOT describe the image. Output ONLY the plan lines starting with "plan"."""
 
-  global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y
+  global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y, gemini_plan_id
 
   while True:
     try:
@@ -312,7 +312,6 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
 1,0,0,0,1.0
 0,1,0,0,2.0
 0,0,0,0,2.1"""
-              global gemini_last_response
               gemini_last_response = response_text
               logger.info(f"✓ Mock Gemini response:")
               logger.info(f"{response_text}")
@@ -322,7 +321,6 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
               try:
                 response = model.generate_content([active_prompt, pil_image])
                 response_text = response.text
-                global gemini_last_response
                 gemini_last_response = response_text
 
                 # Print full response in terminal
@@ -335,7 +333,6 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
 
             if plan is not None:
               # Start executing plan
-              global gemini_plan_id
               gemini_plan = plan
               gemini_plan_start_time = time.monotonic()
               gemini_plan_id += 1
