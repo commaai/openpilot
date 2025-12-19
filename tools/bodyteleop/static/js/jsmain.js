@@ -12,6 +12,11 @@ let geminiPlanTimer = null;
 let currentGeminiPlan = null;
 let currentGeminiPlanStartMs = null;
 
+function setPlanExecStatus(text) {
+  const el = document.getElementById("gemini-plan-exec-status");
+  if (el) el.textContent = text;
+}
+
 function stopGeminiPlanExecution() {
   if (geminiPlanTimer !== null) {
     clearInterval(geminiPlanTimer);
@@ -20,6 +25,7 @@ function stopGeminiPlanExecution() {
   currentGeminiPlan = null;
   currentGeminiPlanStartMs = null;
   setGeminiXY(0, 0);
+  setPlanExecStatus("stopped (x=0,y=0)");
 }
 
 function startGeminiPlanExecution(plan) {
@@ -27,6 +33,7 @@ function startGeminiPlanExecution(plan) {
   stopGeminiPlanExecution();
   currentGeminiPlan = plan;
   currentGeminiPlanStartMs = performance.now();
+  setPlanExecStatus(`started\nsteps=${plan.length}\nplanId=${lastGeminiPlanId}`);
 
   geminiPlanTimer = setInterval(() => {
     if (!geminiEnabled || !currentGeminiPlan || currentGeminiPlan.length === 0) {
@@ -38,17 +45,20 @@ function startGeminiPlanExecution(plan) {
 
     // Find current step
     let step = null;
+    let stepIdx = -1;
     for (let i = 0; i < currentGeminiPlan.length; i++) {
       const s = currentGeminiPlan[i];
       const t = s[4];
       if (elapsedS <= t) {
         step = s;
+        stepIdx = i;
         break;
       }
     }
 
     if (step === null) {
       // Finished
+      setPlanExecStatus(`finished\nelapsed=${elapsedS.toFixed(3)}s`);
       stopGeminiPlanExecution();
       return;
     }
@@ -58,6 +68,11 @@ function startGeminiPlanExecution(plan) {
     const y = (d || 0) - (a || 0);
     setGeminiXY(x, y);
     $("#pos-vals").text(`${x},${y}`);
+
+    const endT = _t;
+    setPlanExecStatus(
+      `running\nelapsed=${elapsedS.toFixed(3)}s\nstep=${stepIdx + 1}/${currentGeminiPlan.length} (until ${endT.toFixed(2)}s)\nwasd=${w},${a},${s},${d}\nxy=${x},${y}`
+    );
   }, 50);
 }
 

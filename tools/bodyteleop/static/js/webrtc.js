@@ -4,6 +4,7 @@ import { pingPoints, batteryPoints, chartPing, chartBattery } from "./plots.js";
 export let controlCommandInterval = null;
 export let latencyInterval = null;
 export let lastChannelMessageTime = null;
+export let lastSentJoystick = {x: 0, y: 0, t: 0};
 
 
 export function offerRtcRequest(sdp, type) {
@@ -178,6 +179,11 @@ export function start(pc, dc) {
     const {x, y} = getXY();
     var message = JSON.stringify({type: "testJoystick", data: {axes: [x, y], buttons: [false]}})
     dc.send(message);
+    lastSentJoystick = {x, y, t: new Date().getTime()};
+    const sentEl = document.getElementById("webrtc-joystick-sent");
+    if (sentEl) {
+      sentEl.textContent = `x=${x.toFixed ? x.toFixed(2) : x}, y=${y.toFixed ? y.toFixed(2) : y} @ ${new Date(lastSentJoystick.t).toLocaleTimeString()}`;
+    }
   }
   function checkLatency() {
     const initialTime = new Date().getTime();
