@@ -49,10 +49,8 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, session=Non
 
   headers['User-Agent'] = "openpilot-" + get_version()
 
-  if session is None:
-    session = requests.Session()
-
-  return session.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
+  req = requests if session is None else session
+  return req.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:
