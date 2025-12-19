@@ -11,6 +11,8 @@ let lastGeminiPlanId = null;
 let geminiPlanTimer = null;
 let currentGeminiPlan = null;
 let currentGeminiPlanStartMs = null;
+let lastGeminiTurnDir = 0; // last non-zero turn direction from plan execution (y sign)
+let geminiCounterTurnTimer = null;
 
 function setPlanExecStatus(text) {
   const el = document.getElementById("gemini-plan-exec-status");
@@ -22,10 +24,58 @@ function stopGeminiPlanExecution() {
     clearInterval(geminiPlanTimer);
     geminiPlanTimer = null;
   }
+  if (geminiCounterTurnTimer !== null) {
+    clearTimeout(geminiCounterTurnTimer);
+    geminiCounterTurnTimer = null;
+  }
   currentGeminiPlan = null;
   currentGeminiPlanStartMs = null;
+  lastGeminiTurnDir = 0;
   setGeminiXY(0, 0);
   setPlanExecStatus("stopped (x=0,y=0)");
+}
+
+function finishGeminiPlanExecution() {
+  // Stop the plan timer, then apply a brief counter-turn pulse to fight any residual rotation.
+  // This is a hack/workaround for a body issue where it can slowly rotate after the last turn.
+  if (geminiPlanTimer !== null) {
+    clearInterval(geminiPlanTimer);
+    geminiPlanTimer = null;
+  }
+  currentGeminiPlan = null;
+  currentGeminiPlanStartMs = null;
+
+  if (!geminiEnabled) {
+    // If Gemini is disabled, just zero immediately.
+    lastGeminiTurnDir = 0;
+    setGeminiXY(0, 0);
+    setPlanExecStatus("finished (disabled) (x=0,y=0)");
+    return;
+  }
+
+  const dir = Math.sign(lastGeminiTurnDir || 0);
+  if (dir === 0) {
+    setGeminiXY(0, 0);
+    setPlanExecStatus("finished (x=0,y=0)");
+    return;
+  }
+
+  const counterY = -dir; // opposite turn direction
+  setGeminiXY(0, counterY);
+  $("#pos-vals").text(`0,${counterY}`);
+  setPlanExecStatus(`finished (counter-turn ${counterY > 0 ? "right" : "left"} for 0.1s)`);
+
+  if (geminiCounterTurnTimer !== null) {
+    clearTimeout(geminiCounterTurnTimer);
+    geminiCounterTurnTimer = null;
+  }
+  geminiCounterTurnTimer = setTimeout(() => {
+    geminiCounterTurnTimer = null;
+    lastGeminiTurnDir = 0;
+    setGeminiXY(0, 0);
+    $("#pos-vals").text("0,0");
+    setPlanExecStatus("finished (x=0,y=0)");
+  }, 100);
 }
 
 function startGeminiPlanExecution(plan) {
@@ -38,6 +88,7 @@ function startGeminiPlanExecution(plan) {
   }
   currentGeminiPlan = plan;
   currentGeminiPlanStartMs = performance.now();
+  lastGeminiTurnDir = 0;
   setPlanExecStatus(`started\nsteps=${plan.length}\nplanId=${lastGeminiPlanId}`);
   console.log(`Plan execution started: ${plan.length} steps, start time=${currentGeminiPlanStartMs}`);
 
@@ -65,13 +116,14 @@ function startGeminiPlanExecution(plan) {
     if (step === null) {
       // Finished
       setPlanExecStatus(`finished\nelapsed=${elapsedS.toFixed(3)}s`);
-      stopGeminiPlanExecution();
+      finishGeminiPlanExecution();
       return;
     }
 
     const [w, a, s, d, _t] = step;
     const x = (w || 0) - (s || 0);
     const y = (d || 0) - (a || 0);
+    if (y !== 0) lastGeminiTurnDir = y;
     setGeminiXY(x, y);
     $("#pos-vals").text(`${x},${y}`);
 
