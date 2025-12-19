@@ -201,13 +201,14 @@ async def gemini_loop():
 
   logger.info("Configuring Gemini API...")
   genai.configure(api_key=api_key)
-  
-  # Try flash models only (cheapest)
-  model_names = ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-flash-001']
+
+  # Try known working flash models first (cheapest), then discover dynamically
+  preferred_models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
   model = None
   model_name = None
-  
-  for name in model_names:
+
+  # Try preferred models first
+  for name in preferred_models:
     try:
       model = genai.GenerativeModel(name)
       model_name = name
@@ -216,9 +217,46 @@ async def gemini_loop():
     except Exception as e:
       logger.debug(f"Failed to load {name}: {e}")
       continue
-  
+
+  # If preferred models don't work, discover dynamically
   if model is None:
-    logger.error("Failed to initialize any Gemini Flash model. Available models may have changed.")
+    try:
+      models = list(genai.list_models())
+      logger.info(f"Discovering models... Found {len(models)} total models")
+
+      for model_obj in models:
+        name = model_obj.name
+        methods = getattr(model_obj, 'supported_generation_methods', [])
+        # Model names come as "models/gemini-2.5-flash" format
+        if 'flash' in name.lower() and ('generateContent' in methods or hasattr(model_obj, 'generate_content')):
+          # Extract just the model name part (remove 'models/' prefix)
+          if '/' in name:
+            candidate_name = name.split('/')[-1]
+          else:
+            candidate_name = name
+
+          try:
+            model = genai.GenerativeModel(candidate_name)
+            model_name = candidate_name
+            logger.info(f"✓ Gemini Flash model initialized: {candidate_name} (discovered)")
+            break
+          except Exception as e:
+            logger.debug(f"Failed to use discovered model {candidate_name}: {e}")
+            continue
+
+      if not model_name:
+        logger.error("No flash model found. Available models with generateContent:")
+        for model_obj in models:
+          methods = getattr(model_obj, 'supported_generation_methods', [])
+          if 'generateContent' in methods or hasattr(model_obj, 'generate_content'):
+            logger.error(f"  - {model_obj.name}")
+        return
+    except Exception as e:
+      logger.error(f"Error discovering models: {e}", exc_info=True)
+      return
+
+  if model is None:
+    logger.error("Failed to initialize any Gemini Flash model")
     return
 
   joystick_rk = Ratekeeper(100, print_delay_threshold=None)
