@@ -12,7 +12,7 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
-from openpilot.panda.board.body import PandaBody
+import cereal.messaging as messaging
 
 try:
   import google.generativeai as genai
@@ -116,15 +116,19 @@ def parse_gemini_response(response_text: str) -> dict:
   }
 
 
-def apply_motor_control(panda: PandaBody, commands: dict, speed: int = 50):
-  """Apply motor control based on commands
+def commands_to_joystick_axes(commands: dict) -> tuple[float, float]:
+  """Convert movement commands to joystick axes format
 
-  W = forward: both motors forward
-  S = backward: both motors backward
-  A = left: left motor backward, right motor forward (rotate left)
-  D = right: left motor forward, right motor backward (rotate right)
-  WA = forward + left: left motor slower, right motor faster
-  SD = backward + right: left motor faster, right motor slower
+  Joystick axes format:
+  - axes[0] (x): forward/backward (-1 to 1, where 1 is forward, -1 is backward)
+  - axes[1] (y): left/right (-1 to 1, where 1 is right, -1 is left)
+
+  W = forward: x = 1.0
+  S = backward: x = -1.0
+  A = left: y = -1.0
+  D = right: y = 1.0
+  WA = forward + left: x = 1.0, y = -1.0
+  SD = backward + right: x = -1.0, y = 1.0
   """
   forward = commands.get("forward", False)
   backward = commands.get("backward", False)
@@ -141,39 +145,21 @@ def apply_motor_control(panda: PandaBody, commands: dict, speed: int = 50):
     cloudlog.warning("Invalid command: both left and right")
     left = right = False
 
-  # Calculate motor speeds
-  left_speed = 0
-  right_speed = 0
+  # Calculate joystick axes
+  x = 0.0  # forward/backward
+  y = 0.0  # left/right
 
-  # Base forward/backward movement
   if forward:
-    left_speed += speed
-    right_speed += speed
+    x = 1.0
   elif backward:
-    left_speed -= speed
-    right_speed -= speed
+    x = -1.0
 
-  # Rotation adjustments (applied on top of forward/backward)
   if left:
-    # Turn left: reduce left motor, increase right motor
-    left_speed -= speed * 0.5
-    right_speed += speed * 0.5
+    y = -1.0
   elif right:
-    # Turn right: increase left motor, reduce right motor
-    left_speed += speed * 0.5
-    right_speed -= speed * 0.5
+    y = 1.0
 
-  # Clamp speeds
-  left_speed = max(-100, min(100, left_speed))
-  right_speed = max(-100, min(100, right_speed))
-
-  # Apply motor control
-  try:
-    panda.motor_set_speed(PandaBody.MOTOR_LEFT, int(left_speed))
-    panda.motor_set_speed(PandaBody.MOTOR_RIGHT, int(right_speed))
-    cloudlog.info(f"Motor control: left={left_speed}, right={right_speed}")
-  except Exception as e:
-    cloudlog.error(f"Error setting motor speeds: {e}")
+  return (x, y)
 
 
 def geminid_thread():
@@ -193,18 +179,20 @@ def geminid_thread():
   # Use the cheapest model: gemini-1.5-flash
   model = genai.GenerativeModel('gemini-1.5-flash')
 
-  # Connect to Panda
-  try:
-    panda = PandaBody()
-    cloudlog.info("Connected to PandaBody")
-  except Exception as e:
-    cloudlog.error(f"Failed to connect to PandaBody: {e}")
-    return
-
-  # Camera connection will be done per-frame
+  # Set up messaging to publish joystick commands
+  pm = messaging.PubMaster(['testJoystick'])
   params = Params()
 
-  rk = Ratekeeper(0.2, print_delay_threshold=None)  # 5 seconds = 0.2 Hz
+  # Ratekeeper for joystick message publishing (100Hz like joystick_control)
+  joystick_rk = Ratekeeper(100, print_delay_threshold=None)
+
+  # Current joystick command (updated by Gemini, published continuously)
+  current_joystick_x = 0.0
+  current_joystick_y = 0.0
+
+  # Track last Gemini API call time
+  last_gemini_call_time = 0.0
+  gemini_call_interval = 5.0  # seconds
 
   prompt = """You are controlling a robot with two motors in a side-by-side configuration.
 Based on the camera image, determine what movement actions to take.
@@ -235,43 +223,62 @@ Analyze the image and respond with the appropriate movement command."""
     try:
       # Check if Gemini control is enabled
       gemini_enabled = params.get_bool("GeminiControlEnabled")
-      if not gemini_enabled:
+
+      if gemini_enabled:
+        # Check if it's time to call Gemini API (every 5 seconds)
+        current_time = time.monotonic()
+        if current_time - last_gemini_call_time >= gemini_call_interval:
+          last_gemini_call_time = current_time
+
+          # Get camera frame
+          frame = get_camera_frame()
+          if frame is not None:
+            # Convert to PIL Image
+            pil_image = image_to_pil(frame)
+
+            # Send to Gemini
+            cloudlog.info("Sending frame to Gemini...")
+            try:
+              response = model.generate_content([
+                prompt,
+                pil_image
+              ])
+
+              response_text = response.text
+              cloudlog.info(f"Gemini response: {response_text}")
+
+              # Parse response
+              commands = parse_gemini_response(response_text)
+
+              # Convert to joystick axes
+              current_joystick_x, current_joystick_y = commands_to_joystick_axes(commands)
+              cloudlog.info(f"Updated joystick command: x={current_joystick_x:.2f}, y={current_joystick_y:.2f}")
+
+            except Exception as e:
+              cloudlog.error(f"Error calling Gemini API: {e}")
+
+        # Publish joystick messages continuously at 100Hz
+        joystick_msg = messaging.new_message('testJoystick')
+        joystick_msg.valid = True
+        joystick_msg.testJoystick.axes = [current_joystick_x, current_joystick_y]
+        joystick_msg.testJoystick.buttons = [False]
+        pm.send('testJoystick', joystick_msg)
+
+        joystick_rk.keep_time()
+      else:
+        # When disabled, send zero commands and reset
+        if current_joystick_x != 0.0 or current_joystick_y != 0.0:
+          current_joystick_x = 0.0
+          current_joystick_y = 0.0
+          joystick_msg = messaging.new_message('testJoystick')
+          joystick_msg.valid = True
+          joystick_msg.testJoystick.axes = [0.0, 0.0]
+          joystick_msg.testJoystick.buttons = [False]
+          pm.send('testJoystick', joystick_msg)
+
         cloudlog.debug("Gemini control disabled, waiting...")
-        time.sleep(1)
-        rk.keep_time()
-        continue
-
-      # Get camera frame
-      frame = get_camera_frame()
-      if frame is None:
-        cloudlog.warning("Failed to get camera frame, skipping this cycle")
-        rk.keep_time()
-        continue
-
-      # Convert to PIL Image
-      pil_image = image_to_pil(frame)
-
-      # Send to Gemini
-      cloudlog.info("Sending frame to Gemini...")
-      try:
-        response = model.generate_content([
-          prompt,
-          pil_image
-        ])
-
-        response_text = response.text
-        cloudlog.info(f"Gemini response: {response_text}")
-
-        # Parse response
-        commands = parse_gemini_response(response_text)
-
-        # Apply motor control
-        apply_motor_control(panda, commands, speed=50)
-
-      except Exception as e:
-        cloudlog.error(f"Error calling Gemini API: {e}")
-
-      rk.keep_time()
+        time.sleep(0.1)
+        joystick_rk.keep_time()
 
     except KeyboardInterrupt:
       cloudlog.info("Shutting down geminid")
