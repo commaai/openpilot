@@ -60,6 +60,7 @@ class PrimeState:
 
       t4 = time.monotonic()
       response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token)
+      return
       t5 = time.monotonic()
       print(f"[PRIME_STATE] api_get: {(t5-t4)*1000:.2f}ms")
 

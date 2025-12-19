@@ -70,6 +70,7 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
   headers['User-Agent'] = "openpilot-" + get_version()
 
   # Use session with connection pooling to reuse connections and avoid DNS/SSL setup
+  requests.request
   session = _get_session()
   return session.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
 
