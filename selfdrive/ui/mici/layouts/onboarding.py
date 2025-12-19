@@ -173,7 +173,7 @@ class TrainingGuideDMTutorial(Widget):
 
     t0 = time.monotonic()
     if device.awake:
-      ui_state.params.put_bool("IsDriverViewEnabled", True)
+      ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
     t1 = time.monotonic()
     print(f"TrainingGuideDMTutorial._update_state: device.awake check + params.put took {(t1 - t0) * 1000:.2f}ms")
 
