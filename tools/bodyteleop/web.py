@@ -34,16 +34,14 @@ logging.basicConfig(level=logging.INFO)
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 WEBRTCD_HOST, WEBRTCD_PORT = "localhost", 5001
 
-# Gemini control state
+# Gemini control state (in-memory only, no file persistence)
 gemini_pm = None
 gemini_current_x = 0.0
 gemini_current_y = 0.0
 gemini_task = None
 gemini_last_response = ""
-
-# File paths for Gemini state (avoiding params)
-GEMINI_ENABLED_FILE = os.path.join(TELEOPDIR, ".gemini_enabled")
-GEMINI_PROMPT_FILE = os.path.join(TELEOPDIR, ".gemini_prompt")
+gemini_enabled = False  # In-memory state, starts disabled
+gemini_prompt = ""  # In-memory prompt
 
 
 ## GEMINI UTILS
@@ -149,46 +147,34 @@ def commands_to_joystick_axes(commands: dict) -> tuple[float, float]:
 
 
 def gemini_is_enabled() -> bool:
-  """Check if Gemini is enabled via file"""
-  return os.path.exists(GEMINI_ENABLED_FILE)
+  """Check if Gemini is enabled (in-memory state)"""
+  global gemini_enabled
+  return gemini_enabled
 
 
 def gemini_get_prompt() -> str:
-  """Get Gemini prompt from file"""
-  if os.path.exists(GEMINI_PROMPT_FILE):
-    try:
-      with open(GEMINI_PROMPT_FILE, 'r', encoding='utf-8') as f:
-        return f.read()
-    except Exception:
-      return ""
-  return ""
+  """Get Gemini prompt (in-memory state)"""
+  global gemini_prompt
+  return gemini_prompt
 
 
 def gemini_set_enabled(enabled: bool):
-  """Set Gemini enabled state via file"""
-  if enabled:
-    with open(GEMINI_ENABLED_FILE, 'w') as f:
-      f.write("1")
-  else:
-    if os.path.exists(GEMINI_ENABLED_FILE):
-      os.remove(GEMINI_ENABLED_FILE)
+  """Set Gemini enabled state (in-memory only)"""
+  global gemini_enabled
+  gemini_enabled = enabled
 
 
 def gemini_set_prompt(prompt: str):
-  """Set Gemini prompt via file"""
-  if prompt:
-    with open(GEMINI_PROMPT_FILE, 'w', encoding='utf-8') as f:
-      f.write(prompt)
-  else:
-    if os.path.exists(GEMINI_PROMPT_FILE):
-      os.remove(GEMINI_PROMPT_FILE)
+  """Set Gemini prompt (in-memory only)"""
+  global gemini_prompt
+  gemini_prompt = prompt
 
 
 async def gemini_loop():
   """Background task for Gemini control"""
   global gemini_current_x, gemini_current_y, gemini_last_response
 
-  logger.info("Gemini loop starting...")
+  logger.info("Gemini loop starting (will wait for enable)...")
 
   try:
     if genai is None:
@@ -458,7 +444,7 @@ async def gemini_control(request: 'web.Request'):
       gemini_set_enabled(enabled)
       logger.info(f"✓ Gemini control {'ENABLED' if enabled else 'DISABLED'}")
       if enabled:
-        logger.info("  - Waiting for next camera frame (every 5 seconds)")
+        logger.info("  - Waiting for next camera frame (every 10 seconds)")
         logger.info(f"  - API key: {'set' if os.getenv('GEMINI_API_KEY') else 'NOT SET'}")
         logger.info(f"  - GenAI library: {'available' if genai else 'NOT AVAILABLE'}")
       return web.json_response({"status": "ok", "enabled": enabled})
@@ -504,6 +490,10 @@ def main():
   global gemini_pm, gemini_task
 
   try:
+    # Ensure Gemini starts disabled by default
+    # Only enable if file exists AND contains "1"
+    # (File will be created when user enables via UI)
+
     # Enable joystick debug mode
     from openpilot.common.params import Params
     Params().put_bool("JoystickDebugMode", True)
@@ -543,7 +533,10 @@ def main():
     app.on_startup.append(startup_background_tasks)
 
     logger.info("Starting web server on https://0.0.0.0:5000")
+    logger.info("Web server ready - Gemini will start disabled by default")
     web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
+  except KeyboardInterrupt:
+    logger.info("Web server shutting down...")
   except Exception as e:
     logger.exception(f"Fatal error starting web server: {e}")
     raise
