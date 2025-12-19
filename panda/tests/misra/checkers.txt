@@ -1,0 +1,456 @@
+Cppcheck checkers list from test_misra.sh:
+
+
+
+
+
+TEST variant options:
+--enable=all --disable=unusedFunction --addon=misra -DSTM32H7 -DSTM32H725xx -I /board/stm32h7/inc/ /board/main.c
+
+
+Critical errors
+---------------
+No critical errors encountered.
+Note: There might still have been non-critical bailouts which might lead to false negatives.
+
+
+Open source checkers
+--------------------
+Yes  Check64BitPortability::pointerassignment
+Yes  CheckAssert::assertWithSideEffects
+Yes  CheckAutoVariables::assignFunctionArg
+Yes  CheckAutoVariables::autoVariables
+Yes  CheckAutoVariables::checkVarLifetime
+No   CheckBool::checkAssignBoolToFloat                         require:style,c++
+Yes  CheckBool::checkAssignBoolToPointer
+No   CheckBool::checkBitwiseOnBoolean                          require:style,inconclusive
+Yes  CheckBool::checkComparisonOfBoolExpressionWithInt
+No   CheckBool::checkComparisonOfBoolWithBool                  require:style,c++
+No   CheckBool::checkComparisonOfBoolWithInt                   require:warning,c++
+No   CheckBool::checkComparisonOfFuncReturningBool             require:style,c++
+Yes  CheckBool::checkIncrementBoolean
+Yes  CheckBool::pointerArithBool
+Yes  CheckBool::returnValueOfFunctionReturningBool
+No   CheckBoost::checkBoostForeachModification
+Yes  CheckBufferOverrun::analyseWholeProgram
+Yes  CheckBufferOverrun::argumentSize
+Yes  CheckBufferOverrun::arrayIndex
+Yes  CheckBufferOverrun::arrayIndexThenCheck
+Yes  CheckBufferOverrun::bufferOverflow
+Yes  CheckBufferOverrun::negativeArraySize
+Yes  CheckBufferOverrun::objectIndex
+Yes  CheckBufferOverrun::pointerArithmetic
+No   CheckBufferOverrun::stringNotZeroTerminated               require:warning,inconclusive
+Yes  CheckClass::analyseWholeProgram
+No   CheckClass::checkConst                                    require:style,inconclusive
+No   CheckClass::checkConstructors                             require:style,warning
+No   CheckClass::checkCopyConstructors                         require:warning
+No   CheckClass::checkDuplInheritedMembers                     require:warning
+No   CheckClass::checkExplicitConstructors                     require:style
+No   CheckClass::checkMemset
+No   CheckClass::checkMissingOverride                          require:style,c++03
+No   CheckClass::checkReturnByReference                        require:performance
+No   CheckClass::checkSelfInitialization
+No   CheckClass::checkThisUseAfterFree                         require:warning
+No   CheckClass::checkUnsafeClassRefMember                     require:warning,safeChecks
+No   CheckClass::checkUselessOverride                          require:style
+No   CheckClass::checkVirtualFunctionCallInConstructor         require:warning
+No   CheckClass::initializationListUsage                       require:performance
+No   CheckClass::initializerListOrder                          require:style,inconclusive
+No   CheckClass::operatorEqRetRefThis                          require:style
+No   CheckClass::operatorEqToSelf                              require:warning
+No   CheckClass::privateFunctions                              require:style
+No   CheckClass::thisSubtraction                               require:warning
+No   CheckClass::virtualDestructor
+Yes  CheckCondition::alwaysTrueFalse
+Yes  CheckCondition::assignIf
+Yes  CheckCondition::checkAssignmentInCondition
+Yes  CheckCondition::checkBadBitmaskCheck
+Yes  CheckCondition::checkCompareValueOutOfTypeRange
+Yes  CheckCondition::checkDuplicateConditionalAssign
+Yes  CheckCondition::checkIncorrectLogicOperator
+Yes  CheckCondition::checkInvalidTestForOverflow
+Yes  CheckCondition::checkModuloAlwaysTrueFalse
+Yes  CheckCondition::checkPointerAdditionResultNotNull
+Yes  CheckCondition::clarifyCondition
+Yes  CheckCondition::comparison
+Yes  CheckCondition::duplicateCondition
+Yes  CheckCondition::multiCondition
+Yes  CheckCondition::multiCondition2
+No   CheckExceptionSafety::checkCatchExceptionByValue          require:style
+No   CheckExceptionSafety::checkRethrowCopy                    require:style
+No   CheckExceptionSafety::deallocThrow                        require:warning
+No   CheckExceptionSafety::destructors                         require:warning
+No   CheckExceptionSafety::nothrowThrows
+No   CheckExceptionSafety::rethrowNoCurrentException
+No   CheckExceptionSafety::unhandledExceptionSpecification     require:style,inconclusive
+Yes  CheckFunctions::checkIgnoredReturnValue
+Yes  CheckFunctions::checkMathFunctions
+Yes  CheckFunctions::checkMissingReturn
+Yes  CheckFunctions::checkProhibitedFunctions
+Yes  CheckFunctions::invalidFunctionUsage
+Yes  CheckFunctions::memsetInvalid2ndParam
+Yes  CheckFunctions::memsetZeroBytes
+No   CheckFunctions::returnLocalStdMove                        require:performance,c++11
+Yes  CheckFunctions::useStandardLibrary
+No   CheckIO::checkCoutCerrMisusage                            require:c
+Yes  CheckIO::checkFileUsage
+Yes  CheckIO::checkWrongPrintfScanfArguments
+Yes  CheckIO::invalidScanf
+Yes  CheckLeakAutoVar::check
+No   CheckMemoryLeakInClass::check
+Yes  CheckMemoryLeakInFunction::checkReallocUsage
+Yes  CheckMemoryLeakNoVar::check
+No   CheckMemoryLeakNoVar::checkForUnsafeArgAlloc
+Yes  CheckMemoryLeakStructMember::check
+Yes  CheckNullPointer::analyseWholeProgram
+Yes  CheckNullPointer::arithmetic
+Yes  CheckNullPointer::nullConstantDereference
+Yes  CheckNullPointer::nullPointer
+No   CheckOther::checkAccessOfMovedVariable                    require:c++11,warning
+Yes  CheckOther::checkCastIntToCharAndBack
+Yes  CheckOther::checkCharVariable
+Yes  CheckOther::checkComparePointers
+Yes  CheckOther::checkComparisonFunctionIsAlwaysTrueOrFalse
+Yes  CheckOther::checkConstPointer
+No   CheckOther::checkConstVariable                            require:style,c++
+No   CheckOther::checkDuplicateBranch                          require:style,inconclusive
+Yes  CheckOther::checkDuplicateExpression
+Yes  CheckOther::checkEvaluationOrder
+Yes  CheckOther::checkFuncArgNamesDifferent
+No   CheckOther::checkIncompleteArrayFill                      require:warning,portability,inconclusive
+Yes  CheckOther::checkIncompleteStatement
+No   CheckOther::checkInterlockedDecrement                     require:windows-platform
+Yes  CheckOther::checkInvalidFree
+Yes  CheckOther::checkKnownArgument
+Yes  CheckOther::checkKnownPointerToBool
+No   CheckOther::checkMisusedScopedObject                      require:style,c++
+Yes  CheckOther::checkModuloOfOne
+Yes  CheckOther::checkNanInArithmeticExpression
+Yes  CheckOther::checkNegativeBitwiseShift
+Yes  CheckOther::checkOverlappingWrite
+No   CheckOther::checkPassByReference                          require:performance,c++
+Yes  CheckOther::checkRedundantAssignment
+No   CheckOther::checkRedundantCopy                            require:c++,performance,inconclusive
+Yes  CheckOther::checkRedundantPointerOp
+Yes  CheckOther::checkShadowVariables
+Yes  CheckOther::checkSignOfUnsignedVariable
+No   CheckOther::checkSuspiciousCaseInSwitch                   require:warning,inconclusive
+No   CheckOther::checkSuspiciousSemicolon                      require:warning,inconclusive
+Yes  CheckOther::checkUnreachableCode
+Yes  CheckOther::checkUnusedLabel
+Yes  CheckOther::checkVarFuncNullUB
+Yes  CheckOther::checkVariableScope
+Yes  CheckOther::checkZeroDivision
+Yes  CheckOther::clarifyCalculation
+Yes  CheckOther::clarifyStatement
+Yes  CheckOther::invalidPointerCast
+Yes  CheckOther::redundantBitwiseOperationInSwitch
+Yes  CheckOther::suspiciousFloatingPointCast
+No   CheckOther::warningOldStylePointerCast                    require:style,c++
+No   CheckPostfixOperator::postfixOperator                     require:performance
+Yes  CheckSizeof::checkSizeofForArrayParameter
+Yes  CheckSizeof::checkSizeofForNumericParameter
+Yes  CheckSizeof::checkSizeofForPointerSize
+Yes  CheckSizeof::sizeofCalculation
+Yes  CheckSizeof::sizeofFunction
+Yes  CheckSizeof::sizeofVoid
+Yes  CheckSizeof::sizeofsizeof
+No   CheckSizeof::suspiciousSizeofCalculation                  require:warning,inconclusive
+No   CheckStl::checkDereferenceInvalidIterator                 require:warning
+No   CheckStl::checkDereferenceInvalidIterator2
+No   CheckStl::checkFindInsert                                 require:performance
+No   CheckStl::checkMutexes                                    require:warning
+No   CheckStl::erase
+No   CheckStl::eraseIteratorOutOfBounds
+No   CheckStl::if_find                                         require:warning,performance
+No   CheckStl::invalidContainer
+No   CheckStl::iterators
+No   CheckStl::knownEmptyContainer                             require:style
+No   CheckStl::misMatchingContainerIterator
+No   CheckStl::misMatchingContainers
+No   CheckStl::missingComparison                               require:warning
+No   CheckStl::negativeIndex
+No   CheckStl::outOfBounds
+No   CheckStl::outOfBoundsIndexExpression
+No   CheckStl::redundantCondition                              require:style
+No   CheckStl::size                                            require:performance,c++03
+No   CheckStl::stlBoundaries
+No   CheckStl::stlOutOfBounds
+No   CheckStl::string_c_str
+No   CheckStl::useStlAlgorithm                                 require:style
+No   CheckStl::uselessCalls                                    require:performance,warning
+Yes  CheckString::checkAlwaysTrueOrFalseStringCompare
+Yes  CheckString::checkIncorrectStringCompare
+Yes  CheckString::checkSuspiciousStringCompare
+Yes  CheckString::overlappingStrcmp
+Yes  CheckString::sprintfOverlappingData
+Yes  CheckString::strPlusChar
+Yes  CheckString::stringLiteralWrite
+Yes  CheckType::checkFloatToIntegerOverflow
+Yes  CheckType::checkIntegerOverflow
+Yes  CheckType::checkLongCast
+Yes  CheckType::checkSignConversion
+Yes  CheckType::checkTooBigBitwiseShift
+Yes  CheckUninitVar::check
+Yes  CheckUninitVar::valueFlowUninit
+No   CheckUnusedFunctions::check                               require:unusedFunction
+Yes  CheckUnusedVar::checkFunctionVariableUsage
+Yes  CheckUnusedVar::checkStructMemberUsage
+Yes  CheckVaarg::va_list_usage
+Yes  CheckVaarg::va_start_argument
+
+
+Premium checkers
+----------------
+Not available, Cppcheck Premium is not used
+
+
+Autosar
+-------
+Not available, Cppcheck Premium is not used
+
+
+Cert C
+------
+Not available, Cppcheck Premium is not used
+
+
+Cert C++
+--------
+Not available, Cppcheck Premium is not used
+
+
+Misra C 2012
+------------
+No   Misra C 2012: Dir 1.1
+No   Misra C 2012: Dir 2.1
+No   Misra C 2012: Dir 3.1
+No   Misra C 2012: Dir 4.1
+No   Misra C 2012: Dir 4.2
+No   Misra C 2012: Dir 4.3
+No   Misra C 2012: Dir 4.4
+No   Misra C 2012: Dir 4.5
+No   Misra C 2012: Dir 4.6    amendment:3
+No   Misra C 2012: Dir 4.7
+No   Misra C 2012: Dir 4.8
+No   Misra C 2012: Dir 4.9    amendment:3
+No   Misra C 2012: Dir 4.10
+No   Misra C 2012: Dir 4.11   amendment:3
+No   Misra C 2012: Dir 4.12
+No   Misra C 2012: Dir 4.13
+No   Misra C 2012: Dir 4.14   amendment:2
+No   Misra C 2012: Dir 4.15   amendment:3
+No   Misra C 2012: Dir 5.1    amendment:4
+No   Misra C 2012: Dir 5.2    amendment:4
+No   Misra C 2012: Dir 5.3    amendment:4
+Yes  Misra C 2012: 1.1
+Yes  Misra C 2012: 1.2
+Yes  Misra C 2012: 1.3
+Yes  Misra C 2012: 1.4        amendment:2
+No   Misra C 2012: 1.5        amendment:3 require:premium
+Yes  Misra C 2012: 2.1
+Yes  Misra C 2012: 2.2
+Yes  Misra C 2012: 2.3
+Yes  Misra C 2012: 2.4
+Yes  Misra C 2012: 2.5
+Yes  Misra C 2012: 2.6
+Yes  Misra C 2012: 2.7
+Yes  Misra C 2012: 2.8
+Yes  Misra C 2012: 3.1
+Yes  Misra C 2012: 3.2
+Yes  Misra C 2012: 4.1
+Yes  Misra C 2012: 4.2
+Yes  Misra C 2012: 5.1
+Yes  Misra C 2012: 5.2
+Yes  Misra C 2012: 5.3
+Yes  Misra C 2012: 5.4
+Yes  Misra C 2012: 5.5
+Yes  Misra C 2012: 5.6
+Yes  Misra C 2012: 5.7
+Yes  Misra C 2012: 5.8
+Yes  Misra C 2012: 5.9
+Yes  Misra C 2012: 6.1
+Yes  Misra C 2012: 6.2
+No   Misra C 2012: 6.3
+Yes  Misra C 2012: 7.1
+Yes  Misra C 2012: 7.2
+Yes  Misra C 2012: 7.3
+Yes  Misra C 2012: 7.4
+No   Misra C 2012: 7.5
+No   Misra C 2012: 7.6
+Yes  Misra C 2012: 8.1
+Yes  Misra C 2012: 8.2
+No   Misra C 2012: 8.3
+Yes  Misra C 2012: 8.4
+Yes  Misra C 2012: 8.5
+Yes  Misra C 2012: 8.6
+Yes  Misra C 2012: 8.7
+Yes  Misra C 2012: 8.8
+Yes  Misra C 2012: 8.9
+Yes  Misra C 2012: 8.10
+Yes  Misra C 2012: 8.11
+Yes  Misra C 2012: 8.12
+Yes  Misra C 2012: 8.13
+Yes  Misra C 2012: 8.14
+No   Misra C 2012: 8.15
+No   Misra C 2012: 8.16
+No   Misra C 2012: 8.17
+Yes  Misra C 2012: 9.1
+Yes  Misra C 2012: 9.2
+Yes  Misra C 2012: 9.3
+Yes  Misra C 2012: 9.4
+Yes  Misra C 2012: 9.5
+No   Misra C 2012: 9.6
+No   Misra C 2012: 9.7
+Yes  Misra C 2012: 10.1
+Yes  Misra C 2012: 10.2
+Yes  Misra C 2012: 10.3
+Yes  Misra C 2012: 10.4
+Yes  Misra C 2012: 10.5
+Yes  Misra C 2012: 10.6
+Yes  Misra C 2012: 10.7
+Yes  Misra C 2012: 10.8
+Yes  Misra C 2012: 11.1
+Yes  Misra C 2012: 11.2
+Yes  Misra C 2012: 11.3
+Yes  Misra C 2012: 11.4
+Yes  Misra C 2012: 11.5
+Yes  Misra C 2012: 11.6
+Yes  Misra C 2012: 11.7
+Yes  Misra C 2012: 11.8
+Yes  Misra C 2012: 11.9
+No   Misra C 2012: 11.10
+Yes  Misra C 2012: 12.1
+Yes  Misra C 2012: 12.2
+Yes  Misra C 2012: 12.3
+Yes  Misra C 2012: 12.4
+Yes  Misra C 2012: 12.5       amendment:1
+No   Misra C 2012: 12.6       amendment:4 require:premium
+Yes  Misra C 2012: 13.1
+No   Misra C 2012: 13.2
+Yes  Misra C 2012: 13.3
+Yes  Misra C 2012: 13.4
+Yes  Misra C 2012: 13.5
+Yes  Misra C 2012: 13.6
+Yes  Misra C 2012: 14.1
+Yes  Misra C 2012: 14.2
+Yes  Misra C 2012: 14.3
+Yes  Misra C 2012: 14.4
+Yes  Misra C 2012: 15.1
+Yes  Misra C 2012: 15.2
+Yes  Misra C 2012: 15.3
+Yes  Misra C 2012: 15.4
+Yes  Misra C 2012: 15.5
+Yes  Misra C 2012: 15.6
+Yes  Misra C 2012: 15.7
+Yes  Misra C 2012: 16.1
+Yes  Misra C 2012: 16.2
+Yes  Misra C 2012: 16.3
+Yes  Misra C 2012: 16.4
+Yes  Misra C 2012: 16.5
+Yes  Misra C 2012: 16.6
+Yes  Misra C 2012: 16.7
+Yes  Misra C 2012: 17.1
+Yes  Misra C 2012: 17.2
+Yes  Misra C 2012: 17.3
+No   Misra C 2012: 17.4
+Yes  Misra C 2012: 17.5
+Yes  Misra C 2012: 17.6
+Yes  Misra C 2012: 17.7
+Yes  Misra C 2012: 17.8
+No   Misra C 2012: 17.9
+No   Misra C 2012: 17.10
+No   Misra C 2012: 17.11
+No   Misra C 2012: 17.12
+No   Misra C 2012: 17.13
+Yes  Misra C 2012: 18.1
+Yes  Misra C 2012: 18.2
+Yes  Misra C 2012: 18.3
+Yes  Misra C 2012: 18.4
+Yes  Misra C 2012: 18.5
+Yes  Misra C 2012: 18.6
+Yes  Misra C 2012: 18.7
+Yes  Misra C 2012: 18.8
+No   Misra C 2012: 18.9
+No   Misra C 2012: 18.10
+Yes  Misra C 2012: 19.1
+Yes  Misra C 2012: 19.2
+Yes  Misra C 2012: 20.1
+Yes  Misra C 2012: 20.2
+Yes  Misra C 2012: 20.3
+Yes  Misra C 2012: 20.4
+Yes  Misra C 2012: 20.5
+Yes  Misra C 2012: 20.6
+Yes  Misra C 2012: 20.7
+Yes  Misra C 2012: 20.8
+Yes  Misra C 2012: 20.9
+Yes  Misra C 2012: 20.10
+Yes  Misra C 2012: 20.11
+Yes  Misra C 2012: 20.12
+Yes  Misra C 2012: 20.13
+Yes  Misra C 2012: 20.14
+Yes  Misra C 2012: 21.1
+Yes  Misra C 2012: 21.2
+Yes  Misra C 2012: 21.3
+Yes  Misra C 2012: 21.4
+Yes  Misra C 2012: 21.5
+Yes  Misra C 2012: 21.6
+Yes  Misra C 2012: 21.7
+Yes  Misra C 2012: 21.8
+Yes  Misra C 2012: 21.9
+Yes  Misra C 2012: 21.10
+Yes  Misra C 2012: 21.11
+Yes  Misra C 2012: 21.12
+Yes  Misra C 2012: 21.13      amendment:1
+Yes  Misra C 2012: 21.14      amendment:1
+Yes  Misra C 2012: 21.15      amendment:1
+Yes  Misra C 2012: 21.16      amendment:1
+Yes  Misra C 2012: 21.17      amendment:1
+Yes  Misra C 2012: 21.18      amendment:1
+Yes  Misra C 2012: 21.19      amendment:1
+Yes  Misra C 2012: 21.20      amendment:1
+Yes  Misra C 2012: 21.21      amendment:3
+No   Misra C 2012: 21.22      amendment:3 require:premium
+No   Misra C 2012: 21.23      amendment:3 require:premium
+No   Misra C 2012: 21.24      amendment:3 require:premium
+No   Misra C 2012: 21.25      amendment:4 require:premium
+No   Misra C 2012: 21.26      amendment:4 require:premium
+Yes  Misra C 2012: 22.1
+Yes  Misra C 2012: 22.2
+Yes  Misra C 2012: 22.3
+Yes  Misra C 2012: 22.4
+Yes  Misra C 2012: 22.5
+Yes  Misra C 2012: 22.6
+Yes  Misra C 2012: 22.7       amendment:1
+Yes  Misra C 2012: 22.8       amendment:1
+Yes  Misra C 2012: 22.9       amendment:1
+Yes  Misra C 2012: 22.10      amendment:1
+No   Misra C 2012: 22.11      amendment:4 require:premium
+No   Misra C 2012: 22.12      amendment:4 require:premium
+No   Misra C 2012: 22.13      amendment:4 require:premium
+No   Misra C 2012: 22.14      amendment:4 require:premium
+No   Misra C 2012: 22.15      amendment:4 require:premium
+No   Misra C 2012: 22.16      amendment:4 require:premium
+No   Misra C 2012: 22.17      amendment:4 require:premium
+No   Misra C 2012: 22.18      amendment:4 require:premium
+No   Misra C 2012: 22.19      amendment:4 require:premium
+No   Misra C 2012: 22.20      amendment:4 require:premium
+No   Misra C 2012: 23.1       amendment:3 require:premium
+No   Misra C 2012: 23.2       amendment:3 require:premium
+No   Misra C 2012: 23.3       amendment:3 require:premium
+No   Misra C 2012: 23.4       amendment:3 require:premium
+No   Misra C 2012: 23.5       amendment:3 require:premium
+No   Misra C 2012: 23.6       amendment:3 require:premium
+No   Misra C 2012: 23.7       amendment:3 require:premium
+No   Misra C 2012: 23.8       amendment:3 require:premium
+
+
+Misra C++ 2008
+--------------
+Not available, Cppcheck Premium is not used
+
+
+Misra C++ 2023
+--------------
+Not available, Cppcheck Premium is not used

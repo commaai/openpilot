@@ -1,0 +1,11 @@
+Import('env')
+
+if GetOption('kaitai'):
+  current_dir = Dir('./generated/').srcnode().abspath
+  python_cmd = f"kaitai-struct-compiler --target python --outdir {current_dir} $SOURCES"
+  env.Command(File('./generated/ubx.py'), 'ubx.ksy', python_cmd)
+  env.Command(File('./generated/gps.py'), 'gps.ksy', python_cmd)
+  env.Command(File('./generated/glonass.py'), 'glonass.ksy', python_cmd)
+  # kaitai issue: https://github.com/kaitai-io/kaitai_struct/issues/910
+  py_glonass_fix = env.Command(None, File('./generated/glonass.py'), "sed -i 's/self._io.align_to_byte()/# self._io.align_to_byte()/' $SOURCES")
+  env.Depends(py_glonass_fix, File('./generated/glonass.py'))

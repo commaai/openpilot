@@ -1,0 +1,51 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _bosch_2018.dbc";
+CM_ "IMPORT _lkas_hud_8byte.dbc";
+CM_ "IMPORT _bosch_standstill.dbc";
+CM_ "IMPORT _steering_sensors_a.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
+
+BO_ 456 ACC_CONTROL: 8 XXX
+ SG_ ACCEL_COMMAND : 7|12@0- (0.01,0) [0|0] "m/s^2" XXX
+ SG_ IDLESTOP_ALLOW : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ STANDSTILL : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ CONTROL_ON : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ BOH : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_STATUS : 33|1@1+ (1,0) [0|7] "" XXX
+ SG_ AEB_BRAKING : 47|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_PREPARE : 43|1@0+ (1,0) [0|1] "" XXX
+ SG_ FCW_1 : 24|1@1+ (1,0) [0|3] "" XXX
+ SG_ FCW_2 : 54|1@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 467 CRUISE_FAULT_STATUS: 8 XXX
+ SG_ CRUISE_FAULT : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 477 GEARBOX_ALT_2: 8 XXX
+ SG_ GEAR_MT : 39|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 495 SPEED_LIMIT_DASH_DISPLAY: 8 ADAS
+ SG_ SPEED_LIMIT : 47|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 254913108 LKAS_HUD_2: 8 ADAS
+ SG_ COUNTER_2 : 7|2@0+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_X01 : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ LKAS_BOH_1 : 15|6@0+ (1,0) [0|63] "" XXX
+ SG_ LEFT_LANE : 23|2@0+ (1,0) [0|3] "" XXX
+ SG_ RIGHT_LANE : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ LKAS_BOH_2 : 30|5@0+ (1,0) [0|31] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+CM_ SG_ 456 IDLESTOP_ALLOW "allows car to turn off engine at a standstill";
+CM_ SG_ 456 STANDSTILL "set to 1 when camera requests -4.0 m/s^2";
+CM_ SG_ 495 SPEED_LIMIT "Defaults to 0xFF if no speed limit found";
+
+VAL_ 477 GEAR_MT 14 "reverse" 6 "6th" 5 "5th" 4 "4th" 3 "3rd" 2 "2nd" 1 "1st" 0 "Clutch";
