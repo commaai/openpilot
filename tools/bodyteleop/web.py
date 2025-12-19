@@ -509,7 +509,7 @@ async def gemini_control(request: 'web.Request'):
       "current_x": gemini_current_x,
       "current_y": gemini_current_y,
       "last_response": gemini_last_response if gemini_last_response else "",  # Full response
-      "current_plan": gemini_plan if gemini_plan else None,
+      "current_plan": [[w, a, s, d, t] for w, a, s, d, t in gemini_plan] if gemini_plan else None,
     }
     return web.json_response(status_info)
   else:
