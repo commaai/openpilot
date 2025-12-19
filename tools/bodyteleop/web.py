@@ -1,6 +1,5 @@
 import asyncio
 import dataclasses
-import functools
 import json
 import logging
 import os
@@ -413,21 +412,8 @@ plan
 
               logger.info("Sending frame to Gemini API...")
               try:
-                # NOTE: The deprecated `google-generativeai` SDK does not expose "thinkingBudget"/thinking controls.
-                # Best we can do for latency is keep output short + deterministic via GenerationConfig knobs.
-                max_out = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "512"))
-                temperature = float(os.getenv("GEMINI_TEMPERATURE", "0.2"))
-                top_p = float(os.getenv("GEMINI_TOP_P", "0.95"))
-                gen_cfg = genai.types.GenerationConfig(
-                  max_output_tokens=max_out,
-                  temperature=temperature,
-                  top_p=top_p,
-                  response_mime_type="text/plain",
-                )
-
                 # Offload the blocking Gemini SDK call to a thread to avoid stalling the event loop.
-                call = functools.partial(model.generate_content, [active_prompt, pil_image], generation_config=gen_cfg)
-                response = await asyncio.to_thread(call)
+                response = await asyncio.to_thread(model.generate_content, [active_prompt, pil_image])
                 response_text = response.text
                 gemini_last_response = response_text
                 gemini_last_summary = extract_gemini_summary(response_text)
