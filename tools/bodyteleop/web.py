@@ -402,8 +402,6 @@ Do NOT describe the image. Output ONLY the summary line and the plan."""
 
         # Only request a new plan when we're idle (no plan currently being executed)
         if current_time >= next_allowed_call_time and gemini_plan is None:
-          last_gemini_call_time = current_time
-
           # Mock mode for debugging (set GEMINI_MOCK=1 to enable)
           plan = None
           if os.getenv("GEMINI_MOCK") == "1":
@@ -464,6 +462,9 @@ plan
             # Start executing plan
             gemini_plan = plan
             gemini_plan_start_time = time.monotonic()
+            # Pace Gemini calls off plan start time so a slow Gemini response doesn't
+            # artificially add extra delay on top of the plan duration.
+            last_gemini_call_time = gemini_plan_start_time
             gemini_plan_id += 1
             plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
             logger.info(f"✓ SETTING PLAN: plan_id={gemini_plan_id}, steps={len(plan)}, start_time={gemini_plan_start_time}")
@@ -472,6 +473,8 @@ plan
             logger.info(f"✓ Plan will be available for browser to fetch")
           else:
             logger.warning("No valid plan parsed from response")
+            # Avoid hammering the API if we keep getting invalid output.
+            last_gemini_call_time = time.monotonic()
             gemini_plan = None
             gemini_plan_start_time = None
             # Reset joystick when plan parsing fails
