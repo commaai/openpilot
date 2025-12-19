@@ -94,6 +94,32 @@ async def sound(request: 'web.Request'):
   return web.json_response({"status": "ok"})
 
 
+async def gemini_control(request: 'web.Request'):
+  """Toggle or get Gemini control status"""
+  params_obj = Params()
+
+  if request.method == 'GET':
+    # Get current status
+    enabled = params_obj.get_bool("GeminiControlEnabled")
+    return web.json_response({"enabled": enabled})
+  else:
+    # POST: Toggle or set status
+    data = await request.json()
+    enabled = data.get("enabled")
+
+    if enabled is not None:
+      params_obj.put_bool("GeminiControlEnabled", enabled)
+      logger.info(f"Gemini control {'enabled' if enabled else 'disabled'}")
+      return web.json_response({"status": "ok", "enabled": enabled})
+    else:
+      # Toggle if no value provided
+      current = params_obj.get_bool("GeminiControlEnabled")
+      new_value = not current
+      params_obj.put_bool("GeminiControlEnabled", new_value)
+      logger.info(f"Gemini control toggled to {'enabled' if new_value else 'disabled'}")
+      return web.json_response({"status": "ok", "enabled": new_value})
+
+
 async def offer(request: 'web.Request'):
   params = await request.json()
   body = StreamRequestBody(params["sdp"], ["wideRoad"], ["testJoystick"], ["carState"])
@@ -119,6 +145,8 @@ def main():
   app.router.add_get("/ping", ping, allow_head=True)
   app.router.add_post("/offer", offer)
   app.router.add_post("/sound", sound)
+  app.router.add_get("/gemini", gemini_control)
+  app.router.add_post("/gemini", gemini_control)
   app.router.add_static('/static', os.path.join(TELEOPDIR, 'static'))
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
 

@@ -24,6 +24,22 @@ export function playSoundRequest(sound) {
 }
 
 
+export function getGeminiStatus() {
+  return fetch('/gemini', {
+    method: 'GET'
+  }).then(response => response.json());
+}
+
+
+export function setGeminiStatus(enabled) {
+  return fetch('/gemini', {
+    body: JSON.stringify({enabled: enabled}),
+    headers: {'Content-Type': 'application/json'},
+    method: 'POST'
+  }).then(response => response.json());
+}
+
+
 export function pingHeadRequest() {
   return fetch('/', {
     method: 'HEAD'
