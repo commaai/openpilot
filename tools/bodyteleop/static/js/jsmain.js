@@ -1,4 +1,4 @@
-import { handleKeyX, executePlan } from "./controls.js";
+import { handleKeyX, executePlan, setGeminiXY, setGeminiEnabled } from "./controls.js";
 import { start, stop, lastChannelMessageTime, playSoundRequest, getGeminiStatus, setGeminiStatus, getGeminiPrompt, setGeminiPrompt } from "./webrtc.js";
 
 export var pc = null;
@@ -35,6 +35,7 @@ $("#gemini-toggle").change(function() {
   const toggle = $(this);
   const enabled = toggle.is(':checked');
   geminiEnabled = enabled;
+  setGeminiEnabled(enabled); // Update controls.js
   $("#gemini-status-text").text(enabled ? "⏳ Enabling..." : "⏳ Disabling...");
   setGeminiStatus(enabled).then(function(data) {
     $("#gemini-status").text(enabled ? "Enabled" : "Disabled");
@@ -53,6 +54,7 @@ $("#gemini-toggle").change(function() {
     // Revert toggle on error
     toggle.prop('checked', !enabled);
     geminiEnabled = false;
+    setGeminiEnabled(false);
     $("#gemini-status-text").text("✗ Error");
   });
 });
@@ -62,6 +64,7 @@ function updateGeminiStatus() {
   getGeminiStatus().then(function(data) {
     const enabled = data.enabled || false;
     geminiEnabled = enabled;
+    setGeminiEnabled(enabled); // Update controls.js
     $("#gemini-toggle").prop('checked', enabled);
     $("#gemini-status").text(enabled ? "Enabled" : "Disabled");
 
@@ -70,6 +73,12 @@ function updateGeminiStatus() {
     $("#gemini-api-key-status").text(data.api_key_set ? "✓ Set" : "✗ Not Set");
     $("#gemini-command-status").text(`x=${(data.current_x || 0).toFixed(2)}, y=${(data.current_y || 0).toFixed(2)}`);
     $("#gemini-response-status").text(data.last_response || "-");
+    
+    // Update Gemini XY values for controls.js
+    if (enabled) {
+      setGeminiXY(data.current_x || 0, data.current_y || 0);
+      $("#pos-vals").text(`${(data.current_x || 0).toFixed(2)},${(data.current_y || 0).toFixed(2)}`);
+    }
     
     // Display current plan
     if (data.current_plan && data.current_plan.length > 0) {

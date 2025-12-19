@@ -20,7 +20,6 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
-import cereal.messaging as messaging
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 try:
@@ -36,7 +35,6 @@ TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 WEBRTCD_HOST, WEBRTCD_PORT = "localhost", 5001
 
 # Gemini control state (in-memory only, no file persistence)
-gemini_pm = None
 gemini_current_x = 0.0
 gemini_current_y = 0.0
 gemini_task = None
@@ -307,7 +305,7 @@ Format: w,a,s,d,t where:
 
 DO NOT write any text explanations. DO NOT describe the image. Output ONLY the plan lines starting with "plan"."""
 
-  global gemini_plan, gemini_plan_start_time, gemini_pm, gemini_current_x, gemini_current_y
+  global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y
 
   while True:
     try:
@@ -383,22 +381,8 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
 
           gemini_current_x, gemini_current_y = commands_to_joystick_axes(current_commands)
 
-        # Publish joystick messages continuously at 100Hz
-        if gemini_pm is not None:
-          try:
-            joystick_msg = messaging.new_message('testJoystick')
-            joystick_msg.valid = True
-            joystick_msg.testJoystick.axes = [gemini_current_x, gemini_current_y]
-            joystick_msg.testJoystick.buttons = [False]
-            gemini_pm.send('testJoystick', joystick_msg)
-          except Exception as e:
-            logger.error(f"Failed to send joystick message: {e}")
-            # Try to reinitialize messaging only if it's None
-            if gemini_pm is None:
-              try:
-                gemini_pm = messaging.PubMaster(['testJoystick'])
-              except Exception as e2:
-                logger.error(f"Failed to reinitialize messaging: {e2}")
+        # Gemini values are sent via WebRTC data channel from the browser
+        # The browser polls /gemini endpoint and updates getXY() in controls.js
 
         joystick_rk.keep_time()
       else:
@@ -410,15 +394,7 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
           logger.info("Gemini disabled, resetting joystick to zero")
           gemini_current_x = 0.0
           gemini_current_y = 0.0
-          if gemini_pm is not None:
-            try:
-              joystick_msg = messaging.new_message('testJoystick')
-              joystick_msg.valid = True
-              joystick_msg.testJoystick.axes = [0.0, 0.0]
-              joystick_msg.testJoystick.buttons = [False]
-              gemini_pm.send('testJoystick', joystick_msg)
-            except Exception as e:
-              logger.error(f"Failed to send zero joystick message: {e}")
+          # Reset handled via browser polling /gemini endpoint
 
         await asyncio.sleep(0.1)
         joystick_rk.keep_time()
@@ -569,7 +545,7 @@ async def offer(request: 'web.Request'):
 
 
 def main():
-  global gemini_pm, gemini_task
+  global gemini_task
 
   try:
     # Ensure Gemini starts disabled by default
@@ -580,18 +556,8 @@ def main():
     from openpilot.common.params import Params
     Params().put_bool("JoystickDebugMode", True)
 
-    # Initialize messaging for Gemini (don't fail if this fails)
-    # Note: Only create one publisher - reuse if it already exists
-    global gemini_pm
-    if gemini_pm is None:
-      try:
-        gemini_pm = messaging.PubMaster(['testJoystick'])
-        logger.info("Messaging initialized for Gemini")
-      except Exception as e:
-        logger.error(f"Failed to initialize messaging: {e}", exc_info=True)
-        gemini_pm = None
-    else:
-      logger.info("Messaging already initialized, reusing existing publisher")
+    # Gemini sends joystick commands via WebRTC data channel (same as keyboard input)
+    # No PubMaster needed - browser polls /gemini endpoint and sends via data channel
 
     # App needs to be HTTPS for microphone and audio autoplay to work on the browser
     ssl_context = create_ssl_context()

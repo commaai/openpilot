@@ -1,6 +1,20 @@
 const keyVals = {w: 0, a: 0, s: 0, d: 0}
+let geminiXY = {x: 0, y: 0}
+let geminiEnabled = false
+
+export function setGeminiXY(x, y) {
+  geminiXY = {x, y}
+}
+
+export function setGeminiEnabled(enabled) {
+  geminiEnabled = enabled
+}
 
 export function getXY() {
+  // Use Gemini values if enabled, otherwise use keyboard values
+  if (geminiEnabled) {
+    return geminiXY
+  }
   let x = keyVals.w - keyVals.s
   let y = keyVals.d - keyVals.a
   return {x, y}
