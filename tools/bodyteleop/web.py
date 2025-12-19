@@ -18,7 +18,6 @@ from aiohttp import ClientSession
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
-from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.tools.bodyteleop.gemini_plan import parse_plan_from_text, compute_next_gemini_call_time
@@ -239,7 +238,10 @@ async def gemini_loop():
     logger.error("Failed to initialize any Gemini Flash model")
     return
 
-  joystick_rk = Ratekeeper(100, print_delay_threshold=None)
+  # IMPORTANT: This task runs on the same asyncio event loop as the aiohttp web server.
+  # Never use blocking sleeps (time.sleep) here, or the web UI will hang/time out.
+  loop_hz = 100.0
+  loop_dt = 1.0 / loop_hz
   last_gemini_call_time = 0.0
   gemini_call_interval = 10.0  # Minimum time between frames (seconds)
 
@@ -271,6 +273,7 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
   global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y, gemini_plan_id
 
   while True:
+    loop_start_t = time.monotonic()
     try:
       gemini_enabled = gemini_is_enabled()
 
@@ -320,7 +323,8 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
 
               logger.info("Sending frame to Gemini API...")
               try:
-                response = model.generate_content([active_prompt, pil_image])
+                # Offload the blocking Gemini SDK call to a thread to avoid stalling the event loop.
+                response = await asyncio.to_thread(model.generate_content, [active_prompt, pil_image])
                 response_text = response.text
                 gemini_last_response = response_text
 
@@ -386,7 +390,9 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
         # Gemini values are sent via WebRTC data channel from the browser
         # The browser polls /gemini endpoint and updates getXY() in controls.js
 
-        joystick_rk.keep_time()
+        # Keep a steady loop rate without blocking the event loop.
+        elapsed = time.monotonic() - loop_start_t
+        await asyncio.sleep(max(0.0, loop_dt - elapsed))
       else:
         # Clear plan when disabled
         gemini_plan = None
@@ -398,8 +404,8 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
           gemini_current_y = 0.0
           # Reset handled via browser polling /gemini endpoint
 
+        # When disabled, run slower and yield to the web server.
         await asyncio.sleep(0.1)
-        joystick_rk.keep_time()
 
     except Exception as e:
       logger.exception(f"Error in gemini loop: {e}")
@@ -487,6 +493,20 @@ async def gemini_control(request: 'web.Request'):
     # Ensure plan_id is always an integer
     plan_id = gemini_plan_id if gemini_plan_id is not None else 0
 
+    # Capture plan at request time to avoid race conditions
+    plan_at_request = gemini_plan
+    plan_start_at_request = gemini_plan_start_time
+
+    # Build current_plan list
+    current_plan_list = None
+    if plan_at_request:
+      try:
+        current_plan_list = [[w, a, s, d, t] for w, a, s, d, t in plan_at_request]
+        logger.info(f"GET /gemini: Built plan list with {len(current_plan_list)} steps")
+      except Exception as e:
+        logger.error(f"GET /gemini: Error building plan list: {e}", exc_info=True)
+        current_plan_list = None
+
     status_info = {
       "enabled": enabled,
       "prompt": prompt,
@@ -495,19 +515,20 @@ async def gemini_control(request: 'web.Request'):
       "current_x": gemini_current_x,
       "current_y": gemini_current_y,
       "last_response": gemini_last_response if gemini_last_response else "",  # Full response
-      "current_plan": [[w, a, s, d, t] for w, a, s, d, t in gemini_plan] if gemini_plan else None,
+      "current_plan": current_plan_list,
       "current_plan_id": plan_id,
-      "plan_active": gemini_plan is not None and gemini_plan_start_time is not None,
-      "plan_elapsed": (time.monotonic() - gemini_plan_start_time) if (gemini_plan_start_time is not None) else None,
+      "plan_active": plan_at_request is not None and plan_start_at_request is not None,
+      "plan_elapsed": (time.monotonic() - plan_start_at_request) if (plan_start_at_request is not None) else None,
     }
-    plan_steps = len(gemini_plan) if gemini_plan else 0
-    logger.info(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={gemini_plan is not None}, plan_steps={plan_steps}")
-    if gemini_plan:
+    plan_steps = len(plan_at_request) if plan_at_request else 0
+    logger.info(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={plan_at_request is not None}, plan_steps={plan_steps}")
+    if plan_at_request:
       logger.info(f"  ✓ SENDING PLAN TO BROWSER: plan_id={plan_id}, steps={plan_steps}")
-      logger.info(f"  Plan steps (first 3): {[f'{w},{a},{s},{d},{t:.2f}' for w,a,s,d,t in gemini_plan[:3]]}")
+      logger.info(f"  Plan steps (first 3): {[f'{w},{a},{s},{d},{t:.2f}' for w,a,s,d,t in plan_at_request[:3]]}")
       logger.info(f"  current_plan in JSON: {status_info['current_plan'] is not None}, length={len(status_info['current_plan']) if status_info['current_plan'] else 0}")
+      logger.info(f"  JSON serialized plan type: {type(status_info['current_plan'])}")
     else:
-      logger.info(f"  ✗ NO PLAN TO SEND (gemini_plan is None)")
+      logger.info(f"  ✗ NO PLAN TO SEND (gemini_plan is None at request time)")
     return web.json_response(status_info)
   else:
     # POST: Toggle or set status
