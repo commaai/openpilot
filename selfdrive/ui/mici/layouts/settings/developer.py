@@ -64,9 +64,9 @@ class DeveloperLayoutMici(NavWidget):
 
     self._scroller = Scroller([
       self._adb_toggle,
+      self._close_ui_btn,
       self._ssh_toggle,
       self._ssh_keys_btn,
-      self._close_ui_btn,
       self._joystick_toggle,
       self._long_maneuver_toggle,
       self._alpha_long_toggle,
