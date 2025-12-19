@@ -21,6 +21,7 @@ from openpilot.system.webrtc.webrtcd import StreamRequestBody
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 from msgq.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.tools.bodyteleop.gemini_plan import parse_plan_from_text, compute_next_gemini_call_time
 
 try:
   import google.generativeai as genai
@@ -103,66 +104,8 @@ def image_to_pil(image: np.ndarray, max_size: tuple[int, int] = (640, 480)) -> I
 
 
 def parse_gemini_response(response_text: str) -> Optional[list]:
-  """Parse Gemini response to extract movement plan
-  Returns: plan_list: [(w, a, s, d, end_time), ...] or None if no plan
-  """
-  response_text = response_text.strip()
-
-  # Look for plan format (lines with w,a,s,d,t after "plan" keyword)
-  plan_lines = []
-  lines = response_text.split('\n')
-  found_plan_keyword = False
-
-  for line in lines:
-    line = line.strip()
-    if 'plan' in line.lower():
-      found_plan_keyword = True
-      continue
-    if found_plan_keyword and ',' in line and line.count(',') == 4:
-      parts = line.split(',')
-      try:
-        w, a, s, d, t = [int(float(p.strip())) if '.' not in p.strip() else float(p.strip()) for p in parts]
-        if w in [0, 1] and a in [0, 1] and s in [0, 1] and d in [0, 1] and t >= 0:
-          plan_lines.append((w, a, s, d, t))
-      except (ValueError, IndexError):
-        pass
-
-  # Also try to find plan lines even without "plan" keyword
-  if not plan_lines:
-    for line in lines:
-      line = line.strip()
-      if ',' in line and line.count(',') == 4:
-        parts = line.split(',')
-        try:
-          w, a, s, d, t = [int(float(p.strip())) if '.' not in p.strip() else float(p.strip()) for p in parts]
-          if w in [0, 1] and a in [0, 1] and s in [0, 1] and d in [0, 1] and t >= 0:
-            plan_lines.append((w, a, s, d, t))
-        except (ValueError, IndexError):
-          pass
-
-  if plan_lines:
-    # Validate:
-    # - t is cumulative time from start, increasing
-    # - <= 5s total
-    # - only one of w/a/s/d may be 1 per row
-    last_t = -1.0
-    for w, a, s, d, t in plan_lines:
-      if (w + a + s + d) > 1:
-        return None
-      if t < 0 or t > 5.0:
-        return None
-      if t <= last_t:
-        return None
-      last_t = t
-
-    # t is already cumulative time from start, use it directly
-    plan = []
-    for w, a, s, d, t in plan_lines:
-      plan.append((w, a, s, d, float(t)))
-    return plan
-
-  # No valid plan found
-  return None
+  # Kept for backwards compatibility within this module
+  return parse_plan_from_text(response_text)
 
 
 def commands_to_joystick_axes(commands: dict) -> tuple[float, float]:
@@ -334,16 +277,14 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
       if gemini_enabled:
         current_time = time.monotonic()
 
-        # Wait until current plan finishes before requesting another frame.
-        # Also enforce a minimum interval between calls.
-        plan_end_time = None
-        if gemini_plan is not None and gemini_plan_start_time is not None and len(gemini_plan) > 0:
-          plan_end_time = gemini_plan_start_time + float(gemini_plan[-1][4])
+        next_allowed_call_time = compute_next_gemini_call_time(
+          last_gemini_call_time,
+          gemini_call_interval,
+          gemini_plan_start_time,
+          gemini_plan,
+        )
 
-        next_allowed_call_time = last_gemini_call_time + gemini_call_interval
-        if plan_end_time is not None:
-          next_allowed_call_time = max(next_allowed_call_time, plan_end_time)
-
+        # Only request a new plan when we're idle (no plan currently being executed)
         if current_time >= next_allowed_call_time and gemini_plan is None:
           last_gemini_call_time = current_time
 
@@ -367,6 +308,7 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
             try:
               response = model.generate_content([active_prompt, pil_image])
               response_text = response.text
+              global gemini_last_response
               gemini_last_response = response_text
 
               # Print full response in terminal
@@ -410,9 +352,12 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
               break
 
           if not plan_active:
-            # Plan finished
-            gemini_plan = None
-            gemini_plan_start_time = None
+            # Plan finished - but keep it visible for a bit so browser can see it
+            # Clear it after 1 second of being finished
+            elapsed_since_finish = elapsed - (gemini_plan[-1][4] if gemini_plan else 0)
+            if elapsed_since_finish > 1.0:
+              gemini_plan = None
+              gemini_plan_start_time = None
             current_commands = {"forward": False, "backward": False, "left": False, "right": False}
 
           gemini_current_x, gemini_current_y = commands_to_joystick_axes(current_commands)
@@ -529,6 +474,8 @@ async def gemini_control(request: 'web.Request'):
       "last_response": gemini_last_response if gemini_last_response else "",  # Full response
       "current_plan": [[w, a, s, d, t] for w, a, s, d, t in gemini_plan] if gemini_plan else None,
       "current_plan_id": gemini_plan_id,
+      "plan_active": gemini_plan is not None and gemini_plan_start_time is not None,
+      "plan_elapsed": (time.monotonic() - gemini_plan_start_time) if (gemini_plan_start_time is not None) else None,
     }
     return web.json_response(status_info)
   else:

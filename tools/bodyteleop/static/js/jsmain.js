@@ -149,6 +149,16 @@ function updateGeminiStatus() {
     $("#gemini-api-key-status").text(data.api_key_set ? "✓ Set" : "✗ Not Set");
     $("#gemini-command-status").text(`x=${(data.current_x || 0).toFixed(2)}, y=${(data.current_y || 0).toFixed(2)}`);
     $("#gemini-response-status").text(data.last_response || "-");
+    
+    // Debug info
+    console.log("Gemini status update:", {
+      enabled,
+      hasPlan: !!data.current_plan,
+      planId: data.current_plan_id,
+      lastPlanId: lastGeminiPlanId,
+      planActive: data.plan_active,
+      planElapsed: data.plan_elapsed
+    });
 
     // Update Gemini XY values for controls.js
     if (enabled) {
