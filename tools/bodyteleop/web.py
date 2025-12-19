@@ -402,8 +402,12 @@ def main():
   app.router.add_post("/gemini/prompt", gemini_prompt)
   app.router.add_static('/static', os.path.join(TELEOPDIR, 'static'))
 
-  # Start Gemini background task
-  gemini_task = asyncio.create_task(gemini_loop())
+  # Start Gemini background task when app starts
+  async def startup_background_tasks(app):
+    global gemini_task
+    gemini_task = asyncio.create_task(gemini_loop())
+
+  app.on_startup.append(startup_background_tasks)
 
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
 
