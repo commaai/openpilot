@@ -288,35 +288,36 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
         if current_time >= next_allowed_call_time and gemini_plan is None:
           last_gemini_call_time = current_time
 
-          logger.info("Getting camera frame...")
-          frame = get_camera_frame()
-          if frame is not None:
-            logger.info(f"Got frame: {frame.shape}")
-            custom_prompt = gemini_get_prompt()
-            # Append custom prompt to default prompt if provided
-            if custom_prompt:
-              active_prompt = default_prompt + "\n\nAdditional instructions: " + custom_prompt
-              logger.info(f"Using default + custom prompt (custom length: {len(custom_prompt)})")
-            else:
-              active_prompt = default_prompt
-              logger.info(f"Using default prompt (length: {len(active_prompt)})")
-
-            pil_image = image_to_pil(frame)
-            logger.info(f"Image prepared: {pil_image.size}")
-
-            # Mock mode for debugging (set GEMINI_MOCK=1 to enable)
-            plan = None
-            if os.getenv("GEMINI_MOCK") == "1":
-              logger.info("MOCK MODE: Using fake Gemini response")
-              response_text = """plan
+          # Mock mode for debugging (set GEMINI_MOCK=1 to enable)
+          plan = None
+          if os.getenv("GEMINI_MOCK") == "1":
+            logger.info("MOCK MODE: Using fake Gemini response (skipping camera)")
+            response_text = """plan
 1,0,0,0,1.0
 0,1,0,0,2.0
 0,0,0,0,2.1"""
-              gemini_last_response = response_text
-              logger.info(f"✓ Mock Gemini response:")
-              logger.info(f"{response_text}")
-              plan = parse_gemini_response(response_text)
-            else:
+            gemini_last_response = response_text
+            logger.info(f"✓ Mock Gemini response:")
+            logger.info(f"{response_text}")
+            plan = parse_gemini_response(response_text)
+            logger.info(f"✓ Parsed plan result: {plan}")
+          else:
+            logger.info("Getting camera frame...")
+            frame = get_camera_frame()
+            if frame is not None:
+              logger.info(f"Got frame: {frame.shape}")
+              custom_prompt = gemini_get_prompt()
+              # Append custom prompt to default prompt if provided
+              if custom_prompt:
+                active_prompt = default_prompt + "\n\nAdditional instructions: " + custom_prompt
+                logger.info(f"Using default + custom prompt (custom length: {len(custom_prompt)})")
+              else:
+                active_prompt = default_prompt
+                logger.info(f"Using default prompt (length: {len(active_prompt)})")
+
+              pil_image = image_to_pil(frame)
+              logger.info(f"Image prepared: {pil_image.size}")
+
               logger.info("Sending frame to Gemini API...")
               try:
                 response = model.generate_content([active_prompt, pil_image])
@@ -330,21 +331,25 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
                 plan = parse_gemini_response(response_text)
               except Exception as e:
                 logger.error(f"✗ Error calling Gemini API: {e}", exc_info=True)
-
-            if plan is not None:
-              # Start executing plan
-              gemini_plan = plan
-              gemini_plan_start_time = time.monotonic()
-              gemini_plan_id += 1
-              plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
-              logger.info(f"✓ Parsed plan with {len(plan)} steps:")
-              logger.info(f"{plan_str}")
             else:
-              logger.warning("No valid plan parsed from response")
-              gemini_plan = None
-              gemini_plan_start_time = None
+              logger.warning("Failed to get camera frame")
+
+          if plan is not None:
+            # Start executing plan
+            gemini_plan = plan
+            gemini_plan_start_time = time.monotonic()
+            gemini_plan_id += 1
+            plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
+            logger.info(f"✓ Parsed plan with {len(plan)} steps, plan_id={gemini_plan_id}:")
+            logger.info(f"{plan_str}")
+            logger.info(f"✓ Plan start time: {gemini_plan_start_time}, plan_id: {gemini_plan_id}")
           else:
-            logger.warning("Failed to get camera frame")
+            logger.warning("No valid plan parsed from response")
+            gemini_plan = None
+            gemini_plan_start_time = None
+            # Reset joystick when plan parsing fails
+            gemini_current_x = 0.0
+            gemini_current_y = 0.0
 
         # Execute plan if active
         if gemini_plan is not None and gemini_plan_start_time is not None:
@@ -495,7 +500,10 @@ async def gemini_control(request: 'web.Request'):
       "plan_elapsed": (time.monotonic() - gemini_plan_start_time) if (gemini_plan_start_time is not None) else None,
     }
     plan_steps = len(gemini_plan) if gemini_plan else 0
-    logger.info(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={gemini_plan is not None}, plan_steps={plan_steps}, current_plan={status_info['current_plan']}")
+    logger.info(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={gemini_plan is not None}, plan_steps={plan_steps}")
+    if gemini_plan:
+      logger.info(f"  Plan steps (first 3): {[f'{w},{a},{s},{d},{t:.2f}' for w,a,s,d,t in gemini_plan[:3]]}")
+    logger.info(f"  Response JSON keys: {list(status_info.keys())}")
     return web.json_response(status_info)
   else:
     # POST: Toggle or set status
