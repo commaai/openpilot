@@ -351,6 +351,8 @@ plan
 
 Keep responses SHORT. Just output the JSON or plan, no explanations."""
 
+  global gemini_plan, gemini_plan_start_time
+  
   while True:
     try:
       gemini_enabled = gemini_is_enabled()
@@ -401,7 +403,6 @@ Keep responses SHORT. Just output the JSON or plan, no explanations."""
             logger.warning("Failed to get camera frame")
 
         # Execute plan if active
-        global gemini_plan, gemini_plan_start_time
         if gemini_plan is not None and gemini_plan_start_time is not None:
           elapsed = time.monotonic() - gemini_plan_start_time
           # Find current step in plan
