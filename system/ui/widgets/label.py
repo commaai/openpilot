@@ -9,72 +9,6 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.emoji import find_emoji, emoji_tex
 from openpilot.system.ui.lib.wrap_text import wrap_text
 
-
-# TODO: This should be a Widget class
-def gui_label(
-  rect: rl.Rectangle,
-  text: str,
-  font_size: int = DEFAULT_TEXT_SIZE,
-  color: rl.Color = DEFAULT_TEXT_COLOR,
-  font_weight: FontWeight = FontWeight.NORMAL,
-  alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-  elide_right: bool = True
-):
-  font = gui_app.font(font_weight)
-  text_size = measure_text_cached(font, text, font_size)
-  display_text = text
-
-  # Elide text to fit within the rectangle
-  if elide_right and text_size.x > rect.width:
-    _ellipsis = "..."
-    left, right = 0, len(text)
-    while left < right:
-      mid = (left + right) // 2
-      candidate = text[:mid] + _ellipsis
-      candidate_size = measure_text_cached(font, candidate, font_size)
-      if candidate_size.x <= rect.width:
-        left = mid + 1
-      else:
-        right = mid
-    display_text = text[: left - 1] + _ellipsis if left > 0 else _ellipsis
-    text_size = measure_text_cached(font, display_text, font_size)
-
-  # Calculate horizontal position based on alignment
-  text_x = rect.x + {
-    rl.GuiTextAlignment.TEXT_ALIGN_LEFT: 0,
-    rl.GuiTextAlignment.TEXT_ALIGN_CENTER: (rect.width - text_size.x) / 2,
-    rl.GuiTextAlignment.TEXT_ALIGN_RIGHT: rect.width - text_size.x,
-  }.get(alignment, 0)
-
-  # Calculate vertical position based on alignment
-  text_y = rect.y + {
-    rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP: 0,
-    rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE: (rect.height - text_size.y) / 2,
-    rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM: rect.height - text_size.y,
-  }.get(alignment_vertical, 0)
-
-  # Draw the text in the specified rectangle
-  # TODO: add wrapping and proper centering for multiline text
-  rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), font_size, 0, color)
-
-
-@dataclass
-class RenderSegment:
-  content: str
-  texture: Union[rl.Texture, None]
-  offset: rl.Vector2  # # Relative to the label's top-left
-  size: rl.Vector2
-
-
-@dataclass
-class LayoutCache:
-  raw_text: str
-  segments: list[RenderSegment]
-  content_width: float
-  content_height: float
-
-
 def _elide_text(font: rl.Font, text: str, font_size: int, max_width: float, spacing: int = 0) -> str:
   """Binary search to truncate text that exceeds max_width."""
   ellipsis = "..."
@@ -97,6 +31,51 @@ def _resolve_value(value, default=""):
   if callable(value):
     return value()
   return value if value is not None else default
+
+
+def gui_label(
+  rect: rl.Rectangle,
+  text: str,
+  font_size: int = DEFAULT_TEXT_SIZE,
+  color: rl.Color = DEFAULT_TEXT_COLOR,
+  font_weight: FontWeight = FontWeight.NORMAL,
+  alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+  elide_right: bool = True
+):
+  font = gui_app.font(font_weight)
+  display_text = text if not elide_right else _elide_text(font, text, font_size, rect.width)
+  text_size = measure_text_cached(font, display_text, font_size)
+
+  text_x = rect.x
+  if alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+    text_x += (rect.width - text_size.x) / 2
+  elif alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+    text_x += rect.width - text_size.x
+
+  text_y = rect.y
+  if alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
+    text_y += (rect.height - text_size.y) / 2
+  elif alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
+    text_y += rect.height - text_size.y
+
+  rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), font_size, 0, color)
+
+
+@dataclass
+class RenderSegment:
+  content: str
+  texture: Union[rl.Texture, None]
+  offset: rl.Vector2  # # Relative to the label's top-left
+  size: rl.Vector2
+
+
+@dataclass
+class LayoutCache:
+  raw_text: str
+  segments: list[RenderSegment]
+  content_width: float
+  content_height: float
 
 
 class Label(Widget):
