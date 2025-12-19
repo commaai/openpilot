@@ -268,6 +268,10 @@ plan
 Format: w,a,s,d,t where:
 - w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
 - t is cumulative time in seconds from plan start (not duration)
+- The plan MUST start near t=0: the FIRST line's t should be a small positive value (e.g. 0.2-0.6), not 5.0
+- The plan MUST end at t=5.0: the LAST line's t must be exactly 5.0 (unless no movement needed)
+- Times must be strictly increasing each line (cumulative)
+- When movement is needed, output AT LEAST 5 steps (5+ lines after "plan"). Use small increments (e.g. 0.2-1.0s per step) and end exactly at 5.0.
 - Target plan duration: ~5 seconds when movement is needed (use multiple short steps that add up close to 5.0s)
 - Maximum plan duration: 5 seconds (never exceed)
 - Example: "1,0,0,0,1.0" means W until 1.0s, then "0,0,0,1,1.3" means D until 1.3s total
