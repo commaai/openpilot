@@ -306,48 +306,20 @@ async def gemini_loop():
 
   logger.info("Gemini loop ready, waiting for enable...")
 
-  default_prompt = """You are controlling a robot with two motors in a side-by-side configuration.
-IMPORTANT: Do NOT crop or modify the image. Analyze the full image as provided. Respond quickly and keep your response SHORT.
+  default_prompt = """You are controlling a robot. Analyze the image and output ONLY a JSON object with movement commands. NO TEXT EXPLANATIONS. NO DESCRIPTIONS.
 
-Movement controls (you can only actuate ONE direction at a time - forward/backward OR left/right, not both):
-- W: Move forward (both motors forward) - moves at ~5 mph
-- S: Move backward (both motors backward) - moves at ~5 mph
-- A: Rotate left in place (left motor backward, right motor forward) - rotates at ~360 deg/s, so turns must be VERY SHORT
-- D: Rotate right in place (left motor forward, right motor backward) - rotates at ~360 deg/s, so turns must be VERY SHORT
+Movement controls (only ONE direction at a time):
+- W/forward: Move forward (~5 mph)
+- S/backward: Move backward (~5 mph)
+- A/left: Rotate left (~360 deg/s, keep turns SHORT: 0.1-0.3s)
+- D/right: Rotate right (~360 deg/s, keep turns SHORT: 0.1-0.3s)
 
-You CANNOT combine forward+backward or left+right. Only one WASD direction at a time.
+Output ONLY this JSON format (nothing else):
+{"forward": false, "backward": false, "left": false, "right": false}
 
-RESPONSE FORMAT OPTIONS:
+Set exactly ONE to true based on what action to take. If no movement needed, set all to false.
 
-Option 1 - Simple JSON (for immediate single command):
-{
-  "forward": true/false,
-  "backward": true/false,
-  "left": true/false,
-  "right": true/false
-}
-Only ONE of these should be true at a time.
-
-Option 2 - Plan format (for timed sequence up to 5 seconds):
-plan
-1,0,0,0,0.5
-0,1,0,0,1.0
-0,0,0,0,0.1
-
-Format: w,a,s,d,t where:
-- w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
-- t is duration in seconds (cumulative time from start)
-- Example: "1,0,0,0,0.5" means W is actuated for 0.5s, then "0,1,0,0,1.0" means A is actuated until 1.0s total
-- Maximum plan duration: 5 seconds
-- Remember: rotations are ~360 deg/s, so keep turn durations SHORT (0.1-0.3s typically)
-
-Example plan for "turn left 90 degrees then go forward":
-plan
-0,1,0,0,0.25
-1,0,0,0,1.0
-0,0,0,0,1.1
-
-Keep responses SHORT. Just output the JSON or plan, no explanations."""
+DO NOT write any text explanations. DO NOT describe the image. Output ONLY the JSON object."""
 
   global gemini_plan, gemini_plan_start_time, gemini_pm, gemini_current_x, gemini_current_y
 
