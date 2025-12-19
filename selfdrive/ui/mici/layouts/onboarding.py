@@ -166,8 +166,8 @@ class TrainingGuideDMTutorial(Widget):
 
   def _update_state(self):
     super()._update_state()
-    if device.awake:
-      ui_state.params.put_bool("IsDriverViewEnabled", True)
+    if device.awake and not ui_state.params.get_bool("IsDriverViewEnabled"):
+      ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
 
     sm = ui_state.sm
     if sm.recv_frame.get("driverMonitoringState", 0) == 0:
