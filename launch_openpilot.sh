@@ -33,14 +33,6 @@ spinner_pid=$!
 scons selfdrive/ui tools/replay -j8
 kill -9 $spinner_pid
 
-echo "Installing dependencies" | ./system/ui/spinner.py &
-spinner_pid=$!
-
-# install deps
-sudo apt update
-sudo apt-get install -y --no-install-recommends gstreamer1.0-tools gstreamer1.0-libav gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
-kill -9 $spinner_pid
-
 # download videos
 echo "Downloading videos" | ./system/ui/spinner.py &
 spinner_pid=$!
@@ -48,4 +40,4 @@ spinner_pid=$!
 kill -9 $spinner_pid
 
 # launch notouch ui
-#./selfdrive/ui/notouch
+NO_TOUCH=1 ./selfdrive/ui/ui.py
