@@ -40,7 +40,7 @@ def _break_long_word(font: rl.Font, word: str, font_size: int, max_width: int, s
 _cache: dict[int, list[str]] = {}
 
 
-def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int, spacing: float = 0) -> list[str]:
+def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int, spacing: float = 0, emojs: bool = False) -> list[str]:
   font = font_fallback(font)
   spacing = round(spacing, 4)
   key = hash((font.texture.id, text, font_size, max_width, spacing))
@@ -70,7 +70,7 @@ def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int, spacing:
     current_line: list[str] = []
 
     for word in words:
-      word_width = measure_text_cached(font, word, font_size, spacing).x
+      word_width = measure_text_cached(font, word, font_size, spacing, emojs).x
 
       # Check if word alone exceeds max width (need to break the word)
       if word_width > max_width:

@@ -168,14 +168,14 @@ class Label(Widget):
     if self._elide:
       lines = [_elide_text(self._font, text, self._font_size, content_width)]
     else:
-      lines = wrap_text(self._font, text, self._font_size, content_width)
+      lines = wrap_text(self._font, text, self._font_size, content_width, self._emojis)
 
     segments: list[RenderSegment] = []
     line_h = self._font_size * self._line_height
 
     cursor_y = 0.0
     for line_text in lines:
-      line_size = measure_text_cached(self._font, line_text, self._font_size, self._spacing)
+      line_size = measure_text_cached(self._font, line_text, self._font_size, self._spacing, self._emojis)
       cursor_x = self._padding
       if self._h_align == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
         cursor_x += (content_width - line_size.x) // 2
@@ -233,7 +233,7 @@ class Label(Widget):
 
       # Emoji texture fragment
       segments.append(RenderSegment(emoji, emoji_tex(emoji), rl.Vector2(x, y), rl.Vector2(line_h, line_h)))
-      x, last_idx = x + line_h, end
+      x, last_idx = x + self._font_size * FONT_SCALE, end
 
     # Final text fragment
     if last_idx < len(line_text):
