@@ -36,8 +36,6 @@ class WifiIcon(Widget):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 89, 64))
 
-    self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 89, 64)
-    self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 89, 64)
     self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 89, 64)
     self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 89, 64)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 89, 64)
@@ -57,17 +55,13 @@ class WifiIcon(Widget):
       return
 
     # Determine which wifi strength icon to use
-    strength = round(self._network.strength / 100 * 4)
-    if strength == 4:
+    strength = round(self._network.strength / 100 * 2)
+    if strength == 2:
       strength_icon = self._wifi_full_txt
-    elif strength == 3:
+    elif strength == 1:
       strength_icon = self._wifi_medium_txt
-    elif strength == 2:
-      strength_icon = self._wifi_low_txt
-    elif self._network.strength < 0:
-      strength_icon = self._wifi_slash_txt
     else:
-      strength_icon = self._wifi_none_txt
+      strength_icon = self._wifi_low_txt
 
     icon_x = int(self._rect.x + (self._rect.width - strength_icon.width * self._scale) // 2)
     icon_y = int(self._rect.y + (self._rect.height - strength_icon.height * self._scale) // 2)

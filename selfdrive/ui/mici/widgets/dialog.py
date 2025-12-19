@@ -4,17 +4,17 @@ import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from typing import cast
-from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 
 DEBUG = False
 
@@ -327,8 +327,10 @@ class BigMultiOptionDialog(BigDialogBase):
     self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
     self._last_selected_option: str = self._selected_option
 
+    # Widget doesn't differentiate between click and drag
+    self._can_click = True
+
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
-    self.set_touch_valid_callback(self._scroller.scroll_panel.is_touch_valid)
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
@@ -365,8 +367,22 @@ class BigMultiOptionDialog(BigDialogBase):
   def _selected_option_changed(self):
     pass
 
+  def _handle_mouse_press(self, mouse_pos: MousePos):
+    super()._handle_mouse_press(mouse_pos)
+    self._can_click = True
+
+  def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
+    super()._handle_mouse_event(mouse_event)
+
+    # # TODO: add generic _handle_mouse_click handler to Widget
+    if not self._scroller.scroll_panel.is_touch_valid():
+      self._can_click = False
+
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
+
+    if not self._can_click:
+      return
 
     # select current option
     for btn in self._scroller._items:
