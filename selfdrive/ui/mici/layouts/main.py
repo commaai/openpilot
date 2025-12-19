@@ -7,6 +7,7 @@ from openpilot.selfdrive.ui.mici.layouts.offroad_alerts import MiciOffroadAlerts
 from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.selfdrive.ui.mici.layouts.onboarding import OnboardingWindow
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app
@@ -21,6 +22,8 @@ class MainState(IntEnum):
 
 
 class MiciMainLayout(Widget):
+  _ssh_dialog_shown = False
+
   def __init__(self):
     super().__init__()
 
@@ -65,6 +68,9 @@ class MiciMainLayout(Widget):
     self._onboarding_window = OnboardingWindow()
     if not self._onboarding_window.completed:
       gui_app.set_modal_overlay(self._onboarding_window)
+    elif not MiciMainLayout._ssh_dialog_shown:
+      gui_app.set_modal_overlay(BigDialog(title="", description="Visit Developer settings, enable SSH, and add an SSH key.", right_btn="check"))
+      MiciMainLayout._ssh_dialog_shown = True
 
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=self._on_settings_clicked)

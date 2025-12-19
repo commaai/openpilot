@@ -9,11 +9,11 @@ echo "Building" | ./system/ui/spinner.py &
 spinner_pid=$!
 
 # build
-scons selfdrive/ui/_notouch selfdrive/ui/_ui -j8
+scons selfdrive/ui -j8
 kill -9 $spinner_pid
 
 # launch ui and let user set up ssh
-./selfdrive/ui/ui
+./selfdrive/ui/ui.py
 
 echo "Fetching updates" | ./system/ui/spinner.py &
 spinner_pid=$!
@@ -27,7 +27,7 @@ kill -9 $spinner_pid
 # build again after update
 echo "Building" | ./system/ui/spinner.py &
 spinner_pid=$!
-scons selfdrive/ui/_notouch selfdrive/ui/_ui -j8
+scons selfdrive/ui -j8
 kill -9 $spinner_pid
 
 echo "Installing dependencies" | ./system/ui/spinner.py &
@@ -45,4 +45,4 @@ spinner_pid=$!
 kill -9 $spinner_pid
 
 # launch notouch ui
-./selfdrive/ui/notouch
+#./selfdrive/ui/notouch

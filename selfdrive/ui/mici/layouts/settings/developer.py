@@ -23,6 +23,7 @@ class DeveloperLayoutMici(NavWidget):
         ssh_keys._fetch_ssh_key(username)
         if not ssh_keys._error_message:
           self._ssh_keys_btn.set_value(username)
+          gui_app.request_close()
         else:
           dlg = BigDialog("", ssh_keys._error_message)
           gui_app.set_modal_overlay(dlg)
@@ -40,6 +41,9 @@ class DeveloperLayoutMici(NavWidget):
     github_username = ui_state.params.get("GithubUsername") or ""
     self._ssh_keys_btn = BigButton("SSH keys", "Not set" if not github_username else github_username, icon=txt_ssh)
     self._ssh_keys_btn.set_click_callback(ssh_keys_callback)
+
+    self._close_ui_btn = BigButton("Close UI", "", icon="")
+    self._close_ui_btn.set_click_callback(lambda: gui_app.request_close())
 
     # adb, ssh, ssh keys, debug mode, joystick debug mode, longitudinal maneuver mode, ip address
     # ******** Main Scroller ********
@@ -62,6 +66,7 @@ class DeveloperLayoutMici(NavWidget):
       self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys_btn,
+      self._close_ui_btn,
       self._joystick_toggle,
       self._long_maneuver_toggle,
       self._alpha_long_toggle,
