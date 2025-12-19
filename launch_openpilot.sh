@@ -12,7 +12,7 @@ echo "Building" | ./system/ui/spinner.py &
 spinner_pid=$!
 
 # build
-scons selfdrive/ui tools/replay -j8
+scons selfdrive/ui selfdrive/assets tools/replay -j8
 kill -9 $spinner_pid
 
 # launch ui and let user set up ssh
@@ -30,7 +30,7 @@ kill -9 $spinner_pid
 # build again after update
 echo "Building" | ./system/ui/spinner.py &
 spinner_pid=$!
-scons selfdrive/ui tools/replay -j8
+scons selfdrive/ui selfdrive/assets tools/replay -j8
 kill -9 $spinner_pid
 
 # download videos
