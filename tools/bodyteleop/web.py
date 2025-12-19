@@ -308,8 +308,10 @@ Planning quality / nuance requirements:
 - Obstacle avoidance is the top priority: if any obstacle/person/object is close ahead or to the side, DO NOT drive into it. Instead stop, turn away, or back up briefly to create clearance, then proceed.
 
 Stuck handling / repeated view:
-- If you appear stuck (no progress, blocked, or not moving), prefer SHORT backup motions (S for 0.2-0.6s) and/or SHORT turns (A/D for 0.1-0.3s) to unstick.
-- If the view looks essentially unchanged from the previous request (same frame / same scene), assume you're not moving and do the same unstick behavior (backup + small turn), then reassess.
+- If you appear stuck (no progress, blocked, wedged, or not moving), you MUST include at least one backup segment (S) in the plan (typically early).
+  Recommended: start with S for 0.4-0.8s, then a short turn (A/D 0.1-0.3s), then reassess/continue.
+- If the view looks essentially unchanged from the previous request(s) (same frame / same scene), assume you're not moving and DO NOT keep pushing forward.
+  Instead: S (0.4-0.8s) + small turn (A/D 0.1-0.3s) + brief stop (0.1-0.3s), then proceed.
 
 Output format (EXACTLY):
 summary: <one short sentence (<= 140 chars, no newlines) describing your intention + anything noteworthy (e.g. obstacle, stuck, turning, exploring)>
@@ -348,6 +350,23 @@ plan
 0,1,0,0,4.50
 0,0,0,0,4.65
 1,0,0,0,4.90
+0,0,0,0,5.00
+
+EXAMPLE OUTPUT (stuck / repeated view):
+summary: stuck, backing up then turning to free clearance
+plan
+0,0,1,0,0.60
+0,0,0,1,0.80
+0,0,0,0,1.00
+1,0,0,0,1.80
+0,0,0,0,2.00
+0,1,0,0,2.20
+0,0,0,0,2.40
+1,0,0,0,3.40
+0,0,0,0,3.60
+0,0,0,1,3.80
+0,0,0,0,4.00
+1,0,0,0,4.80
 0,0,0,0,5.00
 
 Format: w,a,s,d,t where:
