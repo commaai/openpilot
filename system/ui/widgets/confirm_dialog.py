@@ -21,7 +21,8 @@ class ConfirmDialog(Widget):
     super().__init__()
     if cancel_text is None:
       cancel_text = tr("Cancel")
-    self._label = Label(text, 70, FontWeight.BOLD, color=rl.Color(201, 201, 201, 255))
+    self._label = Label(text, 70, FontWeight.BOLD, align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+                        valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, color=rl.Color(201, 201, 201, 255))
     self._html_renderer = HtmlRenderer(text=text, text_size={ElementType.P: 50}, center_text=True)
     self._cancel_button = Button(cancel_text, self._cancel_button_callback)
     self._confirm_button = Button(confirm_text, self._confirm_button_callback, button_style=ButtonStyle.PRIMARY)
