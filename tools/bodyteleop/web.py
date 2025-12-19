@@ -39,6 +39,7 @@ gemini_current_x = 0.0
 gemini_current_y = 0.0
 gemini_task = None
 gemini_last_response = ""
+gemini_last_summary = ""
 gemini_enabled = False  # In-memory state, starts disabled
 gemini_prompt = ""  # In-memory prompt
 gemini_plan = None  # Current plan being executed [(w, a, s, d, end_time), ...]
@@ -105,6 +106,26 @@ def image_to_pil(image: np.ndarray, max_size: tuple[int, int] = (640, 480)) -> I
 def parse_gemini_response(response_text: str) -> Optional[list]:
   # Kept for backwards compatibility within this module
   return parse_plan_from_text(response_text)
+
+
+def extract_gemini_summary(response_text: str) -> str:
+  """
+  Extract a short, structured summary line from the model output.
+  Expected format: a single line starting with "summary:" (case-insensitive).
+  """
+  if not response_text:
+    return ""
+  for ln in response_text.splitlines():
+    s = ln.strip()
+    if not s:
+      continue
+    low = s.lower()
+    if low.startswith("summary:"):
+      out = s.split(":", 1)[1].strip()
+      # Keep it short and single-line for UI
+      out = " ".join(out.split())
+      return out[:240]
+  return ""
 
 
 def commands_to_joystick_axes(commands: dict) -> tuple[float, float]:
@@ -247,7 +268,10 @@ async def gemini_loop():
 
   logger.info("Gemini loop ready, waiting for enable...")
 
-  default_prompt = """You are controlling a robot. Analyze the image and output ONLY a movement plan. NO TEXT EXPLANATIONS. NO DESCRIPTIONS.
+  default_prompt = """You are controlling a robot. Analyze the image and output ONLY a structured response with:
+1) a brief single-line intention/notes summary, and
+2) a movement plan.
+No extra text outside that structure.
 
 Movement controls (only ONE direction at a time):
 - W: Move forward (~5 mph)
@@ -255,15 +279,50 @@ Movement controls (only ONE direction at a time):
 - A: Rotate left (~360 deg/s, keep turns SHORT: 0.1-0.3s)
 - D: Rotate right (~360 deg/s, keep turns SHORT: 0.1-0.3s)
 
+Default behavior (unless overridden by Additional instructions):
+- Explore and move around to see more of the environment. Prefer safe, gentle exploration rather than standing still.
+- If there is a clear open path, make progress forward with short bursts and occasional small turns to look around.
+
+Planning quality / nuance requirements:
+- Do NOT output a trivial plan like "all W until 5.0s" unless the scene is extremely open and safe.
+- Prefer SHORT forward bursts (W for 0.2-0.8s) separated by brief reassessment/stop steps (0,0,0,0 for 0.1-0.3s).
+- Use short turns (A/D 0.1-0.3s) to re-center in corridors/lanes, avoid nearby obstacles, and aim around corners; make these adjustments proactively.
+- If forward motion looks risky/blocked/uncertain, slow down: use stop steps and/or short turns instead of committing to long forward motion.
+- Obstacle avoidance is the top priority: if any obstacle/person/object is close ahead or to the side, DO NOT drive into it. Instead stop, turn away, or back up briefly to create clearance, then proceed.
+
 Stuck handling / repeated view:
 - If you appear stuck (no progress, blocked, or not moving), prefer SHORT backup motions (S for 0.2-0.6s) and/or SHORT turns (A/D for 0.1-0.3s) to unstick.
 - If the view looks essentially unchanged from the previous request (same frame / same scene), assume you're not moving and do the same unstick behavior (backup + small turn), then reassess.
 
-Output ONLY this plan format (nothing else):
+Output format (EXACTLY):
+summary: <one short sentence (<= 140 chars, no newlines) describing your intention + anything noteworthy (e.g. obstacle, stuck, turning, exploring)>
 plan
-1,0,0,0,0.5
-0,1,0,0,1.0
-0,0,0,0,1.1
+<w,a,s,d,t>
+<w,a,s,d,t>
+...
+
+EXAMPLE OUTPUT (copy this structure exactly, but choose actions based on the current image):
+summary: exploring forward, slight right to avoid obstacle on left, pause to reassess
+plan
+1,0,0,0,0.40
+1,0,0,0,0.80
+0,0,0,0,1.00
+0,0,0,1,1.20
+0,0,0,0,1.35
+1,0,0,0,1.95
+0,0,0,0,2.10
+0,1,0,0,2.30
+0,0,0,0,2.45
+1,0,0,0,3.05
+0,0,0,0,3.20
+0,0,0,1,3.40
+0,0,0,0,3.55
+1,0,0,0,4.15
+0,0,0,0,4.30
+0,1,0,0,4.50
+0,0,0,0,4.65
+1,0,0,0,4.90
+0,0,0,0,5.00
 
 Format: w,a,s,d,t where:
 - w,a,s,d are 1 (on) or 0 (off) - only ONE should be 1 per line
@@ -277,9 +336,9 @@ Format: w,a,s,d,t where:
 - Example: "1,0,0,0,1.0" means W until 1.0s, then "0,0,0,1,1.3" means D until 1.3s total
 - If no movement needed, output: plan\n0,0,0,0,0.1
 
-DO NOT write any text explanations. DO NOT describe the image. Output ONLY the plan lines starting with "plan"."""
+Do NOT describe the image. Output ONLY the summary line and the plan."""
 
-  global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y, gemini_plan_id
+  global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y, gemini_plan_id, gemini_last_summary
 
   while True:
     loop_start_t = time.monotonic()
@@ -304,11 +363,13 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
           plan = None
           if os.getenv("GEMINI_MOCK") == "1":
             logger.info("MOCK MODE: Using fake Gemini response (skipping camera)")
-            response_text = """plan
+            response_text = """summary: mock plan (forward then left)
+plan
 1,0,0,0,1.0
 0,1,0,0,2.0
 0,0,0,0,2.1"""
             gemini_last_response = response_text
+            gemini_last_summary = extract_gemini_summary(response_text)
             logger.info(f"✓ Mock Gemini response:")
             logger.info(f"{response_text}")
             plan = parse_gemini_response(response_text)
@@ -337,6 +398,7 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
                 response = await asyncio.to_thread(model.generate_content, [active_prompt, pil_image])
                 response_text = response.text
                 gemini_last_response = response_text
+                gemini_last_summary = extract_gemini_summary(response_text)
 
                 # Print full response in terminal
                 logger.info(f"✓ Gemini response received:")
@@ -519,6 +581,7 @@ async def gemini_control(request: 'web.Request'):
       "genai_available": genai is not None,
       "current_x": gemini_current_x,
       "current_y": gemini_current_y,
+      "summary": gemini_last_summary if gemini_last_summary else "",
       "last_response": gemini_last_response if gemini_last_response else "",  # Full response
       "current_plan": current_plan_list,
       "current_plan_id": plan_id,
