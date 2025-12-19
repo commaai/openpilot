@@ -46,6 +46,10 @@ gemini_prompt = ""  # In-memory prompt
 gemini_plan = None  # Current plan being executed [(w, a, s, d, end_time), ...]
 gemini_plan_start_time = None  # When the current plan started
 gemini_plan_id = 0  # increments every time we receive a new plan
+# In-flight Gemini request (to support mid-plan replanning without blocking the loop)
+gemini_request_task = None
+gemini_request_kind = None  # "initial" | "replan"
+gemini_replan_requested_for_plan_id = None
 
 
 ## GEMINI UTILS
@@ -278,7 +282,12 @@ async def gemini_loop():
   loop_hz = 100.0
   loop_dt = 1.0 / loop_hz
   last_gemini_call_time = 0.0
-  gemini_call_interval = 10.0  # Minimum time between Gemini calls (seconds)
+  # Rolling horizon:
+  # - Plan horizon is 10s
+  # - At 5s into execution, start a new request using a fresh frame
+  # - Apply the new plan as soon as it returns
+  gemini_call_interval = 1.0  # minimum spacing between requests (anti-spam / error cases)
+  replan_at_s = 5.0
 
   logger.info("Gemini loop ready, waiting for enable...")
 
@@ -414,6 +423,51 @@ Do NOT describe the image. Output ONLY the summary line and the plan."""
 
   global gemini_plan, gemini_plan_start_time, gemini_current_x, gemini_current_y, gemini_plan_id
   global gemini_last_summary
+  global gemini_request_task, gemini_request_kind, gemini_replan_requested_for_plan_id
+
+  async def request_plan(kind: str) -> Optional[list]:
+    """One-shot: capture a frame, call Gemini, parse plan. Returns plan or None."""
+    global gemini_last_response, gemini_last_summary
+    # Mock mode for debugging (set GEMINI_MOCK=1 to enable)
+    if os.getenv("GEMINI_MOCK") == "1":
+      logger.info(f"MOCK MODE: Using fake Gemini response ({kind})")
+      response_text = """summary: mock plan (forward then left)
+plan
+1,0,0,0,1.0
+0,1,0,0,2.0
+0,0,0,0,2.1"""
+      gemini_last_response = response_text
+      gemini_last_summary = extract_gemini_summary(response_text)
+      plan = parse_gemini_response(response_text)
+      return plan
+
+    frame = await asyncio.to_thread(get_camera_frame)
+    if frame is None:
+      logger.warning("Failed to get camera frame")
+      return None
+
+    custom_prompt = gemini_get_prompt()
+    active_prompt = default_prompt
+    if custom_prompt:
+      active_prompt = active_prompt + "\n\nAdditional instructions: " + custom_prompt
+
+    pil_image = await asyncio.to_thread(image_to_pil, frame)
+    jpeg_quality = int(os.getenv("GEMINI_JPEG_QUALITY", "65"))
+    image_part, image_nbytes = await asyncio.to_thread(pil_to_jpeg_part, pil_image, jpeg_quality)
+    logger.info(f"Gemini {kind}: image={pil_image.size}, jpeg_bytes={image_nbytes}, q={jpeg_quality}")
+
+    logger.info(f"Gemini {kind}: sending frame to Gemini API...")
+    try:
+      response = await asyncio.to_thread(model.generate_content, [active_prompt, image_part])
+      response_text = response.text
+      gemini_last_response = response_text
+      gemini_last_summary = extract_gemini_summary(response_text)
+      logger.info(f"✓ Gemini {kind} response received:")
+      logger.info(f"{response_text}")
+      return parse_gemini_response(response_text)
+    except Exception as e:
+      logger.error(f"✗ Error calling Gemini API ({kind}): {e}", exc_info=True)
+      return None
 
   while True:
     loop_start_t = time.monotonic()
@@ -423,93 +477,46 @@ Do NOT describe the image. Output ONLY the summary line and the plan."""
       if gemini_enabled:
         current_time = time.monotonic()
 
-        next_allowed_call_time = compute_next_gemini_call_time(
-          last_gemini_call_time,
-          gemini_call_interval,
-          gemini_plan_start_time,
-          gemini_plan,
-        )
-
-        # Only request a new plan when we're idle (no plan currently being executed)
-        if current_time >= next_allowed_call_time and gemini_plan is None:
-          # Mock mode for debugging (set GEMINI_MOCK=1 to enable)
-          plan = None
-          if os.getenv("GEMINI_MOCK") == "1":
-            logger.info("MOCK MODE: Using fake Gemini response (skipping camera)")
-            response_text = """summary: mock plan (forward then left)
-plan
-1,0,0,0,1.0
-0,1,0,0,2.0
-0,0,0,0,2.1"""
-            gemini_last_response = response_text
-            gemini_last_summary = extract_gemini_summary(response_text)
-            logger.info(f"✓ Mock Gemini response:")
-            logger.info(f"{response_text}")
-            plan = parse_gemini_response(response_text)
-            logger.info(f"✓ Parsed plan result: {plan}")
+        # Start requests (single in-flight at a time)
+        can_start = (gemini_request_task is None) or gemini_request_task.done()
+        if can_start and (current_time - last_gemini_call_time) >= gemini_call_interval:
+          if gemini_plan is None or gemini_plan_start_time is None:
+            # No plan: request immediately
+            gemini_request_kind = "initial"
+            gemini_request_task = asyncio.create_task(request_plan("initial"))
+            last_gemini_call_time = current_time
           else:
-            logger.info("Getting camera frame...")
-            # Offload potentially-blocking vision IPC + image handling to a thread to keep aiohttp responsive.
-            frame = await asyncio.to_thread(get_camera_frame)
-            if frame is not None:
-              logger.info(f"Got frame: {frame.shape}")
-              custom_prompt = gemini_get_prompt()
-              # Stateless request: full instructions each time (no chat history).
-              active_prompt = default_prompt
-              if custom_prompt:
-                active_prompt = active_prompt + "\n\nAdditional instructions: " + custom_prompt
-                logger.info(f"Using default + custom prompt (custom length: {len(custom_prompt)})")
-              else:
-                logger.info("Using default prompt (no custom prompt)")
+            # Mid-plan replan: trigger once at ~5s into execution
+            elapsed_in_plan = current_time - gemini_plan_start_time
+            if elapsed_in_plan >= replan_at_s and gemini_replan_requested_for_plan_id != gemini_plan_id:
+              gemini_replan_requested_for_plan_id = gemini_plan_id
+              gemini_request_kind = "replan"
+              gemini_request_task = asyncio.create_task(request_plan("replan"))
+              last_gemini_call_time = current_time
 
-              pil_image = await asyncio.to_thread(image_to_pil, frame)
-              # Compress image to JPEG to reduce upload + latency.
-              jpeg_quality = int(os.getenv("GEMINI_JPEG_QUALITY", "65"))
-              image_part, image_nbytes = await asyncio.to_thread(pil_to_jpeg_part, pil_image, jpeg_quality)
-              logger.info(f"Image prepared: {pil_image.size}, jpeg_bytes={image_nbytes}, q={jpeg_quality}")
+        # Apply completed request immediately (even mid-plan)
+        if gemini_request_task is not None and gemini_request_task.done():
+          try:
+            new_plan = gemini_request_task.result()
+          except Exception as e:
+            logger.error(f"Gemini request task error: {e}", exc_info=True)
+            new_plan = None
+          kind = gemini_request_kind
+          gemini_request_task = None
+          gemini_request_kind = None
 
-              logger.info("Sending frame to Gemini API...")
-              try:
-                # Offload the blocking Gemini SDK call to a thread to avoid stalling the event loop.
-                # Send image + full prompt every time (stateless).
-                response = await asyncio.to_thread(model.generate_content, [active_prompt, image_part])
-                response_text = response.text
-                gemini_last_response = response_text
-                gemini_last_summary = extract_gemini_summary(response_text)
-
-                # Print full response in terminal
-                logger.info("✓ Gemini response received:")
-                logger.info(f"{response_text}")
-
-                plan = parse_gemini_response(response_text)
-
-              except Exception as e:
-                logger.error(f"✗ Error calling Gemini API: {e}", exc_info=True)
-            else:
-              logger.warning("Failed to get camera frame")
-
-          if plan is not None:
-            # Start executing plan
-            gemini_plan = plan
+          if new_plan is not None:
+            gemini_plan = new_plan
             gemini_plan_start_time = time.monotonic()
-            # Pace Gemini calls off plan start time so a slow Gemini response doesn't
-            # artificially add extra delay on top of the plan duration.
-            last_gemini_call_time = gemini_plan_start_time
             gemini_plan_id += 1
-            plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
-            logger.info(f"✓ SETTING PLAN: plan_id={gemini_plan_id}, steps={len(plan)}, start_time={gemini_plan_start_time}")
-            logger.info(f"✓ Plan details:")
-            logger.info(f"{plan_str}")
-            logger.info(f"✓ Plan will be available for browser to fetch")
+            gemini_replan_requested_for_plan_id = None
+            logger.info(f"✓ APPLYING {kind} PLAN NOW: plan_id={gemini_plan_id}, steps={len(new_plan)}, start_time={gemini_plan_start_time}")
           else:
-            logger.warning("No valid plan parsed from response")
-            # Avoid hammering the API if we keep getting invalid output.
-            last_gemini_call_time = time.monotonic()
-            gemini_plan = None
-            gemini_plan_start_time = None
-            # Reset joystick when plan parsing fails
-            gemini_current_x = 0.0
-            gemini_current_y = 0.0
+            logger.warning(f"{kind} produced no valid plan")
+            # If we have no plan at all, keep joystick at zero
+            if gemini_plan is None:
+              gemini_current_x = 0.0
+              gemini_current_y = 0.0
 
         # Execute plan if active
         if gemini_plan is not None and gemini_plan_start_time is not None:
@@ -547,6 +554,11 @@ plan
         # Clear plan when disabled
         gemini_plan = None
         gemini_plan_start_time = None
+        gemini_replan_requested_for_plan_id = None
+        if gemini_request_task is not None and isinstance(gemini_request_task, asyncio.Task):
+          gemini_request_task.cancel()
+        gemini_request_task = None
+        gemini_request_kind = None
 
         if gemini_current_x != 0.0 or gemini_current_y != 0.0:
           logger.info("Gemini disabled, resetting joystick to zero")
