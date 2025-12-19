@@ -45,8 +45,6 @@ gemini_enabled = False  # In-memory state, starts disabled
 gemini_prompt = ""  # In-memory prompt
 gemini_plan = None  # Current plan being executed [(w, a, s, d, end_time), ...]
 gemini_plan_start_time = None  # When the current plan started
-gemini_plan = None  # Current plan being executed [(w, a, s, d, end_time), ...]
-gemini_plan_start_time = None  # When the current plan started
 
 
 ## GEMINI UTILS
@@ -67,7 +65,7 @@ def yuv_to_rgb(y, u, v):
   return rgb.astype(np.uint8)
 
 
-def get_camera_frame() -> Optional[np.ndarray]:
+def get_camera_frame():
   """Get a frame from the road camera"""
   try:
     vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
@@ -352,7 +350,7 @@ plan
 Keep responses SHORT. Just output the JSON or plan, no explanations."""
 
   global gemini_plan, gemini_plan_start_time, gemini_pm, gemini_current_x, gemini_current_y
-  
+
   while True:
     try:
       gemini_enabled = gemini_is_enabled()
@@ -384,7 +382,6 @@ Keep responses SHORT. Just output the JSON or plan, no explanations."""
 
               if plan is not None:
                 # Start executing plan
-                global gemini_plan, gemini_plan_start_time
                 gemini_plan = plan
                 gemini_plan_start_time = time.monotonic()
                 logger.info(f"✓ Parsed plan with {len(plan)} steps: {plan}")
@@ -577,7 +574,7 @@ async def gemini_control(request: 'web.Request'):
       return web.json_response({"status": "ok", "enabled": new_value})
 
 
-async def gemini_prompt(request: 'web.Request'):
+async def gemini_prompt_handler(request: 'web.Request'):
   """Get or set Gemini prompt"""
   if request.method == 'GET':
     prompt = gemini_get_prompt()
@@ -641,8 +638,8 @@ def main():
     app.router.add_post("/sound", sound)
     app.router.add_get("/gemini", gemini_control)
     app.router.add_post("/gemini", gemini_control)
-    app.router.add_get("/gemini/prompt", gemini_prompt)
-    app.router.add_post("/gemini/prompt", gemini_prompt)
+    app.router.add_get("/gemini/prompt", gemini_prompt_handler)
+    app.router.add_post("/gemini/prompt", gemini_prompt_handler)
     app.router.add_static('/static', os.path.join(TELEOPDIR, 'static'))
 
     # Start Gemini background task when app starts
