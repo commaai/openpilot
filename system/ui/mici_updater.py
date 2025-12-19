@@ -10,7 +10,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_text_box, gui_label, Label
+from openpilot.system.ui.widgets.label import gui_label, Label
 from openpilot.system.ui.widgets.button import FullRoundedButton
 from openpilot.system.ui.mici_setup import NetworkSetupPage, FailedPage, NetworkConnectivityMonitor
 
@@ -44,6 +44,7 @@ class Updater(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
 
+    self._body_label = Label("", 36, color=rl.Color(255, 255, 255, int(255 * 0.9)), weight=FontWeight.ROMAN)
     # Buttons
     self._continue_button = FullRoundedButton("continue")
     self._continue_button.set_click_callback(lambda: self.set_current_screen(Screen.WIFI))
@@ -146,8 +147,9 @@ class Updater(Widget):
       font_size = 62
     else:
       font_size = 82
-    gui_text_box(title_rect, self.progress_text, font_size, font_weight=FontWeight.DISPLAY,
-                 color=rl.Color(255, 255, 255, int(255 * 0.9)))
+    self._body_label.set_font_size(font_size)
+    self._body_label.set_text(self.progress_text)
+    self._body_label.render(title_rect)
 
     progress_value = f"{self.progress_value}%"
     text_height = measure_text_cached(gui_app.font(FontWeight.ROMAN), progress_value, 128).y

@@ -12,7 +12,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.slider import SmallSlider
 from openpilot.system.ui.widgets.button import SmallButton, FullRoundedButton
-from openpilot.system.ui.widgets.label import gui_label, gui_text_box
+from openpilot.system.ui.widgets.label import gui_label, Label
 
 USERDATA = "/dev/disk/by-partlabel/userdata"
 TIMEOUT = 3*60
@@ -37,6 +37,7 @@ class Reset(Widget):
     self._previous_reset_state = None
     self._reset_state = ResetState.NONE
 
+    self._body_label = Label("", 36, weight=FontWeight.ROMAN, line_height=0.9)
     self._cancel_button = SmallButton("cancel")
     self._cancel_button.set_click_callback(self._cancel_callback)
 
@@ -87,7 +88,8 @@ class Reset(Widget):
               color=rl.Color(255, 255, 255, int(255 * 0.9)))
 
     text_rect = rl.Rectangle(rect.x + 8, rect.y + 56, rect.width - 8 * 2, rect.height - 80)
-    gui_text_box(text_rect, self._get_body_text(), 36, font_weight=FontWeight.ROMAN, line_scale=0.9)
+    self._body_label.set_text(self._get_body_text())
+    self._body_label.render(text_rect)
 
     if self._reset_state != ResetState.RESETTING:
       # fade out cancel button as slider is moved, set visible to prevent pressing invisible cancel

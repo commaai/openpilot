@@ -6,7 +6,6 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.utils import GuiStyleContext
 from openpilot.system.ui.lib.emoji import find_emoji, emoji_tex
 from openpilot.system.ui.lib.wrap_text import wrap_text
 
@@ -58,34 +57,6 @@ def gui_label(
   # Draw the text in the specified rectangle
   # TODO: add wrapping and proper centering for multiline text
   rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), font_size, 0, color)
-
-
-def gui_text_box(
-  rect: rl.Rectangle,
-  text: str,
-  font_size: int = DEFAULT_TEXT_SIZE,
-  color: rl.Color = DEFAULT_TEXT_COLOR,
-  alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
-  font_weight: FontWeight = FontWeight.NORMAL,
-  line_scale: float = 1.0,
-):
-  styles = [
-    (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(color)),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, round(font_size * FONT_SCALE)),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_LINE_SPACING, round(font_size * FONT_SCALE * line_scale)),
-    (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_ALIGNMENT, alignment),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_ALIGNMENT_VERTICAL, alignment_vertical),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD)
-  ]
-  if font_weight != FontWeight.NORMAL:
-    rl.gui_set_font(gui_app.font(font_weight))
-
-  with GuiStyleContext(styles):
-    rl.gui_label(rect, text)
-
-  if font_weight != FontWeight.NORMAL:
-    rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
 
 
 @dataclass

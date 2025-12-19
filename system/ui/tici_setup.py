@@ -103,7 +103,7 @@ class Setup(Widget):
 
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
-    self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._download_failed_title_label = Label("Download Failed", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, padding=20)
     self._download_failed_url_label = Label("", 52, FontWeight.NORMAL, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, padding=20)
     self._download_failed_body_label = Label("", BODY_FONT_SIZE, align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, padding=20)
 
@@ -111,7 +111,7 @@ class Setup(Widget):
     self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback,
                                                  button_style=ButtonStyle.PRIMARY)
     self._network_setup_continue_button.set_enabled(False)
-    self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, text_padding=20)
+    self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, rl.GuiTextAlignment.TEXT_ALIGN_LEFT, padding=20)
 
     self._custom_software_warning_continue_button = Button("Scroll to continue", self._custom_software_warning_continue_button_callback,
                                                            button_style=ButtonStyle.PRIMARY)
