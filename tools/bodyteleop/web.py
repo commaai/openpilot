@@ -17,7 +17,6 @@ from aiohttp import ClientSession
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
-from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 import cereal.messaging as messaging
@@ -40,6 +39,10 @@ gemini_pm = None
 gemini_current_x = 0.0
 gemini_current_y = 0.0
 gemini_task = None
+
+# File paths for Gemini state (avoiding params)
+GEMINI_ENABLED_FILE = os.path.join(TELEOPDIR, ".gemini_enabled")
+GEMINI_PROMPT_FILE = os.path.join(TELEOPDIR, ".gemini_prompt")
 
 
 ## GEMINI UTILS
@@ -144,6 +147,42 @@ def commands_to_joystick_axes(commands: dict) -> tuple[float, float]:
   return (x, y)
 
 
+def gemini_is_enabled() -> bool:
+  """Check if Gemini is enabled via file"""
+  return os.path.exists(GEMINI_ENABLED_FILE)
+
+
+def gemini_get_prompt() -> str:
+  """Get Gemini prompt from file"""
+  if os.path.exists(GEMINI_PROMPT_FILE):
+    try:
+      with open(GEMINI_PROMPT_FILE, 'r', encoding='utf-8') as f:
+        return f.read()
+    except Exception:
+      return ""
+  return ""
+
+
+def gemini_set_enabled(enabled: bool):
+  """Set Gemini enabled state via file"""
+  if enabled:
+    with open(GEMINI_ENABLED_FILE, 'w') as f:
+      f.write("1")
+  else:
+    if os.path.exists(GEMINI_ENABLED_FILE):
+      os.remove(GEMINI_ENABLED_FILE)
+
+
+def gemini_set_prompt(prompt: str):
+  """Set Gemini prompt via file"""
+  if prompt:
+    with open(GEMINI_PROMPT_FILE, 'w', encoding='utf-8') as f:
+      f.write(prompt)
+  else:
+    if os.path.exists(GEMINI_PROMPT_FILE):
+      os.remove(GEMINI_PROMPT_FILE)
+
+
 async def gemini_loop():
   """Background task for Gemini control"""
   global gemini_current_x, gemini_current_y
@@ -160,7 +199,6 @@ async def gemini_loop():
   genai.configure(api_key=api_key)
   model = genai.GenerativeModel('gemini-1.5-flash')
 
-  params = Params()
   joystick_rk = Ratekeeper(100, print_delay_threshold=None)
   last_gemini_call_time = 0.0
   gemini_call_interval = 5.0
@@ -192,7 +230,7 @@ Analyze the image and respond with the appropriate movement command."""
 
   while True:
     try:
-      gemini_enabled = params.get_bool("GeminiControlEnabled")
+      gemini_enabled = gemini_is_enabled()
 
       if gemini_enabled:
         current_time = time.monotonic()
@@ -201,7 +239,7 @@ Analyze the image and respond with the appropriate movement command."""
 
           frame = get_camera_frame()
           if frame is not None:
-            custom_prompt = params.get("GeminiPrompt", encoding='utf8')
+            custom_prompt = gemini_get_prompt()
             active_prompt = custom_prompt if custom_prompt else default_prompt
 
             pil_image = image_to_pil(frame)
@@ -319,49 +357,41 @@ async def sound(request: 'web.Request'):
 
 async def gemini_control(request: 'web.Request'):
   """Toggle or get Gemini control status"""
-  params_obj = Params()
-
   if request.method == 'GET':
     # Get current status and prompt
-    enabled = params_obj.get_bool("GeminiControlEnabled")
-    prompt = params_obj.get("GeminiPrompt", encoding='utf8')
-    return web.json_response({"enabled": enabled, "prompt": prompt if prompt else ""})
+    enabled = gemini_is_enabled()
+    prompt = gemini_get_prompt()
+    return web.json_response({"enabled": enabled, "prompt": prompt})
   else:
     # POST: Toggle or set status
     data = await request.json()
     enabled = data.get("enabled")
 
     if enabled is not None:
-      params_obj.put_bool("GeminiControlEnabled", enabled)
+      gemini_set_enabled(enabled)
       logger.info(f"Gemini control {'enabled' if enabled else 'disabled'}")
       return web.json_response({"status": "ok", "enabled": enabled})
     else:
       # Toggle if no value provided
-      current = params_obj.get_bool("GeminiControlEnabled")
+      current = gemini_is_enabled()
       new_value = not current
-      params_obj.put_bool("GeminiControlEnabled", new_value)
+      gemini_set_enabled(new_value)
       logger.info(f"Gemini control toggled to {'enabled' if new_value else 'disabled'}")
       return web.json_response({"status": "ok", "enabled": new_value})
 
 
 async def gemini_prompt(request: 'web.Request'):
   """Get or set Gemini prompt"""
-  params_obj = Params()
-
   if request.method == 'GET':
-    prompt = params_obj.get("GeminiPrompt", encoding='utf8')
-    return web.json_response({"prompt": prompt if prompt else ""})
+    prompt = gemini_get_prompt()
+    return web.json_response({"prompt": prompt})
   else:
     # POST: Set prompt
     data = await request.json()
     prompt = data.get("prompt", "")
 
-    if prompt:
-      params_obj.put("GeminiPrompt", prompt.encode('utf8'))
-      logger.info(f"Gemini prompt updated (length: {len(prompt)})")
-    else:
-      params_obj.remove("GeminiPrompt")
-      logger.info("Gemini prompt cleared")
+    gemini_set_prompt(prompt)
+    logger.info(f"Gemini prompt updated (length: {len(prompt)})")
 
     return web.json_response({"status": "ok", "prompt": prompt})
 
@@ -383,6 +413,7 @@ def main():
   global gemini_pm, gemini_task
 
   # Enable joystick debug mode
+  from openpilot.common.params import Params
   Params().put_bool("JoystickDebugMode", True)
 
   # Initialize messaging for Gemini
