@@ -11,6 +11,26 @@ API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 KEYS = {"id_rsa": "RS256",
         "id_ecdsa": "ES256"}
 
+# Reusable session with connection pooling to avoid DNS/SSL setup overhead
+_session = None
+
+def _get_session():
+  global _session
+  if _session is None:
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+
+    _session = requests.Session()
+    # Use connection pooling to reuse connections and avoid DNS/SSL setup
+    adapter = HTTPAdapter(
+      pool_connections=1,
+      pool_maxsize=1,
+      max_retries=Retry(total=3, backoff_factor=0.3)
+    )
+    _session.mount('http://', adapter)
+    _session.mount('https://', adapter)
+  return _session
+
 
 class Api:
   def __init__(self, dongle_id):
@@ -49,7 +69,9 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
 
   headers['User-Agent'] = "openpilot-" + get_version()
 
-  return requests.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
+  # Use session with connection pooling to reuse connections and avoid DNS/SSL setup
+  session = _get_session()
+  return session.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:
