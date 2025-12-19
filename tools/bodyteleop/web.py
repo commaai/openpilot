@@ -102,12 +102,12 @@ def parse_gemini_response(response_text: str) -> Optional[list]:
   Returns: plan_list: [(w, a, s, d, end_time), ...] or None if no plan
   """
   response_text = response_text.strip()
-  
+
   # Look for plan format (lines with w,a,s,d,t after "plan" keyword)
   plan_lines = []
   lines = response_text.split('\n')
   found_plan_keyword = False
-  
+
   for line in lines:
     line = line.strip()
     if 'plan' in line.lower():
@@ -121,7 +121,7 @@ def parse_gemini_response(response_text: str) -> Optional[list]:
           plan_lines.append((w, a, s, d, t))
       except (ValueError, IndexError):
         pass
-  
+
   # Also try to find plan lines even without "plan" keyword
   if not plan_lines:
     for line in lines:
@@ -134,7 +134,7 @@ def parse_gemini_response(response_text: str) -> Optional[list]:
             plan_lines.append((w, a, s, d, t))
         except (ValueError, IndexError):
           pass
-  
+
   if plan_lines:
     # Convert to cumulative timestamps
     plan = []
@@ -143,7 +143,7 @@ def parse_gemini_response(response_text: str) -> Optional[list]:
       cumulative_time += duration
       plan.append((w, a, s, d, cumulative_time))
     return plan
-  
+
   # No valid plan found
   return None
 
@@ -323,8 +323,13 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
           if frame is not None:
             logger.info(f"Got frame: {frame.shape}")
             custom_prompt = gemini_get_prompt()
-            active_prompt = custom_prompt if custom_prompt else default_prompt
-            logger.info(f"Using {'custom' if custom_prompt else 'default'} prompt (length: {len(active_prompt)})")
+            # Append custom prompt to default prompt if provided
+            if custom_prompt:
+              active_prompt = default_prompt + "\n\nAdditional instructions: " + custom_prompt
+              logger.info(f"Using default + custom prompt (custom length: {len(custom_prompt)})")
+            else:
+              active_prompt = default_prompt
+              logger.info(f"Using default prompt (length: {len(active_prompt)})")
 
             pil_image = image_to_pil(frame)
             logger.info(f"Image prepared: {pil_image.size}")
@@ -334,13 +339,13 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
               response = model.generate_content([active_prompt, pil_image])
               response_text = response.text
               gemini_last_response = response_text
-              
+
               # Print full response in terminal
               logger.info(f"✓ Gemini response received:")
               logger.info(f"{response_text}")
-              
+
               plan = parse_gemini_response(response_text)
-              
+
               if plan is not None:
                 # Start executing plan
                 gemini_plan = plan
