@@ -1,5 +1,5 @@
 import { handleKeyX, executePlan } from "./controls.js";
-import { start, stop, lastChannelMessageTime, playSoundRequest, getGeminiStatus, setGeminiStatus } from "./webrtc.js";
+import { start, stop, lastChannelMessageTime, playSoundRequest, getGeminiStatus, setGeminiStatus, getGeminiPrompt, setGeminiPrompt } from "./webrtc.js";
 
 export var pc = null;
 export var dc = null;
@@ -54,14 +54,42 @@ $("#gemini-toggle").change(function() {
   });
 });
 
-// Load initial Gemini status
+// Load initial Gemini status and prompt
 getGeminiStatus().then(function(data) {
   const enabled = data.enabled || false;
   geminiEnabled = enabled;
   $("#gemini-toggle").prop('checked', enabled);
   $("#gemini-status").text(enabled ? "Enabled" : "Disabled");
+
+  // Load prompt if available
+  if (data.prompt) {
+    $("#gemini-prompt").val(data.prompt);
+  }
 }).catch(function(err) {
   console.error("Error getting Gemini status:", err);
+});
+
+// Load prompt separately in case status doesn't include it
+getGeminiPrompt().then(function(data) {
+  if (data.prompt) {
+    $("#gemini-prompt").val(data.prompt);
+  }
+}).catch(function(err) {
+  console.error("Error getting Gemini prompt:", err);
+});
+
+// Save prompt button
+$("#gemini-prompt-save").click(function() {
+  const prompt = $("#gemini-prompt").val();
+  setGeminiPrompt(prompt).then(function(data) {
+    $("#gemini-prompt-status").text("Saved!").css("color", "green");
+    setTimeout(function() {
+      $("#gemini-prompt-status").text("");
+    }, 2000);
+  }).catch(function(err) {
+    console.error("Error saving Gemini prompt:", err);
+    $("#gemini-prompt-status").text("Error saving").css("color", "red");
+  });
 });
 
 setInterval( () => {

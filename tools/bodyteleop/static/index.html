@@ -106,6 +106,16 @@
       </div>
       <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
         <div class="panel row">
+          <div class="col-sm-12">
+            <label for="gemini-prompt" style="margin-bottom: 5px;">Gemini Driving Prompt (optional):</label>
+            <textarea class="form-control" id="gemini-prompt" rows="3" placeholder="Enter custom instructions for how Gemini should drive..."></textarea>
+            <button type="button" id="gemini-prompt-save" class="btn btn-light btn-sm" style="margin-top: 5px;">Save Prompt</button>
+            <span id="gemini-prompt-status" style="margin-left: 10px;"></span>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
+        <div class="panel row">
           <div class="col-sm-6"><canvas id="chart-ping"></canvas></div>
           <div class="col-sm-6"><canvas id="chart-battery"></canvas></div>
         </div>

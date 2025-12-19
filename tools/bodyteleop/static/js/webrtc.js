@@ -40,6 +40,22 @@ export function setGeminiStatus(enabled) {
 }
 
 
+export function getGeminiPrompt() {
+  return fetch('/gemini/prompt', {
+    method: 'GET'
+  }).then(response => response.json());
+}
+
+
+export function setGeminiPrompt(prompt) {
+  return fetch('/gemini/prompt', {
+    body: JSON.stringify({prompt: prompt}),
+    headers: {'Content-Type': 'application/json'},
+    method: 'POST'
+  }).then(response => response.json());
+}
+
+
 export function pingHeadRequest() {
   return fetch('/', {
     method: 'HEAD'
