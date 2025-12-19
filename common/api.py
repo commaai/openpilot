@@ -42,14 +42,16 @@ class Api:
     return token
 
 
-def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
+def api_get(endpoint, method='GET', timeout=None, access_token=None, session=None, **params):
   headers = {}
   if access_token is not None:
     headers['Authorization'] = "JWT " + access_token
 
   headers['User-Agent'] = "openpilot-" + get_version()
 
-  return requests.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
+  # TODO: add session to Api
+  req = requests if session is None else session
+  return req.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
 
 
 def get_key_pair() -> tuple[str, str, str] | tuple[None, None, None]:
