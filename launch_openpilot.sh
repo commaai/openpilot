@@ -3,6 +3,9 @@
 ln -sfn $(pwd) /data/pythonpath
 export PYTHONPATH="$PWD"
 
+# increase /tmp size for replay
+sudo mount -o remount,size=2G /tmp
+
 pkill -f spinner
 # launch spinner
 echo "Building" | ./system/ui/spinner.py &
