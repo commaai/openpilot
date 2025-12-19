@@ -67,17 +67,17 @@
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate/system-0387493619f22b39bfbf7bc303f91b1a2955ae1b1cf91cd19667d89e95dbb41a.img.xz",
-    "hash": "ff2dbfd54cda1055b4db18a06018d7c1729cf1bc8b4dfa11d501becef05388e9",
-    "hash_raw": "0387493619f22b39bfbf7bc303f91b1a2955ae1b1cf91cd19667d89e95dbb41a",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-0cf8cb01e40d05d6d325afe68b934a6c0dda3a56703b2ef3e3de637d754ae5dd.img.xz",
+    "hash": "7c58308be461126677ba02e9c9739556520ee02958934733867d86ecfe2e58e9",
+    "hash_raw": "0cf8cb01e40d05d6d325afe68b934a6c0dda3a56703b2ef3e3de637d754ae5dd",
     "size": 4718592000,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
-    "ondevice_hash": "6287c236e8e7e29b6fd8de6aa34229a064305a7c12b802072256fafe4144c0ca",
+    "ondevice_hash": "826790516410c325aa30265846946d06a556f0a7b23c957f65fd11c055a663da",
     "alt": {
-      "hash": "0387493619f22b39bfbf7bc303f91b1a2955ae1b1cf91cd19667d89e95dbb41a",
-      "url": "https://commadist.azureedge.net/agnosupdate/system-0387493619f22b39bfbf7bc303f91b1a2955ae1b1cf91cd19667d89e95dbb41a.img",
+      "hash": "0cf8cb01e40d05d6d325afe68b934a6c0dda3a56703b2ef3e3de637d754ae5dd",
+      "url": "https://commadist.azureedge.net/agnosupdate/system-0cf8cb01e40d05d6d325afe68b934a6c0dda3a56703b2ef3e3de637d754ae5dd.img",
       "size": 4718592000
     }
   }
