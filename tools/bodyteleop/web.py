@@ -340,9 +340,10 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
             gemini_plan_start_time = time.monotonic()
             gemini_plan_id += 1
             plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
-            logger.info(f"✓ Parsed plan with {len(plan)} steps, plan_id={gemini_plan_id}:")
+            logger.info(f"✓ SETTING PLAN: plan_id={gemini_plan_id}, steps={len(plan)}, start_time={gemini_plan_start_time}")
+            logger.info(f"✓ Plan details:")
             logger.info(f"{plan_str}")
-            logger.info(f"✓ Plan start time: {gemini_plan_start_time}, plan_id: {gemini_plan_id}")
+            logger.info(f"✓ Plan will be available for browser to fetch")
           else:
             logger.warning("No valid plan parsed from response")
             gemini_plan = None
@@ -502,8 +503,11 @@ async def gemini_control(request: 'web.Request'):
     plan_steps = len(gemini_plan) if gemini_plan else 0
     logger.info(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={gemini_plan is not None}, plan_steps={plan_steps}")
     if gemini_plan:
+      logger.info(f"  ✓ SENDING PLAN TO BROWSER: plan_id={plan_id}, steps={plan_steps}")
       logger.info(f"  Plan steps (first 3): {[f'{w},{a},{s},{d},{t:.2f}' for w,a,s,d,t in gemini_plan[:3]]}")
-    logger.info(f"  Response JSON keys: {list(status_info.keys())}")
+      logger.info(f"  current_plan in JSON: {status_info['current_plan'] is not None}, length={len(status_info['current_plan']) if status_info['current_plan'] else 0}")
+    else:
+      logger.info(f"  ✗ NO PLAN TO SEND (gemini_plan is None)")
     return web.json_response(status_info)
   else:
     # POST: Toggle or set status

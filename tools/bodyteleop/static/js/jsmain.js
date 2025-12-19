@@ -160,10 +160,12 @@ function updateGeminiStatus() {
     console.log("Gemini status update:", {
       enabled,
       hasPlan: !!data.current_plan,
+      planLength: data.current_plan ? data.current_plan.length : 0,
       planId: data.current_plan_id,
       lastPlanId: lastGeminiPlanId,
       planActive: data.plan_active,
-      planElapsed: data.plan_elapsed
+      planElapsed: data.plan_elapsed,
+      currentPlanRaw: data.current_plan
     });
 
     // Update Gemini XY values for controls.js
