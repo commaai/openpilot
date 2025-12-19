@@ -304,35 +304,48 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
             pil_image = image_to_pil(frame)
             logger.info(f"Image prepared: {pil_image.size}")
 
-            logger.info("Sending frame to Gemini API...")
-            try:
-              response = model.generate_content([active_prompt, pil_image])
-              response_text = response.text
+            # Mock mode for debugging (set GEMINI_MOCK=1 to enable)
+            plan = None
+            if os.getenv("GEMINI_MOCK") == "1":
+              logger.info("MOCK MODE: Using fake Gemini response")
+              response_text = """plan
+1,0,0,0,1.0
+0,1,0,0,2.0
+0,0,0,0,2.1"""
               global gemini_last_response
               gemini_last_response = response_text
-
-              # Print full response in terminal
-              logger.info(f"✓ Gemini response received:")
+              logger.info(f"✓ Mock Gemini response:")
               logger.info(f"{response_text}")
-
               plan = parse_gemini_response(response_text)
+            else:
+              logger.info("Sending frame to Gemini API...")
+              try:
+                response = model.generate_content([active_prompt, pil_image])
+                response_text = response.text
+                global gemini_last_response
+                gemini_last_response = response_text
 
-              if plan is not None:
-                # Start executing plan
-                global gemini_plan_id
-                gemini_plan = plan
-                gemini_plan_start_time = time.monotonic()
-                gemini_plan_id += 1
-                plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
-                logger.info(f"✓ Parsed plan with {len(plan)} steps:")
-                logger.info(f"{plan_str}")
-              else:
-                logger.warning("No valid plan parsed from response")
-                gemini_plan = None
-                gemini_plan_start_time = None
+                # Print full response in terminal
+                logger.info(f"✓ Gemini response received:")
+                logger.info(f"{response_text}")
 
-            except Exception as e:
-              logger.error(f"✗ Error calling Gemini API: {e}", exc_info=True)
+                plan = parse_gemini_response(response_text)
+              except Exception as e:
+                logger.error(f"✗ Error calling Gemini API: {e}", exc_info=True)
+
+            if plan is not None:
+              # Start executing plan
+              global gemini_plan_id
+              gemini_plan = plan
+              gemini_plan_start_time = time.monotonic()
+              gemini_plan_id += 1
+              plan_str = "\n".join([f"  {w},{a},{s},{d},{t:.2f}" for w, a, s, d, t in plan])
+              logger.info(f"✓ Parsed plan with {len(plan)} steps:")
+              logger.info(f"{plan_str}")
+            else:
+              logger.warning("No valid plan parsed from response")
+              gemini_plan = None
+              gemini_plan_start_time = None
           else:
             logger.warning("Failed to get camera frame")
 
@@ -352,12 +365,16 @@ DO NOT write any text explanations. DO NOT describe the image. Output ONLY the p
               break
 
           if not plan_active:
-            # Plan finished - but keep it visible for a bit so browser can see it
-            # Clear it after 1 second of being finished
-            elapsed_since_finish = elapsed - (gemini_plan[-1][4] if gemini_plan else 0)
-            if elapsed_since_finish > 1.0:
+            # Plan finished - but keep it visible for 5 seconds so browser can see it
+            # Clear it after 5 seconds of being finished
+            plan_end_time = gemini_plan[-1][4] if gemini_plan else 0
+            elapsed_since_finish = elapsed - plan_end_time
+            if elapsed_since_finish > 5.0:
+              logger.info(f"Plan finished {elapsed_since_finish:.2f}s ago, clearing it")
               gemini_plan = None
               gemini_plan_start_time = None
+            else:
+              logger.debug(f"Plan finished but keeping visible for browser (finished {elapsed_since_finish:.2f}s ago)")
             current_commands = {"forward": False, "backward": False, "left": False, "right": False}
 
           gemini_current_x, gemini_current_y = commands_to_joystick_axes(current_commands)
@@ -480,7 +497,8 @@ async def gemini_control(request: 'web.Request'):
       "plan_active": gemini_plan is not None and gemini_plan_start_time is not None,
       "plan_elapsed": (time.monotonic() - gemini_plan_start_time) if (gemini_plan_start_time is not None) else None,
     }
-    logger.debug(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={gemini_plan is not None}, plan_steps={len(gemini_plan) if gemini_plan else 0}")
+    plan_steps = len(gemini_plan) if gemini_plan else 0
+    logger.info(f"GET /gemini: enabled={enabled}, plan_id={plan_id}, has_plan={gemini_plan is not None}, plan_steps={plan_steps}, current_plan={status_info['current_plan']}")
     return web.json_response(status_info)
   else:
     # POST: Toggle or set status
@@ -575,7 +593,7 @@ def main():
         gemini_task = None
 
     app.on_startup.append(startup_background_tasks)
-    
+
     # Also handle shutdown
     async def shutdown_background_tasks(app):
       global gemini_task
@@ -586,7 +604,7 @@ def main():
         except (asyncio.CancelledError, AttributeError, TypeError):
           pass
         logger.info("Gemini background task stopped")
-    
+
     app.on_shutdown.append(shutdown_background_tasks)
 
     logger.info("Starting web server on https://0.0.0.0:5000")
