@@ -197,7 +197,7 @@ class HudRenderer(Widget):
     # pos
     pos_x = int(rect.x + 21 + wheel_txt.width / 2)
     pos_y = int(rect.y + rect.height - 14 - wheel_txt.height / 2 + self._wheel_y_filter.x)
-    rotation = -ui_state.sm['carState'].steeringAngleDeg * 2
+    rotation = -ui_state.sm['carState'].steeringAngleDeg * 1.7
 
     turn_intent_margin = 25
     self._turn_intent.render(rl.Rectangle(
