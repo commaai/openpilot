@@ -10,7 +10,8 @@ from openpilot.system.manager.process import PythonProcess, NativeProcess, Daemo
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return started or params.get_bool("IsDriverViewEnabled")
+  replay_active = params.get_bool("ReplayActive")
+  return (started or params.get_bool("IsDriverViewEnabled")) and not replay_active
 
 def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and CP.notCar
@@ -109,10 +110,10 @@ procs = [
   # PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", only_onroad),
 
   # debug procs
-  NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
-  PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
-  PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
-  PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
+  # NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
+  # PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
+  # PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
+  # PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]
 
 managed_processes = {p.name: p for p in procs}

@@ -1,3 +1,4 @@
+import time
 import pyray as rl
 from enum import IntEnum
 import cereal.messaging as messaging
@@ -94,8 +95,11 @@ class MiciMainLayout(Widget):
           if selected == "[offroad]":
             return
 
+          ui_state.params.put_bool("ReplayActive", True)
+          time.sleep(1.0)
           route = random.choice(list(routes.values())) if selected == "[random]" else routes[selected]
-          self._replay_proc = subprocess.Popen(["./tools/replay/replay", "--ecam", route, "--data_dir", os.path.join(BASEDIR, "data", "replay_routes", route)], cwd=BASEDIR)
+          self._replay_proc = subprocess.Popen(["./tools/replay/replay", "--ecam", '--block', 'managerState', route,
+                                                "--data_dir", os.path.join(BASEDIR, "data", "replay_routes", route)], cwd=BASEDIR)
 
         routes = get_available_routes()
         options = ["[offroad]"] + list(routes)
