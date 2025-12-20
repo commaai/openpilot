@@ -132,6 +132,8 @@ class TrainingGuideDMTutorial(Widget):
     def wrapped_continue_callback():
       device.set_offroad_brightness(None)
       continue_callback()
+    self._continue_callback = wrapped_continue_callback
+    self._hold_start: float | None = None
 
     self._good_button.set_click_callback(wrapped_continue_callback)
     self._good_button.set_enabled(False)
@@ -146,6 +148,12 @@ class TrainingGuideDMTutorial(Widget):
       ui_state.params.put_bool("IsDriverViewEnabled", False)
 
     device.add_interactive_timeout_callback(inactivity_callback)
+
+  def _handle_mouse_event(self, mouse_event):
+    if mouse_event.left_pressed:
+      self._hold_start = rl.get_time()
+    elif mouse_event.left_released:
+      self._hold_start = None
 
   def _show_bad_face_page(self):
     self._bad_face_page.show_event()
@@ -166,6 +174,9 @@ class TrainingGuideDMTutorial(Widget):
 
   def _update_state(self):
     super()._update_state()
+    if self._hold_start is not None and rl.get_time() - self._hold_start > 5:
+      self._hold_start = None
+      self._continue_callback()
     if device.awake and not ui_state.params.get_bool("IsDriverViewEnabled"):
       ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
 
