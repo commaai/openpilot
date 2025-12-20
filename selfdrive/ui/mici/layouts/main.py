@@ -79,16 +79,16 @@ class MiciMainLayout(Widget):
       if NOTOUCH:
         def replay_callback():
           selected = dialog.get_selected_option()
-          if selected == "offroad":
+          if selected == "[offroad]":
             return
 
-          route = random.choice(list(routes.values())) if selected == "random" else routes[selected]
+          route = random.choice(list(routes.values())) if selected == "[random]" else routes[selected]
           self._replay_proc = subprocess.Popen(["./tools/replay/replay", route, "--data_dir", os.path.join(BASEDIR, "data", "replay_routes", route)], cwd=BASEDIR)
 
         routes = get_available_routes()
-        options = ["offroad"] + list(routes)
+        options = ["[offroad]"] + list(routes)
         if len(routes):
-          options.insert(1, "random")
+          options.insert(1, "[random]")
 
         dialog = BigMultiOptionDialog(options=options, default=None, right_btn="check", right_btn_callback=replay_callback)
         dialog.set_back_enabled(False)
