@@ -338,7 +338,7 @@ class DeviceLayoutMici(NavWidget):
       driver_cam_btn,
       # lang_button,
       reset_calibration_btn,
-      uninstall_openpilot_btn,
+      # uninstall_openpilot_btn,
       regulatory_btn,
       reboot_btn,
       self._power_off_btn,
