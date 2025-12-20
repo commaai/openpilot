@@ -4,6 +4,7 @@ ln -sfn $(pwd) /data/pythonpath
 export PYTHONPATH="$PWD"
 
 echo -n 1 > /data/params/d/AdbEnabled
+echo -n 1 > /data/params/d/SshEnabled
 
 # increase /tmp size for replay
 sudo mount -o remount,size=4G /tmp
