@@ -413,8 +413,8 @@ class BigMultiOptionDialog(BigDialogBase):
       self._last_selected_option = self._selected_option
 
   def _render(self, _):
-    super()._render(_)
     self._scroller.render(self._rect)
+    super()._render(_)
 
     return self._ret
 

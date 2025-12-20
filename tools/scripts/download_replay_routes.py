@@ -26,18 +26,18 @@ def get_available_routes():
   available = []
   for route_name in ROUTES:
     route_base = '/'.join(route_name.split('/')[:2])
-    route = Route(route_base.replace('/', '|'))
-    base_dir = os.path.join(DATA_DIR, route.name.canonical_name)
+    canonical_name = route_base.replace('/', '|')
+    base_dir = os.path.join(DATA_DIR, canonical_name)
 
     if not os.path.exists(base_dir):
       continue
 
-    for segment in route.segments:
-      seg_dir = os.path.join(base_dir, f"{segment.name.time_str}--{segment.name.segment_num}")
+    for seg_dir_name in os.listdir(base_dir):
+      seg_dir = os.path.join(base_dir, seg_dir_name)
       if os.path.isdir(seg_dir):
         files = os.listdir(seg_dir)
         if any(f.startswith('rlog.') for f in files) and 'fcamera.hevc' in files and 'ecamera.hevc' in files:
-          available.append(route_base.replace('/', '|'))
+          available.append(canonical_name)
           break
 
   return available

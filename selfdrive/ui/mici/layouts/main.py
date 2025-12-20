@@ -74,8 +74,12 @@ class MiciMainLayout(Widget):
     elif not self._startup_dialog_shown:
       if NOTOUCH:
         routes = get_available_routes()
+        options = ["offroad"] + routes
+        if len(routes):
+          options.insert(1, "random")
+
         dialog = BigMultiOptionDialog(
-          options=["offroad", "random"] + routes,
+          options=options,
           default=None,
           right_btn="check"
         )
