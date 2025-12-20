@@ -36,8 +36,6 @@ class WifiIcon(Widget):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 89, 64))
 
-    self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 89, 64)
-    self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 89, 64)
     self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 89, 64)
     self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 89, 64)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 89, 64)
@@ -57,17 +55,13 @@ class WifiIcon(Widget):
       return
 
     # Determine which wifi strength icon to use
-    strength = round(self._network.strength / 100 * 4)
-    if strength == 4:
+    strength = round(self._network.strength / 100 * 2)
+    if strength == 2:
       strength_icon = self._wifi_full_txt
-    elif strength == 3:
+    elif strength == 1:
       strength_icon = self._wifi_medium_txt
-    elif strength == 2:
-      strength_icon = self._wifi_low_txt
-    elif self._network.strength < 0:
-      strength_icon = self._wifi_slash_txt
     else:
-      strength_icon = self._wifi_none_txt
+      strength_icon = self._wifi_low_txt
 
     icon_x = int(self._rect.x + (self._rect.width - strength_icon.width * self._scale) // 2)
     icon_y = int(self._rect.y + (self._rect.height - strength_icon.height * self._scale) // 2)
@@ -87,7 +81,7 @@ class WifiItem(BigDialogOptionButton):
   def __init__(self, network: Network):
     super().__init__(network.ssid)
 
-    self.set_rect(rl.Rectangle(0, 0, gui_app.width, 64))
+    self.set_rect(rl.Rectangle(0, 0, gui_app.width, self.HEIGHT))
 
     self._selected_txt = gui_app.texture("icons_mici/settings/network/new/wifi_selected.png", 48, 96)
 
@@ -109,16 +103,16 @@ class WifiItem(BigDialogOptionButton):
     self._wifi_icon.render(rl.Rectangle(
       self._rect.x + self.LEFT_MARGIN,
       self._rect.y,
-      self._rect.height,
+      self.SELECTED_HEIGHT,
       self._rect.height
     ))
 
     if self._selected:
-      self._label.set_font_size(74)
+      self._label.set_font_size(self.SELECTED_HEIGHT)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
       self._label.set_font_weight(FontWeight.DISPLAY)
     else:
-      self._label.set_font_size(70)
+      self._label.set_font_size(self.HEIGHT)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.58)))
       self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
 
@@ -316,6 +310,9 @@ class NetworkInfoPage(NavWidget):
 
 
 class WifiUIMici(BigMultiOptionDialog):
+  # Wait this long after user interacts with widget to update network list
+  INACTIVITY_TIMEOUT = 1
+
   def __init__(self, wifi_manager: WifiManager, back_callback: Callable):
     super().__init__([], None, None, right_btn_callback=None)
 
@@ -324,13 +321,16 @@ class WifiUIMici(BigMultiOptionDialog):
 
     self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network, self._open_network_manage_page)
     self._network_info_page.set_connecting(lambda: self._connecting)
-    self._should_open_network_info_page = False  # wait for scroll_to animation
 
     self._loading_animation = LoadingAnimation()
 
     self._wifi_manager = wifi_manager
     self._connecting: str | None = None
     self._networks: dict[str, Network] = {}
+
+    # widget state
+    self._last_interaction_time = -float('inf')
+    self._restore_selection = False
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -344,17 +344,11 @@ class WifiUIMici(BigMultiOptionDialog):
     # Call super to prepare scroller; selection scroll is handled dynamically
     super().show_event()
     self._wifi_manager.set_active(True)
-    self._scroller.show_event()
+    self._last_interaction_time = -float('inf')
 
   def hide_event(self):
     super().hide_event()
     self._wifi_manager.set_active(False)
-
-  def _update_state(self):
-    super()._update_state()
-    if self._should_open_network_info_page:
-      self._should_open_network_info_page = False
-      self._open_network_manage_page()
 
   def _open_network_manage_page(self, result=None):
     self._network_info_page.update_networks(self._networks)
@@ -374,6 +368,10 @@ class WifiUIMici(BigMultiOptionDialog):
     self._network_info_page.update_networks(self._networks)
 
   def _update_buttons(self):
+    # Don't update buttons while user is actively interacting
+    if rl.get_time() - self._last_interaction_time < self.INACTIVITY_TIMEOUT:
+      return
+
     for network in self._networks.values():
       # pop and re-insert to eliminate stuttering on update (prevents position lost for a frame)
       network_button_idx = next((i for i, btn in enumerate(self._scroller._items) if btn.option == network.ssid), None)
@@ -384,22 +382,26 @@ class WifiUIMici(BigMultiOptionDialog):
       else:
         network_button = WifiItem(network)
 
-        def show_network_info_page(_network):
-          self._network_info_page.set_current_network(_network)
-          self._should_open_network_info_page = True
-
-        network_button.set_click_callback(lambda _net=network, _button=network_button: _button._selected and show_network_info_page(_net))
-
-      self.add_button(network_button)
+      self._scroller.add_widget(network_button)
 
     # remove networks no longer present
     self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
+
+    # try to restore previous selection to prevent jumping from adding/removing/reordering buttons
+    self._restore_selection = True
 
   def _connect_with_password(self, ssid: str, password: str):
     if password:
       self._connecting = ssid
       self._wifi_manager.connect_to_network(ssid, password)
       self._update_buttons()
+
+  def _on_option_selected(self, option: str):
+    super()._on_option_selected(option)
+
+    if option in self._networks:
+      self._network_info_page.set_current_network(self._networks[option])
+      self._open_network_manage_page()
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -434,7 +436,19 @@ class WifiUIMici(BigMultiOptionDialog):
   def _on_disconnected(self):
     self._connecting = None
 
+  def _update_state(self):
+    super()._update_state()
+    if self.is_pressed:
+      self._last_interaction_time = rl.get_time()
+
   def _render(self, _):
+    # Update Scroller layout and restore current selection whenever buttons are updated, before first render
+    current_selection = self.get_selected_option()
+    if self._restore_selection and current_selection in self._networks:
+      self._scroller._layout()
+      BigMultiOptionDialog._on_option_selected(self, current_selection)
+      self._restore_selection = None
+
     super()._render(_)
 
     if not self._networks:

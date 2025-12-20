@@ -171,6 +171,8 @@ class NetworkLayoutMici(NavWidget):
       }.get(self._wifi_manager.current_network_metered, 'default'))
 
   def _switch_to_panel(self, panel_type: NetworkPanelType):
+    if panel_type == NetworkPanelType.WIFI:
+      self._wifi_ui.show_event()
     self._current_panel = panel_type
 
   def _render(self, rect: rl.Rectangle):

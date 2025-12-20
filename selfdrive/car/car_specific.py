@@ -93,7 +93,8 @@ class CarSpecificEvents:
       events = self.create_common_events(CS, CS_prev, extra_gears=extra_gears)
 
       if self.CP.openpilotLongitudinalControl:
-        if CS.cruiseState.standstill and not CS.brakePressed:
+        # Only can leave standstill when planner wants to move
+        if CS.cruiseState.standstill and not CS.brakePressed and CC.cruiseControl.resume:
           events.add(EventName.resumeRequired)
         CarSpecificEvents.add_if_below_engage_speed(CS.vEgo, self.CP.minEnableSpeed, events)
         if CC.actuators.accel > 0.3:
