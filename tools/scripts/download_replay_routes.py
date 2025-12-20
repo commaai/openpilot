@@ -56,9 +56,13 @@ def main():
     start_sec = int(parts[2]) if len(parts) > 2 else None
     end_sec = int(parts[3]) if len(parts) > 3 else None
 
-    route = Route(route_base.replace('/', '|'))
-    base_dir = os.path.join(DATA_DIR, route.name.canonical_name)
+    try:
+      route = Route(route_base.replace('/', '|'))
+    except Exception:
+      print(traceback.format_exc())
+      continue
 
+    base_dir = os.path.join(DATA_DIR, route.name.canonical_name)
     for segment in route.segments:
       # Filter by time range: each segment is ~60 seconds
       if start_sec is not None and end_sec is not None:
