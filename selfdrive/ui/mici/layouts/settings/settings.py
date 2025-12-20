@@ -11,7 +11,7 @@ from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMi
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici, PairBigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayout
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, NOTOUCH
 from openpilot.system.ui.widgets import Widget, NavWidget
 
 
@@ -48,7 +48,12 @@ class SettingsLayout(NavWidget):
     firehose_btn = BigButton("firehose", "", "icons_mici/settings/comma_icon.png")
     firehose_btn.set_click_callback(lambda: self._set_current_panel(PanelType.FIREHOSE))
 
+    self._close_ui_btn = BigButton("Close UI", "", icon="")
+    self._close_ui_btn.set_click_callback(lambda: gui_app.request_close())
+    self._close_ui_btn.set_visible(not NOTOUCH)
+
     self._scroller = Scroller([
+      self._close_ui_btn,
       toggles_btn,
       network_btn,
       device_btn,
