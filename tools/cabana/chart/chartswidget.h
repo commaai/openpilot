@@ -43,6 +43,8 @@ public:
   ChartsWidget(QWidget *parent = nullptr);
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
+  QStringList serializeChartIds() const;
+  void restoreChartsFromIds(const QStringList &chart_ids);
 
 public slots:
   void setColumnCount(int n);

@@ -235,6 +235,8 @@ void MainWindow::DBCFileChanged() {
     title.push_back(tr("(%1) %2").arg(toString(dbc()->sources(f)), f->name()));
   }
   setWindowFilePath(title.join(" | "));
+
+  QTimer::singleShot(0, this, &::MainWindow::restoreSessionState);
 }
 
 void MainWindow::selectAndOpenStream() {
@@ -311,11 +313,19 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
 }
 
 void MainWindow::openStream(AbstractStream *stream, const QString &dbc_file) {
+  if (can) {
+    QObject::connect(can, &QObject::destroyed, this, [=]() { startStream(stream, dbc_file); });
+    can->deleteLater();
+  } else {
+    startStream(stream, dbc_file);
+  }
+}
+
+void MainWindow::startStream(AbstractStream *stream, QString dbc_file) {
   center_widget->clear();
   delete messages_widget;
   delete video_splitter;
 
-  delete can;
   can = stream;
   can->setParent(this);  // take ownership
   can->start();
@@ -563,6 +573,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     settings.message_header_state = messages_widget->saveHeaderState();
   }
 
+  saveSessionState();
   QWidget::closeEvent(event);
 }
 
@@ -605,6 +616,39 @@ void MainWindow::toggleFullScreen() {
     statusBar()->hide();
     showFullScreen();
   }
+}
+
+void MainWindow::saveSessionState() {
+  settings.recent_dbc_file = "";
+  settings.active_msg_id = "";
+  settings.selected_msg_ids.clear();
+  settings.active_charts.clear();
+
+  for (auto &f : dbc()->allDBCFiles())
+    if (!f->isEmpty()) { settings.recent_dbc_file = f->filename; break; }
+
+  if (auto *detail = center_widget->getDetailWidget()) {
+    auto [active_id, ids] = detail->serializeMessageIds();
+    settings.active_msg_id = active_id;
+    settings.selected_msg_ids = ids;
+  }
+  if (charts_widget)
+    settings.active_charts = charts_widget->serializeChartIds();
+}
+
+void MainWindow::restoreSessionState() {
+  if (settings.recent_dbc_file.isEmpty() || dbc()->nonEmptyDBCCount() == 0) return;
+
+  QString dbc_file;
+  for (auto& f : dbc()->allDBCFiles())
+    if (!f->isEmpty()) { dbc_file = f->filename; break; }
+  if (dbc_file != settings.recent_dbc_file) return;
+
+  if (!settings.selected_msg_ids.isEmpty())
+    center_widget->ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
+
+  if (charts_widget != nullptr && !settings.active_charts.empty())
+    charts_widget->restoreChartsFromIds(settings.active_charts);
 }
 
 // HelpOverlay

@@ -1,5 +1,6 @@
 from enum import IntEnum
 import os
+import requests
 import threading
 import time
 
@@ -29,6 +30,7 @@ class PrimeState:
   def __init__(self):
     self._params = Params()
     self._lock = threading.Lock()
+    self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self.prime_type: PrimeType = self._load_initial_state()
 
     self._running = False
@@ -50,7 +52,7 @@ class PrimeState:
 
     try:
       identity_token = get_token(dongle_id)
-      response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token)
+      response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token, session=self._session)
       if response.status_code == 200:
         data = response.json()
         is_paired = data.get("is_paired", False)
