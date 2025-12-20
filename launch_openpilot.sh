@@ -43,4 +43,5 @@ spinner_pid=$!
 kill -9 $spinner_pid
 
 # launch notouch ui
-NOTOUCH=1 ./selfdrive/ui/ui.py
+#NOTOUCH=1 ./selfdrive/ui/ui.py
+NOTOUCH=1 ./system/manager/manager.py
