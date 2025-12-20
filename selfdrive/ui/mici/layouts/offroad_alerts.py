@@ -291,7 +291,7 @@ class MiciOffroadAlerts(Widget):
     """Reset scroll position when shown and refresh alerts."""
     self._scroller.show_event()
     self._last_refresh = time.monotonic()
-    self.refresh()
+    # self.refresh()
 
   def _update_state(self):
     """Periodically refresh alerts."""
