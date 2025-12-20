@@ -82,12 +82,11 @@ class MiciMainLayout(Widget):
           if selected == "offroad":
             return
 
-          route = random.choice(routes) if selected == "random" else selected
-          if route in routes:
-            self._replay_proc = subprocess.Popen(["./tools/replay/replay", route, "--data_dir", os.path.join(BASEDIR, "data", "replay_routes", route)], cwd=BASEDIR)
+          route = random.choice(list(routes.values())) if selected == "random" else routes[selected]
+          self._replay_proc = subprocess.Popen(["./tools/replay/replay", route, "--data_dir", os.path.join(BASEDIR, "data", "replay_routes", route)], cwd=BASEDIR)
 
         routes = get_available_routes()
-        options = ["offroad"] + routes
+        options = ["offroad"] + list(routes)
         if len(routes):
           options.insert(1, "random")
 

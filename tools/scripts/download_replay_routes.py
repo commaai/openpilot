@@ -9,23 +9,23 @@ from tqdm import tqdm
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.route import Route
 
-ROUTES = [
-  "140526191c476eaa/00000062--b46a3e1653/1937/2420",
-  "b1c51ac59e436919/00000018--223597e5f4/90/453",
-  "f73c01590368ee5b/0000000f--12760794cf/573/802",
-  "7830b8e854d6713c/0000002a--8e59617918/583/988",
-  "98395b7c5b27882e/000000a7--b86b35ab32/94/334",
-  "d2c676bbc2b7e5de/00000017--32fb235cb7/146/600",
-  "f73c01590368ee5b/00000014--466f1a09da/361/734",
-  "f73c01590368ee5b/00000010--2b6e54cfd4/299/863",
-  "f73c01590368ee5b/0000000b--91475022ee/371/675",
-]
+ROUTES = {
+  "140526191c476eaa/00000062--b46a3e1653/1937/2420": "sonata",
+  "b1c51ac59e436919/00000018--223597e5f4/90/453": "rav5",
+  "f73c01590368ee5b/0000000f--12760794cf/573/802": "prius",
+  "7830b8e854d6713c/0000002a--8e59617918/583/988": "lexus",
+  "98395b7c5b27882e/000000a7--b86b35ab32/94/334": "ev6 experimental",
+  "d2c676bbc2b7e5de/00000017--32fb235cb7/146/600": "bolt",
+  "f73c01590368ee5b/00000014--466f1a09da/361/734": "prius (semi low speed)",
+  "f73c01590368ee5b/00000010--2b6e54cfd4/299/863": "prius (foggy night)",
+  "f73c01590368ee5b/0000000b--91475022ee/371/675": "prius (semi low speed & traffic lights)",
+}
 DATA_DIR = os.path.join(BASEDIR, "data", "replay_routes")
 
 
 def get_available_routes():
-  available = []
-  for route_name in ROUTES:
+  available = {}
+  for route_name, desc in ROUTES.items():
     route_base = '/'.join(route_name.split('/')[:2])
     canonical_name = route_base.replace('/', '|')
     base_dir = os.path.join(DATA_DIR, canonical_name)
@@ -38,7 +38,7 @@ def get_available_routes():
       if os.path.isdir(seg_dir):
         files = os.listdir(seg_dir)
         if any(f.startswith('rlog.') for f in files) and 'fcamera.hevc' in files and 'ecamera.hevc' in files:
-          available.append(canonical_name)
+          available[desc] = canonical_name
           break
 
   return available
@@ -97,7 +97,7 @@ def main():
   os.makedirs(DATA_DIR, exist_ok=True)
 
   with ThreadPoolExecutor(max_workers=4) as executor:
-    list(tqdm(executor.map(download_route, ROUTES), total=len(ROUTES)))
+    list(tqdm(executor.map(download_route, ROUTES.keys()), total=len(ROUTES)))
 
 
 if __name__ == "__main__":
