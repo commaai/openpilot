@@ -212,7 +212,7 @@ class Device:
       return self._override_interactive_timeout
 
     ignition_timeout = 10 if gui_app.big_ui() else 5
-    return ignition_timeout if ui_state.ignition else 30
+    return ignition_timeout if ui_state.ignition else 300
 
   def _reset_interactive_timeout(self) -> None:
     self._interaction_time = time.monotonic() + self.interactive_timeout
