@@ -1,5 +1,6 @@
 from cereal import car, log
 from opendbc.car import DT_CTRL, structs
+from opendbc.car.car_helpers import interfaces
 from opendbc.car.interfaces import MAX_CTRL_SPEED
 
 from openpilot.selfdrive.selfdrived.events import Events
@@ -8,18 +9,6 @@ ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
 EventName = log.OnroadEvent.EventName
 NetworkLocation = structs.CarParams.NetworkLocation
-
-
-BRAND_EXTRA_GEARS = {
-  'ford': [GearShifter.low, GearShifter.manumatic],
-  'nissan': [GearShifter.brake],
-  'chrysler': [GearShifter.low],
-  'honda': [GearShifter.sport],
-  'toyota': [GearShifter.sport],
-  'gm': [GearShifter.sport, GearShifter.low, GearShifter.eco, GearShifter.manumatic],
-  'volkswagen': [GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
-  'hyundai': [GearShifter.sport, GearShifter.manumatic]
-}
 
 
 class CarSpecificEvents:
@@ -32,7 +21,7 @@ class CarSpecificEvents:
     self.silent_steer_warning = True
 
   def update(self, CS: car.CarState, CS_prev: car.CarState, CC: car.CarControl):
-    extra_gears = BRAND_EXTRA_GEARS.get(self.CP.brand, None)
+    extra_gears = interfaces[self.CP.carFingerprint].DRIVABLE_GEARS or None
 
     if self.CP.brand in ('body', 'mock'):
       events = Events()
