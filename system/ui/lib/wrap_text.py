@@ -37,70 +37,56 @@ def _break_long_word(font: rl.Font, word: str, font_size: int, max_width: int, s
   return parts
 
 
-_cache: dict[int, list[str]] = {}
+_cache: dict[tuple[int, str, int, int, float], list[str]] = {}
 
 
-def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int, spacing: float = 0, emojs: bool = False) -> list[str]:
-  font = font_fallback(font)
-  spacing = round(spacing, 4)
-  key = hash((font.texture.id, text, font_size, max_width, spacing))
-  if key in _cache:
-    return _cache[key]
-
+def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int, spacing: float = 0, emojis: bool = False) -> list[str]:
   if not text or max_width <= 0:
     return []
 
-  # Split text by newlines first to preserve explicit line breaks
-  paragraphs = text.split('\n')
-  all_lines: list[str] = []
+  font = font_fallback(font)
+  spacing = round(spacing, 4)
+  key = (font.texture.id, text, font_size, max_width, spacing)
+  if key in _cache:
+    return _cache[key]
 
-  for paragraph in paragraphs:
-    # Handle empty paragraphs (preserve empty lines)
-    if not paragraph.strip():
-      all_lines.append("")
-      continue
+  space_width = measure_text_cached(font, " ", font_size, spacing, emojis).x
+  all_lines = []
 
-    # Process each paragraph separately
+  for paragraph in text.split('\n'):
     words = paragraph.split()
     if not words:
       all_lines.append("")
       continue
 
-    lines: list[str] = []
-    current_line: list[str] = []
+    lines = []
+    cur_line_words: list[str] = []
+    cur_width = 0.0
 
     for word in words:
-      word_width = measure_text_cached(font, word, font_size, spacing, emojs).x
+      w_width = measure_text_cached(font, word, font_size, spacing, emojis).x
 
-      # Check if word alone exceeds max width (need to break the word)
-      if word_width > max_width:
-        # Finish current line if it has content
-        if current_line:
-          lines.append(" ".join(current_line))
-          current_line = []
-
-        # Break the long word into parts
+      # 1. Handle words too long for a single line
+      if w_width > max_width:
+        if cur_line_words:
+          lines.append(" ".join(cur_line_words))
+          cur_line_words, cur_width = [], 0.0
         lines.extend(_break_long_word(font, word, font_size, max_width, spacing))
         continue
 
-      # Measure the actual joined string to get accurate width (accounts for kerning, etc.)
-      test_line = " ".join(current_line + [word]) if current_line else word
-      test_width = measure_text_cached(font, test_line, font_size, spacing).x
+      # 2. Check if word fits: (current width + space + word width)
+      added_width = w_width + (space_width if cur_line_words else 0)
 
-      # Check if word fits on current line
-      if test_width <= max_width:
-        current_line.append(word)
+      if cur_width + added_width <= max_width:
+        cur_line_words.append(word)
+        cur_width += added_width
       else:
-        # Start new line with this word
-        if current_line:
-          lines.append(" ".join(current_line))
-        current_line = [word]
+        lines.append(" ".join(cur_line_words))
+        cur_line_words = [word]
+        cur_width = w_width
 
-    # Add remaining words
-    if current_line:
-      lines.append(" ".join(current_line))
-
-    # Add all lines from this paragraph
+    if cur_line_words:
+      lines.append(" ".join(cur_line_words))
     all_lines.extend(lines)
 
   _cache[key] = all_lines
