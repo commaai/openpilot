@@ -172,7 +172,7 @@ class AugmentedRoadView(CameraView):
     super()._update_state()
 
     # update offroad label
-    if ui_state.panda_type == log.PandaState.PandaType.unknown:
+    if ui_state.panda_type == log.PandaState.PandaType.unknown and False:
       self._offroad_label.set_text("system booting")
     else:
       self._offroad_label.set_text("start the car to\nuse openpilot")
