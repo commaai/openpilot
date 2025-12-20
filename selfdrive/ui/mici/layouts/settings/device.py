@@ -333,7 +333,7 @@ class DeviceLayoutMici(NavWidget):
     self._scroller = Scroller([
       DeviceInfoLayoutMici(),
       UpdateOpenpilotBigButton(),
-      PairBigButton(),
+      # PairBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
       # lang_button,
