@@ -4,6 +4,7 @@ import urllib.request
 import tempfile
 import traceback
 from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.route import Route
@@ -43,55 +44,60 @@ def get_available_routes():
   return available
 
 
+def download_route(route_name):
+  print(route_name)
+
+  # Parse time range if present (format: route/start_seconds/end_seconds)
+  parts = route_name.split('/')
+  route_base = '/'.join(parts[:2])
+  start_sec = int(parts[2]) if len(parts) > 2 else None
+  end_sec = int(parts[3]) if len(parts) > 3 else None
+
+  try:
+    route = Route(route_base.replace('/', '|'))
+  except Exception:
+    print(traceback.format_exc())
+    return
+
+  base_dir = os.path.join(DATA_DIR, route.name.canonical_name)
+
+  for segment in route.segments:
+    # Filter by time range: each segment is ~60 seconds
+    if start_sec is not None and end_sec is not None:
+      seg_start_sec = segment.name.segment_num * 60
+      seg_end_sec = (segment.name.segment_num + 1) * 60
+      # Include segment if it overlaps with the time range
+      if seg_start_sec >= end_sec or seg_end_sec <= start_sec:
+        continue
+
+    seg_dir = os.path.join(base_dir, f"{segment.name.time_str}--{segment.name.segment_num}")
+    os.makedirs(seg_dir, exist_ok=True)
+    print(f'Downloading segment {segment.name.segment_num}')
+
+    for url in [segment.log_path, segment.camera_path, segment.ecamera_path]:
+      if url and url.startswith('http'):
+        parsed = urlparse(url)
+        filename = os.path.basename(parsed.path)
+        dest = os.path.join(seg_dir, filename)
+
+        if os.path.exists(dest):
+          print(f'Skipping existing file {filename}')
+          continue
+
+        try:
+          with tempfile.NamedTemporaryFile(dir=seg_dir, delete=False) as tmpfile:
+            urllib.request.urlretrieve(url, tmpfile.name)
+            os.rename(tmpfile.name, dest)
+        except Exception:
+          print(traceback.format_exc())
+
+
 def main():
   print("downloading replay routes")
   os.makedirs(DATA_DIR, exist_ok=True)
 
-  for route_name in tqdm(ROUTES):
-    print(route_name)
-
-    # Parse time range if present (format: route/start_seconds/end_seconds)
-    parts = route_name.split('/')
-    route_base = '/'.join(parts[:2])
-    start_sec = int(parts[2]) if len(parts) > 2 else None
-    end_sec = int(parts[3]) if len(parts) > 3 else None
-
-    try:
-      route = Route(route_base.replace('/', '|'))
-    except Exception:
-      print(traceback.format_exc())
-      continue
-
-    base_dir = os.path.join(DATA_DIR, route.name.canonical_name)
-    for segment in route.segments:
-      # Filter by time range: each segment is ~60 seconds
-      if start_sec is not None and end_sec is not None:
-        seg_start_sec = segment.name.segment_num * 60
-        seg_end_sec = (segment.name.segment_num + 1) * 60
-        # Include segment if it overlaps with the time range
-        if seg_start_sec >= end_sec or seg_end_sec <= start_sec:
-          continue
-
-      seg_dir = os.path.join(base_dir, f"{segment.name.time_str}--{segment.name.segment_num}")
-      os.makedirs(seg_dir, exist_ok=True)
-      print(f'Downloading segment {segment.name.segment_num}')
-
-      for url in [segment.log_path, segment.camera_path, segment.ecamera_path]:
-        if url and url.startswith('http'):
-          parsed = urlparse(url)
-          filename = os.path.basename(parsed.path)
-          dest = os.path.join(seg_dir, filename)
-
-          if os.path.exists(dest):
-            print(f'Skipping existing file {filename}')
-            continue
-
-          try:
-            with tempfile.NamedTemporaryFile(dir=seg_dir, delete=False) as tmpfile:
-              urllib.request.urlretrieve(url, tmpfile.name)
-              os.rename(tmpfile.name, dest)
-          except Exception:
-            print(traceback.format_exc())
+  with ThreadPoolExecutor(max_workers=4) as executor:
+    list(tqdm(executor.map(download_route, ROUTES), total=len(ROUTES)))
 
 
 if __name__ == "__main__":
