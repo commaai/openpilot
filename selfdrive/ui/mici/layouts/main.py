@@ -1,6 +1,9 @@
 import pyray as rl
 from enum import IntEnum
 import cereal.messaging as messaging
+import os
+import random
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.ui.mici.layouts.home import MiciHomeLayout
 from openpilot.selfdrive.ui.mici.layouts.settings.settings import SettingsLayout
 from openpilot.selfdrive.ui.mici.layouts.offroad_alerts import MiciOffroadAlerts
@@ -70,11 +73,25 @@ class MiciMainLayout(Widget):
       gui_app.set_modal_overlay(self._onboarding_window)
     elif not self._startup_dialog_shown:
       if NOTOUCH:
-        gui_app.set_modal_overlay(BigMultiOptionDialog(
+        dialog = BigMultiOptionDialog(
           options=["offroad", "random"] + ROUTES,
           default=None,
           right_btn="check"
-        ))
+        )
+        dialog.set_back_enabled(False)
+
+        def replay_callback():
+          selected = dialog.get_selected_option()
+          if selected == "offroad":
+            return
+
+          route = random.choice(ROUTES) if selected == "random" else selected
+          if route in ROUTES:
+            route_name = route.replace('/', '|')
+            os.system(f"cd {BASEDIR} && ./tools/replay/replay '{route_name}' --data_dir='{os.path.join(BASEDIR, 'data', 'replay_routes')}' &")
+
+        dialog._right_btn.set_click_callback(lambda: (gui_app.set_modal_overlay(None), replay_callback()))
+        gui_app.set_modal_overlay(dialog)
       else:
         gui_app.set_modal_overlay(BigDialog(title="", description="Visit Developer settings, enable SSH, and add an SSH key.", right_btn="check"))
       self._startup_dialog_shown = True
