@@ -1,6 +1,5 @@
 import pyray as rl
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.application import font_fallback
 
 
 def _break_long_word(font: rl.Font, word: str, font_size: int, max_width: int, spacing: float = 0) -> list[str]:
@@ -44,7 +43,6 @@ def wrap_text(font: rl.Font, text: str, font_size: int, max_width: int, spacing:
   if not text or max_width <= 0:
     return []
 
-  font = font_fallback(font)
   spacing = round(spacing, 4)
   key = (font.texture.id, text, font_size, max_width, spacing)
   if key in _cache:

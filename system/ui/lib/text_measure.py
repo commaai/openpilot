@@ -1,5 +1,5 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import FONT_SCALE, font_fallback
+from openpilot.system.ui.lib.application import FONT_SCALE
 from openpilot.system.ui.lib.emoji import find_emoji
 
 _cache: dict[tuple[int, str, int, float], rl.Vector2] = {}
@@ -7,7 +7,6 @@ _cache: dict[tuple[int, str, int, float], rl.Vector2] = {}
 
 def measure_text(font: rl.Font, text: str, font_size: int, spacing: float = 0, emojis: bool = False) -> rl.Vector2:
   """Caches text measurements to avoid redundant calculations."""
-  font = font_fallback(font)
   scaled_size = font_size * FONT_SCALE
   found_emojis = find_emoji(text) if emojis else []
   if found_emojis:

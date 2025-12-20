@@ -31,6 +31,7 @@ class Multilang:
   def __init__(self):
     self._params = Params() if Params is not None else None
     self._language: str = "en"
+    self._requires_unifont: bool = False
     self.languages = {}
     self.codes = {}
     self._translation: gettext.NullTranslations | gettext.GNUTranslations = gettext.NullTranslations()
@@ -40,9 +41,10 @@ class Multilang:
   def language(self) -> str:
     return self._language
 
+  @property
   def requires_unifont(self) -> bool:
     """Certain languages require unifont to render their glyphs."""
-    return self._language in UNIFONT_LANGUAGES
+    return self._requires_unifont
 
   def setup(self):
     try:
@@ -60,6 +62,7 @@ class Multilang:
     # Reinstall gettext with the selected language
     self._params.put("LanguageSetting", language_code)
     self._language = language_code
+    self._requires_unifont = self._language in UNIFONT_LANGUAGES
     self.setup()
 
   def tr(self, text: str) -> str:
@@ -77,6 +80,7 @@ class Multilang:
       lang = str(self._params.get("LanguageSetting")).removeprefix("main_")
       if lang in self.codes:
         self._language = lang
+        self._requires_unifont = self._language in UNIFONT_LANGUAGES
 
 
 multilang = Multilang()

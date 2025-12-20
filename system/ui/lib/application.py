@@ -103,13 +103,6 @@ class FontWeight(StrEnum):
   DISPLAY = "Inter-Bold.fnt"
 
 
-def font_fallback(font: rl.Font) -> rl.Font:
-  """Fall back to unifont for languages that require it."""
-  if multilang.requires_unifont():
-    return gui_app.font(FontWeight.UNIFONT)
-  return font
-
-
 @dataclass
 class ModalOverlay:
   overlay: object = None
@@ -538,6 +531,8 @@ class GuiApplication:
       pass
 
   def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
+    if multilang.requires_unifont:
+      return self._fonts[FontWeight.UNIFONT]
     return self._fonts[font_weight]
 
   @property
@@ -594,7 +589,6 @@ class GuiApplication:
       rl._orig_draw_text_ex = rl.draw_text_ex
 
     def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
-      font = font_fallback(font)
       return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
 
     rl.draw_text_ex = _draw_text_ex_scaled

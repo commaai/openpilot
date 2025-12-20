@@ -99,7 +99,6 @@ class Label(Widget):
     self._text_source = text
     self._font_size = size
     self._font_weight = weight
-    self._font = gui_app.font(self._font_weight)
     self._h_align = align
     self._v_align = valign
     self._padding = padding
@@ -139,7 +138,6 @@ class Label(Widget):
   def set_font_weight(self, weight: FontWeight):
     if self._font_weight != weight:
       self._font_weight = weight
-      self._font = gui_app.font(self._font_weight)
       self._layout_cache = None
 
   def set_alignment(self, align: int):
@@ -163,19 +161,20 @@ class Label(Widget):
     ):
       return
 
+    font = gui_app.font(self._font_weight)
     width = self._rect.width if self._rect.width > 0 else 10000
     content_width = max(1, width - (self._padding * 2))
     if self._elide:
-      lines = [_elide_text(self._font, text, self._font_size, content_width)]
+      lines = [_elide_text(font, text, self._font_size, content_width)]
     else:
-      lines = wrap_text(self._font, text, self._font_size, content_width, self._emojis)
+      lines = wrap_text(font, text, self._font_size, content_width, self._emojis)
 
     segments: list[RenderSegment] = []
     line_h = self._font_size * self._line_height
 
     cursor_y = 0.0
     for line_text in lines:
-      line_size = measure_text_cached(self._font, line_text, self._font_size, self._spacing, self._emojis)
+      line_size = measure_text_cached(font, line_text, self._font_size, self._spacing, self._emojis)
       cursor_x = self._padding
       if self._h_align == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
         cursor_x += (content_width - line_size.x) // 2
@@ -183,7 +182,7 @@ class Label(Widget):
         cursor_x += content_width - line_size.x
 
       if self._emojis:
-        self._layout_emoji_line(segments, line_text, cursor_x, cursor_y, line_h)
+        self._layout_emoji_line(font, segments, line_text, cursor_x, cursor_y, line_h)
       else:
         segments.append(RenderSegment(line_text, None, rl.Vector2(cursor_x, cursor_y), line_size))
 
@@ -211,6 +210,7 @@ class Label(Widget):
     elif self._v_align == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
       vertical_offset = self._rect.height - self._layout_cache.content_height
 
+    font = gui_app.font(self._font_weight)
     base_pos = rl.Vector2(self._rect.x, self._rect.y + vertical_offset)
 
     for seg in self._layout_cache.segments:
@@ -219,15 +219,15 @@ class Label(Widget):
         tex_scale = (self._font_size / seg.texture.height) * FONT_SCALE
         rl.draw_texture_ex(seg.texture, draw_pos, 0.0, tex_scale, self._color)
       else:
-        rl.draw_text_ex(self._font, seg.content, draw_pos, self._font_size, 0, self._color)
+        rl.draw_text_ex(font, seg.content, draw_pos, self._font_size, 0, self._color)
 
-  def _layout_emoji_line(self, segments, line_text, x, y, line_h):
+  def _layout_emoji_line(self, font, segments, line_text, x, y, line_h):
     last_idx = 0
     for start, end, emoji in find_emoji(line_text):
       # Text fragment before emoji
       if start > last_idx:
         frag = line_text[last_idx:start]
-        size = measure_text_cached(self._font, frag, self._font_size, self._spacing)
+        size = measure_text_cached(font, frag, self._font_size, self._spacing)
         segments.append(RenderSegment(frag, None, rl.Vector2(x, y), size))
         x += size.x
 
@@ -238,5 +238,5 @@ class Label(Widget):
     # Final text fragment
     if last_idx < len(line_text):
       frag = line_text[last_idx:]
-      size = measure_text_cached(self._font, frag, self._font_size, self._spacing)
+      size = measure_text_cached(font, frag, self._font_size, self._spacing)
       segments.append(RenderSegment(frag, None, rl.Vector2(x, y), size))
