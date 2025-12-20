@@ -21,7 +21,29 @@ ROUTES = [
 ]
 DATA_DIR = os.path.join(BASEDIR, "data", "replay_routes")
 
-if __name__ == "__main__":
+
+def get_available_routes():
+  available = []
+  for route_name in ROUTES:
+    route_base = '/'.join(route_name.split('/')[:2])
+    route = Route(route_base.replace('/', '|'))
+    base_dir = os.path.join(DATA_DIR, route.name.canonical_name)
+
+    if not os.path.exists(base_dir):
+      continue
+
+    for segment in route.segments:
+      seg_dir = os.path.join(base_dir, f"{segment.name.time_str}--{segment.name.segment_num}")
+      if os.path.isdir(seg_dir):
+        files = os.listdir(seg_dir)
+        if any(f.startswith('rlog.') for f in files) and 'fcamera.hevc' in files and 'ecamera.hevc' in files:
+          available.append(route_base.replace('/', '|'))
+          break
+
+  return available
+
+
+def main():
   print("downloading replay routes")
   os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -66,3 +88,7 @@ if __name__ == "__main__":
               os.rename(tmpfile.name, dest)
           except Exception:
             print(traceback.format_exc())
+
+
+if __name__ == "__main__":
+  main()

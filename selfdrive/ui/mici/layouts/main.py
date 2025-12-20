@@ -14,7 +14,7 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigMultiOption
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app, NOTOUCH
-from tools.scripts.download_replay_routes import ROUTES
+from tools.scripts.download_replay_routes import get_available_routes
 
 
 ONROAD_DELAY = 2.5  # seconds
@@ -73,8 +73,9 @@ class MiciMainLayout(Widget):
       gui_app.set_modal_overlay(self._onboarding_window)
     elif not self._startup_dialog_shown:
       if NOTOUCH:
+        routes = get_available_routes()
         dialog = BigMultiOptionDialog(
-          options=["offroad", "random"] + ROUTES,
+          options=["offroad", "random"] + routes,
           default=None,
           right_btn="check"
         )
@@ -85,10 +86,9 @@ class MiciMainLayout(Widget):
           if selected == "offroad":
             return
 
-          route = random.choice(ROUTES) if selected == "random" else selected
-          if route in ROUTES:
-            route_name = route.replace('/', '|')
-            os.system(f"cd {BASEDIR} && ./tools/replay/replay '{route_name}' --data_dir='{os.path.join(BASEDIR, 'data', 'replay_routes')}' &")
+          route = random.choice(routes) if selected == "random" else selected
+          if route in routes:
+            os.system(f"cd {BASEDIR} && ./tools/replay/replay '{route}' --data_dir='{os.path.join(BASEDIR, 'data', 'replay_routes', route)}' &")
 
         dialog._right_btn.set_click_callback(lambda: (gui_app.set_modal_overlay(None), replay_callback()))
         gui_app.set_modal_overlay(dialog)
