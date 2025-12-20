@@ -247,7 +247,7 @@ class Device:
 
       clipped_brightness = float(np.interp(clipped_brightness, [0, 1], [30, 100]))
 
-    brightness = round(self._brightness_filter.update(clipped_brightness))
+    brightness = 100  # round(self._brightness_filter.update(clipped_brightness))
     if not self._awake:
       brightness = 0
 
