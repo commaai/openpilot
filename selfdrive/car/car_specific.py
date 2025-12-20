@@ -21,7 +21,7 @@ class CarSpecificEvents:
     self.silent_steer_warning = True
 
   def update(self, CS: car.CarState, CS_prev: car.CarState, CC: car.CarControl):
-    extra_gears = interfaces[self.CP.carFingerprint].DRIVABLE_GEARS or None
+    extra_gears = interfaces[self.CP.carFingerprint].DRIVABLE_GEARS
 
     if self.CP.brand in ('body', 'mock'):
       events = Events()
@@ -115,8 +115,7 @@ class CarSpecificEvents:
       events.add(EventName.doorOpen)
     if CS.seatbeltUnlatched:
       events.add(EventName.seatbeltNotLatched)
-    if CS.gearShifter != GearShifter.drive and (extra_gears is None or
-       CS.gearShifter not in extra_gears):
+    if CS.gearShifter != GearShifter.drive and CS.gearShifter not in extra_gears:
       events.add(EventName.wrongGear)
     if CS.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
