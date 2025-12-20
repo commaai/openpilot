@@ -298,7 +298,7 @@ class MiciOffroadAlerts(Widget):
     # Refresh alerts periodically, not every frame
     current_time = time.monotonic()
     if current_time - self._last_refresh >= REFRESH_INTERVAL:
-      self.refresh()
+      # self.refresh()
       self._last_refresh = current_time
 
   def _render(self, rect: rl.Rectangle):
