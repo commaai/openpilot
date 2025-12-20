@@ -73,18 +73,6 @@ class MiciMainLayout(Widget):
       gui_app.set_modal_overlay(self._onboarding_window)
     elif not self._startup_dialog_shown:
       if NOTOUCH:
-        routes = get_available_routes()
-        options = ["offroad"] + routes
-        if len(routes):
-          options.insert(1, "random")
-
-        dialog = BigMultiOptionDialog(
-          options=options,
-          default=None,
-          right_btn="check"
-        )
-        dialog.set_back_enabled(False)
-
         def replay_callback():
           selected = dialog.get_selected_option()
           if selected == "offroad":
@@ -94,7 +82,13 @@ class MiciMainLayout(Widget):
           if route in routes:
             os.system(f"cd {BASEDIR} && ./tools/replay/replay '{route}' --data_dir='{os.path.join(BASEDIR, 'data', 'replay_routes', route)}' &")
 
-        dialog._right_btn.set_click_callback(lambda: (gui_app.set_modal_overlay(None), replay_callback()))
+        routes = get_available_routes()
+        options = ["offroad"] + routes
+        if len(routes):
+          options.insert(1, "random")
+
+        dialog = BigMultiOptionDialog(options=options, default=None, right_btn="check", right_btn_callback=replay_callback)
+        dialog.set_back_enabled(False)
         gui_app.set_modal_overlay(dialog)
       else:
         gui_app.set_modal_overlay(BigDialog(title="", description="Visit Developer settings, enable SSH, and add an SSH key.", right_btn="check"))
