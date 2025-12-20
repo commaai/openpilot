@@ -38,7 +38,6 @@ class MiciMainLayout(Widget):
     self._prev_standstill = False
     self._onroad_time_delay: float | None = None
     self._setup = False
-    self._startup_dialog_shown = False
     self._replay_proc = None
     atexit.register(lambda: self._replay_proc.terminate() if self._replay_proc else None)
 
@@ -73,29 +72,27 @@ class MiciMainLayout(Widget):
 
     # Start onboarding if terms or training not completed
     self._onboarding_window = OnboardingWindow()
-    if not self._onboarding_window.completed:
-      gui_app.set_modal_overlay(self._onboarding_window)
-    elif not self._startup_dialog_shown:
-      if NOTOUCH:
-        def replay_callback():
-          selected = dialog.get_selected_option()
-          if selected == "[offroad]":
-            return
+    #if not self._onboarding_window.completed:
+    #  gui_app.set_modal_overlay(self._onboarding_window)
+    if NOTOUCH:
+      def replay_callback():
+        selected = dialog.get_selected_option()
+        if selected == "[offroad]":
+          return
 
-          route = random.choice(list(routes.values())) if selected == "[random]" else routes[selected]
-          self._replay_proc = subprocess.Popen(["./tools/replay/replay", route, "--data_dir", os.path.join(BASEDIR, "data", "replay_routes", route)], cwd=BASEDIR)
+        route = random.choice(list(routes.values())) if selected == "[random]" else routes[selected]
+        self._replay_proc = subprocess.Popen(["./tools/replay/replay", route, "--data_dir", os.path.join(BASEDIR, "data", "replay_routes", route)], cwd=BASEDIR)
 
-        routes = get_available_routes()
-        options = ["[offroad]"] + list(routes)
-        if len(routes):
-          options.insert(1, "[random]")
+      routes = get_available_routes()
+      options = ["[offroad]"] + list(routes)
+      if len(routes):
+        options.insert(1, "[random]")
 
-        dialog = BigMultiOptionDialog(options=options, default=None, right_btn="check", right_btn_callback=replay_callback)
-        dialog.set_back_enabled(False)
-        gui_app.set_modal_overlay(dialog)
-      else:
-        gui_app.set_modal_overlay(BigDialog(title="", description="Visit Developer settings, enable SSH, and add an SSH key.", right_btn="check"))
-      self._startup_dialog_shown = True
+      dialog = BigMultiOptionDialog(options=options, default=None, right_btn="check", right_btn_callback=replay_callback)
+      dialog.set_back_enabled(False)
+      gui_app.set_modal_overlay(dialog)
+    else:
+      gui_app.set_modal_overlay(BigDialog(title="", description="Visit Developer settings, enable SSH, and add an SSH key.", right_btn="check"))
 
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=self._on_settings_clicked)
