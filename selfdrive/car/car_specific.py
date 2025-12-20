@@ -1,5 +1,4 @@
 from cereal import car, log
-import cereal.messaging as messaging
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import MAX_CTRL_SPEED
 
@@ -9,21 +8,6 @@ ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
 EventName = log.OnroadEvent.EventName
 NetworkLocation = structs.CarParams.NetworkLocation
-
-
-# TODO: the goal is to abstract this file into the CarState struct and make events generic
-class MockCarState:
-  def __init__(self):
-    self.sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
-
-  def update(self, CS: car.CarState):
-    self.sm.update(0)
-    gps_sock = 'gpsLocationExternal' if self.sm.recv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
-
-    CS.vEgo = self.sm[gps_sock].speed
-    CS.vEgoRaw = self.sm[gps_sock].speed
-
-    return CS
 
 
 BRAND_EXTRA_GEARS = {
