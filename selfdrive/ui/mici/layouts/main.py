@@ -11,6 +11,7 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigMultiOption
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app, NOTOUCH
+from tools.scripts.download_replay_routes import ROUTES
 
 
 ONROAD_DELAY = 2.5  # seconds
@@ -70,7 +71,7 @@ class MiciMainLayout(Widget):
     elif not self._startup_dialog_shown:
       if NOTOUCH:
         gui_app.set_modal_overlay(BigMultiOptionDialog(
-          options=["random", "Option 1", "Option 2", "Option 3", "offroad"],
+          options=["offroad", "random"] + ROUTES,
           default=None,
           right_btn="check"
         ))

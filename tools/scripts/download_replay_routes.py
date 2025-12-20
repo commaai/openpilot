@@ -9,8 +9,12 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.route import Route
 
 ROUTES = [
-  "98395b7c5b27882e/000000b3--5c18aec824",
   "140526191c476eaa/00000062--b46a3e1653/1937/2420",
+  "b1c51ac59e436919/00000018--223597e5f4/90/453",
+  "f73c01590368ee5b/0000000f--12760794cf/573/802",
+  "7830b8e854d6713c/0000002a--8e59617918/583/988",
+  "98395b7c5b27882e/000000a7--b86b35ab32/94/334",
+  "d2c676bbc2b7e5de/00000017--32fb235cb7/146/600",
 ]
 DATA_DIR = os.path.join(BASEDIR, "data", "replay_routes")
 
