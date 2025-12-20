@@ -52,6 +52,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"GsmApn", {PERSISTENT, STRING}},
     {"GsmMetered", {PERSISTENT, BOOL, "1"}},
     {"GsmRoaming", {PERSISTENT, BOOL}},
+    {"ReplayActive", {CLEAR_ON_MANAGER_START, BOOL}},
     {"HardwareSerial", {PERSISTENT, STRING}},
     {"HasAcceptedTerms", {PERSISTENT, STRING, "0"}},
     {"InstallDate", {PERSISTENT, TIME}},
