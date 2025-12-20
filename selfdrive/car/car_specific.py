@@ -107,7 +107,7 @@ class CarSpecificEvents:
 
     return events
 
-  def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears: list | None = None, pcm_enable=True,
+  def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears: tuple = (), pcm_enable=True,
                            allow_button_cancel=True):
     events = Events()
 
