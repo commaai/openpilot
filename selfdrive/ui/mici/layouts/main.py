@@ -3,6 +3,8 @@ from enum import IntEnum
 import cereal.messaging as messaging
 import os
 import random
+import subprocess
+import atexit
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.ui.mici.layouts.home import MiciHomeLayout
 from openpilot.selfdrive.ui.mici.layouts.settings.settings import SettingsLayout
@@ -37,6 +39,8 @@ class MiciMainLayout(Widget):
     self._onroad_time_delay: float | None = None
     self._setup = False
     self._startup_dialog_shown = False
+    self._replay_proc = None
+    atexit.register(lambda: self._replay_proc.terminate() if self._replay_proc else None)
 
     # Initialize widgets
     self._home_layout = MiciHomeLayout()
@@ -80,7 +84,7 @@ class MiciMainLayout(Widget):
 
           route = random.choice(routes) if selected == "random" else selected
           if route in routes:
-            os.system(f"cd {BASEDIR} && ./tools/replay/replay '{route}' --data_dir='{os.path.join(BASEDIR, 'data', 'replay_routes', route)}' &")
+            self._replay_proc = subprocess.Popen(["./tools/replay/replay", route, "--data_dir", os.path.join(BASEDIR, "data", "replay_routes", route)], cwd=BASEDIR)
 
         routes = get_available_routes()
         options = ["offroad"] + routes
