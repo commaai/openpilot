@@ -36,7 +36,7 @@ kill -9 $spinner_pid
 # download videos
 echo "Downloading videos" | ./system/ui/spinner.py &
 spinner_pid=$!
-./selfdrive/assets/videos/download_videos.py
+./tools/scripts/download_replay_routes.py
 kill -9 $spinner_pid
 
 # launch notouch ui
