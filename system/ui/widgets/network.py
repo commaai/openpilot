@@ -21,7 +21,7 @@ try:
   from openpilot.selfdrive.ui.ui_state import ui_state
   from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 except Exception:
-  Params = None
+  Params = None  # type: ignore
   ui_state = None  # type: ignore
   PrimeType = None  # type: ignore
 

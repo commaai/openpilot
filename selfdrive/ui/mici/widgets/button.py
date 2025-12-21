@@ -12,7 +12,7 @@ from openpilot.common.filter_simple import BounceFilter
 try:
   from openpilot.common.params import Params
 except ImportError:
-  Params = None
+  Params = None  # type: ignore
 
 SCROLLING_SPEED_PX_S = 50
 COMPLICATION_SIZE    = 36
