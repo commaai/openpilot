@@ -22,11 +22,11 @@ class CarSpecificEvents:
 
   def update(self, CS: car.CarState, CS_prev: car.CarState, CC: car.CarControl):
     if self.CP.brand in ('body', 'mock'):
-      events = Events()
+      return Events()
 
-    elif self.CP.brand == 'chrysler':
-      events = self.create_common_events(CS, CS_prev)
+    events = self.create_common_events(CS, CS_prev)
 
+    if self.CP.brand == 'chrysler':
       # Low speed steer alert hysteresis logic
       if self.CP.minSteerSpeed > 0. and CS.vEgo < (self.CP.minSteerSpeed + 0.5):
         self.low_speed_alert = True
@@ -36,8 +36,6 @@ class CarSpecificEvents:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.brand == 'honda':
-      events = self.create_common_events(CS, CS_prev)
-
       if self.CP.pcmCruise and CS.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.belowEngageSpeed)
 
@@ -58,8 +56,6 @@ class CarSpecificEvents:
 
     elif self.CP.brand == 'toyota':
       # TODO: when we check for unexpected disengagement, check gear not S1, S2, S3
-      events = self.create_common_events(CS, CS_prev)
-
       if self.CP.openpilotLongitudinalControl:
         # Only can leave standstill when planner wants to move
         if CS.cruiseState.standstill and not CS.brakePressed and CC.cruiseControl.resume:
@@ -74,8 +70,6 @@ class CarSpecificEvents:
             events.add(EventName.manualRestart)
 
     elif self.CP.brand == 'gm':
-      events = self.create_common_events(CS, CS_prev)
-
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
       if CS.vEgo < self.CP.minEnableSpeed and not (CS.standstill and CS.brake >= 20 and
@@ -85,8 +79,6 @@ class CarSpecificEvents:
         events.add(EventName.resumeRequired)
 
     elif self.CP.brand == 'volkswagen':
-      events = self.create_common_events(CS, CS_prev)
-
       if self.CP.openpilotLongitudinalControl:
         if CS.vEgo < self.CP.minEnableSpeed + 0.5:
           events.add(EventName.belowEngageSpeed)
@@ -96,12 +88,6 @@ class CarSpecificEvents:
       # TODO: this needs to be implemented generically in carState struct
       # if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
       #   events.add(EventName.steerTimeLimit)
-
-    elif self.CP.brand == 'hyundai':
-      events = self.create_common_events(CS, CS_prev)
-
-    else:
-      events = self.create_common_events(CS, CS_prev)
 
     return events
 
