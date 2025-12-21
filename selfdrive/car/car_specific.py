@@ -95,8 +95,11 @@ class CarSpecificEvents:
     events = Events()
 
     CI = interfaces[self.CP.carFingerprint]
-    pcm_enable = self.CP.pcmCruise if CI.PCM_ENABLE is None else CI.PCM_ENABLE
-    allow_button_cancel = CI.ALLOW_BUTTON_CANCEL
+    # TODO: cleanup the honda-specific logic
+    pcm_enable = self.CP.pcmCruise and self.CP.brand != 'honda'
+    # TODO: on some hyundai cars, the cancel button is also the pause/resume button,
+    # so only use it for cancel when running openpilot longitudinal
+    allow_button_cancel = self.CP.brand != 'hyundai'
 
     if CS.doorOpen:
       events.add(EventName.doorOpen)
