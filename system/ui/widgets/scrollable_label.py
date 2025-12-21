@@ -3,6 +3,7 @@ from enum import IntEnum
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.label import Align, VAlign
 
 
 class ScrollState(IntEnum):
@@ -12,15 +13,14 @@ class ScrollState(IntEnum):
 
 class ScrollableLabel(Widget):
   def __init__(self, text: str, font_size: int = DEFAULT_TEXT_SIZE, font_weight: FontWeight = FontWeight.NORMAL,
-               text_color: rl.Color = DEFAULT_TEXT_COLOR, alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-               alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP):
+               text_color: rl.Color = DEFAULT_TEXT_COLOR, align: int = Align.LEFT, valign: int = VAlign.TOP):
     super().__init__()
     self._text = text
     self._font_size = font_size
     self._font_weight = font_weight
     self._text_color = text_color
-    self._align = alignment
-    self._align_v = alignment_vertical
+    self._align = align
+    self._align_v = valign
 
     self.reset_scroll()
 
@@ -49,16 +49,16 @@ class ScrollableLabel(Widget):
     # Horizontal alignment only matters if not scrolling
     start_x = self._rect.x
     if not scrolling:
-      if self._align == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+      if self._align == Align.CENTER:
         start_x += (self._rect.width - size.x) / 2
-      elif self._align == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+      elif self._align == Align.RIGHT:
         start_x += (self._rect.width - size.x)
 
     # Vertical alignment
     start_y = self._rect.y
-    if self._align_v == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
+    if self._align_v == VAlign.MIDDLE:
       start_y += (self._rect.height - size.y) / 2
-    elif self._align_v == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
+    elif self._align_v == VAlign.BOTTOM:
       start_y += (self._rect.height - size.y)
 
     if not scrolling:

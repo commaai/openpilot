@@ -155,8 +155,7 @@ class Updater(Widget):
     text_height = measure_text_cached(gui_app.font(FontWeight.ROMAN), progress_value, 128).y
     progress_rect = rl.Rectangle(self._rect.x + 6, self._rect.y + self._rect.height - text_height + 18,
                                  self._rect.width - 12, text_height)
-    gui_label(progress_rect, progress_value, 128, font_weight=FontWeight.ROMAN,
-              color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.35)))
+    gui_label(progress_rect, progress_value, 128, font_weight=FontWeight.ROMAN, color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.35)))
 
   def _update_state(self):
     self._wifi_manager.process_callbacks()

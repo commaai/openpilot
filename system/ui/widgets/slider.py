@@ -4,7 +4,7 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, Align, VAlign
 from openpilot.common.filter_simple import FirstOrderFilter
 
 
@@ -34,8 +34,7 @@ class SmallSlider(Widget):
     self._is_dragging_circle = False
 
     self._label = Label(title, size=36, weight=FontWeight.MEDIUM, color=rl.Color(255, 255, 255, int(255 * 0.65)),
-                               align=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
-                               valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
+                               align=Align.RIGHT, valign=VAlign.MIDDLE, line_height=0.9)
 
   def _load_assets(self):
     self.set_rect(rl.Rectangle(0, 0, 316 + self.HORIZONTAL_PADDING * 2, 100))
@@ -166,8 +165,7 @@ class BigSlider(SmallSlider):
     self._icon = icon
     super().__init__(title, confirm_callback=confirm_callback)
     self._label = Label(title, size=48, weight=FontWeight.DISPLAY, color=rl.Color(255, 255, 255, int(255 * 0.65)),
-                               align=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT, valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-                               line_height=0.875)
+                        align=Align.RIGHT, valign=VAlign.MIDDLE, line_height=0.875)
 
   def _load_assets(self):
     self.set_rect(rl.Rectangle(0, 0, 520 + self.HORIZONTAL_PADDING * 2, 180))

@@ -10,7 +10,7 @@ from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, Align
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.version import terms_version, training_version
 
@@ -116,9 +116,9 @@ class TermsPage(Widget):
     self._on_accept = on_accept
     self._on_decline = on_decline
 
-    self._title = Label(tr("Welcome to openpilot"), size=90, weight=FontWeight.BOLD, align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+    self._title = Label(tr("Welcome to openpilot"), size=90, weight=FontWeight.BOLD, align=Align.LEFT)
     self._desc = Label(tr("You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."),
-                       size=90, weight=FontWeight.MEDIUM, align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+                       size=90, weight=FontWeight.MEDIUM, align=Align.LEFT)
 
     self._decline_btn = Button(tr("Decline"), click_callback=on_decline)
     self._accept_btn = Button(tr("Agree"), button_style=ButtonStyle.PRIMARY, click_callback=on_accept)
@@ -151,7 +151,7 @@ class DeclinePage(Widget):
   def __init__(self, back_callback=None):
     super().__init__()
     self._text = Label(tr("You must accept the Terms and Conditions in order to use openpilot."),
-                       size=90, weight=FontWeight.MEDIUM, align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+                       size=90, weight=FontWeight.MEDIUM, align=Align.LEFT)
     self._back_btn = Button(tr("Back"), click_callback=back_callback)
     self._uninstall_btn = Button(tr("Decline, uninstall openpilot"), button_style=ButtonStyle.DANGER,
                                  click_callback=self._on_uninstall_clicked)

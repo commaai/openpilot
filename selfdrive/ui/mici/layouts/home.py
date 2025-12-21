@@ -3,7 +3,7 @@ import time
 from cereal import log
 import pyray as rl
 from collections.abc import Callable
-from openpilot.system.ui.widgets.label import gui_label, Label
+from openpilot.system.ui.widgets.label import gui_label, Label, Align
 from openpilot.system.ui.widgets.scrollable_label import ScrollableLabel
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR, MousePos
@@ -63,19 +63,19 @@ class DeviceStatus(Widget):
     # draw status
     status_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, 40)
     gui_label(status_rect, self._system_status, font_size=HEAD_BUTTON_FONT_SIZE, color=DEFAULT_TEXT_COLOR,
-              font_weight=FontWeight.BOLD, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+              font_weight=FontWeight.BOLD, align=Align.CENTER)
 
     # draw network status
     network_rect = rl.Rectangle(self._rect.x, self._rect.y + 60, self._rect.width, 40)
     gui_label(network_rect, self._network_status, font_size=40, color=DEFAULT_TEXT_COLOR,
-              font_weight=FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+              font_weight=FontWeight.MEDIUM, align=Align.CENTER)
 
     # draw version
     version_font_size = 30
     version_rect = rl.Rectangle(self._rect.x, self._rect.y + 140, self._rect.width + 20, 40)
     wrapped_text = '\n'.join(wrap_text(self._version_text, version_font_size, version_rect.width))
     gui_label(version_rect, wrapped_text, font_size=version_font_size, color=DEFAULT_TEXT_COLOR,
-              font_weight=FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
+              font_weight=FontWeight.MEDIUM, align=Align.LEFT)
 
 
 class MiciHomeLayout(Widget):

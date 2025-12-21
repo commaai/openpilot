@@ -3,7 +3,7 @@ from typing import Union
 from enum import Enum
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, Align, VAlign
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
@@ -119,11 +119,9 @@ class BigButton(Widget):
     self._value_font = gui_app.font(FontWeight.ROMAN)
 
     self._label = Label(text, size=self._get_label_font_size(), width=int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2),
-                        weight=FontWeight.DISPLAY, color=LABEL_COLOR, align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                        valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+                        weight=FontWeight.DISPLAY, color=LABEL_COLOR, align=Align.LEFT, valign=VAlign.BOTTOM)
     self._sub_label = Label(value, size=COMPLICATION_SIZE, width=int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2),
-                            weight=FontWeight.ROMAN, color=COMPLICATION_GREY, align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                            valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+                            weight=FontWeight.ROMAN, color=COMPLICATION_GREY, align=Align.LEFT, valign=VAlign.BOTTOM)
 
     self._load_images()
 

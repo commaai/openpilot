@@ -5,7 +5,7 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, Align, VAlign
 from openpilot.common.filter_simple import FirstOrderFilter
 
 
@@ -86,7 +86,7 @@ class Button(Widget):
                font_weight: FontWeight = FontWeight.MEDIUM,
                button_style: ButtonStyle = ButtonStyle.NORMAL,
                border_radius: int = 10,
-               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+               text_alignment: Align = Align.CENTER,
                text_padding: int = 20,
                icon=None,
                elide_right: bool = False,
@@ -98,7 +98,7 @@ class Button(Widget):
     self._border_radius = border_radius
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
 
-    self._label = Label(text, font_size, font_weight, text_alignment, valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, padding=text_padding,
+    self._label = Label(text, font_size, font_weight, text_alignment, valign=VAlign.MIDDLE, padding=text_padding,
                         color=BUTTON_TEXT_COLOR[self._button_style], elide=elide_right)
 
     self._click_callback = click_callback
@@ -146,7 +146,7 @@ class ButtonRadio(Button):
                icon,
                click_callback: Callable[[], None] | None = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
-               text_alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+               text_alignment: Align = Align.LEFT,
                border_radius: int = 10,
                text_padding: int = 20,
                ):
@@ -239,10 +239,8 @@ class SmallButton(Widget):
 
     self._load_assets()
 
-    self._label = Label(text, 36, weight=FontWeight.MEDIUM,
-                               color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                               align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                               valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+    self._label = Label(text, 36, weight=FontWeight.MEDIUM, color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                        align=Align.CENTER, valign=VAlign.MIDDLE)
 
     self._bg_disabled_txt = None
 

@@ -3,7 +3,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, Align, VAlign
 from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller_tici import Scroller
@@ -24,8 +24,8 @@ class ConfirmDialog(Widget):
 
     self._rich = rich
     if not rich:
-      self._label = Label(text, 70, FontWeight.BOLD, align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                          valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, color=rl.Color(201, 201, 201, 255))
+      self._label = Label(text, 70, FontWeight.BOLD, align=Align.CENTER,
+                          valign=VAlign.MIDDLE, color=rl.Color(201, 201, 201, 255))
     else:
       self._html_renderer = HtmlRenderer(text=text, text_size={ElementType.P: 50}, center_text=True)
       self._scroller = Scroller([self._html_renderer], line_separator=False, spacing=0)

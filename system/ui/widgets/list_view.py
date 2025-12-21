@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.label import gui_label, Align, VAlign
 from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
 
 ITEM_BASE_WIDTH = 600
@@ -136,8 +136,7 @@ class ButtonAction(ItemAction):
     if value_text:
       value_rect = rl.Rectangle(rect.x, rect.y, rect.width - BUTTON_WIDTH - TEXT_PADDING, rect.height)
       gui_label(value_rect, value_text, font_size=ITEM_TEXT_FONT_SIZE, color=ITEM_TEXT_VALUE_COLOR,
-                font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+                font_weight=FontWeight.NORMAL, align=Align.LEFT, valign=VAlign.MIDDLE)
 
     # TODO: just use the generic Widget click callbacks everywhere, no returning from render
     pressed = self._pressed
@@ -165,8 +164,7 @@ class TextAction(ItemAction):
 
   def _render(self, rect: rl.Rectangle) -> bool:
     gui_label(self._rect, self.text, font_size=ITEM_TEXT_FONT_SIZE, color=self.color,
-              font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
-              alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+              font_weight=FontWeight.NORMAL, align=Align.RIGHT, valign=VAlign.MIDDLE)
     return False
 
   def set_text(self, text: str | Callable[[], str]):

@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import IntEnum
 from typing import Union
 import pyray as rl
 
@@ -8,6 +9,19 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.emoji import find_emoji, emoji_tex
 from openpilot.system.ui.lib.wrap_text import wrap_text
+
+
+class Align(IntEnum):
+  LEFT = 0
+  CENTER = 1
+  RIGHT = 2
+
+
+class VAlign(IntEnum):
+  TOP = 0
+  MIDDLE = 1
+  BOTTOM = 2
+
 
 def _elide_text(font: rl.Font, text: str, font_size: int, max_width: float, spacing: int = 0) -> str:
   """Binary search to truncate text that exceeds max_width."""
@@ -40,8 +54,8 @@ def gui_label(
   font_size: int = DEFAULT_TEXT_SIZE,
   color: rl.Color = DEFAULT_TEXT_COLOR,
   font_weight: FontWeight = FontWeight.NORMAL,
-  alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+  align: Align = Align.LEFT,
+  valign: VAlign = VAlign.MIDDLE,
   elide_right: bool = True
 ):
   font = gui_app.font(font_weight)
@@ -49,15 +63,15 @@ def gui_label(
   text_size = measure_text_cached(font, display_text, font_size)
 
   text_x = rect.x
-  if alignment == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+  if align == Align.CENTER:
     text_x += (rect.width - text_size.x) / 2
-  elif alignment == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+  elif align == Align.RIGHT:
     text_x += rect.width - text_size.x
 
   text_y = rect.y
-  if alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
+  if valign == VAlign.MIDDLE:
     text_y += (rect.height - text_size.y) / 2
-  elif alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
+  elif valign == VAlign.BOTTOM:
     text_y += rect.height - text_size.y
 
   rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), font_size, 0, color)
@@ -85,8 +99,8 @@ class Label(Widget):
     text: str | Callable[[], str],
     size: int = DEFAULT_TEXT_SIZE,
     weight: FontWeight = FontWeight.NORMAL,
-    align: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-    valign: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
+    align: Align = Align.LEFT,
+    valign: VAlign = VAlign.TOP,
     padding: int = 0,
     color: rl.Color = DEFAULT_TEXT_COLOR,
     elide: bool = False,
@@ -140,7 +154,7 @@ class Label(Widget):
       self._font_weight = weight
       self._layout_cache = None
 
-  def set_alignment(self, align: int):
+  def set_alignment(self, align: Align):
     if self._h_align != align:
       self._h_align = align
       self._layout_cache = None
@@ -176,9 +190,9 @@ class Label(Widget):
     for line_text in lines:
       line_size = measure_text_cached(font, line_text, self._font_size, self._spacing, self._emojis)
       cursor_x = self._padding
-      if self._h_align == rl.GuiTextAlignment.TEXT_ALIGN_CENTER:
+      if self._h_align == Align.CENTER:
         cursor_x += (content_width - line_size.x) // 2
-      elif self._h_align == rl.GuiTextAlignment.TEXT_ALIGN_RIGHT:
+      elif self._h_align == Align.RIGHT:
         cursor_x += content_width - line_size.x
 
       if self._emojis:
@@ -205,9 +219,9 @@ class Label(Widget):
 
     # Determine vertical block start
     vertical_offset = 0.0
-    if self._v_align == rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE:
+    if self._v_align == VAlign.MIDDLE:
       vertical_offset = (self._rect.height - self._layout_cache.content_height) / 2
-    elif self._v_align == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
+    elif self._v_align == VAlign.BOTTOM:
       vertical_offset = self._rect.height - self._layout_cache.content_height
 
     font = gui_app.font(self._font_weight)

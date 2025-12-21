@@ -23,7 +23,7 @@ from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRoundedButton, SmallerRoundedButton,
                                                 SmallCircleIconButton, WidishRoundedButton, SmallRedPillButton,
                                                 FullRoundedButton)
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, Align, VAlign
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
@@ -107,8 +107,7 @@ class StartPage(Widget):
     super().__init__()
 
     self._title = Label("start", 64, color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                               weight=FontWeight.DISPLAY, align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                               valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+                        weight=FontWeight.DISPLAY, align=Align.CENTER, valign=VAlign.MIDDLE)
 
     self._start_bg_txt = gui_app.texture("icons_mici/setup/green_button.png", 520, 224)
     self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/green_button_pressed.png", 520, 224)
@@ -160,8 +159,7 @@ class TermsHeader(Widget):
     super().__init__()
 
     self._title = Label(text, 36, color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                               weight=FontWeight.BOLD, valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-                               line_height=0.8)
+                               weight=FontWeight.BOLD, valign=VAlign.MIDDLE, line_height=0.8)
     self._icon_texture = icon_texture
 
     self.set_rect(rl.Rectangle(0, 0, gui_app.width - 16 * 2, self._icon_texture.height))
@@ -355,7 +353,7 @@ class DownloadingPage(Widget):
 
     self._title_label = Label("downloading", 64, color=rl.Color(255, 255, 255, int(255 * 0.9)), weight=FontWeight.DISPLAY)
     self._progress_label = Label("", 128, color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.35)),
-                                        weight=FontWeight.ROMAN, valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+                                 weight=FontWeight.ROMAN, valign=VAlign.BOTTOM)
     self._progress = 0
 
   def set_progress(self, progress: int):

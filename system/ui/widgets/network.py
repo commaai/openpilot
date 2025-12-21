@@ -11,7 +11,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.label import gui_label, Align
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
 
@@ -61,7 +61,7 @@ class NavButton(Widget):
   def _render(self, _):
     color = rl.Color(74, 74, 74, 255) if self.is_pressed else rl.Color(57, 57, 57, 255)
     rl.draw_rectangle_rounded(self._rect, 0.6, 10, color)
-    gui_label(self.rect, self.text, font_size=60, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    gui_label(self.rect, self.text, font_size=60, align=Align.CENTER)
 
 
 class NetworkUI(Widget):
@@ -307,7 +307,7 @@ class WifiManagerUI(Widget):
 
   def _render(self, rect: rl.Rectangle):
     if not self._networks:
-      gui_label(rect, tr("Scanning Wi-Fi networks..."), 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      gui_label(rect, tr("Scanning Wi-Fi networks..."), 72, align=Align.CENTER)
       return
 
     if self.state == UIState.NEEDS_AUTH and self._state_network:
@@ -380,7 +380,7 @@ class WifiManagerUI(Widget):
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
-      gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      gui_label(status_text_rect, status_text, font_size=48, align=Align.CENTER)
     else:
       # If the network is saved, show the "Forget" button
       if network.is_saved:
@@ -453,7 +453,7 @@ class WifiManagerUI(Widget):
 
     for n in self._networks:
       self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55,
-                                              text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
+                                              text_alignment=Align.LEFT, button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
       self._networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
       self._forget_networks_buttons[n.ssid] = Button(tr("Forget"), partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                      font_size=45)

@@ -84,8 +84,7 @@ class Reset(Widget):
 
   def _render(self, rect: rl.Rectangle):
     label_rect = rl.Rectangle(rect.x + 8, rect.y + 8, rect.width, 50)
-    gui_label(label_rect, "factory reset", 48, font_weight=FontWeight.BOLD,
-              color=rl.Color(255, 255, 255, int(255 * 0.9)))
+    gui_label(label_rect, "factory reset", 48, font_weight=FontWeight.BOLD, color=rl.Color(255, 255, 255, int(255 * 0.9)))
 
     text_rect = rl.Rectangle(rect.x + 8, rect.y + 56, rect.width - 8 * 2, rect.height - 80)
     self._body_label.set_text(self._get_body_text())

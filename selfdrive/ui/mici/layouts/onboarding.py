@@ -9,7 +9,7 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, Align
 from openpilot.system.ui.widgets.slider import SmallSlider
 from openpilot.system.ui.mici_setup import TermsHeader, TermsPage as SetupTermsPage
 from openpilot.selfdrive.ui.ui_state import ui_state, device
@@ -39,8 +39,7 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     self._camera_view._render(rect)
 
     if not self._camera_view.frame:
-      gui_label(rect, tr("camera starting"), font_size=64, font_weight=FontWeight.BOLD,
-                alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      gui_label(rect, tr("camera starting"), font_size=64, font_weight=FontWeight.BOLD, align=Align.CENTER)
       rl.end_scissor_mode()
       return -1
 

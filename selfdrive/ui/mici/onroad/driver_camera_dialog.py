@@ -8,7 +8,7 @@ from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import NavWidget
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.label import gui_label, Align, VAlign
 
 EventName = log.OnroadEvent.EventName
 
@@ -83,8 +83,7 @@ class DriverCameraDialog(NavWidget):
     self._camera_view._render(rect)
 
     if not self._camera_view.frame:
-      gui_label(rect, tr("camera starting"), font_size=54, font_weight=FontWeight.BOLD,
-                alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      gui_label(rect, tr("camera starting"), font_size=54, font_weight=FontWeight.BOLD, align=Align.CENTER)
       rl.end_scissor_mode()
       self._publish_alert_sound(None)
       return -1
@@ -126,30 +125,23 @@ class DriverCameraDialog(NavWidget):
 
     gui_label(rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height),
               f"Awareness: {dm_state.awarenessStatus * 100:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
-              alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
-              alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
+              align=Align.RIGHT, valign=VAlign.TOP,
               color=rl.Color(0, 0, 0, 180))
     gui_label(rect, f"Awareness: {dm_state.awarenessStatus * 100:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
-              alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
-              alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
-              color=rl.Color(255, 255, 255, int(255 * 0.9)))
+              align=Align.RIGHT, valign=VAlign.TOP, color=rl.Color(255, 255, 255, int(255 * 0.9)))
 
     if not dm_state.events:
       return
 
     # Show first event (only one should be active at a time)
     event_name_str = str(dm_state.events[0].name).split('.')[-1]
-    alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if self.driver_state_renderer.is_rhd else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
+    alignment = Align.RIGHT if self.driver_state_renderer.is_rhd else Align.LEFT
 
     shadow_rect = rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height)
     gui_label(shadow_rect, event_name_str, font_size=40, font_weight=FontWeight.BOLD,
-              alignment=alignment,
-              alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM,
-              color=rl.Color(0, 0, 0, 180))
+              align=alignment, valign=VAlign.BOTTOM, color=rl.Color(0, 0, 0, 180))
     gui_label(rect, event_name_str, font_size=40, font_weight=FontWeight.BOLD,
-              alignment=alignment,
-              alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM,
-              color=rl.Color(255, 255, 255, int(255 * 0.9)))
+              align=alignment, valign=VAlign.BOTTOM, color=rl.Color(255, 255, 255, int(255 * 0.9)))
 
   def _load_eye_textures(self):
     """Lazy load eye textures"""

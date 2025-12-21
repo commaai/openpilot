@@ -7,7 +7,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.label import Label, Align, VAlign
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -60,12 +60,10 @@ class AlertItem(Widget):
     self._icon_green = gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", self.ICON_SIZE, self.ICON_SIZE)
 
     self._title_label = Label(text="", size=32, weight=FontWeight.SEMI_BOLD, color=self.TEXT_COLOR,
-                                     align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                     valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP, line_height=0.95)
+                              align=Align.LEFT, valign=VAlign.TOP, line_height=0.95)
 
     self._body_label = Label(text="", size=28, weight=FontWeight.ROMAN, color=self.TEXT_COLOR,
-                                    align=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-                                    valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=0.95)
+                             align=Align.LEFT, valign=VAlign.BOTTOM, line_height=0.95)
 
     self._title_text = ""
     self._body_text = ""
@@ -201,8 +199,7 @@ class MiciOffroadAlerts(Widget):
 
     # Create empty state label
     self._empty_label = Label(tr("no alerts"), size=65, weight=FontWeight.DISPLAY, color=rl.WHITE,
-                                     align=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-                                     valign=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+                              align=Align.CENTER, valign=VAlign.MIDDLE)
 
     # Build initial alert list
     self._build_alerts()

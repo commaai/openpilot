@@ -5,7 +5,7 @@ from typing import Union
 from collections.abc import Callable
 from typing import cast
 from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
-from openpilot.system.ui.widgets.label import Label, gui_label
+from openpilot.system.ui.widgets.label import Label, gui_label, Align, VAlign
 from openpilot.system.ui.widgets.scrollable_label import ScrollableLabel
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -81,8 +81,7 @@ class BigDialog(BigDialogBase):
                               int(self._rect.y + PADDING),
                               int(max_width),
                               int(title_size.y))
-    gui_label(title_rect, title_wrapped, 50, font_weight=FontWeight.BOLD,
-              alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    gui_label(title_rect, title_wrapped, 50, font_weight=FontWeight.BOLD, align=Align.CENTER)
 
     # draw description
     desc_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.MEDIUM), self._description, 30, int(max_width)))
@@ -92,8 +91,7 @@ class BigDialog(BigDialogBase):
                              int(max_width),
                              int(desc_size.y))
     # TODO: text align doesn't seem to work properly with newlines
-    gui_label(desc_rect, desc_wrapped, 30, font_weight=FontWeight.MEDIUM,
-              alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    gui_label(desc_rect, desc_wrapped, 30, font_weight=FontWeight.MEDIUM, align=Align.CENTER)
 
     return self._ret
 
@@ -285,7 +283,7 @@ class BigDialogOptionButton(Widget):
     self._selected = False
 
     self._label = ScrollableLabel(option, font_size=70, text_color=rl.Color(255, 255, 255, int(255 * 0.58)),
-                               font_weight=FontWeight.DISPLAY_REGULAR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+                               font_weight=FontWeight.DISPLAY_REGULAR, valign=VAlign.MIDDLE)
 
   def show_event(self):
     super().show_event()
