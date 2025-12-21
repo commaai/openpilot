@@ -51,6 +51,7 @@ class IconLayout(NamedTuple):
 class AlertLayout(NamedTuple):
   text_rect: rl.Rectangle
   icon: IconLayout | None
+  bg_height: int
 
 
 @dataclass
@@ -158,9 +159,12 @@ class AlertRenderer(Widget):
     icon_margin_x = 20
     icon_margin_y = 18
 
+    small_alert_height = round(self._rect.height * 0.583) # 140px at mici height
+    medium_alert_height = round(self._rect.height * 0.833) # 200px at mici height
+
     # alert_type format is "EventName/eventType" (e.g., "preLaneChangeLeft/warning")
     event_name = alert.alert_type.split('/')[0] if alert.alert_type else ''
-
+    background_height = small_alert_height
     if event_name == 'preLaneChangeLeft':
       icon_side = IconSide.left
       txt_icon = self._txt_turn_signal_left
@@ -190,9 +194,11 @@ class AlertRenderer(Widget):
       txt_icon = self._txt_blind_spot_left if icon_side == 'left' else self._txt_blind_spot_right
       icon_margin_x = 8
       icon_margin_y = 0
+      background_height = medium_alert_height
 
     else:
       self._turn_signal_timer = 0.0
+      background_height = int(self._rect.height)
 
     self._last_icon_side = icon_side
 
@@ -213,7 +219,7 @@ class AlertRenderer(Widget):
       self._rect.height,
     )
     icon_layout = IconLayout(txt_icon, icon_side, icon_margin_x, icon_margin_y) if txt_icon is not None and icon_side is not None else None
-    return AlertLayout(text_rect, icon_layout)
+    return AlertLayout(text_rect, icon_layout, background_height)
 
   def _render(self, rect: rl.Rectangle) -> bool:
     alert = self.get_alert(ui_state.sm)
@@ -230,9 +236,8 @@ class AlertRenderer(Widget):
         self._prev_alert = None
         return False
 
-    self._draw_background(alert)
-
     alert_layout = self._icon_helper(alert)
+    self._draw_background(alert, alert_layout)
     self._draw_text(alert, alert_layout)
     self._draw_icons(alert_layout)
 
@@ -261,33 +266,16 @@ class AlertRenderer(Widget):
     rl.draw_texture(alert_layout.icon.texture, pos_x, int(self._rect.y + alert_layout.icon.margin_y),
                     rl.Color(255, 255, 255, int(icon_alpha * self._alpha_filter.x)))
 
-  def _draw_background(self, alert: Alert) -> None:
+  def _draw_background(self, alert: Alert, alert_layout: AlertLayout) -> None:
     # draw top gradient for alert text at top
     color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
     color = rl.Color(color.r, color.g, color.b, int(255 * 0.90 * self._alpha_filter.x))
     translucent_color = rl.Color(color.r, color.g, color.b, int(0 * self._alpha_filter.x))
 
-    small_alert_height = round(self._rect.height * 0.583) # 140px at mici height
-    medium_alert_height = round(self._rect.height * 0.833) # 200px at mici height
-
-    # alert_type format is "EventName/eventType" (e.g., "preLaneChangeLeft/warning")
-    event_name = alert.alert_type.split('/')[0] if alert.alert_type else ''
-
-    if event_name == 'preLaneChangeLeft':
-      bg_height = small_alert_height
-    elif event_name == 'preLaneChangeRight':
-      bg_height = small_alert_height
-    elif event_name == 'laneChange':
-      bg_height = small_alert_height
-    elif event_name == 'laneChangeBlocked':
-      bg_height = medium_alert_height
-    else:
-      bg_height = int(self._rect.height)
-
-    solid_height = round(bg_height * 0.2)
+    solid_height = round(alert_layout.bg_height * 0.2)
     rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), solid_height, color)
     rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + solid_height), int(self._rect.width),
-                                 int(bg_height - solid_height),
+                                 int(alert_layout.bg_height - solid_height),
                                  color, translucent_color)
 
   def _draw_text(self, alert: Alert, alert_layout: AlertLayout) -> None:
