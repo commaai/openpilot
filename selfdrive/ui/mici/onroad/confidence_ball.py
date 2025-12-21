@@ -7,6 +7,16 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.filter_simple import FirstOrderFilter
 
 
+ENGAGED_COLORS = (
+  (rl.Color(0, 255, 204, 255), rl.Color(0, 255, 38, 255)),  # high
+  (rl.Color(255, 200, 0, 255), rl.Color(255, 115, 0, 255)),  # mid
+  (rl.Color(255, 0, 21, 255), rl.Color(255, 0, 89, 255)),  # low
+)
+
+OVERRIDE_COLORS = (rl.Color(255, 255, 255, 255), rl.Color(82, 82, 82, 255))
+DISENGAGED_COLORS = (rl.Color(50, 50, 50, 255), rl.Color(13, 13, 13, 255))
+
+
 def draw_circle_gradient(center_x: float, center_y: float, radius: int,
                          top: rl.Color, bottom: rl.Color) -> None:
   # Draw a square with the gradient
@@ -56,23 +66,15 @@ class ConfidenceBall(Widget):
     # confidence zones
     if ui_state.status == UIStatus.ENGAGED or self._demo:
       if self._confidence_filter.x > 0.5:
-        top_dot_color = rl.Color(0, 255, 204, 255)
-        bottom_dot_color = rl.Color(0, 255, 38, 255)
+        colors = ENGAGED_COLORS[0]
       elif self._confidence_filter.x > 0.2:
-        top_dot_color = rl.Color(255, 200, 0, 255)
-        bottom_dot_color = rl.Color(255, 115, 0, 255)
+        colors = ENGAGED_COLORS[1]
       else:
-        top_dot_color = rl.Color(255, 0, 21, 255)
-        bottom_dot_color = rl.Color(255, 0, 89, 255)
-
+        colors = ENGAGED_COLORS[2]
     elif ui_state.status == UIStatus.OVERRIDE:
-      top_dot_color = rl.Color(255, 255, 255, 255)
-      bottom_dot_color = rl.Color(82, 82, 82, 255)
-
+      colors = OVERRIDE_COLORS
     else:
-      top_dot_color = rl.Color(50, 50, 50, 255)
-      bottom_dot_color = rl.Color(13, 13, 13, 255)
+      colors = DISENGAGED_COLORS
 
     draw_circle_gradient(content_rect.x + content_rect.width - status_dot_radius,
-                         dot_height, status_dot_radius,
-                         top_dot_color, bottom_dot_color)
+                         dot_height, status_dot_radius, colors[0], colors[1])
