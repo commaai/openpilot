@@ -212,7 +212,7 @@ class ProcessContainer:
   def _start_process(self):
     if self.capture is not None:
       self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)
-    self.process.prepare()
+    # self.process.prepare()
     self.process.start()
 
   def start(
@@ -221,6 +221,8 @@ class ProcessContainer:
     fingerprint: str | None, capture_output: bool
   ):
     with self.prefix as p:
+      self.process.prepare()
+
       self.prefix.create_dirs()
       self._setup_env(params_config, environ_config)
 
@@ -658,7 +660,7 @@ def _replay_multi_process(
     required_vision_pubs = {m.camera_state for m in available_streams(lr)} & set(all_vision_pubs)
     assert all(st in frs for st in required_vision_pubs), f"frs for this process must contain following vision streams: {required_vision_pubs}"
 
-  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  all_msgs = lr  # sorted(lr, key=lambda msg: msg.logMonoTime)
   log_msgs = []
   containers = []
   try:
