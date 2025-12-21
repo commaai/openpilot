@@ -1,0 +1,61 @@
+name: SonarCloud
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper blame analysis
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            clang \
+            libcapnp-dev \
+            libzmq3-dev \
+            libssl-dev \
+            libcurl4-openssl-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            libavutil-dev \
+            libyuv-dev \
+            libusb-1.0-0-dev \
+            libbz2-dev \
+            libzstd-dev \
+            ocl-icd-opencl-dev
+
+      - name: Install Python dependencies
+        run: uv sync --frozen
+
+      - name: Build project
+        run: |
+          source .venv/bin/activate
+          scons -u -j$(nproc)
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
