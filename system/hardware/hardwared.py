@@ -210,7 +210,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
-  fan_controller = FanController(1./DT_HW)
+  fan_controller = FanController(int(1./DT_HW))
 
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
