@@ -128,7 +128,7 @@ class ButtonAction(ItemAction):
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self._button.set_text(self.text)
-    self._button.set_enabled(_resolve_value(self.enabled))
+    self._button.set_enabled(self.enabled)
     button_rect = rl.Rectangle(rect.x + rect.width - BUTTON_WIDTH, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._button.render(button_rect)
 
