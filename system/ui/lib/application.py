@@ -217,7 +217,6 @@ class GuiApplication:
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
     self._window_close_requested = False
-    self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
     self._modal_overlay_shown = False
     self._modal_overlay_tick: Callable[[], None] | None = None
