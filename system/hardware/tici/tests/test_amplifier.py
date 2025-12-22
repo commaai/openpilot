@@ -5,7 +5,6 @@ import subprocess
 
 from panda import Panda
 from openpilot.system.hardware import TICI, HARDWARE
-from openpilot.system.hardware.tici.hardware import Tici
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
 
@@ -39,7 +38,7 @@ class TestAmplifier:
 
   def test_init(self):
     amp = Amplifier(debug=True)
-    r = amp.initialize_configuration(Tici().get_device_type())
+    r = amp.initialize_configuration()
     assert r
     assert self._check_for_i2c_errors(False)
 
@@ -61,7 +60,7 @@ class TestAmplifier:
       time.sleep(random.randint(0, 5))
 
       amp = Amplifier(debug=True)
-      r = amp.initialize_configuration(Tici().get_device_type())
+      r = amp.initialize_configuration()
       assert r
 
       if self._check_for_i2c_errors(True):
