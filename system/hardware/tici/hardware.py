@@ -125,7 +125,7 @@ class Tici(HardwareBase):
       return int(f.read())
 
   def set_ir_power(self, percent: int):
-    if self.get_device_type() in ("tici", "tizi"):
+    if self.get_device_type() == "tizi":
       return
 
     value = int((percent / 100) * 300)
