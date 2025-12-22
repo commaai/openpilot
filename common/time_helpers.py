@@ -1,8 +1,10 @@
 import datetime
+from functools import cache
 from pathlib import Path
 
 MIN_DATE = datetime.datetime(year=2025, month=2, day=21)
 
+@cache
 def min_date():
   # on systemd systems, the default time is the systemd build time
   systemd_path = Path("/lib/systemd/systemd")
