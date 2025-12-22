@@ -6,7 +6,6 @@ from collections import namedtuple
 # https://datasheets.maximintegrated.com/en/ds/MAX98089.pdf
 
 AmpConfig = namedtuple('AmpConfig', ['name', 'value', 'register', 'offset', 'mask'])
-EQParams = namedtuple('EQParams', ['K', 'k1', 'k2', 'c1', 'c2'])
 
 CONFIG = [
   AmpConfig("MCLK prescaler", 0b01, 0x10, 4, 0b00110000),
