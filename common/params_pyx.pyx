@@ -3,6 +3,7 @@
 import builtins
 import datetime
 import json
+import threading
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -148,12 +149,16 @@ cdef class Params:
     Use the put_nonblocking, put_bool_nonblocking in time sensitive code, but
     in general try to avoid writing params as much as possible.
     """
+    assert threading.current_thread() is not threading.main_thread(), \
+      f"Params.put() called from main thread! Use put_nonblocking() or put_bool_nonblocking() instead. Key: {key}"
     cdef string k = self.check_key(key)
     cdef string dat_bytes = self._put_cast(key, dat)
     with nogil:
       self.p.put(k, dat_bytes)
 
   def put_bool(self, key, bool val):
+    assert threading.current_thread() is not threading.main_thread(), \
+      f"Params.put_bool() called from main thread! Use put_bool_nonblocking() instead. Key: {key}"
     cdef string k = self.check_key(key)
     with nogil:
       self.p.putBool(k, val)
