@@ -80,7 +80,8 @@ class CallbackReader:
 
 
 @contextlib.contextmanager
-def atomic_write(path: str, mode: str = 'w', buffering: int = -1, encoding: str | None = None, newline: str | None = None, overwrite: bool = False):
+def atomic_write(path: str, mode: str = 'w', buffering: int = -1, encoding: str | None = None, newline: str | None = None,
+                 overwrite: bool = False):
   """Write to a file atomically using a temporary file in the same directory as the destination file."""
   dir_name = os.path.dirname(path)
 
@@ -161,7 +162,5 @@ def retry(attempts=3, delay=1.0, ignore_failure=False):
         cloudlog.error(f"{func.__name__} failed after retry")
       else:
         raise Exception(f"{func.__name__} failed after retry")
-
     return wrapper
-
   return decorator
