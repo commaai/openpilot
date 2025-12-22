@@ -56,7 +56,7 @@ def gui_label(
   font_weight: FontWeight = FontWeight.NORMAL,
   align: Align = Align.LEFT,
   valign: VAlign = VAlign.MIDDLE,
-  elide_right: bool = True
+  elide_right: bool = False
 ):
   font = gui_app.font(font_weight)
   display_text = text if not elide_right else _elide_text(font, text, font_size, rect.width)
