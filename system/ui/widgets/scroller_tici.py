@@ -15,12 +15,16 @@ class Scroller(Widget):
     self._line_separator = line_separator
     self.scroll_panel = GuiScrollPanel()
 
-    for item in items:
-      self.add_widget(item)
+    self.set_widgets(items)
 
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
     item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
+
+  def set_widgets(self, items: list[Widget]) -> None:
+    self._items = items
+    for item in items:
+      item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
   def _render(self, _):
     items = [item for item in self._items if item.is_visible]
