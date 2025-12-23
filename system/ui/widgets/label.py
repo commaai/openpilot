@@ -187,6 +187,7 @@ class Label(Widget):
     line_h = self._font_size * self._line_height
 
     cursor_y = 0.0
+    text_width = 0.0
     for line_text in lines:
       line_size = measure_text_cached(font, line_text, self._font_size, self._spacing, self._emojis)
       cursor_x = self._padding
@@ -201,6 +202,7 @@ class Label(Widget):
         segments.append(RenderSegment(line_text, None, rl.Vector2(cursor_x, cursor_y), line_size))
 
       cursor_y += line_h
+      text_width = max(text_width, line_size.x + (self._padding * 2))
 
     height = cursor_y if len(lines) > 1 else self._font_size * FONT_SCALE
     self._layout_cache = LayoutCache(
@@ -209,7 +211,7 @@ class Label(Widget):
 
     # Set widget size if not explicitly set
     if self._rect.width == 0:
-      self._rect.width = self._layout_cache.content_width
+      self._rect.width = text_width
       self._rect.height = self._layout_cache.content_height
 
   def _render(self, _):
