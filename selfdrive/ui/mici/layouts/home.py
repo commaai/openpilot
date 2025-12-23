@@ -13,6 +13,8 @@ from openpilot.system.version import training_version, RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8
+ICON_SPACING = 18
+ICON_Y_CENTER = 24
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -95,20 +97,16 @@ class MiciHomeLayout(Widget):
     self._experimental_txt = gui_app.texture("icons_mici/experimental_mode.png", 48, 48)
     self._mic_txt = gui_app.texture("icons_mici/microphone.png", 48, 48)
 
-    self._net_type = NETWORK_TYPES.get(NetworkType.none)
-    self._net_strength = 0
-
     self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 50, 44)
-    self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 50, 44)
-    self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 50, 44)
-    self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 50, 44)
-    self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 50, 44)
 
-    self._cell_none_txt = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 55, 35)
-    self._cell_low_txt = gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 55, 35)
-    self._cell_medium_txt = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 55, 35)
-    self._cell_high_txt = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 55, 35)
-    self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 55, 35)
+    self._wifi_levels = [
+      gui_app.texture(f"icons_mici/settings/network/wifi_strength_{l}.png", 50, 44)
+      for l in ["none", "none", "low", "medium", "full", "full"]
+    ]
+    self._cell_levels = [
+      gui_app.texture(f"icons_mici/settings/network/cell_strength_{l}.png", 55, 35)
+      for l in ["none", "none", "low", "medium", "high", "full"]
+    ]
 
     self._openpilot_label = Label("openpilot", size=96, color=rl.Color(255, 255, 255, int(255 * 0.9)), weight=FontWeight.DISPLAY)
     self._version_label = Label("", size=36, weight=FontWeight.ROMAN)
@@ -116,9 +114,9 @@ class MiciHomeLayout(Widget):
     self._date_label = Label("", size=36, color=rl.GRAY, weight=FontWeight.ROMAN)
     self._branch_label = ScrollableLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN)
     self._version_commit_label = Label("", size=36, color=rl.GRAY, weight=FontWeight.ROMAN)
+
   def show_event(self):
     self._version_text = self._get_version_text()
-    self._update_network_status(ui_state.sm['deviceState'])
     self._update_params()
 
   def _update_params(self):
@@ -142,18 +140,10 @@ class MiciHomeLayout(Widget):
         self._did_long_press = True
 
     if rl.get_time() - self._last_refresh > 5.0:
-      device_state = ui_state.sm['deviceState']
-      self._update_network_status(device_state)
-
       # Update version text
       self._version_text = self._get_version_text()
       self._last_refresh = rl.get_time()
       self._update_params()
-
-  def _update_network_status(self, device_state):
-    self._net_type = device_state.networkType
-    strength = device_state.networkStrength
-    self._net_strength = max(0, min(5, strength.raw + 1)) if strength.raw > 0 else 0
 
   def set_callbacks(self, on_settings: Callable | None = None):
     self._on_settings_click = on_settings
@@ -195,10 +185,10 @@ class MiciHomeLayout(Widget):
       self._date_label.set_position(version_pos.x + self._version_label.rect.width + 10, version_pos.y)
       self._date_label.render()
 
-      self._branch_label.set_max_width(gui_app.width - self._version_label.rect.width - self._date_label.rect.width - 32)
       self._branch_label.set_text(" " + ("release" if release_branch else self._version_text[1]))
-      self._branch_label.set_position(version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20, version_pos.y)
-      self._branch_label.render()
+      rect = rl.Rectangle(version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20, version_pos.y,
+                           gui_app.width - self._version_label.rect.width - self._date_label.rect.width - 32, 44)
+      self._branch_label.render(rect)
 
       if not release_branch:
         # 2nd line
@@ -209,57 +199,28 @@ class MiciHomeLayout(Widget):
     self._render_bottom_status_bar()
 
   def _render_bottom_status_bar(self):
-    # ***** Center-aligned bottom section icons *****
+    active_textures = [self._settings_txt]
+    active_textures.append(self._get_network_texture())
 
-    # TODO: refactor repeated icon drawing into a small loop
-    ITEM_SPACING = 18
-    Y_CENTER = 24
-
-    last_x = self.rect.x + HOME_PADDING
-
-    # Draw settings icon in bottom left corner
-    rl.draw_texture(self._settings_txt, int(last_x), int(self._rect.y + self.rect.height - self._settings_txt.height / 2 - Y_CENTER),
-                    rl.Color(255, 255, 255, int(255 * 0.9)))
-    last_x = last_x + self._settings_txt.width + ITEM_SPACING
-
-    # draw network
-    if self._net_type == NetworkType.wifi:
-      # There is no 1
-      draw_net_txt = {0: self._wifi_none_txt,
-                      2: self._wifi_low_txt,
-                      3: self._wifi_medium_txt,
-                      4: self._wifi_full_txt,
-                      5: self._wifi_full_txt}.get(self._net_strength, self._wifi_low_txt)
-      rl.draw_texture(draw_net_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - draw_net_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, int(255 * 0.9)))
-      last_x += draw_net_txt.width + ITEM_SPACING
-
-    elif self._net_type in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
-      draw_net_txt = {0: self._cell_none_txt,
-                      2: self._cell_low_txt,
-                      3: self._cell_medium_txt,
-                      4: self._cell_high_txt,
-                      5: self._cell_full_txt}.get(self._net_strength, self._cell_none_txt)
-      rl.draw_texture(draw_net_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - draw_net_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, int(255 * 0.9)))
-      last_x += draw_net_txt.width + ITEM_SPACING
-
-    else:
-      # No network
-      # Offset by difference in height between slashless and slash icons to make center align match
-      rl.draw_texture(self._wifi_slash_txt, int(last_x), int(self._rect.y + self.rect.height - self._wifi_slash_txt.height / 2 -
-                                                             (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2 - Y_CENTER),
-                      rl.Color(255, 255, 255, 255))
-      last_x += self._wifi_slash_txt.width + ITEM_SPACING
-
-    # draw experimental icon
     if self._experimental_mode:
-      rl.draw_texture(self._experimental_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - self._experimental_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, 255))
-      last_x += self._experimental_txt.width + ITEM_SPACING
+      active_textures.append(self._experimental_txt)
 
-    # draw microphone icon when recording audio is enabled
     if ui_state.recording_audio:
-      rl.draw_texture(self._mic_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - self._mic_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, 255))
-      last_x += self._mic_txt.width + ITEM_SPACING
+      active_textures.append(self._mic_txt)
+
+    current_x = self.rect.x + HOME_PADDING
+    base_y = self.rect.y + self.rect.height - ICON_Y_CENTER
+
+    for tex in active_textures:
+      draw_y = int(base_y - (tex.height / 2))
+      rl.draw_texture(tex, int(current_x), draw_y, rl.WHITE)
+      current_x += tex.width + ICON_SPACING
+
+  def _get_network_texture(self):
+    ds = ui_state.sm['deviceState']
+    strength = max(0, min(5, ds.networkStrength.raw + 1)) if ds.networkStrength.raw > 0 else 0
+    if ds.networkType == NetworkType.wifi:
+      return self._wifi_levels[strength]
+    elif ds.networkType in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
+      return self._cell_levels[strength]
+    return self._wifi_slash_txt
