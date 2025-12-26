@@ -44,16 +44,15 @@ class Joystick:
   def __init__(self):
     # This class supports a PlayStation 5 DualSense controller on the comma 3X
     # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
-    self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
     if HARDWARE.get_device_type() == 'pc':
-      accel_axis = 'ABS_Z'
+      self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
+      accel_axis = 'ABS_RZ'
       steer_axis = 'ABS_RX'
-      # TODO: once the longcontrol API is finalized, we can replace this with outputting gas/brake and steering
-      self.flip_map = {'ABS_RZ': accel_axis}
+      self.flip_map = {'ABS_Z': accel_axis}
     else:
-      accel_axis = 'ABS_RX'
+      accel_axis = 'ABS_RY'
       steer_axis = 'ABS_Z'
-      self.flip_map = {'ABS_RY': accel_axis}
+      self.flip_map = {'ABS_RX': accel_axis}
 
     self.min_axis_value = {accel_axis: 0, steer_axis: 0}
     self.max_axis_value = {accel_axis: 255, steer_axis: 255}
@@ -83,7 +82,7 @@ class Joystick:
       self.max_axis_value[event[0]] = max(event[1], self.max_axis_value[event[0]])
       self.min_axis_value[event[0]] = min(event[1], self.min_axis_value[event[0]])
 
-      norm = -float(np.interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.]))
+      norm = float(np.interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.]))
       norm = norm if abs(norm) > 0.03 else 0.  # center can be noisy, deadzone of 3%
       self.axes_values[event[0]] = EXPO * norm ** 3 + (1 - EXPO) * norm  # less action near center for fine control
     else:
