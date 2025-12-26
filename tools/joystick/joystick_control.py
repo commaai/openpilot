@@ -54,7 +54,8 @@ class Joystick:
       steer_axis = 'ABS_Z'
       self.flip_map = {'ABS_RX': accel_axis}
 
-    self.min_axis_value = {accel_axis: 0, steer_axis: 0}
+    self.min_axis_value = {accel_axis: -255 if accel_axis in self.flip_map.values() else 0,
+                           steer_axis: 0}
     self.max_axis_value = {accel_axis: 255, steer_axis: 255}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
     self.axes_order = [accel_axis, steer_axis]
@@ -69,7 +70,7 @@ class Joystick:
 
     event = (joystick_event.code, joystick_event.state)
 
-    # flip left trigger to negative accel
+    # flip left trigger (brake) to negative accel
     if event[0] in self.flip_map:
       event = (self.flip_map[event[0]], -event[1])
 
