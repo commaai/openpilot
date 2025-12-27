@@ -48,7 +48,7 @@ class Multilang:
         translation = gettext.GNUTranslations(fh)
       translation.install()
       self._translation = translation
-      cloudlog.warning(f"Loaded translations for language: {self._language}")
+      cloudlog.debug(f"Loaded translations for language: {self._language}")
     except FileNotFoundError:
       cloudlog.error(f"No translation file found for language: {self._language}, using default.")
       gettext.install('app')
