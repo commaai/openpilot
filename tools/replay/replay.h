@@ -6,6 +6,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "tools/replay/camera.h"
@@ -24,6 +25,24 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_NO_HW_DECODER = 0x0100,
   REPLAY_FLAG_NO_VIPC = 0x0400,
   REPLAY_FLAG_ALL_SERVICES = 0x0800,
+  REPLAY_FLAG_BENCHMARK = 0x1000,
+};
+
+struct BenchmarkStats {
+  uint64_t load_wall_time = 0;
+  uint64_t start_wall_time = 0;
+  uint64_t end_wall_time = 0;
+  uint64_t wait_time = 0;
+  uint64_t publish_time = 0;
+  uint64_t message_time = 0;
+  uint64_t frame_time = 0;
+  uint64_t camera_wait_time = 0;
+  size_t total_events = 0;
+  size_t total_messages = 0;
+  size_t total_frames = 0;
+  size_t total_bytes = 0;
+  size_t segments_loaded = 0;
+  size_t segments_total = 0;
 };
 
 class Replay {
@@ -57,6 +76,8 @@ public:
   inline const std::optional<Timeline::Entry> findAlertAtTime(double sec) const { return timeline_.findAlertAtTime(sec); }
   const std::shared_ptr<SegmentManager::EventData> getEventData() const { return seg_mgr_->getEventData(); }
   void installEventFilter(std::function<bool(const Event *)> filter) { event_filter_ = filter; }
+  void waitForFinished();
+  const BenchmarkStats &getBenchmarkStats() const { return benchmark_stats_; }
 
   // Event callback functions
   std::function<void()> onSegmentsMerged = nullptr;
@@ -65,6 +86,18 @@ public:
   std::function<void(std::shared_ptr<LogReader>)> onQLogLoaded = nullptr;
 
 private:
+  struct BenchmarkLocalStats {
+    uint64_t wait_time = 0;
+    uint64_t publish_time = 0;
+    uint64_t message_time = 0;
+    uint64_t frame_time = 0;
+    uint64_t camera_wait_time = 0;
+    size_t total_events = 0;
+    size_t total_messages = 0;
+    size_t total_frames = 0;
+    size_t total_bytes = 0;
+  };
+
   void setupServices(const std::vector<std::string> &allow, const std::vector<std::string> &block);
   void setupSegmentManager(bool has_filters);
   void startStream(const std::shared_ptr<Segment> segment);
@@ -72,7 +105,8 @@ private:
   void handleSegmentMerge();
   void interruptStream(const std::function<bool()>& update_fn);
   std::vector<Event>::const_iterator publishEvents(std::vector<Event>::const_iterator first,
-                                                   std::vector<Event>::const_iterator last);
+                                                   std::vector<Event>::const_iterator last,
+                                                   BenchmarkLocalStats *benchmark_stats);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   void checkSeekProgress();
@@ -107,4 +141,12 @@ private:
   std::function<bool(const Event *)> event_filter_ = nullptr;
 
   std::shared_ptr<SegmentManager::EventData> event_data_ = std::make_shared<SegmentManager::EventData>();
+
+  BenchmarkStats benchmark_stats_;
+  std::unordered_set<int> benchmark_loaded_segments_;
+  std::condition_variable benchmark_cv_;
+  std::mutex benchmark_lock_;
+  bool benchmark_started_ = false;
+  bool benchmark_done_ = false;
+  size_t benchmark_segments_total_ = 0;
 };

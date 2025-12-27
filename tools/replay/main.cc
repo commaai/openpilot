@@ -1,5 +1,6 @@
 #include <getopt.h>
 
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
@@ -31,6 +32,7 @@ Options:
       --no-hw-decoder Disable HW video decoding
       --no-vipc      Do not output video
       --all          Output all messages including bookmarkButton, uiDebug, userBookmark
+      --benchmark    Run in benchmark mode (process all events then exit with stats)
   -h, --help         Show this help message
 )";
 
@@ -66,6 +68,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"no-hw-decoder", no_argument, nullptr, 0},
       {"no-vipc", no_argument, nullptr, 0},
       {"all", no_argument, nullptr, 0},
+      {"benchmark", no_argument, nullptr, 0},
       {"help", no_argument, nullptr, 'h'},
       {nullptr, 0, nullptr, 0},  // Terminating entry
   };
@@ -79,6 +82,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"no-hw-decoder", REPLAY_FLAG_NO_HW_DECODER},
       {"no-vipc", REPLAY_FLAG_NO_VIPC},
       {"all", REPLAY_FLAG_ALL_SERVICES},
+      {"benchmark", REPLAY_FLAG_BENCHMARK},
   };
 
   if (argc == 1) {
@@ -147,6 +151,56 @@ int main(int argc, char *argv[]) {
   }
   if (!replay.load()) {
     return 1;
+  }
+
+  if (config.flags & REPLAY_FLAG_BENCHMARK) {
+    replay.start(config.start_seconds);
+    replay.waitForFinished();
+
+    const auto &stats = replay.getBenchmarkStats();
+    uint64_t total_time_ns = stats.end_wall_time - stats.start_wall_time;
+    double total_time_sec = total_time_ns / 1e9;
+    double route_duration = replay.maxSeconds() - replay.minSeconds();
+    double speedup = route_duration > 0 ? route_duration / total_time_sec : 0;
+
+    std::cout << "\n===== REPLAY BENCHMARK RESULTS =====\n";
+    std::cout << "Route: " << replay.route().name() << "\n";
+    std::cout << "Duration: " << std::fixed << std::setprecision(1) << route_duration << " seconds\n";
+    std::cout << "Segments: " << stats.segments_total << " total";
+    if (stats.segments_loaded > 0) {
+      std::cout << ", " << stats.segments_loaded << " loaded";
+    }
+    std::cout << "\n";
+
+    std::cout << "\nTIMING BREAKDOWN:\n";
+    std::cout << "  Load route:      " << (stats.load_wall_time / 1e6) << " ms\n";
+    std::cout << "  Event publish:   " << (stats.publish_time / 1e6) << " ms\n";
+    std::cout << "    - Messages:    " << (stats.message_time / 1e6) << " ms\n";
+    std::cout << "    - Frames:      " << (stats.frame_time / 1e6) << " ms\n";
+    std::cout << "    - Camera wait: " << (stats.camera_wait_time / 1e6) << " ms\n";
+    std::cout << "  Stream thread wait: " << (stats.wait_time / 1e6) << " ms\n";
+    std::cout << "  TOTAL (wall):    " << std::fixed << std::setprecision(1) << total_time_sec << " seconds\n";
+    std::cout << "  SPEEDUP:         " << std::fixed << std::setprecision(1) << speedup << "x realtime\n";
+
+    std::cout << "\nTHROUGHPUT:\n";
+    std::cout << "  Total events:    " << stats.total_events;
+    if (stats.total_events > 0) {
+      std::cout << " (" << (stats.total_events / total_time_sec) << " events/sec)";
+    }
+    std::cout << "\n";
+    std::cout << "  Total messages:  " << stats.total_messages << "\n";
+    std::cout << "  Total frames:    " << stats.total_frames;
+    if (stats.total_frames > 0 && total_time_sec > 0) {
+      std::cout << " (" << (stats.total_frames / total_time_sec) << " frames/sec)";
+    }
+    std::cout << "\n";
+    std::cout << "  Data processed:  " << (stats.total_bytes / (1024.0 * 1024.0)) << " MB";
+    if (total_time_sec > 0) {
+      std::cout << " (" << (stats.total_bytes / (1024.0 * 1024.0) / total_time_sec) << " MB/sec)";
+    }
+    std::cout << "\n";
+
+    return 0;
   }
 
   ConsoleUI console_ui(&replay);

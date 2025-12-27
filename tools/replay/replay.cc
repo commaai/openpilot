@@ -78,7 +78,13 @@ Replay::~Replay() {
 
 bool Replay::load() {
   rInfo("loading route %s", seg_mgr_->route_.name().c_str());
+  uint64_t load_start = nanos_since_boot();
+
   if (!seg_mgr_->load()) return false;
+
+  uint64_t load_end = nanos_since_boot();
+  benchmark_stats_.load_wall_time = load_end - load_start;
+  benchmark_stats_.segments_total = seg_mgr_->route_.segments().size();
 
   min_seconds_ = seg_mgr_->route_.segments().begin()->first * 60;
   max_seconds_ = (seg_mgr_->route_.segments().rbegin()->first + 1) * 60;
@@ -257,8 +263,24 @@ void Replay::streamThread() {
   stream_thread_id = pthread_self();
   std::unique_lock lk(stream_lock_);
 
+  BenchmarkLocalStats *benchmark_stats = nullptr;
+  if (hasFlag(REPLAY_FLAG_BENCHMARK)) {
+    benchmark_stats = new BenchmarkLocalStats();
+    benchmark_stats_.start_wall_time = nanos_since_boot();
+  }
+
   while (true) {
+    uint64_t wait_start = 0;
+    if (benchmark_stats) {
+      wait_start = nanos_since_boot();
+    }
+
     stream_cv_.wait(lk, [this]() { return exit_ || (events_ready_ && !interrupt_requested_); });
+
+    if (benchmark_stats && wait_start > 0) {
+      benchmark_stats->wait_time += nanos_since_boot() - wait_start;
+    }
+
     if (exit_) break;
 
     event_data_ = seg_mgr_->getEventData();
@@ -270,11 +292,18 @@ void Replay::streamThread() {
       continue;
     }
 
-    auto it = publishEvents(first, events.cend());
+    auto it = publishEvents(first, events.cend(), benchmark_stats);
 
     // Ensure frames are sent before unlocking to prevent race conditions
     if (camera_server_) {
+      uint64_t cam_wait_start = 0;
+      if (benchmark_stats) {
+        cam_wait_start = nanos_since_boot();
+      }
       camera_server_->waitForSent();
+      if (benchmark_stats) {
+        benchmark_stats->camera_wait_time += nanos_since_boot() - cam_wait_start;
+      }
     }
 
     if (it == events.cend() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
@@ -287,10 +316,32 @@ void Replay::streamThread() {
       }
     }
   }
+
+  if (benchmark_stats) {
+    benchmark_stats_.end_wall_time = nanos_since_boot();
+    benchmark_stats_.wait_time = benchmark_stats->wait_time;
+    benchmark_stats_.publish_time = benchmark_stats->publish_time;
+    benchmark_stats_.message_time = benchmark_stats->message_time;
+    benchmark_stats_.frame_time = benchmark_stats->frame_time;
+    benchmark_stats_.camera_wait_time = benchmark_stats->camera_wait_time;
+    benchmark_stats_.total_events = benchmark_stats->total_events;
+    benchmark_stats_.total_messages = benchmark_stats->total_messages;
+    benchmark_stats_.total_frames = benchmark_stats->total_frames;
+    benchmark_stats_.total_bytes = benchmark_stats->total_bytes;
+    benchmark_stats_.segments_loaded = benchmark_loaded_segments_.size();
+    delete benchmark_stats;
+
+    {
+      std::unique_lock lock(benchmark_lock_);
+      benchmark_done_ = true;
+    }
+    benchmark_cv_.notify_one();
+  }
 }
 
 std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::const_iterator first,
-                                                         std::vector<Event>::const_iterator last) {
+                                                         std::vector<Event>::const_iterator last,
+                                                         BenchmarkLocalStats *benchmark_stats) {
   uint64_t evt_start_ts = cur_mono_time_;
   uint64_t loop_start_ts = nanos_since_boot();
   double prev_replay_speed = speed_;
@@ -302,6 +353,9 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
     if (current_segment_.load(std::memory_order_relaxed) != segment) {
       current_segment_.store(segment, std::memory_order_relaxed);
       seg_mgr_->setCurrentSegment(segment);
+      if (benchmark_stats) {
+        benchmark_loaded_segments_.insert(segment);
+      }
     }
 
     cur_mono_time_ = evt.mono_time;
@@ -309,6 +363,10 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
 
     // Skip events if socket is not present
     if (!sockets_[evt.which]) continue;
+
+    if (benchmark_stats) {
+      benchmark_stats->total_events++;
+    }
 
     const uint64_t current_nanos = nanos_since_boot();
     const int64_t time_diff = (evt.mono_time - evt_start_ts) / speed_ - (current_nanos - loop_start_ts);
@@ -320,21 +378,58 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
       evt_start_ts = evt.mono_time;
       loop_start_ts = current_nanos;
       prev_replay_speed = speed_;
-    } else if (time_diff > 0) {
+    } else if (time_diff > 0 && !hasFlag(REPLAY_FLAG_BENCHMARK)) {
+      // Skip sleep in benchmark mode for maximum throughput
       precise_nano_sleep(time_diff, interrupt_requested_);
     }
 
     if (interrupt_requested_) break;
 
+    uint64_t publish_start = 0;
+    if (benchmark_stats) {
+      publish_start = nanos_since_boot();
+    }
+
     if (evt.eidx_segnum == -1) {
+      uint64_t msg_start = 0;
+      if (benchmark_stats) {
+        msg_start = nanos_since_boot();
+      }
       publishMessage(&evt);
+      if (benchmark_stats) {
+        benchmark_stats->message_time += nanos_since_boot() - msg_start;
+        benchmark_stats->total_messages++;
+        benchmark_stats->total_bytes += evt.data.size();
+      }
     } else if (camera_server_) {
       if (speed_ > 1.0) {
         camera_server_->waitForSent();
       }
+      uint64_t frame_start = 0;
+      if (benchmark_stats) {
+        frame_start = nanos_since_boot();
+      }
       publishFrame(&evt);
+      if (benchmark_stats) {
+        benchmark_stats->frame_time += nanos_since_boot() - frame_start;
+        benchmark_stats->total_frames++;
+        benchmark_stats->total_bytes += evt.data.size();
+      }
+    }
+
+    if (benchmark_stats && publish_start > 0) {
+      benchmark_stats->publish_time += nanos_since_boot() - publish_start;
     }
   }
 
   return first;
+}
+
+void Replay::waitForFinished() {
+  if (!hasFlag(REPLAY_FLAG_BENCHMARK)) {
+    return;
+  }
+
+  std::unique_lock lock(benchmark_lock_);
+  benchmark_cv_.wait(lock, [this]() { return benchmark_done_; });
 }
