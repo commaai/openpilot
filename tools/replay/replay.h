@@ -146,7 +146,5 @@ private:
   std::unordered_set<int> benchmark_loaded_segments_;
   std::condition_variable benchmark_cv_;
   std::mutex benchmark_lock_;
-  bool benchmark_started_ = false;
   bool benchmark_done_ = false;
-  size_t benchmark_segments_total_ = 0;
 };
