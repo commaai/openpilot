@@ -71,10 +71,11 @@ class SegmentManager:
     self._on_segment_merged_callback: Optional[Callable[[], None]] = None
 
   def __del__(self):
-    with self._lock:
-      self._exit = True
-    self._cv.notify_all() if hasattr(self, '_cv') else None
-    if self._thread is not None and self._thread.is_alive():
+    if hasattr(self, '_cv'):
+      with self._cv:
+        self._exit = True
+        self._cv.notify_all()
+    if hasattr(self, '_thread') and self._thread is not None and self._thread.is_alive():
       self._thread.join()
 
   @property
@@ -125,7 +126,6 @@ class SegmentManager:
     return n in self._segments
 
   def _manage_segment_cache(self) -> None:
-    print("segment manager thread started")
     while True:
       with self._cv:
         self._cv.wait_for(lambda: self._exit or self._needs_update)
@@ -134,7 +134,6 @@ class SegmentManager:
 
         self._needs_update = False
         seg_nums = sorted(self._segments.keys())
-        print(f"segment cache update: cur_seg={self._cur_seg_num}, seg_nums={seg_nums[:5]}...")
         if not seg_nums:
           continue
 
@@ -166,24 +165,32 @@ class SegmentManager:
       if merged and self._on_segment_merged_callback:
         self._on_segment_merged_callback()
 
-  def _load_segments_in_range(self, seg_nums: list[int], cur_seg_num: int) -> None:
+  def _load_segments_in_range(self, seg_nums: list[int], cur_seg_num: int) -> bool:
+    """Load segments in range. Returns True if any segment was loaded."""
     # Load forward from current, then backward
     forward = [n for n in seg_nums if n >= cur_seg_num]
     backward = [n for n in seg_nums if n < cur_seg_num][::-1]
+    loaded_any = False
 
     for seg_num in forward + backward:
       with self._lock:
         if self._exit:
-          return
+          return loaded_any
         if self._segments.get(seg_num) is not None:
           continue
 
-      # Load segment
+      # Load segment (blocking - downloads and parses)
       seg_data = self._load_segment(seg_num)
-      with self._lock:
+      with self._cv:
         self._segments[seg_num] = seg_data
         self._needs_update = True
         self._cv.notify_all()
+      loaded_any = True
+
+      # Only load one segment at a time to be responsive
+      return loaded_any
+
+    return loaded_any
 
   def _load_segment(self, seg_num: int) -> SegmentData:
     # Find the segment object from route

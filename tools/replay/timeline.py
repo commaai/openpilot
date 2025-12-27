@@ -5,6 +5,7 @@ from enum import Enum, auto
 from typing import Callable, Optional
 
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
 
 class TimelineType(Enum):
@@ -95,11 +96,11 @@ class Timeline:
     current_alert_idx: Optional[int] = None
     staging_entries: list[TimelineEntry] = []
 
-    for seg_num, segment in route.segments().items():
+    for segment in route.segments:
       if self._should_exit.is_set():
         break
 
-      qlog_path = segment.qlog
+      qlog_path = segment.qlog_path
       if qlog_path is None:
         continue
 
@@ -108,7 +109,7 @@ class Timeline:
       except Exception:
         continue
 
-      for msg in lr:
+      for msg in migrate_all(lr):
         if self._should_exit.is_set():
           break
 
@@ -117,9 +118,10 @@ class Timeline:
         if msg.which() == 'selfdriveState':
           ss = msg.selfdriveState
           current_engaged_idx = self._update_engagement_status(
-            ss, current_engaged_idx, seconds, staging_entries)
+            ss.enabled, current_engaged_idx, seconds, staging_entries)
           current_alert_idx = self._update_alert_status(
-            ss, current_alert_idx, seconds, staging_entries)
+            ss.alertSize, ss.alertStatus, ss.alertText1, ss.alertText2,
+            current_alert_idx, seconds, staging_entries)
         elif msg.which() == 'userBookmark':
           staging_entries.append(TimelineEntry(
             start_time=seconds,
@@ -134,12 +136,12 @@ class Timeline:
 
       callback(lr)
 
-  def _update_engagement_status(self, ss, idx: Optional[int], seconds: float,
+  def _update_engagement_status(self, enabled: bool, idx: Optional[int], seconds: float,
                                   entries: list[TimelineEntry]) -> Optional[int]:
     if idx is not None:
       entries[idx].end_time = seconds
 
-    if ss.enabled:
+    if enabled:
       if idx is None:
         idx = len(entries)
         entries.append(TimelineEntry(
@@ -151,20 +153,25 @@ class Timeline:
       idx = None
     return idx
 
-  def _update_alert_status(self, ss, idx: Optional[int], seconds: float,
+  def _update_alert_status(self, alert_size, alert_status, text1: str, text2: str,
+                            idx: Optional[int], seconds: float,
                             entries: list[TimelineEntry]) -> Optional[int]:
-    alert_types = [TimelineType.ALERT_INFO, TimelineType.ALERT_WARNING, TimelineType.ALERT_CRITICAL]
+    # Map alertStatus enum to TimelineType
+    status_map = {
+      'normal': TimelineType.ALERT_INFO,
+      'userPrompt': TimelineType.ALERT_WARNING,
+      'critical': TimelineType.ALERT_CRITICAL,
+    }
 
     entry = entries[idx] if idx is not None else None
     if entry is not None:
       entry.end_time = seconds
 
     # Check if there's an active alert (alertSize != NONE means alertSize > 0)
-    if ss.alertSize != 0:  # 0 is NONE
-      alert_status = ss.alertStatus
-      alert_type = alert_types[alert_status] if alert_status < len(alert_types) else TimelineType.ALERT_INFO
-      text1 = ss.alertText1
-      text2 = ss.alertText2
+    # alertSize is an enum: none=0, small=1, mid=2, full=3
+    if str(alert_size) != 'none':
+      status_str = str(alert_status)
+      alert_type = status_map.get(status_str, TimelineType.ALERT_INFO)
 
       if entry is None or entry.type != alert_type or entry.text1 != text1 or entry.text2 != text2:
         idx = len(entries)

@@ -65,7 +65,7 @@ class Replay:
     self._event_filter: Optional[Callable] = None
 
   def __del__(self):
-    if self._stream_thread is not None and self._stream_thread.is_alive():
+    if hasattr(self, '_stream_thread') and self._stream_thread is not None and self._stream_thread.is_alive():
       print("shutdown: in progress...")
       self._interrupt_stream(lambda: setattr(self, '_exit', True) or False)
       self._stream_thread.join()

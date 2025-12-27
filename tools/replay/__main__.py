@@ -121,19 +121,14 @@ def main():
   replay.start(args.start)
 
   if args.headless:
-    # Headless mode - run for a bit and exit
+    # Headless mode - run indefinitely, print status periodically
     import time
-    print("Running in headless mode...")
-    print(f"  stream_thread: {replay._stream_thread}")
-    print(f"  event_data segments: {list(replay.get_event_data().segments.keys())}")
     try:
-      for i in range(10):
-        time.sleep(1)
-        event_data = replay.get_event_data()
-        print(f"  {replay.current_seconds:.1f}s / {replay.max_seconds:.1f}s, events: {len(event_data.events)}, segs: {list(event_data.segments.keys())}")
+      while True:
+        time.sleep(5)
+        print(f"replay: {replay.current_seconds:.1f}s / {replay.max_seconds:.1f}s")
     except KeyboardInterrupt:
       pass
-    print("Done")
     return 0
 
   # Create UI and start replay
