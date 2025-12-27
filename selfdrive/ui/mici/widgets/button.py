@@ -104,12 +104,13 @@ class BigCircleToggle(BigCircleButton):
 class BigButton(Widget):
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
-  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = ""):
+  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", description: str | None = None):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 402, 180))
     self.text = text
     self.value = value
     self.set_icon(icon)
+    self.description = description
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
@@ -135,6 +136,13 @@ class BigButton(Widget):
 
   def set_icon(self, icon: Union[str, rl.Texture]):
     self._txt_icon = gui_app.texture(icon, 64, 64) if isinstance(icon, str) and len(icon) else icon
+
+  def _handle_long_press(self, mouse_pos: MousePos) -> None:
+    if not self.description:
+      return
+    # Import inside to avoid circular imports
+    from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog
+    gui_app.set_modal_overlay(BigDialog(self.text, self.description))
 
   def set_rotate_icon(self, rotate: bool):
     if rotate and self._rotate_icon_t is not None:
@@ -251,8 +259,9 @@ class BigButton(Widget):
 
 
 class BigToggle(BigButton):
-  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable = None):
-    super().__init__(text, value, "")
+  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable = None,
+               description: str | None = None):
+    super().__init__(text, value, "", description=description)
     self._checked = initial_state
     self._toggle_callback = toggle_callback
 
@@ -289,8 +298,8 @@ class BigToggle(BigButton):
 
 class BigMultiToggle(BigToggle):
   def __init__(self, text: str, options: list[str], toggle_callback: Callable = None,
-               select_callback: Callable = None):
-    super().__init__(text, "", toggle_callback=toggle_callback)
+               select_callback: Callable = None, description: str | None = None):
+    super().__init__(text, "", toggle_callback=toggle_callback, description=description)
     assert len(options) > 0
     self._options = options
     self._select_callback = select_callback
@@ -328,8 +337,8 @@ class BigMultiToggle(BigToggle):
 
 class BigMultiParamToggle(BigMultiToggle):
   def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable = None,
-               select_callback: Callable = None):
-    super().__init__(text, options, toggle_callback, select_callback)
+               select_callback: Callable = None, description: str | None = None):
+    super().__init__(text, options, toggle_callback, select_callback, description=description)
     self._param = param
 
     self._params = Params()
@@ -345,8 +354,8 @@ class BigMultiParamToggle(BigMultiToggle):
 
 
 class BigParamControl(BigToggle):
-  def __init__(self, text: str, param: str, toggle_callback: Callable = None):
-    super().__init__(text, "", toggle_callback=toggle_callback)
+  def __init__(self, text: str, param: str, toggle_callback: Callable = None, description: str | None = None):
+    super().__init__(text, "", toggle_callback=toggle_callback, description=description)
     self.param = param
     self.params = Params()
     self.set_checked(self.params.get_bool(self.param, False))

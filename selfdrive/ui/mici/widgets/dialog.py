@@ -59,8 +59,12 @@ class BigDialog(BigDialogBase):
                right_btn: str | None = None,
                right_btn_callback: Callable | None = None):
     super().__init__(right_btn, right_btn_callback)
-    self._title = title
-    self._description = description
+    self._title_label = UnifiedLabel(title, font_size=50, text_color=rl.Color(255, 255, 255, int(255 * 0.9)), font_weight=FontWeight.BOLD)
+    self._description_label = UnifiedLabel(description, font_size=30, text_color=rl.Color(255, 255, 255, int(255 * 0.58)), )
+    self._scroller = Scroller([
+      self._title_label,
+      self._description_label
+    ], horizontal=False, snap_items=False)
 
   def _render(self, _) -> DialogResult:
     super()._render(_)
@@ -73,26 +77,33 @@ class BigDialog(BigDialogBase):
     if self._right_btn:
       max_width -= self._right_btn._rect.width
 
-    title_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.BOLD), self._title, 50, int(max_width)))
-    title_size = measure_text_cached(gui_app.font(FontWeight.BOLD), title_wrapped, 50)
-    text_x_offset = 0
-    title_rect = rl.Rectangle(int(self._rect.x + text_x_offset + PADDING),
-                              int(self._rect.y + PADDING),
-                              int(max_width),
-                              int(title_size.y))
-    gui_label(title_rect, title_wrapped, 50, font_weight=FontWeight.BOLD,
-              alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self._scroller.render(self._rect)
+    # title_height = self._title_label.get_text_height(int(max_width))
+    # self._title_label.render(rl.Rectangle(
+    #   self._rect.x,
+    #   self._rect.y
+    # ))
 
-    # draw description
-    desc_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.MEDIUM), self._description, 30, int(max_width)))
-    desc_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), desc_wrapped, 30)
-    desc_rect = rl.Rectangle(int(self._rect.x + text_x_offset + PADDING),
-                             int(self._rect.y + self._rect.height / 3),
-                             int(max_width),
-                             int(desc_size.y))
-    # TODO: text align doesn't seem to work properly with newlines
-    gui_label(desc_rect, desc_wrapped, 30, font_weight=FontWeight.MEDIUM,
-              alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    # title_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.BOLD), self._title, 50, int(max_width)))
+    # title_size = measure_text_cached(gui_app.font(FontWeight.BOLD), title_wrapped, 50)
+    # text_x_offset = 0
+    # title_rect = rl.Rectangle(int(self._rect.x + text_x_offset + PADDING),
+    #                           int(self._rect.y + PADDING),
+    #                           int(max_width),
+    #                           int(title_size.y))
+    # gui_label(title_rect, title_wrapped, 50, font_weight=FontWeight.BOLD,
+    #           alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    #
+    # # draw description
+    # desc_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.MEDIUM), self._description, 30, int(max_width)))
+    # desc_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), desc_wrapped, 30)
+    # desc_rect = rl.Rectangle(int(self._rect.x + text_x_offset + PADDING),
+    #                          int(self._rect.y + self._rect.height / 3),
+    #                          int(max_width),
+    #                          int(desc_size.y))
+    # # TODO: text align doesn't seem to work properly with newlines
+    # gui_label(desc_rect, desc_wrapped, 30, font_weight=FontWeight.MEDIUM,
+    #           alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
     return self._ret
 
@@ -421,11 +432,10 @@ class BigMultiOptionDialog(BigDialogBase):
 
 class BigDialogButton(BigButton):
   def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", description: str = ""):
-    super().__init__(text, value, icon)
-    self._description = description
+    super().__init__(text, value, icon, description=description)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    dlg = BigDialog(self.text, self._description)
+    dlg = BigDialog(self.text, self.description)
     gui_app.set_modal_overlay(dlg)

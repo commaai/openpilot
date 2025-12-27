@@ -6,6 +6,7 @@ from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import NavWidget
+from openpilot.selfdrive.ui.layouts.settings.toggles import DESCRIPTIONS
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -17,14 +18,18 @@ class TogglesLayoutMici(NavWidget):
     super().__init__()
     self.set_back_callback(back_callback)
 
-    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"])
+    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"],
+                                                   description=DESCRIPTIONS["LongitudinalPersonality"])
     self._experimental_btn = BigParamControl("experimental mode", "ExperimentalMode")
-    is_metric_toggle = BigParamControl("use metric units", "IsMetric")
-    ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled")
-    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM")
-    record_front = BigParamControl("record & upload driver camera", "RecordFront", toggle_callback=restart_needed_callback)
-    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback)
-    enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
+    is_metric_toggle = BigParamControl("use metric units", "IsMetric", description=DESCRIPTIONS["IsMetric"])
+    ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled", description=DESCRIPTIONS["IsLdwEnabled"])
+    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", description=DESCRIPTIONS["AlwaysOnDM"])
+    record_front = BigParamControl("record & upload driver camera", "RecordFront", toggle_callback=restart_needed_callback,
+                                   description=DESCRIPTIONS["RecordFront"])
+    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback,
+                                 description=DESCRIPTIONS["RecordAudio"])
+    enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback,
+                                       description=DESCRIPTIONS["OpenpilotEnabledToggle"])
 
     self._scroller = Scroller([
       self._personality_toggle,

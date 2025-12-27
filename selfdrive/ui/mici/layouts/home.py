@@ -158,6 +158,12 @@ class MiciHomeLayout(Widget):
   def set_callbacks(self, on_settings: Callable | None = None):
     self._on_settings_click = on_settings
 
+  def _handle_long_press(self, _):
+    # long gating for experimental mode - only allow toggle if longitudinal control is available
+    if ui_state.has_longitudinal_control:
+      self._experimental_mode = not self._experimental_mode
+      ui_state.params.put("ExperimentalMode", self._experimental_mode)
+
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:
       if self._on_settings_click:
