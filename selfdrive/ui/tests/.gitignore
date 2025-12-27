@@ -1,0 +1,9 @@
+test
+test_translations
+test_ui/report_1
+test_ui/raylib_report
+
+diff/*.mp4
+diff/*.html
+diff/.coverage
+diff/htmlcov/
