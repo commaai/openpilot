@@ -306,7 +306,7 @@ void Replay::streamThread() {
       }
     }
 
-    if (it == events.cend() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
+    if (it == events.cend() && !hasFlag(REPLAY_FLAG_NO_LOOP) && !hasFlag(REPLAY_FLAG_BENCHMARK)) {
       int last_segment = seg_mgr_->route_.segments().rbegin()->first;
       if (event_data_->isSegmentLoaded(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
@@ -314,6 +314,12 @@ void Replay::streamThread() {
         seekTo(minSeconds(), false);
         stream_lock_.lock();
       }
+    } else if (it == events.cend() && hasFlag(REPLAY_FLAG_BENCHMARK)) {
+      // Exit benchmark mode when first segment is done
+      interruptStream([this]() {
+        exit_ = true;
+        return false;
+      });
     }
   }
 
