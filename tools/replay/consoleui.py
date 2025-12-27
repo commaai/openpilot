@@ -88,6 +88,13 @@ class ConsoleUI:
     # Set up signal handler for clean exit
     signal.signal(signal.SIGINT, lambda s, f: setattr(self, '_exit', True))
 
+    # Set up log callback
+    self.replay._seg_mgr.set_log_callback(self._on_log)
+
+  def _on_log(self, level: int, msg: str) -> None:
+    with self._lock:
+      self._logs.append((level, msg))
+
   def _init_curses(self, stdscr) -> None:
     self._stdscr = stdscr
     curses.curs_set(0)

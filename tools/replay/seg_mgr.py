@@ -69,6 +69,7 @@ class SegmentManager:
 
     self.segment_cache_limit = MIN_SEGMENTS_CACHE
     self._on_segment_merged_callback: Optional[Callable[[], None]] = None
+    self._log_callback: Optional[Callable[[int, str], None]] = None  # (level, msg)
 
   def __del__(self):
     if hasattr(self, '_cv'):
@@ -114,6 +115,13 @@ class SegmentManager:
 
   def set_callback(self, callback: Callable[[], None]) -> None:
     self._on_segment_merged_callback = callback
+
+  def set_log_callback(self, callback: Callable[[int, str], None]) -> None:
+    self._log_callback = callback
+
+  def _log(self, level: int, msg: str) -> None:
+    if self._log_callback:
+      self._log_callback(level, msg)
 
   def set_filters(self, filters: list[bool]) -> None:
     self._filters = filters
@@ -180,12 +188,14 @@ class SegmentManager:
           continue
 
       # Load segment (blocking - downloads and parses)
+      self._log(0, f"loading segment {seg_num}...")
       seg_data = self._load_segment(seg_num)
       with self._cv:
         self._segments[seg_num] = seg_data
         self._needs_update = True
         self._cv.notify_all()
       loaded_any = True
+      self._log(0, f"segment {seg_num} loaded with {len(seg_data.events)} events")
 
       # Only load one segment at a time to be responsive
       return loaded_any
@@ -279,4 +289,5 @@ class SegmentManager:
       self._event_data = merged_event_data
       self._merged_segments = segments_to_merge
 
+    self._log(0, f"merged segments: {sorted(segments_to_merge)}")
     return True
