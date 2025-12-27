@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import logging
 import threading
 import time
 from enum import IntFlag
@@ -12,6 +13,8 @@ from openpilot.common.params import Params
 from openpilot.tools.replay.camera import CameraServer, CameraType
 from openpilot.tools.replay.seg_mgr import SegmentManager, ReplayFlags
 from openpilot.tools.replay.timeline import Timeline, FindFlag
+
+log = logging.getLogger("replay")
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
@@ -66,10 +69,10 @@ class Replay:
 
   def __del__(self):
     if hasattr(self, '_stream_thread') and self._stream_thread is not None and self._stream_thread.is_alive():
-      print("shutdown: in progress...")
+      log.info("shutdown: in progress...")
       self._interrupt_stream(lambda: setattr(self, '_exit', True) or False)
       self._stream_thread.join()
-      print("shutdown: done")
+      log.info("shutdown: done")
 
   def _setup_services(self, allow: list[str], block: list[str]) -> None:
     active_services = []
@@ -83,7 +86,7 @@ class Replay:
       else:
         self._sockets[name] = False
 
-    print(f"active services: {', '.join(active_services)}")
+    log.info(f"active services: {', '.join(active_services)}")
     if not self._sm:
       self._pm = messaging.PubMaster(active_services)
 
@@ -159,7 +162,7 @@ class Replay:
     self._event_filter = filter_fn
 
   def load(self) -> bool:
-    print(f"loading route {self._seg_mgr._route_name}")
+    log.info(f"loading route {self._seg_mgr._route_name}")
     if not self._seg_mgr.load():
       return False
 
@@ -175,7 +178,7 @@ class Replay:
   def pause(self, pause: bool) -> None:
     if self._user_paused != pause:
       def update():
-        print(f"{'paused...' if pause else 'resuming'} at {self.current_seconds:.2f} s")
+        log.info(f"{'paused...' if pause else 'resuming'} at {self.current_seconds:.2f} s")
         self._user_paused = pause
         return not pause
       self._interrupt_stream(update)
@@ -191,10 +194,10 @@ class Replay:
     target_segment = int(target_time / 60)
 
     if not self._seg_mgr.has_segment(target_segment):
-      print(f"Invalid seek to {target_time:.2f} s (segment {target_segment})")
+      log.warning(f"Invalid seek to {target_time:.2f} s (segment {target_segment})")
       return
 
-    print(f"Seeking to {int(target_time)} s, segment {target_segment}")
+    log.info(f"Seeking to {int(target_time)} s, segment {target_segment}")
     if self.on_seeking:
       self.on_seeking(target_time)
 
@@ -272,7 +275,7 @@ class Replay:
           params.put("CarParams", car_params_bytes)
           params.put("CarParamsPersistent", car_params_bytes)
         except Exception as e:
-          print(f"failed to write CarParams: {e}")
+          log.warning(f"failed to write CarParams: {e}")
         break
 
     # Start camera server
@@ -314,7 +317,7 @@ class Replay:
             first_idx = i
             break
         else:
-          print("waiting for events...")
+          log.info("waiting for events...")
           self._events_ready = False
           continue
 
@@ -328,7 +331,7 @@ class Replay:
         if last_idx >= len(events) and not self.has_flag(ReplayFlags.NO_LOOP):
           segments = list(self._seg_mgr._segments.keys())
           if segments and event_data.is_segment_loaded(max(segments)):
-            print("reaches the end of route, restart from beginning")
+            log.info("reaches the end of route, restart from beginning")
             self._stream_lock.release()
             self.seek_to(self._min_seconds, relative=False)
             self._stream_lock.acquire()
@@ -395,7 +398,7 @@ class Replay:
         msg_bytes = evt.as_builder().to_bytes()
         self._pm.send(which, msg_bytes)
       except Exception as e:
-        print(f"stop publishing {which} due to error: {e}")
+        log.warning(f"stop publishing {which} due to error: {e}")
         self._sockets[which] = False
 
   def _publish_frame(self, evt, which: str) -> None:

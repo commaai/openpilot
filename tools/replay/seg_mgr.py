@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
+import logging
 import threading
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, auto
 from typing import Callable, Optional
 
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
+
+log = logging.getLogger("replay")
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, Segment
 from openpilot.tools.lib.framereader import FrameReader
@@ -69,7 +72,6 @@ class SegmentManager:
 
     self.segment_cache_limit = MIN_SEGMENTS_CACHE
     self._on_segment_merged_callback: Optional[Callable[[], None]] = None
-    self._log_callback: Optional[Callable[[int, str], None]] = None  # (level, msg)
 
   def __del__(self):
     if hasattr(self, '_cv'):
@@ -87,7 +89,7 @@ class SegmentManager:
     try:
       self._route = Route(self._route_name, data_dir=self._data_dir)
     except Exception as e:
-      print(f"failed to load route: {self._route_name}: {e}")
+      log.error(f"failed to load route: {self._route_name}: {e}")
       return False
 
     # Initialize segment slots for all available segments
@@ -97,10 +99,10 @@ class SegmentManager:
         self._segments[seg_num] = None
 
     if not self._segments:
-      print(f"no valid segments in route: {self._route_name}")
+      log.error(f"no valid segments in route: {self._route_name}")
       return False
 
-    print(f"loaded route {self._route_name} with {len(self._segments)} valid segments")
+    log.info(f"loaded route {self._route_name} with {len(self._segments)} valid segments")
     self._thread = threading.Thread(target=self._manage_segment_cache, daemon=True)
     self._thread.start()
     return True
@@ -115,13 +117,6 @@ class SegmentManager:
 
   def set_callback(self, callback: Callable[[], None]) -> None:
     self._on_segment_merged_callback = callback
-
-  def set_log_callback(self, callback: Callable[[int, str], None]) -> None:
-    self._log_callback = callback
-
-  def _log(self, level: int, msg: str) -> None:
-    if self._log_callback:
-      self._log_callback(level, msg)
 
   def set_filters(self, filters: list[bool]) -> None:
     self._filters = filters
@@ -188,14 +183,14 @@ class SegmentManager:
           continue
 
       # Load segment (blocking - downloads and parses)
-      self._log(0, f"loading segment {seg_num}...")
+      log.info(f"loading segment {seg_num}...")
       seg_data = self._load_segment(seg_num)
       with self._cv:
         self._segments[seg_num] = seg_data
         self._needs_update = True
         self._cv.notify_all()
       loaded_any = True
-      self._log(0, f"segment {seg_num} loaded with {len(seg_data.events)} events")
+      log.info(f"segment {seg_num} loaded with {len(seg_data.events)} events")
 
       # Only load one segment at a time to be responsive
       return loaded_any
@@ -224,7 +219,7 @@ class SegmentManager:
         events = list(migrate_all(lr))
         seg_data.events = sorted(events, key=lambda x: x.logMonoTime)
       except Exception as e:
-        print(f"failed to load log for segment {seg_num}: {e}")
+        log.warning(f"failed to load log for segment {seg_num}: {e}")
         seg_data.load_state = LoadState.FAILED
         return seg_data
 
@@ -243,7 +238,7 @@ class SegmentManager:
       if segment.qcamera_path and (self._flags & ReplayFlags.QCAMERA):
         seg_data.frame_readers['qcam'] = FrameReader(segment.qcamera_path)
     except Exception as e:
-      print(f"failed to load frames for segment {seg_num}: {e}")
+      log.warning(f"failed to load frames for segment {seg_num}: {e}")
       # Don't fail the whole segment, just skip frames
 
     seg_data.load_state = LoadState.LOADED
@@ -289,5 +284,5 @@ class SegmentManager:
       self._event_data = merged_event_data
       self._merged_segments = segments_to_merge
 
-    self._log(0, f"merged segments: {sorted(segments_to_merge)}")
+    log.debug(f"merged segments: {sorted(segments_to_merge)}")
     return True

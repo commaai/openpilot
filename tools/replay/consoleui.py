@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import curses
+import logging
 import signal
 import threading
 import time
@@ -11,6 +12,24 @@ import cereal.messaging as messaging
 from openpilot.tools.replay.replay import Replay
 from openpilot.tools.replay.seg_mgr import ReplayFlags
 from openpilot.tools.replay.timeline import FindFlag, TimelineType
+
+
+class QueueHandler(logging.Handler):
+  """Logging handler that queues messages for display in curses UI."""
+  def __init__(self, queue: list, lock: threading.Lock):
+    super().__init__()
+    self._queue = queue
+    self._lock = lock
+
+  def emit(self, record: logging.LogRecord) -> None:
+    # Map logging levels to our color scheme
+    level = 0  # DEBUG
+    if record.levelno >= logging.ERROR:
+      level = 2  # Critical/Red
+    elif record.levelno >= logging.WARNING:
+      level = 1  # Warning/Yellow
+    with self._lock:
+      self._queue.append((level, self.format(record)))
 
 BORDER_SIZE = 3
 
@@ -88,12 +107,11 @@ class ConsoleUI:
     # Set up signal handler for clean exit
     signal.signal(signal.SIGINT, lambda s, f: setattr(self, '_exit', True))
 
-    # Set up log callback
-    self.replay._seg_mgr.set_log_callback(self._on_log)
-
-  def _on_log(self, level: int, msg: str) -> None:
-    with self._lock:
-      self._logs.append((level, msg))
+    # Set up logging handler to capture logs for display
+    self._log_handler = QueueHandler(self._logs, self._lock)
+    self._log_handler.setFormatter(logging.Formatter('%(message)s'))
+    logging.getLogger("replay").addHandler(self._log_handler)
+    logging.getLogger("replay").setLevel(logging.DEBUG)
 
   def _init_curses(self, stdscr) -> None:
     self._stdscr = stdscr
