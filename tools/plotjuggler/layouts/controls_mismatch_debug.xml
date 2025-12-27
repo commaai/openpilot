@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab tab_name="tab1" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="5" sizes="0.2;0.2;0.2;0.2;0.2">
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
+       <limitY/>
+       <curve color="#1f77b4" name="/carControl/enabled"/>
+       <curve color="#d62728" name="/pandaStates/0/controlsAllowed"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="27.087398" bottom="-0.905168" left="0.018309" right="59.674401"/>
+       <limitY/>
+       <curve color="#9467bd" name="/controlsState/cumLagMs"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
+       <limitY/>
+       <curve color="#1f77b4" name="/pandaStates/0/safetyRxInvalid"/>
+       <curve color="#e801ce" name="/pandaStates/0/safetyRxChecksInvalid"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="158.850000" bottom="-2.850000" left="0.018309" right="59.674401"/>
+       <limitY/>
+       <curve color="#d62728" name="/pandaStates/0/safetyTxBlocked"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
+       <limitY/>
+       <curve color="#1ac938" name="/carState/gasPressed"/>
+       <curve color="#ff7f0e" name="/carState/brakePressed"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

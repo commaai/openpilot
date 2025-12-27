@@ -1,0 +1,233 @@
+[project]
+name = "tinygrad"
+version = "0.11.0"
+description = "You like pytorch? You like micrograd? You love tinygrad! <3"
+authors = [{ name = "George Hotz" }]
+
+classifiers = ["Programming Language :: Python :: 3"]
+
+license = 'MIT'
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+packages = [
+  'tinygrad',
+  'tinygrad.apps',
+  'tinygrad.codegen',
+  'tinygrad.codegen.opt',
+  'tinygrad.codegen.late',
+  'tinygrad.engine',
+  'tinygrad.mixin',
+  'tinygrad.nn',
+  'tinygrad.renderer',
+  'tinygrad.runtime',
+  'tinygrad.runtime.autogen',
+  'tinygrad.runtime.autogen.am',
+  'tinygrad.runtime.autogen.nv',
+  'tinygrad.runtime.graph',
+  'tinygrad.runtime.support',
+  'tinygrad.runtime.support.am',
+  'tinygrad.runtime.support.nv',
+  'tinygrad.schedule',
+  'tinygrad.uop',
+  'tinygrad.viz',
+]
+
+[tool.setuptools.package-data]
+tinygrad = ["py.typed"]
+"tinygrad.viz" = ["index.html", "assets/**/*", "js/*"]
+
+
+[project.optional-dependencies]
+arm = ["unicorn"]
+triton = ["triton-nightly>=2.1.0.dev20231014192330"]
+linting = [
+  "pylint",
+  "mypy==1.18.1",
+  "typing-extensions",
+  "pre-commit",
+  "ruff",
+  "numpy",
+  "typeguard",
+]
+# mlperf = [
+#   "mlperf-logging @ git+https://github.com/mlperf/logging.git@5.0.0-rc3",
+# ]
+testing_minimal = [
+  "numpy",
+  "torch==2.9.0",
+  "pytest",
+  "pytest-xdist",
+  "pytest-timeout",
+  "pytest-split",
+  "hypothesis",
+  "z3-solver",
+]
+testing_unit = ["tinygrad[testing_minimal]", "tqdm", "safetensors", "tabulate"]
+testing = [
+  "tinygrad[testing_minimal]",
+  "pillow",
+  "onnx==1.18.0",
+  "onnx2torch",
+  "onnxruntime",
+  "opencv-python",
+  "tabulate",
+  "tqdm",
+  "safetensors",
+  "transformers",
+  "sentencepiece",
+  "tiktoken",
+  "blobfile",
+  "librosa",
+  # librosa needs numba but uv ignores python upper bounds and some numba versions require <python3.10
+  "numba>=0.55",
+  "networkx",
+  "nibabel",
+  "bottle",
+  "ggml-python",
+  "capstone",
+  "pycocotools",
+  "boto3",
+  "pandas",
+  "influxdb3-python",
+]
+docs = [
+  "mkdocs",
+  "mkdocs-material",
+  "mkdocstrings[python]",
+  "markdown-callouts",
+  "markdown-exec[ansi]",
+  "black",
+  "numpy",
+]
+
+
+[tool.mutmut]
+paths_to_mutate = ["tinygrad/"]
+do_not_mutate = [
+  "tinygrad/apps/*",
+  "tinygrad/codegen/*",
+  "tinygrad/engine/*",
+  "tinygrad/nn/*",
+  "tinygrad/renderer/*",
+  "tinygrad/runtime/*",
+  "tinygrad/schedule/*",
+  "tinygrad/uop/*",
+  "tinygrad/viz/*",
+  "tinygrad/device.py",
+  "tinygrad/dtype.py",
+  "tinygrad/gradient.py",
+  "tinygrad/helpers.py",
+  "tinygrad/tensor.py",
+]
+tests_dir = ["test/test_tiny.py", "test/test_ops.py"]
+debug = true
+
+
+[tool.mypy]
+warn_unused_configs = true
+files = ["tinygrad"]
+ignore_missing_imports = true
+check_untyped_defs = true
+explicit_package_bases = true
+warn_unreachable = true
+warn_redundant_casts = true
+# NOTE: had to comment this out to make mypy pass on both CI and OSX
+#warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+norecursedirs = [
+  "extra",
+  ".hypothesis",
+  ".git",
+]
+timeout = 300
+timeout_method = "thread"
+timeout_func_only = true
+testpaths = ["test"]
+
+[tool.ruff]
+preview = true
+target-version = "py311"
+line-length = 150
+indent-width = 2
+exclude = [
+  ".git/",
+  "docs/",
+  "extra/",
+  "tinygrad/runtime/autogen",
+  "test/external/mlperf_resnet",
+  "test/external/mlperf_unet3d",
+]
+
+[tool.ruff.lint]
+select = [
+  "F",  # Pyflakes
+  "W6",
+  "E71",
+  "E72",
+  "E112",   # no-indented-block
+  "E113",   # unexpected-indentation
+  # "E124",
+  "E203",   # whitespace-before-punctuation
+  "E272",   # multiple-spaces-before-keyword
+  "E275",   # missing-whitespace-after-keyword
+  "E303",   # too-many-blank-lines
+  "E304",   # blank-line-after-decorator
+  "E501",   # line-too-long
+  # "E502",
+  "E702",   # multiple-statements-on-one-line-semicolon
+  "E703",   # useless-semicolon
+  "E731",   # lambda-assignment
+  "W191",   # tab-indentation
+  "W291",   # trailing-whitespace
+  "W293",   # blank-line-with-whitespace
+  "UP039",  # unnecessary-class-parentheses
+  "C416",   # unnecessary-comprehension
+  "RET506", # superfluous-else-raise
+  "RET507", # superfluous-else-continue
+  "A",      # builtin-variable-shadowing, builtin-argument-shadowing, builtin-attribute-shadowing
+  "FURB110",# if-exp-instead-of-or-operator
+  "RUF018", # assignment-in-assert
+]
+
+# detect unused imports in examples
+[tool.ruff.lint.per-file-ignores]
+"examples/**/*.py" = [
+  "W6",
+  "E71",
+  "E72",
+  "E112",
+  "E113",
+  "E203",
+  "E272",
+  "E275",
+  "E303",
+  "E304",
+  "E501",
+  "E702",
+  "E703",
+  "E731",
+  "W191",
+  "W291",
+  "W293",
+  "UP039",
+  "C416",
+  "RET506",
+  "RET507",
+  "A",
+  "FURB110",
+  "RUF018",
+  "F541",
+  "F841",
+]
+
+[tool.ruff.format]
+exclude = ["*"]
