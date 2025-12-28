@@ -138,18 +138,26 @@ class TestCache:
     assert cache_size_limit() > 10 * 1e6
 
   def test_prune_cache(self, monkeypatch):
-    # setup test files with timestamp prefix (older timestamps sort first)
+    # setup test files and manifest
     os.makedirs(Paths.download_cache_root(), exist_ok=True)
+    manifest_lines = []
     for i in range(3):
       # Use increasing timestamps so file_2 is newest
-      fname = f"{1000 + i}_hash_{i}"
-      with open(Paths.download_cache_root() + f"{fname}", "wb") as f:
+      fname = f"hash_{i}"
+      with open(Paths.download_cache_root() + fname, "wb") as f:
         f.truncate(1000)
-    assert len(os.listdir(Paths.download_cache_root())) == 3
+      manifest_lines.append(f"{fname} {1000 + i}")
+
+    # Write manifest
+    with open(Paths.download_cache_root() + "manifest.txt", "w") as f:
+      f.write('\n'.join(manifest_lines))
+
+    # +1 for manifest.txt
+    assert len(os.listdir(Paths.download_cache_root())) == 4
 
     # under limit, shouldn't prune
     prune_cache()
-    assert len(os.listdir(Paths.download_cache_root())) == 3
+    assert len(os.listdir(Paths.download_cache_root())) == 4
 
     # Set a tiny cache limit to force eviction (1.5 chunks worth)
     monkeypatch.setattr(url_file_module, 'cache_size_limit', lambda: url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
@@ -157,27 +165,26 @@ class TestCache:
     # prune_cache should evict oldest files to get under limit
     prune_cache()
     remaining = os.listdir(Paths.download_cache_root())
-    # Should have evicted at least one file (the oldest)
-    assert len(remaining) < 3
-    # The newest file should remain (timestamp 1002)
-    assert any("1002" in f for f in remaining)
+    # Should have evicted at least one file (the oldest) + manifest
+    assert len(remaining) < 4
+    # The newest file should remain (hash_2 with timestamp 1002)
+    assert "hash_2" in remaining
 
   @pytest.mark.flaky(reruns=3)
   def test_prune_cache_performance(self, monkeypatch):
-    """Test prune_cache performance with 200k files (simulating 200GB cache)."""
+    """Test prune_cache performance with 200k entries."""
     with tempfile.TemporaryDirectory() as tmpdir:
       monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
 
-      # Create 200k empty files with timestamp prefixes (simulates 200GB cache)
+      # Create manifest with 200k entries (no actual files needed for perf test)
       num_files = 200_000
-      for i in range(num_files):
-        fname = f"{i:010d}_hash_{i}"
-        open(os.path.join(tmpdir, fname), "w").close()
-      assert len(os.listdir(tmpdir)) == num_files
+      manifest_lines = [f"hash_{i} {i}" for i in range(num_files)]
+      with open(tmpdir + "/manifest.txt", "w") as f:
+        f.write('\n'.join(manifest_lines))
 
       start = time.monotonic()
       prune_cache()
       elapsed = time.monotonic() - start
 
-      # Should complete in under 5 seconds (no stat calls)
+      # Should complete in under 5 seconds
       assert elapsed < 5, f"prune_cache took {elapsed:.1f}s, expected < 5s"

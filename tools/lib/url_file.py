@@ -1,10 +1,9 @@
-import re
 import logging
 import os
+import re
 import socket
 import time
-from functools import cache
-from hashlib import sha256
+from hashlib import md5
 from urllib3 import PoolManager, Retry
 from urllib3.response import BaseHTTPResponse
 from urllib3.util import Timeout
@@ -18,15 +17,16 @@ K = 1000
 CHUNK_SIZE = 1000 * K
 
 CACHE_SIZE_PERCENT = 10
+MANIFEST_FILE = "manifest.txt"
 
+log = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-def hash_256(link: str) -> str:
-  return sha256((link.split("?")[0]).encode('utf-8')).hexdigest()
+def hash_url(link: str) -> str:
+  return md5((link.split("?")[0]).encode('utf-8')).hexdigest()
 
 
-@cache
 def cache_size_limit() -> int:
   """Returns the maximum cache size in bytes."""
   cache_root = Paths.download_cache_root()
@@ -35,29 +35,48 @@ def cache_size_limit() -> int:
     total = stat.f_blocks * stat.f_frsize
     return int(total * CACHE_SIZE_PERCENT / 100)
   except OSError:
-    return int(10 * 1024 * 1024 * 1024)  # 10GB default fallback
+    return 10 * 1024 * 1024 * 1024  # 10GB default fallback
 
 
 def cache_path(url_hash: str, chunk_number: float) -> str:
-  """Returns cache file path with timestamp prefix for LRU sorting."""
-  ts = int(time.time())
-  return Paths.download_cache_root() + f"{ts}_{url_hash}_{chunk_number}"
+  """Returns cache file path for a chunk."""
+  return Paths.download_cache_root() + f"{url_hash}_{chunk_number}"
 
 
-def find_cache_file(url_hash: str, chunk_number: float) -> str | None:
-  """Find existing cache file for a chunk (any timestamp)."""
-  cache_root = Paths.download_cache_root()
-  suffix = f"_{url_hash}_{chunk_number}"
-  for fname in os.listdir(cache_root):
-    if fname.endswith(suffix):
-      return os.path.join(cache_root, fname)
-  return None
+def _load_manifest() -> dict[str, int]:
+  """Load the cache manifest. Returns {filename: timestamp}."""
+  manifest_path = Paths.download_cache_root() + MANIFEST_FILE
+  try:
+    with open(manifest_path) as f:
+      result = {}
+      for line in f:
+        parts = line.strip().split()
+        if len(parts) == 2:
+          result[parts[0]] = int(parts[1])
+      return result
+  except OSError:
+    return {}
 
 
-log = logging.getLogger(__name__)
+def _save_manifest(manifest: dict[str, int]) -> None:
+  """Save the cache manifest atomically."""
+  manifest_path = Paths.download_cache_root() + MANIFEST_FILE
+  with atomic_write(manifest_path, mode="w", overwrite=True) as f:
+    f.write('\n'.join(f"{k} {v}" for k, v in manifest.items()))
 
-# Pattern for valid cache filenames: {timestamp}_{hash}_{chunk_number}
-CACHE_FILENAME_RE = re.compile(r"^\d+_[a-f0-9]+_\d+\.?\d*$")
+
+def cache_file_exists(url_hash: str, chunk_number: float) -> bool:
+  """Check if a cache file exists."""
+  return os.path.exists(cache_path(url_hash, chunk_number))
+
+
+def update_cache_manifest(url_hash: str, chunk_number: float) -> None:
+  """Update the manifest with the new cache entry."""
+  manifest = _load_manifest()
+  key = f"{url_hash}_{chunk_number}"
+  manifest[key] = int(time.time())
+  _save_manifest(manifest)
+
 
 def prune_cache() -> None:
   """Evicts oldest cache files (LRU) until cache is under the size limit."""
@@ -66,23 +85,31 @@ def prune_cache() -> None:
     return
 
   max_size = cache_size_limit()
+  manifest = _load_manifest()
 
-  # Get all cache files - timestamp is in filename, size is ~CHUNK_SIZE
-  cache_files = sorted(os.listdir(cache_root))  # sorts by timestamp prefix
-  total_size = len(cache_files) * CHUNK_SIZE
+  # Sort by timestamp (oldest first)
+  sorted_entries = sorted(manifest.items(), key=lambda x: x[1])
+  total_size = len(sorted_entries) * CHUNK_SIZE
 
-  # Remove oldest files (sorted first) until under limit
-  # Also remove files that don't match the expected filename pattern
-  for fname in cache_files:
-    should_remove = total_size > max_size or not CACHE_FILENAME_RE.match(fname)
-    if not should_remove:
-      continue
-    fpath = cache_root + fname
+  # Remove oldest files until under limit
+  removed_keys = []
+  for key, _ in sorted_entries:
+    if total_size <= max_size:
+      break
+    fpath = cache_root + key
     try:
       os.remove(fpath)
       total_size -= CHUNK_SIZE
+      removed_keys.append(key)
     except OSError:
       log.exception(f"Failed to remove cache file {fpath}")
+      removed_keys.append(key)  # Remove from manifest anyway
+
+  # Update manifest if we removed anything
+  if removed_keys:
+    for key in removed_keys:
+      manifest.pop(key, None)
+    _save_manifest(manifest)
 
 
 class URLFileException(Exception):
@@ -140,7 +167,7 @@ class URLFile:
     if self._length is not None:
       return self._length
 
-    file_length_path = os.path.join(Paths.download_cache_root(), hash_256(self._url) + "_length")
+    file_length_path = Paths.download_cache_root() + hash_url(self._url) + "_length"
     if not self._force_download and os.path.exists(file_length_path):
       with open(file_length_path) as file_length:
         content = file_length.read()
@@ -166,18 +193,18 @@ class URLFile:
     while True:
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
-      url_hash = hash_256(self._url)
-      existing_path = find_cache_file(url_hash, chunk_number)
+      url_hash = hash_url(self._url)
+      full_path = cache_path(url_hash, chunk_number)
       data = None
       #  If we don't have a file, download it
-      if existing_path is None:
+      if not cache_file_exists(url_hash, chunk_number):
         data = self.read_aux(ll=CHUNK_SIZE)
-        full_path = cache_path(url_hash, chunk_number)
         with atomic_write(full_path, mode="wb", overwrite=True) as new_cached_file:
           new_cached_file.write(data)
+        update_cache_manifest(url_hash, chunk_number)
         prune_cache()
       else:
-        with open(existing_path, "rb") as cached_file:
+        with open(full_path, "rb") as cached_file:
           data = cached_file.read()
 
       response += data[max(0, file_begin - position): min(CHUNK_SIZE, file_end - position)]
