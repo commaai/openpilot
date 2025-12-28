@@ -47,6 +47,7 @@ def prune_cache(new_entry: str | None = None) -> None:
   if not os.path.exists(cache_root):
     return
 
+  # we use a manifest to avoid tons of os.stat syscalls (slow)
   manifest = _load_manifest()
   if new_entry:
     manifest[new_entry] = int(time.time())  # noqa: TID251
@@ -63,11 +64,10 @@ def prune_cache(new_entry: str | None = None) -> None:
     fpath = cache_root + key
     try:
       os.remove(fpath)
-      total_size -= CHUNK_SIZE
-      removed_keys.append(key)
     except OSError:
-      log.exception(f"Failed to remove cache file {fpath}")
-      removed_keys.append(key)
+      pass  # file already gone, just clean up manifest
+    total_size -= CHUNK_SIZE
+    removed_keys.append(key)
 
   # write out manifest
   for key in removed_keys:

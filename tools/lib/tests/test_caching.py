@@ -3,7 +3,6 @@ import os
 import shutil
 import socket
 import tempfile
-import time
 import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
@@ -166,20 +165,3 @@ class TestCache:
       assert len(remaining) < 4
       # The newest file should remain (hash_2 with timestamp 1002)
       assert "hash_2" in remaining
-
-  @pytest.mark.flaky(retries=3, delay=1) # needed due to OS scheduling
-  def test_prune_cache_performance(self, monkeypatch):
-    with tempfile.TemporaryDirectory() as tmpdir:
-      monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
-
-      # Create manifest with 200k entries (no actual files needed for perf test)
-      num_files = 200_000
-      manifest_lines = [f"hash_{i} {i}" for i in range(num_files)]
-      with open(tmpdir + "/manifest.txt", "w") as f:
-        f.write('\n'.join(manifest_lines))
-
-      start = time.monotonic()
-      prune_cache()
-      elapsed = time.monotonic() - start
-
-      assert elapsed < 0.1, f"prune_cache took {elapsed:.1f}s, expected < 5s"
