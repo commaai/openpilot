@@ -164,7 +164,7 @@ class URLFile:
     return parts
 
   def seek(self, pos: int) -> None:
-    self._pos = pos
+    self._pos = int(pos)
 
   @property
   def name(self) -> str:
