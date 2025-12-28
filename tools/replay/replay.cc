@@ -264,6 +264,7 @@ void Replay::streamThread() {
   std::unique_lock lk(stream_lock_);
 
   BenchmarkLocalStats *benchmark_stats = nullptr;
+  int benchmark_segments_processed = 0;
   if (hasFlag(REPLAY_FLAG_BENCHMARK)) {
     benchmark_stats = new BenchmarkLocalStats();
     benchmark_stats_.start_wall_time = nanos_since_boot();
@@ -315,9 +316,25 @@ void Replay::streamThread() {
         stream_lock_.lock();
       }
     } else if (it == events.cend() && hasFlag(REPLAY_FLAG_BENCHMARK)) {
-      // Exit benchmark mode when first segment is done
-      exit_ = true;
-      break;
+      // Exit benchmark mode after 3 segments
+      benchmark_segments_processed++;
+      if (benchmark_segments_processed >= 3) {
+        exit_ = true;
+        break;
+      } else {
+        // Seek to next segment
+        int next_segment = current_segment_.load() + 1;
+        int last_segment = seg_mgr_->route_.segments().rbegin()->first;
+        if (next_segment <= last_segment) {
+          stream_lock_.unlock();
+          seekTo(minSeconds() + next_segment * 60, false);
+          stream_lock_.lock();
+          events_ready_ = false;
+        } else {
+          exit_ = true;
+          break;
+        }
+      }
     }
   }
 
