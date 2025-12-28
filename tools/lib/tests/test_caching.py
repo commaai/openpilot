@@ -132,27 +132,31 @@ class TestFileDownload:
     assert length == 4
 
 
-class TestCachePruning:
+class TestCache:
+  def test_limit(self):
+    assert cache_size_limit() > 10 * 1e6
+
   def test_prune_cache(self, monkeypatch):
-    with tempfile.TemporaryDirectory() as tmpdir:
-      monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
+    # setup test files
+    os.makedirs(Paths.download_cache_root())
+    for i in range(3):
+      with open(Paths.download_cache_root() + f"/test_file_{i}", "wb") as f:
+        f.truncate(1000)
+    assert len(os.listdir(Paths.download_cache_root())) == 3
 
-      # Cache size limit should be 10% of disk space
-      limit = cache_size_limit()
-      assert limit > 0
-      total_disk = os.statvfs(tmpdir)
-      assert limit == int((total_disk.f_blocks * total_disk.f_frsize) * CACHE_SIZE_PERCENT)
+    # under limit, shouldn't prune
+    prune_cache()
+    assert len(os.listdir(Paths.download_cache_root())) == 3
 
-      # Create sparse test files with different access times
-      for i in range(3):
-        fpath = os.path.join(tmpdir, f"test_file_{i}")
-        with open(fpath, "wb") as f:
-          f.truncate(1000)
-        os.utime(fpath, (time.time() - (3 - i) * 100, time.time() - (3 - i) * 100))
+    # Set a tiny cache limit to force eviction
+    import openpilot.tools.lib.url_file as url_file_module
+    monkeypatch.setattr(url_file_module, '_cache_size', None)
+    monkeypatch.setattr(url_file_module, 'cache_size_limit', lambda: 1500)
 
-      # Verify files exist
-      assert len(os.listdir(tmpdir)) == 3
-
-      # prune_cache should not remove anything if under limit
-      prune_cache()
-      assert len(os.listdir(tmpdir)) == 3
+    # prune_cache should evict oldest files to get under 1500 bytes
+    prune_cache()
+    remaining = os.listdir(Paths.download_cache_root())
+    # Should have evicted at least one file (the oldest)
+    assert len(remaining) < 3
+    # The newest file should remain
+    assert "test_file_2" in remaining

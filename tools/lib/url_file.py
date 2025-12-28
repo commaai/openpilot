@@ -2,6 +2,7 @@ import re
 import logging
 import os
 import socket
+from functools import cache
 from hashlib import sha256
 from urllib3 import PoolManager, Retry
 from urllib3.response import BaseHTTPResponse
@@ -24,33 +25,26 @@ def hash_256(link: str) -> str:
   return sha256((link.split("?")[0]).encode('utf-8')).hexdigest()
 
 
+@cache
 def cache_size_limit() -> int:
-  """Returns the maximum cache size in bytes (10% of total disk space)."""
+  """Returns the maximum cache size in bytes."""
   cache_root = Paths.download_cache_root()
   try:
-    stat = os.statvfs(cache_root if os.path.exists(cache_root) else "/")
+    stat = os.statvfs(cache_root)
     total = stat.f_blocks * stat.f_frsize
     return int(total * CACHE_SIZE_PERCENT)
   except OSError:
-    return int(100 * 1024 * 1024 * 1024 * CACHE_SIZE_PERCENT)  # 10GB default fallback
+    return int(10 * 1024 * 1024 * 1024)  # 10GB default fallback
 
 
 _cache_size: int | None = None
-
 def prune_cache(added_bytes: int = 0) -> None:
   """Evicts oldest cache files (LRU) until cache is under the size limit."""
-  global _cache_size
   cache_root = Paths.download_cache_root()
   if not os.path.exists(cache_root):
     return
 
   max_size = cache_size_limit()
-
-  # Fast path: use tracked size if available
-  if _cache_size is not None:
-    _cache_size += added_bytes
-    if _cache_size <= max_size:
-      return
 
   # Get all cache files with their sizes and access times
   cache_files: list[tuple[str, float, int]] = []
@@ -65,14 +59,8 @@ def prune_cache(added_bytes: int = 0) -> None:
       except OSError:
         pass
 
-  _cache_size = total_size
-  if total_size <= max_size:
-    return
-
-  # Sort by access time (oldest first) for LRU eviction
-  cache_files.sort(key=lambda x: x[1])
-
   # Remove files until we're under the limit
+  cache_files.sort(key=lambda x: x[1])
   for fpath, _, fsize in cache_files:
     if total_size <= max_size:
       break
@@ -81,7 +69,6 @@ def prune_cache(added_bytes: int = 0) -> None:
       total_size -= fsize
     except OSError:
       pass
-  _cache_size = total_size
 
 
 class URLFileException(Exception):
