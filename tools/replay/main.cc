@@ -173,23 +173,6 @@ int main(int argc, char *argv[]) {
                 << event << "\n";
     }
 
-    // Calculate total time from timeline
-    double total_time_ms = 0;
-    if (!stats.timeline.empty()) {
-      total_time_ms = (stats.timeline.back().first - process_start) / 1e6;
-    }
-
-    std::cout << "\nSUMMARY:\n";
-    std::cout << "  Total events:   " << stats.total_events << "\n";
-    std::cout << "  Total messages: " << stats.total_messages << "\n";
-    std::cout << "  Total frames:   " << stats.total_frames << "\n";
-    std::cout << "  Data processed: " << std::fixed << std::setprecision(1)
-              << (stats.total_bytes / (1024.0 * 1024.0)) << " MB\n";
-    if (total_time_ms > 0) {
-      std::cout << "  Throughput:     " << std::fixed << std::setprecision(1)
-                << (stats.total_bytes / (1024.0 * 1024.0) / (total_time_ms / 1000.0)) << " MB/sec\n";
-    }
-
     return 0;
   }
 

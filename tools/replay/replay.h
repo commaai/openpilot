@@ -97,7 +97,8 @@ private:
   std::vector<Event>::const_iterator publishEvents(std::vector<Event>::const_iterator first,
                                                    std::vector<Event>::const_iterator last,
                                                    BenchmarkLocalStats *benchmark_stats,
-                                                   int &last_processed_segment);
+                                                   int &last_processed_segment,
+                                                   uint64_t &segment_start_time);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   void checkSeekProgress();

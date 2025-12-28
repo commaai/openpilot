@@ -2,6 +2,8 @@
 
 #include <capnp/dynamic.h>
 #include <csignal>
+#include <iomanip>
+#include <sstream>
 #include "cereal/services.h"
 #include "common/params.h"
 #include "tools/replay/util.h"
@@ -21,6 +23,10 @@ Replay::Replay(const std::string &route, std::vector<std::string> allow, std::ve
 
   if (flags_ & REPLAY_FLAG_BENCHMARK) {
     benchmark_stats_.process_start_ts = nanos_since_boot();
+    seg_mgr_->setBenchmarkCallback([this](int seg_num, const std::string& event) {
+      benchmark_stats_.timeline.emplace_back(nanos_since_boot(),
+          "segment " + std::to_string(seg_num) + " " + event);
+    });
   }
 
   if (!(flags_ & REPLAY_FLAG_ALL_SERVICES)) {
@@ -268,6 +274,7 @@ void Replay::streamThread() {
 
   BenchmarkLocalStats *benchmark_stats = nullptr;
   int last_processed_segment = -1;
+  uint64_t segment_start_time = 0;
   bool streaming_started = false;
   if (hasFlag(REPLAY_FLAG_BENCHMARK)) {
     benchmark_stats = new BenchmarkLocalStats();
@@ -292,7 +299,7 @@ void Replay::streamThread() {
       streaming_started = true;
     }
 
-    auto it = publishEvents(first, events.cend(), benchmark_stats, last_processed_segment);
+    auto it = publishEvents(first, events.cend(), benchmark_stats, last_processed_segment, segment_start_time);
 
     // Ensure frames are sent before unlocking to prevent race conditions
     if (camera_server_) {
@@ -333,7 +340,8 @@ void Replay::streamThread() {
 std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::const_iterator first,
                                                          std::vector<Event>::const_iterator last,
                                                          BenchmarkLocalStats *benchmark_stats,
-                                                         int &last_processed_segment) {
+                                                         int &last_processed_segment,
+                                                         uint64_t &segment_start_time) {
   uint64_t evt_start_ts = cur_mono_time_;
   uint64_t loop_start_ts = nanos_since_boot();
   double prev_replay_speed = speed_;
@@ -349,10 +357,18 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
 
     // Track segment completion for benchmark timeline
     if (benchmark_stats && segment != last_processed_segment) {
-      if (last_processed_segment >= 0) {
-        benchmark_stats_.timeline.emplace_back(nanos_since_boot(),
-            "segment " + std::to_string(last_processed_segment) + " processed");
+      if (last_processed_segment >= 0 && segment_start_time > 0) {
+        uint64_t processing_time_ns = nanos_since_boot() - segment_start_time;
+        double processing_time_ms = processing_time_ns / 1e6;
+        double realtime_factor = 60.0 / (processing_time_ns / 1e9);  // 60s per segment
+
+        std::ostringstream oss;
+        oss << "segment " << last_processed_segment << " done publishing ("
+            << std::fixed << std::setprecision(0) << processing_time_ms << " ms, "
+            << std::fixed << std::setprecision(0) << realtime_factor << "x realtime)";
+        benchmark_stats_.timeline.emplace_back(nanos_since_boot(), oss.str());
       }
+      segment_start_time = nanos_since_boot();
       last_processed_segment = segment;
     }
 
