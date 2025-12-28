@@ -8,7 +8,8 @@ import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
-from openpilot.tools.lib.url_file import URLFile, prune_cache, cache_size_limit, CACHE_SIZE_PERCENT
+from openpilot.tools.lib.url_file import URLFile, prune_cache, cache_size_limit
+import openpilot.tools.lib.url_file as url_file_module
 
 
 class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -137,10 +138,12 @@ class TestCache:
     assert cache_size_limit() > 10 * 1e6
 
   def test_prune_cache(self, monkeypatch):
-    # setup test files
-    os.makedirs(Paths.download_cache_root())
+    # setup test files with timestamp prefix (older timestamps sort first)
+    os.makedirs(Paths.download_cache_root(), exist_ok=True)
     for i in range(3):
-      with open(Paths.download_cache_root() + f"/test_file_{i}", "wb") as f:
+      # Use increasing timestamps so file_2 is newest
+      fname = f"{1000 + i}_hash_{i}"
+      with open(Paths.download_cache_root() + f"{fname}", "wb") as f:
         f.truncate(1000)
     assert len(os.listdir(Paths.download_cache_root())) == 3
 
@@ -148,15 +151,33 @@ class TestCache:
     prune_cache()
     assert len(os.listdir(Paths.download_cache_root())) == 3
 
-    # Set a tiny cache limit to force eviction
-    import openpilot.tools.lib.url_file as url_file_module
-    monkeypatch.setattr(url_file_module, '_cache_size', None)
-    monkeypatch.setattr(url_file_module, 'cache_size_limit', lambda: 1500)
+    # Set a tiny cache limit to force eviction (1.5 chunks worth)
+    monkeypatch.setattr(url_file_module, 'cache_size_limit', lambda: url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
 
-    # prune_cache should evict oldest files to get under 1500 bytes
+    # prune_cache should evict oldest files to get under limit
     prune_cache()
     remaining = os.listdir(Paths.download_cache_root())
     # Should have evicted at least one file (the oldest)
     assert len(remaining) < 3
-    # The newest file should remain
-    assert "test_file_2" in remaining
+    # The newest file should remain (timestamp 1002)
+    assert any("1002" in f for f in remaining)
+
+  @pytest.mark.flaky(reruns=3)
+  def test_prune_cache_performance(self, monkeypatch):
+    """Test prune_cache performance with 200k files (simulating 200GB cache)."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+      monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
+
+      # Create 200k empty files with timestamp prefixes (simulates 200GB cache)
+      num_files = 200_000
+      for i in range(num_files):
+        fname = f"{i:010d}_hash_{i}"
+        open(os.path.join(tmpdir, fname), "w").close()
+      assert len(os.listdir(tmpdir)) == num_files
+
+      start = time.monotonic()
+      prune_cache()
+      elapsed = time.monotonic() - start
+
+      # Should complete in under 5 seconds (no stat calls)
+      assert elapsed < 5, f"prune_cache took {elapsed:.1f}s, expected < 5s"

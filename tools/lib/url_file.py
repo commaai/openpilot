@@ -2,6 +2,7 @@ import re
 import logging
 import os
 import socket
+import time
 from functools import cache
 from hashlib import sha256
 from urllib3 import PoolManager, Retry
@@ -16,7 +17,7 @@ from urllib3.exceptions import MaxRetryError
 K = 1000
 CHUNK_SIZE = 1000 * K
 
-CACHE_SIZE_PERCENT = 0.10
+CACHE_SIZE_PERCENT = 10
 
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
@@ -32,13 +33,33 @@ def cache_size_limit() -> int:
   try:
     stat = os.statvfs(cache_root)
     total = stat.f_blocks * stat.f_frsize
-    return int(total * CACHE_SIZE_PERCENT)
+    return int(total * CACHE_SIZE_PERCENT / 100)
   except OSError:
     return int(10 * 1024 * 1024 * 1024)  # 10GB default fallback
 
 
-_cache_size: int | None = None
-def prune_cache(added_bytes: int = 0) -> None:
+def cache_path(url_hash: str, chunk_number: float) -> str:
+  """Returns cache file path with timestamp prefix for LRU sorting."""
+  ts = int(time.time())
+  return Paths.download_cache_root() + f"{ts}_{url_hash}_{chunk_number}"
+
+
+def find_cache_file(url_hash: str, chunk_number: float) -> str | None:
+  """Find existing cache file for a chunk (any timestamp)."""
+  cache_root = Paths.download_cache_root()
+  suffix = f"_{url_hash}_{chunk_number}"
+  for fname in os.listdir(cache_root):
+    if fname.endswith(suffix):
+      return os.path.join(cache_root, fname)
+  return None
+
+
+log = logging.getLogger(__name__)
+
+# Pattern for valid cache filenames: {timestamp}_{hash}_{chunk_number}
+CACHE_FILENAME_RE = re.compile(r"^\d+_[a-f0-9]+_\d+\.?\d*$")
+
+def prune_cache() -> None:
   """Evicts oldest cache files (LRU) until cache is under the size limit."""
   cache_root = Paths.download_cache_root()
   if not os.path.exists(cache_root):
@@ -46,29 +67,22 @@ def prune_cache(added_bytes: int = 0) -> None:
 
   max_size = cache_size_limit()
 
-  # Get all cache files with their sizes and access times
-  cache_files: list[tuple[str, float, int]] = []
-  total_size = 0
-  for fname in os.listdir(cache_root):
-    fpath = os.path.join(cache_root, fname)
-    if os.path.isfile(fpath):
-      try:
-        stat = os.stat(fpath)
-        cache_files.append((fpath, stat.st_atime, stat.st_size))
-        total_size += stat.st_size
-      except OSError:
-        pass
+  # Get all cache files - timestamp is in filename, size is ~CHUNK_SIZE
+  cache_files = sorted(os.listdir(cache_root))  # sorts by timestamp prefix
+  total_size = len(cache_files) * CHUNK_SIZE
 
-  # Remove files until we're under the limit
-  cache_files.sort(key=lambda x: x[1])
-  for fpath, _, fsize in cache_files:
-    if total_size <= max_size:
-      break
+  # Remove oldest files (sorted first) until under limit
+  # Also remove files that don't match the expected filename pattern
+  for fname in cache_files:
+    should_remove = total_size > max_size or not CACHE_FILENAME_RE.match(fname)
+    if not should_remove:
+      continue
+    fpath = cache_root + fname
     try:
       os.remove(fpath)
-      total_size -= fsize
+      total_size -= CHUNK_SIZE
     except OSError:
-      pass
+      log.exception(f"Failed to remove cache file {fpath}")
 
 
 class URLFileException(Exception):
@@ -152,17 +166,18 @@ class URLFile:
     while True:
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
-      file_name = hash_256(self._url) + "_" + str(chunk_number)
-      full_path = os.path.join(Paths.download_cache_root(), str(file_name))
+      url_hash = hash_256(self._url)
+      existing_path = find_cache_file(url_hash, chunk_number)
       data = None
       #  If we don't have a file, download it
-      if not os.path.exists(full_path):
+      if existing_path is None:
         data = self.read_aux(ll=CHUNK_SIZE)
+        full_path = cache_path(url_hash, chunk_number)
         with atomic_write(full_path, mode="wb", overwrite=True) as new_cached_file:
           new_cached_file.write(data)
-        prune_cache(len(data))
+        prune_cache()
       else:
-        with open(full_path, "rb") as cached_file:
+        with open(existing_path, "rb") as cached_file:
           data = cached_file.read()
 
       response += data[max(0, file_begin - position): min(CHUNK_SIZE, file_end - position)]
