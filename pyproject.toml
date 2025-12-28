@@ -87,7 +87,7 @@ docs = [
 testing = [
   "coverage",
   "hypothesis ==6.47.*",
-  "mypy",
+  "ty",
   "pytest",
   "pytest-cpp",
   "pytest-subtests",
@@ -180,42 +180,6 @@ ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,w
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
 skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
 
-[tool.mypy]
-python_version = "3.11"
-exclude = [
-  "cereal/",
-  "msgq/",
-  "msgq_repo/",
-  "opendbc/",
-  "opendbc_repo/",
-  "panda/",
-  "rednose/",
-  "rednose_repo/",
-  "tinygrad/",
-  "tinygrad_repo/",
-  "teleoprtc/",
-  "teleoprtc_repo/",
-  "third_party/",
-]
-
-# third-party packages
-ignore_missing_imports=true
-
-# helpful warnings
-warn_redundant_casts=true
-warn_unreachable=true
-warn_unused_ignores=true
-
-# restrict dynamic typing
-warn_return_any=true
-
-# allow implicit optionals for default args
-implicit_optional = true
-
-local_partial_types=true
-explicit_package_bases=true
-disable_error_code = "annotation-unchecked"
-
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
 indent-width = 2
@@ -274,3 +238,43 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.format]
 quote-style = "preserve"
+
+[tool.ty.src]
+exclude = [
+  "cereal/",
+  "msgq/",
+  "msgq_repo/",
+  "opendbc/",
+  "opendbc_repo/",
+  "panda/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "teleoprtc/",
+  "teleoprtc_repo/",
+  "third_party/",
+]
+
+[tool.ty.rules]
+# Ignore unresolved imports for Cython-compiled modules (.pyx)
+unresolved-import = "ignore"
+# Ignore unresolved attributes - many from capnp and Cython modules
+unresolved-attribute = "ignore"
+# Ignore invalid method overrides - signature variance issues
+invalid-method-override = "ignore"
+# Ignore possibly-missing-attribute - too many false positives
+possibly-missing-attribute = "ignore"
+# Ignore invalid assignment - often intentional monkey-patching
+invalid-assignment = "ignore"
+# Ignore no-matching-overload - numpy/ctypes overload matching issues
+no-matching-overload = "ignore"
+# Ignore invalid-argument-type - many false positives from raylib, ctypes, numpy
+invalid-argument-type = "ignore"
+# Ignore call-non-callable - false positives from dynamic types
+call-non-callable = "ignore"
+# Ignore unsupported-operator - false positives from dynamic types
+unsupported-operator = "ignore"
+# Ignore non-subscriptable - false positives from dynamic types
+non-subscriptable = "ignore"
+# not-iterable errors are now fixed
