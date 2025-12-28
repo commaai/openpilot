@@ -173,14 +173,14 @@ int main(int argc, char *argv[]) {
     std::cout << "\n";
 
     std::cout << "\nTIMING BREAKDOWN:\n";
-    std::cout << "  Load route:      " << (stats.load_wall_time / 1e6) << " ms\n";
-    std::cout << "  Event publish:   " << (stats.publish_time / 1e6) << " ms\n";
-    std::cout << "    - Messages:    " << (stats.message_time / 1e6) << " ms\n";
-    std::cout << "    - Frames:      " << (stats.frame_time / 1e6) << " ms\n";
-    std::cout << "    - Camera wait: " << (stats.camera_wait_time / 1e6) << " ms\n";
-    std::cout << "  Stream thread wait: " << (stats.wait_time / 1e6) << " ms\n";
-    std::cout << "  TOTAL (wall):    " << std::fixed << std::setprecision(1) << total_time_sec << " seconds\n";
-    std::cout << "  SPEEDUP:         " << std::fixed << std::setprecision(1) << speedup << "x realtime\n";
+    std::cout << "  Route metadata:     " << (stats.load_wall_time / 1e6) << " ms\n";
+    std::cout << "  Process & send:     " << (stats.publish_time / 1e6) << " ms\n";
+    std::cout << "    - Messages:       " << (stats.message_time / 1e6) << " ms\n";
+    std::cout << "    - Video frames:   " << (stats.frame_time / 1e6) << " ms\n";
+    std::cout << "    - Camera queue:   " << (stats.camera_wait_time / 1e6) << " ms\n";
+    std::cout << "  Load & merge segs:  " << (stats.wait_time / 1e6) << " ms\n";
+    std::cout << "  TOTAL (wall):       " << std::fixed << std::setprecision(1) << total_time_sec << " seconds\n";
+    std::cout << "  SPEEDUP:            " << std::fixed << std::setprecision(1) << speedup << "x realtime\n";
 
     std::cout << "\nTHROUGHPUT:\n";
     std::cout << "  Total events:    " << stats.total_events;
