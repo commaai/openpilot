@@ -19,6 +19,10 @@ Replay::Replay(const std::string &route, std::vector<std::string> allow, std::ve
     : sm_(sm), flags_(flags), seg_mgr_(std::make_unique<SegmentManager>(route, flags, data_dir, auto_source)) {
   std::signal(SIGUSR1, interrupt_sleep_handler);
 
+  if (flags_ & REPLAY_FLAG_BENCHMARK) {
+    benchmark_stats_.process_start_ts = nanos_since_boot();
+  }
+
   if (!(flags_ & REPLAY_FLAG_ALL_SERVICES)) {
     block.insert(block.end(), {"bookmarkButton", "uiDebug", "userBookmark"});
   }
@@ -78,13 +82,12 @@ Replay::~Replay() {
 
 bool Replay::load() {
   rInfo("loading route %s", seg_mgr_->route_.name().c_str());
-  uint64_t load_start = nanos_since_boot();
 
   if (!seg_mgr_->load()) return false;
 
-  uint64_t load_end = nanos_since_boot();
-  benchmark_stats_.load_wall_time = load_end - load_start;
-  benchmark_stats_.segments_total = seg_mgr_->route_.segments().size();
+  if (hasFlag(REPLAY_FLAG_BENCHMARK)) {
+    benchmark_stats_.timeline.emplace_back(nanos_since_boot(), "route metadata loaded");
+  }
 
   min_seconds_ = seg_mgr_->route_.segments().begin()->first * 60;
   max_seconds_ = (seg_mgr_->route_.segments().rbegin()->first + 1) * 60;
@@ -264,23 +267,14 @@ void Replay::streamThread() {
   std::unique_lock lk(stream_lock_);
 
   BenchmarkLocalStats *benchmark_stats = nullptr;
-  int benchmark_segments_processed = 0;
+  int last_processed_segment = -1;
+  bool streaming_started = false;
   if (hasFlag(REPLAY_FLAG_BENCHMARK)) {
     benchmark_stats = new BenchmarkLocalStats();
-    benchmark_stats_.start_wall_time = nanos_since_boot();
   }
 
   while (true) {
-    uint64_t wait_start = 0;
-    if (benchmark_stats) {
-      wait_start = nanos_since_boot();
-    }
-
     stream_cv_.wait(lk, [this]() { return exit_ || (events_ready_ && !interrupt_requested_); });
-
-    if (benchmark_stats && wait_start > 0) {
-      benchmark_stats->wait_time += nanos_since_boot() - wait_start;
-    }
 
     if (exit_) break;
 
@@ -293,18 +287,16 @@ void Replay::streamThread() {
       continue;
     }
 
-    auto it = publishEvents(first, events.cend(), benchmark_stats);
+    if (benchmark_stats && !streaming_started) {
+      benchmark_stats_.timeline.emplace_back(nanos_since_boot(), "streaming started");
+      streaming_started = true;
+    }
+
+    auto it = publishEvents(first, events.cend(), benchmark_stats, last_processed_segment);
 
     // Ensure frames are sent before unlocking to prevent race conditions
     if (camera_server_) {
-      uint64_t cam_wait_start = 0;
-      if (benchmark_stats) {
-        cam_wait_start = nanos_since_boot();
-      }
       camera_server_->waitForSent();
-      if (benchmark_stats) {
-        benchmark_stats->camera_wait_time += nanos_since_boot() - cam_wait_start;
-      }
     }
 
     if (it == events.cend() && !hasFlag(REPLAY_FLAG_NO_LOOP) && !hasFlag(REPLAY_FLAG_BENCHMARK)) {
@@ -316,40 +308,18 @@ void Replay::streamThread() {
         stream_lock_.lock();
       }
     } else if (it == events.cend() && hasFlag(REPLAY_FLAG_BENCHMARK)) {
-      // Exit benchmark mode after 3 segments
-      benchmark_segments_processed++;
-      if (benchmark_segments_processed >= 3) {
-        exit_ = true;
-        break;
-      } else {
-        // Seek to next segment
-        int next_segment = current_segment_.load() + 1;
-        int last_segment = seg_mgr_->route_.segments().rbegin()->first;
-        if (next_segment <= last_segment) {
-          stream_lock_.unlock();
-          seekTo(minSeconds() + next_segment * 60, false);
-          stream_lock_.lock();
-          events_ready_ = false;
-        } else {
-          exit_ = true;
-          break;
-        }
-      }
+      // Exit benchmark mode after first segment completes
+      exit_ = true;
+      break;
     }
   }
 
   if (benchmark_stats) {
-    benchmark_stats_.end_wall_time = nanos_since_boot();
-    benchmark_stats_.wait_time = benchmark_stats->wait_time;
-    benchmark_stats_.publish_time = benchmark_stats->publish_time;
-    benchmark_stats_.message_time = benchmark_stats->message_time;
-    benchmark_stats_.frame_time = benchmark_stats->frame_time;
-    benchmark_stats_.camera_wait_time = benchmark_stats->camera_wait_time;
+    benchmark_stats_.timeline.emplace_back(nanos_since_boot(), "benchmark done");
     benchmark_stats_.total_events = benchmark_stats->total_events;
     benchmark_stats_.total_messages = benchmark_stats->total_messages;
     benchmark_stats_.total_frames = benchmark_stats->total_frames;
     benchmark_stats_.total_bytes = benchmark_stats->total_bytes;
-    benchmark_stats_.segments_loaded = benchmark_loaded_segments_.size();
     delete benchmark_stats;
 
     {
@@ -362,7 +332,8 @@ void Replay::streamThread() {
 
 std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::const_iterator first,
                                                          std::vector<Event>::const_iterator last,
-                                                         BenchmarkLocalStats *benchmark_stats) {
+                                                         BenchmarkLocalStats *benchmark_stats,
+                                                         int &last_processed_segment) {
   uint64_t evt_start_ts = cur_mono_time_;
   uint64_t loop_start_ts = nanos_since_boot();
   double prev_replay_speed = speed_;
@@ -374,9 +345,15 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
     if (current_segment_.load(std::memory_order_relaxed) != segment) {
       current_segment_.store(segment, std::memory_order_relaxed);
       seg_mgr_->setCurrentSegment(segment);
-      if (benchmark_stats) {
-        benchmark_loaded_segments_.insert(segment);
+    }
+
+    // Track segment completion for benchmark timeline
+    if (benchmark_stats && segment != last_processed_segment) {
+      if (last_processed_segment >= 0) {
+        benchmark_stats_.timeline.emplace_back(nanos_since_boot(),
+            "segment " + std::to_string(last_processed_segment) + " processed");
       }
+      last_processed_segment = segment;
     }
 
     cur_mono_time_ = evt.mono_time;
@@ -406,19 +383,9 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
 
     if (interrupt_requested_) break;
 
-    uint64_t publish_start = 0;
-    if (benchmark_stats) {
-      publish_start = nanos_since_boot();
-    }
-
     if (evt.eidx_segnum == -1) {
-      uint64_t msg_start = 0;
-      if (benchmark_stats) {
-        msg_start = nanos_since_boot();
-      }
       publishMessage(&evt);
       if (benchmark_stats) {
-        benchmark_stats->message_time += nanos_since_boot() - msg_start;
         benchmark_stats->total_messages++;
         benchmark_stats->total_bytes += evt.data.size();
       }
@@ -426,20 +393,11 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
       if (speed_ > 1.0) {
         camera_server_->waitForSent();
       }
-      uint64_t frame_start = 0;
-      if (benchmark_stats) {
-        frame_start = nanos_since_boot();
-      }
       publishFrame(&evt);
       if (benchmark_stats) {
-        benchmark_stats->frame_time += nanos_since_boot() - frame_start;
         benchmark_stats->total_frames++;
         benchmark_stats->total_bytes += evt.data.size();
       }
-    }
-
-    if (benchmark_stats && publish_start > 0) {
-      benchmark_stats->publish_time += nanos_since_boot() - publish_start;
     }
   }
 

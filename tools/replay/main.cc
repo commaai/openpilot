@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "common/prefix.h"
+#include "common/timing.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
@@ -158,47 +159,36 @@ int main(int argc, char *argv[]) {
     replay.waitForFinished();
 
     const auto &stats = replay.getBenchmarkStats();
-    uint64_t total_time_ns = stats.end_wall_time - stats.start_wall_time;
-    double total_time_sec = total_time_ns / 1e9;
-    double route_duration = replay.maxSeconds() - replay.minSeconds();
-    double speedup = route_duration > 0 ? route_duration / total_time_sec : 0;
+    uint64_t process_start = stats.process_start_ts;
 
     std::cout << "\n===== REPLAY BENCHMARK RESULTS =====\n";
-    std::cout << "Route: " << replay.route().name() << "\n";
-    std::cout << "Duration: " << std::fixed << std::setprecision(1) << route_duration << " seconds\n";
-    std::cout << "Segments: " << stats.segments_total << " total";
-    if (stats.segments_loaded > 0) {
-      std::cout << ", " << stats.segments_loaded << " loaded";
-    }
-    std::cout << "\n";
+    std::cout << "Route: " << replay.route().name() << "\n\n";
 
-    std::cout << "\nTIMING BREAKDOWN:\n";
-    std::cout << "  Route metadata:     " << (stats.load_wall_time / 1e6) << " ms\n";
-    std::cout << "  Process & send:     " << (stats.publish_time / 1e6) << " ms\n";
-    std::cout << "    - Messages:       " << (stats.message_time / 1e6) << " ms\n";
-    std::cout << "    - Video frames:   " << (stats.frame_time / 1e6) << " ms\n";
-    std::cout << "    - Camera queue:   " << (stats.camera_wait_time / 1e6) << " ms\n";
-    std::cout << "  Load & merge segs:  " << (stats.wait_time / 1e6) << " ms\n";
-    std::cout << "  TOTAL (wall):       " << std::fixed << std::setprecision(1) << total_time_sec << " seconds\n";
-    std::cout << "  SPEEDUP:            " << std::fixed << std::setprecision(1) << speedup << "x realtime\n";
+    std::cout << "TIMELINE:\n";
+    std::cout << "  t=0 ms        process start\n";
+    for (const auto &[ts, event] : stats.timeline) {
+      double ms = (ts - process_start) / 1e6;
+      std::cout << "  t=" << std::fixed << std::setprecision(0) << ms << " ms"
+                << std::string(std::max(1, 8 - static_cast<int>(std::to_string(static_cast<int>(ms)).length())), ' ')
+                << event << "\n";
+    }
 
-    std::cout << "\nTHROUGHPUT:\n";
-    std::cout << "  Total events:    " << stats.total_events;
-    if (stats.total_events > 0) {
-      std::cout << " (" << (stats.total_events / total_time_sec) << " events/sec)";
+    // Calculate total time from timeline
+    double total_time_ms = 0;
+    if (!stats.timeline.empty()) {
+      total_time_ms = (stats.timeline.back().first - process_start) / 1e6;
     }
-    std::cout << "\n";
-    std::cout << "  Total messages:  " << stats.total_messages << "\n";
-    std::cout << "  Total frames:    " << stats.total_frames;
-    if (stats.total_frames > 0 && total_time_sec > 0) {
-      std::cout << " (" << (stats.total_frames / total_time_sec) << " frames/sec)";
+
+    std::cout << "\nSUMMARY:\n";
+    std::cout << "  Total events:   " << stats.total_events << "\n";
+    std::cout << "  Total messages: " << stats.total_messages << "\n";
+    std::cout << "  Total frames:   " << stats.total_frames << "\n";
+    std::cout << "  Data processed: " << std::fixed << std::setprecision(1)
+              << (stats.total_bytes / (1024.0 * 1024.0)) << " MB\n";
+    if (total_time_ms > 0) {
+      std::cout << "  Throughput:     " << std::fixed << std::setprecision(1)
+                << (stats.total_bytes / (1024.0 * 1024.0) / (total_time_ms / 1000.0)) << " MB/sec\n";
     }
-    std::cout << "\n";
-    std::cout << "  Data processed:  " << (stats.total_bytes / (1024.0 * 1024.0)) << " MB";
-    if (total_time_sec > 0) {
-      std::cout << " (" << (stats.total_bytes / (1024.0 * 1024.0) / total_time_sec) << " MB/sec)";
-    }
-    std::cout << "\n";
 
     return 0;
   }
