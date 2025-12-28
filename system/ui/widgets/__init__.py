@@ -1,5 +1,6 @@
 import abc
 import pyray as rl
+from __future__ import annotations
 from enum import IntEnum
 from collections.abc import Callable
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
