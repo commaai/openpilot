@@ -8,7 +8,7 @@ import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
-from openpilot.tools.lib.url_file import URLFile, prune_cache, cache_size_limit
+from openpilot.tools.lib.url_file import URLFile, prune_cache
 import openpilot.tools.lib.url_file as url_file_module
 
 
@@ -134,45 +134,41 @@ class TestFileDownload:
 
 
 class TestCache:
-  def test_limit(self):
-    assert cache_size_limit() > 10 * 1e6
-
   def test_prune_cache(self, monkeypatch):
-    # setup test files and manifest
-    os.makedirs(Paths.download_cache_root(), exist_ok=True)
-    manifest_lines = []
-    for i in range(3):
-      # Use increasing timestamps so file_2 is newest
-      fname = f"hash_{i}"
-      with open(Paths.download_cache_root() + fname, "wb") as f:
-        f.truncate(1000)
-      manifest_lines.append(f"{fname} {1000 + i}")
+    with tempfile.TemporaryDirectory() as tmpdir:
+      monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
 
-    # Write manifest
-    with open(Paths.download_cache_root() + "manifest.txt", "w") as f:
-      f.write('\n'.join(manifest_lines))
+      # setup test files and manifest
+      manifest_lines = []
+      for i in range(3):
+        fname = f"hash_{i}"
+        with open(tmpdir + "/" + fname, "wb") as f:
+          f.truncate(1000)
+        manifest_lines.append(f"{fname} {1000 + i}")
 
-    # +1 for manifest.txt
-    assert len(os.listdir(Paths.download_cache_root())) == 4
+      with open(tmpdir + "/manifest.txt", "w") as f:
+        f.write('\n'.join(manifest_lines))
 
-    # under limit, shouldn't prune
-    prune_cache()
-    assert len(os.listdir(Paths.download_cache_root())) == 4
+      # +1 for manifest.txt
+      assert len(os.listdir(tmpdir)) == 4
 
-    # Set a tiny cache limit to force eviction (1.5 chunks worth)
-    monkeypatch.setattr(url_file_module, 'cache_size_limit', lambda: url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
+      # under limit, shouldn't prune
+      prune_cache()
+      assert len(os.listdir(tmpdir)) == 4
 
-    # prune_cache should evict oldest files to get under limit
-    prune_cache()
-    remaining = os.listdir(Paths.download_cache_root())
-    # Should have evicted at least one file (the oldest) + manifest
-    assert len(remaining) < 4
-    # The newest file should remain (hash_2 with timestamp 1002)
-    assert "hash_2" in remaining
+      # Set a tiny cache limit to force eviction (1.5 chunks worth)
+      monkeypatch.setattr(url_file_module, 'CACHE_SIZE', url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
 
-  @pytest.mark.flaky(reruns=3)
+      # prune_cache should evict oldest files to get under limit
+      prune_cache()
+      remaining = os.listdir(tmpdir)
+      # Should have evicted at least one file (the oldest) + manifest
+      assert len(remaining) < 4
+      # The newest file should remain (hash_2 with timestamp 1002)
+      assert "hash_2" in remaining
+
+  @pytest.mark.flaky(retries=3, delay=1) # needed due to OS scheduling
   def test_prune_cache_performance(self, monkeypatch):
-    """Test prune_cache performance with 200k entries."""
     with tempfile.TemporaryDirectory() as tmpdir:
       monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
 
@@ -186,5 +182,4 @@ class TestCache:
       prune_cache()
       elapsed = time.monotonic() - start
 
-      # Should complete in under 5 seconds
-      assert elapsed < 5, f"prune_cache took {elapsed:.1f}s, expected < 5s"
+      assert elapsed < 0.1, f"prune_cache took {elapsed:.1f}s, expected < 5s"
