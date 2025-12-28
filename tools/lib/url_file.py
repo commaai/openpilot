@@ -16,7 +16,7 @@ from urllib3.exceptions import MaxRetryError
 K = 1000
 CHUNK_SIZE = 1000 * K
 
-CACHE_SIZE_PERCENT = 10
+CACHE_SIZE = 10 * 1024 * 1024 * 1024  # in GB
 MANIFEST_FILE = "manifest.txt"
 
 log = logging.getLogger(__name__)
@@ -25,22 +25,6 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 def hash_url(link: str) -> str:
   return md5((link.split("?")[0]).encode('utf-8')).hexdigest()
-
-
-def cache_size_limit() -> int:
-  """Returns the maximum cache size in bytes."""
-  cache_root = Paths.download_cache_root()
-  try:
-    stat = os.statvfs(cache_root)
-    total = stat.f_blocks * stat.f_frsize
-    return int(total * CACHE_SIZE_PERCENT / 100)
-  except OSError:
-    return 10 * 1024 * 1024 * 1024  # 10GB default fallback
-
-
-def cache_path(url_hash: str, chunk_number: float) -> str:
-  """Returns cache file path for a chunk."""
-  return Paths.download_cache_root() + f"{url_hash}_{chunk_number}"
 
 
 def _load_manifest() -> dict[str, int]:
@@ -57,25 +41,15 @@ def _load_manifest() -> dict[str, int]:
     return result
 
 
-def _save_manifest(manifest: dict[str, int]) -> None:
-  """Save the cache manifest atomically."""
-  manifest_path = Paths.download_cache_root() + MANIFEST_FILE
-  with atomic_write(manifest_path, mode="w", overwrite=True) as f:
-    f.write('\n'.join(f"{k} {v}" for k, v in manifest.items()))
-
-
 def prune_cache(new_entry: str | None = None) -> None:
-  """Evicts oldest cache files (LRU) until cache is under the size limit.
-  If new_entry is provided, adds it to the manifest before pruning."""
+  """Evicts oldest cache files (LRU) until cache is under the size limit."""
   cache_root = Paths.download_cache_root()
   if not os.path.exists(cache_root):
     return
 
   manifest = _load_manifest()
   if new_entry:
-    manifest[new_entry] = int(time.time())
-
-  max_size = cache_size_limit()
+    manifest[new_entry] = int(time.time())  # noqa: TID251
 
   # Sort by timestamp (oldest first)
   sorted_entries = sorted(manifest.items(), key=lambda x: x[1])
@@ -84,7 +58,7 @@ def prune_cache(new_entry: str | None = None) -> None:
   # Remove oldest files until under limit
   removed_keys = []
   for key, _ in sorted_entries:
-    if total_size <= max_size:
+    if total_size <= CACHE_SIZE:
       break
     fpath = cache_root + key
     try:
@@ -93,15 +67,14 @@ def prune_cache(new_entry: str | None = None) -> None:
       removed_keys.append(key)
     except OSError:
       log.exception(f"Failed to remove cache file {fpath}")
-      removed_keys.append(key)  # Remove from manifest anyway
+      removed_keys.append(key)
 
+  # write out manifest
   for key in removed_keys:
     manifest.pop(key, None)
-
-  # Save manifest if we added or removed anything
-  if new_entry or removed_keys:
-    _save_manifest(manifest)
-
+  manifest_path = Paths.download_cache_root() + MANIFEST_FILE
+  with atomic_write(manifest_path, mode="w", overwrite=True) as f:
+    f.write('\n'.join(f"{k} {v}" for k, v in manifest.items()))
 
 class URLFileException(Exception):
   pass
@@ -185,7 +158,7 @@ class URLFile:
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
       url_hash = hash_url(self._url)
-      full_path = cache_path(url_hash, chunk_number)
+      full_path = Paths.download_cache_root() + f"{url_hash}_{chunk_number}"
       data = None
       #  If we don't have a file, download it
       if not os.path.exists(full_path):
