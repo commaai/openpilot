@@ -19,7 +19,6 @@ CHUNK_SIZE = 1000 * K
 CACHE_SIZE = 10 * 1024 * 1024 * 1024  # in GB
 MANIFEST_FILE = "manifest.txt"
 
-log = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
@@ -43,37 +42,24 @@ def _load_manifest() -> dict[str, int]:
 
 def prune_cache(new_entry: str | None = None) -> None:
   """Evicts oldest cache files (LRU) until cache is under the size limit."""
-  cache_root = Paths.download_cache_root()
-  if not os.path.exists(cache_root):
-    return
-
   # we use a manifest to avoid tons of os.stat syscalls (slow)
   manifest = _load_manifest()
   if new_entry:
     manifest[new_entry] = int(time.time())  # noqa: TID251
 
-  # Sort by timestamp (oldest first)
-  sorted_entries = sorted(manifest.items(), key=lambda x: x[1])
-  total_size = len(sorted_entries) * CHUNK_SIZE
-
-  # Remove oldest files until under limit
-  removed_keys = []
-  for key, _ in sorted_entries:
-    if total_size <= CACHE_SIZE:
+  # Remove oldest files until under limit,
+  for key, _ in sorted(manifest.items(), key=lambda x: x[1]):
+    # assume file size is CHUNK_SIZE to save a syscall
+    if (len(manifest)*CHUNK_SIZE) <= CACHE_SIZE:
       break
-    fpath = cache_root + key
     try:
-      os.remove(fpath)
+      os.remove(Paths.download_cache_root() + key)
     except OSError:
-      pass  # file already gone, just clean up manifest
-    total_size -= CHUNK_SIZE
-    removed_keys.append(key)
+      pass
+    manifest.pop(key, None)
 
   # write out manifest
-  for key in removed_keys:
-    manifest.pop(key, None)
-  manifest_path = Paths.download_cache_root() + MANIFEST_FILE
-  with atomic_write(manifest_path, mode="w", overwrite=True) as f:
+  with atomic_write(Paths.download_cache_root() + MANIFEST_FILE, mode="w", overwrite=True) as f:
     f.write('\n'.join(f"{k} {v}" for k, v in manifest.items()))
 
 class URLFileException(Exception):
@@ -131,7 +117,7 @@ class URLFile:
     if self._length is not None:
       return self._length
 
-    file_length_path = Paths.download_cache_root() + hash_url(self._url) + "_length"
+    file_length_path = os.path.join(Paths.download_cache_root(), hash_url(self._url) + "_length")
     if not self._force_download and os.path.exists(file_length_path):
       with open(file_length_path) as file_length:
         content = file_length.read()
@@ -157,15 +143,15 @@ class URLFile:
     while True:
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
-      url_hash = hash_url(self._url)
-      full_path = Paths.download_cache_root() + f"{url_hash}_{chunk_number}"
+      file_name = hash_url(self._url) + "_" + str(chunk_number)
+      full_path = os.path.join(Paths.download_cache_root(), str(file_name))
       data = None
       #  If we don't have a file, download it
       if not os.path.exists(full_path):
         data = self.read_aux(ll=CHUNK_SIZE)
         with atomic_write(full_path, mode="wb", overwrite=True) as new_cached_file:
           new_cached_file.write(data)
-        prune_cache(f"{url_hash}_{chunk_number}")
+        prune_cache(file_name)
       else:
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()
