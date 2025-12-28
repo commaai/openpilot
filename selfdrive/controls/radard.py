@@ -10,7 +10,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.simple_kalman import KF1D
+from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 
 
 # Default lead acceleration decay set to 50% at 1s
@@ -139,8 +139,16 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
 
 
 class VisionTrack:
-  def __init__(self):
+  def __init__(self, lead_msg: capnp._DynamicStructReader):
     self.distances = deque(maxlen=int(1 / DT_MDL))
+    A = [[1.0, DT_MDL], [0.0, 1.0]]
+    C = [[1.0, 0.0]]
+    Q = [[0.02, 0.0], [0.0, 0.15**2]]  # Distance: 0.15m, velocity: 0.15 m/s per step (~3 m/s²)
+    R = 1.0**2  # Measurement noise: ~1m std dev
+    self.K = get_kalman_gain(DT_MDL, np.array(A), np.array(C), np.array(Q), R)
+    self.A, self.C = A, C[0]
+    d_rel = float(lead_msg.x[0] - RADAR_TO_CAMERA)
+    self.kf = KF1D([[d_rel], [0.0]], self.A, self.C, self.K.tolist())
 
   def get_RadarState(self, lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
     lead_v_rel_pred = lead_msg.v[0] - model_v_ego
@@ -151,9 +159,8 @@ class VisionTrack:
 
     dt = len(self.distances) * DT_MDL
     if dt > 0.0:
-      # v_rel = (d2 - d1) / (t2 - t1)
-      v_rel = (d_rel - self.distances[0]) / dt
-      # TODO: what if ego is accelerating? use average?
+      self.kf.update(d_rel)
+      v_rel = self.kf.x[1][0]
       v_lead = v_ego + v_rel
     else:
       v_lead = old_v_lead
@@ -210,7 +217,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], vision_track, 
     lead_dict = track.get_RadarState(lead_msg.prob)
   elif (track is None) and ready and (lead_msg.prob > .5):
     if vision_track is None and low_speed_override:
-      vision_track = VisionTrack()
+      vision_track = VisionTrack(lead_msg)
     lead_dict = vision_track.get_RadarState(lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
