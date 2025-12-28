@@ -29,15 +29,7 @@ enum REPLAY_FLAGS {
 
 struct BenchmarkStats {
   uint64_t process_start_ts = 0;
-
-  // Timeline events (all timestamps relative to process_start_ts)
   std::vector<std::pair<uint64_t, std::string>> timeline;
-
-  // Summary stats
-  size_t total_events = 0;
-  size_t total_messages = 0;
-  size_t total_frames = 0;
-  size_t total_bytes = 0;
 };
 
 class Replay {
@@ -81,13 +73,6 @@ public:
   std::function<void(std::shared_ptr<LogReader>)> onQLogLoaded = nullptr;
 
 private:
-  struct BenchmarkLocalStats {
-    size_t total_events = 0;
-    size_t total_messages = 0;
-    size_t total_frames = 0;
-    size_t total_bytes = 0;
-  };
-
   void setupServices(const std::vector<std::string> &allow, const std::vector<std::string> &block);
   void setupSegmentManager(bool has_filters);
   void startStream(const std::shared_ptr<Segment> segment);
@@ -96,7 +81,6 @@ private:
   void interruptStream(const std::function<bool()>& update_fn);
   std::vector<Event>::const_iterator publishEvents(std::vector<Event>::const_iterator first,
                                                    std::vector<Event>::const_iterator last,
-                                                   BenchmarkLocalStats *benchmark_stats,
                                                    int &last_processed_segment,
                                                    uint64_t &segment_start_time);
   void publishMessage(const Event *e);
