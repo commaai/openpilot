@@ -316,10 +316,8 @@ void Replay::streamThread() {
       }
     } else if (it == events.cend() && hasFlag(REPLAY_FLAG_BENCHMARK)) {
       // Exit benchmark mode when first segment is done
-      interruptStream([this]() {
-        exit_ = true;
-        return false;
-      });
+      exit_ = true;
+      break;
     }
   }
 
