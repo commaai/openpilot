@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 class ViewPanel(ABC):
   """Abstract base class for all view panels that can be displayed in a plot container"""
 
-  def __init__(self, panel_id: str = None):
+  def __init__(self, panel_id: str | None = None):
     self.panel_id = panel_id or str(uuid.uuid4())
     self.title = "Untitled Panel"
 

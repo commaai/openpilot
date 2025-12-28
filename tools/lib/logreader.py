@@ -244,7 +244,7 @@ class LogReader:
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
-               sources: list[Source] = None, sort_by_time=False, only_union_types=False):
+               sources: list[Source] | None = None, sort_by_time=False, only_union_types=False):
     if sources is None:
       sources = [internal_source, comma_api_source, openpilotci_source, comma_car_segments_source]
 

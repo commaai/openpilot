@@ -261,8 +261,6 @@ exclude = [
 unresolved-import = "ignore"
 # Ignore unresolved attributes - many from capnp and Cython modules
 unresolved-attribute = "ignore"
-# Ignore invalid parameter defaults - mypy used implicit_optional=true
-invalid-parameter-default = "ignore"
 # Ignore invalid method overrides - signature variance issues
 invalid-method-override = "ignore"
 # Ignore possibly-missing-attribute - too many false positives
