@@ -454,7 +454,8 @@ def text_item(title: str | Callable[[], str], value: str | Callable[[], str], de
   return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
-def dual_button_item(left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable | None = None, right_callback: Callable | None = None,
+def dual_button_item(left_text: str | Callable[[], str], right_text: str | Callable[[], str],
+                     left_callback: Callable | None = None, right_callback: Callable | None = None,
                      description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = DualButtonAction(left_text, right_text, left_callback, right_callback, enabled)
   return ListItem(title="", description=description, action_item=action)
