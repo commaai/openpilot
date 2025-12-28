@@ -147,14 +147,16 @@ class VisionTrack:
 
     d_rel = float(lead_msg.x[0] - RADAR_TO_CAMERA)
 
+    old_v_lead = v_ego + lead_v_rel_pred
+
     dt = len(self.distances) * DT_MDL
     if dt > 0.0:
       # v_rel = (d2 - d1) / (t2 - t1)
       v_rel = (d_rel - self.distances[0]) / dt
-      # TODO: what if ego is accelerating?
-      new_vlead = v_ego + v_rel
+      # TODO: what if ego is accelerating? use average?
+      v_lead = v_ego + v_rel
     else:
-      new_vlead = v_ego + lead_v_rel_pred
+      v_lead = old_v_lead
 
     self.distances.append(d_rel)
 
@@ -162,9 +164,9 @@ class VisionTrack:
       "dRel": d_rel,
       "yRel": float(-lead_msg.y[0]),
       "vRel": float(lead_v_rel_pred),
-      "vLead": new_vlead,  # new vlead
+      "vLead": v_lead,  # new vlead
       "vLeadK": float(v_ego + lead_v_rel_pred),  # old vlead logic for comparison
-      "aLeadK": float(lead_msg.a[0]),
+      "aLeadK": float(lead_msg.a[0]),  # this seems stable?
       "aLeadTau": 0.3,
       "fcw": False,
       "modelProb": float(lead_msg.prob),
@@ -198,16 +200,18 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], vision_track, 
   if len(tracks) > 0 and ready and lead_msg.prob > .5:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
   else:
-    track, vision_track = None, None
+    track = None
+
+  if low_speed_override and lead_msg.prob <= 0.5:
+    vision_track = None
 
   lead_dict = {'status': False}
   if track is not None:
     lead_dict = track.get_RadarState(lead_msg.prob)
   elif (track is None) and ready and (lead_msg.prob > .5):
-    if vision_track is None:
-      vision_track = VisionTrack(lead_msg, v_ego, model_v_ego)
+    if vision_track is None and low_speed_override:
+      vision_track = VisionTrack()
     lead_dict = vision_track.get_RadarState(lead_msg, v_ego, model_v_ego)
-    # lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
     low_speed_tracks = [c for c in tracks.values() if c.potential_low_speed_lead(v_ego)]
