@@ -144,24 +144,21 @@ class TestCache:
         with open(tmpdir + "/" + fname, "wb") as f:
           f.truncate(1000)
         manifest_lines.append(f"{fname} {1000 + i}")
-
       with open(tmpdir + "/manifest.txt", "w") as f:
         f.write('\n'.join(manifest_lines))
 
-      # +1 for manifest.txt
-      assert len(os.listdir(tmpdir)) == 4
-
       # under limit, shouldn't prune
+      assert len(os.listdir(tmpdir)) == 4
       prune_cache()
       assert len(os.listdir(tmpdir)) == 4
 
-      # Set a tiny cache limit to force eviction (1.5 chunks worth)
+      # set a tiny cache limit to force eviction (1.5 chunks worth)
       monkeypatch.setattr(url_file_module, 'CACHE_SIZE', url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
 
       # prune_cache should evict oldest files to get under limit
       prune_cache()
       remaining = os.listdir(tmpdir)
-      # Should have evicted at least one file (the oldest) + manifest
+      # should have evicted at least one file + manifest
       assert len(remaining) < 4
-      # The newest file should remain (hash_2 with timestamp 1002)
-      assert "hash_2" in remaining
+      # newest file should remain
+      assert manifest_lines[2].split()[0] in remaining

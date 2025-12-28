@@ -15,9 +15,7 @@ from urllib3.exceptions import MaxRetryError
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K
-
-CACHE_SIZE = 10 * 1024 * 1024 * 1024  # in GB
-MANIFEST_FILE = "manifest.txt"
+CACHE_SIZE = 10 * 1024 * 1024 * 1024  # total cache size in GB
 
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
@@ -26,16 +24,11 @@ def hash_url(link: str) -> str:
   return md5((link.split("?")[0]).encode('utf-8')).hexdigest()
 
 
-def _load_manifest() -> dict[str, int]:
-  """Load the cache manifest. Returns {filename: timestamp}."""
-
-
-
 def prune_cache(new_entry: str | None = None) -> None:
   """Evicts oldest cache files (LRU) until cache is under the size limit."""
   # we use a manifest to avoid tons of os.stat syscalls (slow)
   manifest = {}
-  manifest_path = Paths.download_cache_root() + MANIFEST_FILE
+  manifest_path = Paths.download_cache_root() + "manifest.txt"
   if os.path.exists(manifest_path):
     with open(manifest_path) as f:
       manifest = {parts[0]: int(parts[1]) for line in f if (parts := line.strip().split()) and len(parts) == 2}
