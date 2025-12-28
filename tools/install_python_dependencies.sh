@@ -25,7 +25,5 @@ source .venv/bin/activate
 
 if [[ "$(uname)" == 'Darwin' ]]; then
   touch "$ROOT"/.env
-  echo "# msgq doesn't work on mac" >> "$ROOT"/.env
-  echo "export ZMQ=1" >> "$ROOT"/.env
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> "$ROOT"/.env
 fi
