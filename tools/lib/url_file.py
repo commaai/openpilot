@@ -1,7 +1,6 @@
 import re
 import logging
 import os
-import shutil
 import socket
 from hashlib import sha256
 from urllib3 import PoolManager, Retry
@@ -16,7 +15,6 @@ from urllib3.exceptions import MaxRetryError
 K = 1000
 CHUNK_SIZE = 1000 * K
 
-# Cache size limit as fraction of total disk space
 CACHE_SIZE_PERCENT = 0.10
 
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -30,19 +28,29 @@ def cache_size_limit() -> int:
   """Returns the maximum cache size in bytes (10% of total disk space)."""
   cache_root = Paths.download_cache_root()
   try:
-    total, _, _ = shutil.disk_usage(cache_root if os.path.exists(cache_root) else "/")
+    stat = os.statvfs(cache_root if os.path.exists(cache_root) else "/")
+    total = stat.f_blocks * stat.f_frsize
     return int(total * CACHE_SIZE_PERCENT)
   except OSError:
     return int(100 * 1024 * 1024 * 1024 * CACHE_SIZE_PERCENT)  # 10GB default fallback
 
 
-def prune_cache() -> None:
+_cache_size: int | None = None
+
+def prune_cache(added_bytes: int = 0) -> None:
   """Evicts oldest cache files (LRU) until cache is under the size limit."""
+  global _cache_size
   cache_root = Paths.download_cache_root()
   if not os.path.exists(cache_root):
     return
 
   max_size = cache_size_limit()
+
+  # Fast path: use tracked size if available
+  if _cache_size is not None:
+    _cache_size += added_bytes
+    if _cache_size <= max_size:
+      return
 
   # Get all cache files with their sizes and access times
   cache_files: list[tuple[str, float, int]] = []
@@ -57,6 +65,7 @@ def prune_cache() -> None:
       except OSError:
         pass
 
+  _cache_size = total_size
   if total_size <= max_size:
     return
 
@@ -72,6 +81,7 @@ def prune_cache() -> None:
       total_size -= fsize
     except OSError:
       pass
+  _cache_size = total_size
 
 
 class URLFileException(Exception):
@@ -163,7 +173,7 @@ class URLFile:
         data = self.read_aux(ll=CHUNK_SIZE)
         with atomic_write(full_path, mode="wb", overwrite=True) as new_cached_file:
           new_cached_file.write(data)
-        prune_cache()
+        prune_cache(len(data))
       else:
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()

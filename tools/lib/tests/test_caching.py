@@ -2,11 +2,13 @@ import http.server
 import os
 import shutil
 import socket
+import tempfile
+import time
 import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
-from openpilot.tools.lib.url_file import URLFile
+from openpilot.tools.lib.url_file import URLFile, prune_cache, cache_size_limit, CACHE_SIZE_PERCENT
 
 
 class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -131,35 +133,26 @@ class TestFileDownload:
 
 
 class TestCachePruning:
-  def test_prune_cache(self):
-    from openpilot.tools.lib.url_file import prune_cache, cache_size_limit, CACHE_SIZE_PERCENT
+  def test_prune_cache(self, monkeypatch):
+    with tempfile.TemporaryDirectory() as tmpdir:
+      monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
 
-    cache_root = Paths.download_cache_root()
-    if os.path.exists(cache_root):
-      shutil.rmtree(cache_root)
-    os.makedirs(cache_root, exist_ok=True)
+      # Cache size limit should be 10% of disk space
+      limit = cache_size_limit()
+      assert limit > 0
+      total_disk = os.statvfs(tmpdir)
+      assert limit == int((total_disk.f_blocks * total_disk.f_frsize) * CACHE_SIZE_PERCENT)
 
-    # Cache size limit should be 10% of disk space
-    limit = cache_size_limit()
-    assert limit > 0
-    import shutil as sh
-    total_disk = sh.disk_usage(cache_root).total
-    assert abs(limit - int(total_disk * CACHE_SIZE_PERCENT)) < 1024  # allow small rounding diff
+      # Create sparse test files with different access times
+      for i in range(3):
+        fpath = os.path.join(tmpdir, f"test_file_{i}")
+        with open(fpath, "wb") as f:
+          f.truncate(1000)
+        os.utime(fpath, (time.time() - (3 - i) * 100, time.time() - (3 - i) * 100))
 
-    # Create some test files with different access times
-    import time
-    for i in range(3):
-      fpath = os.path.join(cache_root, f"test_file_{i}")
-      with open(fpath, "wb") as f:
-        f.write(b"x" * 1000)
-      os.utime(fpath, (time.time() - (3 - i) * 100, time.time() - (3 - i) * 100))
+      # Verify files exist
+      assert len(os.listdir(tmpdir)) == 3
 
-    # Verify files exist
-    assert len(os.listdir(cache_root)) == 3
-
-    # prune_cache should not remove anything if under limit
-    prune_cache()
-    assert len(os.listdir(cache_root)) == 3
-
-    # Clean up
-    shutil.rmtree(cache_root)
+      # prune_cache should not remove anything if under limit
+      prune_cache()
+      assert len(os.listdir(tmpdir)) == 3
