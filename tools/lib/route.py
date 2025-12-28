@@ -11,13 +11,6 @@ from openpilot.tools.lib.api import APIError, CommaApi
 from openpilot.tools.lib.helpers import RE
 
 
-@cache
-def _get_route_metadata(route_name: str):
-  """Lazily fetch and cache route metadata."""
-  api = CommaApi(get_token())
-  return api.get(f'v1/route/{route_name}')
-
-
 class FileName:
   RLOG = ("rlog.zst", "rlog.bz2")
   QLOG = ("qlog.zst", "qlog.bz2")
@@ -30,7 +23,6 @@ class FileName:
 
 class Route:
   def __init__(self, name, data_dir=None):
-    self._metadata = None
     self._name = RouteName(name)
     self.files = None
     if data_dir is not None:
@@ -38,13 +30,6 @@ class Route:
     else:
       self._segments = self._get_segments_remote()
     self.max_seg_number = self._segments[-1].name.segment_num
-
-  @property
-  def metadata(self):
-    if not self._metadata:
-      api = CommaApi(get_token())
-      self._metadata = api.get('v1/route/' + self.name.canonical_name)
-    return self._metadata
 
   @property
   def name(self):
@@ -194,11 +179,16 @@ class Segment:
   def name(self):
     return self._name
 
+  @staticmethod
+  @cache
+  def _get_route_metadata(route_name: str):
+    api = CommaApi(get_token())
+    return api.get(f'v1/route/{route_name}')
+
   @property
   def url(self):
-    """Lazily construct URL from route metadata (triggers API call only when accessed)."""
     route_name = self._name.route_name.canonical_name
-    metadata = _get_route_metadata(route_name)
+    metadata = self._get_route_metadata(route_name)
     return f'{metadata["url"]}/{self._name.segment_num}'
 
   @property
