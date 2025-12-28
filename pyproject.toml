@@ -277,5 +277,4 @@ call-non-callable = "ignore"
 unsupported-operator = "ignore"
 # Ignore non-subscriptable - false positives from dynamic types
 non-subscriptable = "ignore"
-# Ignore not-iterable - false positives from dynamic types
-not-iterable = "ignore"
+# not-iterable errors are now fixed
