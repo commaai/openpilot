@@ -1,5 +1,4 @@
 import asyncio
-import io
 import socket
 
 import aiortc
@@ -46,68 +45,6 @@ class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
     self.pts += frame.samples
 
     return frame
-
-
-class AudioOutputSpeaker:
-  def __init__(self, audio_format: int = pyaudio.paInt16, rate: int = 48000, channels: int = 2, packet_time: float = 0.2, device_index: int | None = None):
-
-    chunk_size = int(packet_time * rate)
-    self.p = pyaudio.PyAudio()
-    self.buffer = io.BytesIO()
-    self.channels = channels
-    self.stream = self.p.open(format=audio_format,
-                              channels=channels,
-                              rate=rate,
-                              frames_per_buffer=chunk_size,
-                              output=True,
-                              output_device_index=device_index,
-                              stream_callback=self.__pyaudio_callback)
-    self.tracks_and_tasks: list[tuple[aiortc.MediaStreamTrack, asyncio.Task | None]] = []
-
-  def __pyaudio_callback(self, in_data, frame_count, time_info, status):
-    if self.buffer.getbuffer().nbytes < frame_count * self.channels * 2:
-      buff = b'\x00\x00' * frame_count * self.channels
-    elif self.buffer.getbuffer().nbytes > 115200:  # 3x the usual read size
-      self.buffer.seek(0)
-      buff = self.buffer.read(frame_count * self.channels * 4)
-      buff = buff[:frame_count * self.channels * 2]
-      self.buffer.seek(2)
-    else:
-      self.buffer.seek(0)
-      buff = self.buffer.read(frame_count * self.channels * 2)
-      self.buffer.seek(2)
-    return (buff, pyaudio.paContinue)
-
-  async def __consume(self, track):
-    while True:
-      try:
-        frame = await track.recv()
-      except aiortc.MediaStreamError:
-        return
-
-      self.buffer.write(bytes(frame.planes[0]))
-
-  def hasTrack(self, track: aiortc.MediaStreamTrack) -> bool:
-    return any(t == track for t, _ in self.tracks_and_tasks)
-
-  def addTrack(self, track: aiortc.MediaStreamTrack):
-    if not self.hasTrack(track):
-      self.tracks_and_tasks.append((track, None))
-
-  def start(self):
-    for index, (track, task) in enumerate(self.tracks_and_tasks):
-      if task is None:
-        self.tracks_and_tasks[index] = (track, asyncio.create_task(self.__consume(track)))
-
-  def stop(self):
-    for _, task in self.tracks_and_tasks:
-      if task is not None:
-        task.cancel()
-
-    self.tracks_and_tasks = []
-    self.stream.stop_stream()
-    self.stream.close()
-    self.p.terminate()
 
 
 class CerealAudioStreamTrack(aiortc.mediastreams.AudioStreamTrack):
