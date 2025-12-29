@@ -1,6 +1,8 @@
 import os
 import subprocess
 import json
+import logging
+from functools import cache
 from collections.abc import Iterator
 from collections import OrderedDict
 
@@ -9,10 +11,23 @@ from openpilot.tools.lib.filereader import FileReader, resolve_name
 from openpilot.tools.lib.exceptions import DataUnreadableError
 from openpilot.tools.lib.vidindex import hevc_index
 
+logger = logging.getLogger("tools")
 
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
 HEVC_SLICE_I = 2
+
+@cache
+def get_hw_accel() -> list[str]:
+  """Detect and return the best available ffmpeg hardware acceleration."""
+  priority = ("videotoolbox", "cuda", "vaapi", "d3d11va")
+  result = subprocess.run(["ffmpeg", "-hwaccels"], capture_output=True, text=True, timeout=5)
+  for accel in priority:
+    if accel in result.stdout.lower():
+      logger.info(f"HW accelerated video decode found, using ffmpeg's {accel}")
+      return ["-hwaccel", accel]
+  logger.warning("no HW accelerated video found with `ffmpeg -hwaccels`. falling back to ffmpeg CPU decode")
+  return []
 
 
 class LRUCache:
@@ -46,6 +61,7 @@ def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc') -> np.n
   threads = os.getenv("FFMPEG_THREADS", "0")
   args = ["ffmpeg", "-v", "quiet",
           "-threads", threads,
+          *get_hw_accel(),
           "-c:v", "hevc",
           "-vsync", "0",
           "-f", vid_fmt,
@@ -171,3 +187,7 @@ class FrameReader:
       self.fidx, frame = next(self.it)
       self._cache[self.fidx] = frame
     return self._cache[fidx]
+
+
+if __name__ == "__main__":
+  get_hw_accel()
