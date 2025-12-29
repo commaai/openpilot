@@ -22,14 +22,30 @@ pred_data = []  # kf predictions derived from model
 # deque (noisy)
 dRel_deque = deque(maxlen=round(1.0 / DT_MDL))
 
+
 # kf (inaccurate?)
-A = [[1.0, DT_MDL], [0.0, 1.0]]
-C = [[1.0, 0.0]]
-Q = [[0.02, 0.0], [0.0, 0.15 ** 2]]  # Distance: 0.15m, velocity: 0.15 m/s per step (~3 m/s²)
-R = 1.0 ** 2  # Measurement noise: ~1m std dev
-K = get_kalman_gain(DT_MDL, np.array(A), np.array(C), np.array(Q), R)
-A, C = A, C[0]
-kf = KF1D([[0.0], [0.0]], A, C, K.tolist())
+class KF:
+  MIN_STD = 0.5
+  MAX_STD = 15
+
+  def __init__(self):
+    self.x = 0.0  # state estimate  # TODO: initialize properly
+    self.P = 0.0  # variance of the state estimate
+    self.Q = 0.1  # process variance per step
+
+  def update(self, x, x_std):
+    P_pred = self.P + self.Q
+
+    x_std = np.clip(x_std, self.MIN_STD, self.MAX_STD)
+    R = x_std ** 2
+    K = P_pred / (P_pred + R)
+
+    self.x = self.x + K * (x - self.x)
+    self.P = (1.0 - K) * P_pred
+    return self.x
+
+
+kf = KF()
 
 for msg in lr:
   if msg.which() == 'carState':
@@ -59,17 +75,18 @@ for msg in lr:
       if len(dRel_deque) == dRel_deque.maxlen:
         # vLead = CS.vEgo + (dRel - dRel_deque[0]) / (DT_MDL * len(dRel_deque))
 
-        kf.update(dRel)
-        kf_dRel = kf.x[0][0]
-        kf_vLead = CS.vEgo + kf.x[1][0]
+        kf_dRel = kf.update(dRel, lead.xStd[0])
+        print(dRel, kf_dRel)
+        # kf_dRel = kf.x[0][0]
+        # kf_vLead = CS.vEgo + kf.x[1][0]
 
-        pred_data.append((msg.logMonoTime, kf_dRel, kf_vLead, lead.a[0]))
+        pred_data.append((msg.logMonoTime, kf_dRel, lead.v[0], lead.a[0]))
 
       dRel_deque.append(dRel)
     else:
       dRel_deque.clear()
 
-fig, ax = plt.subplots(3, 1, sharex=True)
+fig, ax = plt.subplots(4, 1, sharex=True)
 ax[0].plot([d[0] for d in radar_data], [d[1] for d in radar_data], label='radar dRel')
 ax[0].plot([d[0] for d in model_data], [d[1] for d in model_data], label='model dRel')
 ax[0].plot([d[0] for d in pred_data], [d[1] for d in pred_data], label='predicted dRel')
@@ -94,8 +111,8 @@ ax[2].legend()
 # ax[3].legend()
 
 # xStd
-# ax[3].plot([d[0] for d in model_data], [d[4] for d in model_data], label='model lead xStd')
-# ax[3].set_ylabel('lead xStd (m)')
-# ax[3].legend()
+ax[3].plot([d[0] for d in model_data], [d[4] for d in model_data], label='model lead xStd')
+ax[3].set_ylabel('lead xStd (m)')
+ax[3].legend()
 
 # TODO: print some stats about how close model and kf are from radar ground truths
