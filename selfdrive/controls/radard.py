@@ -222,7 +222,7 @@ class VisionTrack:
       "vRel": float(lead_v_rel_pred),
       "vLead": float(v_lead),  # new vlead
       "vLeadK": float(v_ego + lead_v_rel_pred),  # old vlead logic for comparison
-      "aLeadK": 0.0,  # float(lead_msg.a[0]),  # this seems stable?
+      "aLeadK": float(lead_msg.a[0]),  # this seems stable?
       "aLeadTau": 0.3,
       "fcw": False,
       "modelProb": float(lead_msg.prob),
