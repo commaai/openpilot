@@ -1,7 +1,7 @@
 import os
-import sys
 import subprocess
 import json
+from functools import cache
 from collections.abc import Iterator
 from collections import OrderedDict
 
@@ -14,6 +14,17 @@ from openpilot.tools.lib.vidindex import hevc_index
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
 HEVC_SLICE_I = 2
+
+@cache
+def get_hw_accel() -> list[str]:
+  """Detect and return the best available ffmpeg hardware acceleration."""
+  priority = ("videotoolbox", "cuda", "vaapi", "d3d11va")
+  result = subprocess.run(["ffmpeg", "-hwaccels"], capture_output=True, text=True, timeout=5)
+  available = set(result.stdout.lower().split())
+  for accel in priority:
+    if accel in available:
+      return ["-hwaccel", accel]
+  return []
 
 
 class LRUCache:
@@ -45,12 +56,9 @@ def assert_hvec(fn: str) -> None:
 
 def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc') -> np.ndarray:
   threads = os.getenv("FFMPEG_THREADS", "0")
-  hw_accel = []
-  if sys.platform == "darwin":
-    hw_accel = ["-hwaccel", "videotoolbox"]
   args = ["ffmpeg", "-v", "quiet",
           "-threads", threads,
-          *hw_accel,
+          *get_hw_accel(),
           "-c:v", "hevc",
           "-vsync", "0",
           "-f", vid_fmt,
