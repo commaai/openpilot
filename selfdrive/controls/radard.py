@@ -140,7 +140,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
 
 class VisionTrack:
   def __init__(self, lead_msg: capnp._DynamicStructReader):
-    self.distances = deque(maxlen=int(1 / DT_MDL))
+    self.distances = deque(maxlen=round(0.5 / DT_MDL))
     A = [[1.0, DT_MDL], [0.0, 1.0]]
     C = [[1.0, 0.0]]
     Q = [[0.02, 0.0], [0.0, 0.15**2]]  # Distance: 0.15m, velocity: 0.15 m/s per step (~3 m/s²)
@@ -159,8 +159,9 @@ class VisionTrack:
 
     dt = len(self.distances) * DT_MDL
     if dt > 0.0:
-      self.kf.update(d_rel)
-      v_rel = self.kf.x[1][0]
+      #self.kf.update(d_rel)
+      #v_rel = self.kf.x[1][0]
+      v_rel = (d_rel - self.distances[0]) / dt
       v_lead = v_ego + v_rel
     else:
       v_lead = old_v_lead
@@ -291,7 +292,7 @@ class RadarD:
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
       self.radar_state.leadOne, self.vision_track = get_lead(self.v_ego, self.ready, self.tracks, self.vision_track, leads_v3[0], model_v_ego, low_speed_override=True)
-      self.radar_state.leadTwo, self.vision_track = get_lead(self.v_ego, self.ready, self.tracks, self.vision_track, leads_v3[1], model_v_ego, low_speed_override=False)
+      # self.radar_state.leadTwo, self.vision_track = get_lead(self.v_ego, self.ready, self.tracks, self.vision_track, leads_v3[1], model_v_ego, low_speed_override=False)
 
   def publish(self, pm: messaging.PubMaster):
     assert self.radar_state is not None
