@@ -95,7 +95,7 @@ class TogglesLayout(Widget):
       "EnableWebRTC": (
         lambda: tr("Remote Live Streaming and Joystick Control"),
         DESCRIPTIONS["EnableWebRTC"],
-        "wifi.png",
+        "network.png",
         False,
       ),
       "EnableRemoteParams": (
