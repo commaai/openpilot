@@ -44,8 +44,12 @@ def assert_hvec(fn: str) -> None:
 
 def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc') -> np.ndarray:
   threads = os.getenv("FFMPEG_THREADS", "0")
+  hw_accel = []
+  if sys.platform == "darwin":
+    hw_accel = ["-hwaccel", "videotoolbox"]
   args = ["ffmpeg", "-v", "quiet",
           "-threads", threads,
+          *hw_accel,
           "-c:v", "hevc",
           "-vsync", "0",
           "-f", vid_fmt,
