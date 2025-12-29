@@ -10,10 +10,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.modeld.constants import index_function
 from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
-if __name__ == '__main__':  # generating code
-  from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
-else:
-  from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
+from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+from openpilot.selfdrive.controls.lib.acados_setup import acados_preload, prepare_acados_ocp_json
 
 from casadi import SX, vertcat
 
@@ -225,12 +223,17 @@ class LongitudinalMpc:
   def __init__(self, mode='acc', dt=DT_MDL):
     self.mode = mode
     self.dt = dt
-    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
+    acados_preload()
+    json_path = prepare_acados_ocp_json(JSON_FILE)
+    try:
+      self.solver = AcadosOcpSolver(gen_long_ocp(), json_file=json_path, generate=False, build=False)
+    finally:
+      if os.path.exists(json_path):
+        os.remove(json_path)
     self.reset()
     self.source = SOURCES[2]
 
   def reset(self):
-    # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.solver.reset()
     # self.solver.options_set('print_level', 2)
     self.v_solution = np.zeros(N+1)
@@ -454,4 +457,3 @@ class LongitudinalMpc:
 if __name__ == "__main__":
   ocp = gen_long_ocp()
   AcadosOcpSolver.generate(ocp, json_file=JSON_FILE)
-  # AcadosOcpSolver.build(ocp.code_export_directory, with_cython=True)
