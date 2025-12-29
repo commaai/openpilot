@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
+from openpilot.common.params import Params
 
 
 class CerealOutgoingMessageProxy:
@@ -122,7 +123,7 @@ class StreamSession:
     from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
     from aiortc.contrib.media import MediaBlackhole
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, AudioOutputSpeaker
+    from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, CerealAudioStreamTrack, SocketAudioOutput
     from teleoprtc import WebRTCAnswerBuilder
     from teleoprtc.info import parse_info_from_offer
 
@@ -133,9 +134,16 @@ class StreamSession:
     for cam in cameras:
       builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
     if config.expected_audio_track:
-      builder.add_audio_stream(AudioInputStreamTrack() if not debug_mode else AudioStreamTrack())
+      if debug_mode:
+        audio_track = AudioStreamTrack()
+      else:
+        try:
+          audio_track = AudioInputStreamTrack()
+        except Exception:
+          audio_track = CerealAudioStreamTrack()
+      builder.add_audio_stream(audio_track)
     if config.incoming_audio_track:
-      self.audio_output_cls = AudioOutputSpeaker if not debug_mode else MediaBlackhole
+      self.audio_output_cls = SocketAudioOutput if not debug_mode else MediaBlackhole
       builder.offer_to_receive_audio_stream()
 
     self.stream = builder.stream()
@@ -151,7 +159,7 @@ class StreamSession:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
       self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
-    self.audio_output: AudioOutputSpeaker | MediaBlackhole | None = None
+    self.audio_output: SocketAudioOutput | MediaBlackhole | None = None
     self.run_task: asyncio.Task | None = None
     self.logger = logging.getLogger("webrtcd")
     self.logger.info("New stream session (%s), cameras %s, audio in %s out %s, incoming services %s, outgoing services %s",
@@ -177,9 +185,17 @@ class StreamSession:
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 
+  active_count = 0
+
   async def run(self):
+    active = False
     try:
       await self.stream.wait_for_connection()
+      active = True
+      StreamSession.active_count += 1
+      if StreamSession.active_count == 1:
+        Params().put_bool("WebRTCOnline", True)
+
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
@@ -201,6 +217,11 @@ class StreamSession:
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
+    finally:
+      if active:
+        StreamSession.active_count -= 1
+        if StreamSession.active_count == 0:
+          Params().put_bool("WebRTCOnline", False)
 
   async def post_run_cleanup(self):
     await self.stream.stop()
@@ -265,6 +286,9 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   logging_level = logging.DEBUG if debug else logging.INFO
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
+
+  # Reset WebRTC online status on startup
+  Params().put_bool("WebRTCOnline", False)
 
   app = web.Application()
 
