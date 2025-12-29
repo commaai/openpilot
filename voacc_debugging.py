@@ -18,6 +18,7 @@ CS = None
 radar_data = []  # from radard/radar
 model_data = []  # straight from model
 pred_data = []  # kf predictions derived from model
+kf_data = []  # internal kf state to visualize
 
 # deque (noisy)
 dRel_deque = deque(maxlen=round(1.0 / DT_MDL))
@@ -27,22 +28,68 @@ dRel_deque = deque(maxlen=round(1.0 / DT_MDL))
 class KF:
   MIN_STD = 0.5
   MAX_STD = 15
+  SIGMA_A = 2.5  # m/s^2, how much can lead relative velocity realistically change (not per step)
+  DT = DT_MDL
 
   def __init__(self):
-    self.x = 0.0  # state estimate  # TODO: initialize properly
-    self.P = 0.0  # variance of the state estimate
-    self.Q = 0.1  # process variance per step
+    self.x = 0.0  # distance state estimate (m)  # TODO: initialize properly
+    self.vRel = 0.0  # relative velocity state estimate (m/s)
+    self.P = np.diag([10.0 ** 2, 5.0 ** 2])  # variance of the state estimate. x uncertainty: 10m, vRel uncertainty: 5 m/s
+    self.K = 0.0  # Kalman gain
+
+    # TODO: understand this fully
+    var_a = self.SIGMA_A ** 2  # acceleration variance
+    self.Q = var_a * np.array([
+      [self.DT ** 4 / 4.0, self.DT ** 3 / 2.0],  # affects x (m^2) and coupling
+      [self.DT ** 3 / 2.0, self.DT ** 2],  # affects vRel ((m/s)^2)
+    ],)
 
   def update(self, x, x_std):
-    P_pred = self.P + self.Q
+    # predict state
+    self.x = self.x + self.vRel * self.DT
+
+    # predict covariance
+    A = np.array([[1.0, self.DT],
+                  [0.0, 1.0]])
+
+    self.P = A @ self.P @ A.T + self.Q
+
+    # update
+    H = np.array([[1.0, 0.0]])
 
     x_std = np.clip(x_std, self.MIN_STD, self.MAX_STD)
     R = x_std ** 2
-    K = P_pred / (P_pred + R)
 
-    self.x = self.x + K * (x - self.x)
-    self.P = (1.0 - K) * P_pred
+    x_pred = (H @ np.array([[self.x], [self.vRel]]))[0, 0]
+
+    S = (H @ self.P @ H.T)[0, 0] + R
+
+    K = (self.P @ H.T) / S
+
+    y = x - x_pred  # how far meas is form prediction
+    self.x = self.x + K[0, 0] * y
+    self.vRel = self.vRel + K[1, 0] * y
+
+    # update covariance
+    I = np.eye(2)
+    self.P = (I - K @ H) @ self.P
+
     return self.x
+
+  # def update(self, x, x_std):
+  #   P_pred = self.P + self.Q
+  #
+  #   x_std = np.clip(x_std, self.MIN_STD, self.MAX_STD)
+  #   R = x_std ** 2
+  #   self.K = P_pred / (P_pred + R)
+  #
+  #   self.x = self.x + self.K * (x - self.x)
+  #   self.P = (1.0 - self.K) * P_pred
+  #
+  #   # velocity estimate
+  #   x_pred = self.x + self.vRel * self.DT
+  #   vRel_pred = self.vRel
+  #   return self.x
 
 
 kf = KF()
@@ -76,6 +123,8 @@ for msg in lr:
         # vLead = CS.vEgo + (dRel - dRel_deque[0]) / (DT_MDL * len(dRel_deque))
 
         kf_dRel = kf.update(dRel, lead.xStd[0])
+
+        kf_data.append((msg.logMonoTime, kf.P, kf.K))
         print(dRel, kf_dRel)
         # kf_dRel = kf.x[0][0]
         # kf_vLead = CS.vEgo + kf.x[1][0]
@@ -114,5 +163,11 @@ ax[2].legend()
 ax[3].plot([d[0] for d in model_data], [d[4] for d in model_data], label='model lead xStd')
 ax[3].set_ylabel('lead xStd (m)')
 ax[3].legend()
+
+# # kf internal stats
+# ax[4].plot([d[0] for d in kf_data], [d[1] for d in kf_data], label='kf P')
+# ax[4].plot([d[0] for d in kf_data], [d[2] for d in kf_data], label='kf K')
+# ax[4].set_ylabel('kf stats')
+# ax[4].legend()
 
 # TODO: print some stats about how close model and kf are from radar ground truths
