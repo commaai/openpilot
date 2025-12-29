@@ -3,7 +3,7 @@ from collections import deque
 import matplotlib.pyplot as plt
 
 from tools.lib.logreader import LogReader
-from selfdrive.controls.radard import RADAR_TO_CAMERA
+from selfdrive.controls.radard import RADAR_TO_CAMERA, VisionLeadKF
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 
@@ -28,76 +28,7 @@ kf_data = []  # internal kf state to visualize
 dRel_deque = deque(maxlen=round(1.0 / DT_MDL))
 
 
-# kf (inaccurate?)
-class KF:
-  MIN_STD = 1
-  MAX_STD = 15
-  SIGMA_A = 2.5  # m/s^2, how much can lead relative velocity realistically change (not per step)
-  DT = DT_MDL
-
-  def __init__(self, x):
-    self.x = x  # distance state estimate (m)
-    self.vRel = 0.0  # relative velocity state estimate (m/s)
-    self.P = np.diag([10.0 ** 2, 5.0 ** 2])  # variance of the state estimate. x uncertainty: 10m, vRel uncertainty: 5 m/s
-    self.K = 0.0  # Kalman gain
-
-    # TODO: understand this fully
-    var_a = self.SIGMA_A ** 2  # acceleration variance
-    self.Q = var_a * np.array([
-      [self.DT ** 4 / 4.0, self.DT ** 3 / 2.0],  # affects x (m^2) and coupling
-      [self.DT ** 3 / 2.0, self.DT ** 2],  # affects vRel ((m/s)^2)
-    ],)
-
-  def update(self, x, x_std, a_ego):
-    # predict state
-    # self.x = self.x + self.vRel * self.DT
-    self.x = self.x + self.vRel * self.DT - 0.5 * a_ego * self.DT * self.DT
-    self.vRel = self.vRel - a_ego * self.DT
-
-    # predict covariance
-    A = np.array([[1.0, self.DT],
-                  [0.0, 1.0]])
-
-    self.P = A @ self.P @ A.T + self.Q
-
-    # update
-    H = np.array([[1.0, 0.0]])
-
-    x_std = np.clip(x_std, self.MIN_STD, self.MAX_STD)
-    R = x_std ** 2
-
-    x_pred = (H @ np.array([[self.x], [self.vRel]]))[0, 0]
-
-    S = (H @ self.P @ H.T)[0, 0] + R
-
-    K = (self.P @ H.T) / S
-
-    y = x - x_pred  # how far meas is form prediction
-    self.x = self.x + K[0, 0] * y
-    self.vRel = self.vRel + K[1, 0] * y
-
-    # update covariance
-    I = np.eye(2)
-    self.P = (I - K @ H) @ self.P
-
-    return self.x, self.vRel
-
-  # def update(self, x, x_std):
-  #   P_pred = self.P + self.Q
-  #
-  #   x_std = np.clip(x_std, self.MIN_STD, self.MAX_STD)
-  #   R = x_std ** 2
-  #   self.K = P_pred / (P_pred + R)
-  #
-  #   self.x = self.x + self.K * (x - self.x)
-  #   self.P = (1.0 - self.K) * P_pred
-  #
-  #   # velocity estimate
-  #   x_pred = self.x + self.vRel * self.DT
-  #   vRel_pred = self.vRel
-  #   return self.x
-
-
+# kf
 kf = None
 
 for msg in lr:
@@ -123,7 +54,7 @@ for msg in lr:
     if lead.prob > 0.5:
       dRel = lead.x[0] - RADAR_TO_CAMERA
       if kf is None:
-        kf = KF(dRel)
+        kf = VisionLeadKF(dRel)
 
       model_data.append((msg.logMonoTime, dRel, lead.v[0], lead.a[0], lead.xStd[0]))
 

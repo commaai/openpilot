@@ -26,6 +26,60 @@ RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
 
 
+class VisionLeadKF:
+  MIN_STD = 1
+  MAX_STD = 15
+  SIGMA_A = 2.5  # m/s^2, how much can lead relative velocity realistically change (not per step)
+  DT = DT_MDL
+
+  def __init__(self, x):
+    self.x = x  # distance state estimate (m)
+    self.vRel = 0.0  # relative velocity state estimate (m/s)
+    self.P = np.diag([10.0 ** 2, 5.0 ** 2])  # variance of the state estimate. x uncertainty: 10m, vRel uncertainty: 5 m/s
+    self.K = 0.0  # Kalman gain
+
+    # TODO: understand this fully
+    var_a = self.SIGMA_A ** 2  # acceleration variance
+    self.Q = var_a * np.array([
+      [self.DT ** 4 / 4.0, self.DT ** 3 / 2.0],  # affects x (m^2) and coupling
+      [self.DT ** 3 / 2.0, self.DT ** 2],  # affects vRel ((m/s)^2)
+    ],)
+
+  def update(self, x, x_std, a_ego):
+    # predict state
+    # self.x = self.x + self.vRel * self.DT
+    self.x = self.x + self.vRel * self.DT - 0.5 * a_ego * self.DT * self.DT
+    self.vRel = self.vRel - a_ego * self.DT
+
+    # predict covariance
+    A = np.array([[1.0, self.DT],
+                  [0.0, 1.0]])
+
+    self.P = A @ self.P @ A.T + self.Q
+
+    # update
+    H = np.array([[1.0, 0.0]])
+
+    x_std = np.clip(x_std, self.MIN_STD, self.MAX_STD)
+    R = x_std ** 2
+
+    x_pred = (H @ np.array([[self.x], [self.vRel]]))[0, 0]
+
+    S = (H @ self.P @ H.T)[0, 0] + R
+
+    K = (self.P @ H.T) / S
+
+    y = x - x_pred  # how far meas is form prediction
+    self.x = self.x + K[0, 0] * y
+    self.vRel = self.vRel + K[1, 0] * y
+
+    # update covariance
+    I = np.eye(2)
+    self.P = (I - K @ H) @ self.P
+
+    return self.x, self.vRel
+
+
 class KalmanParams:
   def __init__(self, dt: float):
     # Lead Kalman Filter params, calculating K from A, C, Q, R requires the control library.
@@ -141,16 +195,10 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
 class VisionTrack:
   def __init__(self, lead_msg: capnp._DynamicStructReader):
     self.distances = deque(maxlen=round(0.5 / DT_MDL))
-    A = [[1.0, DT_MDL], [0.0, 1.0]]
-    C = [[1.0, 0.0]]
-    Q = [[0.02, 0.0], [0.0, 0.15**2]]  # Distance: 0.15m, velocity: 0.15 m/s per step (~3 m/s²)
-    R = 1.0**2  # Measurement noise: ~1m std dev
-    self.K = get_kalman_gain(DT_MDL, np.array(A), np.array(C), np.array(Q), R)
-    self.A, self.C = A, C[0]
     d_rel = float(lead_msg.x[0] - RADAR_TO_CAMERA)
-    self.kf = KF1D([[d_rel], [0.0]], self.A, self.C, self.K.tolist())
+    self.kf = VisionLeadKF(d_rel)
 
-  def get_RadarState(self, lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
+  def get_RadarState(self, lead_msg: capnp._DynamicStructReader, v_ego: float, a_ego: float, model_v_ego: float):
     lead_v_rel_pred = lead_msg.v[0] - model_v_ego
 
     d_rel = float(lead_msg.x[0] - RADAR_TO_CAMERA)
@@ -159,20 +207,20 @@ class VisionTrack:
 
     dt = len(self.distances) * DT_MDL
     if dt > 0.0:
-      #self.kf.update(d_rel)
-      #v_rel = self.kf.x[1][0]
-      v_rel = (d_rel - self.distances[0]) / dt
-      v_lead = v_ego + v_rel
+      kf_dRel, kf_vRel = self.kf.update(d_rel, lead_msg.xStd[0], a_ego)
+      # v_rel = (d_rel - self.distances[0]) / dt
+      v_lead = v_ego + kf_vRel
     else:
+      kf_dRel = d_rel
       v_lead = old_v_lead
 
     self.distances.append(d_rel)
 
     return {
-      "dRel": d_rel,
+      "dRel": float(kf_dRel),
       "yRel": float(-lead_msg.y[0]),
       "vRel": float(lead_v_rel_pred),
-      "vLead": v_lead,  # new vlead
+      "vLead": float(v_lead),  # new vlead
       "vLeadK": float(v_ego + lead_v_rel_pred),  # old vlead logic for comparison
       "aLeadK": 0.0,  # float(lead_msg.a[0]),  # this seems stable?
       "aLeadTau": 0.3,
@@ -202,7 +250,7 @@ class VisionTrack:
 #   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], vision_track, lead_msg: capnp._DynamicStructReader,
+def get_lead(v_ego: float, a_ego: float, ready: bool, tracks: dict[int, Track], vision_track, lead_msg: capnp._DynamicStructReader,
              model_v_ego: float, low_speed_override: bool = True) -> tuple[dict[str, Any], Any | None]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > .5:
@@ -219,7 +267,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], vision_track, 
   elif (track is None) and ready and (lead_msg.prob > .5):
     if vision_track is None and low_speed_override:
       vision_track = VisionTrack(lead_msg)
-    lead_dict = vision_track.get_RadarState(lead_msg, v_ego, model_v_ego)
+    lead_dict = vision_track.get_RadarState(lead_msg, v_ego, a_ego, model_v_ego)
 
   if low_speed_override:
     low_speed_tracks = [c for c in tracks.values() if c.potential_low_speed_lead(v_ego)]
@@ -242,6 +290,7 @@ class RadarD:
     self.kalman_params = KalmanParams(DT_MDL)
 
     self.v_ego = 0.0
+    self.a_ego = 0.0
     self.v_ego_hist = deque([0.0], maxlen=int(round(delay / DT_MDL))+1)
     self.last_v_ego_frame = -1
 
@@ -256,6 +305,7 @@ class RadarD:
 
     if sm.recv_frame['carState'] != self.last_v_ego_frame:
       self.v_ego = sm['carState'].vEgo
+      self.a_ego = sm['carState'].aEgo
       self.v_ego_hist.append(self.v_ego)
       self.last_v_ego_frame = sm.recv_frame['carState']
 
@@ -291,7 +341,7 @@ class RadarD:
       model_v_ego = self.v_ego
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
-      self.radar_state.leadOne, self.vision_track = get_lead(self.v_ego, self.ready, self.tracks, self.vision_track, leads_v3[0], model_v_ego, low_speed_override=True)
+      self.radar_state.leadOne, self.vision_track = get_lead(self.v_ego, self.a_ego, self.ready, self.tracks, self.vision_track, leads_v3[0], model_v_ego, low_speed_override=True)
       # self.radar_state.leadTwo, self.vision_track = get_lead(self.v_ego, self.ready, self.tracks, self.vision_track, leads_v3[1], model_v_ego, low_speed_override=False)
 
   def publish(self, pm: messaging.PubMaster):
