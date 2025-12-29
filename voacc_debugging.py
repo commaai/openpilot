@@ -1,6 +1,7 @@
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
+
 from tools.lib.logreader import LogReader
 from selfdrive.controls.radard import RADAR_TO_CAMERA
 from openpilot.common.realtime import DT_MDL
@@ -11,6 +12,9 @@ plt.ion()
 # Camry w/ accurate lead from radar
 # lr = LogReader('https://connect.comma.ai/3f447b402cbe27b6/0000008d--b6a2350b41/351/448', sort_by_time=True)
 lr = LogReader('https://connect.comma.ai/3f447b402cbe27b6/0000008d--b6a2350b41/572/950', sort_by_time=True)
+
+# tesla with no radar
+# lr = LogReader('https://connect.comma.ai/0f79c454f812791a/000000a3--e1e54de187/1037/1067', sort_by_time=True)
 lr = sorted(lr, key=lambda m: m.logMonoTime)
 
 CS = None
@@ -26,13 +30,13 @@ dRel_deque = deque(maxlen=round(1.0 / DT_MDL))
 
 # kf (inaccurate?)
 class KF:
-  MIN_STD = 0.5
+  MIN_STD = 1
   MAX_STD = 15
   SIGMA_A = 2.5  # m/s^2, how much can lead relative velocity realistically change (not per step)
   DT = DT_MDL
 
-  def __init__(self):
-    self.x = 0.0  # distance state estimate (m)  # TODO: initialize properly
+  def __init__(self, x):
+    self.x = x  # distance state estimate (m)
     self.vRel = 0.0  # relative velocity state estimate (m/s)
     self.P = np.diag([10.0 ** 2, 5.0 ** 2])  # variance of the state estimate. x uncertainty: 10m, vRel uncertainty: 5 m/s
     self.K = 0.0  # Kalman gain
@@ -44,9 +48,11 @@ class KF:
       [self.DT ** 3 / 2.0, self.DT ** 2],  # affects vRel ((m/s)^2)
     ],)
 
-  def update(self, x, x_std):
+  def update(self, x, x_std, a_ego):
     # predict state
-    self.x = self.x + self.vRel * self.DT
+    # self.x = self.x + self.vRel * self.DT
+    self.x = self.x + self.vRel * self.DT - 0.5 * a_ego * self.DT * self.DT
+    self.vRel = self.vRel - a_ego * self.DT
 
     # predict covariance
     A = np.array([[1.0, self.DT],
@@ -74,7 +80,7 @@ class KF:
     I = np.eye(2)
     self.P = (I - K @ H) @ self.P
 
-    return self.x
+    return self.x, self.vRel
 
   # def update(self, x, x_std):
   #   P_pred = self.P + self.Q
@@ -92,7 +98,7 @@ class KF:
   #   return self.x
 
 
-kf = KF()
+kf = None
 
 for msg in lr:
   if msg.which() == 'carState':
@@ -116,24 +122,29 @@ for msg in lr:
     lead = MD.leadsV3[0]
     if lead.prob > 0.5:
       dRel = lead.x[0] - RADAR_TO_CAMERA
+      if kf is None:
+        kf = KF(dRel)
+
       model_data.append((msg.logMonoTime, dRel, lead.v[0], lead.a[0], lead.xStd[0]))
 
       # simple kf prediction for vlead
       if len(dRel_deque) == dRel_deque.maxlen:
         # vLead = CS.vEgo + (dRel - dRel_deque[0]) / (DT_MDL * len(dRel_deque))
 
-        kf_dRel = kf.update(dRel, lead.xStd[0])
+        kf_dRel, kf_vRel = kf.update(dRel, lead.xStd[0], CS.aEgo)
 
         kf_data.append((msg.logMonoTime, kf.P, kf.K))
         print(dRel, kf_dRel)
         # kf_dRel = kf.x[0][0]
         # kf_vLead = CS.vEgo + kf.x[1][0]
+        kf_vLead = CS.vEgo + kf_vRel
 
-        pred_data.append((msg.logMonoTime, kf_dRel, lead.v[0], lead.a[0]))
+        pred_data.append((msg.logMonoTime, kf_dRel, kf_vLead, lead.a[0]))
 
       dRel_deque.append(dRel)
     else:
       dRel_deque.clear()
+      kf = None
 
 fig, ax = plt.subplots(4, 1, sharex=True)
 ax[0].plot([d[0] for d in radar_data], [d[1] for d in radar_data], label='radar dRel')
