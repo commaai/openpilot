@@ -482,8 +482,8 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "TAKE CONTROL",
       "Stock LKAS: Lane Departure Detected",
       AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
-    ET.NO_ENTRY: NoEntryAlert("Stock AEB: Risk of Collision"),
+      Priority.HIGH, VisualAlert.fcw, AudibleAlert.none, 2.),
+    ET.NO_ENTRY: NoEntryAlert("Stock LKAS: Lane Departure Detected"),
   },
 
   EventName.fcw: {
@@ -1028,7 +1028,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: audio_feedback_alert,
   },
 }
-
 
 if HARDWARE.get_device_type() == 'mici':
   EVENTS.update({
