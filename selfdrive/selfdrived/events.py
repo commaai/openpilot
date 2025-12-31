@@ -1029,6 +1029,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 }
 
+
 if HARDWARE.get_device_type() == 'mici':
   EVENTS.update({
     EventName.preDriverDistracted: {
