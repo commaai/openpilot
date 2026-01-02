@@ -171,12 +171,3 @@ class FrameReader:
       self.fidx, frame = next(self.it)
       self._cache[self.fidx] = frame
     return self._cache[fidx]
-
-
-if __name__ == "__main__":
-  from openpilot.tools.lib.openpilotci import get_url
-  TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
-  SEGMENT = 4
-  fr = FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', loglevel="info")
-  x = fr.get(0)
-  print(x.shape)
