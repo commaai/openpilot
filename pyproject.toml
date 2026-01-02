@@ -122,6 +122,7 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
+  "pyside6",
 ]
 
 tools = [
