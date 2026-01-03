@@ -1,11 +1,109 @@
 import contextlib
 import gc
 import os
-import pytest
 
-from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.system.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
+# Pre-warm heavy imports before pytest collection
+try:
+    import numpy  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    import hypothesis  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    import cereal
+except ImportError:
+    pass
+
+try:
+    from opendbc import car  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from openpilot.tools.lib.logreader import LogReader  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    import casadi  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from openpilot.common.params import Params  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from openpilot.selfdrive.test import helpers  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    import parameterized  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    import cereal.messaging  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from cereal import log  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from panda import Panda  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from openpilot.system.manager.process_config import managed_processes  # noqa: F401
+except ImportError:
+    pass
+
+import pytest
+from typing import Any
+
+# Lazy-loaded modules for fixtures
+_OpenpilotPrefix: Any = None
+_manager: Any = None
+_HARDWARE: Any = None
+
+
+def _get_openpilot_prefix():
+    global _OpenpilotPrefix
+    if _OpenpilotPrefix is None:
+        from openpilot.common.prefix import OpenpilotPrefix
+        _OpenpilotPrefix = OpenpilotPrefix
+    return _OpenpilotPrefix
+
+
+def _get_manager():
+    global _manager
+    if _manager is None:
+        from openpilot.system.manager import manager
+        _manager = manager
+    return _manager
+
+
+def _get_hardware():
+    global _HARDWARE
+    if _HARDWARE is None:
+        from openpilot.system.hardware import HARDWARE
+        _HARDWARE = HARDWARE
+    return _HARDWARE
+
+
+def _is_tici():
+    return os.path.isfile('/TICI')
+
 
 # TODO: pytest-cpp doesn't support FAIL, and we need to create test translations in sessionstart
 # pending https://github.com/pytest-dev/pytest-cpp/pull/147
@@ -47,6 +145,9 @@ def clean_env():
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
+  OpenpilotPrefix = _get_openpilot_prefix()
+  manager = _get_manager()
+
   with clean_env():
     # setup a clean environment for each test
     with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
@@ -78,6 +179,7 @@ def tici_setup_fixture(request, openpilot_function_fixture):
   """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
   if 'skip_tici_setup' in request.keywords:
     return
+  HARDWARE = _get_hardware()
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
@@ -86,9 +188,10 @@ def tici_setup_fixture(request, openpilot_function_fixture):
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
+  is_tici = _is_tici()
   for item in items:
     if "tici" in item.keywords:
-      if not TICI:
+      if not is_tici:
         item.add_marker(skipper)
       else:
         item.fixturenames.append('tici_setup_fixture')
