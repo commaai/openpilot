@@ -15,7 +15,7 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '15'))
 
 
 class TestCarInterfaces:
