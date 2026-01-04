@@ -107,7 +107,6 @@ dev = [
   "av",
   "azure-identity",
   "azure-storage-blob",
-  "dbus-next", # TODO: remove once we moved everything to jeepney
   "dictdiffer",
   "jeepney",
   "matplotlib",
