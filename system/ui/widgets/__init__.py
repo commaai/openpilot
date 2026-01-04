@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import pyray as rl
 from enum import IntEnum
@@ -91,7 +93,7 @@ class Widget(abc.ABC):
       return self._rect
     return rl.get_collision_rec(self._rect, self._parent_rect)
 
-  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     if rect is not None:
       self.set_rect(rect)
 
@@ -165,15 +167,13 @@ class Widget(abc.ABC):
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
 
-  def _handle_mouse_press(self, mouse_pos: MousePos) -> bool:
+  def _handle_mouse_press(self, mouse_pos: MousePos) -> None:
     """Optionally handle mouse press events."""
-    return False
 
-  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
     """Optionally handle mouse release events."""
     if self._click_callback:
       self._click_callback()
-    return False
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
@@ -361,7 +361,7 @@ class NavWidget(Widget, abc.ABC):
 
     self.set_position(self._rect.x, new_y)
 
-  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
 
     if self.back_enabled:

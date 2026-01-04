@@ -187,6 +187,7 @@ class Device:
   def __init__(self):
     self._ignition = False
     self._interaction_time: float = -1
+    self._override_interactive_timeout: int | None = None
     self._interactive_timeout_callbacks: list[Callable] = []
     self._prev_timed_out = False
     self._awake: bool = True
@@ -200,11 +201,21 @@ class Device:
   def awake(self) -> bool:
     return self._awake
 
-  def reset_interactive_timeout(self, timeout: int = -1) -> None:
-    if timeout == -1:
-      ignition_timeout = 10 if gui_app.big_ui() else 5
-      timeout = ignition_timeout if ui_state.ignition else 30
-    self._interaction_time = time.monotonic() + timeout
+  def set_override_interactive_timeout(self, timeout: int | None) -> None:
+    # Override the interactive timeout duration temporarily
+    self._override_interactive_timeout = timeout
+    self._reset_interactive_timeout()
+
+  @property
+  def interactive_timeout(self) -> int:
+    if self._override_interactive_timeout is not None:
+      return self._override_interactive_timeout
+
+    ignition_timeout = 10 if gui_app.big_ui() else 5
+    return ignition_timeout if ui_state.ignition else 30
+
+  def _reset_interactive_timeout(self) -> None:
+    self._interaction_time = time.monotonic() + self.interactive_timeout
 
   def add_interactive_timeout_callback(self, callback: Callable):
     self._interactive_timeout_callbacks.append(callback)
@@ -212,7 +223,7 @@ class Device:
   def update(self):
     # do initial reset
     if self._interaction_time <= 0:
-      self.reset_interactive_timeout()
+      self._reset_interactive_timeout()
 
     self._update_brightness()
     self._update_wakefulness()
@@ -252,7 +263,7 @@ class Device:
     self._ignition = ui_state.ignition
 
     if ignition_just_turned_off or any(ev.left_down for ev in gui_app.mouse_events):
-      self.reset_interactive_timeout()
+      self._reset_interactive_timeout()
 
     interaction_timeout = time.monotonic() > self._interaction_time
     if interaction_timeout and not self._prev_timed_out:

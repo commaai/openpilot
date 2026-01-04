@@ -13,7 +13,11 @@ public:
     if (prefix.empty()) {
       prefix = util::random_string(15);
     }
-    msgq_path = Path::shm_path() + "/" + prefix;
+#ifdef __APPLE__
+    msgq_path = "/tmp/msgq_" + prefix;
+#else
+    msgq_path = "/dev/shm/msgq_" + prefix;
+#endif
     bool ret = util::create_directories(msgq_path, 0777);
     assert(ret);
     setenv("OPENPILOT_PREFIX", prefix.c_str(), 1);

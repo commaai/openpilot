@@ -4,17 +4,17 @@ import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from typing import cast
-from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 
 DEBUG = False
 
@@ -137,7 +137,7 @@ class BigInputDialog(BigDialogBase):
                hint: str,
                default_text: str = "",
                minimum_length: int = 1,
-               confirm_callback: Callable[[str], None] = None):
+               confirm_callback: Callable[[str], None] | None = None):
     super().__init__(None, None)
     self._hint_label = UnifiedLabel(hint, font_size=35, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
                                     font_weight=FontWeight.MEDIUM)
@@ -317,39 +317,36 @@ class BigMultiOptionDialog(BigDialogBase):
   BACK_TOUCH_AREA_PERCENTAGE = 0.1
 
   def __init__(self, options: list[str], default: str | None,
-               right_btn: str | None = 'check', right_btn_callback: Callable[[], None] = None):
+               right_btn: str | None = 'check', right_btn_callback: Callable[[], None] | None = None):
     super().__init__(right_btn, right_btn_callback=right_btn_callback)
     self._options = options
     if default is not None:
       assert default in options
 
-    self._default_option: str = default or (options[0] if len(options) > 0 else "")
-    self._selected_option: str = self._default_option
+    self._default_option: str | None = default
+    self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
     self._last_selected_option: str = self._selected_option
+
+    # Widget doesn't differentiate between click and drag
+    self._can_click = True
 
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
     for option in options:
-      self.add_button(BigDialogOptionButton(option))
-
-  def add_button(self, button: BigDialogOptionButton):
-    def click_callback(_btn=button):
-      self._on_option_selected(_btn.option)
-
-    button.set_click_callback(click_callback)
-    self._scroller.add_widget(button)
+      self._scroller.add_widget(BigDialogOptionButton(option))
 
   def show_event(self):
     super().show_event()
     self._scroller.show_event()
-    self._on_option_selected(self._default_option)
+    if self._default_option is not None:
+      self._on_option_selected(self._default_option)
 
   def get_selected_option(self) -> str:
     return self._selected_option
 
-  def _on_option_selected(self, option: str, smooth_scroll: bool = True):
+  def _on_option_selected(self, option: str):
     y_pos = 0.0
     for btn in self._scroller._items:
       btn = cast(BigDialogOptionButton, btn)
@@ -365,10 +362,34 @@ class BigMultiOptionDialog(BigDialogBase):
         y_pos = rect_center_y - (btn.rect.y + height / 2)
         break
 
-    self._scroller.scroll_to(-y_pos, smooth=smooth_scroll)
+    self._scroller.scroll_to(-y_pos)
 
   def _selected_option_changed(self):
     pass
+
+  def _handle_mouse_press(self, mouse_pos: MousePos):
+    super()._handle_mouse_press(mouse_pos)
+    self._can_click = True
+
+  def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
+    super()._handle_mouse_event(mouse_event)
+
+    # # TODO: add generic _handle_mouse_click handler to Widget
+    if not self._scroller.scroll_panel.is_touch_valid():
+      self._can_click = False
+
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+
+    if not self._can_click:
+      return
+
+    # select current option
+    for btn in self._scroller._items:
+      btn = cast(BigDialogOptionButton, btn)
+      if btn.option == self._selected_option:
+        self._on_option_selected(btn.option)
+        break
 
   def _update_state(self):
     super()._update_state()
