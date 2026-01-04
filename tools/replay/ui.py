@@ -54,7 +54,7 @@ def ui_thread(addr):
   rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
   rl.init_window(size[0], size[1], "openpilot debug UI")
   rl.set_target_fps(60)
-  rl.set_trace_log_level(rl.TraceLogLevel.LOG_ERROR)  # Suppress texture unload spam
+  rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)  # Show warnings but not info spam
   assert raylib_modules_have_loaded()
 
   # Load font
@@ -62,25 +62,16 @@ def ui_thread(addr):
   font = rl.load_font_ex(font_path, 32, None, 0)
 
   # Create textures for camera and top-down view
-  # Use Image with proper RGBA format for update_texture compatibility
-  camera_image = rl.Image()
-  camera_image.data = rl.ffi.NULL
-  camera_image.width = 640
-  camera_image.height = 480
-  camera_image.mipmaps = 1
-  camera_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+  camera_image = rl.gen_image_color(640, 480, rl.BLACK)
   camera_texture = rl.load_texture_from_image(camera_image)
+  rl.unload_image(camera_image)
 
   # lid_overlay array is (lidar_x, lidar_y) = (384, 960)
   # pygame treats first axis as width, so texture is 384 wide x 960 tall
   # For raylib, we need to transpose to get (height, width) = (960, 384) for the RGBA array
-  top_down_image = rl.Image()
-  top_down_image.data = rl.ffi.NULL
-  top_down_image.width = UP.lidar_x  # 384
-  top_down_image.height = UP.lidar_y  # 960
-  top_down_image.mipmaps = 1
-  top_down_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+  top_down_image = rl.gen_image_color(UP.lidar_x, UP.lidar_y, rl.BLACK)
   top_down_texture = rl.load_texture_from_image(top_down_image)
+  rl.unload_image(top_down_image)
 
   sm = messaging.SubMaster(
     [
@@ -163,6 +154,9 @@ def ui_thread(addr):
 
     yuv_img_raw = vipc_client.recv()
     if yuv_img_raw is None or not yuv_img_raw.data.any():
+      # Show waiting message when no frames available
+      rl.draw_text_ex(font, "Waiting for frames...", rl.Vector2(200, 400), 30, 0, rl.WHITE)
+      rl.draw_text_ex(font, "Make sure replay is running", rl.Vector2(200, 440), 20, 0, rl.GRAY)
       rl.end_drawing()
       continue
 

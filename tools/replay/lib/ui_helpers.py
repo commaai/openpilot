@@ -128,13 +128,9 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
 
   # Pre-create texture for plots (reuse each frame to avoid log spam)
   w, h = canvas.get_width_height()
-  plot_image = rl.Image()
-  plot_image.data = rl.ffi.NULL
-  plot_image.width = w
-  plot_image.height = h
-  plot_image.mipmaps = 1
-  plot_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+  plot_image = rl.gen_image_color(w, h, rl.BLACK)
   plot_texture = rl.load_texture_from_image(plot_image)
+  rl.unload_image(plot_image)
 
   def draw_plots(arr):
     for ax in axs:
