@@ -11,6 +11,25 @@ from openpilot.common.swaglog import cloudlog
 
 LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a small step change
 
+class Timer:
+  """Simple lap timer for profiling sequential operations."""
+
+  def __init__(self):
+    self._start = self._lap = time.monotonic()
+    self._sections = {}
+
+  def lap(self, name):
+    now = time.monotonic()
+    self._sections[name] = now - self._lap
+    self._lap = now
+
+  @property
+  def total(self):
+    return time.monotonic() - self._start
+
+  def fmt(self, duration):
+    parts = ", ".join(f"{k}={v:.2f}s" + (f" ({duration/v:.0f}x)" if k == 'render' else "") for k, v in self._sections.items())
+    return f"{duration}s in {self.total:.1f}s ({duration/self.total:.1f}x realtime) | {parts}"
 
 class CallbackReader:
   """Wraps a file, but overrides the read method to also
