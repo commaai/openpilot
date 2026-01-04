@@ -13,7 +13,7 @@ from typing import Optional, List, Union, Dict
 
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.util import MovingAverage
+from openpilot.common.utils import MovingAverage
 
 NO_TRAVERSAL_LIMIT = 2**64-1
 
