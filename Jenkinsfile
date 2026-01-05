@@ -202,6 +202,8 @@ node {
     parallel (
       'onroad tests': {
         deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
+          step("install pyopencl wheel", "uv pip install https://github.com/adeebshihadeh/pyopencl/releases/download/v2025.2.7-arm64/pyopencl-2025.2.7-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"),
+          step("uv pip freeze", "uv pip freeze"),
           step("build openpilot", "cd system/manager && ./build.py"),
           step("check dirty", "release/check-dirty.sh"),
           step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
