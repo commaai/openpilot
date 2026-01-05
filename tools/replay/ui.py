@@ -51,10 +51,10 @@ def ui_thread(addr):
     write_x = 645
     write_y = 970
 
+  rl.set_trace_log_level(rl.TraceLogLevel.LOG_ERROR)
   rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
   rl.init_window(size[0], size[1], "openpilot debug UI")
   rl.set_target_fps(60)
-  rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)  # Show warnings but not info spam
   assert raylib_modules_have_loaded()
 
   # Load font
