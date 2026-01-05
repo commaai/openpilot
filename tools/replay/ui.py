@@ -21,7 +21,6 @@ from openpilot.tools.replay.lib.ui_helpers import (
   maybe_update_radar_points,
   plot_lead,
   plot_model,
-  raylib_modules_have_loaded,
 )
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
@@ -55,7 +54,6 @@ def ui_thread(addr):
   rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
   rl.init_window(size[0], size[1], "openpilot debug UI")
   rl.set_target_fps(60)
-  assert raylib_modules_have_loaded()
 
   # Load font
   font_path = os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf")
@@ -142,23 +140,21 @@ def ui_thread(addr):
 
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
   while not rl.window_should_close():
+    # ***** frame *****
+    if not vipc_client.is_connected():
+      vipc_client.connect(False)
+
     rl.begin_drawing()
     rl.clear_background(rl.Color(64, 64, 64, 255))
 
-    lid_overlay = lid_overlay_blank.copy()
-    top_down = top_down_texture, lid_overlay
-
-    # ***** frame *****
-    if not vipc_client.is_connected():
-      vipc_client.connect(True)
-
     yuv_img_raw = vipc_client.recv()
     if yuv_img_raw is None or not yuv_img_raw.data.any():
-      # Show waiting message when no frames available
-      rl.draw_text_ex(font, "Waiting for frames...", rl.Vector2(200, 400), 30, 0, rl.WHITE)
-      rl.draw_text_ex(font, "Make sure replay is running", rl.Vector2(200, 440), 20, 0, rl.GRAY)
+      rl.draw_text_ex(font, "waiting for frames", rl.Vector2(200, 200), 30, 0, rl.WHITE)
       rl.end_drawing()
       continue
+
+    lid_overlay = lid_overlay_blank.copy()
+    top_down = top_down_texture, lid_overlay
 
     sm.update(0)
 

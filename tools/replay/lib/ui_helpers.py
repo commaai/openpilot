@@ -146,10 +146,6 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
   return draw_plots
 
 
-def raylib_modules_have_loaded():
-  return rl.is_window_ready()
-
-
 def plot_model(m, img, calibration, top_down):
   if calibration is None or top_down is None:
     return
