@@ -51,7 +51,7 @@ class DriverCameraDialog(NavWidget):
     super().show_event()
     ui_state.params.put_bool("IsDriverViewEnabled", True)
     self._publish_alert_sound(None)
-    device.set_override_interactive_timeout(300)
+    device.set_override_interactive_timeout(3600)
     ui_state.params.remove("DriverTooDistracted")
     self._pm = messaging.PubMaster(['selfdriveState'])
 
