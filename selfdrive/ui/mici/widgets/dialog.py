@@ -362,7 +362,7 @@ class BigMultiOptionDialog(BigDialogBase):
         y_pos = rect_center_y - (btn.rect.y + height / 2)
         break
 
-    self._scroller.scroll_to(-y_pos)
+    self._scroller.scroll_to(y_pos)
 
   def _selected_option_changed(self):
     pass
