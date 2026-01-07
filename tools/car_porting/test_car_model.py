@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-import pytest
 
 from opendbc.car.tests.routes import CarTestRoute
 from openpilot.selfdrive.car.tests.test_models import TestCarModel
