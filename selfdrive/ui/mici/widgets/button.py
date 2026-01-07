@@ -71,7 +71,7 @@ class BigCircleButton(Widget):
 
 
 class BigCircleToggle(BigCircleButton):
-  def __init__(self, icon: str, toggle_callback: Callable = None):
+  def __init__(self, icon: str, toggle_callback: Callable | None = None):
     super().__init__(icon, False)
     self._toggle_callback = toggle_callback
 
@@ -251,7 +251,7 @@ class BigButton(Widget):
 
 
 class BigToggle(BigButton):
-  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable = None):
+  def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable | None = None):
     super().__init__(text, value, "")
     self._checked = initial_state
     self._toggle_callback = toggle_callback
@@ -288,8 +288,8 @@ class BigToggle(BigButton):
 
 
 class BigMultiToggle(BigToggle):
-  def __init__(self, text: str, options: list[str], toggle_callback: Callable = None,
-               select_callback: Callable = None):
+  def __init__(self, text: str, options: list[str], toggle_callback: Callable | None = None,
+               select_callback: Callable | None = None):
     super().__init__(text, "", toggle_callback=toggle_callback)
     assert len(options) > 0
     self._options = options
@@ -327,8 +327,8 @@ class BigMultiToggle(BigToggle):
 
 
 class BigMultiParamToggle(BigMultiToggle):
-  def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable = None,
-               select_callback: Callable = None):
+  def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable | None = None,
+               select_callback: Callable | None = None):
     super().__init__(text, options, toggle_callback, select_callback)
     self._param = param
 
@@ -345,7 +345,7 @@ class BigMultiParamToggle(BigMultiToggle):
 
 
 class BigParamControl(BigToggle):
-  def __init__(self, text: str, param: str, toggle_callback: Callable = None):
+  def __init__(self, text: str, param: str, toggle_callback: Callable | None = None):
     super().__init__(text, "", toggle_callback=toggle_callback)
     self.param = param
     self.params = Params()
@@ -361,7 +361,7 @@ class BigParamControl(BigToggle):
 
 # TODO: param control base class
 class BigCircleParamControl(BigCircleToggle):
-  def __init__(self, icon: str, param: str, toggle_callback: Callable = None):
+  def __init__(self, icon: str, param: str, toggle_callback: Callable | None = None):
     super().__init__(icon, toggle_callback)
     self._param = param
     self.params = Params()
