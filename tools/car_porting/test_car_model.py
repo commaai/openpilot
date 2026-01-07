@@ -27,4 +27,5 @@ if __name__ == "__main__":
     class_name = f"TestCarModel_{test_route.car_model}_{seg_idx}".replace("|", "_").replace("-", "_").replace("/", "_")
     globals()[class_name] = type(class_name, (TestCarModel,), test_case_args)
 
-  pytest.main([__file__] + sys.argv[2:])
+  import subprocess
+  subprocess.run([sys.executable, "-m", "pytest", __file__, *sys.argv[2:]], check=True)
