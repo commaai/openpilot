@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, UTC
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
 
-API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
+from openpilot.common.params import Params
+API_HOST = 'https://api.asius.ai' if Params().get_bool("EnableAsiusAPI") else os.getenv('API_HOST', 'https://api.commadotai.com')
 
 # name: jwt signature algorithm
 KEYS = {"id_rsa": "RS256",
