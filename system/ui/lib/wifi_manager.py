@@ -30,7 +30,7 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
 try:
   from openpilot.common.params import Params
 except Exception:
-  Params = None
+  Params = None  # type: ignore
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
