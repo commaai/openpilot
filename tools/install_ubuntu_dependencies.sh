@@ -37,6 +37,7 @@ function install_ubuntu_common_requirements() {
   # TODO: vendor the rest of these in third_party/
   $SUDO apt-get install -y --no-install-recommends \
     gcc-arm-none-eabi \
+    clang-17 \
     capnproto \
     libcapnp-dev \
     ffmpeg \
