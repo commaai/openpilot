@@ -56,13 +56,13 @@ class TestFileDownload:
     for k, v in retry_defaults.items():
       assert getattr(URLFile.pool_manager().connection_pool_kw["retries"], k) == v
 
-    # ensure caching off by default and cache dir doesn't get created
-    os.environ.pop("FILEREADER_CACHE", None)
+    # ensure caching on by default and cache dir gets created
+    os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     if os.path.exists(Paths.download_cache_root()):
       shutil.rmtree(Paths.download_cache_root())
     URLFile(f"{host}/test.txt").get_length()
     URLFile(f"{host}/test.txt").read()
-    assert not os.path.exists(Paths.download_cache_root())
+    assert os.path.exists(Paths.download_cache_root())
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
@@ -90,7 +90,7 @@ class TestFileDownload:
 
   def test_small_file(self):
     # Make sure we don't force cache
-    os.environ["FILEREADER_CACHE"] = "0"
+    os.environ.pop("DISABLE_FILEREADER_CACHE", None)
     small_file_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/SAFETY.md"
     #  If you want large file to be larger than a chunk
     #  large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/fcamera.hevc"
@@ -119,7 +119,10 @@ class TestFileDownload:
 
   @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_recover_from_missing_file(self, host, cache_enabled):
-    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+    if cache_enabled:
+      os.environ.pop("DISABLE_FILEREADER_CACHE", None)
+    else:
+      os.environ["DISABLE_FILEREADER_CACHE"] = "1"
 
     file_url = f"{host}/test.png"
 
