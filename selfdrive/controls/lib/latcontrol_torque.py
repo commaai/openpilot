@@ -59,11 +59,14 @@ class LatControlTorque(LatControl):
   def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited, lat_delay):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     pid_log.version = VERSION
+    measured_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+    measurement = measured_curvature * CS.vEgo ** 2
+
     if not active:
+      self.lat_accel_request_buffer.append(measurement)
       output_torque = 0.0
       pid_log.active = False
     else:
-      measured_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
       roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
@@ -78,7 +81,6 @@ class LatControlTorque(LatControl):
       gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
       setpoint = expected_lateral_accel
 
-      measurement = measured_curvature * CS.vEgo ** 2
       error = setpoint - measurement
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
