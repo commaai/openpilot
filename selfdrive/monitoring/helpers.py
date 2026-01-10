@@ -36,7 +36,7 @@ class DRIVER_MONITOR_SETTINGS:
     self._SG_THRESHOLD = 0.9
     self._BLINK_THRESHOLD = 0.865
 
-    self._PHONE_THRESH = 0.75 if device_type == 'mici' else 0.4
+    self._PHONE_THRESH = 0.6
     self._PHONE_THRESH2 = 15.0
     self._PHONE_MAX_OFFSET = 0.06
     self._PHONE_MIN_OFFSET = 0.025
@@ -252,17 +252,14 @@ class DriverMonitoring:
     yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
 
     if pitch_error > pitch_threshold or yaw_error > yaw_threshold:
-      distracted_types.append(DistractedType.DISTRACTED_POSE)
+      pass
+      # distracted_types.append(DistractedType.DISTRACTED_POSE)
 
     if (self.blink.left + self.blink.right)*0.5 > self.settings._BLINK_THRESHOLD:
-      distracted_types.append(DistractedType.DISTRACTED_BLINK)
+      pass
+      # distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
-    if self.phone.prob_calibrated:
-      using_phone = self.phone.prob > max(min(self.phone.prob_offseter.filtered_stat.M, self.settings._PHONE_MAX_OFFSET), self.settings._PHONE_MIN_OFFSET) \
-                                      * self.settings._PHONE_THRESH2
-    else:
-      using_phone = self.phone.prob > self.settings._PHONE_THRESH
-    if using_phone:
+    if self.phone.prob > self.settings._PHONE_THRESH:
       distracted_types.append(DistractedType.DISTRACTED_PHONE)
 
     return distracted_types
