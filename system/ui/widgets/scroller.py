@@ -73,12 +73,17 @@ class Scroller(Widget):
   def set_reset_scroll_at_show(self, scroll: bool):
     self._reset_scroll_at_show = scroll
 
-  def scroll_to(self, target_offset: float, smooth: bool = False):
-    """Scrolls to an absolute offset."""
+  def scroll_to(self, pos: float, smooth: bool = False):
+    # already there
+    if abs(pos) < 1:
+      return
+
+    # FIXME: the padding correction doesn't seem correct
+    scroll_offset = self.scroll_panel.get_offset() - pos
     if smooth:
-      self._scrolling_to = float(target_offset)
+      self._scrolling_to = scroll_offset
     else:
-      self.scroll_panel.set_offset(float(target_offset))
+      self.scroll_panel.set_offset(scroll_offset)
 
   @property
   def is_auto_scrolling(self) -> bool:
