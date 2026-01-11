@@ -45,28 +45,93 @@ def get_preserved_segments(dirs_by_creation: list[str]) -> set[str]:
   return preserved
 
 
+def safe_delete(path: str) -> bool:
+  """Safely delete a file or directory, handling various edge cases.
+
+  Returns True if deletion was successful, False otherwise.
+  """
+  try:
+    if os.path.islink(path):
+      # Handle symlinks - remove the link, not the target
+      os.unlink(path)
+    elif os.path.isfile(path):
+      # Handle regular files
+      os.remove(path)
+    elif os.path.isdir(path):
+      # Handle directories
+      shutil.rmtree(path)
+    else:
+      # Handle other types (sockets, FIFOs, etc.)
+      os.remove(path)
+    cloudlog.info(f"deleted {path}")
+    return True
+  except (OSError, PermissionError) as e:
+    cloudlog.exception(f"failed to delete {path}: {e}")
+    return False
+
+
 def deleter_thread(exit_event: threading.Event):
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
-      dirs = listdir_by_creation(Paths.log_root())
+      log_root = Paths.log_root()
+
+      # First, check for and delete any non-directory items (stray files, symlinks, etc.)
+      try:
+        all_items = os.listdir(log_root)
+      except OSError:
+        cloudlog.exception(f"failed to list {log_root}")
+        exit_event.wait(.1)
+        continue
+
+      # Find non-directory items
+      non_dirs = []
+      for item in all_items:
+        item_path = os.path.join(log_root, item)
+        try:
+          # Check for symlinks first (before isdir, which follows symlinks)
+          if os.path.islink(item_path):
+            non_dirs.append(item)
+          elif not os.path.isdir(item_path):
+            non_dirs.append(item)
+        except OSError:
+          # If we can't stat it, treat it as a non-directory to attempt deletion
+          non_dirs.append(item)
+
+      # Delete non-directory items first (stray files, symlinks, etc.)
+      deleted_non_dir = False
+      for item in non_dirs:
+        item_path = os.path.join(log_root, item)
+        if safe_delete(item_path):
+          deleted_non_dir = True
+          break
+
+      # If we deleted a non-directory item, wait and continue to next iteration
+      if deleted_non_dir:
+        exit_event.wait(.1)
+        continue
+
+      # Get directories sorted by creation time (using the original function)
+      dirs = listdir_by_creation(log_root)
       preserved_dirs = get_preserved_segments(dirs)
 
-      # remove the earliest directory we can
+      # Remove the earliest directory we can
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        delete_path = os.path.join(Paths.log_root(), delete_dir)
-
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
-          continue
+        delete_path = os.path.join(log_root, delete_dir)
 
         try:
-          cloudlog.info(f"deleting {delete_path}")
-          shutil.rmtree(delete_path)
-          break
+          # Check for lock files
+          if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+            continue
         except OSError:
-          cloudlog.exception(f"issue deleting {delete_path}")
+          # If we can't list the directory, try to delete it anyway
+          pass
+
+        if safe_delete(delete_path):
+          break
+
       exit_event.wait(.1)
     else:
       exit_event.wait(30)
