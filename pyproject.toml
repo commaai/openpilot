@@ -14,7 +14,7 @@ dependencies = [
   "pyserial",     # pigeond + qcomgpsd
   "requests",     # many one-off uses
   "sympy",        # rednose + friends
-  "crcmod",       # cars + qcomgpsd
+  "crcmod-plus",  # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
   # hardwared
@@ -107,15 +107,13 @@ dev = [
   "av",
   "azure-identity",
   "azure-storage-blob",
-  "dbus-next", # TODO: remove once we moved everything to jeepney
   "dictdiffer",
   "jeepney",
   "matplotlib",
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
   "pyautogui",
-  "pygame",
-  "pyopencl; platform_machine != 'aarch64'", # broken on arm64
+  "pyopencl",
   "pytools>=2025.1.6; platform_machine != 'aarch64'",
   "pywinctl",
   "pyprof2calltree",
