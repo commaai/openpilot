@@ -115,7 +115,12 @@ void ConsoleUI::initWindows() {
     w[Win::Log] = newwin(log_height - 2, max_width - 2 * BORDER_SIZE, 18, BORDER_SIZE);
     scrollok(w[Win::Log], true);
   }
-  w[Win::Help] = newwin(5, max_width - (2 * BORDER_SIZE), max_height - 6, BORDER_SIZE);
+  if (max_height >= 23) {
+    w[Win::Help] = newwin(5, max_width - (2 * BORDER_SIZE), max_height - 6, BORDER_SIZE);
+  } else if (max_height >= 17) {
+    w[Win::Help] = newwin(1, max_width - (2 * BORDER_SIZE), max_height - 1, BORDER_SIZE);
+    mvwprintw(w[Win::Help], 0, 0, "Expand screen vertically to list available commands");
+  }
 
   // set the title bar
   wbkgd(w[Win::Title], A_REVERSE);
@@ -124,7 +129,7 @@ void ConsoleUI::initWindows() {
   // show windows on the real screen
   refresh();
   displayTimelineDesc();
-  displayHelp();
+  if (max_height >= 23) displayHelp();
   updateSummary();
   updateTimeline();
   for (auto win : w) {

@@ -9,7 +9,7 @@ from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.lib.logreader import _LogFileReader, LogReader
 
 
-def flatten_dict(d: dict, sep: str = "/", prefix: str = None) -> dict:
+def flatten_dict(d: dict, sep: str = "/", prefix: str | None = None) -> dict:
   result = {}
   stack: list[tuple] = [(d, prefix)]
 

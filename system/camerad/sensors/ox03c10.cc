@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include "system/camerad/sensors/sensor.h"
+#include "third_party/linux/include/msm_camsensor_sdk.h"
 
 namespace {
 
@@ -40,8 +41,8 @@ OX03C10::OX03C10() {
   probe_expected_data = 0x5803;
   bits_per_pixel = 12;
   mipi_format = CAM_FORMAT_MIPI_RAW_12;
-  frame_data_type = 0x2c; // one is 0x2a, two are 0x2b
-  mclk_frequency = 24000000; //Hz
+  frame_data_type = CSI_RAW12;
+  mclk_frequency = 24000000; // Hz
 
   readout_time_ns = 14697000;
 

@@ -31,7 +31,7 @@ class DriverCameraDialog(NavWidget):
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
-    self._pm = messaging.PubMaster(['selfdriveState'])
+    self._pm: messaging.PubMaster | None = None
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(lambda: gui_app.set_modal_overlay(None))
@@ -51,13 +51,14 @@ class DriverCameraDialog(NavWidget):
     super().show_event()
     ui_state.params.put_bool("IsDriverViewEnabled", True)
     self._publish_alert_sound(None)
-    device.reset_interactive_timeout(300)
+    device.set_override_interactive_timeout(300)
     ui_state.params.remove("DriverTooDistracted")
+    self._pm = messaging.PubMaster(['selfdriveState'])
 
   def hide_event(self):
     super().hide_event()
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    device.reset_interactive_timeout()
+    device.set_override_interactive_timeout(None)
 
   def _handle_mouse_release(self, _):
     ui_state.params.remove("DriverTooDistracted")
@@ -88,12 +89,13 @@ class DriverCameraDialog(NavWidget):
       self._publish_alert_sound(None)
       return -1
 
-    self._draw_face_detection(rect)
+    driver_data = self._draw_face_detection(rect)
+    if driver_data is not None:
+      self._draw_eyes(rect, driver_data)
 
     # Position dmoji on opposite side from driver
-    dm_state = ui_state.sm["driverMonitoringState"]
     driver_state_rect = (
-      rect.x if dm_state.isRHD else rect.x + rect.width - self.driver_state_renderer.rect.width,
+      rect.x if self.driver_state_renderer.is_rhd else rect.x + rect.width - self.driver_state_renderer.rect.width,
       rect.y + (rect.height - self.driver_state_renderer.rect.height) / 2,
     )
     self.driver_state_renderer.set_position(*driver_state_rect)
@@ -107,6 +109,9 @@ class DriverCameraDialog(NavWidget):
 
   def _publish_alert_sound(self, dm_state):
     """Publish selfdriveState with only alertSound field set"""
+    if self._pm is None:
+      return
+
     msg = messaging.new_message('selfdriveState')
     if dm_state is not None and len(dm_state.events):
       event_name = EVENT_TO_INT[dm_state.events[0].name]
@@ -134,7 +139,7 @@ class DriverCameraDialog(NavWidget):
 
     # Show first event (only one should be active at a time)
     event_name_str = str(dm_state.events[0].name).split('.')[-1]
-    alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if dm_state.isRHD else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
+    alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if self.driver_state_renderer.is_rhd else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
 
     shadow_rect = rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height)
     gui_label(shadow_rect, event_name_str, font_size=40, font_weight=FontWeight.BOLD,
@@ -155,12 +160,10 @@ class DriverCameraDialog(NavWidget):
     if self._glasses_texture is None:
       self._glasses_texture = gui_app.texture("icons_mici/onroad/glasses.png", self._glasses_size, self._glasses_size)
 
-  def _draw_face_detection(self, rect: rl.Rectangle) -> None:
-    driver_state = ui_state.sm["driverStateV2"]
-    is_rhd = driver_state.wheelOnRightProb > 0.5
-    driver_data = driver_state.rightDriverData if is_rhd else driver_state.leftDriverData
-    face_detect = driver_data.faceProb > 0.7
-    if not face_detect:
+  def _draw_face_detection(self, rect: rl.Rectangle):
+    dm_state = ui_state.sm["driverMonitoringState"]
+    driver_data = self.driver_state_renderer.get_driver_data()
+    if not dm_state.faceDetected:
       return
 
     # Get face position and orientation
@@ -184,7 +187,7 @@ class DriverCameraDialog(NavWidget):
     scale_y = rect.height / 1080.0
     fbox_x = rect.x + rect.width / 2 + offset_x * scale_x
     fbox_y = rect.y + rect.height / 2 + offset_y * scale_y
-    box_size = 50
+    box_size = 75
     line_thickness = 3
 
     line_color = rl.Color(255, 255, 255, int(alpha * 255))
@@ -195,7 +198,9 @@ class DriverCameraDialog(NavWidget):
       line_thickness,
       line_color,
     )
+    return driver_data
 
+  def _draw_eyes(self, rect: rl.Rectangle, driver_data):
     # Draw eye indicators based on eye probabilities
     eye_offset_x = 10
     eye_offset_y = 10

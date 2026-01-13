@@ -31,13 +31,13 @@ class MiciLabel(Widget):
   def __init__(self,
                text: str,
                font_size: int = DEFAULT_TEXT_SIZE,
-               width: int = None,
+               width: int | None = None,
                color: rl.Color = DEFAULT_TEXT_COLOR,
                font_weight: FontWeight = FontWeight.NORMAL,
                alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
                alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
                spacing: int = 0,
-               line_height: int = None,
+               line_height: int | None = None,
                elide_right: bool = True,
                wrap_text: bool = False,
                scroll: bool = False):
@@ -712,8 +712,9 @@ class UnifiedLabel(Widget):
       start_y = self._rect.y + (self._rect.height - total_visible_height) / 2
 
     # Only scissor when we know there is a single scrolling line
+    # Pad a little since descenders like g or j may overflow below rect from font_scale
     if self._needs_scroll:
-      rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
+      rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y - self._font_size / 2), int(self._rect.width), int(self._rect.height + self._font_size))
 
     # Render each line
     current_y = start_y

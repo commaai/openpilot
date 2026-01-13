@@ -107,7 +107,6 @@ else:
 class CameraView(Widget):
   def __init__(self, name: str, stream_type: VisionStreamType):
     super().__init__()
-    # TODO: implement a receiver and connect thread
     self._name = name
     # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)
@@ -197,6 +196,7 @@ class CameraView(Widget):
     # Clean up shader
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
+      self.shader.id = 0
 
     self.frame = None
     self.available_streams.clear()

@@ -79,7 +79,7 @@ void main() {
 """
 
 DEFAULT_TEXT_SIZE = 60
-DEFAULT_TEXT_COLOR = rl.WHITE
+DEFAULT_TEXT_COLOR = rl.Color(255, 255, 255, int(255 * 0.9))
 
 # Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
 # The real scales for the fonts below range from 1.212 to 1.266
@@ -192,6 +192,8 @@ class MouseState:
 
 class GuiApplication:
   def __init__(self, width: int | None = None, height: int | None = None):
+    self._set_log_callback()
+
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width if width is not None else GuiApplication._default_width()
     self._height = height if height is not None else GuiApplication._default_height()
@@ -215,9 +217,9 @@ class GuiApplication:
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
     self._window_close_requested = False
-    self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
     self._modal_overlay_shown = False
+    self._modal_overlay_tick: Callable[[], None] | None = None
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -258,9 +260,6 @@ class GuiApplication:
         sys.exit(0)
       signal.signal(signal.SIGINT, _close)
       atexit.register(self.close)
-
-      self._set_log_callback()
-      rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
 
       flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
       if ENABLE_VSYNC:
@@ -346,6 +345,9 @@ class GuiApplication:
         self._modal_overlay.callback(-1)
 
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
+
+  def set_modal_overlay_tick(self, tick_function: Callable | None):
+    self._modal_overlay_tick = tick_function
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -485,6 +487,9 @@ class GuiApplication:
 
         # Handle modal overlay rendering and input processing
         if self._handle_modal_overlay():
+          # Allow a Widget to still run a function while overlay is shown
+          if self._modal_overlay_tick is not None:
+            self._modal_overlay_tick()
           yield False
         else:
           yield True
@@ -632,6 +637,9 @@ class GuiApplication:
         cloudlog.debug(f"raylib: {text_str}")
       else:
         cloudlog.error(f"raylib: Unknown level {log_level}: {text_str}")
+
+    # ensure we get all the logs forwarded to us
+    rl.set_trace_log_level(rl.TraceLogLevel.LOG_DEBUG)
 
     # Store callback reference
     self._trace_log_callback = trace_log_callback

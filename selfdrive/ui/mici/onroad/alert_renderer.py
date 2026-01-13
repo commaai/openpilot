@@ -200,11 +200,11 @@ class AlertRenderer(Widget):
     text_x = self._rect.x + ALERT_MARGIN
     text_width = self._rect.width - ALERT_MARGIN
     if icon_side == 'left':
-      text_x = self._rect.x + self._txt_turn_signal_right.width + 20 * 2
-      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width - 20 * 2
+      text_x = self._rect.x + self._txt_turn_signal_right.width
+      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width
     elif icon_side == 'right':
       text_x = self._rect.x + ALERT_MARGIN
-      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width - 20 * 2
+      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width
 
     text_rect = rl.Rectangle(
       text_x,
