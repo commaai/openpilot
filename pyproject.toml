@@ -113,7 +113,7 @@ dev = [
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
   "pyautogui",
-  "pyopencl; platform_machine != 'aarch64'", # broken on arm64
+  "pyopencl",
   "pytools>=2025.1.6; platform_machine != 'aarch64'",
   "pywinctl",
   "pyprof2calltree",
