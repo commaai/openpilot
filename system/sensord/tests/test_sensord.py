@@ -42,7 +42,7 @@ ALL_SENSORS = {
     SensorConfig("magneticUncalibrated", 0, 300),
   }
 }
-ALL_SENSORS[Sensor.lsm6ds3] = ALL_SENSORS[Sensor.lsdm6ds3trc]
+ALL_SENSORS[Sensor.lsm6ds3] = ALL_SENSORS[Sensor.lsm6ds3trc]
 
 def get_irq_count(irq: int):
   with open(f"/sys/kernel/irq/{irq}/per_cpu_count") as f:
