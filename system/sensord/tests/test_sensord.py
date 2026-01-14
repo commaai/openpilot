@@ -32,23 +32,17 @@ SENSOR_CONFIGURATIONS: list[set] = {
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
 ALL_SENSORS = {
-  Sensor.lsm6ds3: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("temperature", 0, 60),
-  },
-
   Sensor.lsm6ds3trc: {
     SensorConfig("acceleration", 5, 15),
     SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("temperature", 0, 60),
+    SensorConfig("temperature", 10, 40),  # set for max range of our office
   },
 
   Sensor.mmc5603nj: {
     SensorConfig("magneticUncalibrated", 0, 300),
   }
 }
-
+ALL_SENSORS[Sensor.lsm6ds3] = ALL_SENSORS[Sensor.lsm6ds3trc]
 
 def get_irq_count(irq: int):
   with open(f"/sys/kernel/irq/{irq}/per_cpu_count") as f:
