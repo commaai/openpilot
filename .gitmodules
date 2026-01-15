@@ -16,3 +16,15 @@
 [submodule "tinygrad"]
   path = tinygrad_repo
   url = https://github.com/tinygrad/tinygrad.git
+[submodule "jetracer_repo"]
+	path = jetracer_repo
+	url = https://github.com/FaBoPlatform/jetracer.git
+[submodule "jetcam_repo"]
+	path = jetcam_repo
+	url = https://github.com/NVIDIA-AI-IOT/jetcam.git
+[submodule "opencv"]
+	path = opencv
+	url = https://github.com/opencv/opencv.git
+[submodule "pocl"]
+	path = pocl
+	url = https://github.com/pocl/pocl.git

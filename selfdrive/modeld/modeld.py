@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
+
+# tinygrad のデバイス指定を環境変数に従わせる。既に DEV/DEVICE/TINYGRAD_DEVICE が
+# セットされていればそれを優先し、未指定なら Jetson (非 TICI) では CUDA を使う。
+env_dev = os.environ.get("DEV") or os.environ.get("DEVICE") or os.environ.get("TINYGRAD_DEVICE")
+if env_dev:
+  os.environ["DEV"] = env_dev
+else:
+  os.environ["DEV"] = "QCOM" if TICI else "CUDA"
+# tinygrad が参照する DEVICE も合わせて設定しておく
+os.environ["DEVICE"] = os.environ["DEV"]
+
 USBGPU = "USBGPU" in os.environ
 if USBGPU:
   os.environ['DEV'] = 'AMD'
@@ -189,6 +199,7 @@ class ModelState:
     new_desire = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
 
+    tg_dev = os.environ.get("DEVICE", "CUDA")
     imgs_cl = {name: self.frames[name].prepare(bufs[name], transforms[name].flatten()) for name in self.vision_input_names}
 
     if TICI and not USBGPU:
@@ -199,7 +210,8 @@ class ModelState:
     else:
       for key in imgs_cl:
         frame_input = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.vision_input_shapes[key])
-        self.vision_inputs[key] = Tensor(frame_input, dtype=dtypes.uint8).realize()
+        # GPU 実行を確実にするため device を明示
+        self.vision_inputs[key] = Tensor(frame_input, dtype=dtypes.uint8, device=tg_dev).realize()
 
     if prepare_only:
       return None

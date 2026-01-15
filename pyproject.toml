@@ -110,7 +110,7 @@ dev = [
   "dictdiffer",
   "jeepney",
   "matplotlib",
-  "opencv-python-headless",
+  # "opencv-python-headless", GStreamが入っていないので custom build する
   "parameterized >=0.8, <0.9",
   "pyautogui",
   "pyopencl",
@@ -120,6 +120,13 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
+]
+rc = [
+  "traitlets",
+  "adafruit-circuitpython-servokit",
+  "adafruit-blinka",
+  "Jetson.GPIO",
+  "jetcam",
 ]
 
 tools = [
@@ -276,3 +283,6 @@ unsupported-operator = "ignore"
 # Ignore non-subscriptable - false positives from dynamic types
 non-subscriptable = "ignore"
 # not-iterable errors are now fixed
+
+[tool.uv.sources]
+jetcam = { git = "https://github.com/NVIDIA-AI-IOT/jetcam.git" }

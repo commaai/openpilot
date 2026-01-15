@@ -31,7 +31,12 @@ class Camerad:
 
     self.cameras = []
     for c in CAMERAS:
-      cam_device = f"/dev/video{c.cam_id}" if platform.system() != "Darwin" else c.cam_id
+      try:
+        cam_device = f"/dev/video{int(c.cam_id)}" if platform.system() != "Darwin" else c.cam_id
+      except ValueError:
+        # 数値に変換できない場合は文字列そのまま（GStreamerパイプラインなど）
+        cam_device = c.cam_id
+
       cam = Camera(c.msg_name, c.stream_type, cam_device)
       self.cameras.append(cam)
       self.vipc_server.create_buffers(c.stream_type, 20, cam.W, cam.H)
