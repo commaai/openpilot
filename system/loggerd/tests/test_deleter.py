@@ -3,6 +3,7 @@ import threading
 from collections import namedtuple
 from pathlib import Path
 from collections.abc import Sequence
+from unittest.mock import patch
 
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
@@ -65,30 +66,34 @@ class TestDeleter(UploaderTestCase):
     assert deleted_order == f_paths, "Files not deleted in expected order"
 
   def test_delete_order(self):
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
-    ])
+    self.assertDeleteOrder(
+      [
+        self.make_file_with_data(self.seg_format.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(1), self.f_type),
+        self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+      ]
+    )
 
   def test_delete_many_preserved(self):
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(1), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
-      self.make_file_with_data(self.seg_format.format(2), self.f_type),
-    ] + [
-      self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
-      for i in range(5)
-    ])
+    self.assertDeleteOrder(
+      [
+        self.make_file_with_data(self.seg_format.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(1), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+        self.make_file_with_data(self.seg_format.format(2), self.f_type),
+      ]
+      + [self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE) for i in range(5)]
+    )
 
   def test_delete_last(self):
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
-      self.make_file_with_data("boot", self.seg_format[:-4]),
-      self.make_file_with_data("crash", self.seg_format2[:-4]),
-    ])
+    self.assertDeleteOrder(
+      [
+        self.make_file_with_data(self.seg_format.format(1), self.f_type),
+        self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+        self.make_file_with_data("boot", self.seg_format[:-4]),
+        self.make_file_with_data("crash", self.seg_format2[:-4]),
+      ]
+    )
 
   def test_no_delete_when_available_space(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)
@@ -115,3 +120,20 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  def test_crash_handling_on_file(self):
+    # Create a file that looks like a directory to the deleter
+    fake_dir = "fake_dir_file"
+    fake_path = Path(deleter.Paths.log_root()) / fake_dir
+    with open(fake_path, "w") as f:
+      f.write("I am not a directory")
+
+    # Force the deleter to see this file as a directory
+    with patch("openpilot.system.loggerd.deleter.listdir_by_creation", return_value=[fake_dir]):
+      self.start_thread()
+      try:
+        # Wait a bit to ensure it processes and doesn't crash
+        time.sleep(0.5)
+        assert self.del_thread.is_alive(), "Thread crashed on file masquerading as directory"
+      finally:
+        self.join_thread()

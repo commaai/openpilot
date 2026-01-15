@@ -19,7 +19,10 @@ PRESERVE_COUNT = 5
 
 
 def has_preserve_xattr(d: str) -> bool:
-  return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
+  try:
+    return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
+  except OSError:
+    return False
 
 
 def get_preserved_segments(dirs_by_creation: list[str]) -> set[str]:
@@ -58,7 +61,11 @@ def deleter_thread(exit_event: threading.Event):
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
         delete_path = os.path.join(Paths.log_root(), delete_dir)
 
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+        try:
+          if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+            continue
+        except OSError:
+          cloudlog.exception(f"issue checking lock files in {delete_path}")
           continue
 
         try:
@@ -67,7 +74,7 @@ def deleter_thread(exit_event: threading.Event):
           break
         except OSError:
           cloudlog.exception(f"issue deleting {delete_path}")
-      exit_event.wait(.1)
+      exit_event.wait(0.1)
     else:
       exit_event.wait(30)
 
