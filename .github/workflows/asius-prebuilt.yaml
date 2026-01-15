@@ -51,6 +51,14 @@ jobs:
       - name: Prepare release
         run: |
           cd $BUILD_DIR
+          # Bundle required system libraries that differ from AGNOS
+          mkdir -p third_party/lib
+          cp /usr/lib/aarch64-linux-gnu/libcapnp*.so* third_party/lib/ || true
+          cp /usr/lib/aarch64-linux-gnu/libkj*.so* third_party/lib/ || true
+
+          # Add bundled libs to library path in launch_env.sh
+          echo 'export LD_LIBRARY_PATH="$DIR/third_party/lib:$LD_LIBRARY_PATH"' >> launch_env.sh
+
           # Remove build artifacts and source files not needed at runtime
           find . -name '*.o' -delete
           find . -name '*.a' -delete
