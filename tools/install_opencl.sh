@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
 # llvm 18系が pocl の build に必要
 wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
@@ -10,8 +13,8 @@ sudo apt install -y ocl-icd-libopencl1 ocl-icd-opencl-dev
 
 
 # pocl の build と install
-cd ../pocl || exit
-mkdir build && cd build || exit
+cd "$PROJECT_DIR/pocl" || exit
+mkdir -p build && cd build || exit
 cmake .. \
   -DCMAKE_INSTALL_PREFIX=/usr/local/pocl \
   -DCMAKE_BUILD_TYPE=Release \

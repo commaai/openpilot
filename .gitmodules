@@ -28,3 +28,6 @@
 [submodule "pocl"]
 	path = pocl
 	url = https://github.com/pocl/pocl.git
+[submodule "opencv_contrib"]
+	path = opencv_contrib
+	url = https://github.com/opencv/opencv_contrib.git
