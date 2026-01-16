@@ -154,9 +154,7 @@ size_t getRemoteFileSize(const std::string &url, std::atomic<bool> *abort) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
   curl_easy_setopt(curl, CURLOPT_HEADER, 1);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
-  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5L);
 
   CURLM *cm = curl_multi_init();
   curl_multi_add_handle(cm, curl);
@@ -209,7 +207,6 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     curl_easy_setopt(eh, CURLOPT_URL, url.c_str());
     curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[eh].offset, writers[eh].end - 1).c_str());
     curl_easy_setopt(eh, CURLOPT_HTTPGET, 1);
-    curl_easy_setopt(eh, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
 
     curl_multi_add_handle(cm, eh);
