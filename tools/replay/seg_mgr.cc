@@ -1,6 +1,7 @@
 #include "tools/replay/seg_mgr.h"
 
 #include <algorithm>
+#include <cstdlib>
 
 SegmentManager::~SegmentManager() {
   {
@@ -17,6 +18,12 @@ bool SegmentManager::load() {
     return false;
   }
 
+  static const bool cabana_debug = (std::getenv("CABANA_DEBUG") != nullptr);
+  if (cabana_debug) {
+    rInfo("[CABANA_DEBUG] Route loaded. route=%s seg_files=%zu",
+          route_.name().c_str(), route_.segments().size());
+  }
+
   for (const auto &[n, file] : route_.segments()) {
     if (!file.rlog.empty() || !file.qlog.empty()) {
       segments_.insert({n, nullptr});
@@ -29,15 +36,23 @@ bool SegmentManager::load() {
   }
 
   rInfo("loaded route %s with %zu valid segments", route_.name().c_str(), segments_.size());
+  if (cabana_debug) {
+    rInfo("[CABANA_DEBUG] SegmentManager thread starting. cur_seg_num=%d cache_limit=%d",
+          cur_seg_num_, segment_cache_limit_);
+  }
   thread_ = std::thread(&SegmentManager::manageSegmentCache, this);
   return true;
 }
 
 void SegmentManager::setCurrentSegment(int seg_num) {
+  static const bool cabana_debug = (std::getenv("CABANA_DEBUG") != nullptr);
   {
     std::unique_lock lock(mutex_);
     if (cur_seg_num_ == seg_num) return;
 
+    if (cabana_debug) {
+      rInfo("[CABANA_DEBUG] setCurrentSegment %d -> %d", cur_seg_num_, seg_num);
+    }
     cur_seg_num_ = seg_num;
     needs_update_ = true;
   }
@@ -45,6 +60,7 @@ void SegmentManager::setCurrentSegment(int seg_num) {
 }
 
 void SegmentManager::manageSegmentCache() {
+  static const bool cabana_debug = (std::getenv("CABANA_DEBUG") != nullptr);
   while (true) {
     std::unique_lock lock(mutex_);
     cv_.wait(lock, [this]() { return exit_ || needs_update_; });
@@ -59,6 +75,10 @@ void SegmentManager::manageSegmentCache() {
     auto end = std::next(begin, std::min<int>(segment_cache_limit_, std::distance(begin, segments_.end())));
     begin = std::prev(end, std::min<int>(segment_cache_limit_, std::distance(segments_.begin(), end)));
 
+    if (cabana_debug) {
+      rInfo("[CABANA_DEBUG] manageSegmentCache wake. cur=%d begin=%d end=%d",
+            cur->first, begin->first, std::prev(end)->first);
+    }
     lock.unlock();
 
     loadSegmentsInRange(begin, cur, end);
@@ -69,6 +89,9 @@ void SegmentManager::manageSegmentCache() {
     std::for_each(end, segments_.end(), [](auto &segment) { segment.second.reset(); });
 
     if (merged && onSegmentMergedCallback_) {
+      if (cabana_debug) {
+        rInfo("[CABANA_DEBUG] segments merged -> callback");
+      }
       onSegmentMergedCallback_();  // Notify listener that segments have been merged
     }
   }
@@ -115,6 +138,7 @@ bool SegmentManager::mergeSegments(const SegmentMap::iterator &begin, const Segm
 
 void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap::iterator cur, SegmentMap::iterator end) {
   auto tryLoadSegment = [this](auto first, auto last) {
+    static const bool cabana_debug = (std::getenv("CABANA_DEBUG") != nullptr);
     for (auto it = first; it != last; ++it) {
       auto &segment_ptr = it->second;
       if (!segment_ptr) {
@@ -124,8 +148,16 @@ void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap:
         segment_ptr = std::make_shared<Segment>(
             it->first, route_.at(it->first), flags_, filters_,
             [this](int seg_num, bool success) {
+              static const bool cabana_debug_cb = (std::getenv("CABANA_DEBUG") != nullptr);
               if (onBenchmarkEvent_) {
                 onBenchmarkEvent_(seg_num, success ? "loaded" : "load failed");
+              }
+              if (cabana_debug_cb) {
+                const auto &files = route_.at(seg_num);
+                rInfo("[CABANA_DEBUG] segment %d load finished success=%d rlog=%s qlog=%s",
+                      seg_num, success ? 1 : 0,
+                      files.rlog.empty() ? "-" : files.rlog.c_str(),
+                      files.qlog.empty() ? "-" : files.qlog.c_str());
               }
               std::unique_lock lock(mutex_);
               needs_update_ = true;
@@ -134,6 +166,9 @@ void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap:
       }
 
       if (segment_ptr->getState() == Segment::LoadState::Loading) {
+        if (cabana_debug) {
+          rInfo("[CABANA_DEBUG] segment %d still loading", it->first);
+        }
         return true;  // Segment is still loading
       }
     }

@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QMessageBox>
 #include <QPushButton>
+#include <cstdlib>
 
 #include "common/timing.h"
 #include "common/util.h"
@@ -25,12 +26,21 @@ ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
 }
 
 void ReplayStream::mergeSegments() {
+  static const bool cabana_debug = (std::getenv("CABANA_DEBUG") != nullptr);
   auto event_data = replay->getEventData();
+  if (cabana_debug) {
+    qInfo() << "[CABANA_DEBUG] mergeSegments() called. segments in event_data=" << (int)event_data->segments.size();
+  }
+  bool added_segment = false;
+  std::vector<const CanEvent *> new_events;
   for (const auto &[n, seg] : event_data->segments) {
     if (!processed_segments.count(n)) {
       processed_segments.insert(n);
+      added_segment = true;
+      if (cabana_debug) {
+        qInfo() << "[CABANA_DEBUG] processing new segment" << n << "events=" << (int)seg->log->events.size();
+      }
 
-      std::vector<const CanEvent *> new_events;
       new_events.reserve(seg->log->events.size());
       for (const Event &e : seg->log->events) {
         if (e.which == cereal::Event::Which::CAN) {
@@ -41,8 +51,17 @@ void ReplayStream::mergeSegments() {
           }
         }
       }
-      mergeEvents(new_events);
     }
+  }
+  if (!new_events.empty()) {
+    if (cabana_debug) qInfo() << "[CABANA_DEBUG] emitting eventsMerged with CAN events=" << (int)new_events.size();
+    mergeEvents(new_events);
+  } else if (added_segment) {
+    MessageEventsMap empty_events;
+    if (cabana_debug) qInfo() << "[CABANA_DEBUG] no CAN events in loaded segment(s); emitting eventsMerged(empty)";
+    emit eventsMerged(empty_events);
+  } else {
+    if (cabana_debug) qInfo() << "[CABANA_DEBUG] mergeSegments: no new segments to process";
   }
 }
 
