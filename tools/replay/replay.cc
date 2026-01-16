@@ -4,7 +4,6 @@
 #include <csignal>
 #include <iomanip>
 #include <sstream>
-#include <cstdlib>
 #include "cereal/services.h"
 #include "common/params.h"
 #include "tools/replay/util.h"
@@ -92,12 +91,6 @@ bool Replay::load() {
 
   if (!seg_mgr_->load()) return false;
 
-  static const bool cabana_debug = (std::getenv("CABANA_DEBUG") != nullptr);
-  if (cabana_debug) {
-    rInfo("[CABANA_DEBUG] SegmentManager loaded. route=%s segs=%zu",
-          seg_mgr_->route_.name().c_str(), seg_mgr_->route_.segments().size());
-  }
-
   if (hasFlag(REPLAY_FLAG_BENCHMARK)) {
     benchmark_stats_.timeline.emplace_back(nanos_since_boot(), "route metadata loaded");
   }
@@ -107,11 +100,7 @@ bool Replay::load() {
   
   // Trigger segment loading by setting the current segment to the first one
   if (!seg_mgr_->route_.segments().empty()) {
-    const int first_seg = seg_mgr_->route_.segments().begin()->first;
-    if (cabana_debug) {
-      rInfo("[CABANA_DEBUG] Trigger initial segment load: first_seg=%d", first_seg);
-    }
-    seg_mgr_->setCurrentSegment(first_seg);
+    seg_mgr_->setCurrentSegment(seg_mgr_->route_.segments().begin()->first);
   }
   
   return true;

@@ -3,7 +3,6 @@
 #include <array>
 #include <filesystem>
 #include <regex>
-#include <cstdlib>
 
 #include "third_party/json11/json11.hpp"
 #include "system/hardware/hw.h"
@@ -82,23 +81,16 @@ bool Route::loadSegments() {
 }
 
 bool Route::loadFromAutoSource() {
-  static const bool cabana_debug = (std::getenv("CABANA_DEBUG") != nullptr);
   auto origin_prefix = getenv("OPENPILOT_PREFIX");
   if (origin_prefix) {
     setenv("OPENPILOT_PREFIX", "", 1);
   }
   auto cmd = util::string_format("../auto_source.py \"%s\"", route_string_.c_str());
-  if (cabana_debug) {
-    rInfo("[CABANA_DEBUG] auto_source cmd: %s", cmd.c_str());
-  }
   auto log_files = split(util::check_output(cmd), '\n');
   if (origin_prefix) {
     setenv("OPENPILOT_PREFIX", origin_prefix, 1);
   }
 
-  if (cabana_debug) {
-    rInfo("[CABANA_DEBUG] auto_source lines: %zu", log_files.size());
-  }
   const static std::regex rx(R"(\/(\d+)\/)");
   for (int i = 0; i < log_files.size(); ++i) {
     int seg_num = i;
@@ -107,9 +99,6 @@ bool Route::loadFromAutoSource() {
       seg_num = std::stoi(match[1]);
     }
     addFileToSegment(seg_num, log_files[i]);
-  }
-  if (cabana_debug) {
-    rInfo("[CABANA_DEBUG] route segments after auto_source: %zu", segments_.size());
   }
   return !segments_.empty();
 }
@@ -234,7 +223,6 @@ Segment::~Segment() {
 void Segment::loadFile(int id, const std::string file) {
   const bool local_cache = !(flags & REPLAY_FLAG_NO_FILE_CACHE);
   bool success = false;
-  static const bool cabana_debug = (std::getenv("CABANA_DEBUG") != nullptr);
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>();
     success = frames[id]->load((CameraType)id, file, flags & REPLAY_FLAG_NO_HW_DECODER, &abort_, local_cache, 20 * 1024 * 1024, 3);
@@ -244,9 +232,6 @@ void Segment::loadFile(int id, const std::string file) {
   }
 
   if (!success) {
-    if (cabana_debug) {
-      rWarning("[CABANA_DEBUG] Segment %d failed to load %s", seg_num, file.c_str());
-    }
     // abort all loading jobs.
     abort_ = true;
   }
