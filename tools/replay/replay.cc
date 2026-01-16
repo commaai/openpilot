@@ -97,12 +97,6 @@ bool Replay::load() {
 
   min_seconds_ = seg_mgr_->route_.segments().begin()->first * 60;
   max_seconds_ = (seg_mgr_->route_.segments().rbegin()->first + 1) * 60;
-  
-  // Trigger segment loading by setting the current segment to the first one
-  if (!seg_mgr_->route_.segments().empty()) {
-    seg_mgr_->setCurrentSegment(seg_mgr_->route_.segments().begin()->first);
-  }
-  
   return true;
 }
 

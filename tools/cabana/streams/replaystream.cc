@@ -26,13 +26,11 @@ ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
 
 void ReplayStream::mergeSegments() {
   auto event_data = replay->getEventData();
-  bool added_segment = false;
-  std::vector<const CanEvent *> new_events;
   for (const auto &[n, seg] : event_data->segments) {
     if (!processed_segments.count(n)) {
       processed_segments.insert(n);
-      added_segment = true;
 
+      std::vector<const CanEvent *> new_events;
       new_events.reserve(seg->log->events.size());
       for (const Event &e : seg->log->events) {
         if (e.which == cereal::Event::Which::CAN) {
@@ -43,13 +41,8 @@ void ReplayStream::mergeSegments() {
           }
         }
       }
+      mergeEvents(new_events);
     }
-  }
-  if (!new_events.empty()) {
-    mergeEvents(new_events);
-  } else if (added_segment) {
-    MessageEventsMap empty_events;
-    emit eventsMerged(empty_events);
   }
 }
 
