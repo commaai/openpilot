@@ -36,7 +36,7 @@ class DRIVER_MONITOR_SETTINGS:
     self._SG_THRESHOLD = 0.9
     self._BLINK_THRESHOLD = 0.865
 
-    self._PHONE_THRESH = 0.6
+    self._PHONE_THRESH = 0.1
     self._PHONE_THRESH2 = 15.0
     self._PHONE_MAX_OFFSET = 0.06
     self._PHONE_MIN_OFFSET = 0.025
