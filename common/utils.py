@@ -7,7 +7,6 @@ import time
 import functools
 from subprocess import Popen, PIPE, TimeoutExpired
 import zstandard as zstd
-from openpilot.common.swaglog import cloudlog
 
 LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a small step change
 
@@ -155,11 +154,11 @@ def retry(attempts=3, delay=1.0, ignore_failure=False):
         try:
           return func(*args, **kwargs)
         except Exception:
-          cloudlog.exception(f"{func.__name__} failed, trying again")
+          print(f"{func.__name__} failed, trying again")
           time.sleep(delay)
 
       if ignore_failure:
-        cloudlog.error(f"{func.__name__} failed after retry")
+        print(f"{func.__name__} failed after retry")
       else:
         raise Exception(f"{func.__name__} failed after retry")
     return wrapper
