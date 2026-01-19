@@ -61,9 +61,10 @@ class LatControlTorque(LatControl):
     pid_log.version = VERSION
     measured_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
     measurement = measured_curvature * CS.vEgo ** 2
+    future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
+    self.lat_accel_request_buffer.append(future_desired_lateral_accel)
 
     if not active:
-      self.lat_accel_request_buffer.append(measurement)
       output_torque = 0.0
       pid_log.active = False
     else:
@@ -71,17 +72,15 @@ class LatControlTorque(LatControl):
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
-      delay_frames = int(np.clip(lat_delay / self.dt, 1, self.lat_accel_request_buffer_len))
+      delay_frames = int(np.clip(lat_delay / self.dt + 1, 1, self.lat_accel_request_buffer_len))
       expected_lateral_accel = self.lat_accel_request_buffer[-delay_frames]
+      setpoint = expected_lateral_accel
+      error = setpoint - measurement
+    
       lookahead_idx = int(np.clip(-delay_frames + self.lookahead_frames, -self.lat_accel_request_buffer_len+1, -2))
       raw_lateral_jerk = (self.lat_accel_request_buffer[lookahead_idx+1] - self.lat_accel_request_buffer[lookahead_idx-1]) / (2 * self.dt)
       desired_lateral_jerk = self.jerk_filter.update(raw_lateral_jerk)
-      future_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
-      self.lat_accel_request_buffer.append(future_desired_lateral_accel)
       gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
-      setpoint = expected_lateral_accel
-
-      error = setpoint - measurement
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
       pid_log.error = float(error)
