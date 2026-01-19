@@ -17,7 +17,7 @@ std::string cacheFilePath(const std::string &url) {
 }
 
 std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
-  const bool is_remote = file.find("https://") == 0;
+  const bool is_remote = (file.find("https://") == 0) || (file.find("http://") == 0);
   const std::string local_file = is_remote ? cacheFilePath(file) : file;
   std::string result;
 
