@@ -1,11 +1,13 @@
 #include <getopt.h>
 
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 
 #include "common/prefix.h"
+#include "common/timing.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
@@ -31,6 +33,7 @@ Options:
       --no-hw-decoder Disable HW video decoding
       --no-vipc      Do not output video
       --all          Output all messages including bookmarkButton, uiDebug, userBookmark
+      --benchmark    Run in benchmark mode (process all events then exit with stats)
   -h, --help         Show this help message
 )";
 
@@ -66,6 +69,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"no-hw-decoder", no_argument, nullptr, 0},
       {"no-vipc", no_argument, nullptr, 0},
       {"all", no_argument, nullptr, 0},
+      {"benchmark", no_argument, nullptr, 0},
       {"help", no_argument, nullptr, 'h'},
       {nullptr, 0, nullptr, 0},  // Terminating entry
   };
@@ -79,6 +83,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"no-hw-decoder", REPLAY_FLAG_NO_HW_DECODER},
       {"no-vipc", REPLAY_FLAG_NO_VIPC},
       {"all", REPLAY_FLAG_ALL_SERVICES},
+      {"benchmark", REPLAY_FLAG_BENCHMARK},
   };
 
   if (argc == 1) {
@@ -147,6 +152,28 @@ int main(int argc, char *argv[]) {
   }
   if (!replay.load()) {
     return 1;
+  }
+
+  if (config.flags & REPLAY_FLAG_BENCHMARK) {
+    replay.start(config.start_seconds);
+    replay.waitForFinished();
+
+    const auto &stats = replay.getBenchmarkStats();
+    uint64_t process_start = stats.process_start_ts;
+
+    std::cout << "\n===== REPLAY BENCHMARK RESULTS =====\n";
+    std::cout << "Route: " << replay.route().name() << "\n\n";
+
+    std::cout << "TIMELINE:\n";
+    std::cout << "  t=0 ms        process start\n";
+    for (const auto &[ts, event] : stats.timeline) {
+      double ms = (ts - process_start) / 1e6;
+      std::cout << "  t=" << std::fixed << std::setprecision(0) << ms << " ms"
+                << std::string(std::max(1, 8 - static_cast<int>(std::to_string(static_cast<int>(ms)).length())), ' ')
+                << event << "\n";
+    }
+
+    return 0;
   }
 
   ConsoleUI console_ui(&replay);

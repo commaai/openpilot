@@ -67,10 +67,6 @@ class ThermalConfig:
 
 class LPABase(ABC):
   @abstractmethod
-  def bootstrap(self) -> None:
-    pass
-
-  @abstractmethod
   def list_profiles(self) -> list[Profile]:
     pass
 
