@@ -12,11 +12,11 @@
 #include "media/cam_isp_ife.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
-#include "third_party/linux/include/msm_media_info.h"
 
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "system/camerad/cameras/ife.h"
+#include "system/camerad/cameras/nv12_info.h"
 #include "system/camerad/cameras/spectra.h"
 #include "system/camerad/cameras/bps_blobs.h"
 
@@ -283,12 +283,11 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   buf.out_img_width = sensor->frame_width / sensor->out_scale;
   buf.out_img_height = (sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height) / sensor->out_scale;
-  std::tie(stride, y_height, yuv_size) = get_nv12_info(buf.out_img_width, buf.out_img_height);
-  uv_height = y_height / 2;
+
+  // size is driven by all the HW that handles frames,
+  // the video encoder has certain alignment requirements in this case
+  std::tie(stride, y_height, uv_height, yuv_size) = get_nv12_info(buf.out_img_width, buf.out_img_height);
   uv_offset = stride * y_height;
-  if (cc.output_type != ISP_RAW_OUTPUT) {
-    uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
-  }
 
   open = true;
   configISP();

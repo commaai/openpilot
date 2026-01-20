@@ -43,9 +43,15 @@ def yuv_to_rgb(y, u, v):
 
 
 def extract_image(buf):
+  # NV12 format: Y plane followed by interleaved UV plane
+  # UV plane size is stride * uv_height, where uv_height = align(height/2, 16)
+  uv_height = ((buf.height // 2) + 15) // 16 * 16
+  uv_plane_size = buf.stride * uv_height
+
   y = np.array(buf.data[:buf.uv_offset], dtype=np.uint8).reshape((-1, buf.stride))[:buf.height, :buf.width]
-  u = np.array(buf.data[buf.uv_offset::2], dtype=np.uint8).reshape((-1, buf.stride//2))[:buf.height//2, :buf.width//2]
-  v = np.array(buf.data[buf.uv_offset+1::2], dtype=np.uint8).reshape((-1, buf.stride//2))[:buf.height//2, :buf.width//2]
+  uv_data = buf.data[buf.uv_offset:buf.uv_offset + uv_plane_size]
+  u = np.array(uv_data[::2], dtype=np.uint8).reshape((-1, buf.stride//2))[:buf.height//2, :buf.width//2]
+  v = np.array(uv_data[1::2], dtype=np.uint8).reshape((-1, buf.stride//2))[:buf.height//2, :buf.width//2]
 
   return yuv_to_rgb(y, u, v)
 
