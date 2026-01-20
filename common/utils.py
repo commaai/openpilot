@@ -7,14 +7,61 @@ import time
 import functools
 from subprocess import Popen, PIPE, TimeoutExpired
 import zstandard as zstd
-from openpilot.common.swaglog import cloudlog
 
 LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a small step change
+
+
+def sudo_write(val: str, path: str) -> None:
+  try:
+    with open(path, 'w') as f:
+      f.write(str(val))
+  except PermissionError:
+    os.system(f"sudo chmod a+w {path}")
+    try:
+      with open(path, 'w') as f:
+        f.write(str(val))
+    except PermissionError:
+      # fallback for debugfs files
+      os.system(f"sudo su -c 'echo {val} > {path}'")
+
+
+def sudo_read(path: str) -> str:
+  try:
+    return subprocess.check_output(f"sudo cat {path}", shell=True, encoding='utf8').strip()
+  except Exception:
+    return ""
+
+
+class MovingAverage:
+  def __init__(self, window_size: int):
+    self.window_size: int = window_size
+    self.buffer: list[float] = [0.0] * window_size
+    self.index: int = 0
+    self.count: int = 0
+    self.sum: float = 0.0
+
+  def add_value(self, new_value: float):
+    # Update the sum: subtract the value being replaced and add the new value
+    self.sum -= self.buffer[self.index]
+    self.buffer[self.index] = new_value
+    self.sum += new_value
+
+    # Update the index in a circular manner
+    self.index = (self.index + 1) % self.window_size
+
+    # Track the number of added values (for partial windows)
+    self.count = min(self.count + 1, self.window_size)
+
+  def get_average(self) -> float:
+    if self.count == 0:
+      return float('nan')
+    return self.sum / self.count
 
 
 class CallbackReader:
   """Wraps a file, but overrides the read method to also
   call a callback function with the number of bytes read so far."""
+
   def __init__(self, f, callback, *args):
     self.f = f
     self.callback = callback
@@ -107,11 +154,11 @@ def retry(attempts=3, delay=1.0, ignore_failure=False):
         try:
           return func(*args, **kwargs)
         except Exception:
-          cloudlog.exception(f"{func.__name__} failed, trying again")
+          print(f"{func.__name__} failed, trying again")
           time.sleep(delay)
 
       if ignore_failure:
-        cloudlog.error(f"{func.__name__} failed after retry")
+        print(f"{func.__name__} failed after retry")
       else:
         raise Exception(f"{func.__name__} failed after retry")
     return wrapper

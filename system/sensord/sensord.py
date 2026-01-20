@@ -7,7 +7,7 @@ import threading
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
-from openpilot.common.util import sudo_write
+from openpilot.common.utils import sudo_write
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gpio import gpiochip_get_ro_value_fd, gpioevent_data

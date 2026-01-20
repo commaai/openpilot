@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# type: ignore
 '''
 System tools like top/htop can only show current cpu usage values, so I write this script to do statistics jobs.
   Features:

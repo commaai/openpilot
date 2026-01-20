@@ -273,6 +273,6 @@ invalid-argument-type = "ignore"
 call-non-callable = "ignore"
 # Ignore unsupported-operator - false positives from dynamic types
 unsupported-operator = "ignore"
-# Ignore non-subscriptable - false positives from dynamic types
-non-subscriptable = "ignore"
+# Ignore not-subscriptable - false positives from dynamic types
+not-subscriptable = "ignore"
 # not-iterable errors are now fixed
