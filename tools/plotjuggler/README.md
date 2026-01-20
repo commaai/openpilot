@@ -20,6 +20,7 @@ A helper to run PlotJuggler on openpilot routes
 positional arguments:
   route_or_segment_name
                         The route or segment name to plot (cabana share URL accepted) (default: None)
+                        See README.md for example route syntax.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -39,13 +40,15 @@ Example using route name:
 
 Examples using segment:
 
-`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1"`
+`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/4"   # 4th segment`
 
-`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1/q" # use qlogs`
+`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/4/q" # use qlogs`
 
 Example using segment range:
 
-`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/0:1"`
+`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/4:6" # 4th and 5th segment`
+
+Additional examples at openpilot/tools/lib/README.md
 
 ## Streaming
 
