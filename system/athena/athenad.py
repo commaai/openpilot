@@ -61,6 +61,12 @@ DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 UPLOAD_TOS = 0x20  # CS1, low priority background traffic
 SSH_TOS = 0x90  # AF42, DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
 
+# Parameters that should never be remotely modified
+BLOCKED_PARAMS = {
+  "GithubUsername",  # Could grant SSH access
+  "GithubSshKeys",   # Direct SSH key injection
+}
+
 NetworkType = log.DeviceState.NetworkType
 
 UploadFileDict = dict[str, str | int | float | bool]
@@ -861,6 +867,11 @@ def saveParams(params_to_update: dict[str, str | None]) -> dict[str, str]:
   params = Params()
   results = {}
   for key, value in params_to_update.items():
+    if key in BLOCKED_PARAMS:
+      cloudlog.warning(f"athenad.saveParams.blocked: Attempted to modify blocked parameter '{key}'")
+      results[key] = "error: blocked"
+      continue
+
     try:
       if value is None or value == "":
         params.remove(key)
