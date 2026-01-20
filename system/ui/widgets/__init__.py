@@ -12,7 +12,7 @@ try:
 except ImportError:
   class Device:
     awake = True
-  device = Device()  # type: ignore
+  device = Device()
 
 
 class DialogResult(IntEnum):
@@ -299,7 +299,7 @@ class NavWidget(Widget, abc.ABC):
 
         # block horizontal swiping if now swiping away
         if self._can_swipe_away:
-          if mouse_event.pos.y - self._back_button_start_pos.y > START_DISMISSING_THRESHOLD:  # type: ignore
+          if mouse_event.pos.y - self._back_button_start_pos.y > START_DISMISSING_THRESHOLD:
             self._swiping_away = True
 
     elif mouse_event.left_released:
