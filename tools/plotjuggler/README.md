@@ -48,7 +48,7 @@ Example using segment range:
 
 `./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/4:6" # 4th and 5th segment`
 
-Additional examples at [logreader README.md](./lib/README.md)
+Additional examples at [logreader README.md](../lib/README.md)
 
 ## Streaming
 
