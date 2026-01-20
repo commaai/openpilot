@@ -8,6 +8,8 @@
 
 // Returns NV12 aligned width, height, and buffer size for the given frame.
 inline std::tuple<uint32_t, uint32_t, uint32_t> get_nv12_info(int width, int height) {
+  // the encoder HW tells us the size it wants after setting it up.
+  // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
   const uint32_t nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, width);
   const uint32_t nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, height);
   assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, width));
