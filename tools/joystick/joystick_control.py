@@ -42,7 +42,7 @@ class Keyboard:
 
 class Joystick:
   def __init__(self):
-    # This class supports a PlayStation 5 DualSense controller on the comma 3X
+    # This class supports a PlayStation 5 DualSense controller on the comma four
     # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
     self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
     if HARDWARE.get_device_type() == 'pc':
@@ -123,7 +123,7 @@ def main():
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n' +
                                                'openpilot must be offroad before starting joystick_control. This tool supports ' +
-                                               'a PlayStation 5 DualSense controller on the comma 3X.',
+                                               'a PlayStation 5 DualSense controller on the comma four.',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
   args = parser.parse_args()

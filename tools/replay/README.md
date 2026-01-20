@@ -101,7 +101,7 @@ tools/plotjuggler/juggle.py --stream
 
 ## watch3
 
-watch all three cameras simultaneously from your comma three routes with watch3
+watch all three cameras simultaneously from your comma four routes with watch3
 
 simply replay a route using the `--dcam` and `--ecam` flags:
 
