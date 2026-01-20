@@ -12,6 +12,7 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "system/camerad/cameras/hw.h"
+#include "system/camerad/cameras/nv12_info.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
 
