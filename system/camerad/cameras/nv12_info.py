@@ -4,8 +4,8 @@
 def align(val: int, alignment: int) -> int:
   return ((val + alignment - 1) // alignment) * alignment
 
-def get_nv12_info(width: int, height: int) -> tuple[int, int, int]:
-  """Returns (stride, y_height, buffer_size) for NV12 frame dimensions."""
+def get_nv12_info(width: int, height: int) -> tuple[int, int, int, int]:
+  """Returns (stride, y_height, uv_height, buffer_size) for NV12 frame dimensions."""
   stride = align(width, 128)
   y_height = align(height, 32)
   uv_height = align(height // 2, 16)
@@ -18,4 +18,4 @@ def get_nv12_info(width: int, height: int) -> tuple[int, int, int]:
   size += align(width, 512) * 512  # kernel padding for non-aligned frames
   size = align(size, 4096)
 
-  return stride, y_height, size
+  return stride, y_height, uv_height, size
