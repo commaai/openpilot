@@ -20,7 +20,6 @@ A helper to run PlotJuggler on openpilot routes
 positional arguments:
   route_or_segment_name
                         The route or segment name to plot (cabana share URL accepted) (default: None)
-                        See README.md for example route syntax.
 
 optional arguments:
   -h, --help            show this help message and exit
