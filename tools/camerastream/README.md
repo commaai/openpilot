@@ -49,7 +49,7 @@ usage: compressed_vipc.py [-h] [--nvidia] [--cams CAMS] [--silent] addr
 Decode video streams and broadcast on VisionIPC
 
 positional arguments:
-  addr         Address of comma four
+  addr         Address of comma three
 
 options:
   -h, --help   show this help message and exit

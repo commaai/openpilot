@@ -13,13 +13,13 @@ Development is coordinated through [Discord](https://discord.comma.ai) and GitHu
 ## What contributions are we looking for?
 
 **openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.**
-openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all development is towards that goal.
+openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all development is towards that goal. 
 
 ### What gets merged?
 
 The probability of a pull request being merged is a function of its value to the project and the effort it will take us to get it merged.
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
-Simple, well-tested bug fixes are the easiest to merge, and new features are the hardest to get merged.
+Simple, well-tested bug fixes are the easiest to merge, and new features are the hardest to get merged. 
 
 All of these are examples of good PRs:
 * typo fix: https://github.com/commaai/openpilot/pull/30678
@@ -29,7 +29,7 @@ All of these are examples of good PRs:
 
 ### What doesn't get merged?
 
-* **style changes**: code is art, and it's up to the author to make it beautiful
+* **style changes**: code is art, and it's up to the author to make it beautiful 
 * **500+ line PRs**: clean it up, break it up into smaller PRs, or both
 * **PRs without a clear goal**: every PR must have a singular and clear goal
 * **UI design**: we do not have a good review process for this yet
@@ -39,7 +39,7 @@ All of these are examples of good PRs:
 ### First contribution
 
 [Projects / openpilot bounties](https://github.com/orgs/commaai/projects/26/views/1?pane=info) is the best place to get started and goes in-depth on what's expected when working on a bounty.
-There's lot of bounties that don't require a comma four or a car.
+There's lot of bounties that don't require a comma 3X or a car.
 
 ## Pull Requests
 

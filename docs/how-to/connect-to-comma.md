@@ -1,19 +1,18 @@
-# Connect to comma 3X or comma four
+# connect to a comma 3X
 
-A comma four is a normal [Linux](https://github.com/commaai/agnos-builder) computer that exposes [SSH](https://wiki.archlinux.org/title/Secure_Shell) and a [serial console](https://wiki.archlinux.org/title/Working_with_the_serial_console).
+A comma 3X is a normal [Linux](https://github.com/commaai/agnos-builder) computer that exposes [SSH](https://wiki.archlinux.org/title/Secure_Shell) and a [serial console](https://wiki.archlinux.org/title/Working_with_the_serial_console).
 
 ## Serial Console
 
-On the comma 3X, the serial console is accessible from the main OBD-C port.
+On both the comma three and 3X, the serial console is accessible from the main OBD-C port.
 Connect the comma 3X to your computer with a normal USB C cable, or use a [comma serial](https://comma.ai/shop/comma-serial) for steady 12V power.
 
-The serial console is accessible through the [panda](https://github.com/commaai/panda) using the `panda/tests/som_debug.sh` script.
+On the comma three, the serial console is exposed through a UART-to-USB chip, and `tools/scripts/serial.sh` can be used to connect.
+
+On the comma 3X, the serial console is accessible through the [panda](https://github.com/commaai/panda) using the `panda/tests/som_debug.sh` script.
 
   * Username: `comma`
   * Password: `comma`
-
-> [!NOTE]
-> Serial console access through the OBD-C port is not available on the comma four. On comma four devices, serial access requires opening the device to access the internal debug connector.
 
 ## SSH
 
@@ -35,7 +34,7 @@ For doing development work on device, it's recommended to use [SSH agent forward
 
 In order to use ADB on your device, you'll need to perform the following steps using the image below for reference:
 
-![comma four ports](../assets/four-ports.svg)
+![comma 3/3x back](../assets/three-back.svg)
 
 * Plug your device into constant power using port 2, letting the device boot up
 * Enable ADB in your device's settings
@@ -46,7 +45,7 @@ In order to use ADB on your device, you'll need to perform the following steps u
     * Here's an example command for connecting to your device using its tethered connection: `adb connect 192.168.43.1:5555`
 
 > [!NOTE]
-> The default port for ADB is 5555 on the comma four.
+> The default port for ADB is 5555 on the comma 3X.
 
 For more info on ADB, see the [Android Debug Bridge (ADB) documentation](https://developer.android.com/tools/adb).
 
