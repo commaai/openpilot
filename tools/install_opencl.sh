@@ -3,35 +3,44 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-# llvm 18系が pocl の build に必要
-wget https://apt.llvm.org/llvm.sh
-chmod +x llvm.sh
-sudo ./llvm.sh 18
+# llvm 18 is required to build pocl
+curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 18
 sudo apt install -y llvm-18 llvm-18-dev llvm-18-tools clang-18
 sudo apt install -y libclang-18-dev libedit-dev
 sudo apt install -y ocl-icd-libopencl1 ocl-icd-opencl-dev
 
+POCL_PREFIX=/usr/local/pocl
+if [ -f "$POCL_PREFIX/lib/libpocl.so" ]; then
+  echo "pocl already installed at $POCL_PREFIX, skipping build"
+else
+  cd "$PROJECT_DIR/pocl" || exit
+  mkdir -p build && cd build || exit
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX="$POCL_PREFIX" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DENABLE_CUDA=ON \
+    -DLLVM_DIR=/usr/lib/llvm-18/cmake \
+    -DLLC_HOST_CPU=cortex-a78
 
-# pocl の build と install
-cd "$PROJECT_DIR/pocl" || exit
-mkdir -p build && cd build || exit
-cmake .. \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/pocl \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DENABLE_CUDA=ON \
-  -DLLVM_DIR=/usr/lib/llvm-18/cmake \
-  -DLLC_HOST_CPU=cortex-a78
+  make -j"$(nproc)"
+  sudo make install
+fi
 
-make -j"$(nproc)"
-sudo make install
-
-# pocl の icd を登録
 sudo mkdir -p /etc/OpenCL/vendors
-echo "/usr/local/pocl/lib/libpocl.so" | sudo tee /etc/OpenCL/vendors/pocl.icd
+POCL_ICD_FILE=/etc/OpenCL/vendors/pocl.icd
+POCL_ICD_ENTRY="/usr/local/pocl/lib/libpocl.so"
+if ! sudo grep -qxF "$POCL_ICD_ENTRY" "$POCL_ICD_FILE" 2>/dev/null; then
+  echo "$POCL_ICD_ENTRY" | sudo tee -a "$POCL_ICD_FILE" >/dev/null
+fi
 
-# LD_LIBRARY_PATH の path に opencv の path を追加
 VENV_PATH="$(python3 -c 'import sys; print(sys.prefix)')/lib"
-export LD_LIBRARY_PATH=$VENV_PATH:$LD_LIBRARY_PATH
+BASHRC="$HOME/.bashrc"
+LINE="# Added by install_opencl.sh
+export LD_LIBRARY_PATH=${VENV_PATH}:\$LD_LIBRARY_PATH"
+
+if ! grep -Fqx "export LD_LIBRARY_PATH=${VENV_PATH}:\$LD_LIBRARY_PATH" "$BASHRC"; then
+  printf '%s\n' "$LINE" >> "$BASHRC"
+fi
 
 # check
 ldd /usr/local/pocl/lib/libpocl.so | grep opencv
