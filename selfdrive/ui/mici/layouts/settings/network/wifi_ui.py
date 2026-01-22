@@ -65,7 +65,8 @@ class WifiIcon(Widget):
 
     icon_x = int(self._rect.x + (self._rect.width - strength_icon.width * self._scale) // 2)
     icon_y = int(self._rect.y + (self._rect.height - strength_icon.height * self._scale) // 2)
-    rl.draw_texture_ex(strength_icon, (icon_x, icon_y), 0.0, self._scale, rl.WHITE)
+    icon_tint = rl.GREEN if self._network.is_connected else rl.WHITE
+    rl.draw_texture_ex(strength_icon, (icon_x, icon_y), 0.0, self._scale, icon_tint)
 
     # Render lock icon at lower right of wifi icon if secured
     if self._network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED):
