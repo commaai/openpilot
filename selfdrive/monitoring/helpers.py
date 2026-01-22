@@ -35,14 +35,7 @@ class DRIVER_MONITOR_SETTINGS:
     self._EYE_THRESHOLD = 0.65
     self._SG_THRESHOLD = 0.9
     self._BLINK_THRESHOLD = 0.865
-
-    self._PHONE_THRESH = 0.1
-    self._PHONE_THRESH2 = 15.0
-    self._PHONE_MAX_OFFSET = 0.06
-    self._PHONE_MIN_OFFSET = 0.025
-    self._PHONE_DATA_AVG = 0.05
-    self._PHONE_DATA_VAR = 3*0.005
-    self._PHONE_MAX_COUNT = int(360 / self._DT_DMON)
+    self._PHONE_THRESH = 0.5
 
     self._POSE_PITCH_THRESHOLD = 0.3133
     self._POSE_PITCH_THRESHOLD_SLACK = 0.3237
@@ -152,9 +145,8 @@ class DriverMonitoring:
 
     # init driver status
     wheelpos_filter_raw_priors = (self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2)
-    phone_filter_raw_priors = (self.settings._PHONE_DATA_AVG, self.settings._PHONE_DATA_VAR, 2)
     self.wheelpos = DriverProb(raw_priors=wheelpos_filter_raw_priors, max_trackable=self.settings._WHEELPOS_MAX_COUNT)
-    self.phone = DriverProb(raw_priors=phone_filter_raw_priors, max_trackable=self.settings._PHONE_MAX_COUNT)
+    self.phone = 0.
     self.pose = DriverPose(settings=self.settings)
     self.blink = DriverBlink()
 
@@ -259,7 +251,7 @@ class DriverMonitoring:
       pass
       # distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
-    if self.phone.prob > self.settings._PHONE_THRESH:
+    if self.phone > self.settings._PHONE_THRESH:
       distracted_types.append(DistractedType.DISTRACTED_PHONE)
 
     return distracted_types
@@ -298,7 +290,7 @@ class DriverMonitoring:
                       * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) \
                       * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.phone.prob = driver_data.phoneProb
+    self.phone = driver_data.phoneProb
 
     self.distracted_types = self._get_distracted_types()
     self.driver_distracted = (DistractedType.DISTRACTED_PHONE in self.distracted_types
@@ -312,11 +304,9 @@ class DriverMonitoring:
     if self.face_detected and car_speed > self.settings._POSE_CALIB_MIN_SPEED and self.pose.low_std and (not op_engaged or not self.driver_distracted):
       self.pose.pitch_offseter.push_and_update(self.pose.pitch)
       self.pose.yaw_offseter.push_and_update(self.pose.yaw)
-      self.phone.prob_offseter.push_and_update(self.phone.prob)
 
     self.pose.calibrated = self.pose.pitch_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT and \
                            self.pose.yaw_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
-    self.phone.prob_calibrated = self.phone.prob_offseter.filtered_stat.n > self.settings._POSE_OFFSET_MIN_COUNT
 
     if self.face_detected and not self.driver_distracted:
       if model_std_max > self.settings._DCAM_UNCERTAIN_ALERT_THRESHOLD:
@@ -422,8 +412,6 @@ class DriverMonitoring:
       "posePitchValidCount": self.pose.pitch_offseter.filtered_stat.n,
       "poseYawOffset": self.pose.yaw_offseter.filtered_stat.mean(),
       "poseYawValidCount": self.pose.yaw_offseter.filtered_stat.n,
-      "phoneProbOffset": self.phone.prob_offseter.filtered_stat.mean(),
-      "phoneProbValidCount": self.phone.prob_offseter.filtered_stat.n,
       "stepChange": self.step_change,
       "awarenessActive": self.awareness_active,
       "awarenessPassive": self.awareness_passive,
