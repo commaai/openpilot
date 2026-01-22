@@ -288,7 +288,7 @@ class DriverMonitoring:
                       * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) \
                       * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.phone = driver_data.phoneProb
+    self.phone_prob = driver_data.phoneProb
 
     self.distracted_types = self._get_distracted_types()
     self.driver_distracted = (DistractedType.DISTRACTED_PHONE in self.distracted_types
