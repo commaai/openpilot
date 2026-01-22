@@ -146,9 +146,9 @@ class DriverMonitoring:
     # init driver status
     wheelpos_filter_raw_priors = (self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2)
     self.wheelpos = DriverProb(raw_priors=wheelpos_filter_raw_priors, max_trackable=self.settings._WHEELPOS_MAX_COUNT)
-    self.phone = 0.
     self.pose = DriverPose(settings=self.settings)
     self.blink = DriverBlink()
+    self.phone_prob = 0.
 
     self.always_on = always_on
     self.distracted_types = []
@@ -244,14 +244,12 @@ class DriverMonitoring:
     yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
 
     if pitch_error > pitch_threshold or yaw_error > yaw_threshold:
-      pass
-      # distracted_types.append(DistractedType.DISTRACTED_POSE)
+      distracted_types.append(DistractedType.DISTRACTED_POSE)
 
     if (self.blink.left + self.blink.right)*0.5 > self.settings._BLINK_THRESHOLD:
-      pass
-      # distracted_types.append(DistractedType.DISTRACTED_BLINK)
+      distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
-    if self.phone > self.settings._PHONE_THRESH:
+    if self.phone_prob > self.settings._PHONE_THRESH:
       distracted_types.append(DistractedType.DISTRACTED_PHONE)
 
     return distracted_types
