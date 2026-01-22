@@ -26,7 +26,7 @@ class ExcessiveActuationCheck:
     # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
     # longitudinal
     accel_calibrated = calibrated_pose.acceleration.x
-    excessive_long_actuation = sm['carControl'].longActive and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
+    excessive_long_actuation = sm['carControl'].longActive and ((not CS.gasPressed and accel_calibrated > ACCEL_MAX * 2) or accel_calibrated < ACCEL_MIN * 2)
 
     # lateral
     yaw_rate = calibrated_pose.angular_velocity.yaw
