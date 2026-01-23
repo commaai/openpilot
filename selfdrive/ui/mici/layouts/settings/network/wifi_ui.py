@@ -65,6 +65,7 @@ class WifiIcon(Widget):
 
     icon_x = int(self._rect.x + (self._rect.width - strength_icon.width * self._scale) // 2)
     icon_y = int(self._rect.y + (self._rect.height - strength_icon.height * self._scale) // 2)
+    # Render wifi strength icon (green if connected)
     icon_tint = rl.GREEN if self._network.is_connected else rl.WHITE
     rl.draw_texture_ex(strength_icon, (icon_x, icon_y), 0.0, self._scale, icon_tint)
 
