@@ -33,7 +33,8 @@ void zmq_to_msgq(const std::vector<std::string> &endpoints, const std::string &i
   for (auto endpoint : endpoints) {
     auto pub_sock = new MSGQPubSocket();
     auto sub_sock = new ZMQSubSocket();
-    pub_sock->connect(pub_context.get(), endpoint);
+    size_t queue_size = services.at(endpoint).queue_size;
+    pub_sock->connect(pub_context.get(), endpoint, true, queue_size);
     sub_sock->connect(sub_context.get(), endpoint, ip, false);
 
     poller->registerSocket(sub_sock);
