@@ -14,7 +14,7 @@
 class MsgqToZmq {
 public:
   MsgqToZmq() {}
-  void run(const std::vector<std::pair<std::string, size_t>> &endpoints, const std::string &ip);
+  void run(const std::vector<std::string> &endpoints, const std::string &ip);
 
 protected:
   void registerSockets();
@@ -22,7 +22,6 @@ protected:
 
   struct SocketPair {
     std::string endpoint;
-    size_t queue_size;
     std::unique_ptr<ZMQPubSocket> pub_sock;
     std::unique_ptr<MSGQSubSocket> sub_sock;
     int connected_clients = 0;
