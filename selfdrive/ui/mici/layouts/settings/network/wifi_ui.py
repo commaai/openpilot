@@ -318,7 +318,6 @@ class WifiUIMici(BigMultiOptionDialog):
 
     # Set up back navigation
     self.set_back_callback(back_callback)
-    self.back_callback = back_callback
     self.back_on_activate = back_on_activate
 
     self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network, self._open_network_manage_page)
@@ -434,7 +433,7 @@ class WifiUIMici(BigMultiOptionDialog):
     if self.back_on_activate:
       # Close the overlay and go back
       gui_app.set_modal_overlay(None)
-      self.back_callback()
+      self._back_callback()
 
   def _on_forgotten(self):
     self._connecting = None
