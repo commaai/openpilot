@@ -2,7 +2,6 @@
 
 #include <cassert>
 
-#include "cereal/services.h"
 #include "common/util.h"
 
 extern ExitHandler do_exit;
@@ -21,18 +20,19 @@ static std::string recv_zmq_msg(void *sock) {
   return ret;
 }
 
-void MsgqToZmq::run(const std::vector<std::string> &endpoints, const std::string &ip) {
+void MsgqToZmq::run(const std::vector<std::pair<std::string, size_t>> &endpoints, const std::string &ip) {
   zmq_context = std::make_unique<ZMQContext>();
   msgq_context = std::make_unique<MSGQContext>();
 
   // Create ZMQPubSockets for each endpoint
   for (const auto &endpoint : endpoints) {
     auto &socket_pair = socket_pairs.emplace_back();
-    socket_pair.endpoint = endpoint;
+    socket_pair.endpoint = endpoint.first;
+    socket_pair.queue_size = endpoint.second;
     socket_pair.pub_sock = std::make_unique<ZMQPubSocket>();
-    int ret = socket_pair.pub_sock->connect(zmq_context.get(), endpoint);
+    int ret = socket_pair.pub_sock->connect(zmq_context.get(), endpoint.first);
     if (ret != 0) {
-      printf("Failed to create ZMQ publisher for [%s]: %s\n", endpoint.c_str(), zmq_strerror(zmq_errno()));
+      printf("Failed to create ZMQ publisher for [%s]: %s\n", endpoint.first.c_str(), zmq_strerror(zmq_errno()));
       return;
     }
   }
@@ -109,8 +109,7 @@ void MsgqToZmq::zmqMonitorThread() {
           if (++pair.connected_clients == 1) {
             // Create new MSGQ subscriber socket and map to ZMQ publisher
             pair.sub_sock = std::make_unique<MSGQSubSocket>();
-            size_t queue_size = services.at(pair.endpoint).queue_size;
-            pair.sub_sock->connect(msgq_context.get(), pair.endpoint, "127.0.0.1", false, true, queue_size);
+            pair.sub_sock->connect(msgq_context.get(), pair.endpoint, "127.0.0.1", false, true, pair.queue_size);
             sub2pub[pair.sub_sock.get()] = pair.pub_sock.get();
             registerSockets();
           }
