@@ -74,7 +74,7 @@ class WifiIcon(Widget):
       lock_scale = self._scale * 1.1
       lock_x = int(icon_x + 1 + strength_icon.width * self._scale - self._lock_txt.width * lock_scale / 2)
       lock_y = int(icon_y + 1 + strength_icon.height * self._scale - self._lock_txt.height * lock_scale / 2)
-      rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, lock_scale, rl.WHITE)
+      rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, lock_scale, icon_tint)
 
 
 class WifiItem(BigDialogOptionButton):
