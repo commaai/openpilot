@@ -183,7 +183,7 @@ class PandaSafety:
     if not self.initialized:
       self.prev_obd_multiplexing = False
       for panda in self.pandas:
-        panda.set_safety_model(car.CarParams.SafetyModel.elm327, 1)
+        panda.set_safety_model(int(car.CarParams.SafetyModel.elm327), 1)
       self.initialized = True
 
     # Switch between multiplexing modes based on the OBD multiplexing request
@@ -191,7 +191,7 @@ class PandaSafety:
     if obd_multiplexing_requested != self.prev_obd_multiplexing:
       for i, panda in enumerate(self.pandas):
         safety_param = 1 if (i > 0 or not obd_multiplexing_requested) else 0
-        panda.set_safety_model(car.CarParams.SafetyModel.elm327, safety_param)
+        panda.set_safety_model(int(car.CarParams.SafetyModel.elm327), safety_param)
       self.prev_obd_multiplexing = obd_multiplexing_requested
       self.params.put_bool("ObdMultiplexingChanged", True)
 
@@ -224,8 +224,8 @@ class PandaSafety:
         safety_param = safety_configs[i].safetyParam
 
       cloudlog.warning(f"Panda {i}: setting safety model: {safety_model}, param: {safety_param}, alternative experience: {alternative_experience}")
-      panda.set_alternative_experience(alternative_experience)
-      panda.set_safety_model(safety_model, safety_param)
+      panda.set_alternative_experience(int(alternative_experience))
+      panda.set_safety_model(int(safety_model), int(safety_param))
 
 
 class PeripheralState:
@@ -431,7 +431,7 @@ class Pandad:
 
       # Make sure CAN buses are live
       if health['safety_mode'] == car.CarParams.SafetyModel.silent:
-        panda.set_safety_model(car.CarParams.SafetyModel.noOutput)
+        panda.set_safety_model(int(car.CarParams.SafetyModel.noOutput))
 
       # Power save mode
       power_save_desired = not ignition_local
@@ -441,7 +441,7 @@ class Pandad:
       # Set safety mode to NO_OUTPUT when car is off or not onroad
       should_close_relay = not ignition_local or not is_onroad
       if should_close_relay and health['safety_mode'] != car.CarParams.SafetyModel.noOutput:
-        panda.set_safety_model(car.CarParams.SafetyModel.noOutput)
+        panda.set_safety_model(int(car.CarParams.SafetyModel.noOutput))
 
       if not panda.comms_healthy():
         msg.valid = False
@@ -642,7 +642,7 @@ class Pandad:
     if is_onroad and not engaged:
       for panda in self.pandas:
         if panda.connected():
-          panda.set_safety_model(car.CarParams.SafetyModel.noOutput)
+          panda.set_safety_model(int(car.CarParams.SafetyModel.noOutput))
 
     # Wait for send thread to finish
     send_thread.join(timeout=1.0)
