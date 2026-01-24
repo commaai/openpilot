@@ -132,7 +132,7 @@ class Reset(Widget):
     if self._reset_state == ResetState.FAILED:
       return "Reset failed. Reboot to try again."
     if self._mode == ResetMode.RECOVER:
-      return "Unable to mount data partition. Partition may be corrupted."
+      return "Unable to mount data partition. It may be corrupted."
     return "All content and settings will be erased."
 
 

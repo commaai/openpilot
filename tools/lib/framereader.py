@@ -1,6 +1,7 @@
 import os
 import subprocess
 import json
+import logging
 from collections.abc import Iterator
 from collections import OrderedDict
 
@@ -9,11 +10,11 @@ from openpilot.tools.lib.filereader import FileReader, resolve_name
 from openpilot.tools.lib.exceptions import DataUnreadableError
 from openpilot.tools.lib.vidindex import hevc_index
 
+logger = logging.getLogger("tools")
 
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
 HEVC_SLICE_I = 2
-
 
 class LRUCache:
   def __init__(self, capacity: int):
@@ -32,7 +33,6 @@ class LRUCache:
   def __contains__(self, key):
     return key in self._cache
 
-
 def assert_hvec(fn: str) -> None:
   with FileReader(fn) as f:
     header = f.read(4)
@@ -42,10 +42,11 @@ def assert_hvec(fn: str) -> None:
     if 'hevc' not in fn:
       raise NotImplementedError(fn)
 
-def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc') -> np.ndarray:
+def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc', hwaccel="auto", loglevel="info") -> np.ndarray:
   threads = os.getenv("FFMPEG_THREADS", "0")
-  args = ["ffmpeg", "-v", "quiet",
+  args = ["ffmpeg", "-v", loglevel,
           "-threads", threads,
+          "-hwaccel", hwaccel,
           "-c:v", "hevc",
           "-vsync", "0",
           "-f", vid_fmt,
@@ -98,15 +99,15 @@ def get_video_index(fn):
     'probe': probe
   }
 
-
 class FfmpegDecoder:
   def __init__(self, fn: str, index_data: dict|None = None,
-               pix_fmt: str = "rgb24"):
+               pix_fmt: str = "rgb24", hwaccel="auto", loglevel="quiet"):
     self.fn = fn
     self.index, self.prefix, self.w, self.h = get_index_data(fn, index_data)
     self.frame_count = len(self.index) - 1          # sentinel row at the end
     self.iframes = np.where(self.index[:, 0] == HEVC_SLICE_I)[0]
     self.pix_fmt = pix_fmt
+    self.loglevel, self.hwaccel = loglevel, hwaccel
 
   def _gop_bounds(self, frame_idx: int):
     f_b = frame_idx
@@ -118,7 +119,7 @@ class FfmpegDecoder:
     return f_b, f_e, self.index[f_b, 1], self.index[f_e, 1]
 
   def _decode_gop(self, raw: bytes) -> Iterator[np.ndarray]:
-    yield from decompress_video_data(raw, self.w, self.h, self.pix_fmt)
+    yield from decompress_video_data(raw, self.w, self.h, pix_fmt=self.pix_fmt, hwaccel=self.hwaccel, loglevel=self.loglevel)
 
   def get_gop_start(self, frame_idx: int):
     return self.iframes[np.searchsorted(self.iframes, frame_idx, side="right") - 1]
@@ -133,7 +134,7 @@ class FfmpegDecoder:
         f.seek(off_b)
         raw = self.prefix + f.read(off_e - off_b)
       # number of frames to discard inside this GOP before the wanted one
-      for i, frm in enumerate(decompress_video_data(raw, self.w, self.h, self.pix_fmt)):
+      for i, frm in enumerate(decompress_video_data(raw, self.w, self.h, self.pix_fmt, hwaccel=self.hwaccel, loglevel=self.loglevel)):
         fidx = f_b + i
         if fidx >= end_fidx:
           return
@@ -141,17 +142,16 @@ class FfmpegDecoder:
           yield fidx, frm
       fidx += 1
 
-def FrameIterator(fn: str, index_data: dict|None=None,
-                        pix_fmt: str = "rgb24",
-                        start_fidx:int=0, end_fidx=None, frame_skip:int=1) -> Iterator[np.ndarray]:
-  dec = FfmpegDecoder(fn, pix_fmt=pix_fmt, index_data=index_data)
+def FrameIterator(fn: str, index_data: dict|None=None, pix_fmt: str = "rgb24",
+                  start_fidx:int=0, end_fidx=None, frame_skip:int=1, hwaccel="auto", loglevel="quiet") -> Iterator[np.ndarray]:
+  dec = FfmpegDecoder(fn, pix_fmt=pix_fmt, index_data=index_data, hwaccel=hwaccel, loglevel=loglevel)
   for _, frame in dec.get_iterator(start_fidx=start_fidx, end_fidx=end_fidx, frame_skip=frame_skip):
     yield frame
 
 class FrameReader:
-  def __init__(self, fn: str, index_data: dict|None = None,
-               cache_size: int = 30, pix_fmt: str = "rgb24"):
-    self.decoder = FfmpegDecoder(fn, index_data, pix_fmt)
+  def __init__(self, fn: str, index_data: dict|None = None, cache_size: int = 30,
+               pix_fmt: str = "rgb24", hwaccel="auto", loglevel="quiet"):
+    self.decoder = FfmpegDecoder(fn, index_data=index_data, pix_fmt=pix_fmt, hwaccel=hwaccel, loglevel=loglevel)
     self.iframes = self.decoder.iframes
     self._cache: LRUCache = LRUCache(cache_size)
     self.w, self.h, self.frame_count, = self.decoder.w, self.decoder.h, self.decoder.frame_count

@@ -30,7 +30,7 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.api import Api
+from openpilot.common.api import Api, get_key_pair
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
@@ -314,7 +314,7 @@ def upload_handler(end_event: threading.Event) -> None:
       cloudlog.exception("athena.upload_handler.exception")
 
 
-def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.Response:
+def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> requests.Response:
   path = upload_item.path
   compress = False
 
@@ -523,11 +523,8 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 @dispatcher.add_method
 def getPublicKey() -> str | None:
-  if not os.path.isfile(Paths.persist_root() + '/comma/id_rsa.pub'):
-    return None
-
-  with open(Paths.persist_root() + '/comma/id_rsa.pub') as f:
-    return f.read()
+  _, _, public_key = get_key_pair()
+  return public_key
 
 
 @dispatcher.add_method
@@ -808,7 +805,7 @@ def backoff(retries: int) -> int:
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def main(exit_event: threading.Event = None):
+def main(exit_event: threading.Event | None = None):
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:

@@ -10,8 +10,6 @@
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"
 
-std::tuple<size_t, size_t, size_t> get_nv12_info(int width, int height);
-
 class CameraServer {
 public:
   CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS] = nullptr);

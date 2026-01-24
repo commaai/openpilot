@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections.abc import Callable
+from typing import cast
 import capnp
 import functools
 import traceback
@@ -67,7 +68,7 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
     if migration.product in grouped: # skip if product already exists
       continue
 
-    sorted_indices = sorted(ii for i in migration.inputs for ii in grouped[i])
+    sorted_indices = sorted(ii for i in cast(list[str], migration.inputs) for ii in grouped.get(i, []))
     msg_gen = [(i, lr[i]) for i in sorted_indices]
     r_ops, a_ops, d_ops = migration(msg_gen)
     replace_ops.extend(r_ops)

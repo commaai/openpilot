@@ -24,7 +24,7 @@ class SmallSlider(Widget):
     self._drag_threshold = -self._rect.width // 2
 
     # State
-    self._opacity = 1.0
+    self._opacity_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._confirmed_time = 0.0
     self._confirm_callback_called = False  # we keep dialog open by default, only call once
     self._start_x_circle = 0.0
@@ -54,8 +54,11 @@ class SmallSlider(Widget):
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
 
-  def set_opacity(self, opacity: float):
-    self._opacity = opacity
+  def set_opacity(self, opacity: float, smooth: bool = False):
+    if smooth:
+      self._opacity_filter.update(opacity)
+    else:
+      self._opacity_filter.x = opacity
 
   @property
   def slider_percentage(self):
@@ -117,7 +120,7 @@ class SmallSlider(Widget):
   def _render(self, _):
     # TODO: iOS text shimmering animation
 
-    white = rl.Color(255, 255, 255, int(255 * self._opacity))
+    white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
 
     bg_txt_x = self._rect.x + (self._rect.width - self._bg_txt.width) / 2
     bg_txt_y = self._rect.y + (self._rect.height - self._bg_txt.height) / 2
@@ -127,11 +130,11 @@ class SmallSlider(Widget):
     btn_y = self._rect.y + (self._rect.height - self._circle_bg_txt.height) / 2
 
     if self._confirmed_time == 0.0 or self._scroll_x_circle > 0:
-      self._label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.65 * (1.0 - self.slider_percentage) * self._opacity)))
+      self._label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.65 * (1.0 - self.slider_percentage) * self._opacity_filter.x)))
       label_rect = rl.Rectangle(
         self._rect.x + 20,
         self._rect.y,
-        self._rect.width - self._circle_bg_txt.width - 20 * 3,
+        self._rect.width - self._circle_bg_txt.width - 20 * 2.5,
         self._rect.height,
       )
       self._label.render(label_rect)

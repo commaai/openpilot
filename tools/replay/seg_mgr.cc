@@ -118,9 +118,15 @@ void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap:
     for (auto it = first; it != last; ++it) {
       auto &segment_ptr = it->second;
       if (!segment_ptr) {
+        if (onBenchmarkEvent_) {
+          onBenchmarkEvent_(it->first, "loading");
+        }
         segment_ptr = std::make_shared<Segment>(
             it->first, route_.at(it->first), flags_, filters_,
             [this](int seg_num, bool success) {
+              if (onBenchmarkEvent_) {
+                onBenchmarkEvent_(seg_num, success ? "loaded" : "load failed");
+              }
               std::unique_lock lock(mutex_);
               needs_update_ = true;
               cv_.notify_one();

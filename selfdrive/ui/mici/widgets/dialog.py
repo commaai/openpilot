@@ -4,17 +4,17 @@ import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from typing import cast
-from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 
 DEBUG = False
 
@@ -137,7 +137,7 @@ class BigInputDialog(BigDialogBase):
                hint: str,
                default_text: str = "",
                minimum_length: int = 1,
-               confirm_callback: Callable[[str], None] = None):
+               confirm_callback: Callable[[str], None] | None = None):
     super().__init__(None, None)
     self._hint_label = UnifiedLabel(hint, font_size=35, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
                                     font_weight=FontWeight.MEDIUM)
@@ -274,10 +274,13 @@ class BigInputDialog(BigDialogBase):
 
 
 class BigDialogOptionButton(Widget):
+  HEIGHT = 64
+  SELECTED_HEIGHT = 74
+
   def __init__(self, option: str):
     super().__init__()
     self.option = option
-    self.set_rect(rl.Rectangle(0, 0, int(gui_app.width / 2 + 220), 64))
+    self.set_rect(rl.Rectangle(0, 0, int(gui_app.width / 2 + 220), self.HEIGHT))
 
     self._selected = False
 
@@ -285,8 +288,13 @@ class BigDialogOptionButton(Widget):
                                font_weight=FontWeight.DISPLAY_REGULAR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
                                scroll=True)
 
+  def show_event(self):
+    super().show_event()
+    self._label.reset_scroll()
+
   def set_selected(self, selected: bool):
     self._selected = selected
+    self._rect.height = self.SELECTED_HEIGHT if selected else self.HEIGHT
 
   def _render(self, _):
     if DEBUG:
@@ -294,11 +302,11 @@ class BigDialogOptionButton(Widget):
 
     # FIXME: offset x by -45 because scroller centers horizontally
     if self._selected:
-      self._label.set_font_size(74)
+      self._label.set_font_size(self.SELECTED_HEIGHT)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
       self._label.set_font_weight(FontWeight.DISPLAY)
     else:
-      self._label.set_font_size(70)
+      self._label.set_font_size(self.HEIGHT)
       self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.58)))
       self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
 
@@ -309,38 +317,31 @@ class BigMultiOptionDialog(BigDialogBase):
   BACK_TOUCH_AREA_PERCENTAGE = 0.1
 
   def __init__(self, options: list[str], default: str | None,
-               right_btn: str | None = 'check', right_btn_callback: Callable[[], None] = None):
+               right_btn: str | None = 'check', right_btn_callback: Callable[[], None] | None = None):
     super().__init__(right_btn, right_btn_callback=right_btn_callback)
     self._options = options
     if default is not None:
       assert default in options
 
-    self._default_option: str = default or (options[0] if len(options) > 0 else "")
-    self._selected_option: str = self._default_option
+    self._default_option: str | None = default
+    self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
     self._last_selected_option: str = self._selected_option
 
-    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0)
+    # Widget doesn't differentiate between click and drag
+    self._can_click = True
+
+    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
     if self._right_btn is not None:
       self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
     for option in options:
-      self.add_button(BigDialogOptionButton(option))
-
-  def add_button(self, button: BigDialogOptionButton):
-    og_callback = button._click_callback
-
-    def wrapped_callback(btn=button):
-      self._on_option_selected(btn.option)
-      if og_callback:
-        og_callback()
-
-    button.set_click_callback(wrapped_callback)
-    self._scroller.add_widget(button)
+      self._scroller.add_widget(BigDialogOptionButton(option))
 
   def show_event(self):
     super().show_event()
     self._scroller.show_event()
-    self._on_option_selected(self._default_option)
+    if self._default_option is not None:
+      self._on_option_selected(self._default_option)
 
   def get_selected_option(self) -> str:
     return self._selected_option
@@ -348,13 +349,47 @@ class BigMultiOptionDialog(BigDialogBase):
   def _on_option_selected(self, option: str):
     y_pos = 0.0
     for btn in self._scroller._items:
-      if cast(BigDialogOptionButton, btn).option == option:
-        y_pos = btn.rect.y
+      btn = cast(BigDialogOptionButton, btn)
+      if btn.option == option:
+        rect_center_y = self._rect.y + self._rect.height / 2
+        if btn._selected:
+          height = btn.rect.height
+        else:
+          # when selecting an option under current, account for changing heights
+          btn_center_y = btn.rect.y + btn.rect.height / 2  # not accurate, just to determine direction
+          height_offset = BigDialogOptionButton.SELECTED_HEIGHT - BigDialogOptionButton.HEIGHT
+          height = (BigDialogOptionButton.HEIGHT - height_offset) if rect_center_y < btn_center_y else BigDialogOptionButton.SELECTED_HEIGHT
+        y_pos = rect_center_y - (btn.rect.y + height / 2)
+        break
 
-    self._scroller.scroll_to(y_pos, smooth=True)
+    self._scroller.scroll_to(-y_pos)
 
   def _selected_option_changed(self):
     pass
+
+  def _handle_mouse_press(self, mouse_pos: MousePos):
+    super()._handle_mouse_press(mouse_pos)
+    self._can_click = True
+
+  def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
+    super()._handle_mouse_event(mouse_event)
+
+    # # TODO: add generic _handle_mouse_click handler to Widget
+    if not self._scroller.scroll_panel.is_touch_valid():
+      self._can_click = False
+
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+
+    if not self._can_click:
+      return
+
+    # select current option
+    for btn in self._scroller._items:
+      btn = cast(BigDialogOptionButton, btn)
+      if btn.option == self._selected_option:
+        self._on_option_selected(btn.option)
+        break
 
   def _update_state(self):
     super()._update_state()

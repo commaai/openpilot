@@ -200,7 +200,7 @@ msgstr "CONNECT"
 #: system/ui/widgets/network.py:369
 #, python-format
 msgid "CONNECTING..."
-msgstr "CONNECTING..."
+msgstr "連線中..."
 
 #: system/ui/widgets/confirm_dialog.py:23 system/ui/widgets/option_dialog.py:35
 #: system/ui/widgets/keyboard.py:81 system/ui/widgets/network.py:318
@@ -1000,7 +1000,7 @@ msgstr "適用於「{}」"
 #: selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
 msgid "km/h"
-msgstr "公里/時"
+msgstr "km/h"
 
 #: system/ui/widgets/network.py:204
 #, python-format
@@ -1020,7 +1020,7 @@ msgstr "計量"
 #: selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
 msgid "mph"
-msgstr "英里/時"
+msgstr "mph"
 
 #: selfdrive/ui/layouts/settings/software.py:20
 #, python-format

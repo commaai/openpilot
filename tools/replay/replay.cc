@@ -2,6 +2,8 @@
 
 #include <capnp/dynamic.h>
 #include <csignal>
+#include <iomanip>
+#include <sstream>
 #include "cereal/services.h"
 #include "common/params.h"
 #include "tools/replay/util.h"
@@ -18,6 +20,14 @@ Replay::Replay(const std::string &route, std::vector<std::string> allow, std::ve
                SubMaster *sm, uint32_t flags, const std::string &data_dir, bool auto_source)
     : sm_(sm), flags_(flags), seg_mgr_(std::make_unique<SegmentManager>(route, flags, data_dir, auto_source)) {
   std::signal(SIGUSR1, interrupt_sleep_handler);
+
+  if (flags_ & REPLAY_FLAG_BENCHMARK) {
+    benchmark_stats_.process_start_ts = nanos_since_boot();
+    seg_mgr_->setBenchmarkCallback([this](int seg_num, const std::string& event) {
+      benchmark_stats_.timeline.emplace_back(nanos_since_boot(),
+          "segment " + std::to_string(seg_num) + " " + event);
+    });
+  }
 
   if (!(flags_ & REPLAY_FLAG_ALL_SERVICES)) {
     block.insert(block.end(), {"bookmarkButton", "uiDebug", "userBookmark"});
@@ -78,7 +88,12 @@ Replay::~Replay() {
 
 bool Replay::load() {
   rInfo("loading route %s", seg_mgr_->route_.name().c_str());
+
   if (!seg_mgr_->load()) return false;
+
+  if (hasFlag(REPLAY_FLAG_BENCHMARK)) {
+    benchmark_stats_.timeline.emplace_back(nanos_since_boot(), "route metadata loaded");
+  }
 
   min_seconds_ = seg_mgr_->route_.segments().begin()->first * 60;
   max_seconds_ = (seg_mgr_->route_.segments().rbegin()->first + 1) * 60;
@@ -257,8 +272,13 @@ void Replay::streamThread() {
   stream_thread_id = pthread_self();
   std::unique_lock lk(stream_lock_);
 
+  int last_processed_segment = -1;
+  uint64_t segment_start_time = 0;
+  bool streaming_started = false;
+
   while (true) {
     stream_cv_.wait(lk, [this]() { return exit_ || (events_ready_ && !interrupt_requested_); });
+
     if (exit_) break;
 
     event_data_ = seg_mgr_->getEventData();
@@ -270,14 +290,19 @@ void Replay::streamThread() {
       continue;
     }
 
-    auto it = publishEvents(first, events.cend());
+    if (!streaming_started && hasFlag(REPLAY_FLAG_BENCHMARK)) {
+      benchmark_stats_.timeline.emplace_back(nanos_since_boot(), "streaming started");
+      streaming_started = true;
+    }
+
+    auto it = publishEvents(first, events.cend(), last_processed_segment, segment_start_time);
 
     // Ensure frames are sent before unlocking to prevent race conditions
     if (camera_server_) {
       camera_server_->waitForSent();
     }
 
-    if (it == events.cend() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
+    if (it == events.cend() && !hasFlag(REPLAY_FLAG_NO_LOOP) && !hasFlag(REPLAY_FLAG_BENCHMARK)) {
       int last_segment = seg_mgr_->route_.segments().rbegin()->first;
       if (event_data_->isSegmentLoaded(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
@@ -285,12 +310,28 @@ void Replay::streamThread() {
         seekTo(minSeconds(), false);
         stream_lock_.lock();
       }
+    } else if (it == events.cend() && hasFlag(REPLAY_FLAG_BENCHMARK)) {
+      // Exit benchmark mode after first segment completes
+      exit_ = true;
+      break;
     }
+  }
+
+  if (hasFlag(REPLAY_FLAG_BENCHMARK)) {
+    benchmark_stats_.timeline.emplace_back(nanos_since_boot(), "benchmark done");
+
+    {
+      std::unique_lock lock(benchmark_lock_);
+      benchmark_done_ = true;
+    }
+    benchmark_cv_.notify_one();
   }
 }
 
 std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::const_iterator first,
-                                                         std::vector<Event>::const_iterator last) {
+                                                         std::vector<Event>::const_iterator last,
+                                                         int &last_processed_segment,
+                                                         uint64_t &segment_start_time) {
   uint64_t evt_start_ts = cur_mono_time_;
   uint64_t loop_start_ts = nanos_since_boot();
   double prev_replay_speed = speed_;
@@ -302,6 +343,23 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
     if (current_segment_.load(std::memory_order_relaxed) != segment) {
       current_segment_.store(segment, std::memory_order_relaxed);
       seg_mgr_->setCurrentSegment(segment);
+    }
+
+    // Track segment completion for benchmark timeline
+    if (hasFlag(REPLAY_FLAG_BENCHMARK) && segment != last_processed_segment) {
+      if (last_processed_segment >= 0 && segment_start_time > 0) {
+        uint64_t processing_time_ns = nanos_since_boot() - segment_start_time;
+        double processing_time_ms = processing_time_ns / 1e6;
+        double realtime_factor = 60.0 / (processing_time_ns / 1e9);  // 60s per segment
+
+        std::ostringstream oss;
+        oss << "segment " << last_processed_segment << " done publishing ("
+            << std::fixed << std::setprecision(0) << processing_time_ms << " ms, "
+            << std::fixed << std::setprecision(0) << realtime_factor << "x realtime)";
+        benchmark_stats_.timeline.emplace_back(nanos_since_boot(), oss.str());
+      }
+      segment_start_time = nanos_since_boot();
+      last_processed_segment = segment;
     }
 
     cur_mono_time_ = evt.mono_time;
@@ -320,7 +378,8 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
       evt_start_ts = evt.mono_time;
       loop_start_ts = current_nanos;
       prev_replay_speed = speed_;
-    } else if (time_diff > 0) {
+    } else if (time_diff > 0 && !hasFlag(REPLAY_FLAG_BENCHMARK)) {
+      // Skip sleep in benchmark mode for maximum throughput
       precise_nano_sleep(time_diff, interrupt_requested_);
     }
 
@@ -337,4 +396,13 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
   }
 
   return first;
+}
+
+void Replay::waitForFinished() {
+  if (!hasFlag(REPLAY_FLAG_BENCHMARK)) {
+    return;
+  }
+
+  std::unique_lock lock(benchmark_lock_);
+  benchmark_cv_.wait(lock, [this]() { return benchmark_done_; });
 }
