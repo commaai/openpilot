@@ -343,26 +343,22 @@ class Pandad:
     """Thread for sending CAN messages."""
     cloudlog.info("can_send_thread started")
 
-    sm = messaging.SubMaster(['sendcan'])
+    # Use sub_sock with conflate=False to avoid dropping messages
+    sendcan_sock = messaging.sub_sock('sendcan', conflate=False, timeout=100)
 
     while not self.do_exit and self.check_all_connected():
-      sm.update(100)
+      for msg in messaging.drain_sock(sendcan_sock, wait_for_one=True):
+        # Don't send if older than 1 second
+        age_ns = time.monotonic_ns() - msg.logMonoTime
 
-      if not sm.updated['sendcan']:
-        continue
+        if age_ns < 1e9 and not self.fake_send:
+          # Convert sendcan messages to format expected by panda
+          msgs = [(m.address, m.dat, m.src) for m in msg.sendcan]
 
-      # Don't send if older than 1 second
-      event = sm['sendcan']
-      age_ns = time.monotonic_ns() - sm.logMonoTime['sendcan']
-
-      if age_ns < 1e9 and not self.fake_send:
-        # Convert sendcan messages to format expected by panda
-        msgs = [(msg.address, msg.dat, msg.src) for msg in event]
-
-        for panda in self.pandas:
-          panda.can_send(msgs)
-      else:
-        cloudlog.error(f"sendcan too old to send: age={age_ns / 1e6:.1f}ms")
+          for panda in self.pandas:
+            panda.can_send(msgs)
+        else:
+          cloudlog.error(f"sendcan too old to send: age={age_ns / 1e6:.1f}ms")
 
     cloudlog.info("can_send_thread exiting")
 
