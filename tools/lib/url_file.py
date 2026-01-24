@@ -195,7 +195,7 @@ class URLFile:
   def seekable(self) -> bool:
     return True
 
-  def seek(self, pos: int, whence: int = 0) -> None:
+  def seek(self, pos: int, whence: int = 0) -> int:
     pos = int(pos)
     if whence == os.SEEK_SET:
       self._pos = pos
@@ -207,6 +207,7 @@ class URLFile:
       self._pos = length + pos
     else:
       raise URLFileException("Invalid whence value")
+    return self._pos
 
   def tell(self) -> int:
     return self._pos
