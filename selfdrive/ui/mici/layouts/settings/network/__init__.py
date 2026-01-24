@@ -51,7 +51,7 @@ class NetworkLayoutMici(NavWidget):
                            confirm_callback=tethering_password_callback)
       gui_app.set_modal_overlay(dlg)
 
-    txt_tethering = gui_app.texture("icons_mici/tethering_short.png", 64, 54)
+    txt_tethering = gui_app.texture("icons_mici/settings/network/tethering.png", 64, 54)
     self._tethering_password_btn = BigButton("tethering password", "", txt_tethering)
     self._tethering_password_btn.set_click_callback(tethering_password_clicked)
 
