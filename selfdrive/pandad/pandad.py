@@ -4,10 +4,8 @@ import os
 import usb1
 import time
 import signal
-import subprocess
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
@@ -166,8 +164,10 @@ def main() -> None:
 
     # run pandad with all connected serials as arguments
     os.environ['MANAGER_DAEMON'] = 'pandad'
-    process = subprocess.Popen(["./pandad", *panda_serials], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
-    process.wait()
+
+    # Use Python pandad daemon instead of C++ binary
+    from openpilot.selfdrive.pandad.pandad_daemon import pandad_main_thread
+    pandad_main_thread(panda_serials)
 
 
 if __name__ == "__main__":
