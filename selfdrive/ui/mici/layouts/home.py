@@ -92,7 +92,7 @@ class MiciHomeLayout(Widget):
 
     self._settings_txt = gui_app.texture("icons_mici/settings.png", 48, 48)
     self._experimental_txt = gui_app.texture("icons_mici/experimental_mode.png", 48, 48)
-    self._mic_txt = gui_app.texture("icons_mici/microphone.png", 48, 48)
+    self._mic_txt = gui_app.texture("icons_mici/microphone.png", 32, 46)
 
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
     self._net_strength = 0

@@ -169,7 +169,7 @@ class ForgetButton(Widget):
 
     self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", 100, 100)
     self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", 100, 100)
-    self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 32, 36)
+    self._trash_txt = gui_app.texture("icons_mici/settings/network/new/trash.png", 35, 42)
     self.set_rect(rl.Rectangle(0, 0, 100 + self.HORIZONTAL_MARGIN * 2, 100))
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
