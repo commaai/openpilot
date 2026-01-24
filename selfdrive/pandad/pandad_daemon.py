@@ -389,7 +389,7 @@ class Pandad:
     """Send panda states and return ignition state."""
     ignition_local = False
 
-    msg = messaging.new_message('pandaStates', len(self.pandas))
+    msg = messaging.new_message('pandaStates', len(self.pandas), valid=True)
 
     # Check for red panda comma three setup
     red_panda_comma_three = (
