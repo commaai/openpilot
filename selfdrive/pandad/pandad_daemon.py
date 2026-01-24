@@ -217,15 +217,15 @@ class PandaSafety:
 
     for i, panda in enumerate(self.pandas):
       # Default to SILENT safety model if not specified
-      safety_model = car.CarParams.SafetyModel.silent
+      safety_model = int(car.CarParams.SafetyModel.silent)
       safety_param = 0
       if i < len(safety_configs):
-        safety_model = safety_configs[i].safetyModel
+        safety_model = safety_configs[i].safetyModel.raw
         safety_param = safety_configs[i].safetyParam
 
       cloudlog.warning(f"Panda {i}: setting safety model: {safety_model}, param: {safety_param}, alternative experience: {alternative_experience}")
       panda.set_alternative_experience(int(alternative_experience))
-      panda.set_safety_model(int(safety_model), int(safety_param))
+      panda.set_safety_model(safety_model, safety_param)
 
 
 class PeripheralState:
