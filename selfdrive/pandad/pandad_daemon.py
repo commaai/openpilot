@@ -610,7 +610,7 @@ class Pandad:
       # Process panda state at 10 Hz
       if rk.frame % 10 == 0:
         sm.update(0)
-        if sm.all_alive_and_valid(['selfdriveState']):
+        if sm.all_checks(['selfdriveState']):
           engaged = sm['selfdriveState'].enabled
         else:
           engaged = False
