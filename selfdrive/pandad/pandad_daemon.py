@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import cereal.messaging as messaging
 from cereal import car, log
-from panda import Panda, PANDA_CAN_CNT
+from panda import Panda
 
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -21,6 +21,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE, PC
 
 # Constants from C++ pandad
+PANDA_CAN_CNT = 3  # Number of CAN buses per panda (matches panda firmware)
 PANDA_BUS_OFFSET = 4
 MAX_IR_PANDA_VAL = 50
 CUTOFF_IL = 400
