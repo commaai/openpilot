@@ -453,37 +453,42 @@ class Pandad:
       ps.uptime = health['uptime']
       ps.safetyTxBlocked = health['safety_tx_blocked']
       ps.safetyRxInvalid = health['safety_rx_invalid']
-      ps.ignitionLine = health['ignition_line']
-      ps.ignitionCan = health['ignition_can']
-      ps.controlsAllowed = health['controls_allowed']
+      ps.ignitionLine = bool(health['ignition_line'])
+      ps.ignitionCan = bool(health['ignition_can'])
+      ps.controlsAllowed = bool(health['controls_allowed'])
       ps.txBufferOverflow = health['tx_buffer_overflow']
       ps.rxBufferOverflow = health['rx_buffer_overflow']
       ps.pandaType = panda.hw_type
       ps.safetyModel = health['safety_mode']
       ps.safetyParam = health['safety_param']
       ps.faultStatus = health['fault_status']
-      ps.powerSaveEnabled = health['power_save_enabled']
-      ps.heartbeatLost = health['heartbeat_lost']
+      ps.powerSaveEnabled = bool(health['power_save_enabled'])
+      ps.heartbeatLost = bool(health['heartbeat_lost'])
       ps.alternativeExperience = health['alternative_experience']
       ps.harnessStatus = health['car_harness_status']
       ps.interruptLoad = health['interrupt_load']
       ps.fanPower = health['fan_power']
-      ps.safetyRxChecksInvalid = health['safety_rx_checks_invalid']
+      ps.safetyRxChecksInvalid = bool(health['safety_rx_checks_invalid'])
       ps.spiErrorCount = health.get('spi_error_count', 0)
       ps.sbu1Voltage = health.get('sbu1_voltage_mV', 0) / 1000.0
       ps.sbu2Voltage = health.get('sbu2_voltage_mV', 0) / 1000.0
 
       # Fill CAN states
+      # Map error code strings back to enum values
+      lec_error_map = {
+        "No error": 0, "Stuff error": 1, "Form error": 2, "AckError": 3,
+        "Bit1Error": 4, "Bit0Error": 5, "CRCError": 6, "NoChange": 7,
+      }
       for j, can_health in enumerate(can_healths):
         cs = getattr(ps, f'canState{j}')
-        cs.busOff = can_health['bus_off']
+        cs.busOff = bool(can_health['bus_off'])
         cs.busOffCnt = can_health['bus_off_cnt']
-        cs.errorWarning = can_health['error_warning']
-        cs.errorPassive = can_health['error_passive']
-        cs.lastError = can_health['last_error']
-        cs.lastStoredError = can_health['last_stored_error']
-        cs.lastDataError = can_health['last_data_error']
-        cs.lastDataStoredError = can_health['last_data_stored_error']
+        cs.errorWarning = bool(can_health['error_warning'])
+        cs.errorPassive = bool(can_health['error_passive'])
+        cs.lastError = lec_error_map.get(can_health['last_error'], 0)
+        cs.lastStoredError = lec_error_map.get(can_health['last_stored_error'], 0)
+        cs.lastDataError = lec_error_map.get(can_health['last_data_error'], 0)
+        cs.lastDataStoredError = lec_error_map.get(can_health['last_data_stored_error'], 0)
         cs.receiveErrorCnt = can_health['receive_error_cnt']
         cs.transmitErrorCnt = can_health['transmit_error_cnt']
         cs.totalErrorCnt = can_health['total_error_cnt']
@@ -494,9 +499,9 @@ class Pandad:
         cs.totalFwdCnt = can_health['total_fwd_cnt']
         cs.canSpeed = can_health['can_speed']
         cs.canDataSpeed = can_health['can_data_speed']
-        cs.canfdEnabled = can_health['canfd_enabled']
-        cs.brsEnabled = can_health['brs_enabled']
-        cs.canfdNonIso = can_health['canfd_non_iso']
+        cs.canfdEnabled = bool(can_health['canfd_enabled'])
+        cs.brsEnabled = bool(can_health['brs_enabled'])
+        cs.canfdNonIso = bool(can_health['canfd_non_iso'])
         cs.irq0CallRate = can_health['irq0_call_rate']
         cs.irq1CallRate = can_health['irq1_call_rate']
         cs.irq2CallRate = can_health['irq2_call_rate']
