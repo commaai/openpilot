@@ -143,6 +143,9 @@ def format_markdown(gh_status, gh_run_id, jenkins_status, commit_sha, branch):
         lines.append(f"| {stage['name']} | {icon} {stage['status'].lower()} |")
         if stage["status"] == "FAILED":
           failed_jenkins_stages.append(stage["name"])
+      # Show overall build status if still in progress
+      if jenkins_status["in_progress"]:
+        lines.append("| (build in progress) | :hourglass: in_progress |")
     else:
       icon = ":hourglass:" if jenkins_status["in_progress"] else (
         ":white_check_mark:" if jenkins_status["result"] == "SUCCESS" else ":x:")

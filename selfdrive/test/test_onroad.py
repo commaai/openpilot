@@ -62,11 +62,10 @@ PROCS = {
   "system.journald": 1.0,
   "system.micd": 5.0,
   "system.timed": 0,
-  "selfdrive.pandad.pandad": 0,
+  "selfdrive.pandad.pandad": 25.,
   "system.statsd": 1.0,
   "system.loggerd.uploader": 15.0,
   "system.loggerd.deleter": 1.0,
-  "./pandad": 19.0,
   "system.qcomgpsd.qcomgpsd": 1.0,
 }
 
