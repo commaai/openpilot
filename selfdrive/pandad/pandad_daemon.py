@@ -52,7 +52,7 @@ class PandaWrapper:
 
   def _get_hw_type(self) -> int:
     """Get the hardware type enum value."""
-    hw_type_bytes = self._panda.get_type()
+    hw_type_bytes = bytes(self._panda.get_type())
     # Map hardware type bytes to cereal enum values
     hw_type_map = {
       Panda.HW_TYPE_RED_PANDA: log.PandaState.PandaType.redPanda,
