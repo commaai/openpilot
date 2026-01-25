@@ -27,6 +27,9 @@ from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
 
+# Import shared RPC methods - this registers them with the dispatcher
+from openpilot.system.athena import rpc_methods  # noqa: F401
+
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
