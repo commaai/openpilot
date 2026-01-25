@@ -417,6 +417,7 @@ def register_app_error_cb(error):
 
 def init_bluetooth():
   """Initialize Bluetooth hardware if not already done"""
+  # Check if already running
   try:
     result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
     if result.returncode == 0 and b"UP RUNNING" in result.stdout:
@@ -430,14 +431,15 @@ def init_bluetooth():
     log("ERROR: /dev/ttyHS1 not found - kernel may not have BT support")
     return False
 
-  # Kill any existing btattach
-  subprocess.run(["pkill", "-f", "btattach"], capture_output=True)
+  # Kill any existing btattach and reset hci0 if it exists but is down
+  subprocess.run(["sudo", "pkill", "-f", "btattach"], capture_output=True)
+  subprocess.run(["sudo", "hciconfig", "hci0", "down"], capture_output=True)
   time.sleep(1)
 
   # Start btattach
   log("Starting btattach...")
   subprocess.Popen(
-    ["btattach", "-B", "/dev/ttyHS1", "-S", "115200"],
+    ["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "115200"],
     stdout=subprocess.DEVNULL,
     stderr=subprocess.DEVNULL
   )
@@ -450,6 +452,9 @@ def init_bluetooth():
       if result.returncode == 0 and b"UP RUNNING" in result.stdout:
         log("Bluetooth initialized successfully")
         return True
+      # Try to bring it up if it exists but is down
+      if result.returncode == 0 and b"DOWN" in result.stdout:
+        subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
     except:
       pass
     log(f"Waiting for Bluetooth... ({i+1}/10)")
