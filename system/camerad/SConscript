@@ -2,10 +2,28 @@ Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
 libs = [common, 'OpenCL', messaging, visionipc]
 
-if arch != "Darwin":
+if arch == "larch64":
+  # QCOM/Tici build - uses Spectra ISP
   camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/spectra.cc',
                            'cameras/cdm.cc', 'sensors/ox03c10.cc', 'sensors/os04c10.cc'])
   env.Program('camerad', ['main.cc', camera_obj], LIBS=libs)
 
+elif arch == "aarch64":
+  # Jetson build - uses GStreamer with nvarguscamerasrc
+  # Note: camera_common.cc is NOT included as it depends on Spectra ISP
+  # camera_jetson.cc is self-contained and doesn't use CameraBuf
+  jetson_env = env.Clone()
+
+  # Add GStreamer flags via pkg-config
+  jetson_env.ParseConfig('pkg-config --cflags --libs gstreamer-1.0 gstreamer-app-1.0')
+
+  # visionipc needs OpenCL, add pocl if available
+  jetson_env.Append(LIBS=[common, messaging, visionipc, 'OpenCL'])
+
+  jetson_obj = jetson_env.Object(['cameras/camera_jetson.cc'])
+  jetson_env.Program('camerad', ['main.cc', jetson_obj])
+
 if GetOption("extras") and arch == "x86_64":
+  camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/spectra.cc',
+                           'cameras/cdm.cc', 'sensors/ox03c10.cc', 'sensors/os04c10.cc'])
   env.Program('test/test_ae_gray', ['test/test_ae_gray.cc', camera_obj], LIBS=libs)

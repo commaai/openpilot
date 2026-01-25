@@ -206,7 +206,7 @@ SConscript([
   'system/loggerd/SConscript',
 ])
 
-if arch == "larch64":
+if arch in ["larch64", "aarch64"]:
   SConscript(['system/camerad/SConscript'])
 
 # Build openpilot
