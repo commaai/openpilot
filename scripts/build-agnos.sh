@@ -10,15 +10,20 @@ set -e
 #   - For upload: R2 credentials in environment or .env file
 #
 # Usage:
-#   ./scripts/build-agnos.sh           # Build only
-#   ./scripts/build-agnos.sh --upload  # Build and upload to R2
+#   AGNOS_VERSION=16-bt2 ./scripts/build-agnos.sh --system           # Build kernel + system
+#   AGNOS_VERSION=16-bt2 ./scripts/build-agnos.sh --system --upload  # Build and upload to R2
+#   AGNOS_VERSION=16-bt2 ./scripts/build-agnos.sh --upload-only      # Upload existing build to R2
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Configuration
-AGNOS_VERSION="${AGNOS_VERSION:-16-bt1}"
-BASE_AGNOS_VERSION="${AGNOS_VERSION%%-*}"  # Extract base version (16 from 16-bt1)
+# Configuration - AGNOS_VERSION must be provided
+if [ -z "$AGNOS_VERSION" ]; then
+  echo "Error: AGNOS_VERSION must be set"
+  echo "Usage: AGNOS_VERSION=16-bt2 $0 [options]"
+  exit 1
+fi
+BASE_AGNOS_VERSION="${AGNOS_VERSION%%-*}"  # Extract base version (16 from 16-bt2)
 
 # Determine build directory
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -101,6 +106,41 @@ EOF
   fi
 }
 
+# Step 1.5: Ensure bluez is in base_setup.sh for system image
+ensure_bluez_in_system() {
+  echo ""
+  echo "=== Ensuring bluez is in system image ==="
+
+  BASE_SETUP="$BUILD_DIR/userspace/base_setup.sh"
+  if ! grep -q "bluez" "$BASE_SETUP"; then
+    echo "Adding bluez to base_setup.sh..."
+    # Add bluez to the apt-fast install list (after wireless-tools)
+    sed -i.bak 's/wireless-tools \\/wireless-tools \\\n    bluez \\/' "$BASE_SETUP"
+  else
+    echo "bluez already in base_setup.sh"
+  fi
+}
+
+# Step 1.6: Patch package_ota.py to skip userdata partitions we don't build
+patch_package_ota() {
+  echo ""
+  echo "=== Patching package_ota.py ==="
+
+  PACKAGE_SCRIPT="$BUILD_DIR/scripts/package_ota.py"
+
+  # Comment out userdata partitions (we don't build those)
+  if grep -q "^  Partition('userdata" "$PACKAGE_SCRIPT"; then
+    echo "Commenting out userdata partitions..."
+    sed -i.bak \
+      -e "s|^  Partition('userdata_90'|  # Partition('userdata_90'|" \
+      -e "s|^  Partition('userdata_89'|  # Partition('userdata_89'|" \
+      -e "s|^  Partition('userdata_30'|  # Partition('userdata_30'|" \
+      "$PACKAGE_SCRIPT"
+  else
+    echo "userdata partitions already commented out"
+  fi
+}
+
 # Step 2: Update VERSION file
 update_version() {
   echo ""
@@ -148,6 +188,10 @@ package_ota() {
 
   # Set our R2 URL as the update URL
   export AGNOS_UPDATE_URL="${R2_PUBLIC_URL:-https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev}"
+  export AGNOS_STAGING_UPDATE_URL="$AGNOS_UPDATE_URL"
+
+  # Ensure package_ota.py is patched
+  patch_package_ota
 
   python3 scripts/package_ota.py
 
@@ -215,6 +259,7 @@ generate_manifest() {
 # Main
 main() {
   UPLOAD=false
+  UPLOAD_ONLY=false
   BUILD_SYSTEM=false
 
   for arg in "$@"; do
@@ -222,21 +267,40 @@ main() {
       --upload)
         UPLOAD=true
         ;;
+      --upload-only)
+        UPLOAD_ONLY=true
+        ;;
       --system)
         BUILD_SYSTEM=true
         ;;
       --help)
-        echo "Usage: $0 [options]"
+        echo "Usage: AGNOS_VERSION=<version> $0 [options]"
+        echo ""
+        echo "Environment:"
+        echo "  AGNOS_VERSION   Required. Version string (e.g., 16-bt2)"
+        echo ""
         echo "Options:"
-        echo "  --upload    Upload to R2 after building"
-        echo "  --system    Also build system image (slow, ~30 min)"
-        echo "  --help      Show this help"
+        echo "  --system       Build system image (required for full OTA)"
+        echo "  --upload       Upload to R2 after building"
+        echo "  --upload-only  Only upload existing build (skip build steps)"
+        echo "  --help         Show this help"
+        echo ""
+        echo "Example:"
+        echo "  AGNOS_VERSION=16-bt2 $0 --system --upload"
         exit 0
         ;;
     esac
   done
 
+  if [ "$UPLOAD_ONLY" = true ]; then
+    upload_to_r2
+    echo ""
+    echo "=== Upload complete ==="
+    exit 0
+  fi
+
   apply_bt_kernel_config
+  ensure_bluez_in_system
   update_version
   build_kernel
 

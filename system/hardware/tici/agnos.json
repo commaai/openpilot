@@ -67,17 +67,17 @@
   },
   {
     "name": "system",
-    "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-d5b082db8305e5fac8c42c18cf417d4ec61466c01cb284aa0e9817a74de64fd8.img.xz",
-    "hash": "1933f62b8acfacc3f23f2d396cae9531e72c1022de298912a3a90083faee0a1a",
-    "hash_raw": "d5b082db8305e5fac8c42c18cf417d4ec61466c01cb284aa0e9817a74de64fd8",
+    "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-76940bbc51bec0cb030dde6745ba9cad45c046e643fcc926d94d45a2560900db.img.xz",
+    "hash": "e5e1e6552f7d1e0305ded59271eef2a16890962c2cc7fa3f5b65ae9812a4280b",
+    "hash_raw": "76940bbc51bec0cb030dde6745ba9cad45c046e643fcc926d94d45a2560900db",
     "size": 4718592000,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
-    "ondevice_hash": "1bfb2bef603934ca0f2d9c1197166f603b92edbf8a89a320d811145ace82056e",
+    "ondevice_hash": "75567946ea0f1ed9863e1d813742e7f4a8c65d95a1f6bd4794c8ead80c78d838",
     "alt": {
-      "hash": "d5b082db8305e5fac8c42c18cf417d4ec61466c01cb284aa0e9817a74de64fd8",
-      "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-d5b082db8305e5fac8c42c18cf417d4ec61466c01cb284aa0e9817a74de64fd8.img",
+      "hash": "76940bbc51bec0cb030dde6745ba9cad45c046e643fcc926d94d45a2560900db",
+      "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-76940bbc51bec0cb030dde6745ba9cad45c046e643fcc926d94d45a2560900db.img",
       "size": 4718592000
     }
   }
