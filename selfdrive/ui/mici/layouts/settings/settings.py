@@ -11,6 +11,7 @@ from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMi
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici, PairBigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayout
+from openpilot.selfdrive.ui.mici.layouts.settings.asius import AsiusLayoutMici
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
 
@@ -19,9 +20,10 @@ class PanelType(IntEnum):
   TOGGLES = 0
   NETWORK = 1
   DEVICE = 2
-  DEVELOPER = 3
-  USER_MANUAL = 4
-  FIREHOSE = 5
+  ASIUS = 3
+  DEVELOPER = 4
+  USER_MANUAL = 5
+  FIREHOSE = 6
 
 
 @dataclass
@@ -42,6 +44,8 @@ class SettingsLayout(NavWidget):
     network_btn.set_click_callback(lambda: self._set_current_panel(PanelType.NETWORK))
     device_btn = BigButton("device", "", "icons_mici/settings/device_icon.png")
     device_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVICE))
+    asius_btn = BigButton("asius", "", "icons_mici/settings/network/wifi_strength_full.png")
+    asius_btn.set_click_callback(lambda: self._set_current_panel(PanelType.ASIUS))
     developer_btn = BigButton("developer", "", "icons_mici/settings/developer_icon.png")
     developer_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVELOPER))
 
@@ -52,8 +56,8 @@ class SettingsLayout(NavWidget):
       toggles_btn,
       network_btn,
       device_btn,
+      asius_btn,
       PairBigButton(),
-      #BigDialogButton("manual", "", "icons_mici/settings/manual_icon.png", "Check out the mici user\nmanual at comma.ai/setup"),
       firehose_btn,
       developer_btn,
     ], snap_items=False)
@@ -66,6 +70,7 @@ class SettingsLayout(NavWidget):
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.NETWORK: PanelInfo("Network", NetworkLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.DEVICE: PanelInfo("Device", DeviceLayoutMici(back_callback=lambda: self._set_current_panel(None))),
+      PanelType.ASIUS: PanelInfo("Asius", AsiusLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.DEVELOPER: PanelInfo("Developer", DeveloperLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.FIREHOSE: PanelInfo("Firehose", FirehoseLayout(back_callback=lambda: self._set_current_panel(None))),
     }

@@ -31,9 +31,6 @@ DESCRIPTIONS = {
   'RecordFront': tr_noop("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
   "IsMetric": tr_noop("Display speed in km/h instead of mph."),
   "RecordAudio": tr_noop("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
-  "EnableWebRTC": tr_noop("Allow remote live streaming via Connect."),
-  "EnableRemoteParams": tr_noop("Allow remote parameter editing via Connect."),
-  "EnableAsiusAPI": tr_noop("Use Asius API for Connect features. Disabling will switch to comma API. Requires reboot to re-register device."),
 }
 
 
@@ -91,24 +88,6 @@ class TogglesLayout(Widget):
         lambda: tr("Use Metric System"),
         DESCRIPTIONS["IsMetric"],
         "metric.png",
-        False,
-      ),
-      "EnableWebRTC": (
-        lambda: tr("Remote Live Streaming and Joystick Control"),
-        DESCRIPTIONS["EnableWebRTC"],
-        "network.png",
-        False,
-      ),
-      "EnableRemoteParams": (
-        lambda: tr("Remote Parameter Editing"),
-        DESCRIPTIONS["EnableRemoteParams"],
-        "settings.png",
-        False,
-      ),
-      "EnableAsiusAPI": (
-        lambda: tr("Asius API"),
-        DESCRIPTIONS["EnableAsiusAPI"],
-        "network.png",
         False,
       ),
     }
@@ -257,27 +236,9 @@ class TogglesLayout(Widget):
       self._handle_experimental_mode_toggle(state)
       return
 
-    if param == "EnableAsiusAPI":
-      self._handle_asius_api_toggle(state)
-      return
-
     self._params.put_bool(param, state)
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True)
-
-  def _handle_asius_api_toggle(self, state: bool):
-    msg = tr("Switch to Asius API? This will clear your device registration and reboot.") if state else tr("Switch to comma API? This will clear your device registration and reboot.")
-
-    def confirm_callback(result: int):
-      if result == DialogResult.CONFIRM:
-        self._params.put_bool("EnableAsiusAPI", state)
-        self._params.remove("DongleId")
-        self._params.put_bool_nonblocking("DoReboot", True)
-      else:
-        self._toggles["EnableAsiusAPI"].action_item.set_state(not state)
-
-    dlg = ConfirmDialog(msg, tr("Switch and Reboot"))
-    gui_app.set_modal_overlay(dlg, callback=confirm_callback)
 
   def _set_longitudinal_personality(self, button_index: int):
     self._params.put("LongitudinalPersonality", button_index)

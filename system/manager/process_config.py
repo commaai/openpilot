@@ -52,6 +52,9 @@ def webrtc(started: bool, params: Params, CP: car.CarParams) -> bool:
 def always_run(started: bool, params: Params, CP: car.CarParams) -> bool:
   return True
 
+def ble_enabled(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return params.get_bool("EnableBLE")
+
 def only_onroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started
 
@@ -66,6 +69,7 @@ def and_(*fns):
 
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
+  PythonProcess("ble_server", "system.athena.ble_server", ble_enabled),
 
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
