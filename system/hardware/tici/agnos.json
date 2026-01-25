@@ -2,72 +2,79 @@
   {
     "name": "xbl",
     "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/xbl-dd45c0febdf0e022dab82ed0219370a86e8e6c0dfabfe29f3dab7eb1174d6bc6.img.xz",
-    "hash": "d76c1c1ea509ec3c51b50c7b809d04fcf0c1b1191cacc2cc10b33735ccd30d52",
+    "hash": "dd45c0febdf0e022dab82ed0219370a86e8e6c0dfabfe29f3dab7eb1174d6bc6",
     "hash_raw": "dd45c0febdf0e022dab82ed0219370a86e8e6c0dfabfe29f3dab7eb1174d6bc6",
     "size": 3282256,
     "sparse": false,
     "full_check": true,
-    "has_ab": true
+    "has_ab": true,
+    "ondevice_hash": "d47a08914d2376557b03f1231b7233508222c04b57d781f9daf77c63eab92c2e"
   },
   {
     "name": "xbl_config",
     "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/xbl_config-1074ae051df159ba6dba988d8f6ba2cfc304ed1466cce0db531df6f7b1e44aa9.img.xz",
-    "hash": "d463e7bb409878a9db7aa2363f2e67d811bc91a963bb9674917c0075d7fcb305",
+    "hash": "1074ae051df159ba6dba988d8f6ba2cfc304ed1466cce0db531df6f7b1e44aa9",
     "hash_raw": "1074ae051df159ba6dba988d8f6ba2cfc304ed1466cce0db531df6f7b1e44aa9",
     "size": 98124,
     "sparse": false,
     "full_check": true,
-    "has_ab": true
+    "has_ab": true,
+    "ondevice_hash": "e7d04d9f040c9c040cdf013335d0b6d6e9346311458baeb2461b193e954f5f1c"
   },
   {
     "name": "abl",
     "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/abl-556bbb4ed1c671402b217bd2f3c07edce4f88b0bbd64e92241b82e396aa9ebee.img.xz",
-    "hash": "8f175aa22d1876d6f0b704f54c28e194556f8ae9a1103bd16f2daf0e4477a8cb",
+    "hash": "556bbb4ed1c671402b217bd2f3c07edce4f88b0bbd64e92241b82e396aa9ebee",
     "hash_raw": "556bbb4ed1c671402b217bd2f3c07edce4f88b0bbd64e92241b82e396aa9ebee",
     "size": 274432,
     "sparse": false,
     "full_check": true,
-    "has_ab": true
+    "has_ab": true,
+    "ondevice_hash": "556bbb4ed1c671402b217bd2f3c07edce4f88b0bbd64e92241b82e396aa9ebee"
   },
   {
     "name": "aop",
     "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/aop-4d925c9248672e4a69a236991983375008c44997a854ee7846d1b5fd7c787788.img.xz",
-    "hash": "c8218bb75965e5a03c1e42d901661bf43d5ccdf0b4964646d7eed537699ac0e0",
+    "hash": "4d925c9248672e4a69a236991983375008c44997a854ee7846d1b5fd7c787788",
     "hash_raw": "4d925c9248672e4a69a236991983375008c44997a854ee7846d1b5fd7c787788",
     "size": 184364,
     "sparse": false,
     "full_check": true,
-    "has_ab": true
+    "has_ab": true,
+    "ondevice_hash": "3aa0a79149ec57f4bc8c38f7bbdf4f6630dd659e49a111ce6258d2d06a07c8e5"
   },
   {
     "name": "devcfg",
     "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/devcfg-2f374581243910db92f62bb13bd66ec8e3d56d434997ba007ded06d2d6cc8585.img.xz",
-    "hash": "53dd3b8063f3cb91ef6978e3cea075de9d8815d4611727dd2ed46870677c884b",
+    "hash": "2f374581243910db92f62bb13bd66ec8e3d56d434997ba007ded06d2d6cc8585",
     "hash_raw": "2f374581243910db92f62bb13bd66ec8e3d56d434997ba007ded06d2d6cc8585",
     "size": 40336,
     "sparse": false,
     "full_check": true,
-    "has_ab": true
+    "has_ab": true,
+    "ondevice_hash": "3d7bb33588491a2a40091a7e1cf6cb65e6dd503f69b640aba484d723f1ad47e8"
   },
   {
     "name": "boot",
     "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/boot-dc8d8270363c369b46362da7a9b6c1f95571f6960cbd46fe67a1aeabbc8fe98c.img.xz",
-    "hash": "e2b8d804aa1d0bb64b536206bd8b0228def4a0dce2b51a30ba7fbdd016cf1e7d",
+    "hash": "dc8d8270363c369b46362da7a9b6c1f95571f6960cbd46fe67a1aeabbc8fe98c",
     "hash_raw": "dc8d8270363c369b46362da7a9b6c1f95571f6960cbd46fe67a1aeabbc8fe98c",
     "size": 17860608,
     "sparse": false,
     "full_check": true,
-    "has_ab": true
+    "has_ab": true,
+    "ondevice_hash": "058570e3e39f381321bb60dbf10258f46f80c69e738e474125fcb2a71e238a33"
   },
   {
     "name": "system",
     "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-d5b082db8305e5fac8c42c18cf417d4ec61466c01cb284aa0e9817a74de64fd8.img.xz",
-    "hash": "59deb67a9fa59e5f5a264dcc2954c24d5874900f42f6a4227caeb7fa01a8f32e",
+    "hash": "1933f62b8acfacc3f23f2d396cae9531e72c1022de298912a3a90083faee0a1a",
     "hash_raw": "d5b082db8305e5fac8c42c18cf417d4ec61466c01cb284aa0e9817a74de64fd8",
     "size": 4718592000,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
+    "ondevice_hash": "1bfb2bef603934ca0f2d9c1197166f603b92edbf8a89a320d811145ace82056e",
     "alt": {
       "hash": "d5b082db8305e5fac8c42c18cf417d4ec61466c01cb284aa0e9817a74de64fd8",
       "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-d5b082db8305e5fac8c42c18cf417d4ec61466c01cb284aa0e9817a74de64fd8.img",
