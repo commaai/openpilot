@@ -1,0 +1,178 @@
+name: Sync Upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/commaai/openpilot.git || true
+          git fetch upstream master
+          git fetch origin master
+
+      - name: Check if sync is needed
+        id: check
+        run: |
+          # Get the merge base between origin/master and upstream/master
+          MERGE_BASE=$(git merge-base origin/master upstream/master)
+          UPSTREAM_HEAD=$(git rev-parse upstream/master)
+
+          echo "merge_base=$MERGE_BASE"
+          echo "upstream_head=$UPSTREAM_HEAD"
+
+          if [ "$MERGE_BASE" = "$UPSTREAM_HEAD" ]; then
+            echo "Already up to date with upstream"
+            echo "needs_sync=false" >> $GITHUB_OUTPUT
+          else
+            echo "Upstream has new commits"
+            echo "needs_sync=true" >> $GITHUB_OUTPUT
+
+            # Count commits behind
+            COMMITS_BEHIND=$(git rev-list --count origin/master..upstream/master)
+            echo "commits_behind=$COMMITS_BEHIND" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for existing sync PR
+        if: steps.check.outputs.needs_sync == 'true'
+        id: existing_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Find existing open PR from sync/upstream-master branch
+          PR_NUMBER=$(gh pr list --head "sync/upstream-master" --state open --json number --jq '.[0].number // empty')
+
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Found existing PR: #$PR_NUMBER"
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          else
+            echo "No existing PR found"
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create sync branch with rebase
+        if: steps.check.outputs.needs_sync == 'true'
+        id: rebase
+        run: |
+          # Create or reset sync branch
+          git checkout -B sync/upstream-master origin/master
+
+          # Try to rebase onto upstream/master
+          # This rebases our commits on top of upstream
+          if git rebase upstream/master; then
+            echo "Rebase successful"
+            echo "rebase_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "Rebase failed due to conflicts"
+            echo "rebase_success=false" >> $GITHUB_OUTPUT
+            git rebase --abort
+
+            # Create a merge commit instead to show the conflict
+            git checkout -B sync/upstream-master origin/master
+            if ! git merge upstream/master --no-edit; then
+              # Store conflict info
+              CONFLICTS=$(git diff --name-only --diff-filter=U | head -20)
+              echo "conflicts<<EOF" >> $GITHUB_OUTPUT
+              echo "$CONFLICTS" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+
+              # Abort and leave branch in a state that shows we tried
+              git merge --abort
+              # Just create the branch pointing to origin/master for now
+              git checkout -B sync/upstream-master origin/master
+            fi
+          fi
+
+      - name: Push sync branch
+        if: steps.check.outputs.needs_sync == 'true'
+        run: |
+          git push --force origin sync/upstream-master
+
+      - name: Create or update PR
+        if: steps.check.outputs.needs_sync == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMITS_BEHIND="${{ steps.check.outputs.commits_behind }}"
+          REBASE_SUCCESS="${{ steps.rebase.outputs.rebase_success }}"
+          PR_EXISTS="${{ steps.existing_pr.outputs.pr_exists }}"
+          PR_NUMBER="${{ steps.existing_pr.outputs.pr_number }}"
+          CONFLICTS="${{ steps.rebase.outputs.conflicts }}"
+
+          # Prepare PR body
+          if [ "$REBASE_SUCCESS" = "true" ]; then
+            PR_BODY="## Upstream Sync
+
+          This PR syncs with the latest changes from [commaai/openpilot](https://github.com/commaai/openpilot) master branch.
+
+          - **Commits behind upstream**: $COMMITS_BEHIND
+          - **Rebase status**: Success
+
+          ### Changes
+          This branch has been rebased onto \`upstream/master\`.
+
+          ---
+          *This PR was automatically created by GitHub Actions.*"
+          else
+            PR_BODY="## Upstream Sync (Conflicts Detected)
+
+          This PR attempts to sync with the latest changes from [commaai/openpilot](https://github.com/commaai/openpilot) master branch.
+
+          - **Commits behind upstream**: $COMMITS_BEHIND
+          - **Rebase status**: Failed due to conflicts
+
+          ### Action Required
+          Manual conflict resolution is needed. Please:
+          1. Check out this branch locally
+          2. Run \`git rebase upstream/master\`
+          3. Resolve conflicts
+          4. Force push the resolved branch
+
+          ### Conflicting files
+          \`\`\`
+          $CONFLICTS
+          \`\`\`
+
+          ---
+          *This PR was automatically created by GitHub Actions.*"
+          fi
+
+          if [ "$PR_EXISTS" = "true" ]; then
+            echo "Updating existing PR #$PR_NUMBER"
+            gh pr edit "$PR_NUMBER" --body "$PR_BODY"
+            gh pr comment "$PR_NUMBER" --body "Updated with latest upstream changes. Commits behind: $COMMITS_BEHIND"
+          else
+            echo "Creating new PR"
+            if [ "$REBASE_SUCCESS" = "true" ]; then
+              PR_TITLE="Sync with upstream (commaai/openpilot)"
+            else
+              PR_TITLE="[CONFLICTS] Sync with upstream (commaai/openpilot)"
+            fi
+
+            gh pr create \
+              --title "$PR_TITLE" \
+              --body "$PR_BODY" \
+              --head "sync/upstream-master" \
+              --base "master"
+          fi
