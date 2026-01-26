@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import base64
 import hashlib
-import io
 import json
 import os
 import queue
@@ -18,7 +16,6 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
 from queue import Queue
-from typing import cast
 from collections.abc import Callable
 
 import requests
@@ -27,54 +24,43 @@ from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
 
-# Import shared RPC methods - this registers them with the dispatcher
+# Import shared RPC methods - registers them with dispatcher
 from openpilot.system.athena import rpc_methods  # noqa: F401
 
 import cereal.messaging as messaging
 from cereal import log
-from cereal.services import SERVICE_LIST
-from openpilot.common.api import Api, get_key_pair
+from openpilot.common.api import Api
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.hardware import PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
 
 
 ATHENA_HOST = 'wss://api.asius.ai' if Params().get_bool("EnableAsiusAPI") else os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
-LOCAL_PORT_WHITELIST = {22, }  # SSH
+LOCAL_PORT_WHITELIST = {22, }
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 RECONNECT_TIMEOUT_S = 70
 
-RETRY_DELAY = 10  # seconds
-MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
-MAX_AGE = 31 * 24 * 3600  # seconds
+RETRY_DELAY = 10
+MAX_RETRY_COUNT = 30
+MAX_AGE = 31 * 24 * 3600
 WS_FRAME_SIZE = 4096
-DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
-DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
+DEVICE_STATE_UPDATE_INTERVAL = 1.0
+DEFAULT_UPLOAD_PRIORITY = 99
 
-# https://bytesolutions.com/dscp-tos-cos-precedence-conversion-chart,
-# https://en.wikipedia.org/wiki/Differentiated_services
-UPLOAD_TOS = 0x20  # CS1, low priority background traffic
-SSH_TOS = 0x90  # AF42, DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
-
-# Parameters that should never be remotely modified
-BLOCKED_PARAMS = {
-  "GithubUsername",  # Could grant SSH access
-  "GithubSshKeys",   # Direct SSH key injection
-}
+UPLOAD_TOS = 0x20
+SSH_TOS = 0x90
 
 NetworkType = log.DeviceState.NetworkType
 
 UploadFileDict = dict[str, str | int | float | bool]
 UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
-
 UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
 
@@ -132,7 +118,6 @@ class UploadItem:
     return self.priority == other.priority
 
 
-dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
 send_queue: Queue[str] = queue.Queue()
 upload_queue: Queue[UploadItem] = queue.PriorityQueue()
@@ -154,7 +139,6 @@ class AbortTransferException(Exception):
 
 
 class UploadQueueCache:
-
   @staticmethod
   def initialize(upload_queue: Queue[UploadItem]) -> None:
     try:
@@ -168,8 +152,8 @@ class UploadQueueCache:
   @staticmethod
   def cache(upload_queue: Queue[UploadItem]) -> None:
     try:
-      queue: list[UploadItem | None] = list(upload_queue.queue)
-      items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
+      queue_list: list[UploadItem | None] = list(upload_queue.queue)
+      items = [asdict(i) for i in queue_list if i is not None and (i.id not in cancelled_uploads)]
       Params().put("AthenadUploadQueue", items)
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
@@ -232,16 +216,9 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
   item = cur_upload_items[tid]
   if item is not None and item.retry_count < MAX_RETRY_COUNT:
     new_retry_count = item.retry_count + 1 if increase_count else item.retry_count
-
-    item = replace(
-      item,
-      retry_count=new_retry_count,
-      progress=0,
-      current=False
-    )
+    item = replace(item, retry_count=new_retry_count, progress=0, current=False)
     upload_queue.put_nowait(item)
     UploadQueueCache.cache(upload_queue)
-
     cur_upload_items[tid] = None
 
     for _ in range(RETRY_DELAY):
@@ -251,8 +228,6 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
 
 
 def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
-  # Abort transfer if connection changed to metered after starting upload
-  # or if athenad is shutting down to re-connect the websocket
   if not item.allow_cellular:
     if (time.monotonic() - sm.recv_time['deviceState']) > DEVICE_STATE_UPDATE_INTERVAL:
       sm.update(0)
@@ -279,13 +254,11 @@ def upload_handler(end_event: threading.Event) -> None:
         cancelled_uploads.remove(item.id)
         continue
 
-      # Remove item if too old
       age = datetime.now() - datetime.fromtimestamp(item.created_at / 1000)
       if age.total_seconds() > MAX_AGE:
         cloudlog.event("athena.upload_handler.expired", item=item, error=True)
         continue
 
-      # Check if uploading over metered connection is allowed
       sm.update(0)
       metered = sm['deviceState'].networkMetered
       network_type = sm['deviceState'].networkType.raw
@@ -327,7 +300,6 @@ def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> req
   path = upload_item.path
   compress = False
 
-  # If file does not exist, but does exist without the .zst extension we will compress on the fly
   if not os.path.exists(path) and os.path.exists(strip_zst_extension(path)):
     path = strip_zst_extension(path)
     compress = True
@@ -345,68 +317,10 @@ def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> req
       stream.close()
 
 
-# security: user should be able to request any message from their car
-@dispatcher.add_method
-def getMessage(service: str, timeout: int = 1000) -> dict:
-  if service is None or service not in SERVICE_LIST:
-    raise Exception("invalid service")
-
-  socket = messaging.sub_sock(service, timeout=timeout)
-  try:
-    ret = messaging.recv_one(socket)
-
-    if ret is None:
-      raise TimeoutError
-
-    # this is because capnp._DynamicStructReader doesn't have typing information
-    return cast(dict, ret.to_dict())
-  finally:
-    del socket
-
-
-@dispatcher.add_method
-def getVersion() -> dict[str, str]:
-  build_metadata = get_build_metadata()
-  return {
-    "version": build_metadata.openpilot.version,
-    "remote": build_metadata.openpilot.git_normalized_origin,
-    "branch": build_metadata.channel,
-    "commit": build_metadata.openpilot.git_commit,
-  }
-
-
-def scan_dir(path: str, prefix: str) -> list[str]:
-  files = []
-  # only walk directories that match the prefix
-  # (glob and friends traverse entire dir tree)
-  with os.scandir(path) as i:
-    for e in i:
-      rel_path = os.path.relpath(e.path, Paths.log_root())
-      if e.is_dir(follow_symlinks=False):
-        # add trailing slash
-        rel_path = os.path.join(rel_path, '')
-        # if prefix is a partial dir name, current dir will start with prefix
-        # if prefix is a partial file name, prefix with start with dir name
-        if rel_path.startswith(prefix) or prefix.startswith(rel_path):
-          files.extend(scan_dir(e.path, prefix))
-      else:
-        if rel_path.startswith(prefix):
-          files.append(rel_path)
-  return files
-
-@dispatcher.add_method
-def listDataDirectory(prefix='') -> list[str]:
-  return scan_dir(Paths.log_root(), prefix)
-
-
+# Upload methods - need access to upload_queue so kept in athenad
 @dispatcher.add_method
 def uploadFileToUrl(fn: str, url: str, headers: dict[str, str]) -> UploadFilesToUrlResponse:
-  # this is because mypy doesn't understand that the decorator doesn't change the return type
-  response: UploadFilesToUrlResponse = uploadFilesToUrls([{
-    "fn": fn,
-    "url": url,
-    "headers": headers,
-  }])
+  response: UploadFilesToUrlResponse = uploadFilesToUrls([{"fn": fn, "url": url, "headers": headers}])
   return response
 
 
@@ -426,7 +340,6 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       failed.append(file.fn)
       continue
 
-    # Skip item if already in queue
     url = file.url.split('?')[0]
     if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
       continue
@@ -474,25 +387,9 @@ def cancelUpload(upload_id: str | list[str]) -> dict[str, int | str]:
   cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
 
-@dispatcher.add_method
-def setRouteViewed(route: str) -> dict[str, int | str]:
-  # maintain a list of the last 10 routes viewed in connect
-  params = Params()
-
-  r = params.get("AthenadRecentlyViewedRoutes")
-  routes = [] if r is None else r.split(",")
-  routes.append(route)
-
-  # remove duplicates
-  routes = list(dict.fromkeys(routes))
-
-  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
-  return {"success": 1}
-
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
   try:
-    # migration, can be removed once 0.9.8 is out for a while
     if local_port == 8022:
       local_port = 22
 
@@ -503,11 +400,8 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
     dongle_id = Params().get("DongleId")
     identity_token = Api(dongle_id).get_token()
-    ws = create_connection(remote_ws_uri,
-                           cookie="jwt=" + identity_token,
-                           enable_multithread=True)
+    ws = create_connection(remote_ws_uri, cookie="jwt=" + identity_token, enable_multithread=True)
 
-    # Set TOS to keep connection responsive while under load.
     ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, SSH_TOS)
 
     ssock, csock = socket.socketpair()
@@ -531,61 +425,25 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 
 @dispatcher.add_method
-def getPublicKey() -> str | None:
-  _, _, public_key = get_key_pair()
-  return public_key
-
-
-@dispatcher.add_method
-def getSshAuthorizedKeys() -> str:
-  return cast(str, Params().get("GithubSshKeys") or "")
-
-
-@dispatcher.add_method
-def getGithubUsername() -> str:
-  return cast(str, Params().get("GithubUsername") or "")
-
-@dispatcher.add_method
-def getSimInfo():
-  return HARDWARE.get_sim_info()
-
-
-@dispatcher.add_method
-def getNetworkType():
-  return HARDWARE.get_network_type()
-
-
-@dispatcher.add_method
-def getNetworkMetered() -> bool:
-  network_type = HARDWARE.get_network_type()
-  return HARDWARE.get_network_metered(network_type)
-
-
-@dispatcher.add_method
-def getNetworks():
-  return HARDWARE.get_networks()
-
-
-@dispatcher.add_method
-def takeSnapshot() -> str | dict[str, str] | None:
-  from openpilot.system.camerad.snapshot import jpeg_write, snapshot
-  ret = snapshot()
-  if ret is not None:
-    def b64jpeg(x):
-      if x is not None:
-        f = io.BytesIO()
-        jpeg_write(f, x)
-        return base64.b64encode(f.getvalue()).decode("utf-8")
-      else:
-        return None
-    return {'jpegBack': b64jpeg(ret[0]),
-            'jpegFront': b64jpeg(ret[1])}
-  else:
-    raise Exception("not available while camerad is started")
+def webrtc(sdp: str, cameras: list[str], bridge_services_in: list[str], bridge_services_out: list[str]):
+  if not Params().get_bool("EnableWebRTC"):
+    raise Exception("EnableWebRTC is disabled")
+  try:
+    data = {
+      "sdp": sdp,
+      "cameras": cameras,
+      "bridge_services_in": bridge_services_in,
+      "bridge_services_out": bridge_services_out
+    }
+    response = requests.post("http://0.0.0.0:5001/stream", json=data, timeout=60)
+    response.raise_for_status()
+    return response.json()
+  except Exception as e:
+    cloudlog.exception("athena.webrtc.exception")
+    return {"error": str(e)}
 
 
 def get_logs_to_send_sorted() -> list[str]:
-  # TODO: scan once then use inotify to detect file creation/deletion
   curr_time = int(time.time())  # noqa: TID251
   logs = []
   for log_entry in os.listdir(Paths.swaglog_root()):
@@ -597,10 +455,8 @@ def get_logs_to_send_sorted() -> list[str]:
         time_sent = int.from_bytes(value, sys.byteorder)
     except (ValueError, TypeError):
       pass
-    # assume send failed and we lost the response if sent more than one hour ago
     if not time_sent or curr_time - time_sent > 3600:
       logs.append(log_entry)
-  # excluding most recent (active) log file
   return sorted(logs)[:-1]
 
 
@@ -617,10 +473,9 @@ def log_handler(end_event: threading.Event) -> None:
         log_files = get_logs_to_send_sorted()
         last_scan = curr_scan
 
-      # send one log
       curr_log = None
       if len(log_files) > 0:
-        log_entry = log_files.pop() # newest log file
+        log_entry = log_files.pop()
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
           curr_time = int(time.time())  # noqa: TID251
@@ -629,19 +484,15 @@ def log_handler(end_event: threading.Event) -> None:
           with open(log_path) as f:
             jsonrpc = {
               "method": "forwardLogs",
-              "params": {
-                "logs": f.read()
-              },
+              "params": {"logs": f.read()},
               "jsonrpc": "2.0",
               "id": log_entry
             }
             low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
             curr_log = log_entry
         except OSError:
-          pass  # file could be deleted by log rotation
+          pass
 
-      # wait for response up to ~100 seconds
-      # always read queue at least once to process any old responses that arrive
       for _ in range(100):
         if end_event.is_set():
           break
@@ -655,7 +506,7 @@ def log_handler(end_event: threading.Event) -> None:
             try:
               setxattr(log_path, LOG_ATTR_NAME, LOG_ATTR_VALUE_MAX_UNIX_TIME)
             except OSError:
-              pass  # file could be deleted by log rotation
+              pass
           if curr_log == log_entry:
             break
         except queue.Empty:
@@ -680,9 +531,7 @@ def stat_handler(end_event: threading.Event) -> None:
           with open(stat_path) as f:
             jsonrpc = {
               "method": "storeStats",
-              "params": {
-                "stats": f.read()
-              },
+              "params": {"stats": f.read()},
               "jsonrpc": "2.0",
               "id": stat_filenames[0]
             }
@@ -724,12 +573,10 @@ def ws_proxy_send(ws: WebSocket, local_sock: socket.socket, signal_sock: socket.
       r, _, _ = select.select((local_sock, signal_sock), (), ())
       if r:
         if r[0].fileno() == signal_sock.fileno():
-          # got end signal from ws_proxy_recv
           end_event.set()
           break
         data = local_sock.recv(4096)
         if not data:
-          # local_sock is dead
           end_event.set()
           break
 
@@ -795,9 +642,6 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
       onroad_prev = onroad
 
       if sock is not None:
-        # While not sending data, onroad, we can expect to time out in 7 + (7 * 2) = 21s
-        #                         offroad, we can expect to time out in 30 + (10 * 3) = 60s
-        # FIXME: TCP_USER_TIMEOUT is effectively 2x for some reason (32s), so it's mostly unused
         if sys.platform == 'linux':
           sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
           sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
@@ -812,93 +656,6 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
 
 def backoff(retries: int) -> int:
   return random.randrange(0, min(128, int(2 ** retries)))
-
-
-@dispatcher.add_method
-def webrtc(sdp:str, cameras: list[str], bridge_services_in: list[str], bridge_services_out: list[str]):
-  if not Params().get_bool("EnableWebRTC"):
-    raise Exception("EnableWebRTC is disabled")
-  try:
-    data = {
-      "sdp": sdp,
-      "cameras": cameras,
-      "bridge_services_in": bridge_services_in,
-      "bridge_services_out": bridge_services_out
-    }
-    response = requests.post("http://0.0.0.0:5001/stream", json=data, timeout=60)
-    response.raise_for_status()
-    res = response.json()
-    return res
-  except Exception as e:
-    cloudlog.exception("athena.webrtc.exception")
-    return {"error": str(e)}
-
-@dispatcher.add_method
-def getAllParams() -> list[dict[str, str | bool | int | object | dict | None]]:
-  if not Params().get_bool("EnableRemoteParams"):
-    raise Exception("EnableRemoteParams is disabled")
-
-  available_keys: list[str] = [k.decode('utf-8') for k in Params().all_keys()]
-
-  params_list:  list[dict[str, str | bool | int | object | dict | None]] = []
-  params = Params()
-  for key in available_keys:
-    value = params.get(key)
-
-    if value is not None and not isinstance(value, bytes):
-      if isinstance(value, bool):
-        value = b"1" if value else b"0"
-      else:
-        value = str(value).encode('utf-8')
-
-    entry = {
-      "key": key,
-      "type": int(params.get_type(key).value),
-      "value": base64.b64encode(value).decode('utf-8') if value else None,
-    }
-
-    params_list.append(entry)
-
-  return params_list
-
-
-@dispatcher.add_method
-def saveParams(params_to_update: dict[str, str | None]) -> dict[str, str]:
-  if not Params().get_bool("EnableRemoteParams"):
-    raise Exception("EnableRemoteParams is disabled")
-  from openpilot.common.params_pyx import ParamKeyType
-  params = Params()
-  results = {}
-  for key, value in params_to_update.items():
-    if key in BLOCKED_PARAMS:
-      cloudlog.warning(f"athenad.saveParams.blocked: Attempted to modify blocked parameter '{key}'")
-      results[key] = "error: blocked"
-      continue
-
-    try:
-      if value is None or value == "":
-        params.remove(key)
-        results[key] = "ok: removed"
-        continue
-
-      decoded_value = base64.b64decode(value)
-      decoded_str = decoded_value.decode('utf-8')
-
-      key_type = params.get_type(key)
-      if key_type == ParamKeyType.BOOL:
-        typed_value = decoded_str in ('1', 'true', 'True')
-      elif key_type == ParamKeyType.INT:
-        typed_value = int(decoded_str)
-      elif key_type == ParamKeyType.FLOAT:
-        typed_value = float(decoded_str)
-      else:
-        typed_value = decoded_str
-
-      params.put(key, typed_value)
-      results[key] = f"ok: {decoded_str}"
-    except Exception as e:
-      results[key] = f"error: {e}"
-  return results
 
 
 def main(exit_event: threading.Event | None = None):
@@ -922,12 +679,8 @@ def main(exit_event: threading.Event | None = None):
         conn_start = time.monotonic()
 
       cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
-      ws = create_connection(ws_uri,
-                             cookie="jwt=" + api.get_token(),
-                             enable_multithread=True,
-                             timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
-                     duration=time.monotonic() - conn_start)
+      ws = create_connection(ws_uri, cookie="jwt=" + api.get_token(), enable_multithread=True, timeout=30.0)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries, duration=time.monotonic() - conn_start)
       conn_start = None
 
       conn_retries = 0
