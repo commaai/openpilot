@@ -137,37 +137,46 @@ def takeSnapshot() -> str | dict[str, str] | None:
 
 
 @dispatcher.add_method
-def getAllParams() -> list[dict[str, str | bool | int | object | dict | None]]:
+def getAllParams() -> dict[str, str | bool | int | float | None]:
   if not Params().get_bool("EnableRemoteParams"):
     raise Exception("EnableRemoteParams is disabled")
 
+  from openpilot.common.params_pyx import ParamKeyType
+
   available_keys: list[str] = [k.decode('utf-8') for k in Params().all_keys()]
-  params_list: list[dict[str, str | bool | int | object | dict | None]] = []
+  result: dict[str, str | bool | int | float | None] = {}
   params = Params()
 
   for key in available_keys:
     value = params.get(key)
-    if value is not None and not isinstance(value, bytes):
-      if isinstance(value, bool):
-        value = b"1" if value else b"0"
-      else:
-        value = str(value).encode('utf-8')
+    if value is None:
+      result[key] = None
+      continue
 
-    entry = {
-      "key": key,
-      "type": int(params.get_type(key).value),
-      "value": base64.b64encode(value).decode('utf-8') if value else None,
-    }
-    params_list.append(entry)
+    key_type = params.get_type(key)
+    if key_type == ParamKeyType.BYTES:
+      continue
+    elif key_type == ParamKeyType.BOOL:
+      result[key] = bool(value) if isinstance(value, bool) else value in (b'1', b'true', b'True', '1', 'true', 'True')
+    elif key_type == ParamKeyType.INT:
+      result[key] = int(value) if isinstance(value, int) else int(value.decode('utf-8') if isinstance(value, bytes) else value)
+    elif key_type == ParamKeyType.FLOAT or key_type == ParamKeyType.TIME:
+      result[key] = float(value) if isinstance(value, float) else float(value.decode('utf-8') if isinstance(value, bytes) else value)
+    elif key_type == ParamKeyType.JSON:
+      import json
+      result[key] = json.loads(value.decode('utf-8') if isinstance(value, bytes) else value)
+    else:
+      result[key] = value.decode('utf-8') if isinstance(value, bytes) else str(value)
 
-  return params_list
+  return result
 
 
 @dispatcher.add_method
-def saveParams(params_to_update: dict[str, str | None]) -> dict[str, str]:
+def saveParams(params_to_update: dict[str, str | bool | int | float | dict | list | None]) -> dict[str, str]:
   if not Params().get_bool("EnableRemoteParams"):
     raise Exception("EnableRemoteParams is disabled")
 
+  import json
   from openpilot.common.params_pyx import ParamKeyType
   from openpilot.common.swaglog import cloudlog
 
@@ -181,26 +190,27 @@ def saveParams(params_to_update: dict[str, str | None]) -> dict[str, str]:
       continue
 
     try:
-      if value is None or value == "":
+      if value is None:
         params.remove(key)
         results[key] = "ok: removed"
         continue
 
-      decoded_value = base64.b64decode(value)
-      decoded_str = decoded_value.decode('utf-8')
-
       key_type = params.get_type(key)
-      if key_type == ParamKeyType.BOOL:
-        typed_value = decoded_str in ('1', 'true', 'True')
+      if key_type == ParamKeyType.BYTES:
+        results[key] = "error: bytes not supported"
+        continue
+      elif key_type == ParamKeyType.BOOL:
+        params.put(key, bool(value))
       elif key_type == ParamKeyType.INT:
-        typed_value = int(decoded_str)
-      elif key_type == ParamKeyType.FLOAT:
-        typed_value = float(decoded_str)
+        params.put(key, int(value))
+      elif key_type == ParamKeyType.FLOAT or key_type == ParamKeyType.TIME:
+        params.put(key, float(value))
+      elif key_type == ParamKeyType.JSON:
+        params.put(key, json.dumps(value) if isinstance(value, (dict, list)) else str(value))
       else:
-        typed_value = decoded_str
+        params.put(key, str(value))
 
-      params.put(key, typed_value)
-      results[key] = f"ok: {decoded_str}"
+      results[key] = "ok"
     except Exception as e:
       results[key] = f"error: {e}"
 
