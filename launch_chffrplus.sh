@@ -11,6 +11,15 @@ function agnos_init {
   # set success flag for current boot slot
   sudo abctl --set_success
 
+  # Add system packages (gi/GLib) to venv so ble_server can run with openpilot python
+  # Note: bluez is now included in AGNOS 16-bt2+ system image
+  PTH_FILE="/usr/local/venv/lib/python3.12/site-packages/system-packages.pth"
+  if [ -f "$DIR/system/athena/ble_server.py" ] && [ ! -f "$PTH_FILE" ]; then
+    echo "Adding system packages to venv..."
+    sudo mount -o remount,rw / 2>/dev/null || true
+    echo '/usr/lib/python3/dist-packages' | sudo tee "$PTH_FILE" > /dev/null
+  fi
+
   # TODO: do this without udev in AGNOS
   # udev does this, but sometimes we startup faster
   sudo chgrp gpu /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0
