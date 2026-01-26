@@ -142,6 +142,8 @@ def getAllParams() -> dict[str, str | bool | int | float | None]:
     raise Exception("EnableRemoteParams is disabled")
 
   from openpilot.common.params_pyx import ParamKeyType
+  from datetime import datetime
+  import json
 
   available_keys: list[str] = [k.decode('utf-8') for k in Params().all_keys()]
   result: dict[str, str | bool | int | float | None] = {}
@@ -160,10 +162,11 @@ def getAllParams() -> dict[str, str | bool | int | float | None]:
       result[key] = bool(value) if isinstance(value, bool) else value in (b'1', b'true', b'True', '1', 'true', 'True')
     elif key_type == ParamKeyType.INT:
       result[key] = int(value) if isinstance(value, int) else int(value.decode('utf-8') if isinstance(value, bytes) else value)
-    elif key_type == ParamKeyType.FLOAT or key_type == ParamKeyType.TIME:
+    elif key_type == ParamKeyType.FLOAT:
       result[key] = float(value) if isinstance(value, float) else float(value.decode('utf-8') if isinstance(value, bytes) else value)
+    elif key_type == ParamKeyType.TIME:
+      result[key] = value.timestamp()
     elif key_type == ParamKeyType.JSON:
-      import json
       result[key] = json.loads(value.decode('utf-8') if isinstance(value, bytes) else value)
     else:
       result[key] = value.decode('utf-8') if isinstance(value, bytes) else str(value)
