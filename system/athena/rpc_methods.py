@@ -167,7 +167,10 @@ def getAllParams() -> dict[str, str | bool | int | float | None]:
     elif key_type == ParamKeyType.TIME:
       result[key] = value.timestamp()
     elif key_type == ParamKeyType.JSON:
-      result[key] = json.loads(value.decode('utf-8') if isinstance(value, bytes) else value)
+      if isinstance(value, (dict, list)):
+        result[key] = value
+      else:
+        result[key] = json.loads(value.decode('utf-8') if isinstance(value, bytes) else value)
     else:
       result[key] = value.decode('utf-8') if isinstance(value, bytes) else str(value)
 
