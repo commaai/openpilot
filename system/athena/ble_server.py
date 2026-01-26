@@ -39,9 +39,9 @@ def log(msg: str):
 
 def get_dongle_id() -> str:
   try:
-    with open("/data/params/d/DongleId", "r") as f:
+    with open("/data/params/d/DongleId") as f:
       return f.read().strip()
-  except:
+  except Exception:
     return "unknown"
 
 
@@ -55,7 +55,7 @@ def init_bluetooth():
     result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
     if result.returncode == 0 and b"UP RUNNING" in result.stdout:
       return True
-  except:
+  except Exception:
     pass
 
   if not os.path.exists("/dev/ttyHS1"):
@@ -78,7 +78,7 @@ def init_bluetooth():
         return True
       if result.returncode == 0 and b"DOWN" in result.stdout:
         subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
-    except:
+    except Exception:
       pass
     log(f"Waiting for Bluetooth... ({i+1}/10)")
 

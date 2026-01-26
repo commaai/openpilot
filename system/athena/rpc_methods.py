@@ -142,7 +142,6 @@ def getAllParams() -> dict[str, str | bool | int | float | None]:
     raise Exception("EnableRemoteParams is disabled")
 
   from openpilot.common.params_pyx import ParamKeyType
-  from datetime import datetime
   import json
 
   available_keys: list[str] = [k.decode('utf-8') for k in Params().all_keys()]

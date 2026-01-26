@@ -75,7 +75,8 @@ class AsiusLayout(Widget):
     self._params.put_bool(param, state)
 
   def _handle_asius_api_toggle(self, state: bool):
-    msg = tr("Switch to Asius API? This will clear your device registration and reboot.") if state else tr("Switch to comma API? This will clear your device registration and reboot.")
+    msg = tr("Switch to Asius API? This will clear your device registration and reboot.") if state \
+      else tr("Switch to comma API? This will clear your device registration and reboot.")
 
     def confirm_callback(result: int):
       if result == DialogResult.CONFIRM:
