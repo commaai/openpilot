@@ -14,27 +14,22 @@ Architecture:
 Usage:
   python3 ble_server.py
 
-Requires system python with gi module (not openpilot venv).
+NOTE: All dbus and gi imports happen inside main() to avoid fork issues.
+When the manager pre-imports this module, importing dbus at module level
+causes DBus mainloop state corruption after fork (multiprocessing.Process).
 """
 from __future__ import annotations
 
-import dbus
-import dbus.exceptions
-import dbus.mainloop.glib
-import dbus.service
 import json
 import subprocess
 import os
 import sys
 import time
-from gi.repository import GLib
 
 # Add openpilot to path for importing athenad dispatcher
 sys.path.insert(0, "/data/openpilot")
 
 # Import the shared dispatcher from athenad
-# This is the key - we use the SAME dispatcher, so all @dispatcher.add_method
-# functions from athenad are automatically available over BLE
 from jsonrpc import JSONRPCResponseManager
 
 # BLE GATT UUIDs - Custom UUIDs for Asius/Athena service
@@ -115,306 +110,6 @@ def get_dispatcher():
     return dispatcher
 
 
-# Global dispatcher - initialized in main()
-_dispatcher = None
-
-
-class InvalidArgsException(dbus.exceptions.DBusException):
-  _dbus_error_name = "org.freedesktop.DBus.Error.InvalidArgs"
-
-
-class Application(dbus.service.Object):
-  """GATT Application for BLE server"""
-
-  def __init__(self, bus):
-    self.path = "/"
-    self.services = []
-    dbus.service.Object.__init__(self, bus, self.path)
-    self.add_service(AthenaService(bus, 0))
-
-  def get_path(self):
-    return dbus.ObjectPath(self.path)
-
-  def add_service(self, service):
-    self.services.append(service)
-
-  @dbus.service.method(DBUS_OM_IFACE, out_signature="a{oa{sa{sv}}}")
-  def GetManagedObjects(self):
-    response = {}
-    for service in self.services:
-      response[service.get_path()] = service.get_properties()
-      for chrc in service.get_characteristics():
-        response[chrc.get_path()] = chrc.get_properties()
-    return response
-
-
-class Service(dbus.service.Object):
-  """GATT Service base class"""
-  PATH_BASE = "/org/bluez/app/service"
-
-  def __init__(self, bus, index, uuid, primary):
-    self.path = self.PATH_BASE + str(index)
-    self.bus = bus
-    self.uuid = uuid
-    self.primary = primary
-    self.characteristics = []
-    dbus.service.Object.__init__(self, bus, self.path)
-
-  def get_properties(self):
-    return {
-      GATT_SERVICE_IFACE: {
-        "UUID": self.uuid,
-        "Primary": self.primary,
-        "Characteristics": dbus.Array(
-          self.get_characteristic_paths(), signature="o"
-        ),
-      }
-    }
-
-  def get_path(self):
-    return dbus.ObjectPath(self.path)
-
-  def add_characteristic(self, characteristic):
-    self.characteristics.append(characteristic)
-
-  def get_characteristic_paths(self):
-    return [dbus.ObjectPath(c.get_path()) for c in self.characteristics]
-
-  def get_characteristics(self):
-    return self.characteristics
-
-
-class Characteristic(dbus.service.Object):
-  """GATT Characteristic base class"""
-
-  def __init__(self, bus, index, uuid, flags, service):
-    self.path = service.path + "/char" + str(index)
-    self.bus = bus
-    self.uuid = uuid
-    self.service = service
-    self.flags = flags
-    self.value = []
-    dbus.service.Object.__init__(self, bus, self.path)
-
-  def get_properties(self):
-    return {
-      GATT_CHRC_IFACE: {
-        "Service": self.service.get_path(),
-        "UUID": self.uuid,
-        "Flags": self.flags,
-      }
-    }
-
-  def get_path(self):
-    return dbus.ObjectPath(self.path)
-
-  @dbus.service.method(DBUS_PROP_IFACE, in_signature="s", out_signature="a{sv}")
-  def GetAll(self, interface):
-    if interface != GATT_CHRC_IFACE:
-      raise InvalidArgsException()
-    return self.get_properties()[GATT_CHRC_IFACE]
-
-  @dbus.service.method(GATT_CHRC_IFACE, in_signature="a{sv}", out_signature="ay")
-  def ReadValue(self, options):
-    return self.value
-
-  @dbus.service.method(GATT_CHRC_IFACE, in_signature="aya{sv}")
-  def WriteValue(self, value, options):
-    self.value = value
-
-  @dbus.service.method(GATT_CHRC_IFACE)
-  def StartNotify(self):
-    pass
-
-  @dbus.service.method(GATT_CHRC_IFACE)
-  def StopNotify(self):
-    pass
-
-  @dbus.service.signal(DBUS_PROP_IFACE, signature="sa{sv}as")
-  def PropertiesChanged(self, interface, changed, invalidated):
-    pass
-
-
-class AthenaService(Service):
-  """Athena GATT Service"""
-
-  def __init__(self, bus, index):
-    Service.__init__(self, bus, index, ATHENA_SERVICE_UUID, True)
-    self.response_char = RPCResponseCharacteristic(bus, 1, self)
-    self.add_characteristic(RPCRequestCharacteristic(bus, 0, self, self.response_char))
-    self.add_characteristic(self.response_char)
-
-
-class RPCRequestCharacteristic(Characteristic):
-  """Write characteristic for RPC requests"""
-
-  def __init__(self, bus, index, service, response_char):
-    Characteristic.__init__(
-      self, bus, index, RPC_REQUEST_CHAR_UUID, ["write", "write-without-response"], service
-    )
-    self.response_char = response_char
-    self.buffer = b""
-
-  def WriteValue(self, value, options):
-    data = bytes(value)
-    self.buffer += data
-
-    # Check if we have a complete JSON message
-    try:
-      text = self.buffer.decode("utf-8")
-      # Try to parse as JSON to see if complete
-      json.loads(text)
-      # If we get here, it's valid JSON
-      self.buffer = b""
-      self.process_request(text)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-      # Incomplete message, wait for more data
-      pass
-    except Exception as e:
-      log(f"Error processing request: {e}")
-      self.buffer = b""
-
-  def process_request(self, request_text: str):
-    global _dispatcher
-
-    log(f"Received {len(request_text)} bytes")
-    log(f"Processing request: {request_text[:100]}...")
-
-    try:
-      # Check if method is blocked for BLE
-      try:
-        req = json.loads(request_text)
-        method = req.get("method", "")
-        if method in BLE_BLOCKED_METHODS:
-          error_response = json.dumps({
-            "jsonrpc": "2.0",
-            "error": {"code": -32601, "message": f"Method '{method}' not available over BLE"},
-            "id": req.get("id")
-          })
-          self.response_char.send_response(error_response)
-          return
-      except:
-        pass
-
-      # Use athenad's dispatcher to handle the request
-      response = JSONRPCResponseManager.handle(request_text, _dispatcher)
-      response_text = response.json
-
-      log(f"Sending response: {len(response_text)} bytes")
-      self.response_char.send_response(response_text)
-
-    except Exception as e:
-      log(f"Error: {e}")
-      error_response = json.dumps({
-        "jsonrpc": "2.0",
-        "error": {"code": -32603, "message": str(e)},
-        "id": None
-      })
-      self.response_char.send_response(error_response)
-
-
-class RPCResponseCharacteristic(Characteristic):
-  """Notify characteristic for RPC responses"""
-
-  def __init__(self, bus, index, service):
-    Characteristic.__init__(
-      self, bus, index, RPC_RESPONSE_CHAR_UUID, ["notify"], service
-    )
-    self.notifying = False
-
-  def StartNotify(self):
-    if self.notifying:
-      return
-    self.notifying = True
-    log("Client subscribed to notifications")
-
-  def StopNotify(self):
-    if not self.notifying:
-      return
-    self.notifying = False
-    log("Client unsubscribed from notifications")
-
-  def send_response(self, response: str):
-    if not self.notifying:
-      log("Warning: No client subscribed, cannot send response")
-      return
-
-    data = response.encode("utf-8")
-
-    # Send in chunks if needed
-    for i in range(0, len(data), BLE_MTU):
-      chunk = data[i : i + BLE_MTU]
-      self.value = dbus.Array(chunk, signature="y")
-      self.PropertiesChanged(
-        GATT_CHRC_IFACE, {"Value": self.value}, []
-      )
-
-
-class Advertisement(dbus.service.Object):
-  """BLE Advertisement"""
-  PATH_BASE = "/org/bluez/app/advertisement"
-
-  def __init__(self, bus, index):
-    self.path = self.PATH_BASE + str(index)
-    self.bus = bus
-    self.ad_type = "peripheral"
-    self.service_uuids = [ATHENA_SERVICE_UUID]
-    self.local_name = get_device_name()
-    self.include_tx_power = True
-    dbus.service.Object.__init__(self, bus, self.path)
-
-  def get_properties(self):
-    properties = {
-      "Type": self.ad_type,
-      "ServiceUUIDs": dbus.Array(self.service_uuids, signature="s"),
-      "LocalName": dbus.String(self.local_name),
-      "IncludeTxPower": dbus.Boolean(self.include_tx_power),
-    }
-    return {LE_ADVERTISEMENT_IFACE: properties}
-
-  def get_path(self):
-    return dbus.ObjectPath(self.path)
-
-  @dbus.service.method(DBUS_PROP_IFACE, in_signature="s", out_signature="a{sv}")
-  def GetAll(self, interface):
-    if interface != LE_ADVERTISEMENT_IFACE:
-      raise InvalidArgsException()
-    return self.get_properties()[LE_ADVERTISEMENT_IFACE]
-
-  @dbus.service.method(LE_ADVERTISEMENT_IFACE, in_signature="", out_signature="")
-  def Release(self):
-    log("Advertisement released")
-
-
-def find_adapter(bus):
-  """Find the first available Bluetooth adapter"""
-  remote_om = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, "/"), DBUS_OM_IFACE)
-  objects = remote_om.GetManagedObjects()
-
-  for o, props in objects.items():
-    if GATT_MANAGER_IFACE in props:
-      return o
-
-  return None
-
-
-def register_ad_cb():
-  log("Advertisement registered - device is now discoverable")
-
-
-def register_ad_error_cb(error):
-  log(f"Failed to register advertisement: {error}")
-
-
-def register_app_cb():
-  log("GATT application registered successfully")
-
-
-def register_app_error_cb(error):
-  log(f"Failed to register GATT application: {error}")
-  mainloop.quit()
-
-
 def init_bluetooth():
   """Initialize Bluetooth hardware if not already done"""
   # Check if already running
@@ -464,7 +159,14 @@ def init_bluetooth():
 
 
 def main():
-  global _dispatcher, mainloop
+  # Import dbus here to avoid fork issues with the manager.
+  # When manager pre-imports this module, importing dbus at module level
+  # causes DBus mainloop state corruption after fork.
+  import dbus
+  import dbus.exceptions
+  import dbus.mainloop.glib
+  import dbus.service
+  from gi.repository import GLib
 
   log("Starting BLE GATT Server...")
   log(f"Device name: {get_device_name()}")
@@ -474,13 +176,297 @@ def main():
   if not init_bluetooth():
     return 1
 
-  # Initialize DBus
+  # Initialize DBus mainloop BEFORE creating any bus connection
   dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
   bus = dbus.SystemBus()
 
+  # Define exception class
+  class InvalidArgsException(dbus.exceptions.DBusException):
+    _dbus_error_name = "org.freedesktop.DBus.Error.InvalidArgs"
+
+  # Define GATT classes inside main() to ensure dbus is imported first
+  class Characteristic(dbus.service.Object):
+    """GATT Characteristic base class"""
+
+    def __init__(self, bus, index, uuid, flags, service):
+      self.path = service.path + "/char" + str(index)
+      self.bus = bus
+      self.uuid = uuid
+      self.service = service
+      self.flags = flags
+      self.value = []
+      dbus.service.Object.__init__(self, bus, self.path)
+
+    def get_properties(self):
+      return {
+        GATT_CHRC_IFACE: {
+          "Service": self.service.get_path(),
+          "UUID": self.uuid,
+          "Flags": self.flags,
+        }
+      }
+
+    def get_path(self):
+      return dbus.ObjectPath(self.path)
+
+    @dbus.service.method(DBUS_PROP_IFACE, in_signature="s", out_signature="a{sv}")
+    def GetAll(self, interface):
+      if interface != GATT_CHRC_IFACE:
+        raise InvalidArgsException()
+      return self.get_properties()[GATT_CHRC_IFACE]
+
+    @dbus.service.method(GATT_CHRC_IFACE, in_signature="a{sv}", out_signature="ay")
+    def ReadValue(self, options):
+      return self.value
+
+    @dbus.service.method(GATT_CHRC_IFACE, in_signature="aya{sv}")
+    def WriteValue(self, value, options):
+      self.value = value
+
+    @dbus.service.method(GATT_CHRC_IFACE)
+    def StartNotify(self):
+      pass
+
+    @dbus.service.method(GATT_CHRC_IFACE)
+    def StopNotify(self):
+      pass
+
+    @dbus.service.signal(DBUS_PROP_IFACE, signature="sa{sv}as")
+    def PropertiesChanged(self, interface, changed, invalidated):
+      pass
+
+  class Service(dbus.service.Object):
+    """GATT Service base class"""
+    PATH_BASE = "/org/bluez/app/service"
+
+    def __init__(self, bus, index, uuid, primary):
+      self.path = self.PATH_BASE + str(index)
+      self.bus = bus
+      self.uuid = uuid
+      self.primary = primary
+      self.characteristics = []
+      dbus.service.Object.__init__(self, bus, self.path)
+
+    def get_properties(self):
+      return {
+        GATT_SERVICE_IFACE: {
+          "UUID": self.uuid,
+          "Primary": self.primary,
+          "Characteristics": dbus.Array(
+            self.get_characteristic_paths(), signature="o"
+          ),
+        }
+      }
+
+    def get_path(self):
+      return dbus.ObjectPath(self.path)
+
+    def add_characteristic(self, characteristic):
+      self.characteristics.append(characteristic)
+
+    def get_characteristic_paths(self):
+      return [dbus.ObjectPath(c.get_path()) for c in self.characteristics]
+
+    def get_characteristics(self):
+      return self.characteristics
+
+  class RPCResponseCharacteristic(Characteristic):
+    """Notify characteristic for RPC responses"""
+
+    def __init__(self, bus, index, service):
+      Characteristic.__init__(
+        self, bus, index, RPC_RESPONSE_CHAR_UUID, ["notify"], service
+      )
+      self.notifying = False
+
+    def StartNotify(self):
+      if self.notifying:
+        return
+      self.notifying = True
+      log("Client subscribed to notifications")
+
+    def StopNotify(self):
+      if not self.notifying:
+        return
+      self.notifying = False
+      log("Client unsubscribed from notifications")
+
+    def send_response(self, response: str):
+      if not self.notifying:
+        log("Warning: No client subscribed, cannot send response")
+        return
+
+      data = response.encode("utf-8")
+
+      # Send in chunks if needed
+      for i in range(0, len(data), BLE_MTU):
+        chunk = data[i : i + BLE_MTU]
+        self.value = dbus.Array(chunk, signature="y")
+        self.PropertiesChanged(
+          GATT_CHRC_IFACE, {"Value": self.value}, []
+        )
+
+  class RPCRequestCharacteristic(Characteristic):
+    """Write characteristic for RPC requests"""
+
+    def __init__(self, bus, index, service, response_char, dispatcher):
+      Characteristic.__init__(
+        self, bus, index, RPC_REQUEST_CHAR_UUID, ["write", "write-without-response"], service
+      )
+      self.response_char = response_char
+      self.buffer = b""
+      self._dispatcher = dispatcher
+
+    def WriteValue(self, value, options):
+      data = bytes(value)
+      self.buffer += data
+
+      # Check if we have a complete JSON message
+      try:
+        text = self.buffer.decode("utf-8")
+        # Try to parse as JSON to see if complete
+        json.loads(text)
+        # If we get here, it's valid JSON
+        self.buffer = b""
+        self.process_request(text)
+      except (json.JSONDecodeError, UnicodeDecodeError):
+        # Incomplete message, wait for more data
+        pass
+      except Exception as e:
+        log(f"Error processing request: {e}")
+        self.buffer = b""
+
+    def process_request(self, request_text: str):
+      log(f"Received {len(request_text)} bytes")
+      log(f"Processing request: {request_text[:100]}...")
+
+      try:
+        # Check if method is blocked for BLE
+        try:
+          req = json.loads(request_text)
+          method = req.get("method", "")
+          if method in BLE_BLOCKED_METHODS:
+            error_response = json.dumps({
+              "jsonrpc": "2.0",
+              "error": {"code": -32601, "message": f"Method '{method}' not available over BLE"},
+              "id": req.get("id")
+            })
+            self.response_char.send_response(error_response)
+            return
+        except:
+          pass
+
+        # Use athenad's dispatcher to handle the request
+        response = JSONRPCResponseManager.handle(request_text, self._dispatcher)
+        response_text = response.json
+
+        log(f"Sending response: {len(response_text)} bytes")
+        self.response_char.send_response(response_text)
+
+      except Exception as e:
+        log(f"Error: {e}")
+        error_response = json.dumps({
+          "jsonrpc": "2.0",
+          "error": {"code": -32603, "message": str(e)},
+          "id": None
+        })
+        self.response_char.send_response(error_response)
+
+  class AthenaService(Service):
+    """Athena GATT Service"""
+
+    def __init__(self, bus, index, dispatcher):
+      Service.__init__(self, bus, index, ATHENA_SERVICE_UUID, True)
+      self.response_char = RPCResponseCharacteristic(bus, 1, self)
+      self.add_characteristic(RPCRequestCharacteristic(bus, 0, self, self.response_char, dispatcher))
+      self.add_characteristic(self.response_char)
+
+  class Application(dbus.service.Object):
+    """GATT Application for BLE server"""
+
+    def __init__(self, bus, dispatcher):
+      self.path = "/"
+      self.services = []
+      dbus.service.Object.__init__(self, bus, self.path)
+      self.add_service(AthenaService(bus, 0, dispatcher))
+
+    def get_path(self):
+      return dbus.ObjectPath(self.path)
+
+    def add_service(self, service):
+      self.services.append(service)
+
+    @dbus.service.method(DBUS_OM_IFACE, out_signature="a{oa{sa{sv}}}")
+    def GetManagedObjects(self):
+      response = {}
+      for service in self.services:
+        response[service.get_path()] = service.get_properties()
+        for chrc in service.get_characteristics():
+          response[chrc.get_path()] = chrc.get_properties()
+      return response
+
+  class Advertisement(dbus.service.Object):
+    """BLE Advertisement"""
+    PATH_BASE = "/org/bluez/app/advertisement"
+
+    def __init__(self, bus, index):
+      self.path = self.PATH_BASE + str(index)
+      self.bus = bus
+      self.ad_type = "peripheral"
+      self.service_uuids = [ATHENA_SERVICE_UUID]
+      self.local_name = get_device_name()
+      self.include_tx_power = True
+      dbus.service.Object.__init__(self, bus, self.path)
+
+    def get_properties(self):
+      properties = {
+        "Type": self.ad_type,
+        "ServiceUUIDs": dbus.Array(self.service_uuids, signature="s"),
+        "LocalName": dbus.String(self.local_name),
+        "IncludeTxPower": dbus.Boolean(self.include_tx_power),
+      }
+      return {LE_ADVERTISEMENT_IFACE: properties}
+
+    def get_path(self):
+      return dbus.ObjectPath(self.path)
+
+    @dbus.service.method(DBUS_PROP_IFACE, in_signature="s", out_signature="a{sv}")
+    def GetAll(self, interface):
+      if interface != LE_ADVERTISEMENT_IFACE:
+        raise InvalidArgsException()
+      return self.get_properties()[LE_ADVERTISEMENT_IFACE]
+
+    @dbus.service.method(LE_ADVERTISEMENT_IFACE, in_signature="", out_signature="")
+    def Release(self):
+      log("Advertisement released")
+
+  def find_adapter(bus):
+    """Find the first available Bluetooth adapter"""
+    remote_om = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, "/"), DBUS_OM_IFACE)
+    objects = remote_om.GetManagedObjects()
+
+    for o, props in objects.items():
+      if GATT_MANAGER_IFACE in props:
+        return o
+
+    return None
+
+  def register_ad_cb():
+    log("Advertisement registered - device is now discoverable")
+
+  def register_ad_error_cb(error):
+    log(f"Failed to register advertisement: {error}")
+
+  def register_app_cb():
+    log("GATT application registered successfully")
+
+  def register_app_error_cb(error):
+    log(f"Failed to register GATT application: {error}")
+    mainloop.quit()
+
   # Initialize dispatcher (imports athenad methods)
-  _dispatcher = get_dispatcher()
-  log(f"Dispatcher loaded with {len(_dispatcher.keys())} methods")
+  dispatcher = get_dispatcher()
+  log(f"Dispatcher loaded with {len(dispatcher.keys())} methods")
 
   # Find adapter
   adapter_path = find_adapter(bus)
@@ -491,7 +477,7 @@ def main():
   log(f"Using adapter: {adapter_path}")
 
   # Create GATT application
-  app = Application(bus)
+  app = Application(bus, dispatcher)
 
   # Create advertisement
   advertisement = Advertisement(bus, 0)
