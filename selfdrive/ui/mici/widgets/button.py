@@ -63,10 +63,10 @@ class BigCircleButton(Widget):
     scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed and self._press_state_enabled else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, LABEL_COLOR)
+    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
 
     # draw icon
-    icon_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
+    icon_color = rl.WHITE if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     rl.draw_texture(self._txt_icon, int(self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0]),
                     int(self._rect.y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), icon_color)
 
@@ -99,7 +99,7 @@ class BigCircleToggle(BigCircleButton):
     # draw status icon
     rl.draw_texture(self._txt_toggle_enabled if self._checked else self._txt_toggle_disabled,
                     int(self._rect.x + (self._rect.width - self._txt_toggle_enabled.width) / 2),
-                    int(self._rect.y + 5), LABEL_COLOR)
+                    int(self._rect.y + 5), rl.WHITE)
 
 
 class BigButton(Widget):
@@ -221,7 +221,7 @@ class BigButton(Widget):
     scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, LABEL_COLOR)
+    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
 
     # LABEL ------------------------------------------------------------------
     lx = self._rect.x + LABEL_HORIZONTAL_PADDING
@@ -249,7 +249,7 @@ class BigButton(Widget):
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
       dest_rec = rl.Rectangle(int(x), int(y), self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
-      rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, LABEL_COLOR)
+      rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.WHITE)
 
 
 class BigToggle(BigButton):
@@ -277,9 +277,9 @@ class BigToggle(BigButton):
   def _draw_pill(self, x: float, y: float, checked: bool):
     # draw toggle icon top right
     if checked:
-      rl.draw_texture(self._txt_enabled_toggle, int(x), int(y), LABEL_COLOR)
+      rl.draw_texture(self._txt_enabled_toggle, int(x), int(y), rl.WHITE)
     else:
-      rl.draw_texture(self._txt_disabled_toggle, int(x), int(y), LABEL_COLOR)
+      rl.draw_texture(self._txt_disabled_toggle, int(x), int(y), rl.WHITE)
 
   def _render(self, _):
     super()._render(_)
