@@ -24,7 +24,7 @@ def get_html_from_results(results, labels, AXIS):
   fig, ax = plt.subplots(figsize=(16, 8))
   for idx, speed in enumerate(list(results.keys())):
     ax.plot(results[speed][:, TIME], results[speed][:, AXIS], label=labels[idx])
-  
+
   ax.set_xlabel('Time (s)')
   ax.set_ylabel(axis_labels[AXIS])
   ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
@@ -46,7 +46,7 @@ for lead_accel in np.linspace(1.0, 4.0, 4):
   man = Maneuver(
     '',
     duration=11,
-    initial_speed=float(0.0),
+    initial_speed=0.0,
     lead_relevancy=True,
     initial_distance_lead=desired_follow_distance(0.0, 0.0),
     speed_lead_values=[0.0, 10 * lead_accel],
@@ -114,7 +114,7 @@ for distance in np.arange(20, 140, 10):
   man = Maneuver(
     '',
     duration=50,
-    initial_speed=float(30.0),
+    initial_speed=30.0,
     lead_relevancy=True,
     initial_distance_lead=distance,
     speed_lead_values=[30.0],
@@ -136,7 +136,7 @@ for distance in np.arange(20, 140, 10):
   man = Maneuver(
     '',
     duration=50,
-    initial_speed=float(20.0),
+    initial_speed=20.0,
     lead_relevancy=True,
     initial_distance_lead=distance,
     speed_lead_values=[20.0],
@@ -158,7 +158,7 @@ for stop_time in np.arange(4, 14, 1):
   man = Maneuver(
     '',
     duration=50,
-    initial_speed=float(30.0),
+    initial_speed=30.0,
     lead_relevancy=True,
     initial_distance_lead=60.0,
     speed_lead_values=[30.0, 30.0, 0.0, 0.0],
@@ -203,7 +203,7 @@ for speed in np.arange(0, 40, 5):
   man = Maneuver(
     '',
     duration=50,
-    initial_speed=float(0.0),
+    initial_speed=0.0,
     lead_relevancy=True,
     initial_distance_lead=desired_follow_distance(0.0, 0.0),
     speed_lead_values=[0.0, 0.0, speed],
@@ -225,7 +225,7 @@ for speed in np.arange(0, 40, 5):
   man = Maneuver(
     '',
     duration=50,
-    initial_speed=float(0.0),
+    initial_speed=0.0,
     lead_relevancy=True,
     initial_distance_lead=desired_follow_distance(0.0, 0.0),
     speed_lead_values=[0.0, 0.0],
