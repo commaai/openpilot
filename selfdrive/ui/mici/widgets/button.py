@@ -40,7 +40,7 @@ class BigCircleButton(Widget):
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
     # Icons
-    self._txt_icon = gui_app.texture(icon, icon_size[0], icon_size[1])
+    self._txt_icon = gui_app.texture(icon, *icon_size)
     self._txt_btn_disabled_bg = gui_app.texture("icons_mici/buttons/button_circle_disabled.png", 180, 180)
 
     self._txt_btn_bg = gui_app.texture("icons_mici/buttons/button_circle.png", 180, 180)
@@ -136,7 +136,7 @@ class BigButton(Widget):
     self._scroll_state = ScrollState.PRE_SCROLL
 
   def set_icon(self, icon: Union[str, rl.Texture]):
-    self._txt_icon = gui_app.texture(icon, self._icon_size[0], self._icon_size[1]) if isinstance(icon, str) and len(icon) else icon
+    self._txt_icon = gui_app.texture(icon, *self._icon_size) if isinstance(icon, str) and len(icon) else icon
 
   def set_rotate_icon(self, rotate: bool):
     if rotate and self._rotate_icon_t is not None:
