@@ -363,7 +363,8 @@ class BigParamControl(BigToggle):
 
 # TODO: param control base class
 class BigCircleParamControl(BigCircleToggle):
-  def __init__(self, icon: str, param: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
+  def __init__(self, icon: str, param: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53),
+               icon_offset: tuple[int, int] = (0, 0)):
     super().__init__(icon, toggle_callback, icon_size=icon_size, icon_offset=icon_offset)
     self._param = param
     self.params = Params()
