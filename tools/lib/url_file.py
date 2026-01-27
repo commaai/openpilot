@@ -192,8 +192,25 @@ class URLFile:
       raise URLFileException(f"Expected {len(ranges)} parts, got {len(parts)} ({self._url})")
     return parts
 
-  def seek(self, pos: int) -> None:
-    self._pos = int(pos)
+  def seekable(self) -> bool:
+    return True
+
+  def seek(self, pos: int, whence: int = 0) -> int:
+    pos = int(pos)
+    if whence == os.SEEK_SET:
+      self._pos = pos
+    elif whence == os.SEEK_CUR:
+      self._pos += pos
+    elif whence == os.SEEK_END:
+      length = self.get_length()
+      assert length != -1, "Cannot seek from end on unknown length file"
+      self._pos = length + pos
+    else:
+      raise URLFileException("Invalid whence value")
+    return self._pos
+
+  def tell(self) -> int:
+    return self._pos
 
   @property
   def name(self) -> str:
