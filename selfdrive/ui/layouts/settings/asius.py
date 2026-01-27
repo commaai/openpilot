@@ -1,4 +1,5 @@
 from openpilot.common.params import Params
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.list_view import toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
@@ -12,6 +13,10 @@ DESCRIPTIONS = {
   "EnableWebRTC": tr_noop("Allow remote live streaming via Connect."),
   "EnableRemoteParams": tr_noop("Allow remote parameter editing via Connect."),
   "EnableBLE": tr_noop("Enable Bluetooth Low Energy server for local device control without network."),
+  "TeslaCoopSteering": tr_noop(
+    "Allows the driver to provide limited steering input while openpilot is engaged. "
+    "Warning: May experience steering oscillations below 30 mph during turns."
+  ),
 }
 
 
@@ -41,6 +46,11 @@ class AsiusLayout(Widget):
         DESCRIPTIONS["EnableBLE"],
         "network.png",
       ),
+      "TeslaCoopSteering": (
+        lambda: tr("Tesla Cooperative Steering"),
+        DESCRIPTIONS["TeslaCoopSteering"],
+        "steering_wheel.png",
+      ),
     }
 
     self._toggles = {}
@@ -63,6 +73,10 @@ class AsiusLayout(Widget):
   def _update_toggles(self):
     for param in self._toggle_defs:
       self._toggles[param].action_item.set_state(self._params.get_bool(param))
+
+    # Only show Tesla-specific toggles for Tesla vehicles
+    is_tesla = ui_state.CP is not None and ui_state.CP.brand == "tesla"
+    self._toggles["TeslaCoopSteering"].set_visible(is_tesla)
 
   def _render(self, rect):
     self._scroller.render(rect)
