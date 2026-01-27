@@ -189,6 +189,7 @@ def finalize_update() -> None:
 
   run(["git", "reset", "--hard"], FINALIZED)
   run(["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"], FINALIZED)
+  run(["git", "lfs", "pull"], FINALIZED)
 
   cloudlog.info("Starting git cleanup in finalized update")
   t = time.monotonic()
@@ -397,6 +398,7 @@ class Updater:
       ["git", "submodule", "sync"],
       ["git", "submodule", "update", "--init", "--recursive"],
       ["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"],
+      ["git", "lfs", "pull"],
     ]
     r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
     cloudlog.info("git reset success: %s", '\n'.join(r))
