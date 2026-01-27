@@ -29,7 +29,7 @@ class AsiusLayout(Widget):
       "EnableAsiusAPI": (
         lambda: tr("Asius API"),
         DESCRIPTIONS["EnableAsiusAPI"],
-        "network.png",
+        "asius.png",
       ),
       "EnableWebRTC": (
         lambda: tr("Remote Live Streaming"),
@@ -44,12 +44,12 @@ class AsiusLayout(Widget):
       "EnableBLE": (
         lambda: tr("Bluetooth Control"),
         DESCRIPTIONS["EnableBLE"],
-        "network.png",
+        "bluetooth.png",
       ),
       "TeslaCoopSteering": (
         lambda: tr("Tesla Cooperative Steering"),
         DESCRIPTIONS["TeslaCoopSteering"],
-        "steering_wheel.png",
+        "chffr_wheel.png",
       ),
     }
 
