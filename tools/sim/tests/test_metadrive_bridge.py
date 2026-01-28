@@ -58,9 +58,9 @@ class TestMetaDriveBridge(TestSimBridgeBase):
     while time.monotonic() < start_time + 10:
       sm.update()
       if sm.updated['accelerometer']:
-        accel_values.append(list(sm['accelerometer'].v))
+        accel_values.append(list(sm['accelerometer'].acceleration.v))
       if sm.updated['gyroscope']:
-        gyro_values.append(list(sm['gyroscope'].v))
+        gyro_values.append(list(sm['gyroscope'].gyro.v))
       time.sleep(0.1)
 
     assert len(accel_values) > 10
