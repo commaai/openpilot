@@ -66,7 +66,7 @@ class VCruiseHelper:
   def _update_v_cruise_non_pcm(self, CS, enabled, is_metric):
     # handle button presses. TODO: this should be in state_control, but a decelCruise press
     # would have the effect of both enabling and changing speed is checked after the state transition
-    if not enabled:
+    if not self.v_cruise_initialized:
       return
 
     long_press = False
@@ -95,8 +95,9 @@ class VCruiseHelper:
     if button_type == ButtonType.accelCruise and cruise_standstill:
       return
 
-    # Don't adjust speed if we've enabled since the button was depressed (some ports enable on rising edge)
-    if not self.button_change_states[button_type]["enabled"]:
+    # Don't adjust speed if this button press is intended to enable openpilot
+    enabled_before_pressing = self.button_change_states[button_type]["enabled"]
+    if CS.buttonEnable and not enabled_before_pressing:
       return
 
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
