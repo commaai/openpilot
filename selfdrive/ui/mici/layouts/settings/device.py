@@ -119,7 +119,7 @@ class UpdaterState(IntEnum):
 
 class PairBigButton(BigButton):
   def __init__(self):
-    super().__init__("pair", "connect.comma.ai", "icons_mici/settings/comma_icon.png")
+    super().__init__("pair", "connect.comma.ai", "icons_mici/settings/comma_icon.png", icon_size=(33, 60))
 
   def _update_state(self):
     if ui_state.prime_state.is_paired():
@@ -153,8 +153,8 @@ UPDATER_TIMEOUT = 10.0  # seconds to wait for updater to respond
 
 class UpdateOpenpilotBigButton(BigButton):
   def __init__(self):
-    self._txt_update_icon = gui_app.texture("icons_mici/settings/device/update.png", 64, 64)
-    self._txt_reboot_icon = gui_app.texture("icons_mici/settings/device/reboot.png", 64, 64)
+    self._txt_update_icon = gui_app.texture("icons_mici/settings/device/update.png", 64, 75)
+    self._txt_reboot_icon = gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70)
     self._txt_up_to_date_icon = gui_app.texture("icons_mici/settings/device/up_to_date.png", 64, 64)
     super().__init__("update openpilot", "", self._txt_update_icon)
 
@@ -291,16 +291,16 @@ class DeviceLayoutMici(NavWidget):
     def uninstall_openpilot_callback():
       ui_state.params.put_bool("DoUninstall", True)
 
-    reset_calibration_btn = BigButton("reset calibration", "", "icons_mici/settings/device/lkas.png")
+    reset_calibration_btn = BigButton("reset calibration", "", "icons_mici/settings/device/lkas.png", icon_size=(114, 60))
     reset_calibration_btn.set_click_callback(lambda: _engaged_confirmation_callback(reset_calibration_callback, "reset"))
 
     uninstall_openpilot_btn = BigButton("uninstall openpilot", "", "icons_mici/settings/device/uninstall.png")
     uninstall_openpilot_btn.set_click_callback(lambda: _engaged_confirmation_callback(uninstall_openpilot_callback, "uninstall"))
 
-    reboot_btn = BigCircleButton("icons_mici/settings/device/reboot.png", red=False)
+    reboot_btn = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
     reboot_btn.set_click_callback(lambda: _engaged_confirmation_callback(reboot_callback, "reboot"))
 
-    self._power_off_btn = BigCircleButton("icons_mici/settings/device/power.png", red=True)
+    self._power_off_btn = BigCircleButton("icons_mici/settings/device/power.png", red=True, icon_size=(64, 66))
     self._power_off_btn.set_click_callback(lambda: _engaged_confirmation_callback(power_off_callback, "power off"))
 
     self._load_languages()

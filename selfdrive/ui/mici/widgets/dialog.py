@@ -147,10 +147,10 @@ class BigInputDialog(BigDialogBase):
 
     self._backspace_held_time: float | None = None
 
-    self._backspace_img = gui_app.texture("icons_mici/settings/keyboard/backspace.png", 44, 44)
+    self._backspace_img = gui_app.texture("icons_mici/settings/keyboard/backspace.png", 42, 36)
     self._backspace_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
-    self._enter_img = gui_app.texture("icons_mici/settings/keyboard/confirm.png", 44, 44)
+    self._enter_img = gui_app.texture("icons_mici/settings/keyboard/confirm.png", 42, 36)
     self._enter_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
     # rects for top buttons
