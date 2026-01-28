@@ -120,7 +120,7 @@ class LongitudinalPlanner:
 
     self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(sm['radarState'], v_cruise, personality=sm['selfdriveState'].personality)
+    self.mpc.update(sm['radarState'], personality=sm['selfdriveState'].personality)
 
     self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
@@ -142,15 +142,15 @@ class LongitudinalPlanner:
     cruise_accel = smooth_value(cruise_accel, self.output_a_target, 1.0)
     out_accels['cruise'] = (cruise_accel, False)
 
-    source, (output_a_target, _) = min(out_accels.items(), key=lambda x: x[1][0])
+    source, (output_a_target, should_stop) = min(out_accels.items(), key=lambda x: x[1][0])
     self.source = source
-    self.output_should_stop = any(should_stop for _, should_stop in out_accels.values())
+    self.output_should_stop = should_stop
 
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    if self.source == 'mpc':
+    if self.source == self.mpc.lead_source:
       self.a_desired = float(np.interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory))
     else:
       self.a_desired = self.output_a_target
