@@ -223,7 +223,7 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
+    if: true
     steps:
     - uses: actions/checkout@v4
       with:
