@@ -39,7 +39,8 @@ class NetworkLayoutMici(NavWidget):
       self._network_metered_btn.set_enabled(False)
       self._wifi_manager.set_tethering_active(checked)
 
-    self._tethering_toggle_btn = BigCircleToggle("icons_mici/tethering_short.png", toggle_callback=tethering_toggle_callback, icon_size=(82, 82), icon_offset=(0, 12))
+    self._tethering_toggle_btn = BigCircleToggle("icons_mici/tethering_short.png", toggle_callback=tethering_toggle_callback,
+                                                 icon_size=(82, 82), icon_offset=(0, 12))
 
     def tethering_password_callback(password: str):
       if password:
