@@ -137,4 +137,5 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"EnableRemoteParams", {PERSISTENT, BOOL, "1"}},
     {"EnableWebRTC", {PERSISTENT, BOOL, "1"}},
     {"TeslaCoopSteering", {PERSISTENT, BOOL, "0"}},
+    {"TeslaLateralOnly", {PERSISTENT, BOOL, "0"}},
 };

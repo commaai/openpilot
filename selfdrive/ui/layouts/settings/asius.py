@@ -17,6 +17,10 @@ DESCRIPTIONS = {
     "Allows the driver to provide limited steering input while openpilot is engaged. "
     "Warning: May experience steering oscillations below 30 mph during turns."
   ),
+  "TeslaLateralOnly": tr_noop(
+    "Openpilot controls steering only. Use Tesla's cruise control or manual throttle/brake for speed. "
+    "Useful for maintaining steering assistance while you control acceleration."
+  ),
 }
 
 
@@ -51,6 +55,11 @@ class AsiusLayout(Widget):
         DESCRIPTIONS["TeslaCoopSteering"],
         "chffr_wheel.png",
       ),
+      "TeslaLateralOnly": (
+        lambda: tr("Tesla Lateral Only"),
+        DESCRIPTIONS["TeslaLateralOnly"],
+        "road.png",
+      ),
     }
 
     self._toggles = {}
@@ -77,6 +86,7 @@ class AsiusLayout(Widget):
     # Only show Tesla-specific toggles for Tesla vehicles
     is_tesla = ui_state.CP is not None and ui_state.CP.brand == "tesla"
     self._toggles["TeslaCoopSteering"].set_visible(is_tesla)
+    self._toggles["TeslaLateralOnly"].set_visible(is_tesla)
 
   def _render(self, rect):
     self._scroller.render(rect)
