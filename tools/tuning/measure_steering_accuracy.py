@@ -117,11 +117,7 @@ if __name__ == "__main__":
   parser.add_argument('--route', help="route name")
   parser.add_argument('--addr', default='127.0.0.1', help="IP address for optional ZMQ listener, default to msgq")
   parser.add_argument('--group', default='all', help="speed group to display, [crawl|slow|medium|fast|veryfast|germany|all], default to all")
-  parser.add_argument('--cache', default=False, action='store_true', help="use cached data, default to False")
   args = parser.parse_args()
-
-  if args.cache:
-    os.environ['FILEREADER_CACHE'] = '1'
 
   tool = SteeringAccuracyTool(args)
 

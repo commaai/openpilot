@@ -93,7 +93,10 @@ class TestLogReader:
   @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_direct_parsing(self, mocker, cache_enabled):
     file_exists_mock = mocker.patch("openpilot.tools.lib.filereader.file_exists")
-    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+    if cache_enabled:
+      os.environ.pop("DISABLE_FILEREADER_CACHE", None)
+    else:
+      os.environ["DISABLE_FILEREADER_CACHE"] = "1"
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
     with requests.get(QLOG_FILE, stream=True) as r:
@@ -181,7 +184,10 @@ class TestLogReader:
   @parameterized.expand([(True,), (False,)])
   @pytest.mark.slow
   def test_run_across_segments(self, cache_enabled):
-    os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
+    if cache_enabled:
+      os.environ.pop("DISABLE_FILEREADER_CACHE", None)
+    else:
+      os.environ["DISABLE_FILEREADER_CACHE"] = "1"
     lr = LogReader(f"{TEST_ROUTE}/0:4")
     assert len(lr.run_across_segments(4, noop)) == len(list(lr))
 
