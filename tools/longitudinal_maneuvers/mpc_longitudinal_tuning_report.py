@@ -14,10 +14,11 @@ D_REL = 6
 
 axis_labels = ['Time (s)',
                'Ego position (m)',
-               'Lead distance (m)',
+               'Lead absolute position (m)',
                'Ego Velocity (m/s)',
                'Lead Velocity (m/s)',
                'Ego acceleration (m/s^2)',
+               'Lead distance (m)'
                ]
 
 
@@ -57,7 +58,6 @@ for lead_accel in np.linspace(1.0, 4.0, 4):
   )
   valid, results[lead_accel] = man.evaluate()
   labels.append(f'{lead_accel} m/s^2 lead acceleration')
-print(results)
 
 htmls.append(markdown.markdown('# ' + name))
 htmls.append(get_html_from_results(results, labels, EGO_V))
