@@ -47,6 +47,7 @@ class BookmarkIcon(Widget):
     self._bookmark_callback = bookmark_callback
     self._icon = gui_app.texture("icons_mici/onroad/bookmark.png", 180, 180)
     self._icon_fill = gui_app.texture("icons_mici/onroad/bookmark_fill.png", 180, 180)
+    self._active_icon = self._icon
     self._offset_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     # State
@@ -57,7 +58,6 @@ class BookmarkIcon(Widget):
     self._is_swiping = False
     self._is_swiping_left: bool = False
     self._triggered_time: float = 0.0
-    self._show_fill: bool = False  # Keep fill icon visible until fully hidden
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
@@ -86,7 +86,7 @@ class BookmarkIcon(Widget):
 
       if self._offset_filter.x < 1e-3:
         self._interacting = False
-        self._show_fill = False  # Only swap back to unfilled once fully hidden
+        self._active_icon = self._icon
 
   def _handle_mouse_event(self, mouse_event: MouseEvent):
     if not ui_state.started:
@@ -99,6 +99,7 @@ class BookmarkIcon(Widget):
       self._is_swiping = True
       self._is_swiping_left = False
       self._state = BookmarkState.DRAGGING
+      self._active_icon = self._icon
 
     elif mouse_event.left_down and self._is_swiping:
       self._swipe_current_x = mouse_event.pos.x
@@ -115,7 +116,7 @@ class BookmarkIcon(Widget):
         if swipe_distance > self.PEEK_THRESHOLD:
           self._state = BookmarkState.TRIGGERED
           self._triggered_time = rl.get_time()
-          self._show_fill = True
+          self._active_icon = self._icon_fill
           self._bookmark_callback()
         else:
           # Otherwise, transition back to hidden
@@ -128,10 +129,9 @@ class BookmarkIcon(Widget):
   def _render(self, _):
     """Render the bookmark icon."""
     if self._offset_filter.x > 0:
-      icon = self._icon_fill if self._show_fill else self._icon
       icon_x = self.rect.x + self.rect.width - round(self._offset_filter.x)
-      icon_y = self.rect.y + (self.rect.height - icon.height) / 2  # Vertically centered
-      rl.draw_texture(icon, int(icon_x), int(icon_y), rl.WHITE)
+      icon_y = self.rect.y + (self.rect.height - self._active_icon.height) / 2  # Vertically centered
+      rl.draw_texture(self._active_icon, int(icon_x), int(icon_y), rl.WHITE)
 
 
 class AugmentedRoadView(CameraView):
