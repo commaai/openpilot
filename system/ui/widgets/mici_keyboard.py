@@ -278,7 +278,7 @@ class MiciKeyboard(Widget):
         self._caps_key.set_icon("icons_mici/settings/keyboard/caps_upper.png", icon_size=(38, 33))
       elif self._caps_state == CapsState.UPPER:
         self._caps_state = CapsState.LOCK
-        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lock.png")
+        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lock.png", icon_size=(39, 38))
       else:
         self._set_uppercase(False)
 

@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigToggle, BigParamControl, BigCircleToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigCircleToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
