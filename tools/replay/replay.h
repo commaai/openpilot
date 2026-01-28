@@ -24,6 +24,12 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_NO_HW_DECODER = 0x0100,
   REPLAY_FLAG_NO_VIPC = 0x0400,
   REPLAY_FLAG_ALL_SERVICES = 0x0800,
+  REPLAY_FLAG_BENCHMARK = 0x1000,
+};
+
+struct BenchmarkStats {
+  uint64_t process_start_ts = 0;
+  std::vector<std::pair<uint64_t, std::string>> timeline;
 };
 
 class Replay {
@@ -57,6 +63,8 @@ public:
   inline const std::optional<Timeline::Entry> findAlertAtTime(double sec) const { return timeline_.findAlertAtTime(sec); }
   const std::shared_ptr<SegmentManager::EventData> getEventData() const { return seg_mgr_->getEventData(); }
   void installEventFilter(std::function<bool(const Event *)> filter) { event_filter_ = filter; }
+  void waitForFinished();
+  const BenchmarkStats &getBenchmarkStats() const { return benchmark_stats_; }
 
   // Event callback functions
   std::function<void()> onSegmentsMerged = nullptr;
@@ -72,7 +80,9 @@ private:
   void handleSegmentMerge();
   void interruptStream(const std::function<bool()>& update_fn);
   std::vector<Event>::const_iterator publishEvents(std::vector<Event>::const_iterator first,
-                                                   std::vector<Event>::const_iterator last);
+                                                   std::vector<Event>::const_iterator last,
+                                                   int &last_processed_segment,
+                                                   uint64_t &segment_start_time);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   void checkSeekProgress();
@@ -107,4 +117,9 @@ private:
   std::function<bool(const Event *)> event_filter_ = nullptr;
 
   std::shared_ptr<SegmentManager::EventData> event_data_ = std::make_shared<SegmentManager::EventData>();
+
+  BenchmarkStats benchmark_stats_;
+  std::condition_variable benchmark_cv_;
+  std::mutex benchmark_lock_;
+  bool benchmark_done_ = false;
 };

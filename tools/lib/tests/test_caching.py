@@ -2,11 +2,13 @@ import http.server
 import os
 import shutil
 import socket
+import tempfile
 import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
-from openpilot.tools.lib.url_file import URLFile
+from openpilot.tools.lib.url_file import URLFile, prune_cache
+import openpilot.tools.lib.url_file as url_file_module
 
 
 class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -128,3 +130,35 @@ class TestFileDownload:
     CachingTestRequestHandler.FILE_EXISTS = True
     length = URLFile(file_url).get_length()
     assert length == 4
+
+
+class TestCache:
+  def test_prune_cache(self, monkeypatch):
+    with tempfile.TemporaryDirectory() as tmpdir:
+      monkeypatch.setattr(Paths, 'download_cache_root', staticmethod(lambda: tmpdir + "/"))
+
+      # setup test files and manifest
+      manifest_lines = []
+      for i in range(3):
+        fname = f"hash_{i}"
+        with open(tmpdir + "/" + fname, "wb") as f:
+          f.truncate(1000)
+        manifest_lines.append(f"{fname} {1000 + i}")
+      with open(tmpdir + "/manifest.txt", "w") as f:
+        f.write('\n'.join(manifest_lines))
+
+      # under limit, shouldn't prune
+      assert len(os.listdir(tmpdir)) == 4
+      prune_cache()
+      assert len(os.listdir(tmpdir)) == 4
+
+      # set a tiny cache limit to force eviction (1.5 chunks worth)
+      monkeypatch.setattr(url_file_module, 'CACHE_SIZE', url_file_module.CHUNK_SIZE + url_file_module.CHUNK_SIZE // 2)
+
+      # prune_cache should evict oldest files to get under limit
+      prune_cache()
+      remaining = os.listdir(tmpdir)
+      # should have evicted at least one file + manifest
+      assert len(remaining) < 4
+      # newest file should remain
+      assert manifest_lines[2].split()[0] in remaining

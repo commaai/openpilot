@@ -36,16 +36,16 @@ class SettingsLayout(NavWidget):
     self._params = Params()
     self._current_panel = None  # PanelType.DEVICE
 
-    toggles_btn = BigButton("toggles", "", "icons_mici/settings/toggles_icon.png")
+    toggles_btn = BigButton("toggles", "", "icons_mici/settings.png")
     toggles_btn.set_click_callback(lambda: self._set_current_panel(PanelType.TOGGLES))
-    network_btn = BigButton("network", "", "icons_mici/settings/network/wifi_strength_full.png")
+    network_btn = BigButton("network", "", "icons_mici/settings/network/wifi_strength_full.png", icon_size=(76, 56))
     network_btn.set_click_callback(lambda: self._set_current_panel(PanelType.NETWORK))
-    device_btn = BigButton("device", "", "icons_mici/settings/device_icon.png")
+    device_btn = BigButton("device", "", "icons_mici/settings/device_icon.png", icon_size=(74, 60))
     device_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVICE))
-    developer_btn = BigButton("developer", "", "icons_mici/settings/developer_icon.png")
+    developer_btn = BigButton("developer", "", "icons_mici/settings/developer_icon.png", icon_size=(64, 60))
     developer_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVELOPER))
 
-    firehose_btn = BigButton("firehose", "", "icons_mici/settings/comma_icon.png")
+    firehose_btn = BigButton("firehose", "", "icons_mici/settings/firehose.png", icon_size=(52, 62))
     firehose_btn.set_click_callback(lambda: self._set_current_panel(PanelType.FIREHOSE))
 
     self._scroller = Scroller([

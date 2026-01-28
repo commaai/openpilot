@@ -174,8 +174,8 @@ class TextAction(ItemAction):
 
 
 class DualButtonAction(ItemAction):
-  def __init__(self, left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable = None,
-               right_callback: Callable = None, enabled: bool | Callable[[], bool] = True):
+  def __init__(self, left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable | None = None,
+               right_callback: Callable | None = None, enabled: bool | Callable[[], bool] = True):
     super().__init__(width=0, enabled=enabled)  # Width 0 means use full width
     self.left_button = Button(left_text, click_callback=left_callback, button_style=ButtonStyle.NORMAL, text_padding=0)
     self.right_button = Button(right_text, click_callback=right_callback, button_style=ButtonStyle.DANGER, text_padding=0)
@@ -207,7 +207,7 @@ class DualButtonAction(ItemAction):
 
 
 class MultipleButtonAction(ItemAction):
-  def __init__(self, buttons: list[str | Callable[[], str]], button_width: int, selected_index: int = 0, callback: Callable = None):
+  def __init__(self, buttons: list[str | Callable[[], str]], button_width: int, selected_index: int = 0, callback: Callable | None = None):
     super().__init__(width=len(buttons) * button_width + (len(buttons) - 1) * RIGHT_ITEM_PADDING, enabled=True)
     self.buttons = buttons
     self.button_width = button_width
@@ -454,13 +454,14 @@ def text_item(title: str | Callable[[], str], value: str | Callable[[], str], de
   return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
-def dual_button_item(left_text: str | Callable[[], str], right_text: str | Callable[[], str], left_callback: Callable = None, right_callback: Callable = None,
+def dual_button_item(left_text: str | Callable[[], str], right_text: str | Callable[[], str],
+                     left_callback: Callable | None = None, right_callback: Callable | None = None,
                      description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = DualButtonAction(left_text, right_text, left_callback, right_callback, enabled)
   return ListItem(title="", description=description, action_item=action)
 
 
 def multiple_button_item(title: str | Callable[[], str], description: str | Callable[[], str], buttons: list[str | Callable[[], str]], selected_index: int,
-                         button_width: int = BUTTON_WIDTH, callback: Callable = None, icon: str = ""):
+                         button_width: int = BUTTON_WIDTH, callback: Callable | None = None, icon: str = ""):
   action = MultipleButtonAction(buttons, button_width, selected_index, callback=callback)
   return ListItem(title=title, description=description, icon=icon, action_item=action)

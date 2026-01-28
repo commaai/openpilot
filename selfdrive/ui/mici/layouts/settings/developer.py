@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import NavWidget
@@ -36,15 +36,15 @@ class DeveloperLayoutMici(NavWidget):
         return
       gui_app.set_modal_overlay(dlg)
 
-    txt_ssh = gui_app.texture("icons_mici/settings/developer/ssh.png", 77, 44)
+    txt_ssh = gui_app.texture("icons_mici/settings/developer/ssh.png", 56, 64)
     github_username = ui_state.params.get("GithubUsername") or ""
     self._ssh_keys_btn = BigButton("SSH keys", "Not set" if not github_username else github_username, icon=txt_ssh)
     self._ssh_keys_btn.set_click_callback(ssh_keys_callback)
 
     # adb, ssh, ssh keys, debug mode, joystick debug mode, longitudinal maneuver mode, ip address
     # ******** Main Scroller ********
-    self._adb_toggle = BigParamControl("enable ADB", "AdbEnabled")
-    self._ssh_toggle = BigParamControl("enable SSH", "SshEnabled")
+    self._adb_toggle = BigCircleParamControl("icons_mici/adb_short.png", "AdbEnabled", icon_size=(82, 82), icon_offset=(0, 12))
+    self._ssh_toggle = BigCircleParamControl("icons_mici/ssh_short.png", "SshEnabled", icon_size=(82, 82), icon_offset=(0, 12))
     self._joystick_toggle = BigToggle("joystick debug mode",
                                       initial_state=ui_state.params.get_bool("JoystickDebugMode"),
                                       toggle_callback=self._on_joystick_debug_mode)

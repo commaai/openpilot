@@ -26,11 +26,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
     LOGD("allocated %d CL buffers", frame_buf_count);
   }
 
-  // the encoder HW tells us the size it wants after setting it up.
-  // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
-  size_t nv12_size = (out_img_width <= 1344 ? 2900 : 2346)*cam->stride;
-
-  vipc_server->create_buffers_with_sizes(stream_type, VIPC_BUFFER_COUNT, out_img_width, out_img_height, nv12_size, cam->stride, cam->uv_offset);
+  vipc_server->create_buffers_with_sizes(stream_type, VIPC_BUFFER_COUNT, out_img_width, out_img_height, cam->yuv_size, cam->stride, cam->uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", VIPC_BUFFER_COUNT, cam->stride, cam->y_height);
 }
 
