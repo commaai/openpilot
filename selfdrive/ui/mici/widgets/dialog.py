@@ -148,10 +148,18 @@ class BigInputDialog(BigDialogBase):
     self._backspace_held_time: float | None = None
 
     self._backspace_img = gui_app.texture("icons_mici/settings/keyboard/backspace.png", 44, 44)
-    self._backspace_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
+    # Initialize alpha based on default_text: full if has text, dim if no text
+    initial_backspace_alpha = 255 if default_text else 255 * 0.35
+    self._backspace_img_alpha = FirstOrderFilter(initial_backspace_alpha, 0.05, 1 / gui_app.target_fps)
 
     self._enter_img = gui_app.texture("icons_mici/settings/keyboard/confirm.png", 44, 44)
-    self._enter_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
+    # Initialize alpha based on default_text: visible if text meets minimum_length, dim if has text but below min, hidden if no text
+    initial_enter_alpha = 255 if len(default_text) >= minimum_length else (255 * 0.35 if default_text else 0)
+    self._enter_img_alpha = FirstOrderFilter(initial_enter_alpha, 0.05, 1 / gui_app.target_fps)
+    # Enter icon X offset from rect edge (animates in/out based on text presence)
+    # Initialize to visible position if there's default text, otherwise hidden
+    initial_enter_offset = 15 if default_text else -(self._enter_img.width + 15)
+    self._enter_x_offset_filter = FirstOrderFilter(initial_enter_offset, 0.05, 1 / gui_app.target_fps)
 
     # rects for top buttons
     self._top_left_button_rect = rl.Rectangle(0, 0, 0, 0)
@@ -185,18 +193,33 @@ class BigInputDialog(BigDialogBase):
     text = self._keyboard.text()
     candidate_char = self._keyboard.get_candidate_character()
     text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, text_input_size)
-    text_x = PADDING * 2 + self._enter_img.width
+
+    # Animate enter icon position - slides in when text has at least 1 character
+    enter_visible = len(text) >= 1
+    HINT_X_POSITION = 28  # hint text position from left edge when no text
+    TEXT_X_VISIBLE = 84  # text position when enter icon is fully visible
+
+    # Enter icon position animation
+    hidden_offset = -(self._enter_img.width + 15)
+    visible_offset = 15
+    enter_x_offset_target = visible_offset if enter_visible else hidden_offset
+    enter_x_offset = self._enter_x_offset_filter.update(enter_x_offset_target)
+    enter_x = self._rect.x + enter_x_offset
+
+    # Text position: interpolate from hint position to visible position based on enter animation
+    t = (enter_x_offset - hidden_offset) / (visible_offset - hidden_offset)  # 0 when hidden, 1 when visible
+    text_x = HINT_X_POSITION + t * (TEXT_X_VISIBLE - HINT_X_POSITION)
 
     # text needs to move left if we're at the end where right button is
+    bg_block_margin = 5
     text_rect = rl.Rectangle(text_x,
-                             int(self._rect.y + PADDING),
+                             int(self._rect.y + PADDING - bg_block_margin),  # align with hint label position
                              # clip width to right button when in view
                              int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width + 5),  # TODO: why 5?
                              int(text_size.y))
 
     # draw rounded background for text input
-    bg_block_margin = 5
-    text_field_rect = rl.Rectangle(text_rect.x - bg_block_margin, text_rect.y - bg_block_margin,
+    text_field_rect = rl.Rectangle(text_rect.x - bg_block_margin, text_rect.y,
                                    text_rect.width + bg_block_margin * 2, text_input_size + bg_block_margin * 2)
 
     # draw text input
@@ -221,18 +244,21 @@ class BigInputDialog(BigDialogBase):
       rl.draw_rectangle_gradient_h(int(text_rect.x), int(text_rect.y), 80, int(text_rect.height),
                                    rl.BLACK, rl.BLANK)
 
-    # draw cursor
+    # draw cursor (always visible, even on hint)
+    blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
+    cursor_width = 4
     if text:
-      blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
       cursor_x = min(text_x + text_size.x + 3, text_rect.x + text_rect.width)
-      rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_rect.y), 4, int(text_size.y)),
-                                1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
+    else:
+      cursor_x = text_rect.x - cursor_width - 3  # to the left of hint text
+    rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_rect.y), cursor_width, int(text_size.y)),
+                              1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
 
-    # draw backspace icon with nice fade
-    self._backspace_img_alpha.update(255 * bool(text))
+    # draw backspace icon (35% when inactive, 100% when active)
+    self._backspace_img_alpha.update(255 if text else 255 * 0.35)
     if self._backspace_img_alpha.x > 1:
       color = rl.Color(255, 255, 255, int(self._backspace_img_alpha.x))
-      rl.draw_texture(self._backspace_img, int(self._rect.width - self._enter_img.width - 15), int(text_field_rect.y), color)
+      rl.draw_texture(self._backspace_img, int(self._rect.width - self._backspace_img.width - 15), int(text_field_rect.y), color)
 
     if not text and self._hint_label.text and not candidate_char:
       # draw description if no text entered yet and not drawing candidate char
@@ -244,10 +270,17 @@ class BigInputDialog(BigDialogBase):
     self._top_right_button_rect = rl.Rectangle(text_field_rect.x + text_field_rect.width, self._rect.y,
                                                self._rect.width - (text_field_rect.x + text_field_rect.width), self._top_left_button_rect.height)
 
-    self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 255 * 0.35)
+    # Alpha: 0 when no text, dim when below minimum_length, full when at/above minimum_length
+    if len(text) == 0:
+      enter_alpha_target = 0
+    elif len(text) >= self._minimum_length:
+      enter_alpha_target = 255
+    else:
+      enter_alpha_target = 255 * 0.35
+    self._enter_img_alpha.update(enter_alpha_target)
     if self._enter_img_alpha.x > 1:
       color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
-      rl.draw_texture(self._enter_img, int(self._rect.x + 15), int(text_field_rect.y), color)
+      rl.draw_texture(self._enter_img, int(enter_x), int(text_field_rect.y), color)
 
     # keyboard goes over everything
     self._keyboard.render(self._rect)
