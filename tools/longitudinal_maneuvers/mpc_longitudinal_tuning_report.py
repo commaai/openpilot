@@ -56,6 +56,7 @@ for lead_accel in np.linspace(1.0, 4.0, 4):
   )
   valid, results[lead_accel] = man.evaluate()
   labels.append(f'{lead_accel} m/s^2 lead acceleration')
+print(results)
 
 htmls.append(markdown.markdown('# ' + name))
 htmls.append(get_html_from_results(results, labels, EGO_V))
@@ -102,6 +103,7 @@ for oscil in np.arange(0, 10, 1):
   labels.append(f'{oscil} m/s oscilliation size')
 
 htmls.append(markdown.markdown('# ' + name))
+htmls.append(get_html_from_results(results, labels, LEAD_DISTANCE))
 htmls.append(get_html_from_results(results, labels, EGO_V))
 htmls.append(get_html_from_results(results, labels, EGO_A))
 
