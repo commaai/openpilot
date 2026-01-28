@@ -26,7 +26,7 @@ class TestMetaDriveBridge(TestSimBridgeBase):
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
     self.processes.append(p_manager)
 
-    sm = messaging.SubMaster(['sensorEvents', 'selfdriveState'])
+    sm = messaging.SubMaster(['accelerometer', 'gyroscope', 'selfdriveState'])
     q = Queue()
     bridge = self.create_bridge()
     p_bridge = bridge.run(q, retries=10)
@@ -57,12 +57,10 @@ class TestMetaDriveBridge(TestSimBridgeBase):
     # run for 10 seconds and collect some imu data
     while time.monotonic() < start_time + 10:
       sm.update()
-      if sm.updated['sensorEvents']:
-        for event in sm['sensorEvents']:
-          if event.which == 'acceleration':
-            accel_values.append(list(event.acceleration.v))
-          elif event.which == 'gyro':
-            gyro_values.append(list(event.gyro.v))
+      if sm.updated['accelerometer']:
+        accel_values.append(list(sm['accelerometer'].v))
+      if sm.updated['gyroscope']:
+        gyro_values.append(list(sm['gyroscope'].v))
       time.sleep(0.1)
 
     assert len(accel_values) > 10
