@@ -3,13 +3,14 @@ import functools
 import multiprocessing
 import numpy as np
 import time
+import math
 
 from multiprocessing import Pipe, Array
 
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
                                                                     metadrive_vehicle_state)
-from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.common import SimulatorState, World, vec3
 from openpilot.tools.sim.lib.camerad import W, H
 
 
@@ -58,6 +59,11 @@ class MetaDriveWorld(World):
     self.reset_time = 0
     self.should_reset = False
 
+    # IMU state
+    self.prev_velocity = vec3(0, 0, 0)
+    self.prev_bearing = 0
+    self.last_update_time = time.monotonic()
+
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 2:
       self.vc[0] = steer_angle
@@ -90,6 +96,32 @@ class MetaDriveWorld(World):
       state.steering_angle = md_vehicle.steering_angle
       state.gps.from_xy(curr_pos)
       state.valid = True
+
+      # IMU
+      current_time = time.monotonic()
+      dt = max(current_time - self.last_update_time, 1e-6)
+      self.last_update_time = current_time
+
+      # Gyroscope
+      bearing_rad = math.radians(state.bearing)
+      prev_bearing_rad = math.radians(self.prev_bearing)
+      delta_bearing = bearing_rad - prev_bearing_rad
+      delta_bearing = (delta_bearing + math.pi) % (2 * math.pi) - math.pi # wrap to [-pi, pi]
+      gyro_z = delta_bearing / dt
+      state.imu.gyroscope = vec3(0, 0, gyro_z)
+      self.prev_bearing = state.bearing
+
+      # Accelerometer
+      acceleration = vec3((state.velocity.x - self.prev_velocity.x) / dt,
+                          (state.velocity.y - self.prev_velocity.y) / dt,
+                          (state.velocity.z - self.prev_velocity.z) / dt)
+      self.prev_velocity = state.velocity
+
+      # Rotate acceleration from world frame to body frame
+      bearing_rad_current = -math.radians(state.bearing)
+      ax_body = acceleration.x * math.cos(bearing_rad_current) - acceleration.y * math.sin(bearing_rad_current)
+      ay_body = acceleration.x * math.sin(bearing_rad_current) + acceleration.y * math.cos(bearing_rad_current)
+      state.imu.accelerometer = vec3(ax_body, ay_body, acceleration.z)
 
       is_engaged = state.is_engaged
       if is_engaged and self.first_engage is None:
