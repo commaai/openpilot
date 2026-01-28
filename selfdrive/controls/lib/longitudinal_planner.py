@@ -21,7 +21,9 @@ A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
-K_CRUISE = 0.4
+
+K_CRUISE = 0.75
+TAU_CRUISE = 0.4
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -139,7 +141,7 @@ class LongitudinalPlanner:
 
     cruise_accel = K_CRUISE * (v_cruise - v_ego)
     cruise_accel = np.clip(cruise_accel, CRUISE_MIN_ACCEL, accel_clip[1])
-    cruise_accel = smooth_value(cruise_accel, self.output_a_target, 1.0)
+    cruise_accel = smooth_value(cruise_accel, self.output_a_target, TAU_CRUISE)
     out_accels['cruise'] = (cruise_accel, False)
 
     source, (output_a_target, should_stop) = min(out_accels.items(), key=lambda x: x[1][0])
