@@ -135,7 +135,8 @@ class LongitudinalPlanner:
 
     out_accels = {}
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
-    out_accels[self.mpc.lead_source] = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX, action_t, self.CP.vEgoStopping)
+    out_accels[self.mpc.lead_source] = get_accel_from_plan(
+      self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX, action_t, self.CP.vEgoStopping)
     if sm['selfdriveState'].experimentalMode:
       out_accels['e2e'] = (sm['modelV2'].action.desiredAcceleration, sm['modelV2'].action.shouldStop)
 
