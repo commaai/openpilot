@@ -38,10 +38,10 @@ def fast_euclidean_distance(dx, dy):
 
 
 class Key(Widget):
-  def __init__(self, char: str):
+  def __init__(self, char: str, font_weight: FontWeight = FontWeight.SEMI_BOLD):
     super().__init__()
     self.char = char
-    self._font = gui_app.font(FontWeight.SEMI_BOLD)
+    self._font = gui_app.font(font_weight)
     self._x_filter = BounceFilter(0.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
     self._y_filter = BounceFilter(0.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
     self._size_filter = BounceFilter(CHAR_FONT_SIZE, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
@@ -97,7 +97,7 @@ class Key(Widget):
 
 class SmallKey(Key):
   def __init__(self, chars: str):
-    super().__init__(chars)
+    super().__init__(chars, FontWeight.BOLD)
     self._size_filter.x = NUMBER_LAYER_SWITCH_FONT_SIZE
 
   def set_font_size(self, size: float):
