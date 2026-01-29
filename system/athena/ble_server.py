@@ -6,6 +6,7 @@ NOTE: DBus imports happen inside main() to avoid fork issues with the manager.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import os
@@ -37,17 +38,26 @@ def log(msg: str):
   print(f"[BLE] {msg}", flush=True)
 
 
-def get_dongle_id() -> str:
+def get_serial() -> str:
   try:
-    with open("/data/params/d/DongleId") as f:
-      return f.read().strip()
+    with open("/proc/cmdline") as f:
+      for part in f.read().split():
+        if part.startswith("androidboot.serialno="):
+          return part.split("=", 1)[1]
   except Exception:
-    return "unknown"
+    pass
+  return "unknown"
 
 
 def get_device_name() -> str:
-  dongle_id = get_dongle_id()
-  return f"comma-{dongle_id[:8]}" if dongle_id else "comma-device"
+  return f"comma-{get_serial()}"
+
+
+def get_bd_address() -> str:
+  h = hashlib.sha256(get_serial().encode()).digest()
+  # BLE static random address: top 2 bits of first byte must be 11
+  first_byte = h[0] | 0xC0
+  return f"{first_byte:02X}:{h[1]:02X}:{h[2]:02X}:{h[3]:02X}:{h[4]:02X}:{h[5]:02X}"
 
 
 def power_on_wcn3990():
@@ -90,18 +100,35 @@ def init_bluetooth():
   subprocess.Popen(["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "3000000"],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+  device_name = get_device_name()
+  bd_addr = get_bd_address()
+  addr_set = False
+
   for i in range(20):
     time.sleep(1)
     try:
       result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
-      if result.returncode == 0 and b"UP RUNNING" in result.stdout:
+      if result.returncode != 0:
+        continue
+
+      # Set static address while adapter is down (must be done before power on)
+      if not addr_set and b"UP RUNNING" not in result.stdout:
+        subprocess.run(["sudo", "btmgmt", "static-addr", bd_addr], capture_output=True)
+        subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
+        addr_set = True
+        continue
+
+      if b"UP RUNNING" in result.stdout:
         log("Bluetooth initialized")
+        subprocess.run(["sudo", "hciconfig", "hci0", "name", device_name], capture_output=True)
+        log(f"BD address: {bd_addr}, name: {device_name}")
         # Enable LE peripheral mode for GATT server
         subprocess.run(["sudo", "btmgmt", "le", "on"], capture_output=True)
         subprocess.run(["sudo", "btmgmt", "connectable", "on"], capture_output=True)
         subprocess.run(["sudo", "btmgmt", "advertising", "on"], capture_output=True)
         return True
-      if result.returncode == 0 and b"DOWN" in result.stdout:
+
+      if b"DOWN" in result.stdout:
         subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
     except Exception:
       pass
