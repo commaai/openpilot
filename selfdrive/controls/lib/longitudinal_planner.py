@@ -11,8 +11,6 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, smooth_value
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
@@ -21,7 +19,6 @@ from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 CRUISE_MIN_ACCEL = -1.2
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
-CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
 
@@ -70,61 +67,42 @@ def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
-def get_stopped_equivalence_factor(v_lead):
-  return (v_lead**2) / (2 * COMFORT_BRAKE)
-
-def get_safe_obstacle_distance(v_ego, t_follow):
-  return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
-
-def get_desired_follow_distance(v_ego, v_lead, t_follow=None):
-  if t_follow is None:
-    t_follow = get_T_FOLLOW()
-  return get_safe_obstacle_distance(v_ego, t_follow) - get_stopped_equivalence_factor(v_lead)
-
 def get_max_accel(v_ego):
   return np.interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
 def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
-def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
+def extrapolate_state(x_lead, v_lead, a_lead, a_lead_tau):
   a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS_LEAD**2)/2.)
   v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS_LEAD * a_lead_traj), 0.0, 1e8)
   x_lead_traj = x_lead + np.cumsum(T_DIFFS_LEAD * v_lead_traj)
   lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
   return lead_xv
 
-def process_lead(v_ego, lead):
-  if lead is not None and lead.status:
-    x_lead = lead.dRel
-    v_lead = lead.vLead
-    a_lead = lead.aLeadK
-    a_lead_tau = lead.aLeadTau
-  else:
-    # Fake a fast lead car, so mpc can keep running in the same mode
-    x_lead = 50.0
-    v_lead = v_ego + 10.0
-    a_lead = 0.0
-    a_lead_tau = _LEAD_ACCEL_TAU
+def process_lead(lead):
+  if lead is None or not lead.status:
+    return None
 
-  min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
-  x_lead = np.clip(x_lead, min_x_lead, 1e8)
+  x_lead = lead.dRel
+  v_lead = lead.vLead
+  a_lead = lead.aLeadK
+  a_lead_tau = lead.aLeadTau
+
+  x_lead = np.clip(x_lead, 0.01, 1e8)
   v_lead = np.clip(v_lead, 0.0, 1e8)
   a_lead = np.clip(a_lead, -10., 5.)
-  lead_xv = extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
+  lead_xv = extrapolate_state(x_lead, v_lead, a_lead, a_lead_tau)
   return lead_xv
 
 def process_ego(v_ego, a_ego):
-  x_lead = 0.0
-  v_lead = v_ego
-  a_lead = a_ego
+  x_ego = 0.0
   a_lead_tau = _LEAD_ACCEL_TAU
 
-  min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
-  x_lead = np.clip(x_lead, min_x_lead, 1e8)
-  v_lead = np.clip(v_lead, 0.0, 1e8)
-  a_lead = np.clip(a_lead, -10., 5.)
-  ego_xv = extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
+  x_ego = np.clip(x_ego, 0.0, 1e8)
+  v_ego = np.clip(v_ego, 0.0, 1e8)
+  a_ego = np.clip(a_ego, -10., 5.)
+  ego_xv = extrapolate_state(x_ego, v_ego, a_ego, a_lead_tau)
   return ego_xv
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
@@ -140,9 +118,17 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
+def parse_model(model_msg):
+  if len(model_msg.meta.disengagePredictions.gasPressProbs) > 1:
+    throttle_prob = model_msg.meta.disengagePredictions.gasPressProbs[1]
+  else:
+    throttle_prob = 1.0
+  return throttle_prob
+
+def 
 
 class LongitudinalPlanner:
-  def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
+  def __init__(self, CP, init_v=0.0, dt=DT_MDL):
     self.CP = CP
     self.source = 'cruise'
     self.fcw = False
@@ -152,14 +138,6 @@ class LongitudinalPlanner:
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.output_a_target = 0.0
     self.output_should_stop = False
-
-  @staticmethod
-  def parse_model(model_msg):
-    if len(model_msg.meta.disengagePredictions.gasPressProbs) > 1:
-      throttle_prob = model_msg.meta.disengagePredictions.gasPressProbs[1]
-    else:
-      throttle_prob = 1.0
-    return throttle_prob
 
   def update(self, sm):
     if len(sm['carControl'].orientationNED) == 3:
@@ -191,7 +169,7 @@ class LongitudinalPlanner:
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
-    throttle_prob = self.parse_model(sm['modelV2'])
+    throttle_prob = parse_model(sm['modelV2'])
     # Don't clip at low speeds since throttle_prob doesn't account for creep
     self.allow_throttle = throttle_prob > ALLOW_THROTTLE_THRESHOLD or v_ego <= MIN_ALLOW_THROTTLE_SPEED
 
@@ -217,10 +195,15 @@ class LongitudinalPlanner:
     cruise_accel = smooth_value(cruise_accel, self.output_a_target, TAU_CRUISE)
     out_accels['cruise'] = (cruise_accel, False)
 
-    lead_info = {'lead0': sm['radarState'].leadOne, 'lead1': sm['radarState'].leadTwo}
+    lead_info = {Source.LEAD0: sm['radarState'].leadOne, Source.LEAD1: sm['radarState'].leadTwo}
     ego_xv = process_ego(v_ego, sm['carState'].aEgo)
     for key in lead_info.keys():
       lead_xv = process_lead(v_ego, lead_info[key])
+      if lead_xv is None:
+        continue
+      if lead_info[key].fcw:
+
+
       desired_follow_distance = np.array([
         get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)
         ])
