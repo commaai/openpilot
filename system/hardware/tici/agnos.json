@@ -56,28 +56,28 @@
   },
   {
     "name": "boot",
-    "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/boot-dc8d8270363c369b46362da7a9b6c1f95571f6960cbd46fe67a1aeabbc8fe98c.img.xz",
-    "hash": "dc8d8270363c369b46362da7a9b6c1f95571f6960cbd46fe67a1aeabbc8fe98c",
-    "hash_raw": "dc8d8270363c369b46362da7a9b6c1f95571f6960cbd46fe67a1aeabbc8fe98c",
-    "size": 17860608,
+    "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/boot-b4a6b0974f9b3fe3560a9f06e9c50f2808897dd4c6d742892db5a7667a71fb8c.img.xz",
+    "hash": "b4a6b0974f9b3fe3560a9f06e9c50f2808897dd4c6d742892db5a7667a71fb8c",
+    "hash_raw": "b4a6b0974f9b3fe3560a9f06e9c50f2808897dd4c6d742892db5a7667a71fb8c",
+    "size": 17876992,
     "sparse": false,
     "full_check": true,
     "has_ab": true,
-    "ondevice_hash": "058570e3e39f381321bb60dbf10258f46f80c69e738e474125fcb2a71e238a33"
+    "ondevice_hash": "bd173ac24eb87217387cf35de89f641489e085039524b4ec06fedf37864c77df"
   },
   {
     "name": "system",
-    "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-76940bbc51bec0cb030dde6745ba9cad45c046e643fcc926d94d45a2560900db.img.xz",
-    "hash": "e5e1e6552f7d1e0305ded59271eef2a16890962c2cc7fa3f5b65ae9812a4280b",
-    "hash_raw": "76940bbc51bec0cb030dde6745ba9cad45c046e643fcc926d94d45a2560900db",
+    "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-92a1fe764993d65ef6b515a57a5d8a7d12e67aa80a949af78ba6b2ac44e4649b.img.xz",
+    "hash": "8b36f47909aa45a985d9b7fe6f3e148b08d5a928decd3d13ba4a7cde65e2ef0f",
+    "hash_raw": "92a1fe764993d65ef6b515a57a5d8a7d12e67aa80a949af78ba6b2ac44e4649b",
     "size": 4718592000,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
-    "ondevice_hash": "75567946ea0f1ed9863e1d813742e7f4a8c65d95a1f6bd4794c8ead80c78d838",
+    "ondevice_hash": "f45253fe0912dd497d04fa62c1399e0687348f77bd74d05722b8be6e1d6f2ba6",
     "alt": {
-      "hash": "76940bbc51bec0cb030dde6745ba9cad45c046e643fcc926d94d45a2560900db",
-      "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-76940bbc51bec0cb030dde6745ba9cad45c046e643fcc926d94d45a2560900db.img",
+      "hash": "92a1fe764993d65ef6b515a57a5d8a7d12e67aa80a949af78ba6b2ac44e4649b",
+      "url": "https://pub-0e2c2429a38c4224bf993e0f6773839b.r2.dev/system-92a1fe764993d65ef6b515a57a5d8a7d12e67aa80a949af78ba6b2ac44e4649b.img",
       "size": 4718592000
     }
   }

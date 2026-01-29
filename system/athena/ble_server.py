@@ -50,6 +50,111 @@ def get_device_name() -> str:
   return f"comma-{dongle_id[:8]}" if dongle_id else "comma-device"
 
 
+def ensure_bt_firmware():
+  FW_DIR = "/lib/firmware/qca"
+  NEEDED = ["rampatch_02140201.bin", "nvm_02140201.bin"]
+
+  if all(os.path.exists(os.path.join(FW_DIR, f)) for f in NEEDED):
+    return
+
+  log("Installing QCA Bluetooth firmware...")
+  os.makedirs(FW_DIR, exist_ok=True)
+
+  # Extract from bluetooth partition's FAT16 image
+  import struct
+  BT_PARTS = ["/dev/disk/by-partlabel/bluetooth", "/dev/disk/by-partlabel/bluetooth_a"]
+  bt_dev = next((p for p in BT_PARTS if os.path.exists(p)), None)
+  if not bt_dev:
+    log("WARNING: No bluetooth partition found, firmware not installed")
+    return
+
+  try:
+    with open(bt_dev, "rb") as f:
+      data = f.read(1048576)  # 1MB partition
+
+    sector_size = struct.unpack('<H', data[11:13])[0]
+    spc = data[13]
+    reserved = struct.unpack('<H', data[14:16])[0]
+    num_fats = data[16]
+    root_entries = struct.unpack('<H', data[17:19])[0]
+    spf = struct.unpack('<H', data[22:24])[0]
+    cluster_size = sector_size * spc
+    root_offset = (reserved + num_fats * spf) * sector_size
+    root_sectors = (root_entries * 32 + sector_size - 1) // sector_size
+    data_start = root_offset + root_sectors * sector_size
+
+    fat_offset = reserved * sector_size
+    fat = {i: struct.unpack('<H', data[fat_offset+i*2:fat_offset+i*2+2])[0]
+           for i in range(spf * sector_size // 2)}
+
+    def read_file(cluster, size):
+      result, remaining = b'', size
+      while remaining > 0 and cluster < 0xFFF8:
+        off = data_start + (cluster - 2) * cluster_size
+        chunk = min(remaining, cluster_size)
+        result += data[off:off+chunk]
+        remaining -= chunk
+        cluster = fat[cluster]
+      return result
+
+    FILE_MAP = {"CRBTFW21.TLV": "rampatch_02140201.bin", "CRNV21.BIN": "nvm_02140201.bin"}
+
+    for i in range(root_entries):
+      off = root_offset + i * 32
+      entry = data[off:off+32]
+      if entry[0] == 0: break
+      if entry[0] == 0xE5 or entry[11] == 0x0F: continue
+      name = entry[:8].rstrip(b' ').decode('ascii', errors='ignore')
+      if entry[11] & 0x10 and name == 'IMAGE':
+        cluster = struct.unpack('<H', entry[26:28])[0]
+        dir_data = read_file(cluster, cluster_size * 4)
+        for j in range(len(dir_data) // 32):
+          e2 = dir_data[j*32:j*32+32]
+          if e2[0] == 0: break
+          if e2[0] == 0xE5 or e2[11] == 0x0F: continue
+          n = e2[:8].rstrip(b' ').decode('ascii', errors='ignore')
+          ext = e2[8:11].rstrip(b' ').decode('ascii', errors='ignore')
+          full = f'{n}.{ext}' if ext else n
+          if full in FILE_MAP:
+            c = struct.unpack('<H', e2[26:28])[0]
+            s = struct.unpack('<I', e2[28:32])[0]
+            if s > 0:
+              fw_data = read_file(c, s)
+              dest = os.path.join(FW_DIR, FILE_MAP[full])
+              with open(dest, 'wb') as fw:
+                fw.write(fw_data)
+              log(f"Installed {FILE_MAP[full]} ({s} bytes)")
+  except Exception as e:
+    log(f"WARNING: Failed to extract BT firmware: {e}")
+
+
+def is_mici() -> bool:
+  try:
+    with open("/sys/firmware/devicetree/base/model") as f:
+      return "mici" in f.read().lower()
+  except Exception:
+    return False
+
+
+def power_on_wcn3990():
+  for rfkill_dir in sorted(os.listdir("/sys/class/rfkill/")):
+    rfkill_path = f"/sys/class/rfkill/{rfkill_dir}"
+    try:
+      with open(f"{rfkill_path}/type") as f:
+        if f.read().strip() != "bluetooth":
+          continue
+      with open(f"{rfkill_path}/name") as f:
+        if f.read().strip() != "bt_power":
+          continue
+      log("Powering on WCN3990 via rfkill")
+      subprocess.run(["sudo", "sh", "-c", f"echo 0 > {rfkill_path}/soft"], capture_output=True)
+      time.sleep(2)
+      return True
+    except Exception:
+      continue
+  return False
+
+
 def init_bluetooth():
   try:
     result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
@@ -66,21 +171,33 @@ def init_bluetooth():
   subprocess.run(["sudo", "hciconfig", "hci0", "down"], capture_output=True)
   time.sleep(1)
 
-  subprocess.Popen(["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "115200"],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+  if is_mici():
+    # WCN3990: power on regulators, attach at 3Mbaud with H4 protocol (no firmware download needed)
+    power_on_wcn3990()
+    subprocess.Popen(["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "3000000"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+  else:
+    # Older devices: use QCA protocol at 115200 with firmware download
+    ensure_bt_firmware()
+    subprocess.Popen(["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "115200", "-P", "qca"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-  for i in range(10):
+  for i in range(20):
     time.sleep(1)
     try:
       result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
       if result.returncode == 0 and b"UP RUNNING" in result.stdout:
         log("Bluetooth initialized")
+        # Enable LE peripheral mode for GATT server
+        subprocess.run(["sudo", "btmgmt", "le", "on"], capture_output=True)
+        subprocess.run(["sudo", "btmgmt", "connectable", "on"], capture_output=True)
+        subprocess.run(["sudo", "btmgmt", "advertising", "on"], capture_output=True)
         return True
       if result.returncode == 0 and b"DOWN" in result.stdout:
         subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
     except Exception:
       pass
-    log(f"Waiting for Bluetooth... ({i+1}/10)")
+    log(f"Waiting for Bluetooth... ({i+1}/20)")
 
   log("ERROR: Failed to initialize Bluetooth")
   return False

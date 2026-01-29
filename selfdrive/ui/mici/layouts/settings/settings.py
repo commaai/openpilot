@@ -44,7 +44,7 @@ class SettingsLayout(NavWidget):
     network_btn.set_click_callback(lambda: self._set_current_panel(PanelType.NETWORK))
     device_btn = BigButton("device", "", "icons_mici/settings/device_icon.png")
     device_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVICE))
-    asius_btn = BigButton("asius", "", "icons_mici/settings/network/wifi_strength_full.png")
+    asius_btn = BigButton("asius", "", "icons_mici/settings/asius_icon.png")
     asius_btn.set_click_callback(lambda: self._set_current_panel(PanelType.ASIUS))
     developer_btn = BigButton("developer", "", "icons_mici/settings/developer_icon.png")
     developer_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVELOPER))
