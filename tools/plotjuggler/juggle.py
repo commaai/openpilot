@@ -115,7 +115,8 @@ if __name__ == "__main__":
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
   parser.add_argument("--dbc", help="Set the DBC name to load for parsing CAN data. If not set, the DBC will be automatically inferred from the logs.")
-  parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot (cabana share URL accepted)")
+  parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot (cabana share URL accepted)." + \
+                      " See README.md for example route syntax.")
 
   if len(sys.argv) == 1:
     parser.print_help()
