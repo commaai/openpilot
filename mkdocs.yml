@@ -1,0 +1,44 @@
+site_name: openpilot docs
+repo_url: https://github.com/commaai/openpilot/
+site_url: https://docs.comma.ai
+
+exclude_docs: README.md
+
+strict: true
+docs_dir: docs
+site_dir: docs_site/
+
+hooks:
+  - docs/hooks/glossary.py
+extra_css:
+  - css/tooltip.css
+theme:
+  name: readthedocs
+  navigation_depth: 3
+
+nav:
+  - Getting Started:
+    - What is openpilot?: getting-started/what-is-openpilot.md
+  - How-to:
+    - Turn the speed blue: how-to/turn-the-speed-blue.md
+    - Connect to a comma 3X: how-to/connect-to-comma.md
+    # - Make your first pull request: how-to/make-first-pr.md
+    #- Replay a drive: how-to/replay-a-drive.md
+  - Concepts:
+    - Logs: concepts/logs.md
+    - Safety: concepts/safety.md
+    - Glossary: concepts/glossary.md
+  - Car Porting:
+    - What is a car port?: car-porting/what-is-a-car-port.md
+    - Porting a car brand: car-porting/brand-port.md
+    - Porting a car model: car-porting/model-port.md
+  - Contributing:
+    - Roadmap: contributing/roadmap.md
+    #- Architecture: contributing/architecture.md
+    - Contributing Guide →: https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md
+  - Links:
+    - Blog →: https://blog.comma.ai
+    - Bounties →: https://comma.ai/bounties
+    - GitHub →: https://github.com/commaai
+    - Discord →: https://discord.comma.ai
+    - X →: https://x.com/comma_ai
