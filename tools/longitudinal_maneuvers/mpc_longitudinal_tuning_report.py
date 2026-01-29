@@ -21,11 +21,13 @@ axis_labels = ['Time (s)',
                'Lead distance (m)'
                ]
 
+linestyles = ['-', '--',]
 
 def get_html_from_results(results, labels, AXIS):
   fig, ax = plt.subplots(figsize=(16, 8))
   for idx, speed in enumerate(list(results.keys())):
-    ax.plot(results[speed][:, TIME], results[speed][:, AXIS], label=labels[idx])
+    linestyle = linestyles[idx % len(linestyles)]
+    ax.plot(results[speed][:, TIME], results[speed][:, AXIS], label=labels[idx], linestyle=linestyle)
 
   ax.set_xlabel('Time (s)')
   ax.set_ylabel(axis_labels[AXIS])

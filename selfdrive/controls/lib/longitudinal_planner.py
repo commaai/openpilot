@@ -2,6 +2,7 @@
 import math
 import numpy as np
 
+from enum import Enum
 from cereal import log
 import cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
@@ -39,6 +40,13 @@ T_IDXS = np.array(ModelConstants.T_IDXS)
 FCW_IDXS = T_IDXS < 5.0
 T_IDXS_LEAD = np.arange(0., 2.5, 0.1)
 T_DIFFS_LEAD = np.diff(T_IDXS_LEAD, prepend=[0.])
+
+
+class Source(Enum):
+  LEAD0 = 0
+  LEAD1 = 1
+  CRUISE = 2
+  E2E = 3
 
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
@@ -112,14 +120,12 @@ def process_ego(v_ego, a_ego):
   a_lead = a_ego
   a_lead_tau = _LEAD_ACCEL_TAU
 
-  # MPC will not converge if immediate crash is expected
-  # Clip lead distance to what is still possible to brake for
   min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
   x_lead = np.clip(x_lead, min_x_lead, 1e8)
   v_lead = np.clip(v_lead, 0.0, 1e8)
   a_lead = np.clip(a_lead, -10., 5.)
-  lead_xv = extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
-  return lead_xv
+  ego_xv = extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
+  return ego_xv
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -138,20 +144,14 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
-    self.mpc = LongitudinalMpc(dt=dt)
     self.source = 'cruise'
     self.fcw = False
     self.dt = dt
     self.allow_throttle = True
 
-    self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.output_a_target = 0.0
     self.output_should_stop = False
-
-    self.v_desired_trajectory = np.zeros(CONTROL_N)
-    self.a_desired_trajectory = np.zeros(CONTROL_N)
-    self.j_desired_trajectory = np.zeros(CONTROL_N)
 
   @staticmethod
   def parse_model(model_msg):
@@ -180,9 +180,6 @@ class LongitudinalPlanner:
     # PCM cruise speed may be updated a few cycles later, check if initialized
     reset_state = reset_state or not v_cruise_initialized
 
-    # No change cost when user is controlling the speed, or when standstill
-    prev_accel_constraint = not (reset_state or sm['carState'].standstill)
-
     accel_clip = [ACCEL_MIN, get_max_accel(v_ego)]
     steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
     accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP)
@@ -190,7 +187,7 @@ class LongitudinalPlanner:
     if reset_state:
       self.v_desired_filter.x = v_ego
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
-      self.a_desired = np.clip(sm['carState'].aEgo, accel_clip[0], accel_clip[1])
+      self.output_a_target = np.clip(sm['carState'].aEgo, accel_clip[0], accel_clip[1])
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -206,23 +203,12 @@ class LongitudinalPlanner:
     if force_slow_decel:
       v_cruise = 0.0
 
-    self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
-    self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(sm['radarState'], personality=sm['selfdriveState'].personality)
-
-    self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
-    self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
-    self.j_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC[:-1], self.mpc.j_solution)
-
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
-    if self.fcw:
-      cloudlog.info("FCW triggered")
+    #self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
+    #if self.fcw:
+    #  cloudlog.info("FCW triggered")
 
     out_accels = {}
-    action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
-    out_accels[self.mpc.lead_source] = get_accel_from_plan(
-      self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX, action_t, self.CP.vEgoStopping)
     if sm['selfdriveState'].experimentalMode:
       out_accels['e2e'] = (sm['modelV2'].action.desiredAcceleration, sm['modelV2'].action.shouldStop)
 
@@ -231,19 +217,30 @@ class LongitudinalPlanner:
     cruise_accel = smooth_value(cruise_accel, self.output_a_target, TAU_CRUISE)
     out_accels['cruise'] = (cruise_accel, False)
 
+    lead_info = {'lead0': sm['radarState'].leadOne, 'lead1': sm['radarState'].leadTwo}
+    ego_xv = process_ego(v_ego, sm['carState'].aEgo)
+    for key in lead_info.keys():
+      lead_xv = process_lead(v_ego, lead_info[key])
+      desired_follow_distance = np.array([
+        get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)
+        ])
+
+      error_weights = np.linspace(1.0, 0.0, len(desired_follow_distance))
+      error_weights = error_weights / np.sum(error_weights)
+
+      follow_distance_error =  np.sum(error_weights*(lead_xv[:,0] - desired_follow_distance))
+
+      follow_distance_cost_signed = (follow_distance_error / (v_ego + 1))**2 * np.sign(follow_distance_error)
+      lead_accel = np.clip(2*follow_distance_cost_signed, ACCEL_MIN, ACCEL_MAX)
+      lead_accel = smooth_value(lead_accel, self.output_a_target, 0.5)
+
+      out_accels[key] = (lead_accel, False)
+
     source, (output_a_target, should_stop) = min(out_accels.items(), key=lambda x: x[1][0])
     self.source = source
     self.output_should_stop = should_stop
 
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
-
-    # Interpolate 0.05 seconds and save as starting point for next iteration
-    a_prev = self.a_desired
-    if self.source == self.mpc.lead_source:
-      self.a_desired = float(np.interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory))
-    else:
-      self.a_desired = self.output_a_target
-    self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
@@ -252,12 +249,6 @@ class LongitudinalPlanner:
 
     longitudinalPlan = plan_send.longitudinalPlan
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']
-    longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
-    longitudinalPlan.solverExecutionTime = self.mpc.solve_time
-
-    longitudinalPlan.speeds = self.v_desired_trajectory.tolist()
-    longitudinalPlan.accels = self.a_desired_trajectory.tolist()
-    longitudinalPlan.jerks = self.j_desired_trajectory.tolist()
 
     longitudinalPlan.hasLead = sm['radarState'].leadOne.status
     longitudinalPlan.longitudinalPlanSource = self.source
