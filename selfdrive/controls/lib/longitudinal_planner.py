@@ -236,9 +236,9 @@ class LongitudinalPlanner:
 
       out_accels[key] = (lead_accel, False)
 
-    source, (output_a_target, should_stop) = min(out_accels.items(), key=lambda x: x[1][0])
+    source, (output_a_target, _) = min(out_accels.items(), key=lambda x: x[1][0])
     self.source = source
-    self.output_should_stop = should_stop
+    self.output_should_stop = any(should_stop for _, should_stop in out_accels.values())
 
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
 
