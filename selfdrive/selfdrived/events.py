@@ -481,8 +481,8 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: Alert(
       "TAKE CONTROL",
       "Stock LKAS: Lane Departure Detected",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGH, VisualAlert.fcw, AudibleAlert.none, 2.),
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.MID, VisualAlert.ldw, AudibleAlert.none, 2.),
     ET.NO_ENTRY: NoEntryAlert("Stock LKAS: Lane Departure Detected"),
   },
 
