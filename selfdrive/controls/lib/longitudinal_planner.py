@@ -2,6 +2,7 @@
 import math
 import numpy as np
 
+from cereal import log
 import cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.constants import CV
@@ -14,6 +15,7 @@ from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDX
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, smooth_value
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
 CRUISE_MIN_ACCEL = -1.2
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
@@ -25,15 +27,99 @@ MIN_ALLOW_THROTTLE_SPEED = 2.5
 K_CRUISE = 0.75
 TAU_CRUISE = 0.4
 
+COMFORT_BRAKE = 2.5
+STOP_DISTANCE = 6.0
+MIN_X_LEAD_FACTOR = 0.5
+
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
+
+T_IDXS = np.array(ModelConstants.T_IDXS)
+FCW_IDXS = T_IDXS < 5.0
+T_IDXS_LEAD = np.arange(0., 2.5, 0.1)
+T_DIFFS_LEAD = np.diff(T_IDXS_LEAD, prepend=[0.])
+
+
+def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
+  if personality==log.LongitudinalPersonality.relaxed:
+    return 1.0
+  elif personality==log.LongitudinalPersonality.standard:
+    return 1.0
+  elif personality==log.LongitudinalPersonality.aggressive:
+    return 0.5
+  else:
+    raise NotImplementedError("Longitudinal personality not supported")
+
+
+def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
+  if personality==log.LongitudinalPersonality.relaxed:
+    return 1.75
+  elif personality==log.LongitudinalPersonality.standard:
+    return 1.45
+  elif personality==log.LongitudinalPersonality.aggressive:
+    return 1.25
+  else:
+    raise NotImplementedError("Longitudinal personality not supported")
+
+def get_stopped_equivalence_factor(v_lead):
+  return (v_lead**2) / (2 * COMFORT_BRAKE)
+
+def get_safe_obstacle_distance(v_ego, t_follow):
+  return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
+
+def get_desired_follow_distance(v_ego, v_lead, t_follow=None):
+  if t_follow is None:
+    t_follow = get_T_FOLLOW()
+  return get_safe_obstacle_distance(v_ego, t_follow) - get_stopped_equivalence_factor(v_lead)
 
 def get_max_accel(v_ego):
   return np.interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
 def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
+
+def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
+  a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS_LEAD**2)/2.)
+  v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS_LEAD * a_lead_traj), 0.0, 1e8)
+  x_lead_traj = x_lead + np.cumsum(T_DIFFS_LEAD * v_lead_traj)
+  lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
+  return lead_xv
+
+def process_lead(v_ego, lead):
+  if lead is not None and lead.status:
+    x_lead = lead.dRel
+    v_lead = lead.vLead
+    a_lead = lead.aLeadK
+    a_lead_tau = lead.aLeadTau
+  else:
+    # Fake a fast lead car, so mpc can keep running in the same mode
+    x_lead = 50.0
+    v_lead = v_ego + 10.0
+    a_lead = 0.0
+    a_lead_tau = _LEAD_ACCEL_TAU
+
+  min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
+  x_lead = np.clip(x_lead, min_x_lead, 1e8)
+  v_lead = np.clip(v_lead, 0.0, 1e8)
+  a_lead = np.clip(a_lead, -10., 5.)
+  lead_xv = extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
+  return lead_xv
+
+def process_ego(v_ego, a_ego):
+  x_lead = 0.0
+  v_lead = v_ego
+  a_lead = a_ego
+  a_lead_tau = _LEAD_ACCEL_TAU
+
+  # MPC will not converge if immediate crash is expected
+  # Clip lead distance to what is still possible to brake for
+  min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
+  x_lead = np.clip(x_lead, min_x_lead, 1e8)
+  v_lead = np.clip(v_lead, 0.0, 1e8)
+  a_lead = np.clip(a_lead, -10., 5.)
+  lead_xv = extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
+  return lead_xv
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
