@@ -33,7 +33,7 @@ jobs:
       pull-requests: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
@@ -53,7 +53,7 @@ jobs:
 
       - name: Getting proposed ui  # filename: pr_ui/mici_ui_replay.mp4
         id: download-artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v12
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           run_id: ${{ steps.get_run_id.outputs.run_id }}
@@ -62,7 +62,7 @@ jobs:
           path: ${{ github.workspace }}/pr_ui
 
       - name: Getting master ui  # filename: master_ui_raylib/mici_ui_replay.mp4
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
@@ -140,7 +140,7 @@ jobs:
 
       - name: Comment Video on PR
         if: github.event_name == 'pull_request_target'
-        uses: thollander/actions-comment-pull-request@v2
+        uses: thollander/actions-comment-pull-request@v3
         with:
           message: |
             <!-- _(run_id_video_mici_raylib **${{ github.run_id }}**)_ -->

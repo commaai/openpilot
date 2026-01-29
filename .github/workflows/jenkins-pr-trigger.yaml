@@ -15,7 +15,7 @@ jobs:
     steps:
     - name: Check for trigger phrase
       id: check_comment
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const triggerPhrase = "trigger-jenkins";
@@ -35,7 +35,7 @@ jobs:
 
     - name: Checkout repository
       if: steps.check_comment.outputs.result == 'true'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: refs/pull/${{ github.event.issue.number }}/head
 
@@ -49,7 +49,7 @@ jobs:
 
     - name: Delete trigger comment
       if: steps.check_comment.outputs.result == 'true' && always()
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           await github.rest.issues.deleteComment({

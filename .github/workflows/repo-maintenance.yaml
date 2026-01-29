@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/workflows/setup-with-retry
       - name: Update translations
         run: |
@@ -39,7 +39,7 @@ jobs:
       image: ghcr.io/commaai/openpilot-base:latest
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: true
     - name: uv lock
