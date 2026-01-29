@@ -223,7 +223,6 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v4
       with:
@@ -234,11 +233,21 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Driving test
-      timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
+      timeout-minutes: 5
       run: |
-        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
+        mkdir -p simulation_logs
+        chmod -R 777 simulation_logs
+        ${{ env.RUN }} "export LOG_ROOT=/tmp/openpilot/simulation_logs && \
+                        export BLOCK=camerad,micd,logmessaged,ui && \
+                        source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest -s tools/sim/tests/test_metadrive_bridge.py"
+    - name: Upload simulation logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: simulation_logs
+        path: simulation_logs
 
   create_raylib_ui_report:
     name: Create raylib UI Report

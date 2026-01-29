@@ -6,10 +6,11 @@ export SIMULATION="1"
 export SKIP_FW_QUERY="1"
 export FINGERPRINT="HONDA_CIVIC_2022"
 
-export BLOCK="${BLOCK},camerad,loggerd,encoderd,micd,logmessaged"
-if [[ "$CI" ]]; then
-  # TODO: offscreen UI should work
-  export BLOCK="${BLOCK},ui"
+if [ -z "$BLOCK" ]; then
+  export BLOCK="camerad,loggerd,encoderd,micd,logmessaged"
+  if [[ "$CI" ]]; then
+    export BLOCK="${BLOCK},ui"
+  fi
 fi
 
 python3 -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
