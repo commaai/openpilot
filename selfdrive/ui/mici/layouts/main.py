@@ -73,7 +73,8 @@ class MiciMainLayout(Widget):
     device.add_interactive_timeout_callback(self._set_mode_for_started)
 
   def _scroll_to(self, layout: Widget):
-    layout_x = int(layout.rect.x)
+    # Scroll to the absolute layout_x position (negated because scroll_panel uses negative offsets for content)
+    layout_x = -int(layout.rect.x)
     self._scroller.scroll_to(layout_x, smooth=True)
 
   def _render(self, _):
@@ -83,9 +84,9 @@ class MiciMainLayout(Widget):
 
     if not self._setup:
       if self._alerts_layout.active_alerts() > 0:
-        self._scroller.scroll_to(self._alerts_layout.rect.x)
+        self._scroller.scroll_to(-self._alerts_layout.rect.x)
       else:
-        self._scroller.scroll_to(self._rect.width)
+        self._scroller.scroll_to(-self._rect.width)
       self._setup = True
 
     # Render
