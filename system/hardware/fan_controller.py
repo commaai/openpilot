@@ -1,24 +1,13 @@
 #!/usr/bin/env python3
 import numpy as np
-from abc import ABC, abstractmethod
 
-from openpilot.common.realtime import DT_HW
-from openpilot.common.swaglog import cloudlog
 from openpilot.common.pid import PIDController
 
-class BaseFanController(ABC):
-  @abstractmethod
-  def update(self, cur_temp: float, ignition: bool) -> int:
-    pass
 
-
-class TiciFanController(BaseFanController):
-  def __init__(self) -> None:
-    super().__init__()
-    cloudlog.info("Setting up TICI fan handler")
-
+class FanController:
+  def __init__(self, rate: int) -> None:
     self.last_ignition = False
-    self.controller = PIDController(k_p=0, k_i=4e-3, rate=(1 / DT_HW))
+    self.controller = PIDController(k_p=0, k_i=4e-3, rate=rate)
 
   def update(self, cur_temp: float, ignition: bool) -> int:
     self.controller.pos_limit = 100 if ignition else 30
@@ -26,13 +15,9 @@ class TiciFanController(BaseFanController):
 
     if ignition != self.last_ignition:
       self.controller.reset()
-
-    error = cur_temp - 75
-    fan_pwr_out = int(self.controller.update(
-                      error=error,
-                      feedforward=np.interp(cur_temp, [60.0, 100.0], [0, 100])
-                    ))
-
     self.last_ignition = ignition
-    return fan_pwr_out
 
+    return int(self.controller.update(
+                 error=(cur_temp - 75),  # temperature setpoint in C
+                 feedforward=np.interp(cur_temp, [60.0, 100.0], [0, 100])
+              ))

@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-10-23 00:50-0700\n"
-"PO-Revision-Date: 2025-10-20 18:19-0700\n"
+"PO-Revision-Date: 2026-01-24 12:37+0100\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: fr\n"
@@ -16,21 +16,22 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.8\n"
 
 #: selfdrive/ui/layouts/settings/device.py:160
 #, python-format
 msgid " Steering torque response calibration is complete."
-msgstr ""
+msgstr " L'étalonnage de la réponse du couple de direction est terminé."
 
 #: selfdrive/ui/layouts/settings/device.py:158
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
-msgstr ""
+msgstr " L'étalonnage de la réponse du couple de direction est terminé à {}%."
 
 #: selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
-msgstr ""
+msgstr " Votre appareil est orienté {:.1f}° {} et {:.1f}° {}."
 
 #: selfdrive/ui/layouts/sidebar.py:43
 msgid "--"
@@ -79,12 +80,13 @@ msgstr ""
 #: selfdrive/ui/layouts/settings/device.py:148
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
-msgstr ""
+msgstr "<br><br>L'étalonnage du délai de réponse de la direction est terminé."
 
 #: selfdrive/ui/layouts/settings/device.py:146
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr ""
+"<br><br>L'étalonnage du délai de réponse de la direction est terminé à {}%."
 
 #: selfdrive/ui/layouts/settings/firehose.py:138
 #, python-format
@@ -107,7 +109,7 @@ msgstr "AJOUTER"
 #: system/ui/widgets/network.py:139
 #, python-format
 msgid "APN Setting"
-msgstr ""
+msgstr "Paramètres APN"
 
 #: selfdrive/ui/widgets/offroad_alerts.py:109
 #, python-format
@@ -117,7 +119,7 @@ msgstr "Accuser réception d'actionnement excessif"
 #: system/ui/widgets/network.py:74 system/ui/widgets/network.py:95
 #, python-format
 msgid "Advanced"
-msgstr ""
+msgstr "Avancé"
 
 #: selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
@@ -208,18 +210,18 @@ msgstr "CONNECTER"
 #: system/ui/widgets/network.py:369
 #, python-format
 msgid "CONNECTING..."
-msgstr "CONNECTER"
+msgstr "CONNECTER..."
 
 #: system/ui/widgets/confirm_dialog.py:23 system/ui/widgets/option_dialog.py:35
 #: system/ui/widgets/keyboard.py:81 system/ui/widgets/network.py:318
 #, python-format
 msgid "Cancel"
-msgstr ""
+msgstr "Annuler"
 
 #: system/ui/widgets/network.py:134
 #, python-format
 msgid "Cellular Metered"
-msgstr ""
+msgstr "Données cellulaire limitées"
 
 #: selfdrive/ui/layouts/settings/device.py:68
 #, python-format
@@ -230,7 +232,7 @@ msgstr "Changer la langue"
 #, python-format
 msgid "Changing this setting will restart openpilot if the car is powered on."
 msgstr ""
-" La modification de ce réglage redémarrera openpilot si la voiture est sous "
+"La modification de ce réglage redémarrera openpilot si la voiture est sous "
 "tension."
 
 #: selfdrive/ui/widgets/pairing_dialog.py:129
@@ -318,7 +320,7 @@ msgstr "Personnalité de conduite"
 #: system/ui/widgets/network.py:123 system/ui/widgets/network.py:139
 #, python-format
 msgid "EDIT"
-msgstr ""
+msgstr "EDITER"
 
 #: selfdrive/ui/layouts/sidebar.py:138
 msgid "ERROR"
@@ -387,22 +389,22 @@ msgstr ""
 #: system/ui/widgets/network.py:204
 #, python-format
 msgid "Enter APN"
-msgstr ""
+msgstr "Saisir l'APN"
 
 #: system/ui/widgets/network.py:241
 #, python-format
 msgid "Enter SSID"
-msgstr ""
+msgstr "Entrer le SSID"
 
 #: system/ui/widgets/network.py:254
 #, python-format
 msgid "Enter new tethering password"
-msgstr ""
+msgstr "Saisir le mot de passe du partage de connexion"
 
 #: system/ui/widgets/network.py:237 system/ui/widgets/network.py:314
 #, python-format
 msgid "Enter password"
-msgstr ""
+msgstr "Saisir le mot de passe"
 
 #: selfdrive/ui/widgets/ssh_key.py:89
 #, python-format
@@ -412,7 +414,7 @@ msgstr "Entrez votre nom d'utilisateur GitHub"
 #: system/ui/widgets/list_view.py:123 system/ui/widgets/list_view.py:160
 #, python-format
 msgid "Error"
-msgstr ""
+msgstr "Erreur"
 
 #: selfdrive/ui/layouts/settings/toggles.py:52
 #, python-format
@@ -431,7 +433,7 @@ msgstr ""
 #: system/ui/widgets/network.py:373
 #, python-format
 msgid "FORGETTING..."
-msgstr ""
+msgstr "OUBLIER..."
 
 #: selfdrive/ui/widgets/setup.py:44
 #, python-format
@@ -493,12 +495,12 @@ msgstr ""
 #: system/ui/widgets/network.py:318 system/ui/widgets/network.py:451
 #, python-format
 msgid "Forget"
-msgstr ""
+msgstr "Oublier"
 
 #: system/ui/widgets/network.py:319
 #, python-format
 msgid "Forget Wi-Fi Network \"{}\"?"
-msgstr ""
+msgstr "Oublier le réseau Wi-Fi \"{}\" ?"
 
 #: selfdrive/ui/layouts/sidebar.py:71 selfdrive/ui/layouts/sidebar.py:125
 msgid "GOOD"
@@ -532,7 +534,7 @@ msgstr "INSTALLER"
 #: system/ui/widgets/network.py:150
 #, python-format
 msgid "IP Address"
-msgstr ""
+msgstr "Adresse IP"
 
 #: selfdrive/ui/layouts/settings/software.py:53
 #, python-format
@@ -574,7 +576,7 @@ msgstr ""
 #: selfdrive/ui/layouts/settings/device.py:60
 #, python-format
 msgid "N/A"
-msgstr ""
+msgstr "NC"
 
 #: selfdrive/ui/layouts/sidebar.py:142
 msgid "NO"
@@ -592,7 +594,7 @@ msgstr "Aucune clé SSH trouvée"
 #: selfdrive/ui/widgets/ssh_key.py:126
 #, python-format
 msgid "No SSH keys found for user '{}'"
-msgstr "Aucune clé SSH trouvée pour l'utilisateur '{username}'"
+msgstr "Aucune clé SSH trouvée pour l'utilisateur '{}'"
 
 #: selfdrive/ui/widgets/offroad_alerts.py:320
 #, python-format
@@ -677,11 +679,15 @@ msgstr "Éteindre"
 #, python-format
 msgid "Prevent large data uploads when on a metered Wi-Fi connection"
 msgstr ""
+"Eviter les transferts de données volumineux lorsque vous êtes connecté à un "
+"réseau Wi-Fi limité"
 
 #: system/ui/widgets/network.py:135
 #, python-format
 msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr ""
+"Eviter les transferts de données volumineux lors d'une connexion à un réseau "
+"cellulaire limité"
 
 #: selfdrive/ui/layouts/settings/device.py:25
 msgid ""
@@ -802,32 +808,32 @@ msgstr "Consultez les règles, fonctionnalités et limitations d'openpilot"
 #: selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "SELECT"
-msgstr ""
+msgstr "SELECTIONNER"
 
 #: selfdrive/ui/layouts/settings/developer.py:53
 #, python-format
 msgid "SSH Keys"
-msgstr ""
+msgstr "Clefs SSH"
 
 #: system/ui/widgets/network.py:310
 #, python-format
 msgid "Scanning Wi-Fi networks..."
-msgstr ""
+msgstr "Analyse des réseaux Wi-Fi..."
 
 #: system/ui/widgets/option_dialog.py:36
 #, python-format
 msgid "Select"
-msgstr ""
+msgstr "Sélectionner"
 
 #: selfdrive/ui/layouts/settings/software.py:183
 #, python-format
 msgid "Select a branch"
-msgstr ""
+msgstr "Sélectionner une branche"
 
 #: selfdrive/ui/layouts/settings/device.py:91
 #, python-format
 msgid "Select a language"
-msgstr ""
+msgstr "Sélectionner un langage"
 
 #: selfdrive/ui/layouts/settings/device.py:60
 #, python-format
@@ -880,12 +886,12 @@ msgstr "TEMPÉRATURE"
 #: selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "Target Branch"
-msgstr ""
+msgstr "Branche cible"
 
 #: system/ui/widgets/network.py:124
 #, python-format
 msgid "Tethering Password"
-msgstr ""
+msgstr "Mot de passe du partage de connexion"
 
 #: selfdrive/ui/layouts/settings/settings.py:64
 msgid "Toggles"
@@ -986,12 +992,12 @@ msgstr "Wi‑Fi"
 #: system/ui/widgets/network.py:144
 #, python-format
 msgid "Wi-Fi Network Metered"
-msgstr ""
+msgstr "Réseau Wi-Fi limité"
 
 #: system/ui/widgets/network.py:314
 #, python-format
 msgid "Wrong password"
-msgstr ""
+msgstr "Mauvais mot de passe"
 
 #: selfdrive/ui/layouts/onboarding.py:145
 #, python-format
@@ -1020,12 +1026,12 @@ msgstr "comma prime"
 #: system/ui/widgets/network.py:142
 #, python-format
 msgid "default"
-msgstr ""
+msgstr "défaut"
 
 #: selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "down"
-msgstr ""
+msgstr "bas"
 
 #: selfdrive/ui/layouts/settings/software.py:106
 #, python-format
@@ -1035,7 +1041,7 @@ msgstr "échec de la vérification de mise à jour"
 #: system/ui/widgets/network.py:237 system/ui/widgets/network.py:314
 #, python-format
 msgid "for \"{}\""
-msgstr ""
+msgstr "pour \"{}\""
 
 #: selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1045,17 +1051,17 @@ msgstr "km/h"
 #: system/ui/widgets/network.py:204
 #, python-format
 msgid "leave blank for automatic configuration"
-msgstr ""
+msgstr "ne pas remplir pour une configuration automatique"
 
 #: selfdrive/ui/layouts/settings/device.py:134
 #, python-format
 msgid "left"
-msgstr ""
+msgstr "gauche"
 
 #: system/ui/widgets/network.py:142
 #, python-format
 msgid "metered"
-msgstr ""
+msgstr "limité"
 
 #: selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
@@ -1116,7 +1122,7 @@ msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
 "Resetting calibration will restart openpilot if the car is powered on."
 msgstr ""
-" La modification de ce réglage redémarrera openpilot si la voiture est sous "
+"La modification de ce réglage redémarrera openpilot si la voiture est sous "
 "tension."
 
 #: selfdrive/ui/layouts/settings/firehose.py:20
@@ -1153,17 +1159,17 @@ msgstr ""
 #: selfdrive/ui/layouts/settings/device.py:134
 #, python-format
 msgid "right"
-msgstr ""
+msgstr "droite"
 
 #: system/ui/widgets/network.py:142
 #, python-format
 msgid "unmetered"
-msgstr ""
+msgstr "non limité"
 
 #: selfdrive/ui/layouts/settings/device.py:133
 #, python-format
 msgid "up"
-msgstr ""
+msgstr "haut"
 
 #: selfdrive/ui/layouts/settings/software.py:117
 #, python-format

@@ -121,6 +121,7 @@ class TestOnroad:
     params.put_bool("RecordFront", True)
     set_params_enabled()
     os.environ['REPLAY'] = '1'
+    os.environ['MSGQ_PREALLOC'] = '1'
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
@@ -206,8 +207,9 @@ class TestOnroad:
     result += "-------------- UI Draw Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    # skip first few frames -- connecting to vipc
-    ts = self.ts['uiDebug']['drawTimeMillis'][15:]
+    # other processes preempt ui while starting up
+    offset = int(20 * LOG_OFFSET)
+    ts = self.ts['uiDebug']['drawTimeMillis'][offset:]
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"
@@ -282,11 +284,12 @@ class TestOnroad:
     print("------------------------------------------------")
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
-    print("Memory usage: ", mems)
+    print("Overall memory usage: ", mems)
+    print("MSGQ (/dev/shm/) usage: ", subprocess.check_output(["du", "-hs", "/dev/shm"]).split()[0].decode())
 
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    assert np.average(mems) <= 85, "Average memory usage above 85%"
+    assert np.average(mems) <= 80, "Average memory usage too high"
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 

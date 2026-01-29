@@ -22,7 +22,7 @@ shopt -s huponexit # kill all child processes when the shell exits
 
 export CI=1
 export PYTHONWARNINGS=error
-export LOGPRINT=debug
+#export LOGPRINT=debug # this has gotten too spammy...
 export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}

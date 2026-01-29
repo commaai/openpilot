@@ -1,3 +1,4 @@
+import requests
 import threading
 import time
 import pyray as rl
@@ -44,6 +45,7 @@ class FirehoseLayoutBase(Widget):
   def __init__(self):
     super().__init__()
     self._params = Params()
+    self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self._segment_count = self._get_segment_count()
 
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
@@ -203,7 +205,7 @@ class FirehoseLayoutBase(Widget):
       if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
         return
       identity_token = get_token(dongle_id)
-      response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token)
+      response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token, session=self._session)
       if response.status_code == 200:
         data = response.json()
         self._segment_count = data.get("firehose", 0)

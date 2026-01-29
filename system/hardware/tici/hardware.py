@@ -8,7 +8,7 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
-from openpilot.common.util import sudo_read, sudo_write
+from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, LPABase, ThermalConfig, ThermalZone
 from openpilot.system.hardware.tici import iwlist
@@ -125,7 +125,7 @@ class Tici(HardwareBase):
       return int(f.read())
 
   def set_ir_power(self, percent: int):
-    if self.get_device_type() in ("tici", "tizi"):
+    if self.get_device_type() == "tizi":
       return
 
     value = int((percent / 100) * 300)
@@ -369,7 +369,7 @@ class Tici(HardwareBase):
     if self.amplifier is not None:
       self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
       if not powersave_enabled:
-        self.amplifier.initialize_configuration(self.get_device_type())
+        self.amplifier.initialize_configuration()
 
     # *** CPU config ***
 
@@ -404,7 +404,7 @@ class Tici(HardwareBase):
 
   def initialize_hardware(self):
     if self.amplifier is not None:
-      self.amplifier.initialize_configuration(self.get_device_type())
+      self.amplifier.initialize_configuration()
 
     # Allow hardwared to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
