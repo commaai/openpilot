@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+import sys
+import subprocess
+import threading
+import pyray as rl
+from enum import IntEnum
+
+from openpilot.system.hardware import HARDWARE
+from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+from openpilot.system.ui.lib.wifi_manager import WifiManager
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
+from openpilot.system.ui.widgets.label import gui_text_box, gui_label
+from openpilot.system.ui.widgets.network import WifiManagerUI
+
+# Constants
+MARGIN = 50
+BUTTON_HEIGHT = 160
+BUTTON_WIDTH = 400
+PROGRESS_BAR_HEIGHT = 72
+TITLE_FONT_SIZE = 80
+BODY_FONT_SIZE = 65
+BACKGROUND_COLOR = rl.BLACK
+PROGRESS_BG_COLOR = rl.Color(41, 41, 41, 255)
+PROGRESS_COLOR = rl.Color(54, 77, 239, 255)
+
+
+class Screen(IntEnum):
+  PROMPT = 0
+  WIFI = 1
+  PROGRESS = 2
+
+
+class Updater(Widget):
+  def __init__(self, updater_path, manifest_path):
+    super().__init__()
+    self.updater = updater_path
+    self.manifest = manifest_path
+    self.current_screen = Screen.PROMPT
+
+    self.progress_value = 0
+    self.progress_text = "Loading..."
+    self.show_reboot_button = False
+    self.process = None
+    self.update_thread = None
+    self.wifi_manager_ui = WifiManagerUI(WifiManager())
+
+    # Buttons
+    self._wifi_button = Button("Connect to Wi-Fi", click_callback=lambda: self.set_current_screen(Screen.WIFI))
+    self._install_button = Button("Install", click_callback=self.install_update, button_style=ButtonStyle.PRIMARY)
+    self._back_button = Button("Back", click_callback=lambda: self.set_current_screen(Screen.PROMPT))
+    self._reboot_button = Button("Reboot", click_callback=lambda: HARDWARE.reboot())
+
+  def set_current_screen(self, screen: Screen):
+    self.current_screen = screen
+
+  def install_update(self):
+    self.set_current_screen(Screen.PROGRESS)
+    self.progress_value = 0
+    self.progress_text = "Downloading..."
+    self.show_reboot_button = False
+
+    # Start the update process in a separate thread
+    self.update_thread = threading.Thread(target=self._run_update_process)
+    self.update_thread.daemon = True
+    self.update_thread.start()
+
+  def _run_update_process(self):
+    # TODO: just import it and run in a thread without a subprocess
+    cmd = [self.updater, "--swap", self.manifest]
+    self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    text=True, bufsize=1, universal_newlines=True)
+
+    if self.process.stdout is not None:
+      for line in self.process.stdout:
+        parts = line.strip().split(":")
+        if len(parts) == 2:
+          self.progress_text = parts[0]
+          try:
+            self.progress_value = int(float(parts[1]))
+          except ValueError:
+            pass
+
+    exit_code = self.process.wait()
+    if exit_code == 0:
+      HARDWARE.reboot()
+    else:
+      self.progress_text = "Update failed"
+      self.show_reboot_button = True
+
+  def render_prompt_screen(self, rect: rl.Rectangle):
+    # Title
+    title_rect = rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE * FONT_SCALE)
+    gui_label(title_rect, "Update Required", TITLE_FONT_SIZE, font_weight=FontWeight.BOLD)
+
+    # Description
+    desc_text = ("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
+                 "The download size is approximately 1GB.")
+
+    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE * FONT_SCALE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * FONT_SCALE * 4)
+    gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)
+
+    # Buttons at the bottom
+    button_y = rect.height - MARGIN - BUTTON_HEIGHT
+    button_width = (rect.width - MARGIN * 3) // 2
+
+    # WiFi button
+    wifi_button_rect = rl.Rectangle(MARGIN, button_y, button_width, BUTTON_HEIGHT)
+    self._wifi_button.render(wifi_button_rect)
+
+    # Install button
+    install_button_rect = rl.Rectangle(MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT)
+    self._install_button.render(install_button_rect)
+
+  def render_wifi_screen(self, rect: rl.Rectangle):
+    # Draw the Wi-Fi manager UI
+    wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2,
+                             rect.height - BUTTON_HEIGHT - MARGIN * 3)
+    rl.draw_rectangle_rounded(wifi_rect, 0.035, 10, rl.Color(51, 51, 51, 255))
+    wifi_content_rect = rl.Rectangle(wifi_rect.x + 50, wifi_rect.y, wifi_rect.width - 100, wifi_rect.height)
+    self.wifi_manager_ui.render(wifi_content_rect)
+
+    back_button_rect = rl.Rectangle(MARGIN, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+    self._back_button.render(back_button_rect)
+
+  def render_progress_screen(self, rect: rl.Rectangle):
+    title_rect = rl.Rectangle(MARGIN + 100, 330, rect.width - MARGIN * 2 - 200, 100)
+    gui_label(title_rect, self.progress_text, 90, font_weight=FontWeight.SEMI_BOLD)
+
+    # Progress bar
+    bar_rect = rl.Rectangle(MARGIN + 100, 330 + 100 + 100, rect.width - MARGIN * 2 - 200, PROGRESS_BAR_HEIGHT)
+    rl.draw_rectangle_rounded(bar_rect, 0.5, 10, PROGRESS_BG_COLOR)
+
+    # Calculate the width of the progress chunk
+    progress_width = (bar_rect.width * self.progress_value) / 100
+    if progress_width > 0:
+      progress_rect = rl.Rectangle(bar_rect.x, bar_rect.y, progress_width, bar_rect.height)
+      rl.draw_rectangle_rounded(progress_rect, 0.5, 10, PROGRESS_COLOR)
+
+    # Show reboot button if needed
+    if self.show_reboot_button:
+      reboot_rect = rl.Rectangle(MARGIN + 100, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+      self._reboot_button.render(reboot_rect)
+
+  def _render(self, rect: rl.Rectangle):
+    if self.current_screen == Screen.PROMPT:
+      self.render_prompt_screen(rect)
+    elif self.current_screen == Screen.WIFI:
+      self.render_wifi_screen(rect)
+    elif self.current_screen == Screen.PROGRESS:
+      self.render_progress_screen(rect)
+
+
+def main():
+  if len(sys.argv) < 3:
+    print("Usage: updater.py <updater_path> <manifest_path>")
+    sys.exit(1)
+
+  updater_path = sys.argv[1]
+  manifest_path = sys.argv[2]
+
+  try:
+    gui_app.init_window("System Update")
+    updater = Updater(updater_path, manifest_path)
+    for should_render in gui_app.render():
+      if should_render:
+        updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+  finally:
+    # Make sure we clean up even if there's an error
+    gui_app.close()
+
+
+if __name__ == "__main__":
+  main()

@@ -1,0 +1,625 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0A52E8692F18FC6900A816CD /* tiny_icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 0A52E8682F18FC6900A816CD /* tiny_icon.icon */; };
+		0A5C11DD2F18E466006DBBCA /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5C11DC2F18E461006DBBCA /* server.c */; };
+		0ACB55392E9CB880007029EF /* PCIDriverKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0ACB55382E9CB880007029EF /* PCIDriverKit.framework */; };
+		0AD7C2E52F18DEBC00562D1A /* TinyGPUCLIRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD7C2E42F18DEB800562D1A /* TinyGPUCLIRunner.swift */; };
+		54798269286A3512009785F6 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 54798268286A3512009785F6 /* CoreAudio.framework */; };
+		549EB123286A1D48009D38AB /* org.tinygrad.tinygpu.edriver.dext in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = C5B7D9BC26128AC50089B4C3 /* org.tinygrad.tinygpu.edriver.dext */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		549EB131286A2B98009D38AB /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 549EB130286A2B98009D38AB /* IOKit.framework */; };
+		54E42BC8286A1697000E1E9A /* TinyGPUApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E42BB8286A1696000E1E9A /* TinyGPUApp.swift */; };
+		54E42BCC286A1697000E1E9A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 54E42BBA286A1697000E1E9A /* Assets.xcassets */; };
+		C5B7D9C326128AC50089B4C3 /* TinyGPUDriver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5B7D9C226128AC50089B4C3 /* TinyGPUDriver.cpp */; };
+		C5B7D9C526128AC50089B4C3 /* TinyGPUDriver.iig in Sources */ = {isa = PBXBuildFile; fileRef = C5B7D9C426128AC50089B4C3 /* TinyGPUDriver.iig */; };
+		C5C3BBB32612ACDC003C7BFE /* AudioDriverKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5C3BBB12612ACD3003C7BFE /* AudioDriverKit.framework */; };
+		C5C3BBB52612ACEF003C7BFE /* DriverKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5C3BBB42612ACEF003C7BFE /* DriverKit.framework */; };
+		C5D787AC261667FC006047E5 /* TinyGPUDriverUserClient.iig in Sources */ = {isa = PBXBuildFile; fileRef = C5D787AB261667FC006047E5 /* TinyGPUDriverUserClient.iig */; };
+		C5D787AE26168E59006047E5 /* TinyGPUDriverUserClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D787AD26168D1E006047E5 /* TinyGPUDriverUserClient.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		549EB126286A1D66009D38AB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C5B7D9B326128AC50089B4C3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C5B7D9BB26128AC50089B4C3;
+			remoteInfo = SimpleAudioDriver;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0AD7C2DB2F18D7D500562D1A /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		549EB122286A1D3A009D38AB /* Embed System Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				549EB123286A1D48009D38AB /* org.tinygrad.tinygpu.edriver.dext in Embed System Extensions */,
+			);
+			name = "Embed System Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0A52E8682F18FC6900A816CD /* tiny_icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = tiny_icon.icon; sourceTree = "<group>"; };
+		0A5C11DC2F18E461006DBBCA /* server.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = server.c; sourceTree = "<group>"; };
+		0A5C11DE2F18E468006DBBCA /* TinyGPU-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TinyGPU-Bridging-Header.h"; sourceTree = "<group>"; };
+		0ACB55382E9CB880007029EF /* PCIDriverKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PCIDriverKit.framework; path = System/DriverKit/System/Library/Frameworks/PCIDriverKit.framework; sourceTree = SDKROOT; };
+		0AD7C2D62F18D3DB00562D1A /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
+		0AD7C2D82F18D3E300562D1A /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk/System/Library/Frameworks/CoreFoundation.framework; sourceTree = DEVELOPER_DIR; };
+		0AD7C2E42F18DEB800562D1A /* TinyGPUCLIRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyGPUCLIRunner.swift; sourceTree = "<group>"; };
+		0AFA851D2F1CE486005FDAC2 /* TinyGPUDriver.Release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TinyGPUDriver.Release.entitlements; sourceTree = "<group>"; };
+		54798268286A3512009785F6 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.0.sdk/System/Library/Frameworks/CoreAudio.framework; sourceTree = DEVELOPER_DIR; };
+		549EB130286A2B98009D38AB /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.0.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
+		549EB132286A2B9D009D38AB /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS16.0.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
+		54E42BB8286A1696000E1E9A /* TinyGPUApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyGPUApp.swift; sourceTree = "<group>"; };
+		54E42BBA286A1697000E1E9A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		54E42BC4286A1697000E1E9A /* TinyGPU.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TinyGPU.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		54E42BC6286A1697000E1E9A /* macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = macOS.entitlements; sourceTree = "<group>"; };
+		C5B7D9BC26128AC50089B4C3 /* org.tinygrad.tinygpu.edriver.dext */ = {isa = PBXFileReference; explicitFileType = "wrapper.driver-extension"; includeInIndex = 0; path = org.tinygrad.tinygpu.edriver.dext; sourceTree = BUILT_PRODUCTS_DIR; };
+		C5B7D9BF26128AC50089B4C3 /* DriverKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DriverKit.framework; path = Library/Frameworks/DriverKit.framework; sourceTree = DEVELOPER_DIR; };
+		C5B7D9C226128AC50089B4C3 /* TinyGPUDriver.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TinyGPUDriver.cpp; sourceTree = "<group>"; usesTabs = 1; };
+		C5B7D9C426128AC50089B4C3 /* TinyGPUDriver.iig */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.iig; path = TinyGPUDriver.iig; sourceTree = "<group>"; };
+		C5B7D9C626128AC50089B4C3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C5B7D9CC26128ADA0089B4C3 /* AudioDriverKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioDriverKit.framework; path = System/DriverKit/System/Library/Frameworks/AudioDriverKit.framework; sourceTree = SDKROOT; };
+		C5B7D9CE26128B150089B4C3 /* TinyGPUDriver.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TinyGPUDriver.entitlements; sourceTree = "<group>"; };
+		C5C0063326178F98003345D8 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk/System/Library/Frameworks/AppKit.framework; sourceTree = DEVELOPER_DIR; };
+		C5C006352617ACB8003345D8 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk/System/Library/Frameworks/CoreAudio.framework; sourceTree = DEVELOPER_DIR; };
+		C5C3BBB12612ACD3003C7BFE /* AudioDriverKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioDriverKit.framework; path = Platforms/DriverKit.platform/Developer/SDKs/DriverKit.MacOSX21.0.Internal.sdk/System/DriverKit/System/Library/Frameworks/AudioDriverKit.framework; sourceTree = DEVELOPER_DIR; };
+		C5C3BBB42612ACEF003C7BFE /* DriverKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DriverKit.framework; path = Platforms/DriverKit.platform/Developer/SDKs/DriverKit.MacOSX21.0.Internal.sdk/System/DriverKit/System/Library/Frameworks/DriverKit.framework; sourceTree = DEVELOPER_DIR; };
+		C5D787AB261667FC006047E5 /* TinyGPUDriverUserClient.iig */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.iig; path = TinyGPUDriverUserClient.iig; sourceTree = "<group>"; };
+		C5D787AD26168D1E006047E5 /* TinyGPUDriverUserClient.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TinyGPUDriverUserClient.cpp; sourceTree = "<group>"; };
+		C5D787B026169723006047E5 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
+		C5D787B22616973F006047E5 /* SystemExtensions.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemExtensions.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk/System/Library/Frameworks/SystemExtensions.framework; sourceTree = DEVELOPER_DIR; };
+		C5D787B426169747006047E5 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		54E42BC1286A1697000E1E9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				54798269286A3512009785F6 /* CoreAudio.framework in Frameworks */,
+				549EB131286A2B98009D38AB /* IOKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5B7D9B926128AC50089B4C3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5C3BBB32612ACDC003C7BFE /* AudioDriverKit.framework in Frameworks */,
+				C5C3BBB52612ACEF003C7BFE /* DriverKit.framework in Frameworks */,
+				0ACB55392E9CB880007029EF /* PCIDriverKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		54E42BB7286A1696000E1E9A /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				0A5C11DC2F18E461006DBBCA /* server.c */,
+				0AD7C2E42F18DEB800562D1A /* TinyGPUCLIRunner.swift */,
+				54E42BB8286A1696000E1E9A /* TinyGPUApp.swift */,
+				54E42BBA286A1697000E1E9A /* Assets.xcassets */,
+				0A52E8682F18FC6900A816CD /* tiny_icon.icon */,
+				0A5C11DE2F18E468006DBBCA /* TinyGPU-Bridging-Header.h */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		54E42BC5286A1697000E1E9A /* macOS */ = {
+			isa = PBXGroup;
+			children = (
+				54E42BC6286A1697000E1E9A /* macOS.entitlements */,
+			);
+			path = macOS;
+			sourceTree = "<group>";
+		};
+		C5B7D9B226128AC50089B4C3 = {
+			isa = PBXGroup;
+			children = (
+				C5B7D9C126128AC50089B4C3 /* TinyGPUDriverExtension */,
+				54E42BB7286A1696000E1E9A /* Shared */,
+				54E42BC5286A1697000E1E9A /* macOS */,
+				C5B7D9BE26128AC50089B4C3 /* Frameworks */,
+				C5B7D9BD26128AC50089B4C3 /* Products */,
+			);
+			sourceTree = "<group>";
+			usesTabs = 1;
+		};
+		C5B7D9BD26128AC50089B4C3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C5B7D9BC26128AC50089B4C3 /* org.tinygrad.tinygpu.edriver.dext */,
+				54E42BC4286A1697000E1E9A /* TinyGPU.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C5B7D9BE26128AC50089B4C3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0AD7C2D82F18D3E300562D1A /* CoreFoundation.framework */,
+				0AD7C2D62F18D3DB00562D1A /* IOKit.framework */,
+				0ACB55382E9CB880007029EF /* PCIDriverKit.framework */,
+				54798268286A3512009785F6 /* CoreAudio.framework */,
+				549EB130286A2B98009D38AB /* IOKit.framework */,
+				549EB132286A2B9D009D38AB /* IOKit.framework */,
+				C5C006352617ACB8003345D8 /* CoreAudio.framework */,
+				C5C0063326178F98003345D8 /* AppKit.framework */,
+				C5D787B426169747006047E5 /* Foundation.framework */,
+				C5D787B22616973F006047E5 /* SystemExtensions.framework */,
+				C5D787B026169723006047E5 /* IOKit.framework */,
+				C5C3BBB42612ACEF003C7BFE /* DriverKit.framework */,
+				C5B7D9CC26128ADA0089B4C3 /* AudioDriverKit.framework */,
+				C5C3BBB12612ACD3003C7BFE /* AudioDriverKit.framework */,
+				C5B7D9BF26128AC50089B4C3 /* DriverKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C5B7D9C126128AC50089B4C3 /* TinyGPUDriverExtension */ = {
+			isa = PBXGroup;
+			children = (
+				C5B7D9C226128AC50089B4C3 /* TinyGPUDriver.cpp */,
+				C5B7D9C426128AC50089B4C3 /* TinyGPUDriver.iig */,
+				C5D787AD26168D1E006047E5 /* TinyGPUDriverUserClient.cpp */,
+				C5D787AB261667FC006047E5 /* TinyGPUDriverUserClient.iig */,
+				C5B7D9C626128AC50089B4C3 /* Info.plist */,
+				C5B7D9CE26128B150089B4C3 /* TinyGPUDriver.entitlements */,
+				0AFA851D2F1CE486005FDAC2 /* TinyGPUDriver.Release.entitlements */,
+			);
+			path = TinyGPUDriverExtension;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		C5B7D9B726128AC50089B4C3 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		54E42BC3286A1697000E1E9A /* TinyGPU */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54E42BD2286A1697000E1E9A /* Build configuration list for PBXNativeTarget "TinyGPU" */;
+			buildPhases = (
+				54E42BC0286A1697000E1E9A /* Sources */,
+				54E42BC1286A1697000E1E9A /* Frameworks */,
+				54E42BC2286A1697000E1E9A /* Resources */,
+				549EB122286A1D3A009D38AB /* Embed System Extensions */,
+				0AD7C2DB2F18D7D500562D1A /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				549EB127286A1D66009D38AB /* PBXTargetDependency */,
+			);
+			name = TinyGPU;
+			productName = "SimpleAudioDriverExtension2 (macOS)";
+			productReference = 54E42BC4286A1697000E1E9A /* TinyGPU.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C5B7D9BB26128AC50089B4C3 /* TinyGPUDriver */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C5B7D9C926128AC50089B4C3 /* Build configuration list for PBXNativeTarget "TinyGPUDriver" */;
+			buildPhases = (
+				C5B7D9B726128AC50089B4C3 /* Headers */,
+				C5B7D9B826128AC50089B4C3 /* Sources */,
+				C5B7D9B926128AC50089B4C3 /* Frameworks */,
+				C5B7D9BA26128AC50089B4C3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TinyGPUDriver;
+			productName = SimpleAudioDriverExtension;
+			productReference = C5B7D9BC26128AC50089B4C3 /* org.tinygrad.tinygpu.edriver.dext */;
+			productType = "com.apple.product-type.driver-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C5B7D9B326128AC50089B4C3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				DefaultBuildSystemTypeForWorkspace = Latest;
+				LastSwiftUpdateCheck = 1400;
+				LastUpgradeCheck = 1600;
+				ORGANIZATIONNAME = Apple;
+				TargetAttributes = {
+					54E42BC3286A1697000E1E9A = {
+						CreatedOnToolsVersion = 14.0;
+						LastSwiftMigration = 2620;
+					};
+					C5B7D9BB26128AC50089B4C3 = {
+						CreatedOnToolsVersion = 13.0;
+					};
+				};
+			};
+			buildConfigurationList = C5B7D9B626128AC50089B4C3 /* Build configuration list for PBXProject "TinyGPUDriverExtension" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = C5B7D9B226128AC50089B4C3;
+			productRefGroup = C5B7D9BD26128AC50089B4C3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C5B7D9BB26128AC50089B4C3 /* TinyGPUDriver */,
+				54E42BC3286A1697000E1E9A /* TinyGPU */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		54E42BC2286A1697000E1E9A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				54E42BCC286A1697000E1E9A /* Assets.xcassets in Resources */,
+				0A52E8692F18FC6900A816CD /* tiny_icon.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5B7D9BA26128AC50089B4C3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		54E42BC0286A1697000E1E9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				54E42BC8286A1697000E1E9A /* TinyGPUApp.swift in Sources */,
+				0A5C11DD2F18E466006DBBCA /* server.c in Sources */,
+				0AD7C2E52F18DEBC00562D1A /* TinyGPUCLIRunner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5B7D9B826128AC50089B4C3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5B7D9C526128AC50089B4C3 /* TinyGPUDriver.iig in Sources */,
+				C5D787AE26168E59006047E5 /* TinyGPUDriverUserClient.cpp in Sources */,
+				C5D787AC261667FC006047E5 /* TinyGPUDriverUserClient.iig in Sources */,
+				C5B7D9C326128AC50089B4C3 /* TinyGPUDriver.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		549EB127286A1D66009D38AB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C5B7D9BB26128AC50089B4C3 /* TinyGPUDriver */;
+			targetProxy = 549EB126286A1D66009D38AB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		54E42BCF286A1697000E1E9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = tiny_icon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = macOS/macOS.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 9YG3G8543N;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.1;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.tinygrad.tinygpu.installer;
+				PRODUCT_NAME = TinyGPU;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/TinyGPU-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		54E42BD0286A1697000E1E9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = tiny_icon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = macOS/macOS.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 9YG3G8543N;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.1;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.tinygrad.tinygpu.installer;
+				PRODUCT_NAME = TinyGPU;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Shared/TinyGPU-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C5B7D9C726128AC50089B4C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DRIVERKIT_DEPLOYMENT_TARGET = 21.0;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = driverkit;
+			};
+			name = Debug;
+		};
+		C5B7D9C826128AC50089B4C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DRIVERKIT_DEPLOYMENT_TARGET = 21.0;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = driverkit;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		C5B7D9CA26128AC50089B4C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_ENTITLEMENTS = TinyGPUDriverExtension/TinyGPUDriver.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 9YG3G8543N;
+				DRIVERKIT_DEPLOYMENT_TARGET = 21.0;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXCLUDED_ARCHS = "";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/System/DriverKit/System/Library/Frameworks",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TinyGPUDriverExtension/Info.plist;
+				INFOPLIST_KEY_OSBundleUsageDescription = "TinyGPU Driver";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.tinygrad.tinygpu.edriver;
+				PRODUCT_NAME = "$(inherited)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SDKROOT = driverkit;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = driverkit;
+			};
+			name = Debug;
+		};
+		C5B7D9CB26128AC50089B4C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_ENTITLEMENTS = TinyGPUDriverExtension/TinyGPUDriver.Release.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=driverkit*]" = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=driverkit*]" = 9YG3G8543N;
+				DRIVERKIT_DEPLOYMENT_TARGET = 21.0;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXCLUDED_ARCHS = "";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/System/DriverKit/System/Library/Frameworks",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TinyGPUDriverExtension/Info.plist;
+				INFOPLIST_KEY_OSBundleUsageDescription = "TinyGPU Driver";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				MARKETING_VERSION = 1.0.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = org.tinygrad.tinygpu.edriver;
+				PRODUCT_NAME = "$(inherited)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SDKROOT = driverkit;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = driverkit;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		54E42BD2286A1697000E1E9A /* Build configuration list for PBXNativeTarget "TinyGPU" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54E42BCF286A1697000E1E9A /* Debug */,
+				54E42BD0286A1697000E1E9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C5B7D9B626128AC50089B4C3 /* Build configuration list for PBXProject "TinyGPUDriverExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C5B7D9C726128AC50089B4C3 /* Debug */,
+				C5B7D9C826128AC50089B4C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C5B7D9C926128AC50089B4C3 /* Build configuration list for PBXNativeTarget "TinyGPUDriver" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C5B7D9CA26128AC50089B4C3 /* Debug */,
+				C5B7D9CB26128AC50089B4C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C5B7D9B326128AC50089B4C3 /* Project object */;
+}

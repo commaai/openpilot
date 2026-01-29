@@ -1,0 +1,149 @@
+[project]
+name = "opendbc"
+version = "0.2.1"
+description = "CAN bus databases and tools"
+license = "MIT"
+authors = [{ name = "Vehicle Researcher", email = "user@comma.ai" }]
+readme = "README.md"
+requires-python = ">=3.11,<3.13"  # pycapnp doesn't work with 3.13
+
+urls = { "homepage" = "https://github.com/commaai/opendbc" }
+
+dependencies = [
+  "scons",
+  "numpy",
+  "crcmod-plus",
+  "tqdm",
+  "pycapnp==2.1.0",
+  "pycryptodome",
+]
+
+[project.optional-dependencies]
+testing = [
+  "comma-car-segments @ https://huggingface.co/datasets/commaai/commaCarSegments/resolve/main/dist/comma_car_segments-0.1.0-py3-none-any.whl",
+  "cffi",
+  "gcovr",
+  # FIXME: pytest 9.0.0 doesn't support unittest.SkipTest
+  "pytest==8.4.2",
+  "pytest-coverage",
+  "pytest-mock",
+  "pytest-randomly",
+  # https://github.com/pytest-dev/pytest-xdist/pull/1229
+  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
+  "pytest-subtests",
+  "hypothesis==6.47.*",
+  "parameterized>=0.8,<0.9",
+  "zstandard",
+
+  # static analysis
+  "ruff",
+  "ty",
+  "lefthook",
+  "cpplint",
+  "codespell",
+]
+docs = [
+  "Jinja2",
+  "natsort",
+]
+examples = [
+  "inputs",
+  "matplotlib",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = "-Werror --strict-config --strict-markers --durations=10 -n auto"
+python_files = "test_*.py"
+testpaths = [
+  "opendbc"
+]
+
+[tool.codespell]
+quiet-level = 3
+ignore-words-list = "alo,ba,bu,deque,hda,grey,arange"
+builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
+check-hidden = true
+
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+line-length = 160
+indent-width = 2
+target-version="py311"
+
+[tool.ruff.lint]
+preview = true
+select = [
+  "E", "F", "W", "PIE", "C4", "ISC", "A", "B",
+  "NPY", # numpy
+  "UP",  # pyupgrade
+  "TRY203", "TRY400", "TRY401", # try/excepts
+  "RUF008", "RUF100",
+  "TID251",
+  "PLR1704",
+  "INP001",
+]
+ignore = [
+  "E302", "E305",  # too restrictive
+  "W292",
+  "E741",
+  "E402",
+  "C408",
+  "ISC003",
+  "B027",
+  "B024",
+  "UP031",
+  "NPY002",  # new numpy random syntax is worse
+  "C420",
+  "E111", "E114", "E226", "E241",
+  "E221", "E265", "E266", "E261",
+  "E252", "E251", "E231", "E225",
+  "E262", "C419",
+]
+flake8-implicit-str-concat.allow-multiline=false
+
+[tool.ruff.lint.per-file-ignores]
+"site_scons/*" = ["ALL"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+"numpy.mean".msg = "Sum and divide. np.mean is slow"
+# TODO: re-enable when all tests are converted to pytest
+#"unittest".msg = "Use pytest"
+
+[tool.ty.rules]
+# Ignore rules that produce false positives due to:
+# - Dynamic attributes on LibSafety (loaded from compiled C library)
+# - External dependencies not installed (panda, cereal, openpilot)
+# - capnp dynamically generated types
+possibly-missing-attribute = "ignore"
+unresolved-attribute = "ignore"
+unresolved-import = "ignore"
+
+# Intentional LSP violations in subclass method signatures
+invalid-method-override = "ignore"
+
+# Optional callables called without None checks in test code
+call-non-callable = "ignore"
+
+# Complex type narrowing ty doesn't handle well (isinstance with abstract types)
+invalid-argument-type = "ignore"
+
+# Dynamic type patterns (e.g., values converted from Number to list in __init__)
+not-subscriptable = "ignore"
+unsupported-operator = "ignore"
+
+# Return types with complex callable signatures
+invalid-return-type = "ignore"
+
+# Test class method signature differences
+too-many-positional-arguments = "ignore"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"opendbc.safety" = ["*.h", "board/*.h", "board/drivers/*.h", "modes/*.h"]
