@@ -1,3 +1,5 @@
+# lol, lmao even
+
 name: tests
 
 on:
@@ -120,7 +122,7 @@ jobs:
           scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}-macos
     - name: Building openpilot
-      run: . .venv/bin/activate && scons -j$(nproc)
+      run: . .venv/bin/activate && SKIP_PANDA=1 scons -j$(nproc)
 
   static_analysis:
     name: static analysis
@@ -157,6 +159,8 @@ jobs:
       id: setup-step
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
+      env:
+        SKIP_PANDA: 1
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
@@ -217,13 +221,7 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
       with:
@@ -231,14 +229,26 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
       id: setup-step
     - name: Build openpilot
+      timeout-minutes: 45
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Driving test
-      timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
+      timeout-minutes: 20
       run: |
+        mkdir -p .ci_artifacts/logs
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
+                        LOG_ROOT=/tmp/openpilot/.ci_artifacts/logs \
+                        SIM_LOGS=1 \
+                        PYOPENCL_CTX=0 \
                         CI=1 pytest -s tools/sim/tests/test_metadrive_bridge.py"
+    - name: Upload simulator logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: metadrive-sim-logs-${{ github.run_id }}-${{ github.run_attempt }}
+        path: .ci_artifacts/logs
+        retention-days: 7
 
   create_raylib_ui_report:
     name: Create raylib UI Report
