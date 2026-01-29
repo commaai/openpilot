@@ -3,10 +3,6 @@ import gc
 import os
 import pytest
 
-from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.system.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
-
 # TODO: pytest-cpp doesn't support FAIL, and we need to create test translations in sessionstart
 # pending https://github.com/pytest-dev/pytest-cpp/pull/147
 collect_ignore = [
@@ -47,6 +43,7 @@ def clean_env():
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
+  from openpilot.common.prefix import OpenpilotPrefix
   with clean_env():
     # setup a clean environment for each test
     with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
@@ -58,6 +55,7 @@ def openpilot_function_fixture(request):
       assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
 
     # cleanup any started processes
+    from openpilot.system.manager import manager
     manager.manager_cleanup()
 
     # some processes disable gc for performance, re-enable here
@@ -78,6 +76,7 @@ def tici_setup_fixture(request, openpilot_function_fixture):
   """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
   if 'skip_tici_setup' in request.keywords:
     return
+  from openpilot.system.hardware import HARDWARE
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
@@ -85,6 +84,11 @@ def tici_setup_fixture(request, openpilot_function_fixture):
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
+  # Only import TICI if there are tici tests to process
+  has_tici_tests = any("tici" in item.keywords for item in items)
+  TICI = None
+  if has_tici_tests:
+    from openpilot.system.hardware import TICI
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
     if "tici" in item.keywords:
