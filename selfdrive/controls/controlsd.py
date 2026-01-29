@@ -93,9 +93,10 @@ class Controls:
 
     # Check which actuators can be enabled
     standstill = abs(CS.vEgo) <= max(self.CP.minSteerSpeed, 0.3) or CS.standstill
+    override_longitudinal = any(e.overrideLongitudinal for e in self.sm['onroadEvents'])
     CC.latActive = self.sm['selfdriveState'].active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.CP.steerAtStandstill)
-    CC.longActive = CC.enabled and self.CP.openpilotLongitudinalControl
+    CC.longActive = CC.enabled and self.CP.openpilotLongitudinalControl and (not override_longitudinal or self.CP.longActiveWithGasOverride)
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
@@ -112,7 +113,6 @@ class Controls:
 
     # accel PID loop
     pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, CS.vCruise * CV.KPH_TO_MS)
-    override_longitudinal = any(e.overrideLongitudinal for e in self.sm['onroadEvents'])
     actuators.accel = float(self.LoC.update(CC.longActive, CS, long_plan.aTarget, long_plan.shouldStop,
                                             pid_accel_limits, freeze_integrator=override_longitudinal))
 
