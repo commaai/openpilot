@@ -313,11 +313,12 @@ class WifiUIMici(BigMultiOptionDialog):
   # Wait this long after user interacts with widget to update network list
   INACTIVITY_TIMEOUT = 1
 
-  def __init__(self, wifi_manager: WifiManager, back_callback: Callable):
+  def __init__(self, wifi_manager: WifiManager, back_callback: Callable, back_on_activate: bool = False):
     super().__init__([], None, None, right_btn_callback=None)
 
     # Set up back navigation
     self.set_back_callback(back_callback)
+    self.back_on_activate = back_on_activate
 
     self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network, self._open_network_manage_page)
     self._network_info_page.set_connecting(lambda: self._connecting)
@@ -429,6 +430,10 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _on_activated(self):
     self._connecting = None
+    if self.back_on_activate:
+      # Close the overlay and go back
+      gui_app.set_modal_overlay(None)
+      self._back_callback()
 
   def _on_forgotten(self):
     self._connecting = None
