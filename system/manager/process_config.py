@@ -69,7 +69,7 @@ def and_(*fns):
 
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
-  PythonProcess("ble", "system.athena.ble", ble_enabled),
+  PythonProcess("ble", "system.athena.ble", ble_enabled, enabled=TICI),
 
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
