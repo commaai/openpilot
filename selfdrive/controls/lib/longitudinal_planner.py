@@ -208,7 +208,8 @@ class LongitudinalPlanner:
     cruise_accel = smooth_value(cruise_accel, self.output_a_target, TAU_CRUISE)
     out_accels[Source.CRUISE] = (cruise_accel, False)
 
-    lead_info = {Source.LEAD0: sm['radarState'].leadOne, Source.LEAD1: sm['radarState'].leadTwo}
+    lead_0, lead_1 = sm['radarState'].leadOne, sm['radarState'].leadTwo
+    lead_info = {Source.LEAD0: lead_0, Source.LEAD1: lead_1}
     for key in lead_info.keys():
       lead_xv = process_lead(lead_info[key])
       if lead_xv is None:
@@ -222,7 +223,8 @@ class LongitudinalPlanner:
 
       action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
       out_accels[key] = get_accel_from_plan(v_traj, a_traj, T_IDXS_LEAD, action_t, self.CP.vEgoStopping)
-
+    if not lead_0.status:
+      self.crash_cnt = 0
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
     self.fcw = self.crash_cnt > 2 and not sm['carState'].standstill
@@ -232,6 +234,7 @@ class LongitudinalPlanner:
     source, (output_a_target, _) = min(out_accels.items(), key=lambda x: x[1][0])
     self.source = source
     self.output_should_stop = any(should_stop for _, should_stop in out_accels.values())
+    output_a_target = smooth_value(output_a_target, self.output_a_target, 0.2)
 
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
 
