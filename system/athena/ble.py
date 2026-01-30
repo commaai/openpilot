@@ -116,7 +116,7 @@ def init_bluetooth():
         continue
 
       if b"UP RUNNING" in result.stdout:
-        logcloudlog.info("Bluetooth initialized")
+        cloudlog.info("Bluetooth initialized")
         subprocess.run(["sudo", "hciconfig", "hci0", "name", device_name], capture_output=True)
         cloudlog.info(f"BD address: {bd_addr}, name: {device_name}")
         # Enable LE peripheral mode for GATT server
