@@ -53,6 +53,7 @@ def register(show_spinner=False) -> str | None:
 
     # Block until we get the imei
     serial = HARDWARE.get_serial()
+    device_type = HARDWARE.get_device_type()
     start_time = time.monotonic()
     imei1: str | None = None
     imei2: str | None = None
@@ -74,7 +75,7 @@ def register(show_spinner=False) -> str | None:
                                     cast(str, private_key), algorithm=jwt_algo)
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                       imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
+                       imei=imei1, imei2=imei2, serial=serial, device_type=device_type, public_key=public_key, register_token=register_token)
 
         if resp.status_code in (402, 403):
           cloudlog.info(f"Unable to register device, got {resp.status_code}")
