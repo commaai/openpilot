@@ -24,17 +24,17 @@ class AsiusLayoutMici(NavWidget):
     ble_toggle = BigParamControl("bluetooth control", "EnableBLE")
 
     self._scroller = Scroller([
-      asius_api_toggle,
+      ble_toggle,
       webrtc_toggle,
       remote_params_toggle,
-      ble_toggle,
+      asius_api_toggle,
     ], snap_items=False)
 
     self._refresh_toggles = (
-      ("EnableAsiusAPI", asius_api_toggle),
+      ("EnableBLE", ble_toggle),
       ("EnableWebRTC", webrtc_toggle),
       ("EnableRemoteParams", remote_params_toggle),
-      ("EnableBLE", ble_toggle),
+      ("EnableAsiusAPI", asius_api_toggle),
     )
 
   def show_event(self):

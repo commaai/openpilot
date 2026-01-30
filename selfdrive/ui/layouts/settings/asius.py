@@ -22,10 +22,10 @@ class AsiusLayout(Widget):
     self._params = Params()
 
     self._toggle_defs = {
-      "EnableAsiusAPI": (
-        lambda: tr("Asius API"),
-        DESCRIPTIONS["EnableAsiusAPI"],
-        "asius.png",
+      "EnableBLE": (
+        lambda: tr("Bluetooth Control"),
+        DESCRIPTIONS["EnableBLE"],
+        "bluetooth.png",
       ),
       "EnableWebRTC": (
         lambda: tr("Remote Live Streaming"),
@@ -37,10 +37,10 @@ class AsiusLayout(Widget):
         DESCRIPTIONS["EnableRemoteParams"],
         "settings.png",
       ),
-      "EnableBLE": (
-        lambda: tr("Bluetooth Control"),
-        DESCRIPTIONS["EnableBLE"],
-        "bluetooth.png",
+      "EnableAsiusAPI": (
+        lambda: tr("Asius API"),
+        DESCRIPTIONS["EnableAsiusAPI"],
+        "asius.png",
       ),
     }
 
