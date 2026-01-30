@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from enum import IntEnum
 import pyray as rl
 import numpy as np
@@ -169,26 +170,28 @@ class MiciKeyboard(Widget):
     self._super_special_keys = [[Key(char) for char in row] for row in super_special_chars]
 
     # control keys
-    self._space_key = IconKey("icons_mici/settings/keyboard/space.png", char=" ", vertical_align="bottom", icon_size=(43, 14))
+    self._space_key = IconKey("icons_mici/settings/keyboard/space_short.png", char=" ", vertical_align="bottom", icon_size=(28, 14))
     self._caps_key = IconKey("icons_mici/settings/keyboard/caps_lower.png", icon_size=(38, 33))
+    self._enter_key = IconKey("icons_mici/settings/keyboard/enter_grey.png", icon_size=(70, 46))
     # these two are in different places on some layouts
     self._123_key, self._123_key2 = SmallKey("123"), SmallKey("123")
-    self._abc_key = SmallKey("abc")
+    self._abc_key, self._abc_key2 = SmallKey("abc"), SmallKey("abc")
     self._super_special_key = SmallKey("#+=")
 
     # insert control keys
     for keys in (self._lower_keys, self._upper_keys):
-      keys[2].insert(0, self._caps_key)
-      keys[2].append(self._123_key)
+      keys[1].insert(0, self._caps_key)
+      keys[2].insert(0, self._123_key)
+      keys[2].append(self._enter_key)
 
     for keys in (self._lower_keys, self._upper_keys, self._special_keys, self._super_special_keys):
       keys[1].append(self._space_key)
 
-    for keys in (self._special_keys, self._super_special_keys):
-      keys[2].append(self._abc_key)
+    self._special_keys[2].insert(0, self._abc_key)
+    self._special_keys[2].append(self._super_special_key)
 
-    self._special_keys[2].insert(0, self._super_special_key)
-    self._super_special_keys[2].insert(0, self._123_key2)
+    self._super_special_keys[2].insert(0, self._abc_key2)
+    self._super_special_keys[2].append(self._123_key2)
 
     # set initial keys
     self._current_keys: list[list[Key]] = []
@@ -205,6 +208,11 @@ class MiciKeyboard(Widget):
 
     self._text: str = ""
 
+    self._minimum_length: int = 1
+    self._confirm_callback: Callable[[], None] | None = None
+
+    self._caps_last_tap_time: float = 0.0  # for double-tap detection
+
     self._bg_scale_filter = BounceFilter(1.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
     self._selected_key_filter = FirstOrderFilter(0.0, 0.075 * ANIMATION_SCALE, 1 / gui_app.target_fps)
 
@@ -217,7 +225,7 @@ class MiciKeyboard(Widget):
     return int(self._txt_bg.height)
 
   def _load_images(self):
-    self._txt_bg = gui_app.texture("icons_mici/settings/keyboard/keyboard_background.png", 520, 170, keep_aspect_ratio=False)
+    self._txt_bg = gui_app.texture("icons_mici/settings/keyboard/keyboard_background_tall.png", 520, 180, keep_aspect_ratio=False)
 
   def _set_keys(self, keys: list[list[Key]]):
     # inherit previous keys' positions to fix switching animation
@@ -234,6 +242,13 @@ class MiciKeyboard(Widget):
 
   def text(self) -> str:
     return self._text
+
+  def set_confirm_callback(self, callback: Callable[[], None], minimum_length: int = 1):
+    self._confirm_callback = callback
+    self._minimum_length = minimum_length
+
+  def _is_enter_active(self) -> bool:
+    return len(self._text) >= self._minimum_length
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     keyboard_pos_y = self._rect.y + self._rect.height - self._txt_bg.height
@@ -259,6 +274,9 @@ class MiciKeyboard(Widget):
     closest_key: tuple[Key | None, float] = (None, float('inf'))
     for row in self._current_keys:
       for key in row:
+        # skip enter key when inactive
+        if key == self._enter_key and not self._is_enter_active():
+          continue
         mouse_pos = gui_app.last_mouse_event.pos
         # approximate distance for comparison is accurate enough
         dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - mouse_pos.y)
@@ -268,18 +286,27 @@ class MiciKeyboard(Widget):
     return closest_key
 
   def _set_uppercase(self, cycle: bool):
-    self._set_keys(self._upper_keys if cycle else self._lower_keys)
     if not cycle:
+      self._set_keys(self._lower_keys)
       self._caps_state = CapsState.LOWER
       self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lower.png", icon_size=(38, 33))
     else:
+      current_time = rl.get_time()
       if self._caps_state == CapsState.LOWER:
+        # lower → upper
+        self._set_keys(self._upper_keys)
         self._caps_state = CapsState.UPPER
         self._caps_key.set_icon("icons_mici/settings/keyboard/caps_upper.png", icon_size=(38, 33))
+        self._caps_last_tap_time = current_time
       elif self._caps_state == CapsState.UPPER:
-        self._caps_state = CapsState.LOCK
-        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lock.png", icon_size=(39, 38))
+        # upper → lock (if double tap within 1 second) or lower (if after 1 second)
+        if current_time - self._caps_last_tap_time < 0.35:
+          self._caps_state = CapsState.LOCK
+          self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lock.png", icon_size=(39, 38))
+        else:
+          self._set_uppercase(False)
       else:
+        # lock → lower
         self._set_uppercase(False)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
@@ -288,15 +315,18 @@ class MiciKeyboard(Widget):
         self._set_uppercase(True)
       elif self._closest_key[0] in (self._123_key, self._123_key2):
         self._set_keys(self._special_keys)
-      elif self._closest_key[0] == self._abc_key:
+      elif self._closest_key[0] in (self._abc_key, self._abc_key2):
         self._set_uppercase(False)
       elif self._closest_key[0] == self._super_special_key:
         self._set_keys(self._super_special_keys)
+      elif self._closest_key[0] == self._enter_key:
+        if self._is_enter_active() and self._confirm_callback:
+          self._confirm_callback()
       else:
         self._text += self._closest_key[0].char
 
-        # Reset caps state
-        if self._caps_state == CapsState.UPPER:
+        # Reset caps state only when on uppercase layer
+        if self._caps_state == CapsState.UPPER and self._current_keys == self._upper_keys:
           self._set_uppercase(False)
 
     # ensure minimum selected animation time
@@ -321,6 +351,12 @@ class MiciKeyboard(Widget):
       self._unselect_key_t = None
       self._selected_key_t = None
 
+    # update enter key icon based on active state
+    if self._is_enter_active():
+      self._enter_key.set_icon("icons_mici/settings/keyboard/enter.png", icon_size=(70, 46))
+    else:
+      self._enter_key.set_icon("icons_mici/settings/keyboard/enter_grey.png", icon_size=(70, 46))
+
   def _lay_out_keys(self, bg_x, bg_y, keys: list[list[Key]]):
     key_rect = rl.Rectangle(bg_x, bg_y, self._txt_bg.width, self._txt_bg.height)
     for row_idx, row in enumerate(keys):
@@ -329,6 +365,57 @@ class MiciKeyboard(Widget):
       for key_idx, key in enumerate(row):
         key_x = key_rect.x + padding + key_idx * ((key_rect.width - 2 * padding) / (len(row) - 1))
         key_y = key_rect.y + KEYBOARD_COLUMN_PADDING + row_idx * step_y
+
+        # special handling for row 1 on layer 0: a and space move inward by 6px, letters between adjust
+        if row_idx == 1 and keys in (self._lower_keys, self._upper_keys):
+          if key_idx == 0:
+            # caps key stays in place
+            pass
+          elif key_idx == len(row) - 1:
+            # space key moves left (inward) by 6px
+            key_x -= 6
+          else:
+            # letters a-l: 'a' moves right 6px, 'l' position relative to shifted space, others evenly spaced
+            first_letter_idx = 1
+            last_letter_idx = len(row) - 2
+            first_letter_x = key_rect.x + padding + first_letter_idx * ((key_rect.width - 2 * padding) / (len(row) - 1)) + 6
+            last_letter_x = key_rect.x + padding + last_letter_idx * ((key_rect.width - 2 * padding) / (len(row) - 1)) - 6
+            letter_idx = key_idx - first_letter_idx
+            num_letters = last_letter_idx - first_letter_idx
+            key_x = first_letter_x + letter_idx * ((last_letter_x - first_letter_x) / num_letters)
+
+        # special handling for row 2 on layer 0: 123 and enter move towards center by 4px, letters adjust
+        if row_idx == 2 and keys in (self._lower_keys, self._upper_keys):
+          if key_idx == 0:
+            # 123 key moves right (towards center) by 4px
+            key_x += 4
+          elif key_idx == len(row) - 1:
+            # enter key moves left (towards center) by 4px
+            key_x -= 4
+          else:
+            # letters: z position relative to shifted 123, m shifts left 20px from shifted enter, others evenly spaced
+            first_letter_idx = 1
+            last_letter_idx = len(row) - 2
+            first_letter_x = key_rect.x + padding + first_letter_idx * ((key_rect.width - 2 * padding) / (len(row) - 1))
+            last_letter_x = key_rect.x + padding + last_letter_idx * ((key_rect.width - 2 * padding) / (len(row) - 1)) - 4 - 20
+            letter_idx = key_idx - first_letter_idx
+            num_letters = last_letter_idx - first_letter_idx
+            key_x = first_letter_x + letter_idx * ((last_letter_x - first_letter_x) / num_letters)
+
+        # special handling for row 2 on layer 1: ~ and % move inward by 4px, chars between adjust
+        if row_idx == 2 and keys == self._special_keys:
+          if key_idx == 0 or key_idx == len(row) - 1:
+            # abc and #+= keys stay in place
+            pass
+          else:
+            # special chars: ~ moves right 4px, % moves left 4px, others evenly spaced
+            first_char_idx = 1
+            last_char_idx = len(row) - 2
+            first_char_x = key_rect.x + padding + first_char_idx * ((key_rect.width - 2 * padding) / (len(row) - 1)) + 4
+            last_char_x = key_rect.x + padding + last_char_idx * ((key_rect.width - 2 * padding) / (len(row) - 1)) - 4
+            char_idx = key_idx - first_char_idx
+            num_chars = last_char_idx - first_char_idx
+            key_x = first_char_x + char_idx * ((last_char_x - first_char_x) / num_chars)
 
         if self._closest_key[0] is None:
           key.set_alpha(1.0)

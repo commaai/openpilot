@@ -150,11 +150,7 @@ class BigInputDialog(BigDialogBase):
     self._backspace_img = gui_app.texture("icons_mici/settings/keyboard/backspace.png", 42, 36)
     self._backspace_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
-    self._enter_img = gui_app.texture("icons_mici/settings/keyboard/confirm.png", 42, 36)
-    self._enter_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
-
-    # rects for top buttons
-    self._top_left_button_rect = rl.Rectangle(0, 0, 0, 0)
+    # rect for backspace button
     self._top_right_button_rect = rl.Rectangle(0, 0, 0, 0)
 
     def confirm_callback_wrapper():
@@ -162,6 +158,7 @@ class BigInputDialog(BigDialogBase):
       if confirm_callback:
         confirm_callback(self._keyboard.text())
     self._confirm_callback = confirm_callback_wrapper
+    self._keyboard.set_confirm_callback(confirm_callback_wrapper, minimum_length)
 
   def _update_state(self):
     super()._update_state()
@@ -185,13 +182,13 @@ class BigInputDialog(BigDialogBase):
     text = self._keyboard.text()
     candidate_char = self._keyboard.get_candidate_character()
     text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, text_input_size)
-    text_x = PADDING * 2 + self._enter_img.width
+    text_x = self._rect.x + 24
 
     # text needs to move left if we're at the end where right button is
     text_rect = rl.Rectangle(text_x,
-                             int(self._rect.y + PADDING),
+                             int(self._rect.y + PADDING - 7),
                              # clip width to right button when in view
-                             int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width + 5),  # TODO: why 5?
+                             int(self._rect.width - 24 - PADDING * 2 - self._backspace_img.width + 5),
                              int(text_size.y))
 
     # draw rounded background for text input
@@ -204,14 +201,14 @@ class BigInputDialog(BigDialogBase):
     if text_size.x > text_rect.width:
       text_x -= text_size.x - text_rect.width
 
-    rl.begin_scissor_mode(int(text_rect.x), int(text_rect.y), int(text_rect.width), int(text_rect.height))
-    rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), text, rl.Vector2(text_x, text_rect.y), text_input_size, 0, rl.WHITE)
+    rl.begin_scissor_mode(int(text_rect.x), int(text_field_rect.y), int(text_rect.width), int(text_rect.height))
+    rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), text, rl.Vector2(text_x, text_field_rect.y), text_input_size, 0, rl.WHITE)
 
     # draw grayed out character user is hovering over
     if candidate_char:
       candidate_char_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), candidate_char, text_input_size)
       rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), candidate_char,
-                      rl.Vector2(min(text_x + text_size.x, text_rect.x + text_rect.width) - candidate_char_size.x, text_rect.y),
+                      rl.Vector2(min(text_x + text_size.x, text_rect.x + text_rect.width) - candidate_char_size.x, text_field_rect.y),
                       text_input_size, 0, rl.Color(255, 255, 255, 128))
 
     rl.end_scissor_mode()
@@ -225,14 +222,14 @@ class BigInputDialog(BigDialogBase):
     if text:
       blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
       cursor_x = min(text_x + text_size.x + 3, text_rect.x + text_rect.width)
-      rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_rect.y), 4, int(text_size.y)),
+      rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
                                 1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
 
     # draw backspace icon with nice fade
     self._backspace_img_alpha.update(255 * bool(text))
     if self._backspace_img_alpha.x > 1:
       color = rl.Color(255, 255, 255, int(self._backspace_img_alpha.x))
-      rl.draw_texture(self._backspace_img, int(self._rect.width - self._enter_img.width - 15), int(text_field_rect.y), color)
+      rl.draw_texture(self._backspace_img, int(self._rect.width - self._backspace_img.width - 15), int(self._rect.y + 8), color)
 
     if not text and self._hint_label.text and not candidate_char:
       # draw description if no text entered yet and not drawing candidate char
@@ -240,14 +237,9 @@ class BigInputDialog(BigDialogBase):
 
     # TODO: move to update state
     # make rect take up entire area so it's easier to click
-    self._top_left_button_rect = rl.Rectangle(self._rect.x, self._rect.y, text_field_rect.x, self._rect.height - self._keyboard.get_keyboard_height())
     self._top_right_button_rect = rl.Rectangle(text_field_rect.x + text_field_rect.width, self._rect.y,
-                                               self._rect.width - (text_field_rect.x + text_field_rect.width), self._top_left_button_rect.height)
-
-    self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 255 * 0.35)
-    if self._enter_img_alpha.x > 1:
-      color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
-      rl.draw_texture(self._enter_img, int(self._rect.x + 15), int(text_field_rect.y), color)
+                                               self._rect.width - (text_field_rect.x + text_field_rect.width),
+                                               self._rect.height - self._keyboard.get_keyboard_height())
 
     # keyboard goes over everything
     self._keyboard.render(self._rect)
@@ -257,20 +249,14 @@ class BigInputDialog(BigDialogBase):
       rl.draw_rectangle_lines_ex(text_field_rect, 1, rl.Color(100, 100, 100, 255))
       rl.draw_rectangle_lines_ex(text_rect, 1, rl.Color(0, 255, 0, 255))
       rl.draw_rectangle_lines_ex(self._top_right_button_rect, 1, rl.Color(0, 255, 0, 255))
-      rl.draw_rectangle_lines_ex(self._top_left_button_rect, 1, rl.Color(0, 255, 0, 255))
 
     return self._ret
 
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
-    # TODO: need to track where press was so enter and back can activate on release rather than press
-    #  or turn into icon widgets :eyes_open:
     # handle backspace icon click
     if rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
       self._keyboard.backspace()
-    elif rl.check_collision_point_rec(mouse_pos, self._top_left_button_rect) and self._enter_img_alpha.x > 254:
-      # handle enter icon click
-      self._confirm_callback()
 
 
 class BigDialogOptionButton(Widget):
