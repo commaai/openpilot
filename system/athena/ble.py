@@ -101,8 +101,8 @@ def main():
   if not init_bluetooth():
     return 1
 
-  dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-  bus = dbus.SystemBus()
+  mainloop = dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+  bus = dbus.SystemBus(mainloop=mainloop)
 
   class InvalidArgsException(dbus.exceptions.DBusException):
     _dbus_error_name = "org.freedesktop.DBus.Error.InvalidArgs"
