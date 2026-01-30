@@ -47,17 +47,6 @@ class Source(Enum):
   E2E = 3
 
 
-def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
-  if personality==log.LongitudinalPersonality.relaxed:
-    return 1.0
-  elif personality==log.LongitudinalPersonality.standard:
-    return 1.0
-  elif personality==log.LongitudinalPersonality.aggressive:
-    return 0.5
-  else:
-    raise NotImplementedError("Longitudinal personality not supported")
-
-
 def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
     return 1.75
@@ -142,7 +131,7 @@ def lead_controller(v_ego, v_lead, gap_0, v_cruise, t_follow, accel_clip):
 
   return accel_clip[1] * (1.0 - velocity_term - gap_term)
 
-def check_fcw(v_ego, lead_xv, t_follow, v_cruise, dt):
+def check_crash(v_ego, lead_xv, t_follow, v_cruise, dt):
   x_ego = 0.0
   collision = False
   
@@ -154,8 +143,8 @@ def check_fcw(v_ego, lead_xv, t_follow, v_cruise, dt):
       collision = True
       break
     
-    a = lead_controller(v_ego, v_lead, gap, v_cruise, t_follow)
-    v_ego += a * dt
+    a_ego = lead_controller(v_ego, v_lead, gap, v_cruise, t_follow)
+    v_ego += a_ego * dt
     v_ego = max(0.0, v_ego)
     x_ego += v_ego * dt
   
@@ -166,6 +155,7 @@ class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, dt=DT_MDL):
     self.CP = CP
     self.source = Source.CRUISE
+    self.crash_cnt = 0
     self.fcw = False
     self.dt = dt
     self.allow_throttle = True
@@ -180,6 +170,7 @@ class LongitudinalPlanner:
     else:
       accel_coast = ACCEL_MAX
 
+    t_follow = get_T_FOLLOW(sm['selfdriveState'].personality)
     v_ego = sm['carState'].vEgo
     v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
@@ -217,9 +208,9 @@ class LongitudinalPlanner:
       v_cruise = 0.0
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    #self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
-    #if self.fcw:
-    #  cloudlog.info("FCW triggered")
+    self.fcw = self.crash_cnt > 2 and not sm['carState'].standstill
+    if self.fcw:
+      cloudlog.info("FCW triggered")
 
     out_accels = {}
     if sm['selfdriveState'].experimentalMode:
@@ -236,8 +227,12 @@ class LongitudinalPlanner:
       lead_xv = process_lead(v_ego, lead_info[key])
       if lead_xv is None:
         continue
-      if lead_info[key].fcw:
-        print(1)
+
+      if lead_info[key].fcw and check_crash(v_ego, lead_xv, t_follow):
+        self.crash_cnt += 1
+      else:
+        self.crash_cnt = 0
+
       desired_follow_distance = 0.0
       #np.array([
       #  get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)
