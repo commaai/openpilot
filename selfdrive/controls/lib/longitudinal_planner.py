@@ -63,12 +63,12 @@ def get_max_accel(v_ego):
 def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
-def extrapolate_state(x_lead, v_lead, a_lead, a_lead_tau):
-  a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS_LEAD**2)/2.)
-  v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS_LEAD * a_lead_traj), 0.0, 1e8)
-  x_lead_traj = x_lead + np.cumsum(T_DIFFS_LEAD * v_lead_traj)
-  lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
-  return lead_xv
+def extrapolate_state(x, v, a, a_tau):
+  a_traj = a * np.exp(-a_tau * (T_IDXS_LEAD**2)/2.)
+  v_traj = np.clip(v + np.cumsum(T_DIFFS_LEAD * a_traj), 0.0, 1e8)
+  x_traj = x + np.cumsum(T_DIFFS_LEAD * v_traj)
+  xv_traj = np.column_stack((x_traj, v_traj))
+  return xv_traj
 
 def process_lead(lead):
   if lead is None or not lead.status:
@@ -84,16 +84,6 @@ def process_lead(lead):
   a_lead = np.clip(a_lead, -10., 5.)
   lead_xv = extrapolate_state(x_lead, v_lead, a_lead, a_lead_tau)
   return lead_xv
-
-def process_ego(v_ego, a_ego):
-  x_ego = 0.0
-  a_lead_tau = _LEAD_ACCEL_TAU
-
-  x_ego = np.clip(x_ego, 0.0, 1e8)
-  v_ego = np.clip(v_ego, 0.0, 1e8)
-  a_ego = np.clip(a_ego, -10., 5.)
-  ego_xv = extrapolate_state(x_ego, v_ego, a_ego, a_lead_tau)
-  return ego_xv
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -117,11 +107,8 @@ def parse_model(model_msg):
 
 # TODO maybe use predicted values at delay instead
 def lead_controller(v_ego, v_lead, gap_0, v_cruise, t_follow, accel_clip):
-  if gap_0 < STOP_DISTANCE:
-    return accel_clip[0]
-  
   dv = v_lead - v_ego
-  closing_speed = max(0.0, dv)
+  closing_speed = max(0.0, -dv)
   # TODO might need to be just COMFORT_BRAKE if it follows lead to closely
   dynamic_term = (v_ego * closing_speed) / (2.0 * np.sqrt(accel_clip[1] * COMFORT_BRAKE))
   desired_gap = STOP_DISTANCE + v_ego * t_follow + dynamic_term
@@ -131,7 +118,9 @@ def lead_controller(v_ego, v_lead, gap_0, v_cruise, t_follow, accel_clip):
 
   return accel_clip[1] * (1.0 - velocity_term - gap_term)
 
-def check_crash(v_ego, lead_xv, t_follow, v_cruise, dt):
+def simulate_trajectory(v_ego, lead_xv, v_cruise, t_follow, accel_clip):
+  a_traj = []
+  v_traj = []
   x_ego = 0.0
   collision = False
   
@@ -141,14 +130,17 @@ def check_crash(v_ego, lead_xv, t_follow, v_cruise, dt):
     
     if gap < CRASH_DISTANCE:
       collision = True
-      break
     
-    a_ego = lead_controller(v_ego, v_lead, gap, v_cruise, t_follow)
-    v_ego += a_ego * dt
+    a_target = lead_controller(v_ego, v_lead, gap, v_cruise, t_follow, accel_clip)
+    
+    a_traj.append(a_target)
+    v_traj.append(v_ego)
+    
+    v_ego += a_target * dt
     v_ego = max(0.0, v_ego)
     x_ego += v_ego * dt
   
-  return collision
+  return np.array(v_traj), np.array(a_traj), collision
 
 
 class LongitudinalPlanner:
@@ -207,47 +199,35 @@ class LongitudinalPlanner:
     if force_slow_decel:
       v_cruise = 0.0
 
-    # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.crash_cnt > 2 and not sm['carState'].standstill
-    if self.fcw:
-      cloudlog.info("FCW triggered")
-
     out_accels = {}
     if sm['selfdriveState'].experimentalMode:
-      out_accels['e2e'] = (sm['modelV2'].action.desiredAcceleration, sm['modelV2'].action.shouldStop)
+      out_accels[Source.E2E] = (sm['modelV2'].action.desiredAcceleration, sm['modelV2'].action.shouldStop)
 
     cruise_accel = K_CRUISE * (v_cruise - v_ego)
     cruise_accel = np.clip(cruise_accel, CRUISE_MIN_ACCEL, accel_clip[1])
     cruise_accel = smooth_value(cruise_accel, self.output_a_target, TAU_CRUISE)
-    out_accels['cruise'] = (cruise_accel, False)
+    out_accels[Source.CRUISE] = (cruise_accel, False)
 
     lead_info = {Source.LEAD0: sm['radarState'].leadOne, Source.LEAD1: sm['radarState'].leadTwo}
-    ego_xv = process_ego(v_ego, sm['carState'].aEgo)
     for key in lead_info.keys():
-      lead_xv = process_lead(v_ego, lead_info[key])
+      lead_xv = process_lead(lead_info[key])
       if lead_xv is None:
         continue
+      v_traj, a_traj, collision = simulate_trajectory(v_ego, lead_xv, v_cruise, t_follow, accel_clip)
+      if key == Source.LEAD0:
+        if lead_info[key].fcw and collision:
+          self.crash_cnt += 1
+        else:
+          self.crash_cnt = 0
 
-      if lead_info[key].fcw and check_crash(v_ego, lead_xv, t_follow):
-        self.crash_cnt += 1
-      else:
-        self.crash_cnt = 0
+      action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
+      out_accels[key] = get_accel_from_plan(v_traj, a_traj, T_IDXS_LEAD, action_t, self.CP.vEgoStopping)
 
-      desired_follow_distance = 0.0
-      #np.array([
-      #  get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)
-      #  ])
 
-      error_weights = np.linspace(1.0, 0.0, len(desired_follow_distance))
-      error_weights = error_weights / np.sum(error_weights)
-
-      follow_distance_error =  np.sum(error_weights*(lead_xv[:,0] - desired_follow_distance))
-
-      follow_distance_cost_signed = (follow_distance_error / (v_ego + 1))**2 * np.sign(follow_distance_error)
-      lead_accel = np.clip(2*follow_distance_cost_signed, ACCEL_MIN, ACCEL_MAX)
-      lead_accel = smooth_value(lead_accel, self.output_a_target, 0.5)
-
-      out_accels[key] = (lead_accel, False)
+    # TODO counter is only needed because radar is glitchy, remove once radar is gone
+    self.fcw = self.crash_cnt > 2 and not sm['carState'].standstill
+    if self.fcw:
+      cloudlog.info("FCW triggered")
 
     source, (output_a_target, _) = min(out_accels.items(), key=lambda x: x[1][0])
     self.source = source
@@ -264,7 +244,7 @@ class LongitudinalPlanner:
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']
 
     longitudinalPlan.hasLead = sm['radarState'].leadOne.status
-    longitudinalPlan.longitudinalPlanSource = self.source
+    longitudinalPlan.longitudinalPlanSource = self.source.name
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.aTarget = float(self.output_a_target)
