@@ -6,7 +6,6 @@ NOTE: DBus imports happen inside main() to avoid fork issues with the manager.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 import os
@@ -16,7 +15,6 @@ import time
 sys.path.insert(0, "/data/openpilot")
 
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from openpilot.common.swaglog import cloudlog
 
 ATHENA_SERVICE_UUID = "a51a5a10-0001-4c0d-b8e6-a51a5a100001"
 RPC_REQUEST_CHAR_UUID = "a51a5a10-0002-4c0d-b8e6-a51a5a100001"
@@ -35,113 +33,21 @@ BLE_MTU = 512
 BLE_BLOCKED_METHODS = {"uploadFileToUrl", "uploadFilesToUrls", "startLocalProxy", "takeSnapshot", "webrtc"}
 
 
-def get_serial() -> str:
+def log(msg: str):
+  print(f"[BLE] {msg}", flush=True)
+
+
+def get_dongle_id() -> str:
   try:
-    with open("/proc/cmdline") as f:
-      for part in f.read().split():
-        if part.startswith("androidboot.serialno="):
-          return part.split("=", 1)[1]
+    with open("/data/params/d/DongleId") as f:
+      return f.read().strip()
   except Exception:
-    pass
-  return "unknown"
+    return "unknown"
 
 
 def get_device_name() -> str:
-  return f"comma-{get_serial()}"
-
-
-def get_bd_address() -> str:
-  h = hashlib.sha256(get_serial().encode()).digest()
-  # BLE static random address: top 2 bits of first byte must be 11
-  first_byte = h[0] | 0xC0
-  return f"{first_byte:02X}:{h[1]:02X}:{h[2]:02X}:{h[3]:02X}:{h[4]:02X}:{h[5]:02X}"
-
-
-def is_mici() -> bool:
-  try:
-    with open("/sys/firmware/devicetree/base/model") as f:
-      return "mici" in f.read().lower()
-  except Exception:
-    return False
-
-
-def ensure_bt_firmware():
-  """Extract QCA Bluetooth firmware from the bluetooth partition for tres/tizi devices."""
-  import struct
-  FW_DIR = "/data/firmware/qca"
-  NEEDED = ["rampatch_02140201.bin", "nvm_02140201.bin"]
-
-  if all(os.path.exists(os.path.join(FW_DIR, f)) for f in NEEDED):
-    return
-
-  cloudlog.info("Installing QCA Bluetooth firmware...")
-  os.makedirs(FW_DIR, exist_ok=True)
-
-  BT_PARTS = ["/dev/disk/by-partlabel/bluetooth", "/dev/disk/by-partlabel/bluetooth_a"]
-  bt_dev = next((p for p in BT_PARTS if os.path.exists(p)), None)
-  if not bt_dev:
-    cloudlog.warning("No bluetooth partition found, firmware not installed")
-    return
-
-  try:
-    with open(bt_dev, "rb") as f:
-      data = f.read(1048576)  # 1MB partition
-
-    # Parse FAT16 filesystem
-    sector_size = struct.unpack('<H', data[11:13])[0]
-    spc = data[13]
-    reserved = struct.unpack('<H', data[14:16])[0]
-    num_fats = data[16]
-    root_entries = struct.unpack('<H', data[17:19])[0]
-    spf = struct.unpack('<H', data[22:24])[0]
-    cluster_size = sector_size * spc
-    root_offset = (reserved + num_fats * spf) * sector_size
-    root_sectors = (root_entries * 32 + sector_size - 1) // sector_size
-    data_start = root_offset + root_sectors * sector_size
-
-    fat_offset = reserved * sector_size
-    fat = {i: struct.unpack('<H', data[fat_offset+i*2:fat_offset+i*2+2])[0]
-           for i in range(spf * sector_size // 2)}
-
-    def read_file(cluster, size):
-      result, remaining = b'', size
-      while remaining > 0 and cluster < 0xFFF8:
-        off = data_start + (cluster - 2) * cluster_size
-        chunk = min(remaining, cluster_size)
-        result += data[off:off+chunk]
-        remaining -= chunk
-        cluster = fat[cluster]
-      return result
-
-    FILE_MAP = {"CRBTFW21.TLV": "rampatch_02140201.bin", "CRNV21.BIN": "nvm_02140201.bin"}
-
-    for i in range(root_entries):
-      off = root_offset + i * 32
-      entry = data[off:off+32]
-      if entry[0] == 0: break
-      if entry[0] == 0xE5 or entry[11] == 0x0F: continue
-      name = entry[:8].rstrip(b' ').decode('ascii', errors='ignore')
-      if entry[11] & 0x10 and name == 'IMAGE':
-        cluster = struct.unpack('<H', entry[26:28])[0]
-        dir_data = read_file(cluster, cluster_size * 4)
-        for j in range(len(dir_data) // 32):
-          e2 = dir_data[j*32:j*32+32]
-          if e2[0] == 0: break
-          if e2[0] == 0xE5 or e2[11] == 0x0F: continue
-          n = e2[:8].rstrip(b' ').decode('ascii', errors='ignore')
-          ext = e2[8:11].rstrip(b' ').decode('ascii', errors='ignore')
-          full = f'{n}.{ext}' if ext else n
-          if full in FILE_MAP:
-            c = struct.unpack('<H', e2[26:28])[0]
-            s = struct.unpack('<I', e2[28:32])[0]
-            if s > 0:
-              fw_data = read_file(c, s)
-              dest = os.path.join(FW_DIR, FILE_MAP[full])
-              with open(dest, 'wb') as fw:
-                fw.write(fw_data)
-              cloudlog.info(f"Installed {FILE_MAP[full]} ({s} bytes)")
-  except Exception as e:
-    cloudlog.warning(f"Failed to extract BT firmware: {e}")
+  dongle_id = get_dongle_id()
+  return f"comma-{dongle_id[:8]}" if dongle_id else "comma-device"
 
 
 def power_on_wcn3990():
@@ -154,7 +60,7 @@ def power_on_wcn3990():
       with open(f"{rfkill_path}/name") as f:
         if f.read().strip() != "bt_power":
           continue
-      cloudlog.info("Powering on WCN3990 via rfkill")
+      log("Powering on WCN3990 via rfkill")
       subprocess.run(["sudo", "sh", "-c", f"echo 0 > {rfkill_path}/soft"], capture_output=True)
       time.sleep(2)
       return True
@@ -172,59 +78,36 @@ def init_bluetooth():
     pass
 
   if not os.path.exists("/dev/ttyHS1"):
-    cloudlog.info("ERROR: /dev/ttyHS1 not found")
+    log("ERROR: /dev/ttyHS1 not found")
     return False
 
   subprocess.run(["sudo", "pkill", "-f", "btattach"], capture_output=True)
   subprocess.run(["sudo", "hciconfig", "hci0", "down"], capture_output=True)
   time.sleep(1)
 
-  if is_mici():
-    # WCN3990 (mici): power on regulators, attach at 3Mbaud with H4 protocol (no firmware download needed)
-    power_on_wcn3990()
-    subprocess.Popen(["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "3000000"],
-                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-  else:
-    # Older devices (tres/tizi): use QCA protocol at 115200 with firmware download
-    ensure_bt_firmware()
-    subprocess.Popen(["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "115200", "-P", "qca"],
-                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-  device_name = get_device_name()
-  bd_addr = get_bd_address()
-  addr_set = False
+  # WCN3990: power on via rfkill, attach at 3Mbaud with H4 protocol
+  power_on_wcn3990()
+  subprocess.Popen(["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "3000000"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
   for i in range(20):
     time.sleep(1)
     try:
       result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
-      if result.returncode != 0:
-        continue
-
-      # Set static address while adapter is down (must be done before power on)
-      if not addr_set and b"UP RUNNING" not in result.stdout:
-        subprocess.run(["sudo", "btmgmt", "static-addr", bd_addr], capture_output=True)
-        subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
-        addr_set = True
-        continue
-
-      if b"UP RUNNING" in result.stdout:
-        cloudlog.info("Bluetooth initialized")
-        subprocess.run(["sudo", "hciconfig", "hci0", "name", device_name], capture_output=True)
-        cloudlog.info(f"BD address: {bd_addr}, name: {device_name}")
+      if result.returncode == 0 and b"UP RUNNING" in result.stdout:
+        log("Bluetooth initialized")
         # Enable LE peripheral mode for GATT server
         subprocess.run(["sudo", "btmgmt", "le", "on"], capture_output=True)
         subprocess.run(["sudo", "btmgmt", "connectable", "on"], capture_output=True)
         subprocess.run(["sudo", "btmgmt", "advertising", "on"], capture_output=True)
         return True
-
-      if b"DOWN" in result.stdout:
+      if result.returncode == 0 and b"DOWN" in result.stdout:
         subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
     except Exception:
       pass
-    cloudlog.info(f"Waiting for Bluetooth... ({i+1}/20)")
+    log(f"Waiting for Bluetooth... ({i+1}/20)")
 
-  cloudlog.info("ERROR: Failed to initialize Bluetooth")
+  log("ERROR: Failed to initialize Bluetooth")
   return False
 
 
@@ -238,8 +121,8 @@ def main():
   # Import shared RPC methods - registers them with dispatcher
   from openpilot.system.athena import rpc_methods  # noqa: F401
 
-  cloudlog.info(f"Starting BLE server: {get_device_name()}")
-  cloudlog.info(f"Loaded {len(dispatcher.keys())} RPC methods")
+  log(f"Starting BLE server: {get_device_name()}")
+  log(f"Loaded {len(dispatcher.keys())} RPC methods")
 
   if not init_bluetooth():
     return 1
@@ -350,7 +233,7 @@ def main():
         pass
 
     def process_request(self, request_text: str):
-      cloudlog.info(f"RPC: {request_text[:80]}...")
+      log(f"RPC: {request_text[:80]}...")
       try:
         req = json.loads(request_text)
         method = req.get("method", "")
@@ -430,7 +313,7 @@ def main():
 
   adapter_path = find_adapter(bus)
   if not adapter_path:
-    cloudlog.info("ERROR: No Bluetooth adapter found")
+    log("ERROR: No Bluetooth adapter found")
     return 1
 
   app = Application(bus)
@@ -440,14 +323,14 @@ def main():
   ad_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, adapter_path), LE_ADVERTISING_MANAGER_IFACE)
 
   service_manager.RegisterApplication(app.get_path(), {},
-    reply_handler=lambda: cloudlog.info("GATT registered"),
-    error_handler=lambda e: cloudlog.info(f"GATT failed: {e}"))
+    reply_handler=lambda: log("GATT registered"),
+    error_handler=lambda e: log(f"GATT failed: {e}"))
 
   ad_manager.RegisterAdvertisement(advertisement.get_path(), {},
-    reply_handler=lambda: cloudlog.info("Advertising"),
-    error_handler=lambda e: cloudlog.info(f"Ad failed: {e}"))
+    reply_handler=lambda: log("Advertising"),
+    error_handler=lambda e: log(f"Ad failed: {e}"))
 
-  cloudlog.info("Server running")
+  log("Server running")
   mainloop = GLib.MainLoop()
   try:
     mainloop.run()
