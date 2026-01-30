@@ -60,12 +60,12 @@ class AsiusLayout(Widget):
 
       # Add BLE pairing UI after BLE toggle
       if param == "EnableBLE":
-        pairing_code = self._params.get("BlePairingCode", encoding='utf-8')
+        pairing_code = self._params.get("BlePairingCode")
         if pairing_code:
           # Show pairing code if pairing mode is active
           self._ble_pairing_item = text_item(
             lambda: tr("BLE Pairing Code"),
-            lambda: self._params.get("BlePairingCode", encoding='utf-8') or "",
+            lambda: self._params.get("BlePairingCode") or "",
             description=lambda: tr("Use this code to pair with Connect app"),
             enabled=lambda: self._params.get_bool("EnableBLE")
           )
@@ -111,7 +111,7 @@ class AsiusLayout(Widget):
       if param == "EnableBLE":
         self._ble_pairing_item = text_item(
           lambda: tr("BLE Pairing Code"),
-          lambda: self._params.get("BlePairingCode", encoding='utf-8') or "",
+          lambda: self._params.get("BlePairingCode") or "",
           description=lambda: tr("Use this code to pair with Connect app"),
           enabled=lambda: self._params.get_bool("EnableBLE")
         )

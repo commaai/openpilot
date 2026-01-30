@@ -53,14 +53,14 @@ def get_device_name() -> str:
 
 def get_pairing_code() -> str | None:
   params = Params()
-  return params.get("BlePairingCode", encoding='utf-8')
+  code = params.get("BlePairingCode")
+  return code.decode('utf-8') if code else None
 
 
 def start_pairing() -> str:
   params = Params()
   code = f"{random.randint(0, 999999):06d}"
   params.put("BlePairingCode", code)
-  params.put("BlePairingStartTime", str(int(time.time())))
   log(f"Pairing mode started with code: {code}")
   return code
 
@@ -68,30 +68,22 @@ def start_pairing() -> str:
 def stop_pairing():
   params = Params()
   params.remove("BlePairingCode")
-  params.remove("BlePairingStartTime")
   log("Pairing mode stopped")
-
-
-def is_pairing_expired() -> bool:
-  params = Params()
-  start_time_str = params.get("BlePairingStartTime", encoding='utf-8')
-  if not start_time_str:
-    return True
-  start_time = int(start_time_str)
-  return (time.time() - start_time) > 600  # 10 minutes
 
 
 def get_authorized_clients() -> set[str]:
   params = Params()
-  data = params.get("BleAuthorizedClients", encoding='utf-8')
-  return set(json.loads(data)) if data else set()
+  clients = params.get("BleAuthorizedClients")
+  if not clients:
+    return set()
+  return set(clients)
 
 
 def add_authorized_client(client_id: str):
   params = Params()
   clients = get_authorized_clients()
   clients.add(client_id)
-  params.put("BleAuthorizedClients", json.dumps(list(clients)))
+  params.put("BleAuthorizedClients", list(clients))
   stop_pairing()  # Stop pairing mode after successful pairing
   log(f"Client {client_id[:8]}... authorized")
 

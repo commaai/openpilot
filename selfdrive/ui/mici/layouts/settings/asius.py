@@ -23,7 +23,7 @@ class AsiusLayoutMici(NavWidget):
     remote_params_toggle = BigParamControl("remote parameter editing", "EnableRemoteParams")
     ble_toggle = BigParamControl("bluetooth control", "EnableBLE")
 
-    pairing_code = self._params.get("BlePairingCode", encoding='utf-8')
+    pairing_code = self._params.get("BlePairingCode")
     if pairing_code:
       self._ble_pairing_button = BigButton("ble pairing code")
       self._ble_pairing_button.set_enabled(False)
@@ -59,7 +59,7 @@ class AsiusLayoutMici(NavWidget):
 
     # Update BLE pairing button
     ble_enabled = ui_state.params.get_bool("EnableBLE")
-    pairing_code = ui_state.params.get("BlePairingCode", encoding='utf-8')
+    pairing_code = ui_state.params.get("BlePairingCode")
 
     if pairing_code:
       self._ble_pairing_button.set_text("ble pairing code")
