@@ -11,10 +11,10 @@ function agnos_init {
   # set success flag for current boot slot
   sudo abctl --set_success
 
-  # Add system packages (gi/GLib) to venv so ble_server can run with openpilot python
+  # Add system packages (gi/GLib) to venv so ble can run with openpilot python
   # Note: bluez is now included in AGNOS 16-bt4+ system image
   PTH_FILE="/usr/local/venv/lib/python3.12/site-packages/system-packages.pth"
-  if [ -f "$DIR/system/athena/ble_server.py" ] && [ ! -f "$PTH_FILE" ]; then
+  if [ -f "$DIR/system/athena/ble.py" ] && [ ! -f "$PTH_FILE" ]; then
     echo "Adding system packages to venv..."
     sudo mount -o remount,rw / 2>/dev/null || true
     echo '/usr/lib/python3/dist-packages' | sudo tee "$PTH_FILE" > /dev/null
