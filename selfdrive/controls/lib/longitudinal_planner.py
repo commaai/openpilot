@@ -27,6 +27,7 @@ TAU_CRUISE = 0.4
 
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
+CRASH_DISTANCE = .25
 MIN_X_LEAD_FACTOR = 0.5
 
 # Lookup table for turns
@@ -35,7 +36,7 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 T_IDXS = np.array(ModelConstants.T_IDXS)
 FCW_IDXS = T_IDXS < 5.0
-T_IDXS_LEAD = np.arange(0., 2.5, 0.1)
+T_IDXS_LEAD = T_IDXS[FCW_IDXS]
 T_DIFFS_LEAD = np.diff(T_IDXS_LEAD, prepend=[0.])
 
 
@@ -125,7 +126,41 @@ def parse_model(model_msg):
     throttle_prob = 1.0
   return throttle_prob
 
-def 
+# TODO maybe use predicted values at delay instead
+def lead_controller(v_ego, v_lead, gap_0, v_cruise, t_follow, accel_clip):
+  if gap_0 < STOP_DISTANCE:
+    return accel_clip[0]
+  
+  dv = v_lead - v_ego
+  closing_speed = max(0.0, dv)
+  # TODO might need to be just COMFORT_BRAKE if it follows lead to closely
+  dynamic_term = (v_ego * closing_speed) / (2.0 * np.sqrt(accel_clip[1] * COMFORT_BRAKE))
+  desired_gap = STOP_DISTANCE + v_ego * t_follow + dynamic_term
+
+  velocity_term = (v_ego / max(v_cruise, 0.1)) ** 4
+  gap_term = (desired_gap / gap_0) ** 2
+
+  return accel_clip[1] * (1.0 - velocity_term - gap_term)
+
+def check_fcw(v_ego, lead_xv, t_follow, v_cruise, dt):
+  x_ego = 0.0
+  collision = False
+  
+  for idx, dt in enumerate(T_DIFFS_LEAD):
+    x_lead, v_lead = lead_xv[idx]
+    gap = x_lead - x_ego
+    
+    if gap < CRASH_DISTANCE:
+      collision = True
+      break
+    
+    a = lead_controller(v_ego, v_lead, gap, v_cruise, t_follow)
+    v_ego += a * dt
+    v_ego = max(0.0, v_ego)
+    x_ego += v_ego * dt
+  
+  return collision
+
 
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, dt=DT_MDL):
@@ -202,11 +237,11 @@ class LongitudinalPlanner:
       if lead_xv is None:
         continue
       if lead_info[key].fcw:
-
-
-      desired_follow_distance = np.array([
-        get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)
-        ])
+        print(1)
+      desired_follow_distance = 0.0
+      #np.array([
+      #  get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)
+      #  ])
 
       error_weights = np.linspace(1.0, 0.0, len(desired_follow_distance))
       error_weights = error_weights / np.sum(error_weights)
