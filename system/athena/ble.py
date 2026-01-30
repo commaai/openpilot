@@ -16,6 +16,7 @@ import time
 sys.path.insert(0, "/data/openpilot")
 
 from jsonrpc import JSONRPCResponseManager, dispatcher
+from openpilot.common.swaglog import cloudlog
 
 ATHENA_SERVICE_UUID = "a51a5a10-0001-4c0d-b8e6-a51a5a100001"
 RPC_REQUEST_CHAR_UUID = "a51a5a10-0002-4c0d-b8e6-a51a5a100001"
@@ -32,10 +33,6 @@ LE_ADVERTISEMENT_IFACE = "org.bluez.LEAdvertisement1"
 
 BLE_MTU = 512
 BLE_BLOCKED_METHODS = {"uploadFileToUrl", "uploadFilesToUrls", "startLocalProxy", "takeSnapshot", "webrtc"}
-
-
-def log(msg: str):
-  print(f"[BLE] {msg}", flush=True)
 
 
 def get_serial() -> str:
@@ -70,7 +67,7 @@ def power_on_wcn3990():
       with open(f"{rfkill_path}/name") as f:
         if f.read().strip() != "bt_power":
           continue
-      log("Powering on WCN3990 via rfkill")
+      cloudlog.info("Powering on WCN3990 via rfkill")
       subprocess.run(["sudo", "sh", "-c", f"echo 0 > {rfkill_path}/soft"], capture_output=True)
       time.sleep(2)
       return True
@@ -88,7 +85,7 @@ def init_bluetooth():
     pass
 
   if not os.path.exists("/dev/ttyHS1"):
-    log("ERROR: /dev/ttyHS1 not found")
+    cloudlog.info("ERROR: /dev/ttyHS1 not found")
     return False
 
   subprocess.run(["sudo", "pkill", "-f", "btattach"], capture_output=True)
@@ -119,9 +116,9 @@ def init_bluetooth():
         continue
 
       if b"UP RUNNING" in result.stdout:
-        log("Bluetooth initialized")
+        logcloudlog.info("Bluetooth initialized")
         subprocess.run(["sudo", "hciconfig", "hci0", "name", device_name], capture_output=True)
-        log(f"BD address: {bd_addr}, name: {device_name}")
+        cloudlog.info(f"BD address: {bd_addr}, name: {device_name}")
         # Enable LE peripheral mode for GATT server
         subprocess.run(["sudo", "btmgmt", "le", "on"], capture_output=True)
         subprocess.run(["sudo", "btmgmt", "connectable", "on"], capture_output=True)
@@ -132,9 +129,9 @@ def init_bluetooth():
         subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
     except Exception:
       pass
-    log(f"Waiting for Bluetooth... ({i+1}/20)")
+    cloudlog.info(f"Waiting for Bluetooth... ({i+1}/20)")
 
-  log("ERROR: Failed to initialize Bluetooth")
+  cloudlog.info("ERROR: Failed to initialize Bluetooth")
   return False
 
 
@@ -148,8 +145,8 @@ def main():
   # Import shared RPC methods - registers them with dispatcher
   from openpilot.system.athena import rpc_methods  # noqa: F401
 
-  log(f"Starting BLE server: {get_device_name()}")
-  log(f"Loaded {len(dispatcher.keys())} RPC methods")
+  cloudlog.info(f"Starting BLE server: {get_device_name()}")
+  cloudlog.info(f"Loaded {len(dispatcher.keys())} RPC methods")
 
   if not init_bluetooth():
     return 1
@@ -260,7 +257,7 @@ def main():
         pass
 
     def process_request(self, request_text: str):
-      log(f"RPC: {request_text[:80]}...")
+      cloudlog.info(f"RPC: {request_text[:80]}...")
       try:
         req = json.loads(request_text)
         method = req.get("method", "")
@@ -340,7 +337,7 @@ def main():
 
   adapter_path = find_adapter(bus)
   if not adapter_path:
-    log("ERROR: No Bluetooth adapter found")
+    cloudlog.info("ERROR: No Bluetooth adapter found")
     return 1
 
   app = Application(bus)
@@ -350,14 +347,14 @@ def main():
   ad_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, adapter_path), LE_ADVERTISING_MANAGER_IFACE)
 
   service_manager.RegisterApplication(app.get_path(), {},
-    reply_handler=lambda: log("GATT registered"),
-    error_handler=lambda e: log(f"GATT failed: {e}"))
+    reply_handler=lambda: cloudlog.info("GATT registered"),
+    error_handler=lambda e: cloudlog.info(f"GATT failed: {e}"))
 
   ad_manager.RegisterAdvertisement(advertisement.get_path(), {},
-    reply_handler=lambda: log("Advertising"),
-    error_handler=lambda e: log(f"Ad failed: {e}"))
+    reply_handler=lambda: cloudlog.info("Advertising"),
+    error_handler=lambda e: cloudlog.info(f"Ad failed: {e}"))
 
-  log("Server running")
+  cloudlog.info("Server running")
   mainloop = GLib.MainLoop()
   try:
     mainloop.run()
