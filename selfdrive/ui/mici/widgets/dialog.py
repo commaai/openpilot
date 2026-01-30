@@ -182,13 +182,13 @@ class BigInputDialog(BigDialogBase):
     text = self._keyboard.text()
     candidate_char = self._keyboard.get_candidate_character()
     text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, text_input_size)
-    text_x = self._rect.x + 24
+    text_x = self._rect.x + 28
 
     # text needs to move left if we're at the end where right button is
     text_rect = rl.Rectangle(text_x,
                              int(self._rect.y + PADDING - 7),
                              # clip width to right button when in view
-                             int(self._rect.width - 24 - PADDING * 2 - self._backspace_img.width + 5),
+                             int(self._rect.width - 28 - PADDING * 2 - self._backspace_img.width + 5),
                              int(text_size.y))
 
     # draw rounded background for text input
@@ -219,11 +219,13 @@ class BigInputDialog(BigDialogBase):
                                    rl.BLACK, rl.BLANK)
 
     # draw cursor
+    blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
     if text:
-      blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
       cursor_x = min(text_x + text_size.x + 3, text_rect.x + text_rect.width)
-      rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
-                                1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
+    else:
+      cursor_x = text_rect.x - 2  # cursor at left edge when no text
+    rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
+                              1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
 
     # draw backspace icon with nice fade
     self._backspace_img_alpha.update(255 * bool(text))
@@ -233,7 +235,9 @@ class BigInputDialog(BigDialogBase):
 
     if not text and self._hint_label.text and not candidate_char:
       # draw description if no text entered yet and not drawing candidate char
-      self._hint_label.render(text_field_rect)
+      # use text_rect to align hint with typed text position
+      hint_rect = rl.Rectangle(text_rect.x, text_field_rect.y, text_rect.width, text_input_size + bg_block_margin * 2)
+      self._hint_label.render(hint_rect)
 
     # TODO: move to update state
     # make rect take up entire area so it's easier to click
