@@ -11,10 +11,12 @@ import subprocess
 import os
 import sys
 import time
+import random
 
 sys.path.insert(0, "/data/openpilot")
 
 from jsonrpc import JSONRPCResponseManager, dispatcher
+from openpilot.common.params import Params
 
 ATHENA_SERVICE_UUID = "a51a5a10-0001-4c0d-b8e6-a51a5a100001"
 RPC_REQUEST_CHAR_UUID = "a51a5a10-0002-4c0d-b8e6-a51a5a100001"
@@ -47,6 +49,51 @@ def get_dongle_id() -> str:
 def get_device_name() -> str:
   dongle_id = get_dongle_id()
   return f"comma-{dongle_id[:8]}" if dongle_id else "comma-device"
+
+
+def get_pairing_code() -> str | None:
+  params = Params()
+  return params.get("BlePairingCode", encoding='utf-8')
+
+
+def start_pairing() -> str:
+  params = Params()
+  code = f"{random.randint(0, 999999):06d}"
+  params.put("BlePairingCode", code)
+  params.put("BlePairingStartTime", str(int(time.time())))
+  log(f"Pairing mode started with code: {code}")
+  return code
+
+
+def stop_pairing():
+  params = Params()
+  params.remove("BlePairingCode")
+  params.remove("BlePairingStartTime")
+  log("Pairing mode stopped")
+
+
+def is_pairing_expired() -> bool:
+  params = Params()
+  start_time_str = params.get("BlePairingStartTime", encoding='utf-8')
+  if not start_time_str:
+    return True
+  start_time = int(start_time_str)
+  return (time.time() - start_time) > 600  # 10 minutes
+
+
+def get_authorized_clients() -> set[str]:
+  params = Params()
+  data = params.get("BleAuthorizedClients", encoding='utf-8')
+  return set(json.loads(data)) if data else set()
+
+
+def add_authorized_client(client_id: str):
+  params = Params()
+  clients = get_authorized_clients()
+  clients.add(client_id)
+  params.put("BleAuthorizedClients", json.dumps(list(clients)))
+  stop_pairing()  # Stop pairing mode after successful pairing
+  log(f"Client {client_id[:8]}... authorized")
 
 
 def init_bluetooth():
@@ -195,6 +242,7 @@ def main():
       Characteristic.__init__(self, bus, index, RPC_REQUEST_CHAR_UUID, ["write", "write-without-response"], service)
       self.response_char = response_char
       self.buffer = b""
+      self.current_client_id = None
 
     def WriteValue(self, value, options):
       self.buffer += bytes(value)
@@ -211,6 +259,25 @@ def main():
       try:
         req = json.loads(request_text)
         method = req.get("method", "")
+        params = req.get("params", {})
+        request_id = req.get("id")
+
+        # Track client ID from params if provided
+        if isinstance(params, dict) and "client_id" in params:
+          self.current_client_id = params["client_id"]
+
+        # Allow pairing methods and echo without authorization
+        if method not in ["blePair", "bleStartPairing", "bleStopPairing", "echo"]:
+          authorized_clients = get_authorized_clients()
+          if not self.current_client_id or self.current_client_id not in authorized_clients:
+            error_response = json.dumps({
+              "jsonrpc": "2.0",
+              "error": {"code": -32001, "message": "Unauthorized: pair with device first"},
+              "id": request_id
+            })
+            self.response_char.send_response(error_response)
+            return
+
         response = JSONRPCResponseManager.handle(request_text, dispatcher)
         self.response_char.send_response(response.json)
       except Exception as e:

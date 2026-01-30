@@ -220,3 +220,24 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
       results[key] = f"error: {e}"
 
   return results
+
+
+@dispatcher.add_method
+def blePair(code: str, client_id: str) -> dict[str, bool]:
+  """Pair a BLE client using pairing code"""
+  from openpilot.system.athena.ble import get_pairing_code, add_authorized_client, is_pairing_expired, stop_pairing
+
+  pairing_code = get_pairing_code()
+  if not pairing_code:
+    raise Exception("Pairing mode not active")
+
+  if is_pairing_expired():
+    stop_pairing()
+    raise Exception("Pairing code expired")
+
+  if code != pairing_code:
+    raise Exception("Invalid pairing code")
+
+  add_authorized_client(client_id)
+  return {"success": True}
+

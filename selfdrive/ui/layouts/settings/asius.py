@@ -1,7 +1,7 @@
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import toggle_item
+from openpilot.system.ui.widgets.list_view import toggle_item, text_item, button_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
@@ -45,6 +45,8 @@ class AsiusLayout(Widget):
     }
 
     self._toggles = {}
+    self._items = []
+
     for param, (title, desc, icon) in self._toggle_defs.items():
       toggle = toggle_item(
         title,
@@ -54,8 +56,32 @@ class AsiusLayout(Widget):
         icon=icon,
       )
       self._toggles[param] = toggle
+      self._items.append(toggle)
 
-    self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
+      # Add BLE pairing UI after BLE toggle
+      if param == "EnableBLE":
+        pairing_code = self._params.get("BlePairingCode", encoding='utf-8')
+        if pairing_code:
+          # Show pairing code if pairing mode is active
+          self._ble_pairing_item = text_item(
+            lambda: tr("BLE Pairing Code"),
+            lambda: self._params.get("BlePairingCode", encoding='utf-8') or "",
+            description=lambda: tr("Use this code to pair with Connect app"),
+            enabled=lambda: self._params.get_bool("EnableBLE")
+          )
+          self._items.append(self._ble_pairing_item)
+        else:
+          # Show "Start Pairing" button if no active pairing
+          self._ble_start_pairing = button_item(
+            lambda: tr("BLE Pairing"),
+            lambda: tr("Start Pairing"),
+            description=lambda: tr("Start pairing mode to connect a device"),
+            callback=self._start_ble_pairing,
+            enabled=lambda: self._params.get_bool("EnableBLE")
+          )
+          self._items.append(self._ble_start_pairing)
+
+    self._scroller = Scroller(self._items, line_separator=True, spacing=0)
 
   def show_event(self):
     self._scroller.show_event()
@@ -74,6 +100,23 @@ class AsiusLayout(Widget):
       return
 
     self._params.put_bool(param, state)
+
+  def _start_ble_pairing(self):
+    from openpilot.system.athena.ble import start_pairing
+    start_pairing()
+    # Rebuild the item list to show the pairing code
+    self._items = []
+    for param, (title, desc, icon) in self._toggle_defs.items():
+      self._items.append(self._toggles[param])
+      if param == "EnableBLE":
+        self._ble_pairing_item = text_item(
+          lambda: tr("BLE Pairing Code"),
+          lambda: self._params.get("BlePairingCode", encoding='utf-8') or "",
+          description=lambda: tr("Use this code to pair with Connect app"),
+          enabled=lambda: self._params.get_bool("EnableBLE")
+        )
+        self._items.append(self._ble_pairing_item)
+    self._scroller = Scroller(self._items, line_separator=True, spacing=0)
 
   def _handle_asius_api_toggle(self, state: bool):
     msg = tr("Switch to Asius API? This will clear your device registration and reboot.") if state \
