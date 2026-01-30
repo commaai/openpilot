@@ -253,9 +253,13 @@ def main():
         params = req.get("params", {})
         request_id = req.get("id")
 
-        # Track client ID from params if provided
+        # Track and remove client_id from params if provided
         if isinstance(params, dict) and "client_id" in params:
           self.current_client_id = params["client_id"]
+          # Remove client_id from params before passing to RPC methods
+          params = {k: v for k, v in params.items() if k != "client_id"}
+          req["params"] = params
+          request_text = json.dumps(req)
 
         # Allow pairing methods and echo without authorization
         if method not in ["blePair", "bleStartPairing", "bleStopPairing", "echo"]:
