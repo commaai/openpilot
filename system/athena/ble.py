@@ -53,8 +53,7 @@ def get_device_name() -> str:
 
 def get_pairing_code() -> str | None:
   params = Params()
-  code = params.get("BlePairingCode")
-  return code.decode('utf-8') if code else None
+  return params.get("BlePairingCode")
 
 
 def start_pairing() -> str:
