@@ -62,6 +62,6 @@ if "USBGPU" in os.environ:
   assert 'AMD' in devs, "USBGPU specified but no AMD USB GPU found"
   print("USB GPU detected... building")
   flags = "DEV=AMD AMD_IFACE=USB AMD_LLVM=1 GRAPH_ONE_KERNEL=1 NPY_IMG=1"
-  bp = tg_compile(flags, "big_driving_policy")
+  # bp = tg_compile(flags, "big_driving_policy")
   bv = tg_compile(flags, "big_driving_vision")
-  lenv.SideEffect('lock', [bp, bv])  # tg doesn't support multi-process so build serially
+  lenv.SideEffect('lock', [bv])  # tg doesn't support multi-process so build serially

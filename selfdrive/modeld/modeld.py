@@ -4,19 +4,9 @@ from pathlib import Path
 from openpilot.system.hardware import TICI
 os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
 os.environ['AMD_IFACE'] = 'USB'
-#USBGPU = int(os.environ.get("USBGPU", "0"))
-USBGPU = TICI # hardcode for now
+USBGPU = int(os.environ.get("USBGPU", "0"))
 
-VISION_DEV = os.environ['DEV']
-if USBGPU:
-  import subprocess
-  VISION_DEV = 'NPY'
-  op_dir = Path(__file__).parent.parent.parent
-  subprocess.run(
-      ["scons", "-j1"],
-      cwd=op_dir,
-      check=True
-  )
+VISION_DEV = 'NPY'
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 import time
@@ -234,7 +224,7 @@ class ModelState:
     if SEND_RAW_PRED:
       combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy()])
     t3 = time.perf_counter()
-    #print(f'Model timings: prepare {1000*(t1 - t0):.2f} ms, vision run {1000*(t2 - t1):.2f} ms, policy run {1000*(t3 - t2):.2f} ms')
+    # print(f'Model timings: prepare {1000*(t1 - t0):.2f} ms, vision run {1000*(t2 - t1):.2f} ms, policy run {1000*(t3 - t2):.2f} ms')
 
     return combined_outputs_dict
 
