@@ -30,7 +30,6 @@ GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 LE_ADVERTISEMENT_IFACE = "org.bluez.LEAdvertisement1"
 
 BLE_MTU = 512
-BLE_BLOCKED_METHODS = {"uploadFileToUrl", "uploadFilesToUrls", "startLocalProxy", "takeSnapshot", "webrtc"}
 
 
 def log(msg: str):
@@ -212,14 +211,6 @@ def main():
       try:
         req = json.loads(request_text)
         method = req.get("method", "")
-        if method in BLE_BLOCKED_METHODS:
-          self.response_char.send_response(json.dumps({
-            "jsonrpc": "2.0",
-            "error": {"code": -32601, "message": f"Method '{method}' not available over BLE"},
-            "id": req.get("id")
-          }))
-          return
-
         response = JSONRPCResponseManager.handle(request_text, dispatcher)
         self.response_char.send_response(response.json)
       except Exception as e:
