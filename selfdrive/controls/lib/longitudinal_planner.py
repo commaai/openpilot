@@ -165,7 +165,7 @@ def check_fcw(v_ego, lead_xv, t_follow, v_cruise, dt):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, dt=DT_MDL):
     self.CP = CP
-    self.source = 'cruise'
+    self.source = Source.CRUISE
     self.fcw = False
     self.dt = dt
     self.allow_throttle = True
