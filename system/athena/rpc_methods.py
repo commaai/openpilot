@@ -223,7 +223,7 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
 
 
 @dispatcher.add_method
-def blePair(code: str) -> dict[str, str]:
+def blePair(code: str, dongleId: str) -> dict[str, str]:
   """Pair a BLE client using pairing code and return access token"""
   from openpilot.system.athena.ble import get_pairing_code, add_authorized_token
 
@@ -233,6 +233,11 @@ def blePair(code: str) -> dict[str, str]:
 
   if code != pairing_code:
     raise Exception("Invalid pairing code")
+
+  # Verify dongleId matches
+  device_dongle_id = Params().get("DongleId")
+  if dongleId != device_dongle_id:
+    raise Exception("Invalid dongle ID")
 
   token = add_authorized_token()
   return {"token": token}
