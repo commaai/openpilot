@@ -64,11 +64,13 @@ class AsiusLayoutMici(NavWidget):
     if pairing_code:
       self._ble_pairing_button.set_text("ble pairing code")
       self._ble_pairing_button.set_value(pairing_code)
-      self._ble_pairing_button.set_enabled(False)
+      self._ble_pairing_button.set_enabled(ble_enabled)
+      self._ble_pairing_button.set_click_callback(self._stop_ble_pairing)
     else:
       self._ble_pairing_button.set_text("ble pairing")
       self._ble_pairing_button.set_value("start pairing")
       self._ble_pairing_button.set_enabled(ble_enabled)
+      self._ble_pairing_button.set_click_callback(self._start_ble_pairing)
 
   def _render(self, rect):
     self._scroller.render(rect)
@@ -76,6 +78,11 @@ class AsiusLayoutMici(NavWidget):
   def _start_ble_pairing(self):
     from openpilot.system.athena.ble import start_pairing
     start_pairing()
+    self._update_toggles()
+
+  def _stop_ble_pairing(self):
+    from openpilot.system.athena.ble import stop_pairing
+    stop_pairing()
     self._update_toggles()
 
   def _handle_asius_api_toggle(self, state: bool):
