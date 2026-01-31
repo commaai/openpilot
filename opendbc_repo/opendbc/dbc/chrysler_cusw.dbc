@@ -1,0 +1,192 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 492 EPS_STATUS: 8 XXX
+ SG_ TORQUE_DRIVER : 3|12@0+ (1,-1024) [0|2048] "Nm" XXX
+ SG_ LKAS_STATE : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ LKAS_FAULT : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ LKAS_HIGH_TORQUE : 19|1@0+ (1,0) [0|1] "" XXX
+ SG_ TORQUE_MOTOR : 27|12@0+ (1,-2048) [0|1] "" XXX
+ SG_ LAT_TORQUE_REQUEST : 47|12@0+ (1,-2048) [0|4095] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1250 DOORS: 8 XXX
+ SG_ DOOR_OPEN_FL : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_FR : 11|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RL : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RR : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ TRUNK : 14|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1262 GEAR: 8 XXX
+ SG_ PRNDL : 11|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 875 SEATBELT_STATUS: 8 XXX
+ SG_ SEATBELT_DRIVER_UNLATCHED : 16|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1264 STEERING_LEVERS: 7 XXX
+ SG_ TURN_SIGNALS : 3|4@0+ (1,0) [0|15] "" XXX
+ SG_ HIGH_BEAM_FLASH : 15|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 480 TRACTION_BUTTON: 8 XXX
+ SG_ TRACTION_OFF : 3|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 740 WHEEL_SPEEDS_REAR: 8 XXX
+ SG_ WHEEL_SPEED_RL : 5|13@0+ (0.0087,0) [0|1] "" XXX
+ SG_ WHEEL_SPEED_RR : 20|13@0+ (0.0087,0) [0|1] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 520 EPS_STATUS_2: 7 XXX
+ SG_ NEW_SIGNAL_1 : 3|12@0+ (1,-2048) [0|1] "" XXX
+ SG_ NEW_SIGNAL_2 : 19|12@0+ (1,-2048) [0|1] "" XXX
+ SG_ NEW_SIGNAL_3 : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 43|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 55|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 494 STEERING: 6 XXX
+ SG_ STEER_ANGLE : 5|14@0+ (0.1,-720) [0|1] "deg" XXX
+ SG_ STEERING_RATE : 19|12@0+ (1,-2000) [0|1] "" XXX
+ SG_ COUNTER : 35|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 738 BRAKE_2: 8 XXX
+ SG_ BRAKE_TORQUE : 7|12@0+ (1,0) [0|15] "" XXX
+ SG_ BRAKE_LIGHTS : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_HUMAN : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 742 WHEEL_SPEEDS_FRONT: 8 XXX
+ SG_ WHEEL_SPEED_FL : 5|13@0+ (0.0087,0) [0|1] "" XXX
+ SG_ WHEEL_SPEED_FR : 20|13@0+ (0.0087,0) [0|1] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 502 LKAS_COMMAND: 4 XXX
+ SG_ STEERING_TORQUE : 7|11@0+ (1,-1024) [0|4087] "" XXX
+ SG_ LKAS_CONTROL_BIT : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 19|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 31|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 1498 LKAS_1: 2 XXX
+
+BO_ 1500 DAS_6: 4 XXX
+ SG_ LKAS_ICON_COLOR : 1|2@0+ (1,0) [0|1] "" XXX
+ SG_ SET_ME_0XAC : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ LKAS_LANE_LINES : 19|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 1508 LKAS_HEARTBIT: 8 XXX
+ SG_ LKAS_STATUS_OK : 28|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 762 CRUISE_BUTTONS: 3 XXX
+ SG_ ACC_Cancel : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_Distance_Dec : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_Accel : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_Decel : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_Resume : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ Cruise_OnOff : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_OnOff : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_Distance_Inc : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 15|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 23|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 484 BRAKE_1: 8 XXX
+ SG_ BRAKE_PSI : 7|12@0+ (1,0) [0|1] "" XXX
+ SG_ VEHICLE_SPEED : 35|12@0+ (0.0174,0) [0|4095] "m/s" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 500 GEARBOX_1: 7 XXX
+ SG_ DESIRED_GEAR : 35|4@0+ (1,0) [0|1] "" XXX
+ SG_ ACTUAL_GEAR : 39|4@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 43|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 55|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 510 ACCEL_GAS: 5 XXX
+ SG_ ACC_ACTIVE : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ GAS_HUMAN : 15|8@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 27|4@0+ (1,0) [0|1] "" XXX
+ SG_ GAS_ACC : 28|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 39|8@0+ (1,0) [0|1] "" XXX
+
+BO_ 490 DASHBOARD: 4 XXX
+ SG_ ACC_SPEED_CONFIG_KPH : 7|8@0+ (0.1625,0) [0|1] "m/s" XXX
+
+BO_ 1006 ACC_HUD: 7 XXX
+ SG_ ACC_STATE : 7|3@0+ (1,0) [0|15] "" XXX
+ SG_ ACC_SET_SPEED_KMH : 14|8@0+ (1,0) [0|255] "km/h" XXX
+ SG_ DISTANCE_SETTING : 33|2@0+ (1,0) [0|3] "" XXX
+ SG_ DISTANCE_TO_LEAD : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 748 ACC_CONTROL: 8 XXX
+ SG_ ACC_MAIN_ON : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_ACTIVE : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_VALUE : 13|10@0+ (1,0) [0|1023] "" XXX
+ SG_ GAS_VALID : 15|1@0+ (1,0) [0|1] "" XXX
+ SG_ GAS_VALUE : 28|10@0+ (1,0) [0|1023] "" XXX
+ SG_ BRAKE_VALID : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ UNKNOWN_1 : 33|1@0+ (1,0) [0|1] "" XXX
+ SG_ UNKNOWN_2 : 46|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 496 CLUSTER_1: 8 XXX
+ SG_ TACHOMETER : 3|12@0+ (1.024,0) [0|3] "" XXX
+ SG_ SPEEDOMETER : 19|12@0+ (0.01065,0) [0|1] "m/s" XXX
+ SG_ COUNTER : 51|4@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|1] "" XXX
+
+
+CM_ SG_ 1250 TRUNK "1 = open, 0 = closed";
+CM_ SG_ 1250 DOOR_OPEN_FL "1 = open, 0 = closed";
+CM_ SG_ 1250 DOOR_OPEN_FR "1 = open, 0 = closed";
+CM_ SG_ 1250 DOOR_OPEN_RL "1 = open, 0 = closed";
+CM_ SG_ 1250 DOOR_OPEN_RR "1 = open, 0 = closed";
+CM_ SG_ 1262 PRNDL "1 = park, 2 = reverse, 3 = neutral, 4 = drive, 5 = sport (snicker... sport)";
+CM_ SG_ 875 SEATBELT_DRIVER_UNLATCHED "1 = unlatched, 0 = safety first";
+CM_ SG_ 1264 TURN_SIGNALS "0 = off, 1 = left blinker, 2 = right blinker";
+CM_ SG_ 480 TRACTION_OFF "0 = TCS on, 1 = TCS off (light on dash ON)";
+CM_ SG_ 1500 LKAS_LANE_LINES "0x01 transparent lines, 0x02 left white, 0x03 right white, 0x04 left yellow with car on top, 0x05 left yellow with car on top, 0x06 both white, 0x07 left yellow, 0x08 left yellow right white, 0x09 right yellow, 0x0a right yellow left white, 0x0b left yellow with car on top right white, 0x0c right yellow with car on top left white, (0x00, 0x0d, 0x0e, 0x0f) null";
+CM_ SG_ 1492 LEAD_CAR "lead car present = 4, no car = 2 ";
+CM_ SG_ 498 ACC_STATUS_2 "1 no ACC, 3 icpno ";
+CM_ SG_ 498 ACC_STATUS_1 "0x00 = acc off, 0x03 = acc on, green, 0x02 acc on, white";
+CM_ SG_ 1006 ACC_STATE "0 = ACC off, 6 = ACC active (white), 8 = ACC engaged (green)";
+CM_ SG_ 502 LKAS_STATE "2 = active (green), 1 = error";
+CM_ SG_ 1006 ACC_SET_SPEED_KMH "min set appears to be 68 km/h, errors below 59 km/h ";
+VAL_ 1262 PRNDL 1 "P" 2 "R" 3 "N" 4 "D" 5 "S";

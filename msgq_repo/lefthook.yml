@@ -1,0 +1,32 @@
+output:
+  - meta           # Print lefthook version
+  - summary        # Print summary block (successful and failed steps)
+  - empty_summary  # Print summary heading when there are no steps to run
+  - success        # Print successful steps
+  - failure        # Print failed steps printing
+  - execution      # Print any execution logs
+  #- execution_out  # Print execution output
+  #- execution_info # Print `EXECUTE > ...` logging
+  - skips          # Print "skip" (i.e. no files matched)
+
+test:
+  parallel: true
+  commands:
+    # *** static analysis ***
+    ruff:
+      run: ruff check .
+    ty:
+      run: ty check .
+    codespell:
+      run: codespell {files} -L ned,stdio,master --builtin clear,rare,informal,usage,code,names,en-GB_to_en-US -S uv.lock,*_pyx.cpp,catch2*
+      files: git ls-tree -r HEAD --name-only
+    cppcheck:
+      run: cppcheck --error-exitcode=1 --inline-suppr --language=c++ --force --quiet -j4 --check-level=exhaustive $(git ls-files '*.cc' | grep -v -E '(msgq_tests|test_runner)\.cc')
+    cpplint:
+      run: cpplint --exclude=msgq/catch2/ --exclude=msgq/ipc_pyx.cpp --exclude=msgq/visionipc/visionipc_pyx.cpp --recursive --quiet --counting=detailed --linelength=240 --filter=-build,-legal,-readability,-runtime,-whitespace,+build/include_subdir,+build/forward_decl,+build/include_what_you_use,+build/deprecated,+whitespace/comma,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body,+whitespace/forcolon,+whitespace/parens,+whitespace/semicolon,+whitespace/tab,+readability/braces msgq/
+
+    # *** tests ***
+    test_runner:
+      run: msgq/test_runner
+    pytest:
+      run: pytest

@@ -1,0 +1,56 @@
+[project]
+name = "msgq"
+version = "0.0.1"
+description = "Code powering the comma.ai panda"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = {text = "MIT"}
+authors = [{name = "comma.ai"}]
+classifiers = [
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Hardware",
+]
+dependencies = [
+  "setuptools",  # for distutils
+  "Cython",
+  "scons",
+  "ruff",
+  "parameterized",
+  "coverage",
+  "numpy",
+  "pytest",
+  "pytest-retry",
+  "cppcheck",
+  "cpplint",
+  "codespell",
+  "ty",
+  "lefthook",
+]
+
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+lint.select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A"]
+lint.ignore = ["W292", "E741", "E402", "C408", "ISC003"]
+lint.flake8-implicit-str-concat.allow-multiline=false
+
+line-length = 160
+target-version="py311"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+"unittest".msg = "Use pytest"
+
+[tool.ty.src]
+exclude = ["site_scons/"]
+
+[tool.ty.rules]
+# Cython modules are compiled at build time, not available for static analysis
+unresolved-import = "ignore"
+
+[tool.pytest.ini_options]
+addopts = "--durations=10"
+testpaths = [
+  "msgq/tests",
+  "msgq/visionipc/tests",
+]

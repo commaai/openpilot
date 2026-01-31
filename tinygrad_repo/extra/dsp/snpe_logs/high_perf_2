@@ -1,0 +1,131 @@
+Log File Created: Tue Mar 18 01:33:12 2025
+Time Scale: 1e-06
+Epoch Timestamp: 1742286792883569 Steady Clock Timestamp: 75586845756
+Software library version: 1.61.0.3358
+
+Dnn Runtime Load/Deserialize/Create/De-Init Statistics:
+--------------------------------------------------
+Load: 333 us
+Deserialize: 32452 us
+Create: 143084 us
+
+Init: 178071 us
+De-Init: 16710 us
+
+Create Network(s): 86850 us
+RPC Init Time: 43213 us
+Snpe Accelerator Init Time: 42154 us
+Accelerator Init Time: 39189 us
+
+Average SNPE Statistics:
+------------------------------
+Total Inference Time: 11868 us
+Forward Propagate Time: 11816 us
+RPC Execute Time: 9810 us
+Snpe Accelerator Time: 9129 us
+Accelerator Time: 8701 us
+Misc Accelerator Time: 10 us
+
+Layer Times: 
+---------------
+0: 42 us : DSP
+1: 0 us : DSP
+2: 254 us : DSP
+3: 0 us : DSP
+4: 153 us : DSP
+5: 295 us : DSP
+6: 0 us : DSP
+7: 287 us : DSP
+8: 0 us : DSP
+9: 162 us : DSP
+10: 210 us : DSP
+11: 0 us : DSP
+12: 138 us : DSP
+13: 0 us : DSP
+14: 176 us : DSP
+15: 293 us : DSP
+16: 60 us : DSP
+17: 0 us : DSP
+18: 157 us : DSP
+19: 0 us : DSP
+20: 112 us : DSP
+21: 134 us : DSP
+22: 0 us : DSP
+23: 81 us : DSP
+24: 0 us : DSP
+25: 104 us : DSP
+26: 130 us : DSP
+27: 37 us : DSP
+28: 0 us : DSP
+29: 81 us : DSP
+30: 0 us : DSP
+31: 87 us : DSP
+32: 124 us : DSP
+33: 30 us : DSP
+34: 0 us : DSP
+35: 87 us : DSP
+36: 0 us : DSP
+37: 63 us : DSP
+38: 74 us : DSP
+39: 0 us : DSP
+40: 102 us : DSP
+41: 0 us : DSP
+42: 82 us : DSP
+43: 95 us : DSP
+44: 29 us : DSP
+45: 0 us : DSP
+46: 112 us : DSP
+47: 0 us : DSP
+48: 88 us : DSP
+49: 96 us : DSP
+50: 25 us : DSP
+51: 0 us : DSP
+52: 103 us : DSP
+53: 0 us : DSP
+54: 80 us : DSP
+55: 100 us : DSP
+56: 26 us : DSP
+57: 0 us : DSP
+58: 102 us : DSP
+59: 0 us : DSP
+60: 85 us : DSP
+61: 129 us : DSP
+62: 0 us : DSP
+63: 155 us : DSP
+64: 0 us : DSP
+65: 113 us : DSP
+66: 194 us : DSP
+67: 34 us : DSP
+68: 0 us : DSP
+69: 157 us : DSP
+70: 0 us : DSP
+71: 120 us : DSP
+72: 198 us : DSP
+73: 34 us : DSP
+74: 0 us : DSP
+75: 155 us : DSP
+76: 0 us : DSP
+77: 101 us : DSP
+78: 121 us : DSP
+79: 0 us : DSP
+80: 256 us : DSP
+81: 0 us : DSP
+82: 134 us : DSP
+83: 159 us : DSP
+84: 31 us : DSP
+85: 0 us : DSP
+86: 199 us : DSP
+87: 0 us : DSP
+88: 142 us : DSP
+89: 152 us : DSP
+90: 26 us : DSP
+91: 0 us : DSP
+92: 202 us : DSP
+93: 0 us : DSP
+94: 143 us : DSP
+95: 278 us : DSP
+96: 0 us : DSP
+97: 316 us : DSP
+98: 40 us : DSP
+99: 12 us : DSP
+100: 199 us : DSP

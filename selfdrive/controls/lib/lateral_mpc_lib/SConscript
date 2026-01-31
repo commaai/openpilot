@@ -1,0 +1,97 @@
+Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'np_version')
+
+gen = "c_generated_code"
+
+casadi_model = [
+  f'{gen}/lat_model/lat_expl_ode_fun.c',
+  f'{gen}/lat_model/lat_expl_vde_forw.c',
+]
+
+casadi_cost_y = [
+  f'{gen}/lat_cost/lat_cost_y_fun.c',
+  f'{gen}/lat_cost/lat_cost_y_fun_jac_ut_xt.c',
+  f'{gen}/lat_cost/lat_cost_y_hess.c',
+]
+
+casadi_cost_e = [
+  f'{gen}/lat_cost/lat_cost_y_e_fun.c',
+  f'{gen}/lat_cost/lat_cost_y_e_fun_jac_ut_xt.c',
+  f'{gen}/lat_cost/lat_cost_y_e_hess.c',
+]
+
+casadi_cost_0 = [
+  f'{gen}/lat_cost/lat_cost_y_0_fun.c',
+  f'{gen}/lat_cost/lat_cost_y_0_fun_jac_ut_xt.c',
+  f'{gen}/lat_cost/lat_cost_y_0_hess.c',
+]
+
+build_files = [f'{gen}/acados_solver_lat.c'] + casadi_model + casadi_cost_y + casadi_cost_e + casadi_cost_0
+
+# extra generated files used to trigger a rebuild
+generated_files = [
+  f'{gen}/Makefile',
+
+  f'{gen}/main_lat.c',
+  f'{gen}/main_sim_lat.c',
+  f'{gen}/acados_solver_lat.h',
+  f'{gen}/acados_sim_solver_lat.h',
+  f'{gen}/acados_sim_solver_lat.c',
+  f'{gen}/acados_solver.pxd',
+
+  f'{gen}/lat_model/lat_expl_vde_adj.c',
+
+  f'{gen}/lat_model/lat_model.h',
+  f'{gen}/lat_constraints/lat_constraints.h',
+  f'{gen}/lat_cost/lat_cost.h',
+] + build_files
+
+acados_dir = '#third_party/acados'
+acados_templates_dir = '#third_party/acados/acados_template/c_templates_tera'
+
+source_list = ['lat_mpc.py',
+  '#selfdrive/modeld/constants.py',
+  f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
+  f'{acados_templates_dir}/acados_solver.in.c',
+]
+
+lenv = env.Clone()
+acados_rel_path = Dir(gen).rel_path(Dir(f"#third_party/acados/{arch}/lib"))
+lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{acados_rel_path}')]
+lenv.Clean(generated_files, Dir(gen))
+
+generated_lat = lenv.Command(generated_files,
+                             source_list,
+                             f"cd {Dir('.').abspath} && python3 lat_mpc.py")
+lenv.Depends(generated_lat, [msgq_python, common_python])
+
+lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
+lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")
+lenv["CCFLAGS"].append("-Wno-unused")
+if arch != "Darwin":
+  lenv["LINKFLAGS"].append("-Wl,--disable-new-dtags")
+else:
+  lenv["LINKFLAGS"].append("-Wl,-install_name,@loader_path/libacados_ocp_solver_lat.dylib")
+  lenv["LINKFLAGS"].append(f"-Wl,-rpath,@loader_path/{acados_rel_path}")
+lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_lat",
+                                build_files,
+                                LIBS=['m', 'acados', 'hpipm', 'blasfeo', 'qpOASES_e'])
+
+# generate cython stuff
+acados_ocp_solver_pyx = File("#third_party/acados/acados_template/acados_ocp_solver_pyx.pyx")
+acados_ocp_solver_common = File("#third_party/acados/acados_template/acados_solver_common.pxd")
+libacados_ocp_solver_pxd = File(f'{gen}/acados_solver.pxd')
+libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
+
+lenv2 = envCython.Clone()
+lenv2["LIBPATH"] += [lib_solver[0].dir.abspath]
+lenv2["RPATH"] += [lenv2.Literal('\\$$ORIGIN')]
+lenv2.Command(libacados_ocp_solver_c,
+  [acados_ocp_solver_pyx, acados_ocp_solver_common, libacados_ocp_solver_pxd],
+  f'cython' + \
+  f' -o {libacados_ocp_solver_c.get_labspath()}' + \
+  f' -I {libacados_ocp_solver_pxd.get_dir().get_labspath()}' + \
+  f' -I {acados_ocp_solver_common.get_dir().get_labspath()}' + \
+  f' {acados_ocp_solver_pyx.get_labspath()}')
+lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c], LIBS=['acados_ocp_solver_lat'])
+lenv2.Depends(lib_cython, lib_solver)
+lenv2.Depends(libacados_ocp_solver_c, np_version)
