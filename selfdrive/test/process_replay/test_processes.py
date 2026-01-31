@@ -194,11 +194,11 @@ if __name__ == "__main__":
         if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
           continue
 
-        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst".replace("|", "_"))
         if args.update_refs:  # reference logs will not exist if routes were just regenerated
           ref_log_path = get_url(*segment.rsplit("--", 1,), "rlog.zst")
         else:
-          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.zst")
+          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.zst".replace("|", "_"))
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
         dat = None if args.upload_only else log_data[segment]
