@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - process-replay-github
   pull_request:
   workflow_dispatch:
   workflow_call:
@@ -203,9 +204,9 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
     - name: Upload reference logs
-      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
+      if: github.repository == 'commaai/openpilot' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/process-replay-github')
       run: |
-        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) --update-refs"
     - name: Run regen
       if: false
       timeout-minutes: 4
@@ -213,14 +214,14 @@ jobs:
         ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
                         chmod -R 777 /tmp/comma_download_cache"
     - name: Checkout ci-artifacts
-      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
+      if: github.repository == 'commaai/openpilot' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/process-replay-github')
       uses: actions/checkout@v4
       with:
         repository: commaai/ci-artifacts
         ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
         path: ${{ github.workspace }}/ci-artifacts
     - name: Push refs
-      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
+      if: github.repository == 'commaai/openpilot' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/process-replay-github')
       working-directory: ${{ github.workspace }}/ci-artifacts
       run: |
         git checkout --orphan process-replay
