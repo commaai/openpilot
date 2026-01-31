@@ -259,6 +259,8 @@ def main():
             self.response_char.send_response(error_response)
             return
 
+        from openpilot.system.athena.rpc_methods import set_transport
+        set_transport("ble")
         response = JSONRPCResponseManager.handle(request_text, dispatcher)
         self.response_char.send_response(response.json)
       except Exception as e:

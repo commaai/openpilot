@@ -20,10 +20,33 @@ from openpilot.system.hardware.hw import Paths
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 
-# Parameters that should never be remotely modified
-BLOCKED_PARAMS = {
-  "GithubUsername",  # Could grant SSH access
-  "GithubSshKeys",  # Direct SSH key injection
+# Transport context — set before dispatch by ble.py / athenad.py
+_current_transport: str = "websocket"
+
+def set_transport(transport: str) -> None:
+  global _current_transport
+  _current_transport = transport
+
+def get_transport() -> str:
+  return _current_transport
+
+# RPC methods that require BLE (physical proximity to device)
+BLE_ONLY_METHODS: set[str] = {
+  "getWifiNetworks",
+  "connectWifi",
+  "forgetWifi",
+  "setTethering",
+  "setTetheringPassword",
+  "getNetworkStatus",
+  "blePair",
+}
+
+# Params in saveParams() that require BLE to modify
+BLE_ONLY_PARAMS: set[str] = {
+  "GithubUsername",
+  "GithubSshKeys",
+  "DoReboot",
+  "DoShutdown",
 }
 
 dispatcher["echo"] = lambda s: s
@@ -193,9 +216,9 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
   results = {}
 
   for key, value in params_to_update.items():
-    if key in BLOCKED_PARAMS:
-      cloudlog.warning(f"athenad.saveParams.blocked: Attempted to modify blocked parameter '{key}'")
-      results[key] = "error: blocked"
+    if key in BLE_ONLY_PARAMS and get_transport() != "ble":
+      cloudlog.warning(f"saveParams.blocked: '{key}' requires bluetooth")
+      results[key] = "error: requires bluetooth"
       continue
 
     try:
@@ -224,6 +247,72 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
       results[key] = f"error: {e}"
 
   return results
+
+
+_wifi_manager = None
+
+def _get_wifi_manager():
+  global _wifi_manager
+  if _wifi_manager is None:
+    from openpilot.system.ui.lib.wifi_manager import WifiManager
+    _wifi_manager = WifiManager()
+  return _wifi_manager
+
+
+@dispatcher.add_method
+def getWifiNetworks() -> list[dict]:
+  wm = _get_wifi_manager()
+  return [
+    {
+      "ssid": n.ssid,
+      "strength": n.strength,
+      "security": n.security_type.name.lower(),
+      "connected": n.is_connected,
+      "saved": n.is_saved,
+    }
+    for n in wm._networks
+  ]
+
+
+@dispatcher.add_method
+def connectWifi(ssid: str, password: str = "") -> dict[str, str]:
+  wm = _get_wifi_manager()
+  wm.connect_to_network(ssid, password)
+  return {"status": "connecting"}
+
+
+@dispatcher.add_method
+def forgetWifi(ssid: str) -> dict[str, str]:
+  wm = _get_wifi_manager()
+  wm.forget_connection(ssid, block=True)
+  return {"status": "ok"}
+
+
+@dispatcher.add_method
+def setTethering(enabled: bool) -> dict[str, str]:
+  wm = _get_wifi_manager()
+  wm.set_tethering_active(enabled)
+  return {"status": "ok"}
+
+
+@dispatcher.add_method
+def setTetheringPassword(password: str) -> dict[str, str]:
+  if len(password) < 8:
+    raise Exception("Password must be at least 8 characters")
+  wm = _get_wifi_manager()
+  wm.set_tethering_password(password)
+  return {"status": "ok"}
+
+
+@dispatcher.add_method
+def getNetworkStatus() -> dict:
+  wm = _get_wifi_manager()
+  return {
+    "ip_address": wm.ipv4_address,
+    "tethering_active": wm.is_tethering_active(),
+    "tethering_password": wm.tethering_password,
+    "metered": int(wm.current_network_metered),
+  }
 
 
 @dispatcher.add_method
