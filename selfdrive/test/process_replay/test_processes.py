@@ -158,8 +158,10 @@ if __name__ == "__main__":
   try:
     ref_commit = FileReader(BASE_URL + "ref_commit").read().decode().strip()
   except Exception:
-    print("Couldn't find reference commit")
-    sys.exit(1)
+    if not upload:
+      print("Couldn't find reference commit")
+      sys.exit(1)
+    ref_commit = ""
 
   cur_commit = get_commit()
   if not cur_commit:
