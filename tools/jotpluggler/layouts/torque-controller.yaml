@@ -1,0 +1,128 @@
+tabs:
+  '0':
+    name: Lateral Plan Conformance
+    panel_layout:
+      type: split
+      orientation: 1
+      proportions:
+      - 0.3333333333333333
+      - 0.3333333333333333
+      - 0.3333333333333333
+      children:
+      - type: panel
+        panel:
+          type: timeseries
+          title: desired vs actual
+          series_paths:
+          - controlsState/lateralControlState/torqueState/desiredLateralAccel
+          - controlsState/lateralControlState/torqueState/actualLateralAccel
+      - type: panel
+        panel:
+          type: timeseries
+          title: ff vs output
+          series_paths:
+          - controlsState/lateralControlState/torqueState/f
+          - carState/steeringPressed
+          - carControl/actuators/torque
+      - type: panel
+        panel:
+          type: timeseries
+          title: vehicle speed
+          series_paths:
+          - carState/vEgo
+  '1':
+    name: Actuator Performance
+    panel_layout:
+      type: split
+      orientation: 1
+      proportions:
+      - 0.3333333333333333
+      - 0.3333333333333333
+      - 0.3333333333333333
+      children:
+      - type: panel
+        panel:
+          type: timeseries
+          title: calc vs learned latAccelFactor
+          series_paths:
+          - liveTorqueParameters/latAccelFactorFiltered
+          - liveTorqueParameters/latAccelFactorRaw
+          - carParams/lateralTuning/torque/latAccelFactor
+      - type: panel
+        panel:
+          type: timeseries
+          title: learned latAccelOffset
+          series_paths:
+          - liveTorqueParameters/latAccelOffsetRaw
+          - liveTorqueParameters/latAccelOffsetFiltered
+      - type: panel
+        panel:
+          type: timeseries
+          title: calc vs learned friction
+          series_paths:
+          - liveTorqueParameters/frictionCoefficientFiltered
+          - liveTorqueParameters/frictionCoefficientRaw
+          - carParams/lateralTuning/torque/friction
+  '2':
+    name: Vehicle Dynamics
+    panel_layout:
+      type: split
+      orientation: 1
+      proportions:
+      - 0.3333333333333333
+      - 0.3333333333333333
+      - 0.3333333333333333
+      children:
+      - type: panel
+        panel:
+          type: timeseries
+          title: initial vs learned steerRatio
+          series_paths:
+          - carParams/steerRatio
+          - liveParameters/steerRatio
+      - type: panel
+        panel:
+          type: timeseries
+          title: initial vs learned tireStiffnessFactor
+          series_paths:
+          - carParams/tireStiffnessFactor
+          - liveParameters/stiffnessFactor
+      - type: panel
+        panel:
+          type: timeseries
+          title: live steering angle offsets
+          series_paths:
+          - liveParameters/angleOffsetDeg
+          - liveParameters/angleOffsetAverageDeg
+  '3':
+    name: Controller PIF Terms
+    panel_layout:
+      type: split
+      orientation: 1
+      proportions:
+      - 0.3333333333333333
+      - 0.3333333333333333
+      - 0.3333333333333333
+      children:
+      - type: panel
+        panel:
+          type: timeseries
+          title: ff vs output
+          series_paths:
+          - carControl/actuators/torque
+          - controlsState/lateralControlState/torqueState/f
+          - carState/steeringPressed
+      - type: panel
+        panel:
+          type: timeseries
+          title: PIF terms
+          series_paths:
+          - controlsState/lateralControlState/torqueState/f
+          - controlsState/lateralControlState/torqueState/p
+          - controlsState/lateralControlState/torqueState/i
+      - type: panel
+        panel:
+          type: timeseries
+          title: road roll angle
+          series_paths:
+          - liveParameters/roll

@@ -1,0 +1,7 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _lkas_hud_5byte.dbc";
+CM_ "IMPORT _nidec_scm_group_a.dbc";
+CM_ "IMPORT _steering_sensors_c.dbc";
+CM_ "IMPORT _steering_control_c.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
