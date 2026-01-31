@@ -79,6 +79,7 @@ def set_static_addr():
   mac_address = get_mac_addr()
   subprocess.run(["sudo", "btmgmt", "--index", "0", "power", "off"], capture_output=True)
   subprocess.run(["sudo", "btmgmt", "--index", "0", "static-addr", mac_address], capture_output=True)
+  subprocess.run(["sudo", "btmgmt", "--index", "0", "privacy", "on"], capture_output=True)
   subprocess.run(["sudo", "btmgmt", "--index", "0", "power", "on"], capture_output=True)
   log(f"Set BLE static address to {mac_address}")
 
