@@ -15,6 +15,7 @@ from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC
                                                                    check_most_messages_valid
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
+from openpilot.tools.lib.url_file import URLFile
 
 source_segments = [
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.HYUNDAI_SONATA
@@ -65,6 +66,7 @@ segments = [
 excluded_interfaces = ["mock", "body", "psa"]
 
 BASE_URL = "https://raw.githubusercontent.com/commaai/ci-artifacts/refs/heads/process-replay/"
+REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 
@@ -156,10 +158,10 @@ if __name__ == "__main__":
     assert full_test, "Need to run full test when updating refs"
 
   try:
-    ref_commit = FileReader(BASE_URL + "ref_commit").read().decode().strip()
-  except Exception:
-    print("Couldn't find reference commit")
-    sys.exit(1)
+    with open(REF_COMMIT_FN) as f:
+      ref_commit = f.read().strip()
+  except FileNotFoundError:
+    ref_commit = URLFile(BASE_URL + "ref_commit", cache=False).read().decode().strip()
 
   cur_commit = get_commit()
   if not cur_commit:
@@ -227,6 +229,8 @@ if __name__ == "__main__":
       print("TEST SUCCEEDED")
 
   else:
+    with open(REF_COMMIT_FN, "w") as f:
+      f.write(cur_commit)
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
 
   sys.exit(int(failed))
