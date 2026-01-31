@@ -1,0 +1,19 @@
+Each model should be a clean single file.
+They are imported from the top level `models` directory
+
+It should be capable of loading weights from the reference imp.
+
+We will focus on these 5 models:
+
+# Resnet50-v1.5 (classic) -- 8.2 GOPS/input
+# Retinanet
+# 3D UNET (upconvs)
+# RNNT
+# BERT-large (transformer)
+
+They are used in both the training and inference benchmark:
+https://mlcommons.org/en/training-normal-21/
+https://mlcommons.org/en/inference-edge-30/
+And we will submit to both.
+
+NOTE: we are Edge since we don't have ECC RAM
