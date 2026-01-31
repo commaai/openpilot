@@ -21,7 +21,7 @@ class AsiusLayoutMici(NavWidget):
 
     webrtc_toggle = BigParamControl("remote live streaming", "EnableWebRTC")
     remote_params_toggle = BigParamControl("remote parameter editing", "EnableRemoteParams")
-    ble_toggle = BigParamControl("bluetooth control", "EnableBLE", toggle_callback=self._handle_ble_toggle)
+    ble_toggle = BigParamControl("bluetooth", "EnableBLE", toggle_callback=self._handle_ble_toggle)
 
     pairing_code = self._params.get("BlePairingCode")
     if pairing_code:
@@ -89,6 +89,7 @@ class AsiusLayoutMici(NavWidget):
     if not state:
       from openpilot.system.athena.ble import stop_pairing
       stop_pairing()
+    self._update_toggles()
 
   def _handle_asius_api_toggle(self, state: bool):
     title = "switch to asius api" if state else "switch to comma api"

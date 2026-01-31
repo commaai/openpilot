@@ -23,7 +23,7 @@ class AsiusLayout(Widget):
 
     self._toggle_defs = {
       "EnableBLE": (
-        lambda: tr("Bluetooth Control"),
+        lambda: tr("Bluetooth"),
         DESCRIPTIONS["EnableBLE"],
         "bluetooth.png",
       ),
