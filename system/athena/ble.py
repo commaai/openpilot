@@ -75,10 +75,19 @@ def get_mac_addr() -> str:
   return f"C0:{mac_suffix[0:2]}:{mac_suffix[2:4]}:{mac_suffix[4:6]}:{mac_suffix[6:8]}:{mac_suffix[8:10]}"
 
 
+def set_static_addr():
+  mac_address = get_mac_addr()
+  subprocess.run(["sudo", "btmgmt", "--index", "0", "power", "off"], capture_output=True)
+  subprocess.run(["sudo", "btmgmt", "--index", "0", "static-addr", mac_address], capture_output=True)
+  subprocess.run(["sudo", "btmgmt", "--index", "0", "power", "on"], capture_output=True)
+  log(f"Set BLE static address to {mac_address}")
+
+
 def init_bluetooth():
   try:
     result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
     if result.returncode == 0 and b"UP RUNNING" in result.stdout:
+      set_static_addr()
       return True
   except Exception:
     pass
@@ -98,13 +107,7 @@ def init_bluetooth():
     result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
     if result.returncode == 0 and b"UP RUNNING" in result.stdout:
       log("Bluetooth initialized")
-
-      mac_address = get_mac_addr()
-      subprocess.run(["sudo", "btmgmt", "--index", "0", "power", "off"], capture_output=True)
-      subprocess.run(["sudo", "btmgmt", "--index", "0", "static-addr", mac_address], capture_output=True)
-      subprocess.run(["sudo", "btmgmt", "--index", "0", "power", "on"], capture_output=True)
-      log(f"Set BLE static address to {mac_address}")
-
+      set_static_addr()
       return True
     if result.returncode == 0 and b"DOWN" in result.stdout:
       subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
