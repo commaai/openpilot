@@ -70,21 +70,28 @@ def stop_pairing():
   log("Pairing mode stopped")
 
 
-def get_authorized_clients() -> set[str]:
+def generate_token() -> str:
+  import secrets
+  return secrets.token_urlsafe(32)
+
+
+def get_authorized_tokens() -> set[str]:
   params = Params()
-  clients = params.get("BleAuthorizedClients")
-  if not clients:
+  tokens = params.get("BleAuthorizedTokens")
+  if not tokens:
     return set()
-  return set(clients)
+  return set(tokens)
 
 
-def add_authorized_client(client_id: str):
+def add_authorized_token() -> str:
   params = Params()
-  clients = get_authorized_clients()
-  clients.add(client_id)
-  params.put("BleAuthorizedClients", list(clients))
+  token = generate_token()
+  tokens = get_authorized_tokens()
+  tokens.add(token)
+  params.put("BleAuthorizedTokens", list(tokens))
   stop_pairing()  # Stop pairing mode after successful pairing
-  log(f"Client {client_id[:8]}... authorized")
+  log(f"Token {token[:8]}... issued and authorized")
+  return token
 
 
 def init_bluetooth():
@@ -233,7 +240,7 @@ def main():
       Characteristic.__init__(self, bus, index, RPC_REQUEST_CHAR_UUID, ["write", "write-without-response"], service)
       self.response_char = response_char
       self.buffer = b""
-      self.current_client_id = None
+      self.current_token = None
 
     def WriteValue(self, value, options):
       self.buffer += bytes(value)
@@ -253,18 +260,18 @@ def main():
         params = req.get("params", {})
         request_id = req.get("id")
 
-        # Track and remove client_id from params if provided
-        if isinstance(params, dict) and "client_id" in params:
-          self.current_client_id = params["client_id"]
-          # Remove client_id from params before passing to RPC methods
-          params = {k: v for k, v in params.items() if k != "client_id"}
+        # Track and remove token from params if provided
+        if isinstance(params, dict) and "token" in params:
+          self.current_token = params["token"]
+          # Remove token from params before passing to RPC methods
+          params = {k: v for k, v in params.items() if k != "token"}
           req["params"] = params
           request_text = json.dumps(req)
 
         # Allow pairing methods and echo without authorization
-        if method not in ["blePair", "bleStartPairing", "bleStopPairing", "echo"]:
-          authorized_clients = get_authorized_clients()
-          if not self.current_client_id or self.current_client_id not in authorized_clients:
+        if method not in ["blePair", "echo"]:
+          authorized_tokens = get_authorized_tokens()
+          if not self.current_token or self.current_token not in authorized_tokens:
             error_response = json.dumps({
               "jsonrpc": "2.0",
               "error": {"code": -32001, "message": "Unauthorized: pair with device first"},
