@@ -89,7 +89,6 @@ class AsiusLayoutMici(NavWidget):
     if not state:
       from openpilot.system.athena.ble import stop_pairing
       stop_pairing()
-    self._update_toggles()
 
   def _handle_asius_api_toggle(self, state: bool):
     title = "switch to asius api" if state else "switch to comma api"
