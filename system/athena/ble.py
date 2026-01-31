@@ -17,6 +17,7 @@ sys.path.insert(0, "/data/openpilot")
 
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from openpilot.common.params import Params
+from openpilot.system.hardware import HARDWARE
 
 ATHENA_SERVICE_UUID = "a51a5a10-0001-4c0d-b8e6-a51a5a100001"
 RPC_REQUEST_CHAR_UUID = "a51a5a10-0002-4c0d-b8e6-a51a5a100001"
@@ -119,6 +120,19 @@ def init_bluetooth():
       result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
       if result.returncode == 0 and b"UP RUNNING" in result.stdout:
         log("Bluetooth initialized")
+
+        # Set unique MAC address based on hardware serial
+        serial = HARDWARE.get_serial()
+        if serial and len(serial) >= 10:
+          # Use last 10 hex chars of serial to create MAC address (5 bytes)
+          # Format: C0:xx:xx:xx:xx:xx (C0 is locally administered unicast)
+          mac_suffix = serial[-10:].lower()
+          mac_address = f"C0:{mac_suffix[0:2]}:{mac_suffix[2:4]}:{mac_suffix[4:6]}:{mac_suffix[6:8]}:{mac_suffix[8:10]}"
+          subprocess.run(["sudo", "hciconfig", "hci0", "down"], capture_output=True)
+          subprocess.run(["sudo", "btmgmt", "--index", "0", "public-addr", mac_address], capture_output=True)
+          subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
+          log(f"Set Bluetooth MAC address to {mac_address} (from serial {serial})")
+
         return True
       if result.returncode == 0 and b"DOWN" in result.stdout:
         subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
