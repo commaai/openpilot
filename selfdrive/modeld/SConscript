@@ -1,4 +1,5 @@
 import os
+import glob
 
 Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
 lenv = env.Clone()
@@ -28,8 +29,7 @@ for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transfor
 cython_libs = envCython["LIBS"] + libs
 commonmodel_lib = lenv.Library('commonmodel', common_src)
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
-tinygrad_files = lenv.Glob("#tinygrad_repo/tinygrad/*.py") + lenv.Glob("#tinygrad_repo/tinygrad/**/*.py") + ["#tinygrad_repo/examples/openpilot/compile3.py"]
-
+tinygrad_files = sorted(["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x])
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
