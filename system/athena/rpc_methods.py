@@ -237,7 +237,7 @@ def blePair(code: str, dongleId: str) -> dict[str, str]:
   # Verify dongleId matches
   device_dongle_id = Params().get("DongleId")
   if dongleId != device_dongle_id:
-    raise Exception("Invalid dongle ID")
+    raise Exception(f"Wrong device - expected {device_dongle_id}, got {dongleId}")
 
   token = add_authorized_token()
   return {"token": token}
