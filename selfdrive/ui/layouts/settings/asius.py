@@ -102,6 +102,11 @@ class AsiusLayout(Widget):
 
     self._params.put_bool(param, state)
 
+    # Stop pairing when BLE is disabled
+    if param == "EnableBLE" and not state:
+      from openpilot.system.athena.ble import stop_pairing
+      stop_pairing()
+
   def _start_ble_pairing(self):
     from openpilot.system.athena.ble import start_pairing
     start_pairing()
