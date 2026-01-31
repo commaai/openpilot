@@ -77,22 +77,16 @@ def get_mac_addr() -> str:
 
 def set_static_addr():
   mac_address = get_mac_addr()
-  subprocess.run(["sudo", "btmgmt", "--index", "0", "power", "off"], capture_output=True)
+  # Must be set while controller is powered off — btmgmt power off/on deregisters
+  # the adapter from BlueZ DBus, so we set addr+privacy on the DOWN adapter
+  # before powering it on with hciconfig
   subprocess.run(["sudo", "btmgmt", "--index", "0", "static-addr", mac_address], capture_output=True)
   subprocess.run(["sudo", "btmgmt", "--index", "0", "privacy", "on"], capture_output=True)
-  subprocess.run(["sudo", "btmgmt", "--index", "0", "power", "on"], capture_output=True)
+  subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
   log(f"Set BLE static address to {mac_address}")
 
 
 def init_bluetooth():
-  try:
-    result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
-    if result.returncode == 0 and b"UP RUNNING" in result.stdout:
-      set_static_addr()
-      return True
-  except Exception:
-    pass
-
   if not os.path.exists("/dev/ttyHS1"):
     log("ERROR: /dev/ttyHS1 not found")
     return False
@@ -106,12 +100,11 @@ def init_bluetooth():
   for i in range(10):
     time.sleep(1)
     result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
-    if result.returncode == 0 and b"UP RUNNING" in result.stdout:
-      log("Bluetooth initialized")
+    if result.returncode == 0:
+      log("Bluetooth adapter found")
+      subprocess.run(["sudo", "hciconfig", "hci0", "down"], capture_output=True)
       set_static_addr()
       return True
-    if result.returncode == 0 and b"DOWN" in result.stdout:
-      subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
     log(f"Waiting for Bluetooth... ({i + 1}/10)")
 
   log("ERROR: Failed to initialize Bluetooth")
