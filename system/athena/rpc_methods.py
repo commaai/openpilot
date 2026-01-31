@@ -1,6 +1,7 @@
 """
 Shared RPC methods for Athena (WebSocket) and BLE server.
 """
+
 from __future__ import annotations
 
 import base64
@@ -22,7 +23,7 @@ from cereal.services import SERVICE_LIST
 # Parameters that should never be remotely modified
 BLOCKED_PARAMS = {
   "GithubUsername",  # Could grant SSH access
-  "GithubSshKeys",   # Direct SSH key injection
+  "GithubSshKeys",  # Direct SSH key injection
 }
 
 dispatcher["echo"] = lambda s: s
@@ -124,14 +125,17 @@ def getNetworks():
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:
   from openpilot.system.camerad.snapshot import jpeg_write, snapshot
+
   ret = snapshot()
   if ret is not None:
+
     def b64jpeg(x):
       if x is not None:
         f = io.BytesIO()
         jpeg_write(f, x)
         return base64.b64encode(f.getvalue()).decode("utf-8")
       return None
+
     return {'jpegBack': b64jpeg(ret[0]), 'jpegFront': b64jpeg(ret[1])}
   raise Exception("not available while camerad is started")
 
@@ -225,9 +229,9 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
 @dispatcher.add_method
 def blePair(code: str, dongleId: str) -> dict[str, str]:
   """Pair a BLE client using pairing code and return access token"""
-  from openpilot.system.athena.ble import get_pairing_code, add_authorized_token
+  from openpilot.system.athena.ble import add_authorized_token
 
-  pairing_code = get_pairing_code()
+  pairing_code = Params().get("BlePairingCode")
   if not pairing_code:
     raise Exception("Pairing mode not active")
 
@@ -241,4 +245,3 @@ def blePair(code: str, dongleId: str) -> dict[str, str]:
 
   token = add_authorized_token()
   return {"token": token}
-
