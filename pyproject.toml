@@ -112,7 +112,6 @@ dev = [
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
   "pyautogui",
-  "pytools>=2025.1.6; platform_machine != 'aarch64'",
   "pywinctl",
   "pyprof2calltree",
   "tabulate",
