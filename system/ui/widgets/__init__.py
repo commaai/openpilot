@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import pyray as rl
 from enum import IntEnum
@@ -10,7 +12,7 @@ try:
 except ImportError:
   class Device:
     awake = True
-  device = Device()  # type: ignore
+  device = Device()
 
 
 class DialogResult(IntEnum):
@@ -91,7 +93,7 @@ class Widget(abc.ABC):
       return self._rect
     return rl.get_collision_rec(self._rect, self._parent_rect)
 
-  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     if rect is not None:
       self.set_rect(rect)
 
@@ -297,7 +299,7 @@ class NavWidget(Widget, abc.ABC):
 
         # block horizontal swiping if now swiping away
         if self._can_swipe_away:
-          if mouse_event.pos.y - self._back_button_start_pos.y > START_DISMISSING_THRESHOLD:  # type: ignore
+          if mouse_event.pos.y - self._back_button_start_pos.y > START_DISMISSING_THRESHOLD:
             self._swiping_away = True
 
     elif mouse_event.left_released:
@@ -359,7 +361,7 @@ class NavWidget(Widget, abc.ABC):
 
     self.set_position(self._rect.x, new_y)
 
-  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
 
     if self.back_enabled:

@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "cereal/services.h"
 #include "common/util.h"
 
 extern ExitHandler do_exit;
@@ -108,7 +109,8 @@ void MsgqToZmq::zmqMonitorThread() {
           if (++pair.connected_clients == 1) {
             // Create new MSGQ subscriber socket and map to ZMQ publisher
             pair.sub_sock = std::make_unique<MSGQSubSocket>();
-            pair.sub_sock->connect(msgq_context.get(), pair.endpoint, "127.0.0.1");
+            size_t queue_size = services.at(pair.endpoint).queue_size;
+            pair.sub_sock->connect(msgq_context.get(), pair.endpoint, "127.0.0.1", false, true, queue_size);
             sub2pub[pair.sub_sock.get()] = pair.pub_sock.get();
             registerSockets();
           }

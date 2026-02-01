@@ -102,3 +102,36 @@ class TestNED:
     np.testing.assert_allclose(converter.ned2ecef(ned_offsets_batch),
                                                            ecef_positions_offset_batch,
                                                            rtol=1e-9, atol=1e-7)
+
+  def test_errors(self):
+    # Test wrong shape/type for geodetic2ecef
+    # numpy_wrap raises IndexError for scalar input
+    with np.testing.assert_raises(IndexError):
+      coord.geodetic2ecef(1.0)
+
+    with np.testing.assert_raises_regex(ValueError, "Geodetic must be size 3"):
+      coord.geodetic2ecef([0, 0])
+
+    with np.testing.assert_raises_regex(ValueError, "Geodetic must be size 3"):
+      coord.geodetic2ecef([0, 0, 0, 0])
+
+    with np.testing.assert_raises(TypeError):
+      coord.geodetic2ecef(['a', 'b', 'c'])
+
+    # Test LocalCoord constructor errors
+    with np.testing.assert_raises(ValueError):
+      coord.LocalCoord.from_geodetic([0, 0])
+
+    with np.testing.assert_raises(ValueError):
+      coord.LocalCoord.from_geodetic(1)
+
+    with np.testing.assert_raises(TypeError):
+      coord.LocalCoord.from_geodetic(['a', 'b', 'c'])
+
+    # Test wrong shape/type for ecef2geodetic
+    with np.testing.assert_raises(ValueError):
+      coord.ecef2geodetic([1, 2])
+    with np.testing.assert_raises(ValueError):
+      coord.ecef2geodetic([1, 2, 3, 4])
+    with np.testing.assert_raises(IndexError):
+      coord.ecef2geodetic(1.0)

@@ -2,6 +2,7 @@ from cereal import car, log
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.interfaces import MAX_CTRL_SPEED
+from opendbc.car.toyota.values import ToyotaFlags
 
 from openpilot.selfdrive.selfdrived.events import Events
 
@@ -58,7 +59,7 @@ class CarSpecificEvents:
       # TODO: when we check for unexpected disengagement, check gear not S1, S2, S3
       if self.CP.openpilotLongitudinalControl:
         # Only can leave standstill when planner wants to move
-        if CS.cruiseState.standstill and not CS.brakePressed and CC.cruiseControl.resume:
+        if CS.cruiseState.standstill and not CS.brakePressed and (CC.cruiseControl.resume or self.CP.flags & ToyotaFlags.HYBRID.value):
           events.add(EventName.resumeRequired)
         if CS.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.belowEngageSpeed)
@@ -86,7 +87,7 @@ class CarSpecificEvents:
           events.add(EventName.speedTooLow)
 
       # TODO: this needs to be implemented generically in carState struct
-      # if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
+      # if CC.eps_timer_soft_disable_alert:
       #   events.add(EventName.steerTimeLimit)
 
     return events
@@ -119,6 +120,8 @@ class CarSpecificEvents:
       events.add(EventName.stockFcw)
     if CS.stockAeb:
       events.add(EventName.stockAeb)
+    if CS.stockLkas:
+      events.add(EventName.stockLkas)
     if CS.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
     if CS.cruiseState.nonAdaptive:

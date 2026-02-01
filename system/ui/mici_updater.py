@@ -102,14 +102,15 @@ class Updater(Widget):
     self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     text=True, bufsize=1, universal_newlines=True)
 
-    for line in self.process.stdout:
-      parts = line.strip().split(":")
-      if len(parts) == 2:
-        self.progress_text = parts[0].lower()
-        try:
-          self.progress_value = int(float(parts[1]))
-        except ValueError:
-          pass
+    if self.process.stdout is not None:
+      for line in self.process.stdout:
+        parts = line.strip().split(":")
+        if len(parts) == 2:
+          self.progress_text = parts[0].lower()
+          try:
+            self.progress_value = int(float(parts[1]))
+          except ValueError:
+            pass
 
     exit_code = self.process.wait()
     if exit_code == 0:

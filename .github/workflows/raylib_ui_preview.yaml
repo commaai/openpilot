@@ -58,7 +58,7 @@ jobs:
           path: ${{ github.workspace }}/pr_ui
 
       - name: Getting master ui
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
