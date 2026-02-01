@@ -329,7 +329,13 @@ def main():
         return o
     return None
 
-  adapter_path = find_adapter(bus)
+  adapter_path = None
+  for i in range(10):
+    adapter_path = find_adapter(bus)
+    if adapter_path:
+      break
+    log(f"Waiting for BlueZ adapter... ({i + 1}/10)")
+    time.sleep(1)
   if not adapter_path:
     log("ERROR: No Bluetooth adapter found")
     return 1
