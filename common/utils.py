@@ -27,8 +27,10 @@ class Timer:
     return time.monotonic() - self._start
 
   def fmt(self, duration):
-    parts = ", ".join(f"{k}={v:.2f}s" + (f" ({duration/v:.0f}x)" if k == 'render' else "") for k, v in self._sections.items())
-    return f"{duration}s in {self.total:.1f}s ({duration/self.total:.1f}x realtime) | {parts}"
+    parts = ", ".join(f"{k}={v:.2f}s" + (f" ({duration/v:.0f}x)" if k == 'render' and v > 0 else "") for k, v in self._sections.items())
+    total = self.total
+    realtime = f"{duration/total:.1f}x realtime" if total > 0 else "N/A"
+    return f"{duration}s in {total:.1f}s ({realtime}) | {parts}"
 
 def sudo_write(val: str, path: str) -> None:
   try:

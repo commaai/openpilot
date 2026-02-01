@@ -74,13 +74,12 @@ def setup_env(output_path: str, big: bool = False, speed: int = 1, target_mb: fl
 
 
 def _download_segment(path: str) -> bytes:
-  from openpilot.tools.lib.filereader import FileReader
   with FileReader(path) as f:
     return bytes(f.read())
 
 
 def _parse_and_chunk_segment(args: tuple) -> list[dict]:
-  raw_data, fps = args[0], args[2]
+  raw_data, fps = args
   from openpilot.tools.lib.logreader import _LogFileReader
   messages = migrate_all(list(_LogFileReader("", dat=raw_data, sort_by_time=True)))
   if not messages:
@@ -105,7 +104,7 @@ def load_logs_parallel(log_paths: list[str], fps: int = 20) -> list[dict]:
 
   logger.info("Parsing and chunking segments...")
   with multiprocessing.Pool(num_workers) as pool:
-    return list(itertools.chain.from_iterable(pool.map(_parse_and_chunk_segment, [(raw_data[i], i, fps) for i in range(len(log_paths))])))
+    return list(itertools.chain.from_iterable(pool.map(_parse_and_chunk_segment, [(raw_data[i], fps) for i in range(len(log_paths))])))
 
 
 def patch_submaster(message_chunks, ui_state):
@@ -335,6 +334,7 @@ def main():
   setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start)
   clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, not args.windowed,
        args.big, args.title, not args.no_metadata, not args.no_time_overlay, args.qcam)
+
 
 if __name__ == "__main__":
   main()

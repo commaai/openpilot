@@ -443,10 +443,10 @@ class GuiApplication:
 
   def close_ffmpeg(self):
     if self._ffmpeg_thread is not None:
-      # Send sentinel to signal end of frames, let thread drain queue
+      # Signal thread to stop, send sentinel, then wait for it to drain
+      self._ffmpeg_stop_event.set()
       self._ffmpeg_queue.put(None)
       self._ffmpeg_thread.join(timeout=30)
-      self._ffmpeg_stop_event.set()
 
     if self._ffmpeg_proc is not None:
       self._ffmpeg_proc.stdin.flush()
