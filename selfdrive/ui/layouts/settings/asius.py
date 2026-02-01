@@ -1,7 +1,6 @@
 from openpilot.common.params import Params
-from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import toggle_item, text_item, button_item
+from openpilot.system.ui.widgets.list_view import toggle_item, button_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
@@ -118,7 +117,7 @@ class AsiusLayout(Widget):
     start_pairing()
     # Rebuild the item list to show the pairing code
     self._items = []
-    for param, (title, desc, icon) in self._toggle_defs.items():
+    for param, (_title, _desc, _icon) in self._toggle_defs.items():
       self._items.append(self._toggles[param])
       if param == "EnableBLE":
         self._ble_pairing_item = button_item(
@@ -136,7 +135,7 @@ class AsiusLayout(Widget):
     stop_pairing()
     # Rebuild the item list to show the start pairing button
     self._items = []
-    for param, (title, desc, icon) in self._toggle_defs.items():
+    for param, (_title, _desc, _icon) in self._toggle_defs.items():
       self._items.append(self._toggles[param])
       if param == "EnableBLE":
         self._ble_start_pairing = button_item(
