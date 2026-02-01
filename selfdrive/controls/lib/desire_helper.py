@@ -5,6 +5,7 @@ from openpilot.common.realtime import DT_MDL
 
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
+TurnDirection = log.TurnDirection
 
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
@@ -31,9 +32,9 @@ DESIRES = {
 }
 
 TURN_DESIRES = {
-  'none': log.Desire.none,
-  'left': log.Desire.turnLeft,
-  'right': log.Desire.turnRight,
+  TurnDirection.none: log.Desire.none,
+  TurnDirection.turnLeft: log.Desire.turnLeft,
+  TurnDirection.turnRight: log.Desire.turnRight,
 }
 
 
@@ -46,10 +47,10 @@ class DesireHelper:
     self.keep_pulse_timer = 0.0
     self.prev_one_blinker = False
     self.desire = log.Desire.none
+    self.lane_turn_direction = TurnDirection.none
 
     self._params = Params()
     self._lane_turn_enabled = self._params.get_bool("LaneTurnDesire")
-    self._lane_turn_direction = 'none'
     self._param_read_counter = 0
 
   @staticmethod
@@ -68,13 +69,13 @@ class DesireHelper:
     # Lane turn desire: steer in blinker direction at low speed
     if self._lane_turn_enabled and below_lane_change_speed:
       if carstate.leftBlinker and not carstate.rightBlinker and not carstate.leftBlindspot:
-        self._lane_turn_direction = 'left'
+        self.lane_turn_direction = TurnDirection.turnLeft
       elif carstate.rightBlinker and not carstate.leftBlinker and not carstate.rightBlindspot:
-        self._lane_turn_direction = 'right'
+        self.lane_turn_direction = TurnDirection.turnRight
       else:
-        self._lane_turn_direction = 'none'
+        self.lane_turn_direction = TurnDirection.none
     else:
-      self._lane_turn_direction = 'none'
+      self.lane_turn_direction = TurnDirection.none
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
@@ -133,8 +134,8 @@ class DesireHelper:
 
     self.prev_one_blinker = one_blinker
 
-    if self._lane_turn_direction != 'none':
-      self.desire = TURN_DESIRES[self._lane_turn_direction]
+    if self.lane_turn_direction != TurnDirection.none:
+      self.desire = TURN_DESIRES[self.lane_turn_direction]
     else:
       self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
