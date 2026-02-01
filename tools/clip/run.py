@@ -227,28 +227,37 @@ def load_route_metadata(route):
   }
 
 
-def draw_text_box(rl, text, x, y, size, gui_app, color=None, center=False):
-  box_color, white = rl.Color(0, 0, 0, 85), color or rl.WHITE
-  text_width = rl.measure_text(text, size)
+def draw_text_box(rl, text, x, y, size, gui_app, font, font_scale, color=None, center=False):
+  box_color, text_color = rl.Color(0, 0, 0, 85), color or rl.WHITE
+  # measure_text_ex is NOT auto-scaled, so multiply by font_scale
+  # draw_text_ex IS auto-scaled, so pass size directly
+  text_size = rl.measure_text_ex(font, text, size * font_scale, 0)
+  text_width, text_height = int(text_size.x), int(text_size.y)
   if center:
     x = (gui_app.width - text_width) // 2
-  rl.draw_rectangle(x - 8, y - 4, text_width + 16, size + 8, box_color)
-  rl.draw_text(text, x, y, size, white)
+  rl.draw_rectangle(x - 8, y - 4, text_width + 16, text_height + 8, box_color)
+  rl.draw_text_ex(font, text, rl.Vector2(x, y), size, 0, text_color)
 
 
-def render_overlays(rl, gui_app, metadata, title, start_time, frame_idx, show_metadata, show_time):
+def render_overlays(rl, gui_app, font, font_scale, metadata, title, start_time, frame_idx, show_metadata, show_time):
   if show_metadata and metadata and frame_idx < FRAMERATE * 5:
     m = metadata
     text = ", ".join([f"openpilot v{m['version']}", f"route: {m['route']}", f"car: {m['car']}", f"origin: {m['origin']}",
                       f"branch: {m['branch']}", f"commit: {m['commit']}", f"modified: {m['modified']}"])
-    draw_text_box(rl, text, 0, 8, 26, gui_app, center=True)
+    # Truncate if too wide (leave 20px margin on each side)
+    max_width = gui_app.width - 40
+    while rl.measure_text_ex(font, text, 15 * font_scale, 0).x > max_width and len(text) > 20:
+      text = text[:-4] + "..."
+    draw_text_box(rl, text, 0, 8, 15, gui_app, font, font_scale, center=True)
 
   if title:
-    draw_text_box(rl, title, 0, 60, 48, gui_app, center=True)
+    draw_text_box(rl, title, 0, 60, 32, gui_app, font, font_scale, center=True)
 
   if show_time:
     t = start_time + frame_idx / FRAMERATE
-    draw_text_box(rl, f"{int(t)//60:02d}:{int(t)%60:02d}", gui_app.width - rl.measure_text(f"{int(t)//60:02d}:{int(t)%60:02d}", 36) - 45, 45, 36, gui_app)
+    time_text = f"{int(t)//60:02d}:{int(t)%60:02d}"
+    time_width = int(rl.measure_text_ex(font, time_text, 24 * font_scale, 0).x)
+    draw_text_box(rl, time_text, gui_app.width - time_width - 45, 45, 24, gui_app, font, font_scale)
 
 
 def clip(route: Route, output: str, start: int, end: int, headless: bool = True, big: bool = False,
@@ -261,7 +270,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
   else:
     from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout as MainLayout  # type: ignore[assignment]
   from openpilot.selfdrive.ui.ui_state import ui_state
-  from openpilot.system.ui.lib.application import gui_app
+  from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
   timer.lap("import")
 
   logger.info(f"Clipping {route.name.canonical_name}, {start}s-{end}s ({duration}s)")
@@ -292,6 +301,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
 
     main_layout = MainLayout()
     main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    font = gui_app.font(FontWeight.NORMAL)
     timer.lap("setup")
 
     frame_idx = 0
@@ -304,7 +314,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
         ui_state.update()
         if should_render:
           main_layout.render()
-          render_overlays(rl, gui_app, metadata, title, start, frame_idx, show_metadata, show_time)
+          render_overlays(rl, gui_app, font, FONT_SCALE, metadata, title, start, frame_idx, show_metadata, show_time)
         frame_idx += 1
         pbar.update(1)
     timer.lap("render")
