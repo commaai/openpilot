@@ -30,7 +30,7 @@ jobs:
         running-workflow-name: 'build master-ci'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         check-regexp: ^((?!.*(build prebuilt).*).)*$
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: true
         fetch-depth: 0

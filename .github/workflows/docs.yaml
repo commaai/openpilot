@@ -22,7 +22,7 @@ jobs:
     steps:
     - uses: commaai/timeout@v1
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: true
 
@@ -34,7 +34,7 @@ jobs:
         mkdocs build
 
     # Push to docs.comma.ai
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       with:
         path: openpilot-docs
