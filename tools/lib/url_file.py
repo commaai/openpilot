@@ -74,8 +74,8 @@ class URLFile:
     self._timeout = Timeout(connect=timeout, read=timeout)
     self._pos = 0
     self._length: int | None = None
-    #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
-    self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
+    #  Caching enabled by default, can be disabled with DISABLE_FILEREADER_CACHE=1, or overwritten by the cache input
+    self._force_download = int(os.environ.get("DISABLE_FILEREADER_CACHE", "0")) == 1
     if cache is not None:
       self._force_download = not cache
 
@@ -192,8 +192,25 @@ class URLFile:
       raise URLFileException(f"Expected {len(ranges)} parts, got {len(parts)} ({self._url})")
     return parts
 
-  def seek(self, pos: int) -> None:
-    self._pos = int(pos)
+  def seekable(self) -> bool:
+    return True
+
+  def seek(self, pos: int, whence: int = 0) -> int:
+    pos = int(pos)
+    if whence == os.SEEK_SET:
+      self._pos = pos
+    elif whence == os.SEEK_CUR:
+      self._pos += pos
+    elif whence == os.SEEK_END:
+      length = self.get_length()
+      assert length != -1, "Cannot seek from end on unknown length file"
+      self._pos = length + pos
+    else:
+      raise URLFileException("Invalid whence value")
+    return self._pos
+
+  def tell(self) -> int:
+    return self._pos
 
   @property
   def name(self) -> str:
