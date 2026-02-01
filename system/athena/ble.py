@@ -27,6 +27,7 @@ LE_ADVERTISEMENT_IFACE = "org.bluez.LEAdvertisement1"
 ADAPTER_PATH = "/org/bluez/hci0"
 
 BLE_MTU = 512
+MAX_REQUEST_SIZE = 128 * 1024
 
 
 def log(msg: str):
@@ -50,19 +51,12 @@ def stop_pairing():
   log("Pairing mode stopped")
 
 
-def generate_token() -> str:
-  return secrets.token_urlsafe(32)
-
-
 def get_authorized_tokens() -> list[str]:
-  tokens = Params().get("BleAuthorizedTokens")
-  if not tokens:
-    return list()
-  return list(tokens)
+  return Params().get("BleAuthorizedTokens") or []
 
 
 def add_authorized_token() -> str:
-  token = generate_token()
+  token = secrets.token_urlsafe(32)
   tokens = get_authorized_tokens()
   tokens.append(token)
   Params().put("BleAuthorizedTokens", tokens)
@@ -228,6 +222,10 @@ def main():
 
     def WriteValue(self, value, options):
       self.buffer += bytes(value)
+      if len(self.buffer) > MAX_REQUEST_SIZE:
+        log(f"Buffer exceeded {MAX_REQUEST_SIZE} bytes, dropping")
+        self.buffer = b""
+        return
       try:
         text = self.buffer.decode("utf-8")
         json.loads(text)
@@ -238,26 +236,21 @@ def main():
 
     def process_request(self, request_text: str):
       log(f"RPC: {request_text[:80]}...")
+      request_id = None
       try:
         req = json.loads(request_text)
         method = req.get("method", "")
         params = req.get("params", {})
         request_id = req.get("id")
 
-        # Track and remove token from params if provided
         if isinstance(params, dict) and "token" in params:
-          self.current_token = params["token"]
-          # Remove token from params before passing to RPC methods
-          params = {k: v for k, v in params.items() if k != "token"}
-          req["params"] = params
+          self.current_token = params.pop("token")
           request_text = json.dumps(req)
 
-        # Allow pairing methods and echo without authorization
-        if method not in ["blePair", "echo"]:
-          authorized_tokens = get_authorized_tokens()
-          if not self.current_token or self.current_token not in authorized_tokens:
-            error_response = json.dumps({"jsonrpc": "2.0", "error": {"code": -32001, "message": "Unauthorized: pair with device first"}, "id": request_id})
-            self.response_char.send_response(error_response)
+        if method not in ("blePair", "echo"):
+          if not self.current_token or self.current_token not in get_authorized_tokens():
+            err = {"jsonrpc": "2.0", "error": {"code": -32001, "message": "Unauthorized: pair with device first"}, "id": request_id}
+            self.response_char.send_response(json.dumps(err))
             return
 
         from openpilot.system.athena.rpc_methods import set_transport
@@ -265,7 +258,8 @@ def main():
         response = JSONRPCResponseManager.handle(request_text, dispatcher)
         self.response_char.send_response(response.json)
       except Exception as e:
-        self.response_char.send_response(json.dumps({"jsonrpc": "2.0", "error": {"code": -32603, "message": str(e)}, "id": None}))
+        log(f"RPC error: {e}")
+        self.response_char.send_response(json.dumps({"jsonrpc": "2.0", "error": {"code": -32603, "message": str(e)}, "id": request_id}))
 
   class AthenaService(Service):
     def __init__(self, bus, index):
@@ -296,8 +290,9 @@ def main():
   class Advertisement(dbus.service.Object):
     PATH_BASE = "/org/bluez/app/advertisement"
 
-    def __init__(self, bus, index):
+    def __init__(self, bus, index, ad_manager):
       self.path = self.PATH_BASE + str(index)
+      self.ad_manager = ad_manager
       dbus.service.Object.__init__(self, bus, self.path)
 
     def get_properties(self):
@@ -321,16 +316,23 @@ def main():
 
     @dbus.service.method(LE_ADVERTISEMENT_IFACE)
     def Release(self):
-      pass
+      log("Advertisement released, re-registering...")
+      GLib.timeout_add(100, self._re_register)
+
+    def _re_register(self):
+      self.ad_manager.RegisterAdvertisement(
+        self.get_path(), {},
+        reply_handler=lambda: log("Advertising"),
+        error_handler=lambda e: log(f"Ad re-register failed: {e}"),
+      )
+      return False
 
   app = Application(bus)
-  advertisement = Advertisement(bus, 0)
-
   service_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, ADAPTER_PATH), GATT_MANAGER_IFACE)
   ad_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, ADAPTER_PATH), LE_ADVERTISING_MANAGER_IFACE)
+  advertisement = Advertisement(bus, 0, ad_manager)
 
   service_manager.RegisterApplication(app.get_path(), {}, reply_handler=lambda: log("GATT registered"), error_handler=lambda e: log(f"GATT failed: {e}"))
-
   ad_manager.RegisterAdvertisement(advertisement.get_path(), {}, reply_handler=lambda: log("Advertising"), error_handler=lambda e: log(f"Ad failed: {e}"))
 
   log("Server running")
