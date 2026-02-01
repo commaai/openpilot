@@ -5,8 +5,6 @@ import time
 import usb1
 import threading
 
-os.environ['FILEREADER_CACHE'] = '1'
-
 from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.tools.lib.logreader import LogReader

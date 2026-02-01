@@ -92,22 +92,22 @@ class MiciHomeLayout(Widget):
 
     self._settings_txt = gui_app.texture("icons_mici/settings.png", 48, 48)
     self._experimental_txt = gui_app.texture("icons_mici/experimental_mode.png", 48, 48)
-    self._mic_txt = gui_app.texture("icons_mici/microphone.png", 48, 48)
+    self._mic_txt = gui_app.texture("icons_mici/microphone.png", 32, 46)
 
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
     self._net_strength = 0
 
     self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 50, 44)
-    self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 50, 44)
-    self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 50, 44)
-    self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 50, 44)
-    self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 50, 44)
+    self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 50, 37)
+    self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 50, 37)
+    self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 50, 37)
+    self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 50, 37)
 
-    self._cell_none_txt = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 55, 35)
-    self._cell_low_txt = gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 55, 35)
-    self._cell_medium_txt = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 55, 35)
-    self._cell_high_txt = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 55, 35)
-    self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 55, 35)
+    self._cell_none_txt = gui_app.texture("icons_mici/settings/network/cell_strength_none.png", 54, 36)
+    self._cell_low_txt = gui_app.texture("icons_mici/settings/network/cell_strength_low.png", 54, 36)
+    self._cell_medium_txt = gui_app.texture("icons_mici/settings/network/cell_strength_medium.png", 54, 36)
+    self._cell_high_txt = gui_app.texture("icons_mici/settings/network/cell_strength_high.png", 54, 36)
+    self._cell_full_txt = gui_app.texture("icons_mici/settings/network/cell_strength_full.png", 54, 36)
 
     self._openpilot_label = MiciLabel("openpilot", font_size=96, color=rl.Color(255, 255, 255, int(255 * 0.9)), font_weight=FontWeight.DISPLAY)
     self._version_label = MiciLabel("", font_size=36, font_weight=FontWeight.ROMAN)

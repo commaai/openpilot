@@ -111,10 +111,10 @@ class AlertRenderer(Widget):
     self._load_icons()
 
   def _load_icons(self):
-    self._txt_turn_signal_left = gui_app.texture('icons_mici/onroad/turn_signal_left.png', 100, 91)
-    self._txt_turn_signal_right = gui_app.texture('icons_mici/onroad/turn_signal_right.png', 100, 91)
-    self._txt_blind_spot_left = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 108, 128)
-    self._txt_blind_spot_right = gui_app.texture('icons_mici/onroad/blind_spot_right.png', 108, 128)
+    self._txt_turn_signal_left = gui_app.texture('icons_mici/onroad/turn_signal_left.png', 104, 96)
+    self._txt_turn_signal_right = gui_app.texture('icons_mici/onroad/turn_signal_right.png', 104, 96)
+    self._txt_blind_spot_left = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 134, 150)
+    self._txt_blind_spot_right = gui_app.texture('icons_mici/onroad/blind_spot_right.png', 134, 150)
 
   def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
     """Generate the current alert based on selfdrive state."""

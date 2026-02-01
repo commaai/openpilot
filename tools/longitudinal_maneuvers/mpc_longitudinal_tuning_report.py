@@ -7,16 +7,18 @@ from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 from openpilot.selfdrive.controls.tests.test_following_distance import desired_follow_distance
 
 TIME = 0
+LEAD_DISTANCE= 2
 EGO_V = 3
 EGO_A = 5
-LEAD_DISTANCE= 2
+D_REL = 6
 
 axis_labels = ['Time (s)',
                'Ego position (m)',
-               'Lead distance (m)',
+               'Lead absolute position (m)',
                'Ego Velocity (m/s)',
                'Lead Velocity (m/s)',
                'Ego acceleration (m/s^2)',
+               'Lead distance (m)'
                ]
 
 
@@ -81,7 +83,7 @@ for speed in np.arange(0,45,5):
 
 htmls.append(markdown.markdown('# ' + name))
 htmls.append(get_html_from_results(results, labels, EGO_A))
-htmls.append(get_html_from_results(results, labels, LEAD_DISTANCE))
+htmls.append(get_html_from_results(results, labels, D_REL))
 
 
 results = {}
@@ -102,6 +104,7 @@ for oscil in np.arange(0, 10, 1):
   labels.append(f'{oscil} m/s oscilliation size')
 
 htmls.append(markdown.markdown('# ' + name))
+htmls.append(get_html_from_results(results, labels, D_REL))
 htmls.append(get_html_from_results(results, labels, EGO_V))
 htmls.append(get_html_from_results(results, labels, EGO_A))
 
@@ -126,7 +129,7 @@ for distance in np.arange(20, 140, 10):
 
 htmls.append(markdown.markdown('# ' + name))
 htmls.append(get_html_from_results(results, labels, EGO_V))
-htmls.append(get_html_from_results(results, labels, LEAD_DISTANCE))
+htmls.append(get_html_from_results(results, labels, D_REL))
 
 
 results = {}
@@ -148,7 +151,7 @@ for distance in np.arange(20, 140, 10):
 
 htmls.append(markdown.markdown('# ' + name))
 htmls.append(get_html_from_results(results, labels, EGO_V))
-htmls.append(get_html_from_results(results, labels, LEAD_DISTANCE))
+htmls.append(get_html_from_results(results, labels, D_REL))
 
 
 results = {}
@@ -170,7 +173,7 @@ for stop_time in np.arange(4, 14, 1):
 
 htmls.append(markdown.markdown('# ' + name))
 htmls.append(get_html_from_results(results, labels, EGO_A))
-htmls.append(get_html_from_results(results, labels, LEAD_DISTANCE))
+htmls.append(get_html_from_results(results, labels, D_REL))
 
 
 results = {}
@@ -193,7 +196,7 @@ for speed in np.arange(0, 40, 5):
 
 htmls.append(markdown.markdown('# ' + name))
 htmls.append(get_html_from_results(results, labels, EGO_A))
-htmls.append(get_html_from_results(results, labels, LEAD_DISTANCE))
+htmls.append(get_html_from_results(results, labels, D_REL))
 
 
 results = {}

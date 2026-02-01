@@ -16,7 +16,7 @@ except ImportError:
 
 SCROLLING_SPEED_PX_S = 50
 COMPLICATION_SIZE    = 36
-LABEL_COLOR          = rl.WHITE
+LABEL_COLOR          = rl.Color(255, 255, 255, int(255 * 0.9))
 LABEL_HORIZONTAL_PADDING = 40
 COMPLICATION_GREY    = rl.Color(0xAA, 0xAA, 0xAA, 255)
 PRESSED_SCALE = 1.15 if DO_ZOOM else 1.07
@@ -29,9 +29,10 @@ class ScrollState(Enum):
 
 
 class BigCircleButton(Widget):
-  def __init__(self, icon: str, red: bool = False):
+  def __init__(self, icon: str, red: bool = False, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
     super().__init__()
     self._red = red
+    self._icon_offset = icon_offset
 
     # State
     self.set_rect(rl.Rectangle(0, 0, 180, 180))
@@ -39,7 +40,7 @@ class BigCircleButton(Widget):
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
     # Icons
-    self._txt_icon = gui_app.texture(icon, 64, 53)
+    self._txt_icon = gui_app.texture(icon, *icon_size)
     self._txt_btn_disabled_bg = gui_app.texture("icons_mici/buttons/button_circle_disabled.png", 180, 180)
 
     self._txt_btn_bg = gui_app.texture("icons_mici/buttons/button_circle.png", 180, 180)
@@ -66,13 +67,13 @@ class BigCircleButton(Widget):
 
     # draw icon
     icon_color = rl.WHITE if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
-    rl.draw_texture(self._txt_icon, int(self._rect.x + (self._rect.width - self._txt_icon.width) / 2),
-                    int(self._rect.y + (self._rect.height - self._txt_icon.height) / 2), icon_color)
+    rl.draw_texture(self._txt_icon, int(self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0]),
+                    int(self._rect.y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), icon_color)
 
 
 class BigCircleToggle(BigCircleButton):
-  def __init__(self, icon: str, toggle_callback: Callable | None = None):
-    super().__init__(icon, False)
+  def __init__(self, icon: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
+    super().__init__(icon, False, icon_size=icon_size, icon_offset=icon_offset)
     self._toggle_callback = toggle_callback
 
     # State
@@ -80,7 +81,7 @@ class BigCircleToggle(BigCircleButton):
 
     # Icons
     self._txt_toggle_enabled = gui_app.texture("icons_mici/buttons/toggle_dot_enabled.png", 66, 66)
-    self._txt_toggle_disabled = gui_app.texture("icons_mici/buttons/toggle_dot_disabled.png", 70, 70)  # TODO: why discrepancy?
+    self._txt_toggle_disabled = gui_app.texture("icons_mici/buttons/toggle_dot_disabled.png", 66, 66)
 
   def set_checked(self, checked: bool):
     self._checked = checked
@@ -104,11 +105,12 @@ class BigCircleToggle(BigCircleButton):
 class BigButton(Widget):
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
-  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = ""):
+  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", icon_size: tuple[int, int] = (64, 64)):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 402, 180))
     self.text = text
     self.value = value
+    self._icon_size = icon_size
     self.set_icon(icon)
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
@@ -134,7 +136,7 @@ class BigButton(Widget):
     self._scroll_state = ScrollState.PRE_SCROLL
 
   def set_icon(self, icon: Union[str, rl.Texture]):
-    self._txt_icon = gui_app.texture(icon, 64, 64) if isinstance(icon, str) and len(icon) else icon
+    self._txt_icon = gui_app.texture(icon, *self._icon_size) if isinstance(icon, str) and len(icon) else icon
 
   def set_rotate_icon(self, rotate: bool):
     if rotate and self._rotate_icon_t is not None:
@@ -361,8 +363,9 @@ class BigParamControl(BigToggle):
 
 # TODO: param control base class
 class BigCircleParamControl(BigCircleToggle):
-  def __init__(self, icon: str, param: str, toggle_callback: Callable | None = None):
-    super().__init__(icon, toggle_callback)
+  def __init__(self, icon: str, param: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53),
+               icon_offset: tuple[int, int] = (0, 0)):
+    super().__init__(icon, toggle_callback, icon_size=icon_size, icon_offset=icon_offset)
     self._param = param
     self.params = Params()
     self.set_checked(self.params.get_bool(self._param, False))

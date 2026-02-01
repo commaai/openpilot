@@ -74,8 +74,8 @@ class URLFile:
     self._timeout = Timeout(connect=timeout, read=timeout)
     self._pos = 0
     self._length: int | None = None
-    #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
-    self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
+    #  Caching enabled by default, can be disabled with DISABLE_FILEREADER_CACHE=1, or overwritten by the cache input
+    self._force_download = int(os.environ.get("DISABLE_FILEREADER_CACHE", "0")) == 1
     if cache is not None:
       self._force_download = not cache
 

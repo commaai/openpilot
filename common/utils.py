@@ -10,6 +10,27 @@ import zstandard as zstd
 
 LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a small step change
 
+class Timer:
+  """Simple lap timer for profiling sequential operations."""
+
+  def __init__(self):
+    self._start = self._lap = time.monotonic()
+    self._sections = {}
+
+  def lap(self, name):
+    now = time.monotonic()
+    self._sections[name] = now - self._lap
+    self._lap = now
+
+  @property
+  def total(self):
+    return time.monotonic() - self._start
+
+  def fmt(self, duration):
+    parts = ", ".join(f"{k}={v:.2f}s" + (f" ({duration/v:.0f}x)" if k == 'render' and v > 0 else "") for k, v in self._sections.items())
+    total = self.total
+    realtime = f"{duration/total:.1f}x realtime" if total > 0 else "N/A"
+    return f"{duration}s in {total:.1f}s ({realtime}) | {parts}"
 
 def sudo_write(val: str, path: str) -> None:
   try:
