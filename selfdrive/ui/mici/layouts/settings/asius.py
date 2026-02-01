@@ -32,11 +32,14 @@ class AsiusLayoutMici(NavWidget):
       self._ble_pairing_button = BigButton("ble pairing", "start pairing")
       self._ble_pairing_button.set_click_callback(self._start_ble_pairing)
 
+    lane_turn_toggle = BigParamControl("lane turn desire", "LaneTurnDesire")
+
     self._scroller = Scroller([
       ble_toggle,
       self._ble_pairing_button,
       webrtc_toggle,
       remote_params_toggle,
+      lane_turn_toggle,
       asius_api_toggle,
     ], snap_items=False)
 
@@ -44,6 +47,7 @@ class AsiusLayoutMici(NavWidget):
       ("EnableBLE", ble_toggle),
       ("EnableWebRTC", webrtc_toggle),
       ("EnableRemoteParams", remote_params_toggle),
+      ("LaneTurnDesire", lane_turn_toggle),
       ("EnableAsiusAPI", asius_api_toggle),
     )
 

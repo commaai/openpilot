@@ -130,6 +130,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"Version", {PERSISTENT, STRING}},
 
     // Asius
+    {"LaneTurnDesire", {PERSISTENT, BOOL, "0"}},
     {"WebRTCOnline", {CLEAR_ON_MANAGER_START, BOOL}},
     {"EnableAsiusAPI", {PERSISTENT, BOOL, "0"}},
     {"EnableBLE", {PERSISTENT, BOOL, "0"}},

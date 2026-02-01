@@ -1,5 +1,6 @@
 from cereal import log
 from openpilot.common.constants import CV
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 
 LaneChangeState = log.LaneChangeState
@@ -29,6 +30,12 @@ DESIRES = {
   },
 }
 
+TURN_DESIRES = {
+  'none': log.Desire.none,
+  'left': log.Desire.turnLeft,
+  'right': log.Desire.turnRight,
+}
+
 
 class DesireHelper:
   def __init__(self):
@@ -40,14 +47,34 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.Desire.none
 
+    self._params = Params()
+    self._lane_turn_enabled = self._params.get_bool("LaneTurnDesire")
+    self._lane_turn_direction = 'none'
+    self._param_read_counter = 0
+
   @staticmethod
   def get_lane_change_direction(CS):
     return LaneChangeDirection.left if CS.leftBlinker else LaneChangeDirection.right
 
   def update(self, carstate, lateral_active, lane_change_prob):
+    if self._param_read_counter % 50 == 0:
+      self._lane_turn_enabled = self._params.get_bool("LaneTurnDesire")
+    self._param_read_counter += 1
+
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
+
+    # Lane turn desire: steer in blinker direction at low speed
+    if self._lane_turn_enabled and below_lane_change_speed:
+      if carstate.leftBlinker and not carstate.rightBlinker and not carstate.leftBlindspot:
+        self._lane_turn_direction = 'left'
+      elif carstate.rightBlinker and not carstate.leftBlinker and not carstate.rightBlindspot:
+        self._lane_turn_direction = 'right'
+      else:
+        self._lane_turn_direction = 'none'
+    else:
+      self._lane_turn_direction = 'none'
 
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
@@ -106,7 +133,10 @@ class DesireHelper:
 
     self.prev_one_blinker = one_blinker
 
-    self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
+    if self._lane_turn_direction != 'none':
+      self.desire = TURN_DESIRES[self._lane_turn_direction]
+    else:
+      self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
     # Send keep pulse once per second during LaneChangeStart.preLaneChange
     if self.lane_change_state in (LaneChangeState.off, LaneChangeState.laneChangeStarting):

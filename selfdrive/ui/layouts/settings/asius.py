@@ -13,6 +13,7 @@ DESCRIPTIONS = {
   "EnableWebRTC": tr_noop("Allow remote live streaming via Connect."),
   "EnableRemoteParams": tr_noop("Allow remote parameter editing via Connect."),
   "EnableBLE": tr_noop("Enable Bluetooth Low Energy server for local device control without network."),
+  "LaneTurnDesire": tr_noop("When blinker is on below 20 mph, steer in blinker direction. Useful at intersections and red lights."),
 }
 
 
@@ -41,6 +42,11 @@ class AsiusLayout(Widget):
         lambda: tr("Asius API"),
         DESCRIPTIONS["EnableAsiusAPI"],
         "asius.png",
+      ),
+      "LaneTurnDesire": (
+        lambda: tr("Lane Turn Desire"),
+        DESCRIPTIONS["LaneTurnDesire"],
+        "steering_wheel.png",
       ),
     }
 
