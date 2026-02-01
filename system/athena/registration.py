@@ -3,7 +3,6 @@ import time
 import json
 import jwt
 from typing import cast
-from pathlib import Path
 
 from datetime import datetime, timedelta, UTC
 from openpilot.common.api import api_get, get_key_pair
@@ -11,7 +10,6 @@ from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, PC
-from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 
 

@@ -203,7 +203,8 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
         req = json.loads(data) if isinstance(data, str) else data
         method = req.get("method", "")
         if method in BLE_ONLY_METHODS:
-          send_queue.put_nowait(json.dumps({"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method only available over Bluetooth"}, "id": req.get("id")}))
+          err = {"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method only available over Bluetooth"}, "id": req.get("id")}
+          send_queue.put_nowait(json.dumps(err))
         else:
           set_transport("websocket")
           response = JSONRPCResponseManager.handle(data, dispatcher)

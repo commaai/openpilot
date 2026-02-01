@@ -45,7 +45,7 @@ class AsiusLayout(Widget):
       "LaneTurnDesire": (
         lambda: tr("Lane Turn Desire"),
         DESCRIPTIONS["LaneTurnDesire"],
-        "steering_wheel.png",
+        "chffr_wheel.png",
       ),
     }
 
