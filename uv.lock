@@ -634,6 +634,15 @@ wheels = [
 ]
 
 [[package]]
+name = "future-fstrings"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5d/e2/3874574cce18a2e3608abfe5b4b5b3c9765653c464f5da18df8971cf501d/future_fstrings-1.2.0.tar.gz", hash = "sha256:6cf41cbe97c398ab5a81168ce0dbb8ad95862d3caf23c21e4430627b90844089", size = 5786, upload-time = "2019-06-16T03:04:42.651Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ab/6d/ea1d52e9038558dd37f5d30647eb9f07888c164960a5d4daa5f970c6da25/future_fstrings-1.2.0-py2.py3-none-any.whl", hash = "sha256:90e49598b553d8746c4dc7d9442e0359d038c3039d802c91c0a55505da318c63", size = 6138, upload-time = "2019-06-16T03:04:40.395Z" },
+]
+
+[[package]]
 name = "ghp-import"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1293,6 +1302,7 @@ dependencies = [
     { name = "cffi" },
     { name = "crcmod-plus" },
     { name = "cython" },
+    { name = "future-fstrings" },
     { name = "inputs" },
     { name = "json-rpc" },
     { name = "kaitaistruct" },
@@ -1386,6 +1396,7 @@ requires-dist = [
     { name = "cython" },
     { name = "dearpygui", marker = "(platform_machine != 'aarch64' and extra == 'tools') or (sys_platform != 'linux' and extra == 'tools')", specifier = ">=2.1.0" },
     { name = "dictdiffer", marker = "extra == 'dev'" },
+    { name = "future-fstrings" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },
     { name = "jeepney", marker = "extra == 'dev'" },
