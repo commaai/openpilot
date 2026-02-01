@@ -10,7 +10,6 @@ from openpilot.selfdrive.ui.mici.layouts.settings.toggles import TogglesLayoutMi
 from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici, PairBigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
-from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.mici.layouts.settings.asius import AsiusLayoutMici
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
@@ -23,7 +22,6 @@ class PanelType(IntEnum):
   ASIUS = 3
   DEVELOPER = 4
   USER_MANUAL = 5
-  FIREHOSE = 6
 
 
 @dataclass
@@ -49,16 +47,12 @@ class SettingsLayout(NavWidget):
     developer_btn = BigButton("developer", "", "icons_mici/settings/developer_icon.png", icon_size=(64, 60))
     developer_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVELOPER))
 
-    firehose_btn = BigButton("firehose", "", "icons_mici/settings/firehose.png", icon_size=(52, 62))
-    firehose_btn.set_click_callback(lambda: self._set_current_panel(PanelType.FIREHOSE))
-
     self._scroller = Scroller([
       toggles_btn,
       network_btn,
       device_btn,
       asius_btn,
       PairBigButton(),
-      firehose_btn,
       developer_btn,
     ], snap_items=False)
 
@@ -71,7 +65,6 @@ class SettingsLayout(NavWidget):
       PanelType.NETWORK: PanelInfo("Network", NetworkLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.DEVICE: PanelInfo("Device", DeviceLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.ASIUS: PanelInfo("Asius", AsiusLayoutMici(back_callback=lambda: self._set_current_panel(None))),
-      PanelType.FIREHOSE: PanelInfo("Firehose", FirehoseLayout(back_callback=lambda: self._set_current_panel(None))),
       PanelType.DEVELOPER: PanelInfo("Developer", DeveloperLayoutMici(back_callback=lambda: self._set_current_panel(None))),
     }
 
