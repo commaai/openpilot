@@ -53,7 +53,7 @@ jobs:
 
       - name: Getting proposed ui  # filename: pr_ui/mici_ui_replay.mp4
         id: download-artifact
-        uses: dawidd6/action-download-artifact@v12
+        uses: dawidd6/action-download-artifact@v6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           run_id: ${{ steps.get_run_id.outputs.run_id }}
@@ -140,7 +140,7 @@ jobs:
 
       - name: Comment Video on PR
         if: github.event_name == 'pull_request_target'
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
             <!-- _(run_id_video_mici_raylib **${{ github.run_id }}**)_ -->
