@@ -112,10 +112,7 @@ dev = [
   "parameterized >=0.8, <0.9",
   "pyautogui",
   "pywinctl",
-  "pyprof2calltree",
   "tabulate",
-  "types-requests",
-  "types-tabulate",
 ]
 
 tools = [
@@ -152,19 +149,9 @@ markers = [
 testpaths = [
   "common",
   "selfdrive",
-  "system/manager",
-  "system/updated",
-  "system/athena",
-  "system/camerad",
-  "system/hardware",
-  "system/loggerd",
-  "system/tests",
-  "system/ubloxd",
-  "system/webrtc",
-  "tools/lib/tests",
-  "tools/replay",
-  "tools/cabana",
-  "cereal/messaging/tests",
+  "system",
+  "tools",
+  "cereal",
 ]
 
 [tool.codespell]
