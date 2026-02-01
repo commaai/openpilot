@@ -326,9 +326,11 @@ def main():
 
   log(f"Starting BLE server: {get_device_name()}")
   log(f"Loaded {len(dispatcher.keys())} RPC methods")
+  time.sleep(10)
 
   if not init_bluetooth():
     return 1
+  time.sleep(10)
 
   dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
   bus = dbus.SystemBus()
