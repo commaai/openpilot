@@ -28,9 +28,6 @@ public:
     return it->second;
   }
 
-  static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }
-  static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); }
-
   static std::string get_serial() {
     static std::string serial("");
     if (serial.empty()) {
@@ -47,19 +44,6 @@ public:
       }
     }
     return serial;
-  }
-
-  static void set_ir_power(int percent) {
-    auto device = get_device_type();
-    if (device == cereal::InitData::DeviceType::TICI ||
-        device == cereal::InitData::DeviceType::TIZI) {
-      return;
-    }
-
-    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 300);
-    std::ofstream("/sys/class/leds/led:switch_2/brightness") << 0 << "\n";
-    std::ofstream("/sys/class/leds/led:torch_2/brightness") << value << "\n";
-    std::ofstream("/sys/class/leds/led:switch_2/brightness") << value << "\n";
   }
 
   static std::map<std::string, std::string> get_init_logs() {
