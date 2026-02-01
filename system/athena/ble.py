@@ -24,6 +24,7 @@ DBUS_PROP_IFACE = "org.freedesktop.DBus.Properties"
 GATT_SERVICE_IFACE = "org.bluez.GattService1"
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 LE_ADVERTISEMENT_IFACE = "org.bluez.LEAdvertisement1"
+ADAPTER_PATH = "/org/bluez/hci0"
 
 BLE_MTU = 512
 
@@ -322,29 +323,11 @@ def main():
     def Release(self):
       pass
 
-  def find_adapter(bus):
-    remote_om = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, "/"), DBUS_OM_IFACE)
-    for o, props in remote_om.GetManagedObjects().items():
-      if GATT_MANAGER_IFACE in props:
-        return o
-    return None
-
-  adapter_path = None
-  for i in range(10):
-    adapter_path = find_adapter(bus)
-    if adapter_path:
-      break
-    log(f"Waiting for BlueZ adapter... ({i + 1}/10)")
-    time.sleep(1)
-  if not adapter_path:
-    log("ERROR: No Bluetooth adapter found")
-    return 1
-
   app = Application(bus)
   advertisement = Advertisement(bus, 0)
 
-  service_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, adapter_path), GATT_MANAGER_IFACE)
-  ad_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, adapter_path), LE_ADVERTISING_MANAGER_IFACE)
+  service_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, ADAPTER_PATH), GATT_MANAGER_IFACE)
+  ad_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, ADAPTER_PATH), LE_ADVERTISING_MANAGER_IFACE)
 
   service_manager.RegisterApplication(app.get_path(), {}, reply_handler=lambda: log("GATT registered"), error_handler=lambda e: log(f"GATT failed: {e}"))
 
