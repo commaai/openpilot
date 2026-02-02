@@ -55,22 +55,21 @@ def stop_pairing():
   log("Pairing mode stopped")
 
 
-def get_authorized_token() -> str | None:
-  tokens = Params().get("BleAuthorizedTokens") or []
-  return tokens[0] if tokens else None
+def get_ble_token() -> str | None:
+  return Params().get("BleToken") or None
 
 
-def add_authorized_token() -> str:
+def set_ble_token() -> str:
   token = secrets.token_urlsafe(32)
-  Params().put("BleAuthorizedTokens", [token])
+  Params().put("BleToken", token)
   stop_pairing()
-  log(f"Token {token[:8]}... issued (replaced any previous token)")
+  log(f"Token {token[:8]}... issued")
   return token
 
 
-def revoke_authorized_token():
-  Params().put("BleAuthorizedTokens", [])
-  log("BLE authorized token revoked")
+def clear_ble_token():
+  Params().remove("BleToken")
+  log("BLE token revoked")
 
 
 def get_mac_addr() -> str:
@@ -241,7 +240,7 @@ class RPCRequestCharacteristic(Characteristic):
         request_text = json.dumps(req)
 
       if method not in ("blePair", "echo"):
-        authorized = get_authorized_token()
+        authorized = get_ble_token()
         if not self.current_token or not authorized or self.current_token != authorized:
           err = {"jsonrpc": "2.0", "error": {"code": -32001, "message": "Unauthorized: pair with device first"}, "id": request_id}
           self.response_char.send_response(json.dumps(err))

@@ -10,7 +10,6 @@ from openpilot.system.ui.widgets import DialogResult
 DESCRIPTIONS = {
   "EnableAsiusAPI": tr_noop("Use Asius API for Connect features. Disabling will switch to comma API. Requires reboot to re-register device."),
   "EnableWebRTC": tr_noop("Allow remote live streaming via Connect."),
-  "EnableRemoteParams": tr_noop("Allow remote parameter editing via Connect."),
   "EnableBLE": tr_noop("Enable Bluetooth Low Energy server for local device control without network."),
   "LaneTurnDesire": tr_noop("When blinker is on below 20 mph, steer in blinker direction. Useful at intersections and red lights."),
 }
@@ -25,22 +24,17 @@ class AsiusLayout(Widget):
       "EnableBLE": (
         lambda: tr("Bluetooth"),
         DESCRIPTIONS["EnableBLE"],
-        "bluetooth.png",
+        "../asius/bluetooth.png",
       ),
       "EnableWebRTC": (
         lambda: tr("Remote Live Streaming"),
         DESCRIPTIONS["EnableWebRTC"],
         "network.png",
       ),
-      "EnableRemoteParams": (
-        lambda: tr("Remote Parameter Editing"),
-        DESCRIPTIONS["EnableRemoteParams"],
-        "settings.png",
-      ),
       "EnableAsiusAPI": (
         lambda: tr("Asius API"),
         DESCRIPTIONS["EnableAsiusAPI"],
-        "asius.png",
+        "../asius/asius.png",
       ),
       "LaneTurnDesire": (
         lambda: tr("Lane Turn Desire"),
@@ -63,9 +57,8 @@ class AsiusLayout(Widget):
       self._toggles[param] = toggle
       self._items.append(toggle)
 
-      # Add BLE pairing/revoke UI after BLE toggle
       if param == "EnableBLE":
-        self._items.extend(self._build_ble_items())
+        self._items.append(self._build_ble_button())
 
     self._scroller = Scroller(self._items, line_separator=True, spacing=0)
 
@@ -80,52 +73,44 @@ class AsiusLayout(Widget):
   def _render(self, rect):
     self._scroller.render(rect)
 
-  def _build_ble_items(self) -> list:
-    items = []
+  def _build_ble_button(self):
+    from openpilot.system.athena.ble import get_ble_token
+
+    ble_enabled = self._params.get_bool("EnableBLE")
+    has_token = get_ble_token() is not None
     pairing_code = self._params.get("BlePairingCode")
-    if pairing_code:
-      items.append(
-        button_item(
-          lambda: tr("BLE Pairing Code"),
-          lambda: self._params.get("BlePairingCode") or "",
-          description=lambda: tr("Tap to cancel pairing mode"),
-          callback=self._stop_ble_pairing,
-          enabled=lambda: self._params.get_bool("EnableBLE"),
-        )
+
+    if has_token:
+      return button_item(
+        lambda: tr("Paired BLE Device"),
+        lambda: tr("Remove"),
+        description=lambda: tr("Remove the paired device's access"),
+        callback=self._remove_ble_device,
+        enabled=lambda: self._params.get_bool("EnableBLE"),
+      )
+    elif pairing_code:
+      return button_item(
+        lambda: tr("BLE Pairing Code"),
+        lambda: self._params.get("BlePairingCode") or "",
+        description=lambda: tr("Tap to cancel pairing mode"),
+        callback=self._stop_ble_pairing,
+        enabled=lambda: self._params.get_bool("EnableBLE"),
       )
     else:
-      items.append(
-        button_item(
-          lambda: tr("BLE Pairing"),
-          lambda: tr("Start Pairing"),
-          description=lambda: tr("Start pairing mode to connect a device"),
-          callback=self._start_ble_pairing,
-          enabled=lambda: self._params.get_bool("EnableBLE"),
-        )
+      return button_item(
+        lambda: tr("BLE Pairing"),
+        lambda: tr("Start Pairing"),
+        description=lambda: tr("Start pairing mode to connect a device"),
+        callback=self._start_ble_pairing,
+        enabled=lambda: self._params.get_bool("EnableBLE"),
       )
-
-    from openpilot.system.athena.ble import get_authorized_token
-
-    has_token = get_authorized_token() is not None
-    if has_token:
-      items.append(
-        button_item(
-          lambda: tr("Paired BLE Device"),
-          lambda: tr("Revoke"),
-          description=lambda: tr("Remove the paired BLE device's access"),
-          callback=self._revoke_ble_device,
-          enabled=lambda: self._params.get_bool("EnableBLE"),
-        )
-      )
-
-    return items
 
   def _rebuild_scroller(self):
     self._items = []
     for param in self._toggle_defs:
       self._items.append(self._toggles[param])
       if param == "EnableBLE":
-        self._items.extend(self._build_ble_items())
+        self._items.append(self._build_ble_button())
     self._scroller = Scroller(self._items, line_separator=True, spacing=0)
 
   def _toggle_callback(self, state: bool, param: str):
@@ -152,30 +137,11 @@ class AsiusLayout(Widget):
     stop_pairing()
     self._rebuild_scroller()
 
-  def _revoke_ble_device(self):
-    from openpilot.system.athena.ble import revoke_authorized_token
+  def _remove_ble_device(self):
+    from openpilot.system.athena.ble import clear_ble_token
 
-    revoke_authorized_token()
+    clear_ble_token()
     self._rebuild_scroller()
-
-  def _stop_ble_pairing(self):
-    from openpilot.system.athena.ble import stop_pairing
-
-    stop_pairing()
-    # Rebuild the item list to show the start pairing button
-    self._items = []
-    for param, (_title, _desc, _icon) in self._toggle_defs.items():
-      self._items.append(self._toggles[param])
-      if param == "EnableBLE":
-        self._ble_start_pairing = button_item(
-          lambda: tr("BLE Pairing"),
-          lambda: tr("Start Pairing"),
-          description=lambda: tr("Start pairing mode to connect a device"),
-          callback=self._start_ble_pairing,
-          enabled=lambda: self._params.get_bool("EnableBLE"),
-        )
-        self._items.append(self._ble_start_pairing)
-    self._scroller = Scroller(self._items, line_separator=True, spacing=0)
 
   def _handle_asius_api_toggle(self, state: bool):
     msg = (

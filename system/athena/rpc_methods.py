@@ -169,9 +169,6 @@ def takeSnapshot() -> str | dict[str, str] | None:
 
 @dispatcher.add_method
 def getAllParams() -> dict[str, str | bool | int | float | None]:
-  if not Params().get_bool("EnableRemoteParams"):
-    raise Exception("EnableRemoteParams is disabled")
-
   from openpilot.common.params_pyx import ParamKeyType
   import json
 
@@ -209,9 +206,6 @@ def getAllParams() -> dict[str, str | bool | int | float | None]:
 
 @dispatcher.add_method
 def saveParams(params_to_update: dict[str, str | bool | int | float | dict | list | None]) -> dict[str, str]:
-  if not Params().get_bool("EnableRemoteParams"):
-    raise Exception("EnableRemoteParams is disabled")
-
   import json
   from openpilot.common.params_pyx import ParamKeyType
   from openpilot.common.swaglog import cloudlog
@@ -324,7 +318,7 @@ def getNetworkStatus() -> dict:
 @dispatcher.add_method
 def blePair(code: str, dongleId: str) -> dict[str, str]:
   """Pair a BLE client using pairing code and return access token"""
-  from openpilot.system.athena.ble import add_authorized_token
+  from openpilot.system.athena.ble import set_ble_token
 
   pairing_code = Params().get("BlePairingCode")
   if not pairing_code:
@@ -338,14 +332,14 @@ def blePair(code: str, dongleId: str) -> dict[str, str]:
   if dongleId != device_dongle_id:
     raise Exception("Wrong device")
 
-  token = add_authorized_token()
+  token = set_ble_token()
   return {"token": token}
 
 
 @dispatcher.add_method
 def bleRevoke() -> dict[str, str]:
-  """Revoke the authorized BLE token, disconnecting any paired device."""
-  from openpilot.system.athena.ble import revoke_authorized_token
+  """Revoke the BLE token, disconnecting any paired device."""
+  from openpilot.system.athena.ble import clear_ble_token
 
-  revoke_authorized_token()
+  clear_ble_token()
   return {"status": "ok"}

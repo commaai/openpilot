@@ -42,19 +42,22 @@ class SettingsLayout(NavWidget):
     network_btn.set_click_callback(lambda: self._set_current_panel(PanelType.NETWORK))
     device_btn = BigButton("device", "", "icons_mici/settings/device_icon.png", icon_size=(74, 60))
     device_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVICE))
-    asius_btn = BigButton("asius", "", "icons_mici/settings/asius_icon.png")
+    asius_btn = BigButton("asius", "", "asius/asius_icon.png")
     asius_btn.set_click_callback(lambda: self._set_current_panel(PanelType.ASIUS))
     developer_btn = BigButton("developer", "", "icons_mici/settings/developer_icon.png", icon_size=(64, 60))
     developer_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVELOPER))
 
-    self._scroller = Scroller([
-      toggles_btn,
-      network_btn,
-      device_btn,
-      asius_btn,
-      PairBigButton(),
-      developer_btn,
-    ], snap_items=False)
+    self._scroller = Scroller(
+      [
+        toggles_btn,
+        network_btn,
+        device_btn,
+        asius_btn,
+        PairBigButton(),
+        developer_btn,
+      ],
+      snap_items=False,
+    )
 
     # Set up back navigation
     self.set_back_callback(self.close_settings)
