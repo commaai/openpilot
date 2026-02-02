@@ -21,8 +21,7 @@ from collections.abc import Callable
 import requests
 from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
-                       create_connection)
+from websocket import ABNF, WebSocket, WebSocketException, WebSocketTimeoutException, create_connection
 
 # Import shared RPC methods - registers them with dispatcher
 from openpilot.system.athena import rpc_methods  # noqa: F401
@@ -42,7 +41,9 @@ from openpilot.system.hardware.hw import Paths
 
 ATHENA_HOST = 'wss://api.asius.ai' if Params().get_bool("EnableAsiusAPI") else os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
-LOCAL_PORT_WHITELIST = {22, }
+LOCAL_PORT_WHITELIST = {
+  22,
+}
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
@@ -105,8 +106,7 @@ class UploadItem:
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadItem:
-    return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
-               d["progress"], d["allow_cellular"], d["priority"])
+    return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"], d["progress"], d["allow_cellular"], d["priority"])
 
   def __lt__(self, other):
     if not isinstance(other, UploadItem):
@@ -173,10 +173,7 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler4'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
     threading.Thread(target=stat_handler, args=(end_event,), name='stat_handler'),
-  ] + [
-    threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}')
-    for x in range(HANDLER_THREADS)
-  ]
+  ] + [threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}') for x in range(HANDLER_THREADS)]
 
   for thread in threads:
     thread.start()
@@ -315,10 +312,12 @@ def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> req
   stream = None
   try:
     stream, content_length = get_upload_stream(path, compress)
-    response = UPLOAD_SESS.put(upload_item.url,
-                               data=CallbackReader(stream, callback, content_length) if callback else stream,
-                               headers={**upload_item.headers, 'Content-Length': str(content_length)},
-                               timeout=30)
+    response = UPLOAD_SESS.put(
+      upload_item.url,
+      data=CallbackReader(stream, callback, content_length) if callback else stream,
+      headers={**upload_item.headers, 'Content-Length': str(content_length)},
+      timeout=30,
+    )
     return response
   finally:
     if stream:
@@ -420,7 +419,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     proxy_end_event = threading.Event()
     threads = [
       threading.Thread(target=ws_proxy_recv, args=(ws, local_sock, ssock, proxy_end_event, global_end_event)),
-      threading.Thread(target=ws_proxy_send, args=(ws, local_sock, csock, proxy_end_event))
+      threading.Thread(target=ws_proxy_send, args=(ws, local_sock, csock, proxy_end_event)),
     ]
     for thread in threads:
       thread.start()
@@ -430,25 +429,6 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
   except Exception as e:
     cloudlog.exception("athenad.startLocalProxy.exception")
     raise e
-
-
-@dispatcher.add_method
-def webrtc(sdp: str, cameras: list[str], bridge_services_in: list[str], bridge_services_out: list[str]):
-  if not Params().get_bool("EnableWebRTC"):
-    raise Exception("EnableWebRTC is disabled")
-  try:
-    data = {
-      "sdp": sdp,
-      "cameras": cameras,
-      "bridge_services_in": bridge_services_in,
-      "bridge_services_out": bridge_services_out
-    }
-    response = requests.post("http://0.0.0.0:5001/stream", json=data, timeout=60)
-    response.raise_for_status()
-    return response.json()
-  except Exception as e:
-    cloudlog.exception("athena.webrtc.exception")
-    return {"error": str(e)}
 
 
 def get_logs_to_send_sorted() -> list[str]:
@@ -473,7 +453,7 @@ def log_handler(end_event: threading.Event) -> None:
     return
 
   log_files = []
-  last_scan = 0.
+  last_scan = 0.0
   while not end_event.is_set():
     try:
       curr_scan = time.monotonic()
@@ -490,12 +470,7 @@ def log_handler(end_event: threading.Event) -> None:
           log_path = os.path.join(Paths.swaglog_root(), log_entry)
           setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
           with open(log_path) as f:
-            jsonrpc = {
-              "method": "forwardLogs",
-              "params": {"logs": f.read()},
-              "jsonrpc": "2.0",
-              "id": log_entry
-            }
+            jsonrpc = {"method": "forwardLogs", "params": {"logs": f.read()}, "jsonrpc": "2.0", "id": log_entry}
             low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
             curr_log = log_entry
         except OSError:
@@ -537,12 +512,7 @@ def stat_handler(end_event: threading.Event) -> None:
         if len(stat_filenames) > 0:
           stat_path = os.path.join(STATS_DIR, stat_filenames[0])
           with open(stat_path) as f:
-            jsonrpc = {
-              "method": "storeStats",
-              "params": {"stats": f.read()},
-              "jsonrpc": "2.0",
-              "id": stat_filenames[0]
-            }
+            jsonrpc = {"method": "storeStats", "params": {"stats": f.read()}, "jsonrpc": "2.0", "id": stat_filenames[0]}
             low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
           os.remove(stat_path)
         last_scan = curr_scan
@@ -628,7 +598,7 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
       except queue.Empty:
         data = low_priority_send_queue.get(timeout=1)
       for i in range(0, len(data), WS_FRAME_SIZE):
-        frame = data[i:i+WS_FRAME_SIZE]
+        frame = data[i : i + WS_FRAME_SIZE]
         last = i + WS_FRAME_SIZE >= len(data)
         opcode = ABNF.OPCODE_TEXT if i == 0 else ABNF.OPCODE_CONT
         ws.send_frame(ABNF.create_frame(frame, opcode, last))
@@ -663,7 +633,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
 
 
 def backoff(retries: int) -> int:
-  return random.randrange(0, min(128, int(2 ** retries)))
+  return random.randrange(0, min(128, int(2**retries)))
 
 
 def main(exit_event: threading.Event | None = None):
