@@ -1,9 +1,10 @@
 import time
-import smbus2
 import ctypes
 from collections.abc import Iterable
 
 from cereal import log
+from openpilot.common.i2c import SMBus
+
 
 class Sensor:
   class SensorException(Exception):
@@ -13,9 +14,9 @@ class Sensor:
     pass
 
   def __init__(self, bus: int) -> None:
-    self.bus = smbus2.SMBus(bus)
+    self.bus = SMBus(bus)
     self.source = log.SensorEventData.SensorSource.velodyne  # unknown
-    self.start_ts = 0.
+    self.start_ts = 0.0
 
   def __del__(self):
     self.bus.close()

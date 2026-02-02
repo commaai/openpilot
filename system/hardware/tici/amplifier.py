@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import time
-from smbus2 import SMBus
+from openpilot.common.i2c import SMBus
 from collections import namedtuple
 
 # https://datasheets.maximintegrated.com/en/ds/MAX98089.pdf
@@ -43,14 +43,12 @@ CONFIG = [
   AmpConfig("Enhanced volume smoothing disabled", 0b0, 0x49, 7, 0b10000000),
   AmpConfig("Volume adjustment smoothing disabled", 0b0, 0x49, 6, 0b01000000),
   AmpConfig("Zero-crossing detection disabled", 0b0, 0x49, 5, 0b00100000),
-
   AmpConfig("Left speaker output from left DAC", 0b1, 0x2B, 0, 0b11111111),
   AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),
   AmpConfig("Left Speaker Mixer Gain", 0b00, 0x2D, 0, 0b00000011),
   AmpConfig("Right Speaker Mixer Gain", 0b00, 0x2D, 2, 0b00001100),
   AmpConfig("Left speaker output volume", 0x17, 0x3D, 0, 0b00011111),
   AmpConfig("Right speaker output volume", 0x17, 0x3E, 0, 0b00011111),
-
   AmpConfig("DAI2 EQ enable", 0b0, 0x49, 1, 0b00000010),
   AmpConfig("DAI2: DC blocking", 0b0, 0x20, 0, 0b00000001),
   AmpConfig("ALC enable", 0b0, 0x43, 7, 0b10000000),
@@ -67,6 +65,7 @@ CONFIG = [
   AmpConfig("Right DAC input mixer: DAI2 right", 0b1, 0x22, 0, 0b00000001),
   AmpConfig("Volume adjustment smoothing disabled", 0b1, 0x49, 6, 0b01000000),
 ]
+
 
 class Amplifier:
   AMP_I2C_BUS = 0
@@ -94,7 +93,7 @@ class Amplifier:
   def set_configs(self, configs: list[AmpConfig]) -> bool:
     # retry in case panda is using the amp
     tries = 15
-    backoff = 0.
+    backoff = 0.0
     for i in range(tries):
       try:
         self._set_configs(configs)
@@ -106,7 +105,11 @@ class Amplifier:
     return False
 
   def set_global_shutdown(self, amp_disabled: bool) -> bool:
-    return self.set_configs([self._get_shutdown_config(amp_disabled), ])
+    return self.set_configs(
+      [
+        self._get_shutdown_config(amp_disabled),
+      ]
+    )
 
   def initialize_configuration(self) -> bool:
     cfgs = [
