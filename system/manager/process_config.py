@@ -127,7 +127,7 @@ procs = [
   PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", only_onroad),
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], or_(notcar, webrtc)),
-  PythonProcess("webrtcd", "system.webrtc.webrtcd", or_(notcar, webrtc)),
+  PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]

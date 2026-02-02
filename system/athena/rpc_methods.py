@@ -347,16 +347,14 @@ def bleRevoke() -> dict[str, str]:
 
 @dispatcher.add_method
 def webrtc(sdp: str, cameras: list[str], bridge_services_in: list[str], bridge_services_out: list[str]):
-  import requests
   from openpilot.common.swaglog import cloudlog
 
   if not Params().get_bool("EnableWebRTC"):
     raise Exception("EnableWebRTC is disabled")
   try:
-    data = {"sdp": sdp, "cameras": cameras, "bridge_services_in": bridge_services_in, "bridge_services_out": bridge_services_out}
-    response = requests.post("http://0.0.0.0:5001/stream", json=data, timeout=60)
-    response.raise_for_status()
-    return response.json()
+    from openpilot.system.webrtc.session_manager import create_session
+
+    return create_session(sdp, cameras, bridge_services_in, bridge_services_out)
   except Exception as e:
     cloudlog.exception("athena.webrtc.exception")
     return {"error": str(e)}
