@@ -28,6 +28,7 @@ SATURATE_IL = 1000
 
 
 class HardwareReader:
+  """Separate thread needed here since the read can stall."""
   def __init__(self):
     self.voltage = 0
     self.current = 0
