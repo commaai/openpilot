@@ -17,9 +17,6 @@ dependencies = [
   "crcmod-plus",  # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
-  # hardwared
-  "smbus2", # configuring amp
-
   # core
   "cffi",
   "scons",
