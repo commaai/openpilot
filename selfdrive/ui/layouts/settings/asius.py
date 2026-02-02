@@ -58,9 +58,21 @@ class AsiusLayout(Widget):
       self._items.append(toggle)
 
       if param == "EnableBLE":
-        self._items.append(self._build_ble_button())
+        self._ble_button = self._build_ble_button()
+        self._items.append(self._ble_button)
 
     self._scroller = Scroller(self._items, line_separator=True, spacing=0)
+
+    # Track BLE state so we only rebuild when something changes
+    self._prev_ble_state = self._get_ble_state()
+
+  def _get_ble_state(self) -> tuple:
+    from openpilot.system.athena.ble import get_ble_token
+
+    ble_enabled = self._params.get_bool("EnableBLE")
+    has_token = get_ble_token() is not None
+    pairing_code = self._params.get("BlePairingCode")
+    return (ble_enabled, has_token, pairing_code)
 
   def show_event(self):
     self._scroller.show_event()
@@ -71,17 +83,22 @@ class AsiusLayout(Widget):
       self._toggles[param].action_item.set_state(self._params.get_bool(param))
 
   def _render(self, rect):
+    # Poll for BLE state changes and rebuild if needed
+    ble_state = self._get_ble_state()
+    if ble_state != self._prev_ble_state:
+      self._prev_ble_state = ble_state
+      self._rebuild_scroller()
+
     self._scroller.render(rect)
 
   def _build_ble_button(self):
     from openpilot.system.athena.ble import get_ble_token
 
-    ble_enabled = self._params.get_bool("EnableBLE")
     has_token = get_ble_token() is not None
     pairing_code = self._params.get("BlePairingCode")
 
     if has_token:
-      return button_item(
+      btn = button_item(
         lambda: tr("Paired BLE Device"),
         lambda: tr("Remove"),
         description=lambda: tr("Remove the paired device's access"),
@@ -89,7 +106,7 @@ class AsiusLayout(Widget):
         enabled=lambda: self._params.get_bool("EnableBLE"),
       )
     elif pairing_code:
-      return button_item(
+      btn = button_item(
         lambda: tr("BLE Pairing Code"),
         lambda: self._params.get("BlePairingCode") or "",
         description=lambda: tr("Tap to cancel pairing mode"),
@@ -97,7 +114,7 @@ class AsiusLayout(Widget):
         enabled=lambda: self._params.get_bool("EnableBLE"),
       )
     else:
-      return button_item(
+      btn = button_item(
         lambda: tr("BLE Pairing"),
         lambda: tr("Start Pairing"),
         description=lambda: tr("Start pairing mode to connect a device"),
@@ -105,12 +122,16 @@ class AsiusLayout(Widget):
         enabled=lambda: self._params.get_bool("EnableBLE"),
       )
 
+    btn.set_visible(lambda: self._params.get_bool("EnableBLE"))
+    return btn
+
   def _rebuild_scroller(self):
     self._items = []
     for param in self._toggle_defs:
       self._items.append(self._toggles[param])
       if param == "EnableBLE":
-        self._items.append(self._build_ble_button())
+        self._ble_button = self._build_ble_button()
+        self._items.append(self._ble_button)
     self._scroller = Scroller(self._items, line_separator=True, spacing=0)
 
   def _toggle_callback(self, state: bool, param: str):
@@ -124,6 +145,9 @@ class AsiusLayout(Widget):
       from openpilot.system.athena.ble import stop_pairing
 
       stop_pairing()
+
+    if param == "EnableBLE":
+      self._rebuild_scroller()
 
   def _start_ble_pairing(self):
     from openpilot.system.athena.ble import start_pairing
