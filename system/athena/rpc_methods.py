@@ -23,12 +23,15 @@ from cereal.services import SERVICE_LIST
 # Transport context — set before dispatch by ble.py / athenad.py
 _current_transport: str = "websocket"
 
+
 def set_transport(transport: str) -> None:
   global _current_transport
   _current_transport = transport
 
+
 def get_transport() -> str:
   return _current_transport
+
 
 # RPC methods that require BLE (physical proximity to device)
 BLE_ONLY_METHODS: set[str] = {
@@ -39,6 +42,7 @@ BLE_ONLY_METHODS: set[str] = {
   "setTetheringPassword",
   "getNetworkStatus",
   "blePair",
+  "bleRevoke",
 }
 
 # Params in saveParams() that require BLE to modify
@@ -165,9 +169,6 @@ def takeSnapshot() -> str | dict[str, str] | None:
 
 @dispatcher.add_method
 def getAllParams() -> dict[str, str | bool | int | float | None]:
-  if not Params().get_bool("EnableRemoteParams"):
-    raise Exception("EnableRemoteParams is disabled")
-
   from openpilot.common.params_pyx import ParamKeyType
   import json
 
@@ -205,9 +206,6 @@ def getAllParams() -> dict[str, str | bool | int | float | None]:
 
 @dispatcher.add_method
 def saveParams(params_to_update: dict[str, str | bool | int | float | dict | list | None]) -> dict[str, str]:
-  if not Params().get_bool("EnableRemoteParams"):
-    raise Exception("EnableRemoteParams is disabled")
-
   import json
   from openpilot.common.params_pyx import ParamKeyType
   from openpilot.common.swaglog import cloudlog
@@ -251,10 +249,12 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
 
 _wifi_manager = None
 
+
 def _get_wifi_manager():
   global _wifi_manager
   if _wifi_manager is None:
     from openpilot.system.ui.lib.wifi_manager import WifiManager
+
     _wifi_manager = WifiManager()
   return _wifi_manager
 
@@ -318,7 +318,7 @@ def getNetworkStatus() -> dict:
 @dispatcher.add_method
 def blePair(code: str, dongleId: str) -> dict[str, str]:
   """Pair a BLE client using pairing code and return access token"""
-  from openpilot.system.athena.ble import add_authorized_token
+  from openpilot.system.athena.ble import set_ble_token
 
   pairing_code = Params().get("BlePairingCode")
   if not pairing_code:
@@ -330,7 +330,31 @@ def blePair(code: str, dongleId: str) -> dict[str, str]:
   # Verify dongleId matches
   device_dongle_id = Params().get("DongleId")
   if dongleId != device_dongle_id:
-    raise Exception(f"Wrong device - expected {device_dongle_id}, got {dongleId}")
+    raise Exception("Wrong device")
 
-  token = add_authorized_token()
+  token = set_ble_token()
   return {"token": token}
+
+
+@dispatcher.add_method
+def bleRevoke() -> dict[str, str]:
+  """Revoke the BLE token, disconnecting any paired device."""
+  from openpilot.system.athena.ble import clear_ble_token
+
+  clear_ble_token()
+  return {"status": "ok"}
+
+
+@dispatcher.add_method
+def webrtc(sdp: str, cameras: list[str], bridge_services_in: list[str], bridge_services_out: list[str]):
+  from openpilot.common.swaglog import cloudlog
+
+  if not Params().get_bool("EnableWebRTC"):
+    raise Exception("EnableWebRTC is disabled")
+  try:
+    from openpilot.system.webrtc.session_manager import create_session
+
+    return create_session(sdp, cameras, bridge_services_in, bridge_services_out)
+  except Exception as e:
+    cloudlog.exception("athena.webrtc.exception")
+    return {"error": str(e)}

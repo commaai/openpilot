@@ -6,7 +6,6 @@ import subprocess
 import os
 import sys
 import time
-import random
 import secrets
 
 import dbus
@@ -45,7 +44,7 @@ def get_device_name() -> str:
 
 
 def start_pairing() -> str:
-  code = f"{random.randint(0, 999999):06d}"
+  code = f"{secrets.randbelow(1_000_000):06d}"
   Params().put("BlePairingCode", code)
   log(f"Pairing mode started with code: {code}")
   return code
@@ -56,18 +55,21 @@ def stop_pairing():
   log("Pairing mode stopped")
 
 
-def get_authorized_tokens() -> list[str]:
-  return Params().get("BleAuthorizedTokens") or []
+def get_ble_token() -> str | None:
+  return Params().get("BleToken") or None
 
 
-def add_authorized_token() -> str:
+def set_ble_token() -> str:
   token = secrets.token_urlsafe(32)
-  tokens = get_authorized_tokens()
-  tokens.append(token)
-  Params().put("BleAuthorizedTokens", tokens)
+  Params().put("BleToken", token)
   stop_pairing()
-  log(f"Token {token[:8]}... issued and authorized")
+  log(f"Token {token[:8]}... issued")
   return token
+
+
+def clear_ble_token():
+  Params().remove("BleToken")
+  log("BLE token revoked")
 
 
 def get_mac_addr() -> str:
@@ -238,12 +240,14 @@ class RPCRequestCharacteristic(Characteristic):
         request_text = json.dumps(req)
 
       if method not in ("blePair", "echo"):
-        if not self.current_token or self.current_token not in get_authorized_tokens():
+        authorized = get_ble_token()
+        if not self.current_token or not authorized or self.current_token != authorized:
           err = {"jsonrpc": "2.0", "error": {"code": -32001, "message": "Unauthorized: pair with device first"}, "id": request_id}
           self.response_char.send_response(json.dumps(err))
           return
 
       from openpilot.system.athena.rpc_methods import set_transport
+
       set_transport("ble")
       response = JSONRPCResponseManager.handle(request_text, dispatcher)
       self.response_char.send_response(response.json)
@@ -286,6 +290,7 @@ class Advertisement(dbus.service.Object):
   def __init__(self, bus, index, ad_manager):
     self.path = self.PATH_BASE + str(index)
     self.ad_manager = ad_manager
+    self.registered = False
     dbus.service.Object.__init__(self, bus, self.path)
 
   def get_properties(self):
@@ -309,16 +314,51 @@ class Advertisement(dbus.service.Object):
 
   @dbus.service.method(LE_ADVERTISEMENT_IFACE)
   def Release(self):
-    log("Advertisement released, re-registering...")
-    GLib.timeout_add(100, self._re_register)
+    self.registered = False
+    if Params().get_bool("EnableBLE"):
+      log("Advertisement released, re-registering...")
+      GLib.timeout_add(100, self._re_register)
+    else:
+      log("Advertisement released, EnableBLE is off — not re-registering")
+
+  def register(self):
+    if self.registered:
+      return
+    self.ad_manager.RegisterAdvertisement(
+      self.get_path(),
+      {},
+      reply_handler=self._on_registered,
+      error_handler=lambda e: log(f"Ad register failed: {e}"),
+    )
+
+  def unregister(self):
+    if not self.registered:
+      return
+    try:
+      self.ad_manager.UnregisterAdvertisement(self.get_path())
+      log("Advertisement unregistered")
+    except Exception as e:
+      log(f"Ad unregister failed: {e}")
+    self.registered = False
+
+  def _on_registered(self):
+    self.registered = True
+    log("Advertising")
 
   def _re_register(self):
-    self.ad_manager.RegisterAdvertisement(
-      self.get_path(), {},
-      reply_handler=lambda: log("Advertising"),
-      error_handler=lambda e: log(f"Ad re-register failed: {e}"),
-    )
+    self.register()
     return False
+
+
+def _poll_enable_ble(advertisement):
+  enabled = Params().get_bool("EnableBLE")
+  if enabled and not advertisement.registered:
+    log("EnableBLE turned on — registering advertisement")
+    advertisement.register()
+  elif not enabled and advertisement.registered:
+    log("EnableBLE turned off — unregistering advertisement")
+    advertisement.unregister()
+  return True
 
 
 def main():
@@ -341,7 +381,11 @@ def main():
   advertisement = Advertisement(bus, 0, ad_manager)
 
   service_manager.RegisterApplication(app.get_path(), {}, reply_handler=lambda: log("GATT registered"), error_handler=lambda e: log(f"GATT failed: {e}"))
-  ad_manager.RegisterAdvertisement(advertisement.get_path(), {}, reply_handler=lambda: log("Advertising"), error_handler=lambda e: log(f"Ad failed: {e}"))
+
+  # Only start advertising if EnableBLE is on; poll every 5s to react to toggle changes
+  if Params().get_bool("EnableBLE"):
+    advertisement.register()
+  GLib.timeout_add_seconds(5, _poll_enable_ble, advertisement)
 
   log("Server running")
   mainloop = GLib.MainLoop()
