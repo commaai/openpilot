@@ -137,5 +137,6 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"EnableRemoteParams", {PERSISTENT, BOOL, "1"}},
     {"EnableWebRTC", {PERSISTENT, BOOL, "1"}},
     {"BlePairingCode", {CLEAR_ON_MANAGER_START, STRING}},
+    {"BlePid", {PERSISTENT, INT}},
     {"BleToken", {PERSISTENT, STRING}},
 };

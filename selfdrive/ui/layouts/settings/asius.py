@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets import DialogResult
 DESCRIPTIONS = {
   "EnableAsiusAPI": tr_noop("Use Asius API for Connect features. Disabling will switch to comma API. Requires reboot to re-register device."),
   "EnableWebRTC": tr_noop("Allow remote live streaming via Connect."),
-  "EnableBLE": tr_noop("Enable Bluetooth Low Energy server for local device control without network."),
+  "EnableBLE": tr_noop("Make device discoverable via Bluetooth for local control without network."),
   "LaneTurnDesire": tr_noop("When blinker is on below 20 mph, steer in blinker direction. Useful at intersections and red lights."),
 }
 
