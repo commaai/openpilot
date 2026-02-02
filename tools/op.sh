@@ -162,7 +162,7 @@ function op_check_python() {
     return 1
   fi
 
-  if python3 -c "from packaging.specifiers import SpecifierSet; import sys; exit(0 if '.'.join(map(str, sys.version_info[:3])) in SpecifierSet('$REQUIRED_PYTHON_VERSION') else 1)" 2>/dev/null; then
+  if python3 -c "from packaging.specifiers import SpecifierSet; import sys; exit(0 if '$INSTALLED_PYTHON_VERSION' in SpecifierSet('$REQUIRED_PYTHON_VERSION') else 1)" 2>/dev/null; then
     echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
   else
     echo -e " ↳ [${RED}✗${NC}] You need a python version satisfying '$REQUIRED_PYTHON_VERSION' to continue!"
