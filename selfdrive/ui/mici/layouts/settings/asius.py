@@ -23,25 +23,26 @@ class AsiusLayoutMici(NavWidget):
     remote_params_toggle = BigParamControl("remote parameter editing", "EnableRemoteParams")
     ble_toggle = BigParamControl("bluetooth", "EnableBLE", toggle_callback=self._handle_ble_toggle)
 
-    pairing_code = self._params.get("BlePairingCode")
-    if pairing_code:
-      self._ble_pairing_button = BigButton("ble pairing code")
-      self._ble_pairing_button.set_enabled(False)
-      self._ble_pairing_button.set_value(pairing_code)
-    else:
-      self._ble_pairing_button = BigButton("ble pairing", "start pairing")
-      self._ble_pairing_button.set_click_callback(self._start_ble_pairing)
+    self._ble_pairing_button = BigButton("ble pairing", "start pairing")
+    self._ble_pairing_button.set_click_callback(self._start_ble_pairing)
+
+    self._ble_revoke_button = BigButton("paired ble device", "revoke")
+    self._ble_revoke_button.set_click_callback(self._revoke_ble_device)
 
     lane_turn_toggle = BigParamControl("lane turn desire", "LaneTurnDesire")
 
-    self._scroller = Scroller([
-      ble_toggle,
-      self._ble_pairing_button,
-      webrtc_toggle,
-      remote_params_toggle,
-      lane_turn_toggle,
-      asius_api_toggle,
-    ], snap_items=False)
+    self._scroller = Scroller(
+      [
+        ble_toggle,
+        self._ble_pairing_button,
+        self._ble_revoke_button,
+        webrtc_toggle,
+        remote_params_toggle,
+        lane_turn_toggle,
+        asius_api_toggle,
+      ],
+      snap_items=False,
+    )
 
     self._refresh_toggles = (
       ("EnableBLE", ble_toggle),
@@ -76,22 +77,37 @@ class AsiusLayoutMici(NavWidget):
       self._ble_pairing_button.set_enabled(ble_enabled)
       self._ble_pairing_button.set_click_callback(self._start_ble_pairing)
 
+    # Update BLE revoke button
+    from openpilot.system.athena.ble import get_authorized_token
+
+    has_token = get_authorized_token() is not None
+    self._ble_revoke_button.set_enabled(ble_enabled and has_token)
+
   def _render(self, rect):
     self._scroller.render(rect)
 
   def _start_ble_pairing(self):
     from openpilot.system.athena.ble import start_pairing
+
     start_pairing()
     self._update_toggles()
 
   def _stop_ble_pairing(self):
     from openpilot.system.athena.ble import stop_pairing
+
     stop_pairing()
+    self._update_toggles()
+
+  def _revoke_ble_device(self):
+    from openpilot.system.athena.ble import revoke_authorized_token
+
+    revoke_authorized_token()
     self._update_toggles()
 
   def _handle_ble_toggle(self, state: bool):
     if not state:
       from openpilot.system.athena.ble import stop_pairing
+
       stop_pairing()
 
   def _handle_asius_api_toggle(self, state: bool):

@@ -23,12 +23,15 @@ from cereal.services import SERVICE_LIST
 # Transport context — set before dispatch by ble.py / athenad.py
 _current_transport: str = "websocket"
 
+
 def set_transport(transport: str) -> None:
   global _current_transport
   _current_transport = transport
 
+
 def get_transport() -> str:
   return _current_transport
+
 
 # RPC methods that require BLE (physical proximity to device)
 BLE_ONLY_METHODS: set[str] = {
@@ -39,6 +42,7 @@ BLE_ONLY_METHODS: set[str] = {
   "setTetheringPassword",
   "getNetworkStatus",
   "blePair",
+  "bleRevoke",
 }
 
 # Params in saveParams() that require BLE to modify
@@ -251,10 +255,12 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
 
 _wifi_manager = None
 
+
 def _get_wifi_manager():
   global _wifi_manager
   if _wifi_manager is None:
     from openpilot.system.ui.lib.wifi_manager import WifiManager
+
     _wifi_manager = WifiManager()
   return _wifi_manager
 
@@ -330,7 +336,16 @@ def blePair(code: str, dongleId: str) -> dict[str, str]:
   # Verify dongleId matches
   device_dongle_id = Params().get("DongleId")
   if dongleId != device_dongle_id:
-    raise Exception(f"Wrong device - expected {device_dongle_id}, got {dongleId}")
+    raise Exception("Wrong device")
 
   token = add_authorized_token()
   return {"token": token}
+
+
+@dispatcher.add_method
+def bleRevoke() -> dict[str, str]:
+  """Revoke the authorized BLE token, disconnecting any paired device."""
+  from openpilot.system.athena.ble import revoke_authorized_token
+
+  revoke_authorized_token()
+  return {"status": "ok"}

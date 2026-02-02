@@ -6,7 +6,6 @@ import subprocess
 import os
 import sys
 import time
-import random
 import secrets
 
 import dbus
@@ -45,7 +44,7 @@ def get_device_name() -> str:
 
 
 def start_pairing() -> str:
-  code = f"{random.randint(0, 999999):06d}"
+  code = f"{secrets.randbelow(1_000_000):06d}"
   Params().put("BlePairingCode", code)
   log(f"Pairing mode started with code: {code}")
   return code
@@ -56,18 +55,22 @@ def stop_pairing():
   log("Pairing mode stopped")
 
 
-def get_authorized_tokens() -> list[str]:
-  return Params().get("BleAuthorizedTokens") or []
+def get_authorized_token() -> str | None:
+  tokens = Params().get("BleAuthorizedTokens") or []
+  return tokens[0] if tokens else None
 
 
 def add_authorized_token() -> str:
   token = secrets.token_urlsafe(32)
-  tokens = get_authorized_tokens()
-  tokens.append(token)
-  Params().put("BleAuthorizedTokens", tokens)
+  Params().put("BleAuthorizedTokens", [token])
   stop_pairing()
-  log(f"Token {token[:8]}... issued and authorized")
+  log(f"Token {token[:8]}... issued (replaced any previous token)")
   return token
+
+
+def revoke_authorized_token():
+  Params().put("BleAuthorizedTokens", [])
+  log("BLE authorized token revoked")
 
 
 def get_mac_addr() -> str:
@@ -238,12 +241,14 @@ class RPCRequestCharacteristic(Characteristic):
         request_text = json.dumps(req)
 
       if method not in ("blePair", "echo"):
-        if not self.current_token or self.current_token not in get_authorized_tokens():
+        authorized = get_authorized_token()
+        if not self.current_token or not authorized or self.current_token != authorized:
           err = {"jsonrpc": "2.0", "error": {"code": -32001, "message": "Unauthorized: pair with device first"}, "id": request_id}
           self.response_char.send_response(json.dumps(err))
           return
 
       from openpilot.system.athena.rpc_methods import set_transport
+
       set_transport("ble")
       response = JSONRPCResponseManager.handle(request_text, dispatcher)
       self.response_char.send_response(response.json)
@@ -314,7 +319,8 @@ class Advertisement(dbus.service.Object):
 
   def _re_register(self):
     self.ad_manager.RegisterAdvertisement(
-      self.get_path(), {},
+      self.get_path(),
+      {},
       reply_handler=lambda: log("Advertising"),
       error_handler=lambda e: log(f"Ad re-register failed: {e}"),
     )
