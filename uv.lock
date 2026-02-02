@@ -1294,6 +1294,7 @@ dependencies = [
     { name = "crcmod-plus" },
     { name = "cython" },
     { name = "inputs" },
+    { name = "jeepney" },
     { name = "json-rpc" },
     { name = "kaitaistruct" },
     { name = "libusb1" },
@@ -1331,16 +1332,12 @@ dev = [
     { name = "azure-identity" },
     { name = "azure-storage-blob" },
     { name = "dictdiffer" },
-    { name = "jeepney" },
     { name = "matplotlib" },
     { name = "opencv-python-headless" },
     { name = "parameterized" },
     { name = "pyautogui" },
-    { name = "pyprof2calltree" },
     { name = "pywinctl" },
     { name = "tabulate" },
-    { name = "types-requests" },
-    { name = "types-tabulate" },
 ]
 docs = [
     { name = "jinja2" },
@@ -1356,7 +1353,6 @@ testing = [
     { name = "pytest-asyncio" },
     { name = "pytest-cpp" },
     { name = "pytest-mock" },
-    { name = "pytest-randomly" },
     { name = "pytest-repeat" },
     { name = "pytest-subtests" },
     { name = "pytest-timeout" },
@@ -1386,7 +1382,7 @@ requires-dist = [
     { name = "dictdiffer", marker = "extra == 'dev'" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },
-    { name = "jeepney", marker = "extra == 'dev'" },
+    { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "json-rpc" },
     { name = "kaitaistruct" },
@@ -1408,13 +1404,11 @@ requires-dist = [
     { name = "pycryptodome" },
     { name = "pyjwt" },
     { name = "pyopenssl", specifier = "<24.3.0" },
-    { name = "pyprof2calltree", marker = "extra == 'dev'" },
     { name = "pyserial" },
     { name = "pytest", marker = "extra == 'testing'" },
     { name = "pytest-asyncio", marker = "extra == 'testing'" },
     { name = "pytest-cpp", marker = "extra == 'testing'" },
     { name = "pytest-mock", marker = "extra == 'testing'" },
-    { name = "pytest-randomly", marker = "extra == 'testing'" },
     { name = "pytest-repeat", marker = "extra == 'testing'" },
     { name = "pytest-subtests", marker = "extra == 'testing'" },
     { name = "pytest-timeout", marker = "extra == 'testing'" },
@@ -1436,8 +1430,6 @@ requires-dist = [
     { name = "tabulate", marker = "extra == 'dev'" },
     { name = "tqdm" },
     { name = "ty", marker = "extra == 'testing'" },
-    { name = "types-requests", marker = "extra == 'dev'" },
-    { name = "types-tabulate", marker = "extra == 'dev'" },
     { name = "websocket-client" },
     { name = "xattr" },
     { name = "zstandard" },
@@ -4274,12 +4266,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyprof2calltree"
-version = "1.4.5"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ca/2a/e9a76261183b4b5e059a6625d7aae0bcb0a77622bc767d4497148ce2e218/pyprof2calltree-1.4.5.tar.gz", hash = "sha256:a635672ff31677486350b2be9a823ef92f740e6354a6aeda8fa4a8a3768e8f2f", size = 10080, upload-time = "2020-04-19T10:39:09.819Z" }
-
-[[package]]
 name = "pyrect"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4354,18 +4340,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/68/14/eb014d26be205d38ad5ad20d9a80f7d201472e08167f0bb4361e251084a9/pytest_mock-3.15.1.tar.gz", hash = "sha256:1849a238f6f396da19762269de72cb1814ab44416fa73a8686deac10b0d87a0f", size = 34036, upload-time = "2025-09-16T16:37:27.081Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/cc/06253936f4a7fa2e0f48dfe6d851d9c56df896a9ab09ac019d70b760619c/pytest_mock-3.15.1-py3-none-any.whl", hash = "sha256:0a25e2eb88fe5168d535041d09a4529a188176ae608a6d249ee65abc0949630d", size = 10095, upload-time = "2025-09-16T16:37:25.734Z" },
-]
-
-[[package]]
-name = "pytest-randomly"
-version = "4.0.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c4/1d/258a4bf1109258c00c35043f40433be5c16647387b6e7cd5582d638c116b/pytest_randomly-4.0.1.tar.gz", hash = "sha256:174e57bb12ac2c26f3578188490bd333f0e80620c3f47340158a86eca0593cd8", size = 14130, upload-time = "2025-09-12T15:23:00.085Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/3e/a4a9227807b56869790aad3e24472a554b585974fe7e551ea350f50897ae/pytest_randomly-4.0.1-py3-none-any.whl", hash = "sha256:e0dfad2fd4f35e07beff1e47c17fbafcf98f9bf4531fd369d9260e2f858bfcb7", size = 8304, upload-time = "2025-09-12T15:22:58.946Z" },
 ]
 
 [[package]]
@@ -4862,27 +4836,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/63/06/8932833a4eca2df49c997a29afb26721612de8078ae79074c8fe87e17516/ty-0.0.13-py3-none-win32.whl", hash = "sha256:c1f2ec40daa405508b053e5b8e440fbae5fdb85c69c9ab0ee078f8bc00eeec3d", size = 9433482, upload-time = "2026-01-21T13:20:58.717Z" },
     { url = "https://files.pythonhosted.org/packages/aa/fd/e8d972d1a69df25c2cecb20ea50e49ad5f27a06f55f1f5f399a563e71645/ty-0.0.13-py3-none-win_amd64.whl", hash = "sha256:8b7b1ab9f187affbceff89d51076038363b14113be29bda2ddfa17116de1d476", size = 10319156, upload-time = "2026-01-21T13:21:03.266Z" },
     { url = "https://files.pythonhosted.org/packages/2d/c2/05fdd64ac003a560d4fbd1faa7d9a31d75df8f901675e5bed1ee2ceeff87/ty-0.0.13-py3-none-win_arm64.whl", hash = "sha256:1c9630333497c77bb9bcabba42971b96ee1f36c601dd3dcac66b4134f9fa38f0", size = 9808316, upload-time = "2026-01-21T13:20:54.053Z" },
-]
-
-[[package]]
-name = "types-requests"
-version = "2.32.4.20260107"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/f3/a0663907082280664d745929205a89d41dffb29e89a50f753af7d57d0a96/types_requests-2.32.4.20260107.tar.gz", hash = "sha256:018a11ac158f801bfa84857ddec1650750e393df8a004a8a9ae2a9bec6fcb24f", size = 23165, upload-time = "2026-01-07T03:20:54.091Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/12/709ea261f2bf91ef0a26a9eed20f2623227a8ed85610c1e54c5805692ecb/types_requests-2.32.4.20260107-py3-none-any.whl", hash = "sha256:b703fe72f8ce5b31ef031264fe9395cac8f46a04661a79f7ed31a80fb308730d", size = 20676, upload-time = "2026-01-07T03:20:52.929Z" },
-]
-
-[[package]]
-name = "types-tabulate"
-version = "0.9.0.20241207"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/3f/43/16030404a327e4ff8c692f2273854019ed36718667b2993609dc37d14dd4/types_tabulate-0.9.0.20241207.tar.gz", hash = "sha256:ac1ac174750c0a385dfd248edc6279fa328aaf4ea317915ab879a2ec47833230", size = 8195, upload-time = "2024-12-07T02:54:42.554Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/86/a9ebfd509cbe74471106dffed320e208c72537f9aeb0a55eaa6b1b5e4d17/types_tabulate-0.9.0.20241207-py3-none-any.whl", hash = "sha256:b8dad1343c2a8ba5861c5441370c3e35908edd234ff036d4298708a1d4cf8a85", size = 8307, upload-time = "2024-12-07T02:54:41.031Z" },
 ]
 
 [[package]]
