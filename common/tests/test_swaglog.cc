@@ -1,5 +1,9 @@
-#include <zmq.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 
+#include <cstring>
 #include <iostream>
 
 #include "catch2/catch.hpp"
@@ -22,9 +26,30 @@ void log_thread(int thread_id, int msg_cnt) {
 }
 
 void recv_log(int thread_cnt, int thread_msg_cnt) {
-  void *zctx = zmq_ctx_new();
-  void *sock = zmq_socket(zctx, ZMQ_PULL);
-  zmq_bind(sock, Path::swaglog_ipc().c_str());
+  // Create Unix datagram socket
+  int sock_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
+  REQUIRE(sock_fd >= 0);
+
+  // Set non-blocking
+  int flags = fcntl(sock_fd, F_GETFL, 0);
+  fcntl(sock_fd, F_SETFL, flags | O_NONBLOCK);
+
+  // Get socket path from ipc:// URL
+  std::string ipc_path = Path::swaglog_ipc();
+  if (ipc_path.rfind("ipc://", 0) == 0) {
+    ipc_path = ipc_path.substr(6);
+  }
+
+  // Remove existing socket file if present
+  unlink(ipc_path.c_str());
+
+  // Bind to socket
+  struct sockaddr_un addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, ipc_path.c_str(), sizeof(addr.sun_path) - 1);
+  REQUIRE(bind(sock_fd, (struct sockaddr*)&addr, sizeof(addr)) == 0);
+
   std::vector<int> thread_msgs(thread_cnt);
   int total_count = 0;
 
@@ -32,8 +57,9 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
        now < start + std::chrono::seconds{1} && total_count < (thread_cnt * thread_msg_cnt);
        now = std::chrono::steady_clock::now()) {
     char buf[4096] = {};
-    if (zmq_recv(sock, buf, sizeof(buf), ZMQ_DONTWAIT) <= 0) {
-      if (errno == EAGAIN || errno == EINTR || errno == EFSM) continue;
+    ssize_t len = recv(sock_fd, buf, sizeof(buf), 0);
+    if (len <= 0) {
+      if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK) continue;
       break;
     }
 
@@ -67,8 +93,8 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
     INFO("thread :" << i);
     REQUIRE(thread_msgs[i] == thread_msg_cnt);
   }
-  zmq_close(sock);
-  zmq_ctx_destroy(zctx);
+  close(sock_fd);
+  unlink(ipc_path.c_str());
 }
 
 TEST_CASE("swaglog") {
