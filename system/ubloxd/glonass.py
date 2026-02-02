@@ -11,9 +11,7 @@ from typing import Annotated
 from openpilot.system.ubloxd import binary_struct as bs
 
 
-@bs.binary_struct
 class Glonass(bs.BinaryStruct):
-  @bs.binary_struct
   class String1(bs.BinaryStruct):
     not_used: Annotated[int, bs.bits(2)]
     p1: Annotated[int, bs.bits(2)]
@@ -40,7 +38,6 @@ class Glonass(bs.BinaryStruct):
       """Computed x from sign-magnitude representation."""
       return (self.x_value * -1) if self.x_sign else self.x_value
 
-  @bs.binary_struct
   class String2(bs.BinaryStruct):
     b_n: Annotated[int, bs.bits(3)]
     p2: Annotated[bool, bs.bits(1)]
@@ -68,7 +65,6 @@ class Glonass(bs.BinaryStruct):
       """Computed y from sign-magnitude representation."""
       return (self.y_value * -1) if self.y_sign else self.y_value
 
-  @bs.binary_struct
   class String3(bs.BinaryStruct):
     p3: Annotated[bool, bs.bits(1)]
     gamma_n_sign: Annotated[bool, bs.bits(1)]
@@ -103,7 +99,6 @@ class Glonass(bs.BinaryStruct):
       """Computed z from sign-magnitude representation."""
       return (self.z_value * -1) if self.z_sign else self.z_value
 
-  @bs.binary_struct
   class String4(bs.BinaryStruct):
     tau_n_sign: Annotated[bool, bs.bits(1)]
     tau_n_value: Annotated[int, bs.bits(21)]
@@ -128,7 +123,6 @@ class Glonass(bs.BinaryStruct):
       """Computed delta_tau_n from sign-magnitude representation."""
       return (self.delta_tau_n_value * -1) if self.delta_tau_n_sign else self.delta_tau_n_value
 
-  @bs.binary_struct
   class String5(bs.BinaryStruct):
     n_a: Annotated[int, bs.bits(11)]
     tau_c: Annotated[int, bs.bits(32)]
@@ -137,7 +131,6 @@ class Glonass(bs.BinaryStruct):
     tau_gps: Annotated[int, bs.bits(22)]
     l_n: Annotated[bool, bs.bits(1)]
 
-  @bs.binary_struct
   class StringNonImmediate(bs.BinaryStruct):
     data_1: Annotated[int, bs.bits(64)]
     data_2: Annotated[int, bs.bits(8)]

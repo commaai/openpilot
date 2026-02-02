@@ -77,7 +77,6 @@ s16 = IntType(16, True)
 s32 = IntType(32, True)
 f32 = FloatType(32)
 f64 = FloatType(64)
-
 # Big endian variants
 u16be = IntType(16, False, big_endian=True)
 u32be = IntType(32, False, big_endian=True)
@@ -154,28 +153,21 @@ class BinaryReader:
   def read_bits_int_be(self, n: int) -> int:
     result = 0
     bits_remaining = n
-
     while bits_remaining > 0:
       if self.pos >= len(self.data):
         raise EOFError("Unexpected end of data while reading bits")
-
       bits_in_byte = 8 - self.bit_pos
       bits_to_read = min(bits_remaining, bits_in_byte)
-
       byte_val = self.data[self.pos]
       shift = bits_in_byte - bits_to_read
       mask = (1 << bits_to_read) - 1
       extracted = (byte_val >> shift) & mask
-
       result = (result << bits_to_read) | extracted
-
       self.bit_pos += bits_to_read
       bits_remaining -= bits_to_read
-
       if self.bit_pos >= 8:
         self.bit_pos = 0
         self.pos += 1
-
     return result
 
   def _align_to_byte(self) -> None:
@@ -189,6 +181,25 @@ T = TypeVar('T', bound='BinaryStruct')
 
 class BinaryStruct:
   """Base class for binary struct definitions."""
+
+  def __init_subclass__(cls, **kwargs) -> None:
+    super().__init_subclass__(**kwargs)
+    if cls is BinaryStruct:
+      return
+    if not is_dataclass(cls):
+      dataclass(init=False)(cls)
+    fields = list(getattr(cls, '__annotations__', {}).items())
+    cls.__binary_fields__ = fields  # type: ignore[attr-defined]
+
+    @classmethod
+    def _read(inner_cls, reader: BinaryReader):
+      obj = inner_cls.__new__(inner_cls)
+      for name, spec in inner_cls.__binary_fields__:
+        value = _parse_field(spec, reader, obj)
+        setattr(obj, name, value)
+      return obj
+
+    cls._read = _read  # type: ignore[attr-defined]
 
   @classmethod
   def from_bytes(cls: type[T], data: bytes) -> T:
@@ -249,71 +260,40 @@ def _parse_field(spec: Any, reader: BinaryReader, obj: Any) -> Any:
   field_type = _field_type_from_spec(spec)
   if field_type is not None:
     spec = field_type
-
   if isinstance(spec, ConstType):
     value = _parse_field(spec.base_type, reader, obj)
     if value != spec.expected:
       raise ValueError(f"Invalid constant: expected {spec.expected!r}, got {value!r}")
     return value
-
   if isinstance(spec, EnumType):
     raw = _parse_field(spec.base_type, reader, obj)
     try:
       return spec.enum_cls(raw)
     except ValueError:
       return raw
-
   if isinstance(spec, SwitchType):
     key = _resolve_path(obj, spec.selector)
     target = spec.cases.get(key, spec.default)
     if target is None:
       return None
     return _parse_field(target, reader, obj)
-
   if isinstance(spec, ArrayType):
     count = _resolve_path(obj, spec.count_field)
     return [_parse_field(spec.element_type, reader, obj) for _ in range(int(count))]
-
   if isinstance(spec, SubstreamType):
     length = _resolve_path(obj, spec.length_field)
     data = reader.read_bytes(int(length))
     sub_reader = BinaryReader(data)
     return _parse_field(spec.element_type, sub_reader, obj)
-
   if isinstance(spec, IntType):
     return reader._read_struct(_int_format(spec))
-
   if isinstance(spec, FloatType):
     return reader._read_struct(_float_format(spec))
-
   if isinstance(spec, BitsType):
     value = reader.read_bits_int_be(spec.bits)
     return bool(value) if spec.bits == 1 else value
-
   if isinstance(spec, BytesType):
     return reader.read_bytes(spec.size)
-
   if isinstance(spec, type) and issubclass(spec, BinaryStruct):
     return spec._read(reader)
-
   raise TypeError(f"Unsupported field spec: {spec!r}")
-
-
-def binary_struct(cls):
-  """Decorator to register a binary struct schema."""
-  if not is_dataclass(cls):
-    cls = dataclass(init=False)(cls)
-
-  fields = list(getattr(cls, '__annotations__', {}).items())
-  cls.__binary_fields__ = fields  # type: ignore[attr-defined]
-
-  @classmethod
-  def _read(inner_cls, reader: BinaryReader):
-    obj = inner_cls.__new__(inner_cls)
-    for name, spec in inner_cls.__binary_fields__:
-      value = _parse_field(spec, reader, obj)
-      setattr(obj, name, value)
-    return obj
-
-  cls._read = _read  # type: ignore[attr-defined]
-  return cls

@@ -10,16 +10,13 @@ from typing import Annotated
 from openpilot.system.ubloxd import binary_struct as bs
 
 
-@bs.binary_struct
 class Gps(bs.BinaryStruct):
-  @bs.binary_struct
   class Tlm(bs.BinaryStruct):
     preamble: Annotated[bytes, bs.const(bs.bytes_field(1), b"\x8b")]
     tlm: Annotated[int, bs.bits(14)]
     integrity_status: Annotated[bool, bs.bits(1)]
     reserved: Annotated[bool, bs.bits(1)]
 
-  @bs.binary_struct
   class How(bs.BinaryStruct):
     tow_count: Annotated[int, bs.bits(17)]
     alert: Annotated[bool, bs.bits(1)]
@@ -27,7 +24,6 @@ class Gps(bs.BinaryStruct):
     subframe_id: Annotated[int, bs.bits(3)]
     reserved: Annotated[int, bs.bits(2)]
 
-  @bs.binary_struct
   class Subframe1(bs.BinaryStruct):
     week_no: Annotated[int, bs.bits(10)]
     code: Annotated[int, bs.bits(2)]
@@ -53,7 +49,6 @@ class Gps(bs.BinaryStruct):
       """Computed af_0 from sign-magnitude representation."""
       return (self.af_0_value - (1 << 21)) if self.af_0_sign else self.af_0_value
 
-  @bs.binary_struct
   class Subframe2(bs.BinaryStruct):
     iode: Annotated[int, bs.u8]
     c_rs: Annotated[int, bs.s16be]
@@ -68,7 +63,6 @@ class Gps(bs.BinaryStruct):
     aoda: Annotated[int, bs.bits(5)]
     reserved: Annotated[int, bs.bits(2)]
 
-  @bs.binary_struct
   class Subframe3(bs.BinaryStruct):
     c_ic: Annotated[int, bs.s16be]
     omega_0: Annotated[int, bs.s32be]
@@ -93,9 +87,7 @@ class Gps(bs.BinaryStruct):
       """Computed idot from sign-magnitude representation."""
       return (self.idot_value - (1 << 13)) if self.idot_sign else self.idot_value
 
-  @bs.binary_struct
   class Subframe4(bs.BinaryStruct):
-    @bs.binary_struct
     class IonosphereData(bs.BinaryStruct):
       a0: Annotated[int, bs.s8]
       a1: Annotated[int, bs.s8]

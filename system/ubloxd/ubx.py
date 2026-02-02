@@ -18,13 +18,10 @@ class GnssType(IntEnum):
   glonass = 6
 
 
-@bs.binary_struct
 class Ubx(bs.BinaryStruct):
   GnssType = GnssType
 
-  @bs.binary_struct
   class RxmRawx(bs.BinaryStruct):
-    @bs.binary_struct
     class Measurement(bs.BinaryStruct):
       pr_mes: Annotated[float, bs.f64]
       cp_mes: Annotated[float, bs.f64]
@@ -49,7 +46,6 @@ class Ubx(bs.BinaryStruct):
     reserved1: Annotated[bytes, bs.bytes_field(3)]
     meas: Annotated[list[Measurement], bs.array(Measurement, count_field='num_meas')]
 
-  @bs.binary_struct
   class RxmSfrbx(bs.BinaryStruct):
     gnss_id: Annotated[GnssType | int, bs.enum(bs.u8, GnssType)]
     sv_id: Annotated[int, bs.u8]
@@ -61,9 +57,7 @@ class Ubx(bs.BinaryStruct):
     reserved3: Annotated[bytes, bs.bytes_field(1)]
     body: Annotated[list[int], bs.array(bs.u32, count_field='num_words')]
 
-  @bs.binary_struct
   class NavSat(bs.BinaryStruct):
-    @bs.binary_struct
     class Nav(bs.BinaryStruct):
       gnss_id: Annotated[GnssType | int, bs.enum(bs.u8, GnssType)]
       sv_id: Annotated[int, bs.u8]
@@ -79,7 +73,6 @@ class Ubx(bs.BinaryStruct):
     reserved: Annotated[bytes, bs.bytes_field(2)]
     svs: Annotated[list[Nav], bs.array(Nav, count_field='num_svs')]
 
-  @bs.binary_struct
   class NavPvt(bs.BinaryStruct):
     i_tow: Annotated[int, bs.u32]
     year: Annotated[int, bs.u16]
@@ -115,7 +108,6 @@ class Ubx(bs.BinaryStruct):
     mag_dec: Annotated[int, bs.s16]
     mag_acc: Annotated[int, bs.u16]
 
-  @bs.binary_struct
   class MonHw2(bs.BinaryStruct):
     class ConfigSource(IntEnum):
       flash = 102
@@ -134,7 +126,6 @@ class Ubx(bs.BinaryStruct):
     post_status: Annotated[int, bs.u32]
     reserved3: Annotated[bytes, bs.bytes_field(4)]
 
-  @bs.binary_struct
   class MonHw(bs.BinaryStruct):
     class AntennaStatus(IntEnum):
       init = 0
