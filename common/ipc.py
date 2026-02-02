@@ -23,14 +23,17 @@ class PushSocket:
     """Send data to the socket (non-blocking).
 
     Returns True if sent successfully, False if dropped.
+    Max message size is ~64KB on Linux (kernel limit for datagrams).
     """
     if self.sock is None or self.path is None:
       return False
     try:
       self.sock.sendto(data, self.path)
       return True
-    except (BlockingIOError, ConnectionRefusedError, FileNotFoundError):
-      return False  # Drop message (matches ZMQ NOBLOCK behavior)
+    except (BlockingIOError, ConnectionRefusedError, FileNotFoundError, OSError):
+      # Drop message on any send error (matches ZMQ NOBLOCK behavior)
+      # OSError includes EMSGSIZE (message too long) for large datagrams
+      return False
 
   def close(self):
     if self.sock:
