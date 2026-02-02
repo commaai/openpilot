@@ -1,5 +1,5 @@
 """
-UBX protocol parser - declarative Python DSL implementation.
+UBX protocol parser
 """
 
 from enum import IntEnum

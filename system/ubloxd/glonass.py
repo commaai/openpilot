@@ -1,6 +1,4 @@
 """
-GLONASS navigation string parser - declarative Python DSL implementation.
-
 Parses GLONASS navigation strings per GLONASS ICD specification.
 http://gauss.gge.unb.ca/GLONASS.ICD.pdf
 https://www.unavco.org/help/glossary/docs/ICD_GLONASS_4.0_(1998)_en.pdf

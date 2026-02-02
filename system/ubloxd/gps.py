@@ -1,6 +1,4 @@
 """
-GPS subframe parser - declarative Python DSL implementation.
-
 Parses GPS navigation subframes per IS-GPS-200E specification.
 https://www.gps.gov/technical/icwg/IS-GPS-200E.pdf
 """

@@ -6,8 +6,8 @@ and type annotations.
 """
 
 import struct
-from dataclasses import dataclass, is_dataclass
 from enum import Enum
+from dataclasses import dataclass, is_dataclass
 from typing import Annotated, Any, TypeVar, get_args, get_origin
 
 
@@ -21,27 +21,22 @@ class IntType(FieldType):
   signed: bool
   big_endian: bool = False
 
-
 @dataclass(frozen=True)
 class FloatType(FieldType):
   bits: int
-
 
 @dataclass(frozen=True)
 class BitsType(FieldType):
   bits: int
 
-
 @dataclass(frozen=True)
 class BytesType(FieldType):
   size: int
-
 
 @dataclass(frozen=True)
 class ArrayType(FieldType):
   element_type: Any
   count_field: str
-
 
 @dataclass(frozen=True)
 class SwitchType(FieldType):
@@ -49,24 +44,20 @@ class SwitchType(FieldType):
   cases: dict[Any, Any]
   default: Any = None
 
-
 @dataclass(frozen=True)
 class EnumType(FieldType):
   base_type: FieldType
   enum_cls: type[Enum]
-
 
 @dataclass(frozen=True)
 class ConstType(FieldType):
   base_type: FieldType
   expected: Any
 
-
 @dataclass(frozen=True)
 class SubstreamType(FieldType):
   length_field: str
   element_type: Any
-
 
 # Common types - little endian
 u8 = IntType(8, False)
@@ -88,21 +79,17 @@ def bits(n: int) -> BitsType:
   """Create a bit-level field type."""
   return BitsType(n)
 
-
 def bytes_field(size: int) -> BytesType:
   """Create a fixed-size bytes field."""
   return BytesType(size)
-
 
 def array(element_type: Any, count_field: str) -> ArrayType:
   """Create an array/repeated field."""
   return ArrayType(element_type, count_field)
 
-
 def switch(selector: str, cases: dict[Any, Any], default: Any = None) -> SwitchType:
   """Create a switch-on field."""
   return SwitchType(selector, cases, default)
-
 
 def enum(base_type: Any, enum_cls: type[Enum]) -> EnumType:
   """Create an enum-wrapped field."""
@@ -111,14 +98,12 @@ def enum(base_type: Any, enum_cls: type[Enum]) -> EnumType:
     raise TypeError(f"Unsupported field type: {base_type!r}")
   return EnumType(field_type, enum_cls)
 
-
 def const(base_type: Any, expected: Any) -> ConstType:
   """Create a constant-value field."""
   field_type = _field_type_from_spec(base_type)
   if field_type is None:
     raise TypeError(f"Unsupported field type: {base_type!r}")
   return ConstType(field_type, expected)
-
 
 def substream(length_field: str, element_type: Any) -> SubstreamType:
   """Parse a fixed-length substream using an inner schema."""
@@ -219,12 +204,10 @@ def _resolve_path(obj: Any, path: str) -> Any:
     cur = getattr(cur, part)
   return cur
 
-
 def _unwrap_annotated(spec: Any) -> tuple[Any, ...]:
   if get_origin(spec) is Annotated:
     return get_args(spec)[1:]
   return ()
-
 
 def _field_type_from_spec(spec: Any) -> FieldType | None:
   if isinstance(spec, FieldType):
@@ -247,14 +230,12 @@ def _int_format(field_type: IntType) -> str:
     raise ValueError(f"Unsupported integer size: {field_type.bits}")
   return f"{endian}{code}"
 
-
 def _float_format(field_type: FloatType) -> str:
   if field_type.bits == 32:
     return '<f'
   if field_type.bits == 64:
     return '<d'
   raise ValueError(f"Unsupported float size: {field_type.bits}")
-
 
 def _parse_field(spec: Any, reader: BinaryReader, obj: Any) -> Any:
   field_type = _field_type_from_spec(spec)
