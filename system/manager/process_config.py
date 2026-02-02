@@ -84,7 +84,7 @@ def and_(*fns):
 
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
-  PythonProcess("manage_ble", "system.athena.manage_ble", always_run),
+  DaemonProcess("manage_ble", "system.athena.manage_ble", "BlePid"),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, webrtc)),

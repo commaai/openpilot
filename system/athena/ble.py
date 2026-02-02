@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import os
 import sys
 import time
 import secrets
@@ -28,6 +26,7 @@ DBUS_PROP_IFACE = "org.freedesktop.DBus.Properties"
 GATT_SERVICE_IFACE = "org.bluez.GattService1"
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 LE_ADVERTISEMENT_IFACE = "org.bluez.LEAdvertisement1"
+ADAPTER_IFACE = "org.bluez.Adapter1"
 ADAPTER_PATH = "/org/bluez/hci0"
 
 BLE_MTU = 512
@@ -72,45 +71,33 @@ def clear_ble_token():
   log("BLE token revoked")
 
 
-def get_mac_addr() -> str:
-  mac_suffix = Params().get("DongleId").lower()
-  return f"C0:{mac_suffix[0:2]}:{mac_suffix[2:4]}:{mac_suffix[4:6]}:{mac_suffix[6:8]}:{mac_suffix[8:10]}"
+def wait_for_adapter(bus):
+  """Wait for BlueZ adapter to appear and be powered on.
+  Hardware init (btattach, static addr) is done by launch_chffrplus.sh at boot."""
+  for i in range(30):
+    try:
+      adapter_props = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, ADAPTER_PATH), DBUS_PROP_IFACE)
+      powered = adapter_props.Get(ADAPTER_IFACE, "Powered")
+      if powered:
+        log("Bluetooth adapter ready")
+        return True
+      log(f"Adapter found but not powered, waiting... ({i + 1}/30)")
+    except dbus.exceptions.DBusException:
+      log(f"Waiting for Bluetooth adapter... ({i + 1}/30)")
+    time.sleep(2)
 
-
-def set_static_addr():
-  mac_address = get_mac_addr()
-  # Must be set while controller is powered off — btmgmt power off/on deregisters
-  # the adapter from BlueZ DBus, so we set addr+privacy on the DOWN adapter
-  # before powering it on with hciconfig
-  subprocess.run(["sudo", "btmgmt", "--index", "0", "static-addr", mac_address], capture_output=True)
-  subprocess.run(["sudo", "btmgmt", "--index", "0", "privacy", "on"], capture_output=True)
-  subprocess.run(["sudo", "hciconfig", "hci0", "up"], capture_output=True)
-  log(f"Set BLE static address to {mac_address}")
-
-
-def init_bluetooth():
-  if not os.path.exists("/dev/ttyHS1"):
-    log("ERROR: /dev/ttyHS1 not found")
-    return False
-
-  subprocess.run(["sudo", "pkill", "-f", "btattach"], capture_output=True)
-  subprocess.run(["sudo", "hciconfig", "hci0", "down"], capture_output=True)
-  time.sleep(1)
-
-  subprocess.Popen(["sudo", "btattach", "-B", "/dev/ttyHS1", "-S", "115200"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-  for i in range(10):
-    time.sleep(1)
-    result = subprocess.run(["hciconfig", "hci0"], capture_output=True, timeout=5)
-    if result.returncode == 0:
-      log("Bluetooth adapter found")
-      subprocess.run(["sudo", "hciconfig", "hci0", "down"], capture_output=True)
-      set_static_addr()
-      return True
-    log(f"Waiting for Bluetooth... ({i + 1}/10)")
-
-  log("ERROR: Failed to initialize Bluetooth")
+  log("ERROR: Bluetooth adapter not available after 60s")
   return False
+
+
+def setup_adapter(bus):
+  """Configure adapter properties via D-Bus (no sudo needed)."""
+  adapter_props = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, ADAPTER_PATH), DBUS_PROP_IFACE)
+  device_name = get_device_name()
+  adapter_props.Set(ADAPTER_IFACE, "Alias", dbus.String(device_name))
+  adapter_props.Set(ADAPTER_IFACE, "DiscoverableTimeout", dbus.UInt32(0))
+  adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(True))
+  log(f"Adapter configured: {device_name}, discoverable")
 
 
 class InvalidArgsException(dbus.exceptions.DBusException):
@@ -299,6 +286,7 @@ class Advertisement(dbus.service.Object):
         "Type": "peripheral",
         "ServiceUUIDs": dbus.Array([ATHENA_SERVICE_UUID], signature="s"),
         "LocalName": dbus.String(get_device_name()),
+        "Appearance": dbus.UInt16(0x0080),
         "IncludeTxPower": dbus.Boolean(True),
       }
     }
@@ -350,15 +338,28 @@ class Advertisement(dbus.service.Object):
     return False
 
 
-def _poll_enable_ble(advertisement):
-  enabled = Params().get_bool("EnableBLE")
-  if enabled and not advertisement.registered:
-    log("EnableBLE turned on — registering advertisement")
-    advertisement.register()
-  elif not enabled and advertisement.registered:
-    log("EnableBLE turned off — unregistering advertisement")
-    advertisement.unregister()
+def _poll_enable_ble(advertisement, bus):
+  try:
+    enabled = Params().get_bool("EnableBLE")
+    if enabled and not advertisement.registered:
+      log("EnableBLE turned on — registering advertisement")
+      _set_discoverable(bus, True)
+      advertisement.register()
+    elif not enabled and advertisement.registered:
+      log("EnableBLE turned off — unregistering advertisement")
+      advertisement.unregister()
+      _set_discoverable(bus, False)
+  except Exception as e:
+    log(f"Poll error: {e}")
   return True
+
+
+def _set_discoverable(bus, discoverable):
+  try:
+    adapter_props = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, ADAPTER_PATH), DBUS_PROP_IFACE)
+    adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(discoverable))
+  except Exception as e:
+    log(f"Failed to set discoverable={discoverable}: {e}")
 
 
 def main():
@@ -366,14 +367,14 @@ def main():
 
   log(f"Starting BLE server: {get_device_name()}")
   log(f"Loaded {len(dispatcher.keys())} RPC methods")
-  time.sleep(10)
-
-  if not init_bluetooth():
-    return 1
-  time.sleep(10)
 
   dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
   bus = dbus.SystemBus()
+
+  if not wait_for_adapter(bus):
+    return 1
+
+  setup_adapter(bus)
 
   app = Application(bus)
   service_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, ADAPTER_PATH), GATT_MANAGER_IFACE)
@@ -382,10 +383,11 @@ def main():
 
   service_manager.RegisterApplication(app.get_path(), {}, reply_handler=lambda: log("GATT registered"), error_handler=lambda e: log(f"GATT failed: {e}"))
 
-  # Only start advertising if EnableBLE is on; poll every 5s to react to toggle changes
   if Params().get_bool("EnableBLE"):
     advertisement.register()
-  GLib.timeout_add_seconds(5, _poll_enable_ble, advertisement)
+  else:
+    _set_discoverable(bus, False)
+  GLib.timeout_add_seconds(5, _poll_enable_ble, advertisement, bus)
 
   log("Server running")
   mainloop = GLib.MainLoop()
