@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import zmq
 import time
 import uuid
 from pathlib import Path
@@ -8,6 +7,7 @@ from collections import defaultdict
 from datetime import datetime, UTC
 from typing import NoReturn
 
+from openpilot.common.ipc import PushSocket, PullSocket
 from openpilot.common.params import Params
 from cereal.messaging import SubMaster
 from openpilot.system.hardware.hw import Paths
@@ -25,31 +25,23 @@ class METRIC_TYPE:
 class StatLog:
   def __init__(self):
     self.pid = None
-    self.zctx = None
     self.sock = None
 
   def connect(self) -> None:
-    self.zctx = zmq.Context()
-    self.sock = self.zctx.socket(zmq.PUSH)
-    self.sock.setsockopt(zmq.LINGER, 10)
+    self.sock = PushSocket()
     self.sock.connect(STATS_SOCKET)
     self.pid = os.getpid()
 
   def __del__(self):
     if self.sock is not None:
       self.sock.close()
-    if self.zctx is not None:
-      self.zctx.term()
+      self.sock = None
 
   def _send(self, metric: str) -> None:
     if os.getpid() != self.pid:
       self.connect()
 
-    try:
-      self.sock.send_string(metric, zmq.NOBLOCK)
-    except zmq.error.Again:
-      # drop :/
-      pass
+    self.sock.send(metric.encode('utf8'))  # Non-blocking, drops on failure
 
   def gauge(self, name: str, value: float) -> None:
     self._send(f"{name}:{value}|{METRIC_TYPE.GAUGE}")
@@ -78,8 +70,7 @@ def main() -> NoReturn:
     return res
 
   # open statistics socket
-  ctx = zmq.Context.instance()
-  sock = ctx.socket(zmq.PULL)
+  sock = PullSocket()
   sock.bind(STATS_SOCKET)
 
   STATS_DIR = Paths.stats_root()
@@ -115,7 +106,7 @@ def main() -> NoReturn:
       # Update metrics
       while True:
         try:
-          metric = sock.recv_string(zmq.NOBLOCK)
+          metric = sock.recv(flags=1).decode('utf8')  # flags=1 for non-blocking
           try:
             metric_type = metric.split('|')[1]
             metric_name = metric.split(':')[0]
@@ -129,7 +120,7 @@ def main() -> NoReturn:
               cloudlog.event("unknown metric type", metric_type=metric_type)
           except Exception:
             cloudlog.event("malformed metric", metric=metric)
-        except zmq.error.Again:
+        except BlockingIOError:
           break
 
       # flush when started state changes or after FLUSH_TIME_S
@@ -174,7 +165,6 @@ def main() -> NoReturn:
           cloudlog.error("stats dir full")
   finally:
     sock.close()
-    ctx.term()
 
 
 if __name__ == "__main__":
