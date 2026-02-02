@@ -153,24 +153,21 @@ function op_check_os() {
 
 function op_check_python() {
   echo "Checking for compatible python version..."
-  REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml)
-  INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
+  REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml | cut -d'=' -f2- | xargs)
+  INSTALLED_PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '\d+\.\d+(?:\.\d+)?')
 
   if [[ -z $INSTALLED_PYTHON_VERSION ]]; then
-    echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version satisfying $(echo $REQUIRED_PYTHON_VERSION | cut -d '=' -f2-) to continue!"
+    echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version satisfying '$REQUIRED_PYTHON_VERSION' to continue!"
     loge "ERROR_PYTHON_NOT_FOUND"
     return 1
+  fi
+
+  if python3 -c "from packaging.specifiers import SpecifierSet; import sys; exit(0 if '.'.join(map(str, sys.version_info[:3])) in SpecifierSet('$REQUIRED_PYTHON_VERSION') else 1)" 2>/dev/null; then
+    echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
   else
-    LB=$(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9,]' | cut -d ',' -f1)
-    UB=$(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9,]' | cut -d ',' -f2)
-    VERSION=$(echo $INSTALLED_PYTHON_VERSION | grep -o '[0-9]\+\.[0-9]\+' | tr -d -c '[0-9]')
-    if [[ $VERSION -ge LB && $VERSION -lt UB ]]; then
-      echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
-    else
-      echo -e " ↳ [${RED}✗${NC}] You need a python version satisfying $(echo $REQUIRED_PYTHON_VERSION | cut -d '=' -f2-) to continue!"
-      loge "ERROR_PYTHON_VERSION" "$INSTALLED_PYTHON_VERSION"
-      return 1
-    fi
+    echo -e " ↳ [${RED}✗${NC}] You need a python version satisfying '$REQUIRED_PYTHON_VERSION' to continue!"
+    loge "ERROR_PYTHON_VERSION" "$INSTALLED_PYTHON_VERSION"
+    return 1
   fi
 }
 
