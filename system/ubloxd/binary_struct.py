@@ -6,7 +6,6 @@ and type annotations.
 """
 
 import struct
-from collections.abc import Callable
 from dataclasses import dataclass, is_dataclass
 from enum import Enum
 from typing import Annotated, Any, TypeVar, get_args, get_origin
@@ -22,71 +21,50 @@ class IntType(FieldType):
   signed: bool
   big_endian: bool = False
 
-  @property
-  def bytes(self) -> int:
-    return self.bits // 8
-
 
 @dataclass(frozen=True)
 class FloatType(FieldType):
   bits: int
-  big_endian: bool = False
 
 
 @dataclass(frozen=True)
 class BitsType(FieldType):
-  """Bit-level field (reads n bits from bit stream)."""
-
   bits: int
-  big_endian: bool = True
   as_bool: bool = False
 
 
 @dataclass(frozen=True)
 class BytesType(FieldType):
-  """Fixed-size byte array."""
-
   size: int
 
 
 @dataclass(frozen=True)
 class ArrayType(FieldType):
-  """Repeated field."""
-
   element_type: Any
-  count_field: str | None = None
-  fixed_count: int | None = None
+  count_field: str
 
 
 @dataclass(frozen=True)
 class SwitchType(FieldType):
-  """Switch-on field."""
-
-  selector: str | Callable[[Any], Any]
+  selector: str
   cases: dict[Any, Any]
   default: Any = None
 
 
 @dataclass(frozen=True)
 class EnumType(FieldType):
-  """Enum wrapper for integer fields."""
-
   base_type: FieldType
   enum_cls: type[Enum]
 
 
 @dataclass(frozen=True)
 class ConstType(FieldType):
-  """Constant value validation wrapper."""
-
   base_type: FieldType
   expected: Any
 
 
 @dataclass(frozen=True)
 class SubstreamType(FieldType):
-  """Parse a fixed-length substream using an inner schema."""
-
   length_field: str
   element_type: Any
 
@@ -120,12 +98,12 @@ def bytes_field(size: int) -> BytesType:
   return BytesType(size)
 
 
-def array(element_type: Any, count_field: str | None = None, fixed_count: int | None = None) -> ArrayType:
+def array(element_type: Any, count_field: str) -> ArrayType:
   """Create an array/repeated field."""
-  return ArrayType(element_type, count_field, fixed_count)
+  return ArrayType(element_type, count_field)
 
 
-def switch(selector: str | Callable[[Any], Any], cases: dict[Any, Any], default: Any = None) -> SwitchType:
+def switch(selector: str, cases: dict[Any, Any], default: Any = None) -> SwitchType:
   """Create a switch-on field."""
   return SwitchType(selector, cases, default)
 
@@ -197,9 +175,6 @@ class BinaryReader:
 
     return result
 
-  def align_to_byte(self) -> None:
-    self._align_to_byte()
-
   def _align_to_byte(self) -> None:
     if self.bit_pos > 0:
       self.bit_pos = 0
@@ -268,13 +243,10 @@ def _int_format(field_type: IntType) -> str:
 
 def _float_format(field_type: FloatType) -> str:
   if field_type.bits == 32:
-    code = 'f'
-  elif field_type.bits == 64:
-    code = 'd'
-  else:
-    raise ValueError(f"Unsupported float size: {field_type.bits}")
-  endian = '>' if field_type.big_endian else '<'
-  return f"{endian}{code}"
+    return '<f'
+  if field_type.bits == 64:
+    return '<d'
+  raise ValueError(f"Unsupported float size: {field_type.bits}")
 
 
 def _parse_field(spec: Any, reader: BinaryReader, obj: Any) -> Any:
@@ -296,29 +268,19 @@ def _parse_field(spec: Any, reader: BinaryReader, obj: Any) -> Any:
       return raw
 
   if isinstance(spec, SwitchType):
-    if callable(spec.selector):
-      key = spec.selector(obj)
-    else:
-      key = _resolve_path(obj, spec.selector)
+    key = _resolve_path(obj, spec.selector)
     target = spec.cases.get(key, spec.default)
     if target is None:
       return None
     return _parse_field(target, reader, obj)
 
   if isinstance(spec, ArrayType):
-    if spec.fixed_count is not None:
-      count = spec.fixed_count
-    elif spec.count_field is not None:
-      count = _resolve_path(obj, spec.count_field)
-    else:
-      raise ValueError("ArrayType requires fixed_count or count_field")
+    count = _resolve_path(obj, spec.count_field)
     return [_parse_field(spec.element_type, reader, obj) for _ in range(int(count))]
 
   if isinstance(spec, SubstreamType):
     length = _resolve_path(obj, spec.length_field)
     data = reader.read_bytes(int(length))
-    if spec.element_type is None:
-      return data
     sub_reader = BinaryReader(data)
     return _parse_field(spec.element_type, sub_reader, obj)
 
@@ -329,8 +291,6 @@ def _parse_field(spec: Any, reader: BinaryReader, obj: Any) -> Any:
     return reader._read_struct(_float_format(spec))
 
   if isinstance(spec, BitsType):
-    if not spec.big_endian:
-      raise ValueError("Little-endian bit fields are not supported")
     value = reader.read_bits_int_be(spec.bits)
     return bool(value) if spec.as_bool else value
 
