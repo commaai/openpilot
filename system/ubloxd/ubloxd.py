@@ -8,9 +8,9 @@ from dataclasses import dataclass
 
 from cereal import log
 from cereal import messaging
-from openpilot.system.ubloxd.generated.ubx import Ubx
-from openpilot.system.ubloxd.generated.gps import Gps
-from openpilot.system.ubloxd.generated.glonass import Glonass
+from openpilot.system.ubloxd.ubx import Ubx
+from openpilot.system.ubloxd.gps import Gps
+from openpilot.system.ubloxd.glonass import Glonass
 
 
 SECS_IN_MIN = 60
@@ -52,7 +52,7 @@ class UbxFramer:
       # find preamble
       if len(self.buf) < 2:
         break
-      start = self.buf.find(b"\xB5\x62")
+      start = self.buf.find(b"\xb5\x62")
       if start < 0:
         # no preamble in buffer
         self.buf.clear()
@@ -98,9 +98,22 @@ class UbloxMsgParser:
 
   # user range accuracy in meters
   glonass_URA_lookup: dict[int, float] = {
-    0: 1, 1: 2, 2: 2.5, 3: 4, 4: 5, 5: 7,
-    6: 10, 7: 12, 8: 14, 9: 16, 10: 32,
-    11: 64, 12: 128, 13: 256, 14: 512, 15: 1024,
+    0: 1,
+    1: 2,
+    2: 2.5,
+    3: 4,
+    4: 5,
+    5: 7,
+    6: 10,
+    7: 12,
+    8: 14,
+    9: 16,
+    10: 32,
+    11: 64,
+    12: 128,
+    13: 256,
+    14: 512,
+    15: 1024,
   }
 
   def __init__(self) -> None:
@@ -121,7 +134,7 @@ class UbloxMsgParser:
       body = Ubx.NavPvt.from_bytes(payload)
       return self._gen_nav_pvt(body)
     if msg_type == 0x0213:
-      # Manually parse RXM-SFRBX to avoid Kaitai EOF on some frames
+      # Manually parse RXM-SFRBX to avoid EOF on some frames
       if len(payload) < 8:
         return None
       gnss_id = payload[0]
@@ -134,7 +147,7 @@ class UbloxMsgParser:
       words: list[int] = []
       off = 8
       for _ in range(num_words):
-        words.append(int.from_bytes(payload[off:off+4], 'little'))
+        words.append(int.from_bytes(payload[off : off + 4], 'little'))
         off += 4
 
       class _SfrbxView:
@@ -143,6 +156,7 @@ class UbloxMsgParser:
           self.sv_id = sid
           self.freq_id = fid
           self.body = body
+
       view = _SfrbxView(gnss_id, sv_id, freq_id, words)
       return self._gen_rxm_sfrbx(view)
     if msg_type == 0x0215:
@@ -514,6 +528,7 @@ def main():
         continue
       service, dat = res
       pm.send(service, dat)
+
 
 if __name__ == '__main__':
   main()
