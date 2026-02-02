@@ -44,6 +44,12 @@ cp -r $DIR/acados_repo/lib $INSTALL_DIR
 cp -r $DIR/acados_repo/interfaces/acados_template/acados_template $DIR/
 #pip3 install -e $DIR/acados/interfaces/acados_template
 
+# skip macOS - sed is different :/
+if [[ "$OSTYPE" != "darwin"* ]]; then
+  # strip future_fstrings to avoid having to install the compatibility package
+  find $DIR/acados_template/ -type f -exec sed -i '/future.fstrings/d' {} +
+fi
+
 # build tera
 cd $DIR/acados_repo/interfaces/acados_template/tera_renderer/
 if [[ "$OSTYPE" == "darwin"* ]]; then

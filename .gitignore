@@ -95,3 +95,7 @@ Pipfile
 # Ignore all local history of files
 .history
 .ionide
+
+.claude/
+PLAN.md
+TASK.md

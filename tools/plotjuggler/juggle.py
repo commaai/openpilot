@@ -47,7 +47,7 @@ def install():
         tmpf.write(chunk)
 
     with tarfile.open(tmp.name) as tar:
-      tar.extractall(path=INSTALL_DIR)
+      tar.extractall(path=INSTALL_DIR, filter="data")
 
 
 def get_plotjuggler_version():
