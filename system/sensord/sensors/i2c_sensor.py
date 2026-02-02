@@ -16,7 +16,7 @@ class Sensor:
   def __init__(self, bus: int) -> None:
     self.bus = SMBus(bus)
     self.source = log.SensorEventData.SensorSource.velodyne  # unknown
-    self.start_ts = 0.0
+    self.start_ts = 0.
 
   def __del__(self):
     self.bus.close()
