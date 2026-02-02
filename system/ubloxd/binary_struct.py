@@ -30,7 +30,6 @@ class FloatType(FieldType):
 @dataclass(frozen=True)
 class BitsType(FieldType):
   bits: int
-  as_bool: bool = False
 
 
 @dataclass(frozen=True)
@@ -86,11 +85,9 @@ s16be = IntType(16, True, big_endian=True)
 s32be = IntType(32, True, big_endian=True)
 
 
-def bits(n: int, *, as_bool: bool | None = None) -> BitsType:
+def bits(n: int) -> BitsType:
   """Create a bit-level field type."""
-  if as_bool is None:
-    as_bool = n == 1
-  return BitsType(n, as_bool=as_bool)
+  return BitsType(n)
 
 
 def bytes_field(size: int) -> BytesType:
@@ -110,12 +107,18 @@ def switch(selector: str, cases: dict[Any, Any], default: Any = None) -> SwitchT
 
 def enum(base_type: Any, enum_cls: type[Enum]) -> EnumType:
   """Create an enum-wrapped field."""
-  return EnumType(_coerce_field_type(base_type), enum_cls)
+  field_type = _field_type_from_spec(base_type)
+  if field_type is None:
+    raise TypeError(f"Unsupported field type: {base_type!r}")
+  return EnumType(field_type, enum_cls)
 
 
 def const(base_type: Any, expected: Any) -> ConstType:
   """Create a constant-value field."""
-  return ConstType(_coerce_field_type(base_type), expected)
+  field_type = _field_type_from_spec(base_type)
+  if field_type is None:
+    raise TypeError(f"Unsupported field type: {base_type!r}")
+  return ConstType(field_type, expected)
 
 
 def substream(length_field: str, element_type: Any) -> SubstreamType:
@@ -221,13 +224,6 @@ def _field_type_from_spec(spec: Any) -> FieldType | None:
   return None
 
 
-def _coerce_field_type(spec: Any) -> FieldType:
-  field_type = _field_type_from_spec(spec)
-  if field_type is None:
-    raise TypeError(f"Unsupported field type: {spec!r}")
-  return field_type
-
-
 def _int_format(field_type: IntType) -> str:
   if field_type.bits == 8:
     return 'b' if field_type.signed else 'B'
@@ -292,7 +288,7 @@ def _parse_field(spec: Any, reader: BinaryReader, obj: Any) -> Any:
 
   if isinstance(spec, BitsType):
     value = reader.read_bits_int_be(spec.bits)
-    return bool(value) if spec.as_bool else value
+    return bool(value) if spec.bits == 1 else value
 
   if isinstance(spec, BytesType):
     return reader.read_bytes(spec.size)

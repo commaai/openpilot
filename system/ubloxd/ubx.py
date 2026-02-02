@@ -5,25 +5,7 @@ UBX protocol parser - declarative Python DSL implementation.
 from enum import IntEnum
 from typing import Annotated
 
-from openpilot.system.ubloxd.binary_struct import (
-  BinaryStruct,
-  array,
-  binary_struct,
-  bytes_field,
-  const,
-  enum,
-  f32,
-  f64,
-  s8,
-  s16,
-  s32,
-  substream,
-  switch,
-  u8,
-  u16,
-  u16be,
-  u32,
-)
+from openpilot.system.ubloxd import binary_struct as bs
 
 
 class GnssType(IntEnum):
@@ -36,124 +18,124 @@ class GnssType(IntEnum):
   glonass = 6
 
 
-@binary_struct
-class Ubx(BinaryStruct):
+@bs.binary_struct
+class Ubx(bs.BinaryStruct):
   GnssType = GnssType
 
-  @binary_struct
-  class RxmRawx(BinaryStruct):
-    @binary_struct
-    class Measurement(BinaryStruct):
-      pr_mes: Annotated[float, f64]
-      cp_mes: Annotated[float, f64]
-      do_mes: Annotated[float, f32]
-      gnss_id: Annotated[GnssType | int, enum(u8, GnssType)]
-      sv_id: Annotated[int, u8]
-      reserved2: Annotated[bytes, bytes_field(1)]
-      freq_id: Annotated[int, u8]
-      lock_time: Annotated[int, u16]
-      cno: Annotated[int, u8]
-      pr_stdev: Annotated[int, u8]
-      cp_stdev: Annotated[int, u8]
-      do_stdev: Annotated[int, u8]
-      trk_stat: Annotated[int, u8]
-      reserved3: Annotated[bytes, bytes_field(1)]
+  @bs.binary_struct
+  class RxmRawx(bs.BinaryStruct):
+    @bs.binary_struct
+    class Measurement(bs.BinaryStruct):
+      pr_mes: Annotated[float, bs.f64]
+      cp_mes: Annotated[float, bs.f64]
+      do_mes: Annotated[float, bs.f32]
+      gnss_id: Annotated[GnssType | int, bs.enum(bs.u8, GnssType)]
+      sv_id: Annotated[int, bs.u8]
+      reserved2: Annotated[bytes, bs.bytes_field(1)]
+      freq_id: Annotated[int, bs.u8]
+      lock_time: Annotated[int, bs.u16]
+      cno: Annotated[int, bs.u8]
+      pr_stdev: Annotated[int, bs.u8]
+      cp_stdev: Annotated[int, bs.u8]
+      do_stdev: Annotated[int, bs.u8]
+      trk_stat: Annotated[int, bs.u8]
+      reserved3: Annotated[bytes, bs.bytes_field(1)]
 
-    rcv_tow: Annotated[float, f64]
-    week: Annotated[int, u16]
-    leap_s: Annotated[int, s8]
-    num_meas: Annotated[int, u8]
-    rec_stat: Annotated[int, u8]
-    reserved1: Annotated[bytes, bytes_field(3)]
-    meas: Annotated[list[Measurement], array(Measurement, count_field='num_meas')]
+    rcv_tow: Annotated[float, bs.f64]
+    week: Annotated[int, bs.u16]
+    leap_s: Annotated[int, bs.s8]
+    num_meas: Annotated[int, bs.u8]
+    rec_stat: Annotated[int, bs.u8]
+    reserved1: Annotated[bytes, bs.bytes_field(3)]
+    meas: Annotated[list[Measurement], bs.array(Measurement, count_field='num_meas')]
 
-  @binary_struct
-  class RxmSfrbx(BinaryStruct):
-    gnss_id: Annotated[GnssType | int, enum(u8, GnssType)]
-    sv_id: Annotated[int, u8]
-    reserved1: Annotated[bytes, bytes_field(1)]
-    freq_id: Annotated[int, u8]
-    num_words: Annotated[int, u8]
-    reserved2: Annotated[bytes, bytes_field(1)]
-    version: Annotated[int, u8]
-    reserved3: Annotated[bytes, bytes_field(1)]
-    body: Annotated[list[int], array(u32, count_field='num_words')]
+  @bs.binary_struct
+  class RxmSfrbx(bs.BinaryStruct):
+    gnss_id: Annotated[GnssType | int, bs.enum(bs.u8, GnssType)]
+    sv_id: Annotated[int, bs.u8]
+    reserved1: Annotated[bytes, bs.bytes_field(1)]
+    freq_id: Annotated[int, bs.u8]
+    num_words: Annotated[int, bs.u8]
+    reserved2: Annotated[bytes, bs.bytes_field(1)]
+    version: Annotated[int, bs.u8]
+    reserved3: Annotated[bytes, bs.bytes_field(1)]
+    body: Annotated[list[int], bs.array(bs.u32, count_field='num_words')]
 
-  @binary_struct
-  class NavSat(BinaryStruct):
-    @binary_struct
-    class Nav(BinaryStruct):
-      gnss_id: Annotated[GnssType | int, enum(u8, GnssType)]
-      sv_id: Annotated[int, u8]
-      cno: Annotated[int, u8]
-      elev: Annotated[int, s8]
-      azim: Annotated[int, s16]
-      pr_res: Annotated[int, s16]
-      flags: Annotated[int, u32]
+  @bs.binary_struct
+  class NavSat(bs.BinaryStruct):
+    @bs.binary_struct
+    class Nav(bs.BinaryStruct):
+      gnss_id: Annotated[GnssType | int, bs.enum(bs.u8, GnssType)]
+      sv_id: Annotated[int, bs.u8]
+      cno: Annotated[int, bs.u8]
+      elev: Annotated[int, bs.s8]
+      azim: Annotated[int, bs.s16]
+      pr_res: Annotated[int, bs.s16]
+      flags: Annotated[int, bs.u32]
 
-    itow: Annotated[int, u32]
-    version: Annotated[int, u8]
-    num_svs: Annotated[int, u8]
-    reserved: Annotated[bytes, bytes_field(2)]
-    svs: Annotated[list[Nav], array(Nav, count_field='num_svs')]
+    itow: Annotated[int, bs.u32]
+    version: Annotated[int, bs.u8]
+    num_svs: Annotated[int, bs.u8]
+    reserved: Annotated[bytes, bs.bytes_field(2)]
+    svs: Annotated[list[Nav], bs.array(Nav, count_field='num_svs')]
 
-  @binary_struct
-  class NavPvt(BinaryStruct):
-    i_tow: Annotated[int, u32]
-    year: Annotated[int, u16]
-    month: Annotated[int, u8]
-    day: Annotated[int, u8]
-    hour: Annotated[int, u8]
-    min: Annotated[int, u8]
-    sec: Annotated[int, u8]
-    valid: Annotated[int, u8]
-    t_acc: Annotated[int, u32]
-    nano: Annotated[int, s32]
-    fix_type: Annotated[int, u8]
-    flags: Annotated[int, u8]
-    flags2: Annotated[int, u8]
-    num_sv: Annotated[int, u8]
-    lon: Annotated[int, s32]
-    lat: Annotated[int, s32]
-    height: Annotated[int, s32]
-    h_msl: Annotated[int, s32]
-    h_acc: Annotated[int, u32]
-    v_acc: Annotated[int, u32]
-    vel_n: Annotated[int, s32]
-    vel_e: Annotated[int, s32]
-    vel_d: Annotated[int, s32]
-    g_speed: Annotated[int, s32]
-    head_mot: Annotated[int, s32]
-    s_acc: Annotated[int, s32]
-    head_acc: Annotated[int, u32]
-    p_dop: Annotated[int, u16]
-    flags3: Annotated[int, u8]
-    reserved1: Annotated[bytes, bytes_field(5)]
-    head_veh: Annotated[int, s32]
-    mag_dec: Annotated[int, s16]
-    mag_acc: Annotated[int, u16]
+  @bs.binary_struct
+  class NavPvt(bs.BinaryStruct):
+    i_tow: Annotated[int, bs.u32]
+    year: Annotated[int, bs.u16]
+    month: Annotated[int, bs.u8]
+    day: Annotated[int, bs.u8]
+    hour: Annotated[int, bs.u8]
+    min: Annotated[int, bs.u8]
+    sec: Annotated[int, bs.u8]
+    valid: Annotated[int, bs.u8]
+    t_acc: Annotated[int, bs.u32]
+    nano: Annotated[int, bs.s32]
+    fix_type: Annotated[int, bs.u8]
+    flags: Annotated[int, bs.u8]
+    flags2: Annotated[int, bs.u8]
+    num_sv: Annotated[int, bs.u8]
+    lon: Annotated[int, bs.s32]
+    lat: Annotated[int, bs.s32]
+    height: Annotated[int, bs.s32]
+    h_msl: Annotated[int, bs.s32]
+    h_acc: Annotated[int, bs.u32]
+    v_acc: Annotated[int, bs.u32]
+    vel_n: Annotated[int, bs.s32]
+    vel_e: Annotated[int, bs.s32]
+    vel_d: Annotated[int, bs.s32]
+    g_speed: Annotated[int, bs.s32]
+    head_mot: Annotated[int, bs.s32]
+    s_acc: Annotated[int, bs.s32]
+    head_acc: Annotated[int, bs.u32]
+    p_dop: Annotated[int, bs.u16]
+    flags3: Annotated[int, bs.u8]
+    reserved1: Annotated[bytes, bs.bytes_field(5)]
+    head_veh: Annotated[int, bs.s32]
+    mag_dec: Annotated[int, bs.s16]
+    mag_acc: Annotated[int, bs.u16]
 
-  @binary_struct
-  class MonHw2(BinaryStruct):
+  @bs.binary_struct
+  class MonHw2(bs.BinaryStruct):
     class ConfigSource(IntEnum):
       flash = 102
       otp = 111
       config_pins = 112
       rom = 113
 
-    ofs_i: Annotated[int, s8]
-    mag_i: Annotated[int, u8]
-    ofs_q: Annotated[int, s8]
-    mag_q: Annotated[int, u8]
-    cfg_source: Annotated[ConfigSource | int, enum(u8, ConfigSource)]
-    reserved1: Annotated[bytes, bytes_field(3)]
-    low_lev_cfg: Annotated[int, u32]
-    reserved2: Annotated[bytes, bytes_field(8)]
-    post_status: Annotated[int, u32]
-    reserved3: Annotated[bytes, bytes_field(4)]
+    ofs_i: Annotated[int, bs.s8]
+    mag_i: Annotated[int, bs.u8]
+    ofs_q: Annotated[int, bs.s8]
+    mag_q: Annotated[int, bs.u8]
+    cfg_source: Annotated[ConfigSource | int, bs.enum(bs.u8, ConfigSource)]
+    reserved1: Annotated[bytes, bs.bytes_field(3)]
+    low_lev_cfg: Annotated[int, bs.u32]
+    reserved2: Annotated[bytes, bs.bytes_field(8)]
+    post_status: Annotated[int, bs.u32]
+    reserved3: Annotated[bytes, bs.bytes_field(4)]
 
-  @binary_struct
-  class MonHw(BinaryStruct):
+  @bs.binary_struct
+  class MonHw(bs.BinaryStruct):
     class AntennaStatus(IntEnum):
       init = 0
       dontknow = 1
@@ -166,32 +148,32 @@ class Ubx(BinaryStruct):
       true = 1
       dontknow = 2
 
-    pin_sel: Annotated[int, u32]
-    pin_bank: Annotated[int, u32]
-    pin_dir: Annotated[int, u32]
-    pin_val: Annotated[int, u32]
-    noise_per_ms: Annotated[int, u16]
-    agc_cnt: Annotated[int, u16]
-    a_status: Annotated[AntennaStatus | int, enum(u8, AntennaStatus)]
-    a_power: Annotated[AntennaPower | int, enum(u8, AntennaPower)]
-    flags: Annotated[int, u8]
-    reserved1: Annotated[bytes, bytes_field(1)]
-    used_mask: Annotated[int, u32]
-    vp: Annotated[bytes, bytes_field(17)]
-    jam_ind: Annotated[int, u8]
-    reserved2: Annotated[bytes, bytes_field(2)]
-    pin_irq: Annotated[int, u32]
-    pull_h: Annotated[int, u32]
-    pull_l: Annotated[int, u32]
+    pin_sel: Annotated[int, bs.u32]
+    pin_bank: Annotated[int, bs.u32]
+    pin_dir: Annotated[int, bs.u32]
+    pin_val: Annotated[int, bs.u32]
+    noise_per_ms: Annotated[int, bs.u16]
+    agc_cnt: Annotated[int, bs.u16]
+    a_status: Annotated[AntennaStatus | int, bs.enum(bs.u8, AntennaStatus)]
+    a_power: Annotated[AntennaPower | int, bs.enum(bs.u8, AntennaPower)]
+    flags: Annotated[int, bs.u8]
+    reserved1: Annotated[bytes, bs.bytes_field(1)]
+    used_mask: Annotated[int, bs.u32]
+    vp: Annotated[bytes, bs.bytes_field(17)]
+    jam_ind: Annotated[int, bs.u8]
+    reserved2: Annotated[bytes, bs.bytes_field(2)]
+    pin_irq: Annotated[int, bs.u32]
+    pull_h: Annotated[int, bs.u32]
+    pull_l: Annotated[int, bs.u32]
 
-  magic: Annotated[bytes, const(bytes_field(2), b"\xb5\x62")]
-  msg_type: Annotated[int, u16be]
-  length: Annotated[int, u16]
+  magic: Annotated[bytes, bs.const(bs.bytes_field(2), b"\xb5\x62")]
+  msg_type: Annotated[int, bs.u16be]
+  length: Annotated[int, bs.u16]
   body: Annotated[
     object,
-    substream(
+    bs.substream(
       'length',
-      switch(
+      bs.switch(
         'msg_type',
         {
           0x0107: NavPvt,
@@ -204,4 +186,4 @@ class Ubx(BinaryStruct):
       ),
     ),
   ]
-  checksum: Annotated[int, u16]
+  checksum: Annotated[int, bs.u16]

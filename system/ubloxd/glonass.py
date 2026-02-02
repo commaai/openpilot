@@ -8,22 +8,22 @@ https://www.unavco.org/help/glossary/docs/ICD_GLONASS_4.0_(1998)_en.pdf
 
 from typing import Annotated
 
-from openpilot.system.ubloxd.binary_struct import BinaryStruct, binary_struct, bits, switch
+from openpilot.system.ubloxd import binary_struct as bs
 
 
-@binary_struct
-class Glonass(BinaryStruct):
-  @binary_struct
-  class String1(BinaryStruct):
-    not_used: Annotated[int, bits(2)]
-    p1: Annotated[int, bits(2)]
-    t_k: Annotated[int, bits(12)]
-    x_vel_sign: Annotated[bool, bits(1)]
-    x_vel_value: Annotated[int, bits(23)]
-    x_accel_sign: Annotated[bool, bits(1)]
-    x_accel_value: Annotated[int, bits(4)]
-    x_sign: Annotated[bool, bits(1)]
-    x_value: Annotated[int, bits(26)]
+@bs.binary_struct
+class Glonass(bs.BinaryStruct):
+  @bs.binary_struct
+  class String1(bs.BinaryStruct):
+    not_used: Annotated[int, bs.bits(2)]
+    p1: Annotated[int, bs.bits(2)]
+    t_k: Annotated[int, bs.bits(12)]
+    x_vel_sign: Annotated[bool, bs.bits(1)]
+    x_vel_value: Annotated[int, bs.bits(23)]
+    x_accel_sign: Annotated[bool, bs.bits(1)]
+    x_accel_value: Annotated[int, bs.bits(4)]
+    x_sign: Annotated[bool, bs.bits(1)]
+    x_value: Annotated[int, bs.bits(26)]
 
     @property
     def x_vel(self) -> int:
@@ -40,18 +40,18 @@ class Glonass(BinaryStruct):
       """Computed x from sign-magnitude representation."""
       return (self.x_value * -1) if self.x_sign else self.x_value
 
-  @binary_struct
-  class String2(BinaryStruct):
-    b_n: Annotated[int, bits(3)]
-    p2: Annotated[bool, bits(1)]
-    t_b: Annotated[int, bits(7)]
-    not_used: Annotated[int, bits(5)]
-    y_vel_sign: Annotated[bool, bits(1)]
-    y_vel_value: Annotated[int, bits(23)]
-    y_accel_sign: Annotated[bool, bits(1)]
-    y_accel_value: Annotated[int, bits(4)]
-    y_sign: Annotated[bool, bits(1)]
-    y_value: Annotated[int, bits(26)]
+  @bs.binary_struct
+  class String2(bs.BinaryStruct):
+    b_n: Annotated[int, bs.bits(3)]
+    p2: Annotated[bool, bs.bits(1)]
+    t_b: Annotated[int, bs.bits(7)]
+    not_used: Annotated[int, bs.bits(5)]
+    y_vel_sign: Annotated[bool, bs.bits(1)]
+    y_vel_value: Annotated[int, bs.bits(23)]
+    y_accel_sign: Annotated[bool, bs.bits(1)]
+    y_accel_value: Annotated[int, bs.bits(4)]
+    y_sign: Annotated[bool, bs.bits(1)]
+    y_value: Annotated[int, bs.bits(26)]
 
     @property
     def y_vel(self) -> int:
@@ -68,20 +68,20 @@ class Glonass(BinaryStruct):
       """Computed y from sign-magnitude representation."""
       return (self.y_value * -1) if self.y_sign else self.y_value
 
-  @binary_struct
-  class String3(BinaryStruct):
-    p3: Annotated[bool, bits(1)]
-    gamma_n_sign: Annotated[bool, bits(1)]
-    gamma_n_value: Annotated[int, bits(10)]
-    not_used: Annotated[bool, bits(1)]
-    p: Annotated[int, bits(2)]
-    l_n: Annotated[bool, bits(1)]
-    z_vel_sign: Annotated[bool, bits(1)]
-    z_vel_value: Annotated[int, bits(23)]
-    z_accel_sign: Annotated[bool, bits(1)]
-    z_accel_value: Annotated[int, bits(4)]
-    z_sign: Annotated[bool, bits(1)]
-    z_value: Annotated[int, bits(26)]
+  @bs.binary_struct
+  class String3(bs.BinaryStruct):
+    p3: Annotated[bool, bs.bits(1)]
+    gamma_n_sign: Annotated[bool, bs.bits(1)]
+    gamma_n_value: Annotated[int, bs.bits(10)]
+    not_used: Annotated[bool, bs.bits(1)]
+    p: Annotated[int, bs.bits(2)]
+    l_n: Annotated[bool, bs.bits(1)]
+    z_vel_sign: Annotated[bool, bs.bits(1)]
+    z_vel_value: Annotated[int, bs.bits(23)]
+    z_accel_sign: Annotated[bool, bs.bits(1)]
+    z_accel_value: Annotated[int, bs.bits(4)]
+    z_sign: Annotated[bool, bs.bits(1)]
+    z_value: Annotated[int, bs.bits(26)]
 
     @property
     def gamma_n(self) -> int:
@@ -103,20 +103,20 @@ class Glonass(BinaryStruct):
       """Computed z from sign-magnitude representation."""
       return (self.z_value * -1) if self.z_sign else self.z_value
 
-  @binary_struct
-  class String4(BinaryStruct):
-    tau_n_sign: Annotated[bool, bits(1)]
-    tau_n_value: Annotated[int, bits(21)]
-    delta_tau_n_sign: Annotated[bool, bits(1)]
-    delta_tau_n_value: Annotated[int, bits(4)]
-    e_n: Annotated[int, bits(5)]
-    not_used_1: Annotated[int, bits(14)]
-    p4: Annotated[bool, bits(1)]
-    f_t: Annotated[int, bits(4)]
-    not_used_2: Annotated[int, bits(3)]
-    n_t: Annotated[int, bits(11)]
-    n: Annotated[int, bits(5)]
-    m: Annotated[int, bits(2)]
+  @bs.binary_struct
+  class String4(bs.BinaryStruct):
+    tau_n_sign: Annotated[bool, bs.bits(1)]
+    tau_n_value: Annotated[int, bs.bits(21)]
+    delta_tau_n_sign: Annotated[bool, bs.bits(1)]
+    delta_tau_n_value: Annotated[int, bs.bits(4)]
+    e_n: Annotated[int, bs.bits(5)]
+    not_used_1: Annotated[int, bs.bits(14)]
+    p4: Annotated[bool, bs.bits(1)]
+    f_t: Annotated[int, bs.bits(4)]
+    not_used_2: Annotated[int, bs.bits(3)]
+    n_t: Annotated[int, bs.bits(11)]
+    n: Annotated[int, bs.bits(5)]
+    m: Annotated[int, bs.bits(2)]
 
     @property
     def tau_n(self) -> int:
@@ -128,25 +128,25 @@ class Glonass(BinaryStruct):
       """Computed delta_tau_n from sign-magnitude representation."""
       return (self.delta_tau_n_value * -1) if self.delta_tau_n_sign else self.delta_tau_n_value
 
-  @binary_struct
-  class String5(BinaryStruct):
-    n_a: Annotated[int, bits(11)]
-    tau_c: Annotated[int, bits(32)]
-    not_used: Annotated[bool, bits(1)]
-    n_4: Annotated[int, bits(5)]
-    tau_gps: Annotated[int, bits(22)]
-    l_n: Annotated[bool, bits(1)]
+  @bs.binary_struct
+  class String5(bs.BinaryStruct):
+    n_a: Annotated[int, bs.bits(11)]
+    tau_c: Annotated[int, bs.bits(32)]
+    not_used: Annotated[bool, bs.bits(1)]
+    n_4: Annotated[int, bs.bits(5)]
+    tau_gps: Annotated[int, bs.bits(22)]
+    l_n: Annotated[bool, bs.bits(1)]
 
-  @binary_struct
-  class StringNonImmediate(BinaryStruct):
-    data_1: Annotated[int, bits(64)]
-    data_2: Annotated[int, bits(8)]
+  @bs.binary_struct
+  class StringNonImmediate(bs.BinaryStruct):
+    data_1: Annotated[int, bs.bits(64)]
+    data_2: Annotated[int, bs.bits(8)]
 
-  idle_chip: Annotated[bool, bits(1)]
-  string_number: Annotated[int, bits(4)]
+  idle_chip: Annotated[bool, bs.bits(1)]
+  string_number: Annotated[int, bs.bits(4)]
   data: Annotated[
     object,
-    switch(
+    bs.switch(
       'string_number',
       {
         1: String1,
@@ -158,8 +158,8 @@ class Glonass(BinaryStruct):
       default=StringNonImmediate,
     ),
   ]
-  hamming_code: Annotated[int, bits(8)]
-  pad_1: Annotated[int, bits(11)]
-  superframe_number: Annotated[int, bits(16)]
-  pad_2: Annotated[int, bits(8)]
-  frame_number: Annotated[int, bits(8)]
+  hamming_code: Annotated[int, bs.bits(8)]
+  pad_1: Annotated[int, bs.bits(11)]
+  superframe_number: Annotated[int, bs.bits(16)]
+  pad_2: Annotated[int, bs.bits(8)]
+  frame_number: Annotated[int, bs.bits(8)]
