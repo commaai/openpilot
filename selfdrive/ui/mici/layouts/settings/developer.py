@@ -1,6 +1,7 @@
 import pyray as rl
 from collections.abc import Callable
 
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
@@ -9,7 +10,6 @@ from openpilot.system.ui.widgets import NavWidget
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
-from openpilot.system.ui.mici_setup import NetworkConnectivityMonitor
 
 
 class DeveloperLayoutMici(NavWidget):
@@ -30,25 +30,11 @@ class DeveloperLayoutMici(NavWidget):
     def ssh_keys_callback():
       github_username = ui_state.params.get("GithubUsername") or ""
       dlg = BigInputDialog("enter GitHub username", github_username, confirm_callback=github_username_callback)
-
-      # Check for internet connectivity before showing input dialog
-      network_monitor = NetworkConnectivityMonitor()
-      network_monitor.start()
-
-      def modal_overlay_tick():
-        has_internet = network_monitor.network_connected.is_set()
-        if has_internet:
-          network_monitor.stop()
-          gui_app.set_modal_overlay(dlg)
-          gui_app.set_modal_overlay_tick(None)
-
-      if not network_monitor.network_connected.is_set():
-        waiting_dlg = BigDialog("waiting for internet...", "")
-        gui_app.set_modal_overlay(waiting_dlg)
-        gui_app.set_modal_overlay_tick(modal_overlay_tick)
-      else:
-        network_monitor.stop()
+      if not system_time_valid():
+        dlg = BigDialog("Please connect to Wi-Fi to fetch your key", "")
         gui_app.set_modal_overlay(dlg)
+        return
+      gui_app.set_modal_overlay(dlg)
 
     txt_ssh = gui_app.texture("icons_mici/settings/developer/ssh.png", 56, 64)
     github_username = ui_state.params.get("GithubUsername") or ""
