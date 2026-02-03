@@ -190,7 +190,7 @@ class BigInputDialog(BigDialogBase):
     text_x = PADDING * 2 + self._enter_img.width + bg_block_margin
 
     text_field_rect = rl.Rectangle(text_x, int(self._rect.y + PADDING) - bg_block_margin,
-                                   int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width + 5) - bg_block_margin * 2,
+                                   int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width) - bg_block_margin * 2,
                                    int(text_size.y))
 
     # draw text input
