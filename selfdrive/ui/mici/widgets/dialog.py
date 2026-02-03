@@ -150,7 +150,7 @@ class BigInputDialog(BigDialogBase):
     self._backspace_img = gui_app.texture("icons_mici/settings/keyboard/backspace.png", 42, 36)
     self._backspace_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
-    self._enter_img = gui_app.texture("icons_mici/settings/keyboard/confirm.png", 42, 36)
+    self._enter_img = gui_app.texture("icons_mici/settings/keyboard/confirm.png", 96, 70)
     self._enter_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
     # rects for top buttons
@@ -185,13 +185,13 @@ class BigInputDialog(BigDialogBase):
     text = self._keyboard.text()
     candidate_char = self._keyboard.get_candidate_character()
     text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, text_input_size)
-    text_x = PADDING * 2 + self._enter_img.width
+    text_x = PADDING / 2 + self._enter_img.width
 
     # text needs to move left if we're at the end where right button is
     text_rect = rl.Rectangle(text_x,
                              int(self._rect.y + PADDING),
                              # clip width to right button when in view
-                             int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width + 5),  # TODO: why 5?
+                             int(self._rect.width - text_x - PADDING / 2 - self._enter_img.width + 5),  # TODO: why 5?
                              int(text_size.y))
 
     # draw rounded background for text input
@@ -232,7 +232,7 @@ class BigInputDialog(BigDialogBase):
     self._backspace_img_alpha.update(255 * bool(text))
     if self._backspace_img_alpha.x > 1:
       color = rl.Color(255, 255, 255, int(self._backspace_img_alpha.x))
-      rl.draw_texture(self._backspace_img, int(self._rect.width - self._enter_img.width - 15), int(text_field_rect.y), color)
+      rl.draw_texture(self._backspace_img, int(self._rect.width - self._backspace_img.width - 15), int(text_field_rect.y), color)
 
     if not text and self._hint_label.text and not candidate_char:
       # draw description if no text entered yet and not drawing candidate char
@@ -244,10 +244,15 @@ class BigInputDialog(BigDialogBase):
     self._top_right_button_rect = rl.Rectangle(text_field_rect.x + text_field_rect.width, self._rect.y,
                                                self._rect.width - (text_field_rect.x + text_field_rect.width), self._top_left_button_rect.height)
 
-    self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 255 * 0.35)
+    is_active = len(text) >= self._minimum_length
+    self._enter_img_alpha.update(0 if is_active else 180)
+    # Draw icon at full opacity
+    rl.draw_texture(self._enter_img, int(self._rect.x), int(self._rect.y), rl.WHITE)
+    # Draw grey overlay to desaturate when inactive
     if self._enter_img_alpha.x > 1:
-      color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
-      rl.draw_texture(self._enter_img, int(self._rect.x + 15), int(text_field_rect.y), color)
+      overlay_alpha = int(self._enter_img_alpha.x)
+      rl.draw_rectangle(int(self._rect.x), int(self._rect.y), self._enter_img.width, self._enter_img.height,
+                        rl.Color(80, 80, 80, overlay_alpha))
 
     # keyboard goes over everything
     self._keyboard.render(self._rect)
