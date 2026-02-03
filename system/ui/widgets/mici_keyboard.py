@@ -53,6 +53,7 @@ class Key(Widget):
     self.original_position = rl.Vector2(0, 0)
 
   def set_position(self, x: float, y: float, smooth: bool = True):
+    # Smooth keys within parent rect
     base_y = self._parent_rect.y if self._parent_rect else 0.0
     local_y = y - base_y
 
