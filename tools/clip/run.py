@@ -40,7 +40,7 @@ def parse_args():
   parser.add_argument("-f", "--file-size", type=float, default=9.0, help="Target file size in MB")
   parser.add_argument("-x", "--speed", type=int, default=1, help="Speed multiplier")
   parser.add_argument("--demo", action="store_true", help="Use demo route with default timing")
-  parser.add_argument("--big", action="store_true", default=True, help="Use big UI (2160x1080)")
+  parser.add_argument("--big", action="store_true", help="Use big UI (2160x1080)")
   parser.add_argument("--qcam", action="store_true", help="Use qcamera instead of fcamera")
   parser.add_argument("--windowed", action="store_true", help="Show window")
   parser.add_argument("--no-metadata", action="store_true", help="Disable metadata overlay")
@@ -329,7 +329,6 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
 def main():
   logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s\t%(message)s")
   args = parse_args()
-  assert args.big, "Clips doesn't support mici UI yet. TODO: make it work"
 
   setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start)
   clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, not args.windowed,
