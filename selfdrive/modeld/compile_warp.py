@@ -264,7 +264,7 @@ def compile_dm_warp(cam_w, cam_h):
               Tensor(Tensor.randn(3, 3).mul(8).realize().numpy(), device='NPY')]
     Device.default.synchronize()
     st = time.perf_counter()
-    out = warp_dm_jit(*inputs)
+    warp_dm_jit(*inputs)
     mt = time.perf_counter()
     Device.default.synchronize()
     et = time.perf_counter()
