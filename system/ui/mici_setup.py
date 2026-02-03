@@ -529,8 +529,11 @@ class Setup(Widget):
     self._wifi_manager = WifiManager()
     self._wifi_manager.set_active(True)
     self._network_monitor = NetworkConnectivityMonitor(
-      lambda: self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
+      # lambda: self.state in (SetupState.GETTING_STARTED, SetupState.SOFTWARE_SELECTION, SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
+      # lambda: self.state not in (SetupState.CUSTOM_SOFTWARE, SetupState.DOWNLOADING, SetupState.DOWNLOAD_FAILED)
+      # lambda: True
     )
+    self._network_monitor.start()
     self._prev_has_internet = False
     gui_app.set_modal_overlay_tick(self._modal_overlay_tick)
 
@@ -558,21 +561,26 @@ class Setup(Widget):
 
   def _update_state(self):
     self._wifi_manager.process_callbacks()
+    print(SetupState(self.state).name)
 
   def _set_state(self, state: SetupState):
+    t = time.monotonic()
     self.state = state
     if self.state == SetupState.SOFTWARE_SELECTION:
       self._software_selection_page.reset()
     elif self.state == SetupState.CUSTOM_SOFTWARE_WARNING:
       self._custom_software_warning_page.reset()
+    print(f'{(time.monotonic() - t) * 1000}ms to set state {self.state.name}')
 
     if self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE):
       self._network_setup_page.show_event()
       self._network_monitor.reset()
-      self._network_monitor.start()
+      print(f"{(time.monotonic() - t) * 1000}ms to start network monitor")
     else:
       self._network_setup_page.hide_event()
-      self._network_monitor.stop()
+      print(f"{(time.monotonic() - t) * 1000}ms to hide_evnt")
+      print(f"{(time.monotonic() - t) * 1000}ms to stop network monitor")
+    print(f"State changed to {self.state.name} in {(time.monotonic() - t) * 1000}ms")
 
   def _render(self, rect: rl.Rectangle):
     if self.state == SetupState.GETTING_STARTED:
@@ -618,7 +626,6 @@ class Setup(Widget):
     self._set_state(SetupState.SOFTWARE_SELECTION)
 
   def _network_setup_continue_button_callback(self):
-    self._network_monitor.stop()
     if self.state == SetupState.NETWORK_SETUP:
       self.download(OPENPILOT_URL)
     elif self.state == SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE:
@@ -628,10 +635,10 @@ class Setup(Widget):
     self._network_monitor.stop()
 
   def render_network_setup(self, rect: rl.Rectangle):
-    self._network_setup_page.render(rect)
     has_internet = self._network_monitor.network_connected.is_set()
     self._prev_has_internet = has_internet
     self._network_setup_page.set_has_internet(has_internet)
+    self._network_setup_page.render(rect)
 
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_page.set_progress(self.download_progress)
