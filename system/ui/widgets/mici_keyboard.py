@@ -52,7 +52,8 @@ class Key(Widget):
     self._position_initialized = False
     self.original_position = rl.Vector2(0, 0)
 
-  def set_position(self, x: float, y: float, smooth: bool = True, base_y: float = 0.0):
+  def set_position(self, x: float, y: float, smooth: bool = True):
+    base_y = self._parent_rect.y if self._parent_rect else 0.0
     local_y = y - base_y
 
     if not self._position_initialized:
@@ -368,7 +369,8 @@ class MiciKeyboard(Widget):
           key.set_font_size(font_size)
 
         # TODO: I like the push amount, so we should clip the pos inside the keyboard rect
-        key.set_position(key_x, key_y, base_y=bg_y)
+        key.set_parent_rect(key_rect)
+        key.set_position(key_x, key_y)
 
   def _render(self, _):
     # draw bg
