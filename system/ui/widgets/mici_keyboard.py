@@ -369,7 +369,7 @@ class MiciKeyboard(Widget):
           key.set_font_size(font_size)
 
         # TODO: I like the push amount, so we should clip the pos inside the keyboard rect
-        key.set_parent_rect(key_rect)
+        key.set_parent_rect(self._rect)
         key.set_position(key_x, key_y)
 
   def _render(self, _):
