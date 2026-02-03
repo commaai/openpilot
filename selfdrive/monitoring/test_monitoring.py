@@ -191,6 +191,18 @@ class TestMonitoring:
     assert events[int((_redlight_time-0.1)/DT_DMON)].names[0] == EventName.preDriverDistracted
     assert events[int((_redlight_time+0.5)/DT_DMON)].names[0] == EventName.promptDriverDistracted
 
+  # engaged, distracted while moving, then car stops after reaching orange
+  #  - should downgrade to green alert when stopped, even if already in orange zone
+  def test_distracted_then_stops(self):
+    _stop_time = DISTRACTED_SECONDS_TO_ORANGE + 1  # stop 1 second after reaching orange
+    standstill_vector = always_false[:]
+    standstill_vector[int(_stop_time/DT_DMON):] = [True] * int((TEST_TIMESPAN-_stop_time)/DT_DMON)
+    events, _ = self._run_seq(always_distracted, always_false, always_true, standstill_vector)
+    # just before stopping: orange alert (car is moving, in orange zone)
+    assert events[int((_stop_time-0.1)/DT_DMON)].names[0] == EventName.promptDriverDistracted
+    # just after stopping: green alert (standstill downgrades orange to green)
+    assert events[int((_stop_time+0.5)/DT_DMON)].names[0] == EventName.preDriverDistracted
+
   # engaged, model is somehow uncertain and driver is distracted
   #  - should fall back to wheel touch after uncertain alert
   def test_somehow_indecisive_model(self):
