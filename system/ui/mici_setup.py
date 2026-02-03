@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import traceback
 from abc import abstractmethod
 import os
 import re
@@ -49,7 +50,7 @@ exec ./launch_openpilot.sh
 
 
 class NetworkConnectivityMonitor:
-  def __init__(self, should_check: Callable[[], bool] | None = None, check_interval: float = 0.5):
+  def __init__(self, should_check: Callable[[], bool] | None = None, check_interval: float = 1.0):
     self.network_connected = threading.Event()
     self.wifi_connected = threading.Event()
     self._should_check = should_check or (lambda: True)
@@ -78,11 +79,12 @@ class NetworkConnectivityMonitor:
       if self._should_check():
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
-          urllib.request.urlopen(request, timeout=0.5)
+          urllib.request.urlopen(request, timeout=1.0)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
-        except Exception:
+        except Exception as e:
+          print(traceback.format_exception(e))
           self.reset()
       else:
         self.reset()
@@ -561,7 +563,7 @@ class Setup(Widget):
 
   def _update_state(self):
     self._wifi_manager.process_callbacks()
-    print(SetupState(self.state).name)
+    # print(SetupState(self.state).name)
 
   def _set_state(self, state: SetupState):
     t = time.monotonic()
@@ -583,6 +585,7 @@ class Setup(Widget):
     print(f"State changed to {self.state.name} in {(time.monotonic() - t) * 1000}ms")
 
   def _render(self, rect: rl.Rectangle):
+    print('has internet', self._network_monitor.network_connected.is_set())
     if self.state == SetupState.GETTING_STARTED:
       self._start_page.render(rect)
     elif self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE):
