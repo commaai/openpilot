@@ -9,7 +9,6 @@ from collections.abc import Iterable
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
                                                                    check_openpilot_enabled, check_most_messages_valid, get_custom_params_from_lr
-from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader, LogIterable, save_log
 from openpilot.tools.lib.openpilotci import get_url
@@ -52,7 +51,7 @@ def setup_data_readers(
 
 def regen_and_save(
   route: str, sidx: int, processes: str | Iterable[str] = "all", outdir: str = FAKEDATA,
-  upload: bool = False, disable_tqdm: bool = False, dummy_driver_cam: bool = False
+  disable_tqdm: bool = False, dummy_driver_cam: bool = False
 ) -> str:
   if not isinstance(processes, str) and not hasattr(processes, "__iter__"):
     raise ValueError("whitelist_proc must be a string or iterable")
@@ -90,9 +89,6 @@ def regen_and_save(
   if not check_most_messages_valid(output_logs):
     raise Exception("Route has too many invalid messages")
 
-  if upload:
-    upload_route(rel_log_dir)
-
   return rel_log_dir
 
 
@@ -102,7 +98,6 @@ if __name__ == "__main__":
 
   all_procs = [p.proc_name for p in CONFIGS]
   parser = argparse.ArgumentParser(description="Generate new segments from old ones")
-  parser.add_argument("--upload", action="store_true", help="Upload the new segment to the CI bucket")
   parser.add_argument("--outdir", help="log output dir", default=FAKEDATA)
   parser.add_argument("--dummy-dcamera", action='store_true', help="Use dummy blank driver camera")
   parser.add_argument("--whitelist-procs", type=comma_separated_list, default=all_procs,
@@ -115,4 +110,4 @@ if __name__ == "__main__":
 
   blacklist_set = set(args.blacklist_procs)
   processes = [p for p in args.whitelist_procs if p not in blacklist_set]
-  regen_and_save(args.route, args.seg, processes=processes, upload=args.upload, outdir=args.outdir, dummy_driver_cam=args.dummy_dcamera)
+  regen_and_save(args.route, args.seg, processes=processes, outdir=args.outdir, dummy_driver_cam=args.dummy_dcamera)
