@@ -1,11 +1,11 @@
 [project]
 name = "openpilot"
-requires-python = ">= 3.11, < 3.13"
+requires-python = ">= 3.12.3, < 3.13"
 license = {text = "MIT License"}
 version = "0.1.0"
 description = "an open source driver assistance system"
 authors = [
-  {name ="Vehicle Researcher", email="user@comma.ai"}
+  {name = "Vehicle Researcher", email="user@comma.ai"}
 ]
 
 dependencies = [
@@ -16,9 +16,6 @@ dependencies = [
   "sympy",        # rednose + friends
   "crcmod-plus",  # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
-
-  # hardwared
-  "smbus2", # configuring amp
 
   # core
   "cffi",
@@ -35,9 +32,6 @@ dependencies = [
   # with the latest release
   "pyopenssl < 24.3.0",
   "pyaudio",
-
-  # ubloxd (TODO: just use struct)
-  "kaitaistruct",
 
   # panda
   "libusb1",
@@ -58,7 +52,6 @@ dependencies = [
 
   # acados deps
   "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
-  "future-fstrings",
 
   # joystickd
   "inputs",
@@ -75,12 +68,12 @@ dependencies = [
   "raylib > 5.5.0.3",
   "qrcode",
   "mapbox-earcut",
+  "jeepney",
 ]
 
 [project.optional-dependencies]
 docs = [
   "Jinja2",
-  "natsort",
   "mkdocs",
 ]
 
@@ -94,7 +87,6 @@ testing = [
   # https://github.com/pytest-dev/pytest-xdist/pull/1229
   "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
   "pytest-timeout",
-  "pytest-randomly",
   "pytest-asyncio",
   "pytest-mock",
   "pytest-repeat",
@@ -108,18 +100,12 @@ dev = [
   "azure-identity",
   "azure-storage-blob",
   "dictdiffer",
-  "jeepney",
   "matplotlib",
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
   "pyautogui",
-  "pyopencl",
-  "pytools>=2025.1.6; platform_machine != 'aarch64'",
   "pywinctl",
-  "pyprof2calltree",
   "tabulate",
-  "types-requests",
-  "types-tabulate",
 ]
 
 tools = [
@@ -156,19 +142,9 @@ markers = [
 testpaths = [
   "common",
   "selfdrive",
-  "system/manager",
-  "system/updated",
-  "system/athena",
-  "system/camerad",
-  "system/hardware",
-  "system/loggerd",
-  "system/tests",
-  "system/ubloxd",
-  "system/webrtc",
-  "tools/lib/tests",
-  "tools/replay",
-  "tools/cabana",
-  "cereal/messaging/tests",
+  "system",
+  "tools",
+  "cereal",
 ]
 
 [tool.codespell]
@@ -178,7 +154,7 @@ ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,w
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
 skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.po, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*, tools/plotjuggler/layouts/*, selfdrive/assets/offroad/mici_fcc.html"
 
-# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+# https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
 [tool.ruff]
 indent-width = 2
 lint.select = [

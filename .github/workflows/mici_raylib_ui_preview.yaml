@@ -33,7 +33,7 @@ jobs:
       pull-requests: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
@@ -62,7 +62,7 @@ jobs:
           path: ${{ github.workspace }}/pr_ui
 
       - name: Getting master ui  # filename: master_ui_raylib/mici_ui_replay.mp4
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
