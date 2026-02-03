@@ -16,7 +16,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 
-DEBUG = True
+DEBUG = False
 
 PADDING = 20
 
@@ -247,7 +247,6 @@ class BigInputDialog(BigDialogBase):
     # draw debugging rect bounds
     if DEBUG:
       rl.draw_rectangle_lines_ex(text_field_rect, 1, rl.Color(100, 100, 100, 255))
-      # rl.draw_rectangle_lines_ex(text_rect, 1, rl.Color(0, 255, 0, 255))
       rl.draw_rectangle_lines_ex(self._top_right_button_rect, 1, rl.Color(0, 255, 0, 255))
       rl.draw_rectangle_lines_ex(self._top_left_button_rect, 1, rl.Color(0, 255, 0, 255))
 
