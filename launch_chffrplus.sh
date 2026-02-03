@@ -51,8 +51,7 @@ function init_ble {
   sudo hciconfig hci0 down 2>/dev/null || true
   sleep 1
 
-  # Run btattach in its own session so it survives manager/launch restarts
-  sudo setsid btattach -B /dev/ttyHS1 -S 115200 </dev/null &>/dev/null &
+  sudo btattach -B /dev/ttyHS1 -S 115200 &
 
   # wait for adapter
   for i in $(seq 1 10); do
