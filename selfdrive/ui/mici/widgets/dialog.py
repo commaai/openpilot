@@ -185,19 +185,12 @@ class BigInputDialog(BigDialogBase):
     text = self._keyboard.text()
     candidate_char = self._keyboard.get_candidate_character()
     text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, text_input_size)
-    text_x = PADDING * 2 + self._enter_img.width + 5
 
-    # text needs to move left if we're at the end where right button is
-    # text_rect = rl.Rectangle(text_x,
-    #                          int(self._rect.y + PADDING),
-    #                          # clip width to right button when in view
-    #                          int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width + 5),  # TODO: why 5?
-    #                          int(text_size.y))
+    bg_block_margin = 5
+    text_x = PADDING * 2 + self._enter_img.width + bg_block_margin
 
-    # draw rounded background for text input
-    bg_block_margin = 0#5
-    text_field_rect = rl.Rectangle(text_x - bg_block_margin, int(self._rect.y + PADDING) - 5,
-                                   int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width + 5) + bg_block_margin * 2 - 10,
+    text_field_rect = rl.Rectangle(text_x, int(self._rect.y + PADDING) - bg_block_margin,
+                                   int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width + 5) - bg_block_margin * 2,
                                    int(text_size.y))
 
     # draw text input
