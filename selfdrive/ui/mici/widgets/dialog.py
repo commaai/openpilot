@@ -132,6 +132,7 @@ class BigConfirmationDialogV2(BigDialogBase):
 class BigInputDialog(BigDialogBase):
   BACK_TOUCH_AREA_PERCENTAGE = 0.2
   BACKSPACE_RATE = 25  # hz
+  TEXT_INPUT_SIZE = 35
 
   def __init__(self,
                hint: str,
@@ -179,16 +180,13 @@ class BigInputDialog(BigDialogBase):
       self._backspace_held_time = None
 
   def _render(self, _):
-    text_input_size = 35
-
     # draw current text so far below everything. text floats left but always stays in view
     text = self._keyboard.text()
     candidate_char = self._keyboard.get_candidate_character()
-    text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, text_input_size)
+    text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, self.TEXT_INPUT_SIZE)
 
     bg_block_margin = 5
     text_x = PADDING * 2 + self._enter_img.width + bg_block_margin
-
     text_field_rect = rl.Rectangle(text_x, int(self._rect.y + PADDING) - bg_block_margin,
                                    int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width) - bg_block_margin * 2,
                                    int(text_size.y))
@@ -199,14 +197,14 @@ class BigInputDialog(BigDialogBase):
       text_x -= text_size.x - text_field_rect.width
 
     rl.begin_scissor_mode(int(text_field_rect.x), int(text_field_rect.y), int(text_field_rect.width), int(text_field_rect.height))
-    rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), text, rl.Vector2(text_x, text_field_rect.y), text_input_size, 0, rl.WHITE)
+    rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), text, rl.Vector2(text_x, text_field_rect.y), self.TEXT_INPUT_SIZE, 0, rl.WHITE)
 
     # draw grayed out character user is hovering over
     if candidate_char:
-      candidate_char_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), candidate_char, text_input_size)
+      candidate_char_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), candidate_char, self.TEXT_INPUT_SIZE)
       rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), candidate_char,
                       rl.Vector2(min(text_x + text_size.x, text_field_rect.x + text_field_rect.width) - candidate_char_size.x, text_field_rect.y),
-                      text_input_size, 0, rl.Color(255, 255, 255, 128))
+                      self.TEXT_INPUT_SIZE, 0, rl.Color(255, 255, 255, 128))
 
     rl.end_scissor_mode()
 
