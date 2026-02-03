@@ -383,8 +383,12 @@ class DriverMonitoring:
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_prompt:
-      # prompt orange alert
-      alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
+      if standstill:
+        # green alert at standstill
+        alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive
+      else:
+        # prompt orange alert
+        alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
     elif self.awareness <= self.threshold_pre and not always_on_lowspeed_exemption:
       # pre green alert
       alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive
