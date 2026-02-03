@@ -77,7 +77,7 @@ class SettingsLayout(NavWidget):
 
   def show_event(self):
     super().show_event()
-    self._set_current_panel(None)
+    self._set_current_panel(PanelType.NETWORK)
     self._scroller.show_event()
     if self._current_panel is not None:
       self._panels[self._current_panel].instance.show_event()

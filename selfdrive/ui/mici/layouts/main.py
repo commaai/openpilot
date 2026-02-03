@@ -26,7 +26,7 @@ class MiciMainLayout(Widget):
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
-    self._current_mode: MainState | None = None
+    self._current_mode: MainState | None = MainState.SETTINGS
     self._prev_onroad = False
     self._prev_standstill = False
     self._onroad_time_delay: float | None = None
@@ -79,7 +79,7 @@ class MiciMainLayout(Widget):
   def _render(self, _):
     # Initial show event
     if self._current_mode is None:
-      self._set_mode(MainState.MAIN)
+      self._set_mode(MainState.SETTINGS)
 
     if not self._setup:
       if self._alerts_layout.active_alerts() > 0:
