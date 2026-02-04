@@ -202,10 +202,6 @@ jobs:
       with:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
-    - name: Upload reference logs
-      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
-      run: |
-        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: Run regen
       if: false
       timeout-minutes: 4
