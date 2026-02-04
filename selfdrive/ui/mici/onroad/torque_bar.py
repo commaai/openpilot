@@ -173,8 +173,12 @@ class TorqueBar(Widget):
       actual_lateral_accel = controls_state.curvature * car_state.vEgo ** 2
       desired_lateral_accel = controls_state.desiredCurvature * car_state.vEgo ** 2
       accel_diff = (desired_lateral_accel - actual_lateral_accel)
+      print(f"max lateral_acceleration: {max_lateral_acceleration}, actual_lateral_accel: {lateral_acceleration}, desired_lateral_accel: {desired_lateral_accel}")
+      print(f"accel_diff: {accel_diff}, div: {lateral_acceleration / max_lateral_acceleration}, total: {lateral_acceleration / max_lateral_acceleration + accel_diff}")
+      print()
+      # print(f"lateral_acceleration: {lateral_acceleration}, accel_diff: {accel_diff}, div: {lateral_acceleration / max_lateral_acceleration}, total: {lateral_acceleration / max_lateral_acceleration + accel_diff}")
 
-      self._torque_filter.update(min(max(lateral_acceleration / max_lateral_acceleration + accel_diff, -1), 1))
+      self._torque_filter.update(min(max((lateral_acceleration + accel_diff) / max_lateral_acceleration, -1), 1))
     else:
       self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
 

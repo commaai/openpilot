@@ -167,7 +167,7 @@ class AugmentedRoadView(CameraView):
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 
     # debug
-    self._pm = messaging.PubMaster(['uiDebug'])
+    # self._pm = messaging.PubMaster(['uiDebug'])
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
@@ -257,7 +257,7 @@ class AugmentedRoadView(CameraView):
     # publish uiDebug
     msg = messaging.new_message('uiDebug')
     msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
-    self._pm.send('uiDebug', msg)
+    # self._pm.send('uiDebug', msg)
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
