@@ -187,10 +187,8 @@ class BigInputDialog(BigDialogBase):
     text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, self.TEXT_INPUT_SIZE)
 
     bg_block_margin = 5
-    # text_x = PADDING * 2 + self._enter_img.width + bg_block_margin
-    text_x = 10 + self._enter_img.width + 20
+    text_x = 10 + self._enter_img.width + PADDING
     text_field_rect = rl.Rectangle(text_x, int(self._rect.y + PADDING) - bg_block_margin,
-                                   # int(self._rect.width - text_x - PADDING * 2 - self._enter_img.width) - bg_block_margin * 2,
                                    int(self._rect.width - text_x * 2),
                                    int(text_size.y))
 
