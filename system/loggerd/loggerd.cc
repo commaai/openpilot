@@ -13,6 +13,9 @@
 
 ExitHandler do_exit;
 
+constexpr int MAX_QUEUE_SIZE = MAIN_FPS * 10;
+constexpr double SEGMENT_LENGTH_TIMEOUT = SEGMENT_LENGTH * 1.2;
+
 struct LoggerdState {
   LoggerState logger;
   std::atomic<double> last_camera_seen_tms{0.0};
@@ -42,7 +45,7 @@ void rotate_if_needed(LoggerdState *s) {
     if ((tms - s->last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
       timed_out = true;
       LOGE("no camera packets seen. auto rotating");
-    } else if (seg_length_secs > SEGMENT_LENGTH*1.2) {
+    } else if (seg_length_secs > SEGMENT_LENGTH_TIMEOUT) {
       timed_out = true;
       LOGE("segment too long. auto rotating");
     }
@@ -158,7 +161,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       }
       bytes_count += write_encode_data(s, event, re, encoder_info);
       delete msg;
-    } else if (re.q.size() > MAIN_FPS*10) {
+    } else if (re.q.size() > MAX_QUEUE_SIZE) {
       LOGE_100("%s: dropping frame waiting for audio initialization, queue is too large", name.c_str());
       delete msg;
     } else {
@@ -175,7 +178,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     }
 
     // TODO: define this behavior, but for now don't leak
-    if (re.q.size() > MAIN_FPS*10) {
+    if (re.q.size() > MAX_QUEUE_SIZE) {
       LOGE_100("%s: dropping frame, queue is too large", name.c_str());
       delete msg;
     } else {
