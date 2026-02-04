@@ -16,7 +16,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 
-DEBUG = True
+DEBUG = False
 
 PADDING = 20
 
