@@ -25,7 +25,7 @@ from websocket import ABNF, WebSocket, WebSocketException, WebSocketTimeoutExcep
 
 # Import shared RPC methods - registers them with dispatcher
 from openpilot.system.athena import rpc_methods  # noqa: F401
-from openpilot.system.athena.rpc_methods import set_transport, BLE_ONLY_METHODS
+from openpilot.system.athena.rpc_methods import set_transport
 
 import cereal.messaging as messaging
 from cereal import log
@@ -197,15 +197,9 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       data = recv_queue.get(timeout=1)
       if "method" in data:
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
-        req = json.loads(data) if isinstance(data, str) else data
-        method = req.get("method", "")
-        if method in BLE_ONLY_METHODS:
-          err = {"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method only available over Bluetooth"}, "id": req.get("id")}
-          send_queue.put_nowait(json.dumps(err))
-        else:
-          set_transport("websocket")
-          response = JSONRPCResponseManager.handle(data, dispatcher)
-          send_queue.put_nowait(response.json)
+        set_transport("websocket")
+        response = JSONRPCResponseManager.handle(data, dispatcher)
+        send_queue.put_nowait(response.json)
       elif "id" in data and ("result" in data or "error" in data):
         log_recv_queue.put_nowait(data)
       else:

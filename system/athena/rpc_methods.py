@@ -33,18 +33,6 @@ def get_transport() -> str:
   return _current_transport
 
 
-# RPC methods that require BLE (physical proximity to device)
-BLE_ONLY_METHODS: set[str] = {
-  "getWifiNetworks",
-  "connectWifi",
-  "forgetWifi",
-  "setTethering",
-  "setTetheringPassword",
-  "getNetworkStatus",
-  "blePair",
-  "bleRevoke",
-}
-
 # Params in saveParams() that require BLE to modify
 BLE_ONLY_PARAMS: set[str] = {
   "GithubUsername",
@@ -52,6 +40,17 @@ BLE_ONLY_PARAMS: set[str] = {
   "DoReboot",
   "DoShutdown",
 }
+
+
+def ble_only(fn):
+  def wrapper(*args, **kwargs):
+    if _current_transport != "ble":
+      raise Exception(f"{fn.__name__} requires bluetooth")
+    return fn(*args, **kwargs)
+  wrapper.__name__ = fn.__name__
+  dispatcher.add_method(wrapper)
+  return wrapper
+
 
 dispatcher["echo"] = lambda s: s
 
@@ -259,7 +258,7 @@ def _get_wifi_manager():
   return _wifi_manager
 
 
-@dispatcher.add_method
+@ble_only
 def getWifiNetworks() -> list[dict]:
   wm = _get_wifi_manager()
   return [
@@ -274,28 +273,28 @@ def getWifiNetworks() -> list[dict]:
   ]
 
 
-@dispatcher.add_method
+@ble_only
 def connectWifi(ssid: str, password: str = "") -> dict[str, str]:
   wm = _get_wifi_manager()
   wm.connect_to_network(ssid, password)
   return {"status": "connecting"}
 
 
-@dispatcher.add_method
+@ble_only
 def forgetWifi(ssid: str) -> dict[str, str]:
   wm = _get_wifi_manager()
   wm.forget_connection(ssid, block=True)
   return {"status": "ok"}
 
 
-@dispatcher.add_method
+@ble_only
 def setTethering(enabled: bool) -> dict[str, str]:
   wm = _get_wifi_manager()
   wm.set_tethering_active(enabled)
   return {"status": "ok"}
 
 
-@dispatcher.add_method
+@ble_only
 def setTetheringPassword(password: str) -> dict[str, str]:
   if len(password) < 8:
     raise Exception("Password must be at least 8 characters")
@@ -304,7 +303,7 @@ def setTetheringPassword(password: str) -> dict[str, str]:
   return {"status": "ok"}
 
 
-@dispatcher.add_method
+@ble_only
 def getNetworkStatus() -> dict:
   wm = _get_wifi_manager()
   return {
@@ -315,7 +314,7 @@ def getNetworkStatus() -> dict:
   }
 
 
-@dispatcher.add_method
+@ble_only
 def blePair(code: str, dongleId: str) -> dict[str, str]:
   """Pair a BLE client using pairing code and return access token"""
   from openpilot.system.athena.ble import set_ble_token
@@ -336,7 +335,7 @@ def blePair(code: str, dongleId: str) -> dict[str, str]:
   return {"token": token}
 
 
-@dispatcher.add_method
+@ble_only
 def bleRevoke() -> dict[str, str]:
   """Revoke the BLE token, disconnecting any paired device."""
   from openpilot.system.athena.ble import clear_ble_token
