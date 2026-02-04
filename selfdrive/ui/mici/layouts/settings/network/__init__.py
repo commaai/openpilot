@@ -57,7 +57,7 @@ class NetworkLayoutMici(NavWidget):
     self._tethering_password_btn.set_click_callback(tethering_password_clicked)
 
     # ******** IP Address ********
-    self._ip_address_btn = BigButton("IP Address", "Not connected")
+    # self._ip_address_btn = BigButton("IP Address", "Not connected")
 
     # ******** Network Metered ********
     def network_metered_callback(value: str):
@@ -74,8 +74,8 @@ class NetworkLayoutMici(NavWidget):
     self._network_metered_btn = BigMultiToggle("network usage", ["default", "metered", "unmetered"], select_callback=network_metered_callback)
     self._network_metered_btn.set_enabled(False)
 
-    wifi_button = BigButton("wi-fi")
-    wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
+    self._wifi_button = BigButton("wi-fi", "not connected")
+    self._wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
 
     # ******** Advanced settings ********
     # ******** Roaming toggle ********
@@ -90,7 +90,7 @@ class NetworkLayoutMici(NavWidget):
 
     # Main scroller ----------------------------------
     self._scroller = Scroller([
-      wifi_button,
+      self._wifi_button,
       self._network_metered_btn,
       self._tethering_toggle_btn,
       self._tethering_password_btn,
@@ -99,7 +99,7 @@ class NetworkLayoutMici(NavWidget):
       self._apn_btn,
       self._cellular_metered_btn,
       # */
-      self._ip_address_btn,
+      # self._ip_address_btn,
     ], snap_items=False)
 
     # Set initial config
@@ -159,7 +159,11 @@ class NetworkLayoutMici(NavWidget):
     self._tethering_toggle_btn.set_checked(tethering_active)
 
     # Update IP address
-    self._ip_address_btn.set_value(self._wifi_manager.ipv4_address or "Not connected")
+    # self._ip_address_btn.set_value(self._wifi_manager.ipv4_address or "Not connected")
+    # set to wifi name or "wi-fi"
+    connected_ssid = next((network.ssid for network in self._wifi_manager._networks if network.is_connected), None)
+    self._wifi_button.set_title(connected_ssid or "wi-fi")
+    self._wifi_button.set_value(self._wifi_manager.ipv4_address or "not connected")
 
     # Update network metered
     self._network_metered_btn.set_value(
