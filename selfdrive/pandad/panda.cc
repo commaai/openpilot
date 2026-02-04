@@ -269,12 +269,13 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
     memcpy(&header, &data[pos], sizeof(can_header));
 
     const uint8_t data_len = dlc_to_len[header.data_len_code];
-    if (pos + sizeof(can_header) + data_len > size) {
+    const size_t msg_len = sizeof(can_header) + data_len;
+    if (pos + msg_len > size) {
       // we don't have all the data for this message yet
       break;
     }
 
-    if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
+    if (calculate_checksum(&data[pos], msg_len) != 0) {
       LOGE("Panda CAN checksum failed");
       size = 0;
       can_reset_communications();
@@ -293,7 +294,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
 
     canData.dat.assign((char *)&data[pos + sizeof(can_header)], data_len);
 
-    pos += sizeof(can_header) + data_len;
+    pos += msg_len;
   }
 
   // move the overflowing data to the beginning of the buffer for the next round

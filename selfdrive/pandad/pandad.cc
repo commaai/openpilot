@@ -508,9 +508,10 @@ void pandad_main_thread(std::vector<std::string> serials) {
   }
 
   std::string serials_str;
-  for (int i = 0; i < serials.size(); i++) {
+  const size_t num_serials = serials.size();
+  for (size_t i = 0; i < num_serials; i++) {
     serials_str += serials[i];
-    if (i < serials.size() - 1) serials_str += ", ";
+    if (i < num_serials - 1) serials_str += ", ";
   }
   LOGW("connecting to pandas: %s", serials_str.c_str());
 
