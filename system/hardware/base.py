@@ -40,8 +40,8 @@ class ThermalZone:
     try:
       with open(f"/sys/devices/virtual/thermal/thermal_zone{self.zone_number}/temp") as f:
         return int(f.read()) / self.scale
-    except FileNotFoundError:
-      return 0
+    except Exception:
+      return float('nan')
 
 @dataclass
 class ThermalConfig:
