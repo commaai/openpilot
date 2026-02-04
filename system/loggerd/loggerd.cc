@@ -14,7 +14,7 @@
 ExitHandler do_exit;
 
 constexpr int MAX_QUEUE_SIZE = MAIN_FPS * 10;
-constexpr double SEGMENT_LENGTH_TIMEOUT = SEGMENT_LENGTH * 1.2;
+const double SEGMENT_LENGTH_TIMEOUT = SEGMENT_LENGTH * 1.2;
 
 struct LoggerdState {
   LoggerState logger;
