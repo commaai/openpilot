@@ -202,12 +202,6 @@ jobs:
       with:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
-    - name: Run regen
-      if: false
-      timeout-minutes: 4
-      run: |
-        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                        chmod -R 777 /tmp/comma_download_cache"
     - name: Checkout ci-artifacts
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
       uses: actions/checkout@v4
@@ -226,8 +220,14 @@ jobs:
         cp ${{ github.workspace }}/selfdrive/test/process_replay/fakedata/*.zst .
         echo "${{ github.sha }}" > ref_commit
         git add .
-        git commit -m "process-replay refs for ${{ github.sha }}"
+        git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}"
         git push origin process-replay --force
+    - name: Run regen
+      if: false
+      timeout-minutes: 4
+      run: |
+        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
+                        chmod -R 777 /tmp/comma_download_cache"
 
   simulator_driving:
     name: simulator driving
