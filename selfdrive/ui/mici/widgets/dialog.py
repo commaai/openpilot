@@ -240,9 +240,9 @@ class BigInputDialog(BigDialogBase):
     # draw enter button
     self._enter_img_alpha.update(255 if len(text) >= self._minimum_length else 0)
     color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
-    rl.draw_texture(self._enter_img, int(self._rect.x + 10), int(self._rect.y), color)
+    rl.draw_texture(self._enter_img, int(self._rect.x + PADDING / 2), int(self._rect.y), color)
     color = rl.Color(255, 255, 255, 255 - int(self._enter_img_alpha.x))
-    rl.draw_texture(self._enter_disabled_img, int(self._rect.x + 10), int(self._rect.y), color)
+    rl.draw_texture(self._enter_disabled_img, int(self._rect.x + PADDING / 2), int(self._rect.y), color)
 
     # keyboard goes over everything
     self._keyboard.render(self._rect)
