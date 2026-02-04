@@ -56,9 +56,6 @@ class NetworkLayoutMici(NavWidget):
     self._tethering_password_btn = BigButton("tethering password", "", txt_tethering)
     self._tethering_password_btn.set_click_callback(tethering_password_clicked)
 
-    # ******** IP Address ********
-    # self._ip_address_btn = BigButton("IP Address", "Not connected")
-
     # ******** Network Metered ********
     def network_metered_callback(value: str):
       self._network_metered_btn.set_enabled(False)
@@ -99,7 +96,6 @@ class NetworkLayoutMici(NavWidget):
       self._apn_btn,
       self._cellular_metered_btn,
       # */
-      # self._ip_address_btn,
     ], snap_items=False)
 
     # Set initial config
@@ -158,10 +154,8 @@ class NetworkLayoutMici(NavWidget):
     self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
     self._tethering_toggle_btn.set_checked(tethering_active)
 
-    # Update IP address
-    # self._ip_address_btn.set_value(self._wifi_manager.ipv4_address or "Not connected")
-    # set to wifi name or "wi-fi"
-    connected_ssid = next((network.ssid for network in self._wifi_manager._networks if network.is_connected), None)
+    # Update wi-fi button with ssid and ip address
+    connected_ssid = next((network.ssid for network in networks if network.is_connected), None)
     self._wifi_button.set_title(connected_ssid or "wi-fi")
     self._wifi_button.set_value(self._wifi_manager.ipv4_address or "not connected")
 
