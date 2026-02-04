@@ -187,7 +187,7 @@ class BigInputDialog(BigDialogBase):
     text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, self.TEXT_INPUT_SIZE)
 
     bg_block_margin = 5
-    text_x = 10 + self._enter_img.width + PADDING
+    text_x = PADDING / 2 + self._enter_img.width + PADDING
     text_field_rect = rl.Rectangle(text_x, int(self._rect.y + PADDING) - bg_block_margin,
                                    int(self._rect.width - text_x * 2),
                                    int(text_size.y))
@@ -238,7 +238,7 @@ class BigInputDialog(BigDialogBase):
                                                self._rect.width - (text_field_rect.x + text_field_rect.width), self._top_left_button_rect.height)
 
     # draw enter button
-    self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 0)
+    self._enter_img_alpha.update(255 if len(text) >= self._minimum_length else 0)
     color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
     rl.draw_texture(self._enter_img, int(self._rect.x + 10), int(self._rect.y), color)
     color = rl.Color(255, 255, 255, 255 - int(self._enter_img_alpha.x))
