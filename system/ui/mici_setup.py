@@ -49,7 +49,7 @@ exec ./launch_openpilot.sh
 
 
 class NetworkConnectivityMonitor:
-  def __init__(self, should_check: Callable[[], bool] | None = None, check_interval: float = 0.5):
+  def __init__(self, should_check: Callable[[], bool] | None = None, check_interval: float = 1.0):
     self.network_connected = threading.Event()
     self.wifi_connected = threading.Event()
     self._should_check = should_check or (lambda: True)
@@ -78,7 +78,7 @@ class NetworkConnectivityMonitor:
       if self._should_check():
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
-          urllib.request.urlopen(request, timeout=0.5)
+          urllib.request.urlopen(request, timeout=1.0)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -528,9 +528,8 @@ class Setup(Widget):
     self.download_thread = None
     self._wifi_manager = WifiManager()
     self._wifi_manager.set_active(True)
-    self._network_monitor = NetworkConnectivityMonitor(
-      lambda: self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
-    )
+    self._network_monitor = NetworkConnectivityMonitor()
+    self._network_monitor.start()
     self._prev_has_internet = False
     gui_app.set_modal_overlay_tick(self._modal_overlay_tick)
 
@@ -569,10 +568,8 @@ class Setup(Widget):
     if self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE):
       self._network_setup_page.show_event()
       self._network_monitor.reset()
-      self._network_monitor.start()
     else:
       self._network_setup_page.hide_event()
-      self._network_monitor.stop()
 
   def _render(self, rect: rl.Rectangle):
     if self.state == SetupState.GETTING_STARTED:
@@ -618,7 +615,6 @@ class Setup(Widget):
     self._set_state(SetupState.SOFTWARE_SELECTION)
 
   def _network_setup_continue_button_callback(self):
-    self._network_monitor.stop()
     if self.state == SetupState.NETWORK_SETUP:
       self.download(OPENPILOT_URL)
     elif self.state == SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE:
@@ -628,10 +624,10 @@ class Setup(Widget):
     self._network_monitor.stop()
 
   def render_network_setup(self, rect: rl.Rectangle):
-    self._network_setup_page.render(rect)
     has_internet = self._network_monitor.network_connected.is_set()
     self._prev_has_internet = has_internet
     self._network_setup_page.set_has_internet(has_internet)
+    self._network_setup_page.render(rect)
 
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_page.set_progress(self.download_progress)

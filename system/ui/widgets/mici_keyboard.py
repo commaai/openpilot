@@ -53,20 +53,23 @@ class Key(Widget):
     self.original_position = rl.Vector2(0, 0)
 
   def set_position(self, x: float, y: float, smooth: bool = True):
-    # TODO: swipe up from NavWidget has the keys lag behind other elements a bit
+    # Smooth keys within parent rect
+    base_y = self._parent_rect.y if self._parent_rect else 0.0
+    local_y = y - base_y
+
     if not self._position_initialized:
       self._x_filter.x = x
-      self._y_filter.x = y
+      self._y_filter.x = local_y
       # keep track of original position so dragging around feels consistent. also move touch area down a bit
       self.original_position = rl.Vector2(x, y + KEY_TOUCH_AREA_OFFSET)
       self._position_initialized = True
 
     if not smooth:
       self._x_filter.x = x
-      self._y_filter.x = y
+      self._y_filter.x = local_y
 
     self._rect.x = self._x_filter.update(x)
-    self._rect.y = self._y_filter.update(y)
+    self._rect.y = base_y + self._y_filter.update(local_y)
 
   def set_alpha(self, alpha: float):
     self._alpha_filter.update(alpha)
@@ -367,6 +370,7 @@ class MiciKeyboard(Widget):
           key.set_font_size(font_size)
 
         # TODO: I like the push amount, so we should clip the pos inside the keyboard rect
+        key.set_parent_rect(self._rect)
         key.set_position(key_x, key_y)
 
   def _render(self, _):
