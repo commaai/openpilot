@@ -145,6 +145,9 @@ def arc_bar_pts(cx: float, cy: float,
   return pts
 
 
+DEFAULT_MAX_LAT_ACCEl = 3.0  # m/s^2
+
+
 class TorqueBar(Widget):
   def __init__(self, demo: bool = False):
     super().__init__()
@@ -167,7 +170,7 @@ class TorqueBar(Widget):
       live_parameters = ui_state.sm['liveParameters']
       lateral_acceleration = controls_state.curvature * car_state.vEgo ** 2 - live_parameters.roll * ACCELERATION_DUE_TO_GRAVITY
       # TODO: pull from carparams
-      max_lateral_acceleration = 3
+      max_lateral_acceleration = ui_state.CP.maxLateralAccel if ui_state.CP else DEFAULT_MAX_LAT_ACCEl
 
       # from selfdrived
       actual_lateral_accel = controls_state.curvature * car_state.vEgo ** 2
