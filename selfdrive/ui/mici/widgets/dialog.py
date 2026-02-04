@@ -152,7 +152,7 @@ class BigInputDialog(BigDialogBase):
     self._backspace_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
     self._enter_img = gui_app.texture("icons_mici/settings/keyboard/enter.png", 76, 62)
-    self._enter_disabled_img = gui_app.texture("icons_mici/settings/keyboard/enter.png", 76, 62)
+    self._enter_disabled_img = gui_app.texture("icons_mici/settings/keyboard/enter_disabled.png", 76, 62)
     self._enter_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
     # rects for top buttons
@@ -239,10 +239,12 @@ class BigInputDialog(BigDialogBase):
     self._top_right_button_rect = rl.Rectangle(text_field_rect.x + text_field_rect.width, self._rect.y,
                                                self._rect.width - (text_field_rect.x + text_field_rect.width), self._top_left_button_rect.height)
 
-    self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 255 * 0.35)
-    if self._enter_img_alpha.x > 1:
-      color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
-      rl.draw_texture(self._enter_img, int(self._rect.x + 10), int(self._rect.y), color)
+    # draw enter button
+    self._enter_img_alpha.update(255 if (len(text) >= self._minimum_length) else 0)
+    color = rl.Color(255, 255, 255, int(self._enter_img_alpha.x))
+    rl.draw_texture(self._enter_img, int(self._rect.x + 10), int(self._rect.y), color)
+    color = rl.Color(255, 255, 255, 255 - int(self._enter_img_alpha.x))
+    rl.draw_texture(self._enter_disabled_img, int(self._rect.x + 10), int(self._rect.y), color)
 
     # keyboard goes over everything
     self._keyboard.render(self._rect)
