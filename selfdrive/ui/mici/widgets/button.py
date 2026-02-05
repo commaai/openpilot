@@ -200,7 +200,7 @@ class BigButton(Widget):
     self._label.set_color(label_color)
     label_height = self._label.get_content_height(self._width_hint())
     label_rect = rl.Rectangle(lx, ly - label_height, self._width_hint(), label_height)
-    rl.draw_rectangle_lines_ex(label_rect, 1, rl.RED)
+    # rl.draw_rectangle_lines_ex(label_rect, 1, rl.RED)
     self._label.render(label_rect)
 
     # ICON -------------------------------------------------------------------

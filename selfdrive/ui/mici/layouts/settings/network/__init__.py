@@ -73,7 +73,7 @@ class NetworkLayoutMici(NavWidget):
     self._network_metered_btn = BigMultiToggle("network usage", ["default", "metered", "unmetered"], select_callback=network_metered_callback)
     self._network_metered_btn.set_enabled(False)
 
-    wifi_button = BigButton("wi-fi")
+    wifi_button = BigButton("wi-fi test test 12345 test 987 brz subaru wow crazy i love it")
     wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
 
     # ******** Advanced settings ********
