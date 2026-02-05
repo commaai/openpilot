@@ -96,6 +96,19 @@ def main() -> int:
   for plat, seg, err in errors:
     print(f"\nERROR {plat} - {seg}: {err}")
 
+  if with_diffs:
+    print("<details><summary><b>Show changes</b></summary>\n\n```")
+    for plat, seg, (diffs, ref, new) in with_diffs:
+      print(f"\n{plat} - {seg}")
+      by_field = defaultdict(list)
+      for d in diffs:
+        by_field[d[0]].append(d)
+      for field, fd in sorted(by_field.items()):
+        print(f"\n  {field} ({len(fd)} diffs)")
+        for line in format_card(fd, ref, new, field):
+          print(line)
+    print("```\n</details>")
+
   return 1 if errors else 0
 
 
