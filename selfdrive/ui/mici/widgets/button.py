@@ -104,12 +104,14 @@ class BigCircleToggle(BigCircleButton):
 class BigButton(Widget):
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
-  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", icon_size: tuple[int, int] = (64, 64)):
+  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", icon_size: tuple[int, int] = (64, 64),
+               scroll: bool = False):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 402, 180))
     self.text = text
     self.value = value
     self._icon_size = icon_size
+    self._scroll = scroll
     self.set_icon(icon)
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
@@ -120,7 +122,8 @@ class BigButton(Widget):
     self._value_font = gui_app.font(FontWeight.ROMAN)
 
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.DISPLAY,
-                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=0.9)
+                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, scroll=scroll,
+                               line_height=0.9)
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
                                    text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
@@ -141,7 +144,8 @@ class BigButton(Widget):
     self._txt_hover_bg = gui_app.texture("icons_mici/buttons/button_rectangle_hover.png", 402, 180)
 
   def _width_hint(self) -> int:
-    return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2)
+    icon_size = self._icon_size[0] if self._txt_icon else 0
+    return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - (icon_size if self._scroll else 0))
 
   def _get_label_font_size(self):
     if len(self.text) < 12:
