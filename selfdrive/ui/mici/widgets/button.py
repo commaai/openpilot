@@ -120,12 +120,8 @@ class BigButton(Widget):
     self._label_font = gui_app.font(FontWeight.DISPLAY)
     self._value_font = gui_app.font(FontWeight.ROMAN)
 
-    # self._label = MiciLabel(text, font_size=self._get_label_font_size(), width=int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2),
-    #                         font_weight=FontWeight.DISPLAY, color=LABEL_COLOR,
-    #                         alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, wrap_text=True)
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.DISPLAY,
                                text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
-
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
                                    text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
