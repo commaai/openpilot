@@ -162,7 +162,7 @@ class NetworkLayoutMici(NavWidget):
     # TODO: make sure we handle hidden ssids
     connected_network = next((network for network in networks if network.is_connected), None)
     # connected_ssid = next((network.ssid for network in networks if network.is_connected), None)
-    self._wifi_button.set_text(normalize_ssid('jdalkjd klajdkl jakldj klajlkd jaskdj aklsj klads ') if connected_network is not None else "wi-fi")
+    self._wifi_button.set_text(normalize_ssid(connected_network.ssid) if connected_network is not None else "wi-fi")
     self._wifi_button.set_value(self._wifi_manager.ipv4_address or "not connected")
     if connected_network:
       strength = WifiIcon.get_strength_icon_idx(connected_network.strength)
