@@ -219,11 +219,12 @@ class NavBar(Widget):
   def _render(self, _):
     if rl.get_time() - self._fade_time > DISMISS_TIME_SECONDS:
       self._alpha = 0.0
-    alpha = self._alpha_filter.update(self._alpha)
+    alpha = 1.0  # self._alpha_filter.update(self._alpha)
 
     # white bar with black border
     rl.draw_rectangle_rounded(self._rect, 1.0, 6, rl.Color(255, 255, 255, int(255 * 0.9 * alpha)))
     rl.draw_rectangle_rounded_lines_ex(self._rect, 1.0, 6, 2, rl.Color(0, 0, 0, int(255 * 0.3 * alpha)))
+    rl.draw_rectangle_lines_ex(self._rect, 3, rl.RED)
 
 
 class NavWidget(Widget, abc.ABC):
@@ -371,12 +372,13 @@ class NavWidget(Widget, abc.ABC):
       else:
         self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
-      self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
-      self._nav_bar.render()
-
       # draw black above widget when dismissing
       if self._rect.y > 0:
         rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
+
+      print("NavBar coords:", bar_x, round(self._nav_bar_y_filter.x))
+      self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
+      self._nav_bar.render()
 
     return ret
 
