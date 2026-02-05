@@ -1,4 +1,3 @@
-import numpy as np
 import pyray as rl
 from typing import Union
 from enum import Enum
