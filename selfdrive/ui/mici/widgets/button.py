@@ -121,7 +121,7 @@ class BigButton(Widget):
     self._value_font = gui_app.font(FontWeight.ROMAN)
 
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.DISPLAY,
-                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=0.9)
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
                                    text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
@@ -152,7 +152,7 @@ class BigButton(Widget):
     elif len(self.text) < 20:
       font_size = 42
     else:
-      font_size = 36
+      font_size = 38
 
     if self.value:
       font_size -= 20
@@ -194,7 +194,7 @@ class BigButton(Widget):
       sub_label_height = self._sub_label.get_content_height(self._width_hint())
       sub_label_rect = rl.Rectangle(lx, ly - sub_label_height, self._width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
-      ly -= sub_label_height + 9
+      ly -= sub_label_height
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
