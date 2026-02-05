@@ -119,11 +119,11 @@ class BigButton(Widget):
     self._label_font = gui_app.font(FontWeight.DISPLAY)
     self._value_font = gui_app.font(FontWeight.ROMAN)
 
-    self._label = MiciLabel(text, font_size=self._get_label_font_size(), width=int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2),
-                            font_weight=FontWeight.DISPLAY, color=LABEL_COLOR,
-                            alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, wrap_text=True)
-    # self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.DISPLAY,
-    #                            text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+    # self._label = MiciLabel(text, font_size=self._get_label_font_size(), width=int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2),
+    #                         font_weight=FontWeight.DISPLAY, color=LABEL_COLOR,
+    #                         alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, wrap_text=True)
+    self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.DISPLAY,
+                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
     self._sub_label = MiciLabel(value, font_size=COMPLICATION_SIZE, width=int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2),
                                 font_weight=FontWeight.ROMAN, color=COMPLICATION_GREY,
                                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, wrap_text=True)
@@ -197,8 +197,11 @@ class BigButton(Widget):
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    self._label.set_position(lx, ly)
-    self._label.render()
+    # self._label.set_position(lx, ly)
+    label_height = self._label.get_content_height(int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2))
+    label_rect = rl.Rectangle(lx, ly - label_height, int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2), label_height)
+    rl.draw_rectangle_lines_ex(label_rect, 1, rl.RED)
+    self._label.render(label_rect)
 
     # ICON -------------------------------------------------------------------
     if self._txt_icon:
@@ -260,7 +263,7 @@ class BigMultiToggle(BigToggle):
     self._options = options
     self._select_callback = select_callback
 
-    self._label.set_width(int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width))
+    # self._label.set_width(int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width))
     # TODO: why isn't this automatic?
     self._label.set_font_size(self._get_label_font_size())
 
