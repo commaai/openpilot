@@ -1,4 +1,4 @@
-name: card diff
+name: replay diff
 
 on:
   pull_request_target:
@@ -32,14 +32,14 @@ jobs:
         workflow: tests.yaml
         workflow_conclusion: ''
         pr: ${{ github.event.number }}
-        name: card_diff_${{ github.event.number }}
+        name: replay_diff_${{ github.event.number }}
         path: .
         allow_forks: true
     - name: Comment on PR
       if: steps.wait.outcome == 'success'
       uses: thollander/actions-comment-pull-request@v2
       with:
-        filePath: card_diff.txt
-        comment_tag: card_diff
+        filePath: replay_diff.txt
+        comment_tag: replay_diff
         pr_number: ${{ github.event.number }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
