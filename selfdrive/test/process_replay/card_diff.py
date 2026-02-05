@@ -63,6 +63,10 @@ def main() -> int:
   if not cur_commit:
     raise Exception("Couldn't get current commit")
 
+  print("## Card behavior report")
+  print("Replays driving segments through this PR and compares the behavior to master.")
+  print("Please review any changes carefully to ensure they are expected.\n")
+
   results = []
   for plat, seg in segments:
     cur_log_fn = os.path.join(FAKEDATA, f"{seg}_{CARD_CFG.proc_name}_{cur_commit}.zst".replace("|", "_"))
