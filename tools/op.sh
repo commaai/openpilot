@@ -161,9 +161,9 @@ function op_check_python() {
     loge "ERROR_PYTHON_NOT_FOUND"
     return 1
   else
-    LB=$(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9,]' | cut -d ',' -f1)
-    UB=$(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9,]' | cut -d ',' -f2)
-    VERSION=$(echo $INSTALLED_PYTHON_VERSION | grep -o '[0-9]\+\.[0-9]\+' | tr -d -c '[0-9]')
+    LB=$(echo $REQUIRED_PYTHON_VERSION | tr -d '",' | awk '{ split($4, v, "."); printf "%d%02d%02d", v[1], v[2], v[3] }')
+    UB=$(echo $REQUIRED_PYTHON_VERSION | tr -d '",' | awk '{ split($6, v, "."); printf "%d%02d%02d", v[1], v[2], v[3] }')
+    VERSION=$(echo $INSTALLED_PYTHON_VERSION | awk '{ split($2, v, "."); printf "%d%02d%02d", v[1], v[2], v[3] }')
     if [[ $VERSION -ge LB && $VERSION -lt UB ]]; then
       echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
     else
