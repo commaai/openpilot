@@ -260,7 +260,7 @@ def _wrap_text_by_delimiter(text: str, rl, font, font_size: int, font_scale: flo
 
 
 def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
-  metadata_size = 16 if big else 11
+  metadata_size = 16 if big else 12
   title_size = 32 if big else 24
   time_size = 24 if big else 16
 
