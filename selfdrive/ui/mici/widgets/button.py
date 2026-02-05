@@ -163,31 +163,6 @@ class BigButton(Widget):
 
     return font_size
 
-  # def _get_label_font_size(self) -> int:
-  #   font_size = 64
-  #   label_height = self._label.get_content_height(self._width_hint())
-  #   print(self.get_text(), label_height)
-  #   font_size = np.interp(label_height, [70, 200], [64, 36])
-  #   # if label_height < 70:
-  #   #   font_size = 64
-  #   # elif label_height < 100:
-  #   #   font_size = 48
-  #   # else:
-  #   #   font_size = 36
-  #   # if len(self.text) < 12:
-  #   #   font_size = 64
-  #   # elif len(self.text) < 17:
-  #   #   font_size = 48
-  #   # elif len(self.text) < 20:
-  #   #   font_size = 42
-  #   # else:
-  #   #   font_size = 36
-  #
-  #   if self.value:
-  #     font_size -= 20
-  #
-  #   return round(font_size)
-
   def set_text(self, text: str):
     self.text = text
     self._label.set_text(text)
@@ -227,7 +202,6 @@ class BigButton(Widget):
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    # self._label.set_position(lx, ly)
     label_height = self._label.get_content_height(self._width_hint())
     label_rect = rl.Rectangle(lx, ly - label_height, self._width_hint(), label_height)
     rl.draw_rectangle_lines_ex(label_rect, 1, rl.RED)
@@ -253,8 +227,6 @@ class BigToggle(BigButton):
     super().__init__(text, value, "")
     self._checked = initial_state
     self._toggle_callback = toggle_callback
-
-    # self._label.set_font_size(48)
 
   def _load_images(self):
     super()._load_images()
@@ -293,18 +265,10 @@ class BigMultiToggle(BigToggle):
     self._options = options
     self._select_callback = select_callback
 
-    # # self._label.set_width(int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width))
-    # # TODO: why isn't this automatic?
-    # self._label.set_font_size(self._get_label_font_size())
-
     self.set_value(self._options[0])
 
   def _width_hint(self) -> int:
     return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
-
-  # def _get_label_font_size(self):
-  #   font_size = super()._get_label_font_size()
-  #   return font_size - 6
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
