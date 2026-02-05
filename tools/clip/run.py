@@ -264,7 +264,7 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
   title_size = 32 if big else 24
   time_size = 24 if big else 16
 
-  # Metadata overlay
+  # Metadata overlay (first 5 seconds only)
   if show_metadata and metadata and frame_idx < FRAMERATE * 5:
     m = metadata
     text = ", ".join([f"openpilot v{m['version']}", f"route: {m['route']}", f"car: {m['car']}", f"origin: {m['origin']}",
