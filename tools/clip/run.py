@@ -274,9 +274,11 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
     lines = _wrap_text_by_delimiter(text, rl, font, metadata_size, font_scale, max_width)
 
     # Draw wrapped metadata text
-    line_height = int(rl.measure_text_ex(font, "A", metadata_size * font_scale, 0).y) + 4  # line height with padding
-    for i, line in enumerate(lines):
-      draw_text_box(rl, line, 0, 6 + i * line_height, metadata_size, gui_app, font, font_scale, center=True)
+    y_offset = 6
+    for line in lines:
+      draw_text_box(rl, line, 0, y_offset, metadata_size, gui_app, font, font_scale, center=True)
+      line_height = int(rl.measure_text_ex(font, line, metadata_size * font_scale, 0).y) + 4
+      y_offset += line_height
 
   # Title overlay
   if title:
