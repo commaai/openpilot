@@ -222,7 +222,7 @@ jobs:
         ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: Checkout ci-artifacts
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
       with:
         repository: commaai/ci-artifacts
         ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
