@@ -86,7 +86,17 @@ def main() -> int:
     except Exception as e:
       results.append((plat, seg, None, str(e)))
 
-  return 0
+  with_diffs = [(plat, seg, res) for plat, seg, res, err in results if res]
+  errors = [(plat, seg, err) for plat, seg, _, err in results if err]
+  n_passed = len(results) - len(with_diffs) - len(errors)
+
+  icon = "⚠️" if with_diffs else "✅"
+  print(f"{icon}  {len(with_diffs) - len(errors)} changed, {n_passed} passed, {len(errors)} errors")
+
+  for plat, seg, err in errors:
+    print(f"\nERROR {plat} - {seg}: {err}")
+
+  return 1 if errors else 0
 
 
 if __name__ == "__main__":
