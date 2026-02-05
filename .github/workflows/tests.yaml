@@ -190,8 +190,7 @@ jobs:
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
-        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) \
-                        ${{ github.ref == 'refs/heads/master' && '--update-refs' || '' }} && \
+        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache"
     - name: Print diff
       id: print-diff

@@ -220,4 +220,4 @@ if __name__ == "__main__":
       f.write(cur_commit)
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
 
-  sys.exit(0 if args.update_refs else int(failed))
+  sys.exit(int(failed))
