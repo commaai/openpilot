@@ -264,13 +264,22 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
   title_size = 32 if big else 24
   time_size = 24 if big else 16
 
+  # Time overlay
+  time_width = 0
+  if show_time:
+    t = start_time + frame_idx / FRAMERATE
+    time_text = f"{int(t) // 60:02d}:{int(t) % 60:02d}"
+    time_width = int(rl.measure_text_ex(font, time_text, time_size * font_scale, 0).x)
+    draw_text_box(rl, time_text, gui_app.width - time_width - 5, 0, time_size, gui_app, font, font_scale)
+
   # Metadata overlay (first 5 seconds only)
   if show_metadata and metadata and frame_idx < FRAMERATE * 5:
     m = metadata
     text = ", ".join([f"openpilot v{m['version']}", f"route: {m['route']}", f"car: {m['car']}", f"origin: {m['origin']}",
                       f"branch: {m['branch']}", f"commit: {m['commit']}", f"modified: {m['modified']}"])
     # Wrap text if too wide (leave margin on each side)
-    max_width = gui_app.width - (time_size * 6)  # roughly enough margin for the time overlay
+    margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
+    max_width = gui_app.width - margin
     lines = _wrap_text_by_delimiter(text, rl, font, metadata_size, font_scale, max_width)
 
     # Draw wrapped metadata text
@@ -283,13 +292,6 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
   # Title overlay
   if title:
     draw_text_box(rl, title, 0, 60, title_size, gui_app, font, font_scale, center=True)
-
-  # Time overlay
-  if show_time:
-    t = start_time + frame_idx / FRAMERATE
-    time_text = f"{int(t)//60:02d}:{int(t)%60:02d}"
-    time_width = int(rl.measure_text_ex(font, time_text, time_size * font_scale, 0).x)
-    draw_text_box(rl, time_text, gui_app.width - time_width - 5, 0, time_size, gui_app, font, font_scale)
 
 
 def clip(route: Route, output: str, start: int, end: int, headless: bool = True, big: bool = False,
