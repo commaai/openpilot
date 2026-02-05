@@ -144,8 +144,9 @@ class BigButton(Widget):
     self._txt_hover_bg = gui_app.texture("icons_mici/buttons/button_rectangle_hover.png", 402, 180)
 
   def _width_hint(self) -> int:
-    icon_size = self._icon_size[0] if self._txt_icon else 0
-    return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - (icon_size if self._scroll else 0))
+    # Single line if scrolling, so hide behind icon if exists
+    icon_size = self._icon_size[0] if self._txt_icon and self._scroll and self.value else 0
+    return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _get_label_font_size(self):
     if len(self.text) < 12:
