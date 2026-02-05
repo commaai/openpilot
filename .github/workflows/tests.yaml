@@ -204,9 +204,29 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
     - name: Upload reference logs
-      if: false # TODO: move this to github instead of azure
+      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
       run: |
-        ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python3 selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+    - name: Checkout ci-artifacts
+      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
+      uses: actions/checkout@v6
+      with:
+        repository: commaai/ci-artifacts
+        ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+        path: ${{ github.workspace }}/ci-artifacts
+    - name: Push refs
+      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
+      working-directory: ${{ github.workspace }}/ci-artifacts
+      run: |
+        git checkout --orphan process-replay
+        git rm -rf *
+        git config user.name "GitHub Actions Bot"
+        git config user.email "<>"
+        cp ${{ github.workspace }}/selfdrive/test/process_replay/fakedata/*.zst .
+        echo "${{ github.sha }}" > ref_commit
+        git add .
+        git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}"
+        git push origin process-replay --force
     - name: Run regen
       if: false
       timeout-minutes: 4
