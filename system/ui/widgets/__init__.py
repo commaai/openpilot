@@ -195,7 +195,7 @@ NAV_BAR_WIDTH = 205
 NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = 50 + NAV_BAR_MARGIN + NAV_BAR_HEIGHT  # px extra to push down when dismissing
-DISMISS_TIME_SECONDS = 1.5
+DISMISS_TIME_SECONDS = 2.0
 
 
 class NavBar(Widget):
