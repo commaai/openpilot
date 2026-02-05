@@ -50,12 +50,16 @@ class WifiIcon(Widget):
   def set_scale(self, scale: float):
     self._scale = scale
 
+  @staticmethod
+  def get_strength_icon_idx(strength: int) -> int:
+    return round(strength / 100 * 2)
+
   def _render(self, _):
     if self._network is None:
       return
 
     # Determine which wifi strength icon to use
-    strength = round(self._network.strength / 100 * 2)
+    strength = self.get_strength_icon_idx(self._network.strength)
     if strength == 2:
       strength_icon = self._wifi_full_txt
     elif strength == 1:
