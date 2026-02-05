@@ -4,7 +4,7 @@ from typing import Union
 from enum import Enum
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import MiciLabel, UnifiedLabel
+from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.common.filter_simple import BounceFilter
@@ -124,11 +124,10 @@ class BigButton(Widget):
     #                         font_weight=FontWeight.DISPLAY, color=LABEL_COLOR,
     #                         alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, wrap_text=True)
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.DISPLAY,
-                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=1)
+                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
-    self._sub_label = MiciLabel(value, font_size=COMPLICATION_SIZE, width=int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2),
-                                font_weight=FontWeight.ROMAN, color=COMPLICATION_GREY,
-                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, wrap_text=True)
+    self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
+                                   text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
     self._load_images()
 
@@ -221,9 +220,10 @@ class BigButton(Widget):
     ly = btn_y + self._rect.height - 33  # - 40# - self._get_label_font_size() / 2
 
     if self.value:
-      self._sub_label.set_position(lx, ly)
-      ly -= self._sub_label.font_size + 9
-      self._sub_label.render()
+      sub_label_height = self._sub_label.get_content_height(self._width_hint())
+      sub_label_rect = rl.Rectangle(lx, ly - sub_label_height, self._width_hint(), sub_label_height)
+      self._sub_label.render(sub_label_rect)
+      ly -= sub_label_height + 9
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
