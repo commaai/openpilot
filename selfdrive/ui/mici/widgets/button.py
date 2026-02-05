@@ -124,7 +124,7 @@ class BigButton(Widget):
     #                         font_weight=FontWeight.DISPLAY, color=LABEL_COLOR,
     #                         alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, wrap_text=True)
     self._label = UnifiedLabel(text, font_weight=FontWeight.DISPLAY,
-                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=0.9)
+                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, line_height=1)
 
     self._sub_label = MiciLabel(value, font_size=COMPLICATION_SIZE, width=int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2),
                                 font_weight=FontWeight.ROMAN, color=COMPLICATION_GREY,
@@ -150,30 +150,45 @@ class BigButton(Widget):
   def _width_hint(self) -> int:
     return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2)
 
-  def _get_label_font_size(self) -> int:
-    font_size = 64
-    label_height = self._label.get_content_height(self._width_hint())
-    print(self.get_text(), label_height)
-    font_size = np.interp(label_height, [70, 200], [64, 36])
-    # if label_height < 70:
-    #   font_size = 64
-    # elif label_height < 100:
-    #   font_size = 48
-    # else:
-    #   font_size = 36
-    # if len(self.text) < 12:
-    #   font_size = 64
-    # elif len(self.text) < 17:
-    #   font_size = 48
-    # elif len(self.text) < 20:
-    #   font_size = 42
-    # else:
-    #   font_size = 36
+  def _get_label_font_size(self):
+    if len(self.text) < 12:
+      font_size = 64
+    elif len(self.text) < 17:
+      font_size = 48
+    elif len(self.text) < 20:
+      font_size = 42
+    else:
+      font_size = 36
 
     if self.value:
       font_size -= 20
 
-    return round(font_size)
+    return font_size
+
+  # def _get_label_font_size(self) -> int:
+  #   font_size = 64
+  #   label_height = self._label.get_content_height(self._width_hint())
+  #   print(self.get_text(), label_height)
+  #   font_size = np.interp(label_height, [70, 200], [64, 36])
+  #   # if label_height < 70:
+  #   #   font_size = 64
+  #   # elif label_height < 100:
+  #   #   font_size = 48
+  #   # else:
+  #   #   font_size = 36
+  #   # if len(self.text) < 12:
+  #   #   font_size = 64
+  #   # elif len(self.text) < 17:
+  #   #   font_size = 48
+  #   # elif len(self.text) < 20:
+  #   #   font_size = 42
+  #   # else:
+  #   #   font_size = 36
+  #
+  #   if self.value:
+  #     font_size -= 20
+  #
+  #   return round(font_size)
 
   def set_text(self, text: str):
     self.text = text
