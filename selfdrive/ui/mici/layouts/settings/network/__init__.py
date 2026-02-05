@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigCircleToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
@@ -39,8 +39,7 @@ class NetworkLayoutMici(NavWidget):
       self._network_metered_btn.set_enabled(False)
       self._wifi_manager.set_tethering_active(checked)
 
-    self._tethering_toggle_btn = BigCircleToggle("icons_mici/tethering_short.png", toggle_callback=tethering_toggle_callback,
-                                                 icon_size=(82, 82), icon_offset=(0, 12))
+    self._tethering_toggle_btn = BigToggle("enable tethering", "", toggle_callback=tethering_toggle_callback)
 
     def tethering_password_callback(password: str):
       if password:
