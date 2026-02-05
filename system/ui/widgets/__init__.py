@@ -238,6 +238,7 @@ class NavBar(Widget):
     # alpha = 1
     # white bar with black border
     print(self._rect.y)
+    # TODO: draw rounded rectangle blue gradient behind
     rl.draw_rectangle_rounded(self._rect, 1.0, 6, rl.Color(255, 255, 255, int(255 * 0.9 * alpha)))
     rl.draw_rectangle_rounded_lines_ex(self._rect, 1.0, 6, 2, rl.Color(0, 0, 0, int(255 * 0.3 * alpha)))
 
@@ -397,7 +398,7 @@ class NavWidget(Widget, abc.ABC):
 
       elif rl.get_time() - self._last_interaction_time > NAV_HINT_TIME_SECONDS:
         self._nav_bar_y_filter.update(25)
-        self._nav_bar.set_scale(1.2)
+        self._nav_bar.set_scale(1.3)
         self._nav_bar.set_alpha(1.0)
 
       else:
