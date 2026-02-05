@@ -658,6 +658,7 @@ class UnifiedLabel(Widget):
 
       # Calculate height needed for this line
       # Each line contributes its height * line_height (matching Label's behavior)
+      # print(line, size.y, self._font_size)
       line_height_needed = size.y * self._line_height
 
       # Check if this line fits
