@@ -163,6 +163,7 @@ class LongitudinalPlanner:
       self.a_desired = float(np.interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory))
     else:
       self.a_desired = self.output_a_target
+      self.mpc.a_prev[:] = self.a_desired
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
   def publish(self, sm, pm):
