@@ -17,7 +17,7 @@ NAN_FIELDS = {'aRel', 'yvRel'}
 
 
 class MsgWrap:
-  """adapter so to_dict() includes defaults"""
+  """Adapter so to_dict() includes defaults"""
   def __init__(self, msg):
     self._msg = msg
   def to_dict(self):
@@ -62,6 +62,25 @@ def main() -> int:
   cur_commit = get_commit()
   if not cur_commit:
     raise Exception("Couldn't get current commit")
+
+  results = []
+  for plat, seg in segments:
+    cur_log_fn = os.path.join(FAKEDATA, f"{seg}_{CARD_CFG.proc_name}_{cur_commit}.zst".replace("|", "_"))
+    ref_fn = os.path.join(FAKEDATA, f"{seg}_{CARD_CFG.proc_name}_{ref_commit}.zst".replace("|", "_"))
+    ref_path = ref_fn if os.path.exists(ref_fn) else BASE_URL + os.path.basename(ref_fn)
+    try:
+      if os.path.exists(cur_log_fn):
+        new_msgs = list(LogReader(cur_log_fn))
+      else:
+        _, lr_dat = get_log_data(seg)
+        new_msgs = replay_process(CARD_CFG, LogReader.from_bytes(lr_dat), disable_progress=True)
+      diffs, ref, new = compare_card(list(LogReader(ref_path)), new_msgs)
+      if diffs:
+        results.append((plat, seg, (diffs, ref, new), None))
+      else:
+        results.append((plat, seg, None, None))
+    except Exception as e:
+      results.append((plat, seg, None, str(e)))
 
   return 0
 
