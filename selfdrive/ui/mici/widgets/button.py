@@ -149,10 +149,8 @@ class BigButton(Widget):
       font_size = 64
     elif len(self.text) < 17:
       font_size = 48
-    elif len(self.text) < 20:
-      font_size = 42
     else:
-      font_size = 38
+      font_size = 42
 
     if self.value:
       font_size -= 20
