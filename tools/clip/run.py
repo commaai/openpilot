@@ -272,7 +272,7 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
     time_width = int(rl.measure_text_ex(font, time_text, time_size * font_scale, 0).x)
     draw_text_box(rl, time_text, gui_app.width - time_width - 5, 0, time_size, gui_app, font, font_scale)
 
-  # Metadata overlay (first 5 seconds only)
+  # Metadata overlay (first 5 seconds)
   if show_metadata and metadata and frame_idx < FRAMERATE * 5:
     m = metadata
     text = ", ".join([f"openpilot v{m['version']}", f"route: {m['route']}", f"car: {m['car']}", f"origin: {m['origin']}",
