@@ -52,5 +52,19 @@ def format_card(diffs, ref, new, field):
   return format_diff(diffs, ref, states, field)
 
 
+def main() -> int:
+  try:
+    with open(REF_COMMIT_FN) as f:
+      ref_commit = f.read().strip()
+  except FileNotFoundError:
+    ref_commit = URLFile(BASE_URL + "ref_commit", cache=False).read().decode().strip()
+
+  cur_commit = get_commit()
+  if not cur_commit:
+    raise Exception("Couldn't get current commit")
+
+  return 0
+
+
 if __name__ == "__main__":
-  sys.exit(0)
+  sys.exit(main())
