@@ -219,9 +219,10 @@ class AugmentedRoadView(CameraView):
     self._model_renderer.render(self._content_rect)
 
     # Fade out bottom of overlays for looks (only when engaged)
-    alpha = self._fade_alpha_filter.update(ui_state.status != UIStatus.DISENGAGED)
-    if alpha > 1e-2:
-      rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * alpha)))
+    fade_alpha = self._fade_alpha_filter.update(ui_state.status != UIStatus.DISENGAGED)
+    if fade_alpha > 1e-2:
+      rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0,
+                         rl.Color(255, 255, 255, int(255 * fade_alpha)))
 
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
 
