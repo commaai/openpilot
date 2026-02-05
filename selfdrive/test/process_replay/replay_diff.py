@@ -6,11 +6,10 @@ from opendbc.car.tests.car_diff import format_diff
 from openpilot.common.git import get_commit
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, replay_process
-from openpilot.selfdrive.test.process_replay.test_processes import segments, get_log_data, REF_COMMIT_FN, EXCLUDED_PROCS
+from openpilot.selfdrive.test.process_replay.test_processes import segments, get_log_data, REF_COMMIT_FN, EXCLUDED_PROCS, BASE_URL
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.url_file import URLFile
 
-BASE_URL = "https://raw.githubusercontent.com/commaai/ci-artifacts/refs/heads/process-replay/"
 NAN_FIELDS = {'aRel', 'yvRel'}
 
 
