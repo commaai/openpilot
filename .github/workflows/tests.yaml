@@ -203,17 +203,12 @@ jobs:
       with:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
-    - name: Run replay diff
-      if: github.event_name == 'pull_request'
-      timeout-minutes: 5
-      run: |
-        ${{ env.RUN }} "python3 selfdrive/test/process_replay/replay_diff.py | tee replay_diff.txt"
     - uses: actions/upload-artifact@v6
       if: always() && github.event_name == 'pull_request'
       continue-on-error: true
       with:
-        name: replay_diff_${{ github.event.number }}
-        path: replay_diff.txt
+        name: diff_report_${{ github.event.number }}
+        path: selfdrive/test/process_replay/diff_report.txt
     - name: Checkout ci-artifacts
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
       uses: actions/checkout@v4
