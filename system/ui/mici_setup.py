@@ -590,14 +590,8 @@ class Setup(Widget):
   def _custom_software_warning_back_button_callback(self):
     self._set_state(SetupState.SOFTWARE_SELECTION)
 
-  def _custom_software_warning_continue_button_callback(self):
-    self._set_state(SetupState.CUSTOM_SOFTWARE)
-
   def _getting_started_button_callback(self):
     self._set_state(SetupState.SOFTWARE_SELECTION)
-
-  def _software_selection_back_button_callback(self):
-    self._set_state(SetupState.GETTING_STARTED)
 
   def _software_selection_continue_button_callback(self):
     self.use_openpilot()
