@@ -575,6 +575,8 @@ class GuiApplication:
         if len(self._nav_stack.widgets) > 0:
           self._nav_stack.widgets[-1].render(rl.Rectangle(0, 0, self.width, self.height))
 
+        print('widget stack', len(self._nav_stack.widgets), [w.__class__.__name__ for w in self._nav_stack.widgets])
+
         # # Handle modal overlay rendering and input processing
         # if self._handle_modal_overlay():
         #   # Allow a Widget to still run a function while overlay is shown
