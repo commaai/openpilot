@@ -37,7 +37,7 @@ def get_html_from_results(results, labels, AXIS):
   plt.close(fig)
   return fig_buffer.getvalue() + '<br/>'
 
-if __name__ == '__main__':
+def generate_mpc_tuning_report():
   htmls = []
 
   results = {}
@@ -100,7 +100,7 @@ if __name__ == '__main__':
       breakpoints=[0.,2., 5, 8, 15, 18, 25.],
     )
     valid, results[oscil] = man.evaluate()
-    labels.append(f'{oscil} m/s oscilliation size')
+    labels.append(f'{oscil} m/s oscillation size')
 
   htmls.append(markdown.markdown('# ' + name))
   htmls.append(get_html_from_results(results, labels, D_REL))
@@ -263,6 +263,11 @@ if __name__ == '__main__':
   htmls.append(markdown.markdown('# ' + name))
   htmls.append(get_html_from_results(results, labels, EGO_V))
   htmls.append(get_html_from_results(results, labels, EGO_A))
+  
+  return htmls
+
+if __name__ == '__main__':
+  htmls = generate_mpc_tuning_report()
 
   if len(sys.argv) < 2:
     file_name = 'long_mpc_tune_report.html'
@@ -271,7 +276,5 @@ if __name__ == '__main__':
 
   with open(file_name, 'w') as f:
     f.write(markdown.markdown('# MPC longitudinal tuning report'))
-
-  with open(file_name, 'a') as f:
     for html in htmls:
       f.write(html)
