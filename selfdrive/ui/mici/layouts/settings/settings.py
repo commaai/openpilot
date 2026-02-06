@@ -59,7 +59,8 @@ class SettingsLayout(NavWidget):
     ], snap_items=False)
 
     # Set up back navigation
-    self.set_back_callback(self.close_settings)
+    # self.set_back_callback(self.close_settings)
+    self.set_back_callback(gui_app.pop_widget)
     self.set_back_enabled(lambda: self._current_panel is None)
 
     self._panels = {
@@ -95,6 +96,7 @@ class SettingsLayout(NavWidget):
       self._draw_current_panel()
     else:
       self._scroller.render(rect)
+    return -1
 
   def _draw_current_panel(self):
     panel = self._panels[self._current_panel]
@@ -109,5 +111,6 @@ class SettingsLayout(NavWidget):
         self._panels[self._current_panel].instance.show_event()
 
   def close_settings(self):
-    if self._close_callback:
-      self._close_callback()
+    gui_app.pop_widget()
+    # if self._close_callback:
+    #   self._close_callback()

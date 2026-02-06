@@ -60,6 +60,10 @@ class Widget(abc.ABC):
 
   def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     self._enabled = enabled
+    if hasattr(self, '_scroller'):
+      self._scroller.set_enabled(enabled)
+    elif hasattr(self, '_scroll_panel'):
+      self._scroll_panel.set_enabled(enabled)
 
   @property
   def is_visible(self) -> bool:
@@ -362,6 +366,7 @@ class NavWidget(Widget, abc.ABC):
     self.set_position(self._rect.x, new_y)
 
   def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
+    rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height + 20), rl.BLACK)
     ret = super().render(rect)
 
     if self.back_enabled:
@@ -371,9 +376,9 @@ class NavWidget(Widget, abc.ABC):
       else:
         self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
-      # draw black above widget when dismissing
-      if self._rect.y > 0:
-        rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
+      # # draw black above widget when dismissing
+      # if self._rect.y > 0:
+      #   rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
 
       self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
       self._nav_bar.render()

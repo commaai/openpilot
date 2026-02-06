@@ -138,7 +138,10 @@ class MiciMainLayout(Widget):
         self._scroll_to(self._home_layout)
 
   def _on_settings_clicked(self):
-    self._set_mode(MainState.SETTINGS)
+    # print('on settings clicked')
+    gui_app.push_widget(self._settings_layout)
+    # gui_app.set_modal_overlay(self._settings_layout)
+    # self._set_mode(MainState.SETTINGS)
 
   def _on_settings_closed(self):
     self._set_mode(MainState.MAIN)

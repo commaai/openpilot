@@ -12,7 +12,7 @@ import subprocess
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
@@ -118,6 +118,11 @@ def font_fallback(font: rl.Font) -> rl.Font:
 class ModalOverlay:
   overlay: object = None
   callback: Callable | None = None
+
+
+@dataclass
+class NavStack:
+  widgets: list[object] = field(default_factory=list)
 
 
 class MousePos(NamedTuple):
@@ -226,6 +231,7 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._modal_overlay = ModalOverlay()
+    self._nav_stack = NavStack()
     self._modal_overlay_shown = False
     self._modal_overlay_tick: Callable[[], None] | None = None
 
@@ -369,6 +375,30 @@ class GuiApplication:
         continue
       except Exception:
         break
+
+  def push_widget(self, widget):
+    # disable previous widget to prevent input processing, but keep rendering for smooth transitions
+    if len(self._nav_stack.widgets) > 0:
+      prev_widget = self._nav_stack.widgets[-1]
+      print('Disabling and hide_event for', prev_widget.__class__.__name__)
+      prev_widget.hide_event()
+      prev_widget.set_enabled(False)
+
+    print('Pushing and show_event for', widget.__class__.__name__)
+    self._nav_stack.widgets.append(widget)
+    widget.show_event()
+
+  def pop_widget(self):
+    # reenable previous widget if exists and show event to allow it to update state if needed (e.g. refresh after settings change)
+    if len(self._nav_stack.widgets) > 1:
+      prev_widget = self._nav_stack.widgets[-2]
+      print('Re-enabling and show_event for', prev_widget.__class__.__name__)
+      prev_widget.show_event()
+      prev_widget.set_enabled(True)
+    if len(self._nav_stack.widgets) > 1:
+      print('Popping and hide_event for', self._nav_stack.widgets[-1].__class__.__name__)
+      widget = self._nav_stack.widgets.pop()
+      widget.hide_event()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:
@@ -525,14 +555,21 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        # Handle modal overlay rendering and input processing
-        if self._handle_modal_overlay():
-          # Allow a Widget to still run a function while overlay is shown
-          if self._modal_overlay_tick is not None:
-            self._modal_overlay_tick()
-          yield False
-        else:
-          yield True
+        if len(self._nav_stack.widgets) > 1:
+          self._nav_stack.widgets[-2].render(rl.Rectangle(0, 0, self.width, self.height))
+          rl.draw_rectangle(0, 0, self.width, self.height, rl.Color(0, 0, 0, 150))
+
+        if len(self._nav_stack.widgets) > 0:
+          self._nav_stack.widgets[-1].render(rl.Rectangle(0, 0, self.width, self.height))
+
+        # # Handle modal overlay rendering and input processing
+        # if self._handle_modal_overlay():
+        #   # Allow a Widget to still run a function while overlay is shown
+        #   if self._modal_overlay_tick is not None:
+        #     self._modal_overlay_tick()
+        #   yield False
+        # else:
+        #   yield True
 
         if self._render_texture:
           rl.end_texture_mode()
