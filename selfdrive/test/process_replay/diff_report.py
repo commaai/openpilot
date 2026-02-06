@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 
-from opendbc.car.tests.car_diff import format_diff as format_car_diff
+from opendbc.car.tests.car_diff import format_diff, format_numeric_diffs
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
 from openpilot.selfdrive.test.process_replay.process_replay import PROC_REPLAY_DIR
 
@@ -47,10 +47,12 @@ def diff_process(cfg, ref_msgs, new_msgs):
 
 
 def diff_format(diffs, ref, new, field):
+  if any(part.isdigit() for part in field.split(".")):
+    return format_numeric_diffs(diffs)
   msg_type = field.split(".")[0]
   ref_ts = [(m.logMonoTime, MsgWrap(m)) for m in ref.get(msg_type, [])]
   new_wrapped = [MsgWrap(m) for m in new.get(msg_type, [])]
-  return format_car_diff(diffs, ref_ts, new_wrapped, field)
+  return format_diff(diffs, ref_ts, new_wrapped, field)
 
 
 def diff_report(replay_diffs, segments):
