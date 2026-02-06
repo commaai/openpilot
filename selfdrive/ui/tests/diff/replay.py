@@ -84,23 +84,20 @@ def run_replay():
 
   if not HEADLESS:
     rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)
-  gui_app.init_window("ui diff test", fps=FPS)
+  gui_app.init_window("ui diff test", fps=FPS, new_modal=True)
   main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
   frame = 0
   script_index = 0
 
-  for should_render in gui_app.render():
+  for _ in gui_app.render():
     while script_index < len(SCRIPT) and SCRIPT[script_index][0] == frame:
       _, event = SCRIPT[script_index]
       handle_event(event)
       script_index += 1
 
     ui_state.update()
-
-    if should_render:
-      main_layout.render()
 
     frame += 1
 
