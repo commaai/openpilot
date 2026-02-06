@@ -731,7 +731,7 @@ class Setup(Widget):
 
 def main():
   try:
-    gui_app.init_window("Setup")
+    gui_app.init_window("Setup", old_modal=False)
     setup = Setup()
     gui_app.push_widget(setup)
     for should_render in gui_app.render():

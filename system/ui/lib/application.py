@@ -220,7 +220,7 @@ class GuiApplication:
     self._scaled_height += self._scaled_height % 2
 
     # TODO: move BIG ui over and deprecate
-    self._old_modal = False
+    self._old_modal = True
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
     self._ffmpeg_proc: subprocess.Popen | None = None
@@ -269,7 +269,7 @@ class GuiApplication:
   def request_close(self):
     self._window_close_requested = True
 
-  def init_window(self, title: str, fps: int = _DEFAULT_FPS, old_modal: bool = False):
+  def init_window(self, title: str, fps: int = _DEFAULT_FPS, old_modal: bool = True):
     with self._startup_profile_context():
       def _close(sig, frame):
         self.close()
