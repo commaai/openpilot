@@ -355,6 +355,7 @@ class DeviceLayoutMici(NavWidget):
     if not self._fcc_dialog:
       self._fcc_dialog = MiciFccModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/mici_fcc.html"))
     # gui_app.set_modal_overlay(self._fcc_dialog, callback=setattr(self, '_fcc_dialog', None))
+    # TODO: can we keep it around?
     gui_app.push_widget(self._fcc_dialog)
 
   def _offroad_transition(self):
@@ -363,6 +364,7 @@ class DeviceLayoutMici(NavWidget):
   def _show_driver_camera(self):
     if not self._driver_camera:
       self._driver_camera = DriverCameraDialog()
+    # TODO: can we keep it around?
     # gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
     gui_app.push_widget(self._driver_camera)
 
@@ -374,6 +376,7 @@ class DeviceLayoutMici(NavWidget):
 
       self._training_guide = TrainingGuide(completed_callback=completed_callback)
     # TODO: callbacks. do we need them?
+    # TODO: can we keep it around?
     # gui_app.set_modal_overlay(self._training_guide, callback=lambda result: setattr(self, '_training_guide', None))
     gui_app.push_widget(self._training_guide)
 
