@@ -582,12 +582,10 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
 
         if self._new_modal:
-          if len(self._nav_stack.widgets) > 1:
-            self._nav_stack.widgets[-2].render(rl.Rectangle(0, 0, self.width, self.height))
-            rl.draw_rectangle(0, 0, self.width, self.height, rl.Color(0, 0, 0, 150))
-
-          if len(self._nav_stack.widgets) > 0:
-            self._nav_stack.widgets[-1].render(rl.Rectangle(0, 0, self.width, self.height))
+          # Only render top two
+          for widget in self._nav_stack.widgets[-2:]:
+            # TODO: need scaled sizes?
+            widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
           print('widget stack', len(self._nav_stack.widgets), [w.__class__.__name__ for w in self._nav_stack.widgets])
 
