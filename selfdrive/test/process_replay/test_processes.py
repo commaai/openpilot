@@ -219,8 +219,8 @@ if __name__ == "__main__":
 
     try:
       diff_report(diffs, segments)
-    except Exception:
-      print(f"failed to generate diff report:\n{traceback.format_exc()}")
+    except Exception as e:
+      print(f"failed to generate diff report: {e}")
 
     if failed:
       print("TEST FAILED")
