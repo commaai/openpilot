@@ -209,7 +209,8 @@ class NetworkInfoPage(NavWidget):
     self._subtitle = UnifiedLabel("", 36, FontWeight.ROMAN, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                   alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
-    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
+    # self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
+    self.set_back_callback(gui_app.pop_widget)
 
     # State
     self._network: Network | None = None
@@ -227,7 +228,8 @@ class NetworkInfoPage(NavWidget):
         break
     else:
       # network disappeared, close page
-      gui_app.set_modal_overlay(None)
+      # gui_app.set_modal_overlay(None)
+      gui_app.pop_widget()
 
   def _update_state(self):
     super()._update_state()
@@ -356,7 +358,8 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _open_network_manage_page(self, result=None):
     self._network_info_page.update_networks(self._networks)
-    gui_app.set_modal_overlay(self._network_info_page)
+    # gui_app.set_modal_overlay(self._network_info_page)
+    gui_app.push_widget(self._network_info_page)
 
   def _forget_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -429,7 +432,8 @@ class WifiUIMici(BigMultiOptionDialog):
     dlg = BigInputDialog(hint, "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
     # go back to the manage network page
-    gui_app.set_modal_overlay(dlg, self._open_network_manage_page)
+    # gui_app.set_modal_overlay(dlg, self._open_network_manage_page)
+    gui_app.push_widget(dlg)
 
   def _on_activated(self):
     self._connecting = None

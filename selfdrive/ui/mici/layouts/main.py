@@ -26,7 +26,7 @@ class MiciMainLayout(Widget):
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
-    self._current_mode: MainState | None = None
+    # self._current_mode: MainState | None = None
     self._prev_onroad = False
     self._prev_standstill = False
     self._onroad_time_delay: float | None = None
@@ -78,8 +78,8 @@ class MiciMainLayout(Widget):
 
   def _render(self, _):
     # Initial show event
-    if self._current_mode is None:
-      self._set_mode(MainState.MAIN)
+    # if self._current_mode is None:
+    #   self._set_mode(MainState.MAIN)
 
     if not self._setup:
       if self._alerts_layout.active_alerts() > 0:
@@ -89,20 +89,20 @@ class MiciMainLayout(Widget):
       self._setup = True
 
     # Render
-    if self._current_mode == MainState.MAIN:
-      self._scroller.render(self._rect)
+    # if self._current_mode == MainState.MAIN:
+    self._scroller.render(self._rect)
 
-    elif self._current_mode == MainState.SETTINGS:
-      self._settings_layout.render(self._rect)
+    # elif self._current_mode == MainState.SETTINGS:
+    #   self._settings_layout.render(self._rect)
 
     self._handle_transitions()
 
-  def _set_mode(self, mode: MainState):
-    if mode != self._current_mode:
-      if self._current_mode is not None:
-        self._layouts[self._current_mode].hide_event()
-      self._layouts[mode].show_event()
-      self._current_mode = mode
+  # def _set_mode(self, mode: MainState):
+  #   if mode != self._current_mode:
+  #     if self._current_mode is not None:
+  #       self._layouts[self._current_mode].hide_event()
+  #     self._layouts[mode].show_event()
+  #     self._current_mode = mode
 
   def _handle_transitions(self):
     if ui_state.started != self._prev_onroad:
@@ -120,21 +120,25 @@ class MiciMainLayout(Widget):
 
     CS = ui_state.sm["carState"]
     if not CS.standstill and self._prev_standstill:
-      self._set_mode(MainState.MAIN)
+      # self._set_mode(MainState.MAIN)
+      gui_app.pop_widget_to(self)
       self._scroll_to(self._onroad_layout)
     self._prev_standstill = CS.standstill
 
   def _set_mode_for_started(self, onroad_transition: bool = False):
+    print('_set_mode_for_started', onroad_transition)
     if ui_state.started:
       CS = ui_state.sm["carState"]
       # Only go onroad if car starts or is not at a standstill
       if not CS.standstill or onroad_transition:
-        self._set_mode(MainState.MAIN)
+        # self._set_mode(MainState.MAIN)
+        gui_app.pop_widget_to(self)
         self._scroll_to(self._onroad_layout)
     else:
       # Stay in settings if car turns off while in settings
       if not onroad_transition or self._current_mode != MainState.SETTINGS:
-        self._set_mode(MainState.MAIN)
+        # self._set_mode(MainState.MAIN)
+        gui_app.pop_widget_to(self)
         self._scroll_to(self._home_layout)
 
   def _on_settings_clicked(self):
