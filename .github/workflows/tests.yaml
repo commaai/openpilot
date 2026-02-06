@@ -197,6 +197,9 @@ jobs:
       id: print-diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
+    - name: Print diff report
+      if: always()
+      run: cat selfdrive/test/process_replay/diff_report.txt
     - uses: actions/upload-artifact@v6
       if: always()
       continue-on-error: true
