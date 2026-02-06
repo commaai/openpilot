@@ -115,8 +115,8 @@ def generate_mpc_tuning_report():
   speed = np.int64(10)
   duration = float(30)
   for oscil in np.arange(0, 10, 1):
-    t = DT_MDL * np.arange(int(30 / DT_MDL))
-    lead_speeds = speed + oscil * np.sin(2 * np.pi / 5 * t)
+    bps = DT_MDL * np.arange(int(30 / DT_MDL))
+    lead_speeds = speed + oscil * np.sin(2 * np.pi / 5 * bps)
     man = Maneuver(
       '',
       duration=duration,
@@ -124,7 +124,7 @@ def generate_mpc_tuning_report():
       lead_relevancy=True,
       initial_distance_lead=desired_follow_distance(speed, speed),
       speed_lead_values=lead_speeds,
-      breakpoints=t,
+      breakpoints=bps,
     )
     valid, results[oscil] = man.evaluate()
     labels.append(f'{oscil} m/s oscilliation size')
