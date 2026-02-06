@@ -3,12 +3,14 @@ import logging
 import queue
 import threading
 import time
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
 import numpy as np
 
 from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.tools.lib.framereader import FrameReader
 
 log = logging.getLogger("replay")
@@ -16,40 +18,18 @@ log = logging.getLogger("replay")
 BUFFER_COUNT = 40
 
 
-def get_nv12_info(width: int, height: int) -> tuple[int, int, int]:
-  """Calculate NV12 buffer parameters matching C++ VENUS macros."""
-  # VENUS_Y_STRIDE for NV12: align to 128
-  nv12_width = (width + 127) & ~127
-  # VENUS_Y_SCANLINES for NV12: align to 32
-  nv12_height = (height + 31) & ~31
-  # Buffer size from v4l2_format (matches C++ implementation)
-  nv12_buffer_size = 2346 * nv12_width
-  return nv12_width, nv12_height, nv12_buffer_size
-
-
-def repack_nv12_to_venus(yuv: np.ndarray, width: int, height: int, stride: int) -> np.ndarray:
-  """Repack NV12 data from unpadded to VENUS-aligned stride.
-
-  FrameReader returns NV12 with original width as stride.
-  VisionIPC expects VENUS-aligned stride (128-byte aligned).
-  """
+def repack_nv12_to_venus(yuv: np.ndarray, width: int, height: int, stride: int, y_scanlines: int, uv_scanlines: int, out: np.ndarray) -> None:
   y_plane_size = width * height
 
-  # Reshape into planes
-  y_plane = yuv[:y_plane_size].reshape(height, width)
-  uv_plane = yuv[y_plane_size:].reshape(height // 2, width)
+  y_src = yuv[:y_plane_size].reshape(height, width)
+  uv_src = yuv[y_plane_size:].reshape(height // 2, width)
 
-  # Calculate VENUS-aligned scanlines
-  y_scanlines = (height + 31) & ~31
-  uv_scanlines = (height // 2 + 31) & ~31
+  y_bytes = stride * y_scanlines
+  y_dst = out[:y_bytes].reshape(y_scanlines, stride)
+  uv_dst = out[y_bytes : y_bytes + stride * uv_scanlines].reshape(uv_scanlines, stride)
 
-  # Create padded planes with VENUS stride using numpy pad
-  # Pad width: (0 padding before, stride-width padding after) for axis 1
-  y_padded = np.pad(y_plane, ((0, y_scanlines - height), (0, stride - width)), mode='constant')
-  uv_padded = np.pad(uv_plane, ((0, uv_scanlines - height // 2), (0, stride - width)), mode='constant')
-
-  # Concatenate and flatten
-  return np.concatenate([y_padded.ravel(), uv_padded.ravel()])
+  y_dst[:height, :width] = y_src
+  uv_dst[: height // 2, :width] = uv_src
 
 
 class CameraType(Enum):
@@ -72,10 +52,21 @@ class Camera:
     self.width = 0
     self.height = 0
     self.nv12_stride = 0  # VENUS-aligned stride
+    self.y_scanlines = 0
+    self.uv_scanlines = 0
     self.nv12_buffer_size = 0  # Padded buffer size for VisionIPC
+    self.repack_buffer: Optional[np.ndarray] = None
     self.thread: Optional[threading.Thread] = None
     self.queue: queue.Queue = queue.Queue()
     self.prefetch_up_to: int = -1  # Highest frame index we've prefetched
+
+
+@dataclass(slots=True)
+class FrameRequest:
+  local_frame_idx: int
+  frame_id: int
+  timestamp_sof: int
+  timestamp_eof: int
 
 
 class CameraServer:
@@ -107,28 +98,25 @@ class CameraServer:
         cam.thread.join()
 
   def _start_vipc_server(self) -> None:
-    self._vipc_server = VisionIpcServer("camerad")
+    server = VisionIpcServer("camerad")
+    self._vipc_server = server
 
     for cam in self._cameras.values():
       if cam.width > 0 and cam.height > 0:
-        nv12_width, nv12_height, nv12_buffer_size = get_nv12_info(cam.width, cam.height)
+        nv12_width, nv12_height, uv_scanlines, nv12_buffer_size = get_nv12_info(cam.width, cam.height)
         cam.nv12_stride = nv12_width
+        cam.y_scanlines = nv12_height
+        cam.uv_scanlines = uv_scanlines
         cam.nv12_buffer_size = nv12_buffer_size
+        cam.repack_buffer = np.zeros(nv12_buffer_size, dtype=np.uint8)
         log.info(f"camera[{cam.type.name}] frame size {cam.width}x{cam.height}, stride {nv12_width}, buffer {nv12_buffer_size}")
-        self._vipc_server.create_buffers_with_sizes(
-          cam.stream_type, BUFFER_COUNT, cam.width, cam.height,
-          nv12_buffer_size, nv12_width, nv12_width * nv12_height
-        )
+        server.create_buffers_with_sizes(cam.stream_type, BUFFER_COUNT, cam.width, cam.height, nv12_buffer_size, nv12_width, nv12_width * nv12_height)
 
         if cam.thread is None or not cam.thread.is_alive():
-          cam.thread = threading.Thread(
-            target=self._camera_thread,
-            args=(cam,),
-            daemon=True
-          )
+          cam.thread = threading.Thread(target=self._camera_thread, args=(cam,), daemon=True)
           cam.thread.start()
 
-    self._vipc_server.start_listener()
+    server.start_listener()
 
   def _camera_thread(self, cam: Camera) -> None:
     current_fr: Optional[FrameReader] = None
@@ -149,17 +137,12 @@ class CameraServer:
       if item is None:  # Termination signal
         break
 
-      fr, event = item
+      fr, req = item
       current_fr = fr
 
       try:
-        # Get encode index from the event
-        eidx = event.roadEncodeIdx if cam.type == CameraType.ROAD else \
-               event.driverEncodeIdx if cam.type == CameraType.DRIVER else \
-               event.wideRoadEncodeIdx
-
-        local_frame_idx = eidx.segmentId  # segmentId is actually the local frame index within segment
-        frame_id = eidx.frameId
+        local_frame_idx = req.local_frame_idx
+        frame_id = req.frame_id
 
         # Update prefetch target if we've caught up
         if cam.prefetch_up_to < local_frame_idx:
@@ -168,16 +151,22 @@ class CameraServer:
         # Get the frame (should be cached from prefetch)
         yuv = self._get_frame(fr, local_frame_idx)
         if yuv is not None:
-          # Repack from unpadded NV12 to VENUS-aligned stride
-          yuv_venus = repack_nv12_to_venus(yuv, cam.width, cam.height, cam.nv12_stride)
-          yuv_bytes = yuv_venus.tobytes()
-          # Pad to match the full buffer size expected by VisionIPC
-          if len(yuv_bytes) < cam.nv12_buffer_size:
-            yuv_bytes = yuv_bytes + bytes(cam.nv12_buffer_size - len(yuv_bytes))
+          if cam.repack_buffer is None:
+            cam.repack_buffer = np.zeros(cam.nv12_buffer_size, dtype=np.uint8)
 
-          timestamp_sof = eidx.timestampSof
-          timestamp_eof = eidx.timestampEof
-          self._vipc_server.send(cam.stream_type, yuv_bytes, frame_id, timestamp_sof, timestamp_eof)
+          repack_nv12_to_venus(
+            yuv,
+            cam.width,
+            cam.height,
+            cam.nv12_stride,
+            cam.y_scanlines,
+            cam.uv_scanlines,
+            cam.repack_buffer,
+          )
+
+          server = self._vipc_server
+          if server is not None:
+            server.send(cam.stream_type, cam.repack_buffer, frame_id, req.timestamp_sof, req.timestamp_eof)
 
         # Aggressively prefetch if we're not far enough ahead
         # This ensures we decode the next GOP before we need it
@@ -201,7 +190,7 @@ class CameraServer:
       log.warning(f"Failed to decode frame {local_idx}: {e}")
     return None
 
-  def push_frame(self, cam_type: CameraType, fr: FrameReader, event) -> None:
+  def push_frame(self, cam_type: CameraType, fr: FrameReader, local_frame_idx: int, frame_id: int, timestamp_sof: int, timestamp_eof: int) -> None:
     cam = self._cameras[cam_type]
 
     # Check if frame size changed
@@ -213,7 +202,17 @@ class CameraServer:
 
     with self._publishing_lock:
       self._publishing += 1
-    cam.queue.put((fr, event))
+    cam.queue.put(
+      (
+        fr,
+        FrameRequest(
+          local_frame_idx=local_frame_idx,
+          frame_id=frame_id,
+          timestamp_sof=timestamp_sof,
+          timestamp_eof=timestamp_eof,
+        ),
+      )
+    )
 
   def wait_for_sent(self) -> None:
     while True:

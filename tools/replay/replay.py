@@ -5,12 +5,14 @@ import resource
 import sys
 import threading
 import time
+import bisect
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional, cast
 
 import cereal.messaging as messaging
+from cereal import log as capnp_log
 from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 
@@ -24,6 +26,7 @@ log = logging.getLogger("replay")
 @dataclass
 class ReplayStats:
   """Tracks timing statistics for playback observability."""
+
   time_buffer_ns: int = 0  # Current time_diff (positive = ahead of schedule)
   _lag_events: deque = field(default_factory=deque)  # (timestamp, lag_ns)
   _lag_threshold_ns: int = -10_000_000  # -10ms
@@ -59,18 +62,19 @@ class ReplayStats:
 @dataclass
 class BenchmarkStats:
   """Tracks benchmark timeline events."""
+
   process_start_ts: int = 0
   timeline: list = field(default_factory=list)  # [(timestamp_ns, description)]
 
   def record(self, description: str) -> None:
     self.timeline.append((time.monotonic_ns(), description))
 
+
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 
 class Replay:
-  def __init__(self, route: str, allow: Optional[list[str]] = None, block: Optional[list[str]] = None,
-               sm=None, flags: int = 0, data_dir: str = ""):
+  def __init__(self, route: str, allow: Optional[list[str]] = None, block: Optional[list[str]] = None, sm=None, flags: int = 0, data_dir: str = ""):
     self._sm = sm
     self._flags = flags
     self._seg_mgr = SegmentManager(route, flags, data_dir)
@@ -88,6 +92,7 @@ class Replay:
 
     self._timeline = Timeline()
     self._camera_server: Optional[CameraServer] = None
+    self._warm_cache_thread: Optional[threading.Thread] = None
 
     # Stream thread state
     self._stream_thread: Optional[threading.Thread] = None
@@ -236,6 +241,17 @@ class Replay:
     if not self._seg_mgr.load():
       return False
 
+    # Make fingerprint/details available immediately after route load
+    initial_car_params = getattr(self._seg_mgr, "initial_car_params", None)
+    if initial_car_params is not None:
+      self._car_fingerprint, car_params_bytes = initial_car_params
+      try:
+        params = Params()
+        params.put("CarParams", car_params_bytes)
+        params.put("CarParamsPersistent", car_params_bytes)
+      except Exception as e:
+        log.warning(f"failed to write initial CarParams: {e}")
+
     segments = list(self._seg_mgr._segments.keys())
     if segments:
       self._min_seconds = min(segments) * 60
@@ -250,10 +266,12 @@ class Replay:
 
   def pause(self, pause: bool) -> None:
     if self._user_paused != pause:
+
       def update():
         log.info(f"{'paused...' if pause else 'resuming'} at {self.current_seconds:.2f} s")
         self._user_paused = pause
         return not pause
+
       self._interrupt_stream(update)
 
   def seek_to_flag(self, flag: FindFlag) -> None:
@@ -330,18 +348,20 @@ class Replay:
     self._route_start_ts = events[0].logMonoTime
     self._cur_mono_time = self._route_start_ts - 1
 
-    # Write CarParams
-    for evt in events:
-      if evt.which() == 'carParams':
-        self._car_fingerprint = evt.carParams.carFingerprint
-        try:
-          params = Params()
-          car_params_bytes = evt.carParams.as_builder().to_bytes()
-          params.put("CarParams", car_params_bytes)
-          params.put("CarParamsPersistent", car_params_bytes)
-        except Exception as e:
-          log.warning(f"failed to write CarParams: {e}")
-        break
+    # Write CarParams if not already loaded during route load
+    if not self._car_fingerprint:
+      for evt in events:
+        if evt.which_name == 'carParams':
+          try:
+            with capnp_log.Event.from_bytes(evt.msg_bytes) as car_evt:
+              self._car_fingerprint = car_evt.carParams.carFingerprint
+              params = Params()
+              car_params_bytes = car_evt.carParams.as_builder().to_bytes()
+              params.put("CarParams", car_params_bytes)
+              params.put("CarParamsPersistent", car_params_bytes)
+          except Exception as e:
+            log.warning(f"failed to write CarParams: {e}")
+          break
 
     # Start camera server
     if not self.has_flag(ReplayFlags.NO_VIPC):
@@ -352,16 +372,26 @@ class Replay:
           camera_sizes[cam_type] = (fr.w, fr.h)
       if camera_sizes:
         self._camera_server = CameraServer(camera_sizes)
-        # Warm the cache before playback to prevent initial stutter
-        for cam_name in segment.frame_readers:
-          self._camera_server.warm_cache(segment.frame_readers[cam_name])
+
+        # Warm cache asynchronously to reduce startup latency
+        if not self.has_flag(ReplayFlags.BENCHMARK):
+          readers = [segment.frame_readers[name] for name in segment.frame_readers]
+
+          def warm_cache_worker() -> None:
+            camera_server = self._camera_server
+            if camera_server is None:
+              return
+            for fr in readers:
+              try:
+                camera_server.warm_cache(fr)
+              except Exception:
+                log.debug("failed warming camera cache", exc_info=True)
+
+          self._warm_cache_thread = threading.Thread(target=warm_cache_worker, daemon=True)
+          self._warm_cache_thread.start()
 
     # Initialize timeline
-    self._timeline.initialize(
-      self._seg_mgr.route,
-      self._route_start_ts,
-      lambda lr: self.on_qlog_loaded(lr) if self.on_qlog_loaded else None
-    )
+    self._timeline.initialize(self._seg_mgr.route, self._route_start_ts, lambda lr: self.on_qlog_loaded(lr) if self.on_qlog_loaded else None)
 
     if self.has_flag(ReplayFlags.BENCHMARK):
       self._benchmark_stats.record("streaming started")
@@ -383,14 +413,13 @@ class Replay:
 
         event_data = self._seg_mgr.get_event_data()
         events = event_data.events
+        event_times = getattr(event_data, "event_times", None)
+        if event_times is None or len(event_times) != len(events):
+          event_times = [evt.logMonoTime for evt in events]
 
         # Find first event after current time
-        first_idx = 0
-        for i, evt in enumerate(events):
-          if evt.logMonoTime > self._cur_mono_time:
-            first_idx = i
-            break
-        else:
+        first_idx = bisect.bisect_right(event_times, self._cur_mono_time)
+        if first_idx >= len(events):
           log.info("waiting for events...")
           self._events_ready = False
           continue
@@ -407,7 +436,7 @@ class Replay:
         self._camera_server.wait_for_sent()
 
       # Track segment completion for benchmark
-      if benchmark_mode and self._current_segment != prev_segment:
+      if benchmark_mode and self._current_segment != prev_segment and benchmark_segment_start is not None:
         elapsed_ms = (time.monotonic() - benchmark_segment_start) * 1000
         realtime_ms = 60 * 1000  # 60 seconds per segment
         multiplier = realtime_ms / elapsed_ms if elapsed_ms > 0 else 0
@@ -451,7 +480,7 @@ class Replay:
       self._cur_mono_time = evt.logMonoTime
 
       # Check if service is enabled
-      which = evt.which()
+      which = evt.which_name
       if not self._sockets.get(which, False):
         idx += 1
         continue
@@ -480,9 +509,9 @@ class Replay:
           break
 
       # Publish message or frame
-      if which in ('roadEncodeIdx', 'driverEncodeIdx', 'wideRoadEncodeIdx'):
+      if evt.eidx_segnum >= 0:
         if self._camera_server:
-          self._publish_frame(evt, which)
+          self._publish_frame(evt)
       else:
         self._publish_message(evt)
 
@@ -491,19 +520,25 @@ class Replay:
     return idx
 
   def _publish_message(self, evt) -> None:
-    if self._event_filter and self._event_filter(evt):
-      return
+    which = evt.which_name
 
-    which = evt.which()
+    if self._event_filter:
+      with capnp_log.Event.from_bytes(evt.msg_bytes) as msg:
+        if self._event_filter(msg):
+          return
+
     if not self._sm:
       try:
-        msg_bytes = evt.as_builder().to_bytes()
-        self._pm.send(which, msg_bytes)
+        pm = self._pm
+        if pm is None:
+          return
+        pm.send(which, evt.msg_bytes)
       except Exception as e:
         log.warning(f"stop publishing {which} due to error: {e}")
         self._sockets[which] = False
 
-  def _publish_frame(self, evt, which: str) -> None:
+  def _publish_frame(self, evt) -> None:
+    which = evt.which_name
     cam_type = {
       'roadEncodeIdx': CameraType.ROAD,
       'driverEncodeIdx': CameraType.DRIVER,
@@ -519,23 +554,33 @@ class Replay:
     if cam_type == CameraType.WIDE_ROAD and not self.has_flag(ReplayFlags.ECAM):
       return
 
-    # Get frame reader for this segment
-    # Note: eidx.segmentId is the local frame index, not the segment number
-    # The segment number comes from the current playback position
     event_data = self._seg_mgr.get_event_data()
 
-    if self._current_segment not in event_data.segments:
+    if evt.eidx_segnum not in event_data.segments:
       return
 
-    seg_data = event_data.segments[self._current_segment]
+    seg_data = event_data.segments[evt.eidx_segnum]
     cam_name = {CameraType.ROAD: 'road', CameraType.DRIVER: 'driver', CameraType.WIDE_ROAD: 'wide'}[cam_type]
     if cam_name not in seg_data.frame_readers:
       return
 
     fr = seg_data.frame_readers[cam_name]
+    camera_server = self._camera_server
+    if camera_server is None:
+      return
+
+    camera_server = cast(Any, camera_server)
+
     if self._speed > 1.0:
-      self._camera_server.wait_for_sent()
-    self._camera_server.push_frame(cam_type, fr, evt)
+      camera_server.wait_for_sent()
+    camera_server.push_frame(
+      cam_type,
+      fr,
+      evt.frame_segment_id,
+      evt.frame_id,
+      evt.timestamp_sof,
+      evt.timestamp_eof,
+    )
 
 
 def main():
@@ -599,16 +644,11 @@ def main():
   # Set prefix if provided
   if args.prefix:
     import os
+
     os.environ['OPENPILOT_PREFIX'] = args.prefix
 
   # Create replay instance
-  replay = Replay(
-    route=route,
-    allow=allow,
-    block=block,
-    flags=flags,
-    data_dir=args.data_dir
-  )
+  replay = Replay(route=route, allow=allow, block=block, flags=flags, data_dir=args.data_dir)
 
   if args.buffer > 0:
     replay.segment_cache_limit = args.buffer
@@ -625,9 +665,10 @@ def main():
 
     stats = replay.benchmark_stats
     process_start = stats.process_start_ts
+    route_name = replay.route.name if replay.route is not None else "<unknown>"
 
     print("\n===== REPLAY BENCHMARK RESULTS =====")
-    print(f"Route: {replay.route.name}")
+    print(f"Route: {route_name}")
     print("\nTIMELINE:")
     print("  t=0 ms        process start")
     for ts, event in stats.timeline:
@@ -649,7 +690,8 @@ def main():
     return 0
 
   from openpilot.tools.replay.consoleui import ConsoleUI
-  console_ui = ConsoleUI(replay)
+
+  console_ui = ConsoleUI(replay)  # type: ignore[arg-type]
   return console_ui.exec()
 
 
