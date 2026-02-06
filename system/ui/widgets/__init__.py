@@ -195,7 +195,7 @@ NAV_BAR_WIDTH = 205
 NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = 50 + NAV_BAR_MARGIN + NAV_BAR_HEIGHT  # px extra to push down when dismissing
-DISMISS_TIME_SECONDS = 1.5
+DISMISS_TIME_SECONDS = 2.0
 
 
 class NavBar(Widget):
@@ -371,12 +371,12 @@ class NavWidget(Widget, abc.ABC):
       else:
         self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
-      self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
-      self._nav_bar.render()
-
       # draw black above widget when dismissing
       if self._rect.y > 0:
         rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
+
+      self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
+      self._nav_bar.render()
 
     return ret
 
