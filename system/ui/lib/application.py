@@ -403,6 +403,7 @@ class GuiApplication:
     print()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    print('WARNING! set_modal_overlay is DEPRECATED, but was attempted to use to show', overlay.__class__.__name__)
     if self._modal_overlay.overlay is not None:
       if hasattr(self._modal_overlay.overlay, 'hide_event'):
         self._modal_overlay.overlay.hide_event()

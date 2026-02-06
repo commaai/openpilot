@@ -13,21 +13,21 @@ from openpilot.system.ui.widgets import NavWidget
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType
 
 
-class NetworkPanelType(IntEnum):
-  NONE = 0
-  WIFI = 1
+# class NetworkPanelType(IntEnum):
+#   NONE = 0
+#   WIFI = 1
 
 
 class NetworkLayoutMici(NavWidget):
-  def __init__(self, back_callback: Callable):
+  def __init__(self):
     super().__init__()
 
-    self._current_panel = NetworkPanelType.WIFI
-    self.set_back_enabled(lambda: self._current_panel == NetworkPanelType.NONE)
+    # self._current_panel = NetworkPanelType.WIFI
+    # self.set_back_enabled(lambda: self._current_panel == NetworkPanelType.NONE)
 
     self._wifi_manager = WifiManager()
     self._wifi_manager.set_active(False)
-    self._wifi_ui = WifiUIMici(self._wifi_manager, back_callback=lambda: self._switch_to_panel(NetworkPanelType.NONE))
+    self._wifi_ui = WifiUIMici(self._wifi_manager)
 
     self._wifi_manager.add_callbacks(
       networks_updated=self._on_network_updated,
@@ -49,7 +49,8 @@ class NetworkLayoutMici(NavWidget):
       tethering_password = self._wifi_manager.tethering_password
       dlg = BigInputDialog("enter password...", tethering_password, minimum_length=8,
                            confirm_callback=tethering_password_callback)
-      gui_app.set_modal_overlay(dlg)
+      gui_app.push_widget(dlg)
+      # gui_app.set_modal_overlay(dlg)
 
     txt_tethering = gui_app.texture("icons_mici/settings/network/tethering.png", 64, 54)
     self._tethering_password_btn = BigButton("tethering password", "", txt_tethering)
@@ -76,7 +77,8 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 64, 47)
 
     self._wifi_button = BigButton("wi-fi", "not connected", self._wifi_slash_txt, scroll=True)
-    self._wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
+    # self._wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
+    self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
     # ******** Advanced settings ********
     # ******** Roaming toggle ********
@@ -108,7 +110,7 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_manager.update_gsm_settings(roaming_enabled, ui_state.params.get("GsmApn") or "", metered)
 
     # Set up back navigation
-    self.set_back_callback(back_callback)
+    self.set_back_callback(gui_app.pop_widget)
 
   def _update_state(self):
     super()._update_state()
@@ -122,13 +124,13 @@ class NetworkLayoutMici(NavWidget):
 
   def show_event(self):
     super().show_event()
-    self._current_panel = NetworkPanelType.NONE
-    self._wifi_ui.show_event()
+    # self._current_panel = NetworkPanelType.NONE
+    # self._wifi_ui.show_event()
     self._scroller.show_event()
 
-  def hide_event(self):
-    super().hide_event()
-    self._wifi_ui.hide_event()
+  # def hide_event(self):
+  #   super().hide_event()
+  #   self._wifi_ui.hide_event()
 
   def _toggle_roaming(self, checked: bool):
     self._wifi_manager.update_gsm_settings(checked, ui_state.params.get("GsmApn") or "", ui_state.params.get_bool("GsmMetered"))
@@ -183,15 +185,16 @@ class NetworkLayoutMici(NavWidget):
         MeteredType.NO: 'unmetered'
       }.get(self._wifi_manager.current_network_metered, 'default'))
 
-  def _switch_to_panel(self, panel_type: NetworkPanelType):
-    if panel_type == NetworkPanelType.WIFI:
-      self._wifi_ui.show_event()
-    self._current_panel = panel_type
+  # def _switch_to_panel(self, panel_type: NetworkPanelType):
+  #   if panel_type == NetworkPanelType.WIFI:
+  #     self._wifi_ui.show_event()
+  #   self._current_panel = panel_type
 
   def _render(self, rect: rl.Rectangle):
+    # TODO: make sure process_callbacks still gets called with new nav stack
     self._wifi_manager.process_callbacks()
 
-    if self._current_panel == NetworkPanelType.WIFI:
-      self._wifi_ui.render(rect)
-    else:
-      self._scroller.render(rect)
+    # if self._current_panel == NetworkPanelType.WIFI:
+    #   self._wifi_ui.render(rect)
+    # else:
+    self._scroller.render(rect)

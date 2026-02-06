@@ -266,7 +266,7 @@ class UpdateOpenpilotBigButton(BigButton):
 
 
 class DeviceLayoutMici(NavWidget):
-  def __init__(self, back_callback: Callable):
+  def __init__(self):
     super().__init__()
 
     self._fcc_dialog: HtmlModal | None = None
@@ -345,7 +345,8 @@ class DeviceLayoutMici(NavWidget):
     ], snap_items=False)
 
     # Set up back navigation
-    self.set_back_callback(back_callback)
+    # TODO: can this somehow be generic in widgets/__init__.py or application.py?
+    self.set_back_callback(gui_app.pop_widget)
 
     # Hide power off button when onroad
     ui_state.add_offroad_transition_callback(self._offroad_transition)
