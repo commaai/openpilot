@@ -113,12 +113,13 @@ def generate_mpc_tuning_report():
   name = 'Following 5s (sinusoidal) oscillating lead'
   labels = []
   speed = np.int64(10)
+  duration = float(30)
   for oscil in np.arange(0, 10, 1):
-    t = DT_MDL * np.arange(int(30) / DT_MDL)
+    t = DT_MDL * np.arange(int(30 / DT_MDL))
     lead_speeds = speed + oscil * np.sin(2 * np.pi / 5 * t)
     man = Maneuver(
       '',
-      duration=30.,
+      duration=duration,
       initial_speed=float(speed),
       lead_relevancy=True,
       initial_distance_lead=desired_follow_distance(speed, speed),
