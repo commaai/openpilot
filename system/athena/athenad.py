@@ -38,8 +38,8 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.hw import Paths
 
-
-ATHENA_HOST = 'wss://api.asius.ai' if Params().get_bool("EnableAsiusAPI") else os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
+AsiusAPIHost = Params().get("AsiusAPIHost")
+ATHENA_HOST = f'wss://{AsiusAPIHost}' if AsiusAPIHost else os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {
   22,

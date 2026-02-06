@@ -6,7 +6,9 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
 
 from openpilot.common.params import Params
-API_HOST = 'https://api.asius.ai' if Params().get_bool("EnableAsiusAPI") else os.getenv('API_HOST', 'https://api.commadotai.com')
+
+AsiusAPIHost = Params().get("AsiusAPIHost")
+API_HOST = f'https://{AsiusAPIHost}' if AsiusAPIHost else os.getenv('API_HOST', 'https://api.commadotai.com')
 
 # name: jwt signature algorithm
 KEYS = {"id_rsa": "RS256",

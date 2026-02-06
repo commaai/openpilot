@@ -27,7 +27,7 @@ class AsiusLayoutMici(NavWidget):
     )
     self._webrtc_toggle = BigCircleParamControl("asius/webrtc_short.png", "EnableWebRTC", icon_size=(82, 82), icon_offset=(0, 12))
     self._asius_api_toggle = BigCircleToggle("asius/asius_short.png", toggle_callback=self._handle_asius_api_toggle, icon_size=(82, 82), icon_offset=(0, 12))
-    self._asius_api_toggle.set_checked(self._params.get_bool("EnableAsiusAPI"))
+    self._asius_api_toggle.set_checked(bool(self._params.get("AsiusAPIHost")))
 
     self._scroller = Scroller(
       [
@@ -55,7 +55,8 @@ class AsiusLayoutMici(NavWidget):
   def _update_toggles(self):
     ui_state.update_params()
     for key, item in self._refresh_toggles:
-      item.set_checked(ui_state.params.get_bool(key))
+      state = bool(ui_state.params.get(key)) if key == "AsiusAPIHost" else ui_state.params.get_bool(key)
+      item.set_checked(state)
 
     ble_enabled = ui_state.params.get_bool("EnableBLE")
 
@@ -116,9 +117,9 @@ class AsiusLayoutMici(NavWidget):
     title = "switch to asius api" if state else "switch to comma api"
 
     def on_confirm():
-      self._params.put_bool("EnableAsiusAPI", state)
+      self._params.put("AsiusAPIHost", "api.asius.ai" if state else "")
       self._params.remove("DongleId")
       self._params.put_bool_nonblocking("DoReboot", True)
 
     dlg = BigConfirmationDialogV2(title, "icons_mici/settings/device/reboot.png", red=True, confirm_callback=on_confirm)
-    gui_app.set_modal_overlay(dlg, callback=lambda _: self._asius_api_toggle.set_checked(self._params.get_bool("EnableAsiusAPI")))
+    gui_app.set_modal_overlay(dlg, callback=lambda _: self._asius_api_toggle.set_checked(bool(self._params.get("AsiusAPIHost"))))

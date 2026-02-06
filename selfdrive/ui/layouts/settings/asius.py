@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.widgets import DialogResult
 
 DESCRIPTIONS = {
-  "EnableAsiusAPI": tr_noop("Use Asius API for Connect features. Disabling will switch to comma API. Requires reboot to re-register device."),
+  "AsiusAPIHost": tr_noop("API host for Connect features (e.g. 'api.asius.ai'). Leave empty for comma API. Requires reboot to re-register device."),
   "EnableWebRTC": tr_noop("Allow remote live streaming via Connect."),
   "EnableBLE": tr_noop("Make device discoverable via Bluetooth for local control without network."),
   "LaneTurnDesire": tr_noop("When blinker is on below 20 mph, steer in blinker direction. Useful at intersections and red lights."),
@@ -31,9 +31,9 @@ class AsiusLayout(Widget):
         DESCRIPTIONS["EnableWebRTC"],
         "network.png",
       ),
-      "EnableAsiusAPI": (
-        lambda: tr("Asius API"),
-        DESCRIPTIONS["EnableAsiusAPI"],
+      "AsiusAPIHost": (
+        lambda: tr("API Host"),
+        DESCRIPTIONS["AsiusAPIHost"],
         "../asius/asius.png",
       ),
       "LaneTurnDesire": (
@@ -47,10 +47,11 @@ class AsiusLayout(Widget):
     self._items = []
 
     for param, (title, desc, icon) in self._toggle_defs.items():
+      initial_state = bool(self._params.get(param)) if param == "AsiusAPIHost" else self._params.get_bool(param)
       toggle = toggle_item(
         title,
         desc,
-        self._params.get_bool(param),
+        initial_state,
         callback=lambda state, p=param: self._toggle_callback(state, p),
         icon=icon,
       )
@@ -80,7 +81,8 @@ class AsiusLayout(Widget):
 
   def _update_toggles(self):
     for param in self._toggle_defs:
-      self._toggles[param].action_item.set_state(self._params.get_bool(param))
+      state = bool(self._params.get(param)) if param == "AsiusAPIHost" else self._params.get_bool(param)
+      self._toggles[param].action_item.set_state(state)
 
   def _render(self, rect):
     # Poll for BLE state changes and rebuild if needed
@@ -135,7 +137,7 @@ class AsiusLayout(Widget):
     self._scroller = Scroller(self._items, line_separator=True, spacing=0)
 
   def _toggle_callback(self, state: bool, param: str):
-    if param == "EnableAsiusAPI":
+    if param == "AsiusAPIHost":
       self._handle_asius_api_toggle(state)
       return
 
@@ -176,11 +178,11 @@ class AsiusLayout(Widget):
 
     def confirm_callback(result: int):
       if result == DialogResult.CONFIRM:
-        self._params.put_bool("EnableAsiusAPI", state)
+        self._params.put("AsiusAPIHost", "api.asius.ai" if state else "")
         self._params.remove("DongleId")
         self._params.put_bool_nonblocking("DoReboot", True)
       else:
-        self._toggles["EnableAsiusAPI"].action_item.set_state(not state)
+        self._toggles["AsiusAPIHost"].action_item.set_state(not state)
 
     dlg = ConfirmDialog(msg, tr("Switch and Reboot"))
     gui_app.set_modal_overlay(dlg, callback=confirm_callback)
