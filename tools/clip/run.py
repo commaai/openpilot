@@ -238,25 +238,60 @@ def draw_text_box(rl, text, x, y, size, gui_app, font, font_scale, color=None, c
   rl.draw_text_ex(font, text, rl.Vector2(x, y), size, 0, text_color)
 
 
-def render_overlays(rl, gui_app, font, font_scale, metadata, title, start_time, frame_idx, show_metadata, show_time):
+def _wrap_text_by_delimiter(text: str, rl, font, font_size: int, font_scale: float, max_width: int, delimiter: str = ", ") -> list[str]:
+  """Wrap text by splitting on delimiter when it exceeds max_width."""
+  words = text.split(delimiter)
+  lines: list[str] = []
+  current_line: list[str] = []
+  # Build lines word by word
+  for word in words:
+    current_line.append(word)
+    check_line = delimiter.join(current_line)
+    # Check if line exceeds max width
+    if rl.measure_text_ex(font, check_line, font_size * font_scale, 0).x > max_width:
+      current_line.pop()  # Line is too long, move word to next line
+      if current_line:
+        lines.append(delimiter.join(current_line))
+      current_line = [word]
+  # Add leftover words as last line
+  if current_line:
+    lines.append(delimiter.join(current_line))
+  return lines
+
+
+def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
+  metadata_size = 16 if big else 12
+  title_size = 32 if big else 24
+  time_size = 24 if big else 16
+
+  # Time overlay
+  time_width = 0
+  if show_time:
+    t = start_time + frame_idx / FRAMERATE
+    time_text = f"{int(t) // 60:02d}:{int(t) % 60:02d}"
+    time_width = int(rl.measure_text_ex(font, time_text, time_size * font_scale, 0).x)
+    draw_text_box(rl, time_text, gui_app.width - time_width - 5, 0, time_size, gui_app, font, font_scale)
+
+  # Metadata overlay (first 5 seconds)
   if show_metadata and metadata and frame_idx < FRAMERATE * 5:
     m = metadata
     text = ", ".join([f"openpilot v{m['version']}", f"route: {m['route']}", f"car: {m['car']}", f"origin: {m['origin']}",
                       f"branch: {m['branch']}", f"commit: {m['commit']}", f"modified: {m['modified']}"])
-    # Truncate if too wide (leave 20px margin on each side)
-    max_width = gui_app.width - 40
-    while rl.measure_text_ex(font, text, 15 * font_scale, 0).x > max_width and len(text) > 20:
-      text = text[:-4] + "..."
-    draw_text_box(rl, text, 0, 8, 15, gui_app, font, font_scale, center=True)
+    # Wrap text if too wide (leave margin on each side)
+    margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
+    max_width = gui_app.width - margin
+    lines = _wrap_text_by_delimiter(text, rl, font, metadata_size, font_scale, max_width)
 
+    # Draw wrapped metadata text
+    y_offset = 6
+    for line in lines:
+      draw_text_box(rl, line, 0, y_offset, metadata_size, gui_app, font, font_scale, center=True)
+      line_height = int(rl.measure_text_ex(font, line, metadata_size * font_scale, 0).y) + 4
+      y_offset += line_height
+
+  # Title overlay
   if title:
-    draw_text_box(rl, title, 0, 60, 32, gui_app, font, font_scale, center=True)
-
-  if show_time:
-    t = start_time + frame_idx / FRAMERATE
-    time_text = f"{int(t)//60:02d}:{int(t)%60:02d}"
-    time_width = int(rl.measure_text_ex(font, time_text, 24 * font_scale, 0).x)
-    draw_text_box(rl, time_text, gui_app.width - time_width - 45, 45, 24, gui_app, font, font_scale)
+    draw_text_box(rl, title, 0, 60, title_size, gui_app, font, font_scale, center=True)
 
 
 def clip(route: Route, output: str, start: int, end: int, headless: bool = True, big: bool = False,
@@ -313,7 +348,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
         ui_state.update()
         if should_render:
           road_view.render()
-          render_overlays(rl, gui_app, font, FONT_SCALE, metadata, title, start, frame_idx, show_metadata, show_time)
+          render_overlays(rl, gui_app, font, FONT_SCALE, big, metadata, title, start, frame_idx, show_metadata, show_time)
         frame_idx += 1
         pbar.update(1)
     timer.lap("render")
