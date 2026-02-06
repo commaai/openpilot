@@ -64,7 +64,7 @@ class MiciMainLayout(Widget):
 
     gui_app.push_widget(self)
 
-    # Start onboarding if terms or training not completed
+    # Start onboarding if terms or training not completed, make sure to push after self
     self._onboarding_window = OnboardingWindow()
     if not self._onboarding_window.completed:
       # gui_app.set_modal_overlay(self._onboarding_window)
