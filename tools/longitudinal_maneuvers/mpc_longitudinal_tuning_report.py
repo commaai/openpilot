@@ -115,7 +115,7 @@ def generate_mpc_tuning_report():
   speed = np.int64(10)
   duration = float(30)
   for oscil in np.arange(0, 10, 1):
-    bps = DT_MDL * np.arange(int(30 / DT_MDL))
+    bps = DT_MDL * np.arange(int(duration / DT_MDL))
     lead_speeds = speed + oscil * np.sin(2 * np.pi / 5 * bps)
     man = Maneuver(
       '',
