@@ -66,7 +66,7 @@ def diff_report(replay_diffs, segments):
     else:
       with_diffs.append((plat, seg, proc, data))
 
-  icon = "\u26a0\ufe0f" if with_diffs else "\u2705"
+  icon = "⚠️" if with_diffs else "✅"
   lines = [
     "## Process replay diff report",
     "Replays driving segments through this PR and compares the behavior to master.",
