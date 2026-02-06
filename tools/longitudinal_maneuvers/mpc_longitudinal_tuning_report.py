@@ -3,7 +3,6 @@ import sys
 import markdown
 import numpy as np
 import matplotlib.pyplot as plt
-from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.tests.test_following_distance import desired_follow_distance
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
