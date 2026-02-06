@@ -22,7 +22,8 @@ LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
 JSON_FILE = os.path.join(LONG_MPC_DIR, "acados_ocp_long.json")
 
-SOURCES = ['lead0', 'lead1', 'cruise', 'e2e']
+LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
+MPC_SOURCES = (LongitudinalPlanSource.lead0, LongitudinalPlanSource.lead1, LongitudinalPlanSource.cruise)
 
 X_DIM = 3
 U_DIM = 1
@@ -217,7 +218,7 @@ class LongitudinalMpc:
     self.dt = dt
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
-    self.source = SOURCES[2]
+    self.source = LongitudinalPlanSource.cruise
 
   def reset(self):
     self.solver.reset()
@@ -335,7 +336,7 @@ class LongitudinalMpc:
     cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, t_follow)
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-    self.source = SOURCES[np.argmin(x_obstacles[0])]
+    self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
 
     self.yref[:,:] = 0.0
     for i in range(N):
