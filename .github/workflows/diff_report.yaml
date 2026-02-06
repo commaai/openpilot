@@ -40,6 +40,6 @@ jobs:
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: diff_report.txt
-        comment_tag: replay_diff
+        comment_tag: diff_report
         pr_number: ${{ github.event.number }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

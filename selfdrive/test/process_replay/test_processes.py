@@ -109,11 +109,11 @@ def diff_format(diffs, ref, new, field):
   return format_car_diff(diffs, ref_ts, new_wrapped, field)
 
 
-def diff_report(replay_diffs):
+def diff_report(diffs):
   seg_to_plat = {seg: plat for plat, seg in segments}
 
   with_diffs, errors, n_passed = [], [], 0
-  for seg, proc, data in replay_diffs:
+  for seg, proc, data in diffs:
     plat = seg_to_plat.get(seg, "UNKNOWN")
     if data is None:
       n_passed += 1
