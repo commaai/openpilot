@@ -50,6 +50,7 @@ class Maneuver:
       pitch = np.interp(plant.current_time, self.breakpoints, self.pitch_values)
       prob_throttle = np.interp(plant.current_time, self.breakpoints, self.prob_throttle_values)
       log = plant.step(speed_lead, prob_lead, cruise, pitch, prob_throttle)
+
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
