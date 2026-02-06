@@ -432,7 +432,7 @@ class Replay:
       last_idx = self._publish_events(events, first_idx)
 
       # Wait for camera frames to be sent
-      if self._camera_server:
+      if self._camera_server and (benchmark_mode or self._speed <= 1.0):
         self._camera_server.wait_for_sent()
 
       # Track segment completion for benchmark
@@ -502,6 +502,9 @@ class Replay:
         elif time_diff > 0:
           # Interruptible sleep
           wait_secs = time_diff / 1e9
+          if self._speed > 1.0:
+            # Avoid long stalls at high playback speeds due timestamp jitter.
+            wait_secs = min(wait_secs, 0.003)
           if self._interrupt.wait(timeout=wait_secs):
             break  # Interrupted
 
@@ -571,8 +574,6 @@ class Replay:
 
     camera_server = cast(Any, camera_server)
 
-    if self._speed > 1.0:
-      camera_server.wait_for_sent()
     camera_server.push_frame(
       cam_type,
       fr,

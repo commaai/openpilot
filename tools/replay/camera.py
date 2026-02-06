@@ -5,7 +5,7 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -119,8 +119,11 @@ class CameraServer:
     server.start_listener()
 
   def _camera_thread(self, cam: Camera) -> None:
-    current_fr: Optional[FrameReader] = None
+    current_fr: Optional[Any] = None
     prefetch_ahead = 60  # Stay 2 GOPs ahead
+    prefetch_budget = 4
+    backlog_drop_threshold = 240
+    backlog_keep = 120
 
     while not self._exit:
       # Try to get next frame request, but don't block long - we want to prefetch
@@ -129,13 +132,40 @@ class CameraServer:
       except queue.Empty:
         # No frame requested - use idle time to prefetch
         if current_fr is not None and cam.prefetch_up_to < current_fr.frame_count - 1:
-          # Prefetch next frame sequentially
-          cam.prefetch_up_to += 1
-          self._get_frame(current_fr, cam.prefetch_up_to)
+          if hasattr(current_fr, "prefetch_to"):
+            target = min(cam.prefetch_up_to + prefetch_ahead, current_fr.frame_count - 1)
+            current_fr.prefetch_to(target)
+          else:
+            # Prefetch next frame sequentially
+            cam.prefetch_up_to += 1
+            self._get_frame(current_fr, cam.prefetch_up_to)
         continue
 
       if item is None:  # Termination signal
         break
+
+      # If producer is outrunning decode, coalesce queued requests and keep latest.
+      if cam.queue.qsize() > backlog_drop_threshold:
+        latest = item
+        dropped = 0
+        while cam.queue.qsize() > backlog_keep:
+          try:
+            nxt = cam.queue.get_nowait()
+          except queue.Empty:
+            break
+          if nxt is None:
+            item = None
+            break
+          latest = nxt
+          dropped += 1
+
+        if dropped:
+          with self._publishing_lock:
+            self._publishing = max(0, self._publishing - dropped)
+
+        if item is None:
+          break
+        item = latest
 
       fr, req = item
       current_fr = fr
@@ -171,9 +201,14 @@ class CameraServer:
         # Aggressively prefetch if we're not far enough ahead
         # This ensures we decode the next GOP before we need it
         target = min(local_frame_idx + prefetch_ahead, fr.frame_count - 1)
-        while cam.prefetch_up_to < target and cam.queue.empty():
-          cam.prefetch_up_to += 1
-          self._get_frame(fr, cam.prefetch_up_to)
+        if hasattr(fr, "prefetch_to"):
+          fr.prefetch_to(target)
+        else:
+          n = 0
+          while cam.prefetch_up_to < target and n < prefetch_budget:
+            cam.prefetch_up_to += 1
+            self._get_frame(fr, cam.prefetch_up_to)
+            n += 1
 
       except Exception:
         log.exception(f"camera[{cam.type.name}] error")
@@ -181,7 +216,7 @@ class CameraServer:
       with self._publishing_lock:
         self._publishing -= 1
 
-  def _get_frame(self, fr: FrameReader, local_idx: int) -> Optional[np.ndarray]:
+  def _get_frame(self, fr: Any, local_idx: int) -> Optional[np.ndarray]:
     """Get frame from FrameReader. FrameReader has its own LRU cache."""
     try:
       if local_idx < fr.frame_count:
@@ -190,7 +225,7 @@ class CameraServer:
       log.warning(f"Failed to decode frame {local_idx}: {e}")
     return None
 
-  def push_frame(self, cam_type: CameraType, fr: FrameReader, local_frame_idx: int, frame_id: int, timestamp_sof: int, timestamp_eof: int) -> None:
+  def push_frame(self, cam_type: CameraType, fr: Any, local_frame_idx: int, frame_id: int, timestamp_sof: int, timestamp_eof: int) -> None:
     cam = self._cameras[cam_type]
 
     # Check if frame size changed
@@ -229,6 +264,10 @@ class CameraServer:
     """
     gop_size = 30
     end_frame = min(start_frame + num_gops * gop_size, fr.frame_count)
+    if hasattr(fr, "prefetch_to"):
+      getattr(fr, "prefetch_to")(max(start_frame, end_frame - 1))
+      return
+
     log.info(f"warming cache: frames {start_frame}-{end_frame}")
     for i in range(start_frame, end_frame):
       self._get_frame(fr, i)

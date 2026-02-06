@@ -16,11 +16,13 @@ from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import decompress_stream
 from openpilot.tools.lib.route import Route, Segment
+from openpilot.tools.replay.persistent_framereader import PersistentFFmpegFrameReader
 from openpilot.tools.replay.qcamera_framereader import QCameraFrameReader
 
 log = logging.getLogger("replay")
 
 MIN_SEGMENTS_CACHE = 5
+MAX_LOADS_PER_UPDATE = max(1, int(os.getenv("REPLAY_LOADS_PER_UPDATE", "1")))
 
 
 class ReplayFlags(IntFlag):
@@ -234,6 +236,26 @@ def _extract_car_params(log_path: str) -> Optional[tuple[str, bytes]]:
   return None
 
 
+def _expected_frame_count(events: list[ReplayEvent], seg_num: int, service: str) -> Optional[int]:
+  max_idx = -1
+  for evt in events:
+    if evt.which_name == service and evt.eidx_segnum == seg_num and evt.frame_segment_id >= 0:
+      if evt.frame_segment_id > max_idx:
+        max_idx = evt.frame_segment_id
+  return (max_idx + 1) if max_idx >= 0 else None
+
+
+def _start_reader_prefetch(reader, initial_frames: int = 48) -> None:
+  if not hasattr(reader, "prefetch_to"):
+    return
+  try:
+    target = min(reader.frame_count - 1, max(0, initial_frames - 1))
+    if target >= 0:
+      reader.prefetch_to(target)
+  except Exception:
+    log.debug("failed to start reader prefetch", exc_info=True)
+
+
 class SegmentManager:
   def __init__(self, route_name: str, flags: int = 0, data_dir: str = ""):
     self._flags = flags
@@ -377,6 +399,7 @@ class SegmentManager:
     forward = [n for n in seg_nums if n >= cur_seg_num]
     backward = [n for n in seg_nums if n < cur_seg_num][::-1]
     loaded_any = False
+    loaded_count = 0
 
     for seg_num in forward + backward:
       with self._lock:
@@ -393,10 +416,11 @@ class SegmentManager:
         self._needs_update = True
         self._cv.notify_all()
       loaded_any = True
+      loaded_count += 1
       log.info(f"segment {seg_num} loaded with {len(seg_data.events)} events")
 
-      # Only load one segment at a time to be responsive
-      return loaded_any
+      if loaded_count >= MAX_LOADS_PER_UPDATE:
+        return loaded_any
 
     return loaded_any
 
@@ -432,6 +456,11 @@ class SegmentManager:
     # VisionIPC expects NV12 format
     try:
       # cache_size=90 holds 3 GOPs (30 frames each) to stay ahead at 8x speed
+      use_persistent_decoder = os.getenv("REPLAY_PERSISTENT_DECODER", "1") != "0"
+      road_frame_count = _expected_frame_count(seg_data.events, seg_num, "roadEncodeIdx")
+      driver_frame_count = _expected_frame_count(seg_data.events, seg_num, "driverEncodeIdx")
+      wide_frame_count = _expected_frame_count(seg_data.events, seg_num, "wideRoadEncodeIdx")
+
       if not (self._flags & ReplayFlags.NO_VIPC):
         use_qcamera = bool(self._flags & ReplayFlags.QCAMERA)
         road_camera_path = segment.qcamera_path if (use_qcamera or not segment.camera_path) else segment.camera_path
@@ -439,14 +468,29 @@ class SegmentManager:
           road_name = os.path.basename(urlparse(road_camera_path).path)
           if road_name == "qcamera.ts":
             seg_data.frame_readers['road'] = QCameraFrameReader(road_camera_path, cache_size=90)
+          elif use_persistent_decoder:
+            seg_data.frame_readers['road'] = PersistentFFmpegFrameReader(road_camera_path, pix_fmt='nv12', cache_size=90, expected_frame_count=road_frame_count)
+            _start_reader_prefetch(seg_data.frame_readers['road'])
           else:
             seg_data.frame_readers['road'] = FrameReader(road_camera_path, pix_fmt='nv12', cache_size=90)
 
       if segment.dcamera_path and (self._flags & ReplayFlags.DCAM):
-        seg_data.frame_readers['driver'] = FrameReader(segment.dcamera_path, pix_fmt='nv12', cache_size=90)
+        if use_persistent_decoder:
+          seg_data.frame_readers['driver'] = PersistentFFmpegFrameReader(
+            segment.dcamera_path, pix_fmt='nv12', cache_size=90, expected_frame_count=driver_frame_count
+          )
+          _start_reader_prefetch(seg_data.frame_readers['driver'])
+        else:
+          seg_data.frame_readers['driver'] = FrameReader(segment.dcamera_path, pix_fmt='nv12', cache_size=90)
 
       if segment.ecamera_path and (self._flags & ReplayFlags.ECAM):
-        seg_data.frame_readers['wide'] = FrameReader(segment.ecamera_path, pix_fmt='nv12', cache_size=90)
+        if use_persistent_decoder:
+          seg_data.frame_readers['wide'] = PersistentFFmpegFrameReader(
+            segment.ecamera_path, pix_fmt='nv12', cache_size=90, expected_frame_count=wide_frame_count
+          )
+          _start_reader_prefetch(seg_data.frame_readers['wide'])
+        else:
+          seg_data.frame_readers['wide'] = FrameReader(segment.ecamera_path, pix_fmt='nv12', cache_size=90)
 
     except Exception as e:
       log.warning(f"failed to load frames for segment {seg_num}: {e}")
