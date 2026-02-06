@@ -426,15 +426,9 @@ class FailedPage(Widget):
     ))
 
 
-# class NetworkSetupState(IntEnum):
-#   MAIN = 0
-#   WIFI_PANEL = 1
-
-
 class NetworkSetupPage(Widget):
   def __init__(self, wifi_manager, continue_callback: Callable, back_callback: Callable):
     super().__init__()
-    # self._wifi_ui = WifiUIMici(wifi_manager, back_callback=lambda: self.set_state(NetworkSetupState.MAIN))
     self._wifi_ui = WifiUIMici(wifi_manager)
 
     self._no_wifi_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 58, 50)
@@ -447,7 +441,6 @@ class NetworkSetupPage(Widget):
     self._back_button.set_click_callback(back_callback)
 
     self._wifi_button = SmallerRoundedButton("wifi")
-    # self._wifi_button.set_click_callback(lambda: self.set_state(NetworkSetupState.WIFI_PANEL))
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
     self._wifi_button.set_enabled(lambda: self.enabled)
 
@@ -455,13 +448,7 @@ class NetworkSetupPage(Widget):
     self._continue_button.set_enabled(False)
     self._continue_button.set_click_callback(continue_callback)
 
-    # self._state = NetworkSetupState.MAIN
     self._prev_has_internet = False
-
-  # def set_state(self, state: NetworkSetupState):
-  #   self._state = state
-  #   if state == NetworkSetupState.WIFI_PANEL:
-  #     self._wifi_ui.show_event()
 
   def set_has_internet(self, has_internet: bool):
     if has_internet:
@@ -475,13 +462,11 @@ class NetworkSetupPage(Widget):
 
     if has_internet and not self._prev_has_internet:
       pass
-      # self.set_state(NetworkSetupState.MAIN)
       # gui_app.pop_widgets_to(self)
     self._prev_has_internet = has_internet
 
   def show_event(self):
     super().show_event()
-    # self._state = NetworkSetupState.MAIN
     self._wifi_ui.show_event()
 
   def hide_event(self):
@@ -489,7 +474,6 @@ class NetworkSetupPage(Widget):
     self._wifi_ui.hide_event()
 
   def _render(self, _):
-    # if self._state == NetworkSetupState.MAIN:
     self._network_header.render(rl.Rectangle(
       self._rect.x + 16,
       self._rect.y + 16,
@@ -517,8 +501,6 @@ class NetworkSetupPage(Widget):
       self._continue_button.rect.width,
       self._continue_button.rect.height,
     ))
-    # else:
-    #   self._wifi_ui.render(self._rect)
 
 
 class Setup(Widget):
