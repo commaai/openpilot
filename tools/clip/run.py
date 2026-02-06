@@ -239,27 +239,6 @@ def draw_text_box(rl, text, x, y, size, gui_app, font, font_scale, color=None, c
   rl.draw_text_ex(font, text, rl.Vector2(x, y), size, 0, text_color)
 
 
-def _wrap_text_by_delimiter(text: str, rl, font, font_size: int, font_scale: float, max_width: int, delimiter: str = ", ") -> list[str]:
-  """Wrap text by splitting on delimiter when it exceeds max_width."""
-  words = text.split(delimiter)
-  lines: list[str] = []
-  current_line: list[str] = []
-  # Build lines word by word
-  for word in words:
-    current_line.append(word)
-    check_line = delimiter.join(current_line)
-    # Check if line exceeds max width
-    if rl.measure_text_ex(font, check_line, font_size * font_scale, 0).x > max_width:
-      current_line.pop()  # Line is too long, move word to next line
-      if current_line:
-        lines.append(delimiter.join(current_line))
-      current_line = [word]
-  # Add leftover words as last line
-  if current_line:
-    lines.append(delimiter.join(current_line))
-  return lines
-
-
 def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
   metadata_size = 16 if big else 12
   title_size = 32 if big else 24
@@ -281,12 +260,8 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
     # Wrap text if too wide (leave margin on each side)
     margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
     max_width = gui_app.width - margin
-    old_lines = _wrap_text_by_delimiter(text, rl, font, metadata_size, font_scale, max_width)
-    print('old', old_lines)
     lines = wrap_text(font, text, metadata_size, max_width)
     lines = [line.rstrip(',') for line in lines]
-    print('new', lines)
-    assert lines == old_lines, "wrap_text and _wrap_text_by_delimiter should produce the same output"
 
     # Draw wrapped metadata text
     y_offset = 6
