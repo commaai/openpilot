@@ -1,22 +1,8 @@
 import os
 import glob
 
-Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
+Import('env', 'arch')
 lenv = env.Clone()
-lenvCython = envCython.Clone()
-
-libs = [cereal, messaging, visionipc, common, 'capnp', 'kj', 'pthread']
-frameworks = []
-
-common_src = [
-  "models/commonmodel.cc",
-]
-
-# OpenCL is a framework on Mac
-if arch == "Darwin":
-  frameworks += ['OpenCL']
-else:
-  libs += ['OpenCL']
 
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x]
 
