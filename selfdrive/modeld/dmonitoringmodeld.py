@@ -52,7 +52,7 @@ class ModelState:
 
     t1 = time.perf_counter()
 
-    if self.frame_buf_params is None:
+    if self.image_warp is None:
       self.frame_buf_params = get_nv12_info(buf.width, buf.height)
       warp_path = MODELS_DIR / f'dm_warp_{buf.width}x{buf.height}_tinygrad.pkl'
       with open(warp_path, "rb") as f:
