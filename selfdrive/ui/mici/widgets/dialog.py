@@ -30,7 +30,6 @@ class BigDialogBase(NavWidget, abc.ABC):
     self._right_btn = None
     if right_btn:
       def right_btn_callback_wrapper():
-        # gui_app.set_modal_overlay(None)
         gui_app.pop_widget()
         if right_btn_callback:
           right_btn_callback()
