@@ -420,5 +420,4 @@ class BigDialogButton(BigButton):
     super()._handle_mouse_release(mouse_pos)
 
     dlg = BigDialog(self.text, self._description)
-    # gui_app.set_modal_overlay(dlg)
     gui_app.push_widget(dlg)

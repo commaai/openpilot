@@ -402,10 +402,15 @@ class GuiApplication:
       widget.hide_event()
     print()
 
-  def pop_widget_to(self, widget):
+  def pop_widgets_to(self, widget):
     # pops all widgets after specified widget
     while len(self._nav_stack.widgets) > 0 and self._nav_stack.widgets[-1] != widget:
       self.pop_widget()
+
+  def get_active_widget(self):
+    if len(self._nav_stack.widgets) > 0:
+      return self._nav_stack.widgets[-1]
+    return None
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     print('WARNING! set_modal_overlay is DEPRECATED, but was attempted to use to show', overlay.__class__.__name__)

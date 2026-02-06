@@ -65,7 +65,8 @@ class MiciMainLayout(Widget):
     # Start onboarding if terms or training not completed
     self._onboarding_window = OnboardingWindow()
     if not self._onboarding_window.completed:
-      gui_app.set_modal_overlay(self._onboarding_window)
+      # gui_app.set_modal_overlay(self._onboarding_window)
+      gui_app.push_widget(self._onboarding_window)
 
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=self._on_settings_clicked)
@@ -121,7 +122,7 @@ class MiciMainLayout(Widget):
     CS = ui_state.sm["carState"]
     if not CS.standstill and self._prev_standstill:
       # self._set_mode(MainState.MAIN)
-      gui_app.pop_widget_to(self)
+      gui_app.pop_widgets_to(self)
       self._scroll_to(self._onroad_layout)
     self._prev_standstill = CS.standstill
 
@@ -132,13 +133,13 @@ class MiciMainLayout(Widget):
       # Only go onroad if car starts or is not at a standstill
       if not CS.standstill or onroad_transition:
         # self._set_mode(MainState.MAIN)
-        gui_app.pop_widget_to(self)
+        gui_app.pop_widgets_to(self)
         self._scroll_to(self._onroad_layout)
     else:
       # Stay in settings if car turns off while in settings
       if not onroad_transition or self._current_mode != MainState.SETTINGS:
         # self._set_mode(MainState.MAIN)
-        gui_app.pop_widget_to(self)
+        gui_app.pop_widgets_to(self)
         self._scroll_to(self._home_layout)
 
   def _on_settings_clicked(self):
