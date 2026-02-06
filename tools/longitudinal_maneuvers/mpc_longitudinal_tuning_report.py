@@ -3,6 +3,7 @@ import sys
 import markdown
 import numpy as np
 import matplotlib.pyplot as plt
+from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.tests.test_following_distance import desired_follow_distance
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
@@ -101,6 +102,31 @@ def generate_mpc_tuning_report():
     )
     valid, results[oscil] = man.evaluate()
     labels.append(f'{oscil} m/s oscillation size')
+
+  htmls.append(markdown.markdown('# ' + name))
+  htmls.append(get_html_from_results(results, labels, D_REL))
+  htmls.append(get_html_from_results(results, labels, EGO_V))
+  htmls.append(get_html_from_results(results, labels, EGO_A))
+
+
+  results = {}
+  name = 'Following 5s (sinusoidal) oscillating lead'
+  labels = []
+  speed = np.int64(10)
+  for oscil in np.arange(0, 10, 1):
+    t = DT_MDL * np.arange(int(30) / DT_MDL)
+    lead_speeds = speed + oscil * np.sin(2 * np.pi / 5 * t)
+    man = Maneuver(
+      '',
+      duration=30.,
+      initial_speed=float(speed),
+      lead_relevancy=True,
+      initial_distance_lead=desired_follow_distance(speed, speed),
+      speed_lead_values=lead_speeds,
+      breakpoints=t,
+    )
+    valid, results[oscil] = man.evaluate()
+    labels.append(f'{oscil} m/s oscilliation size')
 
   htmls.append(markdown.markdown('# ' + name))
   htmls.append(get_html_from_results(results, labels, D_REL))
