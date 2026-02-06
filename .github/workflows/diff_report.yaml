@@ -22,7 +22,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         check-name: process replay
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        allowed-conclusions: success
+        allowed-conclusions: success,failure
         wait-interval: 20
     - name: Download diff
       if: steps.wait.outcome == 'success'
