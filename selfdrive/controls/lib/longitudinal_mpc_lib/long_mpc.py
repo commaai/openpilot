@@ -2,7 +2,6 @@
 import os
 import time
 import numpy as np
-from enum import Enum
 from cereal import log
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.realtime import DT_MDL
@@ -57,14 +56,6 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
-
-
-class Source(Enum):
-  CRUISE = 'cruise'
-  LEAD0 = 'lead0'
-  LEAD1 = 'lead1'
-  E2E = 'e2e'
-
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
@@ -225,7 +216,7 @@ class LongitudinalMpc:
     self.dt = dt
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
-    self.source = LongitudinalPlanSource.lead0
+    self.lead_source = log.LongitudinalPlan.LongitudinalPlanSource.lead0
 
   def reset(self):
     self.solver.reset()
@@ -344,13 +335,7 @@ class LongitudinalMpc:
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle])
     lead_idx = np.argmin(x_obstacles[0])
-    match lead_idx:
-      case 0:
-        self.source = log.LongitudinalPlan.LongitudinalPlanSource.lead0
-      case 1:
-        self.source = log.LongitudinalPlan.LongitudinalPlanSource.lead1
-      case 2:
-        self.source = log.LongitudinalPlan.LongitudinalPlanSource.cruise
+    self.lead_source = LongitudinalPlanSource.lead0 if lead_idx == 0 else LongitudinalPlanSource.lead1
 
     self.yref[:,:] = 0.0
     for i in range(N):

@@ -9,12 +9,8 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
-<<<<<<< HEAD
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
-=======
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, Source
->>>>>>> 9459f69b8 (cruising outside the mpc)
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, smooth_value
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
@@ -59,7 +55,7 @@ class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
     self.mpc = LongitudinalMpc(dt=dt)
-    self.source = Source.CRUISE
+    self.source = LongitudinalPlanSource.lead0
     self.fcw = False
     self.dt = dt
     self.allow_throttle = True
@@ -144,12 +140,12 @@ class LongitudinalPlanner:
     out_accels[self.mpc.lead_source] = get_accel_from_plan(
       self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX, action_t, self.CP.vEgoStopping)
     if sm['selfdriveState'].experimentalMode:
-      out_accels[Source.E2E] = (sm['modelV2'].action.desiredAcceleration, sm['modelV2'].action.shouldStop)
+      out_accels[LongitudinalPlanSource.e2e] = (sm['modelV2'].action.desiredAcceleration, sm['modelV2'].action.shouldStop)
 
     cruise_accel = K_CRUISE * (v_cruise - v_ego)
     cruise_accel = np.clip(cruise_accel, CRUISE_MIN_ACCEL, accel_clip[1])
     cruise_accel = smooth_value(cruise_accel, self.output_a_target, TAU_CRUISE)
-    out_accels[Source.CRUISE] = (cruise_accel, False)
+    out_accels[LongitudinalPlanSource.cruise] = (cruise_accel, False)
 
     source, (output_a_target, _) = min(out_accels.items(), key=lambda x: x[1][0])
     self.source = source
@@ -181,7 +177,7 @@ class LongitudinalPlanner:
     longitudinalPlan.jerks = self.j_desired_trajectory.tolist()
 
     longitudinalPlan.hasLead = sm['radarState'].leadOne.status
-    longitudinalPlan.longitudinalPlanSource = self.source.value
+    longitudinalPlan.longitudinalPlanSource = self.source
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.aTarget = float(self.output_a_target)
