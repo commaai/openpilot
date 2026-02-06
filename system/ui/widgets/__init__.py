@@ -60,10 +60,6 @@ class Widget(abc.ABC):
 
   def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     self._enabled = enabled
-    if hasattr(self, '_scroller'):
-      self._scroller.set_enabled(enabled)
-    elif hasattr(self, '_scroll_panel'):
-      self._scroll_panel.set_enabled(enabled)
 
   @property
   def is_visible(self) -> bool:
@@ -325,12 +321,12 @@ class NavWidget(Widget, abc.ABC):
       self._set_up = True
       if hasattr(self, '_scroller'):
         original_enabled = self._scroller._enabled
-        self._scroller.set_enabled(lambda: not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                       original_enabled))
+        self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
+                                                                                        original_enabled))
       elif hasattr(self, '_scroll_panel'):
         original_enabled = self._scroll_panel.enabled
-        self._scroll_panel.set_enabled(lambda: not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                          original_enabled))
+        self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
+                                                                                            original_enabled))
 
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
