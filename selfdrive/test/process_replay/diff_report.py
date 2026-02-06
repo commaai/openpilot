@@ -28,7 +28,9 @@ def diff_process(cfg, ref_msgs, new_msgs):
 
   diffs = []
   for sub in cfg.subs:
-    for i, (r, n) in enumerate(zip(ref[sub], new[sub], strict=True)):
+    if len(ref[sub]) != len(new[sub]):
+      diffs.append((f"{sub} (message count)", 0, (len(ref[sub]), len(new[sub])), 0))
+    for i, (r, n) in enumerate(zip(ref[sub], new[sub], strict=False)):
       for d in compare_logs([r], [n], cfg.ignore, tolerance=cfg.tolerance):
         if d[0] == "change":
           path = ".".join(str(p) for p in d[1]) if isinstance(d[1], list) else d[1]
