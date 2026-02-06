@@ -19,6 +19,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.framereader import FrameReader, ffprobe
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
+from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.utils import Timer
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -280,7 +281,12 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
     # Wrap text if too wide (leave margin on each side)
     margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
     max_width = gui_app.width - margin
-    lines = _wrap_text_by_delimiter(text, rl, font, metadata_size, font_scale, max_width)
+    old_lines = _wrap_text_by_delimiter(text, rl, font, metadata_size, font_scale, max_width)
+    print('old', old_lines)
+    lines = wrap_text(font, text, metadata_size, max_width)
+    lines = [line.rstrip(',') for line in lines]
+    print('new', lines)
+    assert lines == old_lines, "wrap_text and _wrap_text_by_delimiter should produce the same output"
 
     # Draw wrapped metadata text
     y_offset = 6
