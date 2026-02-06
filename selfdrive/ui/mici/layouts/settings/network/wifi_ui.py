@@ -199,6 +199,7 @@ class NetworkInfoPage(NavWidget):
 
     self._wifi_icon = WifiIcon()
     self._forget_btn = ForgetButton(lambda: forget_callback(self._network.ssid) if self._network is not None else None)
+    self._forget_btn.set_enabled(lambda: self.enabled)  # for stack
     self._connect_btn = ConnectButton()
     self._connect_btn.set_click_callback(lambda: connect_callback(self._network.ssid) if self._network is not None else None)
 
@@ -251,7 +252,7 @@ class NetworkInfoPage(NavWidget):
       self._connect_btn.set_enabled(False)
     else:  # saved or unknown
       self._connect_btn.set_label("connect")
-      self._connect_btn.set_enabled(True)
+      self._connect_btn.set_enabled(self.enabled)
 
     self._title.set_text(normalize_ssid(self._network.ssid))
     if self._network.security_type == SecurityType.OPEN:
