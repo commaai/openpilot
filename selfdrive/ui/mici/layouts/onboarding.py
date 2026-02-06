@@ -7,7 +7,7 @@ import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import SmallSlider
@@ -435,9 +435,11 @@ class TermsPage(SetupTermsPage):
     ))
 
 
-class OnboardingWindow(Widget):
+class OnboardingWindow(NavWidget):
   def __init__(self):
     super().__init__()
+    self.set_back_enabled(False)
+
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 

@@ -20,7 +20,7 @@ def main():
   else:
     main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-  gui_app.push_widget(main_layout)
+  # gui_app.push_widget(main_layout)
   for should_render in gui_app.render():
     ui_state.update()
     if should_render:

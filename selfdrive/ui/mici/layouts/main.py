@@ -62,6 +62,8 @@ class MiciMainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
+    gui_app.push_widget(self)
+
     # Start onboarding if terms or training not completed
     self._onboarding_window = OnboardingWindow()
     if not self._onboarding_window.completed:
