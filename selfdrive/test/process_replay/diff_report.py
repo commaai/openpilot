@@ -12,11 +12,11 @@ class MsgWrap:
   """Adapter so to_dict() includes defaults"""
   def __init__(self, msg):
     self._msg = msg
-  def to_dict(self):
+  def to_dict(self) -> dict:
     return self._msg.to_dict(verbose=True)
 
 
-def diff_process(cfg, ref_msgs, new_msgs):
+def diff_process(cfg, ref_msgs, new_msgs) -> tuple | None:
   ref = defaultdict(list)
   new = defaultdict(list)
   for m in ref_msgs:
@@ -46,7 +46,7 @@ def diff_process(cfg, ref_msgs, new_msgs):
   return (diffs, ref, new) if diffs else None
 
 
-def diff_format(diffs, ref, new, field):
+def diff_format(diffs, ref, new, field) -> list[str]:
   if any(part.isdigit() for part in field.split(".")):
     return format_numeric_diffs(diffs)
   msg_type = field.split(".")[0]
@@ -55,7 +55,7 @@ def diff_format(diffs, ref, new, field):
   return format_diff(diffs, ref_ts, new_wrapped, field)
 
 
-def diff_report(replay_diffs, segments):
+def diff_report(replay_diffs, segments) -> None:
   seg_to_plat = {seg: plat for plat, seg in segments}
 
   with_diffs, errors, n_passed = [], [], 0
