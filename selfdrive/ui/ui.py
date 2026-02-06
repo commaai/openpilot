@@ -20,7 +20,7 @@ def main():
     gui_app.init_window("UI")
     main_layout = MainLayout()
   else:
-    gui_app.init_window("UI", old_modal=False)
+    gui_app.init_window("UI", new_modal=True)
     main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   for should_render in gui_app.render():

@@ -731,10 +731,10 @@ class Setup(Widget):
 
 def main():
   try:
-    gui_app.init_window("Setup", old_modal=False)
+    gui_app.init_window("Setup", new_modal=True)
     setup = Setup()
     gui_app.push_widget(setup)
-    for should_render in gui_app.render():
+    for _ in gui_app.render():
       pass
       # if should_render:
       #   setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))

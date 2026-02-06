@@ -220,7 +220,7 @@ class GuiApplication:
     self._scaled_height += self._scaled_height % 2
 
     # TODO: move BIG ui over and deprecate
-    self._old_modal = True
+    self._new_modal = False
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
     self._ffmpeg_proc: subprocess.Popen | None = None
@@ -269,7 +269,7 @@ class GuiApplication:
   def request_close(self):
     self._window_close_requested = True
 
-  def init_window(self, title: str, fps: int = _DEFAULT_FPS, old_modal: bool = True):
+  def init_window(self, title: str, fps: int = _DEFAULT_FPS, new_modal: bool = False):
     with self._startup_profile_context():
       def _close(sig, frame):
         self.close()
@@ -277,7 +277,7 @@ class GuiApplication:
       signal.signal(signal.SIGINT, _close)
       atexit.register(self.close)
 
-      self._old_modal = old_modal
+      self._new_modal = new_modal
 
       flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
       if ENABLE_VSYNC:
@@ -381,7 +381,7 @@ class GuiApplication:
         break
 
   def push_widget(self, widget):
-    assert not self._old_modal
+    assert self._new_modal
 
     # disable previous widget to prevent input processing, but keep rendering for smooth transitions
     if len(self._nav_stack.widgets) > 0:
@@ -396,7 +396,7 @@ class GuiApplication:
     print()
 
   def pop_widget(self):
-    assert not self._old_modal
+    assert self._new_modal
 
     # reenable previous widget if exists and show event to allow it to update state if needed (e.g. refresh after settings change)
     if len(self._nav_stack.widgets) > 1:
@@ -411,19 +411,21 @@ class GuiApplication:
     print()
 
   def pop_widgets_to(self, widget):
-    assert not self._old_modal
+    assert self._new_modal
 
     # pops all widgets after specified widget
     while len(self._nav_stack.widgets) > 0 and self._nav_stack.widgets[-1] != widget:
       self.pop_widget()
 
   def get_active_widget(self):
+    assert self._new_modal
+
     if len(self._nav_stack.widgets) > 0:
       return self._nav_stack.widgets[-1]
     return None
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
-    assert self._old_modal, "set_modal_overlay is deprecated, use push_widget instead"
+    assert not self._new_modal, "set_modal_overlay is deprecated, use push_widget instead"
 
     if self._modal_overlay.overlay is not None:
       if hasattr(self._modal_overlay.overlay, 'hide_event'):
@@ -579,7 +581,7 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        if not self._old_modal:
+        if self._new_modal:
           if len(self._nav_stack.widgets) > 1:
             self._nav_stack.widgets[-2].render(rl.Rectangle(0, 0, self.width, self.height))
             rl.draw_rectangle(0, 0, self.width, self.height, rl.Color(0, 0, 0, 150))
