@@ -98,7 +98,8 @@ class MiciMainLayout(Widget):
     # elif self._current_mode == MainState.SETTINGS:
     #   self._settings_layout.render(self._rect)
 
-    self._handle_transitions()
+    if self.enabled:
+      self._handle_transitions()
 
   # def _set_mode(self, mode: MainState):
   #   if mode != self._current_mode:
@@ -129,7 +130,7 @@ class MiciMainLayout(Widget):
     self._prev_standstill = CS.standstill
 
   def _set_mode_for_started(self, onroad_transition: bool = False):
-    print('_set_mode_for_started', onroad_transition)
+    print(f'_set_mode_for_started, {ui_state.started=}, {onroad_transition=}')
     if ui_state.started:
       CS = ui_state.sm["carState"]
       # Only go onroad if car starts or is not at a standstill
@@ -139,7 +140,7 @@ class MiciMainLayout(Widget):
         self._scroll_to(self._onroad_layout)
     else:
       # Stay in settings if car turns off while in settings
-      if not onroad_transition or self._current_mode != MainState.SETTINGS:
+      if not onroad_transition or gui_app.get_active_widget() != self:
         # self._set_mode(MainState.MAIN)
         gui_app.pop_widgets_to(self)
         self._scroll_to(self._home_layout)
