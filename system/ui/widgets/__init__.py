@@ -181,6 +181,7 @@ class Widget(abc.ABC):
 
   def show_event(self):
     """Optionally handle show event. Parent must manually call this"""
+    # TODO: iterate through all child objects, check for subclassing from Widget/Layout (Scroller)
 
   def hide_event(self):
     """Optionally handle hide event. Parent must manually call this"""

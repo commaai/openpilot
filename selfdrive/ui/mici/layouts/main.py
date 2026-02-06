@@ -20,7 +20,6 @@ class MiciMainLayout(Widget):
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
-    # self._current_mode: MainState | None = None
     self._prev_onroad = False
     self._prev_standstill = False
     self._onroad_time_delay: float | None = None
