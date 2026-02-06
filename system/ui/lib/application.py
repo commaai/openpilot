@@ -381,24 +381,26 @@ class GuiApplication:
     if len(self._nav_stack.widgets) > 0:
       prev_widget = self._nav_stack.widgets[-1]
       print('Disabling and hide_event for', prev_widget.__class__.__name__)
-      prev_widget.hide_event()
+      # prev_widget.hide_event()
       prev_widget.set_enabled(False)
 
     print('Pushing and show_event for', widget.__class__.__name__)
     self._nav_stack.widgets.append(widget)
     widget.show_event()
+    print()
 
   def pop_widget(self):
     # reenable previous widget if exists and show event to allow it to update state if needed (e.g. refresh after settings change)
     if len(self._nav_stack.widgets) > 1:
       prev_widget = self._nav_stack.widgets[-2]
       print('Re-enabling and show_event for', prev_widget.__class__.__name__)
-      prev_widget.show_event()
+      # prev_widget.show_event()
       prev_widget.set_enabled(True)
     if len(self._nav_stack.widgets) > 1:
       print('Popping and hide_event for', self._nav_stack.widgets[-1].__class__.__name__)
       widget = self._nav_stack.widgets.pop()
       widget.hide_event()
+    print()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     if self._modal_overlay.overlay is not None:

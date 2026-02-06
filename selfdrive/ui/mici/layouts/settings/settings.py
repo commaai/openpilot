@@ -34,7 +34,7 @@ class SettingsLayout(NavWidget):
   def __init__(self):
     super().__init__()
     self._params = Params()
-    self._current_panel = None  # PanelType.DEVICE
+    # self._current_panel = None  # PanelType.DEVICE
 
     toggles_btn = BigButton("toggles", "", "icons_mici/settings.png")
     toggles_btn.set_click_callback(lambda: self._set_current_panel(PanelType.TOGGLES))
@@ -59,9 +59,8 @@ class SettingsLayout(NavWidget):
     ], snap_items=False)
 
     # Set up back navigation
-    # self.set_back_callback(self.close_settings)
     self.set_back_callback(gui_app.pop_widget)
-    self.set_back_enabled(lambda: self._current_panel is None)
+    # self.set_back_enabled(lambda: self._current_panel is None)
 
     self._panels = {
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayoutMici(back_callback=lambda: self._set_current_panel(None))),
@@ -73,44 +72,39 @@ class SettingsLayout(NavWidget):
 
     self._font_medium = gui_app.font(FontWeight.MEDIUM)
 
-    # Callbacks
-    self._close_callback: Callable | None = None
-
   def show_event(self):
     super().show_event()
-    self._set_current_panel(None)
+    # self._set_current_panel(None)
     self._scroller.show_event()
-    if self._current_panel is not None:
-      self._panels[self._current_panel].instance.show_event()
+    # if self._current_panel is not None:
+    #   self._panels[self._current_panel].instance.show_event()
 
   def hide_event(self):
     super().hide_event()
-    if self._current_panel is not None:
-      self._panels[self._current_panel].instance.hide_event()
-
-  def set_callbacks(self, on_close: Callable):
-    self._close_callback = on_close
+    self._scroller.hide_event()
+    # if self._current_panel is not None:
+    #   self._panels[self._current_panel].instance.hide_event()
 
   def _render(self, rect: rl.Rectangle):
-    if self._current_panel is not None:
-      self._draw_current_panel()
-    else:
-      self._scroller.render(rect)
+    # if self._current_panel is not None:
+    #   self._draw_current_panel()
+    # else:
+    self._scroller.render(rect)
     return -1
 
-  def _draw_current_panel(self):
-    panel = self._panels[self._current_panel]
-    panel.instance.render(self._rect)
+  # def _draw_current_panel(self):
+  #   panel = self._panels[self._current_panel]
+  #   panel.instance.render(self._rect)
 
   def _set_current_panel(self, panel_type: PanelType | None):
-    if panel_type != self._current_panel:
-      if self._current_panel is not None:
-        self._panels[self._current_panel].instance.hide_event()
-      self._current_panel = panel_type
-      if self._current_panel is not None:
-        self._panels[self._current_panel].instance.show_event()
-
-  def close_settings(self):
-    gui_app.pop_widget()
-    # if self._close_callback:
-    #   self._close_callback()
+    if panel_type is None:
+      # TODO: move this into each layout's class above
+      gui_app.pop_widget()
+    else:
+      gui_app.push_widget(self._panels[panel_type].instance)
+    # if panel_type != self._current_panel:
+    #   if self._current_panel is not None:
+    #     self._panels[self._current_panel].instance.hide_event()
+    #   self._current_panel = panel_type
+    #   if self._current_panel is not None:
+    #     self._panels[self._current_panel].instance.show_event()

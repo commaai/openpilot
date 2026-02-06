@@ -264,6 +264,7 @@ class NavWidget(Widget, abc.ABC):
     self._back_callback = callback
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
+    # FIXME: disabling this widget on new push widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
     if not self.back_enabled:
@@ -338,6 +339,10 @@ class NavWidget(Widget, abc.ABC):
 
     new_y = 0.0
 
+    if not self.enabled:
+      self._back_button_start_pos = None
+
+    # TODO: why not in handle_mouse_event? have to hack above
     if self._back_button_start_pos is not None:
       last_mouse_event = gui_app.last_mouse_event
       # push entire widget as user drags it away
