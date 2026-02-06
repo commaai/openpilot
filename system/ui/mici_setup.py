@@ -96,10 +96,9 @@ class SetupState(IntEnum):
   NETWORK_SETUP = 1
   NETWORK_SETUP_CUSTOM_SOFTWARE = 2
   SOFTWARE_SELECTION = 3
-  CUSTOM_SOFTWARE = 4
-  DOWNLOADING = 5
-  DOWNLOAD_FAILED = 6
-  CUSTOM_SOFTWARE_WARNING = 7
+  DOWNLOADING = 4
+  DOWNLOAD_FAILED = 5
+  CUSTOM_SOFTWARE_WARNING = 6
 
 
 class StartPage(Widget):
@@ -536,6 +535,7 @@ class Setup(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
     self._prev_has_internet = False
+    # TODO: fix this if broken
     gui_app.set_modal_overlay_tick(self._modal_overlay_tick)
 
     self._start_page = StartPage()
@@ -586,8 +586,6 @@ class Setup(Widget):
       self._software_selection_page.render(rect)
     elif self.state == SetupState.CUSTOM_SOFTWARE_WARNING:
       self._custom_software_warning_page.render(rect)
-    elif self.state == SetupState.CUSTOM_SOFTWARE:
-      self.render_custom_software()
     elif self.state == SetupState.DOWNLOADING:
       self.render_downloading(rect)
     elif self.state == SetupState.DOWNLOAD_FAILED:
@@ -618,20 +616,12 @@ class Setup(Widget):
     if self.state == SetupState.NETWORK_SETUP:
       self.download(OPENPILOT_URL)
     elif self.state == SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE:
-      # Don't leave state since we're pushing keyboard widget onto the stack
-      # self._set_state(SetupState.CUSTOM_SOFTWARE)
-
       def handle_keyboard_result(text):
         url = text.strip()
         if url:
           self.download(url)
 
-      # def handle_keyboard_exit(result):
-      #   if result == DialogResult.CANCEL:
-      #     self._set_state(SetupState.SOFTWARE_SELECTION)
-
       keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
-      # gui_app.set_modal_overlay(keyboard, callback=handle_keyboard_exit)
       gui_app.push_widget(keyboard)
 
   def close(self):
@@ -646,21 +636,6 @@ class Setup(Widget):
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_page.set_progress(self.download_progress)
     self._downloading_page.render(rect)
-
-  def render_custom_software(self):
-    def handle_keyboard_result(text):
-      url = text.strip()
-      if url:
-        self.download(url)
-
-    # def handle_keyboard_exit(result):
-    #   if result == DialogResult.CANCEL:
-    #     self._set_state(SetupState.SOFTWARE_SELECTION)
-
-    keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
-    # gui_app.set_modal_overlay(keyboard, callback=handle_keyboard_exit)
-    gui_app.push_widget(keyboard)
-    self._set_state(SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
 
   def use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
