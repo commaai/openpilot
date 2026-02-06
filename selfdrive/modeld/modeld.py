@@ -176,7 +176,6 @@ class ModelState:
     self.policy_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
     self.parser = Parser()
-    self.frame_init = False
     self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
     self.update_imgs = None
 
@@ -196,14 +195,13 @@ class ModelState:
     inputs['desire_pulse'][0] = 0
     new_desire = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
-    if not self.frame_init:
+    if self.update_imgs is None:
       for key in bufs.keys():
         w, h = bufs[key].width, bufs[key].height
         self.frame_buf_params[key] = get_nv12_info(w, h)
       warp_path = MODELS_DIR / f'warp_{w}x{h}_tinygrad.pkl'
       with open(warp_path, "rb") as f:
         self.update_imgs = pickle.load(f)
-      self.frame_init = True
 
 
     for key in bufs.keys():
