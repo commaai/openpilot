@@ -1,5 +1,4 @@
 import pyray as rl
-from collections.abc import Callable
 from cereal import log
 
 from openpilot.system.ui.widgets.scroller import Scroller
