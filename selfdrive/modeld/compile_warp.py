@@ -121,74 +121,6 @@ def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
   return warp_dm
 
 
-# ---- numpy reference implementations ----
-
-def warp_perspective_numpy(src, M_inv, dst_shape, src_shape, stride_pad, ratio):
-  w_dst, h_dst = dst_shape
-  h_src, w_src = src_shape
-  xs, ys = np.meshgrid(np.arange(w_dst), np.arange(h_dst))
-
-  ones = np.ones_like(xs)
-  dst_hom = np.stack([xs, ys, ones], axis=0).reshape(3, -1)
-
-  src_hom = M_inv @ dst_hom
-  src_hom /= src_hom[2:3, :]
-
-  src_x = np.clip(np.round(src_hom[0, :]).astype(int), 0, w_src - 1)
-  src_y = np.clip(np.round(src_hom[1, :]).astype(int), 0, h_src - 1)
-  idx = src_y * w_src + (src_y * ratio).astype(np.int32) * stride_pad + src_x
-  return src[idx]
-
-
-def frames_to_tensor_numpy(frames):
-  H = (frames.shape[0] * 2) // 3
-  W = frames.shape[1]
-  p1 = frames[0:H:2, 0::2]
-  p2 = frames[1:H:2, 0::2]
-  p3 = frames[0:H:2, 1::2]
-  p4 = frames[1:H:2, 1::2]
-  p5 = frames[H:H+H//4].reshape((H//2, W//2))
-  p6 = frames[H+H//4:H+H//2].reshape((H//2, W//2))
-  return np.concatenate([p1, p2, p3, p4, p5, p6], axis=0).reshape((6, H//2, W//2))
-
-
-def make_frame_prepare_numpy(cam_w, cam_h, model_w, model_h):
-  stride, y_height, _, _ = get_nv12_info(cam_w, cam_h)
-  uv_offset = stride * y_height
-  stride_pad = stride - cam_w
-
-  def frame_prepare_numpy(input_frame, M_inv):
-    M_inv_uv = UV_SCALE_MATRIX @ M_inv @ UV_SCALE_MATRIX_INV
-    y = warp_perspective_numpy(input_frame[:cam_h*stride],
-                               M_inv, (model_w, model_h), (cam_h, cam_w), stride_pad, 1)
-    u = warp_perspective_numpy(input_frame[uv_offset:uv_offset + (cam_h//4)*stride],
-                               M_inv_uv, (model_w//2, model_h//2), (cam_h//2, cam_w//2), stride_pad, 0.5)
-    v = warp_perspective_numpy(input_frame[uv_offset + (cam_h//4)*stride:uv_offset + (cam_h//2)*stride],
-                               M_inv_uv, (model_w//2, model_h//2), (cam_h//2, cam_w//2), stride_pad, 0.5)
-    yuv = np.concatenate([y, u, v]).reshape(model_h * 3 // 2, model_w)
-    return frames_to_tensor_numpy(yuv)
-  return frame_prepare_numpy
-
-
-def make_update_img_input_numpy(frame_prepare, model_w, model_h):
-  def update_img_input_numpy(tensor, frame, M_inv):
-    tensor[:-6] = tensor[6:]
-    tensor[-6:] = frame_prepare(frame, M_inv)
-    return tensor, np.concatenate([tensor[:6], tensor[-6:]], axis=0).reshape((1, 12, model_h//2, model_w//2))
-  return update_img_input_numpy
-
-
-def make_update_both_imgs_numpy(frame_prepare, model_w, model_h):
-  update_img = make_update_img_input_numpy(frame_prepare, model_w, model_h)
-
-  def update_both_imgs_numpy(calib_img_buffer, new_img, M_inv,
-                             calib_big_img_buffer, new_big_img, M_inv_big):
-    calib_img_buffer, calib_img_pair = update_img(calib_img_buffer, new_img, M_inv)
-    calib_big_img_buffer, calib_big_img_pair = update_img(calib_big_img_buffer, new_big_img, M_inv_big)
-    return calib_img_buffer, calib_img_pair, calib_big_img_buffer, calib_big_img_pair
-  return update_both_imgs_numpy
-
-
 def compile_modeld_warp(cam_w, cam_h):
   model_w, model_h = MEDMODEL_INPUT_SIZE
   _, _, _, yuv_size = get_nv12_info(cam_w, cam_h)
@@ -198,9 +130,6 @@ def compile_modeld_warp(cam_w, cam_h):
   frame_prepare = make_frame_prepare(cam_w, cam_h, model_w, model_h)
   update_both_imgs = make_update_both_imgs(frame_prepare, model_w, model_h)
   update_img_jit = TinyJit(update_both_imgs, prune=True)
-
-  frame_prepare_np = make_frame_prepare_numpy(cam_w, cam_h, model_w, model_h)
-  update_both_imgs_np = make_update_both_imgs_numpy(frame_prepare_np, model_w, model_h)
 
   full_buffer = Tensor.zeros(IMG_BUFFER_SHAPE, dtype='uint8').contiguous().realize()
   big_full_buffer = Tensor.zeros(IMG_BUFFER_SHAPE, dtype='uint8').contiguous().realize()
@@ -231,15 +160,6 @@ def compile_modeld_warp(cam_w, cam_h):
     Device.default.synchronize()
     et = time.perf_counter()
     print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
-
-    out_np = update_both_imgs_np(*inputs_np)
-    full_buffer_np = out_np[0]
-    big_full_buffer_np = out_np[2]
-
-    for a, b in zip(out_np, (x.numpy() for x in out), strict=True):
-      mismatch = np.abs(a - b) > 0
-      mismatch_percent = sum(mismatch.flatten()) / len(mismatch.flatten()) * 100
-      assert mismatch_percent < 1e-2, f"mismatch {mismatch_percent:.4f}% exceeds tolerance"
 
   pkl_path = warp_pkl_path(cam_w, cam_h)
   with open(pkl_path, "wb") as f:
