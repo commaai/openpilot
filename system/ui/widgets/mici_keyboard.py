@@ -264,8 +264,8 @@ class MiciKeyboard(Widget):
       for key in row:
         mouse_pos = gui_app.last_mouse_event.pos
         # approximate distance for comparison is accurate enough
-        # use local y coords so parent widget offset (e.g. NavWidget animate-in) doesn't affect hit testing
-        dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - (mouse_pos.y - self._rect.y))
+        # use (mouse_pos.y - self._rect.y) to correctly handle pressing while animating in, not important
+        dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - mouse_pos.y)
         if dist < closest_key[1]:
           if self._closest_key[0] is None or key is self._closest_key[0] or dist < self._closest_key[1] - KEY_DRAG_HYSTERESIS:
             closest_key = (key, dist)
