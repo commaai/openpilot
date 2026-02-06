@@ -228,10 +228,14 @@ def load_route_metadata(route):
 
 def draw_text_box(text, x, y, size, gui_app, font, font_scale, color=None, center=False):
   import pyray as rl
+  from system.ui.lib.text_measure import measure_text_cached
   box_color, text_color = rl.Color(0, 0, 0, 85), color or rl.WHITE
   # measure_text_ex is NOT auto-scaled, so multiply by font_scale
   # draw_text_ex IS auto-scaled, so pass size directly
-  text_size = rl.measure_text_ex(font, text, size * font_scale, 0)
+  text_size_old = rl.measure_text_ex(font, text, size * font_scale, 0)
+  text_size = measure_text_cached(font, text, size)
+  print(text_size_old.x, text_size.x, text_size_old.y, text_size.y)
+  assert text_size_old.x == text_size.x and text_size_old.y == text_size.y, "measure_text_ex is not properly scaled"
   text_width, text_height = int(text_size.x), int(text_size.y)
   if center:
     x = (gui_app.width - text_width) // 2
@@ -240,7 +244,7 @@ def draw_text_box(text, x, y, size, gui_app, font, font_scale, color=None, cente
 
 
 def _wrap_text_by_delimiter(text: str, font, font_size: int, font_scale: float, max_width: int, delimiter: str = ", ") -> list[str]:
-  import pyray as rl
+  from system.ui.lib.text_measure import measure_text_cached
   """Wrap text by splitting on delimiter when it exceeds max_width."""
   words = text.split(delimiter)
   lines: list[str] = []
@@ -250,7 +254,8 @@ def _wrap_text_by_delimiter(text: str, font, font_size: int, font_scale: float, 
     current_line.append(word)
     check_line = delimiter.join(current_line)
     # Check if line exceeds max width
-    if rl.measure_text_ex(font, check_line, font_size * font_scale, 0).x > max_width:
+    # if rl.measure_text_ex(font, check_line, font_size * font_scale, 0).x > max_width:
+    if measure_text_cached(font, check_line, font_size).x > max_width:
       current_line.pop()  # Line is too long, move word to next line
       if current_line:
         lines.append(delimiter.join(current_line))
@@ -263,6 +268,7 @@ def _wrap_text_by_delimiter(text: str, font, font_size: int, font_scale: float, 
 
 def render_overlays(gui_app, font, font_scale, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
   import pyray as rl
+  from system.ui.lib.text_measure import measure_text_cached
   metadata_size = 16 if big else 12
   title_size = 32 if big else 24
   time_size = 24 if big else 16
@@ -272,7 +278,9 @@ def render_overlays(gui_app, font, font_scale, big, metadata, title, start_time,
   if show_time:
     t = start_time + frame_idx / FRAMERATE
     time_text = f"{int(t) // 60:02d}:{int(t) % 60:02d}"
-    time_width = int(rl.measure_text_ex(font, time_text, time_size * font_scale, 0).x)
+    time_width_old = int(rl.measure_text_ex(font, time_text, time_size * font_scale, 0).x)
+    time_width = int(measure_text_cached(font, time_text, time_size).x)
+    assert time_width_old == time_width, "measure_text_ex is not properly scaled for time overlay"
     draw_text_box(time_text, gui_app.width - time_width - 5, 0, time_size, gui_app, font, font_scale)
 
   # Metadata overlay (first 5 seconds)
@@ -289,7 +297,9 @@ def render_overlays(gui_app, font, font_scale, big, metadata, title, start_time,
     y_offset = 6
     for line in lines:
       draw_text_box(line, 0, y_offset, metadata_size, gui_app, font, font_scale, center=True)
-      line_height = int(rl.measure_text_ex(font, line, metadata_size * font_scale, 0).y) + 4
+      line_height_old = int(rl.measure_text_ex(font, line, metadata_size * font_scale, 0).y) + 4
+      line_height = int(measure_text_cached(font, line, metadata_size).y) + 4
+      assert line_height_old == line_height, "measure_text_ex is not properly scaled for metadata overlay"
       y_offset += line_height
 
   # Title overlay
