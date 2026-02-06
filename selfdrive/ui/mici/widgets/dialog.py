@@ -32,7 +32,8 @@ class BigDialogBase(NavWidget, abc.ABC):
     self._right_btn = None
     if right_btn:
       def right_btn_callback_wrapper():
-        gui_app.set_modal_overlay(None)
+        # gui_app.set_modal_overlay(None)
+        gui_app.pop_widget()
         if right_btn_callback:
           right_btn_callback()
 
@@ -42,15 +43,9 @@ class BigDialogBase(NavWidget, abc.ABC):
       self._right_btn._rect.x = self._rect.x + self._rect.width - self._right_btn._rect.width
 
   def _render(self, _):
-    """
-    Allows `gui_app.set_modal_overlay(BigDialog(...))`.
-    The overlay runner keeps calling until result != NO_ACTION.
-    """
     if self._right_btn:
       self._right_btn.set_position(self._right_btn._rect.x, self._rect.y)
       self._right_btn.render()
-
-    # return self._ret
 
 
 class BigDialog(BigDialogBase):
@@ -425,4 +420,5 @@ class BigDialogButton(BigButton):
     super()._handle_mouse_release(mouse_pos)
 
     dlg = BigDialog(self.text, self._description)
-    gui_app.set_modal_overlay(dlg)
+    # gui_app.set_modal_overlay(dlg)
+    gui_app.push_widget(dlg)
