@@ -367,8 +367,13 @@ class NavWidget(Widget, abc.ABC):
 
     self.set_position(self._rect.x, new_y)
 
-  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
+  def _layout(self):
+    # Dim whatever is behind this widget, fading with position (runs after _update_state so position is correct)
+    overlay_alpha = int(200 * max(0.0, min(1.0, 1.0 - self._rect.y / self._rect.height))) if self._rect.height > 0 else 0
+    rl.draw_rectangle(0, 0, int(self._rect.width), int(self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
     rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height + 20), rl.BLACK)
+
+  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
 
     if self.back_enabled:
