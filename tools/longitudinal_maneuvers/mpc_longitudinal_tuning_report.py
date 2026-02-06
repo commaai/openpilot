@@ -263,7 +263,7 @@ def generate_mpc_tuning_report():
   htmls.append(markdown.markdown('# ' + name))
   htmls.append(get_html_from_results(results, labels, EGO_V))
   htmls.append(get_html_from_results(results, labels, EGO_A))
-  
+
   return htmls
 
 if __name__ == '__main__':
