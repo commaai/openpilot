@@ -228,7 +228,7 @@ def load_route_metadata(route):
 
 def draw_text_box(text, x, y, size, gui_app, font, color=None, center=False):
   import pyray as rl
-  from system.ui.lib.text_measure import measure_text_cached
+  from openpilot.system.ui.lib.text_measure import measure_text_cached
   box_color, text_color = rl.Color(0, 0, 0, 85), color or rl.WHITE
   text_size = measure_text_cached(font, text, size)
   text_width, text_height = int(text_size.x), int(text_size.y)
@@ -239,7 +239,7 @@ def draw_text_box(text, x, y, size, gui_app, font, color=None, center=False):
 
 
 def _wrap_text_by_delimiter(text: str, font, font_size: int, max_width: int, delimiter: str = ", ") -> list[str]:
-  from system.ui.lib.text_measure import measure_text_cached
+  from openpilot.system.ui.lib.text_measure import measure_text_cached
   """Wrap text by splitting on delimiter when it exceeds max_width."""
   words = text.split(delimiter)
   lines: list[str] = []
@@ -261,7 +261,7 @@ def _wrap_text_by_delimiter(text: str, font, font_size: int, max_width: int, del
 
 
 def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
-  from system.ui.lib.text_measure import measure_text_cached
+  from openpilot.system.ui.lib.text_measure import measure_text_cached
   metadata_size = 16 if big else 12
   title_size = 32 if big else 24
   time_size = 24 if big else 16
