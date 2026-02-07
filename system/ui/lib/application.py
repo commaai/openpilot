@@ -220,6 +220,7 @@ class GuiApplication:
     self._ffmpeg_queue: queue.Queue | None = None
     self._ffmpeg_thread: threading.Thread | None = None
     self._ffmpeg_stop_event: threading.Event | None = None
+    self._recording = False
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
@@ -283,35 +284,6 @@ class GuiApplication:
         self._render_texture = rl.load_render_texture(self._width, self._height)
         rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
-      if RECORD:
-        output_fps = fps * RECORD_SPEED
-        ffmpeg_args = [
-          'ffmpeg',
-          '-v', 'warning',          # Reduce ffmpeg log spam
-          '-nostats',               # Suppress encoding progress
-          '-f', 'rawvideo',         # Input format
-          '-pix_fmt', 'rgba',       # Input pixel format
-          '-s', f'{self._width}x{self._height}',  # Input resolution
-          '-r', str(fps),           # Input frame rate
-          '-i', 'pipe:0',           # Input from stdin
-          '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert to yuv420p
-          '-r', str(output_fps),    # Output frame rate (for speed multiplier)
-          '-c:v', 'libx264',
-          '-preset', 'ultrafast',
-        ]
-        if RECORD_BITRATE:
-          ffmpeg_args += ['-b:v', RECORD_BITRATE, '-maxrate', RECORD_BITRATE, '-bufsize', RECORD_BITRATE]
-        ffmpeg_args += [
-          '-y',                     # Overwrite existing file
-          '-f', 'mp4',              # Output format
-          RECORD_OUTPUT,            # Output file path
-        ]
-        self._ffmpeg_proc = subprocess.Popen(ffmpeg_args, stdin=subprocess.PIPE)
-        self._ffmpeg_queue = queue.Queue(maxsize=60)  # Buffer up to 60 frames
-        self._ffmpeg_stop_event = threading.Event()
-        self._ffmpeg_thread = threading.Thread(target=self._ffmpeg_writer_thread, daemon=True)
-        self._ffmpeg_thread.start()
-
       # OFFSCREEN disables FPS limiting for fast offline rendering (e.g. clips)
       rl.set_target_fps(0 if OFFSCREEN else fps)
 
@@ -354,6 +326,39 @@ class GuiApplication:
     reset = "\033[0m"
     print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
     sys.exit(0)
+
+  def begin_recording(self):
+    if not RECORD or self._recording:
+      return
+
+    self._recording = True
+    output_fps = self._target_fps * RECORD_SPEED
+    ffmpeg_args = [
+      'ffmpeg',
+      '-v', 'warning',          # Reduce ffmpeg log spam
+      '-nostats',               # Suppress encoding progress
+      '-f', 'rawvideo',         # Input format
+      '-pix_fmt', 'rgba',       # Input pixel format
+      '-s', f'{self._width}x{self._height}',  # Input resolution
+      '-r', str(self._target_fps),  # Input frame rate
+      '-i', 'pipe:0',           # Input from stdin
+      '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert to yuv420p
+      '-r', str(output_fps),    # Output frame rate (for speed multiplier)
+      '-c:v', 'libx264',
+      '-preset', 'ultrafast',
+    ]
+    if RECORD_BITRATE:
+      ffmpeg_args += ['-b:v', RECORD_BITRATE, '-maxrate', RECORD_BITRATE, '-bufsize', RECORD_BITRATE]
+    ffmpeg_args += [
+      '-y',                     # Overwrite existing file
+      '-f', 'mp4',              # Output format
+      RECORD_OUTPUT,            # Output file path
+    ]
+    self._ffmpeg_proc = subprocess.Popen(ffmpeg_args, stdin=subprocess.PIPE)
+    self._ffmpeg_queue = queue.Queue(maxsize=60)  # Buffer up to 60 frames
+    self._ffmpeg_stop_event = threading.Event()
+    self._ffmpeg_thread = threading.Thread(target=self._ffmpeg_writer_thread, daemon=True)
+    self._ffmpeg_thread.start()
 
   def _ffmpeg_writer_thread(self):
     """Background thread that writes frames to ffmpeg."""
@@ -560,7 +565,7 @@ class GuiApplication:
 
         rl.end_drawing()
 
-        if RECORD:
+        if self._recording:
           image = rl.load_image_from_texture(self._render_texture.texture)
           data_size = image.width * image.height * 4
           data = bytes(rl.ffi.buffer(image.data, data_size))
