@@ -79,6 +79,8 @@ _services: dict[str, tuple] = {
   "navRoute": (True, 0.),
   "navThumbnail": (True, 0.),
   "qRoadEncodeIdx": (False, 20.),
+  "qWideRoadEncodeIdx": (False, 20.),
+  "qDriverEncodeIdx": (False, 20.),
   "userBookmark": (True, 0., 1),
   "soundPressure": (True, 10., 10),
   "rawAudioData": (False, 20.),
@@ -88,6 +90,8 @@ _services: dict[str, tuple] = {
   "driverEncodeData": (False, 20., None, QueueSize.BIG),
   "wideRoadEncodeData": (False, 20., None, QueueSize.BIG),
   "qRoadEncodeData": (False, 20., None, QueueSize.BIG),
+  "qWideRoadEncodeData": (False, 20., None, QueueSize.BIG),
+  "qDriverEncodeData": (False, 20., None, QueueSize.BIG),
 
   # debug
   "uiDebug": (True, 0., 1),
