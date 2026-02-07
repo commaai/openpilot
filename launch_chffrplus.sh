@@ -56,12 +56,12 @@ function init_ble {
   fi
 
   echo "Initializing Bluetooth..."
-  sudo pkill -f btattach 2>/dev/null || true
+  sudo pkill -9 -f btattach 2>/dev/null || true
+  sleep 1
   sudo hciconfig hci0 down 2>/dev/null || true
   sleep 1
 
-  nohup sudo btattach -B /dev/ttyHS1 -S 115200 >/dev/null 2>&1 &
-  disown
+  sudo btattach -B /dev/ttyHS1 -S 115200 &
 
   # wait for adapter
   for i in $(seq 1 10); do
