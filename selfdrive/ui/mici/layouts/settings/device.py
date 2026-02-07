@@ -326,7 +326,7 @@ class DeviceLayoutMici(NavWidget):
     driver_cam_btn.set_click_callback(self._show_driver_camera)
     driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
-    review_training_guide_btn = BigButton("review\nntraining guide", "", "icons_mici/settings/device/info.png")
+    review_training_guide_btn = BigButton("review\ntraining guide", "", "icons_mici/settings/device/info.png")
     review_training_guide_btn.set_click_callback(self._on_review_training_guide)
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
