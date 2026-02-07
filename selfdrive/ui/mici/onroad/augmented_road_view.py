@@ -14,7 +14,7 @@ from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
-from openpilot.common.filter_simple import BounceFilter
+from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
@@ -165,6 +165,7 @@ class AugmentedRoadView(CameraView):
                                        alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
+    self._fade_alpha_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
 
     # debug
     self._pm = messaging.PubMaster(['uiDebug'])
@@ -217,8 +218,11 @@ class AugmentedRoadView(CameraView):
     # Draw all UI overlays
     self._model_renderer.render(self._content_rect)
 
-    # Fade out bottom of overlays for looks
-    rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
+    # Fade out bottom of overlays for looks (only when engaged)
+    fade_alpha = self._fade_alpha_filter.update(ui_state.status != UIStatus.DISENGAGED)
+    if fade_alpha > 1e-2:
+      rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0,
+                         rl.Color(255, 255, 255, int(255 * fade_alpha)))
 
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
 
