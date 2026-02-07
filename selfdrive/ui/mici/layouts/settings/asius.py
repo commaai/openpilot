@@ -44,7 +44,7 @@ class AsiusLayoutMici(NavWidget):
       ("EnableBLE", self._ble_toggle),
       ("EnableWebRTC", self._webrtc_toggle),
       ("LaneTurnDesire", lane_turn_toggle),
-      ("EnableAsiusAPI", self._asius_api_toggle),
+      ("AsiusAPIHost", self._asius_api_toggle),
     )
 
   def show_event(self):
