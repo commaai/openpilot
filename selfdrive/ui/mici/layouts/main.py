@@ -99,7 +99,7 @@ class MiciMainLayout(Widget):
       self._scroll_to(self._onroad_layout)
       self._onroad_time_delay = None
 
-    # when car leaves standstill, pop nav stack and scroll to onroad
+    # When car leaves standstill, pop nav stack and scroll to onroad
     CS = ui_state.sm["carState"]
     if not CS.standstill and self._prev_standstill:
       gui_app.pop_widgets_to(self)
