@@ -21,6 +21,11 @@ from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 FPS = 60
 HEADLESS = os.getenv("WINDOWED", "0") == "1"
 
+# Monkey-patch raylib timing functions for determinism
+_frame_count = 0
+rl.get_frame_time = lambda: 1.0 / FPS
+rl.get_time = lambda: _frame_count / FPS
+
 
 @dataclass
 class DummyEvent:
@@ -79,6 +84,7 @@ def handle_event(event: DummyEvent):
 
 
 def run_replay():
+  global _frame_count
   setup_state()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
@@ -92,6 +98,8 @@ def run_replay():
   script_index = 0
 
   for should_render in gui_app.render():
+    _frame_count = frame
+
     while script_index < len(SCRIPT) and SCRIPT[script_index][0] == frame:
       _, event = SCRIPT[script_index]
       handle_event(event)
