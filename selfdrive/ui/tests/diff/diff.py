@@ -177,7 +177,7 @@ def main():
   diff_video_path = os.path.join(os.path.dirname(args.output), DIFF_OUT_DIR / "diff.mp4")
   create_diff_video(args.video1, args.video2, diff_video_path)
 
-  different_frames, frame_data, (frame_counts) = find_differences(args.video1, args.video2)
+  different_frames, frame_data, frame_counts = find_differences(args.video1, args.video2)
 
   if different_frames is None:
     sys.exit(1)
