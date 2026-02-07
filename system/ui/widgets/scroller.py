@@ -18,15 +18,15 @@ DO_JELLO = False
 SCROLL_BAR = False
 
 # Space reserved at bottom for horizontal scroll bar
-HORIZONTAL_SCROLL_BAR_MARGIN = 10
+HORIZONTAL_SCROLL_BAR_MARGIN = 15
 
 # Scroll indicator dot dimensions
 SCROLL_DOT_WIDTH = 20
 SCROLL_DOT_HEIGHT = 14
-SCROLL_DOT_SPACING = 8
+SCROLL_DOT_SPACING = 10
 
 # Exclusive touch zone height for scroll indicator (from bottom of screen)
-SCROLL_INDICATOR_TOUCH_ZONE = 30
+SCROLL_INDICATOR_TOUCH_ZONE = 50
 
 # Position indicator pill dimensions
 POSITION_PILL_WIDTH = 36
@@ -101,6 +101,8 @@ class ScrollIndicator(Widget):
     self._parent_bottom = 0.0  # Bottom edge of parent scroller for touch zone
     self._last_drag_index: int | None = None  # Track last dragged index to avoid redundant calls
     self._scroll_progress = 0.0  # 0.0 to 1.0, tracks scroll position
+    self._fractional_index = 0.0  # Fractional item index for position pill
+    self._fractional_index_filter = FirstOrderFilter(0.0, 0.08, 1 / gui_app.target_fps)
     self._scroller_is_active = False  # True when main scroller is being dragged
 
   def set_item_count(self, count: int):
@@ -130,6 +132,11 @@ class ScrollIndicator(Widget):
   def set_scroll_progress(self, progress: float):
     """Set scroll progress (0.0 = start, 1.0 = end) for position indicator."""
     self._scroll_progress = max(0.0, min(1.0, progress))
+
+  def set_fractional_index(self, frac_index: float):
+    """Set the fractional item index for precise position pill tracking."""
+    self._fractional_index = max(0.0, frac_index)
+    self._fractional_index_filter.update(self._fractional_index)
 
   def set_scroller_active(self, active: bool):
     """Set whether the main scroller is actively being dragged."""
@@ -253,10 +260,13 @@ class ScrollIndicator(Widget):
         distance = abs(dot.index - closest_idx)
 
         if distance == 0:
-          # Closest dot: move up 40px
-          dot.set_y_offset(-40)
+          # Closest dot: move up 80px
+          dot.set_y_offset(-80)
         elif distance == 1:
-          # Adjacent dots: move up 20px
+          # Adjacent dots: move up 40px
+          dot.set_y_offset(-40)
+        elif distance == 2:
+          # Next adjacent dots: move up 20px
           dot.set_y_offset(-20)
         else:
           # Other dots: no offset
@@ -269,11 +279,11 @@ class ScrollIndicator(Widget):
       # Determine dot color based on state
       is_active = self._closest_dot[0] is dot or dot.index in self._current_indices
 
-      if dot.is_toggled_on:
-        # Toggled-on dots: always green (0, 255, 38) with full opacity, even when active
+      if dot.is_toggled_on and not is_active:
+        # Toggled-on dots: green (0, 255, 38) when not selected
         color = rl.Color(0, 255, 38, 255)
-      elif dot.is_red and is_active:
-        # Red button (power off) when selected: red (255, 0, 21)
+      elif dot.is_red and not is_active:
+        # Red button (power off) when not selected: red (255, 0, 21)
         color = rl.Color(255, 0, 21, 255)
       elif is_active:
         # Active dot (being touched or current item): full opacity white
@@ -296,15 +306,20 @@ class ScrollIndicator(Widget):
 
     # Draw position indicator pill (half cut off at the bottom of the screen)
     if self._dots:
-      first_dot = self._dots[0]
-      last_dot = self._dots[-1]
+      # Interpolate between actual dot centers using fractional item index
+      num_dots = len(self._dots)
+      if num_dots == 1:
+        pill_x = self._dots[0].x + self._dots[0].width / 2 - POSITION_PILL_WIDTH / 2
+      else:
+        frac_index = max(0.0, min(self._fractional_index_filter.x, num_dots - 1))
+        low_idx = max(0, min(int(frac_index), num_dots - 2))
+        high_idx = low_idx + 1
+        t = frac_index - low_idx  # 0.0 to 1.0 between the two dots
 
-      # Track range: 8px left of first dot to 8px right of last dot, minus pill width
-      track_left = first_dot.x - POSITION_PILL_MARGIN
-      track_right = last_dot.x + last_dot.width + POSITION_PILL_MARGIN - POSITION_PILL_WIDTH
-
-      # Position pill based on scroll progress
-      pill_x = track_left + self._scroll_progress * (track_right - track_left)
+        low_center = self._dots[low_idx].x + self._dots[low_idx].width / 2
+        high_center = self._dots[high_idx].x + self._dots[high_idx].width / 2
+        pill_center = low_center + t * (high_center - low_center)
+        pill_x = pill_center - POSITION_PILL_WIDTH / 2
       # Half cut off at the bottom of the screen (only top 8px visible)
       pill_y = self._parent_bottom - POSITION_PILL_HEIGHT / 2
 
@@ -640,29 +655,23 @@ class Scroller(Widget):
         is_red = getattr(item, '_red', False)
         self._scroll_indicator.set_red(idx, is_red)
 
-      # Find which items should be indicated as current
-      # An item is "selected" if the screen center falls within its horizontal bounds
+      # Find which single item should be indicated as current
+      # Only one indicator is selected at a time
       center_pos = content_rect.x + content_rect.width / 2
-      selected_indices: set[int] = set()
-
-      for idx, item in enumerate(actual_items):
-        item_left = item.rect.x
-        item_right = item.rect.x + item.rect.width
-        if item_left <= center_pos <= item_right:
-          selected_indices.add(idx)
-
-      # Edge cases: if first/last item is fully visible, include it
       edge_margin = 20
       first_item = actual_items[0] if actual_items else None
       last_item = actual_items[-1] if actual_items else None
 
-      if first_item and (first_item.rect.x >= content_rect.x - edge_margin):
-        selected_indices.add(0)
-      if last_item and (last_item.rect.x + last_item.rect.width <= content_rect.x + content_rect.width + edge_margin):
-        selected_indices.add(len(actual_items) - 1)
+      # Edge cases: if at the start/end of the scroller, select the outermost item
+      at_start = first_item is not None and (first_item.rect.x >= content_rect.x - edge_margin)
+      at_end = last_item is not None and (last_item.rect.x + last_item.rect.width <= content_rect.x + content_rect.width + edge_margin)
 
-      # Fallback: if nothing selected, pick the closest to center
-      if not selected_indices:
+      if at_start and not at_end:
+        selected_indices: set[int] = {0}
+      elif at_end and not at_start:
+        selected_indices = {len(actual_items) - 1}
+      else:
+        # Middle of scroller, or all items fit: pick the single closest to center
         closest_idx = 0
         closest_dist = float('inf')
         for idx, item in enumerate(actual_items):
@@ -671,7 +680,7 @@ class Scroller(Widget):
           if dist < closest_dist:
             closest_dist = dist
             closest_idx = idx
-        selected_indices.add(closest_idx)
+        selected_indices = {closest_idx}
 
       self._scroll_indicator.set_current_indices(selected_indices)
 
@@ -679,7 +688,7 @@ class Scroller(Widget):
       # 10px from bottom edge, 40px from left edge, left-justified
       indicator_rect = rl.Rectangle(
         self._rect.x + 40,  # 40px from left edge
-        self._rect.y + self._rect.height - 10 - SCROLL_DOT_HEIGHT,  # 10px from bottom edge
+        self._rect.y + self._rect.height - 15 - SCROLL_DOT_HEIGHT,  # 15px from bottom edge
         self._rect.width - 40,  # Remaining width
         SCROLL_DOT_HEIGHT
       )
@@ -695,6 +704,33 @@ class Scroller(Widget):
       else:
         progress = 0.0
       self._scroll_indicator.set_scroll_progress(progress)
+
+      # Calculate fractional item index based on viewport center relative to item positions
+      # This correctly handles items of different widths
+      if len(actual_items) > 1:
+        # Find which two items the viewport center falls between
+        item_centers = [item.rect.x + item.rect.width / 2 for item in actual_items]
+        if center_pos <= item_centers[0]:
+          frac_index = 0.0
+        elif center_pos >= item_centers[-1]:
+          frac_index = float(len(actual_items) - 1)
+        else:
+          frac_index = 0.0
+          for i in range(len(item_centers) - 1):
+            if item_centers[i] <= center_pos <= item_centers[i + 1]:
+              t = (center_pos - item_centers[i]) / (item_centers[i + 1] - item_centers[i])
+              frac_index = i + t
+              break
+
+        # Clamp to edge items when they're fully visible (matches selected_indices logic)
+        if at_start:
+          frac_index = 0.0
+        elif at_end:
+          frac_index = float(len(actual_items) - 1)
+
+        self._scroll_indicator.set_fractional_index(frac_index)
+      else:
+        self._scroll_indicator.set_fractional_index(0.0)
 
       # Tell the scroll indicator if the main scroller is being actively dragged
       scroller_active = self.scroll_panel.state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL)
