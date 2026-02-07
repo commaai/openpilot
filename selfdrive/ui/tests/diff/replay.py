@@ -29,7 +29,7 @@ class Event:
   swipe_left: bool = False
   swipe_right: bool = False
   swipe_down: bool = False
-  delay: float = 1.0  # seconds to wait after the event before processing the next one
+  delay: float = 1.0  # seconds to wait after event
 
 
 SCRIPT = [
