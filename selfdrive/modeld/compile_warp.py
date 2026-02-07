@@ -10,14 +10,8 @@ from tinygrad.engine.jit import TinyJit
 
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE, DM_INPUT_SIZE
-from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 
 MODELS_DIR = Path(__file__).parent / 'models'
-
-CAMERA_CONFIGS = [
-  (_ar_ox_fisheye.width, _ar_ox_fisheye.height),  # tici: 1928x1208
-  (_os_fisheye.width, _os_fisheye.height),        # mici: 1344x760
-]
 
 UV_SCALE_MATRIX = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], dtype=np.float32)
 UV_SCALE_MATRIX_INV = np.linalg.inv(UV_SCALE_MATRIX)
@@ -196,11 +190,8 @@ def compile_dm_warp(cam_w, cam_h):
   print(f"  Saved to {pkl_path}")
 
 
-def run_and_save_pickle():
-  for cam_w, cam_h in CAMERA_CONFIGS:
-    compile_modeld_warp(cam_w, cam_h)
-    compile_dm_warp(cam_w, cam_h)
-
-
 if __name__ == "__main__":
-  run_and_save_pickle()
+  import sys
+  cam_w, cam_h = int(sys.argv[1]), int(sys.argv[2])
+  compile_modeld_warp(cam_w, cam_h)
+  compile_dm_warp(cam_w, cam_h)
