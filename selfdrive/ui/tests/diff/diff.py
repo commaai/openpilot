@@ -38,7 +38,7 @@ def create_diff_video(video1, video2, output_path):
   subprocess.run(cmd, capture_output=True, check=True)
 
 
-def find_differences(video1, video2):
+def find_differences(video1, video2) -> tuple[list[int], list, tuple[int, int]]:
   with tempfile.TemporaryDirectory() as tmpdir:
     tmpdir = Path(tmpdir)
 
@@ -52,14 +52,8 @@ def find_differences(video1, video2):
     frames2_dir.mkdir()
     frames2 = extract_frames(video2, frames2_dir)
 
-    if len(frames1) != len(frames2):
-      print(f"WARNING: Frame count mismatch: {len(frames1)} vs {len(frames2)}")
-      min_frames = min(len(frames1), len(frames2))
-      frames1 = frames1[:min_frames]
-      frames2 = frames2[:min_frames]
-
     print(f"Comparing {len(frames1)} frames...")
-    different_frames = []
+    different_frames: list[int] = []
     frame_data = []
 
     for i, (f1, f2) in enumerate(zip(frames1, frames2, strict=False)):
@@ -70,10 +64,10 @@ def find_differences(video1, video2):
       if i < 10 or i >= len(frames1) - 10 or is_different:
         frame_data.append({'index': i, 'different': is_different, 'frame1_url': frame_to_data_url(f1), 'frame2_url': frame_to_data_url(f2)})
 
-    return different_frames, frame_data, len(frames1)
+    return different_frames, frame_data, (len(frames1), len(frames2))
 
 
-def generate_html_report(video1, video2, basedir, different_frames, frame_data, total_frames):
+def generate_html_report(videos: tuple[str, str], basedir: str, different_frames: list[int], frame_data, frame_counts: tuple[int, int]):
   chunks = []
   if different_frames:
     current_chunk = [different_frames[0]]
@@ -85,11 +79,21 @@ def generate_html_report(video1, video2, basedir, different_frames, frame_data, 
         current_chunk = [different_frames[i]]
     chunks.append(current_chunk)
 
-  result_text = (
-    f"✅ Videos are identical! ({total_frames} frames)"
-    if len(different_frames) == 0
-    else f"❌ Found {len(different_frames)} different frames out of {total_frames} total ({(len(different_frames) / total_frames * 100):.1f}%)"
-  )
+  total_frames = max(frame_counts)
+  frame_delta = frame_counts[1] - frame_counts[0]
+  extra_frames = abs(frame_delta)
+  different_total = len(different_frames) + extra_frames
+
+  def bold(text):
+    return f"<b>{text}</b>"
+
+  if different_total == 0:
+    result_text = f"✅ Videos are identical! ({bold(total_frames)} frames)"
+  else:
+    percentage = f'{different_total / total_frames * 100:.1f}%'
+    result_text = f"❌ Found {bold(different_total)} different frames out of {bold(total_frames)} total ({bold(percentage)})."
+    if frame_delta != 0:
+      result_text += f"<p>{bold('Video 2' if frame_delta > 0 else 'Video 0')} is longer by {bold(extra_frames)} frames.</p>"
 
   html = f"""<h2>UI Diff</h2>
 <table>
@@ -97,14 +101,14 @@ def generate_html_report(video1, video2, basedir, different_frames, frame_data, 
 <td width='33%'>
   <p><strong>Video 1</strong></p>
   <video id='video1' width='100%' autoplay muted onplay='syncVideos()'>
-    <source src='{os.path.join(basedir, os.path.basename(video1))}' type='video/mp4'>
+    <source src='{os.path.join(basedir, os.path.basename(videos[0]))}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
 </td>
 <td width='33%'>
   <p><strong>Video 2</strong></p>
   <video id='video2' width='100%' autoplay muted onplay='syncVideos()'>
-    <source src='{os.path.join(basedir, os.path.basename(video2))}' type='video/mp4'>
+    <source src='{os.path.join(basedir, os.path.basename(videos[1]))}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
 </td>
@@ -154,7 +158,7 @@ videos.forEach((v) => {{
 }});
 </script>
 <hr>
-<p><strong>Results:</strong> {result_text}</p>
+<p><h3>Results:</h3> {result_text}</p>
 """
   return html
 
@@ -183,14 +187,14 @@ def main():
   diff_video_path = os.path.join(os.path.dirname(args.output), DIFF_OUT_DIR / "diff.mp4")
   create_diff_video(args.video1, args.video2, diff_video_path)
 
-  different_frames, frame_data, total_frames = find_differences(args.video1, args.video2)
+  different_frames, frame_data, (frame_counts) = find_differences(args.video1, args.video2)
 
   if different_frames is None:
     sys.exit(1)
 
   print()
   print("Generating HTML report...")
-  html = generate_html_report(args.video1, args.video2, args.basedir, different_frames, frame_data, total_frames)
+  html = generate_html_report((args.video1, args.video2), args.basedir, different_frames, frame_data, frame_counts)
 
   with open(DIFF_OUT_DIR / args.output, 'w') as f:
     f.write(html)
@@ -200,7 +204,8 @@ def main():
     print(f"Opening {args.output} in browser...")
     webbrowser.open(f'file://{os.path.abspath(DIFF_OUT_DIR / args.output)}')
 
-  return 0 if len(different_frames) == 0 else 1
+  extra_frames = abs(frame_counts[0] - frame_counts[1])
+  return 0 if (len(different_frames) + extra_frames) == 0 else 1
 
 
 if __name__ == "__main__":
