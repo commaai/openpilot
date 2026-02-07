@@ -42,7 +42,7 @@ class MiciMainLayout(Widget):
       self._onroad_layout,
     ], spacing=0, pad_start=0, pad_end=0)
     self._scroller.set_reset_scroll_at_show(False)
-    self._scroller.set_enabled(lambda: self.enabled)
+    self._scroller.set_enabled(lambda: self.enabled)  # for nav stack
 
     # Disable scrolling when onroad is interacting with bookmark
     self._scroller.set_scrolling_enabled(lambda: not self._onroad_layout.is_swiping_left())
@@ -60,7 +60,7 @@ class MiciMainLayout(Widget):
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=lambda: gui_app.push_widget(self._settings_layout))
     self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
-    device.add_interactive_timeout_callback(self._set_mode_for_started)
+    device.add_interactive_timeout_callback(self._on_interactive_timeout)
 
   def _scroll_to(self, layout: Widget):
     layout_x = int(layout.rect.x)
@@ -77,43 +77,51 @@ class MiciMainLayout(Widget):
     # Render
     self._scroller.render(self._rect)
 
-    # If not in background stack
-    if self.enabled:
-      self._handle_transitions()
+    self._handle_transitions()
 
   def _handle_transitions(self):
+    # Don't pop if onboarding
+    if gui_app.get_active_widget() == self._onboarding_window:
+      return
+
     if ui_state.started != self._prev_onroad:
       self._prev_onroad = ui_state.started
 
+      # onroad: after delay, pop nav stack and scroll to onroad
+      # offroad: immediately scroll to home, but don't pop nav stack (can stay in settings)
       if ui_state.started:
         self._onroad_time_delay = rl.get_time()
       else:
-        self._set_mode_for_started(True)
+        self._scroll_to(self._home_layout)
 
-    # delay so we show home for a bit after starting
     if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
-      self._set_mode_for_started(True)
+      gui_app.pop_widgets_to(self)
+      self._scroll_to(self._onroad_layout)
       self._onroad_time_delay = None
 
+    # when car leaves standstill, pop nav stack and scroll to onroad
     CS = ui_state.sm["carState"]
     if not CS.standstill and self._prev_standstill:
       gui_app.pop_widgets_to(self)
       self._scroll_to(self._onroad_layout)
     self._prev_standstill = CS.standstill
 
-  def _set_mode_for_started(self, onroad_transition: bool = False):
-    print(f'_set_mode_for_started, {ui_state.started=}, {onroad_transition=}')
+  def _on_interactive_timeout(self):
+    print(f'_on_interactive_timeout, {ui_state.started=}')
+
+    # Don't pop if onboarding
+    print('get active', gui_app.get_active_widget(), self._onboarding_window.completed)
+    if gui_app.get_active_widget() == self._onboarding_window:
+      return
+
     if ui_state.started:
-      CS = ui_state.sm["carState"]
-      # Only go onroad if car starts or is not at a standstill
-      if not CS.standstill or onroad_transition:
+      # Don't pop if at standstill
+      if not ui_state.sm["carState"].standstill:
         gui_app.pop_widgets_to(self)
         self._scroll_to(self._onroad_layout)
     else:
-      # Stay in settings if car turns off while in settings
-      if not onroad_transition or gui_app.get_active_widget() != self:
-        gui_app.pop_widgets_to(self)
-        self._scroll_to(self._home_layout)
+      gui_app.pop_widgets_to(self)
+      self._scroll_to(self._home_layout)
 
   def _on_bookmark_clicked(self):
     user_bookmark = messaging.new_message('bookmarkButton')
