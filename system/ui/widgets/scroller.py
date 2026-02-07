@@ -26,7 +26,7 @@ SCROLL_DOT_HEIGHT = 14
 SCROLL_DOT_SPACING = 10
 
 # Exclusive touch zone height for scroll indicator (from bottom of screen)
-SCROLL_INDICATOR_TOUCH_ZONE = 50
+SCROLL_INDICATOR_TOUCH_ZONE = 40
 
 # Position indicator pill dimensions
 POSITION_PILL_WIDTH = 36
