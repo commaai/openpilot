@@ -18,21 +18,6 @@ RUN /tmp/tools/install_ubuntu_dependencies.sh && \
     cd /usr/lib/gcc/arm-none-eabi/* && \
     rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    apt-utils \
-    alien \
-    unzip \
-    tar \
-    curl \
-    xz-utils \
-    dbus \
-    gcc-arm-none-eabi \
-    tmux \
-    vim \
-    libx11-6 \
-    wget \
-  && rm -rf /var/lib/apt/lists/*
-
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
 ENV QTWEBENGINE_DISABLE_SANDBOX=1
