@@ -33,14 +33,9 @@ class Event:
 
 
 SCRIPT = [
-  Event(delay=0.5),
+  Event(),
   Event(click=True),  # settings
   Event(click=True),  # toggles
-  Event(swipe_left=True, delay=1.5),  # explore toggles
-  Event(swipe_down=True),  # back to settings
-  Event(swipe_left=True, delay=1.5),  # explore settings
-  Event(swipe_down=True),  # back to home
-  Event(swipe_right=True),  # open alerts
   Event(),  # wait
 ]
 
