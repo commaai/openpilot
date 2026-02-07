@@ -100,7 +100,7 @@ class NetworkLayoutMici(NavWidget):
       self._cellular_metered_btn,
       # */
       self._ip_address_btn,
-    ], snap_items=False)
+    ], snap_items=False, scroll_bar_margin=True)
 
     # Set initial config
     roaming_enabled = ui_state.params.get_bool("GsmRoaming")

@@ -8,6 +8,7 @@ from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.toggles import TogglesLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMici
+from openpilot.selfdrive.ui.mici.layouts.settings.network.fake_wifi_ui import FakeWifiUI
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici, PairBigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayout
@@ -22,6 +23,7 @@ class PanelType(IntEnum):
   DEVELOPER = 3
   USER_MANUAL = 4
   FIREHOSE = 5
+  NETWORK2 = 6
 
 
 @dataclass
@@ -48,15 +50,19 @@ class SettingsLayout(NavWidget):
     firehose_btn = BigButton("firehose", "", "icons_mici/settings/firehose.png", icon_size=(52, 62))
     firehose_btn.set_click_callback(lambda: self._set_current_panel(PanelType.FIREHOSE))
 
+    network2_btn = BigButton("network2", "", "icons_mici/settings/network/wifi_strength_full.png", icon_size=(76, 56))
+    network2_btn.set_click_callback(lambda: self._set_current_panel(PanelType.NETWORK2))
+
     self._scroller = Scroller([
       toggles_btn,
+      network2_btn,
       network_btn,
       device_btn,
       PairBigButton(),
       #BigDialogButton("manual", "", "icons_mici/settings/manual_icon.png", "Check out the mici user\nmanual at comma.ai/setup"),
       firehose_btn,
       developer_btn,
-    ], snap_items=False)
+    ], snap_items=False, scroll_bar_margin=True)
 
     # Set up back navigation
     self.set_back_callback(self.close_settings)
@@ -65,6 +71,7 @@ class SettingsLayout(NavWidget):
     self._panels = {
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.NETWORK: PanelInfo("Network", NetworkLayoutMici(back_callback=lambda: self._set_current_panel(None))),
+      PanelType.NETWORK2: PanelInfo("Network2", FakeWifiUI(back_callback=lambda: self._set_current_panel(None))),
       PanelType.DEVICE: PanelInfo("Device", DeviceLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.DEVELOPER: PanelInfo("Developer", DeveloperLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.FIREHOSE: PanelInfo("Firehose", FirehoseLayout(back_callback=lambda: self._set_current_panel(None))),
