@@ -27,8 +27,14 @@ class TogglesLayoutMici(NavWidget):
     enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
 
     self._scroller = Scroller([
+      self._personality_toggle,
+      self._experimental_btn,
+      is_metric_toggle,
       ldw_toggle,
       always_on_dm_toggle,
+      record_front,
+      record_mic,
+      enable_openpilot,
     ], snap_items=False)
 
     # Toggle lists
