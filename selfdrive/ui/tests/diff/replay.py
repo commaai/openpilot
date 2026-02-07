@@ -23,19 +23,25 @@ HEADLESS = os.getenv("WINDOWED", "0") == "1"
 
 
 @dataclass
-class DummyEvent:
+class Event:
   click: bool = False
   # TODO: add some kind of intensity
   swipe_left: bool = False
   swipe_right: bool = False
   swipe_down: bool = False
+  delay: float = 1.0  # seconds to wait after the event before processing the next one
 
 
 SCRIPT = [
-  (0, DummyEvent()),
-  (FPS * 1, DummyEvent(click=True)),
-  (FPS * 2, DummyEvent(click=True)),
-  (FPS * 3, DummyEvent()),
+  Event(delay=0.5),
+  Event(click=True),  # settings
+  Event(click=True),  # toggles
+  Event(swipe_left=True, delay=1.5),  # explore toggles
+  Event(swipe_down=True),  # back to settings
+  Event(swipe_left=True, delay=1.5),  # explore settings
+  Event(swipe_down=True),  # back to home
+  Event(swipe_right=True),  # open alerts
+  Event(),  # wait
 ]
 
 
@@ -61,7 +67,7 @@ def inject_click(coords):
     gui_app._mouse._events.extend(events)
 
 
-def handle_event(event: DummyEvent):
+def handle_event(event: Event):
   if event.click:
     inject_click([(gui_app.width // 2, gui_app.height // 2)])
   if event.swipe_left:
@@ -90,18 +96,21 @@ def run_replay():
 
   frame = 0
   script_index = 0
+  elapsed_time = 0.0
+  next_event_time = 0.0
 
   for should_render in gui_app.render():
-    while script_index < len(SCRIPT) and SCRIPT[script_index][0] == frame:
-      _, event = SCRIPT[script_index]
+    if script_index < len(SCRIPT) and elapsed_time >= next_event_time:
+      event = SCRIPT[script_index]
       handle_event(event)
+      next_event_time += event.delay
       script_index += 1
 
     ui_state.update()
-
     if should_render:
       main_layout.render()
 
+    elapsed_time += 1.0 / FPS
     frame += 1
 
     if script_index >= len(SCRIPT):
