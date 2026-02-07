@@ -262,7 +262,6 @@ def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, 
     margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
     max_width = gui_app.width - margin
     lines = wrap_text(font, text, metadata_size, max_width)
-    lines = [line.rstrip(',') for line in lines]
 
     # Draw wrapped metadata text
     y_offset = 6
