@@ -40,24 +40,14 @@ function init_ble {
     echo '/usr/lib/python3/dist-packages' | sudo tee "$PTH_FILE" > /dev/null
   fi
 
-  # If btattach is already running and adapter is powered AND BlueZ sees it, skip re-init
+  # If btattach is already running and adapter is powered, skip re-init
   if pgrep -f "btattach.*ttyHS1" >/dev/null 2>&1 && hciconfig hci0 >/dev/null 2>&1; then
-    if busctl tree org.bluez 2>/dev/null | grep -q hci0; then
-      echo "Bluetooth already running"
-      return
-    fi
-    echo "Bluetooth adapter up but BlueZ doesn't see it, restarting bluetoothd..."
-    sudo systemctl restart bluetooth
-    sleep 2
-    if busctl tree org.bluez 2>/dev/null | grep -q hci0; then
-      echo "Bluetooth ready after bluetoothd restart"
-      return
-    fi
+    echo "Bluetooth already running"
+    return
   fi
 
   echo "Initializing Bluetooth..."
-  sudo pkill -9 -f btattach 2>/dev/null || true
-  sleep 1
+  sudo pkill -f btattach 2>/dev/null || true
   sudo hciconfig hci0 down 2>/dev/null || true
   sleep 1
 
@@ -70,25 +60,16 @@ function init_ble {
       echo "Bluetooth adapter found"
       sudo hciconfig hci0 down
 
-      sudo hciconfig hci0 up
-
-      # Restart bluetoothd so it registers the adapter in D-Bus
-      # BlueZ config has ControllerMode=le so it will stay in LE-only mode
-      sudo systemctl restart bluetooth
-      sleep 2
-
-      # Set static address derived from DongleId (must be done after bluetoothd starts)
-      # Disable BR/EDR so adapter uses static address for LE
+      # set static address derived from DongleId
       DONGLE_ID=$(cat /data/params/d/DongleId 2>/dev/null)
       if [ -n "$DONGLE_ID" ]; then
         DID=$(echo "$DONGLE_ID" | tr '[:upper:]' '[:lower:]')
         MAC="C0:${DID:0:2}:${DID:2:2}:${DID:4:2}:${DID:6:2}:${DID:8:2}"
-        sudo btmgmt --index 0 power off 2>/dev/null || true
-        sudo btmgmt --index 0 bredr off 2>/dev/null || true
         sudo btmgmt --index 0 static-addr "$MAC" 2>/dev/null || true
-        sudo btmgmt --index 0 power on 2>/dev/null || true
+        sudo btmgmt --index 0 privacy on 2>/dev/null || true
       fi
 
+      sudo hciconfig hci0 up
       echo "Bluetooth initialized"
       return
     fi
