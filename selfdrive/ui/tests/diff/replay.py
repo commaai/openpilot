@@ -33,9 +33,19 @@ class Event:
 
 
 SCRIPT = [
-  Event(),  # wait for initialization
+  Event(delay=0.5),  # home page
+  Event(swipe_right=True, delay=0.75),  # open alerts
+  Event(swipe_left=True, delay=0.5),  # back to home
+  Event(swipe_left=True, delay=0.75),  # onroad view (system booting)
+  Event(click=True, delay=0.5),  # back to home
   Event(click=True),  # open settings
+  Event(swipe_left=True, delay=1.5),  # explore settings
+  Event(swipe_right=True),  # swipe back again
   Event(click=True),  # open toggles
+  Event(swipe_left=True, delay=1.5),  # explore toggles
+  Event(swipe_left=True),  # rest of toggles
+  Event(swipe_down=True, delay=0.5),  # back to settings
+  Event(swipe_down=True, delay=0.5),  # back to home
 ]
 
 
