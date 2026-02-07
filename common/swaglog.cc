@@ -9,8 +9,14 @@
 #include <mutex>
 #include <string>
 
-#include <zmq.h>
+#include <clocale>
+#include <cstring>
+#include <fcntl.h>
 #include <stdarg.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
 #include "third_party/json11/json11.hpp"
 #include "common/version.h"
 #include "system/hardware/hw.h"
@@ -18,13 +24,23 @@
 class SwaglogState {
 public:
   SwaglogState() {
-    zctx = zmq_ctx_new();
-    sock = zmq_socket(zctx, ZMQ_PUSH);
+    // Create Unix datagram socket
+    sock_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
+    if (sock_fd >= 0) {
+      // Set non-blocking
+      int flags = fcntl(sock_fd, F_GETFL, 0);
+      fcntl(sock_fd, F_SETFL, flags | O_NONBLOCK);
 
-    // Timeout on shutdown for messages to be received by the logging process
-    int timeout = 100;
-    zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
-    zmq_connect(sock, Path::swaglog_ipc().c_str());
+      // Set up destination address
+      memset(&sock_addr, 0, sizeof(sock_addr));
+      sock_addr.sun_family = AF_UNIX;
+      std::string ipc_path = Path::swaglog_ipc();
+      // Convert "ipc:///path" to "/path"
+      if (ipc_path.rfind("ipc://", 0) == 0) {
+        ipc_path = ipc_path.substr(6);
+      }
+      strncpy(sock_addr.sun_path, ipc_path.c_str(), sizeof(sock_addr.sun_path) - 1);
+    }
 
     // workaround for https://github.com/dropbox/json11/issues/38
     setlocale(LC_NUMERIC, "C");
@@ -62,8 +78,9 @@ public:
   }
 
   ~SwaglogState() {
-    zmq_close(sock);
-    zmq_ctx_destroy(zctx);
+    if (sock_fd >= 0) {
+      close(sock_fd);
+    }
   }
 
   void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
@@ -71,12 +88,16 @@ public:
     if (levelnum >= print_level) {
       printf("%s: %s\n", filename, msg);
     }
-    zmq_send(sock, log_s.data(), log_s.length(), ZMQ_NOBLOCK);
+    if (sock_fd >= 0) {
+      // Non-blocking sendto, silently drops on failure (matches ZMQ NOBLOCK behavior)
+      sendto(sock_fd, log_s.data(), log_s.length(), 0,
+             (struct sockaddr*)&sock_addr, sizeof(sock_addr));
+    }
   }
 
   std::mutex lock;
-  void* zctx = nullptr;
-  void* sock = nullptr;
+  int sock_fd = -1;
+  struct sockaddr_un sock_addr;
   int print_level;
   json11::Json::object ctx_j;
 };

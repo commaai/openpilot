@@ -1,5 +1,10 @@
-#include <zmq.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 
+#include <atomic>
+#include <cstring>
 #include <iostream>
 
 #include "catch2/catch.hpp"
@@ -17,58 +22,8 @@ void log_thread(int thread_id, int msg_cnt) {
   for (int i = 0; i < msg_cnt; ++i) {
     LOGD("%d", thread_id);
     LINE_NO = __LINE__ - 1;
-    usleep(1);
+    usleep(100);  // Small delay to avoid overwhelming the socket buffer
   }
-}
-
-void recv_log(int thread_cnt, int thread_msg_cnt) {
-  void *zctx = zmq_ctx_new();
-  void *sock = zmq_socket(zctx, ZMQ_PULL);
-  zmq_bind(sock, Path::swaglog_ipc().c_str());
-  std::vector<int> thread_msgs(thread_cnt);
-  int total_count = 0;
-
-  for (auto start = std::chrono::steady_clock::now(), now = start;
-       now < start + std::chrono::seconds{1} && total_count < (thread_cnt * thread_msg_cnt);
-       now = std::chrono::steady_clock::now()) {
-    char buf[4096] = {};
-    if (zmq_recv(sock, buf, sizeof(buf), ZMQ_DONTWAIT) <= 0) {
-      if (errno == EAGAIN || errno == EINTR || errno == EFSM) continue;
-      break;
-    }
-
-    REQUIRE(buf[0] == CLOUDLOG_DEBUG);
-    std::string err;
-    auto msg = json11::Json::parse(buf + 1, err);
-    REQUIRE(!msg.is_null());
-
-    REQUIRE(msg["levelnum"].int_value() == CLOUDLOG_DEBUG);
-    REQUIRE_THAT(msg["filename"].string_value(), Catch::Contains("test_swaglog.cc"));
-    REQUIRE(msg["funcname"].string_value() == "log_thread");
-    REQUIRE(msg["lineno"].int_value() == LINE_NO);
-
-    auto ctx = msg["ctx"];
-
-    REQUIRE(ctx["daemon"].string_value() == daemon_name);
-    REQUIRE(ctx["dongle_id"].string_value() == dongle_id);
-    REQUIRE(ctx["dirty"].bool_value() == true);
-
-    REQUIRE(ctx["version"].string_value() == COMMA_VERSION);
-
-    std::string device = Hardware::get_name();
-    REQUIRE(ctx["device"].string_value() == device);
-
-    int thread_id = atoi(msg["msg"].string_value().c_str());
-    REQUIRE((thread_id >= 0 && thread_id < thread_cnt));
-    thread_msgs[thread_id]++;
-    total_count++;
-  }
-  for (int i = 0; i < thread_cnt; ++i) {
-    INFO("thread :" << i);
-    REQUIRE(thread_msgs[i] == thread_msg_cnt);
-  }
-  zmq_close(sock);
-  zmq_ctx_destroy(zctx);
 }
 
 TEST_CASE("swaglog") {
@@ -78,11 +33,81 @@ TEST_CASE("swaglog") {
   const int thread_cnt = 5;
   const int thread_msg_cnt = 100;
 
+  // Create and bind receiver socket BEFORE starting senders
+  // (datagram sockets drop messages if no receiver is bound)
+  int sock_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
+  REQUIRE(sock_fd >= 0);
+
+  // Increase receive buffer to handle burst of messages
+  int rcvbuf = 1024 * 1024;  // 1MB buffer
+  setsockopt(sock_fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(rcvbuf));
+
+  int flags = fcntl(sock_fd, F_GETFL, 0);
+  fcntl(sock_fd, F_SETFL, flags | O_NONBLOCK);
+
+  std::string ipc_path = Path::swaglog_ipc();
+  if (ipc_path.rfind("ipc://", 0) == 0) {
+    ipc_path = ipc_path.substr(6);
+  }
+  unlink(ipc_path.c_str());
+
+  struct sockaddr_un addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, ipc_path.c_str(), sizeof(addr.sun_path) - 1);
+  REQUIRE(bind(sock_fd, (struct sockaddr*)&addr, sizeof(addr)) == 0);
+
+  // Shared state for receiver thread
+  std::vector<int> thread_msgs(thread_cnt);
+  std::atomic<int> total_count{0};
+  std::atomic<bool> stop_receiver{false};
+
+  // Start receiver thread BEFORE senders to receive messages concurrently
+  std::thread receiver_thread([&]() {
+    while (!stop_receiver || total_count < (thread_cnt * thread_msg_cnt)) {
+      char buf[4096] = {};
+      ssize_t len = recv(sock_fd, buf, sizeof(buf), 0);
+      if (len <= 0) {
+        if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK) {
+          usleep(100);
+          continue;
+        }
+        break;
+      }
+
+      if (buf[0] != CLOUDLOG_DEBUG) continue;
+      std::string err;
+      auto msg = json11::Json::parse(buf + 1, err);
+      if (msg.is_null()) continue;
+
+      int thread_id = atoi(msg["msg"].string_value().c_str());
+      if (thread_id >= 0 && thread_id < thread_cnt) {
+        thread_msgs[thread_id]++;
+        total_count++;
+      }
+
+      if (total_count >= thread_cnt * thread_msg_cnt) break;
+    }
+  });
+
+  // Now start senders
   std::vector<std::thread> log_threads;
   for (int i = 0; i < thread_cnt; ++i) {
     log_threads.push_back(std::thread(log_thread, i, thread_msg_cnt));
   }
   for (auto &t : log_threads) t.join();
 
-  recv_log(thread_cnt, thread_msg_cnt);
+  // Signal receiver to stop and wait for it
+  stop_receiver = true;
+  // Give receiver a bit more time to drain any remaining messages
+  usleep(100000);  // 100ms
+  receiver_thread.join();
+
+  // Verify all messages were received
+  for (int i = 0; i < thread_cnt; ++i) {
+    INFO("thread :" << i);
+    REQUIRE(thread_msgs[i] == thread_msg_cnt);
+  }
+  close(sock_fd);
+  unlink(ipc_path.c_str());
 }

@@ -41,7 +41,6 @@ dependencies = [
   "onnx >= 1.14.0",
 
   # logging
-  "pyzmq",
   "sentry-sdk",
   "xattr",  # used in place of 'os.getxattr' for macOS compatibility
 
