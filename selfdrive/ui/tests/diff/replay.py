@@ -101,6 +101,7 @@ def run_replay():
       script_index += 1
 
     ui_state.update()
+
     if should_render:
       main_layout.render()
 
