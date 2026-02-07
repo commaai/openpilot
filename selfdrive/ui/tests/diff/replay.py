@@ -94,7 +94,7 @@ def run_replay():
   next_event_time = 0.0
 
   for should_render in gui_app.render():
-    if script_index < len(SCRIPT) and elapsed_time >= next_event_time:
+    while script_index < len(SCRIPT) and elapsed_time >= next_event_time:
       event = SCRIPT[script_index]
       handle_event(event)
       next_event_time += event.delay
