@@ -17,8 +17,8 @@ def run_diff(video1, video2):
   cmd = [
     sys.executable,
     str(Path(__file__).parent / "diff.py"),
-    video1,
-    video2,
+    str(DIFF_OUT_DIR / video1),
+    str(DIFF_OUT_DIR / video2),
   ]
   return subprocess.run(cmd, check=False).returncode
 
