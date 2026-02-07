@@ -238,30 +238,9 @@ def draw_text_box(text, x, y, size, gui_app, font, color=None, center=False):
   rl.draw_text_ex(font, text, rl.Vector2(x, y), size, 0, text_color)
 
 
-def _wrap_text_by_delimiter(text: str, font, font_size: int, max_width: int, delimiter: str = ", ") -> list[str]:
-  from openpilot.system.ui.lib.text_measure import measure_text_cached
-  """Wrap text by splitting on delimiter when it exceeds max_width."""
-  words = text.split(delimiter)
-  lines: list[str] = []
-  current_line: list[str] = []
-  # Build lines word by word
-  for word in words:
-    current_line.append(word)
-    check_line = delimiter.join(current_line)
-    # Check if line exceeds max width
-    if measure_text_cached(font, check_line, font_size).x > max_width:
-      current_line.pop()  # Line is too long, move word to next line
-      if current_line:
-        lines.append(delimiter.join(current_line))
-      current_line = [word]
-  # Add leftover words as last line
-  if current_line:
-    lines.append(delimiter.join(current_line))
-  return lines
-
-
 def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
   from openpilot.system.ui.lib.text_measure import measure_text_cached
+  from openpilot.system.ui.lib.wrap_text import wrap_text
   metadata_size = 16 if big else 12
   title_size = 32 if big else 24
   time_size = 24 if big else 16
@@ -282,7 +261,7 @@ def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, 
     # Wrap text if too wide (leave margin on each side)
     margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
     max_width = gui_app.width - margin
-    lines = _wrap_text_by_delimiter(text, font, metadata_size, max_width)
+    lines = wrap_text(font, text, metadata_size, max_width)
 
     # Draw wrapped metadata text
     y_offset = 6
