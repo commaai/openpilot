@@ -58,9 +58,6 @@ function install_ubuntu_common_requirements() {
     libzmq3-dev \
     libzstd-dev \
     libsqlite3-dev \
-    opencl-headers \
-    ocl-icd-libopencl1 \
-    ocl-icd-opencl-dev \
     portaudio19-dev \
     qttools5-dev-tools \
     libqt5svg5-dev \
