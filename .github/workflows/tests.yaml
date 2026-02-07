@@ -206,7 +206,8 @@ jobs:
       with:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
-    - uses: actions/upload-artifact@v6
+    - name: Upload diff report
+      uses: actions/upload-artifact@v6
       if: always() && github.event_name == 'pull_request'
       continue-on-error: true
       with:
