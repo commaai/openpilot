@@ -84,41 +84,31 @@ def generate_html_report(videos: tuple[str, str], basedir: str, different_frames
   extra_frames = abs(frame_delta)
   different_total = len(different_frames) + extra_frames
 
-  def bold(text):
-    return f"<b>{text}</b>"
-
   if different_total == 0:
-    result_text = f"✅ Videos are identical! ({bold(total_frames)} frames)"
+    result_text = f"✅ Videos are identical! ({total_frames} frames)"
   else:
     percentage = f'{different_total / total_frames * 100:.1f}%'
-    result_text = f"❌ Found {bold(different_total)} different frames out of {bold(total_frames)} total ({bold(percentage)})."
+    result_text = f"❌ Found {different_total} different frames out of {total_frames} total ({percentage})."
     if frame_delta != 0:
-      result_text += f"<p>{bold('Video 2' if frame_delta > 0 else 'Video 0')} is longer by {bold(extra_frames)} frames.</p>"
+      result_text += f" {'Video 2' if frame_delta > 0 else 'Video 0'} is longer by {extra_frames} frames."
+
+  def render_video_cell(video_id: str, title: str, path: str, is_diff=False):
+    return f"""
+<td width='33%'>
+  <p><strong>{title}</strong></p>
+  <video id='{video_id}' width='100%' autoplay muted {'' if is_diff else "onplay='syncVideos()'"}>
+    <source src='{os.path.join(basedir, os.path.basename(path))}' type='video/mp4'>
+    Your browser does not support the video tag.
+  </video>
+</td>
+"""
 
   html = f"""<h2>UI Diff</h2>
 <table>
 <tr>
-<td width='33%'>
-  <p><strong>Video 1</strong></p>
-  <video id='video1' width='100%' autoplay muted onplay='syncVideos()'>
-    <source src='{os.path.join(basedir, os.path.basename(videos[0]))}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
-<td width='33%'>
-  <p><strong>Video 2</strong></p>
-  <video id='video2' width='100%' autoplay muted onplay='syncVideos()'>
-    <source src='{os.path.join(basedir, os.path.basename(videos[1]))}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
-<td width='33%'>
-  <p><strong>Pixel Diff</strong></p>
-  <video id='diffVideo' width='100%' autoplay muted>
-    <source src='{os.path.join(basedir, 'diff.mp4')}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
+{render_video_cell("video1", "Video 1", videos[0])}
+{render_video_cell("video2", "Video 2", videos[1])}
+{render_video_cell("diffVideo", "Pixel Diff", 'diff.mp4', is_diff=True)}
 </tr>
 </table>
 <script>
@@ -158,7 +148,7 @@ videos.forEach((v) => {{
 }});
 </script>
 <hr>
-<p><h3>Results:</h3> {result_text}</p>
+<p><strong>Results:</strong> {result_text}</p>
 """
   return html
 
