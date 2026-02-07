@@ -96,21 +96,21 @@ def generate_html_report(video1, video2, basedir, different_frames, frame_data, 
 <tr>
 <td width='33%'>
   <p><strong>Video 1</strong></p>
-  <video id='video1' width='100%' autoplay muted loop onplay='syncVideos()'>
+  <video id='video1' width='100%' autoplay muted onplay='syncVideos()'>
     <source src='{os.path.join(basedir, os.path.basename(video1))}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
 </td>
 <td width='33%'>
   <p><strong>Video 2</strong></p>
-  <video id='video2' width='100%' autoplay muted loop onplay='syncVideos()'>
+  <video id='video2' width='100%' autoplay muted onplay='syncVideos()'>
     <source src='{os.path.join(basedir, os.path.basename(video2))}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
 </td>
 <td width='33%'>
   <p><strong>Pixel Diff</strong></p>
-  <video id='diffVideo' width='100%' autoplay muted loop>
+  <video id='diffVideo' width='100%' autoplay muted>
     <source src='{os.path.join(basedir, 'diff.mp4')}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
@@ -118,33 +118,39 @@ def generate_html_report(video1, video2, basedir, different_frames, frame_data, 
 </tr>
 </table>
 <script>
+const videos = [
+  document.getElementById('video1'),
+  document.getElementById('video2'),
+  document.getElementById('diffVideo'),
+];
+
+const isEnded = (v) => v.ended || (Number.isFinite(v.duration) && v.currentTime >= (v.duration - 0.05));
+const playAll = () => videos.forEach((v) => v.play());
+
 function syncVideos() {{
-  const video1 = document.getElementById('video1');
-  const video2 = document.getElementById('video2');
-  const diffVideo = document.getElementById('diffVideo');
-  video1.currentTime = video2.currentTime = diffVideo.currentTime;
+  const t = Math.min(...videos.map((v) => v.currentTime));
+  videos.forEach((v) => {{ v.currentTime = t; }});
+  playAll();
 }}
-video1.addEventListener('timeupdate', () => {{
-  if (Math.abs(video1.currentTime - video2.currentTime) > 0.1) {{
-    video2.currentTime = video1.currentTime;
+
+function handleEnded(endedVideo) {{
+  endedVideo.pause();
+  if (videos.every(isEnded)) {{
+    videos.forEach((v) => {{ v.currentTime = 0; }});
+    playAll();
   }}
-  if (Math.abs(video1.currentTime - diffVideo.currentTime) > 0.1) {{
-    diffVideo.currentTime = video1.currentTime;
-  }}
-}});
-video2.addEventListener('timeupdate', () => {{
-  if (Math.abs(video2.currentTime - video1.currentTime) > 0.1) {{
-    video1.currentTime = video2.currentTime;
-  }}
-  if (Math.abs(video2.currentTime - diffVideo.currentTime) > 0.1) {{
-    diffVideo.currentTime = video2.currentTime;
-  }}
-}});
-diffVideo.addEventListener('timeupdate', () => {{
-  if (Math.abs(diffVideo.currentTime - video1.currentTime) > 0.1) {{
-    video1.currentTime = diffVideo.currentTime;
-    video2.currentTime = diffVideo.currentTime;
-  }}
+}}
+
+videos.forEach((v) => {{
+  v.addEventListener('timeupdate', () => {{
+    videos.forEach((other) => {{
+      if (other !== v && !isEnded(other) && Math.abs(v.currentTime - other.currentTime) > 0.1) {{
+        other.currentTime = v.currentTime;
+        if (other.paused) other.play();
+      }}
+    }});
+  }});
+  v.addEventListener('ended', () => handleEnded(v));
 }});
 </script>
 <hr>
