@@ -33,10 +33,10 @@ class Event:
 
 
 SCRIPT = [
-  Event(),
-  Event(click=True),  # settings
-  Event(click=True),  # toggles
-  Event(),  # wait
+  Event(),  # wait for initialization
+  Event(click=True),  # open settings
+  Event(click=True),  # open toggles
+  Event(),  # wait to capture last event
 ]
 
 
