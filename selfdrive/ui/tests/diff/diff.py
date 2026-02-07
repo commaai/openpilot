@@ -81,14 +81,13 @@ def generate_html_report(videos: tuple[str, str], basedir: str, different_frames
 
   total_frames = max(frame_counts)
   frame_delta = frame_counts[1] - frame_counts[0]
-  extra_frames = abs(frame_delta)
-  different_total = len(different_frames) + extra_frames
+  different_total = len(different_frames) + abs(frame_delta)
 
   result_text = (
     f"✅ Videos are identical! ({total_frames} frames)"
     if different_total == 0
     else f"❌ Found {different_total} different frames out of {total_frames} total ({different_total / total_frames * 100:.1f}%)."
-    + f" Video {'2' if frame_delta > 0 else '1'} is longer by {extra_frames} frames."
+    + f" Video {'2' if frame_delta > 0 else '1'} is longer by {abs(frame_delta)} frames."
     if frame_delta != 0
     else ""
   )
