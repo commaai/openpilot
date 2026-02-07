@@ -107,10 +107,7 @@ class MiciMainLayout(Widget):
     self._prev_standstill = CS.standstill
 
   def _on_interactive_timeout(self):
-    print(f'_on_interactive_timeout, {ui_state.started=}')
-
     # Don't pop if onboarding
-    print('get active', gui_app.get_active_widget(), self._onboarding_window.completed)
     if gui_app.get_active_widget() == self._onboarding_window:
       return
 
