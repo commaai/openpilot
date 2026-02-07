@@ -36,7 +36,6 @@ SCRIPT = [
   Event(),  # wait for initialization
   Event(click=True),  # open settings
   Event(click=True),  # open toggles
-  Event(),  # wait to capture last event
 ]
 
 
@@ -108,7 +107,7 @@ def run_replay():
     elapsed_time += 1.0 / FPS
     frame += 1
 
-    if script_index >= len(SCRIPT):
+    if script_index >= len(SCRIPT) and elapsed_time >= next_event_time:
       break
 
   gui_app.close()
