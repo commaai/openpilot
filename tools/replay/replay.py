@@ -318,6 +318,16 @@ class Replay:
       return
 
     seek_to = self._seeking_to
+    should_resume = seek_to >= 0
+
+    if not should_resume:
+      with self._stream_lock:
+        # Only wake stream on segment merge if it's waiting for more events.
+        should_resume = not self._events_ready and not self._user_paused
+
+    if not should_resume:
+      return
+
     self._seeking_to = -1.0
     if seek_to >= 0 and self.on_seeked_to:
       self.on_seeked_to(seek_to)
@@ -337,7 +347,6 @@ class Replay:
     if self.on_segments_merged:
       self.on_segments_merged()
 
-    self._interrupt_stream(lambda: False)
     self._check_seek_progress()
 
   def _start_stream(self, segment) -> None:
