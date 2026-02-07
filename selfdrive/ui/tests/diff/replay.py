@@ -29,23 +29,26 @@ class Event:
   swipe_left: bool = False
   swipe_right: bool = False
   swipe_down: bool = False
-  delay: float = 1.0  # seconds to wait after the event before processing the next one
+  delay: float = 0.5  # seconds to wait after event
 
 
 SCRIPT = [
-  Event(delay=0.5),  # home page
+  Event(),  # home page
   Event(swipe_right=True, delay=0.75),  # open alerts
-  Event(swipe_left=True, delay=0.5),  # back to home
+  Event(swipe_left=True),  # back to home
   Event(swipe_left=True, delay=0.75),  # onroad view (system booting)
-  Event(click=True, delay=0.5),  # back to home
+  Event(click=True),  # back to home
   Event(click=True),  # open settings
-  Event(swipe_left=True, delay=1.5),  # explore settings
-  Event(swipe_right=True),  # swipe back again
+  Event(swipe_left=True, delay=1),  # explore settings
+  Event(click=True),  # open developer settings
+  Event(swipe_left=True, delay=1),  # explore developer settings
+  Event(swipe_down=True),  # back to settings
+  Event(swipe_right=True, delay=1),  # swipe back to beginning of settings
   Event(click=True),  # open toggles
-  Event(swipe_left=True, delay=1.5),  # explore toggles
+  Event(swipe_left=True, delay=1),  # explore toggles
   Event(swipe_left=True),  # rest of toggles
-  Event(swipe_down=True, delay=0.5),  # back to settings
-  Event(swipe_down=True, delay=0.5),  # back to home
+  Event(swipe_down=True),  # back to settings
+  Event(swipe_down=True),  # back to home
 ]
 
 
