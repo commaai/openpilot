@@ -270,8 +270,6 @@ class DeviceLayoutMici(NavWidget):
     super().__init__()
 
     self._fcc_dialog: HtmlModal | None = None
-    self._driver_camera: DriverCameraDialog | None = None
-    self._training_guide: TrainingGuide | None = None
 
     def power_off_callback():
       ui_state.params.put_bool("DoShutdown", True)
@@ -323,11 +321,11 @@ class DeviceLayoutMici(NavWidget):
     regulatory_btn.set_click_callback(self._on_regulatory)
 
     driver_cam_btn = BigButton("driver\ncamera preview", "", "icons_mici/settings/device/cameras.png")
-    driver_cam_btn.set_click_callback(self._show_driver_camera)
+    driver_cam_btn.set_click_callback(lambda: gui_app.push_widget(DriverCameraDialog()))
     driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
     review_training_guide_btn = BigButton("review\ntraining guide", "", "icons_mici/settings/device/info.png")
-    review_training_guide_btn.set_click_callback(self._on_review_training_guide)
+    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(TrainingGuide(completed_callback=gui_app.pop_widget)))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
     self._scroller = Scroller([
@@ -354,31 +352,10 @@ class DeviceLayoutMici(NavWidget):
   def _on_regulatory(self):
     if not self._fcc_dialog:
       self._fcc_dialog = MiciFccModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/mici_fcc.html"))
-    # gui_app.set_modal_overlay(self._fcc_dialog, callback=setattr(self, '_fcc_dialog', None))
-    # TODO: can we keep it around?
     gui_app.push_widget(self._fcc_dialog)
 
   def _offroad_transition(self):
     self._power_off_btn.set_visible(ui_state.is_offroad())
-
-  def _show_driver_camera(self):
-    if not self._driver_camera:
-      self._driver_camera = DriverCameraDialog()
-    # TODO: can we keep it around?
-    # gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
-    gui_app.push_widget(self._driver_camera)
-
-  def _on_review_training_guide(self):
-    if not self._training_guide:
-      def completed_callback():
-        # gui_app.set_modal_overlay(None)
-        gui_app.pop_widget()
-
-      self._training_guide = TrainingGuide(completed_callback=completed_callback)
-    # TODO: callbacks. do we need them?
-    # TODO: can we keep it around?
-    # gui_app.set_modal_overlay(self._training_guide, callback=lambda result: setattr(self, '_training_guide', None))
-    gui_app.push_widget(self._training_guide)
 
   def _load_languages(self):
     with open(os.path.join(BASEDIR, "selfdrive/ui/translations/languages.json")) as f:

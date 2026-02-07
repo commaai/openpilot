@@ -364,6 +364,7 @@ class TrainingGuide(Widget):
         self._completed_callback()
 
   def _render(self, _):
+    rl.draw_rectangle_rec(self._rect, rl.BLACK)
     if self._step < len(self._steps):
       self._steps[self._step].render(self._rect)
     return -1
