@@ -89,7 +89,7 @@ def generate_html_report(videos: tuple[str, str], basedir: str, different_frames
   else:
     result_text = f"❌ Found {different_total} different frames out of {total_frames} total ({different_total / total_frames * 100:.1f}%)."
     if frame_delta != 0:
-      result_text += f" {'Video 2' if frame_delta > 0 else 'Video 0'} is longer by {extra_frames} frames."
+      result_text += f" Video {'2' if frame_delta > 0 else '1'} is longer by {extra_frames} frames."
 
   def render_video_cell(video_id: str, title: str, path: str, is_diff=False):
     return f"""
