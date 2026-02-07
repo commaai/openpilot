@@ -257,8 +257,10 @@ void Replay::publishFrame(const Event *e) {
     default: return;  // Invalid event type
   }
 
-  if ((cam == DriverCam && !hasFlag(REPLAY_FLAG_DCAM)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_ECAM)))
-    return;  // Camera isdisabled
+  // Only send driver camera
+  if (cam != DriverCam) return;
+  // if ((cam == DriverCam && !hasFlag(REPLAY_FLAG_DCAM)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_ECAM)))
+  //   return;  // Camera isdisabled
 
   auto seg_it = event_data_->segments.find(e->eidx_segnum);
   if (seg_it != event_data_->segments.end()) {
@@ -386,7 +388,7 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
     if (interrupt_requested_) break;
 
     if (evt.eidx_segnum == -1) {
-      publishMessage(&evt);
+      // publishMessage(&evt);
     } else if (camera_server_) {
       if (speed_ > 1.0) {
         camera_server_->waitForSent();

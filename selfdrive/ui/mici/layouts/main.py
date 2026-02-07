@@ -4,7 +4,7 @@ import cereal.messaging as messaging
 from openpilot.selfdrive.ui.mici.layouts.home import MiciHomeLayout
 from openpilot.selfdrive.ui.mici.layouts.settings.settings import SettingsLayout
 from openpilot.selfdrive.ui.mici.layouts.offroad_alerts import MiciOffroadAlerts
-from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
+# from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.selfdrive.ui.mici.layouts.onboarding import OnboardingWindow
 from openpilot.system.ui.widgets import Widget
@@ -36,22 +36,23 @@ class MiciMainLayout(Widget):
     self._home_layout = MiciHomeLayout()
     self._alerts_layout = MiciOffroadAlerts()
     self._settings_layout = SettingsLayout()
-    self._onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
+    # self._onroad_layout = AugmentedRoadView(bookmark_callback=self._on_bookmark_clicked)
 
     # Initialize widget rects
-    for widget in (self._home_layout, self._settings_layout, self._alerts_layout, self._onroad_layout):
+    # for widget in (self._home_layout, self._settings_layout, self._alerts_layout, self._onroad_layout):
+    for widget in (self._home_layout, self._settings_layout, self._alerts_layout):
       # TODO: set parent rect and use it if never passed rect from render (like in Scroller)
       widget.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     self._scroller = Scroller([
       self._alerts_layout,
       self._home_layout,
-      self._onroad_layout,
+      # self._onroad_layout,
     ], spacing=0, pad_start=0, pad_end=0)
     self._scroller.set_reset_scroll_at_show(False)
 
     # Disable scrolling when onroad is interacting with bookmark
-    self._scroller.set_scrolling_enabled(lambda: not self._onroad_layout.is_swiping_left())
+    # self._scroller.set_scrolling_enabled(lambda: not self._onroad_layout.is_swiping_left())
 
     self._layouts = {
       MainState.MAIN: self._scroller,
@@ -69,7 +70,7 @@ class MiciMainLayout(Widget):
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=self._on_settings_clicked)
     self._settings_layout.set_callbacks(on_close=self._on_settings_closed)
-    self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
+    # self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
     device.add_interactive_timeout_callback(self._set_mode_for_started)
 
   def _scroll_to(self, layout: Widget):
@@ -105,37 +106,39 @@ class MiciMainLayout(Widget):
       self._current_mode = mode
 
   def _handle_transitions(self):
-    if ui_state.started != self._prev_onroad:
-      self._prev_onroad = ui_state.started
-
-      if ui_state.started:
-        self._onroad_time_delay = rl.get_time()
-      else:
-        self._set_mode_for_started(True)
-
-    # delay so we show home for a bit after starting
-    if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
-      self._set_mode_for_started(True)
-      self._onroad_time_delay = None
-
-    CS = ui_state.sm["carState"]
-    if not CS.standstill and self._prev_standstill:
-      self._set_mode(MainState.MAIN)
-      self._scroll_to(self._onroad_layout)
-    self._prev_standstill = CS.standstill
+    # if ui_state.started != self._prev_onroad:
+    #   self._prev_onroad = ui_state.started
+    #
+    #   if ui_state.started:
+    #     self._onroad_time_delay = rl.get_time()
+    #   else:
+    #     self._set_mode_for_started(True)
+    #
+    # # delay so we show home for a bit after starting
+    # if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
+    #   self._set_mode_for_started(True)
+    #   self._onroad_time_delay = None
+    #
+    # CS = ui_state.sm["carState"]
+    # if not CS.standstill and self._prev_standstill:
+    #   self._set_mode(MainState.MAIN)
+    #   self._scroll_to(self._onroad_layout)
+    # self._prev_standstill = CS.standstill
+    pass
 
   def _set_mode_for_started(self, onroad_transition: bool = False):
-    if ui_state.started:
-      CS = ui_state.sm["carState"]
-      # Only go onroad if car starts or is not at a standstill
-      if not CS.standstill or onroad_transition:
-        self._set_mode(MainState.MAIN)
-        self._scroll_to(self._onroad_layout)
-    else:
-      # Stay in settings if car turns off while in settings
-      if not onroad_transition or self._current_mode != MainState.SETTINGS:
-        self._set_mode(MainState.MAIN)
-        self._scroll_to(self._home_layout)
+    # if ui_state.started:
+    #   CS = ui_state.sm["carState"]
+    #   # Only go onroad if car starts or is not at a standstill
+    #   if not CS.standstill or onroad_transition:
+    #     self._set_mode(MainState.MAIN)
+    #     self._scroll_to(self._onroad_layout)
+    # else:
+    #   # Stay in settings if car turns off while in settings
+    #   if not onroad_transition or self._current_mode != MainState.SETTINGS:
+    #     self._set_mode(MainState.MAIN)
+    #     self._scroll_to(self._home_layout)
+    pass
 
   def _on_settings_clicked(self):
     self._set_mode(MainState.SETTINGS)

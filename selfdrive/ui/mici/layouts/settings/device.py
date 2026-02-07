@@ -326,7 +326,7 @@ class DeviceLayoutMici(NavWidget):
     driver_cam_btn.set_click_callback(self._show_driver_camera)
     driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
-    review_training_guide_btn = BigButton("review\nntraining guide", "", "icons_mici/settings/device/info.png")
+    review_training_guide_btn = BigButton("review\ntraining guide", "", "icons_mici/settings/device/info.png")
     review_training_guide_btn.set_click_callback(self._on_review_training_guide)
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
@@ -353,7 +353,7 @@ class DeviceLayoutMici(NavWidget):
   def _on_regulatory(self):
     if not self._fcc_dialog:
       self._fcc_dialog = MiciFccModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/mici_fcc.html"))
-    gui_app.set_modal_overlay(self._fcc_dialog, callback=setattr(self, '_fcc_dialog', None))
+    gui_app.set_modal_overlay(self._fcc_dialog)
 
   def _offroad_transition(self):
     self._power_off_btn.set_visible(ui_state.is_offroad())
@@ -361,7 +361,7 @@ class DeviceLayoutMici(NavWidget):
   def _show_driver_camera(self):
     if not self._driver_camera:
       self._driver_camera = DriverCameraDialog()
-    gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
+    gui_app.set_modal_overlay(self._driver_camera)
 
   def _on_review_training_guide(self):
     if not self._training_guide:
@@ -369,7 +369,7 @@ class DeviceLayoutMici(NavWidget):
         gui_app.set_modal_overlay(None)
 
       self._training_guide = TrainingGuide(completed_callback=completed_callback)
-    gui_app.set_modal_overlay(self._training_guide, callback=lambda result: setattr(self, '_training_guide', None))
+    gui_app.set_modal_overlay(self._training_guide)
 
   def _load_languages(self):
     with open(os.path.join(BASEDIR, "selfdrive/ui/translations/languages.json")) as f:
