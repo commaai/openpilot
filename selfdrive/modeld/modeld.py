@@ -15,7 +15,6 @@ from cereal import car, log
 from pathlib import Path
 from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from msgq.visionipc.visionipc_pyx import CLContext
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
@@ -143,7 +142,7 @@ class ModelState:
   output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
-  def __init__(self, context: CLContext):
+  def __init__(self):
     with open(VISION_METADATA_PATH, 'rb') as f:
       vision_metadata = pickle.load(f)
       self.vision_input_shapes =  vision_metadata['input_shapes']
@@ -166,7 +165,6 @@ class ModelState:
       self.full_input_queues.update_dtypes_and_shapes({k: self.numpy_inputs[k].dtype}, {k: self.numpy_inputs[k].shape})
     self.full_input_queues.reset()
 
-    # img buffers are managed in openCL transform code
     self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),
                            'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),}
     self.full_frames : dict[str, Tensor] = {}
@@ -242,10 +240,8 @@ def main(demo=False):
     config_realtime_process(7, 54)
 
   st = time.monotonic()
-  cloudlog.warning("setting up CL context")
-  cl_context = CLContext()
-  cloudlog.warning("CL context ready; loading model")
-  model = ModelState(cl_context)
+  cloudlog.warning("loading model")
+  model = ModelState()
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # visionipc clients
@@ -258,8 +254,8 @@ def main(demo=False):
     time.sleep(.1)
 
   vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
-  vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, cl_context)
-  vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
+  vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True)
+  vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False)
   cloudlog.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
 
   while not vipc_client_main.connect(False):
