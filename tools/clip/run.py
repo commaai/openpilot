@@ -226,11 +226,11 @@ def load_route_metadata(route):
   }
 
 
-def draw_text_box(rl, text, x, y, size, gui_app, font, font_scale, color=None, center=False):
+def draw_text_box(text, x, y, size, gui_app, font, color=None, center=False):
+  import pyray as rl
+  from openpilot.system.ui.lib.text_measure import measure_text_cached
   box_color, text_color = rl.Color(0, 0, 0, 85), color or rl.WHITE
-  # measure_text_ex is NOT auto-scaled, so multiply by font_scale
-  # draw_text_ex IS auto-scaled, so pass size directly
-  text_size = rl.measure_text_ex(font, text, size * font_scale, 0)
+  text_size = measure_text_cached(font, text, size)
   text_width, text_height = int(text_size.x), int(text_size.y)
   if center:
     x = (gui_app.width - text_width) // 2
@@ -238,7 +238,8 @@ def draw_text_box(rl, text, x, y, size, gui_app, font, font_scale, color=None, c
   rl.draw_text_ex(font, text, rl.Vector2(x, y), size, 0, text_color)
 
 
-def _wrap_text_by_delimiter(text: str, rl, font, font_size: int, font_scale: float, max_width: int, delimiter: str = ", ") -> list[str]:
+def _wrap_text_by_delimiter(text: str, font, font_size: int, max_width: int, delimiter: str = ", ") -> list[str]:
+  from openpilot.system.ui.lib.text_measure import measure_text_cached
   """Wrap text by splitting on delimiter when it exceeds max_width."""
   words = text.split(delimiter)
   lines: list[str] = []
@@ -248,7 +249,7 @@ def _wrap_text_by_delimiter(text: str, rl, font, font_size: int, font_scale: flo
     current_line.append(word)
     check_line = delimiter.join(current_line)
     # Check if line exceeds max width
-    if rl.measure_text_ex(font, check_line, font_size * font_scale, 0).x > max_width:
+    if measure_text_cached(font, check_line, font_size).x > max_width:
       current_line.pop()  # Line is too long, move word to next line
       if current_line:
         lines.append(delimiter.join(current_line))
@@ -259,7 +260,8 @@ def _wrap_text_by_delimiter(text: str, rl, font, font_size: int, font_scale: flo
   return lines
 
 
-def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
+def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
+  from openpilot.system.ui.lib.text_measure import measure_text_cached
   metadata_size = 16 if big else 12
   title_size = 32 if big else 24
   time_size = 24 if big else 16
@@ -269,8 +271,8 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
   if show_time:
     t = start_time + frame_idx / FRAMERATE
     time_text = f"{int(t) // 60:02d}:{int(t) % 60:02d}"
-    time_width = int(rl.measure_text_ex(font, time_text, time_size * font_scale, 0).x)
-    draw_text_box(rl, time_text, gui_app.width - time_width - 5, 0, time_size, gui_app, font, font_scale)
+    time_width = int(measure_text_cached(font, time_text, time_size).x)
+    draw_text_box(time_text, gui_app.width - time_width - 5, 0, time_size, gui_app, font)
 
   # Metadata overlay (first 5 seconds)
   if show_metadata and metadata and frame_idx < FRAMERATE * 5:
@@ -280,18 +282,18 @@ def render_overlays(rl, gui_app, font, font_scale, big, metadata, title, start_t
     # Wrap text if too wide (leave margin on each side)
     margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
     max_width = gui_app.width - margin
-    lines = _wrap_text_by_delimiter(text, rl, font, metadata_size, font_scale, max_width)
+    lines = _wrap_text_by_delimiter(text, font, metadata_size, max_width)
 
     # Draw wrapped metadata text
     y_offset = 6
     for line in lines:
-      draw_text_box(rl, line, 0, y_offset, metadata_size, gui_app, font, font_scale, center=True)
-      line_height = int(rl.measure_text_ex(font, line, metadata_size * font_scale, 0).y) + 4
+      draw_text_box(line, 0, y_offset, metadata_size, gui_app, font, center=True)
+      line_height = int(measure_text_cached(font, line, metadata_size).y) + 4
       y_offset += line_height
 
   # Title overlay
   if title:
-    draw_text_box(rl, title, 0, 60, title_size, gui_app, font, font_scale, center=True)
+    draw_text_box(title, 0, 60, title_size, gui_app, font, center=True)
 
 
 def clip(route: Route, output: str, start: int, end: int, headless: bool = True, big: bool = False,
@@ -304,7 +306,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
   else:
     from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView  # type: ignore[assignment]
   from openpilot.selfdrive.ui.ui_state import ui_state
-  from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+  from openpilot.system.ui.lib.application import gui_app, FontWeight
   timer.lap("import")
 
   logger.info(f"Clipping {route.name.canonical_name}, {start}s-{end}s ({duration}s)")
@@ -348,7 +350,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
         ui_state.update()
         if should_render:
           road_view.render()
-          render_overlays(rl, gui_app, font, FONT_SCALE, big, metadata, title, start, frame_idx, show_metadata, show_time)
+          render_overlays(gui_app, font, big, metadata, title, start, frame_idx, show_metadata, show_time)
         frame_idx += 1
         pbar.update(1)
     timer.lap("render")
