@@ -60,7 +60,8 @@ function init_ble {
   sudo hciconfig hci0 down 2>/dev/null || true
   sleep 1
 
-  sudo btattach -B /dev/ttyHS1 -S 115200 &
+  nohup sudo btattach -B /dev/ttyHS1 -S 115200 >/dev/null 2>&1 &
+  disown
 
   # wait for adapter
   for i in $(seq 1 10); do
@@ -77,11 +78,13 @@ function init_ble {
       sleep 2
 
       # Set static address derived from DongleId (must be done after bluetoothd starts)
+      # Disable BR/EDR so adapter uses static address for LE
       DONGLE_ID=$(cat /data/params/d/DongleId 2>/dev/null)
       if [ -n "$DONGLE_ID" ]; then
         DID=$(echo "$DONGLE_ID" | tr '[:upper:]' '[:lower:]')
         MAC="C0:${DID:0:2}:${DID:2:2}:${DID:4:2}:${DID:6:2}:${DID:8:2}"
         sudo btmgmt --index 0 power off 2>/dev/null || true
+        sudo btmgmt --index 0 bredr off 2>/dev/null || true
         sudo btmgmt --index 0 static-addr "$MAC" 2>/dev/null || true
         sudo btmgmt --index 0 power on 2>/dev/null || true
       fi
