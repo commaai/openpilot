@@ -57,11 +57,9 @@ base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
-  base_frameworks.append('OpenCL')
   base_frameworks.append('QtCharts')
   base_frameworks.append('QtSerialBus')
 else:
-  base_libs.append('OpenCL')
   base_libs.append('Qt5Charts')
   base_libs.append('Qt5SerialBus')
 
