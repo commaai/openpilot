@@ -101,6 +101,7 @@ class ScrollIndicator(Widget):
     self._parent_bottom = 0.0  # Bottom edge of parent scroller for touch zone
     self._last_drag_index: int | None = None  # Track last dragged index to avoid redundant calls
     self._scroll_progress = 0.0  # 0.0 to 1.0, tracks scroll position
+    self._scroller_is_active = False  # True when main scroller is being dragged
 
   def set_item_count(self, count: int):
     """Update the number of dots to match the scroller's item count."""
@@ -129,6 +130,10 @@ class ScrollIndicator(Widget):
   def set_scroll_progress(self, progress: float):
     """Set scroll progress (0.0 = start, 1.0 = end) for position indicator."""
     self._scroll_progress = max(0.0, min(1.0, progress))
+
+  def set_scroller_active(self, active: bool):
+    """Set whether the main scroller is actively being dragged."""
+    self._scroller_is_active = active
 
   def _get_total_width(self) -> float:
     """Calculate total width of all dots with spacing."""
@@ -185,6 +190,13 @@ class ScrollIndicator(Widget):
 
   def _process_indicator_input(self):
     """Process mouse/touch input for the indicator - similar to keyboard input handling."""
+    # If the main scroller is being dragged, ignore indicator input entirely
+    if self._scroller_is_active:
+      self._dragging_on_indicator = False
+      self._closest_dot = (None, float('inf'))
+      self._last_drag_index = None
+      return
+
     for mouse_event in gui_app.mouse_events:
       if mouse_event.left_pressed:
         # Start dragging if pressed within indicator area
@@ -297,7 +309,7 @@ class ScrollIndicator(Widget):
       pill_y = self._parent_bottom - POSITION_PILL_HEIGHT / 2
 
       pill_rect = rl.Rectangle(pill_x, pill_y, POSITION_PILL_WIDTH, POSITION_PILL_HEIGHT)
-      rl.draw_rectangle_rounded(pill_rect, 1.0, 8, rl.Color(255, 255, 255, 255))
+      rl.draw_rectangle_rounded(pill_rect, 1.0, 8, rl.Color(255, 255, 255, 89))
 
 
 class Scroller(Widget):
@@ -464,7 +476,9 @@ class Scroller(Widget):
 
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
     # Disable scroll panel if touch is in the bottom scroll bar zone (entire 30px area)
-    touch_in_bottom_zone = self._is_touch_in_bottom_zone()
+    # BUT only if the scroller is not already being actively dragged
+    scroller_is_active = self.scroll_panel.state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL)
+    touch_in_bottom_zone = self._is_touch_in_bottom_zone() and not scroller_is_active
     self.scroll_panel.set_enabled(scroll_enabled and self.enabled and not touch_in_bottom_zone)
     self.scroll_panel.update(content_rect, content_size)
     if not self._snap_items:
@@ -681,6 +695,10 @@ class Scroller(Widget):
       else:
         progress = 0.0
       self._scroll_indicator.set_scroll_progress(progress)
+
+      # Tell the scroll indicator if the main scroller is being actively dragged
+      scroller_active = self.scroll_panel.state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL)
+      self._scroll_indicator.set_scroller_active(scroller_active)
 
   def _render(self, _):
     content_rect = self._get_content_rect()
