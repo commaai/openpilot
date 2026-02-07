@@ -208,7 +208,7 @@ class FrameQueue:
 
 def load_route_metadata(route):
   from openpilot.common.params import Params, UnknownKeyName
-  path = next((item for item in route.log_paths() if item is not None), None)
+  path = next((item for item in route.log_paths() if item), None)
   if not path:
     raise Exception('error getting route metadata: cannot find any uploaded logs')
   lr = LogReader(path)
