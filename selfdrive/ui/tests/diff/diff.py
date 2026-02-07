@@ -87,8 +87,7 @@ def generate_html_report(videos: tuple[str, str], basedir: str, different_frames
   if different_total == 0:
     result_text = f"✅ Videos are identical! ({total_frames} frames)"
   else:
-    percentage = f'{different_total / total_frames * 100:.1f}%'
-    result_text = f"❌ Found {different_total} different frames out of {total_frames} total ({percentage})."
+    result_text = f"❌ Found {different_total} different frames out of {total_frames} total ({different_total / total_frames * 100:.1f}%)."
     if frame_delta != 0:
       result_text += f" {'Video 2' if frame_delta > 0 else 'Video 0'} is longer by {extra_frames} frames."
 
