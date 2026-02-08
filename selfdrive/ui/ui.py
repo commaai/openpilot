@@ -34,6 +34,7 @@ def main():
             pass
   finally:
     main_layout.close()
+    gui_app.close()
 
 
 if __name__ == "__main__":
