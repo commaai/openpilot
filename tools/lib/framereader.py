@@ -9,6 +9,7 @@ import numpy as np
 from openpilot.tools.lib.filereader import FileReader, resolve_name
 from openpilot.tools.lib.exceptions import DataUnreadableError
 from openpilot.tools.lib.vidindex import hevc_index
+from openpilot.third_party.ffmpeg import FFMPEG_PATH, FFPROBE_PATH
 
 logger = logging.getLogger("tools")
 
@@ -44,7 +45,7 @@ def assert_hvec(fn: str) -> None:
 
 def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc', hwaccel="auto", loglevel="info") -> np.ndarray:
   threads = os.getenv("FFMPEG_THREADS", "0")
-  args = ["ffmpeg", "-v", loglevel,
+  args = [FFMPEG_PATH, "-v", loglevel,
           "-threads", threads,
           "-hwaccel", hwaccel,
           "-c:v", "hevc",
@@ -68,7 +69,7 @@ def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc', hwaccel
 
 def ffprobe(fn, fmt=None):
   fn = resolve_name(fn)
-  cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams"]
+  cmd = [FFPROBE_PATH, "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams"]
   if fmt:
     cmd += ["-f", fmt]
   cmd += ["-i", "-"]

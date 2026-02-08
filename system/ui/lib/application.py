@@ -19,6 +19,7 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
+from openpilot.third_party.ffmpeg import FFMPEG_PATH
 from openpilot.system.ui.lib.multilang import multilang
 from openpilot.common.realtime import Ratekeeper
 
@@ -286,7 +287,7 @@ class GuiApplication:
       if RECORD:
         output_fps = fps * RECORD_SPEED
         ffmpeg_args = [
-          'ffmpeg',
+          FFMPEG_PATH,
           '-v', 'warning',          # Reduce ffmpeg log spam
           '-nostats',               # Suppress encoding progress
           '-f', 'rawvideo',         # Input format

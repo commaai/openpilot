@@ -18,6 +18,7 @@ from openpilot.common.timeout import Timeout
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.hardware import TICI
 from openpilot.system.loggerd.xattr_cache import getxattr
+from openpilot.third_party.ffmpeg import FFPROBE_PATH
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.version import get_version
@@ -325,7 +326,7 @@ class TestLoggerd:
     self._publish_camera_and_audio_messages()
 
     qcamera_ts_path = os.path.join(self._get_latest_log_dir(), 'qcamera.ts')
-    ffprobe_cmd = f"ffprobe -i {qcamera_ts_path} -show_streams -select_streams a -loglevel error"
+    ffprobe_cmd = f"{FFPROBE_PATH} -i {qcamera_ts_path} -show_streams -select_streams a -loglevel error"
     has_audio_stream = subprocess.run(ffprobe_cmd, shell=True, capture_output=True).stdout.strip() != b''
     assert has_audio_stream == record_audio
 

@@ -7,13 +7,14 @@ import webbrowser
 import argparse
 from pathlib import Path
 from openpilot.common.basedir import BASEDIR
+from openpilot.third_party.ffmpeg import FFMPEG_PATH
 
 DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
 
 
 def extract_frames(video_path, output_dir):
   output_pattern = str(output_dir / "frame_%04d.png")
-  cmd = ['ffmpeg', '-i', video_path, '-vsync', '0', output_pattern, '-y']
+  cmd = [FFMPEG_PATH, '-i', video_path, '-vsync', '0', output_pattern, '-y']
   subprocess.run(cmd, capture_output=True, check=True)
   frames = sorted(output_dir.glob("frame_*.png"))
   return frames
@@ -27,7 +28,7 @@ def compare_frames(frame1_path, frame2_path):
 def create_diff_video(video1, video2, output_path):
   """Create a diff video using ffmpeg blend filter with difference mode."""
   print("Creating diff video...")
-  cmd = ['ffmpeg', '-i', video1, '-i', video2, '-filter_complex', '[0:v]blend=all_mode=difference', '-vsync', '0', '-y', output_path]
+  cmd = [FFMPEG_PATH, '-i', video1, '-i', video2, '-filter_complex', '[0:v]blend=all_mode=difference', '-vsync', '0', '-y', output_path]
   subprocess.run(cmd, capture_output=True, check=True)
 
 
