@@ -7,6 +7,16 @@ cd $DIR/../../tinygrad_repo
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+if [ -f /AGNOS ]; then
+  echo "tici setup"
+
+  taskset -pc 7 $$ >/dev/null
+  sudo chrt -f -p 60 $$ >/dev/null
+  echo 2649600  | sudo tee /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq
+
+  echo 7 | sudo tee /proc/irq/1069/smp_affinity_list
+fi
+
 
 #export DEBUG=2
 export PYTHONPATH=.
