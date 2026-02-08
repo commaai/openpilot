@@ -127,6 +127,12 @@ _SMAPS_KEYS = {b'Pss:', b'Pss_Anon:', b'Pss_Shmem:'}
 # fall back to per-VMA smaps (any kernel). Pss_Anon/Pss_Shmem only in 5.x+.
 _smaps_path: str | None = None  # auto-detected on first call
 
+# per-VMA smaps is expensive (kernel walks page tables for every VMA).
+# cache results and only refresh every N cycles to keep CPU low.
+_smaps_cache: dict[int, SmapsData] = {}
+_smaps_cycle = 0
+_SMAPS_EVERY = 5  # refresh every 5th cycle (10s at 0.5Hz)
+
 
 def _read_smaps(pid: int) -> SmapsData:
   global _smaps_path
@@ -149,6 +155,13 @@ def _read_smaps(pid: int) -> SmapsData:
     return result
   except (FileNotFoundError, PermissionError, ProcessLookupError, OSError):
     return {'pss': 0, 'pss_anon': 0, 'pss_shmem': 0}
+
+
+def _get_smaps_cached(pid: int) -> SmapsData:
+  """Return cached smaps data, refreshing every _SMAPS_EVERY cycles."""
+  if _smaps_cycle == 0 or pid not in _smaps_cache:
+    _smaps_cache[pid] = _read_smaps(pid)
+  return _smaps_cache.get(pid, {'pss': 0, 'pss_anon': 0, 'pss_shmem': 0})
 
 
 class ProcExtra(TypedDict):
@@ -225,9 +238,9 @@ def build_proc_log_message(msg) -> None:
     for j, arg in enumerate(extra['cmdline']):
       cmdline[j] = arg
 
-    # smaps_rollup is expensive (kernel walks page tables); skip small processes
+    # smaps is expensive (kernel walks page tables); skip small processes, use cache
     if r['rss'] * PAGE_SIZE > 5 * 1024 * 1024:
-      smaps = _read_smaps(r['pid'])
+      smaps = _get_smaps_cached(r['pid'])
       proc.memPss = smaps['pss']
       proc.memPssAnon = smaps['pss_anon']
       proc.memPssShmem = smaps['pss_shmem']
@@ -254,6 +267,9 @@ def build_proc_log_message(msg) -> None:
   pl.mem.active = mem_info["Active:"]
   pl.mem.inactive = mem_info["Inactive:"]
   pl.mem.shared = mem_info["Shmem:"]
+
+  global _smaps_cycle
+  _smaps_cycle = (_smaps_cycle + 1) % _SMAPS_EVERY
 
 
 def main() -> NoReturn:
