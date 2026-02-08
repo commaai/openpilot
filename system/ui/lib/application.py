@@ -756,7 +756,7 @@ class GuiApplication:
      # Create temporary window to query monitor info
     rl.init_window(1, 1, "")
     w, h = rl.get_monitor_width(0), rl.get_monitor_height(0)
-    rl.close_window()
+    rl.glfw_destroy_window(rl.get_window_handle())
 
     if w == 0 or h == 0 or (w >= self._width and h >= self._height):
       return 1.0
