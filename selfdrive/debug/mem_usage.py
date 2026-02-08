@@ -9,7 +9,7 @@ from openpilot.tools.lib.logreader import LogReader
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 MB = 1024 * 1024
-TABULATE_OPTS = dict(tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".1f")
+TABULATE_OPTS = dict(tablefmt="simple_grid", stralign="center", numalign="center")
 
 
 def _get_procs():
@@ -33,7 +33,7 @@ def pct(val_mb, total_mb):
 
 def has_pss(proc_logs):
   """Check if logs contain PSS data (new field, not in old logs)."""
-  for proc in proc_logs[0].procLog.procs:
+  for proc in proc_logs[-1].procLog.procs:
     if proc.memPss > 0:
       return True
   return False
@@ -91,12 +91,12 @@ def process_table_rows(by_proc, total_mb, use_pss):
   for name in sorted(by_proc, key=lambda n: np.mean(by_proc[n][mem_key]), reverse=True):
     m = by_proc[name]
     vals = m[mem_key]
-    avg = np.mean(vals)
-    growth = vals[-1] - vals[0]
-    row = [name, avg, np.max(vals), growth, pct(avg, total_mb)]
+    avg = round(np.mean(vals))
+    growth = round(vals[-1] - vals[0], 1)
+    row = [name, avg, round(np.max(vals)), growth, round(pct(avg, total_mb), 1)]
     if use_pss:
-      row.append(np.mean(m['pss_anon']))
-      row.append(np.mean(m['pss_shmem']))
+      row.append(round(np.mean(m['pss_anon'])))
+      row.append(round(np.mean(m['pss_shmem'])))
     rows.append(row)
 
   # Total row
@@ -107,11 +107,11 @@ def process_table_rows(by_proc, total_mb, use_pss):
     for i in range(max_samples):
       s = sum(v[mem_key][i] for v in by_proc.values() if i < len(v[mem_key]))
       totals.append(s)
-    avg_total = np.mean(totals)
-    total_row = ["TOTAL", avg_total, np.max(totals), totals[-1] - totals[0], pct(avg_total, total_mb)]
+    avg_total = round(np.mean(totals))
+    total_row = ["TOTAL", avg_total, round(np.max(totals)), round(totals[-1] - totals[0], 1), round(pct(avg_total, total_mb), 1)]
     if use_pss:
-      total_row.append(sum(np.mean(v['pss_anon']) for v in by_proc.values()))
-      total_row.append(sum(np.mean(v['pss_shmem']) for v in by_proc.values()))
+      total_row.append(round(sum(np.mean(v['pss_anon']) for v in by_proc.values())))
+      total_row.append(round(sum(np.mean(v['pss_shmem']) for v in by_proc.values())))
 
   return rows, total_row
 
