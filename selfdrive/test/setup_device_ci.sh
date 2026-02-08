@@ -91,17 +91,25 @@ unsafe_checkout() {( set -e
 
   # cleanup orphaned locks
   find .git -type f -name "*.lock" -exec rm {} +
+  echo "== lock cleanup done, t=$SECONDS"
 
   git fetch --no-tags --no-recurse-submodules -j8 --depth 1 origin $GIT_COMMIT
+  echo "== fetch done, t=$SECONDS"
+
   git checkout --force --no-recurse-submodules $GIT_COMMIT
+  echo "== checkout done, t=$SECONDS"
+
   git clean -dff
+  echo "== clean done, t=$SECONDS"
 
   # only update submodules if any are out of date
   if git submodule status | grep -q '^[+-]'; then
     git submodule update --init --recursive --force -j$(nproc)
   fi
+  echo "== submodule done, t=$SECONDS"
 
   git lfs pull
+  echo "== lfs done, t=$SECONDS"
 )}
 
 export GIT_PACK_THREADS=8
