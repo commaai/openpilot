@@ -1,0 +1,45 @@
+name: diff report
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  comment:
+    name: comment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+    steps:
+    - name: Wait for process replay
+      id: wait
+      continue-on-error: true
+      uses: lewagon/wait-on-check-action@v1.3.4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        check-name: process replay
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        allowed-conclusions: success,failure
+        wait-interval: 20
+    - name: Download diff
+      if: steps.wait.outcome == 'success'
+      uses: dawidd6/action-download-artifact@v6
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        workflow: tests.yaml
+        workflow_conclusion: ''
+        pr: ${{ github.event.number }}
+        name: diff_report_${{ github.event.number }}
+        path: .
+        allow_forks: true
+    - name: Comment on PR
+      if: steps.wait.outcome == 'success'
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: diff_report.txt
+        comment_tag: diff_report
+        pr_number: ${{ github.event.number }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
