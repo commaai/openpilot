@@ -3,6 +3,10 @@ set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
+# Reproducible builds: pin timestamps to epoch
+export SOURCE_DATE_EPOCH=0
+export ZERO_AR_DATE=1
+
 pids=()
 names=()
 logs=()
@@ -31,4 +35,17 @@ for i in "${!pids[@]}"; do
   echo
 done
 
-exit $failed
+[ $failed -ne 0 ] && exit $failed
+
+# Repack ar archives with deterministic headers (zero timestamps/uid/gid)
+# Skip foreign-platform archives that ar can't read (e.g. Mach-O on Linux)
+while IFS= read -r -d '' lib; do
+  tmpdir=$(mktemp -d)
+  lib=$(realpath "$lib")
+  if (cd "$tmpdir" && ar x "$lib" 2>/dev/null); then
+    (cd "$tmpdir" && rm "$lib" && ar Drcs "$lib" *)
+  fi
+  rm -rf "$tmpdir"
+done < <(find "$DIR" -name '*.a' \
+  \( -path '*/x86_64/*' -o -path '*/Darwin/*' -o -path '*/larch64/*' -o -path '*/aarch64/*' \) \
+  -print0)
