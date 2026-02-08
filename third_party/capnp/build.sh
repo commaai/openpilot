@@ -45,22 +45,20 @@ mkdir -p $INSTALL_DIR/lib $INSTALL_DIR/bin
 rm -rf $DIR/include
 mkdir -p $DIR/include
 
-# only copy the headers we need (capnp and kj)
-cp -r $DIR/capnproto/c++/src/capnp $DIR/include/
-cp -r $DIR/capnproto/c++/src/kj $DIR/include/
+# only copy the headers we actually use
+SRC=$DIR/capnproto/c++/src
+mkdir -p $DIR/include/capnp $DIR/include/kj
 
-# remove test, compat, and other unnecessary headers
-find $DIR/include -name "*-test*" -delete
-find $DIR/include -name "*_test*" -delete
-find $DIR/include -name "*.c++" -delete
-find $DIR/include -name "*.capnp.h" -delete
-find $DIR/include -name "*.capnp" ! -name "c++.capnp" -delete
-rm -rf $DIR/include/capnp/compat
-rm -rf $DIR/include/capnp/compiler
-rm -rf $DIR/include/capnp/testdata
-rm -rf $DIR/include/kj/compat
-find $DIR/include -name "CMakeLists.txt" -o -name "BUILD.bazel" -o -name "*.bzl" \
-  -o -name "*.ekam-rule" -o -name "*.ekam-manifest" | xargs rm -f
+CAPNP_HEADERS="any.h blob.h capability.h common.h c++.capnp dynamic.h endian.h
+  generated-header-support.h layout.h list.h message.h orphan.h pointer-helpers.h
+  raw-schema.h schema.h serialize.h"
+
+KJ_HEADERS="array.h async.h async-inl.h async-prelude.h common.h debug.h exception.h
+  hash.h io.h list.h memory.h mutex.h one-of.h refcount.h source-location.h string.h
+  string-tree.h time.h tuple.h units.h vector.h windows-sanity.h"
+
+for h in $CAPNP_HEADERS; do cp $SRC/capnp/$h $DIR/include/capnp/; done
+for h in $KJ_HEADERS; do cp $SRC/kj/$h $DIR/include/kj/; done
 
 # runtime libraries (linked by the project)
 cp $DIR/capnproto/build/c++/src/capnp/libcapnp.a $INSTALL_DIR/lib/
