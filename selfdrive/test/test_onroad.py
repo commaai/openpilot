@@ -126,6 +126,13 @@ class TestOnroad:
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
 
+    # flush kernel caches right before starting openpilot for clean memory baseline
+    import psutil
+    mem_before = psutil.virtual_memory().percent
+    subprocess.run(["sudo", "sh", "-c", "echo 3 > /proc/sys/vm/drop_caches"], check=False)
+    mem_after = psutil.virtual_memory().percent
+    print(f"drop_caches: memory {mem_before:.0f}% -> {mem_after:.0f}%")
+
     # start manager and run openpilot for TEST_DURATION
     proc = None
     try:
@@ -290,9 +297,40 @@ class TestOnroad:
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
     print("MSGQ (/dev/shm/) usage: ", subprocess.check_output(["du", "-hs", "/dev/shm"]).split()[0].decode())
 
+    # print ION heap info and account for orphaned memory from dead processes
+    ion_orphaned_pct = 0
+    try:
+      ion_data = subprocess.check_output(["sudo", "cat", "/sys/kernel/debug/ion/heaps/system"],
+                                         stderr=subprocess.DEVNULL, timeout=5).decode()
+      print("\n-- ION System Heap --")
+      ion_orphaned_bytes = 0
+      for line in ion_data.splitlines():
+        line = line.strip()
+        if line.startswith('total orphaned'):
+          ion_orphaned_bytes = int(line.split()[-1])
+          print(f"  {line}")
+        elif line.startswith(('pool total', 'uncached pool', 'cached pool')) or \
+             (line.startswith('total') and not line.startswith('total orphaned')):
+          print(f"  {line}")
+        elif 'orphan' not in line and any(x in line for x in ('client', '----', 'v4l', 'selfdrive', 'python', 'camerad', 'modeld', './')) and \
+             'VMID' not in line and 'order' not in line:
+          print(f"  {line}")
+
+      # ION orphaned = memory from dead processes (GPU framebuffers from previous test runs).
+      # This is a Qualcomm kernel/driver limitation, not an openpilot memory leak.
+      # Subtract from memory check to avoid false failures in CI loops.
+      import psutil
+      total_bytes = psutil.virtual_memory().total
+      ion_orphaned_pct = ion_orphaned_bytes / total_bytes * 100
+      print(f"\n  ION orphaned: {ion_orphaned_bytes / 1024 / 1024:.0f} MB ({ion_orphaned_pct:.1f}% of RAM)")
+    except Exception:
+      pass
+
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    assert np.average(mems) <= 80, "Average memory usage too high"
+    adjusted_mems = [m - ion_orphaned_pct for m in mems]
+    print(f"  memory: raw avg={np.average(mems):.1f}%, adjusted={np.average(adjusted_mems):.1f}% (excl ION orphaned)")
+    assert np.average(adjusted_mems) <= 65, f"Average memory usage too high (raw={np.average(mems):.1f}%, ION orphaned={ion_orphaned_pct:.1f}%)"
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 

@@ -264,9 +264,9 @@ class GuiApplication:
   def init_window(self, title: str, fps: int = _DEFAULT_FPS):
     with self._startup_profile_context():
       def _close(sig, frame):
-        self.close()
-        sys.exit(0)
+        self._window_close_requested = True
       signal.signal(signal.SIGINT, _close)
+      signal.signal(signal.SIGTERM, _close)
       atexit.register(self.close)
 
       flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
