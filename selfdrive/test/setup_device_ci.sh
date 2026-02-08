@@ -69,7 +69,7 @@ safe_checkout() {
   git fetch --no-tags --no-recurse-submodules -j4 --depth 1 origin $GIT_COMMIT
   git checkout --force $GIT_COMMIT
   git clean -xdff
-  git submodule update --init --recursive --force -j$(nproc)
+  git submodule update --init --recursive --force
   git submodule foreach --recursive "git clean -xdff"
 
   git lfs pull
@@ -107,7 +107,7 @@ unsafe_checkout() {( set -e
   # update submodules and pull lfs in parallel
   (
     if git submodule status | grep -q '^[+-]'; then
-      git submodule update --init --recursive --force -j$(nproc)
+      git submodule update --init --recursive --force
     fi
   ) &
   _sub_pid=$!
