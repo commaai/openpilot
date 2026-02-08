@@ -109,10 +109,10 @@ done
 # copy static libraries and strip debug symbols
 for lib in libavcodec.a libavformat.a libavutil.a libswresample.a; do
   cp $DIR/ffmpeg_build/lib/$lib $INSTALL_DIR/lib/
-  strip --strip-debug $INSTALL_DIR/lib/$lib
+  strip -S $INSTALL_DIR/lib/$lib
 done
 cp $X264_DIR/lib/libx264.a $INSTALL_DIR/lib/
-strip --strip-debug $INSTALL_DIR/lib/libx264.a
+strip -S $INSTALL_DIR/lib/libx264.a
 
 # copy binaries
 cp $DIR/ffmpeg_build/bin/ffmpeg $INSTALL_DIR/bin/
