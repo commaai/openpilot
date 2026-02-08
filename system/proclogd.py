@@ -125,7 +125,10 @@ _SMAPS_KEYS = {b'Pss:', b'Pss_Anon:', b'Pss_Shmem:'}
 
 
 # TODO: switch to /proc/<pid>/smaps when we mainline our kernel (smaps_rollup removed)
+_smaps_err_logged = False
+
 def _read_smaps(pid: int) -> SmapsData:
+  global _smaps_err_logged
   try:
     with open(f'/proc/{pid}/smaps_rollup', 'rb') as f:
       result: SmapsData = {'pss': 0, 'pss_anon': 0, 'pss_shmem': 0}
@@ -140,7 +143,10 @@ def _read_smaps(pid: int) -> SmapsData:
           elif parts[0] == b'Pss_Shmem:':
             result['pss_shmem'] = val
       return result
-  except (FileNotFoundError, PermissionError, ProcessLookupError, OSError):
+  except (FileNotFoundError, PermissionError, ProcessLookupError, OSError) as e:
+    if not _smaps_err_logged:
+      cloudlog.warning(f"smaps_rollup read failed for pid {pid}: {e.__class__.__name__}: {e}")
+      _smaps_err_logged = True
     return {'pss': 0, 'pss_anon': 0, 'pss_shmem': 0}
 
 

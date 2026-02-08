@@ -34,11 +34,15 @@ def pct(val_mb, total_mb):
 def has_pss(proc_logs):
   """Check if logs contain PSS data (new field, not in old logs)."""
   try:
-    for proc in proc_logs[-1].procLog.procs:
-      if proc.memPss > 0:
-        return True
+    procs = list(proc_logs[-1].procLog.procs)
+    if any(p.memPss > 0 for p in procs):
+      return True
+    # debug: show why PSS is missing
+    top = sorted(procs, key=lambda p: p.memRss, reverse=True)[:3]
+    print(f"  PSS debug: {len(procs)} procs, top by RSS: " +
+          ", ".join(f"{p.name}(RSS={p.memRss} PSS={p.memPss})" for p in top))
   except AttributeError:
-    pass
+    print("  PSS debug: memPss field not in schema (old cereal)")
   return False
 
 
