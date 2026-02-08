@@ -1,7 +1,7 @@
 import os
 import platform
 
-BASEDIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+BASEDIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../'))
 
 _arch = platform.machine()
 if os.path.isfile('/TICI'):
