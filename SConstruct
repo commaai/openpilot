@@ -40,7 +40,7 @@ assert arch in [
 
 env = Environment(
   ENV={
-    "PATH": os.environ['PATH'],
+    "PATH": Dir("#").abspath + f"/third_party/capnp/{arch}/bin:" + os.environ['PATH'],
     "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
     "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
     "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
@@ -74,6 +74,7 @@ env = Environment(
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
+    "#third_party/capnp/include",
   ],
   LIBPATH=[
     "#common",
@@ -83,6 +84,7 @@ env = Environment(
     "#rednose/helpers",
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
+    f"#third_party/capnp/{arch}/lib",
   ],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
