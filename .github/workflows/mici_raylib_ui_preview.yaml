@@ -84,9 +84,6 @@ jobs:
           git commit -m "mici raylib video for commit ${{ env.SHA }}"
           git push origin ${{ env.MASTER_BRANCH_NAME }} --force
 
-      - name: Setup FFmpeg
-        uses: AnimMouse/setup-ffmpeg@ae28d57dabbb148eff63170b6bf7f2b60062cbae
-
       - name: Finding diff
         if: github.event_name == 'pull_request_target'
         id: find_diff

@@ -18,6 +18,8 @@ third_party/**/*.so filter=lfs diff=lfs merge=lfs -text
 third_party/**/*.so.* filter=lfs diff=lfs merge=lfs -text
 third_party/**/*.dylib filter=lfs diff=lfs merge=lfs -text
 third_party/acados/*/t_renderer filter=lfs diff=lfs merge=lfs -text
+third_party/ffmpeg/*/bin/ffmpeg filter=lfs diff=lfs merge=lfs -text
+third_party/ffmpeg/*/bin/ffprobe filter=lfs diff=lfs merge=lfs -text
 third_party/qt5/larch64/bin/lrelease filter=lfs diff=lfs merge=lfs -text
 third_party/qt5/larch64/bin/lupdate filter=lfs diff=lfs merge=lfs -text
 third_party/catch2/include/catch2/catch.hpp filter=lfs diff=lfs merge=lfs -text

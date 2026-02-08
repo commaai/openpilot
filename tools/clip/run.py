@@ -18,6 +18,7 @@ from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.framereader import FrameReader, ffprobe
+from openpilot.third_party.ffmpeg import FFMPEG_PATH
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.utils import Timer
@@ -150,7 +151,7 @@ def iter_segment_frames(camera_paths, start_time, end_time, fps=20, use_qcam=Fal
       if use_qcam:
         w, h = frame_size or get_frame_dimensions(path)
         with FileReader(path) as f:
-          result = subprocess.run(["ffmpeg", "-v", "quiet", "-i", "-", "-f", "rawvideo", "-pix_fmt", "nv12", "-"],
+          result = subprocess.run([FFMPEG_PATH, "-v", "quiet", "-i", "-", "-f", "rawvideo", "-pix_fmt", "nv12", "-"],
                                   input=f.read(), capture_output=True)
         if result.returncode != 0:
           raise RuntimeError(f"ffmpeg failed: {result.stderr.decode()}")

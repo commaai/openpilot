@@ -39,12 +39,6 @@ function install_ubuntu_common_requirements() {
     gcc-arm-none-eabi \
     capnproto \
     libcapnp-dev \
-    ffmpeg \
-    libavformat-dev \
-    libavcodec-dev \
-    libavdevice-dev \
-    libavutil-dev \
-    libavfilter-dev \
     libbz2-dev \
     libeigen3-dev \
     libffi-dev \

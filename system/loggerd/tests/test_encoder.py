@@ -16,6 +16,7 @@ from openpilot.system.hardware import TICI
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
+from openpilot.third_party.ffmpeg import FFPROBE_PATH
 
 SEGMENT_LENGTH = 2
 FULL_SIZE = 2507572
@@ -88,7 +89,7 @@ class TestEncoder:
 
         # TODO: this ffprobe call is really slow
         # get width and check frame count
-        cmd = f"ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets,width -of csv=p=0 {file_path}"
+        cmd = f"{FFPROBE_PATH} -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets,width -of csv=p=0 {file_path}"
         if TICI:
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
