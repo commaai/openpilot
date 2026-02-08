@@ -290,9 +290,25 @@ class TestOnroad:
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
     print("MSGQ (/dev/shm/) usage: ", subprocess.check_output(["du", "-hs", "/dev/shm"]).split()[0].decode())
 
+    # print ION heap info for debugging kernel memory leaks
+    try:
+      with open('/sys/kernel/debug/ion/heaps/system') as f:
+        ion_data = f.read()
+      print("\n-- ION System Heap --")
+      for line in ion_data.splitlines():
+        line = line.strip()
+        if line.startswith(('total orphaned', 'pool total', 'uncached pool', 'cached pool')) or \
+           (line.startswith('total') and not line.startswith('total orphaned')):
+          print(f"  {line}")
+        elif 'orphan' not in line and any(x in line for x in ('client', '----', 'v4l', 'selfdrive', 'python', 'camerad', 'modeld', './')) and \
+             'VMID' not in line and 'order' not in line:
+          print(f"  {line}")
+    except Exception:
+      pass
+
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    assert np.average(mems) <= 80, "Average memory usage too high"
+    assert np.average(mems) <= 65, "Average memory usage too high"
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 

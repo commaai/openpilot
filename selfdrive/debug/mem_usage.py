@@ -158,6 +158,43 @@ def print_process_tables(op_procs, other_procs, total_mb, use_pss):
   print(tabulate(rows, header, **TABULATE_OPTS))
 
 
+def _read_meminfo_fields():
+  """Read additional /proc/meminfo fields for kernel memory breakdown."""
+  fields = {}
+  try:
+    with open('/proc/meminfo') as f:
+      for line in f:
+        parts = line.split()
+        if len(parts) >= 2 and parts[0].rstrip(':') in (
+          'Slab', 'SReclaimable', 'SUnreclaim', 'PageTables', 'KernelStack', 'CmaTotal', 'CmaFree',
+        ):
+          fields[parts[0].rstrip(':')] = int(parts[1]) * 1024  # kB to bytes
+  except Exception:
+    pass
+  return fields
+
+
+def _read_ion_info():
+  """Read ION system heap debugfs for orphaned/pool totals."""
+  result = {'orphaned': 0, 'pool': 0, 'total': 0}
+  try:
+    with open('/sys/kernel/debug/ion/heaps/system') as f:
+      for line in f:
+        line = line.strip()
+        if line.startswith('total orphaned'):
+          result['orphaned'] = int(line.split()[-1])
+        elif line.startswith('pool total'):
+          # "pool total (uncached + cached + secure) = 12345"
+          result['pool'] = int(line.split('=')[-1].strip())
+        elif line.startswith('total') and not line.startswith('total orphaned'):
+          parts = line.split()
+          if len(parts) == 2:
+            result['total'] = int(parts[-1])
+  except Exception:
+    pass
+  return result
+
+
 def print_memory_accounting(proc_logs, op_procs, other_procs, total_mb, use_pss):
   last = proc_logs[-1].procLog.mem
   used = (last.total - last.available) / MB
@@ -185,6 +222,34 @@ def print_memory_accounting(proc_logs, op_procs, other_procs, total_mb, use_pss)
     [f"  other {label}", f"{other_total:.0f}", f"{pct(other_total, total_mb):.1f}", "sum of non-openpilot process memory"],
     ["  kernel/ION/GPU", f"{remainder:.0f}", f"{pct(remainder, total_mb):.1f}", "slab, ION/DMA-BUF, GPU, page tables"],
   ]
+
+  # break down the kernel/ION/GPU remainder
+  meminfo = _read_meminfo_fields()
+  ion = _read_ion_info()
+  if meminfo or ion.get('total'):
+    slab = meminfo.get('Slab', 0) / MB
+    slab_recl = meminfo.get('SReclaimable', 0) / MB
+    slab_unrecl = meminfo.get('SUnreclaim', 0) / MB
+    page_tables = meminfo.get('PageTables', 0) / MB
+    kernel_stack = meminfo.get('KernelStack', 0) / MB
+    cma_used = (meminfo.get('CmaTotal', 0) - meminfo.get('CmaFree', 0)) / MB
+    ion_pool = ion['pool'] / MB
+    ion_orphaned = ion['orphaned'] / MB
+    ion_active = (ion['total'] - ion['orphaned']) / MB
+    accounted = slab + page_tables + kernel_stack + cma_used + ion_pool + ion_orphaned + ion_active
+    unknown = remainder - accounted
+
+    rows.append(["", "", "", ""])
+    rows.append(["  Kernel/ION/GPU breakdown:", "", "", ""])
+    rows.append(["    Slab", f"{slab:.0f}", f"{pct(slab, total_mb):.1f}", f"reclaimable: {slab_recl:.0f}, unreclaimable: {slab_unrecl:.0f}"])
+    rows.append(["    PageTables", f"{page_tables:.0f}", f"{pct(page_tables, total_mb):.1f}", ""])
+    rows.append(["    KernelStack", f"{kernel_stack:.0f}", f"{pct(kernel_stack, total_mb):.1f}", ""])
+    rows.append(["    CMA used", f"{cma_used:.0f}", f"{pct(cma_used, total_mb):.1f}", "contiguous memory allocator"])
+    rows.append(["    ION pool", f"{ion_pool:.0f}", f"{pct(ion_pool, total_mb):.1f}", "freed pages held for reuse"])
+    rows.append(["    ION orphaned", f"{ion_orphaned:.0f}", f"{pct(ion_orphaned, total_mb):.1f}", "leaked bufs from dead procs"])
+    rows.append(["    ION active", f"{ion_active:.0f}", f"{pct(ion_active, total_mb):.1f}", "in-use ION allocations"])
+    rows.append(["    other/GPU", f"{unknown:.0f}", f"{pct(unknown, total_mb):.1f}", "KGSL GPU, misc kernel"])
+
   note = "" if use_pss else " (*RSS overcounts shared mem)"
   print(f"\n-- Memory Accounting (last sample){note} --")
   print(tabulate(rows, header, tablefmt="simple_grid", stralign="right"))
