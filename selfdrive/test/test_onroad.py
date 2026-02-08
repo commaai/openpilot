@@ -126,6 +126,9 @@ class TestOnroad:
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
 
+    # flush kernel caches right before starting openpilot for clean memory baseline
+    subprocess.run(["sudo", "sh", "-c", "echo 3 > /proc/sys/vm/drop_caches"], check=False)
+
     # start manager and run openpilot for TEST_DURATION
     proc = None
     try:
@@ -308,7 +311,7 @@ class TestOnroad:
 
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    assert np.average(mems) <= 75, "Average memory usage too high"
+    assert np.average(mems) <= 65, "Average memory usage too high"
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 
