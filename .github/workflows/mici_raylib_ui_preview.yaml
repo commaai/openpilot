@@ -1,4 +1,4 @@
-name: "mici raylib ui preview"
+name: "raylib ui preview"
 on:
   push:
     branches:
@@ -17,7 +17,7 @@ env:
   UI_JOB_NAME: "Create mici raylib UI Report"
   REPORT_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
   SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
-  BRANCH_NAME: "openpilot/pr-${{ github.event.number }}-mici-raylib-ui"
+  BRANCH_NAME: "openpilot/pr-${{ github.event.number }}-raylib-ui"
   MASTER_BRANCH_NAME: "openpilot_master_ui_mici_raylib"
   # All report files are pushed here
   REPORT_FILES_BRANCH_NAME: "mici-raylib-ui-reports"
@@ -81,7 +81,7 @@ jobs:
           git config user.email "<>"
           mv ${{ github.workspace }}/pr_ui/* .
           git add .
-          git commit -m "mici raylib video for commit ${{ env.SHA }}"
+          git commit -m "raylib video for commit ${{ env.SHA }}"
           git push origin ${{ env.MASTER_BRANCH_NAME }} --force
 
       - name: Setup FFmpeg
@@ -127,7 +127,7 @@ jobs:
           git rm -rf *
           mv ${{ github.workspace }}/pr_ui/* .
           git add .
-          git commit -m "mici raylib video for PR #${{ github.event.number }}"
+          git commit -m "raylib video for PR #${{ github.event.number }}"
           git push origin ${{ env.BRANCH_NAME }} --force
 
           # Append diff report to report files branch
@@ -135,17 +135,17 @@ jobs:
           git checkout ${{ env.REPORT_FILES_BRANCH_NAME }}
           cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/diff.html diff_pr_${{ github.event.number }}.html
           git add diff_pr_${{ github.event.number }}.html
-          git commit -m "mici raylib ui diff report for PR #${{ github.event.number }}" || echo "No changes to commit"
+          git commit -m "raylib ui diff report for PR #${{ github.event.number }}" || echo "No changes to commit"
           git push origin ${{ env.REPORT_FILES_BRANCH_NAME }}
 
-      - name: Comment Video on PR
+      - name: Comment on PR
         if: github.event_name == 'pull_request_target'
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            <!-- _(run_id_video_mici_raylib **${{ github.run_id }}**)_ -->
-            ## mici raylib UI Preview
+            <!-- _(run_id_raylib_ui **${{ github.run_id }}**)_ -->
+            ## raylib UI Preview
             ${{ steps.find_diff.outputs.DIFF }}
-          comment_tag: run_id_video_mici_raylib
+          comment_tag: run_id_raylib_ui
           pr_number: ${{ github.event.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
