@@ -28,7 +28,7 @@ if [ -d /data/safe_staging/ ]; then
 fi
 
 CONTINUE_PATH="/data/continue.sh"
-tee $CONTINUE_PATH << EOF
+cat > $CONTINUE_PATH << EOF
 #!/usr/bin/env bash
 
 sudo abctl --set_success
@@ -89,18 +89,21 @@ unsafe_checkout() {( set -e
 
   cd $TEST_DIR
 
+  # skip everything if already at the target commit
+  if [ "$(git rev-parse HEAD 2>/dev/null)" == "$GIT_COMMIT" ]; then
+    echo "== already at $GIT_COMMIT, skipping checkout"
+    return 0
+  fi
+
   # cleanup orphaned locks
   find .git -type f -name "*.lock" -exec rm {} +
-  echo "== lock cleanup done, t=$SECONDS"
 
   git fetch --no-tags --no-recurse-submodules -j8 --depth 1 origin $GIT_COMMIT
   echo "== fetch done, t=$SECONDS"
 
   git checkout --force --no-recurse-submodules $GIT_COMMIT
-  echo "== checkout done, t=$SECONDS"
-
   git clean -dff
-  echo "== clean done, t=$SECONDS"
+  echo "== checkout+clean done, t=$SECONDS"
 
   # only update submodules if any are out of date
   if git submodule status | grep -q '^[+-]'; then
