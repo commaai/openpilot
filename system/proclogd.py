@@ -123,30 +123,31 @@ class SmapsData(TypedDict):
 
 _SMAPS_KEYS = {b'Pss:', b'Pss_Anon:', b'Pss_Shmem:'}
 
+# smaps_rollup (kernel 4.14+) is ideal but missing on some BSP kernels;
+# fall back to per-VMA smaps (any kernel). Pss_Anon/Pss_Shmem only in 5.x+.
+_smaps_path: str | None = None  # auto-detected on first call
 
-# TODO: switch to /proc/<pid>/smaps when we mainline our kernel (smaps_rollup removed)
-_smaps_err_logged = False
 
 def _read_smaps(pid: int) -> SmapsData:
-  global _smaps_err_logged
+  global _smaps_path
   try:
-    with open(f'/proc/{pid}/smaps_rollup', 'rb') as f:
-      result: SmapsData = {'pss': 0, 'pss_anon': 0, 'pss_shmem': 0}
+    if _smaps_path is None:
+      _smaps_path = 'smaps_rollup' if os.path.exists(f'/proc/{pid}/smaps_rollup') else 'smaps'
+
+    result: SmapsData = {'pss': 0, 'pss_anon': 0, 'pss_shmem': 0}
+    with open(f'/proc/{pid}/{_smaps_path}', 'rb') as f:
       for line in f:
         parts = line.split()
         if len(parts) >= 2 and parts[0] in _SMAPS_KEYS:
           val = int(parts[1]) * 1024  # kB -> bytes
           if parts[0] == b'Pss:':
-            result['pss'] = val
+            result['pss'] += val
           elif parts[0] == b'Pss_Anon:':
-            result['pss_anon'] = val
+            result['pss_anon'] += val
           elif parts[0] == b'Pss_Shmem:':
-            result['pss_shmem'] = val
-      return result
-  except (FileNotFoundError, PermissionError, ProcessLookupError, OSError) as e:
-    if not _smaps_err_logged:
-      cloudlog.warning(f"smaps_rollup read failed for pid {pid}: {e.__class__.__name__}: {e}")
-      _smaps_err_logged = True
+            result['pss_shmem'] += val
+    return result
+  except (FileNotFoundError, PermissionError, ProcessLookupError, OSError):
     return {'pss': 0, 'pss_anon': 0, 'pss_shmem': 0}
 
 
