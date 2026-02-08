@@ -87,12 +87,7 @@ def collect_per_process_mem(proc_logs, use_pss):
   return by_proc
 
 
-def _has_pss_detail(by_proc) -> bool:
-  """Check if any process has non-zero pss_anon/pss_shmem (unavailable on kernel <4.14)."""
-  return any(sum(v.get('pss_anon', [])) > 0 or sum(v.get('pss_shmem', [])) > 0 for v in by_proc.values())
-
-
-def process_table_rows(by_proc, total_mb, use_pss, show_detail):
+def process_table_rows(by_proc, total_mb, use_pss):
   """Build table rows. Returns (rows, total_row)."""
   mem_key = 'pss' if use_pss else 'rss'
   rows = []
@@ -102,7 +97,7 @@ def process_table_rows(by_proc, total_mb, use_pss, show_detail):
     avg = round(np.mean(vals))
     growth = round(vals[-1] - vals[0], 1)
     row = [name, avg, round(np.max(vals)), growth, round(pct(avg, total_mb), 1)]
-    if show_detail:
+    if use_pss:
       row.append(round(np.mean(m['pss_anon'])))
       row.append(round(np.mean(m['pss_shmem'])))
     rows.append(row)
@@ -117,7 +112,7 @@ def process_table_rows(by_proc, total_mb, use_pss, show_detail):
       totals.append(s)
     avg_total = round(np.mean(totals))
     total_row = ["TOTAL", avg_total, round(np.max(totals)), round(totals[-1] - totals[0], 1), round(pct(avg_total, total_mb), 1)]
-    if show_detail:
+    if use_pss:
       total_row.append(round(sum(np.mean(v['pss_anon']) for v in by_proc.values())))
       total_row.append(round(sum(np.mean(v['pss_shmem']) for v in by_proc.values())))
 
@@ -125,17 +120,13 @@ def process_table_rows(by_proc, total_mb, use_pss, show_detail):
 
 
 def print_process_tables(op_procs, other_procs, total_mb, use_pss):
-  # only show anon/shmem columns when kernel provides them (4.14+ smaps_rollup)
-  all_procs = {**op_procs, **other_procs}
-  show_detail = use_pss and _has_pss_detail(all_procs)
-
   header = ["process", "avg (MB)", "max (MB)", "growth (MB)", "avg (%)"]
-  if show_detail:
+  if use_pss:
     header += ["anon (MB)", "shmem (MB)"]
 
-  op_rows, op_total = process_table_rows(op_procs, total_mb, use_pss, show_detail)
+  op_rows, op_total = process_table_rows(op_procs, total_mb, use_pss)
   other_filtered = {n: v for n, v in other_procs.items() if np.mean(v['pss' if use_pss else 'rss']) > 5.0}
-  other_rows, other_total = process_table_rows(other_filtered, total_mb, use_pss, show_detail)
+  other_rows, other_total = process_table_rows(other_filtered, total_mb, use_pss)
 
   rows = op_rows
   if op_total:
