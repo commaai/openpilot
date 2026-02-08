@@ -124,6 +124,14 @@ def patch_submaster(message_chunks, ui_state):
     sm.frame += 1
   ui_state.sm.update = mock_update
 
+  # Prevent _update_status from overwriting started_frame during onroad transition detection
+  # This fixes an issue where driver monitoring isn't immediately shown
+  _orig_update = ui_state.update
+  def clip_update():
+    _orig_update()
+    ui_state.started_frame = 0
+  ui_state.update = clip_update
+
 
 def get_frame_dimensions(camera_path: str) -> tuple[int, int]:
   """Get frame dimensions from a video file using ffprobe."""
@@ -323,6 +331,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
     timer.lap("setup")
 
     frame_idx = 0
+    road_view_ready = False
     with tqdm.tqdm(total=len(message_chunks), desc="Rendering", unit="frame") as pbar:
       for should_render in gui_app.render():
         if frame_idx >= len(message_chunks):
@@ -333,6 +342,10 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
         if should_render:
           road_view.render()
           render_overlays(gui_app, font, big, metadata, title, start, frame_idx, show_metadata, show_time)
+        if road_view_ready:
+          gui_app.begin_recording()
+        if road_view.frame is not None and ui_state.started:
+          road_view_ready = True
         frame_idx += 1
         pbar.update(1)
     timer.lap("render")
