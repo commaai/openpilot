@@ -31,7 +31,7 @@ def create_diff_video(video1, video2, output_path):
   subprocess.run(cmd, capture_output=True, check=True)
 
 
-def find_differences(video1, video2):
+def find_differences(video1, video2) -> tuple[list[int], tuple[int, int]]:
   with tempfile.TemporaryDirectory() as tmpdir:
     tmpdir = Path(tmpdir)
 
@@ -45,24 +45,18 @@ def find_differences(video1, video2):
     frames2_dir.mkdir()
     frames2 = extract_frames(video2, frames2_dir)
 
-    if len(frames1) != len(frames2):
-      print(f"WARNING: Frame count mismatch: {len(frames1)} vs {len(frames2)}")
-      min_frames = min(len(frames1), len(frames2))
-      frames1 = frames1[:min_frames]
-      frames2 = frames2[:min_frames]
-
     print(f"Comparing {len(frames1)} frames...")
-    different_frames = []
+    different_frames: list[int] = []
 
     for i, (f1, f2) in enumerate(zip(frames1, frames2, strict=False)):
       is_different = not compare_frames(f1, f2)
       if is_different:
         different_frames.append(i)
 
-    return different_frames, len(frames1)
+    return different_frames, (len(frames1), len(frames2))
 
 
-def generate_html_report(video1, video2, basedir, different_frames, total_frames):
+def generate_html_report(videos: tuple[str, str], basedir: str, different_frames: list[int], frame_counts: tuple[int, int]):
   chunks = []
   if different_frames:
     current_chunk = [different_frames[0]]
@@ -74,66 +68,70 @@ def generate_html_report(video1, video2, basedir, different_frames, total_frames
         current_chunk = [different_frames[i]]
     chunks.append(current_chunk)
 
+  total_frames = max(frame_counts)
+  frame_delta = frame_counts[1] - frame_counts[0]
+  different_total = len(different_frames) + abs(frame_delta)
+
   result_text = (
     f"✅ Videos are identical! ({total_frames} frames)"
-    if len(different_frames) == 0
-    else f"❌ Found {len(different_frames)} different frames out of {total_frames} total ({(len(different_frames) / total_frames * 100):.1f}%)"
+    if different_total == 0
+    else f"❌ Found {different_total} different frames out of {total_frames} total ({different_total / total_frames * 100:.1f}%)."
+    + (f" Video {'2' if frame_delta > 0 else '1'} is longer by {abs(frame_delta)} frames." if frame_delta != 0 else "")
   )
+
+  def render_video_cell(video_id: str, title: str, path: str, is_diff=False):
+    return f"""
+<td width='33%'>
+  <p><strong>{title}</strong></p>
+  <video id='{video_id}' width='100%' autoplay muted {'' if is_diff else "onplay='syncVideos()'"}>
+    <source src='{os.path.join(basedir, os.path.basename(path))}' type='video/mp4'>
+    Your browser does not support the video tag.
+  </video>
+</td>
+"""
 
   html = f"""<h2>UI Diff</h2>
 <table>
 <tr>
-<td width='33%'>
-  <p><strong>Video 1</strong></p>
-  <video id='video1' width='100%' autoplay muted loop onplay='syncVideos()'>
-    <source src='{os.path.join(basedir, os.path.basename(video1))}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
-<td width='33%'>
-  <p><strong>Video 2</strong></p>
-  <video id='video2' width='100%' autoplay muted loop onplay='syncVideos()'>
-    <source src='{os.path.join(basedir, os.path.basename(video2))}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
-<td width='33%'>
-  <p><strong>Pixel Diff</strong></p>
-  <video id='diffVideo' width='100%' autoplay muted loop>
-    <source src='{os.path.join(basedir, 'diff.mp4')}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
+{render_video_cell("video1", "Video 1", videos[0])}
+{render_video_cell("video2", "Video 2", videos[1])}
+{render_video_cell("diffVideo", "Pixel Diff", 'diff.mp4', is_diff=True)}
 </tr>
 </table>
 <script>
+const videos = [
+  document.getElementById('video1'),
+  document.getElementById('video2'),
+  document.getElementById('diffVideo'),
+];
+
+const isEnded = (v) => v.ended || (Number.isFinite(v.duration) && v.currentTime >= (v.duration - 0.05));
+const playAll = () => videos.forEach((v) => v.play());
+
 function syncVideos() {{
-  const video1 = document.getElementById('video1');
-  const video2 = document.getElementById('video2');
-  const diffVideo = document.getElementById('diffVideo');
-  video1.currentTime = video2.currentTime = diffVideo.currentTime;
+  const t = Math.min(...videos.map((v) => v.currentTime));
+  videos.forEach((v) => {{ v.currentTime = t; }});
+  playAll();
 }}
-video1.addEventListener('timeupdate', () => {{
-  if (Math.abs(video1.currentTime - video2.currentTime) > 0.1) {{
-    video2.currentTime = video1.currentTime;
+
+function handleEnded(endedVideo) {{
+  endedVideo.pause();
+  if (videos.every(isEnded)) {{
+    videos.forEach((v) => {{ v.currentTime = 0; }});
+    playAll();
   }}
-  if (Math.abs(video1.currentTime - diffVideo.currentTime) > 0.1) {{
-    diffVideo.currentTime = video1.currentTime;
-  }}
-}});
-video2.addEventListener('timeupdate', () => {{
-  if (Math.abs(video2.currentTime - video1.currentTime) > 0.1) {{
-    video1.currentTime = video2.currentTime;
-  }}
-  if (Math.abs(video2.currentTime - diffVideo.currentTime) > 0.1) {{
-    diffVideo.currentTime = video2.currentTime;
-  }}
-}});
-diffVideo.addEventListener('timeupdate', () => {{
-  if (Math.abs(diffVideo.currentTime - video1.currentTime) > 0.1) {{
-    video1.currentTime = diffVideo.currentTime;
-    video2.currentTime = diffVideo.currentTime;
-  }}
+}}
+
+videos.forEach((v) => {{
+  v.addEventListener('timeupdate', () => {{
+    videos.forEach((other) => {{
+      if (other !== v && !isEnded(other) && Math.abs(v.currentTime - other.currentTime) > 0.1) {{
+        other.currentTime = v.currentTime;
+        if (other.paused) other.play();
+      }}
+    }});
+  }});
+  v.addEventListener('ended', () => handleEnded(v));
 }});
 </script>
 <hr>
@@ -166,14 +164,14 @@ def main():
   diff_video_path = os.path.join(os.path.dirname(args.output), DIFF_OUT_DIR / "diff.mp4")
   create_diff_video(args.video1, args.video2, diff_video_path)
 
-  different_frames, total_frames = find_differences(args.video1, args.video2)
+  different_frames, frame_counts = find_differences(args.video1, args.video2)
 
   if different_frames is None:
     sys.exit(1)
 
   print()
   print("Generating HTML report...")
-  html = generate_html_report(args.video1, args.video2, args.basedir, different_frames, total_frames)
+  html = generate_html_report((args.video1, args.video2), args.basedir, different_frames, frame_counts)
 
   with open(DIFF_OUT_DIR / args.output, 'w') as f:
     f.write(html)
@@ -183,7 +181,8 @@ def main():
     print(f"Opening {args.output} in browser...")
     webbrowser.open(f'file://{os.path.abspath(DIFF_OUT_DIR / args.output)}')
 
-  return 0 if len(different_frames) == 0 else 1
+  extra_frames = abs(frame_counts[0] - frame_counts[1])
+  return 0 if (len(different_frames) + extra_frames) == 0 else 1
 
 
 if __name__ == "__main__":
