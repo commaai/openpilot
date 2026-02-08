@@ -344,7 +344,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
           render_overlays(gui_app, font, big, metadata, title, start, frame_idx, show_metadata, show_time)
         if road_view_ready:
           gui_app.begin_recording()
-        if road_view.frame is not None:
+        if road_view.frame is not None and ui_state.started:
           road_view_ready = True
         frame_idx += 1
         pbar.update(1)
