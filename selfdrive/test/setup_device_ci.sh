@@ -18,17 +18,18 @@ if [ -z "$TEST_DIR" ]; then
   exit 1
 fi
 
-# prevent storage from filling up
-rm -rf /data/media/0/realdata/*
+setup_device() {
+  # prevent storage from filling up
+  rm -rf /data/media/0/realdata/*
 
-rm -rf /data/safe_staging/ || true
-if [ -d /data/safe_staging/ ]; then
-  sudo umount /data/safe_staging/merged/ || true
   rm -rf /data/safe_staging/ || true
-fi
+  if [ -d /data/safe_staging/ ]; then
+    sudo umount /data/safe_staging/merged/ || true
+    rm -rf /data/safe_staging/ || true
+  fi
 
-CONTINUE_PATH="/data/continue.sh"
-tee $CONTINUE_PATH << EOF
+  CONTINUE_PATH="/data/continue.sh"
+  cat > $CONTINUE_PATH << 'CONTINUE_EOF'
 #!/usr/bin/env bash
 
 sudo abctl --set_success
@@ -49,18 +50,13 @@ while true; do
     sudo systemctl start ssh
   fi
 
-  #if ! pgrep -f 'ciui.py' > /dev/null 2>&1; then
-  #  echo 'starting UI'
-  #  cp $SOURCE_DIR/selfdrive/test/ciui.py /data/
-  #  /data/ciui.py &
-  #fi
-
   sleep 5s
 done
 
 sleep infinity
-EOF
-chmod +x $CONTINUE_PATH
+CONTINUE_EOF
+  chmod +x $CONTINUE_PATH
+}
 
 safe_checkout() {
   # completely clean TEST_DIR
@@ -70,19 +66,13 @@ safe_checkout() {
   # cleanup orphaned locks
   find .git -type f -name "*.lock" -exec rm {} +
 
-  git reset --hard
-  git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin $GIT_COMMIT
-  find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
-  git reset --hard $GIT_COMMIT
-  git checkout $GIT_COMMIT
+  git fetch --no-tags --no-recurse-submodules -j4 --depth 1 origin $GIT_COMMIT
+  git checkout --force $GIT_COMMIT
   git clean -xdff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
+  git submodule update --init --recursive --force
+  git submodule foreach --recursive "git clean -xdff"
 
   git lfs pull
-  (ulimit -n 65535 && git lfs prune)
 
   echo "git checkout done, t=$SECONDS"
   du -hs $SOURCE_DIR $SOURCE_DIR/.git
@@ -90,25 +80,43 @@ safe_checkout() {
   rsync -a --delete $SOURCE_DIR $TEST_DIR
 }
 
+ms() { echo $(( $(date +%s%N) / 1000000 )); }
+
 unsafe_checkout() {( set -e
   # checkout directly in test dir, leave old build products
 
   cd $TEST_DIR
+  _t0=$(ms)
+
+  # skip everything if already at the target commit
+  if [ "$(git rev-parse HEAD 2>/dev/null)" == "$GIT_COMMIT" ]; then
+    echo "== already at $GIT_COMMIT, skipping checkout"
+    return 0
+  fi
 
   # cleanup orphaned locks
   find .git -type f -name "*.lock" -exec rm {} +
 
-  git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin $GIT_COMMIT
-  git checkout --force --no-recurse-submodules $GIT_COMMIT
-  git reset --hard $GIT_COMMIT
-  git clean -dff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -df"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -df"
+  git fetch --no-tags --no-recurse-submodules -j8 --depth 1 origin $GIT_COMMIT
+  echo "== fetch $(( $(ms) - _t0 ))ms"
 
-  git lfs pull
-  (ulimit -n 65535 && git lfs prune)
+  git checkout --force --no-recurse-submodules $GIT_COMMIT
+  git clean -dff
+  echo "== checkout+clean $(( $(ms) - _t0 ))ms"
+
+  # update submodules and pull lfs in parallel
+  (
+    if git submodule status | grep -q '^[+-]'; then
+      git submodule update --init --recursive --force
+    fi
+  ) &
+  _sub_pid=$!
+  git lfs pull &
+  _lfs_pid=$!
+  wait $_sub_pid
+  echo "== submodule $(( $(ms) - _t0 ))ms"
+  wait $_lfs_pid
+  echo "== lfs $(( $(ms) - _t0 ))ms"
 )}
 
 export GIT_PACK_THREADS=8
@@ -117,6 +125,10 @@ export GIT_PACK_THREADS=8
 if [ ! -d "$SOURCE_DIR" ]; then
   git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
 fi
+
+# run device setup in parallel with checkout
+setup_device &
+_setup_pid=$!
 
 if [ ! -z "$UNSAFE" ]; then
   echo "trying unsafe checkout"
@@ -130,5 +142,7 @@ else
   echo "doing safe checkout"
   safe_checkout
 fi
+
+wait $_setup_pid
 
 echo "$TEST_DIR synced with $GIT_COMMIT, t=$SECONDS"
