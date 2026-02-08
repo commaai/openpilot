@@ -43,7 +43,7 @@ struct EncoderSettings {
   }
 
   static EncoderSettings QcamEncoderSettings() {
-    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H_E_V_C, .bitrate = 1'398'000, .gop_size = 15};
+    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = 1'398'000, .gop_size = 15};
   }
 
   static EncoderSettings StreamEncoderSettings() {
