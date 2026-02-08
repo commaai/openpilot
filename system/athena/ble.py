@@ -371,24 +371,6 @@ def main():
 
   service_manager.RegisterApplication(app.get_path(), {}, reply_handler=lambda: log("GATT registered"), error_handler=lambda e: log(f"GATT failed: {e}"))
 
-  # when a BLE client disconnects, BlueZ won't restart advertising automatically.
-  # listen for device property changes and re-register the advertisement when Connected goes False.
-  def on_properties_changed(interface, changed, invalidated, path=None):
-    if interface != "org.bluez.Device1":
-      return
-    if "Connected" in changed and not changed["Connected"]:
-      log("Client disconnected, re-registering advertisement")
-      advertisement.registered = False
-      if Params().get_bool("EnableBLE"):
-        advertisement.register()
-
-  bus.add_signal_receiver(
-    on_properties_changed,
-    dbus_interface=DBUS_PROP_IFACE,
-    signal_name="PropertiesChanged",
-    path_keyword="path",
-  )
-
   if Params().get_bool("EnableBLE"):
     advertisement.register()
   else:
