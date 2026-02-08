@@ -9,8 +9,8 @@ from openpilot.system.hardware import TICI
 from collections import deque
 
 MIN_VELOCITY = 10  # px/s, changes from auto scroll to steady state
-MIN_VELOCITY_FOR_CLICKING = 2 * 60  # px/s, accepts clicks while auto scrolling below this velocity
-MIN_DRAG_PIXELS = 12
+MIN_VELOCITY_FOR_CLICKING = 2 * 45  # px/s, accepts clicks while auto scrolling below this velocity
+MIN_DRAG_PIXELS = 6
 AUTO_SCROLL_TC_SNAP = 0.025
 AUTO_SCROLL_TC = 0.18
 BOUNCE_RETURN_RATE = 10.0
