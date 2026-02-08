@@ -84,10 +84,13 @@ safe_checkout() {
   rsync -a --delete $SOURCE_DIR $TEST_DIR
 }
 
+ms() { echo $(( $(date +%s%N) / 1000000 )); }
+
 unsafe_checkout() {( set -e
   # checkout directly in test dir, leave old build products
 
   cd $TEST_DIR
+  _t0=$(ms)
 
   # skip everything if already at the target commit
   if [ "$(git rev-parse HEAD 2>/dev/null)" == "$GIT_COMMIT" ]; then
@@ -99,20 +102,25 @@ unsafe_checkout() {( set -e
   find .git -type f -name "*.lock" -exec rm {} +
 
   git fetch --no-tags --no-recurse-submodules -j8 --depth 1 origin $GIT_COMMIT
-  echo "== fetch done, t=$SECONDS"
+  echo "== fetch $(( $(ms) - _t0 ))ms"
 
   git checkout --force --no-recurse-submodules $GIT_COMMIT
   git clean -dff
-  echo "== checkout+clean done, t=$SECONDS"
+  echo "== checkout+clean $(( $(ms) - _t0 ))ms"
 
-  # only update submodules if any are out of date
-  if git submodule status | grep -q '^[+-]'; then
-    git submodule update --init --recursive --force -j$(nproc)
-  fi
-  echo "== submodule done, t=$SECONDS"
-
-  git lfs pull
-  echo "== lfs done, t=$SECONDS"
+  # update submodules and pull lfs in parallel
+  (
+    if git submodule status | grep -q '^[+-]'; then
+      git submodule update --init --recursive --force -j$(nproc)
+    fi
+  ) &
+  _sub_pid=$!
+  git lfs pull &
+  _lfs_pid=$!
+  wait $_sub_pid
+  echo "== submodule $(( $(ms) - _t0 ))ms"
+  wait $_lfs_pid
+  echo "== lfs $(( $(ms) - _t0 ))ms"
 )}
 
 export GIT_PACK_THREADS=8
