@@ -37,7 +37,7 @@ def has_pss(proc_logs):
     for proc in proc_logs[-1].procLog.procs:
       if proc.memPss > 0:
         return True
-  except (AttributeError, Exception):
+  except AttributeError:
     pass
   return False
 
