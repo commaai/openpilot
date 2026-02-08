@@ -127,7 +127,11 @@ class TestOnroad:
       shutil.rmtree(Paths.log_root())
 
     # flush kernel caches right before starting openpilot for clean memory baseline
+    import psutil
+    mem_before = psutil.virtual_memory().percent
     subprocess.run(["sudo", "sh", "-c", "echo 3 > /proc/sys/vm/drop_caches"], check=False)
+    mem_after = psutil.virtual_memory().percent
+    print(f"drop_caches: memory {mem_before:.0f}% -> {mem_after:.0f}%")
 
     # start manager and run openpilot for TEST_DURATION
     proc = None
@@ -295,8 +299,8 @@ class TestOnroad:
 
     # print ION heap info for debugging kernel memory leaks
     try:
-      with open('/sys/kernel/debug/ion/heaps/system') as f:
-        ion_data = f.read()
+      ion_data = subprocess.check_output(["sudo", "cat", "/sys/kernel/debug/ion/heaps/system"],
+                                         stderr=subprocess.DEVNULL, timeout=5).decode()
       print("\n-- ION System Heap --")
       for line in ion_data.splitlines():
         line = line.strip()

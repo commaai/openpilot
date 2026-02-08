@@ -176,20 +176,22 @@ def _read_meminfo_fields():
 
 def _read_ion_info():
   """Read ION system heap debugfs for orphaned/pool totals."""
+  import subprocess
   result = {'orphaned': 0, 'pool': 0, 'total': 0}
   try:
-    with open('/sys/kernel/debug/ion/heaps/system') as f:
-      for line in f:
-        line = line.strip()
-        if line.startswith('total orphaned'):
-          result['orphaned'] = int(line.split()[-1])
-        elif line.startswith('pool total'):
-          # "pool total (uncached + cached + secure) = 12345"
-          result['pool'] = int(line.split('=')[-1].strip())
-        elif line.startswith('total') and not line.startswith('total orphaned'):
-          parts = line.split()
-          if len(parts) == 2:
-            result['total'] = int(parts[-1])
+    # needs root to read debugfs
+    data = subprocess.check_output(["sudo", "cat", "/sys/kernel/debug/ion/heaps/system"],
+                                   stderr=subprocess.DEVNULL, timeout=5).decode()
+    for line in data.splitlines():
+      line = line.strip()
+      if line.startswith('total orphaned'):
+        result['orphaned'] = int(line.split()[-1])
+      elif line.startswith('pool total'):
+        result['pool'] = int(line.split('=')[-1].strip())
+      elif line.startswith('total') and not line.startswith('total orphaned'):
+        parts = line.split()
+        if len(parts) == 2:
+          result['total'] = int(parts[-1])
   except Exception:
     pass
   return result
