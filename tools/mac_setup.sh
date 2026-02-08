@@ -32,7 +32,11 @@ else
     brew up
 fi
 
-brew bundle --file=- <<-EOS
+# Clear any cached ARM toolchain pkg that occasionally ships with bad checksum on runners
+BREW_CACHE_DIR="$(brew --cache)"
+rm -f "${BREW_CACHE_DIR}/downloads"/*arm-gnu-toolchain* || true
+
+cat > /tmp/op-brew-bundle <<'EOS'
 brew "git-lfs"
 brew "capnp"
 brew "coreutils"
@@ -45,10 +49,16 @@ brew "llvm"
 brew "openssl@3.0"
 brew "qt@5"
 brew "zeromq"
-cask "gcc-arm-embedded"
 brew "portaudio"
 brew "gcc@13"
+brew "arm-none-eabi-gcc"
 EOS
+
+if brew info arm-none-eabi-newlib >/dev/null 2>&1; then
+  echo 'brew "arm-none-eabi-newlib"' >> /tmp/op-brew-bundle
+fi
+
+brew bundle --file=/tmp/op-brew-bundle
 
 echo "[ ] finished brew install t=$SECONDS"
 
