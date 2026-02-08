@@ -4,7 +4,9 @@ import glob
 Import('env', 'arch')
 lenv = env.Clone()
 
-tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x]
+tinygrad_root = env.Dir("#").abspath
+tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
+                  if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
