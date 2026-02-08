@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 from collections import defaultdict
 
 import numpy as np
@@ -18,7 +19,10 @@ def _get_procs():
 
 
 def is_openpilot_proc(name):
-  return any(p in name for p in _get_procs())
+  if any(p in name for p in _get_procs()):
+    return True
+  # catch openpilot processes not in PROCS (athenad, manager, etc.)
+  return 'openpilot' in name or name.startswith(('selfdrive.', 'system.'))
 
 
 def get_proc_name(proc):
@@ -100,11 +104,10 @@ def process_table_rows(by_proc, total_mb, use_pss, show_detail):
     m = by_proc[name]
     vals = m[mem_key]
     avg = round(np.mean(vals))
-    growth = round(vals[-1] - vals[0], 1)
-    row = [name, avg, round(np.max(vals)), growth, round(pct(avg, total_mb), 1)]
+    row = [name, f"{avg} MB", f"{round(np.max(vals))} MB", f"{round(pct(avg, total_mb), 1)}%"]
     if show_detail:
-      row.append(round(np.mean(m['pss_anon'])))
-      row.append(round(np.mean(m['pss_shmem'])))
+      row.append(f"{round(np.mean(m['pss_anon']))} MB")
+      row.append(f"{round(np.mean(m['pss_shmem']))} MB")
     rows.append(row)
 
   # Total row
@@ -116,10 +119,10 @@ def process_table_rows(by_proc, total_mb, use_pss, show_detail):
       s = sum(v[mem_key][i] for v in by_proc.values() if i < len(v[mem_key]))
       totals.append(s)
     avg_total = round(np.mean(totals))
-    total_row = ["TOTAL", avg_total, round(np.max(totals)), round(totals[-1] - totals[0], 1), round(pct(avg_total, total_mb), 1)]
+    total_row = ["TOTAL", f"{avg_total} MB", f"{round(np.max(totals))} MB", f"{round(pct(avg_total, total_mb), 1)}%"]
     if show_detail:
-      total_row.append(round(sum(np.mean(v['pss_anon']) for v in by_proc.values())))
-      total_row.append(round(sum(np.mean(v['pss_shmem']) for v in by_proc.values())))
+      total_row.append(f"{round(sum(np.mean(v['pss_anon']) for v in by_proc.values()))} MB")
+      total_row.append(f"{round(sum(np.mean(v['pss_shmem']) for v in by_proc.values()))} MB")
 
   return rows, total_row
 
@@ -128,12 +131,15 @@ def print_process_tables(op_procs, other_procs, total_mb, use_pss):
   all_procs = {**op_procs, **other_procs}
   show_detail = use_pss and _has_pss_detail(all_procs)
 
-  header = ["process", "avg (MB)", "max (MB)", "growth (MB)", "avg (%)"]
+  header = ["process", "avg", "max", "%"]
   if show_detail:
-    header += ["anon (MB)", "shmem (MB)"]
+    header += ["anon", "shmem"]
 
   op_rows, op_total = process_table_rows(op_procs, total_mb, use_pss, show_detail)
-  other_filtered = {n: v for n, v in other_procs.items() if np.mean(v['pss' if use_pss else 'rss']) > 5.0}
+  # filter other: >5MB avg and not bare interpreter paths (test infra noise)
+  other_filtered = {n: v for n, v in other_procs.items()
+                    if np.mean(v['pss' if use_pss else 'rss']) > 5.0
+                    and os.path.basename(n.split()[0]) not in ('python', 'python3')}
   other_rows, other_total = process_table_rows(other_filtered, total_mb, use_pss, show_detail)
 
   rows = op_rows
@@ -149,7 +155,6 @@ def print_process_tables(op_procs, other_procs, total_mb, use_pss):
 
   metric = "PSS (no shared double-count)" if use_pss else "RSS (includes shared, overcounts)"
   print(f"\n-- Per-Process Memory: {metric} --")
-  print("  growth = last - first sample (positive = possible leak)")
   print(tabulate(rows, header, **TABULATE_OPTS))
 
 
