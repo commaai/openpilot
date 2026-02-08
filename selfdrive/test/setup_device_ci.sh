@@ -18,17 +18,18 @@ if [ -z "$TEST_DIR" ]; then
   exit 1
 fi
 
-# prevent storage from filling up
-rm -rf /data/media/0/realdata/*
+setup_device() {
+  # prevent storage from filling up
+  rm -rf /data/media/0/realdata/*
 
-rm -rf /data/safe_staging/ || true
-if [ -d /data/safe_staging/ ]; then
-  sudo umount /data/safe_staging/merged/ || true
   rm -rf /data/safe_staging/ || true
-fi
+  if [ -d /data/safe_staging/ ]; then
+    sudo umount /data/safe_staging/merged/ || true
+    rm -rf /data/safe_staging/ || true
+  fi
 
-CONTINUE_PATH="/data/continue.sh"
-cat > $CONTINUE_PATH << EOF
+  CONTINUE_PATH="/data/continue.sh"
+  cat > $CONTINUE_PATH << 'CONTINUE_EOF'
 #!/usr/bin/env bash
 
 sudo abctl --set_success
@@ -49,18 +50,13 @@ while true; do
     sudo systemctl start ssh
   fi
 
-  #if ! pgrep -f 'ciui.py' > /dev/null 2>&1; then
-  #  echo 'starting UI'
-  #  cp $SOURCE_DIR/selfdrive/test/ciui.py /data/
-  #  /data/ciui.py &
-  #fi
-
   sleep 5s
 done
 
 sleep infinity
-EOF
-chmod +x $CONTINUE_PATH
+CONTINUE_EOF
+  chmod +x $CONTINUE_PATH
+}
 
 safe_checkout() {
   # completely clean TEST_DIR
@@ -130,6 +126,10 @@ if [ ! -d "$SOURCE_DIR" ]; then
   git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
 fi
 
+# run device setup in parallel with checkout
+setup_device &
+_setup_pid=$!
+
 if [ ! -z "$UNSAFE" ]; then
   echo "trying unsafe checkout"
   set +e
@@ -142,5 +142,7 @@ else
   echo "doing safe checkout"
   safe_checkout
 fi
+
+wait $_setup_pid
 
 echo "$TEST_DIR synced with $GIT_COMMIT, t=$SECONDS"
