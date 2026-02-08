@@ -1211,6 +1211,7 @@ struct EncodeIndex {
     fullHEVC @1;
     qcameraH264 @6;
     livestreamH264 @7;
+    qcameraHEVC @8;
 
     # deprecated
     bigBoxHEVCDEPRECATED @2;

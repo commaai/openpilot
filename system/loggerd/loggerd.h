@@ -43,7 +43,7 @@ struct EncoderSettings {
   }
 
   static EncoderSettings QcamEncoderSettings() {
-    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C, .bitrate = 1'398'000, .gop_size = 15};
+    return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H_E_V_C, .bitrate = 1'398'000, .gop_size = 15};
   }
 
   static EncoderSettings StreamEncoderSettings() {
@@ -124,21 +124,21 @@ const EncoderInfo stream_driver_encoder_info = {
 
 const EncoderInfo qcam_encoder_info = {
   .publish_name = "qRoadEncodeData",
-  .filename = "qcamera.hevc",
+  .filename = "qcamera.mp4",
   .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(QRoadEncode),
 };
 
 const EncoderInfo qcam_wide_road_encoder_info = {
   .publish_name = "qWideRoadEncodeData",
-  .filename = "qecamera.hevc",
+  .filename = "qecamera.mp4",
   .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(QWideRoadEncode),
 };
 
 const EncoderInfo qcam_driver_encoder_info = {
   .publish_name = "qDriverEncodeData",
-  .filename = "qdcamera.hevc",
+  .filename = "qdcamera.mp4",
   .record = Params().getBool("RecordFront"),
   .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(QDriverEncode),
