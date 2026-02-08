@@ -588,17 +588,17 @@ class GuiApplication:
 
   def _handle_modal_overlay(self) -> bool:
     if self._modal_overlay.overlay:
+      # Send show event to Widget
+      if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
+        self._modal_overlay.overlay.show_event()
+        self._modal_overlay_shown = True
+
       if hasattr(self._modal_overlay.overlay, 'render'):
         result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
       elif callable(self._modal_overlay.overlay):
         result = self._modal_overlay.overlay()
       else:
         raise Exception
-
-      # Send show event to Widget
-      if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
-        self._modal_overlay.overlay.show_event()
-        self._modal_overlay_shown = True
 
       if result >= 0:
         # Clear the overlay and execute the callback
