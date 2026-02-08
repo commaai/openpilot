@@ -1211,6 +1211,7 @@ struct EncodeIndex {
     fullHEVC @1;
     qcameraH264 @6;
     livestreamH264 @7;
+    qcameraHEVC @8;
 
     # deprecated
     bigBoxHEVCDEPRECATED @2;
@@ -2572,6 +2573,8 @@ struct Event {
     driverEncodeIdx @76 :EncodeIndex;
     wideRoadEncodeIdx @77 :EncodeIndex;
     qRoadEncodeIdx @90 :EncodeIndex;
+    qWideRoadEncodeIdx @150 :EncodeIndex;
+    qDriverEncodeIdx @151 :EncodeIndex;
 
     livestreamRoadEncodeIdx @117 :EncodeIndex;
     livestreamWideRoadEncodeIdx @118 :EncodeIndex;
@@ -2614,6 +2617,8 @@ struct Event {
     driverEncodeData @87 :EncodeData;
     wideRoadEncodeData @88 :EncodeData;
     qRoadEncodeData @89 :EncodeData;
+    qWideRoadEncodeData @152 :EncodeData;
+    qDriverEncodeData @153 :EncodeData;
     alertDebug @133 :DebugAlert;
 
     livestreamRoadEncodeData @120 :EncodeData;
