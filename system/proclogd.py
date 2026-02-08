@@ -131,7 +131,7 @@ _smaps_path: str | None = None  # auto-detected on first call
 # cache results and only refresh every N cycles to keep CPU low.
 _smaps_cache: dict[int, SmapsData] = {}
 _smaps_cycle = 0
-_SMAPS_EVERY = 5  # refresh every 5th cycle (10s at 0.5Hz)
+_SMAPS_EVERY = 20  # refresh every 20th cycle (40s at 0.5Hz)
 
 
 def _read_smaps(pid: int) -> SmapsData:
