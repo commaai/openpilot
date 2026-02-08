@@ -115,6 +115,34 @@ def _parse_proc_stat(stat: str) -> ProcStat | None:
     cloudlog.exception("failed to parse /proc/<pid>/stat")
     return None
 
+class SmapsRollup(TypedDict):
+  pss: int       # bytes
+  pss_anon: int  # bytes
+  pss_shmem: int # bytes
+
+
+_SMAPS_KEYS = {b'Pss:', b'Pss_Anon:', b'Pss_Shmem:'}
+
+
+def _read_smaps_rollup(pid: int) -> SmapsRollup:
+  result: SmapsRollup = {'pss': 0, 'pss_anon': 0, 'pss_shmem': 0}
+  try:
+    with open(f'/proc/{pid}/smaps_rollup', 'rb') as f:
+      for line in f:
+        parts = line.split()
+        if len(parts) >= 2 and parts[0] in _SMAPS_KEYS:
+          val = int(parts[1]) * 1024  # kB -> bytes
+          if parts[0] == b'Pss:':
+            result['pss'] = val
+          elif parts[0] == b'Pss_Anon:':
+            result['pss_anon'] = val
+          elif parts[0] == b'Pss_Shmem:':
+            result['pss_shmem'] = val
+  except (FileNotFoundError, PermissionError, ProcessLookupError):
+    pass
+  return result
+
+
 class ProcExtra(TypedDict):
   pid: int
   name: str
@@ -188,6 +216,11 @@ def build_proc_log_message(msg) -> None:
     cmdline = proc.init('cmdline', len(extra['cmdline']))
     for j, arg in enumerate(extra['cmdline']):
       cmdline[j] = arg
+
+    smaps = _read_smaps_rollup(r['pid'])
+    proc.memPss = smaps['pss']
+    proc.memPssAnon = smaps['pss_anon']
+    proc.memPssShmem = smaps['pss_shmem']
 
   cpu_times = _cpu_times()
   cpu_list = pl.init('cpuTimes', len(cpu_times))

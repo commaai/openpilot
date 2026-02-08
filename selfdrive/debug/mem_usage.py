@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+from collections import defaultdict
+
+import numpy as np
+from tabulate import tabulate
+
+from openpilot.selfdrive.test.test_onroad import PROCS
+from openpilot.tools.lib.logreader import LogReader
+
+DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+MB = 1024 * 1024
+TABULATE_OPTS = dict(tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".1f")
+
+
+def is_openpilot_proc(name):
+  return any(p in name for p in PROCS)
+
+
+def get_proc_name(proc):
+  if len(proc.cmdline) > 0:
+    return list(proc.cmdline)[0]
+  return proc.name
+
+
+def pct(val_mb, total_mb):
+  return val_mb / total_mb * 100 if total_mb else 0
+
+
+def has_pss(proc_logs):
+  """Check if logs contain PSS data (new field, not in old logs)."""
+  for proc in proc_logs[0].procLog.procs:
+    if proc.memPss > 0:
+      return True
+  return False
+
+
+def print_summary(proc_logs, device_states):
+  mem = proc_logs[-1].procLog.mem
+  total = mem.total / MB
+  used = (mem.total - mem.available) / MB
+  cached = mem.cached / MB
+  shared = mem.shared / MB
+  buffers = mem.buffers / MB
+
+  lines = [
+    f"  Total: {total:.0f} MB",
+    f"  Used (total-avail): {used:.0f} MB ({pct(used, total):.0f}%)",
+    f"  Cached: {cached:.0f} MB ({pct(cached, total):.0f}%)    Buffers: {buffers:.0f} MB ({pct(buffers, total):.0f}%)",
+    f"  Shared/MSGQ: {shared:.0f} MB ({pct(shared, total):.0f}%)",
+  ]
+
+  if device_states:
+    mem_pcts = [m.deviceState.memoryUsagePercent for m in device_states]
+    lines.append(f"  deviceState memory: {np.min(mem_pcts)}-{np.max(mem_pcts)}% (avg {np.mean(mem_pcts):.0f}%)")
+
+  print("\n-- Memory Summary --")
+  print("\n".join(lines))
+  return total
+
+
+def collect_per_process_mem(proc_logs, use_pss):
+  """Collect per-process memory samples. Returns {name: {metric: [values_per_sample_in_MB]}}."""
+  by_proc = defaultdict(lambda: defaultdict(list))
+
+  for msg in proc_logs:
+    sample = defaultdict(lambda: defaultdict(float))
+    for proc in msg.procLog.procs:
+      name = get_proc_name(proc)
+      sample[name]['rss'] += proc.memRss / MB
+      if use_pss:
+        sample[name]['pss'] += proc.memPss / MB
+        sample[name]['pss_anon'] += proc.memPssAnon / MB
+        sample[name]['pss_shmem'] += proc.memPssShmem / MB
+
+    for name, metrics in sample.items():
+      for metric, val in metrics.items():
+        by_proc[name][metric].append(val)
+
+  return by_proc
+
+
+def process_table_rows(by_proc, total_mb, use_pss):
+  """Build table rows. Returns (rows, total_row)."""
+  mem_key = 'pss' if use_pss else 'rss'
+  rows = []
+  for name in sorted(by_proc, key=lambda n: np.mean(by_proc[n][mem_key]), reverse=True):
+    m = by_proc[name]
+    vals = m[mem_key]
+    avg = np.mean(vals)
+    growth = vals[-1] - vals[0]
+    row = [name, avg, np.max(vals), growth, pct(avg, total_mb)]
+    if use_pss:
+      row.append(np.mean(m['pss_anon']))
+      row.append(np.mean(m['pss_shmem']))
+    rows.append(row)
+
+  # Total row
+  total_row = None
+  if by_proc:
+    max_samples = max(len(v[mem_key]) for v in by_proc.values())
+    totals = []
+    for i in range(max_samples):
+      s = sum(v[mem_key][i] for v in by_proc.values() if i < len(v[mem_key]))
+      totals.append(s)
+    avg_total = np.mean(totals)
+    total_row = ["TOTAL", avg_total, np.max(totals), totals[-1] - totals[0], pct(avg_total, total_mb)]
+    if use_pss:
+      total_row.append(sum(np.mean(v['pss_anon']) for v in by_proc.values()))
+      total_row.append(sum(np.mean(v['pss_shmem']) for v in by_proc.values()))
+
+  return rows, total_row
+
+
+def print_process_tables(op_procs, other_procs, total_mb, use_pss):
+  header = ["process", "avg (MB)", "max (MB)", "growth (MB)", "avg (%)"]
+  if use_pss:
+    header += ["anon (MB)", "shmem (MB)"]
+
+  op_rows, op_total = process_table_rows(op_procs, total_mb, use_pss)
+  other_filtered = {n: v for n, v in other_procs.items() if np.mean(v['pss' if use_pss else 'rss']) > 5.0}
+  other_rows, other_total = process_table_rows(other_filtered, total_mb, use_pss)
+
+  rows = op_rows
+  if op_total:
+    rows.append(op_total)
+  if other_rows:
+    sep_width = len(header)
+    rows.append([""] * sep_width)
+    rows.extend(other_rows)
+    if other_total:
+      other_total[0] = "TOTAL (other)"
+      rows.append(other_total)
+
+  metric = "PSS (no shared double-count)" if use_pss else "RSS (includes shared, overcounts)"
+  print(f"\n-- Per-Process Memory: {metric} --")
+  print(f"  growth = last - first sample (positive = possible leak)")
+  print(tabulate(rows, header, **TABULATE_OPTS))
+
+
+def print_memory_accounting(proc_logs, op_procs, other_procs, total_mb, use_pss):
+  last = proc_logs[-1].procLog.mem
+  used = (last.total - last.available) / MB
+  cached_buf = (last.buffers + last.cached) / MB
+
+  mem_key = 'pss' if use_pss else 'rss'
+  op_total = sum(v[mem_key][-1] for v in op_procs.values()) if op_procs else 0
+  other_total = sum(v[mem_key][-1] for v in other_procs.values()) if other_procs else 0
+  proc_sum = op_total + other_total
+  remainder = used - cached_buf - proc_sum
+
+  if not use_pss:
+    # RSS double-counts shared; add back once to partially correct
+    shared = last.shared / MB
+    remainder += shared
+
+  header = ["", "MB", "%"]
+  label = "PSS" if use_pss else "RSS*"
+  rows = [
+    ["Used (total - avail)", f"{used:.0f}", f"{pct(used, total_mb):.1f}"],
+    ["  Cached + Buffers", f"{cached_buf:.0f}", f"{pct(cached_buf, total_mb):.1f}"],
+    [f"  openpilot {label}", f"{op_total:.0f}", f"{pct(op_total, total_mb):.1f}"],
+    [f"  other {label}", f"{other_total:.0f}", f"{pct(other_total, total_mb):.1f}"],
+    ["  kernel/ION/GPU", f"{remainder:.0f}", f"{pct(remainder, total_mb):.1f}"],
+  ]
+  note = "" if use_pss else " (*RSS overcounts shared mem)"
+  print(f"\n-- Memory Accounting (last sample){note} --")
+  print(tabulate(rows, header, tablefmt="simple_grid", stralign="right"))
+
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description="Analyze memory usage from route logs")
+  parser.add_argument("route", nargs="?", default=None, help="route ID or local rlog path")
+  parser.add_argument("--demo", action="store_true", help=f"use demo route ({DEMO_ROUTE})")
+  args = parser.parse_args()
+
+  if args.demo:
+    route = DEMO_ROUTE
+  elif args.route:
+    route = args.route
+  else:
+    parser.error("provide a route or use --demo")
+
+  print(f"Reading logs from: {route}")
+
+  proc_logs = []
+  device_states = []
+  for msg in LogReader(route):
+    if msg.which() == 'procLog':
+      proc_logs.append(msg)
+    elif msg.which() == 'deviceState':
+      device_states.append(msg)
+
+  if not proc_logs:
+    print("No procLog messages found")
+    sys.exit(0)
+
+  print(f"{len(proc_logs)} procLog samples, {len(device_states)} deviceState samples")
+
+  use_pss = has_pss(proc_logs)
+  if not use_pss:
+    print("  (no PSS data in logs, falling back to RSS — re-record with updated proclogd for accurate numbers)")
+
+  total_mb = print_summary(proc_logs, device_states)
+
+  by_proc = collect_per_process_mem(proc_logs, use_pss)
+  op_procs = {n: v for n, v in by_proc.items() if is_openpilot_proc(n)}
+  other_procs = {n: v for n, v in by_proc.items() if not is_openpilot_proc(n)}
+
+  print_process_tables(op_procs, other_procs, total_mb, use_pss)
+  print_memory_accounting(proc_logs, op_procs, other_procs, total_mb, use_pss)
