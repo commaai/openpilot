@@ -105,7 +105,6 @@ dev = [
   "parameterized >=0.8, <0.9",
   "pyautogui",
   "pywinctl",
-  "tabulate",
 ]
 
 tools = [

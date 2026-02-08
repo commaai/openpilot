@@ -1478,6 +1478,11 @@ struct ProcLog {
 
     cmdline @15 :List(Text);
     exe @16 :Text;
+
+    # from /proc/<pid>/smaps_rollup (proportional/private memory)
+    memPss @17 :UInt64;        # Pss — shared pages split by mapper count
+    memPssAnon @18 :UInt64;    # Pss_Anon — private anonymous (heap, stack)
+    memPssShmem @19 :UInt64;   # Pss_Shmem — proportional MSGQ/tmpfs share
   }
 
   struct CPUTimes {
