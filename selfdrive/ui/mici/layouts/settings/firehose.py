@@ -223,6 +223,6 @@ class FirehoseLayoutBase(Widget):
 class FirehoseLayout(FirehoseLayoutBase, NavWidget):
   BACK_TOUCH_AREA_PERCENTAGE = 0.1
 
-  def __init__(self, back_callback):
+  def __init__(self):
     super().__init__()
-    self.set_back_callback(back_callback)
+    self.set_back_callback(gui_app.pop_widget)

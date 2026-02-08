@@ -208,6 +208,7 @@ class Device:
 
   @property
   def interactive_timeout(self) -> int:
+    return 5
     if self._override_interactive_timeout is not None:
       return self._override_interactive_timeout
 

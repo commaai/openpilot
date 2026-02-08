@@ -19,7 +19,7 @@ class PairingDialog(NavWidget):
 
   def __init__(self):
     super().__init__()
-    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
+    self.set_back_callback(gui_app.pop_widget)
     self._params = Params()
     self._qr_texture: rl.Texture | None = None
     self._last_qr_generation = float("-inf")
@@ -105,12 +105,15 @@ class PairingDialog(NavWidget):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("pairing device")
+  gui_app.init_window("pairing device", new_modal=True)
   pairing = PairingDialog()
+  gui_app.push_widget(pairing)
+  # TODO: black screen?
   try:
     for _ in gui_app.render():
-      result = pairing.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-      if result != -1:
-        break
+      pass
+      # result = pairing.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+      # if result != -1:
+      #   break
   finally:
     del pairing

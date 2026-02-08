@@ -185,11 +185,13 @@ def main():
   manifest_path = sys.argv[2]
 
   try:
-    gui_app.init_window("System Update")
+    gui_app.init_window("System Update", new_modal=True)
     updater = Updater(updater_path, manifest_path)
-    for should_render in gui_app.render():
-      if should_render:
-        updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    gui_app.push_widget(updater)
+    for _ in gui_app.render():
+      pass
+      # if should_render:
+      #   updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     updater.close()
   except Exception as e:
     print(f"Updater error: {e}")

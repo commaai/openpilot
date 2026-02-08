@@ -12,7 +12,7 @@ import subprocess
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
@@ -120,6 +120,11 @@ class ModalOverlay:
   callback: Callable | None = None
 
 
+@dataclass
+class NavStack:
+  widgets: list[object] = field(default_factory=list)
+
+
 class MousePos(NamedTuple):
   x: float
   y: float
@@ -214,6 +219,8 @@ class GuiApplication:
     self._scaled_width += self._scaled_width % 2
     self._scaled_height += self._scaled_height % 2
 
+    # TODO: move BIG ui over and deprecate
+    self._new_modal = False
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
     self._ffmpeg_proc: subprocess.Popen | None = None
@@ -226,6 +233,7 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._modal_overlay = ModalOverlay()
+    self._nav_stack = NavStack()
     self._modal_overlay_shown = False
     self._modal_overlay_tick: Callable[[], None] | None = None
 
@@ -261,13 +269,15 @@ class GuiApplication:
   def request_close(self):
     self._window_close_requested = True
 
-  def init_window(self, title: str, fps: int = _DEFAULT_FPS):
+  def init_window(self, title: str, fps: int = _DEFAULT_FPS, new_modal: bool = False):
     with self._startup_profile_context():
       def _close(sig, frame):
         self.close()
         sys.exit(0)
       signal.signal(signal.SIGINT, _close)
       atexit.register(self.close)
+
+      self._new_modal = new_modal
 
       flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
       if ENABLE_VSYNC:
@@ -370,7 +380,53 @@ class GuiApplication:
       except Exception:
         break
 
+  def push_widget(self, widget):
+    assert self._new_modal
+
+    # disable previous widget to prevent input processing, but keep rendering for smooth transitions
+    if len(self._nav_stack.widgets) > 0:
+      prev_widget = self._nav_stack.widgets[-1]
+      print('Disabling and hide_event for', prev_widget.__class__.__name__)
+      # prev_widget.hide_event()
+      prev_widget.set_enabled(False)
+
+    print('Pushing and show_event for', widget.__class__.__name__)
+    self._nav_stack.widgets.append(widget)
+    widget.show_event()
+    print()
+
+  def pop_widget(self):
+    assert self._new_modal
+
+    # reenable previous widget if exists and show event to allow it to update state if needed (e.g. refresh after settings change)
+    if len(self._nav_stack.widgets) > 1:
+      prev_widget = self._nav_stack.widgets[-2]
+      print('Re-enabling and show_event for', prev_widget.__class__.__name__)
+      # prev_widget.show_event()
+      prev_widget.set_enabled(True)
+    if len(self._nav_stack.widgets) > 1:
+      print('Popping and hide_event for', self._nav_stack.widgets[-1].__class__.__name__)
+      widget = self._nav_stack.widgets.pop()
+      widget.hide_event()
+    print()
+
+  def pop_widgets_to(self, widget):
+    assert self._new_modal
+
+    # pops all widgets after specified widget
+    while len(self._nav_stack.widgets) > 0 and self._nav_stack.widgets[-1] != widget:
+      self.pop_widget()
+
+  def get_active_widget(self):
+    assert self._new_modal
+
+    if len(self._nav_stack.widgets) > 0:
+      return self._nav_stack.widgets[-1]
+    return None
+
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    assert not self._new_modal, "set_modal_overlay is deprecated, use push_widget instead"
+
     if self._modal_overlay.overlay is not None:
       if hasattr(self._modal_overlay.overlay, 'hide_event'):
         self._modal_overlay.overlay.hide_event()
@@ -525,14 +581,25 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        # Handle modal overlay rendering and input processing
-        if self._handle_modal_overlay():
-          # Allow a Widget to still run a function while overlay is shown
-          if self._modal_overlay_tick is not None:
-            self._modal_overlay_tick()
-          yield False
-        else:
+        if self._new_modal:
+          # Only render top two
+          for widget in self._nav_stack.widgets[-2:]:
+            # TODO: need scaled sizes?
+            widget.render(rl.Rectangle(0, 0, self.width, self.height))
+
+          print('widget stack', len(self._nav_stack.widgets), [w.__class__.__name__ for w in self._nav_stack.widgets])
+
           yield True
+
+        else:
+          # Handle modal overlay rendering and input processing
+          if self._handle_modal_overlay():
+            # Allow a Widget to still run a function while overlay is shown
+            if self._modal_overlay_tick is not None:
+              self._modal_overlay_tick()
+            yield False
+          else:
+            yield True
 
         if self._render_texture:
           rl.end_texture_mode()
