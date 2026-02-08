@@ -8,7 +8,7 @@ import time
 import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
-from tabulate import tabulate
+from openpilot.common.utils import tabulate
 
 from cereal import log
 import cereal.messaging as messaging

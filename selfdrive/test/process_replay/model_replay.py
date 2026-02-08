@@ -9,7 +9,7 @@ from itertools import zip_longest
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tabulate import tabulate
+from openpilot.common.utils import tabulate
 
 from openpilot.common.git import get_commit
 from openpilot.system.hardware import PC

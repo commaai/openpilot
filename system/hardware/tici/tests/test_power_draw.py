@@ -3,7 +3,7 @@ import pytest
 import time
 import numpy as np
 from dataclasses import dataclass
-from tabulate import tabulate
+from openpilot.common.utils import tabulate
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
