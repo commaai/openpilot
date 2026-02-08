@@ -49,7 +49,7 @@ jobs:
       - name: Getting workflow run ID
         id: get_run_id
         run: |
-          echo "run_id=$(curl https://api.github.com/repos/${{ github.repository }}/commits/${{ env.SHA }}/check-runs | jq -r '.check_runs[] | select(.name == "${{ env.UI_JOB_NAME }}") | .html_url | capture("(?<number>[0-9]+)") | .number')" >> $GITHUB_OUTPUT
+          echo "run_id=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/commits/${{ env.SHA }}/check-runs | jq -r '.check_runs[] | select(.name == "${{ env.UI_JOB_NAME }}") | .html_url | capture("(?<number>[0-9]+)") | .number')" >> $GITHUB_OUTPUT
 
       - name: Getting proposed ui  # filename: pr_ui/mici_ui_replay.mp4
         id: download-artifact
