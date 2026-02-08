@@ -5,7 +5,44 @@ on:
     types: [created, edited]
 
 jobs:
-  # TODO: gc old branches in a separate job in this workflow
+  cleanup-branches:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete stale Jenkins branches
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+            const prefixes = ['tmp-jenkins', '__jenkins'];
+
+            for await (const response of github.paginate.iterator(github.rest.repos.listBranches, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            })) {
+              for (const branch of response.data) {
+                if (!prefixes.some(p => branch.name.startsWith(p))) continue;
+
+                const { data: commit } = await github.rest.repos.getCommit({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: branch.commit.sha,
+                });
+
+                const commitDate = new Date(commit.commit.committer.date).getTime();
+                if (commitDate < cutoff) {
+                  console.log(`Deleting branch: ${branch.name} (last commit: ${commit.commit.committer.date})`);
+                  await github.rest.git.deleteRef({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: `heads/${branch.name}`,
+                  });
+                }
+              }
+            }
+
   scan-comments:
     runs-on: ubuntu-latest
     if: ${{ github.event.issue.pull_request }}
