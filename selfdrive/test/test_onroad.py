@@ -282,9 +282,12 @@ class TestOnroad:
     print("\n------------------------------------------------")
     print("--------------- Memory Usage -------------------")
     print("------------------------------------------------")
+
+    from openpilot.selfdrive.debug.mem_usage import print_report
+    print_report(self.msgs['procLog'], self.msgs['deviceState'])
+
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
-    print("Overall memory usage: ", mems)
     print("MSGQ (/dev/shm/) usage: ", subprocess.check_output(["du", "-hs", "/dev/shm"]).split()[0].decode())
 
     # check for big leaks. note that memory usage is

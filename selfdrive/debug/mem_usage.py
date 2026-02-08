@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import argparse
-import sys
 from collections import defaultdict
 
 import numpy as np
 from tabulate import tabulate
 
-from openpilot.selfdrive.test.test_onroad import PROCS
 from openpilot.tools.lib.logreader import LogReader
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
@@ -14,8 +12,13 @@ MB = 1024 * 1024
 TABULATE_OPTS = dict(tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".1f")
 
 
+def _get_procs():
+  from openpilot.selfdrive.test.test_onroad import PROCS
+  return PROCS
+
+
 def is_openpilot_proc(name):
-  return any(p in name for p in PROCS)
+  return any(p in name for p in _get_procs())
 
 
 def get_proc_name(proc):
@@ -135,7 +138,7 @@ def print_process_tables(op_procs, other_procs, total_mb, use_pss):
 
   metric = "PSS (no shared double-count)" if use_pss else "RSS (includes shared, overcounts)"
   print(f"\n-- Per-Process Memory: {metric} --")
-  print(f"  growth = last - first sample (positive = possible leak)")
+  print("  growth = last - first sample (positive = possible leak)")
   print(tabulate(rows, header, **TABULATE_OPTS))
 
 
@@ -169,6 +172,28 @@ def print_memory_accounting(proc_logs, op_procs, other_procs, total_mb, use_pss)
   print(tabulate(rows, header, tablefmt="simple_grid", stralign="right"))
 
 
+def print_report(proc_logs, device_states=None):
+  """Print full memory analysis report. Can be called from tests or CLI."""
+  if not proc_logs:
+    print("No procLog messages found")
+    return
+
+  print(f"{len(proc_logs)} procLog samples, {len(device_states or [])} deviceState samples")
+
+  use_pss = has_pss(proc_logs)
+  if not use_pss:
+    print("  (no PSS data — re-record with updated proclogd for accurate numbers)")
+
+  total_mb = print_summary(proc_logs, device_states or [])
+
+  by_proc = collect_per_process_mem(proc_logs, use_pss)
+  op_procs = {n: v for n, v in by_proc.items() if is_openpilot_proc(n)}
+  other_procs = {n: v for n, v in by_proc.items() if not is_openpilot_proc(n)}
+
+  print_process_tables(op_procs, other_procs, total_mb, use_pss)
+  print_memory_accounting(proc_logs, op_procs, other_procs, total_mb, use_pss)
+
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Analyze memory usage from route logs")
   parser.add_argument("route", nargs="?", default=None, help="route ID or local rlog path")
@@ -192,21 +217,4 @@ if __name__ == "__main__":
     elif msg.which() == 'deviceState':
       device_states.append(msg)
 
-  if not proc_logs:
-    print("No procLog messages found")
-    sys.exit(0)
-
-  print(f"{len(proc_logs)} procLog samples, {len(device_states)} deviceState samples")
-
-  use_pss = has_pss(proc_logs)
-  if not use_pss:
-    print("  (no PSS data in logs, falling back to RSS — re-record with updated proclogd for accurate numbers)")
-
-  total_mb = print_summary(proc_logs, device_states)
-
-  by_proc = collect_per_process_mem(proc_logs, use_pss)
-  op_procs = {n: v for n, v in by_proc.items() if is_openpilot_proc(n)}
-  other_procs = {n: v for n, v in by_proc.items() if not is_openpilot_proc(n)}
-
-  print_process_tables(op_procs, other_procs, total_mb, use_pss)
-  print_memory_accounting(proc_logs, op_procs, other_procs, total_mb, use_pss)
+  print_report(proc_logs, device_states)
