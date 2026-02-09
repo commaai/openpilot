@@ -39,9 +39,11 @@ def read_file_chunked(path: str) -> bytes:
 
 
 def rechunk_file(path: str) -> None:
-  """Read an unchunked file and resave it as chunks. Removes the original file if chunks were created."""
+  """Read a file and resave it as chunks, removing the original."""
   with open(path, 'rb') as f:
     data = f.read()
-  write_file_chunked(path, data)
-  if len(data) > CHUNK_SIZE:
-    os.remove(path)
+  for i in range(0, len(data), CHUNK_SIZE):
+    chunk_path = f"{path}.chunk{i // CHUNK_SIZE:02d}"
+    with atomic_write(chunk_path, mode='wb', overwrite=True) as f:
+      f.write(data[i:i + CHUNK_SIZE])
+  os.remove(path)

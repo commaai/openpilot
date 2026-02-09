@@ -10,8 +10,12 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "
 
 def rechunk_action(target, source, env):
   from openpilot.common.file_chunker import rechunk_file
+  rechunked = set()
   for t in target:
-    rechunk_file(str(t))
+    pkl_path = str(t).removesuffix('.chunk00')
+    if pkl_path not in rechunked:
+      rechunk_file(pkl_path)
+      rechunked.add(pkl_path)
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
@@ -35,14 +39,14 @@ warp_targets = []
 for cam in [_ar_ox_fisheye, _os_fisheye]:
   w, h = cam.width, cam.height
   warp_targets += [File(f"models/warp_{w}x{h}_tinygrad.pkl").abspath, File(f"models/dm_warp_{w}x{h}_tinygrad.pkl").abspath]
-warp_node = lenv.Command(warp_targets, tinygrad_files + script_files, cmd)
+warp_node = lenv.Command([t + ".chunk00" for t in warp_targets], tinygrad_files + script_files, cmd)
 lenv.AddPostAction(warp_node, rechunk_action)
 
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
   node = lenv.Command(
-    fn + "_tinygrad.pkl",
+    fn + "_tinygrad.pkl.chunk00",
     [fn + ".onnx"] + tinygrad_files,
     f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
   )
