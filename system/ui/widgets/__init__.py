@@ -196,6 +196,7 @@ NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = 50 + NAV_BAR_MARGIN + NAV_BAR_HEIGHT  # px extra to push down when dismissing
 DISMISS_TIME_SECONDS = 2.0
+NAV_HINT_TIME_SECONDS = 5.0
 
 
 class NavBar(Widget):
@@ -204,7 +205,17 @@ class NavBar(Widget):
     self.set_rect(rl.Rectangle(0, 0, NAV_BAR_WIDTH, NAV_BAR_HEIGHT))
     self._alpha = 1.0
     self._alpha_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._fade_time = 0.0
+
+  def set_scale(self, scale: float) -> None:
+    scale = self._scale_filter.update(scale)
+    self.set_rect(rl.Rectangle(
+      self._rect.x,
+      self._rect.y,
+      NAV_BAR_WIDTH * scale,
+      NAV_BAR_HEIGHT * scale,
+    ))
 
   def set_alpha(self, alpha: float) -> None:
     self._alpha = alpha
@@ -212,16 +223,22 @@ class NavBar(Widget):
 
   def show_event(self):
     super().show_event()
+    print('nav bar show event')
     self._alpha = 1.0
     self._alpha_filter.x = 1.0
     self._fade_time = rl.get_time()
 
   def _render(self, _):
+    # TODO: move positioning logic here, and pass in generic parent_rect
+    # print('alpha', self._alpha, self._alpha_filter.x)
     if rl.get_time() - self._fade_time > DISMISS_TIME_SECONDS:
       self._alpha = 0.0
     alpha = self._alpha_filter.update(self._alpha)
 
+    # alpha = 1
     # white bar with black border
+    print(self._rect.y)
+    # TODO: draw rounded rectangle blue gradient behind
     rl.draw_rectangle_rounded(self._rect, 1.0, 6, rl.Color(255, 255, 255, int(255 * 0.9 * alpha)))
     rl.draw_rectangle_rounded_lines_ex(self._rect, 1.0, 6, 2, rl.Color(0, 0, 0, int(255 * 0.3 * alpha)))
 
@@ -249,6 +266,9 @@ class NavWidget(Widget, abc.ABC):
 
     self._set_up = False
 
+    # Mouse interaction tracking
+    self._last_interaction_time = rl.get_time()
+
   @property
   def back_enabled(self) -> bool:
     return self._back_enabled() if callable(self._back_enabled) else self._back_enabled
@@ -261,6 +281,10 @@ class NavWidget(Widget, abc.ABC):
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     super()._handle_mouse_event(mouse_event)
+
+    # Track any mouse interaction to reset inactivity timer
+    if mouse_event.left_pressed or mouse_event.left_down or mouse_event.left_released:
+      self._last_interaction_time = rl.get_time()
 
     if not self.back_enabled:
       self._back_button_start_pos = None
@@ -330,6 +354,7 @@ class NavWidget(Widget, abc.ABC):
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
       self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
+      print('trigger animate in', self._nav_bar_y_filter.x)
       self._trigger_animate_in = False
 
     new_y = 0.0
@@ -366,10 +391,22 @@ class NavWidget(Widget, abc.ABC):
 
     if self.back_enabled:
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
-      if self._back_button_start_pos is not None or self._playing_dismiss_animation:
-        self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._pos_filter.x
+
+      if rl.get_time() - self._last_interaction_time > NAV_HINT_TIME_SECONDS + 0.75:
+        # self._nav_bar_y_filter.update(NAV_BAR_MARGIN + self._pos_filter.x)
+        self._last_interaction_time = rl.get_time()
+
+      elif rl.get_time() - self._last_interaction_time > NAV_HINT_TIME_SECONDS:
+        self._nav_bar_y_filter.update(25)
+        self._nav_bar.set_scale(1.3)
+        self._nav_bar.set_alpha(1.0)
+
       else:
-        self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
+        self._nav_bar.set_scale(1.)
+        if self._back_button_start_pos is not None or self._playing_dismiss_animation:
+          self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._pos_filter.x
+        else:
+          self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
       # draw black above widget when dismissing
       if self._rect.y > 0:
@@ -386,3 +423,5 @@ class NavWidget(Widget, abc.ABC):
     #  so we need this hacky bool for now
     self._trigger_animate_in = True
     self._nav_bar.show_event()
+    # Reset interaction tracking when widget is shown
+    self._last_interaction_time = rl.get_time()
