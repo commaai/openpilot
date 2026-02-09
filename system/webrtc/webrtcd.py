@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import base64
 import json
 import uuid
 import logging
@@ -33,11 +34,15 @@ class CerealOutgoingMessageProxy:
 
   def to_json(self, msg_content: Any):
     if isinstance(msg_content, capnp._DynamicStructReader):
-      msg_dict = msg_content.to_dict()
+      msg_dict = self.to_json(msg_content.to_dict())
     elif isinstance(msg_content, capnp._DynamicListReader):
       msg_dict = [self.to_json(msg) for msg in msg_content]
+    elif isinstance(msg_content, dict):
+      msg_dict = {k: self.to_json(v) for k, v in msg_content.items()}
+    elif isinstance(msg_content, list):
+      msg_dict = [self.to_json(item) for item in msg_content]
     elif isinstance(msg_content, bytes):
-      msg_dict = msg_content.decode()
+      msg_dict = base64.b64encode(msg_content).decode('ascii')
     else:
       msg_dict = msg_content
 
