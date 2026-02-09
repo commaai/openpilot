@@ -8,6 +8,11 @@ tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
 
+def rechunk_action(target, source, env):
+  from openpilot.common.file_chunker import rechunk_file
+  for t in target:
+    rechunk_file(str(t))
+
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
@@ -30,16 +35,19 @@ warp_targets = []
 for cam in [_ar_ox_fisheye, _os_fisheye]:
   w, h = cam.width, cam.height
   warp_targets += [File(f"models/warp_{w}x{h}_tinygrad.pkl").abspath, File(f"models/dm_warp_{w}x{h}_tinygrad.pkl").abspath]
-lenv.Command(warp_targets, tinygrad_files + script_files, cmd)
+warp_node = lenv.Command(warp_targets, tinygrad_files + script_files, cmd)
+lenv.AddPostAction(warp_node, rechunk_action)
 
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
-  return lenv.Command(
+  node = lenv.Command(
     fn + "_tinygrad.pkl",
     [fn + ".onnx"] + tinygrad_files,
     f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
   )
+  lenv.AddPostAction(node, rechunk_action)
+  return node
 
 # Compile small models
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
