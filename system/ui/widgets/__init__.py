@@ -211,10 +211,9 @@ class NavBar(Widget):
     self._fade_time = rl.get_time()
 
   def show_event(self):
+    self._alpha = 0.0
+    self._alpha_filter.x = 0.0
     super().show_event()
-    self._alpha = 1.0
-    self._alpha_filter.x = 1.0
-    self._fade_time = rl.get_time()
 
   def _render(self, _):
     if rl.get_time() - self._fade_time > DISMISS_TIME_SECONDS:
@@ -242,10 +241,12 @@ class NavWidget(Widget, abc.ABC):
     self._pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False
     self._trigger_animate_in = False
+    self._waiting_for_animate_in_done = False
+    self._animate_in_start_time = 0.0
     self._back_enabled: bool | Callable[[], bool] = True
     self._nav_bar = NavBar()
 
-    # self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     self._set_up = False
 
@@ -329,8 +330,11 @@ class NavWidget(Widget, abc.ABC):
 
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
-      # self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
+      # Keep nav bar at top from the start; it will follow the widget normally after animate-up finishes
+      self._nav_bar_y_filter.x = NAV_BAR_MARGIN
       self._trigger_animate_in = False
+      self._waiting_for_animate_in_done = True
+      self._animate_in_start_time = rl.get_time()
 
     new_y = 0.0
 
@@ -348,6 +352,10 @@ class NavWidget(Widget, abc.ABC):
       new_y = self._rect.height + DISMISS_PUSH_OFFSET
 
     new_y = round(self._pos_filter.update(new_y))
+    # Start nav bar fade-in 0.4s after animate-up begins
+    if self._waiting_for_animate_in_done and rl.get_time() - self._animate_in_start_time >= 0.4:
+      self._waiting_for_animate_in_done = False
+      self._nav_bar.set_alpha(1.0)
     if abs(new_y) < 1 and self._pos_filter.velocity.x == 0.0:
       new_y = self._pos_filter.x = 0.0
 
@@ -366,17 +374,16 @@ class NavWidget(Widget, abc.ABC):
 
     if self.back_enabled:
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
-      # if self._back_button_start_pos is not None or self._playing_dismiss_animation:
-      #   self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._pos_filter.x
-      # else:
-      #   self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
+      if self._back_button_start_pos is not None or self._playing_dismiss_animation:
+        self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._pos_filter.x
+      else:
+        self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
       # draw black above widget when dismissing
       if self._rect.y > 0:
         rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
 
-      print(rect.x, rect.y)
-      self._nav_bar.set_position(bar_x, self._rect.y + NAV_BAR_MARGIN)
+      self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
       self._nav_bar.render()
 
     return ret
