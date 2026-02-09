@@ -1,11 +1,12 @@
 import glob
 import os
+import sys
 from pathlib import Path
 
 CHUNK_SIZE = 49 * 1024 * 1024  # 49MB, under GitHub's 50MB limit
 
 
-def rechunk_file(path):
+def chunk_file(path):
   with open(path, 'rb') as f:
     data = f.read()
   for i in range(0, len(data), CHUNK_SIZE):
@@ -19,3 +20,8 @@ def read_file_chunked(path):
   if not files:
     raise FileNotFoundError(path)
   return b''.join(Path(f).read_bytes() for f in files)
+
+
+if __name__ == "__main__":
+  for path in sys.argv[1:]:
+    chunk_file(path)
