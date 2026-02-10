@@ -8,8 +8,6 @@ tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
 
-chunk_cmd = f'python3 {Dir("#common").abspath}/file_chunker.py'
-
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
@@ -26,23 +24,21 @@ image_flag = {
      'larch64': 'IMAGE=2',
 }.get(arch, 'IMAGE=0')
 script_files = [File(Dir("#selfdrive/modeld").File("compile_warp.py").abspath)]
-compile_warp_cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/compile_warp.py '
+cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/compile_warp.py '
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 warp_targets = []
 for cam in [_ar_ox_fisheye, _os_fisheye]:
   w, h = cam.width, cam.height
   warp_targets += [File(f"models/warp_{w}x{h}_tinygrad.pkl").abspath, File(f"models/dm_warp_{w}x{h}_tinygrad.pkl").abspath]
-lenv.Command([t + ".chunk00" for t in warp_targets], tinygrad_files + script_files,
-             f'{compile_warp_cmd} && {chunk_cmd} {" ".join(warp_targets)}')
+lenv.Command(warp_targets, tinygrad_files + script_files, cmd)
 
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
-  pkl = fn + "_tinygrad.pkl"
   return lenv.Command(
-    pkl + ".chunk00",
+    fn + "_tinygrad.pkl",
     [fn + ".onnx"] + tinygrad_files,
-    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl} && {chunk_cmd} {pkl}'
+    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
   )
 
 # Compile small models

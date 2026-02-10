@@ -16,7 +16,6 @@ from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
-from openpilot.common.file_chunker import read_file_chunked
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
@@ -44,7 +43,8 @@ class ModelState:
     self.frame_buf_params = None
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self.image_warp = None
-    self.model_run = pickle.loads(read_file_chunked(str(MODEL_PKL_PATH)))
+    with open(MODEL_PKL_PATH, "rb") as f:
+      self.model_run = pickle.load(f)
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -54,7 +54,8 @@ class ModelState:
     if self.image_warp is None:
       self.frame_buf_params = get_nv12_info(buf.width, buf.height)
       warp_path = MODELS_DIR / f'dm_warp_{buf.width}x{buf.height}_tinygrad.pkl'
-      self.image_warp = pickle.loads(read_file_chunked(str(warp_path)))
+      with open(warp_path, "rb") as f:
+        self.image_warp = pickle.load(f)
     self.warp_inputs['frame'] = Tensor.from_blob(buf.data.ctypes.data, (self.frame_buf_params[3],), dtype='uint8').realize()
 
     self.warp_inputs_np['transform'][:] = transform[:]
