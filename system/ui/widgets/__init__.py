@@ -373,9 +373,9 @@ class NavWidget(Widget, abc.ABC):
       if self._back_button_start_pos is not None or self._playing_dismiss_animation:
         self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._pos_filter.x
       elif not self._animate_in_delay_done:
-        if rl.get_time() - self._animate_in_start_time >= 0.35:
+        if rl.get_time() - self._animate_in_start_time >= 0.5:
           self._animate_in_delay_done = True
-        self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT  # keep nav bar off-screen for 0.35s
+        self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT  # keep nav bar off-screen for 0.5s
       if self._animate_in_delay_done:
         self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
