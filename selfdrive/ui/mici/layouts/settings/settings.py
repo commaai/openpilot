@@ -51,7 +51,7 @@ class SettingsLayout(NavWidget):
     device_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVICE))
     asius_btn = SettingsBigButton("asius", "", "asius/asius_icon.png")
     asius_btn.set_click_callback(lambda: self._set_current_panel(PanelType.ASIUS))
-    skills_btn = SettingsBigButton("skills", "", "asius/skills_icon.png")
+    skills_btn = SettingsBigButton("skills", "", "icons_mici/wheel.png")
     skills_btn.set_click_callback(lambda: self._set_current_panel(PanelType.SKILLS))
     developer_btn = SettingsBigButton("developer", "", "icons_mici/settings/developer_icon.png", icon_size=(64, 60))
     developer_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVELOPER))
