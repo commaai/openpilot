@@ -211,7 +211,7 @@ class ModelState:
     if prepare_only:
       return None
 
-    self.vision_output = self.vision_run(**vision_inputs).contiguous().realize().uop.base.buffer.numpy()
+    self.vision_output = self.vision_run(**vision_inputs).numpy().flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
     self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'], 'desire_pulse': new_desire})
@@ -219,7 +219,7 @@ class ModelState:
       self.numpy_inputs[k][:] = self.full_input_queues.get(k)[k]
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
 
-    self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy()
+    self.policy_output = self.policy_run(**self.policy_inputs).numpy().flatten()
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(self.policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
     if SEND_RAW_PRED:
