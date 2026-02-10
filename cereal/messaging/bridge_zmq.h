@@ -20,12 +20,12 @@ private:
 
 class BridgeZmqMessage : public Message {
 public:
-  void init(size_t size) override;
-  void init(char *data, size_t size) override;
-  void close() override;
-  size_t getSize() override { return size; }
-  char *getData() override { return data; }
-  ~BridgeZmqMessage() override;
+  void init(size_t size);
+  void init(char *data, size_t size);
+  void close();
+  size_t getSize() { return size; }
+  char *getData() { return data; }
+  ~BridgeZmqMessage();
 
 private:
   char *data = nullptr;
