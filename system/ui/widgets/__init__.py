@@ -242,6 +242,8 @@ class NavWidget(Widget, abc.ABC):
     self._pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False
     self._trigger_animate_in = False
+    self._animate_in_delay_done = True
+    self._animate_in_start_time = 0.0
     self._back_enabled: bool | Callable[[], bool] = True
     self._nav_bar = NavBar()
 
@@ -331,6 +333,8 @@ class NavWidget(Widget, abc.ABC):
       self._pos_filter.x = self._rect.height
       self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
       self._trigger_animate_in = False
+      self._animate_in_delay_done = False
+      self._animate_in_start_time = rl.get_time()
 
     new_y = 0.0
 
@@ -368,7 +372,11 @@ class NavWidget(Widget, abc.ABC):
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
       if self._back_button_start_pos is not None or self._playing_dismiss_animation:
         self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._pos_filter.x
-      else:
+      elif not self._animate_in_delay_done:
+        if rl.get_time() - self._animate_in_start_time >= 0.35:
+          self._animate_in_delay_done = True
+        self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT  # keep nav bar off-screen for 0.35s
+      if self._animate_in_delay_done:
         self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
       # draw black above widget when dismissing
