@@ -215,7 +215,7 @@ jobs:
       working-directory: ${{ github.workspace }}/ci-artifacts
       run: |
         git checkout --orphan process-replay
-        git rm -rf *
+        git rm -rf .
         git config user.name "GitHub Actions Bot"
         git config user.email "<>"
         cp ${{ github.workspace }}/selfdrive/test/process_replay/fakedata/*.zst .
