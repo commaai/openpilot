@@ -11,6 +11,7 @@ from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMi
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici, PairBigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.asius import AsiusLayoutMici
+from openpilot.selfdrive.ui.mici.layouts.settings.skills import SkillsLayoutMici
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
 
@@ -20,8 +21,9 @@ class PanelType(IntEnum):
   NETWORK = 1
   DEVICE = 2
   ASIUS = 3
-  DEVELOPER = 4
-  USER_MANUAL = 5
+  SKILLS = 4
+  DEVELOPER = 5
+  USER_MANUAL = 6
 
 
 @dataclass
@@ -49,6 +51,8 @@ class SettingsLayout(NavWidget):
     device_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVICE))
     asius_btn = SettingsBigButton("asius", "", "asius/asius_icon.png")
     asius_btn.set_click_callback(lambda: self._set_current_panel(PanelType.ASIUS))
+    skills_btn = SettingsBigButton("skills", "", "asius/skills_icon.png")
+    skills_btn.set_click_callback(lambda: self._set_current_panel(PanelType.SKILLS))
     developer_btn = SettingsBigButton("developer", "", "icons_mici/settings/developer_icon.png", icon_size=(64, 60))
     developer_btn.set_click_callback(lambda: self._set_current_panel(PanelType.DEVELOPER))
 
@@ -58,6 +62,7 @@ class SettingsLayout(NavWidget):
         network_btn,
         device_btn,
         asius_btn,
+        skills_btn,
         PairBigButton(),
         developer_btn,
       ],
@@ -73,6 +78,7 @@ class SettingsLayout(NavWidget):
       PanelType.NETWORK: PanelInfo("Network", NetworkLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.DEVICE: PanelInfo("Device", DeviceLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.ASIUS: PanelInfo("Asius", AsiusLayoutMici(back_callback=lambda: self._set_current_panel(None))),
+      PanelType.SKILLS: PanelInfo("Skills", SkillsLayoutMici(back_callback=lambda: self._set_current_panel(None))),
       PanelType.DEVELOPER: PanelInfo("Developer", DeveloperLayoutMici(back_callback=lambda: self._set_current_panel(None))),
     }
 

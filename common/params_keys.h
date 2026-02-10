@@ -138,4 +138,5 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"BlePairingCode", {CLEAR_ON_MANAGER_START, STRING}},
     {"BlePid", {PERSISTENT, INT}},
     {"BleToken", {PERSISTENT, STRING}},
+    {"Skills", {PERSISTENT, JSON}},
 };
