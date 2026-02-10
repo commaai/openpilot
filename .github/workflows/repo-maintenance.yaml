@@ -47,6 +47,12 @@ jobs:
         python3 -m ensurepip --upgrade
         pip3 install uv
         uv lock --upgrade
+    - name: uv pip tree
+      id: pip_tree
+      run: |
+        echo 'PIP_TREE<<EOF' >> $GITHUB_OUTPUT
+        uv pip tree >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
     - name: bump submodules
       run: |
         git config --global --add safe.directory '*'
@@ -68,5 +74,10 @@ jobs:
         branch: auto-package-updates
         base: master
         delete-branch: true
-        body: 'Automatic PR from repo-maintenance -> package_updates'
+        body: |
+          Automatic PR from repo-maintenance -> package_updates
+
+          ```
+          ${{ steps.pip_tree.outputs.PIP_TREE }}
+          ```
         labels: bot
