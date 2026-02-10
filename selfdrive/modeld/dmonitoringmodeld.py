@@ -3,7 +3,6 @@ import os
 from openpilot.system.hardware import TICI
 os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
 from tinygrad.tensor import Tensor
-from tinygrad.dtype import dtypes
 import time
 import pickle
 import numpy as np
@@ -16,32 +15,34 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
+from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
-from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 METADATA_PATH = Path(__file__).parent / 'models/dmonitoring_model_metadata.pkl'
-
+MODELS_DIR = Path(__file__).parent / 'models'
 
 class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
 
-  def __init__(self, cl_ctx):
+  def __init__(self):
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
       self.output_slices = model_metadata['output_slices']
 
-    self.frame = MonitoringModelFrame(cl_ctx)
     self.numpy_inputs = {
       'calib': np.zeros(self.input_shapes['calib'], dtype=np.float32),
     }
 
+    self.warp_inputs_np = {'transform': np.zeros((3,3), dtype=np.float32)}
+    self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
+    self.frame_buf_params = None
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+    self.image_warp = None
     with open(MODEL_PKL_PATH, "rb") as f:
       self.model_run = pickle.load(f)
 
@@ -50,16 +51,17 @@ class ModelState:
 
     t1 = time.perf_counter()
 
-    input_img_cl = self.frame.prepare(buf, transform.flatten())
-    if TICI:
-      # The imgs tensors are backed by opencl memory, only need init once
-      if 'input_img' not in self.tensor_inputs:
-        self.tensor_inputs['input_img'] = qcom_tensor_from_opencl_address(input_img_cl.mem_address, self.input_shapes['input_img'], dtype=dtypes.uint8)
-    else:
-      self.tensor_inputs['input_img'] = Tensor(self.frame.buffer_from_cl(input_img_cl).reshape(self.input_shapes['input_img']), dtype=dtypes.uint8).realize()
+    if self.image_warp is None:
+      self.frame_buf_params = get_nv12_info(buf.width, buf.height)
+      warp_path = MODELS_DIR / f'dm_warp_{buf.width}x{buf.height}_tinygrad.pkl'
+      with open(warp_path, "rb") as f:
+        self.image_warp = pickle.load(f)
+    self.warp_inputs['frame'] = Tensor.from_blob(buf.data.ctypes.data, (self.frame_buf_params[3],), dtype='uint8').realize()
 
+    self.warp_inputs_np['transform'][:] = transform[:]
+    self.tensor_inputs['input_img'] = self.image_warp(self.warp_inputs['frame'], self.warp_inputs['transform']).realize()
 
-    output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy()
+    output = self.model_run(**self.tensor_inputs).numpy().flatten()
 
     t2 = time.perf_counter()
     return output, t2 - t1
@@ -107,12 +109,11 @@ def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_t
 def main():
   config_realtime_process(7, 5)
 
-  cl_context = CLContext()
-  model = ModelState(cl_context)
+  model = ModelState()
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
 
   cloudlog.warning("connecting to driver stream")
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True, cl_context)
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
   while not vipc_client.connect(False):
     time.sleep(0.1)
   assert vipc_client.is_connected()

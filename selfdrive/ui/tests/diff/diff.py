@@ -3,7 +3,6 @@ import os
 import sys
 import subprocess
 import tempfile
-import base64
 import webbrowser
 import argparse
 from pathlib import Path
@@ -23,12 +22,6 @@ def extract_frames(video_path, output_dir):
 def compare_frames(frame1_path, frame2_path):
   result = subprocess.run(['cmp', '-s', frame1_path, frame2_path])
   return result.returncode == 0
-
-
-def frame_to_data_url(frame_path):
-  with open(frame_path, 'rb') as f:
-    data = f.read()
-  return f"data:image/png;base64,{base64.b64encode(data).decode()}"
 
 
 def create_diff_video(video1, video2, output_path):
@@ -60,20 +53,16 @@ def find_differences(video1, video2):
 
     print(f"Comparing {len(frames1)} frames...")
     different_frames = []
-    frame_data = []
 
     for i, (f1, f2) in enumerate(zip(frames1, frames2, strict=False)):
       is_different = not compare_frames(f1, f2)
       if is_different:
         different_frames.append(i)
 
-      if i < 10 or i >= len(frames1) - 10 or is_different:
-        frame_data.append({'index': i, 'different': is_different, 'frame1_url': frame_to_data_url(f1), 'frame2_url': frame_to_data_url(f2)})
-
-    return different_frames, frame_data, len(frames1)
+    return different_frames, len(frames1)
 
 
-def generate_html_report(video1, video2, basedir, different_frames, frame_data, total_frames):
+def generate_html_report(video1, video2, basedir, different_frames, total_frames):
   chunks = []
   if different_frames:
     current_chunk = [different_frames[0]]
@@ -177,14 +166,14 @@ def main():
   diff_video_path = os.path.join(os.path.dirname(args.output), DIFF_OUT_DIR / "diff.mp4")
   create_diff_video(args.video1, args.video2, diff_video_path)
 
-  different_frames, frame_data, total_frames = find_differences(args.video1, args.video2)
+  different_frames, total_frames = find_differences(args.video1, args.video2)
 
   if different_frames is None:
     sys.exit(1)
 
   print()
   print("Generating HTML report...")
-  html = generate_html_report(args.video1, args.video2, args.basedir, different_frames, frame_data, total_frames)
+  html = generate_html_report(args.video1, args.video2, args.basedir, different_frames, total_frames)
 
   with open(DIFF_OUT_DIR / args.output, 'w') as f:
     f.write(html)

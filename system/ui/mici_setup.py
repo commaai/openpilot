@@ -94,12 +94,12 @@ class NetworkConnectivityMonitor:
 class SetupState(IntEnum):
   GETTING_STARTED = 0
   NETWORK_SETUP = 1
-  NETWORK_SETUP_CUSTOM_SOFTWARE = 8
-  SOFTWARE_SELECTION = 2
-  CUSTOM_SOFTWARE = 3
-  DOWNLOADING = 4
-  DOWNLOAD_FAILED = 5
-  CUSTOM_SOFTWARE_WARNING = 6
+  NETWORK_SETUP_CUSTOM_SOFTWARE = 2
+  SOFTWARE_SELECTION = 3
+  CUSTOM_SOFTWARE = 4
+  DOWNLOADING = 5
+  DOWNLOAD_FAILED = 6
+  CUSTOM_SOFTWARE_WARNING = 7
 
 
 class StartPage(Widget):
@@ -590,14 +590,8 @@ class Setup(Widget):
   def _custom_software_warning_back_button_callback(self):
     self._set_state(SetupState.SOFTWARE_SELECTION)
 
-  def _custom_software_warning_continue_button_callback(self):
-    self._set_state(SetupState.CUSTOM_SOFTWARE)
-
   def _getting_started_button_callback(self):
     self._set_state(SetupState.SOFTWARE_SELECTION)
-
-  def _software_selection_back_button_callback(self):
-    self._set_state(SetupState.GETTING_STARTED)
 
   def _software_selection_continue_button_callback(self):
     self.use_openpilot()

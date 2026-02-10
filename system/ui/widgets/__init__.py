@@ -195,7 +195,7 @@ NAV_BAR_WIDTH = 205
 NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = 50 + NAV_BAR_MARGIN + NAV_BAR_HEIGHT  # px extra to push down when dismissing
-DISMISS_TIME_SECONDS = 1.5
+DISMISS_TIME_SECONDS = 2.0
 
 
 class NavBar(Widget):
@@ -242,6 +242,7 @@ class NavWidget(Widget, abc.ABC):
     self._pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False
     self._trigger_animate_in = False
+    self._nav_bar_show_time = 0.0
     self._back_enabled: bool | Callable[[], bool] = True
     self._nav_bar = NavBar()
 
@@ -330,6 +331,7 @@ class NavWidget(Widget, abc.ABC):
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
       self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
+      self._nav_bar_show_time = rl.get_time()
       self._trigger_animate_in = False
 
     new_y = 0.0
@@ -366,17 +368,23 @@ class NavWidget(Widget, abc.ABC):
 
     if self.back_enabled:
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
+      nav_bar_delayed = rl.get_time() - self._nav_bar_show_time < 0.4
+      # User dragging or dismissing, nav bar follows NavWidget
       if self._back_button_start_pos is not None or self._playing_dismiss_animation:
         self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._pos_filter.x
+      # Waiting to show
+      elif nav_bar_delayed:
+        self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
+      # Animate back to top
       else:
         self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
-
-      self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
-      self._nav_bar.render()
 
       # draw black above widget when dismissing
       if self._rect.y > 0:
         rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
+
+      self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
+      self._nav_bar.render()
 
     return ret
 
