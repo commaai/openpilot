@@ -5,6 +5,7 @@ common_libs = [
   'swaglog.cc',
   'util.cc',
   'ratekeeper.cc',
+  'clutil.cc',
 ]
 
 _common = env.Library('common', common_libs, LIBS="json11")

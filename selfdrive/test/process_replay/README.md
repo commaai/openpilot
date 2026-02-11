@@ -22,7 +22,7 @@ Currently the following processes are tested:
 ### Usage
 ```
 Usage: test_processes.py [-h] [--whitelist-procs PROCS] [--whitelist-cars CARS] [--blacklist-procs PROCS]
-                         [--blacklist-cars CARS] [--ignore-fields FIELDS] [--ignore-msgs MSGS] [--update-refs] [--upload-only]
+                         [--blacklist-cars CARS] [--ignore-fields FIELDS] [--ignore-msgs MSGS] [--update-refs]
 Regression test to identify changes in a process's output
 optional arguments:
   -h, --help            show this help message and exit
@@ -33,7 +33,6 @@ optional arguments:
   --ignore-fields IGNORE_FIELDS         Extra fields or msgs to ignore (e.g. driverMonitoringState.events)
   --ignore-msgs IGNORE_MSGS             Msgs to ignore (e.g. onroadEvents)
   --update-refs                         Updates reference logs using current commit
-  --upload-only                         Skips testing processes and uploads logs from previous test run
 ```
 
 ## Forks

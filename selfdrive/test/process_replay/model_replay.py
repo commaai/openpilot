@@ -9,7 +9,7 @@ from itertools import zip_longest
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tabulate import tabulate
+from openpilot.common.utils import tabulate
 
 from openpilot.common.git import get_commit
 from openpilot.system.hardware import PC
@@ -34,7 +34,7 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
   # model, instant max, average max
-  ("modelV2", 0.035, 0.028),
+  ("modelV2", 0.035, 0.025),
   ("driverStateV2", 0.02, 0.015),
 ]
 

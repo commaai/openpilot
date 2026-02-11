@@ -160,9 +160,12 @@ def ui_thread(addr):
 
     camera = DEVICE_CAMERAS[("tici", str(sm['roadCameraState'].sensor))]
 
-    imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((len(yuv_img_raw.data) // vipc_client.stride, vipc_client.stride))
-    num_px = vipc_client.width * vipc_client.height
-    rgb = cv2.cvtColor(imgff[: vipc_client.height * 3 // 2, : vipc_client.width], cv2.COLOR_YUV2RGB_NV12)
+    # Use received buffer dimensions (full HEVC can have stride != buffer_len/rows due to VENUS padding)
+    h, w, stride = yuv_img_raw.height, yuv_img_raw.width, yuv_img_raw.stride
+    nv12_size = h * 3 // 2 * stride
+    imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8, count=nv12_size).reshape((h * 3 // 2, stride))
+    num_px = w * h
+    rgb = cv2.cvtColor(imgff[: h * 3 // 2, : w], cv2.COLOR_YUV2RGB_NV12)
 
     qcam = "QCAM" in os.environ
     bb_scale = (528 if qcam else camera.fcam.width) / 640.0

@@ -318,7 +318,7 @@ class WifiUIMici(BigMultiOptionDialog):
   INACTIVITY_TIMEOUT = 1
 
   def __init__(self, wifi_manager: WifiManager, back_callback: Callable):
-    super().__init__([], None, None, right_btn_callback=None)
+    super().__init__([], None)
 
     # Set up back navigation
     self.set_back_callback(back_callback)

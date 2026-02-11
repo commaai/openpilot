@@ -4,7 +4,6 @@ import time
 import copy
 import heapq
 import signal
-import numpy as np
 from collections import Counter
 from dataclasses import dataclass, field
 from itertools import islice
@@ -24,7 +23,6 @@ from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
-from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
@@ -205,8 +203,7 @@ class ProcessContainer:
       if meta.camera_state in self.cfg.vision_pubs:
         assert frs[meta.camera_state].pix_fmt == 'nv12'
         frame_size = (frs[meta.camera_state].w, frs[meta.camera_state].h)
-        stride, y_height, _, yuv_size = get_nv12_info(frame_size[0], frame_size[1])
-        vipc_server.create_buffers_with_sizes(meta.stream, 2, frame_size[0], frame_size[1], yuv_size, stride, stride * y_height)
+        vipc_server.create_buffers(meta.stream, 2, *frame_size)
     vipc_server.start_listener()
 
     self.vipc_server = vipc_server
@@ -303,15 +300,7 @@ class ProcessContainer:
             camera_meta = meta_from_camera_state(m.which())
             assert frs is not None
             img = frs[m.which()].get(camera_state.frameId)
-
-            h, w = frs[m.which()].h, frs[m.which()].w
-            stride, y_height, _, yuv_size = get_nv12_info(w, h)
-            uv_offset = stride * y_height
-            padded_img = np.zeros((yuv_size), dtype=np.uint8).reshape((-1, stride))
-            padded_img[:h, :w] = img[:h * w].reshape((-1, w))
-            padded_img[uv_offset // stride:uv_offset // stride + h // 2, :w] = img[h * w:].reshape((-1, w))
-
-            self.vipc_server.send(camera_meta.stream, padded_img.flatten().tobytes(),
+            self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 

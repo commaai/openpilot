@@ -94,6 +94,7 @@ env = Environment(
 
 # Arch-specific flags and paths
 if arch == "larch64":
+  env.Append(CPPPATH=["#third_party/opencl/include"])
   env.Append(LIBPATH=[
     "/usr/local/lib",
     "/system/vendor/lib64",

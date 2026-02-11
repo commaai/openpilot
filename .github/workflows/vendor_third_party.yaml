@@ -1,0 +1,51 @@
+name: vendor third_party
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    if: github.ref != 'refs/heads/master'
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+    - name: Build
+      run: third_party/build.sh
+    - name: Package artifacts
+      run: |
+        git add -A third_party/
+        git diff --cached --name-only -- third_party/ | tar -cf /tmp/third_party_build.tar -T -
+    - uses: actions/upload-artifact@v4
+      with:
+        name: third-party-${{ runner.os }}
+        path: /tmp/third_party_build.tar
+
+  commit:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/download-artifact@v4
+      with:
+        path: /tmp/artifacts
+    - name: Commit vendored libraries
+      run: |
+        for f in /tmp/artifacts/*/third_party_build.tar; do
+          tar xf "$f"
+        done
+        git add third_party/
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git commit -m "third_party: rebuild vendor libraries"
+        git push
