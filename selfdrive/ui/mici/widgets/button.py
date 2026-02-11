@@ -149,7 +149,7 @@ class BigButton(Widget):
 
   def _get_label_font_size(self):
     if len(self.text) <= 18:
-      return 48 if not self.value else 48
+      return 48
     else:
       return 42
 
