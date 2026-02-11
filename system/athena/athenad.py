@@ -41,9 +41,7 @@ from openpilot.system.hardware.hw import Paths
 AsiusAPIHost = Params().get("AsiusAPIHost")
 ATHENA_HOST = f'wss://{AsiusAPIHost}' if AsiusAPIHost else os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
-LOCAL_PORT_WHITELIST = {
-  22,
-}
+LOCAL_PORT_WHITELIST = {22, }  # SSH
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
@@ -264,6 +262,7 @@ def upload_handler(end_event: threading.Event) -> None:
         cloudlog.event("athena.upload_handler.expired", item=item, error=True)
         continue
 
+      # Check if uploading over metered connection is allowed
       sm.update(0)
       metered = sm['deviceState'].networkMetered
       network_type = sm['deviceState'].networkType.raw
@@ -305,6 +304,7 @@ def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> req
   path = upload_item.path
   compress = False
 
+  # If file does not exist, but does exist without the .zst extension we will compress on the fly
   if not os.path.exists(path) and os.path.exists(strip_zst_extension(path)):
     path = strip_zst_extension(path)
     compress = True
@@ -324,9 +324,9 @@ def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> req
       stream.close()
 
 
-# Upload methods - need access to upload_queue so kept in athenad
 @dispatcher.add_method
 def uploadFileToUrl(fn: str, url: str, headers: dict[str, str]) -> UploadFilesToUrlResponse:
+  # this is because mypy doesn't understand that the decorator doesn't change the return type
   response: UploadFilesToUrlResponse = uploadFilesToUrls([{"fn": fn, "url": url, "headers": headers}])
   return response
 
@@ -347,6 +347,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       failed.append(file.fn)
       continue
 
+    # Skip item if already in queue
     url = file.url.split('?')[0]
     if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
       continue
@@ -397,6 +398,7 @@ def cancelUpload(upload_id: str | list[str]) -> dict[str, int | str]:
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
   try:
+    # migration, can be removed once 0.9.8 is out for a while
     if local_port == 8022:
       local_port = 22
 
@@ -409,6 +411,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri, cookie="jwt=" + identity_token, enable_multithread=True)
 
+    # Set TOS to keep connection responsive while under load.
     ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, SSH_TOS)
 
     ssock, csock = socket.socketpair()
@@ -432,6 +435,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
 
 def get_logs_to_send_sorted() -> list[str]:
+  # TODO: scan once then use inotify to detect file creation/deletion
   curr_time = int(time.time())  # noqa: TID251
   logs = []
   for log_entry in os.listdir(Paths.swaglog_root()):
@@ -443,8 +447,10 @@ def get_logs_to_send_sorted() -> list[str]:
         time_sent = int.from_bytes(value, sys.byteorder)
     except (ValueError, TypeError):
       pass
+    # assume send failed and we lost the response if sent more than one hour ago
     if not time_sent or curr_time - time_sent > 3600:
       logs.append(log_entry)
+  # excluding most recent (active) log file
   return sorted(logs)[:-1]
 
 
@@ -453,7 +459,7 @@ def log_handler(end_event: threading.Event) -> None:
     return
 
   log_files = []
-  last_scan = 0.0
+  last_scan = 0.
   while not end_event.is_set():
     try:
       curr_scan = time.monotonic()
@@ -461,9 +467,10 @@ def log_handler(end_event: threading.Event) -> None:
         log_files = get_logs_to_send_sorted()
         last_scan = curr_scan
 
+      # send one log
       curr_log = None
       if len(log_files) > 0:
-        log_entry = log_files.pop()
+        log_entry = log_files.pop() # newest log file
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
           curr_time = int(time.time())  # noqa: TID251
@@ -474,8 +481,10 @@ def log_handler(end_event: threading.Event) -> None:
             low_priority_send_queue.put_nowait(json.dumps(jsonrpc))
             curr_log = log_entry
         except OSError:
-          pass
+          pass  # file could be deleted by log rotation
 
+      # wait for response up to ~100 seconds
+      # always read queue at least once to process any old responses that arrive
       for _ in range(100):
         if end_event.is_set():
           break
@@ -489,7 +498,7 @@ def log_handler(end_event: threading.Event) -> None:
             try:
               setxattr(log_path, LOG_ATTR_NAME, LOG_ATTR_VALUE_MAX_UNIX_TIME)
             except OSError:
-              pass
+              pass  # file could be deleted by log rotation
           if curr_log == log_entry:
             break
         except queue.Empty:
