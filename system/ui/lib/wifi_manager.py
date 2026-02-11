@@ -447,16 +447,13 @@ class WifiManager:
   def _deactivate_connection(self, ssid: str):
     for conn_path in self._get_active_connections():
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      print('SpecificObject')
       specific_obj_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('SpecificObject')).body[0][1]
 
       if specific_obj_path != "/":
         ap_addr = DBusAddress(specific_obj_path, bus_name=NM, interface=NM_ACCESS_POINT_IFACE)
-        print('Ssid')
         ap_ssid = bytes(self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid')).body[0][1]).decode("utf-8", "replace")
 
         if ap_ssid == ssid:
-          print('DeactivateConnection')
           self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (conn_path,)))
           return
 
@@ -556,7 +553,6 @@ class WifiManager:
 
   def set_current_network_metered(self, metered: MeteredType):
     def worker():
-      t = time.monotonic()
       for active_conn in self._get_active_connections():
         conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
         props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
@@ -579,7 +575,6 @@ class WifiManager:
           if reply.header.message_type == MessageType.error:
             cloudlog.warning(f'Failed to update tethering settings: {reply}')
             return
-      print(f"Set current network metered to {metered} in {(time.monotonic() - t) * 1000:.2f} ms")
 
     threading.Thread(target=worker, daemon=True).start()
 
