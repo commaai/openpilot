@@ -34,6 +34,7 @@ class LineSeparator(Widget):
 
 class ScrollIndicator(Widget):
   HORIZONTAL_MARGIN = 4
+  FADE_DELAY = 0.4
 
   def __init__(self):
     super().__init__()
@@ -41,6 +42,13 @@ class ScrollIndicator(Widget):
     self._scroll_offset: float = 0.0
     self._content_size: float = 0.0
     self._viewport: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
+    self._show_time: float = 0.0
+    self._alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+
+  def show_event(self):
+    super().show_event()
+    self._show_time = rl.get_time()
+    self._alpha_filter.x = 0.0
 
   def update(self, scroll_offset: float, content_size: float, viewport: rl.Rectangle) -> None:
     self._scroll_offset = scroll_offset
@@ -56,7 +64,7 @@ class ScrollIndicator(Widget):
     max_scroll = self._content_size - self._viewport.width
     scroll_ratio = -self._scroll_offset / max_scroll
     x = self._viewport.x + scroll_ratio * slide_range
-    y = self._viewport.y + self._viewport.height - self._txt_scroll_indicator.height / 2
+    y = max(self._viewport.y, 0) + self._viewport.height - self._txt_scroll_indicator.height / 2
 
     # squeeze when overscrolling past edges
     dest_left = max(x, self._viewport.x)
@@ -67,10 +75,14 @@ class ScrollIndicator(Widget):
     dest_left = min(dest_left, self._viewport.x + self._viewport.width - dest_w)
     dest_left = max(dest_left, self._viewport.x)
 
+    # fade in after delay
+    target_alpha = 0.45 if rl.get_time() - self._show_time >= self.FADE_DELAY else 0.0
+    alpha = self._alpha_filter.update(target_alpha)
+
     src_rec = rl.Rectangle(0, 0, self._txt_scroll_indicator.width, self._txt_scroll_indicator.height)
     dest_rec = rl.Rectangle(dest_left, y, dest_w, self._txt_scroll_indicator.height)
     rl.draw_texture_pro(self._txt_scroll_indicator, src_rec, dest_rec, rl.Vector2(0, 0), 0.0,
-                        rl.Color(255, 255, 255, int(255 * 0.45)))
+                        rl.Color(255, 255, 255, int(255 * alpha)))
 
 
 class Scroller(Widget):
@@ -295,6 +307,7 @@ class Scroller(Widget):
     if self._reset_scroll_at_show:
       self.scroll_panel.set_offset(0.0)
 
+    self._scroll_indicator.show_event()
     for item in self._items:
       item.show_event()
 
