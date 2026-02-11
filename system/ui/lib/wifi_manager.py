@@ -449,6 +449,7 @@ class WifiManager:
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
       print('GetAll active connection')
       props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
+      print(props, ssid)
 
       if props.get('Id', ('s', ''))[1] == ssid:
         print('DeactivateConnection')
