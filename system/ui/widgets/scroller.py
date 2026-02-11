@@ -37,7 +37,7 @@ class ScrollIndicator(Widget):
 
   def __init__(self):
     super().__init__()
-    self._txt_scroll_indicator = gui_app.texture("icons_mici/settings/horizontal_scroll_indicator.png", 96, 24)
+    self._txt_scroll_indicator = gui_app.texture("icons_mici/settings/horizontal_scroll_indicator.png", 96, 48)
     self._scroll_offset: float = 0.0
     self._content_size: float = 0.0
     self._viewport: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
@@ -55,9 +55,8 @@ class ScrollIndicator(Widget):
     slide_range = self._viewport.width - indicator_w
     max_scroll = self._content_size - self._viewport.width
     scroll_ratio = -self._scroll_offset / max_scroll
-    print(self._viewport.x)
     x = self._viewport.x + scroll_ratio * slide_range
-    y = self._viewport.y + self._viewport.height - self._txt_scroll_indicator.height
+    y = self._viewport.y + self._viewport.height - self._txt_scroll_indicator.height / 2
 
     # squeeze when overscrolling past edges
     dest_left = max(x, self._viewport.x)
@@ -284,12 +283,12 @@ class Scroller(Widget):
       else:
         item.render()
 
+    rl.end_scissor_mode()
+
     # Draw scroll indicator
     if self._show_scroll_indicator and self._horizontal and len(self._visible_items) > 0:
       self._scroll_indicator.update(self._scroll_offset, self._content_size, self._rect)
       self._scroll_indicator.render()
-
-    rl.end_scissor_mode()
 
   def show_event(self):
     super().show_event()
