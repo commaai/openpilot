@@ -33,6 +33,43 @@ class LineSeparator(Widget):
                  LINE_COLOR)
 
 
+class ScrollIndicator(Widget):
+  def __init__(self):
+    super().__init__()
+    self.set_rect(rl.Rectangle(0, 0, 96 + 4 * 2, 24))
+
+    self._txt_scroll_indicator = gui_app.texture("icons_mici/settings/horizontal_scroll_indicator.png", 96, 24)
+
+  def _render(self, _):
+    # draw scroll indicator at the bottom center of the parent rect
+    x = self._rect.x + (self._rect.width - self._txt_scroll_indicator.width) / 2
+    y = self._rect.y
+    rl.draw_texture_ex(self._txt_scroll_indicator, rl.Vector2(x, y), 0, 1.0, rl.WHITE)
+
+  def render_squeezed(self, x: float, y: float, bounds: rl.Rectangle) -> None:
+    """Draw the indicator with squeeze effect when overlapping bounds edges (e.g. during bounce)."""
+    tw = self._txt_scroll_indicator.width
+    th = self._txt_scroll_indicator.height
+    iw = self._rect.width
+    ih = self._rect.height
+    min_w = iw / 2
+
+    # clamp indicator to visible area and compute squeeze
+    dest_left = max(x, bounds.x)
+    dest_right = min(x + iw, bounds.x + bounds.width)
+    dest_w = max(min_w, dest_right - dest_left)
+    dest_x = dest_left
+    dest_y = y
+
+    if dest_w <= 0:
+      return
+
+    # source: full texture
+    src_rec = rl.Rectangle(0, 0, tw, th)
+    dest_rec = rl.Rectangle(dest_x, dest_y, dest_w, ih)
+    rl.draw_texture_pro(self._txt_scroll_indicator, src_rec, dest_rec, rl.Vector2(0, 0), 0.0, rl.WHITE)
+
+
 class Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = True, spacing: int = ITEM_SPACING,
                line_separator: bool = False, pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING):
@@ -66,6 +103,7 @@ class Scroller(Widget):
     self._scroll_enabled: bool | Callable[[], bool] = True
 
     self._txt_scroll_indicator = gui_app.texture("icons_mici/settings/vertical_scroll_indicator.png", 40, 80)
+    self._scroll_indicator = ScrollIndicator()
 
     for item in items:
       self.add_widget(item)
@@ -247,6 +285,20 @@ class Scroller(Widget):
       scroll_bar_y = -self._scroll_offset / _real_content_size * self._rect.height
       scroll_bar_y = min(max(scroll_bar_y, self._rect.y), self._rect.y + self._rect.height - self._txt_scroll_indicator.height)
       rl.draw_texture_ex(self._txt_scroll_indicator, rl.Vector2(self._rect.x, scroll_bar_y), 0, 1.0, rl.WHITE)
+
+    if self._horizontal and len(self._visible_items) > 0:
+      # position horizontal scroll indicator based on scroll position (can overscroll for bounce)
+      indicator_w = self._scroll_indicator.rect.width
+      indicator_h = self._scroll_indicator.rect.height
+      track_width = self._rect.width - indicator_w
+      max_scroll = self._content_size - self._rect.width
+      if max_scroll > 0:
+        scroll_ratio = -self._scroll_offset / max_scroll
+        indicator_x = self._rect.x + scroll_ratio * track_width
+      else:
+        indicator_x = self._rect.x + (self._rect.width - indicator_w) / 2
+      indicator_y = self._rect.y + self._rect.height - indicator_h
+      self._scroll_indicator.render_squeezed(indicator_x, indicator_y, self._rect)
 
     rl.end_scissor_mode()
 
