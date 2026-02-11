@@ -37,8 +37,6 @@ class ScrollIndicator(Widget):
 
   def __init__(self):
     super().__init__()
-    self.set_rect(rl.Rectangle(0, 0, 96 + self.HORIZONTAL_MARGIN * 2, 24))
-
     self._txt_scroll_indicator = gui_app.texture("icons_mici/settings/horizontal_scroll_indicator.png", 96, 24)
     self._scroll_offset: float = 0.0
     self._content_size: float = 0.0
@@ -50,14 +48,8 @@ class ScrollIndicator(Widget):
     self._viewport = viewport
 
   def _render(self, _):
-    rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
-    tw = self._txt_scroll_indicator.width
-    th = self._txt_scroll_indicator.height
-
     # scale indicator width based on content size
     indicator_w = float(np.interp(self._content_size, [1000, 3000], [300, 100]))
-    indicator_h = self._rect.height
-    min_w = indicator_w / 2
 
     # position based on scroll ratio
     track_width = self._viewport.width - indicator_w
@@ -67,29 +59,27 @@ class ScrollIndicator(Widget):
       x = self._viewport.x + scroll_ratio * track_width
     else:
       x = self._viewport.x + (self._viewport.width - indicator_w) / 2
-    y = self._viewport.y + self._viewport.height - indicator_h
+    y = self._viewport.y + self._viewport.height - self._txt_scroll_indicator.height
 
     # squeeze when overscrolling past edges
     dest_left = max(x, self._viewport.x)
     dest_right = min(x + indicator_w, self._viewport.x + self._viewport.width)
-    dest_w = max(min_w, dest_right - dest_left)
+    dest_w = max(indicator_w / 2, dest_right - dest_left)
 
     # keep within viewport after applying minimum width
     dest_left = min(dest_left, self._viewport.x + self._viewport.width - dest_w)
     dest_left = max(dest_left, self._viewport.x)
 
-    if dest_w <= 0:
-      return
-
-    src_rec = rl.Rectangle(0, 0, tw, th)
-    dest_rec = rl.Rectangle(dest_left, y, dest_w, indicator_h)
+    src_rec = rl.Rectangle(0, 0, self._txt_scroll_indicator.width, self._txt_scroll_indicator.height)
+    dest_rec = rl.Rectangle(dest_left, y, dest_w, self._txt_scroll_indicator.height)
     rl.draw_texture_pro(self._txt_scroll_indicator, src_rec, dest_rec, rl.Vector2(0, 0), 0.0,
                         rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
 class Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = True, spacing: int = ITEM_SPACING,
-               line_separator: bool = False, pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING):
+               line_separator: bool = False, pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING,
+               scroll_indicator: bool = True):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
@@ -119,6 +109,7 @@ class Scroller(Widget):
     self.scroll_panel = GuiScrollPanel2(self._horizontal, handle_out_of_bounds=not self._snap_items)
     self._scroll_enabled: bool | Callable[[], bool] = True
 
+    self._show_scroll_indicator = scroll_indicator
     self._scroll_indicator = ScrollIndicator()
 
     for item in items:
@@ -296,7 +287,7 @@ class Scroller(Widget):
         item.render()
 
     # Draw scroll indicator
-    if self._horizontal and len(self._visible_items) > 0:
+    if self._show_scroll_indicator and self._horizontal and len(self._visible_items) > 0:
       self._scroll_indicator.update(self._scroll_offset, self._content_size, self._rect)
       self._scroll_indicator.render()
 
