@@ -34,7 +34,7 @@ class LineSeparator(Widget):
 
 class ScrollIndicator(Widget):
   HORIZONTAL_MARGIN = 4
-  FADE_DELAY = 0.4
+  FADE_DELAY = 0.2
 
   def __init__(self):
     super().__init__()
