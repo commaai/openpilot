@@ -205,7 +205,8 @@ class BigButton(Widget):
     self._label.set_color(label_color)
     label_height = self._label.get_content_height(self._width_hint())
     # label_rect = rl.Rectangle(lx, ly, self._width_hint(), label_height)
-    label_rect = rl.Rectangle(lx, self._rect.y + 23, self._width_hint(), self._rect.height - 23 - 23)
+    print(btn_y, self._rect.y)
+    label_rect = rl.Rectangle(lx, btn_y + 23, self._width_hint(), self._rect.height - 23 - 23)
     # rl.draw_rectangle_lines_ex(label_rect, 1, rl.BLUE)
     self._label.render(label_rect)
 
