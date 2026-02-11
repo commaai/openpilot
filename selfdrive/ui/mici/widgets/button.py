@@ -17,6 +17,7 @@ SCROLLING_SPEED_PX_S = 50
 COMPLICATION_SIZE    = 36
 LABEL_COLOR          = rl.Color(255, 255, 255, int(255 * 0.9))
 LABEL_HORIZONTAL_PADDING = 40
+LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
 COMPLICATION_GREY    = rl.Color(0xAA, 0xAA, 0xAA, 255)
 PRESSED_SCALE = 1.15 if DO_ZOOM else 1.07
 
@@ -118,14 +119,12 @@ class BigButton(Widget):
 
     self._rotate_icon_t: float | None = None
 
-    self._label_font = gui_app.font(FontWeight.DISPLAY)
-    self._value_font = gui_app.font(FontWeight.ROMAN)
-
-    self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.DISPLAY,
+    self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.BOLD,
                                text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, scroll=scroll,
                                line_height=0.9)
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
                                    text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+    self._update_label_layout()
 
     self._load_images()
 
@@ -149,25 +148,27 @@ class BigButton(Widget):
     return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _get_label_font_size(self):
-    if len(self.text) < 12:
-      font_size = 64
-    elif len(self.text) < 17:
-      font_size = 48
+    if len(self.text) <= 18:
+      return 48
     else:
-      font_size = 42
+      return 42
 
+  def _update_label_layout(self):
+    self._label.set_font_size(self._get_label_font_size())
     if self.value:
-      font_size -= 20
-
-    return font_size
+      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+    else:
+      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
   def set_text(self, text: str):
     self.text = text
     self._label.set_text(text)
+    self._update_label_layout()
 
   def set_value(self, value: str):
     self.value = value
     self._sub_label.set_text(value)
+    self._update_label_layout()
 
   def get_value(self) -> str:
     return self.value
@@ -189,20 +190,19 @@ class BigButton(Widget):
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
 
     # LABEL ------------------------------------------------------------------
-    lx = self._rect.x + LABEL_HORIZONTAL_PADDING
-    ly = btn_y + self._rect.height - 33  # - 40# - self._get_label_font_size() / 2
-
-    if self.value:
-      sub_label_height = self._sub_label.get_content_height(self._width_hint())
-      sub_label_rect = rl.Rectangle(lx, ly - sub_label_height, self._width_hint(), sub_label_height)
-      self._sub_label.render(sub_label_rect)
-      ly -= sub_label_height
+    label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    label_height = self._label.get_content_height(self._width_hint())
-    label_rect = rl.Rectangle(lx, ly - label_height, self._width_hint(), label_height)
+    label_rect = rl.Rectangle(label_x, btn_y + LABEL_VERTICAL_PADDING, self._width_hint(),
+                              self._rect.height - LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
+
+    if self.value:
+      label_y = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
+      sub_label_height = self._sub_label.get_content_height(self._width_hint())
+      sub_label_rect = rl.Rectangle(label_x, label_y - sub_label_height, self._width_hint(), sub_label_height)
+      self._sub_label.render(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
     if self._txt_icon:
