@@ -56,6 +56,7 @@ class ScrollIndicator(Widget):
     max_scroll = self._content_size - self._viewport.width
     scroll_ratio = -self._scroll_offset / max_scroll
     x = self._viewport.x + scroll_ratio * slide_range
+    # don't bounce up when NavWidget shows
     y = max(self._viewport.y, 0) + self._viewport.height - self._txt_scroll_indicator.height / 2
 
     # squeeze when overscrolling past edges
