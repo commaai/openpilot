@@ -317,14 +317,14 @@ class DeviceLayoutMici(NavWidget):
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
     self._scroller = Scroller([
-      # DeviceInfoLayoutMici(),
-      # UpdateOpenpilotBigButton(),
-      # PairBigButton(),
-      # review_training_guide_btn,
-      # driver_cam_btn,
-      # # lang_button,
-      # reset_calibration_btn,
-      # uninstall_openpilot_btn,
+      DeviceInfoLayoutMici(),
+      UpdateOpenpilotBigButton(),
+      PairBigButton(),
+      review_training_guide_btn,
+      driver_cam_btn,
+      # lang_button,
+      reset_calibration_btn,
+      uninstall_openpilot_btn,
       regulatory_btn,
       reboot_btn,
       self._power_off_btn,
