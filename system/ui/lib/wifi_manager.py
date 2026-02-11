@@ -555,10 +555,10 @@ class WifiManager:
     def worker():
       for active_conn in self._get_active_connections():
         conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-        conn_type = self._router_main.send_and_get_reply(Properties(conn_addr).get('Type')).body[0][1]
+        props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
 
-        if conn_type == '802-11-wireless' and not self.is_tethering_active():
-          conn_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('Connection')).body[0][1]
+        if props.get('Type', ('s', ''))[1] == '802-11-wireless' and not self.is_tethering_active():
+          conn_path = props.get('Connection', ('o', '/'))[1]
           if conn_path == "/":
             continue
 
