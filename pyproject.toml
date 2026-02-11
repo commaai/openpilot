@@ -89,7 +89,6 @@ testing = [
   "pytest-timeout",
   "pytest-asyncio",
   "pytest-mock",
-  "pytest-repeat",
   "ruff",
   "codespell",
   "pre-commit-hooks",
