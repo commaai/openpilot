@@ -190,17 +190,18 @@ class BigButton(Widget):
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
 
     # LABEL ------------------------------------------------------------------
-    lx = self._rect.x + LABEL_HORIZONTAL_PADDING
+    label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    label_rect = rl.Rectangle(lx, btn_y + LABEL_VERTICAL_PADDING, self._width_hint(), self._rect.height - LABEL_VERTICAL_PADDING * 2)
+    label_rect = rl.Rectangle(label_x, btn_y + LABEL_VERTICAL_PADDING, self._width_hint(),
+                              self._rect.height - LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
-      ly = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
+      label_y = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
       sub_label_height = self._sub_label.get_content_height(self._width_hint())
-      sub_label_rect = rl.Rectangle(lx, ly - sub_label_height, self._width_hint(), sub_label_height)
+      sub_label_rect = rl.Rectangle(label_x, label_y - sub_label_height, self._width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
