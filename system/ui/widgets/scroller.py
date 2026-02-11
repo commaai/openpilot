@@ -67,7 +67,8 @@ class ScrollIndicator(Widget):
     # source: full texture
     src_rec = rl.Rectangle(0, 0, tw, th)
     dest_rec = rl.Rectangle(dest_x, dest_y, dest_w, ih)
-    rl.draw_texture_pro(self._txt_scroll_indicator, src_rec, dest_rec, rl.Vector2(0, 0), 0.0, rl.WHITE)
+    rl.draw_texture_pro(self._txt_scroll_indicator, src_rec, dest_rec, rl.Vector2(0, 0), 0.0,
+                        rl.Color(255, 255, 255, int(255 * 0.65)))
 
 
 class Scroller(Widget):
