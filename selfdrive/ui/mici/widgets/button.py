@@ -205,7 +205,7 @@ class BigButton(Widget):
       x = self._rect.x + self._rect.width - 30 - self._txt_icon.width / 2
       y = btn_y + 30 + self._txt_icon.height / 2
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
-      dest_rec = rl.Rectangle(int(x), int(y), self._txt_icon.width, self._txt_icon.height)
+      dest_rec = rl.Rectangle(x, y, self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
       rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.WHITE)
 
