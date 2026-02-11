@@ -118,11 +118,8 @@ class BigButton(Widget):
 
     self._rotate_icon_t: float | None = None
 
-    self._label_font = gui_app.font(FontWeight.DISPLAY)
-    self._value_font = gui_app.font(FontWeight.ROMAN)
-
-    self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.DISPLAY,
-                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM, scroll=scroll,
+    self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.BOLD,
+                               text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP, scroll=scroll,
                                line_height=0.9)
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
                                    text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
@@ -190,11 +187,12 @@ class BigButton(Widget):
 
     # LABEL ------------------------------------------------------------------
     lx = self._rect.x + LABEL_HORIZONTAL_PADDING
-    ly = btn_y + self._rect.height - 33  # - 40# - self._get_label_font_size() / 2
+    ly = btn_y + self._rect.height - 22  # - 40# - self._get_label_font_size() / 2
 
     if self.value:
       sub_label_height = self._sub_label.get_content_height(self._width_hint())
       sub_label_rect = rl.Rectangle(lx, ly - sub_label_height, self._width_hint(), sub_label_height)
+      rl.draw_rectangle_lines_ex(sub_label_rect, 1, rl.RED)
       self._sub_label.render(sub_label_rect)
       ly -= sub_label_height
 
