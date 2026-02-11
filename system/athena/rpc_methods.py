@@ -424,7 +424,7 @@ def runSkill(skill_id: str) -> dict:
     panda.can_send(msg_id, data, bus)
     time.sleep(0.02)
 
-  panda.set_safety_mode(CarParams.SafetyModel.silent)
+  panda.set_safety_mode(CarParams.SafetyModel.elm327)
   panda.close()
 
   return {"status": "ok", "skill": skill["name"]}
