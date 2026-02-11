@@ -418,13 +418,17 @@ def runSkill(skill_id: str) -> dict:
   data = bytes.fromhex(skill["data"])
 
   panda = Panda()
+  health = panda.health()
+  original_safety_mode = health["safety_mode"]
+  original_safety_param = health["safety_param"]
+
   panda.set_safety_mode(CarParams.SafetyModel.allOutput)
 
   for _ in range(count):
     panda.can_send(msg_id, data, bus)
     time.sleep(0.02)
 
-  panda.set_safety_mode(CarParams.SafetyModel.elm327)
+  panda.set_safety_mode(original_safety_mode, original_safety_param)
   panda.close()
 
   return {"status": "ok", "skill": skill["name"]}
