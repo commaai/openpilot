@@ -33,19 +33,15 @@ class LineSeparator(Widget):
 
 
 class ScrollIndicator(Widget):
+  HORIZONTAL_MARGIN = 4
+
   def __init__(self):
     super().__init__()
-    self.set_rect(rl.Rectangle(0, 0, 96 + 4 * 2, 24))
+    self.set_rect(rl.Rectangle(0, 0, 96 + self.HORIZONTAL_MARGIN * 2, 24))
 
     self._txt_scroll_indicator = gui_app.texture("icons_mici/settings/horizontal_scroll_indicator.png", 96, 24)
 
   def _render(self, _):
-    # draw scroll indicator at the bottom center of the parent rect
-    x = self._rect.x + (self._rect.width - self._txt_scroll_indicator.width) / 2
-    y = self._rect.y
-    rl.draw_texture_ex(self._txt_scroll_indicator, rl.Vector2(x, y), 0, 1.0, rl.WHITE)
-
-  def render_squeezed(self, x: float, y: float, indicator_w: float, bounds: rl.Rectangle) -> None:
     """Draw the indicator with squeeze effect when overlapping bounds edges (e.g. during bounce)."""
     tw = self._txt_scroll_indicator.width
     th = self._txt_scroll_indicator.height
