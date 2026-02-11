@@ -17,6 +17,7 @@ SCROLLING_SPEED_PX_S = 50
 COMPLICATION_SIZE    = 36
 LABEL_COLOR          = rl.Color(255, 255, 255, int(255 * 0.9))
 LABEL_HORIZONTAL_PADDING = 40
+LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
 COMPLICATION_GREY    = rl.Color(0xAA, 0xAA, 0xAA, 255)
 PRESSED_SCALE = 1.15 if DO_ZOOM else 1.07
 
@@ -190,17 +191,17 @@ class BigButton(Widget):
 
     # LABEL ------------------------------------------------------------------
     lx = self._rect.x + LABEL_HORIZONTAL_PADDING
-    ly = btn_y + self._rect.height - 22  # - 40# - self._get_label_font_size() / 2
-
-    if self.value:
-      sub_label_height = self._sub_label.get_content_height(self._width_hint())
-      sub_label_rect = rl.Rectangle(lx, ly - sub_label_height, self._width_hint(), sub_label_height)
-      self._sub_label.render(sub_label_rect)
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    label_rect = rl.Rectangle(lx, btn_y + 23, self._width_hint(), self._rect.height - 23 - 23)
+    label_rect = rl.Rectangle(lx, btn_y + LABEL_VERTICAL_PADDING, self._width_hint(), self._rect.height - LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
+
+    if self.value:
+      ly = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
+      sub_label_height = self._sub_label.get_content_height(self._width_hint())
+      sub_label_rect = rl.Rectangle(lx, ly - sub_label_height, self._width_hint(), sub_label_height)
+      self._sub_label.render(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
     if self._txt_icon:
