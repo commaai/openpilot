@@ -166,7 +166,7 @@ class ModelState:
     self.full_input_queues.reset()
 
     self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),
-                           'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),}
+                       'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize()}
     self.full_frames : dict[str, Tensor] = {}
     self.transforms_np = {k: np.zeros((3,3), dtype=np.float32) for k in self.img_queues}
     self.transforms = {k: Tensor(v, device='NPY').realize() for k, v in self.transforms_np.items()}
@@ -176,7 +176,6 @@ class ModelState:
     self.parser = Parser()
     self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
     self.update_imgs = None
-
     with open(VISION_PKL_PATH, "rb") as f:
       self.vision_run = pickle.load(f)
 
@@ -201,14 +200,13 @@ class ModelState:
       with open(warp_path, "rb") as f:
         self.update_imgs = pickle.load(f)
 
-
     for key in bufs.keys():
       self.full_frames[key] = Tensor.from_blob(bufs[key].data.ctypes.data, (self.frame_buf_params[key][3],), dtype='uint8').realize()
       self.transforms_np[key][:,:] = transforms[key][:,:]
 
     out = self.update_imgs(self.img_queues['img'], self.full_frames['img'], self.transforms['img'],
                            self.img_queues['big_img'], self.full_frames['big_img'], self.transforms['big_img'])
-    self.img_queues['img'], self.img_queues['big_img'], = out[0].realize(), out[2].realize()
+    self.img_queues['img'], self.img_queues['big_img'] = out[0].realize(), out[2].realize()
     vision_inputs = {'img': out[1], 'big_img': out[3]}
 
     if prepare_only:
