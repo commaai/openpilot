@@ -52,6 +52,12 @@ class BigCircleButton(Widget):
   def set_enable_pressed_state(self, pressed: bool):
     self._press_state_enabled = pressed
 
+  def _draw_content(self, btn_y: float):
+    # draw icon
+    icon_color = rl.WHITE if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
+    rl.draw_texture(self._txt_icon, int(self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0]),
+                    int(btn_y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), icon_color)
+
   def _render(self, _):
     # draw background
     txt_bg = self._txt_btn_bg if not self._red else self._txt_btn_red_bg
@@ -65,10 +71,7 @@ class BigCircleButton(Widget):
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
 
-    # draw icon
-    icon_color = rl.WHITE if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
-    rl.draw_texture(self._txt_icon, int(self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0]),
-                    int(self._rect.y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), icon_color)
+    self._draw_content(btn_y)
 
 
 class BigCircleToggle(BigCircleButton):
@@ -93,13 +96,13 @@ class BigCircleToggle(BigCircleButton):
     if self._toggle_callback:
       self._toggle_callback(self._checked)
 
-  def _render(self, _):
-    super()._render(_)
+  def _draw_content(self, btn_y: float):
+    super()._draw_content(btn_y)
 
     # draw status icon
     rl.draw_texture(self._txt_toggle_enabled if self._checked else self._txt_toggle_disabled,
                     int(self._rect.x + (self._rect.width - self._txt_toggle_enabled.width) / 2),
-                    int(self._rect.y + 5), rl.WHITE)
+                    int(btn_y + 5), rl.WHITE)
 
 
 class BigButton(Widget):
@@ -176,19 +179,7 @@ class BigButton(Widget):
   def get_text(self):
     return self.text
 
-  def _render(self, _):
-    # draw _txt_default_bg
-    txt_bg = self._txt_default_bg
-    if not self.enabled:
-      txt_bg = self._txt_disabled_bg
-    elif self.is_pressed:
-      txt_bg = self._txt_hover_bg
-
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
-    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
-    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
-
+  def _draw_content(self, btn_y: float):
     # LABEL ------------------------------------------------------------------
     label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
 
@@ -210,13 +201,28 @@ class BigButton(Widget):
       if self._rotate_icon_t is not None:
         rotation = (rl.get_time() - self._rotate_icon_t) * 180
 
-      # drop top right with 30px padding
+      # draw top right with 30px padding
       x = self._rect.x + self._rect.width - 30 - self._txt_icon.width / 2
-      y = self._rect.y + 30 + self._txt_icon.height / 2
+      y = btn_y + 30 + self._txt_icon.height / 2
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
       dest_rec = rl.Rectangle(int(x), int(y), self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
       rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.WHITE)
+
+  def _render(self, _):
+    # draw _txt_default_bg
+    txt_bg = self._txt_default_bg
+    if not self.enabled:
+      txt_bg = self._txt_disabled_bg
+    elif self.is_pressed:
+      txt_bg = self._txt_hover_bg
+
+    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
+    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
+    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
+    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+
+    self._draw_content(btn_y)
 
 
 class BigToggle(BigButton):
@@ -246,11 +252,11 @@ class BigToggle(BigButton):
     else:
       rl.draw_texture(self._txt_disabled_toggle, int(x), int(y), rl.WHITE)
 
-  def _render(self, _):
-    super()._render(_)
+  def _draw_content(self, btn_y: float):
+    super()._draw_content(btn_y)
 
     x = self._rect.x + self._rect.width - self._txt_enabled_toggle.width
-    y = self._rect.y
+    y = btn_y
     self._draw_pill(x, y, self._checked)
 
 
@@ -275,13 +281,14 @@ class BigMultiToggle(BigToggle):
     if self._select_callback:
       self._select_callback(self.value)
 
-  def _render(self, _):
-    BigButton._render(self, _)
+  def _draw_content(self, btn_y: float):
+    # don't draw pill from BigToggle
+    BigButton._draw_content(self, btn_y)
 
     checked_idx = self._options.index(self.value)
 
     x = self._rect.x + self._rect.width - self._txt_enabled_toggle.width
-    y = self._rect.y
+    y = btn_y
 
     for i in range(len(self._options)):
       self._draw_pill(x, y, checked_idx == i)
