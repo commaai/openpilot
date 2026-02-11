@@ -11,7 +11,7 @@ DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
 
 
 def extract_framehashes(video_path):
-  cmd = ['ffmpeg', '-i', video_path, '-map', '0:v:0', '-f', 'framehash', '-hash', 'md5', '-']
+  cmd = ['ffmpeg', '-i', video_path, '-map', '0:v:0', '-vsync', '0', '-f', 'framehash', '-hash', 'md5', '-']
   result = subprocess.run(cmd, capture_output=True, text=True, check=True)
   hashes = []
   for line in result.stdout.splitlines():
