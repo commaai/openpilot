@@ -58,7 +58,17 @@ def deleter_thread(exit_event: threading.Event):
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
         delete_path = os.path.join(Paths.log_root(), delete_dir)
 
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+        # Directory may disappear between listing candidates and iterating.
+        # Skip stale paths instead of crashing the deleter thread.
+        if not os.path.isdir(delete_path):
+          continue
+
+        try:
+          has_lock = any(name.endswith(".lock") for name in os.listdir(delete_path))
+        except FileNotFoundError:
+          continue
+
+        if has_lock:
           continue
 
         try:
