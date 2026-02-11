@@ -531,10 +531,10 @@ class WifiManager:
     self._current_network_metered = MeteredType.UNKNOWN
     for active_conn in active_conns:
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      conn_type = self._router_main.send_and_get_reply(Properties(conn_addr).get('Type')).body[0][1]
+      props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
 
-      if conn_type == '802-11-wireless':
-        conn_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('Connection')).body[0][1]
+      if props.get('Type', ('s', ''))[1] == '802-11-wireless':
+        conn_path = props.get('Connection', ('o', '/'))[1]
         if conn_path == "/":
           continue
 
@@ -642,9 +642,9 @@ class WifiManager:
 
     for conn_path in active_conns:
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      conn_type = self._router_main.send_and_get_reply(Properties(conn_addr).get('Type')).body[0][1]
-      if conn_type == '802-11-wireless':
-        ip4config_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('Ip4Config')).body[0][1]
+      props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
+      if props.get('Type', ('s', ''))[1] == '802-11-wireless':
+        ip4config_path = props.get('Ip4Config', ('o', '/'))[1]
 
         if ip4config_path != "/":
           ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
