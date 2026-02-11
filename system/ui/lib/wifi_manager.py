@@ -630,6 +630,7 @@ class WifiManager:
       networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
       self._networks = networks
 
+      # Get active connections once
       active_conns = self._get_active_connections()
       self._update_ipv4_address(active_conns)
       self._update_current_network_metered(active_conns)
