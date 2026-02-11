@@ -46,17 +46,16 @@ class ScrollIndicator(Widget):
     y = self._rect.y
     rl.draw_texture_ex(self._txt_scroll_indicator, rl.Vector2(x, y), 0, 1.0, rl.WHITE)
 
-  def render_squeezed(self, x: float, y: float, bounds: rl.Rectangle) -> None:
+  def render_squeezed(self, x: float, y: float, indicator_w: float, bounds: rl.Rectangle) -> None:
     """Draw the indicator with squeeze effect when overlapping bounds edges (e.g. during bounce)."""
     tw = self._txt_scroll_indicator.width
     th = self._txt_scroll_indicator.height
-    iw = self._rect.width
     ih = self._rect.height
-    min_w = iw / 2
+    min_w = indicator_w / 2
 
     # clamp indicator to visible area and compute squeeze
     dest_left = max(x, bounds.x)
-    dest_right = min(x + iw, bounds.x + bounds.width)
+    dest_right = min(x + indicator_w, bounds.x + bounds.width)
     dest_w = max(min_w, dest_right - dest_left)
     dest_x = dest_left
     dest_y = y
@@ -68,7 +67,7 @@ class ScrollIndicator(Widget):
     src_rec = rl.Rectangle(0, 0, tw, th)
     dest_rec = rl.Rectangle(dest_x, dest_y, dest_w, ih)
     rl.draw_texture_pro(self._txt_scroll_indicator, src_rec, dest_rec, rl.Vector2(0, 0), 0.0,
-                        rl.Color(255, 255, 255, int(255 * 0.65)))
+                        rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
 class Scroller(Widget):
@@ -289,7 +288,8 @@ class Scroller(Widget):
 
     if self._horizontal and len(self._visible_items) > 0:
       # position horizontal scroll indicator based on scroll position (can overscroll for bounce)
-      indicator_w = self._scroll_indicator.rect.width
+      print("content size", self._content_size, "scroll offset", self._scroll_offset)
+      indicator_w = float(np.interp(self._content_size, [1000, 3000], [300, 100]))
       indicator_h = self._scroll_indicator.rect.height
       track_width = self._rect.width - indicator_w
       max_scroll = self._content_size - self._rect.width
@@ -299,7 +299,7 @@ class Scroller(Widget):
       else:
         indicator_x = self._rect.x + (self._rect.width - indicator_w) / 2
       indicator_y = self._rect.y + self._rect.height - indicator_h
-      self._scroll_indicator.render_squeezed(indicator_x, indicator_y, self._rect)
+      self._scroll_indicator.render_squeezed(indicator_x, indicator_y, indicator_w, self._rect)
 
     rl.end_scissor_mode()
 
