@@ -447,18 +447,13 @@ class WifiManager:
   def _deactivate_connection(self, ssid: str):
     for conn_path in self._get_active_connections():
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      print('SpecificObject')
-      specific_obj_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('SpecificObject')).body[0][1]
+      print('GetAll active connection')
+      props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
 
-      if specific_obj_path != "/":
-        ap_addr = DBusAddress(specific_obj_path, bus_name=NM, interface=NM_ACCESS_POINT_IFACE)
-        print('Ssid')
-        ap_ssid = bytes(self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid')).body[0][1]).decode("utf-8", "replace")
-
-        if ap_ssid == ssid:
-          print('DeactivateConnection')
-          self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (conn_path,)))
-          return
+      if props.get('Id', ('s', ''))[1] == ssid:
+        print('DeactivateConnection')
+        self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (conn_path,)))
+        return
 
   def is_tethering_active(self) -> bool:
     for network in self._networks:
