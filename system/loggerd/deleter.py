@@ -19,7 +19,11 @@ PRESERVE_COUNT = 5
 
 
 def has_preserve_xattr(d: str) -> bool:
-  return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
+  try:
+    return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
+  except OSError:
+    # Directory may disappear while deleter is running.
+    return False
 
 
 def get_preserved_segments(dirs_by_creation: list[str]) -> set[str]:
