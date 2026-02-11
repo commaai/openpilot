@@ -527,13 +527,9 @@ class WifiManager:
 
     threading.Thread(target=worker, daemon=True).start()
 
-  def _update_current_network_metered(self) -> None:
-    if self._wifi_device is None:
-      cloudlog.warning("No WiFi device found")
-      return
-
+  def _update_current_network_metered(self, active_conns) -> None:
     self._current_network_metered = MeteredType.UNKNOWN
-    for active_conn in self._get_active_connections():
+    for active_conn in active_conns:
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
       conn_type = self._router_main.send_and_get_reply(Properties(conn_addr).get('Type')).body[0][1]
 
@@ -634,19 +630,16 @@ class WifiManager:
       networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
       self._networks = networks
 
-      self._update_ipv4_address()
-      self._update_current_network_metered()
+      active_conns = self._get_active_connections()
+      self._update_ipv4_address(active_conns)
+      self._update_current_network_metered(active_conns)
 
       self._enqueue_callbacks(self._networks_updated, self._networks)
 
-  def _update_ipv4_address(self):
-    if self._wifi_device is None:
-      cloudlog.warning("No WiFi device found")
-      return
-
+  def _update_ipv4_address(self, active_conns):
     self._ipv4_address = ""
 
-    for conn_path in self._get_active_connections():
+    for conn_path in active_conns:
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
       conn_type = self._router_main.send_and_get_reply(Properties(conn_addr).get('Type')).body[0][1]
       if conn_type == '802-11-wireless':
