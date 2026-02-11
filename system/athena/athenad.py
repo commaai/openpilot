@@ -49,15 +49,18 @@ LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 RECONNECT_TIMEOUT_S = 70
 
-RETRY_DELAY = 10
-MAX_RETRY_COUNT = 30
-MAX_AGE = 31 * 24 * 3600
+RETRY_DELAY = 10  # seconds
+MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
+MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
-DEVICE_STATE_UPDATE_INTERVAL = 1.0
-DEFAULT_UPLOAD_PRIORITY = 99
+DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
+DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 
-UPLOAD_TOS = 0x20
-SSH_TOS = 0x90
+# https://bytesolutions.com/dscp-tos-cos-precedence-conversion-chart,
+# https://en.wikipedia.org/wiki/Differentiated_services
+UPLOAD_TOS = 0x20  # CS1, low priority background traffic
+SSH_TOS = 0x90  # AF42, DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
+
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -227,6 +230,8 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
 
 
 def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
+  # Abort transfer if connection changed to metered after starting upload
+  # or if athenad is shutting down to re-connect the websocket
   if not item.allow_cellular:
     if (time.monotonic() - sm.recv_time['deviceState']) > DEVICE_STATE_UPDATE_INTERVAL:
       sm.update(0)
@@ -253,6 +258,7 @@ def upload_handler(end_event: threading.Event) -> None:
         cancelled_uploads.remove(item.id)
         continue
 
+      # Remove item if too old
       age = datetime.now() - datetime.fromtimestamp(item.created_at / 1000)
       if age.total_seconds() > MAX_AGE:
         cloudlog.event("athena.upload_handler.expired", item=item, error=True)
