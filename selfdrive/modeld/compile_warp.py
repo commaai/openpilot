@@ -33,7 +33,7 @@ def dm_warp_pkl_path(w, h):
   return MODELS_DIR / f'dm_warp_{w}x{h}_tinygrad.pkl'
 
 
-def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad, ratio):
+def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad):
   w_dst, h_dst = dst_shape
   h_src, w_src = src_shape
 
@@ -50,7 +50,7 @@ def warp_perspective_tinygrad(src_flat, M_inv, dst_shape, src_shape, stride_pad,
 
   x_nn_clipped = Tensor.round(src_x).clip(0, w_src - 1).cast('int')
   y_nn_clipped = Tensor.round(src_y).clip(0, h_src - 1).cast('int')
-  idx = y_nn_clipped * w_src + (y_nn_clipped * ratio).cast('int') * stride_pad + x_nn_clipped
+  idx = y_nn_clipped * (w_src + stride_pad) + x_nn_clipped
 
   return src_flat[idx]
 
@@ -68,23 +68,24 @@ def frames_to_tensor(frames, model_w, model_h):
 
 
 def make_frame_prepare(cam_w, cam_h, model_w, model_h):
-  stride, y_height, _, _ = get_nv12_info(cam_w, cam_h)
+  stride, y_height, uv_height, _ = get_nv12_info(cam_w, cam_h)
   uv_offset = stride * y_height
   stride_pad = stride - cam_w
 
   def frame_prepare_tinygrad(input_frame, M_inv):
-    # inline UV scale: UV_SCALE is diag(0.5, 0.5, 1), so M_inv_uv = diag(0.5,0.5,1) @ M_inv @ diag(2,2,1)
-    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]])
+    M_inv_uv = Tensor(UV_SCALE_MATRIX) @ M_inv @ Tensor(UV_SCALE_MATRIX_INV)
+    # deinterleave NV12 UV plane (UVUV... -> separate U, V)
+    uv = input_frame[uv_offset:uv_offset + uv_height * stride].reshape(uv_height, stride)
     with Context(SPLIT_REDUCEOP=0):
       y = warp_perspective_tinygrad(input_frame[:cam_h*stride],
                                     M_inv, (model_w, model_h),
-                                    (cam_h, cam_w), stride_pad, 1).realize()
-      u = warp_perspective_tinygrad(input_frame[uv_offset:uv_offset + (cam_h//4)*stride],
+                                    (cam_h, cam_w), stride_pad).realize()
+      u = warp_perspective_tinygrad(uv[:cam_h//2, :cam_w:2].flatten(),
                                     M_inv_uv, (model_w//2, model_h//2),
-                                    (cam_h//2, cam_w//2), stride_pad, 0.5).realize()
-      v = warp_perspective_tinygrad(input_frame[uv_offset + (cam_h//4)*stride:uv_offset + (cam_h//2)*stride],
+                                    (cam_h//2, cam_w//2), 0).realize()
+      v = warp_perspective_tinygrad(uv[:cam_h//2, 1:cam_w:2].flatten(),
                                     M_inv_uv, (model_w//2, model_h//2),
-                                    (cam_h//2, cam_w//2), stride_pad, 0.5).realize()
+                                    (cam_h//2, cam_w//2), 0).realize()
     yuv = y.cat(u).cat(v).reshape((model_h * 3 // 2, model_w))
     tensor = frames_to_tensor(yuv, model_w, model_h)
     return tensor
@@ -117,7 +118,7 @@ def make_warp_dm(cam_w, cam_h, dm_w, dm_h):
 
   def warp_dm(input_frame, M_inv):
     M_inv = M_inv.to(Device.DEFAULT)
-    result = warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv, (dm_w, dm_h), (cam_h, cam_w), stride_pad, 1).reshape(-1, dm_h * dm_w)
+    result = warp_perspective_tinygrad(input_frame[:cam_h*stride], M_inv, (dm_w, dm_h), (cam_h, cam_w), stride_pad).reshape(-1, dm_h * dm_w)
     return result
   return warp_dm
 
