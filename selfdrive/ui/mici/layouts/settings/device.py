@@ -120,6 +120,9 @@ class PairBigButton(BigButton):
   def __init__(self):
     super().__init__("pair", "connect.comma.ai", "icons_mici/settings/comma_icon.png", icon_size=(33, 60))
 
+  def _get_label_font_size(self):
+    return 64
+
   def _update_state(self):
     if ui_state.prime_state.is_paired():
       self.set_text("paired")

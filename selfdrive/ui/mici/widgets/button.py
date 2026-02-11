@@ -121,8 +121,10 @@ class BigButton(Widget):
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.BOLD,
                                text_color=LABEL_COLOR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP, scroll=scroll,
                                line_height=0.9)
+    print(self.text, self._get_label_font_size())
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
                                    text_color=COMPLICATION_GREY, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+    self._update_label_layout()
 
     self._load_images()
 
@@ -146,25 +148,27 @@ class BigButton(Widget):
     return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _get_label_font_size(self):
-    if len(self.text) < 12:
-      font_size = 64
-    elif len(self.text) < 17:
-      font_size = 48
+    if len(self.text) <= 9:
+      return 64 if not self.value else 48
     else:
-      font_size = 42
+      return 42
 
+  def _update_label_layout(self):
+    self._label.set_font_size(self._get_label_font_size())
     if self.value:
-      font_size -= 20
-
-    return font_size
+      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP)
+    else:
+      self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
   def set_text(self, text: str):
     self.text = text
     self._label.set_text(text)
+    self._update_label_layout()
 
   def set_value(self, value: str):
     self.value = value
     self._sub_label.set_text(value)
+    self._update_label_layout()
 
   def get_value(self) -> str:
     return self.value
@@ -192,14 +196,17 @@ class BigButton(Widget):
     if self.value:
       sub_label_height = self._sub_label.get_content_height(self._width_hint())
       sub_label_rect = rl.Rectangle(lx, ly - sub_label_height, self._width_hint(), sub_label_height)
-      rl.draw_rectangle_lines_ex(sub_label_rect, 1, rl.RED)
+      # rl.draw_rectangle_lines_ex(sub_label_rect, 1, rl.RED)
       self._sub_label.render(sub_label_rect)
-      ly -= sub_label_height
+      # ly -= sub_label_height
+      ly = self._rect.y + 23
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
     label_height = self._label.get_content_height(self._width_hint())
-    label_rect = rl.Rectangle(lx, ly - label_height, self._width_hint(), label_height)
+    # label_rect = rl.Rectangle(lx, ly, self._width_hint(), label_height)
+    label_rect = rl.Rectangle(lx, self._rect.y + 23, self._width_hint(), self._rect.height - 23 - 23)
+    # rl.draw_rectangle_lines_ex(label_rect, 1, rl.BLUE)
     self._label.render(label_rect)
 
     # ICON -------------------------------------------------------------------
