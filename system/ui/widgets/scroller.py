@@ -52,13 +52,11 @@ class ScrollIndicator(Widget):
     indicator_w = float(np.interp(self._content_size, [1000, 3000], [300, 100]))
 
     # position based on scroll ratio
-    track_width = self._viewport.width - indicator_w
+    slide_range = self._viewport.width - indicator_w
     max_scroll = self._content_size - self._viewport.width
-    if max_scroll > 0:
-      scroll_ratio = -self._scroll_offset / max_scroll
-      x = self._viewport.x + scroll_ratio * track_width
-    else:
-      x = self._viewport.x + (self._viewport.width - indicator_w) / 2
+    scroll_ratio = -self._scroll_offset / max_scroll
+    print(self._viewport.x)
+    x = self._viewport.x + scroll_ratio * slide_range
     y = self._viewport.y + self._viewport.height - self._txt_scroll_indicator.height
 
     # squeeze when overscrolling past edges
