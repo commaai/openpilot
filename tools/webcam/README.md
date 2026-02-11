@@ -10,6 +10,10 @@ What's needed:
 
 ## Setup openpilot
 - Follow [this readme](../README.md) to install and build the requirements
+- Install OpenCL Driver (Ubuntu)
+```
+sudo apt install pocl-opencl-icd
+```
 
 ## Connect the hardware
 - Connect the camera first
