@@ -15,7 +15,6 @@ ANIMATION_SCALE = 0.6
 MIN_ZOOM_ANIMATION_TIME = 0.075  # seconds
 DO_ZOOM = False
 DO_JELLO = False
-SCROLL_BAR = False
 
 
 class LineSeparator(Widget):
@@ -102,7 +101,6 @@ class Scroller(Widget):
     self.scroll_panel = GuiScrollPanel2(self._horizontal, handle_out_of_bounds=not self._snap_items)
     self._scroll_enabled: bool | Callable[[], bool] = True
 
-    self._txt_scroll_indicator = gui_app.texture("icons_mici/settings/vertical_scroll_indicator.png", 40, 80)
     self._scroll_indicator = ScrollIndicator()
 
     for item in items:
@@ -280,12 +278,6 @@ class Scroller(Widget):
         item.render()
 
     # Draw scroll indicator
-    if SCROLL_BAR and not self._horizontal and len(self._visible_items) > 0:
-      _real_content_size = self._content_size - self._rect.height + self._txt_scroll_indicator.height
-      scroll_bar_y = -self._scroll_offset / _real_content_size * self._rect.height
-      scroll_bar_y = min(max(scroll_bar_y, self._rect.y), self._rect.y + self._rect.height - self._txt_scroll_indicator.height)
-      rl.draw_texture_ex(self._txt_scroll_indicator, rl.Vector2(self._rect.x, scroll_bar_y), 0, 1.0, rl.WHITE)
-
     if self._horizontal and len(self._visible_items) > 0:
       # position horizontal scroll indicator based on scroll position (can overscroll for bounce)
       print("content size", self._content_size, "scroll offset", self._scroll_offset)
