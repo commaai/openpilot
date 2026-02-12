@@ -527,30 +527,6 @@ class WifiManager:
 
     threading.Thread(target=worker, daemon=True).start()
 
-  def _update_current_network_metered(self, active_conns) -> None:
-    self._current_network_metered = MeteredType.UNKNOWN
-    for active_conn in active_conns:
-      conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
-
-      if props.get('Type', ('s', ''))[1] == '802-11-wireless':
-        conn_path = props.get('Connection', ('o', '/'))[1]
-        if conn_path == "/":
-          continue
-
-        settings = self._get_connection_settings(conn_path)
-
-        if len(settings) == 0:
-          cloudlog.warning(f'Failed to get connection settings for {conn_path}')
-          continue
-
-        metered_prop = settings['connection'].get('metered', ('i', 0))[1]
-        if metered_prop == MeteredType.YES:
-          self._current_network_metered = MeteredType.YES
-        elif metered_prop == MeteredType.NO:
-          self._current_network_metered = MeteredType.NO
-        return
-
   def set_current_network_metered(self, metered: MeteredType):
     def worker():
       for active_conn in self._get_active_connections():
@@ -577,6 +553,37 @@ class WifiManager:
             return
 
     threading.Thread(target=worker, daemon=True).start()
+
+  def _update_active_connection_info(self):
+    self._ipv4_address = ""
+    self._current_network_metered = MeteredType.UNKNOWN
+
+    for active_conn in self._get_active_connections():
+      conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+      props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
+
+      if props.get('Type', ('s', ''))[1] == '802-11-wireless':
+        # IPv4 address
+        ip4config_path = props.get('Ip4Config', ('o', '/'))[1]
+        if ip4config_path != "/":
+          ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
+          address_data = self._router_main.send_and_get_reply(Properties(ip4config_addr).get('AddressData')).body[0][1]
+          for entry in address_data:
+            if 'address' in entry:
+              self._ipv4_address = entry['address'][1]
+              break
+
+        # Metered status
+        conn_path = props.get('Connection', ('o', '/'))[1]
+        if conn_path != "/":
+          settings = self._get_connection_settings(conn_path)
+          if len(settings) > 0:
+            metered_prop = settings['connection'].get('metered', ('i', 0))[1]
+            if metered_prop == MeteredType.YES:
+              self._current_network_metered = MeteredType.YES
+            elif metered_prop == MeteredType.NO:
+              self._current_network_metered = MeteredType.NO
+        return
 
   def _request_scan(self):
     if self._wifi_device is None:
@@ -631,30 +638,9 @@ class WifiManager:
       networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
       self._networks = networks
 
-      # Get active connections once
-      active_conns = self._get_active_connections()
-      self._update_ipv4_address(active_conns)
-      self._update_current_network_metered(active_conns)
+      self._update_active_connection_info()
 
       self._enqueue_callbacks(self._networks_updated, self._networks)
-
-  def _update_ipv4_address(self, active_conns):
-    self._ipv4_address = ""
-
-    for conn_path in active_conns:
-      conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
-      if props.get('Type', ('s', ''))[1] == '802-11-wireless':
-        ip4config_path = props.get('Ip4Config', ('o', '/'))[1]
-
-        if ip4config_path != "/":
-          ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
-          address_data = self._router_main.send_and_get_reply(Properties(ip4config_addr).get('AddressData')).body[0][1]
-
-          for entry in address_data:
-            if 'address' in entry:
-              self._ipv4_address = entry['address'][1]
-              return
 
   def __del__(self):
     self.stop()
