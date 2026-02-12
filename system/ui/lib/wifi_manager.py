@@ -182,7 +182,7 @@ class WifiManager:
       self._scan_thread.start()
       self._state_thread.start()
 
-      self._update_connections()
+      self._init_connections()
       if Params is not None and self._tethering_ssid not in self._connections:
         self._add_tethering_connection()
 
@@ -276,10 +276,12 @@ class WifiManager:
           continue
 
         # Connection added/removed
-        if len(new_conn_q) or len(removed_conn_q):
-          new_conn_q.clear()
-          removed_conn_q.clear()
-          self._update_connections()
+        while len(removed_conn_q):
+          conn_path = removed_conn_q.popleft().body[0]
+          self._connection_removed(conn_path)
+        while len(new_conn_q):
+          conn_path = new_conn_q.popleft().body[0]
+          self._new_connection(conn_path)
 
         # Device state changes
         while len(state_q):
@@ -333,7 +335,7 @@ class WifiManager:
       cloudlog.exception(f"Error getting adapter type {adapter_type}: {e}")
     return None
 
-  def _update_connections(self) -> None:
+  def _init_connections(self) -> None:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
     known_connections = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
 
@@ -350,6 +352,19 @@ class WifiManager:
         if ssid != "":
           conns[ssid] = conn_path
     self._connections = conns
+
+  def _new_connection(self, conn_path: str):
+    settings = self._get_connection_settings(conn_path)
+
+    if "802-11-wireless" in settings:
+      ssid = settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
+      if ssid != "":
+        self._connections[ssid] = conn_path
+        if ssid != self._tethering_ssid:
+          self.activate_connection(ssid, block=True)
+
+  def _connection_removed(self, conn_path: str):
+    self._connections = {ssid: path for ssid, path in self._connections.items() if path != conn_path}
 
   def _get_active_connections(self):
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
@@ -433,7 +448,6 @@ class WifiManager:
 
       settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
       self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
-      self.activate_connection(ssid, block=True)
 
     threading.Thread(target=worker, daemon=True).start()
 

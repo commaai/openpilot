@@ -395,6 +395,7 @@ class WifiUIMici(BigMultiOptionDialog):
     self._restore_selection = True
 
   def _connect_with_password(self, ssid: str, password: str):
+    print('got password from dialog, connecting to', ssid, 'with password', password)
     if password:
       self._connecting = ssid
       self._wifi_manager.connect_to_network(ssid, password)
@@ -413,15 +414,19 @@ class WifiUIMici(BigMultiOptionDialog):
       cloudlog.warning(f"Trying to connect to unknown network: {ssid}")
       return
 
+    print('going to connect to', ssid)
     if network.is_saved:
+      print('saved!')
       self._connecting = network.ssid
       self._wifi_manager.activate_connection(network.ssid)
       self._update_buttons()
     elif network.security_type == SecurityType.OPEN:
+      print('open!')
       self._connecting = network.ssid
       self._wifi_manager.connect_to_network(network.ssid, "")
       self._update_buttons()
     else:
+      print('need auth!')
       self._on_need_auth(network.ssid, False)
 
   def _on_need_auth(self, ssid, incorrect_password=True):
