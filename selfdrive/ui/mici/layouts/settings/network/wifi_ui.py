@@ -395,7 +395,6 @@ class WifiUIMici(BigMultiOptionDialog):
     self._restore_selection = True
 
   def _connect_with_password(self, ssid: str, password: str):
-    print('got password from dialog, connecting to', ssid, 'with password', password)
     if password:
       self._connecting = ssid
       self._wifi_manager.connect_to_network(ssid, password)
