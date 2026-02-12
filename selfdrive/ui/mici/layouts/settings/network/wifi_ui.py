@@ -349,10 +349,6 @@ class WifiUIMici(BigMultiOptionDialog):
     self._connecting: str | None = None
     self._networks: dict[str, Network] = {}
 
-    # widget state
-    # self._last_interaction_time = -float('inf')
-    self._restore_selection = False
-
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
       activated=self._on_activated,
@@ -365,7 +361,6 @@ class WifiUIMici(BigMultiOptionDialog):
     # Call super to prepare scroller; selection scroll is handled dynamically
     super().show_event()
     self._wifi_manager.set_active(True)
-    # self._last_interaction_time = -float('inf')
 
   def hide_event(self):
     super().hide_event()
@@ -392,13 +387,9 @@ class WifiUIMici(BigMultiOptionDialog):
     self._network_info_page.update_networks(self._networks)
 
   def _update_buttons(self):
-    # Don't update buttons while user is actively interacting
-    # TODO: remove this
-    # if rl.get_time() - self._last_interaction_time < self.INACTIVITY_TIMEOUT:
-    #   return
+    # Only add new buttons to the end. Update existing buttons without re-sorting so user can freely scroll around
     print('_UPDATE_BUTTONS')
 
-    # Only add new buttons to the end. Update existing buttons without re-sorting so user can freely scroll around
     for network in self._networks.values():
       network_button_idx = next((i for i, btn in enumerate(self._scroller._items) if btn.option == network.ssid), None)
       if network_button_idx is not None:
@@ -424,9 +415,6 @@ class WifiUIMici(BigMultiOptionDialog):
       if btn.option not in self._networks:
         btn.set_enabled(False)
         btn.set_network_missing(True)
-
-    # # try to restore previous selection to prevent jumping from adding/removing/reordering buttons
-    # self._restore_selection = True
 
   def _connect_with_password(self, ssid: str, password: str):
     if password:
@@ -474,19 +462,7 @@ class WifiUIMici(BigMultiOptionDialog):
   def _on_disconnected(self):
     self._connecting = None
 
-  # def _update_state(self):
-  #   super()._update_state()
-  #   if self.is_pressed:
-  #     self._last_interaction_time = rl.get_time()
-
   def _render(self, _):
-    # Update Scroller layout and restore current selection whenever buttons are updated, before first render
-    # current_selection = self.get_selected_option()
-    # if self._restore_selection and current_selection in self._networks:
-    #   self._scroller._layout()  # TODO: remove special _layout or fine?
-    #   BigMultiOptionDialog._on_option_selected(self, current_selection)
-    #   self._restore_selection = None
-
     super()._render(_)
 
     if not self._networks:
