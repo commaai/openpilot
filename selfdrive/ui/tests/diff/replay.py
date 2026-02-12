@@ -13,6 +13,7 @@ if "RECORD_OUTPUT" not in os.environ:
 os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ["RECORD_OUTPUT"])
 
 from openpilot.common.params import Params
+from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.version import terms_version, training_version
 from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -116,13 +117,14 @@ def run_replay():
 
 
 def main():
-  cov = coverage.coverage(source=['openpilot.selfdrive.ui.mici'])
-  with cov.collect():
-    run_replay()
-  cov.save()
-  cov.report()
-  cov.html_report(directory=os.path.join(DIFF_OUT_DIR, 'htmlcov'))
-  print("HTML report: htmlcov/index.html")
+  with OpenpilotPrefix():
+    cov = coverage.coverage(source=['openpilot.selfdrive.ui.mici'])
+    with cov.collect():
+      run_replay()
+    cov.save()
+    cov.report()
+    cov.html_report(directory=os.path.join(DIFF_OUT_DIR, 'htmlcov'))
+    print("HTML report: htmlcov/index.html")
 
 
 if __name__ == "__main__":
