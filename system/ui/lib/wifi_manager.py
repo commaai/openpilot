@@ -649,10 +649,11 @@ class WifiManager:
 
     for active_conn in self._get_active_connections():
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
-      print('conn info update props', props)
-
-      props = props.body[0]
+      reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f"Failed to get active connection properties for {active_conn}: {reply}")
+        continue
+      props = reply.body[0]
       if props.get('Type', ('s', ''))[1] == '802-11-wireless':
         # IPv4 address
         ip4config_path = props.get('Ip4Config', ('o', '/'))[1]
