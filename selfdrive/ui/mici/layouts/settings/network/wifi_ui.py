@@ -43,12 +43,16 @@ class WifiIcon(Widget):
 
     self._network: Network | None = None
     self._scale = 1.0
+    self._tint = rl.WHITE
 
   def set_current_network(self, network: Network):
     self._network = network
 
   def set_scale(self, scale: float):
     self._scale = scale
+
+  def set_tint(self, tint: rl.Color):
+    self._tint = tint
 
   @staticmethod
   def get_strength_icon_idx(strength: int) -> int:
@@ -69,14 +73,14 @@ class WifiIcon(Widget):
 
     icon_x = int(self._rect.x + (self._rect.width - strength_icon.width * self._scale) // 2)
     icon_y = int(self._rect.y + (self._rect.height - strength_icon.height * self._scale) // 2)
-    rl.draw_texture_ex(strength_icon, (icon_x, icon_y), 0.0, self._scale, rl.WHITE)
+    rl.draw_texture_ex(strength_icon, (icon_x, icon_y), 0.0, self._scale, self._tint)
 
     # Render lock icon at lower right of wifi icon if secured
     if self._network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED):
       lock_scale = self._scale * 1.1
       lock_x = int(icon_x + 1 + strength_icon.width * self._scale - self._lock_txt.width * lock_scale / 2)
       lock_y = int(icon_y + 1 + strength_icon.height * self._scale - self._lock_txt.height * lock_scale / 2)
-      rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, lock_scale, rl.WHITE)
+      rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, lock_scale, self._tint)
 
 
 class WifiItem(BigDialogOptionButton):
@@ -98,11 +102,14 @@ class WifiItem(BigDialogOptionButton):
     self._wifi_icon.set_current_network(network)
 
   def _render(self, _):
+    disabled_alpha = 0.35 if not self.enabled else 1.0
+
     if self._network.is_connected:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
       rl.draw_texture(self._selected_txt, selected_x, selected_y, rl.WHITE)
 
+    self._wifi_icon.set_tint(rl.Color(255, 255, 255, int(255 * disabled_alpha)))
     self._wifi_icon.set_scale((1.0 if self._selected else 0.65) * 0.7)
     self._wifi_icon.render(rl.Rectangle(
       self._rect.x + self.LEFT_MARGIN,
@@ -113,11 +120,11 @@ class WifiItem(BigDialogOptionButton):
 
     if self._selected:
       self._label.set_font_size(self.SELECTED_HEIGHT)
-      self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
+      self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9 * disabled_alpha)))
       self._label.set_font_weight(FontWeight.DISPLAY)
     else:
       self._label.set_font_size(self.HEIGHT)
-      self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.58)))
+      self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.58 * disabled_alpha)))
       self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
 
     label_offset = self.LEFT_MARGIN + self._wifi_icon.rect.width + 20
@@ -394,14 +401,19 @@ class WifiUIMici(BigMultiOptionDialog):
         self._scroller.add_widget(network_button)
         print('Adding network', network.ssid)
 
-    # move connected network to the start
+    # Move connected network to the start
     connected_btn_idx = next((i for i, btn in enumerate(self._scroller._items) if btn._network.is_connected), None)
     if connected_btn_idx is not None and connected_btn_idx > 0:
       self._scroller._items.insert(0, self._scroller._items.pop(connected_btn_idx))
+      self._scroller._layout()  # fixes selected style single frame stutter
       print('Moving connected network to top', self._scroller._items[0].option)
 
     # # remove networks no longer present
     # self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
+    # Set networks no longer present disabled
+    for btn in self._scroller._items:
+      if btn.option not in self._networks:
+        btn.set_enabled(False)
 
     # # try to restore previous selection to prevent jumping from adding/removing/reordering buttons
     # self._restore_selection = True
