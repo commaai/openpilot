@@ -286,10 +286,11 @@ class WifiManager:
           new_state, previous_state, change_reason = state_q.popleft().body
 
           # BAD PASSWORD
+          print((new_state, change_reason, self._connecting_to_ssid))
           if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
             self.forget_connection(self._connecting_to_ssid, block=True)
             self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
-            self._connecting_to_ssid = ""
+            # self._connecting_to_ssid = ""
 
           elif new_state == NMDeviceState.ACTIVATED:
             if len(self._activated):
@@ -297,9 +298,10 @@ class WifiManager:
             self._enqueue_callbacks(self._activated)
             self._connecting_to_ssid = ""
 
-          elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
-            self._connecting_to_ssid = ""
-            self._enqueue_callbacks(self._forgotten)
+          # elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
+          #   # TODO: weird
+          #   self._connecting_to_ssid = ""
+          #   self._enqueue_callbacks(self._forgotten)
 
   def _network_scanner(self):
     while not self._exit:
