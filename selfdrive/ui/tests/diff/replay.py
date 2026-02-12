@@ -78,7 +78,7 @@ def handle_event(event: DummyEvent):
 
 
 def run_replay():
-  from openpilot.selfdrive.ui.ui_state import ui_state  # import here for correct param setup
+  from openpilot.selfdrive.ui.ui_state import ui_state  # import here for correct param setup (e.g. training guide)
   from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout  # import here for coverage
 
   setup_state()
