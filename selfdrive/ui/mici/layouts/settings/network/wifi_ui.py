@@ -45,7 +45,7 @@ class WifiIcon(Widget):
     self._network: Network | None = None
     self._network_missing = False  # if network disappeared from scan results
     self._scale = 1.0
-    self._tint = rl.WHITE
+    self._opacity = 1.0
 
   def set_network_missing(self, missing: bool):
     self._network_missing = missing
@@ -56,8 +56,8 @@ class WifiIcon(Widget):
   def set_scale(self, scale: float):
     self._scale = scale
 
-  def set_tint(self, tint: rl.Color):
-    self._tint = tint
+  def set_opacity(self, opacity: float):
+    self._opacity = opacity
 
   @staticmethod
   def get_strength_icon_idx(strength: int) -> int:
@@ -80,14 +80,15 @@ class WifiIcon(Widget):
 
     icon_x = int(self._rect.x + (self._rect.width - strength_icon.width * self._scale) // 2)
     icon_y = int(self._rect.y + (self._rect.height - strength_icon.height * self._scale) // 2)
-    rl.draw_texture_ex(strength_icon, (icon_x, icon_y), 0.0, self._scale, self._tint)
+    tint = rl.Color(255, 255, 255, int(255 * self._opacity))
+    rl.draw_texture_ex(strength_icon, (icon_x, icon_y), 0.0, self._scale, tint)
 
     # Render lock icon at lower right of wifi icon if secured
     if self._network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED):
       lock_scale = self._scale * 1.1
       lock_x = int(icon_x + 1 + strength_icon.width * self._scale - self._lock_txt.width * lock_scale / 2)
       lock_y = int(icon_y + 1 + strength_icon.height * self._scale - self._lock_txt.height * lock_scale / 2)
-      rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, lock_scale, self._tint)
+      rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, lock_scale, tint)
 
 
 class WifiItem(BigDialogOptionButton):
@@ -119,7 +120,7 @@ class WifiItem(BigDialogOptionButton):
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
       rl.draw_texture(self._selected_txt, selected_x, selected_y, rl.WHITE)
 
-    self._wifi_icon.set_tint(rl.Color(255, 255, 255, int(255 * disabled_alpha)))
+    self._wifi_icon.set_opacity(disabled_alpha)
     self._wifi_icon.set_scale((1.0 if self._selected else 0.65) * 0.7)
     self._wifi_icon.render(rl.Rectangle(
       self._rect.x + self.LEFT_MARGIN,
