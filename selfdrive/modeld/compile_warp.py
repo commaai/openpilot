@@ -73,7 +73,8 @@ def make_frame_prepare(cam_w, cam_h, model_w, model_h):
   stride_pad = stride - cam_w
 
   def frame_prepare_tinygrad(input_frame, M_inv):
-    M_inv_uv = Tensor(UV_SCALE_MATRIX) @ M_inv @ Tensor(UV_SCALE_MATRIX_INV)
+    # UV_SCALE @ M_inv @ UV_SCALE_INV simplifies to elementwise scaling
+    M_inv_uv = M_inv * Tensor([[1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [2.0, 2.0, 1.0]])
     # deinterleave NV12 UV plane (UVUV... -> separate U, V)
     uv = input_frame[uv_offset:uv_offset + uv_height * stride].reshape(uv_height, stride)
     with Context(SPLIT_REDUCEOP=0):
