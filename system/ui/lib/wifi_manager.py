@@ -439,8 +439,20 @@ class WifiManager:
         }
 
       settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-      self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
-      self.activate_connection(ssid, block=True)
+      reply = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f"Failed to add connection for {ssid}: {reply}")
+        self._connecting_to_ssid = ""
+        return
+
+      conn_path = reply.body[0]
+      if self._wifi_device is None:
+        cloudlog.warning("No WiFi device found")
+        self._connecting_to_ssid = ""
+        return
+
+      self._router_main.send(new_method_call(self._nm, 'ActivateConnection', 'ooo',
+                                             (conn_path, self._wifi_device, "/")))
 
     threading.Thread(target=worker, daemon=True).start()
 
