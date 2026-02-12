@@ -58,6 +58,7 @@ class ModelState:
       with open(warp_path, "rb") as f:
         self.image_warp = pickle.load(f)
     ptr = buf.data.ctypes.data
+    # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:
       self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
 
