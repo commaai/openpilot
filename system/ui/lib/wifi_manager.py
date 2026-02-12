@@ -262,9 +262,9 @@ class WifiManager:
     for rule in rules:
       self._conn_monitor.send_and_get_reply(message_bus.AddMatch(rule))
 
-    with (self._conn_monitor.filter(rules[0], bufsize=SIGNAL_QUEUE_SIZE) as q,
-          self._conn_monitor.filter(rules[1], bufsize=SIGNAL_QUEUE_SIZE) as new_q,
-          self._conn_monitor.filter(rules[2], bufsize=SIGNAL_QUEUE_SIZE) as removed_q):
+    with (self._conn_monitor.filter(rules[0], bufsize=SIGNAL_QUEUE_SIZE) as state_q,
+          self._conn_monitor.filter(rules[1], bufsize=SIGNAL_QUEUE_SIZE) as new_conn_q,
+          self._conn_monitor.filter(rules[2], bufsize=SIGNAL_QUEUE_SIZE) as removed_conn_q):
       while not self._exit:
         if not self._active:
           time.sleep(1)
@@ -276,14 +276,14 @@ class WifiManager:
           continue
 
         # Connection added/removed
-        if len(new_q) or len(removed_q):
-          new_q.clear()
-          removed_q.clear()
+        if len(new_conn_q) or len(removed_conn_q):
+          new_conn_q.clear()
+          removed_conn_q.clear()
           self._update_connections()
 
         # Device state changes
-        while len(q):
-          new_state, previous_state, change_reason = q.popleft().body
+        while len(state_q):
+          new_state, previous_state, change_reason = state_q.popleft().body
 
           # BAD PASSWORD
           if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
