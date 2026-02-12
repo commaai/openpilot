@@ -270,35 +270,36 @@ class WifiManager:
           time.sleep(1)
           continue
 
-        # Check for connection added/removed signals
+        try:
+          self._conn_monitor.recv_messages(timeout=1)
+        except TimeoutError:
+          continue
+
+        # Connection added/removed
         if len(new_q) or len(removed_q):
           new_q.clear()
           removed_q.clear()
           self._update_connections()
 
-        # Block until a matching signal arrives
-        try:
-          msg = self._conn_monitor.recv_until_filtered(q, timeout=1)
-        except TimeoutError:
-          continue
+        # Device state changes
+        while len(q):
+          new_state, previous_state, change_reason = q.popleft().body
 
-        new_state, previous_state, change_reason = msg.body
+          # BAD PASSWORD
+          if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
+            self.forget_connection(self._connecting_to_ssid, block=True)
+            self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
+            self._connecting_to_ssid = ""
 
-        # BAD PASSWORD
-        if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
-          self.forget_connection(self._connecting_to_ssid, block=True)
-          self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
-          self._connecting_to_ssid = ""
+          elif new_state == NMDeviceState.ACTIVATED:
+            if len(self._activated):
+              self._update_networks()
+            self._enqueue_callbacks(self._activated)
+            self._connecting_to_ssid = ""
 
-        elif new_state == NMDeviceState.ACTIVATED:
-          if len(self._activated):
-            self._update_networks()
-          self._enqueue_callbacks(self._activated)
-          self._connecting_to_ssid = ""
-
-        elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
-          self._connecting_to_ssid = ""
-          self._enqueue_callbacks(self._forgotten)
+          elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
+            self._connecting_to_ssid = ""
+            self._enqueue_callbacks(self._forgotten)
 
   def _network_scanner(self):
     while not self._exit:
