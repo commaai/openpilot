@@ -381,8 +381,8 @@ class WifiUIMici(BigMultiOptionDialog):
     #   return
     print('_UPDATE_BUTTONS')
 
+    # Only add new buttons to the end. Update existing buttons without re-sorting so user can freely scroll around
     for network in self._networks.values():
-      # pop and re-insert to eliminate stuttering on update (prevents position lost for a frame)
       network_button_idx = next((i for i, btn in enumerate(self._scroller._items) if btn.option == network.ssid), None)
       if network_button_idx is not None:
         network_button = self._scroller._items[network_button_idx]
@@ -393,6 +393,12 @@ class WifiUIMici(BigMultiOptionDialog):
         network_button = WifiItem(network)
         self._scroller.add_widget(network_button)
         print('Adding network', network.ssid)
+
+    # move connected network to the start
+    connected_btn_idx = next((i for i, btn in enumerate(self._scroller._items) if btn._network.is_connected), None)
+    if connected_btn_idx is not None and connected_btn_idx > 0:
+      self._scroller._items.insert(0, self._scroller._items.pop(connected_btn_idx))
+      print('Moving connected network to top', self._scroller._items[0].option)
 
     # # remove networks no longer present
     # self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
