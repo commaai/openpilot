@@ -47,11 +47,11 @@ class WifiIcon(Widget):
     self._scale = 1.0
     self._opacity = 1.0
 
-  def set_network_missing(self, missing: bool):
-    self._network_missing = missing
-
   def set_current_network(self, network: Network):
     self._network = network
+
+  def set_network_missing(self, missing: bool):
+    self._network_missing = missing
 
   def set_scale(self, scale: float):
     self._scale = scale
@@ -78,9 +78,9 @@ class WifiIcon(Widget):
     else:
       strength_icon = self._wifi_low_txt
 
+    tint = rl.Color(255, 255, 255, int(255 * self._opacity))
     icon_x = int(self._rect.x + (self._rect.width - strength_icon.width * self._scale) // 2)
     icon_y = int(self._rect.y + (self._rect.height - strength_icon.height * self._scale) // 2)
-    tint = rl.Color(255, 255, 255, int(255 * self._opacity))
     rl.draw_texture_ex(strength_icon, (icon_x, icon_y), 0.0, self._scale, tint)
 
     # Render lock icon at lower right of wifi icon if secured
@@ -366,7 +366,6 @@ class WifiUIMici(BigMultiOptionDialog):
   def hide_event(self):
     super().hide_event()
     self._wifi_manager.set_active(False)
-    print('HIDE EVENT')
     # clear scroller items to remove old networks on next show
     self._scroller._items.clear()
 
@@ -394,9 +393,8 @@ class WifiUIMici(BigMultiOptionDialog):
     for network in self._networks.values():
       network_button_idx = next((i for i, btn in enumerate(self._scroller._items) if btn.option == network.ssid), None)
       if network_button_idx is not None:
-        network_button = self._scroller._items[network_button_idx]
         # Update network on existing button
-        network_button.set_current_network(network)
+        self._scroller._items[network_button_idx].set_current_network(network)
         print('Updating network', network.ssid)
       else:
         network_button = WifiItem(network)
@@ -408,10 +406,8 @@ class WifiUIMici(BigMultiOptionDialog):
     if connected_btn_idx is not None and connected_btn_idx > 0:
       self._scroller._items.insert(0, self._scroller._items.pop(connected_btn_idx))
       self._scroller._layout()  # fixes selected style single frame stutter
-      print('Moving connected network to top', self._scroller._items[0].option)
 
-    # # remove networks no longer present
-    # Set networks no longer present disabled
+    # Disable networks no longer present
     for btn in self._scroller._items:
       if btn.option not in self._networks:
         btn.set_enabled(False)
