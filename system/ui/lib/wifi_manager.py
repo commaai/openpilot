@@ -37,7 +37,7 @@ DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
 SCAN_PERIOD_SECONDS = 5
 
-DEBUG = True
+DEBUG = False
 _dbus_call_idx = 0
 
 
