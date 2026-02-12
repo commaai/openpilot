@@ -425,7 +425,7 @@ class WifiUIMici(BigMultiOptionDialog):
       self._on_need_auth(network.ssid, False)
 
   def _on_need_auth(self, ssid, incorrect_password=True):
-    hint = "incorrect password..." if incorrect_password else "enter password..."
+    hint = "wrong password..." if incorrect_password else "enter password..."
     dlg = BigInputDialog(hint, "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
     # go back to the manage network page
