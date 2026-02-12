@@ -36,18 +36,6 @@ TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
 SCAN_PERIOD_SECONDS = 5
-DEBUG = True
-_n = 0
-
-
-def _dbg(fn):
-  def w(msg, *a, **kw):
-    if DEBUG:
-      global _n; _n += 1
-      f = msg.header.fields
-      body = repr(msg.body); print(f"[DBUS #{_n}] {f.get(1, '?')} {f.get(3, '?')} {body[:200]}", flush=True)
-    return fn(msg, *a, **kw)
-  return w
 
 
 class SecurityType(IntEnum):
@@ -148,9 +136,6 @@ class WifiManager:
       self._router_main = DBusRouter(open_dbus_connection_threading(bus="SYSTEM"))  # used by scanner / general method calls
       self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
       self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
-      self._router_main.send_and_get_reply = _dbg(self._router_main.send_and_get_reply)
-      self._router_main.send = _dbg(self._router_main.send)
-      self._conn_monitor.send_and_get_reply = _dbg(self._conn_monitor.send_and_get_reply)
     except FileNotFoundError:
       cloudlog.exception("Failed to connect to system D-Bus")
       self._router_main = None
