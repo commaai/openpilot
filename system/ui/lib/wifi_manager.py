@@ -304,6 +304,7 @@ class WifiManager:
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT:
             failed_ssid = self._prev_connecting_to_ssid or self._connecting_to_ssid
+            print('WifiManager NEED_AUTH failed:', failed_ssid, 'connecting_to:', self._connecting_to_ssid, 'prev:', self._prev_connecting_to_ssid)
             if failed_ssid:
               self.forget_connection(failed_ssid, block=True)
               self._enqueue_callbacks(self._need_auth, failed_ssid)
@@ -432,8 +433,8 @@ class WifiManager:
     self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
-    self._prev_connecting_to_ssid = self._connecting_to_ssid
-    self._connecting_to_ssid = ssid
+    self._set_connecting(ssid)
+
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
       self.forget_connection(ssid, block=True)
@@ -486,8 +487,8 @@ class WifiManager:
       threading.Thread(target=worker, daemon=True).start()
 
   def activate_connection(self, ssid: str, block: bool = False):
-    self._prev_connecting_to_ssid = self._connecting_to_ssid
-    self._connecting_to_ssid = ssid
+    self._set_connecting(ssid)
+
     def worker():
       conn_path = self._connections.get(ssid, None)
       if conn_path is not None:
