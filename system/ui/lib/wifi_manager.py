@@ -232,10 +232,6 @@ class WifiManager:
   def set_active(self, active: bool):
     self._active = active
 
-    # Update networks immediately if we haven't scanned in a while
-    if active and time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS / 2:
-      self._last_network_scan = 0.0
-
   def _monitor_state(self):
     # Filter for signals
     rules = (
