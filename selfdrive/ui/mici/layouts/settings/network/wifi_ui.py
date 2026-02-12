@@ -435,6 +435,7 @@ class WifiUIMici(BigMultiOptionDialog):
     self._connecting = None
 
   def _on_forgotten(self):
+    print('forgotten!')
     self._connecting = None
 
   def _on_disconnected(self):

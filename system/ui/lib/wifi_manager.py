@@ -298,10 +298,10 @@ class WifiManager:
             self._enqueue_callbacks(self._activated)
             self._connecting_to_ssid = ""
 
-          # elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
-          #   # TODO: weird
-          #   self._connecting_to_ssid = ""
-          #   self._enqueue_callbacks(self._forgotten)
+          elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
+            # TODO: weird
+            self._connecting_to_ssid = ""
+            self._enqueue_callbacks(self._forgotten)
 
   def _network_scanner(self):
     while not self._exit:
