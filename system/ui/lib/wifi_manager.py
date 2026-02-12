@@ -220,6 +220,10 @@ class WifiManager:
   def tethering_password(self) -> str:
     return self._tethering_password
 
+  def _set_connecting(self, ssid: str):
+    self._prev_connecting_to_ssid = self._connecting_to_ssid
+    self._connecting_to_ssid = ssid
+
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
       self._callback_queue.append(lambda _cb=cb: _cb(*args))
@@ -300,7 +304,6 @@ class WifiManager:
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT:
             failed_ssid = self._prev_connecting_to_ssid or self._connecting_to_ssid
-            print('WifiManager NEED_AUTH failed:', failed_ssid, 'connecting_to:', self._connecting_to_ssid, 'prev:', self._prev_connecting_to_ssid)
             if failed_ssid:
               self.forget_connection(failed_ssid, block=True)
               self._enqueue_callbacks(self._need_auth, failed_ssid)
@@ -379,23 +382,6 @@ class WifiManager:
 
   def _connection_removed(self, conn_path: str):
     self._connections = {ssid: path for ssid, path in self._connections.items() if path != conn_path}
-
-  def _get_applied_connection_ssid(self) -> str:
-    """Get the SSID of the currently applied connection on the wifi device via GetAppliedConnection."""
-    if self._wifi_device is None:
-      return ""
-    try:
-      dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
-      reply = self._router_main.send_and_get_reply(new_method_call(dev_addr, 'GetAppliedConnection', 'u', (0,)))
-      if reply.header.message_type == MessageType.error:
-        cloudlog.warning(f'Failed to get applied connection: {reply}')
-        return ""
-      settings = dict(reply.body[0])
-      if '802-11-wireless' in settings:
-        return settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
-    except Exception:
-      cloudlog.exception("Error getting applied connection SSID")
-    return ""
 
   def _get_active_connections(self):
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
