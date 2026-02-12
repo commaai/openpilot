@@ -595,10 +595,11 @@ class WifiManager:
         cloudlog.warning("No WiFi device found")
         return
 
-      # returns '/' if no active AP
+      # NOTE: AccessPoints property may exclude hidden APs (use GetAllAccessPoints method if needed)
       wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
-      active_ap_path = self._router_main.send_and_get_reply(Properties(wifi_addr).get('ActiveAccessPoint')).body[0][1]
-      ap_paths = self._router_main.send_and_get_reply(new_method_call(wifi_addr, 'GetAllAccessPoints')).body[0]
+      wifi_props = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all()).body[0]
+      active_ap_path = wifi_props.get('ActiveAccessPoint', ('o', '/'))[1]
+      ap_paths = wifi_props.get('AccessPoints', ('ao', []))[1]
 
       aps: dict[str, list[AccessPoint]] = {}
 
