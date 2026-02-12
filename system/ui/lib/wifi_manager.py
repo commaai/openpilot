@@ -233,7 +233,8 @@ class WifiManager:
     self._active = active
 
     # Update networks immediately when activating for UI
-    self._update_networks(block=False)
+    if active:
+      self._update_networks(block=False)
 
   def _monitor_state(self):
     # Filter for signals
