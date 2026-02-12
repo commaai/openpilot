@@ -360,6 +360,8 @@ class WifiManager:
         if ssid != self._tethering_ssid:
           print('activating...')
           self.activate_connection(ssid, block=True)
+        else:
+          print('skipping activation for tethering network')
 
   def _connection_removed(self, conn_path: str):
     self._connections = {ssid: path for ssid, path in self._connections.items() if path != conn_path}
@@ -376,6 +378,7 @@ class WifiManager:
     return dict(reply.body[0])
 
   def _add_tethering_connection(self):
+    print('adding tethering connection')
     connection = {
       'connection': {
         'type': ('s', '802-11-wireless'),
