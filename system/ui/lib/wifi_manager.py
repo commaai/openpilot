@@ -476,10 +476,8 @@ class WifiManager:
           return
 
         self._connecting_to_ssid = ssid
-        t = time.monotonic()
-        self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
-                                                             (conn_path, self._wifi_device, "/")))
-        print(f"[PERF] ActivateConnection: {(time.monotonic() - t) * 1000:.1f} ms", flush=True)
+        self._router_main.send(new_method_call(self._nm, 'ActivateConnection', 'ooo',
+                                               (conn_path, self._wifi_device, "/")))
 
     if block:
       worker()
