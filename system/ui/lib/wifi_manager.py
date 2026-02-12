@@ -266,6 +266,7 @@ class WifiManager:
           self._conn_monitor.filter(rules[1], bufsize=SIGNAL_QUEUE_SIZE) as new_conn_q,
           self._conn_monitor.filter(rules[2], bufsize=SIGNAL_QUEUE_SIZE) as removed_conn_q):
       while not self._exit:
+        print('active', self._active)
         if not self._active:
           time.sleep(1)
           continue
@@ -273,16 +274,20 @@ class WifiManager:
         try:
           self._conn_monitor.recv_messages(timeout=1)
         except TimeoutError:
+          print('TimeoutError')
           continue
 
+        print('no timeout, got msg')
         # Connection added/removed
         if len(new_conn_q) or len(removed_conn_q):
+          print('connection added!')
           new_conn_q.clear()
           removed_conn_q.clear()
           self._update_connections()
 
         # Device state changes
         while len(state_q):
+          print('got state change signal!')
           new_state, previous_state, change_reason = state_q.popleft().body
 
           # BAD PASSWORD
