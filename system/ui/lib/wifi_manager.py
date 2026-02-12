@@ -153,7 +153,7 @@ class WifiManager:
     self._tethering_password: str = ""
     self._ipv4_forward = False
 
-    self._last_network_update: float = 0.0
+    self._last_network_scan: float = 0.0
     self._callback_queue: list[Callable] = []
 
     self._tethering_ssid = "weedle"
@@ -232,9 +232,9 @@ class WifiManager:
   def set_active(self, active: bool):
     self._active = active
 
-    # Scan immediately if we haven't scanned in a while
-    if active and time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS / 2:
-      self._last_network_update = 0.0
+    # Update networks immediately if we haven't scanned in a while
+    if active and time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS / 2:
+      self._last_network_scan = 0.0
 
   def _monitor_state(self):
     # Filter for signals
@@ -319,9 +319,9 @@ class WifiManager:
   def _network_scanner(self):
     while not self._exit:
       if self._active:
-        if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
+        if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
-          self._last_network_update = time.monotonic()
+          self._last_network_scan = time.monotonic()
       time.sleep(1 / 2.)
 
   def _wait_for_wifi_device(self):
