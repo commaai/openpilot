@@ -16,7 +16,6 @@ from openpilot.common.params import Params
 from openpilot.system.version import terms_version, training_version
 from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 
 FPS = 60
 HEADLESS = os.getenv("WINDOWED", "0") == "1"
@@ -85,6 +84,9 @@ def run_replay():
   if not HEADLESS:
     rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)
   gui_app.init_window("ui diff test", fps=FPS)
+
+  from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout  # import here for coverage
+
   main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
@@ -117,7 +119,6 @@ def main():
   cov = coverage.coverage(source=['openpilot.selfdrive.ui.mici'])
   with cov.collect():
     run_replay()
-  cov.stop()
   cov.save()
   cov.report()
   cov.html_report(directory=os.path.join(DIFF_OUT_DIR, 'htmlcov'))
