@@ -288,7 +288,6 @@ class WifiManager:
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
-            print('UPDATE_NETWORKS LASTSCAN')
             self._update_networks()
 
         # Device state changes
@@ -303,7 +302,6 @@ class WifiManager:
 
           elif new_state == NMDeviceState.ACTIVATED:
             if len(self._activated):
-              print('UPDATE_NETWORKS ACTIVATED')
               self._update_networks()
             self._enqueue_callbacks(self._activated)
             self._connecting_to_ssid = ""
@@ -453,7 +451,6 @@ class WifiManager:
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
         if len(self._forgotten):
-          print('UPDATE_NETWORKS FORGOTTEN ')
           self._update_networks()
         self._enqueue_callbacks(self._forgotten)
 
@@ -601,8 +598,6 @@ class WifiManager:
       cloudlog.warning(f"Failed to request scan: {reply}")
 
   def _update_networks(self):
-    print('UPDATE_NETWORKS', self._active)
-    print()
     with self._lock:
       if self._wifi_device is None:
         cloudlog.warning("No WiFi device found")
