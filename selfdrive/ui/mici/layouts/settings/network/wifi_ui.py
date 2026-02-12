@@ -36,14 +36,19 @@ class WifiIcon(Widget):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 86, 64))
 
+    self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 86, 64)
     self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 86, 64)
     self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 86, 64)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 86, 64)
     self._lock_txt = gui_app.texture("icons_mici/settings/network/new/lock.png", 22, 32)
 
     self._network: Network | None = None
+    self._network_missing = False  # if network disappeared from scan results
     self._scale = 1.0
     self._tint = rl.WHITE
+
+  def set_network_missing(self, missing: bool):
+    self._network_missing = missing
 
   def set_current_network(self, network: Network):
     self._network = network
@@ -64,7 +69,9 @@ class WifiIcon(Widget):
 
     # Determine which wifi strength icon to use
     strength = self.get_strength_icon_idx(self._network.strength)
-    if strength == 2:
+    if self._network_missing:
+      strength_icon = self._wifi_slash_txt
+    elif strength == 2:
       strength_icon = self._wifi_full_txt
     elif strength == 1:
       strength_icon = self._wifi_medium_txt
@@ -96,6 +103,9 @@ class WifiItem(BigDialogOptionButton):
     self._network = network
     self._wifi_icon = WifiIcon()
     self._wifi_icon.set_current_network(network)
+
+  def set_network_missing(self, missing: bool):
+    self._wifi_icon.set_network_missing(missing)
 
   def set_current_network(self, network: Network):
     self._network = network
@@ -412,8 +422,9 @@ class WifiUIMici(BigMultiOptionDialog):
     # self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
     # Set networks no longer present disabled
     for btn in self._scroller._items:
-      if btn.option not in self._networks:
+      if btn.option not in self._networks or normalize_ssid(btn.option) == "Shane's iPhone":
         btn.set_enabled(False)
+        btn.set_network_missing(True)
 
     # # try to restore previous selection to prevent jumping from adding/removing/reordering buttons
     # self._restore_selection = True
