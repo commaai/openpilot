@@ -241,15 +241,39 @@ class WifiManager:
       member="StateChanged",
       path=self._wifi_device,
     )
+    new_conn_rule = MatchRule(
+      type="signal",
+      interface=NM_SETTINGS_IFACE,
+      member="NewConnection",
+      path=NM_SETTINGS_PATH,
+    )
+    removed_conn_rule = MatchRule(
+      type="signal",
+      interface=NM_SETTINGS_IFACE,
+      member="ConnectionRemoved",
+      path=NM_SETTINGS_PATH,
+    )
 
     # Filter for StateChanged signal
     self._conn_monitor.send_and_get_reply(message_bus.AddMatch(rule))
+    self._conn_monitor.send_and_get_reply(message_bus.AddMatch(new_conn_rule))
+    self._conn_monitor.send_and_get_reply(message_bus.AddMatch(removed_conn_rule))
 
-    with self._conn_monitor.filter(rule, bufsize=SIGNAL_QUEUE_SIZE) as q:
+    with self._conn_monitor.filter(rule, bufsize=SIGNAL_QUEUE_SIZE) as q, \
+         self._conn_monitor.filter(new_conn_rule, bufsize=SIGNAL_QUEUE_SIZE) as new_q, \
+         self._conn_monitor.filter(removed_conn_rule, bufsize=SIGNAL_QUEUE_SIZE) as removed_q:
       while not self._exit:
         if not self._active:
           time.sleep(1)
           continue
+
+        # Check for connection added/removed signals
+        while len(new_q):
+          conn_msg = new_q.popleft()
+          print(f"[NM signal] NewConnection: {conn_msg.body[0]}", flush=True)
+        while len(removed_q):
+          conn_msg = removed_q.popleft()
+          print(f"[NM signal] ConnectionRemoved: {conn_msg.body[0]}", flush=True)
 
         # Block until a matching signal arrives
         try:
