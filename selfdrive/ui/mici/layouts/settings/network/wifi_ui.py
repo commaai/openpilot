@@ -419,10 +419,9 @@ class WifiUIMici(BigMultiOptionDialog):
       print('Moving connected network to top', self._scroller._items[0].option)
 
     # # remove networks no longer present
-    # self._scroller._items[:] = [btn for btn in self._scroller._items if btn.option in self._networks]
     # Set networks no longer present disabled
     for btn in self._scroller._items:
-      if btn.option not in self._networks or normalize_ssid(btn.option) == "Shane's iPhone":
+      if btn.option not in self._networks:
         btn.set_enabled(False)
         btn.set_network_missing(True)
 
