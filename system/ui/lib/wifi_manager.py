@@ -25,7 +25,7 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
                                                     NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
                                                     NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
-                                                    NM_IP4_CONFIG_IFACE, NMDeviceState)
+                                                    NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState)
 
 try:
   from openpilot.common.params import Params
@@ -256,7 +256,13 @@ class WifiManager:
         interface=NM_SETTINGS_IFACE,
         member="ConnectionRemoved",
         path=NM_SETTINGS_PATH,
-      )
+      ),
+      MatchRule(
+        type="signal",
+        interface=NM_PROPERTIES_IFACE,
+        member="PropertiesChanged",
+        path=self._wifi_device,
+      ),
     )
 
     for rule in rules:
@@ -264,7 +270,8 @@ class WifiManager:
 
     with (self._conn_monitor.filter(rules[0], bufsize=SIGNAL_QUEUE_SIZE) as state_q,
           self._conn_monitor.filter(rules[1], bufsize=SIGNAL_QUEUE_SIZE) as new_conn_q,
-          self._conn_monitor.filter(rules[2], bufsize=SIGNAL_QUEUE_SIZE) as removed_conn_q):
+          self._conn_monitor.filter(rules[2], bufsize=SIGNAL_QUEUE_SIZE) as removed_conn_q,
+          self._conn_monitor.filter(rules[3], bufsize=SIGNAL_QUEUE_SIZE) as props_q):
       while not self._exit:
         if not self._active:
           time.sleep(1)
@@ -281,6 +288,13 @@ class WifiManager:
           removed_conn_q.clear()
           self._update_connections()
 
+        # PropertiesChanged on wifi device (LastScan = scan complete)
+        while len(props_q):
+          iface, changed, _ = props_q.popleft().body
+          if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
+            print('UPDATE_NETWORKS LASTSCAN')
+            self._update_networks()
+
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
@@ -293,6 +307,7 @@ class WifiManager:
 
           elif new_state == NMDeviceState.ACTIVATED:
             if len(self._activated):
+              print('UPDATE_NETWORKS ACTIVATED')
               self._update_networks()
             self._enqueue_callbacks(self._activated)
             self._connecting_to_ssid = ""
@@ -305,9 +320,6 @@ class WifiManager:
     while not self._exit:
       if self._active:
         if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
-          # Scan for networks every 10 seconds
-          # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
-          self._update_networks()
           self._request_scan()
           self._last_network_update = time.monotonic()
       time.sleep(1 / 2.)
@@ -445,6 +457,7 @@ class WifiManager:
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
         if len(self._forgotten):
+          print('UPDATE_NETWORKS FORGOTTEN ')
           self._update_networks()
         self._enqueue_callbacks(self._forgotten)
 
@@ -592,6 +605,8 @@ class WifiManager:
       cloudlog.warning(f"Failed to request scan: {reply}")
 
   def _update_networks(self):
+    print('UPDATE_NETWORKS', self._active)
+    print()
     with self._lock:
       if self._wifi_device is None:
         cloudlog.warning("No WiFi device found")
