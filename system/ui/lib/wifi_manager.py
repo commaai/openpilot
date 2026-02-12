@@ -565,9 +565,11 @@ class WifiManager:
       if props.get('Type', ('s', ''))[1] == '802-11-wireless':
         # IPv4 address
         ip4config_path = props.get('Ip4Config', ('o', '/'))[1]
+
         if ip4config_path != "/":
           ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
           address_data = self._router_main.send_and_get_reply(Properties(ip4config_addr).get('AddressData')).body[0][1]
+
           for entry in address_data:
             if 'address' in entry:
               self._ipv4_address = entry['address'][1]
@@ -577,8 +579,10 @@ class WifiManager:
         conn_path = props.get('Connection', ('o', '/'))[1]
         if conn_path != "/":
           settings = self._get_connection_settings(conn_path)
+
           if len(settings) > 0:
             metered_prop = settings['connection'].get('metered', ('i', 0))[1]
+
             if metered_prop == MeteredType.YES:
               self._current_network_metered = MeteredType.YES
             elif metered_prop == MeteredType.NO:
