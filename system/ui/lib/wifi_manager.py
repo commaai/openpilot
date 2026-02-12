@@ -37,6 +37,23 @@ DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
 SCAN_PERIOD_SECONDS = 5
 
+DEBUG = True
+_dbus_call_idx = 0
+
+
+def _wrap_router(router):
+  def _wrap(orig):
+    def wrapper(msg, **kw):
+      global _dbus_call_idx
+      _dbus_call_idx += 1
+      if DEBUG:
+        h = msg.header.fields
+        print(f"[DBUS #{_dbus_call_idx}] {h.get(6, '?')} {h.get(3, '?')} {msg.body}")
+      return orig(msg, **kw)
+    return wrapper
+  router.send_and_get_reply = _wrap(router.send_and_get_reply)
+  router.send = _wrap(router.send)
+
 
 class SecurityType(IntEnum):
   OPEN = 0
@@ -134,6 +151,7 @@ class WifiManager:
     # DBus connections
     try:
       self._router_main = DBusRouter(open_dbus_connection_threading(bus="SYSTEM"))  # used by scanner / general method calls
+      _wrap_router(self._router_main)
       self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
       self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
     except FileNotFoundError:
