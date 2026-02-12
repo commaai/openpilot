@@ -266,10 +266,6 @@ class WifiManager:
           self._conn_monitor.filter(rules[1], bufsize=SIGNAL_QUEUE_SIZE) as new_conn_q,
           self._conn_monitor.filter(rules[2], bufsize=SIGNAL_QUEUE_SIZE) as removed_conn_q):
       while not self._exit:
-        if not self._active:
-          time.sleep(1)
-          continue
-
         try:
           self._conn_monitor.recv_messages(timeout=1)
         except TimeoutError:
@@ -354,6 +350,7 @@ class WifiManager:
     self._connections = conns
 
   def _new_connection(self, conn_path: str):
+    print('new connection!')
     settings = self._get_connection_settings(conn_path)
 
     if "802-11-wireless" in settings:
@@ -361,6 +358,7 @@ class WifiManager:
       if ssid != "":
         self._connections[ssid] = conn_path
         if ssid != self._tethering_ssid:
+          print('activating...')
           self.activate_connection(ssid, block=True)
 
   def _connection_removed(self, conn_path: str):
@@ -606,6 +604,9 @@ class WifiManager:
       cloudlog.warning(f"Failed to request scan: {reply}")
 
   def _update_networks(self):
+    if not self._active:
+      return
+
     with self._lock:
       if self._wifi_device is None:
         cloudlog.warning("No WiFi device found")
