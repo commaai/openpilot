@@ -55,7 +55,8 @@ class ModelState:
     if self.image_warp is None:
       self.frame_buf_params = get_nv12_info(buf.width, buf.height)
       warp_path = MODELS_DIR / f'dm_warp_{buf.width}x{buf.height}_tinygrad.pkl'
-      self.image_warp = load_external_pickle(str(warp_path))
+      with open(warp_path, "rb") as f:
+        self.image_warp = pickle.load(f)
     ptr = buf.data.ctypes.data
     # There is a ringbuffer of imgs, just cache tensors pointing to all of them
     if ptr not in self._blob_cache:

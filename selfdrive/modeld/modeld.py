@@ -196,7 +196,8 @@ class ModelState:
         w, h = bufs[key].width, bufs[key].height
         self.frame_buf_params[key] = get_nv12_info(w, h)
       warp_path = MODELS_DIR / f'warp_{w}x{h}_tinygrad.pkl'
-      self.update_imgs = load_external_pickle(str(warp_path))
+      with open(warp_path, "rb") as f:
+        self.update_imgs = pickle.load(f)
 
     for key in bufs.keys():
       ptr = bufs[key].data.ctypes.data
