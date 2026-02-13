@@ -360,12 +360,14 @@ class WifiUIMici(BigMultiOptionDialog):
     )
 
   def show_event(self):
-    # Call super to prepare scroller; selection scroll is handled dynamically
     super().show_event()
+    print('WifiUi show_event')
+    self._scroller._items.clear()
+    self._update_buttons()
 
   def hide_event(self):
     super().hide_event()
-    self._scroller._items.clear()
+    print('WifiUi hide_event')
 
   def _open_network_manage_page(self, result=None):
     self._network_info_page.update_networks(self._networks)

@@ -129,7 +129,6 @@ class NetworkLayoutMici(NavWidget):
   def hide_event(self):
     super().hide_event()
     self._wifi_manager.set_active(False)
-    self._wifi_ui.hide_event()
 
   def _toggle_roaming(self, checked: bool):
     self._wifi_manager.update_gsm_settings(checked, ui_state.params.get("GsmApn") or "", ui_state.params.get_bool("GsmMetered"))
