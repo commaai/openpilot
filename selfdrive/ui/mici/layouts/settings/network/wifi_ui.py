@@ -453,10 +453,10 @@ class WifiUIMici(BigMultiOptionDialog):
     print('RESET CONNECTING 1')
     self._connecting = None
 
-  def _on_forgotten(self):
-    pass
-    print('RESET CONNECTING 2')
-    self._connecting = None
+  def _on_forgotten(self, ssid):
+    if self._connecting == ssid:
+      print('RESET CONNECTING 2', ssid)
+      self._connecting = None
 
   def _on_disconnected(self):
     print('RESET CONNECTING 3')
