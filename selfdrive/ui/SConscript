@@ -8,22 +8,22 @@ Import('env', 'arch', 'common')
 generator = File("#selfdrive/assets/fonts/process.py")
 source_files = Glob("#selfdrive/assets/fonts/*.ttf") + Glob("#selfdrive/assets/fonts/*.otf")
 output_files = [
-  (f.abspath.split('.')[0] + ".fnt", f.abspath.split('.')[0] + ".png")
+  (f.path.split('.')[0] + ".fnt", f.path.split('.')[0] + ".png")
   for f in source_files
   if "NotoColor" not in f.name
 ]
 env.Command(
-  target=output_files,
+  target=[f.path for f in output_files],
   source=[generator, source_files],
-  action=f"python3 {generator}",
+  action=f"cd {env.Dir('#')} && python3 {generator.path}", # generator path is root-relative
 )
 
 # compile gettext .po -> .mo translations
-with open(File("translations/languages.json").abspath) as f:
+with open(File("translations/languages.json").path) as f:
   languages = json.loads(f.read())
 
 po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
-po_sources = [src for src in po_sources if os.path.exists(File(src).abspath)]
+po_sources = [src for src in po_sources if File(src).exists()] # Changed from os.path.exists() to File().exists()
 mo_targets = [src.replace(".po", ".mo") for src in po_sources]
 mo_build = []
 for src, tgt in zip(po_sources, mo_targets):
