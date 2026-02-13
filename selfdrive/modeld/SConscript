@@ -56,8 +56,7 @@ def tg_compile(flags, model_name):
   )
 
   lenv.NoCache(parts_node)
-  cleanup_node = lenv.Command(None, parts_node, Delete(full))
-  lenv.AlwaysBuild(cleanup_node)
+  lenv.AlwaysBuild(parts_node)
   return parts_node
 
 # Compile small models

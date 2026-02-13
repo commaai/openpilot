@@ -20,6 +20,7 @@ def split_pickle(full_path: Path, out_prefix: Path, chunk_bytes: int) -> None:
 
   manifest = hashlib.sha256(data).hexdigest() + "\n" + "\n".join(names) + "\n"
   (out_dir / (out_prefix.name + ".parts")).write_text(manifest)
+  full_path.unlink()
 
 def load_external_pickle(prefix: Path):
   parts = prefix.parent / (prefix.name + ".parts")
