@@ -446,8 +446,14 @@ class WifiUIMici(BigMultiOptionDialog):
     hint = "wrong password..." if incorrect_password else "enter password..."
     dlg = BigInputDialog(hint, "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
-    # go back to the manage network page
-    gui_app.set_modal_overlay(dlg, self._open_network_manage_page)
+
+    def on_close(result=None):
+      gui_app.set_modal_overlay_tick(None)
+      self._open_network_manage_page(result)
+
+    # Process wifi callbacks while the keyboard is shown so forgotten clears connecting state
+    gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
+    gui_app.set_modal_overlay(dlg, on_close)
 
   def _on_activated(self):
     print('RESET CONNECTING 1')
