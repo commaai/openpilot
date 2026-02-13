@@ -178,8 +178,8 @@ class ModelState:
     self.parser = Parser()
     self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
     self.update_imgs = None
-    self.vision_run = load_external_pickle(str(VISION_PKL_PATH))
-    self.policy_run = load_external_pickle(str(POLICY_PKL_PATH))
+    self.vision_run = load_external_pickle(VISION_PKL_PATH)
+    self.policy_run = load_external_pickle(POLICY_PKL_PATH)
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}

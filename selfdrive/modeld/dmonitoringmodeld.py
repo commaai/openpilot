@@ -45,7 +45,7 @@ class ModelState:
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self._blob_cache : dict[int, Tensor] = {}
     self.image_warp = None
-    self.model_run = load_external_pickle(str(MODEL_PKL_PATH))
+    self.model_run = load_external_pickle(MODEL_PKL_PATH)
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
