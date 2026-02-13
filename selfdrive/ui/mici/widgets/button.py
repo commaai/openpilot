@@ -209,6 +209,7 @@ class BigButton(Widget):
       rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.WHITE)
 
   def _render(self, _):
+    # draw _txt_default_bg
     txt_bg = self._txt_default_bg
     if not self.enabled:
       txt_bg = self._txt_disabled_bg
