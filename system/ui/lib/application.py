@@ -88,6 +88,9 @@ FONT_SCALE = 1.242 if BIG_UI else 1.16
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
+# Tint applied to full-white (255,255,255,255) pixels in MICI icons to soften brightness
+ICON_TINT_COLOR = rl.Color(255, 255, 255, int(255 * 0.9))
+
 
 class FontWeight(StrEnum):
   LIGHT = "Inter-Light.fnt"
@@ -361,6 +364,9 @@ class GuiApplication:
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
       image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      # Reduce full-white pixel opacity to 90% in MICI icons
+      if asset_path.startswith("icons_mici/"):
+        rl.image_color_replace(image_obj, rl.WHITE, ICON_TINT_COLOR)
       texture_obj = self._load_texture_from_image(image_obj)
     self._textures[cache_key] = texture_obj
     return texture_obj
