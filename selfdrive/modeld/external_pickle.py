@@ -43,7 +43,7 @@ def load_external_pickle(prefix_or_parts: str) -> bytes:
   parts_path = prefix_or_parts if prefix_or_parts.endswith(".parts") else (prefix_or_parts + ".parts")
   base_dir = os.path.dirname(parts_path) or "."
 
-  lines = open(parts_path, "r", encoding="utf-8").read().splitlines()
+  lines = open(parts_path, encoding="utf-8").read().splitlines()
   if len(lines) < 2:
     raise RuntimeError("bad manifest (need at least 2 lines)")
 
