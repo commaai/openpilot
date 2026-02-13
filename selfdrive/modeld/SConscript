@@ -1,6 +1,5 @@
 import os
 import glob
-import math
 
 Import('env', 'arch')
 lenv = env.Clone()
@@ -10,7 +9,7 @@ tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
 
-from openpilot.common.file_chunker import CHUNK_SIZE, chunk_file
+from openpilot.common.file_chunker import chunk_file, get_num_chunks
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
@@ -57,7 +56,7 @@ def tg_compile(flags, model_name):
 =======
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
-  num_chunks = math.ceil(os.path.getsize(onnx_path) / CHUNK_SIZE) + 1
+  num_chunks = get_num_chunks(os.path.getsize(onnx_path))
   def do_chunk(target, source, env):
     chunk_file(pkl, num_chunks)
   return lenv.Command(

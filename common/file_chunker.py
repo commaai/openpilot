@@ -7,6 +7,10 @@ from pathlib import Path
 CHUNK_SIZE = 49 * 1024 * 1024  # 49MB, under GitHub's 50MB limit
 
 
+def get_num_chunks(file_size):
+  return math.ceil(file_size / CHUNK_SIZE) + 1
+
+
 def chunk_file(path, num_chunks=None):
   with open(path, 'rb') as f:
     data = f.read()
