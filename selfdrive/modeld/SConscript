@@ -52,7 +52,7 @@ def tg_compile(flags, model_name):
   parts_node = lenv.Command(
     parts,
     [full_node, split_script, Value(str(CHUNK_BYTES))],
-    f'python3 {split_script.abspath} {full} {out} {CHUNK_BYTES}'
+    [f'python3 {split_script.abspath} {full} {out} {CHUNK_BYTES}', Delete(full)],
   )
 
   lenv.NoCache(parts_node)
