@@ -95,8 +95,6 @@ def run_replay():
   rl.get_time = lambda: frame / FPS
 
   for should_render in gui_app.render():
-    _frame_count = frame
-
     while script_index < len(SCRIPT) and SCRIPT[script_index][0] == frame:
       _, event = SCRIPT[script_index]
       handle_event(event)
