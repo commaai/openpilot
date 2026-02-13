@@ -153,8 +153,12 @@ class WifiButton(BigButton):
   def network(self) -> Network:
     return self._network
 
+  @property
+  def _show_forget_btn(self):
+    return (self._network.is_saved and not self._network_forgot) or self._is_connecting
+
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
+    if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
       return
     super()._handle_mouse_release(mouse_pos)
 
@@ -189,7 +193,7 @@ class WifiButton(BigButton):
     ))
 
     # Forget button
-    if (self._network.is_saved and not self._network_forgot) or self._is_connecting:
+    if self._show_forget_btn:
       self._forget_btn.render(rl.Rectangle(
         self._rect.x + self._rect.width - self._forget_btn.rect.width,
         btn_y + self._rect.height - self._forget_btn.rect.height,
