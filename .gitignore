@@ -64,8 +64,7 @@ flycheck_*
 cppcheck_report.txt
 comma*.sh
 
-selfdrive/modeld/models/*.pkl
-selfdrive/modeld/models/*.pkl.*
+selfdrive/modeld/models/*.pkl*
 
 # openpilot log files
 *.bz2
