@@ -362,6 +362,7 @@ class WifiUIMici(BigMultiOptionDialog):
   def show_event(self):
     # Clear scroller items and update from latest scan results
     super().show_event()
+    self._wifi_manager.set_active(True)
     self._scroller._items.clear()
     self._update_buttons()
 
