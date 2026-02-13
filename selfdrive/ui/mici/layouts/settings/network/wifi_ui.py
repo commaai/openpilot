@@ -323,7 +323,7 @@ class WifiUIMici(NavWidget):
                                (not self._connecting and btn.network.is_connected))), None)
 
     if front_btn_idx is not None and front_btn_idx > 0:
-      self._scroller._items.insert(0, self._scroller._items.pop(front_btn_idx))
+      self._scroller.move_item(front_btn_idx, 0)
 
   def _connect_with_password(self, ssid: str, password: str):
     if password:
@@ -374,11 +374,11 @@ class WifiUIMici(NavWidget):
     for i, btn in enumerate(self._scroller._items):
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
-        # Move after the last saved network
-        last_saved_idx = max((j for j, b in enumerate(self._scroller._items)
-                              if isinstance(b, WifiButton) and b.network.is_saved and not b._network_forgot), default=-1)
-        self._scroller._items.insert(last_saved_idx + 1, self._scroller._items.pop(i))
-        break
+        # # Move after the last saved network with animation
+        # last_saved_idx = max((j for j, b in enumerate(self._scroller._items)
+        #                       if isinstance(b, WifiButton) and b.network.is_saved and not b._network_forgot), default=-1)
+        # self._scroller.move_item(i, last_saved_idx + 1)
+        # break
 
   def _on_disconnected(self):
     self._connecting = None
