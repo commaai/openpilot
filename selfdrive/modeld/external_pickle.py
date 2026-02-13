@@ -4,10 +4,11 @@ import sys
 import glob
 import hashlib
 import pickle
+from pathlib import Path
 
 def make_external_pickle(raw_path: str, out_prefix: str, chunk_bytes: int) -> None:
   print(f"splitting {raw_path} into {chunk_bytes} byte chunks with prefix {out_prefix}")
-  data = open(raw_path, "rb").read()
+  data = Path(raw_path).read_bytes()
 
   out_dir = os.path.dirname(out_prefix) or "."
   base = os.path.basename(out_prefix)
@@ -18,7 +19,7 @@ def make_external_pickle(raw_path: str, out_prefix: str, chunk_bytes: int) -> No
     chunk = data[i:i + chunk_bytes]
     name = f"{base}.data-{(i // chunk_bytes) + 1:03d}"
     path = os.path.join(out_dir, name)
-    open(path, "wb").write(chunk)
+    Path(path).write_bytes(chunk)
     keep.add(path)
     lines.append(f"{name}\t{hashlib.sha256(chunk).hexdigest()}")
 
@@ -31,10 +32,11 @@ def make_external_pickle(raw_path: str, out_prefix: str, chunk_bytes: int) -> No
         pass
 
   parts_path = out_prefix + ".parts"
-  open(parts_path, "w", encoding="utf-8").write(
+  Path(parts_path).write_text(
     hashlib.sha256(data).hexdigest() + "\n" +
     str(len(data)) + "\n" +
-    "\n".join(lines) + ("\n" if lines else "")
+    "\n".join(lines) + ("\n" if lines else ""),
+    encoding="utf-8",
   )
 
 
@@ -43,7 +45,7 @@ def load_external_pickle(prefix_or_parts: str) -> bytes:
   parts_path = prefix_or_parts if prefix_or_parts.endswith(".parts") else (prefix_or_parts + ".parts")
   base_dir = os.path.dirname(parts_path) or "."
 
-  lines = open(parts_path, encoding="utf-8").read().splitlines()
+  lines = Path(parts_path).read_text(encoding="utf-8").splitlines()
   if len(lines) < 2:
     raise RuntimeError("bad manifest (need at least 2 lines)")
 
@@ -52,9 +54,8 @@ def load_external_pickle(prefix_or_parts: str) -> bytes:
   for ln in lines[2:]:
     if not ln.strip():
       continue
-    name, h = ln.split("\t", 1)
-    b = open(os.path.join(base_dir, name), "rb").read()
-    out += b
+    name, _ = ln.split("\t", 1)
+    out += Path(os.path.join(base_dir, name)).read_bytes()
 
   if hashlib.sha256(bytes(out)).hexdigest() != full_expected:
     raise RuntimeError("full hash mismatch")
