@@ -438,6 +438,7 @@ class UnifiedLabel(Widget):
     self._scroll_offset = 0
     self._scroll_pause_t: float | None = None
     self._scroll_state: ScrollState = ScrollState.STARTING
+    self._scroll_rt: rl.RenderTexture | None = None
 
     # Scroll mode does not support eliding or multiline wrapping
     if self._scroll:
@@ -703,6 +704,22 @@ class UnifiedLabel(Widget):
       else:
         total_visible_height += size.y * self._line_height
 
+    # Render scrolling text to an offscreen texture so we can fade with alpha instead of black gradients
+    screen_x, screen_y = self._rect.x, self._rect.y
+    if self._needs_scroll:
+      rt_w = int(self._rect.width)
+      rt_h = int(self._rect.height + self._font_size)
+      if self._scroll_rt is None or self._scroll_rt.texture.width != rt_w or self._scroll_rt.texture.height != rt_h:
+        if self._scroll_rt is not None:
+          rl.unload_render_texture(self._scroll_rt)
+        self._scroll_rt = rl.load_render_texture(rt_w, rt_h)
+
+      # Switch to render texture coordinates (RT origin = screen scissor origin)
+      self._rect.x = 0
+      self._rect.y = self._font_size / 2
+      rl.begin_texture_mode(self._scroll_rt)
+      rl.clear_background(rl.BLANK)
+
     # Calculate vertical alignment offset
     if self._alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP:
       start_y = self._rect.y
@@ -710,11 +727,6 @@ class UnifiedLabel(Widget):
       start_y = self._rect.y + self._rect.height - total_visible_height
     else:  # TEXT_ALIGN_MIDDLE
       start_y = self._rect.y + (self._rect.height - total_visible_height) / 2
-
-    # Only scissor when we know there is a single scrolling line
-    # Pad a little since descenders like g or j may overflow below rect from font_scale
-    if self._needs_scroll:
-      rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y - self._font_size / 2), int(self._rect.width), int(self._rect.height + self._font_size))
 
     # Render each line
     current_y = start_y
@@ -750,13 +762,30 @@ class UnifiedLabel(Widget):
         current_y += size.y * self._line_height
 
     if self._needs_scroll:
-      # draw black fade on left and right
-      fade_width = 20
-      rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.BLANK, rl.BLACK)
-      if self._scroll_state != ScrollState.STARTING:
-        rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.BLANK)
+      # Fade edges by reducing alpha only (no black overlay).
+      # Custom blend: RGB keeps destination, Alpha multiplies dst by src alpha.
+      #   srcRGB=GL_ZERO  dstRGB=GL_ONE  srcA=GL_ZERO  dstA=GL_SRC_ALPHA  eq=GL_FUNC_ADD
+      rl.rl_set_blend_factors_separate(0x0000, 0x0001, 0x0000, 0x0302, 0x8006, 0x8006)
+      rl.begin_blend_mode(rl.BLEND_CUSTOM_SEPARATE)
 
-      rl.end_scissor_mode()
+      fade_width = 20
+      rt_h = self._scroll_rt.texture.height
+      # Where src alpha=1 (WHITE) dest alpha is kept; where src alpha=0 (BLANK) dest alpha is erased
+      rl.draw_rectangle_gradient_h(int(self._rect.width) - fade_width, 0, fade_width, rt_h, rl.WHITE, rl.BLANK)
+      if self._scroll_state != ScrollState.STARTING:
+        rl.draw_rectangle_gradient_h(0, 0, fade_width, rt_h, rl.BLANK, rl.WHITE)
+
+      rl.end_blend_mode()
+      rl.end_texture_mode()
+
+      # Restore screen coordinates
+      self._rect.x = screen_x
+      self._rect.y = screen_y
+
+      # Composite render texture to screen (Y-flipped for OpenGL texture coords)
+      source = rl.Rectangle(0, 0, self._scroll_rt.texture.width, -self._scroll_rt.texture.height)
+      rl.draw_texture_rec(self._scroll_rt.texture, source,
+                          rl.Vector2(self._rect.x, self._rect.y - self._font_size / 2), rl.WHITE)
 
   def _render_line(self, line, size, emojis, current_y, x_offset=0.0):
     # Calculate horizontal position
