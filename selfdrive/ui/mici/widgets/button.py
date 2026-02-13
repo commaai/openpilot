@@ -222,7 +222,7 @@ class BigButton(Widget):
 
     # draw black background since images are transparent
     scaled_rect = rl.Rectangle(btn_x, btn_y, self._rect.width * scale, self._rect.height * scale)
-    rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.65)))
+    rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.5)))
 
     self._draw_content(btn_y)
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
