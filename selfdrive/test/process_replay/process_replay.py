@@ -125,7 +125,7 @@ class ProcessConfig:
   should_recv_callback: Callable | None = None
   tolerance: float | None = None
   processing_time: float = 0.001
-  timeout: int = 30
+  timeout: int = 300
   simulation: bool = True
   # Set to service process receives on first
   main_pub: str | None = None

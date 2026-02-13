@@ -6,7 +6,11 @@ USBGPU = "USBGPU" in os.environ
 if USBGPU:
   os.environ['DEV'] = 'AMD'
   os.environ['AMD_IFACE'] = 'USB'
+  os.environ['JIT_BATCH_SIZE'] = '0'
+  os.environ['GRAPH_ONE_KERNEL'] = '1'
+WARP_DEVICE = 'QCOM' if TICI else 'CPU'
 from tinygrad.tensor import Tensor
+from tinygrad import Device
 import time
 import pickle
 import numpy as np
@@ -33,8 +37,8 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
-POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
+VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl' if not USBGPU else Path(__file__).parent / 'models/big_driving_vision_tinygrad.pkl'
+POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl' # if not USBGPU else Path(__file__).parent / 'models/big_driving_policy_tinygrad.pkl'
 VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
 POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
 MODELS_DIR = Path(__file__).parent / 'models'
@@ -165,8 +169,8 @@ class ModelState:
       self.full_input_queues.update_dtypes_and_shapes({k: self.numpy_inputs[k].dtype}, {k: self.numpy_inputs[k].shape})
     self.full_input_queues.reset()
 
-    self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),
-                       'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize()}
+    self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8', device=WARP_DEVICE).contiguous().realize(),
+                       'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8', device=WARP_DEVICE).contiguous().realize()}
     self.full_frames : dict[str, Tensor] = {}
     self._blob_cache : dict[int, Tensor] = {}
     self.transforms_np = {k: np.zeros((3,3), dtype=np.float32) for k in self.img_queues}
@@ -174,7 +178,7 @@ class ModelState:
     self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
     self.policy_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
-    self.parser = Parser()
+    self.parser = Parser(ignore_missing=True)
     self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
     self.update_imgs = None
     with open(VISION_PKL_PATH, "rb") as f:
@@ -182,6 +186,14 @@ class ModelState:
 
     with open(POLICY_PKL_PATH, "rb") as f:
       self.policy_run = pickle.load(f)
+
+    self.dummy_ll_outputs = {
+      'lane_lines': np.zeros((1, ModelConstants.NUM_LANE_LINES, ModelConstants.IDX_N, ModelConstants.LANE_LINES_WIDTH), dtype=np.float32),
+      'lane_lines_stds': np.zeros((1, ModelConstants.NUM_LANE_LINES, ModelConstants.IDX_N, ModelConstants.LANE_LINES_WIDTH), dtype=np.float32),
+      'lane_lines_prob': np.zeros((1, 8), dtype=np.float32),
+      'road_edges': np.zeros((1, ModelConstants.NUM_ROAD_EDGES, ModelConstants.IDX_N, ModelConstants.LANE_LINES_WIDTH), dtype=np.float32),
+      'road_edges_stds': np.zeros((1, ModelConstants.NUM_ROAD_EDGES, ModelConstants.IDX_N, ModelConstants.LANE_LINES_WIDTH), dtype=np.float32),
+    }
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -206,21 +218,36 @@ class ModelState:
       yuv_size = self.frame_buf_params[key][3]
       # There is a ringbuffer of imgs, just cache tensors pointing to all of them
       if ptr not in self._blob_cache:
-        self._blob_cache[ptr] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+        self._blob_cache[ptr] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8', device=WARP_DEVICE)
       self.full_frames[key] = self._blob_cache[ptr]
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
 
+    t0 = time.perf_counter()
     out = self.update_imgs(self.img_queues['img'], self.full_frames['img'], self.transforms['img'],
                            self.img_queues['big_img'], self.full_frames['big_img'], self.transforms['big_img'])
     self.img_queues['img'], self.img_queues['big_img'] = out[0].realize(), out[2].realize()
+    Device[WARP_DEVICE].synchronize()
+    t1 = time.perf_counter()
     vision_inputs = {'img': out[1], 'big_img': out[3]}
-
+    if USBGPU:
+      vision_inputs = {k: v.to(Device.DEFAULT) for k, v in vision_inputs.items()}
+      Tensor.realize(*vision_inputs.values())
+    Device[Device.DEFAULT].synchronize()
+    t2 = time.perf_counter()
     if prepare_only:
       return None
 
-    self.vision_output = self.vision_run(**vision_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
+    self.vision_output = self.vision_run(**vision_inputs).contiguous().realize()
+    Device[Device.DEFAULT].synchronize()
+    t3 = time.perf_counter()
+    self.vision_output = self.vision_output.uop.base.buffer.numpy().flatten()
+    t4 = time.perf_counter()
+
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
+
+    for k, dummy_value in self.dummy_ll_outputs.items():
+      vision_outputs_dict.setdefault(k, dummy_value)
 
     self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'], 'desire_pulse': new_desire})
     for k in ['desire_pulse', 'features_buffer']:
@@ -232,6 +259,7 @@ class ModelState:
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
     if SEND_RAW_PRED:
       combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy()])
+    print(f'Model timings: warp {1000*(t1 - t0):.2f} ms, copy in {1000*(t2 - t1):.2f} ms, vision {1000*(t3 - t2):.2f} ms, copy out {1000*(t4 - t3):.2f} ms')
 
     return combined_outputs_dict
 
