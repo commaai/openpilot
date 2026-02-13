@@ -1,15 +1,15 @@
 import os
 import glob
+from openpilot.common.file_chunker import chunk_file, get_chunk_paths
 
 Import('env', 'arch')
+chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
 CHUNK_BYTES = int(os.environ.get("TG_CHUNK_BYTES", str(45 * 1024 * 1024)))
 
 tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
-
-from openpilot.common.file_chunker import chunk_file, get_num_chunks
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
@@ -37,7 +37,7 @@ for cam in [_ar_ox_fisheye, _os_fisheye]:
 def chunk_warps(target, source, env):
   for t in warp_targets:
     chunk_file(t, 1)
-lenv.Command([t + ".chunk00" for t in warp_targets], tinygrad_files + script_files,
+lenv.Command([t + ".chunk00of01" for t in warp_targets], tinygrad_files + script_files + [chunker_file],
              [compile_warp_cmd, chunk_warps])
 
 def tg_compile(flags, model_name):
@@ -56,12 +56,12 @@ def tg_compile(flags, model_name):
 =======
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
-  num_chunks = get_num_chunks(os.path.getsize(onnx_path))
+  chunk_targets = get_chunk_paths(pkl, os.path.getsize(onnx_path))
   def do_chunk(target, source, env):
-    chunk_file(pkl, num_chunks)
+    chunk_file(pkl, len(chunk_targets))
   return lenv.Command(
-    [f"{pkl}.chunk{i:02d}" for i in range(num_chunks)],
-    [onnx_path] + tinygrad_files,
+    chunk_targets,
+    [onnx_path] + tinygrad_files + [chunker_file],
     [f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
      do_chunk]
 >>>>>>> c7691475d (Chunk tinygrad pkl below GitHub max size)
