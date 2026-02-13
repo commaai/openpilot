@@ -9,6 +9,7 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").path + "/**
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root.path, x))]
 
 # Get model metadata
+script_files = [Dir("#selfdrive/modeld").File("get_model_metadata.py")]
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}")
   cmd = f'cd {env.Dir("#")} && python3 {script_files[0].path} {fn.path}.onnx'
