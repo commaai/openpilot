@@ -209,25 +209,6 @@ class BigButton(Widget):
       rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.WHITE)
 
   def _render(self, _):
-    # draw _txt_default_bg
-    txt_bg = self._txt_default_bg
-    if not self.enabled:
-      txt_bg = self._txt_disabled_bg
-    elif self.is_pressed:
-      txt_bg = self._txt_pressed_bg
-
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
-    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
-    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
-
-    self._draw_content(btn_y)
-
-
-class BigButtonBgOverContent(BigButton):
-  """BigButton variant that draws the background image on top of the content (text/icon)."""
-
-  def _render(self, _):
     txt_bg = self._txt_default_bg
     if not self.enabled:
       txt_bg = self._txt_disabled_bg

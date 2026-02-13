@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici, WifiIcon, normalize_ssid
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigButtonBgOverContent, BigMultiToggle, BigParamControl, BigToggle
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
@@ -75,7 +75,7 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 64, 47)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 64, 47)
 
-    self._wifi_button = BigButtonBgOverContent("wi-fi", "not connected", self._wifi_slash_txt, scroll=True)
+    self._wifi_button = BigButton("wi-fi", "not connected", self._wifi_slash_txt, scroll=True)
     self._wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
 
     # ******** Advanced settings ********
