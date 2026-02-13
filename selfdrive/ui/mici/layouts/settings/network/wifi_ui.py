@@ -111,6 +111,8 @@ class WifiItem(BigDialogOptionButton):
   def set_current_network(self, network: Network):
     self._network = network
     self._wifi_icon.set_current_network(network)
+
+    # reset if we see the network again
     self.set_enabled(True)
     self.set_network_missing(False)
 
