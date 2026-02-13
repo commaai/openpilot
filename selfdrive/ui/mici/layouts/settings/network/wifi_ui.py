@@ -111,6 +111,8 @@ class WifiItem(BigDialogOptionButton):
   def set_current_network(self, network: Network):
     self._network = network
     self._wifi_icon.set_current_network(network)
+    self.set_enabled(True)
+    self.set_network_missing(False)
 
   def _render(self, _):
     disabled_alpha = 0.35 if not self.enabled else 1.0
@@ -332,9 +334,6 @@ class NetworkInfoPage(NavWidget):
 
 
 class WifiUIMici(BigMultiOptionDialog):
-  # Wait this long after user interacts with widget to update network list
-  INACTIVITY_TIMEOUT = 1
-
   def __init__(self, wifi_manager: WifiManager, back_callback: Callable):
     super().__init__([], None)
 
