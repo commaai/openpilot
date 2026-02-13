@@ -160,10 +160,15 @@ class NetworkLayoutMici(NavWidget):
 
     # Update wi-fi button with ssid and ip address
     # TODO: make sure we handle hidden ssids
+    connecting_ssid = self._wifi_manager.connecting_to_ssid
     connected_network = next((network for network in networks if network.is_connected), None)
-    self._wifi_button.set_text(normalize_ssid(connected_network.ssid) if connected_network is not None else "wi-fi")
-    self._wifi_button.set_value(self._wifi_manager.ipv4_address or "not connected")
-    if connected_network is not None:
+    if connecting_ssid:
+      self._wifi_button.set_text(normalize_ssid(connecting_ssid))
+      self._wifi_button.set_value("connecting...")
+      self._wifi_button.set_icon(self._wifi_slash_txt)
+    elif connected_network is not None:
+      self._wifi_button.set_text(normalize_ssid(connected_network.ssid))
+      self._wifi_button.set_value(self._wifi_manager.ipv4_address or "not connected")
       strength = WifiIcon.get_strength_icon_idx(connected_network.strength)
       if strength == 2:
         strength_icon = self._wifi_full_txt
@@ -173,6 +178,8 @@ class NetworkLayoutMici(NavWidget):
         strength_icon = self._wifi_low_txt
       self._wifi_button.set_icon(strength_icon)
     else:
+      self._wifi_button.set_text("wi-fi")
+      self._wifi_button.set_value("not connected")
       self._wifi_button.set_icon(self._wifi_slash_txt)
 
     # Update network metered
