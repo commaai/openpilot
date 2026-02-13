@@ -21,7 +21,7 @@ AddOption('--ccflags', action='store', type='string', default='', help='pass arb
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.exists(File('#.gitattributes').abspath), # minimal by default on release branch (where there's no LFS)
+          default=File('#.gitattributes').exists(), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 # Detect platform
@@ -41,10 +41,10 @@ assert arch in [
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
-    "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
-    "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
-    "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
+    "PYTHONPATH": Dir("#").path + ':' + Dir(f"#third_party/acados").path,
+    "ACADOS_SOURCE_DIR": Dir("#third_party/acados").path,
+    "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").path,
+    "TERA_PATH": Dir("#").path + f"/third_party/acados/{arch}/t_renderer"
   },
   CC='clang',
   CXX='clang++',
@@ -86,7 +86,7 @@ env = Environment(
   ],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
-  COMPILATIONDB_USE_ABSPATH=True,
+  COMPILATIONDB_USE_ABSPATH=False,
   REDNOSE_ROOT="#",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
