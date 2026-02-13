@@ -17,7 +17,7 @@ from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
-from openpilot.selfdrive.external_pickle import load_external_pickle
+from openpilot.selfdrive.modeld.external_pickle import load_external_pickle
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')

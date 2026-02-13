@@ -3,6 +3,7 @@ import os
 import sys
 import glob
 import hashlib
+import pickle
 
 def make_external_pickle(raw_path: str, out_prefix: str, chunk_bytes: int) -> None:
   print(f"splitting {raw_path} into {chunk_bytes} byte chunks with prefix {out_prefix}")
@@ -57,7 +58,7 @@ def load_external_pickle(prefix_or_parts: str) -> bytes:
 
   if hashlib.sha256(bytes(out)).hexdigest() != full_expected:
     raise RuntimeError("full hash mismatch")
-  return bytes(out)
+  return pickle.loads(bytes(out))
 
 if __name__ == "__main__":
   make_external_pickle(sys.argv[1], sys.argv[2], int(sys.argv[3]))
