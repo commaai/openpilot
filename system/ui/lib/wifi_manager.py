@@ -442,7 +442,7 @@ class WifiManager:
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
       self._connecting_to_ssid = ssid
-      self.forget_connection(ssid, block=True, notify=False)
+      self.forget_connection(ssid, block=True)
 
       connection = {
         'connection': {
@@ -475,7 +475,7 @@ class WifiManager:
 
     threading.Thread(target=worker, daemon=True).start()
 
-  def forget_connection(self, ssid: str, block: bool = False, notify: bool = True):
+  def forget_connection(self, ssid: str, block: bool = False):
     def worker():
       conn_path = self._connections.get(ssid, None)
       if conn_path is not None:
@@ -484,8 +484,7 @@ class WifiManager:
 
         if len(self._forgotten):
           self._update_networks()
-        if notify:
-          self._enqueue_callbacks(self._forgotten, ssid)
+        self._enqueue_callbacks(self._forgotten, ssid)
 
     if block:
       worker()
