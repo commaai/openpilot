@@ -370,6 +370,8 @@ class Scroller(Widget):
     for item in reversed(self._visible_items):
       if not rl.check_collision_recs(item.rect, self._rect):
         continue
+      if self._overlay_filter.x > 0.01 and id(item) in self._moved_item_ids:
+        continue  # drawn on top of overlay instead
       self._render_item(item)
 
     # Dark overlay dims everything, then re-draw the moved item on top
