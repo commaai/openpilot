@@ -123,12 +123,12 @@ class NetworkLayoutMici(NavWidget):
   def show_event(self):
     super().show_event()
     self._current_panel = NetworkPanelType.NONE
-    self._wifi_ui.show_event()
+    self._wifi_manager.set_active(True)
     self._scroller.show_event()
 
   def hide_event(self):
     super().hide_event()
-    self._wifi_ui.hide_event()
+    self._wifi_manager.set_active(False)
 
   def _toggle_roaming(self, checked: bool):
     self._wifi_manager.update_gsm_settings(checked, ui_state.params.get("GsmApn") or "", ui_state.params.get_bool("GsmMetered"))
@@ -186,6 +186,8 @@ class NetworkLayoutMici(NavWidget):
   def _switch_to_panel(self, panel_type: NetworkPanelType):
     if panel_type == NetworkPanelType.WIFI:
       self._wifi_ui.show_event()
+    elif self._current_panel == NetworkPanelType.WIFI:
+      self._wifi_ui.hide_event()
     self._current_panel = panel_type
 
   def _render(self, rect: rl.Rectangle):

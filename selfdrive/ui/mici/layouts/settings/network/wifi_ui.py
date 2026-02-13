@@ -287,16 +287,12 @@ class WifiUIMici(NavWidget):
     )
 
   def show_event(self):
-    # Call super to prepare scroller; selection scroll is handled dynamically
+    # Clear scroller items and update from latest scan results
     super().show_event()
     self._scroller.show_event()
     self._wifi_manager.set_active(True)
-
-  def hide_event(self):
-    super().hide_event()
-    self._wifi_manager.set_active(False)
-    # clear scroller items to remove old networks on next show
     self._scroller._items.clear()
+    self._update_buttons()
 
   def _on_network_updated(self, networks: list[Network]):
     self._networks = {network.ssid: network for network in networks}

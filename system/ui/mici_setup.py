@@ -457,6 +457,8 @@ class NetworkSetupPage(Widget):
     self._prev_has_internet = False
 
   def set_state(self, state: NetworkSetupState):
+    if self._state == NetworkSetupState.WIFI_PANEL and state != NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.hide_event()
     self._state = state
     if state == NetworkSetupState.WIFI_PANEL:
       self._wifi_ui.show_event()
@@ -478,11 +480,11 @@ class NetworkSetupPage(Widget):
   def show_event(self):
     super().show_event()
     self._state = NetworkSetupState.MAIN
-    self._wifi_ui.show_event()
 
   def hide_event(self):
     super().hide_event()
-    self._wifi_ui.hide_event()
+    if self._state == NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.hide_event()
 
   def _render(self, _):
     if self._state == NetworkSetupState.MAIN:
