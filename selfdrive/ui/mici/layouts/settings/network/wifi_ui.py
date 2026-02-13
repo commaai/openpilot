@@ -414,7 +414,6 @@ class WifiUIMici(BigMultiOptionDialog):
   def _connect_with_password(self, ssid: str, password: str):
     if password:
       self._connecting = ssid
-      print('SET CONNECTING', ssid)
       self._wifi_manager.connect_to_network(ssid, password)
       self._update_buttons()
 
@@ -456,16 +455,13 @@ class WifiUIMici(BigMultiOptionDialog):
     gui_app.set_modal_overlay(dlg, on_close)
 
   def _on_activated(self):
-    print('RESET CONNECTING 1')
     self._connecting = None
 
   def _on_forgotten(self, ssid):
     if self._connecting == ssid:
-      print('RESET CONNECTING 2', ssid)
       self._connecting = None
 
   def _on_disconnected(self):
-    print('RESET CONNECTING 3')
     self._connecting = None
 
   def _render(self, _):

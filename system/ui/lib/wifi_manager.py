@@ -314,11 +314,8 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
-          print('new_state', (new_state, change_reason))
-
           # BAD PASSWORD
           if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
-            print('need auth!')
             self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
             self.forget_connection(self._connecting_to_ssid, block=True)
             self._connecting_to_ssid = ""
@@ -330,7 +327,6 @@ class WifiManager:
             self._connecting_to_ssid = ""
 
           elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
-            print('      WEIRD DISCONNECT')
             self._enqueue_callbacks(self._forgotten, self._connecting_to_ssid)
             self._connecting_to_ssid = ""
 
