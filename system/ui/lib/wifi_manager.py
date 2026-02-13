@@ -249,7 +249,6 @@ class WifiManager:
 
   def set_active(self, active: bool):
     self._active = active
-    print('WifiManager active:', active)
 
     # Update networks immediately when activating for UI
     if active:
