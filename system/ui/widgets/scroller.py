@@ -115,7 +115,6 @@ class Scroller(Widget):
     self._move_animations: dict[int, FirstOrderFilter] = {}
     self._move_lift: dict[int, FirstOrderFilter] = {}
     self._moved_item_ids: set[int] = set()
-    self._slide_started: bool = False
     self._overlay_filter = FirstOrderFilter(0.0, OVERLAY_RC, 1 / gui_app.target_fps)
 
     for item in items:
@@ -200,24 +199,26 @@ class Scroller(Widget):
           else:
             self._zoom_filter.update(0.85)
 
-    # Fade overlay and lift first, then slide once they're ~complete
-    # Start fading out when slide is 95% settled, but let x filters keep running
-    move_nearly_done = all(abs(self._move_animations[wid].x) < 5
-                           for wid in self._moved_item_ids if wid in self._move_animations)
-    has_active_moved = any(wid in self._move_animations for wid in self._moved_item_ids) and not move_nearly_done
-    self._overlay_filter.update(OVERLAY_OPACITY if has_active_moved else 0.0)
+    # Check if moved items are nearly at their final x position
+    move_nearly_done = not any(
+      wid in self._move_animations and abs(self._move_animations[wid].x) > 10
+      for wid in self._moved_item_ids
+    )
 
-    # Lift moved items up while sliding, settle back down after
+    # Fade overlay and lift first, then slide once they're ~complete
+    has_active_moved = any(wid in self._move_animations for wid in self._moved_item_ids)
+    self._overlay_filter.update(OVERLAY_OPACITY if has_active_moved and not move_nearly_done else 0.0)
+
+    # Lift moved items up while sliding, drop back down when within 10px
     for wid, filt in list(self._move_lift.items()):
-      filt.update(-20.0 if has_active_moved else 0.0)
+      filt.update(-20.0 if has_active_moved and not move_nearly_done else 0.0)
       if not has_active_moved and abs(filt.x) < 0.5:
         del self._move_lift[wid]
 
-    # Only start sliding once fade + lift are ~done (one-way latch)
-    if self._overlay_filter.x > 0.9 * OVERLAY_OPACITY:
-      self._slide_started = True
+    # Only start sliding once fade + lift are ~done
+    slide_ready = self._overlay_filter.x > 0.5 * OVERLAY_OPACITY or move_nearly_done
     for wid, filt in list(self._move_animations.items()):
-      if self._slide_started:
+      if slide_ready:
         filt.update(0.0)
       if abs(filt.x) < 0.5:
         del self._move_animations[wid]
@@ -225,13 +226,12 @@ class Scroller(Widget):
     # Clear moved item ids only after overlay has fully faded
     if self._overlay_filter.x < 0.01:
       self._moved_item_ids.clear()
-      self._slide_started = False
 
     # Cancel auto-scroll if user starts manually scrolling
     if self._scrolling_to is not None and (self.scroll_panel.state == ScrollState.PRESSED or self.scroll_panel.state == ScrollState.MANUAL_SCROLL):
       self._scrolling_to = None
 
-    if self._scrolling_to is not None and self._slide_started:
+    if self._scrolling_to is not None and slide_ready:
       self._scroll_filter.update(self._scrolling_to)
       self.scroll_panel.set_offset(self._scroll_filter.x)
 
