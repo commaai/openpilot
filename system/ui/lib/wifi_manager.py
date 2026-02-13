@@ -234,6 +234,10 @@ class WifiManager:
     return self._current_network_metered
 
   @property
+  def connecting_to_ssid(self) -> str:
+    return self._connecting_to_ssid
+
+  @property
   def tethering_password(self) -> str:
     return self._tethering_password
 
@@ -249,6 +253,7 @@ class WifiManager:
 
   def set_active(self, active: bool):
     self._active = active
+    print('WifiManager active:', active)
 
     # Update networks immediately when activating for UI
     if active:
