@@ -217,7 +217,8 @@ class Scroller(Widget):
         del self._move_lift[wid]
 
     # Only start sliding once fade + lift are ~done
-    slide_ready = self._overlay_filter.x > 0.5 * OVERLAY_OPACITY or move_nearly_done
+    intro_done = has_active_moved and not move_nearly_done and self._overlay_filter.x > 0.9 * OVERLAY_OPACITY
+    slide_ready = intro_done or move_nearly_done
     for wid, filt in list(self._move_animations.items()):
       if slide_ready:
         filt.update(0.0)
