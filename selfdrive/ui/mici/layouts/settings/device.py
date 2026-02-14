@@ -120,6 +120,9 @@ class PairBigButton(BigButton):
   def __init__(self):
     super().__init__("pair", "connect.comma.ai", "icons_mici/settings/comma_icon.png", icon_size=(33, 60))
 
+  def _get_label_font_size(self):
+    return 64
+
   def _update_state(self):
     if ui_state.prime_state.is_paired():
       self.set_text("paired")
@@ -221,7 +224,7 @@ class UpdateOpenpilotBigButton(BigButton):
 
       if self._waiting_for_updater_t is not None and rl.get_time() - self._waiting_for_updater_t > UPDATER_TIMEOUT:
         self.set_rotate_icon(False)
-        self.set_value("updater failed to respond")
+        self.set_value("updater failed\nto respond")
         self._state = UpdaterState.IDLE
         self._hide_value_t = rl.get_time()
 
@@ -319,7 +322,6 @@ class DeviceLayoutMici(NavWidget):
       PairBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
-      # lang_button,
       reset_calibration_btn,
       uninstall_openpilot_btn,
       regulatory_btn,

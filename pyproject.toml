@@ -89,7 +89,6 @@ testing = [
   "pytest-timeout",
   "pytest-asyncio",
   "pytest-mock",
-  "pytest-repeat",
   "ruff",
   "codespell",
   "pre-commit-hooks",
@@ -97,8 +96,6 @@ testing = [
 
 dev = [
   "av",
-  "azure-identity",
-  "azure-storage-blob",
   "dictdiffer",
   "matplotlib",
   "opencv-python-headless",

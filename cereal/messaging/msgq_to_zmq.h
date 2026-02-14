@@ -26,7 +26,7 @@ protected:
     int connected_clients = 0;
   };
 
-  std::unique_ptr<MSGQContext> msgq_context;
+  std::unique_ptr<Context> msgq_context;
   std::unique_ptr<BridgeZmqContext> zmq_context;
   std::mutex mutex;
   std::condition_variable cv;

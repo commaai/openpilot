@@ -463,7 +463,7 @@ class WifiManagerUI(Widget):
     if self.state == UIState.CONNECTING:
       self.state = UIState.IDLE
 
-  def _on_forgotten(self):
+  def _on_forgotten(self, _):
     if self.state == UIState.FORGETTING:
       self.state = UIState.IDLE
 

@@ -3,6 +3,7 @@ import glob
 
 Import('env', 'arch')
 lenv = env.Clone()
+CHUNK_BYTES = int(os.environ.get("TG_CHUNK_BYTES", str(45 * 1024 * 1024)))
 
 tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
@@ -16,10 +17,11 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
 
 # compile warp
+# THREADS=0 is need to prevent bug: https://github.com/tinygrad/tinygrad/issues/14689
 tg_flags = {
     'larch64': 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0',
-    'Darwin': f'DEV=CPU HOME={os.path.expanduser("~")}', # tinygrad calls brew which needs a $HOME in the env
-}.get(arch, 'DEV=CPU CPU_LLVM=1')
+    'Darwin': f'DEV=CPU THREADS=0 HOME={os.path.expanduser("~")}', # tinygrad calls brew which needs a $HOME in the env
+}.get(arch, 'DEV=CPU CPU_LLVM=1 THREADS=0')
 image_flag = {
      'larch64': 'IMAGE=2',
 }.get(arch, 'IMAGE=0')
@@ -35,11 +37,27 @@ lenv.Command(warp_targets, tinygrad_files + script_files, cmd)
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
-  return lenv.Command(
-    fn + "_tinygrad.pkl",
+
+  out = fn + "_tinygrad.pkl"
+  full = out + ".full"
+  parts = out + ".parts"
+
+  full_node = lenv.Command(
+    full,
     [fn + ".onnx"] + tinygrad_files,
-    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
+    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {full}'
   )
+
+  split_script = File(Dir("#selfdrive/modeld").File("external_pickle.py").abspath)
+  parts_node = lenv.Command(
+    parts,
+    [full_node, split_script, Value(str(CHUNK_BYTES))],
+    [f'python3 {split_script.abspath} {full} {out} {CHUNK_BYTES}', Delete(full)],
+  )
+
+  lenv.NoCache(parts_node)
+  lenv.AlwaysBuild(parts_node)
+  return parts_node
 
 # Compile small models
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
