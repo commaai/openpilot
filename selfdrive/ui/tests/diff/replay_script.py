@@ -1,10 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 from collections.abc import Callable
 from dataclasses import dataclass
 
 from cereal import log
-from openpilot.selfdrive.ui.tests.diff.replay import FPS, ReplayContext
+from openpilot.selfdrive.ui.tests.diff.replay import VariantType, FPS, ReplayContext
 from openpilot.selfdrive.ui.tests.diff.replay_setup import (
   put_update_params, setup_offroad_alerts, setup_update_available, setup_developer_params,
   make_network_state_setup, make_onroad_setup, make_alert_setup,
@@ -150,7 +150,7 @@ def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
   script.end()
 
 
-def build_script(context: ReplayContext, variant: Literal['mici', 'tizi']) -> list[ScriptEntry]:
+def build_script(context: ReplayContext, variant: VariantType) -> list[ScriptEntry]:
   """Build the replay script for the appropriate layout variant and return list of script entries."""
   print(f"Building {variant} replay script...")
 

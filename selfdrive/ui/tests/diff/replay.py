@@ -5,12 +5,14 @@ import pyray as rl
 import argparse
 
 from collections.abc import Callable
+from typing import Literal
 
 from cereal.messaging import PubMaster
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
 from openpilot.selfdrive.ui.tests.diff.replay_setup import initialize_params
 
+VariantType = Literal["mici", "tizi"]
 
 HEADLESS = os.getenv("WINDOWED", "0") != "1"
 FPS = 60
@@ -32,7 +34,7 @@ class ReplayContext:
     return self.send_fn
 
 
-def run_replay(variant: str) -> None:
+def run_replay(variant: VariantType) -> None:
   from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
   from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
   from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
@@ -105,7 +107,7 @@ def main():
   parser.add_argument('--big', action='store_true', help='Use big UI layout (tizi/tici) instead of mici layout')
   args = parser.parse_args()
 
-  variant = 'tizi' if args.big else 'mici'
+  variant: VariantType = 'tizi' if args.big else 'mici'
 
   if args.big:
     os.environ["BIG"] = "1"
