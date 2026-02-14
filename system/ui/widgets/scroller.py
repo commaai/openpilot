@@ -370,6 +370,7 @@ class Scroller(Widget):
                           int(self._rect.width), int(self._rect.height))
 
     for item in reversed(self._visible_items):
+      # Skip rendering if not in viewport
       if not rl.check_collision_recs(item.rect, self._rect):
         continue
       if self._overlay_filter.x > 0.01 and id(item) in self._moved_item_ids:
