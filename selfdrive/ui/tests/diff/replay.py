@@ -112,7 +112,7 @@ def main():
   os.environ["RECORD"] = "1"
   os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ.get("RECORD_OUTPUT", f"{variant}_ui_replay.mp4"))
 
-  print(f"Running '{variant}' replay...")
+  print(f"Running {variant} UI replay...")
   with OpenpilotPrefix():
     sources = ["openpilot.system.ui"]
     if variant == "mici":
