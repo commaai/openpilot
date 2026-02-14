@@ -639,7 +639,7 @@ class Setup(Widget):
       if result == DialogResult.CANCEL:
         self._set_state(SetupState.SOFTWARE_SELECTION)
 
-    keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
+    keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result)
     gui_app.set_modal_overlay(keyboard, callback=handle_keyboard_exit)
 
   def use_openpilot(self):

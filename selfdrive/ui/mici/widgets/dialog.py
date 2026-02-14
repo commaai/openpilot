@@ -195,11 +195,13 @@ class BigInputDialog(BigDialogBase):
                                    rl.BLACK, rl.BLANK)
 
     # draw cursor
+    blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
     if text:
-      blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
       cursor_x = min(text_x + text_size.x + 3, text_field_rect.x + text_field_rect.width)
-      rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
-                                1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
+    else:
+      cursor_x = text_field_rect.x - 6
+    rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
+                              1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
 
     # draw backspace icon with nice fade
     self._backspace_img_alpha.update(255 * bool(text))
@@ -209,7 +211,10 @@ class BigInputDialog(BigDialogBase):
 
     if not text and self._hint_label.text and not candidate_char:
       # draw description if no text entered yet and not drawing candidate char
-      self._hint_label.render(text_field_rect)
+      hint_rect = rl.Rectangle(text_field_rect.x, text_field_rect.y,
+                               self._rect.width - text_field_rect.x - PADDING,
+                               text_field_rect.height)
+      self._hint_label.render(hint_rect)
 
     # TODO: move to update state
     # make rect take up entire area so it's easier to click
