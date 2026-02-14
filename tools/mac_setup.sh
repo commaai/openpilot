@@ -42,7 +42,6 @@ brew "glfw"
 brew "libusb"
 brew "libtool"
 brew "llvm"
-brew "openssl@3.0"
 brew "qt@5"
 brew "zeromq"
 cask "gcc-arm-embedded"
@@ -58,12 +57,6 @@ export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/zlib/lib"
 export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/bzip2/lib"
 export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/zlib/include"
 export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/bzip2/include"
-
-# pycurl curl/openssl backend dependencies
-export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/openssl@3/lib"
-export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
-export PYCURL_CURL_CONFIG=/usr/bin/curl-config
-export PYCURL_SSL_LIBRARY=openssl
 
 # install python dependencies
 $DIR/install_python_dependencies.sh
