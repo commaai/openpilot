@@ -22,8 +22,8 @@ class ScriptEvent:
     # Only import for type checking to avoid excluding the application code from coverage
     from openpilot.system.ui.lib.application import MouseEvent
 
-  setup: Callable | None = None  # Setup function prior to adding mouse events
-  mouse_events: list[MouseEvent] | None = None  # Mouse events to send to the application on this frame
+  setup: Callable | None = None  # Setup function to run prior to adding mouse events
+  mouse_events: list[MouseEvent] | None = None  # Mouse events to send to the application on this event's frame
 
 
 ScriptEntry = tuple[int, ScriptEvent]  # (frame, event)
