@@ -14,9 +14,21 @@ NC='\033[0m'
 
 OPENPILOT_ARCH=$(uname -m)
 
-# ── check OS ──────────────────────────────────────────────────
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+# ── check OS and normalize arch ──────────────────────────────
+if [ -f /TICI ]; then
+  # TICI runs AGNOS — no OS validation needed
+  OPENPILOT_ARCH="larch64"
 
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  if [[ "$OPENPILOT_ARCH" == "x86_64" ]]; then
+    echo -e " ↳ [${RED}✗${NC}] Intel-based Macs are not supported!"
+    echo "       openpilot requires an Apple Silicon Mac (M1 or newer)."
+    exit 1
+  fi
+  echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
+  OPENPILOT_ARCH="Darwin"
+
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   if [ -f "/etc/os-release" ]; then
     source /etc/os-release
     case "$VERSION_CODENAME" in
@@ -33,23 +45,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     exit 1
   fi
 
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-
-  if [[ "$OPENPILOT_ARCH" == "x86_64" ]]; then
-    echo -e " ↳ [${RED}✗${NC}] Intel-based Macs are not supported!"
-    echo "       openpilot requires an Apple Silicon Mac (M1 or newer)."
-    exit 1
-  fi
-  echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
-
 else
   echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
   exit 1
-fi
-
-# ── normalize arch ────────────────────────────────────────────
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  OPENPILOT_ARCH="Darwin"
-elif [ -f /TICI ]; then
-  OPENPILOT_ARCH="larch64"
 fi
