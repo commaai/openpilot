@@ -83,7 +83,7 @@ class LocationEstimator:
 
   def _validate_timestamp(self, t: float):
     kf_t = self.kf.t
-    invalid = not np.isnan(kf_t) and (kf_t - t) > MAX_FILTER_REWIND_TIME
+    invalid = kf_t is not None and not np.isnan(kf_t) and (kf_t - t) > MAX_FILTER_REWIND_TIME
     if invalid:
       cloudlog.warning("Observation timestamp is older than the max rewind threshold of the filter")
     return not invalid

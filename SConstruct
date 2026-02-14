@@ -80,6 +80,7 @@ env = Environment(
     "#msgq_repo",
     "#third_party",
     "#selfdrive/pandad",
+    "#rednose/helpers",
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
   ],
@@ -87,8 +88,8 @@ env = Environment(
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#",
-  tools=["default", "cython", "compilation_db"],
-  toolpath=["#site_scons/site_tools"],
+  tools=["default", "cython", "compilation_db", "rednose_filter"],
+  toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
 
 # Arch-specific flags and paths
