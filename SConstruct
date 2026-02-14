@@ -24,16 +24,7 @@ AddOption('--minimal',
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 # Detect platform (see scripts/platform.sh)
-try:
-  arch = subprocess.check_output(
-    ["bash", "-c", "source scripts/platform.sh && echo $OPENPILOT_ARCH"],
-    encoding='utf8', stderr=subprocess.PIPE,
-  ).rstrip()
-except subprocess.CalledProcessError as e:
-  raise SCons.Errors.UserError(e.output.strip())
-
-if arch == "Darwin":
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
+arch = subprocess.check_output(["bash", "-c", "source scripts/platform.sh >&2 && echo $OPENPILOT_ARCH"], encoding='utf8', stderr=subprocess.PIPE).rstrip()
 
 env = Environment(
   ENV={
@@ -100,6 +91,7 @@ if arch == "larch64":
   env.Append(CCFLAGS=arch_flags)
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":
+  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
   env.Append(LIBPATH=[
     f"{brew_prefix}/lib",
     f"{brew_prefix}/opt/openssl@3.0/lib",
