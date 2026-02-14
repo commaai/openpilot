@@ -90,8 +90,11 @@ def run_replay():
   main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
-  frame = 0
   script_index = 0
+  frame = 0
+  # Override raylib timing functions to return deterministic values based on frame count instead of real time
+  rl.get_frame_time = lambda: 1.0 / FPS
+  rl.get_time = lambda: frame / FPS
 
   for should_render in gui_app.render():
     while script_index < len(SCRIPT) and SCRIPT[script_index][0] == frame:

@@ -143,7 +143,6 @@ class BigButton(Widget):
     self._txt_default_bg = gui_app.texture("icons_mici/buttons/button_rectangle.png", 402, 180)
     self._txt_pressed_bg = gui_app.texture("icons_mici/buttons/button_rectangle_pressed.png", 402, 180)
     self._txt_disabled_bg = gui_app.texture("icons_mici/buttons/button_rectangle_disabled.png", 402, 180)
-    self._txt_hover_bg = gui_app.texture("icons_mici/buttons/button_rectangle_hover.png", 402, 180)
 
   def _width_hint(self) -> int:
     # Single line if scrolling, so hide behind icon if exists
@@ -215,14 +214,14 @@ class BigButton(Widget):
     if not self.enabled:
       txt_bg = self._txt_disabled_bg
     elif self.is_pressed:
-      txt_bg = self._txt_hover_bg
+      txt_bg = self._txt_pressed_bg
 
     scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
 
     self._draw_content(btn_y)
+    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
 
 
 class BigToggle(BigButton):

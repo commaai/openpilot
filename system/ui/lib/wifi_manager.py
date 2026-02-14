@@ -37,6 +37,23 @@ DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
 SCAN_PERIOD_SECONDS = 5
 
+DEBUG = False
+_dbus_call_idx = 0
+
+
+def _wrap_router(router):
+  def _wrap(orig):
+    def wrapper(msg, **kw):
+      global _dbus_call_idx
+      _dbus_call_idx += 1
+      if DEBUG:
+        h = msg.header.fields
+        print(f"[DBUS #{_dbus_call_idx}] {h.get(6, '?')} {h.get(3, '?')} {msg.body}")
+      return orig(msg, **kw)
+    return wrapper
+  router.send_and_get_reply = _wrap(router.send_and_get_reply)
+  router.send = _wrap(router.send)
+
 
 class SecurityType(IntEnum):
   OPEN = 0
@@ -134,6 +151,7 @@ class WifiManager:
     # DBus connections
     try:
       self._router_main = DBusRouter(open_dbus_connection_threading(bus="SYSTEM"))  # used by scanner / general method calls
+      _wrap_router(self._router_main)
       self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
       self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
     except FileNotFoundError:
@@ -166,7 +184,7 @@ class WifiManager:
     # Callbacks
     self._need_auth: list[Callable[[str], None]] = []
     self._activated: list[Callable[[], None]] = []
-    self._forgotten: list[Callable[[], None]] = []
+    self._forgotten: list[Callable[[str], None]] = []
     self._networks_updated: list[Callable[[list[Network]], None]] = []
     self._disconnected: list[Callable[[], None]] = []
 
@@ -194,7 +212,7 @@ class WifiManager:
 
   def add_callbacks(self, need_auth: Callable[[str], None] | None = None,
                     activated: Callable[[], None] | None = None,
-                    forgotten: Callable[[], None] | None = None,
+                    forgotten: Callable[[str], None] | None = None,
                     networks_updated: Callable[[list[Network]], None] | None = None,
                     disconnected: Callable[[], None] | None = None):
     if need_auth is not None:
@@ -215,6 +233,10 @@ class WifiManager:
   @property
   def current_network_metered(self) -> MeteredType:
     return self._current_network_metered
+
+  @property
+  def connecting_to_ssid(self) -> str:
+    return self._connecting_to_ssid
 
   @property
   def tethering_password(self) -> str:
@@ -306,8 +328,8 @@ class WifiManager:
             failed_ssid = self._prev_connecting_to_ssid or self._connecting_to_ssid
             print('WifiManager NEED_AUTH failed:', failed_ssid, 'connecting_to:', self._connecting_to_ssid, 'prev:', self._prev_connecting_to_ssid)
             if failed_ssid:
-              self.forget_connection(failed_ssid, block=True)
               self._enqueue_callbacks(self._need_auth, failed_ssid)
+              self.forget_connection(failed_ssid, block=True)
               self._prev_connecting_to_ssid = ""
               if self._connecting_to_ssid == failed_ssid:
                 self._connecting_to_ssid = ""
@@ -320,9 +342,9 @@ class WifiManager:
             self._connecting_to_ssid = ""
 
           elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
+            self._enqueue_callbacks(self._forgotten, self._connecting_to_ssid)
             self._prev_connecting_to_ssid = ""
             self._connecting_to_ssid = ""
-            self._enqueue_callbacks(self._forgotten)
 
   def _network_scanner(self):
     while not self._exit:
@@ -479,7 +501,7 @@ class WifiManager:
 
         if len(self._forgotten):
           self._update_networks()
-        self._enqueue_callbacks(self._forgotten)
+        self._enqueue_callbacks(self._forgotten, ssid)
 
     if block:
       worker()
