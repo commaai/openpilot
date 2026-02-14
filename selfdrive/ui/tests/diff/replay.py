@@ -45,7 +45,7 @@ def run_replay(variant: LayoutVariant) -> None:
 
   if HEADLESS:
     rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)
-  gui_app.init_window("ui diff test", fps=FPS)
+  gui_app.init_window("ui diff test", fps=FPS)  # TODO: Can we render faster than real time?
 
   # Dynamically import main layout based on variant
   if variant == "mici":
