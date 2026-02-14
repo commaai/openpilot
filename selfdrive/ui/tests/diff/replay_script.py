@@ -84,9 +84,6 @@ def build_mici_script(ctx: ReplayContext, script: Script) -> None:
 def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
   """Build the replay script for the tizi layout."""
 
-  # TODO: Explore more (keyboard states, advanced network panel, experimental mode description, alpha long modal, etc.)
-  # TODO: We could also scroll down each panel to see all the settings
-
   def make_home_refresh_setup(fn: Callable) -> Callable:
     """Return setup function that calls the given function to modify state and forces an immediate refresh on the home layout."""
     from openpilot.selfdrive.ui.layouts.main import MainState
@@ -110,12 +107,17 @@ def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
 
   # === Settings - Device (click sidebar settings button) ===
   script.click(150, 90, wait_between=1)  # wait 1 frame between mouse down and up to avoid clicking close button immediately when opened
+  script.click(1985, 790)  # reset calibration confirmation
+  script.click(650, 750)  # cancel
 
   # === Settings - Network ===
   script.click(278, 450)
+  script.click(1880, 100)  # advanced network settings
+  script.click(630, 80)  # back
 
   # === Settings - Toggles ===
   script.click(278, 600)
+  script.click(1200, 280)  # experimental mode description
 
   # === Settings - Software ===
   script.setup(put_update_params, wait_after=0)
@@ -127,6 +129,8 @@ def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
   # === Settings - Developer (set CarParamsPersistent first) ===
   script.setup(setup_developer_params, wait_after=0)
   script.click(278, 950)
+  script.click(2000, 960)  # toggle alpha long
+  script.click(1500, 875)  # confirm
 
   # === Keyboard modal (SSH keys button in developer panel) ===
   script.click(1930, 470)  # click SSH keys
