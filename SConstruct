@@ -2,7 +2,6 @@ import os
 import subprocess
 import sys
 import sysconfig
-import platform
 import shlex
 import numpy as np
 
@@ -24,29 +23,17 @@ AddOption('--minimal',
           default=os.path.exists(File('#.gitattributes').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
-# Detect platform
-real_arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
-arch = real_arch
-if platform.system() == "Darwin":
-  if real_arch == "x86_64":
-    raise SCons.Errors.UserError(
-      "\n\n" + "="*58 + "\n"
-      " ERROR: Intel-based Macs are not supported.\n\n"
-      " openpilot requires an Apple Silicon Mac (M1 or newer).\n"
-      " See https://github.com/commaai/openpilot for supported\n"
-      " hardware.\n" +
-      "="*58 + "\n"
-    )
-  arch = "Darwin"
+# Detect platform (see scripts/arch.sh)
+try:
+  arch = subprocess.check_output(
+    ["bash", "-c", "source scripts/arch.sh && echo $OPENPILOT_ARCH"],
+    encoding='utf8', stderr=subprocess.PIPE,
+  ).rstrip()
+except subprocess.CalledProcessError as e:
+  raise SCons.Errors.UserError(e.stderr.strip())
+
+if arch == "Darwin":
   brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-elif arch == "aarch64" and os.path.isfile('/TICI'):
-  arch = "larch64"
-assert arch in [
-  "larch64",  # linux tici arm64
-  "aarch64",  # linux pc arm64
-  "x86_64",   # linux pc x64
-  "Darwin",   # macOS arm64
-]
 
 env = Environment(
   ENV={

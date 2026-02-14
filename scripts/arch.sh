@@ -9,7 +9,14 @@
 #
 
 OPENPILOT_ARCH=$(uname -m)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  OPENPILOT_ARCH="Darwin"
+elif [ -f /TICI ]; then
+  OPENPILOT_ARCH="larch64"
+fi
 
+
+# unsupported platforms
 if [[ "$OSTYPE" == "darwin"* && "$OPENPILOT_ARCH" == "x86_64" ]]; then
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -21,10 +28,4 @@ if [[ "$OSTYPE" == "darwin"* && "$OPENPILOT_ARCH" == "x86_64" ]]; then
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   exit 1
-fi
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  OPENPILOT_ARCH="Darwin"
-elif [ -f /TICI ]; then
-  OPENPILOT_ARCH="larch64"
 fi
