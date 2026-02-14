@@ -19,7 +19,7 @@ FPS = 60
 class ReplayContext:
   send_fn: Callable | None = None  # Function to call each frame to send messages for persistent states (onroad, alerts)
 
-  def __init__(self, pm: PubMaster, main_layout):
+  def __init__(self, pm: PubMaster, main_layout) -> None:
     self.pm = pm
     self.send_fn = None
     self.main_layout = main_layout

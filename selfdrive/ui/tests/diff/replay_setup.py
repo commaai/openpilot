@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 BRANCH_NAME = "this-is-a-really-super-mega-ultra-max-extreme-ultimate-long-branch-name"
 
 
-def initialize_params():
+def initialize_params() -> None:
   """Initialize Params with necessary values for the replay script."""
   params = Params()
   params.put("HasAcceptedTerms", terms_version)
@@ -26,7 +26,7 @@ def initialize_params():
   params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
 
 
-def put_update_params(params: Params | None = None):
+def put_update_params(params: Params | None = None) -> None:
   if params is None:
     params = Params()
   params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
@@ -34,27 +34,27 @@ def put_update_params(params: Params | None = None):
   params.put("UpdaterTargetBranch", BRANCH_NAME)
 
 
-def setup_offroad_alerts():
+def setup_offroad_alerts() -> None:
   put_update_params(Params())
   set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
   set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
   set_offroad_alert("Offroad_IsTakingSnapshot", True)
 
 
-def setup_update_available():
+def setup_update_available() -> None:
   params = Params()
   params.put_bool("UpdateAvailable", True)
   params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
   put_update_params(params)
 
 
-def setup_developer_params():
+def setup_developer_params() -> None:
   CP = car.CarParams()
   CP.alphaLongitudinalAvailable = True
   Params().put("CarParamsPersistent", CP.to_bytes())
 
 
-def send_onroad(pm: PubMaster):
+def send_onroad(pm: PubMaster) -> None:
   ds = messaging.new_message('deviceState')
   ds.deviceState.started = True
   ds.deviceState.networkType = log.DeviceState.NetworkType.wifi

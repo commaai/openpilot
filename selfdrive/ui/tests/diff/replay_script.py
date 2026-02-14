@@ -30,7 +30,7 @@ ScriptEntry = tuple[int, ScriptEvent]  # (frame, event)
 
 
 class Script:
-  def __init__(self, fps: int):
+  def __init__(self, fps: int) -> None:
     self.fps = fps
     self.frame = 0
     self.entries: list[ScriptEntry] = []
@@ -38,26 +38,26 @@ class Script:
   def get_frame_time(self) -> float:
     return self.frame / self.fps
 
-  def add(self, event: ScriptEvent, before: int = 0, after: int = 0):
+  def add(self, event: ScriptEvent, before: int = 0, after: int = 0) -> None:
     """Add event to the script, optionally with the given number of frames to wait before or after the event."""
     self.frame += before
     self.entries.append((self.frame, event))
     self.frame += after
 
-  def end(self):
+  def end(self) -> None:
     """Add a final empty event to mark the end of the script."""
     # Without this, it will just end on the last event without waiting for any specified delay after it
     self.add(ScriptEvent())
 
-  def wait(self, frames: int):
+  def wait(self, frames: int) -> None:
     """Add a delay for the given number of frames followed by an empty event."""
     self.add(ScriptEvent(), before=frames)
 
-  def setup(self, fn: Callable, wait_after: int = WAIT):
+  def setup(self, fn: Callable, wait_after: int = WAIT) -> None:
     """Add a setup function to be called immediately followed by a delay of the given number of frames."""
     self.add(ScriptEvent(setup=fn), after=wait_after)
 
-  def click(self, x: int, y: int, wait_after: int = WAIT, wait_between: int = 0):
+  def click(self, x: int, y: int, wait_after: int = WAIT, wait_between: int = 0) -> None:
     """Add a click event to the script for the given position and specify frames to wait between mouse events or after the click."""
     from openpilot.system.ui.lib.application import MouseEvent, MousePos
 
@@ -67,7 +67,7 @@ class Script:
     self.add(ScriptEvent(mouse_events=[mouse_up]), after=wait_after)
 
 
-def build_mici_script(ctx: ReplayContext, script: Script):
+def build_mici_script(ctx: ReplayContext, script: Script) -> None:
   """Build the replay script for the mici layout."""
   from openpilot.system.ui.lib.application import gui_app
 
@@ -79,10 +79,10 @@ def build_mici_script(ctx: ReplayContext, script: Script):
   script.end()
 
 
-def build_tizi_script(ctx: ReplayContext, script: Script):
+def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
   """Build the replay script for the tizi layout."""
 
-  def make_home_refresh_setup(fn: Callable):
+  def make_home_refresh_setup(fn: Callable) -> Callable:
     """Return setup function that calls the given function to modify state and forces an immediate refresh on the home layout."""
     from openpilot.selfdrive.ui.layouts.main import MainState
 
