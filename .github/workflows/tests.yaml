@@ -109,14 +109,14 @@ jobs:
         PYTHONWARNINGS: default  # package install has DeprecationWarnings
         HOMEBREW_DISPLAY_INSTALL_TIMES: 1
     - run: git lfs pull
-    #- name: Getting scons cache
-    #  uses: ./.github/workflows/auto-cache
-    #  with:
-    #    path: /tmp/scons_cache
-    #    key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-    #    restore-keys: |
-    #      scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
-    #      scons-${{ runner.arch }}-macos
+    - name: Getting scons cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-macos
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
