@@ -28,7 +28,7 @@ jobs:
         wait-interval: 30
         running-workflow-name: 'build prebuilt'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        check-regexp: ^((?!.*(build master-ci).*).)*$
+        check-regexp: ^((?!.*(build master-ci|create badges).*).)*$
     - uses: actions/checkout@v6
       with:
         submodules: true

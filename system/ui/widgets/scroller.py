@@ -267,7 +267,7 @@ class Scroller(Widget):
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
-    for item in self._visible_items:
+    for item in reversed(self._visible_items):
       # Skip rendering if not in viewport
       if not rl.check_collision_recs(item.rect, self._rect):
         continue

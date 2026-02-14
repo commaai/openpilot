@@ -342,7 +342,7 @@ class WifiUIMici(BigMultiOptionDialog):
     # Set up back navigation
     self.set_back_callback(back_callback)
 
-    self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, self._forget_network, self._open_network_manage_page)
+    self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, wifi_manager.forget_connection, self._open_network_manage_page)
     self._network_info_page.set_connecting(lambda: self._connecting)
 
     self._loading_animation = LoadingAnimation()
@@ -360,27 +360,16 @@ class WifiUIMici(BigMultiOptionDialog):
     )
 
   def show_event(self):
-    # Call super to prepare scroller; selection scroll is handled dynamically
+    # Clear scroller items and update from latest scan results
     super().show_event()
     self._wifi_manager.set_active(True)
-
-  def hide_event(self):
-    super().hide_event()
-    self._wifi_manager.set_active(False)
-    # clear scroller items to remove old networks on next show
     self._scroller._items.clear()
+    self._update_buttons()
 
   def _open_network_manage_page(self, result=None):
-    self._network_info_page.update_networks(self._networks)
-    gui_app.set_modal_overlay(self._network_info_page)
-
-  def _forget_network(self, ssid: str):
-    network = self._networks.get(ssid)
-    if network is None:
-      cloudlog.warning(f"Trying to forget unknown network: {ssid}")
-      return
-
-    self._wifi_manager.forget_connection(network.ssid)
+    if self._network_info_page._network is not None and self._network_info_page._network.ssid in self._networks:
+      self._network_info_page.update_networks(self._networks)
+      gui_app.set_modal_overlay(self._network_info_page)
 
   def _on_network_updated(self, networks: list[Network]):
     self._networks = {network.ssid: network for network in networks}
