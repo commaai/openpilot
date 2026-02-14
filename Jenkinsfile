@@ -40,6 +40,7 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 
+  rm -rf /tmp/scons_cache
   rm -rf /tmp/tmp*
   rm -rf ~/.commacache
   rm -rf /dev/shm/*
