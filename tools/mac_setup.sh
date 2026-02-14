@@ -3,20 +3,7 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
-ARCH=$(uname -m)
-
-if [[ "$ARCH" == "x86_64" ]]; then
-  echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo " ERROR: Intel-based Macs are not supported."
-  echo ""
-  echo " openpilot requires an Apple Silicon Mac (M1 or newer)."
-  echo " See https://github.com/commaai/openpilot for supported"
-  echo " hardware."
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  exit 1
-fi
+source $ROOT/scripts/arch.sh
 
 # homebrew update is slow
 export HOMEBREW_NO_AUTO_UPDATE=1
