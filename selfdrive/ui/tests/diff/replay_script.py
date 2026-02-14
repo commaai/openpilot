@@ -46,8 +46,7 @@ class Script:
 
   def end(self) -> None:
     """Add a final empty event to mark the end of the script."""
-    # Without this, it will just end on the last event without waiting for any specified delay after it
-    self.add(ScriptEvent())
+    self.add(ScriptEvent())  # Without this, it will just end on the last event without waiting for any specified delay after it
 
   def wait(self, frames: int) -> None:
     """Add a delay for the given number of frames followed by an empty event."""
@@ -63,6 +62,7 @@ class Script:
     # NOTE: By default we wait a couple frames between mouse events so pressed states will be rendered
     from openpilot.system.ui.lib.application import MouseEvent, MousePos
 
+    # TODO: Add support for long press (left_down=True)
     mouse_down = MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=True, left_released=False, left_down=False, t=self.get_frame_time())
     self.add(ScriptEvent(mouse_events=[mouse_down]), after=wait_between)
     mouse_up = MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=False, left_released=True, left_down=False, t=self.get_frame_time())
