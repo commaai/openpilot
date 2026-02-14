@@ -3,7 +3,7 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
-source $ROOT/scripts/arch.sh
+source $ROOT/scripts/platform.sh
 
 # homebrew update is slow
 export HOMEBREW_NO_AUTO_UPDATE=1

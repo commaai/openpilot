@@ -6,7 +6,7 @@ export ZERO_AR_DATE=1
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-source "$DIR/../../scripts/arch.sh"
+source "$DIR/../../scripts/platform.sh"
 ARCHNAME="$OPENPILOT_ARCH"
 
 cd $DIR

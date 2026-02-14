@@ -20,7 +20,7 @@ cd $DIR
 
 RAYLIB_PLATFORM="PLATFORM_DESKTOP"
 
-source "$DIR/../../scripts/arch.sh"
+source "$DIR/../../scripts/platform.sh"
 ARCHNAME="$OPENPILOT_ARCH"
 if [ -f /TICI ]; then
   RAYLIB_PLATFORM="PLATFORM_COMMA"
