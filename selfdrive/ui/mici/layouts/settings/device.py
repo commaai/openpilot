@@ -322,7 +322,6 @@ class DeviceLayoutMici(NavWidget):
       PairBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
-      # lang_button,
       reset_calibration_btn,
       uninstall_openpilot_btn,
       regulatory_btn,

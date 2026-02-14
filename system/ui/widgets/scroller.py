@@ -223,9 +223,6 @@ class Scroller(Widget):
 
     self._scroll_offset = self._get_scroll(self._visible_items, self._content_size)
 
-    rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
-                          int(self._rect.width), int(self._rect.height))
-
     self._item_pos_filter.update(self._scroll_offset)
 
     cur_pos = 0
@@ -267,7 +264,10 @@ class Scroller(Widget):
       item.set_parent_rect(self._rect)
 
   def _render(self, _):
-    for item in self._visible_items:
+    rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
+                          int(self._rect.width), int(self._rect.height))
+
+    for item in reversed(self._visible_items):
       # Skip rendering if not in viewport
       if not rl.check_collision_recs(item.rect, self._rect):
         continue
