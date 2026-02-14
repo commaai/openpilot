@@ -367,8 +367,9 @@ class WifiUIMici(BigMultiOptionDialog):
     self._update_buttons()
 
   def _open_network_manage_page(self, result=None):
-    self._network_info_page.update_networks(self._networks)
-    gui_app.set_modal_overlay(self._network_info_page)
+    if self._network_info_page._network is not None and self._network_info_page._network.ssid in self._networks:
+      self._network_info_page.update_networks(self._networks)
+      gui_app.set_modal_overlay(self._network_info_page)
 
   def _forget_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -452,13 +453,16 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _on_activated(self):
     self._connecting = None
+    print('WifiUi: activated, clearing connecting')
 
   def _on_forgotten(self, ssid):
     if self._connecting == ssid:
+      print('WifiUi: forgotten, clearing connecting', ssid)
       self._connecting = None
 
   def _on_disconnected(self):
     self._connecting = None
+    print('WifiUi: disconnected, clearing connecting')
 
   def _render(self, _):
     super()._render(_)

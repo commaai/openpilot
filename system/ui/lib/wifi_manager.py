@@ -23,7 +23,8 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
-                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_NO_SECRETS,
+                                                    NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
                                                     NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState)
 
@@ -317,9 +318,18 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
+          print('new_state', (new_state, change_reason))
 
-          # BAD PASSWORD
+          # BAD PASSWORD - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT,
+          # weak/gone network fails with FAILED+NO_SECRETS
           if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
+            print(f'BAD PASSWORD (NEED_AUTH): forgetting {self._connecting_to_ssid}')
+            self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
+            self.forget_connection(self._connecting_to_ssid, block=True)
+            self._connecting_to_ssid = ""
+
+          elif new_state == NMDeviceState.FAILED and change_reason == NM_DEVICE_STATE_REASON_NO_SECRETS and len(self._connecting_to_ssid):
+            print(f'BAD PASSWORD (FAILED/NO_SECRETS): forgetting {self._connecting_to_ssid}')
             self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
             self.forget_connection(self._connecting_to_ssid, block=True)
             self._connecting_to_ssid = ""
@@ -331,6 +341,7 @@ class WifiManager:
             self._connecting_to_ssid = ""
 
           elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
+            print('DISCONNECTED! CLEARING CONNECTING TO SSID')
             self._enqueue_callbacks(self._forgotten, self._connecting_to_ssid)
             self._connecting_to_ssid = ""
 
