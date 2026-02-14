@@ -19,10 +19,9 @@ HEADLESS = os.getenv("WINDOWED", "0") != "1"
 
 
 class ReplayContext:
-  send_fn: Callable | None = None  # Function to call each frame to send messages for persistent states (onroad, alerts)
 
   def __init__(self, pm: PubMaster, main_layout) -> None:
-    self.send_fn = None
+    self.send_fn: Callable | None = None  # Function to call each frame to send messages for persistent states (onroad, alerts)
     self.pm = pm
     self.main_layout = main_layout
 
