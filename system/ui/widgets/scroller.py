@@ -246,7 +246,7 @@ class Scroller(Widget):
 
   def _get_scroll(self, visible_items: list[Widget], content_size: float) -> float:
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
-    self.scroll_panel.set_enabled(scroll_enabled and self.enabled and self._overlay_filter.x < 0.01)
+    self.scroll_panel.set_enabled(scroll_enabled and self.enabled)
     self.scroll_panel.update(self._rect, content_size)
     if not self._snap_items:
       return round(self.scroll_panel.get_offset())
