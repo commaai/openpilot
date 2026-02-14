@@ -58,7 +58,7 @@ class Script:
     self.add(ScriptEvent(setup=fn), after=wait_after)
 
   # TODO: Also add more complex gestures, like swipe or drag
-  def click(self, x: int, y: int, wait_after: int = WAIT, wait_between: int = 0) -> None:
+  def click(self, x: int, y: int, wait_after: int = WAIT, wait_between: int = 2) -> None:
     """Add a click event to the script for the given position and specify frames to wait between mouse events or after the click."""
     from openpilot.system.ui.lib.application import MouseEvent, MousePos
 
@@ -106,7 +106,7 @@ def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
   script.setup(make_home_refresh_setup(setup_update_available))
 
   # === Settings - Device (click sidebar settings button) ===
-  script.click(150, 90, wait_between=1)  # wait 1 frame between mouse down and up to avoid clicking close button immediately when opened
+  script.click(150, 90)
   script.click(1985, 790)  # reset calibration confirmation
   script.click(650, 750)  # cancel
 
