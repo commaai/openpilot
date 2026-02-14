@@ -659,7 +659,7 @@ wheels = [
 [[package]]
 name = "metadrive-simulator"
 version = "0.4.2.3"
-source = { git = "https://github.com/commaai/metadrive.git?rev=less-deps#5d2aa88d4dfe8b7651588cd3972bee15beb9bf7f" }
+source = { git = "https://github.com/commaai/metadrive.git?rev=less-deps#71d86130a5f515935d1192e0c0b102fbde37d28c" }
 dependencies = [
     { name = "numpy" },
     { name = "panda3d" },
