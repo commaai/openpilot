@@ -14,7 +14,6 @@ from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
-from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 
 DEBUG = False
 
@@ -22,32 +21,17 @@ PADDING = 20
 
 
 class BigDialogBase(NavWidget, abc.ABC):
-  def __init__(self, right_btn: str | None = None, right_btn_callback: Callable | None = None):
+  def __init__(self):
     super().__init__()
     self._ret = DialogResult.NO_ACTION
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
-
-    self._right_btn = None
-    if right_btn:
-      def right_btn_callback_wrapper():
-        gui_app.set_modal_overlay(None)
-        if right_btn_callback:
-          right_btn_callback()
-
-      self._right_btn = SideButton(right_btn)
-      self._right_btn.set_click_callback(right_btn_callback_wrapper)
-      # move to right side
-      self._right_btn._rect.x = self._rect.x + self._rect.width - self._right_btn._rect.width
 
   def _render(self, _) -> DialogResult:
     """
     Allows `gui_app.set_modal_overlay(BigDialog(...))`.
     The overlay runner keeps calling until result != NO_ACTION.
     """
-    if self._right_btn:
-      self._right_btn.set_position(self._right_btn._rect.x, self._rect.y)
-      self._right_btn.render()
 
     return self._ret
 
@@ -55,10 +39,8 @@ class BigDialogBase(NavWidget, abc.ABC):
 class BigDialog(BigDialogBase):
   def __init__(self,
                title: str,
-               description: str,
-               right_btn: str | None = None,
-               right_btn_callback: Callable | None = None):
-    super().__init__(right_btn, right_btn_callback)
+               description: str):
+    super().__init__()
     self._title = title
     self._description = description
 
@@ -70,8 +52,6 @@ class BigDialog(BigDialogBase):
     # TODO: coming up with these numbers manually is a pain and not scalable
     # TODO: no clue what any of these numbers mean. VBox and HBox would remove all of this shite
     max_width = self._rect.width - PADDING * 2
-    if self._right_btn:
-      max_width -= self._right_btn._rect.width
 
     title_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.BOLD), self._title, 50, int(max_width)))
     title_size = measure_text_cached(gui_app.font(FontWeight.BOLD), title_wrapped, 50)
@@ -139,7 +119,7 @@ class BigInputDialog(BigDialogBase):
                default_text: str = "",
                minimum_length: int = 1,
                confirm_callback: Callable[[str], None] | None = None):
-    super().__init__(None, None)
+    super().__init__()
     self._hint_label = UnifiedLabel(hint, font_size=35, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
                                     font_weight=FontWeight.MEDIUM)
     self._keyboard = MiciKeyboard()
@@ -215,11 +195,13 @@ class BigInputDialog(BigDialogBase):
                                    rl.BLACK, rl.BLANK)
 
     # draw cursor
+    blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
     if text:
-      blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
       cursor_x = min(text_x + text_size.x + 3, text_field_rect.x + text_field_rect.width)
-      rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
-                                1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
+    else:
+      cursor_x = text_field_rect.x - 6
+    rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
+                              1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
 
     # draw backspace icon with nice fade
     self._backspace_img_alpha.update(255 * bool(text))
@@ -229,7 +211,10 @@ class BigInputDialog(BigDialogBase):
 
     if not text and self._hint_label.text and not candidate_char:
       # draw description if no text entered yet and not drawing candidate char
-      self._hint_label.render(text_field_rect)
+      hint_rect = rl.Rectangle(text_field_rect.x, text_field_rect.y,
+                               self._rect.width - text_field_rect.x - PADDING,
+                               text_field_rect.height)
+      self._hint_label.render(hint_rect)
 
     # TODO: move to update state
     # make rect take up entire area so it's easier to click
@@ -310,9 +295,8 @@ class BigDialogOptionButton(Widget):
 class BigMultiOptionDialog(BigDialogBase):
   BACK_TOUCH_AREA_PERCENTAGE = 0.1
 
-  def __init__(self, options: list[str], default: str | None,
-               right_btn: str | None = 'check', right_btn_callback: Callable[[], None] | None = None):
-    super().__init__(right_btn, right_btn_callback=right_btn_callback)
+  def __init__(self, options: list[str], default: str | None):
+    super().__init__()
     self._options = options
     if default is not None:
       assert default in options
@@ -325,8 +309,6 @@ class BigMultiOptionDialog(BigDialogBase):
     self._can_click = True
 
     self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
-    if self._right_btn is not None:
-      self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
 
     for option in options:
       self._scroller.add_widget(BigDialogOptionButton(option))

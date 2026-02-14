@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+export SOURCE_DATE_EPOCH=0
+export ZERO_AR_DATE=1
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 ARCHNAME=$(uname -m)

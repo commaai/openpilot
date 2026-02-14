@@ -186,12 +186,13 @@ def generate_mpc_tuning_report():
   for stop_time in np.arange(4, 14, 1):
     man = Maneuver(
       '',
-      duration=50,
+      duration=30,
       initial_speed=30.0,
+      cruise_values=[30.0, 30.0, 30.0],
       lead_relevancy=True,
       initial_distance_lead=60.0,
-      speed_lead_values=[30.0, 30.0, 0.0, 0.0],
-      breakpoints=[0., 20., 20 + stop_time, 30 + stop_time],
+      speed_lead_values=[30.0, 30.0, 0.0],
+      breakpoints=[0., 5., 5 + stop_time],
     )
     valid, results[stop_time] = man.evaluate()
     results[stop_time][:,2] = results[stop_time][:,2] - results[stop_time][:,1]
@@ -208,12 +209,12 @@ def generate_mpc_tuning_report():
   for speed in np.arange(0, 40, 5):
     man = Maneuver(
       '',
-      duration=10,
+      duration=20,
       initial_speed=float(speed),
+      cruise_values=[speed, speed, speed],
       lead_relevancy=True,
       initial_distance_lead=desired_follow_distance(speed, speed)/2,
       speed_lead_values=[speed, speed, speed],
-      cruise_values=[speed, speed, speed],
       prob_lead_values=[0.0, 0.0, 1.0],
       breakpoints=[0., 5.0, 5.01],
     )
@@ -231,7 +232,7 @@ def generate_mpc_tuning_report():
   for speed in np.arange(0, 40, 5):
     man = Maneuver(
       '',
-      duration=50,
+      duration=60,
       initial_speed=0.0,
       lead_relevancy=True,
       initial_distance_lead=desired_follow_distance(0.0, 0.0),

@@ -1,6 +1,5 @@
 import os
 import threading
-import json
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
@@ -11,7 +10,7 @@ from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigMultiOptionDialog, BigDialog, BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialogV2
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide
@@ -121,6 +120,9 @@ class PairBigButton(BigButton):
   def __init__(self):
     super().__init__("pair", "connect.comma.ai", "icons_mici/settings/comma_icon.png", icon_size=(33, 60))
 
+  def _get_label_font_size(self):
+    return 64
+
   def _update_state(self):
     if ui_state.prime_state.is_paired():
       self.set_text("paired")
@@ -222,7 +224,7 @@ class UpdateOpenpilotBigButton(BigButton):
 
       if self._waiting_for_updater_t is not None and rl.get_time() - self._waiting_for_updater_t > UPDATER_TIMEOUT:
         self.set_rotate_icon(False)
-        self.set_value("updater failed to respond")
+        self.set_value("updater failed\nto respond")
         self._state = UpdaterState.IDLE
         self._hide_value_t = rl.get_time()
 
@@ -303,22 +305,6 @@ class DeviceLayoutMici(NavWidget):
     self._power_off_btn = BigCircleButton("icons_mici/settings/device/power.png", red=True, icon_size=(64, 66))
     self._power_off_btn.set_click_callback(lambda: _engaged_confirmation_callback(power_off_callback, "power off"))
 
-    self._load_languages()
-
-    def language_callback():
-      def selected_language_callback():
-        selected_language = dlg.get_selected_option()
-        ui_state.params.put("LanguageSetting", self._languages[selected_language])
-
-      current_language_name = ui_state.params.get("LanguageSetting")
-      current_language = next(name for name, lang in self._languages.items() if lang == current_language_name)
-
-      dlg = BigMultiOptionDialog(list(self._languages), default=current_language, right_btn_callback=selected_language_callback)
-      gui_app.set_modal_overlay(dlg)
-
-    # lang_button = BigButton("change language", "", "icons_mici/settings/device/language.png")
-    # lang_button.set_click_callback(language_callback)
-
     regulatory_btn = BigButton("regulatory info", "", "icons_mici/settings/device/info.png")
     regulatory_btn.set_click_callback(self._on_regulatory)
 
@@ -336,7 +322,6 @@ class DeviceLayoutMici(NavWidget):
       PairBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
-      # lang_button,
       reset_calibration_btn,
       uninstall_openpilot_btn,
       regulatory_btn,
@@ -370,10 +355,6 @@ class DeviceLayoutMici(NavWidget):
 
       self._training_guide = TrainingGuide(completed_callback=completed_callback)
     gui_app.set_modal_overlay(self._training_guide, callback=lambda result: setattr(self, '_training_guide', None))
-
-  def _load_languages(self):
-    with open(os.path.join(BASEDIR, "selfdrive/ui/translations/languages.json")) as f:
-      self._languages = json.load(f)
 
   def show_event(self):
     super().show_event()

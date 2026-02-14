@@ -1,1 +1,2 @@
-libyuv/
+/libyuv/
+!*.a
