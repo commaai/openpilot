@@ -12,6 +12,9 @@ LINE_COLOR = rl.GRAY
 LINE_PADDING = 40
 ANIMATION_SCALE = 0.6
 
+EDGE_SHADOW_WIDTH = 20
+EDGE_SHADOW_HEIGHT = 240
+
 MIN_ZOOM_ANIMATION_TIME = 0.075  # seconds
 DO_ZOOM = False
 DO_JELLO = False
@@ -74,10 +77,31 @@ class ScrollIndicator(Widget):
                         rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
+class EdgeShadow:
+  """Draws gradient shadow overlays on the left and right edges of a horizontal scroller.
+
+  The shadows are purely visual (drawn on top of content) and do not affect touch detection.
+  """
+
+  def draw(self, viewport: rl.Rectangle):
+    shadow_y = int(viewport.y + (viewport.height - EDGE_SHADOW_HEIGHT) / 2)
+
+    # Left shadow: 100% black at outer edge -> 0% at inner edge
+    rl.draw_rectangle_gradient_h(int(viewport.x), shadow_y,
+                                 EDGE_SHADOW_WIDTH, EDGE_SHADOW_HEIGHT,
+                                 rl.Color(0, 0, 0, 255), rl.Color(0, 0, 0, 0))
+
+    # Right shadow: 0% at inner edge -> 100% black at outer edge
+    right_x = int(viewport.x + viewport.width - EDGE_SHADOW_WIDTH)
+    rl.draw_rectangle_gradient_h(right_x, shadow_y,
+                                 EDGE_SHADOW_WIDTH, EDGE_SHADOW_HEIGHT,
+                                 rl.Color(0, 0, 0, 0), rl.Color(0, 0, 0, 255))
+
+
 class Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = True, spacing: int = ITEM_SPACING,
                line_separator: bool = False, pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING,
-               scroll_indicator: bool = True):
+               scroll_indicator: bool = True, edge_shadows: bool = False):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
@@ -109,6 +133,7 @@ class Scroller(Widget):
 
     self._show_scroll_indicator = scroll_indicator
     self._scroll_indicator = ScrollIndicator()
+    self._edge_shadows = EdgeShadow() if edge_shadows else None
 
     for item in items:
       self.add_widget(item)
@@ -286,7 +311,11 @@ class Scroller(Widget):
 
     rl.end_scissor_mode()
 
-    # Draw scroll indicator
+    # Draw edge shadows on top of scroller content
+    if self._edge_shadows is not None and self._horizontal:
+      self._edge_shadows.draw(self._rect)
+
+    # Draw scroll indicator on top of edge shadows
     if self._show_scroll_indicator and self._horizontal and len(self._visible_items) > 0:
       self._scroll_indicator.update(self._scroll_offset, self._content_size, self._rect)
       self._scroll_indicator.render()
