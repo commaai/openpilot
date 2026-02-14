@@ -57,6 +57,7 @@ class Script:
     """Add a setup function to be called immediately followed by a delay of the given number of frames."""
     self.add(ScriptEvent(setup=fn), after=wait_after)
 
+  # TODO: Also add more complex gestures, like swipe or drag
   def click(self, x: int, y: int, wait_after: int = WAIT, wait_between: int = 0) -> None:
     """Add a click event to the script for the given position and specify frames to wait between mouse events or after the click."""
     from openpilot.system.ui.lib.application import MouseEvent, MousePos
@@ -73,6 +74,7 @@ def build_mici_script(ctx: ReplayContext, script: Script) -> None:
 
   center = (gui_app.width // 2, gui_app.height // 2)
 
+  # TODO: Explore more
   script.wait(FPS)
   script.click(*center, FPS)  # Open settings
   script.click(*center, FPS)  # Open toggles
@@ -81,6 +83,9 @@ def build_mici_script(ctx: ReplayContext, script: Script) -> None:
 
 def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
   """Build the replay script for the tizi layout."""
+
+  # TODO: Explore more (keyboard states, advanced network panel, experimental mode description, alpha long modal, etc.)
+  # TODO: We could also scroll down each panel to see all the settings
 
   def make_home_refresh_setup(fn: Callable) -> Callable:
     """Return setup function that calls the given function to modify state and forces an immediate refresh on the home layout."""
