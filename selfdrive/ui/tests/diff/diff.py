@@ -152,6 +152,9 @@ def main():
 
   args = parser.parse_args()
 
+  if not args.output.lower().endswith('.html'):
+    args.output += '.html'
+
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
   print("=" * 60)
