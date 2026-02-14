@@ -32,7 +32,7 @@ class ReplayContext:
     return self.send_fn
 
 
-def run_replay(variant):
+def run_replay(variant: str) -> None:
   from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
   from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
   from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
