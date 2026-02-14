@@ -15,7 +15,6 @@ def device(String ip, String step_label, String cmd) {
 ssh -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec /usr/bin/bash <<'END'
 
 set -e
-set -x
 
 export TERM=xterm-256color
 
@@ -42,7 +41,6 @@ if [ -f /TICI ]; then
   source /etc/profile
 
   rm -rf /tmp/scons_cache
-  scons -c || true
   rm -rf /tmp/tmp*
   rm -rf ~/.commacache
   rm -rf /dev/shm/*
