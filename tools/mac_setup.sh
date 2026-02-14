@@ -47,7 +47,6 @@ brew "qt@5"
 brew "zeromq"
 cask "gcc-arm-embedded"
 brew "portaudio"
-brew "gcc@13"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
