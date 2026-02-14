@@ -23,7 +23,8 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
-                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_NO_SECRETS,
+                                                    NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
                                                     NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState)
 
@@ -234,6 +235,10 @@ class WifiManager:
     return self._current_network_metered
 
   @property
+  def connecting_to_ssid(self) -> str:
+    return self._connecting_to_ssid
+
+  @property
   def tethering_password(self) -> str:
     return self._tethering_password
 
@@ -315,7 +320,10 @@ class WifiManager:
           new_state, previous_state, change_reason = state_q.popleft().body
 
           # BAD PASSWORD
-          if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
+          # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
+          # - weak/gone network fails with FAILED+NO_SECRETS
+          if len(self._connecting_to_ssid) and ((new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT) or
+                                                (new_state == NMDeviceState.FAILED and change_reason == NM_DEVICE_STATE_REASON_NO_SECRETS)):
             self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
             self.forget_connection(self._connecting_to_ssid, block=True)
             self._connecting_to_ssid = ""
