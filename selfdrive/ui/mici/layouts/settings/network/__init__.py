@@ -163,23 +163,22 @@ class NetworkLayoutMici(NavWidget):
     connecting_ssid = self._wifi_manager.connecting_to_ssid
     connected_network = next((network for network in networks if network.is_connected), None)
     if connecting_ssid:
+      display_network = next((n for n in networks if n.ssid == connecting_ssid), None)
       self._wifi_button.set_text(normalize_ssid(connecting_ssid))
       self._wifi_button.set_value("connecting...")
-      self._wifi_button.set_icon(self._wifi_slash_txt)
     elif connected_network is not None:
+      display_network = connected_network
       self._wifi_button.set_text(normalize_ssid(connected_network.ssid))
       self._wifi_button.set_value(self._wifi_manager.ipv4_address or "not connected")
-      strength = WifiIcon.get_strength_icon_idx(connected_network.strength)
-      if strength == 2:
-        strength_icon = self._wifi_full_txt
-      elif strength == 1:
-        strength_icon = self._wifi_medium_txt
-      else:
-        strength_icon = self._wifi_low_txt
-      self._wifi_button.set_icon(strength_icon)
     else:
+      display_network = None
       self._wifi_button.set_text("wi-fi")
       self._wifi_button.set_value("not connected")
+
+    if display_network is not None:
+      strength = WifiIcon.get_strength_icon_idx(display_network.strength)
+      self._wifi_button.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
+    else:
       self._wifi_button.set_icon(self._wifi_slash_txt)
 
     # Update network metered
