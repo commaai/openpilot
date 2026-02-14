@@ -167,6 +167,7 @@ class WifiManager:
     # State
     self._connections: dict[str, str] = {}  # ssid -> connection path, updated via NM signals
     self._connecting_to_ssid: str = ""
+    self._prev_connecting_to_ssid: str = ""
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
@@ -241,6 +242,10 @@ class WifiManager:
   @property
   def tethering_password(self) -> str:
     return self._tethering_password
+
+  def _set_connecting(self, ssid: str):
+    self._prev_connecting_to_ssid = self._connecting_to_ssid
+    self._connecting_to_ssid = ssid
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
@@ -319,23 +324,29 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
-          # BAD PASSWORD
+          # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
           # - weak/gone network fails with FAILED+NO_SECRETS
-          if len(self._connecting_to_ssid) and ((new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT) or
-                                                (new_state == NMDeviceState.FAILED and change_reason == NM_DEVICE_STATE_REASON_NO_SECRETS)):
-            self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
-            self.forget_connection(self._connecting_to_ssid, block=True)
-            self._connecting_to_ssid = ""
+          if ((new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT) or
+              (new_state == NMDeviceState.FAILED and change_reason == NM_DEVICE_STATE_REASON_NO_SECRETS)):
+            failed_ssid = self._prev_connecting_to_ssid or self._connecting_to_ssid
+            if failed_ssid:
+              self._enqueue_callbacks(self._need_auth, failed_ssid)
+              self.forget_connection(failed_ssid, block=True)
+              self._prev_connecting_to_ssid = ""
+              if self._connecting_to_ssid == failed_ssid:
+                self._connecting_to_ssid = ""
 
           elif new_state == NMDeviceState.ACTIVATED:
             if len(self._activated):
               self._update_networks()
             self._enqueue_callbacks(self._activated)
+            self._prev_connecting_to_ssid = ""
             self._connecting_to_ssid = ""
 
           elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
             self._enqueue_callbacks(self._forgotten, self._connecting_to_ssid)
+            self._prev_connecting_to_ssid = ""
             self._connecting_to_ssid = ""
 
   def _network_scanner(self):
@@ -447,9 +458,10 @@ class WifiManager:
     self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
+    self._set_connecting(ssid)
+
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
-      self._connecting_to_ssid = ssid
       self.forget_connection(ssid, block=True)
 
       connection = {
@@ -503,6 +515,8 @@ class WifiManager:
       threading.Thread(target=worker, daemon=True).start()
 
   def activate_connection(self, ssid: str, block: bool = False):
+    self._set_connecting(ssid)
+
     def worker():
       conn_path = self._connections.get(ssid, None)
       if conn_path is not None:
@@ -510,7 +524,6 @@ class WifiManager:
           cloudlog.warning("No WiFi device found")
           return
 
-        self._connecting_to_ssid = ssid
         self._router_main.send(new_method_call(self._nm, 'ActivateConnection', 'ooo',
                                                (conn_path, self._wifi_device, "/")))
 
