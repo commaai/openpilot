@@ -14,8 +14,8 @@ from openpilot.selfdrive.ui.tests.diff.replay_setup import initialize_params
 
 LayoutVariant = Literal["mici", "tizi"]
 
-HEADLESS = os.getenv("WINDOWED", "0") != "1"
 FPS = 60
+HEADLESS = os.getenv("WINDOWED", "0") != "1"
 
 
 class ReplayContext:
