@@ -12,7 +12,7 @@ if __name__=="__main__":
   from rednose.helpers.ekf_sym import gen_code
   from rednose.helpers.sympy_helpers import euler_rotate, rot_to_euler
 else:
-  from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx
+  from rednose.helpers.ekf_sym import EKF_sym as EKF_sym_pyx
 
 EARTH_G = 9.81
 
