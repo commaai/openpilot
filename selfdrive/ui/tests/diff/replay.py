@@ -11,16 +11,6 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
 from openpilot.selfdrive.ui.tests.diff.replay_setup import initialize_params
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--big', action='store_true', help='Use big UI layout (tizi/tici) instead of mici layout')
-args = parser.parse_args()
-
-variant = 'tizi' if args.big else 'mici'
-
-if args.big:
-  os.environ["BIG"] = "1"
-os.environ["RECORD"] = "1"
-os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ.get("RECORD_OUTPUT", f"{variant}_ui_replay.mp4"))
 
 HEADLESS = os.getenv("WINDOWED", "0") != "1"
 FPS = 60
@@ -66,7 +56,7 @@ def run_replay(variant):
   # Create context and build script
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
   context = ReplayContext(pm, main_layout)
-  script = build_script(context, big=args.big)
+  script = build_script(context, variant)
   script_index = 0
 
   frame = 0
@@ -111,6 +101,17 @@ def run_replay(variant):
 
 
 def main():
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--big', action='store_true', help='Use big UI layout (tizi/tici) instead of mici layout')
+  args = parser.parse_args()
+
+  variant = 'tizi' if args.big else 'mici'
+
+  if args.big:
+    os.environ["BIG"] = "1"
+  os.environ["RECORD"] = "1"
+  os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ.get("RECORD_OUTPUT", f"{variant}_ui_replay.mp4"))
+
   print(f"Running '{variant}' replay...")
   with OpenpilotPrefix():
     sources = ["openpilot.system.ui"]
@@ -120,7 +121,7 @@ def main():
     else:
       sources.extend(["openpilot.selfdrive.ui.layouts", "openpilot.selfdrive.ui.onroad", "openpilot.selfdrive.ui.widgets"])
       omit = ["**/*mici*"]  # exclude files containing "mici"
-    cov = coverage.coverage(source=sources, omit=omit)
+    cov = coverage.Coverage(source=sources, omit=omit)
     with cov.collect():
       run_replay(variant)
     cov.save()

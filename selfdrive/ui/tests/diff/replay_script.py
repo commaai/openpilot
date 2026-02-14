@@ -150,12 +150,12 @@ def build_tizi_script(ctx: ReplayContext, script: Script):
   script.end()
 
 
-def build_script(context: ReplayContext, big=False) -> list[ScriptEntry]:
+def build_script(context: ReplayContext, variant: str) -> list[ScriptEntry]:
   """Build the replay script for the appropriate layout variant and return list of script entries."""
-  print(f"Building replay script (big={big})...")
+  print(f"Building {variant} replay script...")
 
   script = Script(FPS)
-  builder = build_tizi_script if big else build_mici_script
+  builder = build_tizi_script if variant == 'tizi' else build_mici_script
   builder(context, script)
 
   print(f"Built replay script with {len(script.entries)} events and {script.frame} frames ({script.get_frame_time():.2f} seconds)")
