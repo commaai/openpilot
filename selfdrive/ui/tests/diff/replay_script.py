@@ -60,6 +60,7 @@ class Script:
   # TODO: Also add more complex gestures, like swipe or drag
   def click(self, x: int, y: int, wait_after: int = WAIT, wait_between: int = 2) -> None:
     """Add a click event to the script for the given position and specify frames to wait between mouse events or after the click."""
+    # NOTE: By default we wait a couple frames between mouse events so pressed states will be rendered
     from openpilot.system.ui.lib.application import MouseEvent, MousePos
 
     mouse_down = MouseEvent(pos=MousePos(x, y), slot=0, left_pressed=True, left_released=False, left_down=False, t=self.get_frame_time())
