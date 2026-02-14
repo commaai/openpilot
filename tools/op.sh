@@ -143,6 +143,12 @@ function op_check_os() {
     fi
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
+    if [[ "$(uname -m)" == "x86_64" ]]; then
+      echo -e " ↳ [${RED}✗${NC}] Intel-based Macs are not supported!"
+      echo "       openpilot requires an Apple Silicon Mac (M1 or newer)."
+      loge "ERROR_INTEL_MAC"
+      return 1
+    fi
     echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"

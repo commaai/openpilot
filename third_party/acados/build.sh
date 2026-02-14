@@ -16,7 +16,7 @@ fi
 ACADOS_FLAGS="-DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_TARGET"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64 -DCMAKE_MACOSX_RPATH=1"
+  ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_MACOSX_RPATH=1"
   ARCHNAME="Darwin"
 fi
 
@@ -57,8 +57,7 @@ fi
 cd $DIR/acados_repo/interfaces/acados_template/tera_renderer/
 if [[ "$OSTYPE" == "darwin"* ]]; then
   cargo build --verbose --release --target aarch64-apple-darwin
-  cargo build --verbose --release --target x86_64-apple-darwin
-  lipo -create -output target/release/t_renderer target/x86_64-apple-darwin/release/t_renderer target/aarch64-apple-darwin/release/t_renderer
+  cp target/aarch64-apple-darwin/release/t_renderer target/release/t_renderer
 else
   cargo build --verbose --release
 fi
