@@ -319,14 +319,11 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
-          # BAD PASSWORD - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
-          if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
-            self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
-            self.forget_connection(self._connecting_to_ssid, block=True)
-            self._connecting_to_ssid = ""
-
-          # BAD PASSWORD - weak/gone network fails with FAILED+NO_SECRETS
-          elif new_state == NMDeviceState.FAILED and change_reason == NM_DEVICE_STATE_REASON_NO_SECRETS and len(self._connecting_to_ssid):
+          # BAD PASSWORD
+          # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
+          # - weak/gone network fails with FAILED+NO_SECRETS
+          if len(self._connecting_to_ssid) and ((new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT) or
+                                                (new_state == NMDeviceState.FAILED and change_reason == NM_DEVICE_STATE_REASON_NO_SECRETS)):
             self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
             self.forget_connection(self._connecting_to_ssid, block=True)
             self._connecting_to_ssid = ""
