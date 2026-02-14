@@ -453,16 +453,13 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _on_activated(self):
     self._connecting = None
-    print('WifiUi: activated, clearing connecting')
 
   def _on_forgotten(self, ssid):
     if self._connecting == ssid:
-      print('WifiUi: forgotten, clearing connecting', ssid)
       self._connecting = None
 
   def _on_disconnected(self):
     self._connecting = None
-    print('WifiUi: disconnected, clearing connecting')
 
   def _render(self, _):
     super()._render(_)
