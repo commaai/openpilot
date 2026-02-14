@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -150,7 +150,7 @@ def build_tizi_script(ctx: ReplayContext, script: Script):
   script.end()
 
 
-def build_script(context: ReplayContext, variant: str) -> list[ScriptEntry]:
+def build_script(context: ReplayContext, variant: Literal['mici', 'tizi']) -> list[ScriptEntry]:
   """Build the replay script for the appropriate layout variant and return list of script entries."""
   print(f"Building {variant} replay script...")
 
