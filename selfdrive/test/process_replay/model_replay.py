@@ -204,7 +204,8 @@ def get_frames():
   if os.path.isfile(cache_name) and not regen_cache:
     try:
       print(f"Loading frames from cache {cache_name}")
-      return pickle.load(open(cache_name, "rb"))
+      with open(cache_name, "rb") as f:
+        return pickle.load(f)
     except Exception as e:
       print(f"Failed to load frames from cache {cache_name}: {e}")
 
@@ -218,7 +219,8 @@ def get_frames():
       fr.get(fidx)
     fr.it = None
   print(f"Dumping frame cache {cache_name}")
-  pickle.dump(frs, open(cache_name, "wb"))
+  with open(cache_name, "wb") as f:
+    pickle.dump(frs, f)
   return frs
 
 if __name__ == "__main__":

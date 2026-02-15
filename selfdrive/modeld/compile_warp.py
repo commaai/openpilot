@@ -169,7 +169,8 @@ def compile_modeld_warp(cam_w, cam_h):
     pickle.dump(update_img_jit, f)
   print(f"  Saved to {pkl_path}")
 
-  jit = pickle.load(open(pkl_path, "rb"))
+  with open(pkl_path, "rb") as f:
+    jit = pickle.load(f)
   jit(*inputs)
 
 

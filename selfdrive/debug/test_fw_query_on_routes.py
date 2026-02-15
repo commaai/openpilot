@@ -24,7 +24,8 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   if os.path.exists(args.route):
-    routes = list(open(args.route))
+    with open(args.route) as f:
+      routes = list(f)
   else:
     routes = [args.route]
 
