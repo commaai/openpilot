@@ -7,14 +7,13 @@ import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
-from openpilot.selfdrive.test.helpers import processes_context
 from openpilot.system.camerad.snapshot import get_snapshots
 
 TEST_TIMESPAN = 10
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
-EXPOSURE_TEST_TIME = 25
 EXPOSURE_STABLE_COUNT = 3
 EXPOSURE_RANGE = (0.15, 0.35)
+MAX_TEST_TIME = 25
 
 
 def _numpy_rgb2gray(im):
@@ -24,6 +23,16 @@ def _exposure_stats(im):
   h, w = im.shape[:2]
   gray = _numpy_rgb2gray(im[h//10:9*h//10, w//10:9*w//10])
   return float(np.median(gray) / 255.), float(np.mean(gray) / 255.)
+
+def _in_range(median, mean):
+  lo, hi = EXPOSURE_RANGE
+  return lo < median < hi and lo < mean < hi
+
+def _exposure_stable(results):
+  return all(
+    len(v) >= EXPOSURE_STABLE_COUNT and all(_in_range(*s) for s in v[-EXPOSURE_STABLE_COUNT:])
+    for v in results.values()
+  )
 
 
 def run_and_log(procs, services, duration):
@@ -47,40 +56,56 @@ def run_and_log(procs, services, duration):
   return logs
 
 @pytest.fixture(scope="module")
-def logs():
-  logs = run_and_log(["camerad", ], CAMERAS, TEST_TIMESPAN)
-  ts = msgs_to_time_series(logs)
+def _camera_session():
+  """Single camerad session that collects logs and exposure data.
+     Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
+  managed_processes["camerad"].start()
+  try:
+    socks = [messaging.sub_sock(s, conflate=False, timeout=100) for s in CAMERAS]
+    raw_logs = []
+    exposure = {cam: [] for cam in CAMERAS}
+
+    start = time.monotonic()
+    while time.monotonic() - start < MAX_TEST_TIME:
+      for s in socks:
+        raw_logs.extend(messaging.drain_sock(s))
+
+      rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
+      wpic, _ = get_snapshots(frame="wideRoadCameraState")
+      for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
+        exposure[cam].append(_exposure_stats(img))
+
+      elapsed = time.monotonic() - start
+      if elapsed >= TEST_TIMESPAN and _exposure_stable(exposure):
+        break
+
+    # final log drain
+    for s in socks:
+      raw_logs.extend(messaging.drain_sock(s))
+    assert managed_processes["camerad"].proc.is_alive()
+  finally:
+    managed_processes["camerad"].stop()
+
+  elapsed = time.monotonic() - start
+  ts = msgs_to_time_series(raw_logs)
 
   for cam in CAMERAS:
-    expected_frames = SERVICE_LIST[cam].frequency * TEST_TIMESPAN
+    expected_frames = SERVICE_LIST[cam].frequency * elapsed
     cnt = len(ts[cam]['t'])
     assert expected_frames*0.8 < cnt < expected_frames*1.2, f"unexpected frame count {cam}: {expected_frames=}, got {cnt}"
 
     dts = np.abs(np.diff([ts[cam]['timestampSof']/1e6]) - 1000/SERVICE_LIST[cam].frequency)
     assert (dts < 1.0).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
-  return ts
 
-def _in_range(median, mean):
-  lo, hi = EXPOSURE_RANGE
-  return lo < median < hi and lo < mean < hi
+  return ts, exposure
 
 @pytest.fixture(scope="module")
-def exposure_data():
-  with processes_context(['camerad']):
-    results = {cam: [] for cam in CAMERAS}
-    start = time.monotonic()
-    while time.monotonic() - start < EXPOSURE_TEST_TIME:
-      rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
-      wpic, _ = get_snapshots(frame="wideRoadCameraState")
-      for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
-        results[cam].append(_exposure_stats(img))
-      # stop once all cameras have stabilized
-      if all(
-        len(v) >= EXPOSURE_STABLE_COUNT and all(_in_range(*s) for s in v[-EXPOSURE_STABLE_COUNT:])
-        for v in results.values()
-      ):
-        break
-  return results
+def logs(_camera_session):
+  return _camera_session[0]
+
+@pytest.fixture(scope="module")
+def exposure_data(_camera_session):
+  return _camera_session[1]
 
 @pytest.mark.tici
 class TestCamerad:
