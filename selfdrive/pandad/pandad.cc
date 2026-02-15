@@ -31,7 +31,7 @@ bool check_connected(Panda *panda) {
   return true;
 }
 
-Panda *connect(std::string serial="") {
+Panda *connect(std::string serial) {
   std::unique_ptr<Panda> panda;
   try {
     panda = std::make_unique<Panda>(serial);
