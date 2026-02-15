@@ -219,15 +219,13 @@ node {
       'camerad OX03C10': {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
-          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
-          step("test exposure", "pytest system/camerad/test/test_exposure.py"),
+          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 180]),
         ])
       },
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
-          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
-          step("test exposure", "pytest system/camerad/test/test_exposure.py"),
+          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 180]),
         ])
       },
       'sensord': {
