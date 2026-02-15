@@ -342,6 +342,8 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
   if service is None or service not in SERVICE_LIST:
     raise Exception("invalid service")
 
+  timeout = max(0, min(timeout, 10000))
+
   socket = messaging.sub_sock(service, timeout=timeout)
   try:
     ret = messaging.recv_one(socket)
@@ -387,6 +389,8 @@ def scan_dir(path: str, prefix: str) -> list[str]:
 
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> list[str]:
+  if '..' in prefix or prefix.startswith('/'):
+    raise Exception("invalid prefix")
   return scan_dir(Paths.log_root(), prefix)
 
 
@@ -467,6 +471,9 @@ def cancelUpload(upload_id: str | list[str]) -> dict[str, int | str]:
 
 @dispatcher.add_method
 def setRouteViewed(route: str) -> dict[str, int | str]:
+  if len(route) == 0 or len(route) > 200:
+    raise Exception("invalid route")
+
   # maintain a list of the last 10 routes viewed in connect
   params = Params()
 
