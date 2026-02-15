@@ -3,7 +3,6 @@
 #include <atomic>
 #include <cstdint>
 #include <mutex>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -18,6 +17,9 @@ public:
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
 
+  PandaSpiHandle(std::string serial);
+  ~PandaSpiHandle();
+
   int control_write(uint8_t request, uint16_t param1, uint16_t param2, unsigned int timeout=TIMEOUT);
   int control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout=TIMEOUT);
   int bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
@@ -25,13 +27,6 @@ public:
   void cleanup();
 
   static std::vector<std::string> list();
-
-#ifdef __APPLE__
-  PandaSpiHandle(std::string serial) { throw std::runtime_error("SPI not supported on macOS"); }
-  ~PandaSpiHandle() {}
-#else
-  PandaSpiHandle(std::string serial);
-  ~PandaSpiHandle();
 
 private:
   int spi_fd = -1;
@@ -54,5 +49,4 @@ private:
 
   spi_header header;
   uint32_t xfer_count = 0;
-#endif
 };
