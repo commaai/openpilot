@@ -62,7 +62,7 @@ def find_differences(video1, video2):
     return different_frames, len(frames1)
 
 
-def generate_html_report(video1, video2, basedir, different_frames, total_frames):
+def generate_html_report(video1, video2, basedir, different_frames, total_frames, diff_video_name):
   chunks = []
   if different_frames:
     current_chunk = [different_frames[0]]
@@ -100,7 +100,7 @@ def generate_html_report(video1, video2, basedir, different_frames, total_frames
 <td width='33%'>
   <p><strong>Pixel Diff</strong></p>
   <video id='diffVideo' width='100%' autoplay muted loop>
-    <source src='{os.path.join(basedir, 'diff.mp4')}' type='video/mp4'>
+    <source src='{os.path.join(basedir, diff_video_name)}' type='video/mp4'>
     Your browser does not support the video tag.
   </video>
 </td>
@@ -152,6 +152,9 @@ def main():
 
   args = parser.parse_args()
 
+  if not args.output.lower().endswith('.html'):
+    args.output += '.html'
+
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
   print("=" * 60)
@@ -162,8 +165,9 @@ def main():
   print(f"Output: {args.output}")
   print()
 
-  # Create diff video
-  diff_video_path = os.path.join(os.path.dirname(args.output), DIFF_OUT_DIR / "diff.mp4")
+  # Create diff video with name derived from output HTML
+  diff_video_name = Path(args.output).stem + '.mp4'
+  diff_video_path = str(DIFF_OUT_DIR / diff_video_name)
   create_diff_video(args.video1, args.video2, diff_video_path)
 
   different_frames, total_frames = find_differences(args.video1, args.video2)
@@ -173,7 +177,7 @@ def main():
 
   print()
   print("Generating HTML report...")
-  html = generate_html_report(args.video1, args.video2, args.basedir, different_frames, total_frames)
+  html = generate_html_report(args.video1, args.video2, args.basedir, different_frames, total_frames, diff_video_name)
 
   with open(DIFF_OUT_DIR / args.output, 'w') as f:
     f.write(html)

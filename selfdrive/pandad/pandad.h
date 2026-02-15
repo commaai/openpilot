@@ -1,16 +1,15 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include "common/params.h"
 #include "selfdrive/pandad/panda.h"
 
-void pandad_main_thread(std::vector<std::string> serials);
+void pandad_main_thread(std::string serial);
 
 class PandaSafety {
 public:
-  PandaSafety(const std::vector<Panda *> &pandas) : pandas_(pandas) {}
+  PandaSafety(Panda *panda) : panda_(panda) {}
   void configureSafetyMode(bool is_onroad);
 
 private:
@@ -22,6 +21,6 @@ private:
   bool log_once_ = false;
   bool safety_configured_ = false;
   bool prev_obd_multiplexing_ = false;
-  std::vector<Panda *> pandas_;
+  Panda *panda_;
   Params params_;
 };

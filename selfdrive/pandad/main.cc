@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     assert(err == 0);
   }
 
-  std::vector<std::string> serials(argv + 1, argv + argc);
-  pandad_main_thread(serials);
+  std::string serial = (argc > 1) ? argv[1] : "";
+  pandad_main_thread(serial);
   return 0;
 }
