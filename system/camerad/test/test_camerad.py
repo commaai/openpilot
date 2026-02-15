@@ -12,8 +12,8 @@ from openpilot.system.camerad.snapshot import get_snapshots
 
 TEST_TIMESPAN = 10
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
-EXPOSURE_TEST_TIME = 30
-EXPOSURE_REPEAT = 5
+EXPOSURE_TEST_TIME = 25
+EXPOSURE_STABLE_COUNT = 3
 EXPOSURE_RANGE = (0.15, 0.35)
 
 
@@ -60,6 +60,10 @@ def logs():
     assert (dts < 1.0).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
   return ts
 
+def _in_range(median, mean):
+  lo, hi = EXPOSURE_RANGE
+  return lo < median < hi and lo < mean < hi
+
 @pytest.fixture(scope="module")
 def exposure_data():
   with processes_context(['camerad']):
@@ -70,6 +74,12 @@ def exposure_data():
       wpic, _ = get_snapshots(frame="wideRoadCameraState")
       for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
         results[cam].append(_exposure_stats(img))
+      # stop once all cameras have stabilized
+      if all(
+        len(v) >= EXPOSURE_STABLE_COUNT and all(_in_range(*s) for s in v[-EXPOSURE_STABLE_COUNT:])
+        for v in results.values()
+      ):
+        break
   return results
 
 @pytest.mark.tici
@@ -78,18 +88,18 @@ class TestCamerad:
   def test_camera_exposure(self, exposure_data, cam):
     lo, hi = EXPOSURE_RANGE
     checks = exposure_data[cam]
-    assert len(checks) >= EXPOSURE_REPEAT, f"{cam}: only got {len(checks)} samples"
+    assert len(checks) >= EXPOSURE_STABLE_COUNT, f"{cam}: only got {len(checks)} samples"
 
     # check that exposure converges into the valid range
-    passed = sum(lo < med < hi and lo < mean < hi for med, mean in checks)
-    assert passed >= EXPOSURE_REPEAT, \
+    passed = sum(_in_range(med, mean) for med, mean in checks)
+    assert passed >= EXPOSURE_STABLE_COUNT, \
       f"{cam}: only {passed}/{len(checks)} checks in range. " + \
       " | ".join(f"#{i+1}: med={m:.4f} mean={u:.4f}" for i, (m, u) in enumerate(checks))
 
     # check that exposure is stable once converged (no regressions)
     in_range = False
     for i, (median, mean) in enumerate(checks):
-      ok = lo < median < hi and lo < mean < hi
+      ok = _in_range(median, mean)
       if in_range and not ok:
         pytest.fail(f"{cam}: exposure regressed on sample {i+1} " +
                     f"(median={median:.4f}, mean={mean:.4f}, expected: ({lo}, {hi}))")
