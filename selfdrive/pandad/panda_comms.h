@@ -3,28 +3,17 @@
 #include <atomic>
 #include <cstdint>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 #include <vector>
-
-#include <linux/spi/spidev.h>
 
 
 #define TIMEOUT 0
 #define SPI_BUF_SIZE 2048
 
 
-struct __attribute__((packed)) spi_header {
-  uint8_t sync;
-  uint8_t endpoint;
-  uint16_t tx_len;
-  uint16_t max_rx_len;
-};
-
 class PandaSpiHandle {
 public:
-  PandaSpiHandle(std::string serial);
-  ~PandaSpiHandle();
-
   std::string hw_serial;
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
@@ -37,18 +26,33 @@ public:
 
   static std::vector<std::string> list();
 
+#ifdef __APPLE__
+  PandaSpiHandle(std::string serial) { throw std::runtime_error("SPI not supported on macOS"); }
+  ~PandaSpiHandle() {}
+#else
+  PandaSpiHandle(std::string serial);
+  ~PandaSpiHandle();
+
 private:
   int spi_fd = -1;
   uint8_t tx_buf[SPI_BUF_SIZE];
   uint8_t rx_buf[SPI_BUF_SIZE];
   inline static std::recursive_mutex hw_lock;
 
+  struct __attribute__((packed)) spi_header {
+    uint8_t sync;
+    uint8_t endpoint;
+    uint16_t tx_len;
+    uint16_t max_rx_len;
+  };
+
   int wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, unsigned int length);
   int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len, unsigned int timeout);
   int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
   int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
-  int lltransfer(spi_ioc_transfer &t);
+  int lltransfer(struct spi_ioc_transfer &t);
 
   spi_header header;
   uint32_t xfer_count = 0;
+#endif
 };

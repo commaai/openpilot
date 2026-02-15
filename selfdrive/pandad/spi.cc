@@ -1,3 +1,4 @@
+#ifndef __APPLE__
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
@@ -406,3 +407,4 @@ fail:
   if (ret >= 0) ret = -1;
   return ret;
 }
+#endif
