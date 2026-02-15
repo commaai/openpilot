@@ -1,4 +1,5 @@
 #include "tools/cabana/streams/devicestream.h"
+#include "tools/cabana/streams/subsocketadapter.h"
 
 #include <memory>
 #include <string>
@@ -20,9 +21,14 @@ DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(addre
 void DeviceStream::streamThread() {
   zmq_address.isEmpty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
 
-  std::unique_ptr<Context> context(Context::create());
-  std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
-  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address, false, true, services.at("can").queue_size));
+  std::unique_ptr<SubSocketAdapter> sock;
+
+  if (zmq_address.isEmpty()) {
+    sock = std::make_unique<MsgqSubSocketAdapter>("can", "127.0.0.1", false, true, services.at("can").queue_size);
+  } else {
+    sock = std::make_unique<ZmqSubSocketAdapter>("can", zmq_address.toStdString(), false, true);
+  }
+
   assert(sock != NULL);
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
