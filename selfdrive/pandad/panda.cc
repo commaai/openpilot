@@ -12,7 +12,7 @@
 
 const bool PANDAD_MAXOUT = getenv("PANDAD_MAXOUT") != nullptr;
 
-Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
+Panda::Panda(std::string serial) {
   // try USB first, then SPI
   try {
     handle = std::make_unique<PandaUsbHandle>(serial);
@@ -195,7 +195,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   for (const auto &cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
-    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_OFFSET)) {
+    if (bus >= PANDA_BUS_OFFSET) {
       continue;
     }
     auto can_data = cmsg.getDat();
@@ -207,7 +207,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     header.addr = cmsg.getAddress();
     header.extended = (cmsg.getAddress() >= 0x800) ? 1 : 0;
     header.data_len_code = data_len_code;
-    header.bus = bus - bus_offset;
+    header.bus = bus;
     header.checksum = 0;
 
     memcpy(&send_buf[pos], (uint8_t *)&header, sizeof(can_header));
@@ -283,7 +283,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
 
     can_frame &canData = out_vec.emplace_back();
     canData.address = header.addr;
-    canData.src = header.bus + bus_offset;
+    canData.src = header.bus;
     if (header.rejected) {
       canData.src += CAN_REJECTED_BUS_OFFSET;
     }

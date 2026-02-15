@@ -216,12 +216,6 @@ node {
           step("test manager", "pytest system/manager/test/test_manager.py"),
         ])
       },
-      'loopback': {
-        deviceStage("loopback", "tizi-loopback", ["UNSAFE=1"], [
-          step("build openpilot", "cd system/manager && ./build.py"),
-          step("test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
-        ])
-      },
       'camerad OX03C10': {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
@@ -251,11 +245,9 @@ node {
       'tizi': {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           step("build openpilot", "cd system/manager && ./build.py"),
-          step("test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
+          step("test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
           step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
-          // TODO: enable once new AGNOS is available
-          // step("test esim", "pytest system/hardware/tici/tests/test_esim.py"),
           step("test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py", [diffPaths: ["system/qcomgpsd/"]]),
         ])
       },
