@@ -659,7 +659,7 @@ wheels = [
 [[package]]
 name = "metadrive-simulator"
 version = "0.4.2.3"
-source = { git = "https://github.com/commaai/metadrive.git?rev=less-deps#71d86130a5f515935d1192e0c0b102fbde37d28c" }
+source = { git = "https://github.com/commaai/metadrive.git?rev=minimal#2716f55a9c7b928ce957a497a15c2c19840c08bc" }
 dependencies = [
     { name = "numpy" },
     { name = "panda3d" },
@@ -921,7 +921,7 @@ requires-dist = [
     { name = "libusb1" },
     { name = "mapbox-earcut" },
     { name = "matplotlib", marker = "extra == 'dev'" },
-    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", git = "https://github.com/commaai/metadrive.git?rev=less-deps" },
+    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", git = "https://github.com/commaai/metadrive.git?rev=minimal" },
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "onnx", specifier = ">=1.14.0" },
