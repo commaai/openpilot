@@ -7,10 +7,11 @@ on:
     types: [assigned, opened, synchronize, reopened, edited]
     branches:
       - 'master'
-    paths:
+    paths:  # TODO: remove workflow path before merging
       - 'selfdrive/assets/**'
       - 'selfdrive/ui/**'
       - 'system/ui/**'
+      - '.github/workflows/ui_preview.yaml'
   workflow_dispatch:
 
 env:
@@ -127,7 +128,7 @@ jobs:
             if [ $diff_exit_code -eq 0 ]; then
               COMMENT+="**${name}**: Videos are identical! [View Diff Report]($REPORT_URL)"$'\n'
             else
-              COMMENT+="**${name}**: <strong>Videos differ!</strong> [View Diff Report]($REPORT_URL)"$'\n'
+              COMMENT+="**${name}**: ⚠️ <strong>Videos differ!</strong> [View Diff Report]($REPORT_URL)"$'\n'
             fi
           done
 
