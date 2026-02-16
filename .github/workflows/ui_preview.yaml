@@ -1,0 +1,212 @@
+name: "raylib ui preview"
+on:
+  push:
+    branches:
+      - master
+  pull_request_target:
+    types: [assigned, opened, synchronize, reopened, edited]
+    branches:
+      - 'master'
+    paths:
+      - 'selfdrive/assets/**'
+      - 'selfdrive/ui/**'
+      - 'system/ui/**'
+  workflow_dispatch:
+
+env:
+  MICI_JOB_NAME: "Create mici raylib UI Report"
+  BIG_JOB_NAME: "Create big raylib UI Report"
+  REPORT_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
+  SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
+  BRANCH_NAME: "openpilot/pr-${{ github.event.number }}-raylib-ui"
+  MICI_MASTER_BRANCH: "openpilot_master_ui_mici_raylib"
+  BIG_MASTER_BRANCH: "openpilot_master_ui_big_raylib"
+  REPORT_FILES_BRANCH_NAME: "mici-raylib-ui-reports"
+
+jobs:
+  preview:
+    if: github.repository == 'commaai/openpilot'
+    name: preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Waiting for mici ui generation to end
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ env.SHA }}
+          check-name: ${{ env.MICI_JOB_NAME }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          allowed-conclusions: success
+          wait-interval: 20
+
+      - name: Waiting for big ui generation to end
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ env.SHA }}
+          check-name: ${{ env.BIG_JOB_NAME }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          allowed-conclusions: success
+          wait-interval: 20
+
+      - name: Getting workflow run ID
+        id: get_run_id
+        run: |
+          echo "run_id=$(curl https://api.github.com/repos/${{ github.repository }}/commits/${{ env.SHA }}/check-runs | jq -r '.check_runs[] | select(.name == "${{ env.MICI_JOB_NAME }}") | .html_url | capture("(?<number>[0-9]+)") | .number')" >> $GITHUB_OUTPUT
+
+      - name: Getting proposed mici ui
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          run_id: ${{ steps.get_run_id.outputs.run_id }}
+          search_artifacts: true
+          name: mici-raylib-report-1-${{ env.REPORT_NAME }}
+          path: ${{ github.workspace }}/pr_ui/mici
+
+      - name: Getting proposed big ui
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          run_id: ${{ steps.get_run_id.outputs.run_id }}
+          search_artifacts: true
+          name: big-raylib-report-1-${{ env.REPORT_NAME }}
+          path: ${{ github.workspace }}/pr_ui/big
+
+      - name: Getting mici master ui
+        uses: actions/checkout@v6
+        with:
+          repository: commaai/ci-artifacts
+          ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+          path: ${{ github.workspace }}/master_mici
+          ref: ${{ env.MICI_MASTER_BRANCH }}
+
+      - name: Getting big master ui
+        uses: actions/checkout@v6
+        with:
+          repository: commaai/ci-artifacts
+          ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+          path: ${{ github.workspace }}/master_big
+          ref: ${{ env.BIG_MASTER_BRANCH }}
+
+      - name: Saving new mici master ui
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        working-directory: ${{ github.workspace }}/master_mici
+        run: |
+          git checkout --orphan=new_branch
+          git rm -rf *
+          git branch -D ${{ env.MICI_MASTER_BRANCH }}
+          git branch -m ${{ env.MICI_MASTER_BRANCH }}
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          mv ${{ github.workspace }}/pr_ui/mici/* .
+          git add .
+          git commit -m "mici raylib video for commit ${{ env.SHA }}"
+          git push origin ${{ env.MICI_MASTER_BRANCH }} --force
+
+      - name: Saving new big master ui
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        working-directory: ${{ github.workspace }}/master_big
+        run: |
+          git checkout --orphan=new_branch
+          git rm -rf *
+          git branch -D ${{ env.BIG_MASTER_BRANCH }}
+          git branch -m ${{ env.BIG_MASTER_BRANCH }}
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          mv ${{ github.workspace }}/pr_ui/big/* .
+          git add .
+          git commit -m "big raylib video for commit ${{ env.SHA }}"
+          git push origin ${{ env.BIG_MASTER_BRANCH }} --force
+
+      - name: Setup FFmpeg
+        uses: AnimMouse/setup-ffmpeg@ae28d57dabbb148eff63170b6bf7f2b60062cbae
+
+      - name: Finding mici diff
+        if: github.event_name == 'pull_request_target'
+        id: find_mici_diff
+        run: |
+          mv "${{ github.workspace }}/pr_ui/mici/mici_ui_replay.mp4" "${{ github.workspace }}/pr_ui/mici/mici_ui_replay_proposed.mp4"
+          mv "${{ github.workspace }}/master_mici/mici_ui_replay.mp4" "${{ github.workspace }}/pr_ui/mici/mici_ui_replay_master.mp4"
+
+          export PYTHONPATH=${{ github.workspace }}
+          baseurl="https://github.com/commaai/ci-artifacts/raw/refs/heads/${{ env.BRANCH_NAME }}/mici"
+          diff_exit_code=0
+          python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "${{ github.workspace }}/pr_ui/mici/mici_ui_replay_master.mp4" "${{ github.workspace }}/pr_ui/mici/mici_ui_replay_proposed.mp4" "mici_diff.html" --basedir "$baseurl" --no-open || diff_exit_code=$?
+
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/mici_diff.html ${{ github.workspace }}/pr_ui/mici/
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/mici_diff.mp4 ${{ github.workspace }}/pr_ui/mici/
+
+          REPORT_URL="https://commaai.github.io/ci-artifacts/mici_diff_pr_${{ github.event.number }}.html"
+          if [ $diff_exit_code -eq 0 ]; then
+            DIFF="Videos are identical! [View Diff Report]($REPORT_URL)"
+          else
+            DIFF="<strong>Videos differ!</strong> [View Diff Report]($REPORT_URL)"
+          fi
+          echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
+
+      - name: Finding big diff
+        if: github.event_name == 'pull_request_target'
+        id: find_big_diff
+        run: |
+          mv "${{ github.workspace }}/pr_ui/big/tizi_ui_replay.mp4" "${{ github.workspace }}/pr_ui/big/tizi_ui_replay_proposed.mp4"
+          mv "${{ github.workspace }}/master_big/tizi_ui_replay.mp4" "${{ github.workspace }}/pr_ui/big/tizi_ui_replay_master.mp4"
+
+          export PYTHONPATH=${{ github.workspace }}
+          baseurl="https://github.com/commaai/ci-artifacts/raw/refs/heads/${{ env.BRANCH_NAME }}/big"
+          diff_exit_code=0
+          python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py "${{ github.workspace }}/pr_ui/big/tizi_ui_replay_master.mp4" "${{ github.workspace }}/pr_ui/big/tizi_ui_replay_proposed.mp4" "big_diff.html" --basedir "$baseurl" --no-open || diff_exit_code=$?
+
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/big_diff.html ${{ github.workspace }}/pr_ui/big/
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/big_diff.mp4 ${{ github.workspace }}/pr_ui/big/
+
+          REPORT_URL="https://commaai.github.io/ci-artifacts/big_diff_pr_${{ github.event.number }}.html"
+          if [ $diff_exit_code -eq 0 ]; then
+            DIFF="Videos are identical! [View Diff Report]($REPORT_URL)"
+          else
+            DIFF="<strong>Videos differ!</strong> [View Diff Report]($REPORT_URL)"
+          fi
+          echo "DIFF=$DIFF" >> "$GITHUB_OUTPUT"
+
+      - name: Saving proposed ui
+        if: github.event_name == 'pull_request_target'
+        working-directory: ${{ github.workspace }}/master_mici
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          git checkout --orphan=${{ env.BRANCH_NAME }}
+          git rm -rf *
+          mkdir -p mici big
+          mv ${{ github.workspace }}/pr_ui/mici/* mici/
+          mv ${{ github.workspace }}/pr_ui/big/* big/
+          git add .
+          git commit -m "raylib videos for PR #${{ github.event.number }}"
+          git push origin ${{ env.BRANCH_NAME }} --force
+
+          # Append diff reports to report files branch
+          git fetch origin ${{ env.REPORT_FILES_BRANCH_NAME }}
+          git checkout ${{ env.REPORT_FILES_BRANCH_NAME }}
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/mici_diff.html mici_diff_pr_${{ github.event.number }}.html
+          cp ${{ github.workspace }}/selfdrive/ui/tests/diff/report/big_diff.html big_diff_pr_${{ github.event.number }}.html
+          git add mici_diff_pr_${{ github.event.number }}.html big_diff_pr_${{ github.event.number }}.html
+          git commit -m "raylib ui diff reports for PR #${{ github.event.number }}" || echo "No changes to commit"
+          git push origin ${{ env.REPORT_FILES_BRANCH_NAME }}
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request_target'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            <!-- _(run_id_video_raylib **${{ github.run_id }}**)_ -->
+            ## Raylib UI Preview
+            **mici**: ${{ steps.find_mici_diff.outputs.DIFF }}
+            **big**: ${{ steps.find_big_diff.outputs.DIFF }}
+          comment_tag: run_id_video_raylib
+          pr_number: ${{ github.event.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
