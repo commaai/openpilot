@@ -96,9 +96,9 @@ class VCruiseHelper:
       return
 
     # Don't adjust speed if this button press is intended to enable openpilot
-    enabled_before_pressing = self.button_change_states[button_type]["enabled"]
-    if CS.buttonEnable and not enabled_before_pressing:
-      return
+    # enabled_before_pressing = self.button_change_states[button_type]["enabled"]
+    # if CS.buttonEnable and not enabled_before_pressing:
+    #   return
 
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
     if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
