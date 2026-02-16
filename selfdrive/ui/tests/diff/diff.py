@@ -56,7 +56,7 @@ def find_differences(video1, video2) -> tuple[list[int], tuple[int, int]]:
     return different_frames, (len(frames1), len(frames2))
 
 
-def generate_html_report(videos: tuple[str, str], basedir: str, different_frames: list[int], frame_counts: tuple[int, int]):
+def generate_html_report(videos: tuple[str, str], basedir: str, different_frames: list[int], frame_counts: tuple[int, int], diff_video_name):
   chunks = []
   if different_frames:
     current_chunk = [different_frames[0]]
@@ -95,7 +95,7 @@ def generate_html_report(videos: tuple[str, str], basedir: str, different_frames
 <tr>
 {render_video_cell("video1", "Video 1", videos[0])}
 {render_video_cell("video2", "Video 2", videos[1])}
-{render_video_cell("diffVideo", "Pixel Diff", 'diff.mp4', is_diff=True)}
+{render_video_cell("diffVideo", "Pixel Diff", diff_video_name, is_diff=True)}
 </tr>
 </table>
 <script>
@@ -150,6 +150,9 @@ def main():
 
   args = parser.parse_args()
 
+  if not args.output.lower().endswith('.html'):
+    args.output += '.html'
+
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
   print("=" * 60)
@@ -160,8 +163,9 @@ def main():
   print(f"Output: {args.output}")
   print()
 
-  # Create diff video
-  diff_video_path = os.path.join(os.path.dirname(args.output), DIFF_OUT_DIR / "diff.mp4")
+  # Create diff video with name derived from output HTML
+  diff_video_name = Path(args.output).stem + '.mp4'
+  diff_video_path = str(DIFF_OUT_DIR / diff_video_name)
   create_diff_video(args.video1, args.video2, diff_video_path)
 
   different_frames, frame_counts = find_differences(args.video1, args.video2)
@@ -171,7 +175,7 @@ def main():
 
   print()
   print("Generating HTML report...")
-  html = generate_html_report((args.video1, args.video2), args.basedir, different_frames, frame_counts)
+  html = generate_html_report((args.video1, args.video2), args.basedir, different_frames, frame_counts, diff_video_name)
 
   with open(DIFF_OUT_DIR / args.output, 'w') as f:
     f.write(html)

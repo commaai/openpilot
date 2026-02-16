@@ -1,13 +1,15 @@
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
+#include <climits>
+
 #include "catch2/catch.hpp"
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
 #include "selfdrive/pandad/panda.h"
 
 struct PandaTest : public Panda {
-  PandaTest(uint32_t bus_offset, int can_list_size, cereal::PandaState::PandaType hw_type);
+  PandaTest(int can_list_size, cereal::PandaState::PandaType hw_type);
   void test_can_send();
   void test_can_recv(uint32_t chunk_size = 0);
   void test_chunked_can_recv();
@@ -19,7 +21,7 @@ struct PandaTest : public Panda {
   capnp::List<cereal::CanData>::Reader can_data_list;
 };
 
-PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState::PandaType hw_type) : can_list_size(can_list_size), Panda(bus_offset_) {
+PandaTest::PandaTest(int can_list_size, cereal::PandaState::PandaType hw_type) : can_list_size(can_list_size), Panda() {
   this->hw_type = hw_type;
   int data_limit = ((hw_type == cereal::PandaState::PandaType::RED_PANDA) ? std::size(dlc_to_len) : 8);
   // prepare test data
@@ -40,7 +42,7 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
     uint32_t id = util::random_int(0, std::size(dlc_to_len) - 1);
     const std::string &dat = test_data[dlc_to_len[id]];
     can.setAddress(i);
-    can.setSrc(util::random_int(0, 2) + bus_offset);
+    can.setSrc(util::random_int(0, 2));
     can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
     total_pakets_size += sizeof(can_header) + dat.size();
   }
@@ -103,9 +105,8 @@ void PandaTest::test_can_recv(uint32_t rx_chunk_size) {
 }
 
 TEST_CASE("send/recv CAN 2.0 packets") {
-  auto bus_offset = GENERATE(0, 4);
   auto can_list_size = GENERATE(1, 3, 5, 10, 30, 60, 100, 200);
-  PandaTest test(bus_offset, can_list_size, cereal::PandaState::PandaType::DOS);
+  PandaTest test(can_list_size, cereal::PandaState::PandaType::DOS);
 
   SECTION("can_send") {
     test.test_can_send();
@@ -119,9 +120,8 @@ TEST_CASE("send/recv CAN 2.0 packets") {
 }
 
 TEST_CASE("send/recv CAN FD packets") {
-  auto bus_offset = GENERATE(0, 4);
   auto can_list_size = GENERATE(1, 3, 5, 10, 30, 60, 100, 200);
-  PandaTest test(bus_offset, can_list_size, cereal::PandaState::PandaType::RED_PANDA);
+  PandaTest test(can_list_size, cereal::PandaState::PandaType::RED_PANDA);
 
   SECTION("can_send") {
     test.test_can_send();

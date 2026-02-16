@@ -40,6 +40,7 @@ jobs:
       if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
+        issue_message: ""
         pr_message: |
             <!-- _(run_id **${{ github.run_id }}**)_ -->
             Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
