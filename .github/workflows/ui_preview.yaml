@@ -100,7 +100,7 @@ jobs:
         uses: AnimMouse/setup-ffmpeg@ae28d57dabbb148eff63170b6bf7f2b60062cbae
 
       - name: Finding diffs
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         id: find_diff
         run: |
           export PYTHONPATH=${{ github.workspace }}
@@ -138,7 +138,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Saving proposed ui
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         working-directory: ${{ github.workspace }}/master_mici
         run: |
           git config user.name "GitHub Actions Bot"
@@ -163,7 +163,7 @@ jobs:
           git push origin ${{ env.REPORT_FILES_BRANCH_NAME }}
 
       - name: Comment on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
