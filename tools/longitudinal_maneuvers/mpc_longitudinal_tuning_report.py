@@ -68,7 +68,6 @@ def generate_mpc_tuning_report():
     labels.append(f'{speed} m/s approach speed')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, Axis.EGO_J))
   htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
   htmls.append(get_html_from_results(results, labels, Axis.D_REL))
 
@@ -206,7 +205,6 @@ def generate_mpc_tuning_report():
     labels.append(f'{speed} m/s speed')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, Axis.EGO_J))
   htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
   htmls.append(get_html_from_results(results, labels, Axis.D_REL))
 
