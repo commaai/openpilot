@@ -3,17 +3,20 @@ from typing import TYPE_CHECKING
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from cereal import log
-from openpilot.selfdrive.ui.tests.diff.replay import FPS, LayoutVariant, ReplayContext
-from openpilot.selfdrive.ui.tests.diff.replay_setup import (
-  put_update_params, setup_offroad_alerts, setup_update_available, setup_developer_params,
-  make_network_state_setup, make_onroad_setup, make_alert_setup,
-)
+from cereal import car, log, messaging
+from cereal.messaging import PubMaster
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.selfdrive.ui.tests.diff.replay import FPS, LayoutVariant
+from openpilot.system.updated.updated import parse_release_notes
 
 WAIT = int(FPS * 0.5)  # Default frames to wait after events
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
+
+BRANCH_NAME = "this-is-a-really-super-mega-ultra-max-extreme-ultimate-long-branch-name"
 
 
 @dataclass
@@ -24,6 +27,7 @@ class ScriptEvent:
 
   setup: Callable | None = None  # Setup function to run prior to adding mouse events
   mouse_events: list[MouseEvent] | None = None  # Mouse events to send to the application on this event's frame
+  send_fn: Callable | None = None  # When set, the main loop uses this as the new persistent sender
 
 
 ScriptEntry = tuple[int, ScriptEvent]  # (frame, event)
@@ -56,6 +60,10 @@ class Script:
     """Add a setup function to be called immediately followed by a delay of the given number of frames."""
     self.add(ScriptEvent(setup=fn), after=wait_after)
 
+  def set_send(self, fn: Callable, wait_after: int = WAIT) -> None:
+    """Set a new persistent send function to be called every frame."""
+    self.add(ScriptEvent(send_fn=fn), after=wait_after)
+
   # TODO: Also add more complex gestures, like swipe or drag
   def click(self, x: int, y: int, wait_after: int = WAIT, wait_between: int = 2) -> None:
     """Add a click event to the script for the given position and specify frames to wait between mouse events or after the click."""
@@ -69,7 +77,75 @@ class Script:
     self.add(ScriptEvent(mouse_events=[mouse_up]), after=wait_after)
 
 
-def build_mici_script(ctx: ReplayContext, script: Script) -> None:
+# --- Setup functions ---
+
+def put_update_params(params: Params | None = None) -> None:
+  if params is None:
+    params = Params()
+  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
+  params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+  params.put("UpdaterTargetBranch", BRANCH_NAME)
+
+
+def setup_offroad_alerts() -> None:
+  put_update_params(Params())
+  set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
+  set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
+  set_offroad_alert("Offroad_IsTakingSnapshot", True)
+
+
+def setup_update_available() -> None:
+  params = Params()
+  params.put_bool("UpdateAvailable", True)
+  params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
+  put_update_params(params)
+
+
+def setup_developer_params() -> None:
+  CP = car.CarParams()
+  CP.alphaLongitudinalAvailable = True
+  Params().put("CarParamsPersistent", CP.to_bytes())
+
+
+# --- Send functions ---
+
+def send_onroad(pm: PubMaster) -> None:
+  ds = messaging.new_message('deviceState')
+  ds.deviceState.started = True
+  ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
+
+  ps = messaging.new_message('pandaStates', 1)
+  ps.pandaStates[0].pandaType = log.PandaState.PandaType.dos
+  ps.pandaStates[0].ignitionLine = True
+
+  pm.send('deviceState', ds)
+  pm.send('pandaStates', ps)
+
+
+def make_network_state_setup(pm: PubMaster, network_type) -> Callable:
+  def _send() -> None:
+    ds = messaging.new_message('deviceState')
+    ds.deviceState.networkType = network_type
+    pm.send('deviceState', ds)
+  return _send
+
+
+def make_alert_setup(pm: PubMaster, size, text1, text2, status) -> Callable:
+  def _send() -> None:
+    send_onroad(pm)
+    alert = messaging.new_message('selfdriveState')
+    ss = alert.selfdriveState
+    ss.alertSize = size
+    ss.alertText1 = text1
+    ss.alertText2 = text2
+    ss.alertStatus = status
+    pm.send('selfdriveState', alert)
+  return _send
+
+
+# --- Script builders ---
+
+def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
   """Build the replay script for the mici layout."""
   from openpilot.system.ui.lib.application import gui_app
 
@@ -82,7 +158,7 @@ def build_mici_script(ctx: ReplayContext, script: Script) -> None:
   script.end()
 
 
-def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
+def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   """Build the replay script for the tizi layout."""
 
   def make_home_refresh_setup(fn: Callable) -> Callable:
@@ -91,14 +167,14 @@ def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
 
     def setup():
       fn()
-      ctx.main_layout._layouts[MainState.HOME].last_refresh = 0
+      main_layout._layouts[MainState.HOME].last_refresh = 0
 
     return setup
 
   # TODO: Better way of organizing the events
 
   # === Homescreen ===
-  script.setup(make_network_state_setup(ctx, log.DeviceState.NetworkType.wifi))
+  script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
 
   # === Offroad Alerts (auto-transitions via HomeLayout refresh) ===
   script.setup(make_home_refresh_setup(setup_offroad_alerts))
@@ -141,32 +217,32 @@ def build_tizi_script(ctx: ReplayContext, script: Script) -> None:
   script.click(250, 160)
 
   # === Onroad ===
-  script.setup(make_onroad_setup(ctx))
+  script.set_send(lambda: send_onroad(pm))
   script.click(1000, 500)  # click onroad to toggle sidebar
 
   # === Onroad alerts ===
   # Small alert (normal)
-  script.setup(make_alert_setup(ctx, AlertSize.small, "Small Alert", "This is a small alert", AlertStatus.normal))
+  script.set_send(make_alert_setup(pm, AlertSize.small, "Small Alert", "This is a small alert", AlertStatus.normal))
   # Medium alert (userPrompt)
-  script.setup(make_alert_setup(ctx, AlertSize.mid, "Medium Alert", "This is a medium alert", AlertStatus.userPrompt))
+  script.set_send(make_alert_setup(pm, AlertSize.mid, "Medium Alert", "This is a medium alert", AlertStatus.userPrompt))
   # Full alert (critical)
-  script.setup(make_alert_setup(ctx, AlertSize.full, "DISENGAGE IMMEDIATELY", "Driver Distracted", AlertStatus.critical))
+  script.set_send(make_alert_setup(pm, AlertSize.full, "DISENGAGE IMMEDIATELY", "Driver Distracted", AlertStatus.critical))
   # Full alert multiline
-  script.setup(make_alert_setup(ctx, AlertSize.full, "Reverse\nGear", "", AlertStatus.normal))
+  script.set_send(make_alert_setup(pm, AlertSize.full, "Reverse\nGear", "", AlertStatus.normal))
   # Full alert long text
-  script.setup(make_alert_setup(ctx, AlertSize.full, "TAKE CONTROL IMMEDIATELY", "Calibration Invalid: Remount Device & Recalibrate", AlertStatus.userPrompt))
+  script.set_send(make_alert_setup(pm, AlertSize.full, "TAKE CONTROL IMMEDIATELY", "Calibration Invalid: Remount Device & Recalibrate", AlertStatus.userPrompt))
 
   # End
   script.end()
 
 
-def build_script(context: ReplayContext, variant: LayoutVariant) -> list[ScriptEntry]:
+def build_script(pm: PubMaster, main_layout, variant: LayoutVariant) -> list[ScriptEntry]:
   """Build the replay script for the appropriate layout variant and return list of script entries."""
   print(f"Building {variant} replay script...")
 
   script = Script(FPS)
   builder = build_tizi_script if variant == 'tizi' else build_mici_script
-  builder(context, script)
+  builder(pm, main_layout, script)
 
   print(f"Built replay script with {len(script.entries)} events and {script.frame} frames ({script.get_frame_time():.2f} seconds)")
 

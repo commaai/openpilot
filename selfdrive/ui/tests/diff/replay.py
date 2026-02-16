@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import os
+import argparse
 import coverage
 import pyray as rl
-import argparse
 
-from collections.abc import Callable
 from typing import Literal
-
+from collections.abc import Callable
 from cereal.messaging import PubMaster
+from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
-from openpilot.selfdrive.ui.tests.diff.replay_setup import initialize_params
+from openpilot.system.version import terms_version, training_version
 
 LayoutVariant = Literal["mici", "tizi"]
 
@@ -18,18 +18,12 @@ FPS = 60
 HEADLESS = os.getenv("WINDOWED", "0") != "1"
 
 
-class ReplayContext:
-  def __init__(self, pm: PubMaster, main_layout) -> None:
-    self.send_fn: Callable | None = None  # Function to call each frame to send messages for persistent states (onroad, alerts)
-    self.pm = pm
-    self.main_layout = main_layout
-
-  def update_send_fn(self, send_fn: Callable) -> None:
-    self.send_fn = send_fn
-    send_fn()  # Call immediately to set initial state
-
-  def get_send_fn(self) -> Callable | None:
-    return self.send_fn
+def setup_state():
+  params = Params()
+  params.put("HasAcceptedTerms", terms_version)
+  params.put("CompletedTrainingVersion", training_version)
+  params.put("DongleId", "test123456789")
+  params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
 
 
 def run_replay(variant: LayoutVariant) -> None:
@@ -37,13 +31,12 @@ def run_replay(variant: LayoutVariant) -> None:
   from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
   from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
 
+  setup_state()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
-
-  initialize_params()
 
   if HEADLESS:
     rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)
-  gui_app.init_window("ui diff test", fps=FPS)  # TODO: Can we render faster than real time?
+  gui_app.init_window("ui diff test", fps=FPS)
 
   # Dynamically import main layout based on variant
   if variant == "mici":
@@ -53,12 +46,11 @@ def run_replay(variant: LayoutVariant) -> None:
   main_layout = MainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
-  # Create context and build script
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
-  context = ReplayContext(pm, main_layout)
-  script = build_script(context, variant)
+  script = build_script(pm, main_layout, variant)
   script_index = 0
 
+  send_fn: Callable | None = None
   frame = 0
   # Override raylib timing functions to return deterministic values based on frame count instead of real time
   rl.get_frame_time = lambda: 1.0 / FPS
@@ -76,11 +68,13 @@ def run_replay(variant: LayoutVariant) -> None:
       if event.mouse_events:
         with gui_app._mouse._lock:
           gui_app._mouse._events.extend(event.mouse_events)
+      # Update persistent send function
+      if event.send_fn is not None:
+        send_fn = event.send_fn
       # Move to next script event
       script_index += 1
 
     # Keep sending cereal messages for persistent states (onroad, alerts)
-    send_fn = context.get_send_fn()
     if send_fn:
       send_fn()
 
