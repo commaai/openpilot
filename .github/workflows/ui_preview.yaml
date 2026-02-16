@@ -3,15 +3,14 @@ on:
   push:
     branches:
       - master
-  pull_request:  # TODO: change back to pull_request_target before merging
+  pull_request_target:
     types: [assigned, opened, synchronize, reopened, edited]
     branches:
       - 'master'
-    paths:  # TODO: remove workflow path before merging
+    paths:
       - 'selfdrive/assets/**'
       - 'selfdrive/ui/**'
       - 'system/ui/**'
-      - '.github/workflows/ui_preview.yaml'
   workflow_dispatch:
 
 env:
