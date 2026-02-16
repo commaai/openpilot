@@ -8,7 +8,6 @@ class Axis(IntEnum):
   LEAD_V = 4
   EGO_A = 5
   D_REL = 6
-  EGO_J = 7
 
 axis_labels = {Axis.TIME: 'Time (s)',
                Axis.EGO_POSITION: 'Ego position (m)',
@@ -16,5 +15,4 @@ axis_labels = {Axis.TIME: 'Time (s)',
                Axis.EGO_V: 'Ego Velocity (m/s)',
                Axis.LEAD_V: 'Lead Velocity (m/s)',
                Axis.EGO_A: 'Ego acceleration (m/s^2)',
-               Axis.D_REL: 'Lead distance (m)',
-               Axis.EGO_J: 'Ego jerk (m/s^3)'}
+               Axis.D_REL: 'Lead distance (m)'}

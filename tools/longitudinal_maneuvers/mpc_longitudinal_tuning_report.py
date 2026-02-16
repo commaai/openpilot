@@ -9,16 +9,11 @@ from openpilot.tools.longitudinal_maneuvers.maneuver_helpers import Axis, axis_l
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
-JERK_LIM = 4
-
 def get_html_from_results(results, labels, AXIS):
   fig, ax = plt.subplots(figsize=(16, 8))
   for idx, key in enumerate(results.keys()):
     ax.plot(results[key][:, Axis.TIME], results[key][:, AXIS], label=labels[idx])
 
-  if AXIS == Axis.EGO_J:
-    if max(abs(results[key][:, AXIS])) > JERK_LIM:
-      ax.set_ylim([-JERK_LIM, JERK_LIM])
   ax.set_xlabel(axis_labels[Axis.TIME])
   ax.set_ylabel(axis_labels[AXIS])
   ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)

@@ -79,9 +79,6 @@ class Maneuver:
       print('Not stopping with force decel')
       valid = False
 
-    logs = np.array(logs)
-    jerks = np.gradient(logs[:, 5], logs[:, 0])
-    logs = np.column_stack([logs, jerks])
 
     print("maneuver end", valid)
-    return valid, logs
+    return valid, np.array(logs)
