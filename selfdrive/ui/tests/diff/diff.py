@@ -2,7 +2,6 @@
 import os
 import sys
 import subprocess
-import tempfile
 import webbrowser
 import argparse
 from pathlib import Path
@@ -11,17 +10,18 @@ from openpilot.common.basedir import BASEDIR
 DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
 
 
-def extract_frames(video_path, output_dir):
-  output_pattern = str(output_dir / "frame_%04d.png")
-  cmd = ['ffmpeg', '-i', video_path, '-vsync', '0', output_pattern, '-y']
-  subprocess.run(cmd, capture_output=True, check=True)
-  frames = sorted(output_dir.glob("frame_*.png"))
-  return frames
-
-
-def compare_frames(frame1_path, frame2_path):
-  result = subprocess.run(['cmp', '-s', frame1_path, frame2_path])
-  return result.returncode == 0
+def extract_framehashes(video_path):
+  cmd = ['ffmpeg', '-i', video_path, '-map', '0:v:0', '-vsync', '0', '-f', 'framehash', '-hash', 'md5', '-']
+  result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+  hashes = []
+  for line in result.stdout.splitlines():
+    if not line or line.startswith('#'):
+      continue
+    parts = line.split(',')
+    if len(parts) < 4:
+      continue
+    hashes.append(parts[-1].strip())
+  return hashes
 
 
 def create_diff_video(video1, video2, output_path):
@@ -32,28 +32,20 @@ def create_diff_video(video1, video2, output_path):
 
 
 def find_differences(video1, video2) -> tuple[list[int], tuple[int, int]]:
-  with tempfile.TemporaryDirectory() as tmpdir:
-    tmpdir = Path(tmpdir)
+  print(f"Hashing frames from {video1}...")
+  hashes1 = extract_framehashes(video1)
 
-    print(f"Extracting frames from {video1}...")
-    frames1_dir = tmpdir / "frames1"
-    frames1_dir.mkdir()
-    frames1 = extract_frames(video1, frames1_dir)
+  print(f"Hashing frames from {video2}...")
+  hashes2 = extract_framehashes(video2)
 
-    print(f"Extracting frames from {video2}...")
-    frames2_dir = tmpdir / "frames2"
-    frames2_dir.mkdir()
-    frames2 = extract_frames(video2, frames2_dir)
+  print(f"Comparing {len(hashes1)} frames...")
+  different_frames = []
 
-    print(f"Comparing {len(frames1)} frames...")
-    different_frames: list[int] = []
+  for i, (h1, h2) in enumerate(zip(hashes1, hashes2, strict=False)):
+    if h1 != h2:
+      different_frames.append(i)
 
-    for i, (f1, f2) in enumerate(zip(frames1, frames2, strict=False)):
-      is_different = not compare_frames(f1, f2)
-      if is_different:
-        different_frames.append(i)
-
-    return different_frames, (len(frames1), len(frames2))
+  return different_frames, (len(hashes1), len(hashes2))
 
 
 def generate_html_report(videos: tuple[str, str], basedir: str, different_frames: list[int], frame_counts: tuple[int, int], diff_video_name):
