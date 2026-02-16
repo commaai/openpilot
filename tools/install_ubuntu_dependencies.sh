@@ -55,7 +55,6 @@ function install_ubuntu_common_requirements() {
     libqt5charts5-dev \
     libncurses5-dev \
     libusb-1.0-0-dev \
-    libzmq3-dev \
     libzstd-dev \
     libsqlite3-dev \
     portaudio19-dev \
