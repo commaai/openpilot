@@ -1,14 +1,12 @@
 import os
 import time
-import threading
 import pytest
 import numpy as np
 
-import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
-from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 from openpilot.system.camerad.snapshot import get_snapshots
+from openpilot.selfdrive.test.helpers import collect_logs, log_collector, processes_context
 
 TEST_TIMESPAN = 10
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
@@ -37,49 +35,14 @@ def _exposure_stable(results):
 
 
 def run_and_log(procs, services, duration):
-  logs = []
-
-  try:
-    for p in procs:
-      managed_processes[p].start()
-    socks = [messaging.sub_sock(s, conflate=False, timeout=100) for s in services]
-
-    start_time = time.monotonic()
-    while time.monotonic() - start_time < duration:
-      for s in socks:
-        logs.extend(messaging.drain_sock(s))
-    for p in procs:
-      assert managed_processes[p].proc.is_alive()
-  finally:
-    for p in procs:
-      managed_processes[p].stop()
-
-  return logs
+  with processes_context(procs):
+    return collect_logs(services, duration)
 
 @pytest.fixture(scope="module")
 def _camera_session():
   """Single camerad session that collects logs and exposure data.
-     Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data).
-     A background thread continuously drains log sockets so get_snapshots() blocking doesn't cause message loss."""
-  managed_processes["camerad"].start()
-  try:
-    socks = [messaging.sub_sock(s, conflate=False, timeout=100) for s in CAMERAS]
-    raw_logs = []
-    lock = threading.Lock()
-    stop_event = threading.Event()
-
-    def _drain_logs():
-      while not stop_event.is_set():
-        for s in socks:
-          msgs = messaging.drain_sock(s)
-          if msgs:
-            with lock:
-              raw_logs.extend(msgs)
-        time.sleep(0.01)
-
-    drain_thread = threading.Thread(target=_drain_logs, daemon=True)
-    drain_thread.start()
-
+     Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
+  with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
     exposure = {cam: [] for cam in CAMERAS}
     start = time.monotonic()
     while time.monotonic() - start < MAX_TEST_TIME:
@@ -88,16 +51,10 @@ def _camera_session():
       for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
         exposure[cam].append(_exposure_stats(img))
 
-      elapsed = time.monotonic() - start
-      if elapsed >= TEST_TIMESPAN and _exposure_stable(exposure):
+      if time.monotonic() - start >= TEST_TIMESPAN and _exposure_stable(exposure):
         break
 
     elapsed = time.monotonic() - start
-    stop_event.set()
-    drain_thread.join(timeout=2)
-    assert managed_processes["camerad"].proc.is_alive()
-  finally:
-    managed_processes["camerad"].stop()
 
   with lock:
     ts = msgs_to_time_series(raw_logs)
