@@ -1,5 +1,6 @@
 import os
 import time
+import threading
 import pytest
 import numpy as np
 
@@ -58,18 +59,30 @@ def run_and_log(procs, services, duration):
 @pytest.fixture(scope="module")
 def _camera_session():
   """Single camerad session that collects logs and exposure data.
-     Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
+     Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data).
+     A background thread continuously drains log sockets so get_snapshots() blocking doesn't cause message loss."""
   managed_processes["camerad"].start()
   try:
     socks = [messaging.sub_sock(s, conflate=False, timeout=100) for s in CAMERAS]
     raw_logs = []
-    exposure = {cam: [] for cam in CAMERAS}
+    lock = threading.Lock()
+    stop_event = threading.Event()
 
+    def _drain_logs():
+      while not stop_event.is_set():
+        for s in socks:
+          msgs = messaging.drain_sock(s)
+          if msgs:
+            with lock:
+              raw_logs.extend(msgs)
+        time.sleep(0.01)
+
+    drain_thread = threading.Thread(target=_drain_logs, daemon=True)
+    drain_thread.start()
+
+    exposure = {cam: [] for cam in CAMERAS}
     start = time.monotonic()
     while time.monotonic() - start < MAX_TEST_TIME:
-      for s in socks:
-        raw_logs.extend(messaging.drain_sock(s))
-
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
       wpic, _ = get_snapshots(frame="wideRoadCameraState")
       for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
@@ -79,15 +92,15 @@ def _camera_session():
       if elapsed >= TEST_TIMESPAN and _exposure_stable(exposure):
         break
 
-    # final log drain
-    for s in socks:
-      raw_logs.extend(messaging.drain_sock(s))
+    elapsed = time.monotonic() - start
+    stop_event.set()
+    drain_thread.join(timeout=2)
     assert managed_processes["camerad"].proc.is_alive()
   finally:
     managed_processes["camerad"].stop()
 
-  elapsed = time.monotonic() - start
-  ts = msgs_to_time_series(raw_logs)
+  with lock:
+    ts = msgs_to_time_series(raw_logs)
 
   for cam in CAMERAS:
     expected_frames = SERVICE_LIST[cam].frequency * elapsed
