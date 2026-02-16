@@ -274,8 +274,8 @@ jobs:
         run: >
           ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                           source selfdrive/test/setup_xvfb.sh &&
-                          WINDOWED=1 python3 selfdrive/ui/tests/diff/replay.py &&
-                          WINDOWED=1 python3 selfdrive/ui/tests/diff/replay.py --big"
+                          python3 selfdrive/ui/tests/diff/replay.py &&
+                          python3 selfdrive/ui/tests/diff/replay.py --big"
       - name: Upload UI Report
         uses: actions/upload-artifact@v6
         with:
