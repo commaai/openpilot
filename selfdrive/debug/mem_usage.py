@@ -4,8 +4,8 @@ import os
 from collections import defaultdict
 
 import numpy as np
-from tabulate import tabulate
 
+from openpilot.common.utils import tabulate
 from openpilot.tools.lib.logreader import LogReader
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"

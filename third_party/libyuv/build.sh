@@ -6,14 +6,8 @@ export ZERO_AR_DATE=1
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-ARCHNAME=$(uname -m)
-if [ -f /TICI ]; then
-  ARCHNAME="larch64"
-fi
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  ARCHNAME="Darwin"
-fi
+source "$DIR/../../scripts/platform.sh"
+ARCHNAME="$OPENPILOT_ARCH"
 
 cd $DIR
 if [ ! -d libyuv ]; then
@@ -35,8 +29,3 @@ rm -rf $DIR/include
 mkdir -p $INSTALL_DIR/lib
 cp $DIR/libyuv/libyuv.a $INSTALL_DIR/lib
 cp -r $DIR/libyuv/include $DIR
-
-## To create universal binary on Darwin:
-## ```
-## lipo -create -output Darwin/libyuv.a path-to-x64/libyuv.a path-to-arm64/libyuv.a
-## ```

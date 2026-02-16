@@ -100,12 +100,10 @@ dev = [
   "matplotlib",
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
-  "pyautogui",
-  "pywinctl",
 ]
 
 tools = [
-  "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl ; (platform_machine != 'aarch64')",
+  "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
   "dearpygui>=2.1.0; (sys_platform != 'linux' or platform_machine != 'aarch64')", # not vended for linux aarch64
 ]
 

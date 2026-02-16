@@ -20,9 +20,9 @@ cd $DIR
 
 RAYLIB_PLATFORM="PLATFORM_DESKTOP"
 
-ARCHNAME=$(uname -m)
+source "$DIR/../../scripts/platform.sh"
+ARCHNAME="$OPENPILOT_ARCH"
 if [ -f /TICI ]; then
-  ARCHNAME="larch64"
   RAYLIB_PLATFORM="PLATFORM_COMMA"
 elif [[ "$OSTYPE" == "linux"* ]]; then
   # required dependencies on Linux PC
@@ -31,10 +31,6 @@ elif [[ "$OSTYPE" == "linux"* ]]; then
     libxi-dev \
     libxinerama-dev \
     libxrandr-dev
-fi
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  ARCHNAME="Darwin"
 fi
 
 INSTALL_DIR="$DIR/$ARCHNAME"
