@@ -6,7 +6,7 @@ from cereal import log
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import get_safe_obstacle_distance, get_stopped_equivalence_factor, get_T_FOLLOW
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
-
+from openpilot.tools.longitudinal_maneuvers.maneuver_helpers import Axis
 
 def desired_follow_distance(v_ego, v_lead, t_follow=None):
   if t_follow is None:
