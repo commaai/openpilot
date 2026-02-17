@@ -275,7 +275,6 @@ class WifiUIMici(NavWidget):
     self._loading_animation = LoadingAnimation()
 
     self._wifi_manager = wifi_manager
-    self._connecting: str | None = None
     self._networks: dict[str, Network] = {}
 
     self._wifi_manager.add_callbacks(
@@ -290,6 +289,8 @@ class WifiUIMici(NavWidget):
     # Clear scroller items and update from latest scan results
     super().show_event()
     self._scroller.show_event()
+    print("[WifiUIMici] show_event: clearing pending wifi callbacks")
+    self._wifi_manager.clear_pending_callbacks()
     self._wifi_manager.set_active(True)
     self._scroller._items.clear()
     self._update_buttons()
@@ -307,7 +308,7 @@ class WifiUIMici(NavWidget):
       if network.ssid in existing:
         existing[network.ssid].set_current_network(network)
       else:
-        btn = WifiButton(network, self._wifi_manager.forget_connection, lambda: self._connecting)
+        btn = WifiButton(network, self._wifi_manager.forget_connection, lambda: self._wifi_manager.connecting_to_ssid)
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
@@ -319,15 +320,14 @@ class WifiUIMici(NavWidget):
     # Move connecting/connected network to the front with animation
     front_btn_idx = next((i for i, btn in enumerate(self._scroller._items)
                           if isinstance(btn, WifiButton) and not btn._network_missing
-                          and (btn.network.ssid == self._connecting or
-                               (not self._connecting and btn.network.is_connected))), None)
+                          and (btn.network.ssid == self._wifi_manager.connecting_to_ssid or
+                               (not self._wifi_manager.connecting_to_ssid and btn.network.is_connected))), None)
 
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
 
   def _connect_with_password(self, ssid: str, password: str):
     if password:
-      self._connecting = ssid
       self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.connect_to_network(ssid, password)
       self._update_buttons()
@@ -339,12 +339,10 @@ class WifiUIMici(NavWidget):
       return
 
     if network.is_saved:
-      self._connecting = network.ssid
       self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.activate_connection(network.ssid)
       self._update_buttons()
     elif network.security_type == SecurityType.OPEN:
-      self._connecting = network.ssid
       self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.connect_to_network(network.ssid, "")
       self._update_buttons()
@@ -352,6 +350,7 @@ class WifiUIMici(NavWidget):
       self._on_need_auth(network.ssid, False)
 
   def _on_need_auth(self, ssid, incorrect_password=True):
+    print(f"[WifiUIMici] _on_need_auth fired: ssid={ssid}, incorrect_password={incorrect_password}")
     hint = "wrong password..." if incorrect_password else "enter password..."
     dlg = BigInputDialog(hint, "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
@@ -364,11 +363,12 @@ class WifiUIMici(NavWidget):
     gui_app.set_modal_overlay(dlg, on_close)
 
   def _on_activated(self):
-    self._connecting = None
+    pass
+    # self._connecting = None
 
   def _on_forgotten(self, ssid):
-    if self._connecting == ssid:
-      self._connecting = None
+    # if self._connecting == ssid:
+    #   self._connecting = None
 
     # For eager UI forget
     for i, btn in enumerate(self._scroller._items):
@@ -381,7 +381,8 @@ class WifiUIMici(NavWidget):
         # break
 
   def _on_disconnected(self):
-    self._connecting = None
+    pass
+    # self._connecting = None
 
   def _render(self, _):
     self._scroller.render(self._rect)
