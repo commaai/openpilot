@@ -338,8 +338,7 @@ class WifiManager:
                 self._connecting_to_ssid = None
 
           elif new_state == NMDeviceState.ACTIVATED:
-            if len(self._activated):
-              self._update_networks()
+            self._update_networks()
             self._enqueue_callbacks(self._activated)
             self._prev_connecting_to_ssid = None
             self._connecting_to_ssid = None
@@ -349,6 +348,9 @@ class WifiManager:
               self._enqueue_callbacks(self._forgotten, self._connecting_to_ssid)
             self._prev_connecting_to_ssid = None
             self._connecting_to_ssid = None
+
+          else:
+            cloudlog.warning(f"Unhandled state change: new_state={new_state}, previous_state={previous_state}, change_reason={change_reason}")
 
   def _network_scanner(self):
     while not self._exit:
