@@ -343,20 +343,16 @@ class WifiUIMici(BigMultiOptionDialog):
     self.set_back_callback(back_callback)
 
     self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, wifi_manager.forget_connection, self._open_network_manage_page)
-    self._network_info_page.set_connecting(lambda: self._connecting)
+    self._network_info_page.set_connecting(lambda: wifi_manager.connecting_to_ssid)
 
     self._loading_animation = LoadingAnimation()
 
     self._wifi_manager = wifi_manager
-    self._connecting: str | None = None
     self._networks: dict[str, Network] = {}
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
-      activated=self._on_activated,
-      forgotten=self._on_forgotten,
       networks_updated=self._on_network_updated,
-      disconnected=self._on_disconnected,
     )
 
   def show_event(self):
@@ -402,7 +398,6 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _connect_with_password(self, ssid: str, password: str):
     if password:
-      self._connecting = ssid
       self._wifi_manager.connect_to_network(ssid, password)
       self._update_buttons()
 
@@ -420,11 +415,9 @@ class WifiUIMici(BigMultiOptionDialog):
       return
 
     if network.is_saved:
-      self._connecting = network.ssid
       self._wifi_manager.activate_connection(network.ssid)
       self._update_buttons()
     elif network.security_type == SecurityType.OPEN:
-      self._connecting = network.ssid
       self._wifi_manager.connect_to_network(network.ssid, "")
       self._update_buttons()
     else:
@@ -442,16 +435,6 @@ class WifiUIMici(BigMultiOptionDialog):
     # Process wifi callbacks while the keyboard is shown so forgotten clears connecting state
     gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
     gui_app.set_modal_overlay(dlg, on_close)
-
-  def _on_activated(self):
-    self._connecting = None
-
-  def _on_forgotten(self, ssid):
-    if self._connecting == ssid:
-      self._connecting = None
-
-  def _on_disconnected(self):
-    self._connecting = None
 
   def _render(self, _):
     super()._render(_)

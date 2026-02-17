@@ -166,8 +166,8 @@ class WifiManager:
 
     # State
     self._connections: dict[str, str] = {}  # ssid -> connection path, updated via NM signals
-    self._connecting_to_ssid: str = ""
-    self._prev_connecting_to_ssid: str = ""
+    self._connecting_to_ssid: str | None = None
+    self._prev_connecting_to_ssid: str | None = None
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
@@ -236,7 +236,7 @@ class WifiManager:
     return self._current_network_metered
 
   @property
-  def connecting_to_ssid(self) -> str:
+  def connecting_to_ssid(self) -> str | None:
     return self._connecting_to_ssid
 
   @property
@@ -333,21 +333,21 @@ class WifiManager:
             if failed_ssid:
               self._enqueue_callbacks(self._need_auth, failed_ssid)
               self.forget_connection(failed_ssid, block=True)
-              self._prev_connecting_to_ssid = ""
+              self._prev_connecting_to_ssid = None
               if self._connecting_to_ssid == failed_ssid:
-                self._connecting_to_ssid = ""
+                self._connecting_to_ssid = None
 
           elif new_state == NMDeviceState.ACTIVATED:
             if len(self._activated):
               self._update_networks()
             self._enqueue_callbacks(self._activated)
-            self._prev_connecting_to_ssid = ""
-            self._connecting_to_ssid = ""
+            self._prev_connecting_to_ssid = None
+            self._connecting_to_ssid = None
 
           elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
             self._enqueue_callbacks(self._forgotten, self._connecting_to_ssid)
-            self._prev_connecting_to_ssid = ""
-            self._connecting_to_ssid = ""
+            self._prev_connecting_to_ssid = None
+            self._connecting_to_ssid = None
 
   def _network_scanner(self):
     while not self._exit:
