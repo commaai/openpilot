@@ -1,5 +1,4 @@
 #include "tools/cabana/streams/devicestream.h"
-#include "tools/cabana/streams/subsocketadapter.h"
 
 #include <memory>
 #include <string>
@@ -7,7 +6,9 @@
 #include "cereal/services.h"
 
 #include <QButtonGroup>
+#include <QFileInfo>
 #include <QFormLayout>
+#include <QMessageBox>
 #include <QRadioButton>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
@@ -18,17 +19,37 @@
 DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(address), LiveStream(parent) {
 }
 
+DeviceStream::~DeviceStream() {
+  if (!bridge_process)
+    return;
+
+  bridge_process->terminate();
+  if (!bridge_process->waitForFinished(3000)) {
+    bridge_process->kill();
+    bridge_process->waitForFinished();
+  }
+}
+
+void DeviceStream::start() {
+  if (!zmq_address.isEmpty()) {
+    bridge_process = new QProcess(this);
+    QString bridgePath = QCoreApplication::applicationDirPath() + "/../../cereal/messaging/bridge";
+    bridge_process->start(QFileInfo(bridgePath).absoluteFilePath(), QStringList { zmq_address, "/\"can/\"" });
+
+    if (!bridge_process->waitForStarted()) {
+      QMessageBox::warning(nullptr, tr("Error"), tr("Failed to start bridge: %1").arg(bridge_process->errorString()));
+      return;
+    }
+  }
+
+  LiveStream::start();
+}
+
 void DeviceStream::streamThread() {
   zmq_address.isEmpty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
 
-  std::unique_ptr<SubSocketAdapter> sock;
-
-  if (zmq_address.isEmpty()) {
-    sock = std::make_unique<MsgqSubSocketAdapter>("can", "127.0.0.1", false, true, services.at("can").queue_size);
-  } else {
-    sock = std::make_unique<ZmqSubSocketAdapter>("can", zmq_address.toStdString(), false, true);
-  }
-
+  std::unique_ptr<Context> context(Context::create());
+  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", "127.0.0.1", false, true, services.at("can").queue_size));
   assert(sock != NULL);
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
