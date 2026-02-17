@@ -279,10 +279,8 @@ class WifiUIMici(NavWidget):
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
-      activated=self._on_activated,
       forgotten=self._on_forgotten,
       networks_updated=self._on_network_updated,
-      disconnected=self._on_disconnected,
     )
 
   def show_event(self):
@@ -362,14 +360,7 @@ class WifiUIMici(NavWidget):
     gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
     gui_app.set_modal_overlay(dlg, on_close)
 
-  def _on_activated(self):
-    pass
-    # self._connecting = None
-
   def _on_forgotten(self, ssid):
-    # if self._connecting == ssid:
-    #   self._connecting = None
-
     # For eager UI forget
     for i, btn in enumerate(self._scroller._items):
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
@@ -379,10 +370,6 @@ class WifiUIMici(NavWidget):
         #                       if isinstance(b, WifiButton) and b.network.is_saved and not b._network_forgot), default=-1)
         # self._scroller.move_item(i, last_saved_idx + 1)
         # break
-
-  def _on_disconnected(self):
-    pass
-    # self._connecting = None
 
   def _render(self, _):
     self._scroller.render(self._rect)

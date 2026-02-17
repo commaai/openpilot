@@ -255,8 +255,8 @@ jobs:
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest -s tools/sim/tests/test_metadrive_bridge.py"
 
-  create_raylib_ui_report:
-    name: Create raylib UI Report
+  create_ui_report:
+    name: Create UI Report
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
@@ -270,39 +270,14 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
-      - name: Create raylib UI Report
+      - name: Create UI Report
         run: >
           ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                           source selfdrive/test/setup_xvfb.sh &&
-                          python3 selfdrive/ui/tests/test_ui/raylib_screenshots.py"
-      - name: Upload Raylib UI Report
+                          python3 selfdrive/ui/tests/diff/replay.py &&
+                          python3 selfdrive/ui/tests/diff/replay.py --big"
+      - name: Upload UI Report
         uses: actions/upload-artifact@v6
         with:
-          name: raylib-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
-          path: selfdrive/ui/tests/test_ui/raylib_report/screenshots
-
-  create_mici_raylib_ui_report:
-    name: Create mici raylib UI Report
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - uses: ./.github/workflows/setup-with-retry
-      - name: Build openpilot
-        run: ${{ env.RUN }} "scons -j$(nproc)"
-      - name: Create mici raylib UI Report
-        run: >
-          ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
-                          source selfdrive/test/setup_xvfb.sh &&
-                          WINDOWED=1 python3 selfdrive/ui/tests/diff/replay.py"
-      - name: Upload Raylib UI Report
-        uses: actions/upload-artifact@v6
-        with:
-          name: mici-raylib-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
+          name: ui-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
           path: selfdrive/ui/tests/diff/report
