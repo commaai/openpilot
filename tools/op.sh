@@ -122,7 +122,33 @@ function op_check_git() {
 
 function op_check_os() {
   echo "Checking for compatible os version..."
-  source "$OPENPILOT_ROOT/scripts/platform.sh"
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+
+    if [ -f "/etc/os-release" ]; then
+      source /etc/os-release
+      case "$VERSION_CODENAME" in
+        "jammy" | "kinetic" | "noble" | "focal")
+          echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
+          ;;
+        * )
+          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
+          return 1
+          ;;
+      esac
+    else
+      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
+      loge "ERROR_UNKNOWN_UBUNTU"
+      return 1
+    fi
+
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
+  else
+    echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
+    loge "ERROR_UNKNOWN_OS" "$OSTYPE"
+    return 1
+  fi
 }
 
 function op_check_python() {

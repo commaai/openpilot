@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import sysconfig
+import platform
 import shlex
 import numpy as np
 
@@ -23,8 +24,19 @@ AddOption('--minimal',
           default=os.path.exists(File('#.gitattributes').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
-# Detect platform (see scripts/platform.sh)
-arch = subprocess.check_output(["bash", "-c", "source scripts/platform.sh >&2 && echo $OPENPILOT_ARCH"], encoding='utf8', stderr=subprocess.PIPE).rstrip()
+# Detect platform
+arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
+if platform.system() == "Darwin":
+  arch = "Darwin"
+  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
+elif arch == "aarch64" and os.path.isfile('/TICI'):
+  arch = "larch64"
+assert arch in [
+  "larch64",  # linux tici arm64
+  "aarch64",  # linux pc arm64
+  "x86_64",   # linux pc x64
+  "Darwin",   # macOS arm64 (x86 not supported)
+]
 
 env = Environment(
   ENV={
@@ -91,7 +103,6 @@ if arch == "larch64":
   env.Append(CCFLAGS=arch_flags)
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
   env.Append(LIBPATH=[
     f"{brew_prefix}/lib",
     f"{brew_prefix}/opt/openssl@3.0/lib",
