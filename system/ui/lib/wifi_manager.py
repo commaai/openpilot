@@ -338,8 +338,7 @@ class WifiManager:
                 self._connecting_to_ssid = None
 
           elif new_state == NMDeviceState.ACTIVATED:
-            if len(self._activated):
-              self._update_networks()
+            self._update_networks()
             self._enqueue_callbacks(self._activated)
             self._prev_connecting_to_ssid = None
             self._connecting_to_ssid = None

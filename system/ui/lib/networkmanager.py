@@ -1,7 +1,17 @@
 from enum import IntEnum
 
 
+class SafeIntEnum(IntEnum):
+  @classmethod
+  def _missing_(cls, value):
+    obj = int.__new__(cls, value)
+    obj._name_ = f"UNKNOWN_{value}"
+    obj._value_ = value
+    return obj
+
+
 # NetworkManager device states
+# https://people.freedesktop.org/~lkundrak/nm-dbus-api/nm-dbus-types.html
 class NMDeviceState(IntEnum):
   UNKNOWN = 0
   DISCONNECTED = 30
