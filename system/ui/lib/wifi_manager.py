@@ -257,10 +257,6 @@ class WifiManager:
     for cb in to_run:
       cb()
 
-  def clear_pending_callbacks(self):
-    """Discard all queued callbacks (e.g. stale need_auth from a previous session)."""
-    self._callback_queue.clear()
-
   def set_active(self, active: bool):
     self._active = active
 

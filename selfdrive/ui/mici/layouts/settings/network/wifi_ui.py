@@ -287,8 +287,6 @@ class WifiUIMici(NavWidget):
     # Clear scroller items and update from latest scan results
     super().show_event()
     self._scroller.show_event()
-    print("[WifiUIMici] show_event: clearing pending wifi callbacks")
-    self._wifi_manager.clear_pending_callbacks()
     self._wifi_manager.set_active(True)
     self._scroller._items.clear()
     self._update_buttons()

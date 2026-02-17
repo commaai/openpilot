@@ -123,8 +123,6 @@ class NetworkLayoutMici(NavWidget):
   def show_event(self):
     super().show_event()
     self._current_panel = NetworkPanelType.NONE
-    print("[NetworkLayoutMici] show_event: clearing pending wifi callbacks")
-    self._wifi_manager.clear_pending_callbacks()
     self._wifi_manager.set_active(True)
     self._scroller.show_event()
 
