@@ -33,8 +33,8 @@ DeviceStream::~DeviceStream() {
 void DeviceStream::start() {
   if (!zmq_address.isEmpty()) {
     bridge_process = new QProcess(this);
-    QString bridgePath = QCoreApplication::applicationDirPath() + "/../../cereal/messaging/bridge";
-    bridge_process->start(QFileInfo(bridgePath).absoluteFilePath(), QStringList { zmq_address, "/\"can/\"" });
+    QString bridge_path = QCoreApplication::applicationDirPath() + "/../../cereal/messaging/bridge";
+    bridge_process->start(QFileInfo(bridge_path).absoluteFilePath(), QStringList { zmq_address, "/\"can/\"" });
 
     if (!bridge_process->waitForStarted()) {
       QMessageBox::warning(nullptr, tr("Error"), tr("Failed to start bridge: %1").arg(bridge_process->errorString()));
