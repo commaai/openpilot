@@ -137,6 +137,7 @@ class WifiButton(BigButton):
 
     self._network_forgetting = True
     self._forget_btn.set_visible(False)
+    print('forgetting network:', self._network.ssid)
     self._forget_callback(self._network.ssid)
 
   def on_forgotten(self):
@@ -323,10 +324,11 @@ class WifiUIMici(NavWidget):
       self._scroller.move_item(front_btn_idx, 0)
 
   def _connect_with_password(self, ssid: str, password: str):
-    if password:
-      self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
-      self._wifi_manager.connect_to_network(ssid, password)
-      self._update_buttons()
+    import os
+    password = os.getenv('WIFI_PASSWORD', password)
+    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+    self._wifi_manager.connect_to_network(ssid, password)
+    self._update_buttons()
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -348,7 +350,7 @@ class WifiUIMici(NavWidget):
   def _on_need_auth(self, ssid, incorrect_password=True):
     print(f"[WifiUIMici] _on_need_auth fired: ssid={ssid}, incorrect_password={incorrect_password}")
     hint = "wrong password..." if incorrect_password else "enter password..."
-    dlg = BigInputDialog(hint, "", minimum_length=8,
+    dlg = BigInputDialog(hint, "", minimum_length=0,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
 
     def on_close(_):

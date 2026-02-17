@@ -23,10 +23,8 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
-                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_NO_SECRETS,
-                                                    NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
-                                                    NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
-                                                    NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState)
+                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_ACTIVE_CONNECTION_IFACE,
+                                                    NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState, NMDeviceStateReason)
 
 try:
   from openpilot.common.params import Params
@@ -244,6 +242,7 @@ class WifiManager:
     return self._tethering_password
 
   def _set_connecting(self, ssid: str):
+    print('SET CONNECTING', ssid, self._prev_connecting_to_ssid)
     self._prev_connecting_to_ssid = self._connecting_to_ssid
     self._connecting_to_ssid = ssid
 
@@ -323,34 +322,40 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
+          print('State change', (new_state, change_reason))
 
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
           # - weak/gone network fails with FAILED+NO_SECRETS
-          if ((new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT) or
-              (new_state == NMDeviceState.FAILED and change_reason == NM_DEVICE_STATE_REASON_NO_SECRETS)):
+          if ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT) or
+              (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
             failed_ssid = self._prev_connecting_to_ssid or self._connecting_to_ssid
             if failed_ssid:
               self._enqueue_callbacks(self._need_auth, failed_ssid)
+              print('forgetting failed connection to', failed_ssid)
               self.forget_connection(failed_ssid, block=True)
               self._prev_connecting_to_ssid = None
               if self._connecting_to_ssid == failed_ssid:
+                print('clearing connecting ssid', self._connecting_to_ssid)
                 self._connecting_to_ssid = None
 
           elif new_state == NMDeviceState.ACTIVATED:
             self._update_networks()
             self._enqueue_callbacks(self._activated)
+            print('activated connection to', self._prev_connecting_to_ssid)
             self._prev_connecting_to_ssid = None
             self._connecting_to_ssid = None
 
-          elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
+          elif new_state == NMDeviceState.DISCONNECTED and change_reason != NMDeviceStateReason.NEW_ACTIVATION:
             if self._connecting_to_ssid:
               self._enqueue_callbacks(self._forgotten, self._connecting_to_ssid)
+            print('disconnected from', self._connecting_to_ssid)
             self._prev_connecting_to_ssid = None
             self._connecting_to_ssid = None
 
           else:
-            cloudlog.warning(f"Unhandled state change: new_state={new_state}, previous_state={previous_state}, change_reason={change_reason}")
+            cloudlog.warning(f"Unhandled state change: new_state={repr(NMDeviceState(new_state))}, previous_state={repr(NMDeviceState(previous_state))}, "
+                             f"change_reason={change_reason}")
 
   def _network_scanner(self):
     while not self._exit:
@@ -465,6 +470,7 @@ class WifiManager:
 
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
+      print('forgetting connections to', ssid)
       self.forget_connection(ssid, block=True)
 
       connection = {
