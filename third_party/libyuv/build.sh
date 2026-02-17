@@ -6,8 +6,14 @@ export ZERO_AR_DATE=1
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-source "$DIR/../../scripts/platform.sh"
-ARCHNAME="$OPENPILOT_ARCH"
+ARCHNAME=$(uname -m)
+if [ -f /TICI ]; then
+  ARCHNAME="larch64"
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  ARCHNAME="Darwin"
+fi
 
 cd $DIR
 if [ ! -d libyuv ]; then
