@@ -342,6 +342,7 @@ class WifiManager:
           if ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT) or
               (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
             failed_ssid = self._prev_connecting_to_ssid or self._connecting_to_ssid
+            print('connection failed to', failed_ssid, (new_state, change_reason))
             if failed_ssid:
               self._enqueue_callbacks(self._need_auth, failed_ssid)
               print('forgetting failed connection to', failed_ssid)
