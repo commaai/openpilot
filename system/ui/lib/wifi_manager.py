@@ -705,8 +705,8 @@ class WifiManager:
       threading.Thread(target=worker, daemon=True).start()
 
   def _update_active_connection_info(self):
-    self._ipv4_address = ""
-    self._current_network_metered = MeteredType.UNKNOWN
+    ipv4_address = ""
+    metered = MeteredType.UNKNOWN
 
     for active_conn in self._get_active_connections():
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
@@ -728,7 +728,7 @@ class WifiManager:
 
           for entry in address_data:
             if 'address' in entry:
-              self._ipv4_address = entry['address'][1]
+              ipv4_address = entry['address'][1]
               break
 
         # Metered status
@@ -740,10 +740,13 @@ class WifiManager:
             metered_prop = settings['connection'].get('metered', ('i', 0))[1]
 
             if metered_prop == MeteredType.YES:
-              self._current_network_metered = MeteredType.YES
+              metered = MeteredType.YES
             elif metered_prop == MeteredType.NO:
-              self._current_network_metered = MeteredType.NO
-        return
+              metered = MeteredType.NO
+        break
+
+    self._ipv4_address = ipv4_address
+    self._current_network_metered = metered
 
   def __del__(self):
     self.stop()
