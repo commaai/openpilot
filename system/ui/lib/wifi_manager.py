@@ -325,6 +325,7 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
+          print('New state', (new_state, change_reason))
 
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
@@ -515,23 +516,34 @@ class WifiManager:
     else:
       threading.Thread(target=worker, daemon=True).start()
 
-  def activate_connection(self, ssid: str, block: bool = False):
+  def activate_connection(self, ssid: str, block: bool = False) -> bool | None:
     self._set_connecting(ssid)
 
-    def worker():
+    def worker() -> bool:
       conn_path = self._connections.get(ssid, None)
-      if conn_path is not None:
-        if self._wifi_device is None:
-          cloudlog.warning("No WiFi device found")
-          return
+      if conn_path is None:
+        self._connecting_to_ssid = None
+        return False
 
-        self._router_main.send(new_method_call(self._nm, 'ActivateConnection', 'ooo',
-                                               (conn_path, self._wifi_device, "/")))
+      if self._wifi_device is None:
+        cloudlog.warning("No WiFi device found")
+        self._connecting_to_ssid = None
+        return False
+
+      reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
+                                                                   (conn_path, self._wifi_device, "/")))
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f"Failed to activate connection for {ssid}: {reply}")
+        self._connecting_to_ssid = None
+        return False
+
+      return True
 
     if block:
-      worker()
+      return worker()
     else:
       threading.Thread(target=worker, daemon=True).start()
+      return None
 
   def _deactivate_connection(self, ssid: str):
     for conn_path in self._get_active_connections():
@@ -611,7 +623,10 @@ class WifiManager:
     def worker():
       try:
         if active:
-          self.activate_connection(self._tethering_ssid, block=True)
+          success = self.activate_connection(self._tethering_ssid, block=True)
+          if not success:
+            self._enqueue_callbacks(self._setting_changed, "tethering", False)
+            return
 
           if not self._ipv4_forward:
             time.sleep(5)
