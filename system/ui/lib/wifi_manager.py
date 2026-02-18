@@ -228,6 +228,10 @@ class WifiManager:
       self._disconnected.append(disconnected)
 
   @property
+  def networks(self) -> list[Network]:
+    return self._networks
+
+  @property
   def ipv4_address(self) -> str:
     return self._ipv4_address
 
