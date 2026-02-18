@@ -731,9 +731,13 @@ class WifiManager:
 
     conn_path, props = self._get_active_wifi_connection()
 
+    print('Active connection path:', conn_path, props)
+
     if conn_path is not None and props is not None:
       # IPv4 address
       ip4config_path = props.get('Ip4Config', ('o', '/'))[1]
+
+      print('Has IP4 config:', ip4config_path)
 
       if ip4config_path != "/":
         ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
@@ -743,6 +747,8 @@ class WifiManager:
           if 'address' in entry:
             ipv4_address = entry['address'][1]
             break
+        else:
+          print('NO IP address found in AddressData:', address_data)
 
       # Metered status
       settings = self._get_connection_settings(conn_path)
