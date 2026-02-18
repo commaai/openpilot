@@ -516,34 +516,23 @@ class WifiManager:
     else:
       threading.Thread(target=worker, daemon=True).start()
 
-  def activate_connection(self, ssid: str, block: bool = False) -> bool | None:
+  def activate_connection(self, ssid: str, block: bool = False):
     self._set_connecting(ssid)
 
-    def worker() -> bool:
+    def worker():
       conn_path = self._connections.get(ssid, None)
-      if conn_path is None:
-        self._connecting_to_ssid = None
-        return False
+      if conn_path is not None:
+        if self._wifi_device is None:
+          cloudlog.warning("No WiFi device found")
+          return
 
-      if self._wifi_device is None:
-        cloudlog.warning("No WiFi device found")
-        self._connecting_to_ssid = None
-        return False
-
-      reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
-                                                                   (conn_path, self._wifi_device, "/")))
-      if reply.header.message_type == MessageType.error:
-        cloudlog.warning(f"Failed to activate connection for {ssid}: {reply}")
-        self._connecting_to_ssid = None
-        return False
-
-      return True
+        self._router_main.send(new_method_call(self._nm, 'ActivateConnection', 'ooo',
+                                               (conn_path, self._wifi_device, "/")))
 
     if block:
-      return worker()
+      worker()
     else:
       threading.Thread(target=worker, daemon=True).start()
-      return None
 
   def _deactivate_connection(self, ssid: str):
     for conn_path in self._get_active_connections():
@@ -621,23 +610,15 @@ class WifiManager:
 
   def set_tethering_active(self, active: bool):
     def worker():
-      try:
-        if active:
-          success = self.activate_connection(self._tethering_ssid, block=True)
-          if not success:
-            self._enqueue_callbacks(self._setting_changed, "tethering", False)
-            return
+      if active:
+        self.activate_connection(self._tethering_ssid, block=True)
 
-          if not self._ipv4_forward:
-            time.sleep(5)
-            cloudlog.warning("net.ipv4.ip_forward = 0")
-            subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
-        else:
-          self._deactivate_connection(self._tethering_ssid)
-        self._enqueue_callbacks(self._setting_changed, "tethering", True)
-      except Exception:
-        cloudlog.exception("Failed to set tethering")
-        self._enqueue_callbacks(self._setting_changed, "tethering", False)
+        if not self._ipv4_forward:
+          time.sleep(5)
+          cloudlog.warning("net.ipv4.ip_forward = 0")
+          subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
+      else:
+        self._deactivate_connection(self._tethering_ssid)
 
     threading.Thread(target=worker, daemon=True).start()
 
