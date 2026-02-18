@@ -42,6 +42,7 @@ PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to
 RECORD = os.getenv("RECORD") == "1"
 RECORD_OUTPUT = str(Path(os.getenv("RECORD_OUTPUT", "output")).with_suffix(".mp4"))
 RECORD_BITRATE = os.getenv("RECORD_BITRATE", "")  # Target bitrate e.g. "2000k"
+RECORD_LOSSLESS = os.getenv("RECORD_LOSSLESS") == "1"  # Use lossless recording quality (larger file size; can't be set with RECORD_BITRATE)
 RECORD_SPEED = int(os.getenv("RECORD_SPEED", "1"))  # Speed multiplier
 OFFSCREEN = os.getenv("OFFSCREEN") == "1"  # Disable FPS limiting for fast offline rendering
 
@@ -299,7 +300,10 @@ class GuiApplication:
           '-c:v', 'libx264',
           '-preset', 'ultrafast',
         ]
-        if RECORD_BITRATE:
+        if RECORD_LOSSLESS:
+          assert not RECORD_BITRATE, "RECORD_BITRATE and RECORD_LOSSLESS cannot be set together."
+          ffmpeg_args += ['-crf', '0']
+        elif RECORD_BITRATE:
           ffmpeg_args += ['-b:v', RECORD_BITRATE, '-maxrate', RECORD_BITRATE, '-bufsize', RECORD_BITRATE]
         ffmpeg_args += [
           '-y',                     # Overwrite existing file
