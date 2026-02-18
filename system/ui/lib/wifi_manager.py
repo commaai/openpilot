@@ -371,8 +371,7 @@ class WifiManager:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
           self._last_network_scan = time.monotonic()
-        self._update_networks()  # TODO: temporary 10hz for testing
-      time.sleep(1 / 10.)
+      time.sleep(1 / 2.)
 
   def _wait_for_wifi_device(self):
     while not self._exit:
@@ -697,8 +696,6 @@ class WifiManager:
         if self._wifi_device is None:
           cloudlog.warning("No WiFi device found")
           return
-
-        connected_ssid = self._get_connected_ssid()
 
         # NOTE: AccessPoints property may exclude hidden APs (use GetAllAccessPoints method if needed)
         wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
