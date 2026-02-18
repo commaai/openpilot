@@ -411,7 +411,7 @@ class WifiManager:
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
 
   def _get_active_wifi_connection(self) -> tuple[str | None, dict | None]:
-    # Returns first Connection in ActiveConnections with Type 802-11-wireless
+    # Returns first Connection settings path and ActiveConnection props from ActiveConnections with Type 802-11-wireless
     for active_conn in self._get_active_connections():
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
       reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
@@ -653,7 +653,6 @@ class WifiManager:
       reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Update', 'a{sa{sv}}', (settings,)))
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f'Failed to update metered settings: {reply}')
-        return
 
     threading.Thread(target=worker, daemon=True).start()
 
