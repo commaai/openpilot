@@ -1,17 +1,8 @@
 from enum import IntEnum
 
 
-class SafeIntEnum(IntEnum):
-  @classmethod
-  def _missing_(cls, value):
-    obj = int.__new__(cls, value)
-    obj._name_ = f"UNKNOWN_{value}"
-    obj._value_ = value
-    return obj
-
-
 # NetworkManager device states
-class NMDeviceState(SafeIntEnum):
+class NMDeviceState(IntEnum):
   # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceState
   UNKNOWN = 0
   UNMANAGED = 10
@@ -28,13 +19,12 @@ class NMDeviceState(SafeIntEnum):
   FAILED = 120
 
 
-class NMDeviceStateReason(SafeIntEnum):
+class NMDeviceStateReason(IntEnum):
   # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceStateReason
   NONE = 0
   UNKNOWN = 1
   NO_SECRETS = 7
   SUPPLICANT_DISCONNECT = 8
-  CONNECTION_REMOVED = 38
   NEW_ACTIVATION = 60
 
 
