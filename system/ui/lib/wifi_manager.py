@@ -355,8 +355,7 @@ class WifiManager:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
           self._last_network_scan = time.monotonic()
-        self._update_networks()  # TODO: temporary 10hz for testing
-      time.sleep(1 / 10.)
+      time.sleep(1 / 2.)
 
   def _wait_for_wifi_device(self):
     while not self._exit:
@@ -414,31 +413,30 @@ class WifiManager:
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
 
   def _get_connected_ssid(self) -> str | None:
-    """Get SSID from ActiveConnections instead of ActiveAccessPoint — stable during AP roaming."""
     for active_conn in self._get_active_connections():
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
       reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
+
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f"Failed to get active connection properties for {active_conn}: {reply}")
         continue
 
       props = reply.body[0]
-      if props.get('Type', ('s', ''))[1] != '802-11-wireless':
-        continue
 
-      conn_path = props.get('Connection', ('o', '/'))[1]
-      if conn_path == '/':
-        return None
+      if props.get('Type', ('s', ''))[1] == '802-11-wireless':
+        conn_path = props.get('Connection', ('o', '/'))[1]
+        if conn_path == '/':
+          return None
 
-      settings = self._get_connection_settings(conn_path)
-      if not settings:
-        return None
+        settings = self._get_connection_settings(conn_path)
 
-      ssid_val = settings.get('802-11-wireless', {}).get('ssid', None)
-      if ssid_val is None:
-        return None
+        if len(settings) == 0:
+          cloudlog.warning(f"Failed to get connection settings for {conn_path}")
+          return None
 
-      return bytes(ssid_val[1]).decode('utf-8', 'replace')
+        ssid_val = settings.get('802-11-wireless', {}).get('ssid', None)
+        if ssid_val is not None:
+          return bytes(ssid_val[1]).decode('utf-8', 'replace')
 
     return None
 
@@ -693,8 +691,6 @@ class WifiManager:
           cloudlog.warning("No WiFi device found")
           return
 
-        connected_ssid = self._get_connected_ssid()
-
         # NOTE: AccessPoints property may exclude hidden APs (use GetAllAccessPoints method if needed)
         wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
         wifi_props = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all()).body[0]
@@ -726,8 +722,8 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        # print(aps)
-        # print()
+        connected_ssid = self._get_connected_ssid()
+        print('connected ssid', connected_ssid)
         networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections, connected_ssid) for ssid, ap_list in aps.items()]
         # sort with quantized strength to reduce jumping
         networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
