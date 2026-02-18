@@ -12,7 +12,7 @@ class SafeIntEnum(IntEnum):
 
 # NetworkManager device states
 # https://people.freedesktop.org/~lkundrak/nm-dbus-api/nm-dbus-types.html
-class NMDeviceState(IntEnum):
+class NMDeviceState(SafeIntEnum):
   UNKNOWN = 0
   UNMANAGED = 10
   UNAVAILABLE = 20
@@ -26,6 +26,12 @@ class NMDeviceState(IntEnum):
   ACTIVATED = 100
   DEACTIVATING = 110
   FAILED = 120
+
+
+class NMDeviceStateReason(SafeIntEnum):
+  NO_SECRETS = 7
+  SUPPLICANT_DISCONNECT = 8
+  NEW_ACTIVATION = 60
 
 
 # NetworkManager constants
@@ -44,9 +50,6 @@ NM_IP4_CONFIG_IFACE = 'org.freedesktop.NetworkManager.IP4Config'
 
 NM_DEVICE_TYPE_WIFI = 2
 NM_DEVICE_TYPE_MODEM = 8
-NM_DEVICE_STATE_REASON_NO_SECRETS = 7
-NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
-NM_DEVICE_STATE_REASON_NEW_ACTIVATION = 60
 
 # https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApFlags
 NM_802_11_AP_FLAGS_NONE = 0x0

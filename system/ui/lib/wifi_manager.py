@@ -23,10 +23,8 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
-                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_NO_SECRETS,
-                                                    NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
-                                                    NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
-                                                    NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState)
+                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_ACTIVE_CONNECTION_IFACE,
+                                                    NM_IP4_CONFIG_IFACE, NM_PROPERTIES_IFACE, NMDeviceState, NMDeviceStateReason)
 
 try:
   from openpilot.common.params import Params
@@ -327,8 +325,8 @@ class WifiManager:
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
           # - weak/gone network fails with FAILED+NO_SECRETS
-          if ((new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT) or
-              (new_state == NMDeviceState.FAILED and change_reason == NM_DEVICE_STATE_REASON_NO_SECRETS)):
+          if ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT) or
+              (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
             failed_ssid = self._prev_connecting_to_ssid or self._connecting_to_ssid
             if failed_ssid:
               self._enqueue_callbacks(self._need_auth, failed_ssid)
@@ -343,7 +341,7 @@ class WifiManager:
             self._prev_connecting_to_ssid = None
             self._connecting_to_ssid = None
 
-          elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
+          elif new_state == NMDeviceState.DISCONNECTED and change_reason != NMDeviceStateReason.NEW_ACTIVATION:
             self._enqueue_callbacks(self._forgotten, self._connecting_to_ssid)
             self._prev_connecting_to_ssid = None
             self._connecting_to_ssid = None
