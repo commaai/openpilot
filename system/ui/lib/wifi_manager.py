@@ -186,6 +186,7 @@ class WifiManager:
     self._forgotten: list[Callable[[str | None], None]] = []
     self._networks_updated: list[Callable[[list[Network]], None]] = []
     self._disconnected: list[Callable[[], None]] = []
+    self._settings_completed: list[Callable[[str, bool], None]] = []  # (setting_name, success)
 
     self._lock = threading.Lock()
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
@@ -213,7 +214,8 @@ class WifiManager:
                     activated: Callable[[], None] | None = None,
                     forgotten: Callable[[str], None] | None = None,
                     networks_updated: Callable[[list[Network]], None] | None = None,
-                    disconnected: Callable[[], None] | None = None):
+                    disconnected: Callable[[], None] | None = None,
+                    settings_completed: Callable[[str, bool], None] | None = None):
     if need_auth is not None:
       self._need_auth.append(need_auth)
     if activated is not None:
@@ -224,6 +226,8 @@ class WifiManager:
       self._networks_updated.append(networks_updated)
     if disconnected is not None:
       self._disconnected.append(disconnected)
+    if settings_completed is not None:
+      self._settings_completed.append(settings_completed)
 
   @property
   def ipv4_address(self) -> str:
@@ -553,11 +557,13 @@ class WifiManager:
       conn_path = self._connections.get(self._tethering_ssid, None)
       if conn_path is None:
         cloudlog.warning('No tethering connection found')
+        self._enqueue_callbacks(self._settings_completed, "tethering_password", False)
         return
 
       settings = self._get_connection_settings(conn_path)
       if len(settings) == 0:
         cloudlog.warning(f'Failed to get tethering settings for {conn_path}')
+        self._enqueue_callbacks(self._settings_completed, "tethering_password", False)
         return
 
       settings['802-11-wireless-security']['psk'] = ('s', password)
@@ -566,11 +572,14 @@ class WifiManager:
       reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Update', 'a{sa{sv}}', (settings,)))
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f'Failed to update tethering settings: {reply}')
+        self._enqueue_callbacks(self._settings_completed, "tethering_password", False)
         return
 
       self._tethering_password = password
       if self.is_tethering_active():
         self.activate_connection(self._tethering_ssid, block=True)
+
+      self._enqueue_callbacks(self._settings_completed, "tethering_password", True)
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -600,20 +609,26 @@ class WifiManager:
 
   def set_tethering_active(self, active: bool):
     def worker():
-      if active:
-        self.activate_connection(self._tethering_ssid, block=True)
+      try:
+        if active:
+          self.activate_connection(self._tethering_ssid, block=True)
 
-        if not self._ipv4_forward:
-          time.sleep(5)
-          cloudlog.warning("net.ipv4.ip_forward = 0")
-          subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
-      else:
-        self._deactivate_connection(self._tethering_ssid)
+          if not self._ipv4_forward:
+            time.sleep(5)
+            cloudlog.warning("net.ipv4.ip_forward = 0")
+            subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
+        else:
+          self._deactivate_connection(self._tethering_ssid)
+        self._enqueue_callbacks(self._settings_completed, "tethering", True)
+      except Exception:
+        cloudlog.exception("Failed to set tethering")
+        self._enqueue_callbacks(self._settings_completed, "tethering", False)
 
     threading.Thread(target=worker, daemon=True).start()
 
   def set_current_network_metered(self, metered: MeteredType):
     def worker():
+      success = False
       for active_conn in self._get_active_connections():
         conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
         props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
@@ -627,15 +642,21 @@ class WifiManager:
 
           if len(settings) == 0:
             cloudlog.warning(f'Failed to get connection settings for {conn_path}')
-            return
+            break
 
           settings['connection']['metered'] = ('i', int(metered))
 
           conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
           reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Update', 'a{sa{sv}}', (settings,)))
           if reply.header.message_type == MessageType.error:
-            cloudlog.warning(f'Failed to update tethering settings: {reply}')
-            return
+            cloudlog.warning(f'Failed to update metered settings: {reply}')
+            break
+
+          self._current_network_metered = metered
+          success = True
+          break
+
+      self._enqueue_callbacks(self._settings_completed, "metered", success)
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -796,17 +817,20 @@ class WifiManager:
           changes = True
 
         if changes:
-          # Update the connection settings (temporary update)
           conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
           reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,)))
 
           if reply.header.message_type == MessageType.error:
             cloudlog.warning(f"Failed to update GSM settings: {reply}")
+            self._enqueue_callbacks(self._settings_completed, "gsm", False)
             return
 
           self._activate_modem_connection(lte_connection_path)
+
+        self._enqueue_callbacks(self._settings_completed, "gsm", True)
       except Exception as e:
         cloudlog.exception(f"Error updating GSM settings: {e}")
+        self._enqueue_callbacks(self._settings_completed, "gsm", False)
 
     threading.Thread(target=worker, daemon=True).start()
 
