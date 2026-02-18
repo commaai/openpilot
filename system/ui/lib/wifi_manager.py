@@ -394,7 +394,7 @@ class WifiManager:
               # When connection is forgotten
               self._set_connecting(None)
 
-          elif new_state == NMDeviceState.FAILED and change_reason != NMDeviceStateReason.NO_SECRETS:
+          elif new_state == NMDeviceState.FAILED:
             if change_reason in (NMDeviceStateReason.SSID_NOT_FOUND, NMDeviceStateReason.SUPPLICANT_TIMEOUT):
               # set to connecting, likely to attempt to reconnect
               self._wifi_state.status = ConnectStatus.CONNECTING
