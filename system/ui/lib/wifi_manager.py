@@ -737,7 +737,7 @@ class WifiManager:
 
         active_wifi_connection, _ = self._get_active_wifi_connection()
         networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections,
-                                      self._connections.get(ssid) == active_wifi_connection) for ssid, ap_list in aps.items()]
+                                      active_wifi_connection is not None and self._connections.get(ssid) == active_wifi_connection) for ssid, ap_list in aps.items()]
         networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -n.strength, n.ssid.lower()))
         self._networks = networks
 
