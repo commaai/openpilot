@@ -368,36 +368,10 @@ class WifiManager:
           new_state, previous_state, change_reason = state_q.popleft().body
           print('  State change', (NMDeviceState(new_state), NMDeviceStateReason(change_reason)))
 
-          # if new_state == NMDeviceState.DISCONNECTED and change_reason != NMDeviceStateReason.NEW_ACTIVATION:
-          #   print('disconnected from', self._wifi_state.ssid)
-          #   self._wifi_state.status = ConnectStatus.DISCONNECTED
-          #   self._wifi_state.ssid = None
-          #
-          # elif new_state in (NMDeviceState.DEACTIVATING, NMDeviceState.DISCONNECTED):
-          #   if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-          #     # When connection is forgotten
-          #     self._set_connecting(None)
-
-          if new_state == NMDeviceState.DISCONNECTED:
-            if previous_state != NMDeviceState.FAILED:
-              if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-                # When connection is forgotten
-                self._set_connecting(None)
-
-              elif change_reason != NMDeviceStateReason.NEW_ACTIVATION:
-                print('disconnected from', self._wifi_state.ssid)
-                self._wifi_state.status = ConnectStatus.DISCONNECTED
-                self._wifi_state.ssid = None
-
-          elif new_state == NMDeviceState.DEACTIVATING:
-            if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-              # When connection is forgotten
-              self._set_connecting(None)
-
-          elif new_state == NMDeviceState.FAILED:
-            if change_reason in (NMDeviceStateReason.SSID_NOT_FOUND, NMDeviceStateReason.SUPPLICANT_TIMEOUT):
-              # set to connecting, likely to attempt to reconnect
-              self._wifi_state.status = ConnectStatus.CONNECTING
+          if new_state == NMDeviceState.DISCONNECTED and change_reason != NMDeviceStateReason.NEW_ACTIVATION:
+            print('disconnected from', self._wifi_state.ssid)
+            self._wifi_state.status = ConnectStatus.DISCONNECTED
+            self._wifi_state.ssid = None
 
           elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
             self._wifi_state.status = ConnectStatus.CONNECTING
@@ -446,7 +420,12 @@ class WifiManager:
             if save_reply.header.message_type == MessageType.error:
               cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
 
-          elif new_state in (NMDeviceState.NEED_AUTH, ):
+          elif new_state in (NMDeviceState.DEACTIVATING, NMDeviceState.DISCONNECTED):
+            if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
+              # When connection is forgotten
+              self._set_connecting(None)
+
+          elif new_state in (NMDeviceState.NEED_AUTH, NMDeviceState.FAILED):
             pass
 
           else:
