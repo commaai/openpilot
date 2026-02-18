@@ -387,7 +387,9 @@ class WifiUIMici(NavWidget):
       cloudlog.warning(f"Trying to connect to unknown network: {ssid}")
       return
 
-    if network.is_saved:
+    # Eager treat wrong password buttons as not saved, short window race condition
+    wrong_password = any(isinstance(btn, WifiButton) and btn.network.ssid == ssid and btn._wrong_password for btn in self._scroller._items)
+    if network.is_saved and not wrong_password:
       self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.activate_connection(network.ssid)
       self._update_buttons()

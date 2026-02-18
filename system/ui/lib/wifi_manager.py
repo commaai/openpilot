@@ -229,15 +229,25 @@ class WifiManager:
 
     threading.Thread(target=worker, daemon=True).start()
 
-  def _init_wifi_state(self):
-    dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
-    dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
-    if dev_state == NMDeviceState.ACTIVATED:
+  def _init_wifi_state(self, block: bool = True):
+    def worker():
+      dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
+      dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
+      wifi_state = WifiState()
+      if NMDeviceState.PREPARE <= dev_state <= NMDeviceState.SECONDARIES and dev_state != NMDeviceState.NEED_AUTH:
+         wifi_state.status = ConnectStatus.CONNECTING
+      elif dev_state == NMDeviceState.ACTIVATED:
+        wifi_state.status = ConnectStatus.CONNECTED
+
       conn_path, _ = self._get_active_wifi_connection()
       if conn_path:
-        ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
-        if ssid:
-          self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.CONNECTED)
+        wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+      self._wifi_state = wifi_state
+
+    if block:
+      worker()
+    else:
+      threading.Thread(target=worker, daemon=True).start()
 
   def add_callbacks(self, need_auth: Callable[[str], None] | None = None,
                     activated: Callable[[], None] | None = None,
@@ -301,8 +311,9 @@ class WifiManager:
   def set_active(self, active: bool):
     self._active = active
 
-    # Update networks immediately when activating for UI
+    # Update networks and WiFi state (to self-heal) immediately when activating for UI
     if active:
+      self._init_wifi_state(block=False)
       self._update_networks(block=False)
 
   def _monitor_state(self):
@@ -401,7 +412,6 @@ class WifiManager:
             pass
 
           elif new_state == NMDeviceState.ACTIVATED:
-            self._update_networks()
             self._enqueue_callbacks(self._activated)
             print('activated connection to', self._wifi_state.ssid)
 
