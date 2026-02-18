@@ -424,7 +424,7 @@ class WifiUIMici(NavWidget):
 
   def _render(self, _):
 
-    print('WifiState:', self._wifi_manager.wifi_state)
+    # print('WifiState:', self._wifi_manager.wifi_state)
 
     self._scroller.render(self._rect)
 
