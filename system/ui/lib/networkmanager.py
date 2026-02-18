@@ -11,9 +11,8 @@ class SafeIntEnum(IntEnum):
 
 
 # NetworkManager device states
-# https://people.freedesktop.org/~lkundrak/nm-dbus-api/nm-dbus-types.html
 class NMDeviceState(SafeIntEnum):
-  META_UNKNOWN = -1
+  # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceState
   UNKNOWN = 0
   UNMANAGED = 10
   UNAVAILABLE = 20
@@ -30,6 +29,7 @@ class NMDeviceState(SafeIntEnum):
 
 
 class NMDeviceStateReason(SafeIntEnum):
+  # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceStateReason
   NONE = 0
   UNKNOWN = 1
   NO_SECRETS = 7
