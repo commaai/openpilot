@@ -174,7 +174,7 @@ class WifiButton(BigButton):
 
   @property
   def _shake_offset(self) -> float:
-    SHAKE_DURATION = 0.4
+    SHAKE_DURATION = 0.5
     SHAKE_AMPLITUDE = 24.0
     SHAKE_FREQUENCY = 32.0
     t = rl.get_time() - (self._shake_start or 0.0)
