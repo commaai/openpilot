@@ -513,7 +513,12 @@ class WifiManager:
         }
 
       settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-      self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
+      reply = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
+
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f"Failed to add connection for {ssid}: {reply}")
+        self._connecting_to_ssid = None
+        self._prev_connecting_to_ssid = None
 
     threading.Thread(target=worker, daemon=True).start()
 
