@@ -402,9 +402,8 @@ class WifiUIMici(BigMultiOptionDialog):
         btn.set_network_missing(True)
 
   def _connect_with_password(self, ssid: str, password: str):
-    if password:
-      self._wifi_manager.connect_to_network(ssid, password)
-      self._update_buttons()
+    self._wifi_manager.connect_to_network(ssid, password)
+    self._update_buttons()
 
   def _on_option_selected(self, option: str):
     super()._on_option_selected(option)
