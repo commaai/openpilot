@@ -817,6 +817,7 @@ class WifiManager:
           changes = True
 
         if changes:
+          # Update the connection settings (temporary update)
           conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
           reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,)))
 
