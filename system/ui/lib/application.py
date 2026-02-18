@@ -41,8 +41,8 @@ PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
 RECORD = os.getenv("RECORD") == "1"
 RECORD_OUTPUT = str(Path(os.getenv("RECORD_OUTPUT", "output")).with_suffix(".mp4"))
-RECORD_BITRATE = os.getenv("RECORD_BITRATE", "")  # Target bitrate e.g. "2000k"
-RECORD_LOSSLESS = os.getenv("RECORD_LOSSLESS") == "1"  # Use lossless recording quality (larger file size; can't be set with RECORD_BITRATE)
+RECORD_QUALITY = int(os.getenv("RECORD_QUALITY", "23"))  # Dynamic bitrate quality level (CRF); 0 is lossless, max is 51, default is 23 for x264
+RECORD_BITRATE = os.getenv("RECORD_BITRATE", "")  # Target bitrate e.g. "2000k" (overrides RECORD_QUALITY when set)
 RECORD_SPEED = int(os.getenv("RECORD_SPEED", "1"))  # Speed multiplier
 OFFSCREEN = os.getenv("OFFSCREEN") == "1"  # Disable FPS limiting for fast offline rendering
 
@@ -299,11 +299,10 @@ class GuiApplication:
           '-r', str(output_fps),    # Output frame rate (for speed multiplier)
           '-c:v', 'libx264',
           '-preset', 'ultrafast',
+          '-crf', str(RECORD_QUALITY)
         ]
-        if RECORD_LOSSLESS:
-          assert not RECORD_BITRATE, "RECORD_BITRATE and RECORD_LOSSLESS cannot be set together."
-          ffmpeg_args += ['-crf', '0']
-        elif RECORD_BITRATE:
+        if RECORD_BITRATE:
+          # NOTE: Setting bitrate settings here will override CRF quality setting above
           ffmpeg_args += ['-b:v', RECORD_BITRATE, '-maxrate', RECORD_BITRATE, '-bufsize', RECORD_BITRATE]
         ffmpeg_args += [
           '-y',                     # Overwrite existing file
