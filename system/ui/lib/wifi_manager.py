@@ -409,6 +409,25 @@ class WifiManager:
   def _get_active_connections(self):
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
 
+  def _get_active_wifi_connection(self) -> str | None:
+    # Returns first Connection path in ActiveConnections with Type 802-11-wireless
+    for active_conn in self._get_active_connections():
+      conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+      reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
+
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f"Failed to get active connection properties for {active_conn}: {reply}")
+        continue
+
+      props = reply.body[0]
+
+      if props.get('Type', ('s', ''))[1] == '802-11-wireless':
+        conn_path = props.get('Connection', ('o', '/'))[1]
+        if conn_path != '/':
+          return conn_path
+
+    return None
+
   def _get_connection_settings(self, conn_path: str) -> dict:
     conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
     reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'GetSettings'))
