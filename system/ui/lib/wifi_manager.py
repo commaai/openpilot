@@ -397,13 +397,13 @@ class WifiManager:
               (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
 
             if self._wifi_state.ssid:
+              self._enqueue_callbacks(self._need_auth, self._wifi_state.ssid)
               self.forget_connection(self._wifi_state.ssid, block=True)
 
+            print('connection failed to', self._wifi_state.ssid, (new_state, change_reason))
             self._wifi_state.status = ConnectStatus.DISCONNECTED
             self._wifi_state.ssid = None
 
-            # failed_ssid = self._prev_connecting_to_ssid or self._connecting_to_ssid
-            print('connection failed to', self._wifi_state.ssid, (new_state, change_reason))
             # print('connection failed to', failed_ssid, (new_state, change_reason))
             # if failed_ssid:
             #   self._enqueue_callbacks(self._need_auth, failed_ssid)
