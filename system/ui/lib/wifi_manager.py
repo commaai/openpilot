@@ -398,7 +398,7 @@ class WifiManager:
 
             if self._wifi_state.ssid:
               self._enqueue_callbacks(self._need_auth, self._wifi_state.ssid)
-              self.forget_connection(self._wifi_state.ssid, block=True)
+              # self.forget_connection(self._wifi_state.ssid, block=True)
 
             print('connection failed to', self._wifi_state.ssid, (new_state, change_reason))
             self._wifi_state.status = ConnectStatus.DISCONNECTED
@@ -432,6 +432,12 @@ class WifiManager:
               continue
 
             self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == active_conn_path), None)
+
+            # Persist volatile connections (created by AddAndActivateConnection2) to disk
+            conn_addr = DBusAddress(active_conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+            save_reply = self._conn_monitor.send_and_get_reply(new_method_call(conn_addr, 'Save'))
+            if save_reply.header.message_type == MessageType.error:
+              cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
 
           elif new_state in (NMDeviceState.DEACTIVATING, NMDeviceState.DISCONNECTED) and change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
             self._set_connecting(None)
@@ -497,8 +503,9 @@ class WifiManager:
       ssid = settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
       if ssid != "":
         self._connections[ssid] = conn_path
-        if ssid != self._tethering_ssid:
-          self.activate_connection(ssid, block=True)
+        # Skip activation if already connecting (AddAndActivateConnection2 handles it)
+        # if ssid != self._tethering_ssid and self._wifi_state.status != ConnectStatus.CONNECTING:
+        #   self.activate_connection(ssid, block=True)
 
   def _connection_removed(self, conn_path: str):
     self._connections = {ssid: path for ssid, path in self._connections.items() if path != conn_path}
@@ -610,11 +617,18 @@ class WifiManager:
           'psk': ('s', password),
         }
 
-      settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-      reply = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
+      # Volatile connection auto-deletes on disconnect (wrong password, user switches networks)
+      # Persisted to disk on ACTIVATED via Save()
+      if self._wifi_device is None:
+        cloudlog.warning("No WiFi device found")
+        self._set_connecting(None)
+        return
+
+      reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'AddAndActivateConnection2', 'a{sa{sv}}ooa{sv}',
+                                                                   (connection, self._wifi_device, "/", {'persist': ('s', 'volatile')})))
 
       if reply.header.message_type == MessageType.error:
-        cloudlog.warning(f"Failed to add connection for {ssid}: {reply}")
+        cloudlog.warning(f"Failed to add and activate connection for {ssid}: {reply}")
         self._set_connecting(None)
         # self._connecting_to_ssid = None
         # self._prev_connecting_to_ssid = None

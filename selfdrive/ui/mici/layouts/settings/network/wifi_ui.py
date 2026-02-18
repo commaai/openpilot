@@ -162,6 +162,7 @@ class WifiButton(BigButton):
 
   def set_wrong_password(self):
     self._wrong_password = True
+    self._shake_start = rl.get_time()
 
   @property
   def network(self) -> Network:
@@ -169,7 +170,7 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
-    return (self._network.is_saved and not self._network_forgot) or self._is_connecting
+    return (self._network.is_saved and not self._network_forgot and not self._wrong_password) or self._is_connecting
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
@@ -185,7 +186,7 @@ class WifiButton(BigButton):
     SHAKE_AMPLITUDE = 24.0
     SHAKE_FREQUENCY = 32.0
     t = rl.get_time() - (self._shake_start or 0.0)
-    if t < 0 or t > SHAKE_DURATION:
+    if t > SHAKE_DURATION:
       return 0.0
     decay = 1.0 - t / SHAKE_DURATION
     return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
@@ -267,10 +268,6 @@ class WifiButton(BigButton):
         self.set_value("unsupported")
 
     else:  # saved, wrong password, or unknown
-      # Start shake when actually setting text
-      if self._wrong_password and self._shake_start is None:
-        self._shake_start = rl.get_time()
-
       self.set_value("wrong password" if self._wrong_password else "connect")
       self.set_enabled(True)
       self._sub_label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
