@@ -94,13 +94,13 @@ class Network:
   ip_address: str = ""  # TODO: implement
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool, connected_ssid: str | None = None) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool, active_connection: bool) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
     # uses ActiveConnection SSID (stable during AP roaming) instead of ActiveAccessPoint path
     # https://github.com/GNOME/gnome-shell/blob/3f8b174274fac7d69477523d4873ef8253e1ed49/js/ui/status/network.js#L810-L819
-    print((any(ap.is_connected for ap in aps)), connected_ssid, ssid)
-    is_connected = any(ap.is_connected for ap in aps)# or (ssid == connected_ssid)
+    print('test', ssid, (any(ap.is_connected for ap in aps)), active_connection)
+    is_connected = any(ap.is_connected for ap in aps) or active_connection
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
 
     return cls(
@@ -355,7 +355,8 @@ class WifiManager:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
           self._last_network_scan = time.monotonic()
-      time.sleep(1 / 2.)
+        self._update_networks()
+      time.sleep(1 / 10.)
 
   def _wait_for_wifi_device(self):
     while not self._exit:
@@ -412,7 +413,8 @@ class WifiManager:
   def _get_active_connections(self):
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
 
-  def _get_connected_ssid(self) -> str | None:
+  def _get_active_connection(self) -> str | None:
+    # Returns first Connection path in ActiveConnections with Type 802-11-wireless
     for active_conn in self._get_active_connections():
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
       reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
@@ -426,19 +428,53 @@ class WifiManager:
       if props.get('Type', ('s', ''))[1] == '802-11-wireless':
         conn_path = props.get('Connection', ('o', '/'))[1]
         if conn_path == '/':
-          return None
+          continue
 
-        settings = self._get_connection_settings(conn_path)
+        return conn_path
 
-        if len(settings) == 0:
-          cloudlog.warning(f"Failed to get connection settings for {conn_path}")
-          return None
-
-        ssid_val = settings.get('802-11-wireless', {}).get('ssid', None)
-        if ssid_val is not None:
-          return bytes(ssid_val[1]).decode('utf-8', 'replace')
+        # print('ActiveConnection:', active_conn, 'Connection path:', conn_path)
+        #
+        # settings = self._get_connection_settings(conn_path)
+        #
+        # if len(settings) == 0:
+        #   cloudlog.warning(f"Failed to get connection settings for {conn_path}")
+        #   return None
+        #
+        # ssid_val = settings.get('802-11-wireless', {}).get('ssid', None)
+        # if ssid_val is not None:
+        #   return bytes(ssid_val[1]).decode('utf-8', 'replace')
 
     return None
+
+  # def _get_connected_ssid(self) -> str | None:
+  #   for active_conn in self._get_active_connections():
+  #     conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+  #     reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
+  #
+  #     if reply.header.message_type == MessageType.error:
+  #       cloudlog.warning(f"Failed to get active connection properties for {active_conn}: {reply}")
+  #       continue
+  #
+  #     props = reply.body[0]
+  #
+  #     if props.get('Type', ('s', ''))[1] == '802-11-wireless':
+  #       conn_path = props.get('Connection', ('o', '/'))[1]
+  #       if conn_path == '/':
+  #         return None
+  #
+  #       print('ActiveConnection:', active_conn, 'Connection path:', conn_path)
+  #
+  #       settings = self._get_connection_settings(conn_path)
+  #
+  #       if len(settings) == 0:
+  #         cloudlog.warning(f"Failed to get connection settings for {conn_path}")
+  #         return None
+  #
+  #       ssid_val = settings.get('802-11-wireless', {}).get('ssid', None)
+  #       if ssid_val is not None:
+  #         return bytes(ssid_val[1]).decode('utf-8', 'replace')
+  #
+  #   return None
 
   def _get_connection_settings(self, conn_path: str) -> dict:
     conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
@@ -722,9 +758,10 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        connected_ssid = self._get_connected_ssid()
-        print('connected ssid', connected_ssid)
-        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections, connected_ssid) for ssid, ap_list in aps.items()]
+        # connected_ssid = self._get_connected_ssid()
+        active_connection_path = self._get_active_connection()
+        print('_connections', self._connections)
+        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections, self._connections.get(ssid) == active_connection_path) for ssid, ap_list in aps.items()]
         # sort with quantized strength to reduce jumping
         networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
         self._networks = networks
