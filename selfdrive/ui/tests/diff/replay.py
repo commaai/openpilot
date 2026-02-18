@@ -104,7 +104,7 @@ def main():
   if args.big:
     os.environ["BIG"] = "1"
   os.environ["RECORD"] = "1"
-  os.environ["RECORD_QUALITY"] = "0"  # Lossless (CRF 0) is needed for deterministic output across different machines
+  os.environ["RECORD_QUALITY"] = "0"  # Use CRF 0 ("lossless" encode) for deterministic output across different machines
   os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ.get("RECORD_OUTPUT", f"{variant}_ui_replay.mp4"))
 
   print(f"Running {variant} UI replay...")
