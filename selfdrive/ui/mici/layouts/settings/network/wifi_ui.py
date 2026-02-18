@@ -414,6 +414,7 @@ class WifiUIMici(NavWidget):
   def _render(self, _):
     self._scroller.render(self._rect)
 
-    anim_x = self._rect.x
+    anim_w = 90
+    anim_x = self._rect.x + self._rect.width - anim_w
     anim_y = self._rect.y + self._rect.height - 25 + 2
-    self._loading_animation.render(rl.Rectangle(anim_x, anim_y, 90, 20))
+    self._loading_animation.render(rl.Rectangle(anim_x, anim_y, anim_w, 20))
