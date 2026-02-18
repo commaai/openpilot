@@ -12,6 +12,8 @@ LINE_COLOR = rl.GRAY
 LINE_PADDING = 40
 ANIMATION_SCALE = 0.6
 
+EDGE_SHADOW_WIDTH = 20
+
 MIN_ZOOM_ANIMATION_TIME = 0.075  # seconds
 DO_ZOOM = False
 DO_JELLO = False
@@ -80,7 +82,7 @@ class ScrollIndicator(Widget):
 class Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = True, spacing: int = ITEM_SPACING,
                line_separator: bool = False, pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING,
-               scroll_indicator: bool = True):
+               scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
@@ -110,8 +112,10 @@ class Scroller(Widget):
     self.scroll_panel = GuiScrollPanel2(self._horizontal, handle_out_of_bounds=not self._snap_items)
     self._scroll_enabled: bool | Callable[[], bool] = True
 
-    self._show_scroll_indicator = scroll_indicator
+    self._show_scroll_indicator = scroll_indicator and self._horizontal
     self._scroll_indicator = ScrollIndicator()
+    self._edge_shadows = edge_shadows and self._horizontal
+
     self._move_animations: dict[int, FirstOrderFilter] = {}
     self._move_lift: dict[int, FirstOrderFilter] = {}
     self._moved_item_ids: set[int] = set()
@@ -392,8 +396,19 @@ class Scroller(Widget):
 
     rl.end_scissor_mode()
 
-    # Draw scroll indicator
-    if self._show_scroll_indicator and self._horizontal and len(self._visible_items) > 0:
+    # Draw edge shadows on top of scroller content
+    if self._edge_shadows:
+      rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y),
+                                   EDGE_SHADOW_WIDTH, int(self._rect.y),
+                                   rl.Color(0, 0, 0, 166), rl.BLANK)
+
+      right_x = int(self._rect.x + self._rect.width - EDGE_SHADOW_WIDTH)
+      rl.draw_rectangle_gradient_h(right_x, int(self._rect.y),
+                                   EDGE_SHADOW_WIDTH, int(self._rect.y),
+                                   rl.BLANK, rl.Color(0, 0, 0, 166))
+
+    # Draw scroll indicator on top of edge shadows
+    if self._show_scroll_indicator and len(self._visible_items) > 0:
       self._scroll_indicator.update(self._scroll_offset, self._content_size, self._rect)
       self._scroll_indicator.render()
 

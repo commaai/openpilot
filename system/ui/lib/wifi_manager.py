@@ -353,7 +353,7 @@ class WifiManager:
             conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
             if conn_path is None:
               cloudlog.warning("Failed to get active wifi connection during PREPARE state")
-              return
+              continue
 
             ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
             if ssid:
@@ -437,17 +437,19 @@ class WifiManager:
   def _connection_removed(self, conn_path: str):
     self._connections = {ssid: path for ssid, path in self._connections.items() if path != conn_path}
 
-  def _get_active_connections(self):
+  def _get_active_connections(self, router: DBusConnection | DBusRouter | None = None):
     # Returns list of ActiveConnection
-    return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
+    if router is None:
+      router = self._router_main
+
+    return router.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
 
   def _get_active_wifi_connection(self, router: DBusConnection | DBusRouter | None = None) -> tuple[str | None, dict | None]:
     # Returns first Connection settings path and ActiveConnection props from ActiveConnections with Type 802-11-wireless
     if router is None:
       router = self._router_main
 
-    active_conns = router.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
-    for active_conn in active_conns:
+    for active_conn in self._get_active_connections(router):
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
       reply = router.send_and_get_reply(Properties(conn_addr).get_all())
 
