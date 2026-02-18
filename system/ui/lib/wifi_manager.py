@@ -709,9 +709,9 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        # connected_ssid = self._get_connected_ssid()
         active_wifi_connection, _ = self._get_active_wifi_connection()
-        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections, self._connections.get(ssid) == active_wifi_connection) for ssid, ap_list in aps.items()]
+        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections,
+                                      self._connections.get(ssid) == active_wifi_connection) for ssid, ap_list in aps.items()]
         # sort with quantized strength to reduce jumping
         networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
         self._networks = networks
