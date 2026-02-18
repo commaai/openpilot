@@ -331,7 +331,7 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
-          print('  State change', (NMDeviceState(new_state), NMDeviceStateReason(change_reason)))
+          print('  State change', (new_state, change_reason))
 
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
