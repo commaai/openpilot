@@ -135,7 +135,7 @@ class NetworkLayoutMici(NavWidget):
     elif connected_network is not None:
       display_network = connected_network
       self._wifi_button.set_text(normalize_ssid(connected_network.ssid))
-      self._wifi_button.set_value(self._wifi_manager.ipv4_address or "connecting...")
+      self._wifi_button.set_value(self._wifi_manager.ipv4_address or "obtaining IP...")
     else:
       display_network = None
       self._wifi_button.set_text("wi-fi")

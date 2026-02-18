@@ -456,7 +456,8 @@ class WifiManager:
       props = reply.body[0]
 
       conn_path = props.get('Connection', ('o', '/'))[1]
-      if props.get('Type', ('s', ''))[1] == '802-11-wireless' and conn_path != '/':
+      state = props.get('State', ('u', 0))[1]
+      if props.get('Type', ('s', ''))[1] == '802-11-wireless' and conn_path != '/' and state == 2:  # NM_ACTIVE_CONNECTION_STATE_ACTIVATED
         return conn_path, props
 
     return None, None
@@ -717,9 +718,12 @@ class WifiManager:
           return
 
         # NOTE: AccessPoints property may exclude hidden APs (use GetAllAccessPoints method if needed)
+        dev_addr = DBusAddress(self._wifi_device, NM, interface=NM_DEVICE_IFACE)
+        dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
+
         wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
         wifi_props = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all()).body[0]
-        active_ap_path = wifi_props.get('ActiveAccessPoint', ('o', '/'))[1]
+        active_ap_path = wifi_props.get('ActiveAccessPoint', ('o', '/'))[1] if dev_state == NMDeviceState.ACTIVATED else '/'
         print('active ap path', active_ap_path)
         ap_paths = wifi_props.get('AccessPoints', ('ao', []))[1]
 
@@ -751,7 +755,8 @@ class WifiManager:
         # print()
         active_wifi_connection, _ = self._get_active_wifi_connection()
         networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections,
-                                      self._connections.get(ssid) == active_wifi_connection) for ssid, ap_list in aps.items()]
+                                      active_wifi_connection is not None and self._connections.get(ssid) == active_wifi_connection)
+                    for ssid, ap_list in aps.items()]
         networks.sort(key=lambda n: (n.ssid != self._connecting_to_ssid, -n.is_connected, -n.is_saved, -n.strength, n.ssid.lower()))
         self._networks = networks
 
