@@ -138,7 +138,7 @@ class WifiButton(BigButton):
     self._network_missing = False
     self._wifi_icon.set_network_missing(False)
     self._network_forgot = False
-    if self._is_connected:
+    if self._is_connected or self._is_connecting:
       self._wrong_password = False
 
   def _forget_network(self):
@@ -404,12 +404,12 @@ class WifiUIMici(NavWidget):
     dlg = BigInputDialog("enter password...", "", minimum_length=0,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
 
-    def on_close(_):
-      gui_app.set_modal_overlay_tick(None)
-
-    # Process wifi callbacks while the keyboard is shown so forgotten clears connecting state
-    gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
-    gui_app.set_modal_overlay(dlg, on_close)
+    # def on_close(_):
+    #   gui_app.set_modal_overlay_tick(None)
+    #
+    # # Process wifi callbacks while the keyboard is shown so forgotten clears connecting state
+    # gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
+    gui_app.set_modal_overlay(dlg)
 
   def _on_forgotten(self, ssid):
     # For eager UI forget
