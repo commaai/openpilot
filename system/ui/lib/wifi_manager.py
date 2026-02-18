@@ -346,7 +346,7 @@ class WifiManager:
             conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
             if conn_path is None:
               cloudlog.warning("Failed to get active wifi connection during PREPARE state")
-              return
+              continue
 
             ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
             if ssid:
