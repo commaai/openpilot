@@ -30,13 +30,13 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_ui = WifiUIMici(self._wifi_manager, back_callback=lambda: self._switch_to_panel(NetworkPanelType.NONE))
 
     self._wifi_manager.add_callbacks(
-      networks_updated=self._on_networks_updated,
-      setting_changed=self._on_setting_changed,
+      networks_updated=self._on_network_updated,
     )
 
     # ******** Tethering ********
     def tethering_toggle_callback(checked: bool):
       self._tethering_toggle_btn.set_enabled(False)
+      self._tethering_password_btn.set_enabled(False)
       self._network_metered_btn.set_enabled(False)
       self._wifi_manager.set_tethering_active(checked)
 
@@ -44,8 +44,8 @@ class NetworkLayoutMici(NavWidget):
 
     def tethering_password_callback(password: str):
       if password:
+        self._tethering_toggle_btn.set_enabled(False)
         self._tethering_password_btn.set_enabled(False)
-        self._tethering_password_btn.set_value("updating...")
         self._wifi_manager.set_tethering_password(password)
 
     def tethering_password_clicked():
@@ -153,11 +153,12 @@ class NetworkLayoutMici(NavWidget):
   def _toggle_cellular_metered(self, checked: bool):
     self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), ui_state.params.get("GsmApn") or "", checked)
 
-  def _on_networks_updated(self, networks: list[Network]):
+  def _on_network_updated(self, networks: list[Network]):
     # Update tethering state
     tethering_active = self._wifi_manager.is_tethering_active()
     # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
     self._tethering_toggle_btn.set_enabled(True)
+    self._tethering_password_btn.set_enabled(True)
     self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
     self._tethering_toggle_btn.set_checked(tethering_active)
 
@@ -191,11 +192,6 @@ class NetworkLayoutMici(NavWidget):
         MeteredType.YES: 'metered',
         MeteredType.NO: 'unmetered'
       }.get(self._wifi_manager.current_network_metered, 'default'))
-
-  def _on_setting_changed(self, setting: str, success: bool):
-    if setting == "tethering_password":
-      self._tethering_password_btn.set_value("")
-      self._tethering_password_btn.set_enabled(True)
 
   def _switch_to_panel(self, panel_type: NetworkPanelType):
     if panel_type == NetworkPanelType.WIFI:

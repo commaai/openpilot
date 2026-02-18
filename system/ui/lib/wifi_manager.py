@@ -186,7 +186,6 @@ class WifiManager:
     self._forgotten: list[Callable[[str | None], None]] = []
     self._networks_updated: list[Callable[[list[Network]], None]] = []
     self._disconnected: list[Callable[[], None]] = []
-    self._setting_changed: list[Callable[[str, bool], None]] = []  # (setting_name, success)
 
     self._lock = threading.Lock()
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
@@ -214,8 +213,7 @@ class WifiManager:
                     activated: Callable[[], None] | None = None,
                     forgotten: Callable[[str], None] | None = None,
                     networks_updated: Callable[[list[Network]], None] | None = None,
-                    disconnected: Callable[[], None] | None = None,
-                    setting_changed: Callable[[str, bool], None] | None = None):
+                    disconnected: Callable[[], None] | None = None):
     if need_auth is not None:
       self._need_auth.append(need_auth)
     if activated is not None:
@@ -226,8 +224,6 @@ class WifiManager:
       self._networks_updated.append(networks_updated)
     if disconnected is not None:
       self._disconnected.append(disconnected)
-    if setting_changed is not None:
-      self._setting_changed.append(setting_changed)
 
   @property
   def ipv4_address(self) -> str:
@@ -325,7 +321,6 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
-          print('New state', (new_state, change_reason))
 
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
@@ -558,13 +553,11 @@ class WifiManager:
       conn_path = self._connections.get(self._tethering_ssid, None)
       if conn_path is None:
         cloudlog.warning('No tethering connection found')
-        self._enqueue_callbacks(self._setting_changed, "tethering_password", False)
         return
 
       settings = self._get_connection_settings(conn_path)
       if len(settings) == 0:
         cloudlog.warning(f'Failed to get tethering settings for {conn_path}')
-        self._enqueue_callbacks(self._setting_changed, "tethering_password", False)
         return
 
       settings['802-11-wireless-security']['psk'] = ('s', password)
@@ -573,14 +566,11 @@ class WifiManager:
       reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Update', 'a{sa{sv}}', (settings,)))
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f'Failed to update tethering settings: {reply}')
-        self._enqueue_callbacks(self._setting_changed, "tethering_password", False)
         return
 
       self._tethering_password = password
       if self.is_tethering_active():
         self.activate_connection(self._tethering_ssid, block=True)
-
-      self._enqueue_callbacks(self._setting_changed, "tethering_password", True)
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -624,7 +614,6 @@ class WifiManager:
 
   def set_current_network_metered(self, metered: MeteredType):
     def worker():
-      success = False
       for active_conn in self._get_active_connections():
         conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
         props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
@@ -638,21 +627,15 @@ class WifiManager:
 
           if len(settings) == 0:
             cloudlog.warning(f'Failed to get connection settings for {conn_path}')
-            break
+            return
 
           settings['connection']['metered'] = ('i', int(metered))
 
           conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
           reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Update', 'a{sa{sv}}', (settings,)))
           if reply.header.message_type == MessageType.error:
-            cloudlog.warning(f'Failed to update metered settings: {reply}')
-            break
-
-          self._current_network_metered = metered
-          success = True
-          break
-
-      self._enqueue_callbacks(self._setting_changed, "metered", success)
+            cloudlog.warning(f'Failed to update tethering settings: {reply}')
+            return
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -819,15 +802,11 @@ class WifiManager:
 
           if reply.header.message_type == MessageType.error:
             cloudlog.warning(f"Failed to update GSM settings: {reply}")
-            self._enqueue_callbacks(self._setting_changed, "gsm", False)
             return
 
           self._activate_modem_connection(lte_connection_path)
-
-        self._enqueue_callbacks(self._setting_changed, "gsm", True)
       except Exception as e:
         cloudlog.exception(f"Error updating GSM settings: {e}")
-        self._enqueue_callbacks(self._setting_changed, "gsm", False)
 
     threading.Thread(target=worker, daemon=True).start()
 

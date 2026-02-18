@@ -352,7 +352,7 @@ class WifiUIMici(BigMultiOptionDialog):
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
-      networks_updated=self._on_networks_updated,
+      networks_updated=self._on_network_updated,
     )
 
   def show_event(self):
@@ -367,7 +367,7 @@ class WifiUIMici(BigMultiOptionDialog):
       self._network_info_page.update_networks(self._networks)
       gui_app.set_modal_overlay(self._network_info_page)
 
-  def _on_networks_updated(self, networks: list[Network]):
+  def _on_network_updated(self, networks: list[Network]):
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
     self._network_info_page.update_networks(self._networks)
