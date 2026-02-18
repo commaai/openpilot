@@ -138,6 +138,8 @@ class WifiButton(BigButton):
     self._network_missing = False
     self._wifi_icon.set_network_missing(False)
     self._network_forgot = False
+    if self._is_connected:
+      self._wrong_password = False
 
   def _forget_network(self):
     if self._network_forgetting:
