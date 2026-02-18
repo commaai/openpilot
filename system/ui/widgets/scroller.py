@@ -86,16 +86,16 @@ class EdgeShadow:
   def draw(self, viewport: rl.Rectangle):
     shadow_y = int(viewport.y + (viewport.height - EDGE_SHADOW_HEIGHT) / 2)
 
-    # Left shadow: 100% black at outer edge -> 0% at inner edge
+    # Left shadow: 65% black at outer edge -> 0% at inner edge
     rl.draw_rectangle_gradient_h(int(viewport.x), shadow_y,
                                  EDGE_SHADOW_WIDTH, EDGE_SHADOW_HEIGHT,
-                                 rl.Color(0, 0, 0, 255), rl.Color(0, 0, 0, 0))
+                                 rl.Color(0, 0, 0, 166), rl.Color(0, 0, 0, 0))
 
-    # Right shadow: 0% at inner edge -> 100% black at outer edge
+    # Right shadow: 0% at inner edge -> 65% black at outer edge
     right_x = int(viewport.x + viewport.width - EDGE_SHADOW_WIDTH)
     rl.draw_rectangle_gradient_h(right_x, shadow_y,
                                  EDGE_SHADOW_WIDTH, EDGE_SHADOW_HEIGHT,
-                                 rl.Color(0, 0, 0, 0), rl.Color(0, 0, 0, 255))
+                                 rl.Color(0, 0, 0, 0), rl.Color(0, 0, 0, 166))
 
 
 class Scroller(Widget):
