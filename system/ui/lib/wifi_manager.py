@@ -355,8 +355,7 @@ class WifiManager:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
           self._last_network_scan = time.monotonic()
-        self._update_networks()
-      time.sleep(1 / 10.)
+      time.sleep(1 / 2.)
 
   def _wait_for_wifi_device(self):
     while not self._exit:
@@ -427,54 +426,10 @@ class WifiManager:
 
       if props.get('Type', ('s', ''))[1] == '802-11-wireless':
         conn_path = props.get('Connection', ('o', '/'))[1]
-        if conn_path == '/':
-          continue
-
-        return conn_path
-
-        # print('ActiveConnection:', active_conn, 'Connection path:', conn_path)
-        #
-        # settings = self._get_connection_settings(conn_path)
-        #
-        # if len(settings) == 0:
-        #   cloudlog.warning(f"Failed to get connection settings for {conn_path}")
-        #   return None
-        #
-        # ssid_val = settings.get('802-11-wireless', {}).get('ssid', None)
-        # if ssid_val is not None:
-        #   return bytes(ssid_val[1]).decode('utf-8', 'replace')
+        if conn_path != '/':
+          return conn_path
 
     return None
-
-  # def _get_connected_ssid(self) -> str | None:
-  #   for active_conn in self._get_active_connections():
-  #     conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-  #     reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
-  #
-  #     if reply.header.message_type == MessageType.error:
-  #       cloudlog.warning(f"Failed to get active connection properties for {active_conn}: {reply}")
-  #       continue
-  #
-  #     props = reply.body[0]
-  #
-  #     if props.get('Type', ('s', ''))[1] == '802-11-wireless':
-  #       conn_path = props.get('Connection', ('o', '/'))[1]
-  #       if conn_path == '/':
-  #         return None
-  #
-  #       print('ActiveConnection:', active_conn, 'Connection path:', conn_path)
-  #
-  #       settings = self._get_connection_settings(conn_path)
-  #
-  #       if len(settings) == 0:
-  #         cloudlog.warning(f"Failed to get connection settings for {conn_path}")
-  #         return None
-  #
-  #       ssid_val = settings.get('802-11-wireless', {}).get('ssid', None)
-  #       if ssid_val is not None:
-  #         return bytes(ssid_val[1]).decode('utf-8', 'replace')
-  #
-  #   return None
 
   def _get_connection_settings(self, conn_path: str) -> dict:
     conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
