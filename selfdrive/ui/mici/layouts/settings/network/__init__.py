@@ -3,8 +3,8 @@ from enum import IntEnum
 from collections.abc import Callable
 
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigToggle, BigParamControl
+from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici, WifiIcon, normalize_ssid
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
@@ -33,11 +33,10 @@ class NetworkLayoutMici(NavWidget):
       networks_updated=self._on_network_updated,
     )
 
-    _tethering_icon = "icons_mici/settings/network/tethering.png"
-
     # ******** Tethering ********
     def tethering_toggle_callback(checked: bool):
       self._tethering_toggle_btn.set_enabled(False)
+      self._tethering_password_btn.set_enabled(False)
       self._network_metered_btn.set_enabled(False)
       self._wifi_manager.set_tethering_active(checked)
 
@@ -45,6 +44,8 @@ class NetworkLayoutMici(NavWidget):
 
     def tethering_password_callback(password: str):
       if password:
+        self._tethering_toggle_btn.set_enabled(False)
+        self._tethering_password_btn.set_enabled(False)
         self._wifi_manager.set_tethering_password(password)
 
     def tethering_password_clicked():
@@ -53,12 +54,9 @@ class NetworkLayoutMici(NavWidget):
                            confirm_callback=tethering_password_callback)
       gui_app.set_modal_overlay(dlg)
 
-    txt_tethering = gui_app.texture(_tethering_icon, 64, 53)
+    txt_tethering = gui_app.texture("icons_mici/settings/network/tethering.png", 64, 54)
     self._tethering_password_btn = BigButton("tethering password", "", txt_tethering)
     self._tethering_password_btn.set_click_callback(tethering_password_clicked)
-
-    # ******** IP Address ********
-    self._ip_address_btn = BigButton("IP Address", "Not connected")
 
     # ******** Network Metered ********
     def network_metered_callback(value: str):
@@ -75,8 +73,13 @@ class NetworkLayoutMici(NavWidget):
     self._network_metered_btn = BigMultiToggle("network usage", ["default", "metered", "unmetered"], select_callback=network_metered_callback)
     self._network_metered_btn.set_enabled(False)
 
-    wifi_button = BigButton("wi-fi")
-    wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
+    self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 64, 56)
+    self._wifi_low_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_low.png", 64, 47)
+    self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 64, 47)
+    self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 64, 47)
+
+    self._wifi_button = BigButton("wi-fi", "not connected", self._wifi_slash_txt, scroll=True)
+    self._wifi_button.set_click_callback(lambda: self._switch_to_panel(NetworkPanelType.WIFI))
 
     # ******** Advanced settings ********
     # ******** Roaming toggle ********
@@ -91,7 +94,7 @@ class NetworkLayoutMici(NavWidget):
 
     # Main scroller ----------------------------------
     self._scroller = Scroller([
-      wifi_button,
+      self._wifi_button,
       self._network_metered_btn,
       self._tethering_toggle_btn,
       self._tethering_password_btn,
@@ -100,7 +103,6 @@ class NetworkLayoutMici(NavWidget):
       self._apn_btn,
       self._cellular_metered_btn,
       # */
-      self._ip_address_btn,
     ], snap_items=False)
 
     # Set initial config
@@ -121,15 +123,38 @@ class NetworkLayoutMici(NavWidget):
     self._apn_btn.set_visible(show_cell_settings)
     self._cellular_metered_btn.set_visible(show_cell_settings)
 
+    # Update wi-fi button with ssid and ip address
+    # TODO: make sure we handle hidden ssids
+    connecting_ssid = self._wifi_manager.connecting_to_ssid
+    connected_network = next((network for network in self._wifi_manager.networks if network.is_connected), None)
+    if connecting_ssid:
+      display_network = next((n for n in self._wifi_manager.networks if n.ssid == connecting_ssid), None)
+      self._wifi_button.set_text(normalize_ssid(connecting_ssid))
+      self._wifi_button.set_value("connecting...")
+    elif connected_network is not None:
+      display_network = connected_network
+      self._wifi_button.set_text(normalize_ssid(connected_network.ssid))
+      self._wifi_button.set_value(self._wifi_manager.ipv4_address or "obtaining IP...")
+    else:
+      display_network = None
+      self._wifi_button.set_text("wi-fi")
+      self._wifi_button.set_value("not connected")
+
+    if display_network is not None:
+      strength = WifiIcon.get_strength_icon_idx(display_network.strength)
+      self._wifi_button.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
+    else:
+      self._wifi_button.set_icon(self._wifi_slash_txt)
+
   def show_event(self):
     super().show_event()
     self._current_panel = NetworkPanelType.NONE
-    self._wifi_ui.show_event()
+    self._wifi_manager.set_active(True)
     self._scroller.show_event()
 
   def hide_event(self):
     super().hide_event()
-    self._wifi_ui.hide_event()
+    self._wifi_manager.set_active(False)
 
   def _toggle_roaming(self, checked: bool):
     self._wifi_manager.update_gsm_settings(checked, ui_state.params.get("GsmApn") or "", ui_state.params.get_bool("GsmMetered"))
@@ -145,7 +170,7 @@ class NetworkLayoutMici(NavWidget):
       self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), apn, ui_state.params.get_bool("GsmMetered"))
 
     current_apn = ui_state.params.get("GsmApn") or ""
-    dlg = BigInputDialog("enter APN", current_apn, minimum_length=0, confirm_callback=update_apn)
+    dlg = BigInputDialog("enter APN...", current_apn, minimum_length=0, confirm_callback=update_apn)
     gui_app.set_modal_overlay(dlg)
 
   def _toggle_cellular_metered(self, checked: bool):
@@ -156,11 +181,9 @@ class NetworkLayoutMici(NavWidget):
     tethering_active = self._wifi_manager.is_tethering_active()
     # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
     self._tethering_toggle_btn.set_enabled(True)
+    self._tethering_password_btn.set_enabled(True)
     self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
     self._tethering_toggle_btn.set_checked(tethering_active)
-
-    # Update IP address
-    self._ip_address_btn.set_value(self._wifi_manager.ipv4_address or "Not connected")
 
     # Update network metered
     self._network_metered_btn.set_value(
@@ -173,6 +196,8 @@ class NetworkLayoutMici(NavWidget):
   def _switch_to_panel(self, panel_type: NetworkPanelType):
     if panel_type == NetworkPanelType.WIFI:
       self._wifi_ui.show_event()
+    elif self._current_panel == NetworkPanelType.WIFI:
+      self._wifi_ui.hide_event()
     self._current_panel = panel_type
 
   def _render(self, rect: rl.Rectangle):

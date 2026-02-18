@@ -8,20 +8,22 @@ on:
 env:
   BASE_IMAGE: openpilot-base
   BUILD: selfdrive/test/docker_build.sh base
-  RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
+  RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
 jobs:
   update_translations:
     runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
       - uses: ./.github/workflows/setup-with-retry
       - name: Update translations
         run: |
           ${{ env.RUN }} "python3 selfdrive/ui/update_translations.py --vanish"
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
         with:
           author: Vehicle Researcher <user@comma.ai>
           commit-message: "Update translations"
@@ -39,7 +41,7 @@ jobs:
       image: ghcr.io/commaai/openpilot-base:latest
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: true
     - name: uv lock
@@ -47,6 +49,12 @@ jobs:
         python3 -m ensurepip --upgrade
         pip3 install uv
         uv lock --upgrade
+    - name: uv pip tree
+      id: pip_tree
+      run: |
+        echo 'PIP_TREE<<EOF' >> $GITHUB_OUTPUT
+        uv pip tree >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
     - name: bump submodules
       run: |
         git config --global --add safe.directory '*'
@@ -59,7 +67,7 @@ jobs:
         python selfdrive/car/docs.py
         git add docs/CARS.md
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
+      uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
       with:
         author: Vehicle Researcher <user@comma.ai>
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
@@ -68,5 +76,10 @@ jobs:
         branch: auto-package-updates
         base: master
         delete-branch: true
-        body: 'Automatic PR from repo-maintenance -> package_updates'
+        body: |
+          Automatic PR from repo-maintenance -> package_updates
+
+          ```
+          ${{ steps.pip_tree.outputs.PIP_TREE }}
+          ```
         labels: bot

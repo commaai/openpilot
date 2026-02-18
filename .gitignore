@@ -65,6 +65,7 @@ cppcheck_report.txt
 comma*.sh
 
 selfdrive/modeld/models/*.pkl
+selfdrive/modeld/models/*.pkl.*
 
 # openpilot log files
 *.bz2
@@ -95,3 +96,8 @@ Pipfile
 # Ignore all local history of files
 .history
 .ionide
+
+.claude/
+.context/
+PLAN.md
+TASK.md

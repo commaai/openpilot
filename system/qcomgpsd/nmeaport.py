@@ -107,11 +107,11 @@ def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
           match fields[0]:
             case "$GNCLK":
               # fields at end are reserved (not used)
-              gnss_clock = GnssClockNmeaPort(*fields[1:10]) # type: ignore[arg-type]
+              gnss_clock = GnssClockNmeaPort(*fields[1:10])
               print(gnss_clock)
             case "$GNMEAS":
               # fields at end are reserved (not used)
-              gnss_meas = GnssMeasNmeaPort(*fields[1:14]) # type: ignore[arg-type]
+              gnss_meas = GnssMeasNmeaPort(*fields[1:14])
               print(gnss_meas)
     except Exception as e:
       print(e)

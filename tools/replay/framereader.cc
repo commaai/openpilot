@@ -72,7 +72,7 @@ FrameReader::~FrameReader() {
 }
 
 bool FrameReader::load(CameraType type, const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
-  auto local_file_path = url.find("https://") == 0 ? cacheFilePath(url) : url;
+  auto local_file_path = (url.find("https://") == 0 || url.find("http://") == 0) ? cacheFilePath(url) : url;
   if (!util::file_exists(local_file_path)) {
     FileReader f(local_cache, chunk_size, retries);
     if (f.read(url, abort).empty()) {

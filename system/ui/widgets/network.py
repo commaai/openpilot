@@ -22,8 +22,8 @@ try:
   from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 except Exception:
   Params = None
-  ui_state = None  # type: ignore
-  PrimeType = None  # type: ignore
+  ui_state = None
+  PrimeType = None
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -463,7 +463,7 @@ class WifiManagerUI(Widget):
     if self.state == UIState.CONNECTING:
       self.state = UIState.IDLE
 
-  def _on_forgotten(self):
+  def _on_forgotten(self, _):
     if self.state == UIState.FORGETTING:
       self.state = UIState.IDLE
 

@@ -1,0 +1,175 @@
+name: "ui preview"
+on:
+  push:
+    branches:
+      - master
+  pull_request_target:
+    types: [assigned, opened, synchronize, reopened, edited]
+    branches:
+      - 'master'
+    paths:
+      - 'selfdrive/assets/**'
+      - 'selfdrive/ui/**'
+      - 'system/ui/**'
+  workflow_dispatch:
+
+env:
+  UI_JOB_NAME: "Create UI Report"
+  REPORT_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
+  SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
+  BRANCH_NAME: "openpilot/pr-${{ github.event.number }}-ui-preview"
+  REPORT_FILES_BRANCH_NAME: "mici-raylib-ui-reports"
+
+  # variant:video_prefix:master_branch
+  VARIANTS: "mici:mici_ui_replay:openpilot_master_ui_mici_raylib big:tizi_ui_replay:openpilot_master_ui_big_raylib"
+
+jobs:
+  preview:
+    if: github.repository == 'commaai/openpilot'
+    name: preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Waiting for ui generation to end
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ env.SHA }}
+          check-name: ${{ env.UI_JOB_NAME }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          allowed-conclusions: success
+          wait-interval: 20
+
+      - name: Getting workflow run ID
+        id: get_run_id
+        run: |
+          echo "run_id=$(curl https://api.github.com/repos/${{ github.repository }}/commits/${{ env.SHA }}/check-runs | jq -r '.check_runs[] | select(.name == "${{ env.UI_JOB_NAME }}") | .html_url | capture("(?<number>[0-9]+)") | .number')" >> $GITHUB_OUTPUT
+
+      - name: Getting proposed ui
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          run_id: ${{ steps.get_run_id.outputs.run_id }}
+          search_artifacts: true
+          name: ui-report-1-${{ env.REPORT_NAME }}
+          path: ${{ github.workspace }}/pr_ui
+
+      - name: Getting mici master ui
+        uses: actions/checkout@v6
+        with:
+          repository: commaai/ci-artifacts
+          ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+          path: ${{ github.workspace }}/master_mici
+          ref: openpilot_master_ui_mici_raylib
+
+      - name: Getting big master ui
+        uses: actions/checkout@v6
+        with:
+          repository: commaai/ci-artifacts
+          ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+          path: ${{ github.workspace }}/master_big
+          ref: openpilot_master_ui_big_raylib
+
+      - name: Saving new master ui
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          for variant in $VARIANTS; do
+            IFS=':' read -r name video branch <<< "$variant"
+            master_dir="${{ github.workspace }}/master_${name}"
+            cd "$master_dir"
+            git checkout --orphan=new_branch
+            git rm -rf *
+            git branch -D "$branch"
+            git branch -m "$branch"
+            git config user.name "GitHub Actions Bot"
+            git config user.email "<>"
+            cp "${{ github.workspace }}/pr_ui/${video}.mp4" .
+            git add .
+            git commit -m "${name} video for commit ${{ env.SHA }}"
+            git push origin "$branch" --force
+          done
+
+      - name: Setup FFmpeg
+        uses: AnimMouse/setup-ffmpeg@ae28d57dabbb148eff63170b6bf7f2b60062cbae
+
+      - name: Finding diffs
+        if: github.event_name == 'pull_request_target'
+        id: find_diff
+        run: |
+          export PYTHONPATH=${{ github.workspace }}
+          baseurl="https://github.com/commaai/ci-artifacts/raw/refs/heads/${{ env.BRANCH_NAME }}"
+
+          COMMENT=""
+          for variant in $VARIANTS; do
+            IFS=':' read -r name video _ <<< "$variant"
+            diff_name="${name}_diff"
+
+            mv "${{ github.workspace }}/pr_ui/${video}.mp4" "${{ github.workspace }}/pr_ui/${video}_proposed.mp4"
+            cp "${{ github.workspace }}/master_${name}/${video}.mp4" "${{ github.workspace }}/pr_ui/${video}_master.mp4"
+
+            diff_exit_code=0
+            python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py \
+              "${{ github.workspace }}/pr_ui/${video}_master.mp4" \
+              "${{ github.workspace }}/pr_ui/${video}_proposed.mp4" \
+              "${diff_name}.html" --basedir "$baseurl" --no-open || diff_exit_code=$?
+
+            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.html" "${{ github.workspace }}/pr_ui/"
+            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.mp4" "${{ github.workspace }}/pr_ui/"
+
+            REPORT_URL="https://commaai.github.io/ci-artifacts/${diff_name}_pr_${{ github.event.number }}.html"
+            if [ $diff_exit_code -eq 0 ]; then
+              COMMENT+="**${name}**: Videos are identical! [View Diff Report]($REPORT_URL)"$'\n'
+            else
+              COMMENT+="**${name}**: ⚠️ <strong>Videos differ!</strong> [View Diff Report]($REPORT_URL)"$'\n'
+            fi
+          done
+
+          {
+            echo "COMMENT<<EOF"
+            echo "$COMMENT"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Saving proposed ui
+        if: github.event_name == 'pull_request_target'
+        working-directory: ${{ github.workspace }}/master_mici
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          git checkout --orphan=${{ env.BRANCH_NAME }}
+          git rm -rf *
+          mv ${{ github.workspace }}/pr_ui/* .
+          git add .
+          git commit -m "ui videos for PR #${{ github.event.number }}"
+          git push origin ${{ env.BRANCH_NAME }} --force
+
+          # Append diff reports to report files branch
+          git fetch origin ${{ env.REPORT_FILES_BRANCH_NAME }}
+          git checkout ${{ env.REPORT_FILES_BRANCH_NAME }}
+          for variant in $VARIANTS; do
+            IFS=':' read -r name _ _ <<< "$variant"
+            diff_name="${name}_diff"
+            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.html" "${diff_name}_pr_${{ github.event.number }}.html"
+            git add "${diff_name}_pr_${{ github.event.number }}.html"
+          done
+          git commit -m "ui diff reports for PR #${{ github.event.number }}" || echo "No changes to commit"
+          git push origin ${{ env.REPORT_FILES_BRANCH_NAME }}
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request_target'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            <!-- _(run_id_ui_preview **${{ github.run_id }}**)_ -->
+            ## UI Preview
+            ${{ steps.find_diff.outputs.COMMENT }}
+          comment_tag: run_id_ui_preview
+          pr_number: ${{ github.event.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

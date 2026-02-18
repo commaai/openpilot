@@ -154,6 +154,8 @@ size_t getRemoteFileSize(const std::string &url, std::atomic<bool> *abort) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
   curl_easy_setopt(curl, CURLOPT_HEADER, 1);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   CURLM *cm = curl_multi_init();
   curl_multi_add_handle(cm, curl);

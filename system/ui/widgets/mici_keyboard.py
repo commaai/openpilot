@@ -38,10 +38,10 @@ def fast_euclidean_distance(dx, dy):
 
 
 class Key(Widget):
-  def __init__(self, char: str):
+  def __init__(self, char: str, font_weight: FontWeight = FontWeight.SEMI_BOLD):
     super().__init__()
     self.char = char
-    self._font = gui_app.font(FontWeight.SEMI_BOLD)
+    self._font = gui_app.font(font_weight)
     self._x_filter = BounceFilter(0.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
     self._y_filter = BounceFilter(0.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
     self._size_filter = BounceFilter(CHAR_FONT_SIZE, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
@@ -53,20 +53,23 @@ class Key(Widget):
     self.original_position = rl.Vector2(0, 0)
 
   def set_position(self, x: float, y: float, smooth: bool = True):
-    # TODO: swipe up from NavWidget has the keys lag behind other elements a bit
+    # Smooth keys within parent rect
+    base_y = self._parent_rect.y if self._parent_rect else 0.0
+    local_y = y - base_y
+
     if not self._position_initialized:
       self._x_filter.x = x
-      self._y_filter.x = y
+      self._y_filter.x = local_y
       # keep track of original position so dragging around feels consistent. also move touch area down a bit
       self.original_position = rl.Vector2(x, y + KEY_TOUCH_AREA_OFFSET)
       self._position_initialized = True
 
     if not smooth:
       self._x_filter.x = x
-      self._y_filter.x = y
+      self._y_filter.x = local_y
 
     self._rect.x = self._x_filter.update(x)
-    self._rect.y = self._y_filter.update(y)
+    self._rect.y = base_y + self._y_filter.update(local_y)
 
   def set_alpha(self, alpha: float):
     self._alpha_filter.update(alpha)
@@ -97,7 +100,7 @@ class Key(Widget):
 
 class SmallKey(Key):
   def __init__(self, chars: str):
-    super().__init__(chars)
+    super().__init__(chars, FontWeight.BOLD)
     self._size_filter.x = NUMBER_LAYER_SWITCH_FONT_SIZE
 
   def set_font_size(self, size: float):
@@ -105,13 +108,15 @@ class SmallKey(Key):
 
 
 class IconKey(Key):
-  def __init__(self, icon: str, vertical_align: str = "center", char: str = ""):
+  def __init__(self, icon: str, vertical_align: str = "center", char: str = "", icon_size: tuple[int, int] = (38, 38)):
     super().__init__(char)
-    self._icon = gui_app.texture(icon, 38, 38)
+    self._icon_size = icon_size
+    self._icon = gui_app.texture(icon, *icon_size)
     self._vertical_align = vertical_align
 
-  def set_icon(self, icon: str):
-    self._icon = gui_app.texture(icon, 38, 38)
+  def set_icon(self, icon: str, icon_size: tuple[int, int] | None = None):
+    size = icon_size if icon_size is not None else self._icon_size
+    self._icon = gui_app.texture(icon, *size)
 
   def _render(self, _):
     scale = np.interp(self._size_filter.x, [CHAR_FONT_SIZE, CHAR_NEAR_FONT_SIZE], [1, 1.5])
@@ -167,8 +172,8 @@ class MiciKeyboard(Widget):
     self._super_special_keys = [[Key(char) for char in row] for row in super_special_chars]
 
     # control keys
-    self._space_key = IconKey("icons_mici/settings/keyboard/space.png", char=" ", vertical_align="bottom")
-    self._caps_key = IconKey("icons_mici/settings/keyboard/caps_lower.png")
+    self._space_key = IconKey("icons_mici/settings/keyboard/space.png", char=" ", vertical_align="bottom", icon_size=(43, 14))
+    self._caps_key = IconKey("icons_mici/settings/keyboard/caps_lower.png", icon_size=(38, 33))
     # these two are in different places on some layouts
     self._123_key, self._123_key2 = SmallKey("123"), SmallKey("123")
     self._abc_key = SmallKey("abc")
@@ -269,14 +274,14 @@ class MiciKeyboard(Widget):
     self._set_keys(self._upper_keys if cycle else self._lower_keys)
     if not cycle:
       self._caps_state = CapsState.LOWER
-      self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lower.png")
+      self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lower.png", icon_size=(38, 33))
     else:
       if self._caps_state == CapsState.LOWER:
         self._caps_state = CapsState.UPPER
-        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_upper.png")
+        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_upper.png", icon_size=(38, 33))
       elif self._caps_state == CapsState.UPPER:
         self._caps_state = CapsState.LOCK
-        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lock.png")
+        self._caps_key.set_icon("icons_mici/settings/keyboard/caps_lock.png", icon_size=(39, 38))
       else:
         self._set_uppercase(False)
 
@@ -365,6 +370,7 @@ class MiciKeyboard(Widget):
           key.set_font_size(font_size)
 
         # TODO: I like the push amount, so we should clip the pos inside the keyboard rect
+        key.set_parent_rect(self._rect)
         key.set_position(key_x, key_y)
 
   def _render(self, _):
