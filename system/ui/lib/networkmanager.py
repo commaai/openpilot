@@ -34,6 +34,7 @@ class NMDeviceStateReason(SafeIntEnum):
   UNKNOWN = 1
   NO_SECRETS = 7
   SUPPLICANT_DISCONNECT = 8
+  CONNECTION_REMOVED = 38
   NEW_ACTIVATION = 60
 
 
