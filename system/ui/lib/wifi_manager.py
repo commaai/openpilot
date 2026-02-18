@@ -97,9 +97,8 @@ class Network:
   def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool, active_connection: bool) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
-    # uses ActiveConnection SSID (stable during AP roaming) instead of ActiveAccessPoint path
+    # fall back to ActiveConnection during momentary AP roaming or low strength networks. matches GNOME shell behavior
     # https://github.com/GNOME/gnome-shell/blob/3f8b174274fac7d69477523d4873ef8253e1ed49/js/ui/status/network.js#L810-L819
-    print('test', ssid, (any(ap.is_connected for ap in aps)), active_connection)
     is_connected = any(ap.is_connected for ap in aps) or active_connection
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
 
@@ -684,7 +683,6 @@ class WifiManager:
         wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
         wifi_props = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all()).body[0]
         active_ap_path = wifi_props.get('ActiveAccessPoint', ('o', '/'))[1]
-        print('active ap path', active_ap_path)
         ap_paths = wifi_props.get('AccessPoints', ('ao', []))[1]
 
         aps: dict[str, list[AccessPoint]] = {}
@@ -713,7 +711,6 @@ class WifiManager:
 
         # connected_ssid = self._get_connected_ssid()
         active_wifi_connection, _ = self._get_active_wifi_connection()
-        print('_connections', self._connections)
         networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections, self._connections.get(ssid) == active_wifi_connection) for ssid, ap_list in aps.items()]
         # sort with quantized strength to reduce jumping
         networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
