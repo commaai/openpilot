@@ -14,11 +14,15 @@ class SafeIntEnum(IntEnum):
 # https://people.freedesktop.org/~lkundrak/nm-dbus-api/nm-dbus-types.html
 class NMDeviceState(IntEnum):
   UNKNOWN = 0
+  UNMANAGED = 10
+  UNAVAILABLE = 20
   DISCONNECTED = 30
   PREPARE = 40
-  STATE_CONFIG = 50
+  CONFIG = 50
   NEED_AUTH = 60
   IP_CONFIG = 70
+  IP_CHECK = 80
+  SECONDARIES = 90
   ACTIVATED = 100
   DEACTIVATING = 110
   FAILED = 120
