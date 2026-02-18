@@ -128,6 +128,7 @@ class WifiButton(BigButton):
     self._network_forgetting = False
     self._network_forgot = False
     self._wrong_password = False
+    self._last_password: str = ""
     self._shake_start: float | None = None
 
   def set_current_network(self, network: Network):
@@ -372,6 +373,10 @@ class WifiUIMici(NavWidget):
 
   def _connect_with_password(self, ssid: str, password: str):
     password = password or 'fjklsdfjsklfjlkskkjfslfs'
+    for btn in self._scroller._items:
+      if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
+        btn._last_password = password
+        break
     self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
     self._wifi_manager.connect_to_network(ssid, password)
     self._update_buttons()
@@ -401,7 +406,13 @@ class WifiUIMici(NavWidget):
           break
       return
 
-    dlg = BigInputDialog("enter password...", "", minimum_length=0,
+    last_password = ""
+    for btn in self._scroller._items:
+      if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
+        last_password = btn._last_password
+        break
+
+    dlg = BigInputDialog("enter password...", last_password, minimum_length=0,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
 
     # def on_close(_):
