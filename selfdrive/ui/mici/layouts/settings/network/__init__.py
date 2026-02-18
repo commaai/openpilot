@@ -30,7 +30,8 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_ui = WifiUIMici(self._wifi_manager, back_callback=lambda: self._switch_to_panel(NetworkPanelType.NONE))
 
     self._wifi_manager.add_callbacks(
-      networks_updated=self._on_network_updated,
+      networks_updated=self._on_networks_updated,
+      setting_changed=self._on_setting_changed,
     )
 
     # ******** Tethering ********
@@ -150,13 +151,8 @@ class NetworkLayoutMici(NavWidget):
   def _toggle_cellular_metered(self, checked: bool):
     self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), ui_state.params.get("GsmApn") or "", checked)
 
-  def _on_network_updated(self, networks: list[Network]):
-    # Update tethering state
-    tethering_active = self._wifi_manager.is_tethering_active()
-    # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
-    self._tethering_toggle_btn.set_enabled(True)
-    self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
-    self._tethering_toggle_btn.set_checked(tethering_active)
+  def _on_networks_updated(self, networks: list[Network]):
+
 
     # Update wi-fi button with ssid and ip address
     # TODO: make sure we handle hidden ssids
@@ -181,13 +177,31 @@ class NetworkLayoutMici(NavWidget):
     else:
       self._wifi_button.set_icon(self._wifi_slash_txt)
 
-    # Update network metered
-    self._network_metered_btn.set_value(
-      {
-        MeteredType.UNKNOWN: 'default',
-        MeteredType.YES: 'metered',
-        MeteredType.NO: 'unmetered'
-      }.get(self._wifi_manager.current_network_metered, 'default'))
+    # # Update network metered
+    # self._network_metered_btn.set_value(
+    #   {
+    #     MeteredType.UNKNOWN: 'default',
+    #     MeteredType.YES: 'metered',
+    #     MeteredType.NO: 'unmetered'
+    #   }.get(self._wifi_manager.current_network_metered, 'default'))
+
+  def _on_setting_changed(self, setting: str, success: bool):
+    # Update tethering state
+    tethering_active = self._wifi_manager.is_tethering_active()
+    # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
+    self._tethering_toggle_btn.set_enabled(True)
+    self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
+    self._tethering_toggle_btn.set_checked(tethering_active)
+
+    if setting == "metered":
+      # Update network metered
+      self._network_metered_btn.set_value(
+        {
+          MeteredType.UNKNOWN: 'default',
+          MeteredType.YES: 'metered',
+          MeteredType.NO: 'unmetered'
+        }.get(self._wifi_manager.current_network_metered, 'default'))
+
 
   def _switch_to_panel(self, panel_type: NetworkPanelType):
     if panel_type == NetworkPanelType.WIFI:
