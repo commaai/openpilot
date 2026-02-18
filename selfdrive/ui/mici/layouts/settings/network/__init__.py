@@ -165,15 +165,16 @@ class NetworkLayoutMici(NavWidget):
     # Update wi-fi button with ssid and ip address
     # TODO: make sure we handle hidden ssids
     connecting_ssid = self._wifi_manager.connecting_to_ssid
-    connected_network = next((network for network in networks if network.is_connected), None)
+    connected_network = next((network for network in self._wifi_ui.networks.values() if network.is_connected), None)
+    # print('connecting_ssid', connecting_ssid, 'connected_network', connected_network)
     if connecting_ssid:
-      display_network = next((n for n in networks if n.ssid == connecting_ssid), None)
+      display_network = next((n for n in self._wifi_ui.networks.values() if n.ssid == connecting_ssid), None)
       self._wifi_button.set_text(normalize_ssid(connecting_ssid))
       self._wifi_button.set_value("connecting...")
     elif connected_network is not None:
       display_network = connected_network
       self._wifi_button.set_text(normalize_ssid(connected_network.ssid))
-      self._wifi_button.set_value(self._wifi_manager.ipv4_address or "not connected")
+      self._wifi_button.set_value(self._wifi_manager.ipv4_address or "obtaining IP...")
     else:
       display_network = None
       self._wifi_button.set_text("wi-fi")
