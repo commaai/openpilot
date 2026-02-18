@@ -373,10 +373,6 @@ class WifiManager:
             self._prev_connecting_to_ssid = None
             self._connecting_to_ssid = None
 
-          else:
-            cloudlog.warning(f"Unhandled state change: new_state={repr(NMDeviceState(new_state))}, previous_state={repr(NMDeviceState(previous_state))}, "
-                             f"change_reason={change_reason}")
-
   def _network_scanner(self):
     while not self._exit:
       if self._active:
