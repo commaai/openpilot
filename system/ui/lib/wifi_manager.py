@@ -94,13 +94,16 @@ class Network:
   ip_address: str = ""  # TODO: implement
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool, active_connection: bool) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool, active_connection: bool,
+                connecting_to_ssid: str | None = None) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
     # fall back to ActiveConnection during momentary AP roaming or low strength networks. matches GNOME shell behavior
     # https://github.com/GNOME/gnome-shell/blob/3f8b174274fac7d69477523d4873ef8253e1ed49/js/ui/status/network.js#L810-L819
     print(f'{ssid=}, ap connected: {any(ap.is_connected for ap in aps)}, active connection: {active_connection}')
     is_connected = any(ap.is_connected for ap in aps) or active_connection
+    if connecting_to_ssid is not None and connecting_to_ssid != ssid:
+      is_connected = False
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
 
     return cls(
@@ -456,8 +459,7 @@ class WifiManager:
       props = reply.body[0]
 
       conn_path = props.get('Connection', ('o', '/'))[1]
-      state = props.get('State', ('u', 0))[1]
-      if props.get('Type', ('s', ''))[1] == '802-11-wireless' and conn_path != '/' and state == 2:  # NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+      if props.get('Type', ('s', ''))[1] == '802-11-wireless' and conn_path != '/':
         return conn_path, props
 
     return None, None
@@ -718,12 +720,9 @@ class WifiManager:
           return
 
         # NOTE: AccessPoints property may exclude hidden APs (use GetAllAccessPoints method if needed)
-        dev_addr = DBusAddress(self._wifi_device, NM, interface=NM_DEVICE_IFACE)
-        dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
-
         wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
         wifi_props = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all()).body[0]
-        active_ap_path = wifi_props.get('ActiveAccessPoint', ('o', '/'))[1] if dev_state == NMDeviceState.ACTIVATED else '/'
+        active_ap_path = wifi_props.get('ActiveAccessPoint', ('o', '/'))[1]
         print('active ap path', active_ap_path)
         ap_paths = wifi_props.get('AccessPoints', ('ao', []))[1]
 
@@ -755,7 +754,8 @@ class WifiManager:
         # print()
         active_wifi_connection, _ = self._get_active_wifi_connection()
         networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections,
-                                      active_wifi_connection is not None and self._connections.get(ssid) == active_wifi_connection)
+                                      active_wifi_connection is not None and self._connections.get(ssid) == active_wifi_connection,
+                                      self._connecting_to_ssid)
                     for ssid, ap_list in aps.items()]
         networks.sort(key=lambda n: (n.ssid != self._connecting_to_ssid, -n.is_connected, -n.is_saved, -n.strength, n.ssid.lower()))
         self._networks = networks
