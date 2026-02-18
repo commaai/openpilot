@@ -302,7 +302,7 @@ class GuiApplication:
           '-crf', str(RECORD_QUALITY)
         ]
         if RECORD_BITRATE:
-          # NOTE: Setting bitrate settings here will override CRF quality setting above
+          # NOTE: custom bitrate overrides crf setting
           ffmpeg_args += ['-b:v', RECORD_BITRATE, '-maxrate', RECORD_BITRATE, '-bufsize', RECORD_BITRATE]
         ffmpeg_args += [
           '-y',                     # Overwrite existing file
