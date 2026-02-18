@@ -316,7 +316,8 @@ class WifiManager:
         # PropertiesChanged on wifi device (LastScan = scan complete)
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
-          print('Properties changed', (iface, changed))
+          if 'AccessPoints' not in changed:
+            print('Properties changed', (iface, changed))
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
             self._update_networks()
 
@@ -703,6 +704,8 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
+        print(aps)
+        print()
         networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections) for ssid, ap_list in aps.items()]
         # sort with quantized strength to reduce jumping
         networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
