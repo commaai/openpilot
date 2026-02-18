@@ -2,8 +2,8 @@ from enum import IntEnum
 
 
 # NetworkManager device states
-# https://people.freedesktop.org/~lkundrak/nm-dbus-api/nm-dbus-types.html
 class NMDeviceState(IntEnum):
+  # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceState
   UNKNOWN = 0
   UNMANAGED = 10
   UNAVAILABLE = 20
@@ -20,6 +20,9 @@ class NMDeviceState(IntEnum):
 
 
 class NMDeviceStateReason(IntEnum):
+  # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceStateReason
+  NONE = 0
+  UNKNOWN = 1
   NO_SECRETS = 7
   SUPPLICANT_DISCONNECT = 8
   NEW_ACTIVATION = 60
