@@ -358,9 +358,14 @@ class WifiUIMici(BigMultiOptionDialog):
   def show_event(self):
     # Clear scroller items and update from latest scan results
     super().show_event()
+    self._scroller.show_event()
     self._wifi_manager.set_active(True)
     self._scroller._items.clear()
     self._update_buttons()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
 
   def _open_network_manage_page(self, result=None):
     if self._network_info_page._network is not None and self._network_info_page._network.ssid in self._networks:
