@@ -420,16 +420,18 @@ class WifiManager:
             if save_reply.header.message_type == MessageType.error:
               cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
 
-          elif new_state in (NMDeviceState.DEACTIVATING, NMDeviceState.DISCONNECTED) and change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-            # When connection is forgotten
-            self._set_connecting(None)
+          elif new_state in (NMDeviceState.DEACTIVATING, NMDeviceState.DISCONNECTED):
+            if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
+              # When connection is forgotten
+              self._set_connecting(None)
 
-          elif new_state in (NMDeviceState.DEACTIVATING, NMDeviceState.FAILED):
+          elif new_state in (NMDeviceState.NEED_AUTH, NMDeviceState.FAILED):
             pass
 
           else:
             cloudlog.warning(f"Unhandled state change: new_state={repr(NMDeviceState(new_state))}, previous_state={repr(NMDeviceState(previous_state))}, "
                              f"change_reason={change_reason}")
+            raise Exception
 
   def _network_scanner(self):
     while not self._exit:
