@@ -27,15 +27,17 @@ def setup_state():
 
 
 def run_replay(variant: LayoutVariant) -> None:
-  from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
-  from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
-  from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
+  if HEADLESS:
+    rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
+    os.environ["OFFSCREEN"] = "1"  # Run UI without FPS limit (set before importing gui_app)
 
   setup_state()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
-  if HEADLESS:
-    rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)
+  from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
+  from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
+  from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
+
   gui_app.init_window("ui diff test", fps=FPS)
 
   # Dynamically import main layout based on variant
