@@ -10,7 +10,9 @@ from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR, L
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType
+from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType, WifiState
+
+from selfdrive.ui.ui_state import ui_state
 
 
 def normalize_ssid(ssid: str) -> str:
@@ -106,12 +108,15 @@ class WifiButton(BigButton):
   LABEL_WIDTH = 402 - 98 - 28  # button width - left padding - right padding
   SUB_LABEL_WIDTH = 402 - LABEL_HORIZONTAL_PADDING * 2
 
-  def __init__(self, network: Network, forget_callback: Callable[[str], None], connecting_callback: Callable[[], str | None]):
+  def __init__(self, network: Network, forget_callback: Callable[[str], None], connecting_callback: Callable[[], str | None],
+               connected_callback: Callable[[], str | None], wifi_state_callback: Callable[[], WifiState]):
     super().__init__(normalize_ssid(network.ssid), scroll=True)
 
     self._network = network
     self._forget_callback = forget_callback
     self._connecting_callback = connecting_callback
+    self._connected_callback = connected_callback
+    self._wifi_state_callback = wifi_state_callback
 
     self._wifi_icon = WifiIcon()
     self._wifi_icon.set_current_network(network)
@@ -198,7 +203,7 @@ class WifiButton(BigButton):
       sub_label_w = self.SUB_LABEL_WIDTH - (self._forget_btn.rect.width if self._show_forget_btn else 0)
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
-      if self._network.is_connected and not self._is_connecting and not self._network_forgetting and not self._network_missing:
+      if self._is_connected and not self._network_forgetting and not self._network_missing:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
         rl.draw_texture(self._check_txt, int(sub_label_x), check_y, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)))
         sub_label_x += self._check_txt.width + 14
@@ -229,8 +234,11 @@ class WifiButton(BigButton):
 
   @property
   def _is_connecting(self):
-    is_connecting = self._connecting_callback() == self._network.ssid
-    return is_connecting
+    return self._connecting_callback() == self._network.ssid
+
+  @property
+  def _is_connected(self):
+    return self._connected_callback() == self._network.ssid
 
   def _update_state(self):
     # if normalize_ssid(self._network.ssid) == "Shane's iPhone":
@@ -239,7 +247,7 @@ class WifiButton(BigButton):
 
     # print(f'{self._network.ssid}, {self._network_forgetting=}, {self._network_missing=}, {self._is_connecting=}, {self._network.is_connected=}, {self._network.security_type=}, {self._wrong_password=}')
 
-    if any((self._network_forgetting, self._network_missing, self._is_connecting, self._network.is_connected,
+    if any((self._network_forgetting, self._network_missing, self._is_connecting, self._is_connected,
             self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)
       self._sub_label.set_color(rl.Color(255, 255, 255, int(255 * 0.585)))
@@ -251,7 +259,7 @@ class WifiButton(BigButton):
         self.set_value("not in range")
       elif self._is_connecting:
         self.set_value("connecting...")
-      elif self._network.is_connected:
+      elif self._is_connected:
         self.set_value("connected")
       else:
         self.set_value("unsupported")
@@ -344,7 +352,8 @@ class WifiUIMici(NavWidget):
       if network.ssid in existing:
         existing[network.ssid].set_current_network(network)
       else:
-        btn = WifiButton(network, self._wifi_manager.forget_connection, lambda: self._wifi_manager.connecting_to_ssid)
+        btn = WifiButton(network, self._wifi_manager.forget_connection, lambda: self._wifi_manager.connecting_to_ssid,
+                         lambda: self._wifi_manager.connected_ssid, lambda: self._wifi_manager.wifi_state)
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
@@ -354,10 +363,10 @@ class WifiUIMici(NavWidget):
         btn.set_network_missing(True)
 
     # Move connecting/connected network to the front with animation
+    front_ssid = self._wifi_manager.wifi_state.ssid
     front_btn_idx = next((i for i, btn in enumerate(self._scroller._items)
                           if isinstance(btn, WifiButton) and not btn._network_missing
-                          and (btn.network.ssid == self._wifi_manager.connecting_to_ssid or
-                               (not self._wifi_manager.connecting_to_ssid and btn.network.is_connected))), None)
+                          and btn.network.ssid == front_ssid), None) if front_ssid else None
 
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
@@ -415,6 +424,9 @@ class WifiUIMici(NavWidget):
         # break
 
   def _render(self, _):
+
+    print('WifiState:', self._wifi_manager.wifi_state)
+
     self._scroller.render(self._rect)
 
     anim_w = 90
