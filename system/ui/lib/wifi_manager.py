@@ -316,6 +316,7 @@ class WifiManager:
         # PropertiesChanged on wifi device (LastScan = scan complete)
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
+          print('Properties changed', (iface, changed))
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
             self._update_networks()
 

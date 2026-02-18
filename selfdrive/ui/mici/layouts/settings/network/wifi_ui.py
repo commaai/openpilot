@@ -212,6 +212,10 @@ class WifiButton(BigButton):
     return is_connecting
 
   def _update_state(self):
+    # if normalize_ssid(self._network.ssid) == "Shane's iPhone":
+    if normalize_ssid(self._network.ssid) == "CoxWiFi":
+      print(f"_update_state: ssid={self._network.ssid}, is_connected={self._network.is_connected}, is_connecting={self._is_connecting}, network_forgetting={self._network_forgetting}, network_missing={self._network_missing}")
+
     if any((self._network_forgetting, self._network_missing, self._is_connecting, self._network.is_connected,
             self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)

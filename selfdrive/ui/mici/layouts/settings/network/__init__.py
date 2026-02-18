@@ -124,7 +124,7 @@ class NetworkLayoutMici(NavWidget):
     # TODO: make sure we handle hidden ssids
     connecting_ssid = self._wifi_manager.connecting_to_ssid
     connected_network = next((network for network in self._wifi_ui.networks.values() if network.is_connected), None)
-    print('connecting_ssid', connecting_ssid, 'connected_network', connected_network)
+    # print('connecting_ssid', connecting_ssid, 'connected_network', connected_network)
     if connecting_ssid:
       display_network = next((n for n in self._wifi_ui.networks.values() if n.ssid == connecting_ssid), None)
       self._wifi_button.set_text(normalize_ssid(connecting_ssid))
@@ -138,9 +138,9 @@ class NetworkLayoutMici(NavWidget):
       self._wifi_button.set_text("wi-fi")
       self._wifi_button.set_value("not connected")
 
-    print('display_network', display_network)
-    print('----')
-    print()
+    # print('display_network', display_network)
+    # print('----')
+    # print()
 
     if display_network is not None:
       strength = WifiIcon.get_strength_icon_idx(display_network.strength)
@@ -179,8 +179,8 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), ui_state.params.get("GsmApn") or "", checked)
 
   def _on_network_updated(self, networks: list[Network]):
-    print('----')
-    print('Network: _on_network_updated', rl.get_time())
+    # print('----')
+    # print('Network: _on_network_updated', rl.get_time())
 
     # Update tethering state
     tethering_active = self._wifi_manager.is_tethering_active()
