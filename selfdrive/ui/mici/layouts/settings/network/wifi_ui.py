@@ -104,6 +104,7 @@ class WifiIcon(Widget):
 class WifiButton(BigButton):
   LABEL_PADDING = 98
   LABEL_WIDTH = 402 - 98 - 28  # button width - left padding - right padding
+  SUB_LABEL_WIDTH = 402 - LABEL_HORIZONTAL_PADDING * 2
 
   def __init__(self, network: Network, forget_callback: Callable[[str], None], connecting_callback: Callable[[], str | None]):
     super().__init__(normalize_ssid(network.ssid), scroll=True)
@@ -121,6 +122,7 @@ class WifiButton(BigButton):
     self._network_missing = False
     self._network_forgetting = False
     self._network_forgot = False
+    self._wrong_password = False
 
   def set_current_network(self, network: Network):
     self._network = network
@@ -150,6 +152,9 @@ class WifiButton(BigButton):
     self._network_missing = missing
     self._wifi_icon.set_network_missing(missing)
 
+  def set_wrong_password(self, wrong: bool):
+    self._wrong_password = wrong
+
   @property
   def network(self) -> Network:
     return self._network
@@ -175,14 +180,15 @@ class WifiButton(BigButton):
     if self.value:
       sub_label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
       label_y = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
-      sub_label_height = self._sub_label.get_content_height(self.LABEL_WIDTH)
+      sub_label_w = self.SUB_LABEL_WIDTH - (self._forget_btn.rect.width if self._show_forget_btn else 0)
+      sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
       if self._network.is_connected and not self._is_connecting and not self._network_forgetting and not self._network_missing:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
         rl.draw_texture(self._check_txt, int(sub_label_x), check_y, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)))
         sub_label_x += self._check_txt.width + 14
 
-      sub_label_rect = rl.Rectangle(sub_label_x, label_y - sub_label_height, self.LABEL_WIDTH, sub_label_height)
+      sub_label_rect = rl.Rectangle(sub_label_x, label_y - sub_label_height, sub_label_w, sub_label_height)
       self._sub_label.render(sub_label_rect)
 
     # Wifi icon
@@ -233,8 +239,8 @@ class WifiButton(BigButton):
       else:
         self.set_value("unsupported")
 
-    else:  # saved or unknown
-      self.set_value("connect")
+    else:  # saved, wrong password, or unknown
+      self.set_value("wrong password" if self._wrong_password else "connect")
       self.set_enabled(True)
       self._sub_label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
       self._sub_label.set_font_weight(FontWeight.SEMI_BOLD)
@@ -356,9 +362,14 @@ class WifiUIMici(NavWidget):
       self._on_need_auth(network.ssid, False)
 
   def _on_need_auth(self, ssid, incorrect_password=True):
-    print(f"[WifiUIMici] _on_need_auth fired: ssid={ssid}, incorrect_password={incorrect_password}")
-    hint = "wrong password..." if incorrect_password else "enter password..."
-    dlg = BigInputDialog(hint, "", minimum_length=0,
+    if incorrect_password:
+      for btn in self._scroller._items:
+        if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
+          btn.set_wrong_password(True)
+          break
+      return
+
+    dlg = BigInputDialog("enter password...", "", minimum_length=0,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
 
     def on_close(_):
