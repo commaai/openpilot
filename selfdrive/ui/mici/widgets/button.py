@@ -54,7 +54,7 @@ class BigCircleButton(Widget):
 
   def _draw_content(self, btn_y: float):
     # draw icon
-    icon_color = rl.WHITE if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
+    icon_color = rl.Color(255, 255, 255, int(255 * 0.9)) if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     rl.draw_texture_ex(self._txt_icon, (self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0],
                                         btn_y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), 0, 1.0, icon_color)
 
@@ -206,7 +206,7 @@ class BigButton(Widget):
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
       dest_rec = rl.Rectangle(x, y, self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
-      rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.WHITE)
+      rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.Color(255, 255, 255, int(255 * 0.9)))
 
   def _render(self, _):
     # draw _txt_default_bg
@@ -219,6 +219,10 @@ class BigButton(Widget):
     scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
+
+    # draw black background since images are transparent
+    scaled_rect = rl.Rectangle(btn_x, btn_y, self._rect.width * scale, self._rect.height * scale)
+    rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.5)))
 
     self._draw_content(btn_y)
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)

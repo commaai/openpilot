@@ -36,6 +36,7 @@ class NetworkLayoutMici(NavWidget):
     # ******** Tethering ********
     def tethering_toggle_callback(checked: bool):
       self._tethering_toggle_btn.set_enabled(False)
+      self._tethering_password_btn.set_enabled(False)
       self._network_metered_btn.set_enabled(False)
       self._wifi_manager.set_tethering_active(checked)
 
@@ -43,6 +44,8 @@ class NetworkLayoutMici(NavWidget):
 
     def tethering_password_callback(password: str):
       if password:
+        self._tethering_toggle_btn.set_enabled(False)
+        self._tethering_password_btn.set_enabled(False)
         self._wifi_manager.set_tethering_password(password)
 
     def tethering_password_clicked():
@@ -120,6 +123,29 @@ class NetworkLayoutMici(NavWidget):
     self._apn_btn.set_visible(show_cell_settings)
     self._cellular_metered_btn.set_visible(show_cell_settings)
 
+    # Update wi-fi button with ssid and ip address
+    # TODO: make sure we handle hidden ssids
+    connecting_ssid = self._wifi_manager.connecting_to_ssid
+    connected_network = next((network for network in self._wifi_manager.networks if network.is_connected), None)
+    if connecting_ssid:
+      display_network = next((n for n in self._wifi_manager.networks if n.ssid == connecting_ssid), None)
+      self._wifi_button.set_text(normalize_ssid(connecting_ssid))
+      self._wifi_button.set_value("connecting...")
+    elif connected_network is not None:
+      display_network = connected_network
+      self._wifi_button.set_text(normalize_ssid(connected_network.ssid))
+      self._wifi_button.set_value(self._wifi_manager.ipv4_address or "obtaining IP...")
+    else:
+      display_network = None
+      self._wifi_button.set_text("wi-fi")
+      self._wifi_button.set_value("not connected")
+
+    if display_network is not None:
+      strength = WifiIcon.get_strength_icon_idx(display_network.strength)
+      self._wifi_button.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
+    else:
+      self._wifi_button.set_icon(self._wifi_slash_txt)
+
   def show_event(self):
     super().show_event()
     self._current_panel = NetworkPanelType.NONE
@@ -144,7 +170,7 @@ class NetworkLayoutMici(NavWidget):
       self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), apn, ui_state.params.get_bool("GsmMetered"))
 
     current_apn = ui_state.params.get("GsmApn") or ""
-    dlg = BigInputDialog("enter APN", current_apn, minimum_length=0, confirm_callback=update_apn)
+    dlg = BigInputDialog("enter APN...", current_apn, minimum_length=0, confirm_callback=update_apn)
     gui_app.set_modal_overlay(dlg)
 
   def _toggle_cellular_metered(self, checked: bool):
@@ -155,25 +181,9 @@ class NetworkLayoutMici(NavWidget):
     tethering_active = self._wifi_manager.is_tethering_active()
     # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
     self._tethering_toggle_btn.set_enabled(True)
+    self._tethering_password_btn.set_enabled(True)
     self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
     self._tethering_toggle_btn.set_checked(tethering_active)
-
-    # Update wi-fi button with ssid and ip address
-    # TODO: make sure we handle hidden ssids
-    connected_network = next((network for network in networks if network.is_connected), None)
-    self._wifi_button.set_text(normalize_ssid(connected_network.ssid) if connected_network is not None else "wi-fi")
-    self._wifi_button.set_value(self._wifi_manager.ipv4_address or "not connected")
-    if connected_network is not None:
-      strength = WifiIcon.get_strength_icon_idx(connected_network.strength)
-      if strength == 2:
-        strength_icon = self._wifi_full_txt
-      elif strength == 1:
-        strength_icon = self._wifi_medium_txt
-      else:
-        strength_icon = self._wifi_low_txt
-      self._wifi_button.set_icon(strength_icon)
-    else:
-      self._wifi_button.set_icon(self._wifi_slash_txt)
 
     # Update network metered
     self._network_metered_btn.set_value(

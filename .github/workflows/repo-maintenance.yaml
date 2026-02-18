@@ -16,6 +16,8 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
       - uses: actions/checkout@v6
+        with:
+          submodules: true
       - uses: ./.github/workflows/setup-with-retry
       - name: Update translations
         run: |

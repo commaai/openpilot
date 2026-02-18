@@ -35,8 +35,3 @@ rm -rf $DIR/include
 mkdir -p $INSTALL_DIR/lib
 cp $DIR/libyuv/libyuv.a $INSTALL_DIR/lib
 cp -r $DIR/libyuv/include $DIR
-
-## To create universal binary on Darwin:
-## ```
-## lipo -create -output Darwin/libyuv.a path-to-x64/libyuv.a path-to-arm64/libyuv.a
-## ```
