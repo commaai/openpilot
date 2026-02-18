@@ -123,6 +123,7 @@ class WifiButton(BigButton):
     self._network_forgetting = False
     self._network_forgot = False
     self._wrong_password = False
+    self._shake_start: float | None = None
 
   def set_current_network(self, network: Network):
     self._network = network
@@ -152,8 +153,8 @@ class WifiButton(BigButton):
     self._network_missing = missing
     self._wifi_icon.set_network_missing(missing)
 
-  def set_wrong_password(self, wrong: bool):
-    self._wrong_password = wrong
+  def set_wrong_password(self):
+    self._wrong_password = True
 
   @property
   def network(self) -> Network:
@@ -170,6 +171,20 @@ class WifiButton(BigButton):
 
   def _get_label_font_size(self):
     return 48
+
+  @property
+  def _shake_offset(self) -> float:
+    SHAKE_DURATION = 0.6
+    SHAKE_AMPLITUDE = 20.0
+    SHAKE_FREQUENCY = 32.0
+    t = rl.get_time() - (self._shake_start or 0.0)
+    if t < 0 or t > SHAKE_DURATION:
+      return 0.0
+    decay = 1.0 - t / SHAKE_DURATION
+    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
+
+  def set_position(self, x: float, y: float) -> None:
+    super().set_position(x + self._shake_offset, y)
 
   def _draw_content(self, btn_y: float):
     self._label.set_color(LABEL_COLOR)
@@ -222,6 +237,8 @@ class WifiButton(BigButton):
     if normalize_ssid(self._network.ssid) == "CoxWiFi":
       print(f"_update_state: ssid={self._network.ssid}, is_connected={self._network.is_connected}, is_connecting={self._is_connecting}, network_forgetting={self._network_forgetting}, network_missing={self._network_missing}")
 
+    # print(f'{self._network.ssid}, {self._network_forgetting=}, {self._network_missing=}, {self._is_connecting=}, {self._network.is_connected=}, {self._network.security_type=}, {self._wrong_password=}')
+
     if any((self._network_forgetting, self._network_missing, self._is_connecting, self._network.is_connected,
             self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)
@@ -240,6 +257,10 @@ class WifiButton(BigButton):
         self.set_value("unsupported")
 
     else:  # saved, wrong password, or unknown
+      # Start shake when actually setting text
+      if self._wrong_password and self._shake_start is None:
+        self._shake_start = rl.get_time()
+
       self.set_value("wrong password" if self._wrong_password else "connect")
       self.set_enabled(True)
       self._sub_label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
@@ -365,7 +386,7 @@ class WifiUIMici(NavWidget):
     if incorrect_password:
       for btn in self._scroller._items:
         if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
-          btn.set_wrong_password(True)
+          btn.set_wrong_password()
           break
       return
 
