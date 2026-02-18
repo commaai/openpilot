@@ -10,7 +10,7 @@ from typing import Any
 
 from jeepney import DBusAddress, new_method_call
 from jeepney.bus_messages import MatchRule, message_bus
-from jeepney.io.blocking import open_dbus_connection as open_dbus_connection_blocking
+from jeepney.io.blocking import DBusConnection, open_dbus_connection as open_dbus_connection_blocking
 from jeepney.io.threading import DBusRouter, open_dbus_connection as open_dbus_connection_threading
 from jeepney.low_level import MessageType
 from jeepney.wrappers import Properties
@@ -331,7 +331,7 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
-          print('State change', (new_state, change_reason))
+          print('  State change', (NMDeviceState(new_state), NMDeviceStateReason(change_reason)))
 
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
@@ -347,6 +347,17 @@ class WifiManager:
               if self._connecting_to_ssid == failed_ssid:
                 print('clearing connecting ssid', self._connecting_to_ssid)
                 self._connecting_to_ssid = None
+
+          elif new_state == NMDeviceState.PREPARE and self._connecting_to_ssid is None:
+            # Set connecting status when NetworkManager connects to known networks on its own
+            conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
+            if conn_path is None:
+              cloudlog.warning("Failed to get active wifi connection during PREPARE state")
+              return
+
+            ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+            if ssid:
+              self._set_connecting(ssid)
 
           elif new_state == NMDeviceState.ACTIVATED:
             self._update_networks()
@@ -430,11 +441,15 @@ class WifiManager:
     # Returns list of ActiveConnection
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
 
-  def _get_active_wifi_connection(self) -> tuple[str | None, dict | None]:
+  def _get_active_wifi_connection(self, router: DBusConnection | DBusRouter | None = None) -> tuple[str | None, dict | None]:
     # Returns first Connection settings path and ActiveConnection props from ActiveConnections with Type 802-11-wireless
-    for active_conn in self._get_active_connections():
+    if router is None:
+      router = self._router_main
+
+    active_conns = router.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
+    for active_conn in active_conns:
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
+      reply = router.send_and_get_reply(Properties(conn_addr).get_all())
 
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f"Failed to get active connection properties for {active_conn}: {reply}")
