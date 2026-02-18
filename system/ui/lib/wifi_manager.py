@@ -614,11 +614,14 @@ class WifiManager:
 
   def set_current_network_metered(self, metered: MeteredType):
     def worker():
+      if self.is_tethering_active():
+        return
+
       for active_conn in self._get_active_connections():
         conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
         props = self._router_main.send_and_get_reply(Properties(conn_addr).get_all()).body[0]
 
-        if props.get('Type', ('s', ''))[1] == '802-11-wireless' and not self.is_tethering_active():
+        if props.get('Type', ('s', ''))[1] == '802-11-wireless':
           conn_path = props.get('Connection', ('o', '/'))[1]
           if conn_path == "/":
             continue
