@@ -18,6 +18,9 @@ if [ -z "$TEST_DIR" ]; then
   exit 1
 fi
 
+# flush ION page pool and pagecache to reclaim leaked kernel memory between runs
+sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
+
 # prevent storage from filling up
 rm -rf /data/media/0/realdata/*
 

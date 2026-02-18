@@ -20,17 +20,21 @@ def main():
   else:
     main_layout = MiciMainLayout()
   main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-  for should_render in gui_app.render():
-    ui_state.update()
-    if should_render:
-      main_layout.render()
+  try:
+    for should_render in gui_app.render():
+      ui_state.update()
+      if should_render:
+        main_layout.render()
 
-      # reaffine after power save offlines our core
-      if TICI and os.sched_getaffinity(0) != cores:
-        try:
-          set_core_affinity(list(cores))
-        except OSError:
-          pass
+        # reaffine after power save offlines our core
+        if TICI and os.sched_getaffinity(0) != cores:
+          try:
+            set_core_affinity(list(cores))
+          except OSError:
+            pass
+  finally:
+    main_layout.close()
+    gui_app.close()
 
 
 if __name__ == "__main__":

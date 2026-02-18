@@ -41,6 +41,9 @@ class MainLayout(Widget):
     if not self._onboarding_window.completed:
       gui_app.set_modal_overlay(self._onboarding_window)
 
+  def close(self):
+    self._layouts[MainState.ONROAD].close()
+
   def _render(self, _):
     self._handle_onroad_transition()
     self._render_main_content()
