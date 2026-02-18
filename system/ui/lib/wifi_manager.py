@@ -34,7 +34,7 @@ except Exception:
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
-SCAN_PERIOD_SECONDS = 10
+SCAN_PERIOD_SECONDS = 5
 
 DEBUG = False
 _dbus_call_idx = 0
@@ -94,10 +94,13 @@ class Network:
   ip_address: str = ""  # TODO: implement
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool, connected_ssid: str | None = None) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
-    is_connected = any(ap.is_connected for ap in aps)
+    # uses ActiveConnection SSID (stable during AP roaming) instead of ActiveAccessPoint path
+    # https://github.com/GNOME/gnome-shell/blob/3f8b174274fac7d69477523d4873ef8253e1ed49/js/ui/status/network.js#L810-L819
+    print((any(ap.is_connected for ap in aps)), connected_ssid, ssid)
+    is_connected = any(ap.is_connected for ap in aps)# or (ssid == connected_ssid)
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
 
     return cls(
@@ -365,7 +368,8 @@ class WifiManager:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
           self._last_network_scan = time.monotonic()
-      time.sleep(1 / 2.)
+        self._update_networks()  # TODO: temporary 10hz for testing
+      time.sleep(1 / 10.)
 
   def _wait_for_wifi_device(self):
     while not self._exit:
@@ -421,6 +425,35 @@ class WifiManager:
 
   def _get_active_connections(self):
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
+
+  def _get_connected_ssid(self) -> str | None:
+    """Get SSID from ActiveConnections instead of ActiveAccessPoint — stable during AP roaming."""
+    for active_conn in self._get_active_connections():
+      conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+      reply = self._router_main.send_and_get_reply(Properties(conn_addr).get_all())
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f"Failed to get active connection properties for {active_conn}: {reply}")
+        continue
+
+      props = reply.body[0]
+      if props.get('Type', ('s', ''))[1] != '802-11-wireless':
+        continue
+
+      conn_path = props.get('Connection', ('o', '/'))[1]
+      if conn_path == '/':
+        return None
+
+      settings = self._get_connection_settings(conn_path)
+      if not settings:
+        return None
+
+      ssid_val = settings.get('802-11-wireless', {}).get('ssid', None)
+      if ssid_val is None:
+        return None
+
+      return bytes(ssid_val[1]).decode('utf-8', 'replace')
+
+    return None
 
   def _get_connection_settings(self, conn_path: str) -> dict:
     conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
@@ -674,10 +707,13 @@ class WifiManager:
           cloudlog.warning("No WiFi device found")
           return
 
+        connected_ssid = self._get_connected_ssid()
+
         # NOTE: AccessPoints property may exclude hidden APs (use GetAllAccessPoints method if needed)
         wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
         wifi_props = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all()).body[0]
         active_ap_path = wifi_props.get('ActiveAccessPoint', ('o', '/'))[1]
+        print('active ap path', active_ap_path)
         ap_paths = wifi_props.get('AccessPoints', ('ao', []))[1]
 
         aps: dict[str, list[AccessPoint]] = {}
@@ -704,9 +740,9 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        print(aps)
-        print()
-        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections) for ssid, ap_list in aps.items()]
+        # print(aps)
+        # print()
+        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections, connected_ssid) for ssid, ap_list in aps.items()]
         # sort with quantized strength to reduce jumping
         networks.sort(key=lambda n: (-n.is_connected, -n.is_saved, -round(n.strength / 100 * 2), n.ssid.lower()))
         self._networks = networks
