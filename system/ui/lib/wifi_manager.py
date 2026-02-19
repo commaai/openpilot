@@ -629,10 +629,9 @@ class WifiManager:
       conn_path = self._connections.get(ssid, None)
       if conn_path is None:
         cloudlog.warning(f"Trying to forget unknown connection: {ssid}")
-        return
-
-      conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-      self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
+      else:
+        conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+        self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
       self._update_networks()
       self._enqueue_callbacks(self._forgotten, ssid)
