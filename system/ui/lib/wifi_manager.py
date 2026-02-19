@@ -89,11 +89,10 @@ class Network:
   ssid: str
   strength: int
   security_type: SecurityType
-  is_saved: bool
   ip_address: str = ""  # TODO: implement
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"]) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
@@ -102,7 +101,6 @@ class Network:
       ssid=ssid,
       strength=strongest_ap.strength,
       security_type=security_type,
-      is_saved=is_saved,
     )
 
 
@@ -668,6 +666,9 @@ class WifiManager:
     # Check ssid, not connected_ssid, to also catch connecting state
     return self._wifi_state.ssid == self._tethering_ssid
 
+  def is_connection_saved(self, ssid: str) -> bool:
+    return ssid in self._connections
+
   def set_tethering_password(self, password: str):
     def worker():
       conn_path = self._connections.get(self._tethering_ssid, None)
@@ -807,8 +808,8 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections) for ssid, ap_list in aps.items()]
-        networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, -n.is_saved, -n.strength, n.ssid.lower()))
+        networks = [Network.from_dbus(ssid, ap_list) for ssid, ap_list in aps.items()]
+        networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, -self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
         self._networks = networks
 
         self._update_active_connection_info()

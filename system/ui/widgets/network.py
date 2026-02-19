@@ -383,7 +383,7 @@ class WifiManagerUI(Widget):
       gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
     else:
       # If the network is saved, show the "Forget" button
-      if network.is_saved:
+      if self._wifi_manager.is_connection_saved(network.ssid):
         forget_btn_rect = rl.Rectangle(
           security_icon_rect.x - self.btn_width - spacing,
           rect.y + (ITEM_HEIGHT - 80) / 2,
@@ -396,7 +396,7 @@ class WifiManagerUI(Widget):
     self._draw_signal_strength_icon(signal_icon_rect, network)
 
   def _networks_buttons_callback(self, network):
-    if not network.is_saved and network.security_type != SecurityType.OPEN:
+    if not self._wifi_manager.is_connection_saved(network.ssid) and network.security_type != SecurityType.OPEN:
       self.state = UIState.NEEDS_AUTH
       self._state_network = network
       self._password_retry = False
@@ -432,7 +432,7 @@ class WifiManagerUI(Widget):
   def connect_to_network(self, network: Network, password=''):
     self.state = UIState.CONNECTING
     self._state_network = network
-    if network.is_saved and not password:
+    if self._wifi_manager.is_connection_saved(network.ssid) and not password:
       self._wifi_manager.activate_connection(network.ssid)
     else:
       self._wifi_manager.connect_to_network(network.ssid, password)
