@@ -364,9 +364,6 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
-          print('  New state', (NMDeviceState(new_state), change_reason))
-          print('Before wifi state', self._wifi_state)
-
           if new_state == NMDeviceState.DISCONNECTED:
             if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
               # Only clear if the forgotten connection is the one we're connecting/connected to
@@ -426,8 +423,6 @@ class WifiManager:
               if self._wifi_state.ssid not in self._connections:
                 self._set_connecting(None)
 
-          print('After wifi state', self._wifi_state)
-
   def _network_scanner(self):
     while not self._exit:
       if self._active:
@@ -480,12 +475,10 @@ class WifiManager:
 
     if "802-11-wireless" in settings:
       ssid = settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
-      print('GOT NEW CONNECTION', ssid)
       if ssid != "":
         self._connections[ssid] = conn_path
 
   def _connection_removed(self, conn_path: str):
-    print('REMOVED CONNECTION!')
     self._connections = {ssid: path for ssid, path in self._connections.items() if path != conn_path}
 
   def _get_active_connections(self, router: DBusConnection | DBusRouter | None = None):
