@@ -123,8 +123,6 @@ class WifiItem(BigDialogOptionButton):
   def _render(self, _):
     disabled_alpha = 0.35 if not self.enabled else 1.0
 
-    # print(self._network.ssid, (self._connecting_callback(), self._connected_callback()))
-
     # connecting or connected
     if self._wifi_state_callback().ssid == self._network.ssid:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
