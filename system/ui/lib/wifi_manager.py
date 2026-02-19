@@ -378,7 +378,7 @@ class WifiManager:
 
             self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
 
-          # BAD PASSWORD - use prev if current has already moved on to a new connection
+          # BAD PASSWORD
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
           # - weak/gone network fails with FAILED+NO_SECRETS
           elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT) or
