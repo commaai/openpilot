@@ -12,8 +12,6 @@ from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType, WifiState
 
-from selfdrive.ui.ui_state import ui_state
-
 
 def normalize_ssid(ssid: str) -> str:
   return ssid.replace("’", "'")  # for iPhone hotspots
@@ -109,14 +107,13 @@ class WifiButton(BigButton):
   SUB_LABEL_WIDTH = 402 - LABEL_HORIZONTAL_PADDING * 2
 
   def __init__(self, network: Network, forget_callback: Callable[[str], None], connecting_callback: Callable[[], str | None],
-               connected_callback: Callable[[], str | None], wifi_state_callback: Callable[[], WifiState]):
+               connected_callback: Callable[[], str | None]):
     super().__init__(normalize_ssid(network.ssid), scroll=True)
 
     self._network = network
     self._forget_callback = forget_callback
     self._connecting_callback = connecting_callback
     self._connected_callback = connected_callback
-    self._wifi_state_callback = wifi_state_callback
 
     self._wifi_icon = WifiIcon()
     self._wifi_icon.set_current_network(network)
@@ -352,7 +349,7 @@ class WifiUIMici(NavWidget):
         existing[network.ssid].set_current_network(network)
       else:
         btn = WifiButton(network, self._wifi_manager.forget_connection, lambda: self._wifi_manager.connecting_to_ssid,
-                         lambda: self._wifi_manager.connected_ssid, lambda: self._wifi_manager.wifi_state)
+                         lambda: self._wifi_manager.connected_ssid)
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
