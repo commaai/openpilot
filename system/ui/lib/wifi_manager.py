@@ -622,6 +622,7 @@ class WifiManager:
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
       # FIXME: race here where ConnectionRemoved signal may arrive after we update all Network is_saved
+      #  and keep the old ssid's is_saved=True
       self._update_networks()
       self._enqueue_callbacks(self._forgotten, ssid)
 
