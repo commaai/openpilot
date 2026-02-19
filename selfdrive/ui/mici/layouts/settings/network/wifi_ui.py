@@ -10,7 +10,7 @@ from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR, L
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType, WifiState
+from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType
 
 
 def normalize_ssid(ssid: str) -> str:
@@ -371,7 +371,7 @@ class WifiUIMici(NavWidget):
       cloudlog.warning(f"Trying to connect to unknown network: {ssid}")
       return
 
-    if self._wifi_manager.is_connection_saved(ssid):
+    if self._wifi_manager.is_connection_saved(network.ssid):
       self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.activate_connection(network.ssid)
       self._update_buttons()
