@@ -417,17 +417,18 @@ class WifiManager:
             conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
             if conn_path is None:
               cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
+              self._wifi_state = wifi_state
+              self._enqueue_callbacks(self._activated)
             else:
               wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+              self._wifi_state = wifi_state
+              self._enqueue_callbacks(self._activated)
 
               # Persist volatile connections (created by AddAndActivateConnection2) to disk
               conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
               save_reply = self._conn_monitor.send_and_get_reply(new_method_call(conn_addr, 'Save'))
               if save_reply.header.message_type == MessageType.error:
                 cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
-
-            self._wifi_state = wifi_state
-            self._enqueue_callbacks(self._activated)
 
           elif new_state == NMDeviceState.DEACTIVATING:
             if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
