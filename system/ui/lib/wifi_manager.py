@@ -364,6 +364,8 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
+          print('  New state', (NMDeviceState(new_state), change_reason))
+
           if new_state == NMDeviceState.DISCONNECTED:
             if change_reason != NMDeviceStateReason.NEW_ACTIVATION:
               # catches CONNECTION_REMOVED reason when connection is forgotten
