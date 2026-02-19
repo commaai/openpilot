@@ -4,7 +4,7 @@ import time
 import uuid
 import subprocess
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import IntEnum
 from typing import Any
 
@@ -283,11 +283,7 @@ class WifiManager:
     return self._tethering_password
 
   def _set_connecting(self, ssid: str | None):
-    print('    setting status')
-    self._wifi_state.status = ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING
-    print('    done setting status')
-    self._wifi_state.ssid = ssid
-    print('    done setting ssid')
+    self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
@@ -387,14 +383,15 @@ class WifiManager:
 
           elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
             # Set connecting status when NetworkManager connects to known networks on its own
-            self._wifi_state.status = ConnectStatus.CONNECTING
+            wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
 
             conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
             if conn_path is None:
               cloudlog.warning("Failed to get active wifi connection during PREPARE/CONFIG state")
-              continue
+            else:
+              wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
 
-            self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+            self._wifi_state = wifi_state
 
           # BAD PASSWORD
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
@@ -415,21 +412,22 @@ class WifiManager:
             # Note that IP address from Ip4Config may not be propagated immediately and could take until the next scan results
             self._update_networks()
 
-            self._wifi_state.status = ConnectStatus.CONNECTED
+            wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
             conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
             if conn_path is None:
               cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
-              self._enqueue_callbacks(self._activated)
             else:
-              self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
-              self._enqueue_callbacks(self._activated)
+              wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
 
               # Persist volatile connections (created by AddAndActivateConnection2) to disk
               conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
               save_reply = self._conn_monitor.send_and_get_reply(new_method_call(conn_addr, 'Save'))
               if save_reply.header.message_type == MessageType.error:
                 cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
+
+            self._wifi_state = wifi_state
+            self._enqueue_callbacks(self._activated)
 
           elif new_state == NMDeviceState.DEACTIVATING:
             if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
