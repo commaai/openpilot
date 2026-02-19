@@ -89,7 +89,6 @@ class Network:
   ssid: str
   strength: int
   security_type: SecurityType
-  ip_address: str = ""  # TODO: implement
 
   @classmethod
   def from_dbus(cls, ssid: str, aps: list["AccessPoint"]) -> "Network":
