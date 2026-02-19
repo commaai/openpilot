@@ -223,7 +223,7 @@ class WifiManager:
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
       wifi_state = WifiState()
       if NMDeviceState.PREPARE <= dev_state <= NMDeviceState.SECONDARIES and dev_state != NMDeviceState.NEED_AUTH:
-         wifi_state.status = ConnectStatus.CONNECTING
+        wifi_state.status = ConnectStatus.CONNECTING
       elif dev_state == NMDeviceState.ACTIVATED:
         wifi_state.status = ConnectStatus.CONNECTED
 
@@ -610,8 +610,7 @@ class WifiManager:
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
       self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
-      if len(self._forgotten):
-        self._update_networks()
+      self._update_networks()
       self._enqueue_callbacks(self._forgotten, ssid)
 
     if block:
