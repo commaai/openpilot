@@ -361,6 +361,14 @@ class WifiManager:
             self._update_networks()
 
         # Device state changes
+        # TODO: known race conditions when switching networks (e.g. forget A, connect to B):
+        # 1. DEACTIVATING/DISCONNECTED + CONNECTION_REMOVED: fires before NewConnection for B
+        #    arrives, so _set_connecting(None) clears B's CONNECTING state causing UI flicker.
+        #    Fix: make DEACTIVATING a no-op, and guard DISCONNECTED with
+        #    `if wifi_state.ssid not in _connections` (NewConnection arrives between the two).
+        # 2. PREPARE/CONFIG ssid lookup: DBus may return stale A's conn_path, overwriting B.
+        #    Fix: only do DBus lookup when wifi_state.ssid is None (auto-connections);
+        #    user-initiated connections already have ssid set via _set_connecting.
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
