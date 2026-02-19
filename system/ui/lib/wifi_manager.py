@@ -283,8 +283,11 @@ class WifiManager:
     return self._tethering_password
 
   def _set_connecting(self, ssid: str | None):
+    print('    setting status')
     self._wifi_state.status = ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING
+    print('    done setting status')
     self._wifi_state.ssid = ssid
+    print('    done setting ssid')
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
