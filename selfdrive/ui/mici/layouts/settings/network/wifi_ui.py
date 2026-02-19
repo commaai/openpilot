@@ -263,6 +263,8 @@ class NetworkInfoPage(NavWidget):
     if self._network is None:
       return
 
+    print('NetworkInfoPage WifiState:', self._wifi_manager.wifi_state)
+
     self._connect_btn.set_full(not self._network.is_saved and not self._is_connecting)
     if self._is_connecting:
       self._connect_btn.set_label("connecting...")
