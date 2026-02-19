@@ -164,7 +164,7 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
-    return (self._is_saved and not self._wrong_password) or self._is_connecting
+    return self._is_saved or self._is_connecting
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
