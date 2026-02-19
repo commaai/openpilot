@@ -400,7 +400,7 @@ class WifiManagerUI(Widget):
       self.state = UIState.NEEDS_AUTH
       self._state_network = network
       self._password_retry = False
-    elif not network.is_connected:
+    elif self._wifi_manager.wifi_state.ssid != network.ssid:
       self.connect_to_network(network)
 
   def _forget_networks_buttons_callback(self, network):
@@ -410,7 +410,7 @@ class WifiManagerUI(Widget):
   def _draw_status_icon(self, rect, network: Network):
     """Draw the status icon based on network's connection state"""
     icon_file = None
-    if network.is_connected and self.state != UIState.CONNECTING:
+    if self._wifi_manager.connected_ssid == network.ssid and self.state != UIState.CONNECTING:
       icon_file = "icons/checkmark.png"
     elif network.security_type == SecurityType.UNSUPPORTED:
       icon_file = "icons/circled_slash.png"

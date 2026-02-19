@@ -8,6 +8,7 @@ from pathlib import Path
 from openpilot.common.basedir import BASEDIR
 
 DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
+HTML_TEMPLATE_PATH = Path(__file__).with_name("diff_template.html")
 
 
 def extract_framehashes(video_path):
@@ -71,64 +72,17 @@ def generate_html_report(videos: tuple[str, str], basedir: str, different_frames
     + (f" Video {'2' if frame_delta > 0 else '1'} is longer by {abs(frame_delta)} frames." if frame_delta != 0 else "")
   )
 
-  def render_video_cell(video_id: str, title: str, path: str, is_diff=False):
-    return f"""
-<td width='33%'>
-  <p><strong>{title}</strong></p>
-  <video id='{video_id}' width='100%' autoplay muted {'' if is_diff else "onplay='syncVideos()'"}>
-    <source src='{os.path.join(basedir, os.path.basename(path))}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
-"""
+  # Load HTML template and replace placeholders
+  html = HTML_TEMPLATE_PATH.read_text()
+  placeholders = {
+    "VIDEO1_SRC": os.path.join(basedir, os.path.basename(videos[0])),
+    "VIDEO2_SRC": os.path.join(basedir, os.path.basename(videos[1])),
+    "DIFF_SRC": os.path.join(basedir, diff_video_name),
+    "RESULT_TEXT": result_text,
+  }
+  for key, value in placeholders.items():
+    html = html.replace(f"${key}", value)
 
-  html = f"""<h2>UI Diff</h2>
-<table>
-<tr>
-{render_video_cell("video1", "Video 1", videos[0])}
-{render_video_cell("video2", "Video 2", videos[1])}
-{render_video_cell("diffVideo", "Pixel Diff", diff_video_name, is_diff=True)}
-</tr>
-</table>
-<script>
-const videos = [
-  document.getElementById('video1'),
-  document.getElementById('video2'),
-  document.getElementById('diffVideo'),
-];
-
-const isEnded = (v) => v.ended || (Number.isFinite(v.duration) && v.currentTime >= (v.duration - 0.05));
-const playAll = () => videos.forEach((v) => v.play());
-
-function syncVideos() {{
-  const t = Math.min(...videos.map((v) => v.currentTime));
-  videos.forEach((v) => {{ v.currentTime = t; }});
-  playAll();
-}}
-
-function handleEnded(endedVideo) {{
-  endedVideo.pause();
-  if (videos.every(isEnded)) {{
-    videos.forEach((v) => {{ v.currentTime = 0; }});
-    playAll();
-  }}
-}}
-
-videos.forEach((v) => {{
-  v.addEventListener('timeupdate', () => {{
-    videos.forEach((other) => {{
-      if (other !== v && !isEnded(other) && Math.abs(v.currentTime - other.currentTime) > 0.1) {{
-        other.currentTime = v.currentTime;
-        if (other.paused) other.play();
-      }}
-    }});
-  }});
-  v.addEventListener('ended', () => handleEnded(v));
-}});
-</script>
-<hr>
-<p><strong>Results:</strong> {result_text}</p>
-"""
   return html
 
 

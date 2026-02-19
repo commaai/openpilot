@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Diff Report</title>
+  <style>
+    h1, h2, h3, h4 {
+      margin: 0.5em 0 0.25em;
+    }
+    #videoTable {
+      width: 100%;
+    }
+    @media (max-width: 800px) {
+      #videoTable tr {
+        display: flex;
+        flex-direction: column;
+      }
+      #videoTable td {
+        width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>UI Diff</h2>
+  <table id='videoTable'></table>
+  <hr>
+  <p><strong>Results:</strong> $RESULT_TEXT</p>
+  <script>
+    const videoDefs = [
+      { id: 'video1', title: 'Video 1', src: '$VIDEO1_SRC', sync: true },
+      { id: 'video2', title: 'Video 2', src: '$VIDEO2_SRC', sync: true },
+      { id: 'diffVideo', title: 'Pixel Diff', src: '$DIFF_SRC', sync: false },
+    ];
+
+    const row = document.getElementById('videoTable').insertRow();
+    videoDefs.forEach(({ id, title, src, sync }) => {
+      const td = row.insertCell();
+      td.width = '33%';
+      td.innerHTML = `<h4>${title}</h4>
+        <video id='${id}' width='100%' autoplay muted ${sync ? "onplay='syncVideos()'" : ''}>
+          <source src='${src}' type='video/mp4'>
+          Your browser does not support the video tag.
+        </video>`;
+    });
+
+    const videos = videoDefs.map(({ id }) => document.getElementById(id));
+
+    const isEnded = (v) => v.ended || (Number.isFinite(v.duration) && v.currentTime >= (v.duration - 0.05));
+    const playAll = () => videos.forEach((v) => v.play());
+
+    function syncVideos() {
+      const t = Math.min(...videos.map((v) => v.currentTime));
+      videos.forEach((v) => { v.currentTime = t; });
+      playAll();
+    }
+
+    function handleEnded(endedVideo) {
+      endedVideo.pause();
+      if (videos.every(isEnded)) {
+        videos.forEach((v) => { v.currentTime = 0; });
+        playAll();
+      }
+    }
+
+    videos.forEach((v) => {
+      v.addEventListener('timeupdate', () => {
+        videos.forEach((other) => {
+          if (other !== v && !isEnded(other) && Math.abs(v.currentTime - other.currentTime) > 0.1) {
+            other.currentTime = v.currentTime;
+            if (other.paused) other.play();
+          }
+        });
+      });
+      v.addEventListener('ended', () => handleEnded(v));
+    });
+  </script>
+</body>
+</html>

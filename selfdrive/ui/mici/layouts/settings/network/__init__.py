@@ -10,7 +10,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import NavWidget
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType
+from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType, ConnectStatus
 
 
 class NetworkPanelType(IntEnum):
@@ -125,16 +125,13 @@ class NetworkLayoutMici(NavWidget):
 
     # Update wi-fi button with ssid and ip address
     # TODO: make sure we handle hidden ssids
-    connecting_ssid = self._wifi_manager.connecting_to_ssid
-    connected_network = next((network for network in self._wifi_manager.networks if network.ssid == self._wifi_manager.connected_ssid), None)
-    # print('connecting_ssid', connecting_ssid, 'connected_network', connected_network)
-    if connecting_ssid:
-      display_network = next((n for n in self._wifi_manager.networks if n.ssid == connecting_ssid), None)
-      self._wifi_button.set_text(normalize_ssid(connecting_ssid))
+    wifi_state = self._wifi_manager.wifi_state
+    display_network = next((n for n in self._wifi_manager.networks if n.ssid == wifi_state.ssid), None)
+    if wifi_state.status == ConnectStatus.CONNECTING:
+      self._wifi_button.set_text(normalize_ssid(wifi_state.ssid or "wi-fi"))
       self._wifi_button.set_value("connecting...")
-    elif connected_network is not None:
-      display_network = connected_network
-      self._wifi_button.set_text(normalize_ssid(connected_network.ssid))
+    elif wifi_state.status == ConnectStatus.CONNECTED:
+      self._wifi_button.set_text(normalize_ssid(wifi_state.ssid or "wi-fi"))
       self._wifi_button.set_value(self._wifi_manager.ipv4_address or "obtaining IP...")
     else:
       display_network = None

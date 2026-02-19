@@ -4,7 +4,7 @@ import time
 import uuid
 import subprocess
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import IntEnum
 from typing import Any
 
@@ -88,27 +88,19 @@ def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityTyp
 class Network:
   ssid: str
   strength: int
-  # is_connected: bool
   security_type: SecurityType
   is_saved: bool
   ip_address: str = ""  # TODO: implement
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool, active_connection: bool) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
-    # fall back to ActiveConnection during momentary AP roaming or low strength networks. matches GNOME shell behavior
-    # https://github.com/GNOME/gnome-shell/blob/3f8b174274fac7d69477523d4873ef8253e1ed49/js/ui/status/network.js#L810-L819
-    # print(f'{ssid=}, ap connected: {any(ap.is_connected for ap in aps)}, active connection: {active_connection}')
-    is_connected = any(ap.is_connected for ap in aps) or active_connection
-    # if connecting_to_ssid is not None and connecting_to_ssid != ssid:
-    #   is_connected = False
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
 
     return cls(
       ssid=ssid,
       strength=strongest_ap.strength,
-      # is_connected=is_connected and is_saved,
       security_type=security_type,
       is_saved=is_saved,
     )
@@ -119,14 +111,13 @@ class AccessPoint:
   ssid: str
   bssid: str
   strength: int
-  is_connected: bool
   flags: int
   wpa_flags: int
   rsn_flags: int
   ap_path: str
 
   @classmethod
-  def from_dbus(cls, ap_props: dict[str, tuple[str, Any]], ap_path: str, active_ap_path: str) -> "AccessPoint":
+  def from_dbus(cls, ap_props: dict[str, tuple[str, Any]], ap_path: str) -> "AccessPoint":
     ssid = bytes(ap_props['Ssid'][1]).decode("utf-8", "replace")
     bssid = str(ap_props['HwAddress'][1])
     strength = int(ap_props['Strength'][1])
@@ -138,7 +129,6 @@ class AccessPoint:
       ssid=ssid,
       bssid=bssid,
       strength=strength,
-      is_connected=ap_path == active_ap_path,
       flags=flags,
       wpa_flags=wpa_flags,
       rsn_flags=rsn_flags,
@@ -152,7 +142,6 @@ class ConnectStatus(IntEnum):
   CONNECTED = 2
 
 
-# holds ssid, status, etc.
 @dataclass
 class WifiState:
   ssid: str | None = None
@@ -182,12 +171,11 @@ class WifiManager:
 
     # State
     self._connections: dict[str, str] = {}  # ssid -> connection path, updated via NM signals
+    self._wifi_state: WifiState = WifiState()
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
     self._ipv4_forward = False
-
-    self._wifi_state: WifiState = WifiState()
 
     self._last_network_scan: float = 0.0
     self._callback_queue: list[Callable] = []
@@ -233,9 +221,10 @@ class WifiManager:
     def worker():
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
+
       wifi_state = WifiState()
       if NMDeviceState.PREPARE <= dev_state <= NMDeviceState.SECONDARIES and dev_state != NMDeviceState.NEED_AUTH:
-         wifi_state.status = ConnectStatus.CONNECTING
+        wifi_state.status = ConnectStatus.CONNECTING
       elif dev_state == NMDeviceState.ACTIVATED:
         wifi_state.status = ConnectStatus.CONNECTED
 
@@ -295,8 +284,7 @@ class WifiManager:
 
   def _set_connecting(self, ssid: str | None):
     print('SET CONNECTING', ssid)
-    self._wifi_state.status = ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING
-    self._wifi_state.ssid = ssid
+    self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
@@ -375,6 +363,16 @@ class WifiManager:
             self._update_networks()
 
         # Device state changes
+        # TODO: known race conditions when switching networks (e.g. forget A, connect to B):
+        # 1. DEACTIVATING/DISCONNECTED + CONNECTION_REMOVED: fires before NewConnection for B
+        #    arrives, so _set_connecting(None) clears B's CONNECTING state causing UI flicker.
+        #    DEACTIVATING(CONNECTION_REMOVED): wifi_state (B, CONNECTING) -> (None, DISCONNECTED)
+        #    Fix: make DEACTIVATING a no-op, and guard DISCONNECTED with
+        #    `if wifi_state.ssid not in _connections` (NewConnection arrives between the two).
+        # 2. PREPARE/CONFIG ssid lookup: DBus may return stale A's conn_path, overwriting B.
+        #    PREPARE(0): wifi_state (B, CONNECTING) -> (A, CONNECTING)
+        #    Fix: only do DBus lookup when wifi_state.ssid is None (auto-connections);
+        #    user-initiated connections already have ssid set via _set_connecting.
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
           print('  State change', (NMDeviceState(new_state), NMDeviceStateReason(change_reason)))
@@ -634,8 +632,7 @@ class WifiManager:
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
       self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
-      if len(self._forgotten):
-        self._update_networks()
+      self._update_networks()
       self._enqueue_callbacks(self._forgotten, ssid)
 
     if block:
@@ -807,7 +804,7 @@ class WifiManager:
             continue
 
           try:
-            ap = AccessPoint.from_dbus(ap_props.body[0], ap_path, active_ap_path)
+            ap = AccessPoint.from_dbus(ap_props.body[0], ap_path)
             if ap.ssid == "":
               continue
 
@@ -821,10 +818,7 @@ class WifiManager:
 
         # print(aps)
         # print()
-        active_wifi_connection, _ = self._get_active_wifi_connection()
-        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections,
-                                      active_wifi_connection is not None and self._connections.get(ssid) == active_wifi_connection)
-                    for ssid, ap_list in aps.items()]
+        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections) for ssid, ap_list in aps.items()]
         networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, -n.is_saved, -n.strength, n.ssid.lower()))
         self._networks = networks
 
