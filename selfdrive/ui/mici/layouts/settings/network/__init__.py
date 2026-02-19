@@ -127,7 +127,6 @@ class NetworkLayoutMici(NavWidget):
     # TODO: make sure we handle hidden ssids
     wifi_state = self._wifi_manager.wifi_state
     display_network = next((n for n in self._wifi_manager.networks if n.ssid == wifi_state.ssid), None)
-    print(wifi_state)
     if wifi_state.status == ConnectStatus.CONNECTING:
       self._wifi_button.set_text(normalize_ssid(wifi_state.ssid or "wi-fi"))
       self._wifi_button.set_value("connecting...")

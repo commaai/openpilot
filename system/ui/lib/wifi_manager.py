@@ -282,7 +282,6 @@ class WifiManager:
     return self._tethering_password
 
   def _set_connecting(self, ssid: str | None):
-    print('SET CONNECTING', ssid)
     self._wifi_state.status = ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING
     self._wifi_state.ssid = ssid
 
@@ -363,10 +362,8 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
-          print('  State change', (NMDeviceState(new_state), NMDeviceStateReason(change_reason)))
 
           if new_state == NMDeviceState.DISCONNECTED and change_reason != NMDeviceStateReason.NEW_ACTIVATION:
-            print('disconnected from', self._wifi_state.ssid)
             self._wifi_state.status = ConnectStatus.DISCONNECTED
             self._wifi_state.ssid = None
 
@@ -379,7 +376,6 @@ class WifiManager:
               continue
 
             self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
-            print('     NEW WIFI_STATE', self._wifi_state)
 
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
@@ -390,7 +386,6 @@ class WifiManager:
             if self._wifi_state.ssid:
               self._enqueue_callbacks(self._need_auth, self._wifi_state.ssid)
 
-            print('connection failed to', self._wifi_state.ssid, (new_state, change_reason))
             self._wifi_state.status = ConnectStatus.DISCONNECTED
             self._wifi_state.ssid = None
 
@@ -400,7 +395,6 @@ class WifiManager:
           elif new_state == NMDeviceState.ACTIVATED:
             self._update_active_connection_info(self._conn_monitor)
             self._enqueue_callbacks(self._activated)
-            print('activated connection to', self._wifi_state.ssid)
 
             self._wifi_state.status = ConnectStatus.CONNECTED
 
