@@ -364,6 +364,8 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
+          print('  New state', (new_state, change_reason))
+
           if new_state == NMDeviceState.DISCONNECTED:
             if change_reason != NMDeviceStateReason.NEW_ACTIVATION:
               # catches CONNECTION_REMOVED reason when connection is forgotten
@@ -395,6 +397,7 @@ class WifiManager:
             pass
 
           elif new_state == NMDeviceState.ACTIVATED:
+            print('ACTIVATED')
             self._update_active_connection_info(self._conn_monitor)
 
             self._wifi_state.status = ConnectStatus.CONNECTED
@@ -814,10 +817,12 @@ class WifiManager:
     metered = MeteredType.UNKNOWN
 
     conn_path, props = self._get_active_wifi_connection(router)
+    print('active conn', conn_path)
 
     if conn_path is not None and props is not None:
       # IPv4 address
       ip4config_path = props.get('Ip4Config', ('o', '/'))[1]
+      print('ip4config_path', ip4config_path)
 
       if ip4config_path != "/":
         ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
@@ -826,6 +831,7 @@ class WifiManager:
         for entry in address_data:
           if 'address' in entry:
             ipv4_address = entry['address'][1]
+            print('ipv4_address', ipv4_address)
             break
 
       # Metered status
@@ -840,7 +846,9 @@ class WifiManager:
           metered = MeteredType.NO
 
     self._ipv4_address = ipv4_address
+    print('set ipv4 address', self._ipv4_address)
     self._current_network_metered = metered
+    print('set current network metered', self._current_network_metered)
 
   def __del__(self):
     self.stop()
