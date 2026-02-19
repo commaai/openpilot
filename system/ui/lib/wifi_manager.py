@@ -417,9 +417,6 @@ class WifiManager:
               # When connection is forgotten
               self._set_connecting(None)
 
-          print('After wifi state', self._wifi_state)
-          print()
-
   def _network_scanner(self):
     while not self._exit:
       if self._active:
