@@ -399,7 +399,7 @@ class WifiManager:
 
           elif new_state == NMDeviceState.ACTIVATED:
             print('ACTIVATED')
-            time.sleep(0.1)
+            time.sleep(0.5)
             self._update_active_connection_info(self._conn_monitor)
 
             self._wifi_state.status = ConnectStatus.CONNECTED
