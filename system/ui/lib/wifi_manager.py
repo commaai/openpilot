@@ -380,14 +380,16 @@ class WifiManager:
               self._set_connecting(None)
 
           elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
-            self._wifi_state.status = ConnectStatus.CONNECTING
+            # Set connecting status when NetworkManager connects to known networks on its own
+            if self._wifi_state.ssid is not None:
+              self._wifi_state.status = ConnectStatus.CONNECTING
 
-            conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
-            if conn_path is None:
-              cloudlog.warning("Failed to get active wifi connection during PREPARE/CONFIG state")
-              continue
+              conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
+              if conn_path is None:
+                cloudlog.warning("Failed to get active wifi connection during PREPARE/CONFIG state")
+                continue
 
-            self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+              self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
 
           # BAD PASSWORD
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
