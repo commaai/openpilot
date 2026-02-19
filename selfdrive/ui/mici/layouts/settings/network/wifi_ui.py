@@ -124,7 +124,6 @@ class WifiButton(BigButton):
     # Eager state (not sourced from Network)
     self._network_missing = False
     self._network_forgetting = False
-    self._network_forgot = False
     self._wrong_password = False
     self._shake_start: float | None = None
 
@@ -135,7 +134,6 @@ class WifiButton(BigButton):
     # We can assume network is not missing if got new Network
     self._network_missing = False
     self._wifi_icon.set_network_missing(False)
-    self._network_forgot = False
     if self._is_connected or self._is_connecting:
       self._wrong_password = False
 
@@ -149,8 +147,6 @@ class WifiButton(BigButton):
     self._forget_callback(self._network.ssid)
 
   def on_forgotten(self):
-    # Fired when WifiManager finishes forget. Network may still be old, so override is_saved with _network_forgot
-    self._network_forgot = True
     self._network_forgetting = False
     self._forget_btn.set_visible(True)
 
@@ -168,7 +164,7 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
-    return (self._is_saved and not self._network_forgot and not self._wrong_password) or self._is_connecting
+    return (self._is_saved and not self._wrong_password) or self._is_connecting
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
@@ -384,9 +380,7 @@ class WifiUIMici(NavWidget):
       cloudlog.warning(f"Trying to connect to unknown network: {ssid}")
       return
 
-    # Eager treat wrong password buttons as not saved, short window race condition
-    wrong_password = any(isinstance(btn, WifiButton) and btn.network.ssid == ssid and btn._wrong_password for btn in self._scroller._items)
-    if self._wifi_manager.is_connection_saved(ssid) and not wrong_password:
+    if self._wifi_manager.is_connection_saved(ssid):
       self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.activate_connection(network.ssid)
       self._update_buttons()
