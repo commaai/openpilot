@@ -412,7 +412,6 @@ class WifiManager:
 
           elif new_state == NMDeviceState.ACTIVATED:
             # Note that IP address from Ip4Config may not be propagated immediately and could take until the next scan results
-            self._update_networks()
 
             wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
@@ -421,10 +420,12 @@ class WifiManager:
               cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
               self._wifi_state = wifi_state
               self._enqueue_callbacks(self._activated)
+              self._update_networks()
             else:
               wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
               self._wifi_state = wifi_state
               self._enqueue_callbacks(self._activated)
+              self._update_networks()
 
               # Persist volatile connections (created by AddAndActivateConnection2) to disk
               conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)

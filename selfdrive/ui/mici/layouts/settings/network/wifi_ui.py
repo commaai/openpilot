@@ -363,6 +363,7 @@ class WifiUIMici(NavWidget):
     front_btn_idx = next((i for i, btn in enumerate(self._scroller._items)
                           if isinstance(btn, WifiButton) and not btn._network_missing
                           and btn.network.ssid == front_ssid), None) if front_ssid else None
+    print('front_ssid:', front_ssid, front_btn_idx)
 
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
