@@ -221,6 +221,7 @@ class WifiManager:
     def worker():
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
+
       wifi_state = WifiState()
       if NMDeviceState.PREPARE <= dev_state <= NMDeviceState.SECONDARIES and dev_state != NMDeviceState.NEED_AUTH:
         wifi_state.status = ConnectStatus.CONNECTING
@@ -399,15 +400,15 @@ class WifiManager:
             self._wifi_state.status = ConnectStatus.CONNECTED
             self._enqueue_callbacks(self._activated)
 
-            active_conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
-            if active_conn_path is None:
+            conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
+            if conn_path is None:
               cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
               continue
 
-            self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == active_conn_path), None)
+            self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
 
             # Persist volatile connections (created by AddAndActivateConnection2) to disk
-            conn_addr = DBusAddress(active_conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+            conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
             save_reply = self._conn_monitor.send_and_get_reply(new_method_call(conn_addr, 'Save'))
             if save_reply.header.message_type == MessageType.error:
               cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
@@ -792,8 +793,7 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections)
-                    for ssid, ap_list in aps.items()]
+        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections) for ssid, ap_list in aps.items()]
         networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, -n.is_saved, -n.strength, n.ssid.lower()))
         self._networks = networks
 
