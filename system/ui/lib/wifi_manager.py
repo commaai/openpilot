@@ -828,6 +828,7 @@ class WifiManager:
         ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
         address_data = router.send_and_get_reply(Properties(ip4config_addr).get('AddressData')).body[0][1]
 
+        print('address_data', address_data)
         for entry in address_data:
           if 'address' in entry:
             ipv4_address = entry['address'][1]
