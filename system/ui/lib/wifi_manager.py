@@ -368,11 +368,8 @@ class WifiManager:
           print('Before wifi state', self._wifi_state)
 
           if new_state == NMDeviceState.DISCONNECTED:
-            if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-              # Only clear if the forgotten connection is the one we're connecting/connected to
-              if self._wifi_state.ssid not in self._connections:
-                self._set_connecting(None)
-            elif change_reason != NMDeviceStateReason.NEW_ACTIVATION:
+            if change_reason != NMDeviceStateReason.NEW_ACTIVATION:
+              # catches CONNECTION_REMOVED reason when connection is forgotten
               self._set_connecting(None)
 
           elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
@@ -402,7 +399,7 @@ class WifiManager:
 
           elif new_state == NMDeviceState.ACTIVATED:
             # Note that IP address from Ip4Config may not be propagated immediately and could take until the next scan results
-            self._update_networks()
+            self._update_active_connection_info(self._conn_monitor)
 
             self._wifi_state.status = ConnectStatus.CONNECTED
 
@@ -422,9 +419,8 @@ class WifiManager:
 
           elif new_state == NMDeviceState.DEACTIVATING:
             if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-              # Only clear if the forgotten connection is the one we're connecting/connected to
-              if self._wifi_state.ssid not in self._connections:
-                self._set_connecting(None)
+              # When connection is forgotten
+              self._set_connecting(None)
 
           print('After wifi state', self._wifi_state)
 
@@ -480,12 +476,10 @@ class WifiManager:
 
     if "802-11-wireless" in settings:
       ssid = settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
-      print('GOT NEW CONNECTION', ssid)
       if ssid != "":
         self._connections[ssid] = conn_path
 
   def _connection_removed(self, conn_path: str):
-    print('REMOVED CONNECTION!')
     self._connections = {ssid: path for ssid, path in self._connections.items() if path != conn_path}
 
   def _get_active_connections(self, router: DBusConnection | DBusRouter | None = None):
