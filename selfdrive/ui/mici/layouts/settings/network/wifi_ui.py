@@ -125,7 +125,7 @@ class WifiItem(BigDialogOptionButton):
 
     print(self._network.ssid, (self._connecting_callback(), self._connected_callback()))
 
-    # if self._connected_callback() == self._network.ssid:
+    # connecting or connected
     if self._wifi_state_callback().ssid == self._network.ssid:
       selected_x = int(self._rect.x - self._selected_txt.width / 2)
       selected_y = int(self._rect.y + (self._rect.height - self._selected_txt.height) / 2)
@@ -403,7 +403,6 @@ class WifiUIMici(BigMultiOptionDialog):
         self._scroller.add_widget(network_button)
 
     # Move connecting/connected network to the start
-    # connected_btn_idx = next((i for i, btn in enumerate(self._scroller._items) if btn._network.is_connected), None)
     connected_btn_idx = next((i for i, btn in enumerate(self._scroller._items) if self._wifi_manager.wifi_state.ssid == btn._network.ssid), None)
     if connected_btn_idx is not None and connected_btn_idx > 0:
       self._scroller._items.insert(0, self._scroller._items.pop(connected_btn_idx))
