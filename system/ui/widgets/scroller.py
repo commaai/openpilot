@@ -116,8 +116,8 @@ class Scroller(Widget):
     self._scroll_indicator = ScrollIndicator()
     self._edge_shadows = edge_shadows and self._horizontal
 
-    self._move_animations: dict[int, FirstOrderFilter] = {}
-    self._move_lift: dict[int, FirstOrderFilter] = {}
+    self._move_offsets: dict[int, FirstOrderFilter] = {}
+    self._move_lifts: dict[int, FirstOrderFilter] = {}
     self._moved_item_ids: set[int] = set()
     self._overlay_filter = FirstOrderFilter(0.0, OVERLAY_RC, 1 / gui_app.target_fps)
 
@@ -158,39 +158,73 @@ class Scroller(Widget):
     self._items.insert(to_idx, item)
 
     dt = 1 / gui_app.target_fps
-    item_size = item.rect.width if self._horizontal else item.rect.height
+    sign = 1 if to_idx < from_idx else -1
+    displaced = range(to_idx + 1, from_idx + 1) if to_idx < from_idx else range(from_idx, to_idx)
 
-    # Displaced item indices in NEW order (items we jumped over)
-    if to_idx < from_idx:
-      displaced_indices = range(to_idx + 1, from_idx + 1)
-    else:
-      displaced_indices = range(from_idx, to_idx)
+    def _extent(w):
+      return (w.rect.width if self._horizontal else w.rect.height) + self._spacing
 
-    moved_distance = sum(
-      (self._items[i].rect.width if self._horizontal else self._items[i].rect.height) + self._spacing
-      for i in displaced_indices
-    )
-
-    # Sign: moving toward start (to_idx < from_idx) = old pos had larger coord = positive offset
-    moved_offset = moved_distance if to_idx < from_idx else -moved_distance
-    if id(item) in self._move_animations:
-      self._move_animations[id(item)].x += moved_offset
-    else:
-      self._move_animations[id(item)] = FirstOrderFilter(moved_offset, MOVE_RC, dt)
+    moved_offset = sign * sum(_extent(self._items[i]) for i in displaced)
+    self._add_move_offset(id(item), moved_offset, dt)
     self._moved_item_ids.add(id(item))
-    self._move_lift[id(item)] = FirstOrderFilter(0.0, OVERLAY_RC, dt)
+    self._move_lifts[id(item)] = FirstOrderFilter(0.0, OVERLAY_RC, dt)
 
-    displaced_offset = -(item_size + self._spacing) if to_idx < from_idx else (item_size + self._spacing)
-    for i in displaced_indices:
-      other = self._items[i]
-      if id(other) in self._move_animations:
-        self._move_animations[id(other)].x += displaced_offset
-      else:
-        self._move_animations[id(other)] = FirstOrderFilter(displaced_offset, MOVE_RC, dt)
+    displaced_offset = -sign * _extent(item)
+    for i in displaced:
+      self._add_move_offset(id(self._items[i]), displaced_offset, dt)
+
+  def _add_move_offset(self, widget_id: int, offset: float, dt: float) -> None:
+    """Accumulate a move offset for a widget, creating the filter if needed."""
+    if widget_id in self._move_offsets:
+      self._move_offsets[widget_id].x += offset
+    else:
+      self._move_offsets[widget_id] = FirstOrderFilter(offset, MOVE_RC, dt)
 
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     """Set whether scrolling is enabled (does not affect widget enabled state)."""
     self._scroll_enabled = enabled
+
+  def _update_move_animations(self) -> bool:
+    """Returns True when x-sliding is active (auto-scroll can proceed)."""
+    if not self._move_offsets and not self._moved_item_ids:
+      return True
+
+    moved_near_target = not any(
+      wid in self._move_offsets and abs(self._move_offsets[wid].x) > 10
+      for wid in self._moved_item_ids
+    )
+    has_active = any(wid in self._move_offsets for wid in self._moved_item_ids)
+    overlay_ready = self._overlay_filter.x > 0.9 * OVERLAY_OPACITY
+
+    if moved_near_target:
+      # DROPPING: near target x, fade out overlay and lower items back
+      target_overlay, target_lift, do_slide = 0.0, 0.0, True
+    elif has_active and overlay_ready:
+      # SLIDING: overlay is up, slide items horizontally while lifted
+      target_overlay, target_lift, do_slide = OVERLAY_OPACITY, -20.0, True
+    else:
+      # LIFTING: fade in overlay and lift items, hold x positions
+      target_overlay = OVERLAY_OPACITY if has_active else 0.0
+      target_lift = -20.0 if has_active else 0.0
+      do_slide = False
+
+    self._overlay_filter.update(target_overlay)
+
+    for wid, filt in list(self._move_lifts.items()):
+      filt.update(target_lift)
+      if not has_active and abs(filt.x) < 0.5:
+        del self._move_lifts[wid]
+
+    for wid, filt in list(self._move_offsets.items()):
+      if do_slide:
+        filt.update(0.0)
+      if abs(filt.x) < 0.5:
+        del self._move_offsets[wid]
+
+    if self._overlay_filter.x < 0.01:
+      self._moved_item_ids.clear()
+
+    return do_slide
 
   def _update_state(self):
     if DO_ZOOM:
@@ -204,34 +238,7 @@ class Scroller(Widget):
           else:
             self._zoom_filter.update(0.85)
 
-    # Check if moved items are nearly at their final x position
-    move_nearly_done = not any(
-      wid in self._move_animations and abs(self._move_animations[wid].x) > 10
-      for wid in self._moved_item_ids
-    )
-
-    # Fade overlay and lift first, then slide once they're ~complete
-    has_active_moved = any(wid in self._move_animations for wid in self._moved_item_ids)
-    self._overlay_filter.update(OVERLAY_OPACITY if has_active_moved and not move_nearly_done else 0.0)
-
-    # Lift moved items up while sliding, drop back down when within 10px
-    for wid, filt in list(self._move_lift.items()):
-      filt.update(-20.0 if has_active_moved and not move_nearly_done else 0.0)
-      if not has_active_moved and abs(filt.x) < 0.5:
-        del self._move_lift[wid]
-
-    # Only start sliding once fade + lift are ~done
-    intro_done = has_active_moved and not move_nearly_done and self._overlay_filter.x > 0.9 * OVERLAY_OPACITY
-    slide_ready = intro_done or move_nearly_done
-    for wid, filt in list(self._move_animations.items()):
-      if slide_ready:
-        filt.update(0.0)
-      if abs(filt.x) < 0.5:
-        del self._move_animations[wid]
-
-    # Clear moved item ids only after overlay has fully faded
-    if self._overlay_filter.x < 0.01:
-      self._moved_item_ids.clear()
+    slide_ready = self._update_move_animations()
 
     # Cancel auto-scroll if user starts manually scrolling
     if self._scrolling_to is not None and (self.scroll_panel.state == ScrollState.PRESSED or self.scroll_panel.state == ScrollState.MANUAL_SCROLL):
@@ -340,16 +347,14 @@ class Scroller(Widget):
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
-      # Apply move animation offset
-      move_off = self._move_animations.get(id(item))
+      move_off = self._move_offsets.get(id(item))
       if move_off is not None:
         if self._horizontal:
           x += move_off.x
         else:
           y += move_off.x
 
-      # Lift moved item up then back down
-      lift = self._move_lift.get(id(item))
+      lift = self._move_lifts.get(id(item))
       if lift is not None:
         y += lift.x
 
@@ -422,8 +427,8 @@ class Scroller(Widget):
 
   def hide_event(self):
     super().hide_event()
-    self._move_animations.clear()
-    self._move_lift.clear()
+    self._move_offsets.clear()
+    self._move_lifts.clear()
     self._moved_item_ids.clear()
     for item in self._items:
       item.hide_event()
