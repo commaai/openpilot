@@ -22,14 +22,14 @@ static std::string recv_zmq_msg(void *sock) {
 }
 
 void MsgqToZmq::run(const std::vector<std::string> &endpoints, const std::string &ip) {
-  zmq_context = std::make_unique<ZMQContext>();
-  msgq_context = std::make_unique<MSGQContext>();
+  zmq_context = std::make_unique<BridgeZmqContext>();
+  msgq_context = std::make_unique<Context>();
 
   // Create ZMQPubSockets for each endpoint
   for (const auto &endpoint : endpoints) {
     auto &socket_pair = socket_pairs.emplace_back();
     socket_pair.endpoint = endpoint;
-    socket_pair.pub_sock = std::make_unique<ZMQPubSocket>();
+    socket_pair.pub_sock = std::make_unique<BridgeZmqPubSocket>();
     int ret = socket_pair.pub_sock->connect(zmq_context.get(), endpoint);
     if (ret != 0) {
       printf("Failed to create ZMQ publisher for [%s]: %s\n", endpoint.c_str(), zmq_strerror(zmq_errno()));
@@ -49,7 +49,7 @@ void MsgqToZmq::run(const std::vector<std::string> &endpoints, const std::string
 
       for (auto sub_sock : msgq_poller->poll(100)) {
         // Process messages for each socket
-        ZMQPubSocket *pub_sock = sub2pub.at(sub_sock);
+        BridgeZmqPubSocket *pub_sock = sub2pub.at(sub_sock);
         for (int i = 0; i < MAX_MESSAGES_PER_SOCKET; ++i) {
           auto msg = std::unique_ptr<Message>(sub_sock->receive(true));
           if (!msg) break;
@@ -72,7 +72,7 @@ void MsgqToZmq::zmqMonitorThread() {
   // Set up ZMQ monitor for each pub socket
   for (int i = 0; i < socket_pairs.size(); ++i) {
     std::string addr = "inproc://op-bridge-monitor-" + std::to_string(i);
-    zmq_socket_monitor(socket_pairs[i].pub_sock->sock, addr.c_str(), ZMQ_EVENT_ACCEPTED | ZMQ_EVENT_DISCONNECTED);
+    zmq_socket_monitor(socket_pairs[i].pub_sock->getRawSocket(), addr.c_str(), ZMQ_EVENT_ACCEPTED | ZMQ_EVENT_DISCONNECTED);
 
     void *monitor_socket = zmq_socket(zmq_context->getRawContext(), ZMQ_PAIR);
     zmq_connect(monitor_socket, addr.c_str());
@@ -130,7 +130,7 @@ void MsgqToZmq::zmqMonitorThread() {
 
   // Clean up monitor sockets
   for (int i = 0; i < pollitems.size(); ++i) {
-    zmq_socket_monitor(socket_pairs[i].pub_sock->sock, nullptr, 0);
+    zmq_socket_monitor(socket_pairs[i].pub_sock->getRawSocket(), nullptr, 0);
     zmq_close(pollitems[i].socket);
   }
   cv.notify_one();

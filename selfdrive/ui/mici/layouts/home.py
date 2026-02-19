@@ -249,7 +249,7 @@ class MiciHomeLayout(Widget):
       # Offset by difference in height between slashless and slash icons to make center align match
       rl.draw_texture(self._wifi_slash_txt, int(last_x), int(self._rect.y + self.rect.height - self._wifi_slash_txt.height / 2 -
                                                              (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2 - Y_CENTER),
-                      rl.Color(255, 255, 255, 255))
+                      rl.Color(255, 255, 255, int(255 * 0.9)))
       last_x += self._wifi_slash_txt.width + ITEM_SPACING
 
     # draw experimental icon

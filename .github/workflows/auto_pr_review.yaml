@@ -39,8 +39,9 @@ jobs:
       uses: actions/first-interaction@v3
       if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
       with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        pr-message: |
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        issue_message: ""
+        pr_message: |
             <!-- _(run_id **${{ github.run_id }}**)_ -->
             Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
             * Convert your PR to a draft unless it's ready to review

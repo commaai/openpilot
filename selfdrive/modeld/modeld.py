@@ -28,6 +28,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, 
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
+from openpilot.selfdrive.modeld.external_pickle import load_external_pickle
 
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -166,8 +167,9 @@ class ModelState:
     self.full_input_queues.reset()
 
     self.img_queues = {'img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),
-                           'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize(),}
+                       'big_img': Tensor.zeros(IMG_QUEUE_SHAPE, dtype='uint8').contiguous().realize()}
     self.full_frames : dict[str, Tensor] = {}
+    self._blob_cache : dict[int, Tensor] = {}
     self.transforms_np = {k: np.zeros((3,3), dtype=np.float32) for k in self.img_queues}
     self.transforms = {k: Tensor(v, device='NPY').realize() for k, v in self.transforms_np.items()}
     self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
@@ -176,12 +178,8 @@ class ModelState:
     self.parser = Parser()
     self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
     self.update_imgs = None
-
-    with open(VISION_PKL_PATH, "rb") as f:
-      self.vision_run = pickle.load(f)
-
-    with open(POLICY_PKL_PATH, "rb") as f:
-      self.policy_run = pickle.load(f)
+    self.vision_run = load_external_pickle(VISION_PKL_PATH)
+    self.policy_run = load_external_pickle(POLICY_PKL_PATH)
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -201,20 +199,26 @@ class ModelState:
       with open(warp_path, "rb") as f:
         self.update_imgs = pickle.load(f)
 
-
     for key in bufs.keys():
-      self.full_frames[key] = Tensor.from_blob(bufs[key].data.ctypes.data, (self.frame_buf_params[key][3],), dtype='uint8').realize()
+      ptr = bufs[key].data.ctypes.data
+      yuv_size = self.frame_buf_params[key][3]
+      # There is a ringbuffer of imgs, just cache tensors pointing to all of them
+      cache_key = (key, ptr)
+      if cache_key not in self._blob_cache:
+        self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+      self.full_frames[key] = self._blob_cache[cache_key]
+    for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
 
     out = self.update_imgs(self.img_queues['img'], self.full_frames['img'], self.transforms['img'],
                            self.img_queues['big_img'], self.full_frames['big_img'], self.transforms['big_img'])
-    self.img_queues['img'], self.img_queues['big_img'], = out[0].realize(), out[2].realize()
+    self.img_queues['img'], self.img_queues['big_img'] = out[0].realize(), out[2].realize()
     vision_inputs = {'img': out[1], 'big_img': out[3]}
 
     if prepare_only:
       return None
 
-    self.vision_output = self.vision_run(**vision_inputs).contiguous().realize().uop.base.buffer.numpy()
+    self.vision_output = self.vision_run(**vision_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
     self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'], 'desire_pulse': new_desire})
@@ -222,7 +226,7 @@ class ModelState:
       self.numpy_inputs[k][:] = self.full_input_queues.get(k)[k]
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
 
-    self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy()
+    self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(self.policy_output, self.policy_output_slices))
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
     if SEND_RAW_PRED:

@@ -471,7 +471,8 @@ class NetworkSetupPage(Widget):
 
   def hide_event(self):
     super().hide_event()
-    self._wifi_ui.hide_event()
+    if self._state == NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.hide_event()
 
   def _render(self, _):
     self._network_header.render(rl.Rectangle(

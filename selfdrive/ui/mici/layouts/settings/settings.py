@@ -12,29 +12,34 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import NavWidget
 
 
+class SettingsBigButton(BigButton):
+  def _get_label_font_size(self):
+    return 64
+
+
 class SettingsLayout(NavWidget):
   def __init__(self):
     super().__init__()
     self._params = Params()
 
     toggles_panel = TogglesLayoutMici()
-    toggles_btn = BigButton("toggles", "", "icons_mici/settings.png")
+    toggles_btn = SettingsBigButton("toggles", "", "icons_mici/settings.png")
     toggles_btn.set_click_callback(lambda: gui_app.push_widget(toggles_panel))
 
     network_panel = NetworkLayoutMici()
-    network_btn = BigButton("network", "", "icons_mici/settings/network/wifi_strength_full.png", icon_size=(76, 56))
+    network_btn = SettingsBigButton("network", "", "icons_mici/settings/network/wifi_strength_full.png", icon_size=(76, 56))
     network_btn.set_click_callback(lambda: gui_app.push_widget(network_panel))
 
     device_panel = DeviceLayoutMici()
-    device_btn = BigButton("device", "", "icons_mici/settings/device_icon.png", icon_size=(74, 60))
+    device_btn = SettingsBigButton("device", "", "icons_mici/settings/device_icon.png", icon_size=(74, 60))
     device_btn.set_click_callback(lambda: gui_app.push_widget(device_panel))
 
     developer_panel = DeveloperLayoutMici()
-    developer_btn = BigButton("developer", "", "icons_mici/settings/developer_icon.png", icon_size=(64, 60))
+    developer_btn = SettingsBigButton("developer", "", "icons_mici/settings/developer_icon.png", icon_size=(64, 60))
     developer_btn.set_click_callback(lambda: gui_app.push_widget(developer_panel))
 
     firehose_panel = FirehoseLayout()
-    firehose_btn = BigButton("firehose", "", "icons_mici/settings/firehose.png", icon_size=(52, 62))
+    firehose_btn = SettingsBigButton("firehose", "", "icons_mici/settings/firehose.png", icon_size=(52, 62))
     firehose_btn.set_click_callback(lambda: gui_app.push_widget(firehose_panel))
 
     self._scroller = Scroller([

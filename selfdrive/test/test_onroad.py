@@ -8,7 +8,7 @@ import time
 import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
-from tabulate import tabulate
+from openpilot.common.utils import tabulate
 
 from cereal import log
 import cereal.messaging as messaging
@@ -56,7 +56,7 @@ PROCS = {
   "selfdrive.ui.soundd": 3.0,
   "selfdrive.ui.feedback.feedbackd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 4.0,
-  "system.proclogd": 3.0,
+  "system.proclogd": 7.0,
   "system.logmessaged": 1.0,
   "system.tombstoned": 0,
   "system.journald": 1.0,
@@ -282,9 +282,12 @@ class TestOnroad:
     print("\n------------------------------------------------")
     print("--------------- Memory Usage -------------------")
     print("------------------------------------------------")
+
+    from openpilot.selfdrive.debug.mem_usage import print_report
+    print_report(self.msgs['procLog'], self.msgs['deviceState'])
+
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
-    print("Overall memory usage: ", mems)
     print("MSGQ (/dev/shm/) usage: ", subprocess.check_output(["du", "-hs", "/dev/shm"]).split()[0].decode())
 
     # check for big leaks. note that memory usage is

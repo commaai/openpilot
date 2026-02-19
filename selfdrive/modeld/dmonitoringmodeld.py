@@ -17,6 +17,7 @@ from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
+from openpilot.selfdrive.modeld.external_pickle import load_external_pickle
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -42,9 +43,9 @@ class ModelState:
     self.warp_inputs = {k: Tensor(v, device='NPY') for k,v in self.warp_inputs_np.items()}
     self.frame_buf_params = None
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+    self._blob_cache : dict[int, Tensor] = {}
     self.image_warp = None
-    with open(MODEL_PKL_PATH, "rb") as f:
-      self.model_run = pickle.load(f)
+    self.model_run = load_external_pickle(MODEL_PKL_PATH)
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -56,12 +57,15 @@ class ModelState:
       warp_path = MODELS_DIR / f'dm_warp_{buf.width}x{buf.height}_tinygrad.pkl'
       with open(warp_path, "rb") as f:
         self.image_warp = pickle.load(f)
-    self.warp_inputs['frame'] = Tensor.from_blob(buf.data.ctypes.data, (self.frame_buf_params[3],), dtype='uint8').realize()
+    ptr = buf.data.ctypes.data
+    # There is a ringbuffer of imgs, just cache tensors pointing to all of them
+    if ptr not in self._blob_cache:
+      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8')
 
     self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(self.warp_inputs['frame'], self.warp_inputs['transform']).realize()
+    self.tensor_inputs['input_img'] = self.image_warp(self._blob_cache[ptr], self.warp_inputs['transform']).realize()
 
-    output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy()
+    output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy().flatten()
 
     t2 = time.perf_counter()
     return output, t2 - t1
