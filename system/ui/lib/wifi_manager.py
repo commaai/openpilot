@@ -509,12 +509,9 @@ class WifiManager:
 
     return None, None
 
-  def _get_connection_settings(self, conn_path: str, router: DBusConnection | DBusRouter | None = None) -> dict:
-    if router is None:
-      router = self._router_main
-
+  def _get_connection_settings(self, conn_path: str) -> dict:
     conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-    reply = router.send_and_get_reply(new_method_call(conn_addr, 'GetSettings'))
+    reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'GetSettings'))
     if reply.header.message_type == MessageType.error:
       cloudlog.warning(f'Failed to get connection settings: {reply}')
       return {}
@@ -811,14 +808,11 @@ class WifiManager:
     else:
       threading.Thread(target=worker, daemon=True).start()
 
-  def _update_active_connection_info(self, router: DBusConnection | DBusRouter | None = None):
-    if router is None:
-      router = self._router_main
-
+  def _update_active_connection_info(self):
     ipv4_address = ""
     metered = MeteredType.UNKNOWN
 
-    conn_path, props = self._get_active_wifi_connection(router)
+    conn_path, props = self._get_active_wifi_connection()
 
     if conn_path is not None and props is not None:
       # IPv4 address
@@ -826,7 +820,7 @@ class WifiManager:
 
       if ip4config_path != "/":
         ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
-        address_data = router.send_and_get_reply(Properties(ip4config_addr).get('AddressData')).body[0][1]
+        address_data = self._router_main.send_and_get_reply(Properties(ip4config_addr).get('AddressData')).body[0][1]
 
         for entry in address_data:
           if 'address' in entry:
@@ -834,7 +828,7 @@ class WifiManager:
             break
 
       # Metered status
-      settings = self._get_connection_settings(conn_path, router)
+      settings = self._get_connection_settings(conn_path)
 
       if len(settings) > 0:
         metered_prop = settings['connection'].get('metered', ('i', 0))[1]
