@@ -621,7 +621,7 @@ class WifiManager:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
-      # FIXME: race here where connectionRemoved signal may arrive after we update all Network is_saved
+      # FIXME: race here where ConnectionRemoved signal may arrive after we update all Network is_saved
       self._update_networks()
       self._enqueue_callbacks(self._forgotten, ssid)
 
