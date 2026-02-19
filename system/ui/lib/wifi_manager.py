@@ -419,11 +419,6 @@ class WifiManager:
           elif new_state in (NMDeviceState.NEED_AUTH, NMDeviceState.FAILED):
             pass
 
-          else:
-            cloudlog.warning(f"Unhandled state change: new_state={repr(NMDeviceState(new_state))}, previous_state={repr(NMDeviceState(previous_state))}, "
-                             f"change_reason={change_reason}")
-            raise Exception
-
   def _network_scanner(self):
     while not self._exit:
       if self._active:
