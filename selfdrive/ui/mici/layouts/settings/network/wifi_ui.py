@@ -368,7 +368,6 @@ class WifiUIMici(NavWidget):
       self._scroller.move_item(front_btn_idx, 0)
 
   def _connect_with_password(self, ssid: str, password: str):
-    password = password or 'fjklsdfjsklfjlkskkjfslfs'
     self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
     self._wifi_manager.connect_to_network(ssid, password)
     self._update_buttons()
@@ -400,14 +399,8 @@ class WifiUIMici(NavWidget):
           break
       return
 
-    dlg = BigInputDialog("enter password...", "", minimum_length=0,
+    dlg = BigInputDialog("enter password...", "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
-
-    # def on_close(_):
-    #   gui_app.set_modal_overlay_tick(None)
-    #
-    # # Process wifi callbacks while the keyboard is shown so forgotten clears connecting state
-    # gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
     gui_app.set_modal_overlay(dlg)
 
   def _on_forgotten(self, ssid):
@@ -415,11 +408,6 @@ class WifiUIMici(NavWidget):
     for i, btn in enumerate(self._scroller._items):
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
-        # # Move after the last saved network with animation
-        # last_saved_idx = max((j for j, b in enumerate(self._scroller._items)
-        #                       if isinstance(b, WifiButton) and b.network.is_saved and not b._network_forgot), default=-1)
-        # self._scroller.move_item(i, last_saved_idx + 1)
-        # break
 
   def _render(self, _):
 
