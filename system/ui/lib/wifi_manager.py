@@ -618,13 +618,11 @@ class WifiManager:
       else:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
-        # self._connections.pop(ssid, None)
 
       # FIXME: race here where ConnectionRemoved signal may arrive after we update all Network is_saved
       #  and keep the old ssid's is_saved=True
-      self._enqueue_callbacks(self._forgotten, ssid)
-      time.sleep(1.)
       self._update_networks()
+      self._enqueue_callbacks(self._forgotten, ssid)
 
     if block:
       worker()
