@@ -364,9 +364,11 @@ class WifiManager:
         # TODO: known race conditions when switching networks (e.g. forget A, connect to B):
         # 1. DEACTIVATING/DISCONNECTED + CONNECTION_REMOVED: fires before NewConnection for B
         #    arrives, so _set_connecting(None) clears B's CONNECTING state causing UI flicker.
+        #    DEACTIVATING(CONNECTION_REMOVED): wifi_state (B, CONNECTING) -> (None, DISCONNECTED)
         #    Fix: make DEACTIVATING a no-op, and guard DISCONNECTED with
         #    `if wifi_state.ssid not in _connections` (NewConnection arrives between the two).
         # 2. PREPARE/CONFIG ssid lookup: DBus may return stale A's conn_path, overwriting B.
+        #    PREPARE(0): wifi_state (B, CONNECTING) -> (A, CONNECTING)
         #    Fix: only do DBus lookup when wifi_state.ssid is None (auto-connections);
         #    user-initiated connections already have ssid set via _set_connecting.
         while len(state_q):
