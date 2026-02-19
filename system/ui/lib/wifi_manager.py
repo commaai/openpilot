@@ -361,6 +361,11 @@ class WifiManager:
             self._update_networks()
 
         # Device state changes
+        # RACE CONDITION GUARDS:
+        # 1. DISCONNECTED/DEACTIVATING + CONNECTION_REMOVED: forgetting network A while connecting to B
+        #    would clear B's state. Guard: only clear if wifi_state.ssid not in _connections.
+        # 2. PREPARE/CONFIG ssid lookup: switching A→B, DBus returns stale A connection.
+        #    Guard: only look up ssid if wifi_state.ssid is None (user already set B via _set_connecting).
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
@@ -372,18 +377,29 @@ class WifiManager:
               # Only clear if the forgotten connection is the one we're connecting/connected to
               if self._wifi_state.ssid not in self._connections:
                 self._set_connecting(None)
+              elif self._wifi_state.status == ConnectStatus.CONNECTING:
+                print(f'!!! RACE GUARD 1 HIT: DISCONNECTED+CONNECTION_REMOVED but keeping {self._wifi_state.ssid} (still in _connections)')
             elif change_reason != NMDeviceStateReason.NEW_ACTIVATION:
               self._set_connecting(None)
 
           elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
             self._wifi_state.status = ConnectStatus.CONNECTING
 
-            conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
-            if conn_path is None:
-              cloudlog.warning("Failed to get active wifi connection during PREPARE/CONFIG state")
-              continue
+            # Only look up ssid if not already set (auto-connections).
+            # User-initiated connections set ssid via _set_connecting before NM signals arrive.
+            if self._wifi_state.ssid is None:
+              conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
+              if conn_path is None:
+                cloudlog.warning("Failed to get active wifi connection during PREPARE/CONFIG state")
+                continue
 
-            self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+              self._wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+            else:
+              conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
+              if conn_path:
+                dbus_ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+                if dbus_ssid != self._wifi_state.ssid:
+                  print(f'!!! RACE GUARD 2 HIT: PREPARE/CONFIG would have set {dbus_ssid} but keeping {self._wifi_state.ssid}')
 
           # BAD PASSWORD
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
@@ -421,10 +437,9 @@ class WifiManager:
                 cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
 
           elif new_state == NMDeviceState.DEACTIVATING:
-            if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-              # Only clear if the forgotten connection is the one we're connecting/connected to
-              if self._wifi_state.ssid not in self._connections:
-                self._set_connecting(None)
+            # Don't handle here — DISCONNECTED always follows and has correct _connections state
+            # (NewConnection signals arrive between DEACTIVATING and DISCONNECTED)
+            pass
 
           print('After wifi state', self._wifi_state)
 
