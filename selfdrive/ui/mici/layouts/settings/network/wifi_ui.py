@@ -94,8 +94,7 @@ class WifiIcon(Widget):
 class WifiItem(BigDialogOptionButton):
   LEFT_MARGIN = 20
 
-  def __init__(self, network: Network, connecting_callback: Callable[[], str | None],
-               connected_callback: Callable[[], str | None], wifi_state_callback: Callable[[], WifiState]):
+  def __init__(self, network: Network, wifi_state_callback: Callable[[], WifiState]):
     super().__init__(network.ssid)
 
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, self.HEIGHT))
@@ -103,8 +102,6 @@ class WifiItem(BigDialogOptionButton):
     self._selected_txt = gui_app.texture("icons_mici/settings/network/new/wifi_selected.png", 48, 96)
 
     self._network = network
-    self._connecting_callback = connecting_callback
-    self._connected_callback = connected_callback
     self._wifi_state_callback = wifi_state_callback
     self._wifi_icon = WifiIcon()
     self._wifi_icon.set_current_network(network)
@@ -396,8 +393,7 @@ class WifiUIMici(BigMultiOptionDialog):
         # Update network on existing button
         self._scroller._items[network_button_idx].set_current_network(network)
       else:
-        network_button = WifiItem(network, lambda: self._wifi_manager.connecting_to_ssid,
-                                  lambda: self._wifi_manager.connected_ssid, lambda: self._wifi_manager.wifi_state)
+        network_button = WifiItem(network, lambda: self._wifi_manager.wifi_state)
         self._scroller.add_widget(network_button)
 
     # Move connecting/connected network to the start
