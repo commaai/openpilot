@@ -89,11 +89,9 @@ class Network:
   ssid: str
   strength: int
   security_type: SecurityType
-  is_saved: bool
-  ip_address: str = ""  # TODO: implement
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"]) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
@@ -102,7 +100,6 @@ class Network:
       ssid=ssid,
       strength=strongest_ap.strength,
       security_type=security_type,
-      is_saved=is_saved,
     )
 
 
@@ -632,11 +629,9 @@ class WifiManager:
       else:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
-        # self._connections.pop(ssid, None)
 
-      self._enqueue_callbacks(self._forgotten, ssid)
-      time.sleep(1.)
       self._update_networks()
+      self._enqueue_callbacks(self._forgotten, ssid)
 
     if block:
       worker()
@@ -648,13 +643,17 @@ class WifiManager:
 
     def worker():
       conn_path = self._connections.get(ssid, None)
-      if conn_path is not None:
-        if self._wifi_device is None:
-          cloudlog.warning("No WiFi device found")
-          return
+      if conn_path is None or self._wifi_device is None:
+        cloudlog.warning(f"Failed to activate connection for {ssid}: conn_path={conn_path}, wifi_device={self._wifi_device}")
+        self._set_connecting(None)
+        return
 
-        self._router_main.send(new_method_call(self._nm, 'ActivateConnection', 'ooo',
-                                               (conn_path, self._wifi_device, "/")))
+      reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
+                                                                   (conn_path, self._wifi_device, "/")))
+
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f"Failed to activate connection for {ssid}: {reply}")
+        self._set_connecting(None)
 
     if block:
       worker()
@@ -677,6 +676,9 @@ class WifiManager:
   def is_tethering_active(self) -> bool:
     # Check ssid, not connected_ssid, to also catch connecting state
     return self._wifi_state.ssid == self._tethering_ssid
+
+  def is_connection_saved(self, ssid: str) -> bool:
+    return ssid in self._connections
 
   def set_tethering_password(self, password: str):
     def worker():
@@ -819,8 +821,8 @@ class WifiManager:
 
         # print(aps)
         # print()
-        networks = [Network.from_dbus(ssid, ap_list, ssid in self._connections) for ssid, ap_list in aps.items()]
-        networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, -n.is_saved, -n.strength, n.ssid.lower()))
+        networks = [Network.from_dbus(ssid, ap_list) for ssid, ap_list in aps.items()]
+        networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
         self._networks = networks
 
         self._update_active_connection_info()
