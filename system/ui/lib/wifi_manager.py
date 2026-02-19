@@ -364,8 +364,6 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
-          print('  New state', (NMDeviceState(new_state), change_reason))
-
           if new_state == NMDeviceState.DISCONNECTED:
             if change_reason != NMDeviceStateReason.NEW_ACTIVATION:
               # catches CONNECTION_REMOVED reason when connection is forgotten
@@ -399,7 +397,6 @@ class WifiManager:
           elif new_state == NMDeviceState.ACTIVATED:
             # Note that IP address from Ip4Config may not be propagated immediately and could take until the next scan results
             self._update_active_connection_info(self._conn_monitor)
-            # self._update_networks()
 
             self._wifi_state.status = ConnectStatus.CONNECTED
 
