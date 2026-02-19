@@ -8,7 +8,7 @@ from enum import IntEnum
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network
+from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_text_box, gui_label, UnifiedLabel
 from openpilot.system.ui.widgets.button import FullRoundedButton
@@ -28,7 +28,6 @@ class Updater(Widget):
     self.updater = updater_path
     self.manifest = manifest_path
     self.current_screen = Screen.PROMPT
-    self._current_network_strength = -1
 
     self.progress_value = 0
     self.progress_text = "loading"
@@ -40,7 +39,6 @@ class Updater(Widget):
     self._network_setup_page = NetworkSetupPage(self._wifi_manager, self._network_setup_continue_callback,
                                                 self._network_setup_back_callback)
 
-    self._wifi_manager.add_callbacks(networks_updated=self._on_network_updated)
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
 
@@ -65,9 +63,6 @@ class Updater(Widget):
 
   def _update_failed_retry_callback(self):
     self.set_current_screen(Screen.PROMPT)
-
-  def _on_network_updated(self, networks: list[Network]):
-    self._current_network_strength = next((net.strength for net in networks if net.is_connected), -1)
 
   def set_current_screen(self, screen: Screen):
     if self.current_screen != screen:
