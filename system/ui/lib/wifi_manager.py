@@ -357,6 +357,7 @@ class WifiManager:
         # PropertiesChanged on wifi device (LastScan = scan complete)
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
+          # print('  PropertiesChanged', (iface, changed))
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
             self._update_networks()
 
@@ -398,6 +399,7 @@ class WifiManager:
 
           elif new_state == NMDeviceState.ACTIVATED:
             print('ACTIVATED')
+            time.sleep(0.1)
             self._update_active_connection_info(self._conn_monitor)
 
             self._wifi_state.status = ConnectStatus.CONNECTED
