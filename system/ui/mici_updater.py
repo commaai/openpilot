@@ -64,7 +64,6 @@ class Updater(Widget):
   def _update_failed_retry_callback(self):
     self.set_current_screen(Screen.PROMPT)
 
-
   def set_current_screen(self, screen: Screen):
     if self.current_screen != screen:
       if screen == Screen.PROGRESS:
