@@ -416,10 +416,7 @@ class WifiUIMici(BigMultiOptionDialog):
     super()._on_option_selected(option)
 
     if option in self._networks:
-      network = self._networks[option]
-      if network.is_saved:
-        self._wifi_manager.activate_connection(network.ssid)
-      self._network_info_page.set_current_network(network)
+      self._network_info_page.set_current_network(self._networks[option])
       self._open_network_manage_page()
 
   def _connect_to_network(self, ssid: str):
@@ -455,23 +452,3 @@ class WifiUIMici(BigMultiOptionDialog):
 
     if not self._networks:
       self._loading_animation.render(self._rect)
-
-    # TEST: auto swap between unifi and Shane's iPhone every 5 seconds
-    import time
-    if not hasattr(self, '_test_timer'):
-      self._test_timer = time.monotonic()
-      self._test_target_unifi = True
-    if time.monotonic() - self._test_timer > 5 and self._networks:
-      self._test_timer = time.monotonic()
-      unifi_ssid = next((s for s in self._networks if 'unifi' in s.lower()), None)
-      iphone_ssid = next((s for s in self._networks if 'shane' in s.lower() and 'iphone' in s.lower()), None)
-      if unifi_ssid and iphone_ssid:
-        if self._test_target_unifi:
-          print(f'TEST: forgetting {iphone_ssid}, connecting to {unifi_ssid}')
-          self._wifi_manager.forget_connection(iphone_ssid)
-          self._wifi_manager.connect_to_network(unifi_ssid, "comma1441")
-        else:
-          print(f'TEST: forgetting {unifi_ssid}, connecting to {iphone_ssid}')
-          self._wifi_manager.forget_connection(unifi_ssid)
-          self._wifi_manager.connect_to_network(iphone_ssid, "smiskol987")
-        self._test_target_unifi = not self._test_target_unifi
