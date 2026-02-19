@@ -160,7 +160,7 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
-    return self._is_saved or self._is_connecting
+    return (self._is_saved and not self._wrong_password) or self._is_connecting
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
@@ -372,15 +372,15 @@ class WifiUIMici(NavWidget):
       return
 
     if self._wifi_manager.is_connection_saved(network.ssid):
-      self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.activate_connection(network.ssid)
-      self._update_buttons()
     elif network.security_type == SecurityType.OPEN:
-      self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.connect_to_network(network.ssid, "")
-      self._update_buttons()
     else:
       self._on_need_auth(network.ssid, False)
+      return
+
+    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+    self._update_buttons()
 
   def _on_need_auth(self, ssid, incorrect_password=True):
     if incorrect_password:
