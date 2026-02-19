@@ -107,13 +107,14 @@ class WifiButton(BigButton):
   SUB_LABEL_WIDTH = 402 - LABEL_HORIZONTAL_PADDING * 2
 
   def __init__(self, network: Network, forget_callback: Callable[[str], None], connecting_callback: Callable[[], str | None],
-               connected_callback: Callable[[], str | None]):
+               connected_callback: Callable[[], str | None], is_saved_callback: Callable[[str], bool]):
     super().__init__(normalize_ssid(network.ssid), scroll=True)
 
     self._network = network
     self._forget_callback = forget_callback
     self._connecting_callback = connecting_callback
     self._connected_callback = connected_callback
+    self._is_saved_callback = is_saved_callback
 
     self._wifi_icon = WifiIcon()
     self._wifi_icon.set_current_network(network)
@@ -131,7 +132,7 @@ class WifiButton(BigButton):
     self._network = network
     self._wifi_icon.set_current_network(network)
 
-    # We can assume network is not missing and that is_saved is accurate if got new Network
+    # We can assume network is not missing if got new Network
     self._network_missing = False
     self._wifi_icon.set_network_missing(False)
     self._network_forgot = False
@@ -167,7 +168,7 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
-    return (self._network.is_saved and not self._network_forgot and not self._wrong_password) or self._is_connecting
+    return (self._is_saved and not self._network_forgot and not self._wrong_password) or self._is_connecting
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
@@ -231,6 +232,10 @@ class WifiButton(BigButton):
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(lambda: touch_callback() and not self._forget_btn.is_pressed)
     self._forget_btn.set_touch_valid_callback(touch_callback)
+
+  @property
+  def _is_saved(self):
+    return self._is_saved_callback(self._network.ssid)
 
   @property
   def _is_connecting(self):
@@ -349,7 +354,7 @@ class WifiUIMici(NavWidget):
         existing[network.ssid].set_current_network(network)
       else:
         btn = WifiButton(network, self._wifi_manager.forget_connection, lambda: self._wifi_manager.connecting_to_ssid,
-                         lambda: self._wifi_manager.connected_ssid)
+                         lambda: self._wifi_manager.connected_ssid, self._wifi_manager.is_connection_saved)
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
@@ -381,7 +386,7 @@ class WifiUIMici(NavWidget):
 
     # Eager treat wrong password buttons as not saved, short window race condition
     wrong_password = any(isinstance(btn, WifiButton) and btn.network.ssid == ssid and btn._wrong_password for btn in self._scroller._items)
-    if network.is_saved and not wrong_password:
+    if self._wifi_manager.is_connection_saved(ssid) and not wrong_password:
       self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
       self._wifi_manager.activate_connection(network.ssid)
       self._update_buttons()
