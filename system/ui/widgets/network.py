@@ -400,7 +400,7 @@ class WifiManagerUI(Widget):
       self.state = UIState.NEEDS_AUTH
       self._state_network = network
       self._password_retry = False
-    elif self._wifi_manager.connected_ssid != network.ssid:
+    elif self._wifi_manager.wifi_state.ssid != network.ssid:
       self.connect_to_network(network)
 
   def _forget_networks_buttons_callback(self, network):
