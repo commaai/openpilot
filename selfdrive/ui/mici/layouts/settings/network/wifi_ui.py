@@ -320,10 +320,6 @@ class WifiUIMici(NavWidget):
       networks_updated=self._on_network_updated,
     )
 
-  @property
-  def networks(self) -> dict[str, Network]:
-    return self._networks
-
   def show_event(self):
     # Clear scroller items and update from latest scan results
     super().show_event()
