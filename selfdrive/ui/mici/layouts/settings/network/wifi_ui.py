@@ -106,15 +106,11 @@ class WifiButton(BigButton):
   LABEL_WIDTH = 402 - 98 - 28  # button width - left padding - right padding
   SUB_LABEL_WIDTH = 402 - LABEL_HORIZONTAL_PADDING * 2
 
-  def __init__(self, network: Network, forget_callback: Callable[[str], None], connecting_callback: Callable[[], str | None],
-               connected_callback: Callable[[], str | None], is_saved_callback: Callable[[str], bool]):
+  def __init__(self, network: Network, wifi_manager: WifiManager):
     super().__init__(normalize_ssid(network.ssid), scroll=True)
 
     self._network = network
-    self._forget_callback = forget_callback
-    self._connecting_callback = connecting_callback
-    self._connected_callback = connected_callback
-    self._is_saved_callback = is_saved_callback
+    self._wifi_manager = wifi_manager
 
     self._wifi_icon = WifiIcon()
     self._wifi_icon.set_current_network(network)
@@ -144,7 +140,7 @@ class WifiButton(BigButton):
     self._network_forgetting = True
     self._forget_btn.set_visible(False)
     print('forgetting network:', self._network.ssid)
-    self._forget_callback(self._network.ssid)
+    self._wifi_manager.forget_connection(self._network.ssid)
 
   def on_forgotten(self):
     self._network_forgetting = False
@@ -231,15 +227,15 @@ class WifiButton(BigButton):
 
   @property
   def _is_saved(self):
-    return self._is_saved_callback(self._network.ssid)
+    return self._wifi_manager.is_connection_saved(self._network.ssid)
 
   @property
   def _is_connecting(self):
-    return self._connecting_callback() == self._network.ssid
+    return self._wifi_manager.connecting_to_ssid == self._network.ssid
 
   @property
   def _is_connected(self):
-    return self._connected_callback() == self._network.ssid
+    return self._wifi_manager.connected_ssid == self._network.ssid
 
   def _update_state(self):
     # if normalize_ssid(self._network.ssid) == "Shane's iPhone":
@@ -345,8 +341,7 @@ class WifiUIMici(NavWidget):
       if network.ssid in existing:
         existing[network.ssid].set_current_network(network)
       else:
-        btn = WifiButton(network, self._wifi_manager.forget_connection, lambda: self._wifi_manager.connecting_to_ssid,
-                         lambda: self._wifi_manager.connected_ssid, self._wifi_manager.is_connection_saved)
+        btn = WifiButton(network, self._wifi_manager)
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
