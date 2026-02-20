@@ -248,8 +248,8 @@ class AdvancedNetworkSettings(Widget):
     gui_app.push_widget(self._keyboard)
 
   def _edit_tethering_password(self):
-    def update_password(result):
-      if result != 1:
+    def update_password(result: DialogResult):
+      if result != DialogResult.CONFIRM:
         return
 
       password = self._keyboard.text

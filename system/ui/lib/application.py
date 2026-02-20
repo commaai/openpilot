@@ -416,15 +416,15 @@ class GuiApplication:
     widget.hide_event()
     print()
 
-  def pop_widgets_to(self, widget):
-    assert self._new_modal
+  # def pop_widgets_to(self, widget):
+  #   assert self._new_modal
+  #
+  #   # pops all widgets after specified widget
+  #   while len(self._nav_stack.widgets) > 0 and self._nav_stack.widgets[-1] != widget:
+  #     self.pop_widget()
 
-    # pops all widgets after specified widget
-    while len(self._nav_stack.widgets) > 0 and self._nav_stack.widgets[-1] != widget:
-      self.pop_widget()
-
-  def get_active_widget(self):
-    assert self._new_modal
+  # def get_active_widget(self):
+  #   assert self._new_modal
 
     if len(self._nav_stack.widgets) > 0:
       return self._nav_stack.widgets[-1]

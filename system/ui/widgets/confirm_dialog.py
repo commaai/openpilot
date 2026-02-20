@@ -37,18 +37,15 @@ class ConfirmDialog(Widget):
     else:
       self._html_renderer.parse_html_content(text)
 
-  # def reset(self):
-  #   self._dialog_result = DialogResult.NO_ACTION
-
   def _cancel_button_callback(self):
+    gui_app.pop_widget()
     if self._callback:
       self._callback(DialogResult.CANCEL)
-    gui_app.pop_widget()
 
   def _confirm_button_callback(self):
+    gui_app.pop_widget()
     if self._callback:
       self._callback(DialogResult.CONFIRM)
-    gui_app.pop_widget()
 
   def _render(self, rect: rl.Rectangle):
     dialog_x = OUTER_MARGIN if not self._rich else RICH_OUTER_MARGIN

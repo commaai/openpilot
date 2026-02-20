@@ -131,15 +131,15 @@ class Keyboard(Widget):
 
   def _cancel_button_callback(self):
     self.clear()
+    gui_app.pop_widget()
     if self._callback:
       self._callback(DialogResult.CANCEL)
-    gui_app.pop_widget()
 
   def _key_callback(self, k):
     if k == ENTER_KEY:
+      gui_app.pop_widget()
       if self._callback:
         self._callback(DialogResult.CONFIRM)
-      gui_app.pop_widget()
     else:
       self.handle_key_press(k)
 
