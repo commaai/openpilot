@@ -397,7 +397,7 @@ class GuiApplication:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop")
       return
 
-    # re-enable previous widget and show event to allow it to update state if needed (e.g. refresh after settings change)
+    # re-enable previous widget and pop current
     prev_widget = self._nav_stack[-2]
     prev_widget.set_enabled(True)
 
