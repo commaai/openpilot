@@ -1,3 +1,4 @@
+import glob
 import math
 import os
 from pathlib import Path
@@ -12,6 +13,8 @@ def get_chunk_paths(path, file_size):
   return [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
 
 def chunk_file(path, num_chunks):
+  for old in glob.glob(f"{path}.chunk*"):
+    os.remove(old)
   with open(path, 'rb') as f:
     data = f.read()
   actual_num_chunks = max(1, math.ceil(len(data) / CHUNK_SIZE))
@@ -22,10 +25,11 @@ def chunk_file(path, num_chunks):
 
 
 def read_file_chunked(path):
-  for num_chunks in range(1, 100):
-    if os.path.isfile(get_chunk_name(path, 0, num_chunks)):
-      files = [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
-      return b''.join(Path(f).read_bytes() for f in files)
+  chunks = sorted(glob.glob(f"{path}.chunk*"))
+  if chunks:
+    expected = [get_chunk_name(path, i, len(chunks)) for i in range(len(chunks))]
+    assert chunks == expected, f"Chunk mismatch: {chunks} != {expected}"
+    return b''.join(Path(f).read_bytes() for f in chunks)
   if os.path.isfile(path):
     return Path(path).read_bytes()
   raise FileNotFoundError(path)
