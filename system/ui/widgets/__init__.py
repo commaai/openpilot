@@ -378,7 +378,7 @@ class NavWidget(Widget, abc.ABC):
     overlay_alpha = int(200 * max(0.0, min(1.0, 1.0 - self._rect.y / self._rect.height))) if self._rect.height > 0 else 0
     rl.draw_rectangle(0, 0, int(self._rect.width), int(self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
 
-    gradient_height = 40
+    gradient_height = 20
     bounce_height = 20
     rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y - gradient_height), int(self._rect.width), gradient_height, rl.BLANK, rl.BLACK)
     rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height + bounce_height), rl.BLACK)
