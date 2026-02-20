@@ -12,7 +12,7 @@ import subprocess
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
@@ -119,11 +119,6 @@ def font_fallback(font: rl.Font) -> rl.Font:
 class ModalOverlay:
   overlay: object = None
   callback: Callable | None = None
-
-
-@dataclass
-class NavStack:
-  widgets: list[object] = field(default_factory=list)
 
 
 class MousePos(NamedTuple):
@@ -234,7 +229,6 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._modal_overlay = ModalOverlay()
-    self._nav_stack = NavStack()
     self._modal_overlay_shown = False
     self._modal_overlay_tick: Callable[[], None] | None = None
 
@@ -387,7 +381,7 @@ class GuiApplication:
       except Exception:
         break
 
-  def push_widget(self, widget):
+  def push_widget(self, widget: object):
     assert self._new_modal
 
     # disable previous widget to prevent input processing, but keep rendering for smooth transitions
@@ -405,7 +399,11 @@ class GuiApplication:
   def pop_widget(self):
     assert self._new_modal
 
-    # reenable previous widget if exists and show event to allow it to update state if needed (e.g. refresh after settings change)
+    if len(self._nav_stack) < 2:
+      cloudlog.warning("At least one widget should remain on the stack, ignoring pop")
+      return
+
+    # re-enable previous widget if exists
     if len(self._nav_stack) > 1:
       prev_widget = self._nav_stack[-2]
       print('Re-enabling and show_event for', prev_widget.__class__.__name__)
@@ -589,9 +587,9 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
 
         if self._new_modal:
+          # TODO: only render top 1 if BIG via flag
           # Only render top two
           for widget in self._nav_stack[-2:]:
-            # TODO: need scaled sizes?
             widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
           print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
