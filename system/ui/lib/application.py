@@ -425,10 +425,10 @@ class GuiApplication:
 
   # def get_active_widget(self):
   #   assert self._new_modal
-
-    if len(self._nav_stack.widgets) > 0:
-      return self._nav_stack.widgets[-1]
-    return None
+  #
+  #   if len(self._nav_stack.widgets) > 0:
+  #     return self._nav_stack.widgets[-1]
+  #   return None
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     assert not self._new_modal, "set_modal_overlay is deprecated, use push_widget instead"
