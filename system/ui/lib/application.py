@@ -382,7 +382,7 @@ class GuiApplication:
   def push_widget(self, widget: object):
     assert self._new_modal
 
-    # disable previous widget to prevent input processing, but keep rendering for smooth transitions
+    # disable previous widget to prevent input processing
     if len(self._nav_stack) > 0:
       prev_widget = self._nav_stack[-1]
       prev_widget.set_enabled(False)
