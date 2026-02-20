@@ -21,7 +21,7 @@ from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.html_render import HtmlModal
 from openpilot.system.ui.widgets.keyboard import Keyboard
 
-# known small leaks not worth worrying about
+# FIXME: known small leaks not worth worrying about at the moment
 KNOWN_LEAKS = {
   "openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog.DriverCameraView",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.TermsPage",
