@@ -1,3 +1,5 @@
+import pyray as rl
+rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
 import gc
 import weakref
 from openpilot.system.ui.lib.application import gui_app
@@ -52,3 +54,7 @@ def test_dialogs_do_not_leak():
   gui_app.close()
 
   assert not leaked_widgets, f"Leaked widgets: {leaked_widgets}"
+
+
+if __name__ == "__main__":
+  test_dialogs_do_not_leak()
