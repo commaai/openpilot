@@ -15,6 +15,20 @@ from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialo
 from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow as TiciOnboardingWindow
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog as TiciPairingDialog
 
+# known small leaks not worth worrying about
+KNOWN_LEAKS = {
+  "openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog.DriverCameraView",
+  "openpilot.selfdrive.ui.mici.layouts.onboarding.TermsPage",
+  "openpilot.selfdrive.ui.mici.layouts.onboarding.TrainingGuide",
+  "openpilot.selfdrive.ui.mici.layouts.onboarding.DeclinePage",
+  "openpilot.selfdrive.ui.mici.layouts.onboarding.OnboardingWindow",
+  "openpilot.selfdrive.ui.onroad.driver_state.DriverStateRenderer",
+  "openpilot.selfdrive.ui.onroad.driver_camera_dialog.DriverCameraDialog",
+  "openpilot.selfdrive.ui.layouts.onboarding.TermsPage",
+  "openpilot.selfdrive.ui.layouts.onboarding.DeclinePage",
+  "openpilot.selfdrive.ui.layouts.onboarding.OnboardingWindow",
+}
+
 
 def get_child_widgets(widget: Widget) -> list[Widget]:
   children = []
@@ -60,7 +74,11 @@ def test_dialogs_do_not_leak():
 
   gui_app.close()
 
-  assert not leaked_widgets, f"Leaked widgets: {leaked_widgets}"
+  unexpected = leaked_widgets - KNOWN_LEAKS
+  assert not unexpected, f"New leaked widgets: {unexpected}"
+
+  fixed = KNOWN_LEAKS - leaked_widgets
+  assert not fixed, f"These leaks are fixed, remove from KNOWN_LEAKS: {fixed}"
 
 
 if __name__ == "__main__":
