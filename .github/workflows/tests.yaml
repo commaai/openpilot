@@ -147,8 +147,7 @@ jobs:
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         # Pre-compile Python bytecode so each pytest worker doesn't need to
                         $PYTEST --collect-only -m 'not slow' -qq && \
-                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
-                        chmod -R 777 /tmp/comma_download_cache"
+                        MAX_EXAMPLES=1 $PYTEST -m 'not slow'"
 
   process_replay:
     name: process replay
@@ -168,7 +167,7 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v5
       with:
-        path: .ci_cache/comma_download_cache
+        path: /tmp/comma_download_cache
         key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/test_processes.py') }}
     - name: Build openpilot
       run: |
@@ -177,8 +176,7 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
       run: |
-        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 /tmp/comma_download_cache"
+        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc)"
     - name: Print diff
       id: print-diff
       if: always()

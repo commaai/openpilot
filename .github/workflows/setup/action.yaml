@@ -39,7 +39,7 @@ runs:
     - id: scons-cache
       uses: ./.github/workflows/auto-cache
       with:
-        path: .ci_cache/scons_cache
+        path: /tmp/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
@@ -48,9 +48,5 @@ runs:
       name: Run setup
       run: ./tools/op.sh setup
     - shell: bash
-      name: Setup cache symlinks
-      run: |
-        mkdir -p .ci_cache/scons_cache .ci_cache/comma_download_cache .ci_cache/openpilot_cache
-        ln -sfn "$GITHUB_WORKSPACE/.ci_cache/scons_cache" /tmp/scons_cache
-        ln -sfn "$GITHUB_WORKSPACE/.ci_cache/comma_download_cache" /tmp/comma_download_cache
-        ln -sfn "$GITHUB_WORKSPACE/.ci_cache/openpilot_cache" /tmp/openpilot_cache
+      name: Setup cache dirs
+      run: mkdir -p /tmp/comma_download_cache
