@@ -1,5 +1,6 @@
 # SGP.22 v2.3: https://www.gsma.com/solutions-and-impact/technologies/esim/wp-content/uploads/2021/07/SGP.22-v2.3.pdf
 
+import atexit
 import base64
 import serial
 import sys
@@ -218,6 +219,7 @@ class TiciLPA(LPABase):
     self._client = AtClient(DEFAULT_DEVICE, DEFAULT_BAUD, DEFAULT_TIMEOUT, verbose=False)
     self._client.ensure_capabilities()
     self._client.open_isdr()
+    atexit.register(self._client.close)
 
   def list_profiles(self) -> list[Profile]:
     return [
