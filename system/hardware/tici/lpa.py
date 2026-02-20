@@ -75,6 +75,12 @@ class AtClient:
     self.query("AT")
     for command in ("AT+CCHO", "AT+CCHC", "AT+CGLA"):
       self.query(f"{command}=?")
+    # Close any stale logical channels left by a previous crashed session
+    for ch in range(1, 4):
+      try:
+        self.query(f"AT+CCHC={ch}")
+      except (RuntimeError, TimeoutError):
+        pass
 
   def open_isdr(self) -> None:
     for line in self.query(f'AT+CCHO="{ISDR_AID}"'):
