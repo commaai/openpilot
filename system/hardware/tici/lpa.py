@@ -36,6 +36,18 @@ class AtClient:
     self.verbose = verbose
     self.channel: str | None = None
     self.serial.reset_input_buffer()
+    self._sync()
+
+  def _sync(self) -> None:
+    """Terminate any partial AT command from a crashed session and re-sync."""
+    self.serial.write(b"\rAT\r")
+    while True:
+      raw = self.serial.readline()
+      if not raw:
+        break
+      line = raw.decode(errors="ignore").strip()
+      if line in ("OK", "ERROR"):
+        break
 
   def close(self) -> None:
     try:
