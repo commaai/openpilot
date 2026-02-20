@@ -186,9 +186,10 @@ class ConnectButton(Widget):
 class ForgetButton(Widget):
   HORIZONTAL_MARGIN = 8
 
-  def __init__(self, forget_network: Callable):
+  def __init__(self, forget_network: Callable, open_network_manage_page):
     super().__init__()
     self._forget_network = forget_network
+    self._open_network_manage_page = open_network_manage_page
 
     self._bg_txt = gui_app.texture("icons_mici/settings/network/new/forget_button.png", 100, 100)
     self._bg_pressed_txt = gui_app.texture("icons_mici/settings/network/new/forget_button_pressed.png", 100, 100)
@@ -199,7 +200,7 @@ class ForgetButton(Widget):
     super()._handle_mouse_release(mouse_pos)
     dlg = BigConfirmationDialogV2("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
                                   confirm_callback=self._forget_network)
-    gui_app.push_widget(dlg)
+    gui_app.set_modal_overlay(dlg, callback=self._open_network_manage_page)
 
   def _render(self, _):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
@@ -211,7 +212,7 @@ class ForgetButton(Widget):
 
 
 class NetworkInfoPage(NavWidget):
-  def __init__(self, wifi_manager, connect_callback: Callable, forget_callback: Callable,
+  def __init__(self, wifi_manager, connect_callback: Callable, forget_callback: Callable, open_network_manage_page: Callable,
                connecting_callback: Callable[[], str | None], connected_callback: Callable[[], str | None]):
     super().__init__()
     self._wifi_manager = wifi_manager
@@ -219,8 +220,8 @@ class NetworkInfoPage(NavWidget):
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     self._wifi_icon = WifiIcon()
-    self._forget_btn = ForgetButton(lambda: forget_callback(self._network.ssid) if self._network is not None else None)
-    self._forget_btn.set_enabled(lambda: self.enabled)  # for stack
+    self._forget_btn = ForgetButton(lambda: forget_callback(self._network.ssid) if self._network is not None else None,
+                                    open_network_manage_page)
     self._connect_btn = ConnectButton()
     self._connect_btn.set_click_callback(lambda: connect_callback(self._network.ssid) if self._network is not None else None)
 
@@ -229,8 +230,7 @@ class NetworkInfoPage(NavWidget):
     self._subtitle = UnifiedLabel("", 36, FontWeight.ROMAN, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                   alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
-    # self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
-    self.set_back_callback(gui_app.pop_widget)
+    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
 
     # State
     self._network: Network | None = None
@@ -249,10 +249,7 @@ class NetworkInfoPage(NavWidget):
         break
     else:
       # network disappeared, close page
-      # FIXME: this closes wifi page
-      # gui_app.set_modal_overlay(None)
-      if gui_app.get_active_widget() == self:
-        gui_app.pop_widget()
+      gui_app.set_modal_overlay(None)
 
   def _update_state(self):
     super()._update_state()
@@ -274,7 +271,7 @@ class NetworkInfoPage(NavWidget):
       self._connect_btn.set_enabled(False)
     else:  # saved or unknown
       self._connect_btn.set_label("connect")
-      self._connect_btn.set_enabled(self.enabled)
+      self._connect_btn.set_enabled(True)
 
     self._title.set_text(normalize_ssid(self._network.ssid))
     if self._network.security_type == SecurityType.OPEN:
@@ -339,15 +336,17 @@ class NetworkInfoPage(NavWidget):
         self._forget_btn.rect.height,
       ))
 
+    return -1
+
 
 class WifiUIMici(BigMultiOptionDialog):
-  def __init__(self, wifi_manager: WifiManager):
+  def __init__(self, wifi_manager: WifiManager, back_callback: Callable):
     super().__init__([], None)
 
     # Set up back navigation
-    self.set_back_callback(gui_app.pop_widget)
+    self.set_back_callback(back_callback)
 
-    self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, wifi_manager.forget_connection,
+    self._network_info_page = NetworkInfoPage(wifi_manager, self._connect_to_network, wifi_manager.forget_connection, self._open_network_manage_page,
                                               lambda: wifi_manager.connecting_to_ssid, lambda: wifi_manager.connected_ssid)
 
     self._loading_animation = LoadingAnimation()
@@ -371,8 +370,12 @@ class WifiUIMici(BigMultiOptionDialog):
     super().hide_event()
     self._scroller.hide_event()
 
+  def _open_network_manage_page(self, result=None):
+    if self._network_info_page._network is not None and self._network_info_page._network.ssid in self._networks:
+      self._network_info_page.update_networks(self._networks)
+      gui_app.set_modal_overlay(self._network_info_page)
+
   def _on_network_updated(self, networks: list[Network]):
-    print('WifiUIMici->_on_network_updated')
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
     self._network_info_page.update_networks(self._networks)
@@ -410,9 +413,7 @@ class WifiUIMici(BigMultiOptionDialog):
 
     if option in self._networks:
       self._network_info_page.set_current_network(self._networks[option])
-      # self._network_info_page.update_networks(self._networks)
-      # gui_app.set_modal_overlay(self._network_info_page)
-      gui_app.push_widget(self._network_info_page)
+      self._open_network_manage_page()
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -433,15 +434,14 @@ class WifiUIMici(BigMultiOptionDialog):
     hint = "wrong password..." if incorrect_password else "enter password..."
     dlg = BigInputDialog(hint, "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
-    gui_app.push_widget(dlg)
 
-    # def on_close(result=None):
-    #   gui_app.set_modal_overlay_tick(None)
-    #   self._open_network_manage_page(result)
-    #
-    # # Process wifi callbacks while the keyboard is shown so forgotten clears connecting state
-    # gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
-    # gui_app.set_modal_overlay(dlg, on_close)
+    def on_close(result=None):
+      gui_app.set_modal_overlay_tick(None)
+      self._open_network_manage_page(result)
+
+    # Process wifi callbacks while the keyboard is shown so forgotten clears connecting state
+    gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
+    gui_app.set_modal_overlay(dlg, on_close)
 
   def _render(self, _):
     super()._render(_)

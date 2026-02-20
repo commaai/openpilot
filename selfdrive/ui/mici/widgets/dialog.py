@@ -4,7 +4,7 @@ import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from typing import cast
-from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -23,11 +23,17 @@ PADDING = 20
 class BigDialogBase(NavWidget, abc.ABC):
   def __init__(self):
     super().__init__()
+    self._ret = DialogResult.NO_ACTION
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    self.set_back_callback(gui_app.pop_widget)
+    self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
 
-  # def _render(self, _):
-  #   pass
+  def _render(self, _) -> DialogResult:
+    """
+    Allows `gui_app.set_modal_overlay(BigDialog(...))`.
+    The overlay runner keeps calling until result != NO_ACTION.
+    """
+
+    return self._ret
 
 
 class BigDialog(BigDialogBase):
@@ -38,7 +44,7 @@ class BigDialog(BigDialogBase):
     self._title = title
     self._description = description
 
-  def _render(self, _):
+  def _render(self, _) -> DialogResult:
     super()._render(_)
 
     # draw title
@@ -68,6 +74,8 @@ class BigDialog(BigDialogBase):
     gui_label(desc_rect, desc_wrapped, 30, font_weight=FontWeight.MEDIUM,
               alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
+    return self._ret
+
 
 class BigConfirmationDialogV2(BigDialogBase):
   def __init__(self, title: str, icon: str, red: bool = False,
@@ -89,15 +97,16 @@ class BigConfirmationDialogV2(BigDialogBase):
     if self._confirm_callback:
       self._confirm_callback()
     if self._exit_on_confirm:
-      gui_app.pop_widget()
+      self._ret = DialogResult.CONFIRM
 
   def _update_state(self):
     super()._update_state()
     if self._swiping_away and not self._slider.confirmed:
       self._slider.reset()
 
-  def _render(self, _):
+  def _render(self, _) -> DialogResult:
     self._slider.render(self._rect)
+    return self._ret
 
 
 class BigInputDialog(BigDialogBase):
@@ -131,9 +140,9 @@ class BigInputDialog(BigDialogBase):
     self._top_right_button_rect = rl.Rectangle(0, 0, 0, 0)
 
     def confirm_callback_wrapper():
+      self._ret = DialogResult.CONFIRM
       if confirm_callback:
         confirm_callback(self._keyboard.text())
-      gui_app.pop_widget()
     self._confirm_callback = confirm_callback_wrapper
 
   def _update_state(self):
@@ -228,6 +237,8 @@ class BigInputDialog(BigDialogBase):
       rl.draw_rectangle_lines_ex(text_field_rect, 1, rl.Color(100, 100, 100, 255))
       rl.draw_rectangle_lines_ex(self._top_right_button_rect, 1, rl.Color(0, 255, 0, 255))
       rl.draw_rectangle_lines_ex(self._top_left_button_rect, 1, rl.Color(0, 255, 0, 255))
+
+    return self._ret
 
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
@@ -381,6 +392,8 @@ class BigMultiOptionDialog(BigDialogBase):
     super()._render(_)
     self._scroller.render(self._rect)
 
+    return self._ret
+
 
 class BigDialogButton(BigButton):
   def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", description: str = ""):
@@ -391,4 +404,4 @@ class BigDialogButton(BigButton):
     super()._handle_mouse_release(mouse_pos)
 
     dlg = BigDialog(self.text, self._description)
-    gui_app.push_widget(dlg)
+    gui_app.set_modal_overlay(dlg)
