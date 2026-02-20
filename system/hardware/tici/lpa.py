@@ -71,17 +71,6 @@ class AtClient:
     self.send(cmd)
     return self.expect()
 
-  def ensure_capabilities(self) -> None:
-    self.query("AT")
-    for command in ("AT+CCHO", "AT+CCHC", "AT+CGLA"):
-      self.query(f"{command}=?")
-    # Close any stale logical channels left by a previous crashed session
-    for ch in range(1, 4):
-      try:
-        self.query(f"AT+CCHC={ch}")
-      except (RuntimeError, TimeoutError):
-        pass
-
   def open_isdr(self) -> None:
     for line in self.query(f'AT+CCHO="{ISDR_AID}"'):
       if line.startswith("+CCHO:") and (ch := line.split(":", 1)[1].strip()):
@@ -223,7 +212,6 @@ class TiciLPA(LPABase):
     if hasattr(self, '_client'):
       return
     self._client = AtClient(DEFAULT_DEVICE, DEFAULT_BAUD, DEFAULT_TIMEOUT, verbose=False)
-    self._client.ensure_capabilities()
     self._client.open_isdr()
     atexit.register(self._client.close)
 
