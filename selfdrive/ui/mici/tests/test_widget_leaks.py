@@ -5,15 +5,21 @@ import weakref
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 
-# mici modals
+# mici dialogs
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide as MiciTrainingGuide, OnboardingWindow as MiciOnboardingWindow
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog as MiciDriverCameraDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog as MiciPairingDialog
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialogV2, BigInputDialog, BigMultiOptionDialog
+from openpilot.selfdrive.ui.mici.layouts.settings.device import MiciFccModal
 
-# tici modals
+# tici dialogs
 from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog as TiciDriverCameraDialog
 from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow as TiciOnboardingWindow
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog as TiciPairingDialog
+from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
+from openpilot.system.ui.widgets.html_render import HtmlModal
+from openpilot.system.ui.widgets.keyboard import Keyboard
 
 # known small leaks not worth worrying about
 KNOWN_LEAKS = {
@@ -27,6 +33,23 @@ KNOWN_LEAKS = {
   "openpilot.selfdrive.ui.layouts.onboarding.TermsPage",
   "openpilot.selfdrive.ui.layouts.onboarding.DeclinePage",
   "openpilot.selfdrive.ui.layouts.onboarding.OnboardingWindow",
+  "openpilot.system.ui.widgets.confirm_dialog.ConfirmDialog",
+  "openpilot.system.ui.widgets.label.Label",
+  "openpilot.system.ui.widgets.button.Button",
+  "openpilot.selfdrive.ui.mici.widgets.dialog.BigDialog",
+  "openpilot.system.ui.widgets.html_render.HtmlRenderer",
+  "openpilot.system.ui.widgets.NavBar",
+  "openpilot.system.ui.widgets.inputbox.InputBox",
+  "openpilot.system.ui.widgets.scroller_tici.Scroller",
+  "openpilot.system.ui.widgets.scroller.Scroller",
+  "openpilot.system.ui.widgets.label.UnifiedLabel",
+  "openpilot.selfdrive.ui.mici.widgets.dialog.BigMultiOptionDialog",
+  "openpilot.system.ui.widgets.mici_keyboard.MiciKeyboard",
+  "openpilot.selfdrive.ui.mici.widgets.dialog.BigConfirmationDialogV2",
+  "openpilot.system.ui.widgets.keyboard.Keyboard",
+  "openpilot.system.ui.widgets.slider.BigSlider",
+  "openpilot.selfdrive.ui.mici.widgets.dialog.BigInputDialog",
+  "openpilot.system.ui.widgets.option_dialog.MultiOptionDialog",
 }
 
 
@@ -43,11 +66,21 @@ def test_dialogs_do_not_leak():
 
   leaked_widgets = set()
 
-  for test_widget in (
+  for ctor in (
+    # mici
     MiciDriverCameraDialog, MiciTrainingGuide, MiciOnboardingWindow, MiciPairingDialog,
-    TiciDriverCameraDialog, TiciOnboardingWindow, TiciPairingDialog,
+    lambda: BigDialog("test", "test"),
+    lambda: BigConfirmationDialogV2("test", "icons_mici/settings/network/new/trash.png"),
+    lambda: BigInputDialog("test"),
+    lambda: BigMultiOptionDialog(["a", "b"], "a"),
+    lambda: MiciFccModal(text="test"),
+    # tici
+    TiciDriverCameraDialog, TiciOnboardingWindow, TiciPairingDialog, Keyboard,
+    lambda: ConfirmDialog("test", "ok"),
+    lambda: MultiOptionDialog("test", ["a", "b"]),
+    lambda: HtmlModal(text="test"),
   ):
-    widget = test_widget()
+    widget = ctor()
     all_refs = [weakref.ref(w) for w in get_child_widgets(widget) + [widget]]
 
     del widget
