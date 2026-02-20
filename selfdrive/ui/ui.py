@@ -22,7 +22,8 @@ def main():
   else:
     gui_app.init_window("UI", new_modal=True)
     main_layout = MiciMainLayout()
-  main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+
   for should_render in gui_app.render():
     ui_state.update()
     if should_render:

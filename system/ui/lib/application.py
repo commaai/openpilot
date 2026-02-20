@@ -238,6 +238,10 @@ class GuiApplication:
     self._modal_overlay_shown = False
     self._modal_overlay_tick: Callable[[], None] | None = None
 
+    # TODO: move over the entire ui and deprecate
+    self._new_modal = False
+    self._nav_stack: list[object] = []
+
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
     self._last_mouse_event: MouseEvent = MouseEvent(MousePos(0, 0), 0, False, False, False, 0.0)
@@ -387,14 +391,14 @@ class GuiApplication:
     assert self._new_modal
 
     # disable previous widget to prevent input processing, but keep rendering for smooth transitions
-    if len(self._nav_stack.widgets) > 0:
-      prev_widget = self._nav_stack.widgets[-1]
+    if len(self._nav_stack) > 0:
+      prev_widget = self._nav_stack[-1]
       print('Disabling and hide_event for', prev_widget.__class__.__name__)
       # prev_widget.hide_event()
       prev_widget.set_enabled(False)
 
     print('Pushing and show_event for', widget.__class__.__name__)
-    self._nav_stack.widgets.append(widget)
+    self._nav_stack.append(widget)
     widget.show_event()
     print()
 
@@ -402,14 +406,14 @@ class GuiApplication:
     assert self._new_modal
 
     # reenable previous widget if exists and show event to allow it to update state if needed (e.g. refresh after settings change)
-    if len(self._nav_stack.widgets) > 1:
-      prev_widget = self._nav_stack.widgets[-2]
+    if len(self._nav_stack) > 1:
+      prev_widget = self._nav_stack[-2]
       print('Re-enabling and show_event for', prev_widget.__class__.__name__)
       # prev_widget.show_event()
       prev_widget.set_enabled(True)
-    if len(self._nav_stack.widgets) > 1:
-      print('Popping and hide_event for', self._nav_stack.widgets[-1].__class__.__name__)
-      widget = self._nav_stack.widgets.pop()
+    if len(self._nav_stack) > 1:
+      print('Popping and hide_event for', self._nav_stack[-1].__class__.__name__)
+      widget = self._nav_stack.pop()
       widget.hide_event()
     print()
 
@@ -417,14 +421,14 @@ class GuiApplication:
     assert self._new_modal
 
     # pops all widgets after specified widget
-    while len(self._nav_stack.widgets) > 0 and self._nav_stack.widgets[-1] != widget:
+    while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
 
   def get_active_widget(self):
     assert self._new_modal
 
-    if len(self._nav_stack.widgets) > 0:
-      return self._nav_stack.widgets[-1]
+    if len(self._nav_stack) > 0:
+      return self._nav_stack[-1]
     return None
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
@@ -586,11 +590,11 @@ class GuiApplication:
 
         if self._new_modal:
           # Only render top two
-          for widget in self._nav_stack.widgets[-2:]:
+          for widget in self._nav_stack[-2:]:
             # TODO: need scaled sizes?
             widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
-          print('widget stack', len(self._nav_stack.widgets), [w.__class__.__name__ for w in self._nav_stack.widgets])
+          print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
 
           yield True
 
