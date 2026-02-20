@@ -36,9 +36,9 @@ class OnboardingState(IntEnum):
 
 
 class TrainingGuide(Widget):
-  def __init__(self, completed_callback=None):
+  def __init__(self):
     super().__init__()
-    self._completed_callback = completed_callback
+    # self._completed_callback = completed_callback
 
     self._step = 0
     self._load_image_paths()
@@ -78,8 +78,9 @@ class TrainingGuide(Widget):
       # Finished?
       if self._step >= len(self._image_paths):
         self._step = 0
-        if self._completed_callback:
-          self._completed_callback()
+        # if self._completed_callback:
+        #   self._completed_callback()
+        gui_app.pop_widget()
 
   def _update_state(self):
     if len(self._image_objs):
@@ -194,11 +195,13 @@ class OnboardingWindow(Widget):
     ui_state.params.put("HasAcceptedTerms", terms_version)
     self._state = OnboardingState.ONBOARDING
     if self._training_done:
-      gui_app.set_modal_overlay(None)
+      # gui_app.set_modal_overlay(None)
+      gui_app.pop_widget()
 
   def _on_completed_training(self):
     ui_state.params.put("CompletedTrainingVersion", training_version)
-    gui_app.set_modal_overlay(None)
+    # gui_app.set_modal_overlay(None)
+    gui_app.pop_widget()
 
   def _render(self, _):
     if self._training_guide is None:

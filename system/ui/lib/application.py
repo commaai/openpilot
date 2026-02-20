@@ -585,8 +585,8 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
 
         if self._new_modal:
-          # Only render top two
-          for widget in self._nav_stack.widgets[-2:]:
+          # Only render last widget
+          for widget in self._nav_stack.widgets[-1:]:
             # TODO: need scaled sizes?
             widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
