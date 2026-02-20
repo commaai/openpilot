@@ -592,6 +592,7 @@ class GuiApplication:
 
           print('widget stack', len(self._nav_stack.widgets), [w.__class__.__name__ for w in self._nav_stack.widgets])
 
+          # Yield to allow caller to run non-rendering related code
           yield True
 
         else:
