@@ -1,6 +1,7 @@
 from functools import partial
 import time
-from typing import Literal, Callable
+from typing import Literal
+from collections.abc import Callable
 
 import pyray as rl
 
