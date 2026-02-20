@@ -3,7 +3,7 @@ import sys
 import math
 import capnp
 import numbers
-import dictdiffer
+from openpilot.selfdrive.test.process_replay import dictdiffer
 from collections import Counter
 
 from openpilot.tools.lib.logreader import LogReader
