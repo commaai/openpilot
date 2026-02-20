@@ -44,13 +44,13 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
-      shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
-      run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
     - shell: bash
-      run: eval ${{ env.BUILD }}
+      name: Install dependencies
+      run: ./tools/ubuntu_setup.sh
+    - shell: bash
+      name: Setup cache symlinks
+      run: |
+        mkdir -p .ci_cache/scons_cache .ci_cache/comma_download_cache .ci_cache/openpilot_cache
+        ln -sfn "$GITHUB_WORKSPACE/.ci_cache/scons_cache" /tmp/scons_cache
+        ln -sfn "$GITHUB_WORKSPACE/.ci_cache/comma_download_cache" /tmp/comma_download_cache
+        ln -sfn "$GITHUB_WORKSPACE/.ci_cache/openpilot_cache" /tmp/openpilot_cache
