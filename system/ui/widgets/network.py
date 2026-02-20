@@ -38,6 +38,7 @@ STRENGTH_ICONS = [
   "icons/wifi_strength_full.png",
 ]
 
+
 class PanelType(IntEnum):
   WIFI = 0
   ADVANCED = 1
@@ -310,10 +311,8 @@ class WifiManagerUI(Widget):
       return
 
     if self.state == UIState.NEEDS_AUTH and self._state_network:
-      self.keyboard.set_title(
-        tr("Wrong password") if self._password_retry else tr("Enter password"),
-        tr("for \"{}\"").format(normalize_ssid(self._state_network.ssid)),
-      )
+      self.keyboard.set_title(tr("Wrong password") if self._password_retry else tr("Enter password"),
+                              tr("for \"{}\"").format(normalize_ssid(self._state_network.ssid)))
       self.keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
       gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
     elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
