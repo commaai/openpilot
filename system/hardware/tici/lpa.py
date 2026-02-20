@@ -2,6 +2,7 @@
 
 import atexit
 import base64
+import os
 import serial
 import sys
 
@@ -211,7 +212,7 @@ class TiciLPA(LPABase):
   def __init__(self):
     if hasattr(self, '_client'):
       return
-    self._client = AtClient(DEFAULT_DEVICE, DEFAULT_BAUD, DEFAULT_TIMEOUT, verbose=False)
+    self._client = AtClient(DEFAULT_DEVICE, DEFAULT_BAUD, DEFAULT_TIMEOUT, verbose=os.environ.get("DEBUG") == "1")
     self._client.open_isdr()
     atexit.register(self._client.close)
 
