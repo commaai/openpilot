@@ -20,37 +20,39 @@ def get_child_widgets(widget: Widget) -> list[Widget]:
   return children
 
 
-for test_widget in (DriverCameraDialog, TrainingGuide, OnboardingWindow):
-  widget = test_widget()
-  widget_ref = weakref.ref(widget)
+def test_dialogs_do_not_leak():
+  leaked_widgets = set()
 
-  all_widgets = get_child_widgets(widget) + [widget]
+  for test_widget in (DriverCameraDialog, TrainingGuide, OnboardingWindow):
+    widget = test_widget()
+    all_refs = [weakref.ref(w) for w in get_child_widgets(widget) + [widget]]
 
-  all_refs = [weakref.ref(w) for w in all_widgets]
+    del widget
 
-  del widget, all_widgets
+    for ref in all_refs:
+      if ref() is not None:
+        obj = ref()
+        name = f"{type(obj).__module__}.{type(obj).__qualname__}"
+        leaked_widgets.add(name)
 
-  for ref in all_refs:
-    if ref() is not None:
-      print(f"\n===  Widget {type(ref()).__module__}.{type(ref()).__qualname__} alive after del: True")
+        print(f"\n===  Widget {name} alive after del")
+        print("  Referrers:")
+        for r in gc.get_referrers(obj):
+          if r is obj:
+            continue
 
-      obj = ref()
-      for r in gc.get_referrers(obj):
-        if r is obj:
-          continue
+          if hasattr(r, '__self__') and r.__self__ is not obj:
+            print(f"    bound method: {type(r.__self__).__qualname__}.{r.__name__}")
+          elif hasattr(r, '__func__'):
+            print(f"    method: {r.__name__}")
+          else:
+            print(f"    {type(r).__module__}.{type(r).__qualname__}")
+        del obj
 
-        if hasattr(r, '__self__') and r.__self__ is not obj:
-          print(f"  bound method: {type(r.__self__).__qualname__}.{r.__name__}")
-        elif hasattr(r, '__func__'):
-          print(f"  method: {r.__name__}")
-        else:
-          print(f"  {type(r).__module__}.{type(r).__qualname__}")
-      del obj
+  gui_app.close()
 
-    # assert not leaked, "Circular reference: widget alive after del"
-
-  # for child in child_widgets:
-  #   run_test_on_widget(child)
+  assert not leaked_widgets, f"Leaked widgets: {leaked_widgets}"
 
 
-gui_app.close()
+if __name__ == "__main__":
+  test_dialogs_do_not_leak()
