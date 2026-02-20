@@ -385,9 +385,12 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
 
     if (interrupt_requested_) break;
 
-    if (evt.eidx_segnum == -1) {
+    bool is_dm_msg = (evt.which == cereal::Event::Which::DRIVER_CAMERA_STATE ||
+                       evt.which == cereal::Event::Which::DRIVER_STATE_V2 ||
+                       evt.which == cereal::Event::Which::DRIVER_MONITORING_STATE);
+    if (evt.eidx_segnum == -1 && is_dm_msg) {
       publishMessage(&evt);
-    } else if (camera_server_) {
+    } else if (evt.eidx_segnum != -1 && camera_server_ && evt.which == cereal::Event::DRIVER_ENCODE_IDX) {
       if (speed_ > 1.0) {
         camera_server_->waitForSent();
       }
