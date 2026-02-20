@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pyray as rl
 
 from openpilot.system.hardware import TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
@@ -21,6 +22,7 @@ def main():
   else:
     gui_app.init_window("UI")
     main_layout = MiciMainLayout()
+    main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
   for should_render in gui_app.render():
     ui_state.update()
