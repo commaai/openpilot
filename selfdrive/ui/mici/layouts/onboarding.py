@@ -124,8 +124,11 @@ class TrainingGuideDMTutorial(Widget):
 
   def __init__(self, continue_callback):
     super().__init__()
+
+    self_ref = weakref.ref(self)
+
     self._back_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_question.png", 28, 48))
-    self._back_button.set_click_callback(self._show_bad_face_page)
+    self._back_button.set_click_callback(lambda: self_ref() and self_ref()._show_bad_face_page())
     self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 42, 42))
 
     # Wrap the continue callback to restore settings
@@ -138,7 +141,7 @@ class TrainingGuideDMTutorial(Widget):
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
     self._dialog = DriverCameraSetupDialog()
-    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, self._hide_bad_face_page)
+    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, lambda: self_ref() and self_ref()._hide_bad_face_page())
     self._should_show_bad_face_page = False
 
     # Disable driver monitoring model when device times out for inactivity

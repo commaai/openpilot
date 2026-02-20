@@ -20,8 +20,6 @@ concurrency:
 env:
   PYTHONWARNINGS: error
   BASE_IMAGE: openpilot-base
-  AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
-
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: selfdrive/test/docker_build.sh base
 
@@ -185,12 +183,13 @@ jobs:
       uses: actions/cache@v5
       with:
         path: .ci_cache/comma_download_cache
-        key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_processes.py') }}
+        key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/test_processes.py') }}
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      continue-on-error: ${{ github.ref == 'refs/heads/master' }}
       run: |
         ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache"
@@ -204,10 +203,26 @@ jobs:
       with:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
-    - name: Upload reference logs
-      if: false # TODO: move this to github instead of azure
+    - name: Checkout ci-artifacts
+      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
+      uses: actions/checkout@v4
+      with:
+        repository: commaai/ci-artifacts
+        ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+        path: ${{ github.workspace }}/ci-artifacts
+    - name: Push refs
+      if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
+      working-directory: ${{ github.workspace }}/ci-artifacts
       run: |
-        ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python3 selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        git checkout --orphan process-replay
+        git rm -rf .
+        git config user.name "GitHub Actions Bot"
+        git config user.email "<>"
+        cp ${{ github.workspace }}/selfdrive/test/process_replay/fakedata/*.zst .
+        echo "${{ github.sha }}" > ref_commit
+        git add .
+        git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}"
+        git push origin process-replay --force
     - name: Run regen
       if: false
       timeout-minutes: 4
@@ -240,8 +255,8 @@ jobs:
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest -s tools/sim/tests/test_metadrive_bridge.py"
 
-  create_raylib_ui_report:
-    name: Create raylib UI Report
+  create_ui_report:
+    name: Create UI Report
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
@@ -255,39 +270,14 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
-      - name: Create raylib UI Report
+      - name: Create UI Report
         run: >
           ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                           source selfdrive/test/setup_xvfb.sh &&
-                          python3 selfdrive/ui/tests/test_ui/raylib_screenshots.py"
-      - name: Upload Raylib UI Report
+                          python3 selfdrive/ui/tests/diff/replay.py &&
+                          python3 selfdrive/ui/tests/diff/replay.py --big"
+      - name: Upload UI Report
         uses: actions/upload-artifact@v6
         with:
-          name: raylib-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
-          path: selfdrive/ui/tests/test_ui/raylib_report/screenshots
-
-  create_mici_raylib_ui_report:
-    name: Create mici raylib UI Report
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - uses: ./.github/workflows/setup-with-retry
-      - name: Build openpilot
-        run: ${{ env.RUN }} "scons -j$(nproc)"
-      - name: Create mici raylib UI Report
-        run: >
-          ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
-                          source selfdrive/test/setup_xvfb.sh &&
-                          WINDOWED=1 python3 selfdrive/ui/tests/diff/replay.py"
-      - name: Upload Raylib UI Report
-        uses: actions/upload-artifact@v6
-        with:
-          name: mici-raylib-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
+          name: ui-report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
           path: selfdrive/ui/tests/diff/report

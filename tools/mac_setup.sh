@@ -3,7 +3,6 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
-ARCH=$(uname -m)
 
 # homebrew update is slow
 export HOMEBREW_NO_AUTO_UPDATE=1
@@ -21,13 +20,8 @@ if [[ $(command -v brew) == "" ]]; then
   echo "[ ] installed brew t=$SECONDS"
 
   # make brew available now
-  if [[ $ARCH == "x86_64" ]]; then
-    echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $RC_FILE
-    eval "$(/usr/local/bin/brew shellenv)"
-  else
-    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $RC_FILE
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  fi
+  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $RC_FILE
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 else
     brew up
 fi
@@ -42,12 +36,10 @@ brew "glfw"
 brew "libusb"
 brew "libtool"
 brew "llvm"
-brew "openssl@3.0"
 brew "qt@5"
 brew "zeromq"
 cask "gcc-arm-embedded"
 brew "portaudio"
-brew "gcc@13"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
@@ -59,12 +51,6 @@ export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/zlib/lib"
 export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/bzip2/lib"
 export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/zlib/include"
 export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/bzip2/include"
-
-# pycurl curl/openssl backend dependencies
-export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/openssl@3/lib"
-export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
-export PYCURL_CURL_CONFIG=/usr/bin/curl-config
-export PYCURL_SSL_LIBRARY=openssl
 
 # install python dependencies
 $DIR/install_python_dependencies.sh

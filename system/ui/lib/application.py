@@ -41,7 +41,8 @@ PROFILE_RENDER = int(os.getenv("PROFILE_RENDER", "0"))
 PROFILE_STATS = int(os.getenv("PROFILE_STATS", "100"))  # Number of functions to show in profile output
 RECORD = os.getenv("RECORD") == "1"
 RECORD_OUTPUT = str(Path(os.getenv("RECORD_OUTPUT", "output")).with_suffix(".mp4"))
-RECORD_BITRATE = os.getenv("RECORD_BITRATE", "")  # Target bitrate e.g. "2000k"
+RECORD_QUALITY = int(os.getenv("RECORD_QUALITY", "23"))  # Dynamic bitrate quality level (CRF); 0 is lossless (bigger size), max is 51, default is 23 for x264
+RECORD_BITRATE = os.getenv("RECORD_BITRATE", "")  # Target bitrate e.g. "2000k" (overrides RECORD_QUALITY when set)
 RECORD_SPEED = int(os.getenv("RECORD_SPEED", "1"))  # Speed multiplier
 OFFSCREEN = os.getenv("OFFSCREEN") == "1"  # Disable FPS limiting for fast offline rendering
 
@@ -229,6 +230,10 @@ class GuiApplication:
     self._modal_overlay_shown = False
     self._modal_overlay_tick: Callable[[], None] | None = None
 
+    # TODO: move over the entire ui and deprecate
+    self._new_modal = False
+    self._nav_stack: list[object] = []
+
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
     self._last_mouse_event: MouseEvent = MouseEvent(MousePos(0, 0), 0, False, False, False, 0.0)
@@ -261,13 +266,15 @@ class GuiApplication:
   def request_close(self):
     self._window_close_requested = True
 
-  def init_window(self, title: str, fps: int = _DEFAULT_FPS):
+  def init_window(self, title: str, fps: int = _DEFAULT_FPS, new_modal: bool = False):
     with self._startup_profile_context():
       def _close(sig, frame):
         self.close()
         sys.exit(0)
       signal.signal(signal.SIGINT, _close)
       atexit.register(self.close)
+
+      self._new_modal = new_modal
 
       flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
       if ENABLE_VSYNC:
@@ -298,8 +305,10 @@ class GuiApplication:
           '-r', str(output_fps),    # Output frame rate (for speed multiplier)
           '-c:v', 'libx264',
           '-preset', 'ultrafast',
+          '-crf', str(RECORD_QUALITY)
         ]
         if RECORD_BITRATE:
+          # NOTE: custom bitrate overrides crf setting
           ffmpeg_args += ['-b:v', RECORD_BITRATE, '-maxrate', RECORD_BITRATE, '-bufsize', RECORD_BITRATE]
         ffmpeg_args += [
           '-y',                     # Overwrite existing file
@@ -370,7 +379,34 @@ class GuiApplication:
       except Exception:
         break
 
+  def push_widget(self, widget: object):
+    assert self._new_modal
+
+    # disable previous widget to prevent input processing
+    if len(self._nav_stack) > 0:
+      prev_widget = self._nav_stack[-1]
+      prev_widget.set_enabled(False)
+
+    self._nav_stack.append(widget)
+    widget.show_event()
+
+  def pop_widget(self):
+    assert self._new_modal
+
+    if len(self._nav_stack) < 2:
+      cloudlog.warning("At least one widget should remain on the stack, ignoring pop")
+      return
+
+    # re-enable previous widget and pop current
+    prev_widget = self._nav_stack[-2]
+    prev_widget.set_enabled(True)
+
+    widget = self._nav_stack.pop()
+    widget.hide_event()
+
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    assert not self._new_modal, "set_modal_overlay is deprecated, use push_widget instead"
+
     if self._modal_overlay.overlay is not None:
       if hasattr(self._modal_overlay.overlay, 'hide_event'):
         self._modal_overlay.overlay.hide_event()
@@ -525,14 +561,23 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        # Handle modal overlay rendering and input processing
-        if self._handle_modal_overlay():
-          # Allow a Widget to still run a function while overlay is shown
-          if self._modal_overlay_tick is not None:
-            self._modal_overlay_tick()
-          yield False
-        else:
+        if self._new_modal:
+          # Only render last widget
+          for widget in self._nav_stack[-1:]:
+            widget.render(rl.Rectangle(0, 0, self.width, self.height))
+
+          # Yield to allow caller to run non-rendering related code
           yield True
+
+        else:
+          # Handle modal overlay rendering and input processing
+          if self._handle_modal_overlay():
+            # Allow a Widget to still run a function while overlay is shown
+            if self._modal_overlay_tick is not None:
+              self._modal_overlay_tick()
+            yield False
+          else:
+            yield True
 
         if self._render_texture:
           rl.end_texture_mode()

@@ -12,16 +12,8 @@
 #include <string>
 #include <vector>
 
-#ifdef __TICI__
-#include "CL/cl_ext_qcom.h"
-#else
-#define CL_PRIORITY_HINT_HIGH_QCOM NULL
-#define CL_CONTEXT_PRIORITY_HINT_QCOM NULL
-#endif
-
 #include "media/cam_sensor_cmn_header.h"
 
-#include "common/clutil.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 
@@ -57,7 +49,7 @@ public:
 
   CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config) {};
   ~CameraState();
-  void init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
+  void init(VisionIpcServer *v);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
   void set_exposure_rect();
@@ -68,8 +60,8 @@ public:
   }
 };
 
-void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
-  camera.camera_open(v, device_id, ctx);
+void CameraState::init(VisionIpcServer *v) {
+  camera.camera_open(v);
 
   if (!camera.enabled) return;
 
@@ -257,11 +249,7 @@ void CameraState::sendState() {
 void camerad_thread() {
   // TODO: centralize enabled handling
 
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-  cl_context ctx = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
-
-  VisionIpcServer v("camerad", device_id, ctx);
+  VisionIpcServer v("camerad");
 
   // *** initial ISP init ***
   SpectraMaster m;
@@ -271,7 +259,7 @@ void camerad_thread() {
   std::vector<std::unique_ptr<CameraState>> cams;
   for (const auto &config : ALL_CAMERA_CONFIGS) {
     auto cam = std::make_unique<CameraState>(&m, config);
-    cam->init(&v, device_id, ctx);
+    cam->init(&v);
     cams.emplace_back(std::move(cam));
   }
 

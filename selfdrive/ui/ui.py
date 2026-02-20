@@ -9,21 +9,26 @@ from openpilot.selfdrive.ui.layouts.main import MainLayout
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
 
+BIG_UI = gui_app.big_ui()
+
 
 def main():
   cores = {5, }
   config_realtime_process(0, 51)
 
-  gui_app.init_window("UI")
-  if gui_app.big_ui():
+  if BIG_UI:
+    gui_app.init_window("UI", new_modal=True)
     main_layout = MainLayout()
   else:
+    gui_app.init_window("UI")
     main_layout = MiciMainLayout()
-  main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+
   for should_render in gui_app.render():
     ui_state.update()
     if should_render:
-      main_layout.render()
+      if not BIG_UI:
+        main_layout.render()
 
       # reaffine after power save offlines our core
       if TICI and os.sched_getaffinity(0) != cores:

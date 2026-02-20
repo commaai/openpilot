@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+export SOURCE_DATE_EPOCH=0
+export ZERO_AR_DATE=1
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 ARCHNAME=$(uname -m)
@@ -32,8 +35,3 @@ rm -rf $DIR/include
 mkdir -p $INSTALL_DIR/lib
 cp $DIR/libyuv/libyuv.a $INSTALL_DIR/lib
 cp -r $DIR/libyuv/include $DIR
-
-## To create universal binary on Darwin:
-## ```
-## lipo -create -output Darwin/libyuv.a path-to-x64/libyuv.a path-to-arm64/libyuv.a
-## ```

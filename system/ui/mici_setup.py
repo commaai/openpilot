@@ -94,12 +94,12 @@ class NetworkConnectivityMonitor:
 class SetupState(IntEnum):
   GETTING_STARTED = 0
   NETWORK_SETUP = 1
-  NETWORK_SETUP_CUSTOM_SOFTWARE = 8
-  SOFTWARE_SELECTION = 2
-  CUSTOM_SOFTWARE = 3
-  DOWNLOADING = 4
-  DOWNLOAD_FAILED = 5
-  CUSTOM_SOFTWARE_WARNING = 6
+  NETWORK_SETUP_CUSTOM_SOFTWARE = 2
+  SOFTWARE_SELECTION = 3
+  CUSTOM_SOFTWARE = 4
+  DOWNLOADING = 5
+  DOWNLOAD_FAILED = 6
+  CUSTOM_SOFTWARE_WARNING = 7
 
 
 class StartPage(Widget):
@@ -457,6 +457,8 @@ class NetworkSetupPage(Widget):
     self._prev_has_internet = False
 
   def set_state(self, state: NetworkSetupState):
+    if self._state == NetworkSetupState.WIFI_PANEL and state != NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.hide_event()
     self._state = state
     if state == NetworkSetupState.WIFI_PANEL:
       self._wifi_ui.show_event()
@@ -478,11 +480,11 @@ class NetworkSetupPage(Widget):
   def show_event(self):
     super().show_event()
     self._state = NetworkSetupState.MAIN
-    self._wifi_ui.show_event()
 
   def hide_event(self):
     super().hide_event()
-    self._wifi_ui.hide_event()
+    if self._state == NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.hide_event()
 
   def _render(self, _):
     if self._state == NetworkSetupState.MAIN:
@@ -590,14 +592,8 @@ class Setup(Widget):
   def _custom_software_warning_back_button_callback(self):
     self._set_state(SetupState.SOFTWARE_SELECTION)
 
-  def _custom_software_warning_continue_button_callback(self):
-    self._set_state(SetupState.CUSTOM_SOFTWARE)
-
   def _getting_started_button_callback(self):
     self._set_state(SetupState.SOFTWARE_SELECTION)
-
-  def _software_selection_back_button_callback(self):
-    self._set_state(SetupState.GETTING_STARTED)
 
   def _software_selection_continue_button_callback(self):
     self.use_openpilot()
@@ -643,7 +639,7 @@ class Setup(Widget):
       if result == DialogResult.CANCEL:
         self._set_state(SetupState.SOFTWARE_SELECTION)
 
-    keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
+    keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result)
     gui_app.set_modal_overlay(keyboard, callback=handle_keyboard_exit)
 
   def use_openpilot(self):
