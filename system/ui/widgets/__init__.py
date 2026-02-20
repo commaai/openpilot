@@ -376,10 +376,12 @@ class NavWidget(Widget, abc.ABC):
   def _layout(self):
     # Dim whatever is behind this widget, fading with position (runs after _update_state so position is correct)
     overlay_alpha = int(200 * max(0.0, min(1.0, 1.0 - self._rect.y / self._rect.height))) if self._rect.height > 0 else 0
-    # rl.draw_rectangle(0, 0, int(self._rect.width), int(self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
-    # clear to black from 0 to 50px for nice fade
-    # rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y - 30), int(self._rect.width), 30, rl.BLANK, rl.Color(150, 0, 0, 100))
-    # rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height + 20), rl.Color(0, 0, 150, 100))
+    rl.draw_rectangle(0, 0, int(self._rect.width), int(self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
+
+    gradient_height = 60
+    bounce_height = 20
+    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y - gradient_height), int(self._rect.width), gradient_height, rl.BLANK, rl.BLACK)
+    rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height + bounce_height), rl.BLACK)
 
   def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
