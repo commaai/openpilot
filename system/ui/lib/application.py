@@ -564,7 +564,6 @@ class GuiApplication:
         if self._new_modal:
           # Only render last widget
           for widget in self._nav_stack[-1:]:
-            # TODO: need scaled sizes?
             widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
           # Yield to allow caller to run non-rendering related code

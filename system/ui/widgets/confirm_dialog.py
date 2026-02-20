@@ -1,5 +1,5 @@
 import pyray as rl
-from typing import Callable
+from collections.abc import Callable
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import DialogResult
