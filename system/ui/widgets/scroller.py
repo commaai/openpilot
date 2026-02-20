@@ -291,7 +291,7 @@ class Scroller(Widget):
 
     # Draw edge shadows on top of scroller content
     if self._edge_shadows:
-      rl.draw_rectangle_gradient_h(int(self._rect.x), 0,
+      rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y),
                                    EDGE_SHADOW_WIDTH, int(self._rect.height),
                                    rl.Color(0, 0, 0, 204), rl.BLANK)
 
