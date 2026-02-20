@@ -3,14 +3,14 @@ from enum import IntEnum
 from collections.abc import Callable
 
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici, WifiIcon, normalize_ssid
+from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici, WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import NavWidget
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType, ConnectStatus
+from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType, ConnectStatus, normalize_ssid
 
 
 class NetworkPanelType(IntEnum):
