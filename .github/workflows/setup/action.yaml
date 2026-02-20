@@ -46,7 +46,7 @@ runs:
           scons-${{ runner.arch }}
     - shell: bash
       name: Install dependencies
-      run: ./tools/ubuntu_setup.sh
+      run: PYTHONWARNINGS=default ./tools/ubuntu_setup.sh
     - shell: bash
       name: Setup cache symlinks
       run: |
