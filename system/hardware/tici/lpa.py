@@ -17,6 +17,7 @@ DEFAULT_TIMEOUT = 5.0
 # https://euicc-manual.osmocom.org/docs/lpa/applet-id/
 ISDR_AID = "A0000005591010FFFFFFFF8900000100"
 ES10X_MSS = 120
+DEBUG = os.environ.get("DEBUG") == "1"
 
 # TLV Tags
 TAG_ICCID = 0x5A
@@ -32,9 +33,9 @@ def b64e(data: bytes) -> str:
 
 
 class AtClient:
-  def __init__(self, device: str, baud: int, timeout: float, verbose: bool) -> None:
+  def __init__(self, device: str, baud: int, timeout: float, debug: bool) -> None:
     self.serial = serial.Serial(device, baudrate=baud, timeout=timeout)
-    self.verbose = verbose
+    self.debug = debug
     self.channel: str | None = None
     self.serial.reset_input_buffer()
 
@@ -47,7 +48,7 @@ class AtClient:
       self.serial.close()
 
   def send(self, cmd: str) -> None:
-    if self.verbose:
+    if self.debug:
       print(f">> {cmd}", file=sys.stderr)
     self.serial.write((cmd + "\r").encode("ascii"))
 
@@ -60,7 +61,7 @@ class AtClient:
       line = raw.decode(errors="ignore").strip()
       if not line:
         continue
-      if self.verbose:
+      if self.debug:
         print(f"<< {line}", file=sys.stderr)
       if line == "OK":
         return lines
@@ -217,7 +218,7 @@ class TiciLPA(LPABase):
   def __init__(self):
     if hasattr(self, '_client'):
       return
-    self._client = AtClient(DEFAULT_DEVICE, DEFAULT_BAUD, DEFAULT_TIMEOUT, verbose=os.environ.get("DEBUG") == "1")
+    self._client = AtClient(DEFAULT_DEVICE, DEFAULT_BAUD, DEFAULT_TIMEOUT, debug=DEBUG)
     self._client.open_isdr()
     atexit.register(self._client.close)
 
