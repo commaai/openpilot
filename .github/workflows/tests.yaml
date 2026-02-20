@@ -18,7 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RUN: PATH=$GITHUB_WORKSPACE/.venv/bin:$PATH CI=1 PYTHONPATH=$PWD bash -c
+  CI: 1
+  PYTHONPATH: ${{ github.workspace }}
   PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
@@ -32,6 +33,7 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
+      PYTHONPATH: /tmp/releasepilot
     steps:
     - uses: actions/checkout@v6
       with:
@@ -48,14 +50,12 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot and run checks
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
-      run: |
-        cd $STRIPPED_DIR
-        ${{ env.RUN }} "python3 system/manager/build.py"
+      working-directory: ${{ env.STRIPPED_DIR }}
+      run: python3 system/manager/build.py
     - name: Run tests
       timeout-minutes: 1
-      run: |
-        cd $STRIPPED_DIR
-        ${{ env.RUN }} "release/check-dirty.sh"
+      working-directory: ${{ env.STRIPPED_DIR }}
+      run: release/check-dirty.sh
     - name: Check submodules
       if: github.repository == 'commaai/openpilot'
       timeout-minutes: 3
@@ -123,7 +123,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Static analysis
       timeout-minutes: 1
-      run: ${{ env.RUN }} "scripts/lint/lint.sh"
+      run: scripts/lint/lint.sh
 
   unit_tests:
     name: unit tests
@@ -140,14 +140,14 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
       id: setup-step
     - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
+      run: scons -j$(nproc)
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
-        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        # Pre-compile Python bytecode so each pytest worker doesn't need to
-                        $PYTEST --collect-only -m 'not slow' -qq && \
-                        MAX_EXAMPLES=1 $PYTEST -m 'not slow'"
+        source selfdrive/test/setup_xvfb.sh
+        # Pre-compile Python bytecode so each pytest worker doesn't need to
+        $PYTEST --collect-only -m 'not slow' -qq
+        MAX_EXAMPLES=1 $PYTEST -m 'not slow'
 
   process_replay:
     name: process replay
@@ -170,13 +170,11 @@ jobs:
         path: /tmp/comma_download_cache
         key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/test_processes.py') }}
     - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+      run: scons -j$(nproc)
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
-      run: |
-        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc)"
+      run: selfdrive/test/process_replay/test_processes.py -j$(nproc)
     - name: Print diff
       id: print-diff
       if: always()
@@ -210,9 +208,9 @@ jobs:
     - name: Run regen
       if: false
       timeout-minutes: 4
-      run: |
-        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                        chmod -R 777 /tmp/comma_download_cache"
+      env:
+        ONNXCPU: 1
+      run: $PYTEST selfdrive/test/process_replay/test_regen.py
 
   simulator_driving:
     name: simulator driving
@@ -230,14 +228,13 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
       id: setup-step
     - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+      run: scons -j$(nproc)
     - name: Driving test
       timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
       run: |
-        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        source selfdrive/test/setup_vsound.sh && \
-                        CI=1 pytest -s tools/sim/tests/test_metadrive_bridge.py"
+        source selfdrive/test/setup_xvfb.sh
+        source selfdrive/test/setup_vsound.sh
+        pytest -s tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report
@@ -253,12 +250,12 @@ jobs:
           submodules: true
       - uses: ./.github/workflows/setup-with-retry
       - name: Build openpilot
-        run: ${{ env.RUN }} "scons -j$(nproc)"
+        run: scons -j$(nproc)
       - name: Create UI Report
-        run: >
-          ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh &&
-                          python3 selfdrive/ui/tests/diff/replay.py &&
-                          python3 selfdrive/ui/tests/diff/replay.py --big"
+        run: |
+          source selfdrive/test/setup_xvfb.sh
+          python3 selfdrive/ui/tests/diff/replay.py
+          python3 selfdrive/ui/tests/diff/replay.py --big
       - name: Upload UI Report
         uses: actions/upload-artifact@v6
         with:

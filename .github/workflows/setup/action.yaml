@@ -49,4 +49,6 @@ runs:
       run: ./tools/op.sh setup
     - shell: bash
       name: Setup cache dirs
-      run: mkdir -p /tmp/comma_download_cache
+      run: |
+        mkdir -p /tmp/comma_download_cache
+        echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
