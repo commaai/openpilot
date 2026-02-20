@@ -160,12 +160,11 @@ class PairingDialog(Widget):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("pairing device")
+  gui_app.init_window("pairing device", new_modal=True)
   pairing = PairingDialog()
+  gui_app.push_widget(pairing)
   try:
     for _ in gui_app.render():
-      result = pairing.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-      if result != -1:
-        break
+      pass
   finally:
     del pairing

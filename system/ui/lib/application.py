@@ -401,16 +401,19 @@ class GuiApplication:
   def pop_widget(self):
     assert self._new_modal
 
-    # reenable previous widget if exists and show event to allow it to update state if needed (e.g. refresh after settings change)
-    if len(self._nav_stack.widgets) > 1:
-      prev_widget = self._nav_stack.widgets[-2]
-      print('Re-enabling and show_event for', prev_widget.__class__.__name__)
-      # prev_widget.show_event()
-      prev_widget.set_enabled(True)
-    if len(self._nav_stack.widgets) > 1:
-      print('Popping and hide_event for', self._nav_stack.widgets[-1].__class__.__name__)
-      widget = self._nav_stack.widgets.pop()
-      widget.hide_event()
+    if len(self._nav_stack.widgets) < 2:
+      cloudlog.warning("At least one widget should remain on the stack, ignoring pop")
+      return
+
+    # re-enable previous widget and show event to allow it to update state if needed (e.g. refresh after settings change)
+    prev_widget = self._nav_stack.widgets[-2]
+    print('Re-enabling and show_event for', prev_widget.__class__.__name__)
+    # prev_widget.show_event()
+    prev_widget.set_enabled(True)
+
+    print('Popping and hide_event for', self._nav_stack.widgets[-1].__class__.__name__)
+    widget = self._nav_stack.widgets.pop()
+    widget.hide_event()
     print()
 
   def pop_widgets_to(self, widget):

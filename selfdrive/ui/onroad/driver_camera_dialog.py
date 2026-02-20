@@ -100,12 +100,12 @@ class DriverCameraDialog(CameraView):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("Driver Camera View")
+  gui_app.init_window("Driver Camera View", new_modal=True)
 
   driver_camera_view = DriverCameraDialog()
+  gui_app.push_widget(driver_camera_view)
   try:
     for _ in gui_app.render():
       ui_state.update()
-      driver_camera_view.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     driver_camera_view.close()
