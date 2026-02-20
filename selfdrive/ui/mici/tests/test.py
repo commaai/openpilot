@@ -105,13 +105,7 @@ for test_widget in (
         if r is obj:
           continue
 
-        if isinstance(r, dict):
-          for attr, val in list(r.items()):
-            if val is obj:
-              owners = [o for o in gc.get_referrers(r) if o is not obj and not isinstance(o, list)]
-              owner_names = [f"{type(o).__module__}.{type(o).__qualname__}" for o in owners[:3]]
-              print(f"  dict['{attr}'] (owned by: {owner_names})")
-        elif hasattr(r, '__self__') and r.__self__ is not obj:
+        if hasattr(r, '__self__') and r.__self__ is not obj:
           print(f"  bound method: {type(r.__self__).__qualname__}.{r.__name__}")
         elif hasattr(r, '__func__'):
           print(f"  method: {r.__name__}")
