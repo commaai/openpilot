@@ -81,30 +81,30 @@ def get_all_widgets(widget: Widget) -> list[Widget]:
 # widget = onboarding.TrainingGuide()
 # widget = DriverCameraDialog()
 # widget = SettingsLayout()
-for _widget in (
+for test_widget in (
     onboarding.TrainingGuide,
   # onboarding.TrainingGuideDMTutorial(continue_callback=lambda: None),
 ):
 
-  widget = _widget()
+  widget = test_widget()
   widget_ref = weakref.ref(widget)
+
   all_widgets = get_all_widgets(widget) + [widget]
 
   all_refs = [weakref.ref(w) for w in all_widgets]
   print('testing on', all_widgets)
 
-  del widget
+  del widget, all_widgets
 
-  for weakref in all_refs:
-    if weakref() is not None:
-      print(f"\n===  Widget {type(weakref()).__module__}.{type(weakref()).__qualname__} alive after del: True")
-  # leaked = widget_ref() is not None
-  # print(f"  Widget {type(widget_ref()).__module__}.{type(widget_ref()).__qualname__} alive after del: {leaked}")
+  for ref in all_refs:
+    if ref() is not None:
+      print(f"\n===  Widget {type(ref()).__module__}.{type(ref()).__qualname__} alive after del: True")
 
-      obj = widget_ref()
+      obj = ref()
       for r in gc.get_referrers(obj):
         if r is obj:
           continue
+
         if isinstance(r, dict):
           for attr, val in list(r.items()):
             if val is obj:
