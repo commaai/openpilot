@@ -87,7 +87,7 @@ class DriverCameraDialog(NavWidget):
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       rl.end_scissor_mode()
       self._publish_alert_sound(None)
-      return -1
+      return
 
     driver_data = self._draw_face_detection(rect)
     if driver_data is not None:
@@ -105,7 +105,7 @@ class DriverCameraDialog(NavWidget):
     self._render_dm_alerts(rect)
 
     rl.end_scissor_mode()
-    return -1
+    return
 
   def _publish_alert_sound(self, dm_state):
     """Publish selfdriveState with only alertSound field set"""

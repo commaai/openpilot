@@ -47,8 +47,6 @@ class MiciFccModal(NavWidget):
 
     rl.draw_texture_ex(self._fcc_logo, fcc_pos, 0.0, 1.0, rl.WHITE)
 
-    return -1
-
 
 def _engaged_confirmation_callback(callback: Callable, action_text: str):
   if not ui_state.engaged:

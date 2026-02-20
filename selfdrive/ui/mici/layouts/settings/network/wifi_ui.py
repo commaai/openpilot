@@ -343,8 +343,6 @@ class NetworkInfoPage(NavWidget):
         self._forget_btn.rect.height,
       ))
 
-    return -1
-
 
 class WifiUIMici(BigMultiOptionDialog):
   def __init__(self, wifi_manager: WifiManager):

@@ -42,7 +42,7 @@ class DriverCameraSetupDialog(DriverCameraDialog):
       gui_label(rect, tr("camera starting"), font_size=64, font_weight=FontWeight.BOLD,
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       rl.end_scissor_mode()
-      return -1
+      return
 
     # Position dmoji on opposite side from driver
     is_rhd = self.driver_state_renderer.is_rhd
@@ -55,7 +55,6 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     self._draw_face_detection(rect)
 
     rl.end_scissor_mode()
-    return -1
 
 
 class TrainingGuidePreDMTutorial(SetupTermsPage):
@@ -369,7 +368,6 @@ class TrainingGuide(Widget):
     rl.draw_rectangle_rec(self._rect, rl.BLACK)
     if self._step < len(self._steps):
       self._steps[self._step].render(self._rect)
-    return -1
 
 
 class DeclinePage(Widget):
@@ -492,4 +490,3 @@ class OnboardingWindow(NavWidget):
       self._training_guide.render(self._rect)
     elif self._state == OnboardingState.DECLINE:
       self._decline_page.render(self._rect)
-    return -1

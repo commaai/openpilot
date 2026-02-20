@@ -85,8 +85,6 @@ class PairingDialog(NavWidget):
     rl.draw_texture_ex(self._txt_pair, rl.Vector2(label_x, self._rect.y + self._rect.height - self._txt_pair.height - 16),
                        0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.35)))
 
-    return -1
-
   def _render_qr_code(self) -> None:
     if not self._qr_texture:
       error_font = gui_app.font(FontWeight.BOLD)

@@ -132,9 +132,6 @@ class FirehoseLayoutBase(Widget):
       y = self._draw_wrapped_text(x, y, w, tr(answer), gui_app.font(FontWeight.ROMAN), 32, self.LIGHT_GRAY)
       y += 20
 
-    # return value not used by NavWidget
-    return -1
-
   def _draw_wrapped_text(self, x, y, width, text, font, font_size, color):
     wrapped = wrap_text(font, text, font_size, width)
     for line in wrapped:
