@@ -10,9 +10,7 @@ import threading
 import platform
 import subprocess
 from contextlib import contextmanager
-from collections.abc import Callable
 from collections import deque
-from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
@@ -113,12 +111,6 @@ def font_fallback(font: rl.Font) -> rl.Font:
   if multilang.requires_unifont():
     return gui_app.font(FontWeight.UNIFONT)
   return font
-
-
-@dataclass
-class ModalOverlay:
-  overlay: object = None
-  callback: Callable | None = None
 
 
 class MousePos(NamedTuple):
@@ -226,10 +218,6 @@ class GuiApplication:
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
     self._window_close_requested = False
-    self._modal_overlay = ModalOverlay()
-    self._modal_overlay_shown = False
-    self._modal_overlay_tick: Callable[[], None] | None = None
-
     self._nav_stack: list[object] = []
 
     self._mouse = MouseState(self._scale)
@@ -617,33 +605,6 @@ class GuiApplication:
   @property
   def height(self):
     return self._height
-
-  def _handle_modal_overlay(self) -> bool:
-    if self._modal_overlay.overlay:
-      if hasattr(self._modal_overlay.overlay, 'render'):
-        result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
-      elif callable(self._modal_overlay.overlay):
-        result = self._modal_overlay.overlay()
-      else:
-        raise Exception
-
-      # Send show event to Widget
-      if not self._modal_overlay_shown and hasattr(self._modal_overlay.overlay, 'show_event'):
-        self._modal_overlay.overlay.show_event()
-        self._modal_overlay_shown = True
-
-      if result >= 0:
-        # Clear the overlay and execute the callback
-        original_modal = self._modal_overlay
-        self._modal_overlay = ModalOverlay()
-        if hasattr(original_modal.overlay, 'hide_event'):
-          original_modal.overlay.hide_event()
-        if original_modal.callback is not None:
-          original_modal.callback(result)
-      return True
-    else:
-      self._modal_overlay_shown = False
-      return False
 
   def _load_fonts(self):
     for font_weight_file in FontWeight:
