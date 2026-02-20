@@ -10,6 +10,9 @@ tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
 
+def estimate_pickle_max_size(onnx_size):
+  return 1.2 * onnx_size  + 1 * 1024 * 1024  # 20% + 10MB is plenty
+
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
@@ -36,7 +39,8 @@ for cam in [_ar_ox_fisheye, _os_fisheye]:
 def chunk_warps(target, source, env):
   for t in warp_targets:
     chunk_file(t, 1)
-lenv.Command([t + ".chunk00of01" for t in warp_targets], tinygrad_files + script_files + [chunker_file],
+chunk_targets = sum([get_chunk_paths(t, estimate_pickle_max_size(0)) for t in warp_targets], [])
+lenv.Command(chunk_targets, tinygrad_files + script_files + [chunker_file],
              [compile_warp_cmd, chunk_warps])
 
 def tg_compile(flags, model_name):
@@ -44,7 +48,7 @@ def tg_compile(flags, model_name):
   fn = File(f"models/{model_name}").abspath
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
-  chunk_targets = get_chunk_paths(pkl, os.path.getsize(onnx_path))
+  chunk_targets = get_chunk_paths(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
   def do_chunk(target, source, env):
     chunk_file(pkl, len(chunk_targets))
   return lenv.Command(
