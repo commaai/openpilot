@@ -481,11 +481,11 @@ class WifiManagerUI(Widget):
 
 
 def main():
-  gui_app.init_window("Wi-Fi Manager")
-  wifi_ui = WifiManagerUI(WifiManager())
+  gui_app.init_window("Wi-Fi Manager", new_modal=True)
+  gui_app.push_widget(WifiManagerUI(WifiManager()))
 
   for _ in gui_app.render():
-    wifi_ui.render(rl.Rectangle(50, 50, gui_app.width - 100, gui_app.height - 100))
+    pass
 
   gui_app.close()
 

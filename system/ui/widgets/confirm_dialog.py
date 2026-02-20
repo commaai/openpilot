@@ -20,7 +20,6 @@ BACKGROUND_COLOR = rl.Color(27, 27, 27, 255)
 class ConfirmDialog(Widget):
   def __init__(self, text: str, confirm_text: str, cancel_text: str | None = None, rich: bool = False, callback: Callable[[DialogResult], None] | None = None):
     super().__init__()
-    self._callback = callback
     if cancel_text is None:
       cancel_text = tr("Cancel")
     self._label = Label(text, 70, FontWeight.BOLD, text_color=rl.Color(201, 201, 201, 255))
@@ -28,6 +27,7 @@ class ConfirmDialog(Widget):
     self._cancel_button = Button(cancel_text, self._cancel_button_callback)
     self._confirm_button = Button(confirm_text, self._confirm_button_callback, button_style=ButtonStyle.PRIMARY)
     self._rich = rich
+    self._callback = callback
     self._cancel_text = cancel_text
     self._scroller = Scroller([self._html_renderer], line_separator=False, spacing=0)
 
