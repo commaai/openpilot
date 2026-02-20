@@ -116,7 +116,7 @@ def main():
     elif sys.argv[1] == "--format":
       mode = ResetMode.FORMAT
 
-  gui_app.init_window("System Reset", 20, new_modal=True)
+  gui_app.init_window("System Reset", 20)
   reset = Reset(mode)
 
   if mode == ResetMode.FORMAT:

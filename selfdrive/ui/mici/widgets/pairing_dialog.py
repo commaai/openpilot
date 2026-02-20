@@ -103,15 +103,12 @@ class PairingDialog(NavWidget):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("pairing device", new_modal=True)
+  gui_app.init_window("pairing device")
   pairing = PairingDialog()
   gui_app.push_widget(pairing)
   # TODO: black screen?
   try:
     for _ in gui_app.render():
       pass
-      # result = pairing.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-      # if result != -1:
-      #   break
   finally:
     del pairing

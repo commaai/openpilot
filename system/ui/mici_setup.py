@@ -714,13 +714,11 @@ class Setup(Widget):
 
 def main():
   try:
-    gui_app.init_window("Setup", new_modal=True)
+    gui_app.init_window("Setup")
     setup = Setup()
     gui_app.push_widget(setup)
     for _ in gui_app.render():
       pass
-      # if should_render:
-      #   setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     setup.close()
   except Exception as e:
     print(f"Setup error: {e}")

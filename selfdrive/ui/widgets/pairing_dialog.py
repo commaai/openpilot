@@ -160,7 +160,7 @@ class PairingDialog(Widget):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("pairing device", new_modal=True)
+  gui_app.init_window("pairing device")
   pairing = PairingDialog()
   gui_app.push_widget(pairing)
   try:

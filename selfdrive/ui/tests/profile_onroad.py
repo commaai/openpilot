@@ -81,9 +81,8 @@ if __name__ == "__main__":
   if args.headless:
     os.environ['SDL_VIDEODRIVER'] = 'dummy'
 
-  gui_app.init_window("UI Profiling", fps=600, new_modal=True)
+  gui_app.init_window("UI Profiling", fps=600)
   main_layout = MiciMainLayout()
-  main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
   print("Running...")
   patch_submaster(message_chunks)

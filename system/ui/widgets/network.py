@@ -481,7 +481,7 @@ class WifiManagerUI(Widget):
 
 
 def main():
-  gui_app.init_window("Wi-Fi Manager", new_modal=True)
+  gui_app.init_window("Wi-Fi Manager")
   gui_app.push_widget(WifiManagerUI(WifiManager()))
 
   for _ in gui_app.render():
