@@ -2,7 +2,7 @@ import pytest
 import itertools
 import numpy as np
 
-from parameterized import parameterized_class
+from openpilot.common.parameterized import parameterized_class
 from cereal import log
 from openpilot.selfdrive.car.cruise import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
 from cereal import car
