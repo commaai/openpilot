@@ -16,7 +16,7 @@ from openpilot.common.utils import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets import DialogResult, Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import Label
@@ -327,19 +327,20 @@ class Setup(Widget):
   def render_custom_software(self):
     def handle_keyboard_result(result):
       # Enter pressed
-      if result == 1:
+      if result == DialogResult.CONFIRM:
         url = self.keyboard.text
         self.keyboard.clear()
         if url:
           self.download(url)
 
       # Cancel pressed
-      elif result == 0:
+      elif result == DialogResult.CANCEL:
         self.state = SetupState.SOFTWARE_SELECTION
 
     self.keyboard.reset(min_text_size=1)
     self.keyboard.set_title("Enter URL", "for Custom Software")
-    gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
+    self.keyboard.set_callback(handle_keyboard_result)
+    gui_app.push_widget(self.keyboard)
 
   def use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
@@ -435,11 +436,11 @@ class Setup(Widget):
 
 def main():
   try:
-    gui_app.init_window("Setup", 20)
+    gui_app.init_window("Setup", 20, new_modal=True)
     setup = Setup()
-    for should_render in gui_app.render():
-      if should_render:
-        setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    gui_app.push_widget(setup)
+    for _ in gui_app.render():
+      pass
     setup.close()
   except Exception as e:
     print(f"Setup error: {e}")
