@@ -64,8 +64,8 @@ class AtClient:
         print(f"<< {line}", file=sys.stderr)
       if line == "OK":
         return lines
-      if line == "ERROR":
-        raise RuntimeError("AT command failed")
+      if line == "ERROR" or line.startswith("+CME ERROR"):
+        raise RuntimeError(f"AT command failed: {line}")
       lines.append(line)
 
   def query(self, cmd: str) -> list[str]:
@@ -73,6 +73,11 @@ class AtClient:
     return self.expect()
 
   def open_isdr(self) -> None:
+    # close any stale logical channel from a previous crashed session
+    try:
+      self.query("AT+CCHC=1")
+    except RuntimeError:
+      pass
     for line in self.query(f'AT+CCHO="{ISDR_AID}"'):
       if line.startswith("+CCHO:") and (ch := line.split(":", 1)[1].strip()):
         self.channel = ch
