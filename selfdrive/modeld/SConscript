@@ -5,7 +5,6 @@ from openpilot.common.file_chunker import chunk_file, get_chunk_paths
 Import('env', 'arch')
 chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
-CHUNK_BYTES = int(os.environ.get("TG_CHUNK_BYTES", str(45 * 1024 * 1024)))
 
 tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
@@ -43,17 +42,6 @@ lenv.Command([t + ".chunk00of01" for t in warp_targets], tinygrad_files + script
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
-<<<<<<< HEAD
-
-  out = fn + "_tinygrad.pkl"
-  full = out + ".full"
-  parts = out + ".parts"
-
-  full_node = lenv.Command(
-    full,
-    [fn + ".onnx"] + tinygrad_files,
-    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {full}'
-=======
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
   chunk_targets = get_chunk_paths(pkl, os.path.getsize(onnx_path))
@@ -64,19 +52,7 @@ def tg_compile(flags, model_name):
     [onnx_path] + tinygrad_files + [chunker_file],
     [f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
      do_chunk]
->>>>>>> c7691475d (Chunk tinygrad pkl below GitHub max size)
   )
-
-  split_script = File(Dir("#selfdrive/modeld").File("external_pickle.py").abspath)
-  parts_node = lenv.Command(
-    parts,
-    [full_node, split_script, Value(str(CHUNK_BYTES))],
-    [f'python3 {split_script.abspath} {full} {out} {CHUNK_BYTES}', Delete(full)],
-  )
-
-  lenv.NoCache(parts_node)
-  lenv.AlwaysBuild(parts_node)
-  return parts_node
 
 # Compile small models
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
