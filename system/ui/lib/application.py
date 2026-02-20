@@ -100,7 +100,7 @@ class FontWeight(StrEnum):
   MEDIUM = "Inter-Medium.fnt"
   BOLD = "Inter-Bold.fnt"
   SEMI_BOLD = "Inter-SemiBold.fnt"
-  UNIFONT = "unifont.fnt"
+  UNIFONT = "OpFont-Regular-Labels.fnt"
 
   # Small UI fonts
   DISPLAY_REGULAR = "Inter-Regular.fnt"
@@ -108,11 +108,39 @@ class FontWeight(StrEnum):
   DISPLAY = "Inter-Bold.fnt"
 
 
+_OPFONT_WEIGHT = {
+  "Inter-Light.fnt": "Regular",
+  "Inter-Regular.fnt": "Regular",
+  "Inter-Medium.fnt": "Medium",
+  "Inter-SemiBold.fnt": "SemiBold",
+  "Inter-Bold.fnt": "Bold",
+}
+
+
+def _opfont_filename(inter_filename: str, lang_code: str) -> str:
+  """Map an Inter font filename to the equivalent OpFont filename for a language."""
+  weight_name = _OPFONT_WEIGHT.get(inter_filename, "Regular")
+  return f"OpFont-{weight_name}-{lang_code}.fnt"
+
+
 def font_fallback(font: rl.Font) -> rl.Font:
-  """Fall back to unifont for languages that require it."""
-  if multilang.requires_unifont():
-    return gui_app.font(FontWeight.UNIFONT)
-  return font
+  """Ensure the font is from the current language's font set.
+
+  Widgets may cache rl.Font references. After a language switch, those references
+  are stale (freed GPU texture). This catches them and returns the current equivalent.
+  """
+  if not gui_app._font_remap:
+    return font  # no language switch has occurred
+  # Check if this is a currently loaded font (handles texture ID reuse)
+  for f in gui_app._fonts.values():
+    if font.texture.id == f.texture.id:
+      return f
+  # Stale reference — look up the original weight and return current font for it
+  weight = gui_app._font_remap.get(font.texture.id)
+  if weight:
+    return gui_app.font(weight)
+  return gui_app.font(FontWeight.NORMAL)
+
 
 
 @dataclass
@@ -201,6 +229,8 @@ class GuiApplication:
     self._set_log_callback()
 
     self._fonts: dict[FontWeight, rl.Font] = {}
+    self._active_lang_code: str = ""
+    self._font_remap: dict[int, FontWeight] = {}  # old texture ID → weight (for stale references)
     self._width = width if width is not None else GuiApplication._default_width()
     self._height = height if height is not None else GuiApplication._default_height()
 
@@ -471,6 +501,7 @@ class GuiApplication:
     for font in self._fonts.values():
       rl.unload_font(font)
     self._fonts = {}
+    self._active_lang_code = ""
 
     if self._render_texture is not None:
       rl.unload_render_texture(self._render_texture)
@@ -579,6 +610,21 @@ class GuiApplication:
       pass
 
   def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
+    if font_weight not in self._fonts:
+      # For languages need unifont, load OpFont instead of Inter (except labels font)
+      if multilang.requires_unifont() and font_weight != FontWeight.UNIFONT:
+        filename = _opfont_filename(font_weight.value, self._active_lang_code)
+      else:
+        filename = font_weight.value
+      with as_file(FONT_DIR) as fspath:
+        fnt_path = fspath / filename
+        # Fall back to Regular weight if requested weight doesn't exist
+        if not fnt_path.exists() and multilang.requires_unifont():
+          filename = f"OpFont-Regular-{self._active_lang_code}.fnt"
+          fnt_path = fspath / filename
+        font = rl.load_font(fnt_path.as_posix())
+        rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        self._fonts[font_weight] = font
     return self._fonts[font_weight]
 
   @property
@@ -617,14 +663,27 @@ class GuiApplication:
       return False
 
   def _load_fonts(self):
-    for font_weight_file in FontWeight:
-      with as_file(FONT_DIR) as fspath:
-        fnt_path = fspath / font_weight_file
-        font = rl.load_font(fnt_path.as_posix())
-        if font_weight_file != FontWeight.UNIFONT:
-          rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        self._fonts[font_weight_file] = font
-    rl.gui_set_font(self._fonts[FontWeight.NORMAL])
+    self._active_lang_code = multilang.language
+    rl.gui_set_font(self.font(FontWeight.NORMAL))
+
+  def on_language_changed(self, lang_code: str):
+    # Map old texture IDs → weights so we can remap stale references
+    old_weight_by_texture = {f.texture.id: w for w, f in self._fonts.items()}
+    old_fonts = list(self._fonts.values())
+    self._fonts = {}
+    self._active_lang_code = lang_code
+    # Load new fonts for all weights that were active
+    for weight in old_weight_by_texture.values():
+      self.font(weight)
+    # Carry forward existing remap + add new entries (weights are stable across switches)
+    self._font_remap = dict(self._font_remap) | {tid: w for tid, w in old_weight_by_texture.items()}
+    # Now safe to unload old fonts
+    for f in old_fonts:
+      rl.unload_font(f)
+    rl.gui_set_font(self.font(FontWeight.NORMAL))
+    from openpilot.system.ui.lib import text_measure, wrap_text
+    text_measure._cache.clear()
+    wrap_text._cache.clear()
 
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)

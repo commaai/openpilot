@@ -83,6 +83,7 @@ class DeviceLayout(Widget):
       if result == 1 and self._select_language_dialog:
         selected_language = multilang.languages[self._select_language_dialog.selection]
         multilang.change_language(selected_language)
+        gui_app.on_language_changed(selected_language)
         self._update_calib_description()
       self._select_language_dialog = None
 
