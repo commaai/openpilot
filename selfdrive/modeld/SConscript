@@ -11,7 +11,7 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
 
 def estimate_pickle_max_size(onnx_size):
-  return 1.2 * onnx_size  + 1 * 1024 * 1024  # 20% + 10MB is plenty
+  return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
