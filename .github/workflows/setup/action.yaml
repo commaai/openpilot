@@ -34,8 +34,6 @@ runs:
     - id: date
       shell: bash
       run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
     - id: scons-cache
       uses: ./.github/workflows/auto-cache
       with:
