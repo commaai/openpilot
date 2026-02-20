@@ -108,6 +108,10 @@ class Widget(abc.ABC):
     # Keep track of whether mouse down started within the widget's rectangle
     if self.enabled and self.__was_awake:
       self._process_mouse_events()
+    else:
+      # TODO: ideally we emit release events when going disabled
+      self.__is_pressed = [False] * MAX_TOUCH_SLOTS
+      self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
 
     self.__was_awake = device.awake
 
