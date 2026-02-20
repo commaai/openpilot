@@ -215,8 +215,6 @@ class GuiApplication:
     self._scaled_width += self._scaled_width % 2
     self._scaled_height += self._scaled_height % 2
 
-    # TODO: move BIG ui over and deprecate
-    self._new_modal = False
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
     self._ffmpeg_proc: subprocess.Popen | None = None
@@ -232,8 +230,6 @@ class GuiApplication:
     self._modal_overlay_shown = False
     self._modal_overlay_tick: Callable[[], None] | None = None
 
-    # TODO: move over the entire ui and deprecate
-    self._new_modal = False
     self._nav_stack: list[object] = []
 
     self._mouse = MouseState(self._scale)
@@ -268,15 +264,13 @@ class GuiApplication:
   def request_close(self):
     self._window_close_requested = True
 
-  def init_window(self, title: str, fps: int = _DEFAULT_FPS, new_modal: bool = False):
+  def init_window(self, title: str, fps: int = _DEFAULT_FPS):
     with self._startup_profile_context():
       def _close(sig, frame):
         self.close()
         sys.exit(0)
       signal.signal(signal.SIGINT, _close)
       atexit.register(self.close)
-
-      self._new_modal = new_modal
 
       flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
       if ENABLE_VSYNC:
@@ -382,8 +376,6 @@ class GuiApplication:
         break
 
   def push_widget(self, widget: object):
-    assert self._new_modal
-
     # disable previous widget to prevent input processing, but keep rendering for smooth transitions
     if len(self._nav_stack) > 0:
       prev_widget = self._nav_stack[-1]
@@ -397,8 +389,6 @@ class GuiApplication:
     print()
 
   def pop_widget(self):
-    assert self._new_modal
-
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop")
       return
@@ -416,33 +406,14 @@ class GuiApplication:
     print()
 
   def pop_widgets_to(self, widget):
-    assert self._new_modal
-
     # pops all widgets after specified widget
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
 
   def get_active_widget(self):
-    assert self._new_modal
-
     if len(self._nav_stack) > 0:
       return self._nav_stack[-1]
     return None
-
-  def set_modal_overlay(self, overlay, callback: Callable | None = None):
-    assert not self._new_modal, "set_modal_overlay is deprecated, use push_widget instead"
-
-    if self._modal_overlay.overlay is not None:
-      if hasattr(self._modal_overlay.overlay, 'hide_event'):
-        self._modal_overlay.overlay.hide_event()
-
-      if self._modal_overlay.callback is not None:
-        self._modal_overlay.callback(-1)
-
-    self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
-
-  def set_modal_overlay_tick(self, tick_function: Callable | None):
-    self._modal_overlay_tick = tick_function
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -586,25 +557,14 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        if self._new_modal:
-          # TODO: only render top 1 if BIG via flag
-          # Only render top two
-          for widget in self._nav_stack[-2:]:
-            widget.render(rl.Rectangle(0, 0, self.width, self.height))
+        # TODO: only render top 1 if BIG via flag
+        # Only render top two
+        for widget in self._nav_stack[-2:]:
+          widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
-          print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
+        print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
 
-          yield True
-
-        else:
-          # Handle modal overlay rendering and input processing
-          if self._handle_modal_overlay():
-            # Allow a Widget to still run a function while overlay is shown
-            if self._modal_overlay_tick is not None:
-              self._modal_overlay_tick()
-            yield False
-          else:
-            yield True
+        yield True
 
         if self._render_texture:
           rl.end_texture_mode()
