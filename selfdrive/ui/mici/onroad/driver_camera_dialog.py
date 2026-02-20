@@ -35,6 +35,7 @@ class DriverCameraDialog(NavWidget):
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(lambda: gui_app.set_modal_overlay(None))
+    device.add_interactive_timeout_callback(self.close)
     self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
     self.set_back_enabled(not no_escape)
 
