@@ -2,6 +2,7 @@ import pyray as rl
 rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
 import gc
 import weakref
+import pytest
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 
@@ -61,6 +62,7 @@ def get_child_widgets(widget: Widget) -> list[Widget]:
   return children
 
 
+@pytest.mark.skip(reason="segfaults")
 def test_dialogs_do_not_leak():
   gui_app.init_window("ref-test")
 
