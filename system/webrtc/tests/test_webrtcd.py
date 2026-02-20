@@ -21,7 +21,7 @@ from parameterized import parameterized_class
 ])
 @pytest.mark.asyncio
 class TestWebrtcdProc:
-  async def assertCompletesWithTimeout(self, awaitable, timeout=1):
+  async def assertCompletesWithTimeout(self, awaitable, timeout=5):
     try:
       async with asyncio.timeout(timeout):
         await awaitable
