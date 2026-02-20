@@ -1,9 +1,7 @@
 import os
 import pytest
-import json
 import time
 import datetime
-import subprocess
 
 import cereal.messaging as messaging
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
@@ -18,14 +16,14 @@ class TestRawgpsd:
   def setup_class(cls):
     os.environ['GPS_COLD_START'] = '1'
     os.system("sudo systemctl start systemd-resolved")
-    os.system("sudo systemctl restart ModemManager lte")
+    os.system("sudo systemctl restart lte")
     wait_for_modem()
 
   @classmethod
   def teardown_class(cls):
     managed_processes['qcomgpsd'].stop()
     os.system("sudo systemctl restart systemd-resolved")
-    os.system("sudo systemctl restart ModemManager lte")
+    os.system("sudo systemctl restart lte")
 
   def setup_method(self):
     self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
@@ -48,11 +46,12 @@ class TestRawgpsd:
     at_cmd("AT+QGPSDEL=0")
 
   def test_wait_for_modem(self):
-    os.system("sudo systemctl stop ModemManager")
+    # Power cycle modem to test wait_for_modem recovery
+    os.system("/usr/comma/lte/lte.sh stop_blocking")
     managed_processes['qcomgpsd'].start()
     assert not self._wait_for_output(5)
 
-    os.system("sudo systemctl restart ModemManager")
+    os.system("/usr/comma/lte/lte.sh start")
     assert self._wait_for_output(30)
 
   def test_startup_time(self, subtests):
@@ -71,9 +70,8 @@ class TestRawgpsd:
         time.sleep(s)
         managed_processes['qcomgpsd'].stop()
 
-        ls = subprocess.check_output("mmcli -m any --location-status --output-json", shell=True, encoding='utf-8')
-        loc_status = json.loads(ls)
-        assert set(loc_status['modem']['location']['enabled']) <= {'3gpp-lac-ci'}
+        out = at_cmd("AT+QGPS?")
+        assert "QGPS: 0" in out or "ERROR" in out
 
 
   def check_assistance(self, should_be_loaded):

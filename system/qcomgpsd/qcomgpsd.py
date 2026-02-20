@@ -7,7 +7,6 @@ import math
 import time
 import requests
 import shutil
-import subprocess
 import datetime
 from multiprocessing import Process, Event
 from typing import NoReturn
@@ -90,9 +89,15 @@ measurementStatusGlonassFields = {
 def try_setup_logs(diag, logs):
   return setup_logs(diag, logs)
 
+GPS_AT_PORT = '/dev/ttyUSB2'
+
 @retry(attempts=3, delay=1.0)
 def at_cmd(cmd: str) -> str | None:
-  return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
+  from openpilot.system.hardware.tici.modem import at_cmd as _at_cmd
+  resp = _at_cmd(cmd, port=GPS_AT_PORT, timeout=30)
+  if resp is None:
+    raise TimeoutError(f"No response from modem for: {cmd}")
+  return resp
 
 def gps_enabled() -> bool:
   return "QGPS: 1" in at_cmd("AT+QGPS?")
@@ -131,9 +136,12 @@ def downloader_loop(event):
 
 @retry(attempts=5, delay=0.2, ignore_failure=True)
 def inject_assistance():
-  cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
-  subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
-  cloudlog.info("successfully loaded assistance data")
+  from openpilot.system.hardware.tici.modem import ModemPort
+  with ModemPort(GPS_AT_PORT) as m:
+    if m.upload_file(ASSIST_DATA_FILE, "RAM:xtra3grc.bin"):
+      cloudlog.info("successfully loaded assistance data")
+    else:
+      raise RuntimeError("Failed to upload assistance data")
 
 @retry(attempts=5, delay=1.0)
 def setup_quectel(diag: ModemDiag) -> bool:
@@ -210,10 +218,13 @@ def teardown_quectel(diag):
 def wait_for_modem(cmd="AT+QGPS?"):
   cloudlog.warning("waiting for modem to come up")
   while True:
-    ret = subprocess.call(f"mmcli -m any --timeout 10 --command=\"{cmd}\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
-    if ret == 0:
-      return
-    time.sleep(0.1)
+    try:
+      resp = at_cmd(cmd)
+      if resp is not None:
+        return
+    except Exception:
+      pass
+    time.sleep(0.5)
 
 
 def main() -> NoReturn:
