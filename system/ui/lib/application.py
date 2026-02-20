@@ -219,6 +219,7 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._nav_stack: list[object] = []
+    self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -545,9 +546,8 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        # TODO: only render top 1 if BIG via flag
-        # Only render top two
-        for widget in self._nav_stack[-2:]:
+        # Only render top widgets
+        for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
         print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
