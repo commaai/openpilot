@@ -12,7 +12,7 @@ import subprocess
 from contextlib import contextmanager
 from collections.abc import Callable
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import NamedTuple
@@ -121,11 +121,6 @@ class ModalOverlay:
   callback: Callable | None = None
 
 
-@dataclass
-class NavStack:
-  widgets: list[object] = field(default_factory=list)
-
-
 class MousePos(NamedTuple):
   x: float
   y: float
@@ -220,8 +215,6 @@ class GuiApplication:
     self._scaled_width += self._scaled_width % 2
     self._scaled_height += self._scaled_height % 2
 
-    # TODO: move over the entire ui and deprecate
-    self._new_modal = False
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None
     self._ffmpeg_proc: subprocess.Popen | None = None
@@ -234,9 +227,12 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._modal_overlay = ModalOverlay()
-    self._nav_stack = NavStack()
     self._modal_overlay_shown = False
     self._modal_overlay_tick: Callable[[], None] | None = None
+
+    # TODO: move over the entire ui and deprecate
+    self._new_modal = False
+    self._nav_stack: list[object] = []
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -383,38 +379,30 @@ class GuiApplication:
       except Exception:
         break
 
-  def push_widget(self, widget):
+  def push_widget(self, widget: object):
     assert self._new_modal
 
     # disable previous widget to prevent input processing, but keep rendering for smooth transitions
-    if len(self._nav_stack.widgets) > 0:
-      prev_widget = self._nav_stack.widgets[-1]
-      print('Disabling and hide_event for', prev_widget.__class__.__name__)
-      # prev_widget.hide_event()
+    if len(self._nav_stack) > 0:
+      prev_widget = self._nav_stack[-1]
       prev_widget.set_enabled(False)
 
-    print('Pushing and show_event for', widget.__class__.__name__)
-    self._nav_stack.widgets.append(widget)
+    self._nav_stack.append(widget)
     widget.show_event()
-    print()
 
   def pop_widget(self):
     assert self._new_modal
 
-    if len(self._nav_stack.widgets) < 2:
+    if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop")
       return
 
     # re-enable previous widget and show event to allow it to update state if needed (e.g. refresh after settings change)
-    prev_widget = self._nav_stack.widgets[-2]
-    print('Re-enabling and show_event for', prev_widget.__class__.__name__)
-    # prev_widget.show_event()
+    prev_widget = self._nav_stack[-2]
     prev_widget.set_enabled(True)
 
-    print('Popping and hide_event for', self._nav_stack.widgets[-1].__class__.__name__)
-    widget = self._nav_stack.widgets.pop()
+    widget = self._nav_stack.pop()
     widget.hide_event()
-    print()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     assert not self._new_modal, "set_modal_overlay is deprecated, use push_widget instead"
@@ -575,11 +563,9 @@ class GuiApplication:
 
         if self._new_modal:
           # Only render last widget
-          for widget in self._nav_stack.widgets[-1:]:
+          for widget in self._nav_stack[-1:]:
             # TODO: need scaled sizes?
             widget.render(rl.Rectangle(0, 0, self.width, self.height))
-
-          print('widget stack', len(self._nav_stack.widgets), [w.__class__.__name__ for w in self._nav_stack.widgets])
 
           # Yield to allow caller to run non-rendering related code
           yield True
