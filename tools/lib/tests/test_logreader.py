@@ -7,7 +7,7 @@ import os
 import pytest
 import requests
 
-from parameterized import parameterized
+from openpilot.common.parameterized import parameterized
 
 from cereal import log as capnp_log
 from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode

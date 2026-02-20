@@ -10,7 +10,7 @@ from openpilot.system.webrtc.webrtcd import get_stream
 
 import aiortc
 from teleoprtc import WebRTCOfferBuilder
-from parameterized import parameterized_class
+from openpilot.common.parameterized import parameterized_class
 
 
 @parameterized_class(("in_services", "out_services"), [
