@@ -17,7 +17,6 @@ def chunk_file(path, num_chunks):
   actual_num_chunks = max(1, math.ceil(len(data) / CHUNK_SIZE))
   assert num_chunks >= actual_num_chunks, f"expected {num_chunks} chunks but data needs at least {actual_num_chunks}"
 
-  # write out the chunks
   for i in range(num_chunks):
     with open(get_chunk_name(path, i, num_chunks), 'wb') as f:
       f.write(data[i * CHUNK_SIZE:(i + 1) * CHUNK_SIZE])
