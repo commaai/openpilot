@@ -1,13 +1,6 @@
-"""Minimal drop-in replacement for the PyPI ``parameterized`` package.
-
-Implements ``parameterized.expand`` and ``parameterized_class``.
-"""
-
-import inspect
 import sys
-
 import pytest
-
+import inspect
 
 class parameterized:
   @staticmethod
@@ -27,7 +20,6 @@ class parameterized:
       return pytest.mark.parametrize(', '.join(expand_params), normalized)(func)
 
     return decorator
-
 
 def parameterized_class(attrs, input_list=None):
   if isinstance(attrs, list) and (not attrs or isinstance(attrs[0], dict)):
