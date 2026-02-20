@@ -9,8 +9,6 @@ from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
 from selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from selfdrive.ui.mici.layouts.settings.settings import SettingsLayout
 
-gui_app.init_window("onboarding-memory-test")
-
 
 def get_child_widgets(widget: Widget) -> list[Widget]:
   children = []
@@ -21,6 +19,8 @@ def get_child_widgets(widget: Widget) -> list[Widget]:
 
 
 def test_dialogs_do_not_leak():
+  gui_app.init_window("ref-test")
+
   leaked_widgets = set()
 
   for test_widget in (DriverCameraDialog, TrainingGuide, OnboardingWindow):
@@ -52,7 +52,3 @@ def test_dialogs_do_not_leak():
   gui_app.close()
 
   assert not leaked_widgets, f"Leaked widgets: {leaked_widgets}"
-
-
-if __name__ == "__main__":
-  test_dialogs_do_not_leak()
