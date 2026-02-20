@@ -1,7 +1,6 @@
 import os
 import re
 import threading
-import weakref
 from enum import IntEnum
 
 import pyray as rl
@@ -144,12 +143,11 @@ class TermsPage(Widget):
 class DeclinePage(Widget):
   def __init__(self, back_callback=None):
     super().__init__()
-    self_ref = weakref.ref(self)
     self._text = Label(tr("You must accept the Terms and Conditions in order to use openpilot."),
                        font_size=90, font_weight=FontWeight.MEDIUM, text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
     self._back_btn = Button(tr("Back"), click_callback=back_callback)
     self._uninstall_btn = Button(tr("Decline, uninstall openpilot"), button_style=ButtonStyle.DANGER,
-                                 click_callback=lambda: self_ref() and self_ref()._on_uninstall_clicked())
+                                 click_callback=self._on_uninstall_clicked)
 
   def _on_uninstall_clicked(self):
     ui_state.params.put_bool("DoUninstall", True)
@@ -177,13 +175,10 @@ class OnboardingWindow(Widget):
 
     self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
 
-    self_ref = weakref.ref(self)
-
     # Windows
-    self._terms = TermsPage(on_accept=lambda: self_ref() and self_ref()._on_terms_accepted(),
-                            on_decline=lambda: self_ref() and self_ref()._on_terms_declined())
+    self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_terms_declined)
     self._training_guide: TrainingGuide | None = None
-    self._decline_page = DeclinePage(back_callback=lambda: self_ref() and self_ref()._on_decline_back())
+    self._decline_page = DeclinePage(back_callback=self._on_decline_back)
 
   @property
   def completed(self) -> bool:
@@ -207,8 +202,7 @@ class OnboardingWindow(Widget):
 
   def _render(self, _):
     if self._training_guide is None:
-      ref = weakref.ref(self)
-      self._training_guide = TrainingGuide(completed_callback=lambda: ref() and ref()._on_completed_training())
+      self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
 
     if self._state == OnboardingState.TERMS:
       self._terms.render(self._rect)

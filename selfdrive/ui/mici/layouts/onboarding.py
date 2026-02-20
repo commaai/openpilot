@@ -375,8 +375,7 @@ class TrainingGuide(Widget):
 class DeclinePage(Widget):
   def __init__(self, back_callback=None):
     super().__init__()
-    self_ref = weakref.ref(self)
-    self._uninstall_slider = SmallSlider("uninstall openpilot", lambda: self_ref() and self_ref()._on_uninstall())
+    self._uninstall_slider = SmallSlider("uninstall openpilot", self._on_uninstall)
 
     self._back_button = SmallButton("back")
     self._back_button.set_click_callback(back_callback)
@@ -449,13 +448,10 @@ class OnboardingWindow(Widget):
 
     self.set_rect(rl.Rectangle(0, 0, 458, gui_app.height))
 
-    self_ref = weakref.ref(self)
-
     # Windows
-    self._terms = TermsPage(on_accept=lambda: self_ref() and self_ref()._on_terms_accepted(),
-                            on_decline=lambda: self_ref() and self_ref()._on_terms_declined())
-    self._training_guide = TrainingGuide(completed_callback=lambda: self_ref() and self_ref()._on_completed_training())
-    self._decline_page = DeclinePage(back_callback=lambda: self_ref() and self_ref()._on_decline_back())
+    self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_terms_declined)
+    self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
+    self._decline_page = DeclinePage(back_callback=self._on_decline_back)
 
   def show_event(self):
     super().show_event()
