@@ -86,7 +86,6 @@ testing = [
   "pytest-subtests",
   # https://github.com/pytest-dev/pytest-xdist/pull/1229
   "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
-  "pytest-timeout",
   "pytest-asyncio",
   "pytest-mock",
   "pytest-repeat",
@@ -133,7 +132,6 @@ cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
 asyncio_default_fixture_loop_scope = "function"
-#timeout = "30"  # you get this long by default
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
