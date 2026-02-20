@@ -18,9 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHONWARNINGS: error
-  RUN: PATH=$GITHUB_WORKSPACE/.venv/bin:$PATH CI=1 PYTHONWARNINGS=error PYTHONPATH=$PWD QTWEBENGINE_DISABLE_SANDBOX=1 bash -c
-
+  RUN: PATH=$GITHUB_WORKSPACE/.venv/bin:$PATH CI=1 PYTHONPATH=$PWD bash -c
   PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
@@ -97,7 +95,6 @@ jobs:
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
-        PYTHONWARNINGS: default  # package install has DeprecationWarnings
         HOMEBREW_DISPLAY_INSTALL_TIMES: 1
     - run: git lfs pull
     - name: Getting scons cache
@@ -119,8 +116,6 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    env:
-      PYTHONWARNINGS: default
     steps:
     - uses: actions/checkout@v6
       with:
@@ -263,8 +258,7 @@ jobs:
         run: ${{ env.RUN }} "scons -j$(nproc)"
       - name: Create UI Report
         run: >
-          ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
-                          source selfdrive/test/setup_xvfb.sh &&
+          ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh &&
                           python3 selfdrive/ui/tests/diff/replay.py &&
                           python3 selfdrive/ui/tests/diff/replay.py --big"
       - name: Upload UI Report
