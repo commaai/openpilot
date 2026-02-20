@@ -220,7 +220,7 @@ class GuiApplication:
     self._scaled_width += self._scaled_width % 2
     self._scaled_height += self._scaled_height % 2
 
-    # TODO: move BIG ui over and deprecate
+    # TODO: move over the entire and deprecate
     self._new_modal = False
     self._render_texture: rl.RenderTexture | None = None
     self._burn_in_shader: rl.Shader | None = None

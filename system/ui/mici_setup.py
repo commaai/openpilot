@@ -19,7 +19,7 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRoundedButton, SmallerRoundedButton,
                                                 SmallCircleIconButton, WidishRoundedButton, SmallRedPillButton,
                                                 FullRoundedButton)
@@ -96,9 +96,10 @@ class SetupState(IntEnum):
   NETWORK_SETUP = 1
   NETWORK_SETUP_CUSTOM_SOFTWARE = 2
   SOFTWARE_SELECTION = 3
-  DOWNLOADING = 4
-  DOWNLOAD_FAILED = 5
-  CUSTOM_SOFTWARE_WARNING = 6
+  CUSTOM_SOFTWARE = 4
+  DOWNLOADING = 5
+  DOWNLOAD_FAILED = 6
+  CUSTOM_SOFTWARE_WARNING = 7
 
 
 class StartPage(Widget):
@@ -426,10 +427,15 @@ class FailedPage(Widget):
     ))
 
 
+class NetworkSetupState(IntEnum):
+  MAIN = 0
+  WIFI_PANEL = 1
+
+
 class NetworkSetupPage(Widget):
   def __init__(self, wifi_manager, continue_callback: Callable, back_callback: Callable):
     super().__init__()
-    self._wifi_ui = WifiUIMici(wifi_manager)
+    self._wifi_ui = WifiUIMici(wifi_manager, back_callback=lambda: self.set_state(NetworkSetupState.MAIN))
 
     self._no_wifi_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 58, 50)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 58, 50)
@@ -441,33 +447,39 @@ class NetworkSetupPage(Widget):
     self._back_button.set_click_callback(back_callback)
 
     self._wifi_button = SmallerRoundedButton("wifi")
-    self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
-    self._wifi_button.set_enabled(lambda: self.enabled)
+    self._wifi_button.set_click_callback(lambda: self.set_state(NetworkSetupState.WIFI_PANEL))
 
     self._continue_button = WidishRoundedButton("continue")
     self._continue_button.set_enabled(False)
     self._continue_button.set_click_callback(continue_callback)
 
+    self._state = NetworkSetupState.MAIN
     self._prev_has_internet = False
+
+  def set_state(self, state: NetworkSetupState):
+    if self._state == NetworkSetupState.WIFI_PANEL and state != NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.hide_event()
+    self._state = state
+    if state == NetworkSetupState.WIFI_PANEL:
+      self._wifi_ui.show_event()
 
   def set_has_internet(self, has_internet: bool):
     if has_internet:
       self._network_header.set_title("connected to internet")
       self._network_header.set_icon(self._wifi_full_txt)
-      self._continue_button.set_enabled(self.enabled)
+      self._continue_button.set_enabled(True)
     else:
       self._network_header.set_title(self._waiting_text)
       self._network_header.set_icon(self._no_wifi_txt)
       self._continue_button.set_enabled(False)
 
     if has_internet and not self._prev_has_internet:
-      pass
-      # gui_app.pop_widgets_to(self)
+      self.set_state(NetworkSetupState.MAIN)
     self._prev_has_internet = has_internet
 
   def show_event(self):
     super().show_event()
-    self._wifi_ui.show_event()
+    self._state = NetworkSetupState.MAIN
 
   def hide_event(self):
     super().hide_event()
@@ -475,33 +487,36 @@ class NetworkSetupPage(Widget):
       self._wifi_ui.hide_event()
 
   def _render(self, _):
-    self._network_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16,
-      self._rect.width - 32,
-      self._network_header.rect.height,
-    ))
+    if self._state == NetworkSetupState.MAIN:
+      self._network_header.render(rl.Rectangle(
+        self._rect.x + 16,
+        self._rect.y + 16,
+        self._rect.width - 32,
+        self._network_header.rect.height,
+      ))
 
-    self._back_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._back_button.rect.height,
-      self._back_button.rect.width,
-      self._back_button.rect.height,
-    ))
+      self._back_button.render(rl.Rectangle(
+        self._rect.x + 8,
+        self._rect.y + self._rect.height - self._back_button.rect.height,
+        self._back_button.rect.width,
+        self._back_button.rect.height,
+      ))
 
-    self._wifi_button.render(rl.Rectangle(
-      self._rect.x + 8 + self._back_button.rect.width + 10,
-      self._rect.y + self._rect.height - self._wifi_button.rect.height,
-      self._wifi_button.rect.width,
-      self._wifi_button.rect.height,
-    ))
+      self._wifi_button.render(rl.Rectangle(
+        self._rect.x + 8 + self._back_button.rect.width + 10,
+        self._rect.y + self._rect.height - self._wifi_button.rect.height,
+        self._wifi_button.rect.width,
+        self._wifi_button.rect.height,
+      ))
 
-    self._continue_button.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._continue_button.rect.width - 8,
-      self._rect.y + self._rect.height - self._continue_button.rect.height,
-      self._continue_button.rect.width,
-      self._continue_button.rect.height,
-    ))
+      self._continue_button.render(rl.Rectangle(
+        self._rect.x + self._rect.width - self._continue_button.rect.width - 8,
+        self._rect.y + self._rect.height - self._continue_button.rect.height,
+        self._continue_button.rect.width,
+        self._continue_button.rect.height,
+      ))
+    else:
+      self._wifi_ui.render(self._rect)
 
 
 class Setup(Widget):
@@ -518,7 +533,6 @@ class Setup(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
     self._prev_has_internet = False
-    # TODO: fix this if broken
     gui_app.set_modal_overlay_tick(self._modal_overlay_tick)
 
     self._start_page = StartPage()
@@ -560,7 +574,6 @@ class Setup(Widget):
       self._network_setup_page.hide_event()
 
   def _render(self, rect: rl.Rectangle):
-    print(f"Rendering state: {self.state.name}")
     if self.state == SetupState.GETTING_STARTED:
       self._start_page.render(rect)
     elif self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE):
@@ -569,6 +582,8 @@ class Setup(Widget):
       self._software_selection_page.render(rect)
     elif self.state == SetupState.CUSTOM_SOFTWARE_WARNING:
       self._custom_software_warning_page.render(rect)
+    elif self.state == SetupState.CUSTOM_SOFTWARE:
+      self.render_custom_software()
     elif self.state == SetupState.DOWNLOADING:
       self.render_downloading(rect)
     elif self.state == SetupState.DOWNLOAD_FAILED:
@@ -599,13 +614,7 @@ class Setup(Widget):
     if self.state == SetupState.NETWORK_SETUP:
       self.download(OPENPILOT_URL)
     elif self.state == SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE:
-      def handle_keyboard_result(text):
-        url = text.strip()
-        if url:
-          self.download(url)
-
-      keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
-      gui_app.push_widget(keyboard)
+      self._set_state(SetupState.CUSTOM_SOFTWARE)
 
   def close(self):
     self._network_monitor.stop()
@@ -619,6 +628,19 @@ class Setup(Widget):
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_page.set_progress(self.download_progress)
     self._downloading_page.render(rect)
+
+  def render_custom_software(self):
+    def handle_keyboard_result(text):
+      url = text.strip()
+      if url:
+        self.download(url)
+
+    def handle_keyboard_exit(result):
+      if result == DialogResult.CANCEL:
+        self._set_state(SetupState.SOFTWARE_SELECTION)
+
+    keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result)
+    gui_app.set_modal_overlay(keyboard, callback=handle_keyboard_exit)
 
   def use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
@@ -714,13 +736,11 @@ class Setup(Widget):
 
 def main():
   try:
-    gui_app.init_window("Setup", new_modal=True)
+    gui_app.init_window("Setup")
     setup = Setup()
-    gui_app.push_widget(setup)
-    for _ in gui_app.render():
-      pass
-      # if should_render:
-      #   setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    for should_render in gui_app.render():
+      if should_render:
+        setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     setup.close()
   except Exception as e:
     print(f"Setup error: {e}")
