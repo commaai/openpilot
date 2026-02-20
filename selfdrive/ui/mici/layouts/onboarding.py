@@ -123,6 +123,7 @@ class TrainingGuideDMTutorial(Widget):
 
   def __init__(self, continue_callback):
     super().__init__()
+
     self_ref = weakref.ref(self)
 
     self._back_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_question.png", 28, 48))

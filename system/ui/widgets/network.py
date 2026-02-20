@@ -6,7 +6,7 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
+from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType, normalize_ssid
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
@@ -311,12 +311,13 @@ class WifiManagerUI(Widget):
       return
 
     if self.state == UIState.NEEDS_AUTH and self._state_network:
-      self.keyboard.set_title(tr("Wrong password") if self._password_retry else tr("Enter password"), tr("for \"{}\"").format(self._state_network.ssid))
+      self.keyboard.set_title(tr("Wrong password") if self._password_retry else tr("Enter password"),
+                              tr("for \"{}\"").format(normalize_ssid(self._state_network.ssid)))
       self.keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
       gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
     elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
       confirm_dialog = ConfirmDialog("", tr("Forget"), tr("Cancel"))
-      confirm_dialog.set_text(tr("Forget Wi-Fi Network \"{}\"?").format(self._state_network.ssid))
+      confirm_dialog.set_text(tr("Forget Wi-Fi Network \"{}\"?").format(normalize_ssid(self._state_network.ssid)))
       confirm_dialog.reset()
       gui_app.set_modal_overlay(confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
     else:
@@ -445,7 +446,7 @@ class WifiManagerUI(Widget):
   def _on_network_updated(self, networks: list[Network]):
     self._networks = networks
     for n in self._networks:
-      self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55,
+      self._networks_buttons[n.ssid] = Button(normalize_ssid(n.ssid), partial(self._networks_buttons_callback, n), font_size=55,
                                               text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)
       self._networks_buttons[n.ssid].set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid())
       self._forget_networks_buttons[n.ssid] = Button(tr("Forget"), partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
