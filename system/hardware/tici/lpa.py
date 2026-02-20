@@ -204,7 +204,7 @@ def decode_profiles(blob: bytes) -> list[dict]:
 
 
 def list_profiles(client: AtClient) -> list[dict]:
-  return decode_profiles(es10x_command(client, bytes.fromhex("BF2D00")))
+  return decode_profiles(es10x_command(client, TAG_PROFILE_INFO_LIST.to_bytes(2, "big") + b"\x00"))
 
 
 class TiciLPA(LPABase):
