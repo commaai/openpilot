@@ -38,7 +38,7 @@ def run_replay(variant: LayoutVariant) -> None:
   from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
   from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
 
-  gui_app.init_window("ui diff test", fps=FPS)
+  gui_app.init_window("ui diff test", fps=FPS, new_modal=variant == "tizi")
 
   # Dynamically import main layout based on variant
   if variant == "mici":
