@@ -25,7 +25,7 @@ class BigDialogBase(NavWidget, abc.ABC):
     super().__init__()
     self._ret = DialogResult.NO_ACTION
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
+    # self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
 
   def _render(self, _) -> DialogResult:
     """
