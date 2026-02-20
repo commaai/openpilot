@@ -3,7 +3,7 @@ import math
 import os
 from pathlib import Path
 
-CHUNK_SIZE = 49 * 1024 * 1024  # 49MB, under GitHub's 50MB limit
+CHUNK_SIZE = 19 * 1024 * 1024  # 49MB, under GitHub's 50MB limit
 
 def get_chunk_name(name, idx, num_chunks):
   return f"{name}.chunk{idx+1:02d}of{num_chunks:02d}"
@@ -22,6 +22,7 @@ def chunk_file(path, num_chunks):
   for i in range(num_chunks):
     with open(get_chunk_name(path, i, num_chunks), 'wb') as f:
       f.write(data[i * CHUNK_SIZE:(i + 1) * CHUNK_SIZE])
+  os.remove(path)
 
 
 def read_file_chunked(path):
