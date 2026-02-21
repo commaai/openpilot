@@ -46,7 +46,6 @@ def run_replay(variant: LayoutVariant) -> None:
   else:
     from openpilot.selfdrive.ui.layouts.main import MainLayout
   main_layout = MainLayout()
-  gui_app.push_widget(main_layout)
 
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
   script = build_script(pm, main_layout, variant)
