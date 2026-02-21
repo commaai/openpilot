@@ -109,15 +109,6 @@ function op_check_git() {
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
     return 1
   fi
-
-  echo "Checking for git submodules..."
-  for name in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' '); do
-    if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
-      echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
-      return 1
-    fi
-  done
-  echo -e " ↳ [${GREEN}✔${NC}] git submodules found."
 }
 
 function op_check_os() {
@@ -228,16 +219,6 @@ function op_setup() {
   fi
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
-
-  echo "Getting git submodules..."
-  st="$(date +%s)"
-  if ! git submodule update --jobs 4 --init --recursive; then
-    echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
-    loge "ERROR_GIT_SUBMODULES"
-    return 1
-  fi
-  et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
@@ -366,16 +347,11 @@ function op_switch() {
   BRANCH="$1"
 
   git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-  git submodule deinit --all --force
   git fetch "$REMOTE" "$BRANCH"
   git checkout -f FETCH_HEAD
   git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
-  git submodule deinit --all --force
   git reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
-  git submodule update --init --recursive
-  git submodule foreach git reset --hard
-  git submodule foreach git clean -df
 }
 
 function op_start() {

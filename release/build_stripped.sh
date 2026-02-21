@@ -26,14 +26,12 @@ git checkout --orphan tmp
 
 # remove everything except .git
 echo "[-] erasing old openpilot T=$SECONDS"
-git submodule deinit -f --all
 git rm -rf --cached .
 find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
 
 # cleanup before the copy
 cd $SOURCE_DIR
 git clean -xdff
-git submodule foreach --recursive git clean -xdff
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
@@ -42,7 +40,6 @@ cp -pR --parents $(./release/release_files.py) $TARGET_DIR/
 
 # in the directory
 cd $TARGET_DIR
-rm -rf .git/modules/
 rm -f panda/board/obj/panda.bin.signed
 
 # include source commit hash and build date in commit
@@ -63,8 +60,7 @@ date: $DATETIME
 master commit: $GIT_HASH
 "
 
-# should be no submodules or LFS files
-git submodule status
+# should be no LFS files
 if [ ! -z "$(git lfs ls-files)" ]; then
   echo "LFS files detected!"
   exit 1

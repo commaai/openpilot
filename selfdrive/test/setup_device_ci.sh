@@ -76,10 +76,6 @@ safe_checkout() {
   git reset --hard $GIT_COMMIT
   git checkout $GIT_COMMIT
   git clean -xdff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -xdff"
 
   git lfs pull
   (ulimit -n 65535 && git lfs prune)
@@ -102,10 +98,6 @@ unsafe_checkout() {( set -e
   git checkout --force --no-recurse-submodules $GIT_COMMIT
   git reset --hard $GIT_COMMIT
   git clean -dff
-  git submodule sync
-  git submodule foreach --recursive "git reset --hard && git clean -df"
-  git submodule update --init --recursive
-  git submodule foreach --recursive "git reset --hard && git clean -df"
 
   git lfs pull
   (ulimit -n 65535 && git lfs prune)

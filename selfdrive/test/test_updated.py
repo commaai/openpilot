@@ -14,7 +14,6 @@ from openpilot.common.params import Params
 
 @pytest.mark.tici
 class TestUpdated:
-
   def setup_method(self):
     self.updated_proc = None
 
@@ -30,28 +29,21 @@ class TestUpdated:
     self.neos_version = os.path.join(org_dir, "neos_version")
     self.neosupdate_dir = os.path.join(org_dir, "neosupdate")
     with open(self.neos_version, "w") as f:
-      v = subprocess.check_output(r"bash -c 'source launch_env.sh && echo $REQUIRED_NEOS_VERSION'",
-                                  cwd=BASEDIR, shell=True, encoding='utf8').strip()
+      v = subprocess.check_output(r"bash -c 'source launch_env.sh && echo $REQUIRED_NEOS_VERSION'", cwd=BASEDIR, shell=True, encoding='utf8').strip()
       f.write(v)
 
     self.upper_dir = os.path.join(self.staging_dir, "upper")
     self.merged_dir = os.path.join(self.staging_dir, "merged")
     self.finalized_dir = os.path.join(self.staging_dir, "finalized")
 
-    # setup local submodule remotes
-    submodules = subprocess.check_output("git submodule --quiet foreach 'echo $name'",
-                                         shell=True, cwd=BASEDIR, encoding='utf8').split()
-    for s in submodules:
-      sub_path = os.path.join(org_dir, s.split("_repo")[0])
-      self._run(f"git clone {s} {sub_path}.git", cwd=BASEDIR)
-
     # setup two git repos, a remote and one we'll run updated in
-    self._run([
-      f"git clone {BASEDIR} {self.git_remote_dir}",
-      f"git clone {self.git_remote_dir} {self.basedir}",
-      f"cd {self.basedir} && git submodule init && git submodule update",
-      f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
-    ])
+    self._run(
+      [
+        f"git clone {BASEDIR} {self.git_remote_dir}",
+        f"git clone {self.git_remote_dir} {self.basedir}",
+        f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/",
+      ]
+    )
 
     self.params = Params(os.path.join(self.basedir, "persist/params"))
     self.params.clear_all()
@@ -66,9 +58,7 @@ class TestUpdated:
       print(e)
     self.tmp_dir.cleanup()
 
-
   # *** test helpers ***
-
 
   def _run(self, cmd, cwd=None):
     if not isinstance(cmd, list):
@@ -155,10 +145,13 @@ class TestUpdated:
       shutil.rmtree(d)
 
     # commit the changes
-    self._run([
-      "git add -A",
-      "git commit -m 'an update'",
-    ], cwd=self.git_remote_dir)
+    self._run(
+      [
+        "git add -A",
+        "git commit -m 'an update'",
+      ],
+      cwd=self.git_remote_dir,
+    )
 
   def _check_update_state(self, update_available):
     # make sure LastUpdateTime is recent
@@ -180,9 +173,7 @@ class TestUpdated:
     assert os.path.isfile(os.path.join(self.basedir, ".overlay_init"))
     assert os.path.isfile(os.path.join(self.finalized_dir, ".overlay_consistent")) == update_available
 
-
   # *** test cases ***
-
 
   # Run updated for 100 cycles with no update
   def test_no_update(self):
@@ -259,9 +250,7 @@ class TestUpdated:
     ret_code = second_updated.wait(timeout=5)
     assert ret_code is not None
 
-
   # *** test cases with NEOS updates ***
-
 
   # Run updated with no update, make sure it clears the old NEOS update
   def test_clear_neos_cache(self):
@@ -280,11 +269,14 @@ class TestUpdated:
   @pytest.mark.skip("TODO: only runs on device")
   def test_update_with_neos_update(self):
     # bump the NEOS version and commit it
-    self._run([
-      "echo 'export REQUIRED_NEOS_VERSION=3' >> launch_env.sh",
-      "git -c user.name='testy' -c user.email='testy@tester.test' \
+    self._run(
+      [
+        "echo 'export REQUIRED_NEOS_VERSION=3' >> launch_env.sh",
+        "git -c user.name='testy' -c user.email='testy@tester.test' \
        commit -am 'a neos update'",
-    ], cwd=self.git_remote_dir)
+      ],
+      cwd=self.git_remote_dir,
+    )
 
     # run for a cycle to get the update
     self._start_updater()

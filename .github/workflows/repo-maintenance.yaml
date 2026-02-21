@@ -14,8 +14,6 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
       - uses: ./.github/workflows/setup-with-retry
       - name: Update translations
         run: python3 selfdrive/ui/update_translations.py --vanish
@@ -37,8 +35,6 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v6
-      with:
-        submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: uv lock
       run: uv lock --upgrade
@@ -62,13 +58,9 @@ jobs:
           | head -10 \
           | while IFS=$'\t' read size path; do echo "$size  ${path##*/}"; done >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
-    - name: bump submodules
-      run: |
-        git submodule update --remote
-        git add .
     - name: update car docs
       run: |
-        scons -j$(nproc) --minimal opendbc_repo
+        scons -j$(nproc) --minimal
         python selfdrive/car/docs.py
         git add docs/CARS.md
     - name: Create Pull Request
