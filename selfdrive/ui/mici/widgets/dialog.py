@@ -86,10 +86,10 @@ class BigConfirmationDialogV2(BigDialogBase):
     self._slider.set_enabled(lambda: not self._swiping_away)
 
   def _on_confirm(self):
-    if self._confirm_callback:
-      self._confirm_callback()
     if self._exit_on_confirm:
       gui_app.pop_widget()
+    if self._confirm_callback:
+      self._confirm_callback()
 
   def _update_state(self):
     super()._update_state()
@@ -131,9 +131,10 @@ class BigInputDialog(BigDialogBase):
     self._top_right_button_rect = rl.Rectangle(0, 0, 0, 0)
 
     def confirm_callback_wrapper():
-      if confirm_callback:
-        confirm_callback(self._keyboard.text())
+      text = self._keyboard.text()
       gui_app.pop_widget()
+      if confirm_callback:
+        confirm_callback(text)
     self._confirm_callback = confirm_callback_wrapper
 
   def _update_state(self):
