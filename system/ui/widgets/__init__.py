@@ -266,7 +266,7 @@ class NavWidget(Widget, abc.ABC):
     self._back_callback = callback
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
-    # FIXME: disabling this widget on new push widget still causes this widget to track mouse events without mouse down
+    # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
     if not self.back_enabled:
@@ -326,6 +326,7 @@ class NavWidget(Widget, abc.ABC):
     if not self._set_up:
       self._set_up = True
       if hasattr(self, '_scroller'):
+        # TODO: use touch_valid
         original_enabled = self._scroller._enabled
         self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
                                                                                         original_enabled))
@@ -345,7 +346,7 @@ class NavWidget(Widget, abc.ABC):
     if not self.enabled:
       self._back_button_start_pos = None
 
-    # TODO: why not in handle_mouse_event? have to hack above
+    # TODO: why is this not in handle_mouse_event? have to hack above
     if self._back_button_start_pos is not None:
       last_mouse_event = gui_app.last_mouse_event
       # push entire widget as user drags it away
@@ -396,10 +397,6 @@ class NavWidget(Widget, abc.ABC):
       # Animate back to top
       else:
         self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
-
-      # # draw black above widget when dismissing
-      # if self._rect.y > 0:
-      #   rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
 
       self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
       self._nav_bar.render()
