@@ -83,7 +83,7 @@ class BigConfirmationDialogV2(BigDialogBase):
       self._slider = RedBigSlider(title, icon_txt, confirm_callback=self._on_confirm)
     else:
       self._slider = BigSlider(title, icon_txt, confirm_callback=self._on_confirm)
-    self._slider.set_enabled(lambda: not self._swiping_away)
+    self._slider.set_enabled(lambda: self.enabled and not self._swiping_away)
 
   def _on_confirm(self):
     if self._exit_on_confirm:
@@ -115,6 +115,7 @@ class BigInputDialog(BigDialogBase):
                                     font_weight=FontWeight.MEDIUM)
     self._keyboard = MiciKeyboard()
     self._keyboard.set_text(default_text)
+    self._keyboard.set_enabled(lambda: self.enabled)  # for nav stack
     self._minimum_length = minimum_length
 
     self._backspace_held_time: float | None = None
