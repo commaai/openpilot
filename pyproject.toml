@@ -67,7 +67,6 @@ dependencies = [
   # ui
   "raylib > 5.5.0.3",
   "qrcode",
-  "mapbox-earcut",
   "jeepney",
 ]
 
