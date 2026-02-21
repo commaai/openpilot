@@ -248,6 +248,7 @@ class NetworkInfoPage(NavWidget):
         break
     else:
       # network disappeared, close page
+      # TODO: pop_widgets_to, to close potentially open keyboard too
       if gui_app.get_active_widget() == self:
         gui_app.pop_widget()
 
