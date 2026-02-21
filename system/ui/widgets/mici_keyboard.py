@@ -227,6 +227,8 @@ class MiciKeyboard(Widget):
     for current_row, row in zip(self._current_keys, keys, strict=False):
       # not all layouts have the same number of keys
       for current_key, key in zip_repeat(current_row, row):
+        # reset parent rect for new keys
+        key.set_parent_rect(self._rect)
         current_pos = current_key.get_position()
         key.set_position(current_pos[0], current_pos[1], smooth=False)
 
