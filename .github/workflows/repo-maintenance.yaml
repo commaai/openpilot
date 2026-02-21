@@ -48,6 +48,20 @@ jobs:
         echo 'PIP_TREE<<EOF' >> $GITHUB_OUTPUT
         uv pip tree >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
+    - name: venv size
+      id: venv_size
+      run: |
+        echo 'VENV_SIZE<<EOF' >> $GITHUB_OUTPUT
+        echo "Total: $(du -sh .venv | cut -f1)" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "Top 10 by size:" >> $GITHUB_OUTPUT
+        du -sh .venv/lib/python*/site-packages/* 2>/dev/null \
+          | grep -v '\.dist-info' \
+          | grep -v '__pycache__' \
+          | sort -rh \
+          | head -10 \
+          | sed 's|.*/site-packages/||' >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
     - name: bump submodules
       run: |
         git submodule update --remote
@@ -69,6 +83,10 @@ jobs:
         delete-branch: true
         body: |
           Automatic PR from repo-maintenance -> package_updates
+
+          ```
+          ${{ steps.venv_size.outputs.VENV_SIZE }}
+          ```
 
           ```
           ${{ steps.pip_tree.outputs.PIP_TREE }}
