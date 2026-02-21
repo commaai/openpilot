@@ -439,7 +439,6 @@ class WifiManager:
         if time.monotonic() - self._last_network_scan > SCAN_PERIOD_SECONDS:
           self._request_scan()
           self._last_network_scan = time.monotonic()
-      # print('WifiManager active', self._active)
       time.sleep(1 / 2.)
 
   def _wait_for_wifi_device(self):
