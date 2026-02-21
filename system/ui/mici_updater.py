@@ -38,6 +38,7 @@ class Updater(Widget):
 
     self._network_setup_page = NetworkSetupPage(self._wifi_manager, self._network_setup_continue_callback,
                                                 self._network_setup_back_callback)
+    self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
@@ -182,9 +183,9 @@ def main():
   try:
     gui_app.init_window("System Update")
     updater = Updater(updater_path, manifest_path)
-    for should_render in gui_app.render():
-      if should_render:
-        updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    gui_app.push_widget(updater)
+    for _ in gui_app.render():
+      pass
     updater.close()
   except Exception as e:
     print(f"Updater error: {e}")

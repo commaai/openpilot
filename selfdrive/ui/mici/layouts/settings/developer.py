@@ -1,5 +1,4 @@
 import pyray as rl
-from collections.abc import Callable
 
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import Scroller
@@ -13,9 +12,9 @@ from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
 
 
 class DeveloperLayoutMici(NavWidget):
-  def __init__(self, back_callback: Callable):
+  def __init__(self):
     super().__init__()
-    self.set_back_callback(back_callback)
+    self.set_back_callback(gui_app.pop_widget)
 
     def github_username_callback(username: str):
       if username:
@@ -25,16 +24,16 @@ class DeveloperLayoutMici(NavWidget):
           self._ssh_keys_btn.set_value(username)
         else:
           dlg = BigDialog("", ssh_keys._error_message)
-          gui_app.set_modal_overlay(dlg)
+          gui_app.push_widget(dlg)
 
     def ssh_keys_callback():
       github_username = ui_state.params.get("GithubUsername") or ""
       dlg = BigInputDialog("enter GitHub username...", github_username, confirm_callback=github_username_callback)
       if not system_time_valid():
         dlg = BigDialog("Please connect to Wi-Fi to fetch your key", "")
-        gui_app.set_modal_overlay(dlg)
+        gui_app.push_widget(dlg)
         return
-      gui_app.set_modal_overlay(dlg)
+      gui_app.push_widget(dlg)
 
     txt_ssh = gui_app.texture("icons_mici/settings/developer/ssh.png", 56, 64)
     github_username = ui_state.params.get("GithubUsername") or ""

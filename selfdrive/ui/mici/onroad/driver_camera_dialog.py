@@ -34,8 +34,8 @@ class DriverCameraDialog(NavWidget):
     self._pm: messaging.PubMaster | None = None
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(lambda: gui_app.set_modal_overlay(None))
-    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
+      device.add_interactive_timeout_callback(gui_app.pop_widget)
+    self.set_back_callback(gui_app.pop_widget)
     self.set_back_enabled(not no_escape)
 
     # Load eye icons
@@ -87,7 +87,7 @@ class DriverCameraDialog(NavWidget):
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       rl.end_scissor_mode()
       self._publish_alert_sound(None)
-      return -1
+      return
 
     driver_data = self._draw_face_detection(rect)
     if driver_data is not None:
@@ -105,7 +105,7 @@ class DriverCameraDialog(NavWidget):
     self._render_dm_alerts(rect)
 
     rl.end_scissor_mode()
-    return -1
+    return
 
   def _publish_alert_sound(self, dm_state):
     """Publish selfdriveState with only alertSound field set"""
@@ -235,9 +235,9 @@ if __name__ == "__main__":
   gui_app.init_window("Driver Camera View (mici)")
 
   driver_camera_view = DriverCameraDialog()
+  gui_app.push_widget(driver_camera_view)
   try:
     for _ in gui_app.render():
       ui_state.update()
-      driver_camera_view.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     driver_camera_view.close()

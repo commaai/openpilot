@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import pyray as rl
 
 from openpilot.system.hardware import TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
@@ -16,20 +15,15 @@ def main():
   cores = {5, }
   config_realtime_process(0, 51)
 
+  gui_app.init_window("UI")
   if BIG_UI:
-    gui_app.init_window("UI", new_modal=True)
-    main_layout = MainLayout()
+    MainLayout()
   else:
-    gui_app.init_window("UI")
-    main_layout = MiciMainLayout()
-    main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    MiciMainLayout()
 
   for should_render in gui_app.render():
     ui_state.update()
     if should_render:
-      if not BIG_UI:
-        main_layout.render()
-
       # reaffine after power save offlines our core
       if TICI and os.sched_getaffinity(0) != cores:
         try:

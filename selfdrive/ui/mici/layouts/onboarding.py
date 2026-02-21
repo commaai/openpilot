@@ -7,7 +7,7 @@ import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets import Widget, NavWidget
 from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import SmallSlider
@@ -42,7 +42,7 @@ class DriverCameraSetupDialog(DriverCameraDialog):
       gui_label(rect, tr("camera starting"), font_size=64, font_weight=FontWeight.BOLD,
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       rl.end_scissor_mode()
-      return -1
+      return
 
     # Position dmoji on opposite side from driver
     is_rhd = self.driver_state_renderer.is_rhd
@@ -55,7 +55,6 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     self._draw_face_detection(rect)
 
     rl.end_scissor_mode()
-    return -1
 
 
 class TrainingGuidePreDMTutorial(SetupTermsPage):
@@ -367,9 +366,9 @@ class TrainingGuide(Widget):
         self._completed_callback()
 
   def _render(self, _):
+    rl.draw_rectangle_rec(self._rect, rl.BLACK)
     if self._step < len(self._steps):
       self._steps[self._step].render(self._rect)
-    return -1
 
 
 class DeclinePage(Widget):
@@ -438,9 +437,11 @@ class TermsPage(SetupTermsPage):
     ))
 
 
-class OnboardingWindow(Widget):
+class OnboardingWindow(NavWidget):
   def __init__(self):
     super().__init__()
+    self.set_back_enabled(False)
+
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 
@@ -473,7 +474,7 @@ class OnboardingWindow(Widget):
 
   def close(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    gui_app.set_modal_overlay(None)
+    gui_app.pop_widget()
 
   def _on_terms_accepted(self):
     ui_state.params.put("HasAcceptedTerms", terms_version)
@@ -490,4 +491,3 @@ class OnboardingWindow(Widget):
       self._training_guide.render(self._rect)
     elif self._state == OnboardingState.DECLINE:
       self._decline_page.render(self._rect)
-    return -1

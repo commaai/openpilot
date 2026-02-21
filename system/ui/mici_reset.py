@@ -150,10 +150,10 @@ def main():
   if mode == ResetMode.FORMAT:
     reset.start_reset()
 
-  for should_render in gui_app.render():
-    if should_render:
-      if not reset.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height)):
-        break
+  gui_app.push_widget(reset)
+
+  for _ in gui_app.render():
+    pass
 
 
 if __name__ == "__main__":

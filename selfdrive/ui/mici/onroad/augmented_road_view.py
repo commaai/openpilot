@@ -363,7 +363,7 @@ class AugmentedRoadView(CameraView):
 
 if __name__ == "__main__":
   gui_app.init_window("OnRoad Camera View")
-  road_camera_view = AugmentedRoadView(ROAD_CAM)
+  road_camera_view = AugmentedRoadView(lambda: None, stream_type=ROAD_CAM)
   print("***press space to switch camera view***")
   try:
     for _ in gui_app.render():

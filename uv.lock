@@ -743,6 +743,7 @@ source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
+    { name = "av" },
     { name = "casadi" },
     { name = "cffi" },
     { name = "crcmod-plus" },
@@ -757,7 +758,6 @@ dependencies = [
     { name = "pycapnp" },
     { name = "pycryptodome" },
     { name = "pyjwt" },
-    { name = "pyopenssl" },
     { name = "pyserial" },
     { name = "pyzmq" },
     { name = "qrcode" },
@@ -778,7 +778,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "av" },
     { name = "matplotlib" },
     { name = "opencv-python-headless" },
 ]
@@ -809,7 +808,7 @@ tools = [
 requires-dist = [
     { name = "aiohttp" },
     { name = "aiortc" },
-    { name = "av", marker = "extra == 'dev'" },
+    { name = "av" },
     { name = "casadi", specifier = ">=3.6.6" },
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
@@ -831,10 +830,9 @@ requires-dist = [
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
     { name = "pyaudio" },
-    { name = "pycapnp", specifier = "==2.1.0" },
+    { name = "pycapnp" },
     { name = "pycryptodome" },
     { name = "pyjwt" },
-    { name = "pyopenssl", specifier = "<24.3.0" },
     { name = "pyserial" },
     { name = "pytest", marker = "extra == 'testing'" },
     { name = "pytest-asyncio", marker = "extra == 'testing'" },

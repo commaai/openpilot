@@ -219,7 +219,7 @@ class AugmentedRoadView(CameraView):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("OnRoad Camera View", new_modal=True)
+  gui_app.init_window("OnRoad Camera View")
   road_camera_view = AugmentedRoadView(ROAD_CAM)
   gui_app.push_widget(road_camera_view)
   print("***press space to switch camera view***")

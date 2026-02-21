@@ -272,7 +272,7 @@ if __name__ == "__main__":
       print("Canceled")
     gui_app.request_close()
 
-  gui_app.init_window("Keyboard", new_modal=True)
+  gui_app.init_window("Keyboard")
   keyboard = Keyboard(min_text_size=8, show_password_toggle=True, callback=callback)
   keyboard.set_title("Keyboard Input", "Type your text below")
 

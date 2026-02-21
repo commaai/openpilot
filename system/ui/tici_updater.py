@@ -160,7 +160,7 @@ def main():
   manifest_path = sys.argv[2]
 
   try:
-    gui_app.init_window("System Update", new_modal=True)
+    gui_app.init_window("System Update")
     gui_app.push_widget(Updater(updater_path, manifest_path))
     for _ in gui_app.render():
       pass

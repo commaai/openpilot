@@ -108,6 +108,10 @@ class Widget(abc.ABC):
     # Keep track of whether mouse down started within the widget's rectangle
     if self.enabled and self.__was_awake:
       self._process_mouse_events()
+    else:
+      # TODO: ideally we emit release events when going disabled
+      self.__is_pressed = [False] * MAX_TOUCH_SLOTS
+      self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
 
     self.__was_awake = device.awake
 
@@ -181,6 +185,7 @@ class Widget(abc.ABC):
 
   def show_event(self):
     """Optionally handle show event. Parent must manually call this"""
+    # TODO: iterate through all child objects, check for subclassing from Widget/Layout (Scroller)
 
   def hide_event(self):
     """Optionally handle hide event. Parent must manually call this"""
@@ -261,6 +266,7 @@ class NavWidget(Widget, abc.ABC):
     self._back_callback = callback
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
+    # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
     if not self.back_enabled:
@@ -320,13 +326,14 @@ class NavWidget(Widget, abc.ABC):
     if not self._set_up:
       self._set_up = True
       if hasattr(self, '_scroller'):
+        # TODO: use touch_valid
         original_enabled = self._scroller._enabled
-        self._scroller.set_enabled(lambda: not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                       original_enabled))
+        self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
+                                                                                        original_enabled))
       elif hasattr(self, '_scroll_panel'):
         original_enabled = self._scroll_panel.enabled
-        self._scroll_panel.set_enabled(lambda: not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                          original_enabled))
+        self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
+                                                                                            original_enabled))
 
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
@@ -336,6 +343,10 @@ class NavWidget(Widget, abc.ABC):
 
     new_y = 0.0
 
+    if not self.enabled:
+      self._back_button_start_pos = None
+
+    # TODO: why is this not in handle_mouse_event? have to hack above
     if self._back_button_start_pos is not None:
       last_mouse_event = gui_app.last_mouse_event
       # push entire widget as user drags it away
@@ -363,6 +374,14 @@ class NavWidget(Widget, abc.ABC):
 
     self.set_position(self._rect.x, new_y)
 
+  def _layout(self):
+    # Dim whatever is behind this widget, fading with position (runs after _update_state so position is correct)
+    overlay_alpha = int(200 * max(0.0, min(1.0, 1.0 - self._rect.y / self._rect.height))) if self._rect.height > 0 else 0
+    rl.draw_rectangle(0, 0, int(self._rect.width), int(self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
+
+    bounce_height = 20
+    rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height + bounce_height), rl.BLACK)
+
   def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
 
@@ -378,10 +397,6 @@ class NavWidget(Widget, abc.ABC):
       # Animate back to top
       else:
         self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
-
-      # draw black above widget when dismissing
-      if self._rect.y > 0:
-        rl.draw_rectangle(int(self._rect.x), 0, int(self._rect.width), int(self._rect.y), rl.BLACK)
 
       self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
       self._nav_bar.render()
