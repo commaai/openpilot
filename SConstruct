@@ -4,6 +4,7 @@ import sys
 import sysconfig
 import platform
 import shlex
+import shutil
 import numpy as np
 
 import SCons.Errors
@@ -211,7 +212,15 @@ SConscript(['third_party/SConscript'])
 
 SConscript(['selfdrive/SConscript'])
 
-if Dir('#tools/cabana/').exists() and GetOption('extras'):
+# Detect Qt - build cabana if Qt is available
+if arch == "Darwin":
+  has_qt = os.path.isdir(os.path.join(brew_prefix, "opt/qt@5"))
+elif arch == "larch64":
+  has_qt = os.path.isfile(File('#third_party/qt5/larch64/bin/qmake').abspath)
+else:
+  has_qt = shutil.which('qmake') is not None
+
+if Dir('#tools/cabana/').exists() and has_qt:
   SConscript(['tools/replay/SConscript'])
   if arch != "larch64":
     SConscript(['tools/cabana/SConscript'])

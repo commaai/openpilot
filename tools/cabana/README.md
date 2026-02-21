@@ -2,6 +2,41 @@
 
 Cabana is a tool developed to view raw CAN data. One use for this is creating and editing [CAN Dictionaries](http://socialledge.com/sjsu/index.php/DBC_Format) (DBC files), and the tool provides direct integration with [commaai/opendbc](https://github.com/commaai/opendbc) (a collection of DBC files), allowing you to load the DBC files direct from source, and save to your fork. In addition, you can load routes from [comma connect](https://connect.comma.ai).
 
+## Building
+
+Cabana requires Qt5. Install Qt5 before building:
+
+**Ubuntu:**
+```bash
+sudo apt-get install -y --no-install-recommends \
+  qtbase5-dev \
+  qtbase5-dev-tools \
+  qttools5-dev-tools \
+  libqt5charts5-dev \
+  libqt5svg5-dev \
+  libqt5serialbus5-dev \
+  libqt5x11extras5-dev \
+  libqt5opengl5-dev
+```
+
+**macOS:**
+```bash
+brew install qt@5
+brew link qt@5
+```
+
+Once Qt5 is installed, the `cabana` wrapper script will handle building and running automatically:
+```bash
+# from the openpilot root
+tools/cabana/cabana
+```
+
+Or build manually with scons and run the binary directly:
+```bash
+scons -j$(nproc) tools/cabana/_cabana
+tools/cabana/_cabana
+```
+
 ## Usage Instructions
 
 ```bash
