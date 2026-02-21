@@ -256,7 +256,7 @@ class NetworkInfoPage(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-    # Modal overlays stop main UI rendering, so we need to call here
+    # TODO: remove? only left for potential compatibility with setup/updater
     self._wifi_manager.process_callbacks()
 
     if self._network is None:
@@ -412,8 +412,6 @@ class WifiUIMici(BigMultiOptionDialog):
 
     if option in self._networks:
       self._network_info_page.set_current_network(self._networks[option])
-      # self._network_info_page.update_networks(self._networks)
-      # gui_app.set_modal_overlay(self._network_info_page)
       gui_app.push_widget(self._network_info_page)
 
   def _connect_to_network(self, ssid: str):
