@@ -7,7 +7,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from parameterized import parameterized
+from openpilot.common.parameterized import parameterized
 from tqdm import trange
 
 from openpilot.common.params import Params

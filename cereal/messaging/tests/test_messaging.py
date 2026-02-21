@@ -5,7 +5,7 @@ import numbers
 import random
 import threading
 import time
-from parameterized import parameterized
+from openpilot.common.parameterized import parameterized
 import pytest
 
 from cereal import log, car

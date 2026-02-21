@@ -20,25 +20,20 @@ dependencies = [
   # core
   "cffi",
   "scons",
-  "pycapnp==2.1.0",
+  "pycapnp",
   "Cython",
   "setuptools",
   "numpy >=2.0",
 
   # body / webrtcd
+  "av",
   "aiohttp",
   "aiortc",
-  # aiortc does not put an upper bound on pyopenssl and is now incompatible
-  # with the latest release
-  "pyopenssl < 24.3.0",
   "pyaudio",
 
   # panda
   "libusb1",
   "spidev; platform_system == 'Linux'",
-
-  # modeld
-  "onnx >= 1.14.0",
 
   # logging
   "pyzmq",
@@ -67,7 +62,6 @@ dependencies = [
   # ui
   "raylib > 5.5.0.3",
   "qrcode",
-  "mapbox-earcut",
   "jeepney",
 ]
 
@@ -86,7 +80,6 @@ testing = [
   "pytest-subtests",
   # https://github.com/pytest-dev/pytest-xdist/pull/1229
   "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
-  "pytest-timeout",
   "pytest-asyncio",
   "pytest-mock",
   "ruff",
@@ -95,11 +88,8 @@ testing = [
 ]
 
 dev = [
-  "av",
-  "dictdiffer",
   "matplotlib",
   "opencv-python-headless",
-  "parameterized >=0.8, <0.9",
 ]
 
 tools = [
@@ -127,7 +117,6 @@ cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
 asyncio_default_fixture_loop_scope = "function"
-#timeout = "30"  # you get this long by default
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",

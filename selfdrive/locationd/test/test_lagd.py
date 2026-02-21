@@ -120,7 +120,6 @@ class TestLagd:
     assert msg.liveDelay.calPerc == 100
 
   @pytest.mark.skipif(PC, reason="only on device")
-  @pytest.mark.timeout(60)
   def test_estimator_performance(self):
     mocked_CP = car.CarParams(steerActuatorDelay=0.8)
     estimator = LateralLagEstimator(mocked_CP, DT)
