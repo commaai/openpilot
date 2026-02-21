@@ -32,40 +32,18 @@ mo_alias = env.Alias('mo', mo_build)
 env.AlwaysBuild(mo_alias)
 
 if GetOption('extras'):
-  # build installers
+  # build installers (Python zipapps)
   if arch != "Darwin":
-    raylib_env = env.Clone()
-    raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
-    raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
-
-    raylib_libs = common + ["raylib"]
-    if arch == "larch64":
-      raylib_libs += ["GLESv2", "EGL", "gbm", "drm"]
-    else:
-      raylib_libs += ["GL"]
-
-    release = "release3"
     installers = [
-      ("openpilot", release),
-      ("openpilot_test", f"{release}-staging"),
+      ("openpilot", "release3"),
+      ("openpilot_test", "release3-staging"),
       ("openpilot_nightly", "nightly"),
       ("openpilot_internal", "nightly-dev"),
     ]
-
-    cont = raylib_env.Command("installer/continue_openpilot.o", "installer/continue_openpilot.sh",
-                              "ld -r -b binary -o $TARGET $SOURCE")
-    inter = raylib_env.Command("installer/inter_ttf.o", "installer/inter-ascii.ttf",
-                               "ld -r -b binary -o $TARGET $SOURCE")
-    inter_bold = raylib_env.Command("installer/inter_bold.o", "../assets/fonts/Inter-Bold.ttf",
-                                "ld -r -b binary -o $TARGET $SOURCE")
-    inter_light = raylib_env.Command("installer/inter_light.o", "../assets/fonts/Inter-Light.ttf",
-                                "ld -r -b binary -o $TARGET $SOURCE")
-    for name, branch in installers:
-      d = {'BRANCH': f"'\"{branch}\"'"}
-      if "internal" in name:
-        d['INTERNAL'] = "1"
-
-      obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter, inter_bold, inter_light], LIBS=raylib_libs)
-      # keep installers small
-      assert f[0].get_size() < 1900*1e3, f[0].get_size()
+    build_script = File("installer/build_installer.py")
+    env.Command(
+      [f"installer/installers/installer_{name}" for name, _ in installers],
+      [build_script, "installer/__main__.py", "installer/continue_openpilot.sh",
+       "../assets/fonts/inter-ascii.ttf", "../assets/fonts/Inter-Bold.ttf", "../assets/fonts/Inter-Light.ttf"],
+      f"python3 {build_script.abspath}",
+    )
