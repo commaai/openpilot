@@ -437,14 +437,6 @@ class WifiUIMici(BigMultiOptionDialog):
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
     gui_app.push_widget(dlg)
 
-    # def on_close(result=None):
-    #   gui_app.set_modal_overlay_tick(None)
-    #   self._open_network_manage_page(result)
-    #
-    # # Process wifi callbacks while the keyboard is shown so forgotten clears connecting state
-    # gui_app.set_modal_overlay_tick(self._wifi_manager.process_callbacks)
-    # gui_app.set_modal_overlay(dlg, on_close)
-
   def _render(self, _):
     super()._render(_)
 
