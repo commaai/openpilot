@@ -60,7 +60,7 @@ jobs:
           | grep -v '__pycache__' \
           | sort -rh \
           | head -10 \
-          | sed 's|.*/site-packages/||' >> $GITHUB_OUTPUT
+          | while IFS=$'\t' read size path; do echo "$size  ${path##*/}"; done >> $GITHUB_OUTPUT
         echo 'EOF' >> $GITHUB_OUTPUT
     - name: bump submodules
       run: |
@@ -85,10 +85,12 @@ jobs:
           Automatic PR from repo-maintenance -> package_updates
 
           ```
+          $ du -sh .venv && du -sh .venv/lib/python*/site-packages/* | sort -rh | head -10
           ${{ steps.venv_size.outputs.VENV_SIZE }}
           ```
 
           ```
+          $ uv pip tree
           ${{ steps.pip_tree.outputs.PIP_TREE }}
           ```
         labels: bot
