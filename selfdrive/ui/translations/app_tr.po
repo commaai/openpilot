@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-23 00:50-0700\n"
+"POT-Creation-Date: 2026-02-21 00:33+0000\n"
 "PO-Revision-Date: 2025-10-20 18:19-0700\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,48 +17,48 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: selfdrive/ui/layouts/settings/device.py:160
+#: openpilot/selfdrive/ui/layouts/settings/device.py:151
 #, python-format
 msgid " Steering torque response calibration is complete."
 msgstr " Direksiyon tork tepkisi kalibrasyonu tamamlandı."
 
-#: selfdrive/ui/layouts/settings/device.py:158
+#: openpilot/selfdrive/ui/layouts/settings/device.py:149
 #, python-format
 msgid " Steering torque response calibration is {}% complete."
 msgstr " Direksiyon tork tepkisi kalibrasyonu {}% tamamlandı."
 
-#: selfdrive/ui/layouts/settings/device.py:133
+#: openpilot/selfdrive/ui/layouts/settings/device.py:124
 #, python-format
 msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
 msgstr " Cihazınız {:.1f}° {} ve {:.1f}° {} yönünde konumlandırılmış."
 
-#: selfdrive/ui/layouts/sidebar.py:43
+#: openpilot/selfdrive/ui/layouts/sidebar.py:43
 msgid "--"
 msgstr "--"
 
-#: selfdrive/ui/widgets/prime.py:47
+#: openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "1 year of drive storage"
 msgstr "1 yıl sürüş depolaması"
 
-#: selfdrive/ui/widgets/prime.py:47
+#: openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "24/7 LTE connectivity"
 msgstr "7/24 LTE bağlantısı"
 
-#: selfdrive/ui/layouts/sidebar.py:46
+#: openpilot/selfdrive/ui/layouts/sidebar.py:46
 msgid "2G"
 msgstr "2G"
 
-#: selfdrive/ui/layouts/sidebar.py:47
+#: openpilot/selfdrive/ui/layouts/sidebar.py:47
 msgid "3G"
 msgstr "3G"
 
-#: selfdrive/ui/layouts/sidebar.py:49
+#: openpilot/selfdrive/ui/layouts/sidebar.py:49
 msgid "5G"
 msgstr "5G"
 
-#: selfdrive/ui/layouts/settings/developer.py:23
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:23
 msgid ""
 "<b>WARNING: openpilot longitudinal control is in alpha for this car and will "
 "disable Automatic Emergency Braking (AEB).</b><br><br>On this car, openpilot "
@@ -75,22 +75,17 @@ msgstr ""
 "etkinleştirin. openpilot boylamsal kontrol alfayı etkinleştirirken Deneysel "
 "modu etkinleştirmeniz önerilir."
 
-#: selfdrive/ui/layouts/settings/device.py:148
+#: openpilot/selfdrive/ui/layouts/settings/device.py:139
 #, python-format
 msgid "<br><br>Steering lag calibration is complete."
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/device.py:146
+#: openpilot/selfdrive/ui/layouts/settings/device.py:137
 #, python-format
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/firehose.py:138
-#, python-format
-msgid "ACTIVE"
-msgstr "AKTİF"
-
-#: selfdrive/ui/layouts/settings/developer.py:15
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:15
 msgid ""
 "ADB (Android Debug Bridge) allows connecting to your device over USB or over "
 "the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."
@@ -99,7 +94,7 @@ msgstr ""
 "sağlar. Daha fazla bilgi için https://docs.comma.ai/how-to/connect-to-comma "
 "adresine bakın."
 
-#: selfdrive/ui/widgets/ssh_key.py:30
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:30
 msgid "ADD"
 msgstr "EKLE"
 
@@ -108,7 +103,7 @@ msgstr "EKLE"
 msgid "APN Setting"
 msgstr ""
 
-#: selfdrive/ui/widgets/offroad_alerts.py:109
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py:109
 #, python-format
 msgid "Acknowledge Excessive Actuation"
 msgstr "Aşırı Müdahaleyi Onayla"
@@ -118,22 +113,22 @@ msgstr "Aşırı Müdahaleyi Onayla"
 msgid "Advanced"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/toggles.py:98
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
 msgid "Aggressive"
 msgstr "Agresif"
 
-#: selfdrive/ui/layouts/onboarding.py:116
+#: openpilot/selfdrive/ui/layouts/onboarding.py:120
 #, python-format
 msgid "Agree"
 msgstr "Kabul et"
 
-#: selfdrive/ui/layouts/settings/toggles.py:70
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:70
 #, python-format
 msgid "Always-On Driver Monitoring"
 msgstr "Sürekli Sürücü İzleme"
 
-#: selfdrive/ui/layouts/settings/toggles.py:186
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:186
 #, python-format
 msgid ""
 "An alpha version of openpilot longitudinal control can be tested, along with "
@@ -142,74 +137,77 @@ msgstr ""
 "openpilot boylamsal kontrolünün alfa sürümü, Deneysel mod ile birlikte, "
 "yayın dışı dallarda test edilebilir."
 
-#: selfdrive/ui/layouts/settings/device.py:187
+#: openpilot/selfdrive/ui/layouts/settings/device.py:182
 #, python-format
 msgid "Are you sure you want to power off?"
 msgstr "Kapatmak istediğinizden emin misiniz?"
 
-#: selfdrive/ui/layouts/settings/device.py:175
+#: openpilot/selfdrive/ui/layouts/settings/device.py:170
 #, python-format
 msgid "Are you sure you want to reboot?"
 msgstr "Yeniden başlatmak istediğinizden emin misiniz?"
 
-#: selfdrive/ui/layouts/settings/device.py:119
+#: openpilot/selfdrive/ui/layouts/settings/device.py:110
 #, python-format
 msgid "Are you sure you want to reset calibration?"
 msgstr "Kalibrasyonu sıfırlamak istediğinizden emin misiniz?"
 
-#: selfdrive/ui/layouts/settings/software.py:163
+#: openpilot/selfdrive/ui/layouts/settings/software.py:172
 #, python-format
 msgid "Are you sure you want to uninstall?"
 msgstr "Kaldırmak istediğinizden emin misiniz?"
 
-#: system/ui/widgets/network.py:99 selfdrive/ui/layouts/onboarding.py:147
+#: system/ui/widgets/network.py:99
+#: openpilot/selfdrive/ui/layouts/onboarding.py:151
 #, python-format
 msgid "Back"
 msgstr "Geri"
 
-#: selfdrive/ui/widgets/prime.py:38
+#: openpilot/selfdrive/ui/widgets/prime.py:38
 #, python-format
 msgid "Become a comma prime member at connect.comma.ai"
 msgstr "connect.comma.ai adresinde comma prime üyesi olun"
 
-#: selfdrive/ui/widgets/pairing_dialog.py:130
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py:119
 #, python-format
 msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
 msgstr ""
 "connect.comma.ai'yi ana ekranınıza ekleyerek bir uygulama gibi kullanın"
 
-#: selfdrive/ui/layouts/settings/device.py:68
+#: openpilot/selfdrive/ui/layouts/settings/device.py:66
 #, python-format
 msgid "CHANGE"
 msgstr "DEĞİŞTİR"
 
-#: selfdrive/ui/layouts/settings/software.py:50
-#: selfdrive/ui/layouts/settings/software.py:107
-#: selfdrive/ui/layouts/settings/software.py:118
-#: selfdrive/ui/layouts/settings/software.py:147
+#: openpilot/selfdrive/ui/layouts/settings/software.py:57
+#: openpilot/selfdrive/ui/layouts/settings/software.py:116
+#: openpilot/selfdrive/ui/layouts/settings/software.py:127
+#: openpilot/selfdrive/ui/layouts/settings/software.py:156
 #, python-format
 msgid "CHECK"
 msgstr "KONTROL ET"
 
-#: selfdrive/ui/widgets/exp_mode_button.py:50
+#: openpilot/selfdrive/ui/widgets/exp_mode_button.py:50
 #, python-format
 msgid "CHILL MODE ON"
 msgstr "CHILL MODU AÇIK"
 
-#: system/ui/widgets/network.py:155 selfdrive/ui/layouts/sidebar.py:73
-#: selfdrive/ui/layouts/sidebar.py:134 selfdrive/ui/layouts/sidebar.py:136
-#: selfdrive/ui/layouts/sidebar.py:138
+#: system/ui/widgets/network.py:155
+#: openpilot/selfdrive/ui/layouts/sidebar.py:73
+#: openpilot/selfdrive/ui/layouts/sidebar.py:134
+#: openpilot/selfdrive/ui/layouts/sidebar.py:136
+#: openpilot/selfdrive/ui/layouts/sidebar.py:138
 #, python-format
 msgid "CONNECT"
 msgstr "BAĞLAN"
 
-#: system/ui/widgets/network.py:369
+#: system/ui/widgets/network.py:377
 #, python-format
 msgid "CONNECTING..."
 msgstr "BAĞLAN"
 
-#: system/ui/widgets/confirm_dialog.py:23 system/ui/widgets/option_dialog.py:35
-#: system/ui/widgets/keyboard.py:81 system/ui/widgets/network.py:318
+#: system/ui/widgets/network.py:327 system/ui/widgets/confirm_dialog.py:24
+#: system/ui/widgets/option_dialog.py:36 system/ui/widgets/keyboard.py:83
 #, python-format
 msgid "Cancel"
 msgstr ""
@@ -219,95 +217,95 @@ msgstr ""
 msgid "Cellular Metered"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/device.py:68
+#: openpilot/selfdrive/ui/layouts/settings/device.py:66
 #, python-format
 msgid "Change Language"
 msgstr "Dili Değiştir"
 
-#: selfdrive/ui/layouts/settings/toggles.py:125
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:125
 #, python-format
 msgid "Changing this setting will restart openpilot if the car is powered on."
 msgstr ""
 " Bu ayarı değiştirmek, araç çalışıyorsa openpilot'u yeniden başlatacaktır."
 
-#: selfdrive/ui/widgets/pairing_dialog.py:129
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py:118
 #, python-format
 msgid "Click \"add new device\" and scan the QR code on the right"
 msgstr "\"yeni cihaz ekle\"ye tıklayın ve sağdaki QR kodunu tarayın"
 
-#: selfdrive/ui/widgets/offroad_alerts.py:104
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py:104
 #, python-format
 msgid "Close"
 msgstr "Kapat"
 
-#: selfdrive/ui/layouts/settings/software.py:49
+#: openpilot/selfdrive/ui/layouts/settings/software.py:56
 #, python-format
 msgid "Current Version"
 msgstr "Geçerli Sürüm"
 
-#: selfdrive/ui/layouts/settings/software.py:110
+#: openpilot/selfdrive/ui/layouts/settings/software.py:119
 #, python-format
 msgid "DOWNLOAD"
 msgstr "İNDİR"
 
-#: selfdrive/ui/layouts/onboarding.py:115
+#: openpilot/selfdrive/ui/layouts/onboarding.py:119
 #, python-format
 msgid "Decline"
 msgstr "Reddet"
 
-#: selfdrive/ui/layouts/onboarding.py:148
+#: openpilot/selfdrive/ui/layouts/onboarding.py:152
 #, python-format
 msgid "Decline, uninstall openpilot"
 msgstr "Reddet, openpilot'u kaldır"
 
-#: selfdrive/ui/layouts/settings/settings.py:67
+#: openpilot/selfdrive/ui/layouts/settings/settings.py:64
 msgid "Developer"
 msgstr "Geliştirici"
 
-#: selfdrive/ui/layouts/settings/settings.py:62
+#: openpilot/selfdrive/ui/layouts/settings/settings.py:59
 msgid "Device"
 msgstr "Cihaz"
 
-#: selfdrive/ui/layouts/settings/toggles.py:58
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:58
 #, python-format
 msgid "Disengage on Accelerator Pedal"
 msgstr "Gaz Pedalında Devreden Çık"
 
-#: selfdrive/ui/layouts/settings/device.py:184
+#: openpilot/selfdrive/ui/layouts/settings/device.py:175
 #, python-format
 msgid "Disengage to Power Off"
 msgstr "Kapatmak için Devreden Çıkın"
 
-#: selfdrive/ui/layouts/settings/device.py:172
+#: openpilot/selfdrive/ui/layouts/settings/device.py:163
 #, python-format
 msgid "Disengage to Reboot"
 msgstr "Yeniden Başlatmak için Devreden Çıkın"
 
-#: selfdrive/ui/layouts/settings/device.py:103
+#: openpilot/selfdrive/ui/layouts/settings/device.py:94
 #, python-format
 msgid "Disengage to Reset Calibration"
 msgstr "Kalibrasyonu Sıfırlamak için Devreden Çıkın"
 
-#: selfdrive/ui/layouts/settings/toggles.py:32
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:32
 msgid "Display speed in km/h instead of mph."
 msgstr "Hızı mph yerine km/h olarak göster."
 
-#: selfdrive/ui/layouts/settings/device.py:59
+#: openpilot/selfdrive/ui/layouts/settings/device.py:57
 #, python-format
 msgid "Dongle ID"
 msgstr "Dongle ID"
 
-#: selfdrive/ui/layouts/settings/software.py:50
+#: openpilot/selfdrive/ui/layouts/settings/software.py:57
 #, python-format
 msgid "Download"
 msgstr "İndir"
 
-#: selfdrive/ui/layouts/settings/device.py:62
+#: openpilot/selfdrive/ui/layouts/settings/device.py:60
 #, python-format
 msgid "Driver Camera"
 msgstr "Sürücü Kamerası"
 
-#: selfdrive/ui/layouts/settings/toggles.py:96
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:96
 #, python-format
 msgid "Driving Personality"
 msgstr "Sürüş Kişiliği"
@@ -317,31 +315,31 @@ msgstr "Sürüş Kişiliği"
 msgid "EDIT"
 msgstr ""
 
-#: selfdrive/ui/layouts/sidebar.py:138
+#: openpilot/selfdrive/ui/layouts/sidebar.py:138
 msgid "ERROR"
 msgstr "HATA"
 
-#: selfdrive/ui/layouts/sidebar.py:45
+#: openpilot/selfdrive/ui/layouts/sidebar.py:45
 msgid "ETH"
 msgstr "ETH"
 
-#: selfdrive/ui/widgets/exp_mode_button.py:50
+#: openpilot/selfdrive/ui/widgets/exp_mode_button.py:50
 #, python-format
 msgid "EXPERIMENTAL MODE ON"
 msgstr "DENEYSEL MOD AÇIK"
 
-#: selfdrive/ui/layouts/settings/developer.py:166
-#: selfdrive/ui/layouts/settings/toggles.py:228
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:179
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:228
 #, python-format
 msgid "Enable"
 msgstr "Etkinleştir"
 
-#: selfdrive/ui/layouts/settings/developer.py:39
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:39
 #, python-format
 msgid "Enable ADB"
 msgstr "ADB'yi Etkinleştir"
 
-#: selfdrive/ui/layouts/settings/toggles.py:64
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:64
 #, python-format
 msgid "Enable Lane Departure Warnings"
 msgstr "Şerit Terk Uyarılarını Etkinleştir"
@@ -351,7 +349,7 @@ msgstr "Şerit Terk Uyarılarını Etkinleştir"
 msgid "Enable Roaming"
 msgstr "openpilot'u etkinleştir"
 
-#: selfdrive/ui/layouts/settings/developer.py:48
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:48
 #, python-format
 msgid "Enable SSH"
 msgstr "SSH'yi Etkinleştir"
@@ -361,16 +359,16 @@ msgstr "SSH'yi Etkinleştir"
 msgid "Enable Tethering"
 msgstr "Şerit Terk Uyarılarını Etkinleştir"
 
-#: selfdrive/ui/layouts/settings/toggles.py:30
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:30
 msgid "Enable driver monitoring even when openpilot is not engaged."
 msgstr "openpilot devrede değilken bile sürücü izlemesini etkinleştir."
 
-#: selfdrive/ui/layouts/settings/toggles.py:46
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:46
 #, python-format
 msgid "Enable openpilot"
 msgstr "openpilot'u etkinleştir"
 
-#: selfdrive/ui/layouts/settings/toggles.py:189
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:189
 #, python-format
 msgid ""
 "Enable the openpilot longitudinal control (alpha) toggle to allow "
@@ -383,22 +381,22 @@ msgstr ""
 msgid "Enter APN"
 msgstr ""
 
-#: system/ui/widgets/network.py:241
+#: system/ui/widgets/network.py:246
 #, python-format
 msgid "Enter SSID"
 msgstr ""
 
-#: system/ui/widgets/network.py:254
+#: system/ui/widgets/network.py:260
 #, python-format
 msgid "Enter new tethering password"
 msgstr ""
 
-#: system/ui/widgets/network.py:237 system/ui/widgets/network.py:314
+#: system/ui/widgets/network.py:241 system/ui/widgets/network.py:321
 #, python-format
 msgid "Enter password"
 msgstr ""
 
-#: selfdrive/ui/widgets/ssh_key.py:89
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:89
 #, python-format
 msgid "Enter your GitHub username"
 msgstr "GitHub kullanıcı adınızı girin"
@@ -408,12 +406,12 @@ msgstr "GitHub kullanıcı adınızı girin"
 msgid "Error"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/toggles.py:52
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:52
 #, python-format
 msgid "Experimental Mode"
 msgstr "Deneysel Mod"
 
-#: selfdrive/ui/layouts/settings/toggles.py:181
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:181
 #, python-format
 msgid ""
 "Experimental mode is currently unavailable on this car since the car's stock "
@@ -422,25 +420,25 @@ msgstr ""
 "Bu araçta boylamsal kontrol için stok ACC kullanıldığından şu anda Deneysel "
 "mod kullanılamıyor."
 
-#: system/ui/widgets/network.py:373
+#: system/ui/widgets/network.py:381
 #, python-format
 msgid "FORGETTING..."
 msgstr ""
 
-#: selfdrive/ui/widgets/setup.py:44
+#: openpilot/selfdrive/ui/widgets/setup.py:43
 #, python-format
 msgid "Finish Setup"
 msgstr "Kurulumu Bitir"
 
-#: selfdrive/ui/layouts/settings/settings.py:66
+#: openpilot/selfdrive/ui/layouts/settings/settings.py:63
 msgid "Firehose"
 msgstr "Firehose"
 
-#: selfdrive/ui/layouts/settings/firehose.py:18
+#: openpilot/selfdrive/ui/layouts/settings/firehose.py:10
 msgid "Firehose Mode"
 msgstr "Firehose Modu"
 
-#: selfdrive/ui/layouts/settings/firehose.py:25
+#: openpilot/selfdrive/ui/layouts/settings/firehose.py:17
 msgid ""
 "For maximum effectiveness, bring your device inside and connect to a good "
 "USB-C adapter and Wi-Fi weekly.\n"
@@ -484,26 +482,27 @@ msgstr ""
 "Hangi yazılımı çalıştırdığım önemli mi? Evet, yalnızca upstream openpilot "
 "(ve bazı fork'lar) eğitim için kullanılabilir."
 
-#: system/ui/widgets/network.py:318 system/ui/widgets/network.py:451
+#: system/ui/widgets/network.py:327 system/ui/widgets/network.py:459
 #, python-format
 msgid "Forget"
 msgstr ""
 
-#: system/ui/widgets/network.py:319
+#: system/ui/widgets/network.py:328
 #, python-format
 msgid "Forget Wi-Fi Network \"{}\"?"
 msgstr ""
 
-#: selfdrive/ui/layouts/sidebar.py:71 selfdrive/ui/layouts/sidebar.py:125
+#: openpilot/selfdrive/ui/layouts/sidebar.py:71
+#: openpilot/selfdrive/ui/layouts/sidebar.py:125
 msgid "GOOD"
 msgstr "İYİ"
 
-#: selfdrive/ui/widgets/pairing_dialog.py:128
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py:117
 #, python-format
 msgid "Go to https://connect.comma.ai on your phone"
 msgstr "Telefonunuzda https://connect.comma.ai adresine gidin"
 
-#: selfdrive/ui/layouts/sidebar.py:129
+#: openpilot/selfdrive/ui/layouts/sidebar.py:129
 msgid "HIGH"
 msgstr "YÜKSEK"
 
@@ -512,13 +511,8 @@ msgstr "YÜKSEK"
 msgid "Hidden Network"
 msgstr "Ağ"
 
-#: selfdrive/ui/layouts/settings/firehose.py:140
-#, python-format
-msgid "INACTIVE: connect to an unmetered network"
-msgstr "PASİF: sınırsız bir ağa bağlanın"
-
-#: selfdrive/ui/layouts/settings/software.py:53
-#: selfdrive/ui/layouts/settings/software.py:136
+#: openpilot/selfdrive/ui/layouts/settings/software.py:60
+#: openpilot/selfdrive/ui/layouts/settings/software.py:145
 #, python-format
 msgid "INSTALL"
 msgstr "YÜKLE"
@@ -528,35 +522,35 @@ msgstr "YÜKLE"
 msgid "IP Address"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/software.py:53
+#: openpilot/selfdrive/ui/layouts/settings/software.py:60
 #, python-format
 msgid "Install Update"
 msgstr "Güncellemeyi Yükle"
 
-#: selfdrive/ui/layouts/settings/developer.py:56
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:56
 #, python-format
 msgid "Joystick Debug Mode"
 msgstr "Joystick Hata Ayıklama Modu"
 
-#: selfdrive/ui/widgets/ssh_key.py:29
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:29
 msgid "LOADING"
 msgstr "YÜKLENİYOR"
 
-#: selfdrive/ui/layouts/sidebar.py:48
+#: openpilot/selfdrive/ui/layouts/sidebar.py:48
 msgid "LTE"
 msgstr "LTE"
 
-#: selfdrive/ui/layouts/settings/developer.py:64
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:64
 #, python-format
 msgid "Longitudinal Maneuver Mode"
 msgstr "Boylamsal Manevra Modu"
 
-#: selfdrive/ui/onroad/hud_renderer.py:148
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py:148
 #, python-format
 msgid "MAX"
 msgstr "MAKS"
 
-#: selfdrive/ui/widgets/setup.py:75
+#: openpilot/selfdrive/ui/widgets/setup.py:74
 #, python-format
 msgid ""
 "Maximize your training data uploads to improve openpilot's driving models."
@@ -564,90 +558,93 @@ msgstr ""
 "openpilot'un sürüş modellerini iyileştirmek için eğitim veri yüklemelerinizi "
 "en üst düzeye çıkarın."
 
-#: selfdrive/ui/layouts/settings/device.py:59
-#: selfdrive/ui/layouts/settings/device.py:60
+#: openpilot/selfdrive/ui/layouts/settings/device.py:57
+#: openpilot/selfdrive/ui/layouts/settings/device.py:58
 #, python-format
 msgid "N/A"
 msgstr ""
 
-#: selfdrive/ui/layouts/sidebar.py:142
+#: openpilot/selfdrive/ui/layouts/sidebar.py:142
 msgid "NO"
 msgstr "HAYIR"
 
-#: selfdrive/ui/layouts/settings/settings.py:63
+#: openpilot/selfdrive/ui/layouts/settings/settings.py:60
 msgid "Network"
 msgstr "Ağ"
 
-#: selfdrive/ui/widgets/ssh_key.py:114
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:115
 #, python-format
 msgid "No SSH keys found"
 msgstr "SSH anahtarı bulunamadı"
 
-#: selfdrive/ui/widgets/ssh_key.py:126
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:127
 #, python-format
 msgid "No SSH keys found for user '{}'"
 msgstr "'{username}' için SSH anahtarı bulunamadı"
 
-#: selfdrive/ui/widgets/offroad_alerts.py:320
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py:320
 #, python-format
 msgid "No release notes available."
 msgstr "Sürüm notu mevcut değil."
 
-#: selfdrive/ui/layouts/sidebar.py:73 selfdrive/ui/layouts/sidebar.py:134
+#: openpilot/selfdrive/ui/layouts/sidebar.py:73
+#: openpilot/selfdrive/ui/layouts/sidebar.py:134
 msgid "OFFLINE"
 msgstr "ÇEVRİMDIŞI"
 
 #: system/ui/widgets/html_render.py:263 system/ui/widgets/confirm_dialog.py:93
-#: selfdrive/ui/layouts/sidebar.py:127
+#: openpilot/selfdrive/ui/layouts/sidebar.py:127
 #, python-format
 msgid "OK"
 msgstr "OK"
 
-#: selfdrive/ui/layouts/sidebar.py:72 selfdrive/ui/layouts/sidebar.py:136
-#: selfdrive/ui/layouts/sidebar.py:144
+#: openpilot/selfdrive/ui/layouts/sidebar.py:72
+#: openpilot/selfdrive/ui/layouts/sidebar.py:136
+#: openpilot/selfdrive/ui/layouts/sidebar.py:144
 msgid "ONLINE"
 msgstr "ÇEVRİMİÇİ"
 
-#: selfdrive/ui/widgets/setup.py:20
+#: openpilot/selfdrive/ui/widgets/setup.py:19
 #, python-format
 msgid "Open"
 msgstr "Aç"
 
-#: selfdrive/ui/layouts/settings/device.py:48
+#: openpilot/selfdrive/ui/layouts/settings/device.py:45
 #, python-format
 msgid "PAIR"
 msgstr "EŞLE"
 
-#: selfdrive/ui/layouts/sidebar.py:142
+#: openpilot/selfdrive/ui/layouts/sidebar.py:142
 msgid "PANDA"
 msgstr "PANDA"
 
-#: selfdrive/ui/layouts/settings/device.py:62
+#: openpilot/selfdrive/ui/layouts/settings/device.py:60
 #, python-format
 msgid "PREVIEW"
 msgstr "ÖNİZLEME"
 
-#: selfdrive/ui/widgets/prime.py:44
+#: openpilot/selfdrive/ui/widgets/prime.py:44
 #, python-format
 msgid "PRIME FEATURES:"
 msgstr "PRIME ÖZELLİKLERİ:"
 
-#: selfdrive/ui/layouts/settings/device.py:48
+#: openpilot/selfdrive/ui/layouts/settings/device.py:45
 #, python-format
 msgid "Pair Device"
 msgstr "Cihazı Eşle"
 
-#: selfdrive/ui/widgets/setup.py:19
+#: openpilot/selfdrive/ui/widgets/setup.py:18
 #, python-format
 msgid "Pair device"
 msgstr "Cihazı eşle"
 
-#: selfdrive/ui/widgets/pairing_dialog.py:103
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py:92
 #, python-format
 msgid "Pair your device to your comma account"
 msgstr "Cihazınızı comma hesabınızla eşleştirin"
 
-#: selfdrive/ui/widgets/setup.py:48 selfdrive/ui/layouts/settings/device.py:24
+#: openpilot/selfdrive/ui/widgets/setup.py:47
+#: openpilot/selfdrive/ui/layouts/settings/device.py:23
 #, python-format
 msgid ""
 "Pair your device with comma connect (connect.comma.ai) and claim your comma "
@@ -656,13 +653,13 @@ msgstr ""
 "Cihazınızı comma connect (connect.comma.ai) ile eşleştirin ve comma prime "
 "teklifinizi alın."
 
-#: selfdrive/ui/widgets/setup.py:91
+#: openpilot/selfdrive/ui/widgets/setup.py:91
 #, python-format
 msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr "İlk eşleştirmeyi tamamlamak için lütfen Wi‑Fi'a bağlanın"
 
-#: selfdrive/ui/layouts/settings/device.py:55
-#: selfdrive/ui/layouts/settings/device.py:187
+#: openpilot/selfdrive/ui/layouts/settings/device.py:53
+#: openpilot/selfdrive/ui/layouts/settings/device.py:182
 #, python-format
 msgid "Power Off"
 msgstr "Kapat"
@@ -677,7 +674,7 @@ msgstr ""
 msgid "Prevent large data uploads when on a metered cellular connection"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/device.py:25
+#: openpilot/selfdrive/ui/layouts/settings/device.py:24
 msgid ""
 "Preview the driver facing camera to ensure that driver monitoring has good "
 "visibility. (vehicle must be off)"
@@ -685,42 +682,42 @@ msgstr ""
 "Sürücü izleme görünürlüğünün iyi olduğundan emin olmak için sürücüye bakan "
 "kamerayı önizleyin. (araç kapalı olmalıdır)"
 
-#: selfdrive/ui/widgets/pairing_dialog.py:161
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py:150
 #, python-format
 msgid "QR Code Error"
 msgstr "QR Kod Hatası"
 
-#: selfdrive/ui/widgets/ssh_key.py:31
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:31
 msgid "REMOVE"
 msgstr "KALDIR"
 
-#: selfdrive/ui/layouts/settings/device.py:51
+#: openpilot/selfdrive/ui/layouts/settings/device.py:49
 #, python-format
 msgid "RESET"
 msgstr "SIFIRLA"
 
-#: selfdrive/ui/layouts/settings/device.py:65
+#: openpilot/selfdrive/ui/layouts/settings/device.py:63
 #, python-format
 msgid "REVIEW"
 msgstr "GÖZDEN GEÇİR"
 
-#: selfdrive/ui/layouts/settings/device.py:55
-#: selfdrive/ui/layouts/settings/device.py:175
+#: openpilot/selfdrive/ui/layouts/settings/device.py:53
+#: openpilot/selfdrive/ui/layouts/settings/device.py:170
 #, python-format
 msgid "Reboot"
 msgstr "Yeniden Başlat"
 
-#: selfdrive/ui/onroad/alert_renderer.py:66
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py:66
 #, python-format
 msgid "Reboot Device"
 msgstr "Cihazı Yeniden Başlat"
 
-#: selfdrive/ui/widgets/offroad_alerts.py:112
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py:112
 #, python-format
 msgid "Reboot and Update"
 msgstr "Yeniden Başlat ve Güncelle"
 
-#: selfdrive/ui/layouts/settings/toggles.py:27
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:27
 msgid ""
 "Receive alerts to steer back into the lane when your vehicle drifts over a "
 "detected lane line without a turn signal activated while driving over 31 mph "
@@ -729,17 +726,17 @@ msgstr ""
 "Araç 31 mph (50 km/h) üzerindeyken sinyal verilmeden algılanan şerit "
 "çizgisini aştığınızda şeride geri dönmeniz için uyarılar alın."
 
-#: selfdrive/ui/layouts/settings/toggles.py:76
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:76
 #, python-format
 msgid "Record and Upload Driver Camera"
 msgstr "Sürücü Kamerasını Kaydet ve Yükle"
 
-#: selfdrive/ui/layouts/settings/toggles.py:82
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:82
 #, python-format
 msgid "Record and Upload Microphone Audio"
 msgstr "Mikrofon Sesini Kaydet ve Yükle"
 
-#: selfdrive/ui/layouts/settings/toggles.py:33
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:33
 msgid ""
 "Record and store microphone audio while driving. The audio will be included "
 "in the dashcam video in comma connect."
@@ -747,101 +744,101 @@ msgstr ""
 "Sürüş sırasında mikrofon sesini kaydedip saklayın. Ses, comma connect'teki "
 "ön kamera videosuna dahil edilecektir."
 
-#: selfdrive/ui/layouts/settings/device.py:67
+#: openpilot/selfdrive/ui/layouts/settings/device.py:65
 #, python-format
 msgid "Regulatory"
 msgstr "Mevzuat"
 
-#: selfdrive/ui/layouts/settings/toggles.py:98
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
 msgid "Relaxed"
 msgstr "Rahat"
 
-#: selfdrive/ui/widgets/prime.py:47
+#: openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "Remote access"
 msgstr "Uzaktan erişim"
 
-#: selfdrive/ui/widgets/prime.py:47
+#: openpilot/selfdrive/ui/widgets/prime.py:47
 #, python-format
 msgid "Remote snapshots"
 msgstr "Uzaktan anlık görüntüler"
 
-#: selfdrive/ui/widgets/ssh_key.py:123
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:124
 #, python-format
 msgid "Request timed out"
 msgstr "İstek zaman aşımına uğradı"
 
-#: selfdrive/ui/layouts/settings/device.py:119
+#: openpilot/selfdrive/ui/layouts/settings/device.py:110
 #, python-format
 msgid "Reset"
 msgstr "Sıfırla"
 
-#: selfdrive/ui/layouts/settings/device.py:51
+#: openpilot/selfdrive/ui/layouts/settings/device.py:49
 #, python-format
 msgid "Reset Calibration"
 msgstr "Kalibrasyonu Sıfırla"
 
-#: selfdrive/ui/layouts/settings/device.py:65
+#: openpilot/selfdrive/ui/layouts/settings/device.py:63
 #, python-format
 msgid "Review Training Guide"
 msgstr "Eğitim Kılavuzunu İncele"
 
-#: selfdrive/ui/layouts/settings/device.py:27
+#: openpilot/selfdrive/ui/layouts/settings/device.py:26
 msgid "Review the rules, features, and limitations of openpilot"
 msgstr ""
 "openpilot'un kurallarını, özelliklerini ve sınırlamalarını gözden geçirin"
 
-#: selfdrive/ui/layouts/settings/software.py:61
+#: openpilot/selfdrive/ui/layouts/settings/software.py:68
 #, python-format
 msgid "SELECT"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/developer.py:53
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:53
 #, python-format
 msgid "SSH Keys"
 msgstr ""
 
-#: system/ui/widgets/network.py:310
+#: system/ui/widgets/network.py:317
 #, python-format
 msgid "Scanning Wi-Fi networks..."
 msgstr ""
 
-#: system/ui/widgets/option_dialog.py:36
+#: system/ui/widgets/option_dialog.py:37
 #, python-format
 msgid "Select"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/software.py:183
+#: openpilot/selfdrive/ui/layouts/settings/software.py:202
 #, python-format
 msgid "Select a branch"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/device.py:91
+#: openpilot/selfdrive/ui/layouts/settings/device.py:88
 #, python-format
 msgid "Select a language"
 msgstr "Bir dil seçin"
 
-#: selfdrive/ui/layouts/settings/device.py:60
+#: openpilot/selfdrive/ui/layouts/settings/device.py:58
 #, python-format
 msgid "Serial"
 msgstr "Seri"
 
-#: selfdrive/ui/widgets/offroad_alerts.py:106
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py:106
 #, python-format
 msgid "Snooze Update"
 msgstr "Güncellemeyi Ertele"
 
-#: selfdrive/ui/layouts/settings/settings.py:65
+#: openpilot/selfdrive/ui/layouts/settings/settings.py:62
 msgid "Software"
 msgstr "Yazılım"
 
-#: selfdrive/ui/layouts/settings/toggles.py:98
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:98
 #, python-format
 msgid "Standard"
 msgstr "Standart"
 
-#: selfdrive/ui/layouts/settings/toggles.py:22
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:22
 msgid ""
 "Standard is recommended. In aggressive mode, openpilot will follow lead cars "
 "closer and be more aggressive with the gas and brake. In relaxed mode "
@@ -853,23 +850,25 @@ msgstr ""
 "araçlardan daha uzak durur. Desteklenen araçlarda bu kişilikler arasında "
 "direksiyon mesafe düğmesiyle geçiş yapabilirsiniz."
 
-#: selfdrive/ui/onroad/alert_renderer.py:59
-#: selfdrive/ui/onroad/alert_renderer.py:65
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py:59
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py:65
 #, python-format
 msgid "System Unresponsive"
 msgstr "Sistem Yanıt Vermiyor"
 
-#: selfdrive/ui/onroad/alert_renderer.py:58
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py:58
 #, python-format
 msgid "TAKE CONTROL IMMEDIATELY"
 msgstr "HEMEN KONTROLÜ DEVRALIN"
 
-#: selfdrive/ui/layouts/sidebar.py:71 selfdrive/ui/layouts/sidebar.py:125
-#: selfdrive/ui/layouts/sidebar.py:127 selfdrive/ui/layouts/sidebar.py:129
+#: openpilot/selfdrive/ui/layouts/sidebar.py:71
+#: openpilot/selfdrive/ui/layouts/sidebar.py:125
+#: openpilot/selfdrive/ui/layouts/sidebar.py:127
+#: openpilot/selfdrive/ui/layouts/sidebar.py:129
 msgid "TEMP"
 msgstr "TEMP"
 
-#: selfdrive/ui/layouts/settings/software.py:61
+#: openpilot/selfdrive/ui/layouts/settings/software.py:68
 #, python-format
 msgid "Target Branch"
 msgstr ""
@@ -879,41 +878,46 @@ msgstr ""
 msgid "Tethering Password"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/settings.py:64
+#: openpilot/selfdrive/ui/layouts/settings/settings.py:61
 msgid "Toggles"
 msgstr "Seçenekler"
 
-#: selfdrive/ui/layouts/settings/software.py:72
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:79
+#, python-format
+msgid "UI Debug Mode"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py:79
 #, python-format
 msgid "UNINSTALL"
 msgstr "KALDIR"
 
-#: selfdrive/ui/layouts/home.py:155
+#: openpilot/selfdrive/ui/layouts/home.py:154
 #, python-format
 msgid "UPDATE"
 msgstr "GÜNCELLE"
 
-#: selfdrive/ui/layouts/settings/software.py:72
-#: selfdrive/ui/layouts/settings/software.py:163
+#: openpilot/selfdrive/ui/layouts/settings/software.py:79
+#: openpilot/selfdrive/ui/layouts/settings/software.py:172
 #, python-format
 msgid "Uninstall"
 msgstr "Kaldır"
 
-#: selfdrive/ui/layouts/sidebar.py:117
+#: openpilot/selfdrive/ui/layouts/sidebar.py:117
 msgid "Unknown"
 msgstr "Bilinmiyor"
 
-#: selfdrive/ui/layouts/settings/software.py:48
+#: openpilot/selfdrive/ui/layouts/settings/software.py:55
 #, python-format
 msgid "Updates are only downloaded while the car is off."
 msgstr "Güncellemeler yalnızca araç kapalıyken indirilir."
 
-#: selfdrive/ui/widgets/prime.py:33
+#: openpilot/selfdrive/ui/widgets/prime.py:33
 #, python-format
 msgid "Upgrade Now"
 msgstr "Şimdi Yükselt"
 
-#: selfdrive/ui/layouts/settings/toggles.py:31
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:31
 msgid ""
 "Upload data from the driver facing camera and help improve the driver "
 "monitoring algorithm."
@@ -921,12 +925,12 @@ msgstr ""
 "Sürücüye bakan kameradan veri yükleyin ve sürücü izleme algoritmasını "
 "geliştirmeye yardımcı olun."
 
-#: selfdrive/ui/layouts/settings/toggles.py:88
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:88
 #, python-format
 msgid "Use Metric System"
 msgstr "Metrik Sistemi Kullan"
 
-#: selfdrive/ui/layouts/settings/toggles.py:17
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:17
 msgid ""
 "Use the openpilot system for adaptive cruise control and lane keep driver "
 "assistance. Your attention is required at all times to use this feature."
@@ -935,21 +939,22 @@ msgstr ""
 "sistemini kullanın. Bu özelliği kullanırken her zaman dikkatli olmanız "
 "gerekir."
 
-#: selfdrive/ui/layouts/sidebar.py:72 selfdrive/ui/layouts/sidebar.py:144
+#: openpilot/selfdrive/ui/layouts/sidebar.py:72
+#: openpilot/selfdrive/ui/layouts/sidebar.py:144
 msgid "VEHICLE"
 msgstr "ARAÇ"
 
-#: selfdrive/ui/layouts/settings/device.py:67
+#: openpilot/selfdrive/ui/layouts/settings/device.py:65
 #, python-format
 msgid "VIEW"
 msgstr "GÖRÜNTÜLE"
 
-#: selfdrive/ui/onroad/alert_renderer.py:52
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py:52
 #, python-format
 msgid "Waiting to start"
 msgstr "Başlatma bekleniyor"
 
-#: selfdrive/ui/layouts/settings/developer.py:19
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:19
 msgid ""
 "Warning: This grants SSH access to all public keys in your GitHub settings. "
 "Never enter a GitHub username other than your own. A comma employee will "
@@ -959,17 +964,17 @@ msgstr ""
 "Kendi adınız dışında asla bir GitHub kullanıcı adı girmeyin. Bir comma "
 "çalışanı sizden asla GitHub kullanıcı adlarını eklemenizi İSTEMEZ."
 
-#: selfdrive/ui/layouts/onboarding.py:111
+#: openpilot/selfdrive/ui/layouts/onboarding.py:115
 #, python-format
 msgid "Welcome to openpilot"
 msgstr "openpilot'a hoş geldiniz"
 
-#: selfdrive/ui/layouts/settings/toggles.py:20
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:20
 msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
 msgstr ""
 "Etkinleştirildiğinde, gaz pedalına basmak openpilot'u devreden çıkarır."
 
-#: selfdrive/ui/layouts/sidebar.py:44
+#: openpilot/selfdrive/ui/layouts/sidebar.py:44
 msgid "Wi-Fi"
 msgstr "Wi‑Fi"
 
@@ -978,17 +983,17 @@ msgstr "Wi‑Fi"
 msgid "Wi-Fi Network Metered"
 msgstr ""
 
-#: system/ui/widgets/network.py:314
+#: system/ui/widgets/network.py:321
 #, python-format
 msgid "Wrong password"
 msgstr ""
 
-#: selfdrive/ui/layouts/onboarding.py:145
+#: openpilot/selfdrive/ui/layouts/onboarding.py:149
 #, python-format
 msgid "You must accept the Terms and Conditions in order to use openpilot."
 msgstr "openpilot'u kullanmak için Şartlar ve Koşulları kabul etmelisiniz."
 
-#: selfdrive/ui/layouts/onboarding.py:112
+#: openpilot/selfdrive/ui/layouts/onboarding.py:116
 #, python-format
 msgid ""
 "You must accept the Terms and Conditions to use openpilot. Read the latest "
@@ -997,12 +1002,17 @@ msgstr ""
 "openpilot'u kullanmak için Şartlar ve Koşulları kabul etmelisiniz. Devam "
 "etmeden önce en güncel şartları https://comma.ai/terms adresinde okuyun."
 
-#: selfdrive/ui/onroad/driver_camera_dialog.py:34
+#: openpilot/selfdrive/ui/onroad/driver_camera_dialog.py:38
 #, python-format
 msgid "camera starting"
 msgstr "kamera başlatılıyor"
 
-#: selfdrive/ui/widgets/prime.py:63
+#: openpilot/selfdrive/ui/layouts/settings/software.py:19
+#, python-format
+msgid "checking..."
+msgstr ""
+
+#: openpilot/selfdrive/ui/widgets/prime.py:63
 #, python-format
 msgid "comma prime"
 msgstr "comma prime"
@@ -1012,22 +1022,32 @@ msgstr "comma prime"
 msgid "default"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/device.py:133
+#: openpilot/selfdrive/ui/layouts/settings/device.py:124
 #, python-format
 msgid "down"
 msgstr "aşağı"
 
-#: selfdrive/ui/layouts/settings/software.py:106
+#: openpilot/selfdrive/ui/layouts/settings/software.py:20
+#, python-format
+msgid "downloading..."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/software.py:115
 #, python-format
 msgid "failed to check for update"
 msgstr "güncelleme kontrolü başarısız"
 
-#: system/ui/widgets/network.py:237 system/ui/widgets/network.py:314
+#: openpilot/selfdrive/ui/layouts/settings/software.py:21
+#, python-format
+msgid "finalizing update..."
+msgstr ""
+
+#: system/ui/widgets/network.py:241 system/ui/widgets/network.py:322
 #, python-format
 msgid "for \"{}\""
 msgstr ""
 
-#: selfdrive/ui/onroad/hud_renderer.py:177
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
 msgid "km/h"
 msgstr "km/h"
@@ -1037,7 +1057,7 @@ msgstr "km/h"
 msgid "leave blank for automatic configuration"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/device.py:134
+#: openpilot/selfdrive/ui/layouts/settings/device.py:125
 #, python-format
 msgid "left"
 msgstr "sol"
@@ -1047,32 +1067,32 @@ msgstr "sol"
 msgid "metered"
 msgstr ""
 
-#: selfdrive/ui/onroad/hud_renderer.py:177
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py:177
 #, python-format
 msgid "mph"
 msgstr "mph"
 
-#: selfdrive/ui/layouts/settings/software.py:20
+#: openpilot/selfdrive/ui/layouts/settings/software.py:27
 #, python-format
 msgid "never"
 msgstr "asla"
 
-#: selfdrive/ui/layouts/settings/software.py:31
+#: openpilot/selfdrive/ui/layouts/settings/software.py:38
 #, python-format
 msgid "now"
 msgstr "şimdi"
 
-#: selfdrive/ui/layouts/settings/developer.py:71
+#: openpilot/selfdrive/ui/layouts/settings/developer.py:71
 #, python-format
 msgid "openpilot Longitudinal Control (Alpha)"
 msgstr "openpilot Boylamsal Kontrol (Alfa)"
 
-#: selfdrive/ui/onroad/alert_renderer.py:51
+#: openpilot/selfdrive/ui/onroad/alert_renderer.py:51
 #, python-format
 msgid "openpilot Unavailable"
 msgstr "openpilot Kullanılamıyor"
 
-#: selfdrive/ui/layouts/settings/toggles.py:158
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:158
 #, python-format
 msgid ""
 "openpilot defaults to driving in chill mode. Experimental mode enables alpha-"
@@ -1099,7 +1119,7 @@ msgstr ""
 "göstermek için yola bakan geniş açılı kameraya geçer. Deneysel mod logosu "
 "sağ üst köşede de gösterilecektir."
 
-#: selfdrive/ui/layouts/settings/device.py:165
+#: openpilot/selfdrive/ui/layouts/settings/device.py:156
 #, python-format
 msgid ""
 "openpilot is continuously calibrating, resetting is rarely required. "
@@ -1107,7 +1127,7 @@ msgid ""
 msgstr ""
 " Bu ayarı değiştirmek, araç çalışıyorsa openpilot'u yeniden başlatacaktır."
 
-#: selfdrive/ui/layouts/settings/firehose.py:20
+#: openpilot/selfdrive/ui/layouts/settings/firehose.py:12
 msgid ""
 "openpilot learns to drive by watching humans, like you, drive.\n"
 "\n"
@@ -1121,12 +1141,12 @@ msgstr ""
 "yüklemelerinizi en üst düzeye çıkarmanıza olanak tanır. Daha fazla veri, "
 "daha büyük modeller demektir; bu da daha iyi Deneysel Mod anlamına gelir."
 
-#: selfdrive/ui/layouts/settings/toggles.py:183
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py:183
 #, python-format
 msgid "openpilot longitudinal control may come in a future update."
 msgstr "openpilot boylamsal kontrolü gelecekteki bir güncellemede gelebilir."
 
-#: selfdrive/ui/layouts/settings/device.py:26
+#: openpilot/selfdrive/ui/layouts/settings/device.py:25
 msgid ""
 "openpilot requires the device to be mounted within 4° left or right and "
 "within 5° up or 9° down."
@@ -1134,7 +1154,7 @@ msgstr ""
 "openpilot, cihazın sağa/sola 4° ve yukarı 5° veya aşağı 9° içinde monte "
 "edilmesini gerektirir."
 
-#: selfdrive/ui/layouts/settings/device.py:134
+#: openpilot/selfdrive/ui/layouts/settings/device.py:125
 #, python-format
 msgid "right"
 msgstr "sağ"
@@ -1144,67 +1164,75 @@ msgstr "sağ"
 msgid "unmetered"
 msgstr ""
 
-#: selfdrive/ui/layouts/settings/device.py:133
+#: openpilot/selfdrive/ui/layouts/settings/device.py:124
 #, python-format
 msgid "up"
 msgstr "yukarı"
 
-#: selfdrive/ui/layouts/settings/software.py:117
+#: openpilot/selfdrive/ui/layouts/settings/software.py:126
 #, python-format
 msgid "up to date, last checked never"
 msgstr "güncel, son kontrol asla"
 
-#: selfdrive/ui/layouts/settings/software.py:115
+#: openpilot/selfdrive/ui/layouts/settings/software.py:124
 #, python-format
 msgid "up to date, last checked {}"
 msgstr "güncel, son kontrol {}"
 
-#: selfdrive/ui/layouts/settings/software.py:109
+#: openpilot/selfdrive/ui/layouts/settings/software.py:118
 #, python-format
 msgid "update available"
 msgstr "güncelleme mevcut"
 
-#: selfdrive/ui/layouts/home.py:169
+#: openpilot/selfdrive/ui/layouts/home.py:168
 #, python-format
 msgid "{} ALERT"
 msgid_plural "{} ALERTS"
 msgstr[0] "{} UYARI"
 msgstr[1] "{} UYARILAR"
 
-#: selfdrive/ui/layouts/settings/software.py:40
+#: openpilot/selfdrive/ui/layouts/settings/software.py:47
 #, python-format
 msgid "{} day ago"
 msgid_plural "{} days ago"
 msgstr[0] "{} gün önce"
 msgstr[1] "{} gün önce"
 
-#: selfdrive/ui/layouts/settings/software.py:37
+#: openpilot/selfdrive/ui/layouts/settings/software.py:44
 #, python-format
 msgid "{} hour ago"
 msgid_plural "{} hours ago"
 msgstr[0] "{} saat önce"
 msgstr[1] "{} saat önce"
 
-#: selfdrive/ui/layouts/settings/software.py:34
+#: openpilot/selfdrive/ui/layouts/settings/software.py:41
 #, python-format
 msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] "{} dakika önce"
 msgstr[1] "{} dakika önce"
 
-#: selfdrive/ui/layouts/settings/firehose.py:111
+#: openpilot/selfdrive/ui/layouts/settings/firehose.py:70
 #, python-format
 msgid "{} segment of your driving is in the training dataset so far."
 msgid_plural "{} segments of your driving is in the training dataset so far."
 msgstr[0] "{} segment sürüşünüz eğitim veri setinde."
 msgstr[1] "{} segment sürüşünüz eğitim veri setinde."
 
-#: selfdrive/ui/widgets/prime.py:62
+#: openpilot/selfdrive/ui/widgets/prime.py:62
 #, python-format
 msgid "✓ SUBSCRIBED"
 msgstr "✓ ABONE"
 
-#: selfdrive/ui/widgets/setup.py:22
+#: openpilot/selfdrive/ui/widgets/setup.py:21
 #, python-format
 msgid "🔥 Firehose Mode 🔥"
 msgstr "🔥 Firehose Modu 🔥"
+
+#, python-format
+#~ msgid "ACTIVE"
+#~ msgstr "AKTİF"
+
+#, python-format
+#~ msgid "INACTIVE: connect to an unmetered network"
+#~ msgstr "PASİF: sınırsız bir ağa bağlanın"
