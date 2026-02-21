@@ -233,7 +233,6 @@ jobs:
       timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
       run: |
         source selfdrive/test/setup_xvfb.sh
-        source selfdrive/test/setup_vsound.sh
         pytest -s tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
