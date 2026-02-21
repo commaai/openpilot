@@ -2,24 +2,11 @@ import contextlib
 import gc
 import os
 import signal
-import sys
 import pytest
 
 from openpilot.common.prefix import OpenpilotPrefix
 
-# Track tests currently running in this process (each xdist worker tracks its own)
-_running_tests: set[str] = set()
-
-def _sigterm_handler(signum, frame):
-  if _running_tests:
-    print(f"\n\nSIGTERM received! {len(_running_tests)} test(s) still running:", file=sys.stderr, flush=True)
-    for test_id in sorted(_running_tests):
-      print(f"  - {test_id}", file=sys.stderr, flush=True)
-  else:
-    print("\n\nSIGTERM received! No tests currently running in this process.", file=sys.stderr, flush=True)
-  raise SystemExit(1)
-
-signal.signal(signal.SIGTERM, _sigterm_handler)
+signal.signal(signal.SIGTERM, lambda signum, frame: (_ for _ in ()).throw(KeyboardInterrupt))
 
 from openpilot.system.manager import manager
 from openpilot.system.hardware import TICI, HARDWARE
@@ -41,13 +28,6 @@ def pytest_sessionstart(session):
   # TODO: fix tests and enable test order randomization
   if session.config.pluginmanager.hasplugin('randomly'):
     session.config.option.randomly_reorganize = False
-
-
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_protocol(item, nextitem):
-  _running_tests.add(item.nodeid)
-  yield
-  _running_tests.discard(item.nodeid)
 
 
 @pytest.hookimpl(hookwrapper=True, trylast=True)
