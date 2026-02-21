@@ -32,6 +32,7 @@ Replay::Replay(const std::string &route, std::vector<std::string> allow, std::ve
   if (!(flags_ & REPLAY_FLAG_ALL_SERVICES)) {
     block.insert(block.end(), {"bookmarkButton", "uiDebug", "userBookmark"});
   }
+  allow = {"driverCameraState", "driverEncodeIdx", "driverStateV2", "driverMonitoringState"};
   setupServices(allow, block);
   setupSegmentManager(!allow.empty() || !block.empty());
 }
