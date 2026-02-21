@@ -160,7 +160,6 @@ def main():
   manifest_path = sys.argv[2]
 
   try:
-    # todo: popping can keep keyboard up!
     gui_app.init_window("System Update")
     gui_app.push_widget(Updater(updater_path, manifest_path))
     for _ in gui_app.render():

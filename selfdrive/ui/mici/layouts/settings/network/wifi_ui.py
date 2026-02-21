@@ -369,6 +369,7 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def hide_event(self):
     super().hide_event()
+    print('WifiUIMici->hide_event')
     self._scroller.hide_event()
 
   def _on_network_updated(self, networks: list[Network]):
@@ -407,6 +408,7 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _on_option_selected(self, option: str):
     super()._on_option_selected(option)
+    print(f"WifiUIMici->_on_option_selected: {option}")
 
     if option in self._networks:
       self._network_info_page.set_current_network(self._networks[option])

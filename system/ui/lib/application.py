@@ -10,6 +10,7 @@ import threading
 import platform
 import subprocess
 from contextlib import contextmanager
+from collections.abc import Callable
 from collections import deque
 from enum import StrEnum
 from pathlib import Path
@@ -220,6 +221,7 @@ class GuiApplication:
     self._window_close_requested = False
     self._nav_stack: list[object] = []
     self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
+    self._nav_stack_tick: Callable[[], None] | None = None
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -365,11 +367,19 @@ class GuiApplication:
         break
 
   def push_widget(self, widget: object):
+    import traceback
+    traceback.print_stack(limit=5)
+
+    if widget in self._nav_stack:
+      cloudlog.warning("Widget already in stack, cannot push again!")
+      return
+
     # disable previous widget to prevent input processing, but keep rendering for smooth transitions
     if len(self._nav_stack) > 0:
       prev_widget = self._nav_stack[-1]
       print('Disabling and hide_event for', prev_widget.__class__.__name__)
       # prev_widget.hide_event()
+      # TODO: change these to touch_valid
       prev_widget.set_enabled(False)
 
     print('Pushing and show_event for', widget.__class__.__name__)
@@ -379,7 +389,7 @@ class GuiApplication:
 
   def pop_widget(self):
     if len(self._nav_stack) < 2:
-      cloudlog.warning("At least one widget should remain on the stack, ignoring pop")
+      cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
     # re-enable previous widget if exists
@@ -395,6 +405,10 @@ class GuiApplication:
     print()
 
   def pop_widgets_to(self, widget):
+    if widget not in self._nav_stack:
+      cloudlog.warning("Widget not in stack, cannot pop to it!")
+      return
+
     # pops all widgets after specified widget
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
@@ -403,6 +417,9 @@ class GuiApplication:
     if len(self._nav_stack) > 0:
       return self._nav_stack[-1]
     return None
+
+  def set_nav_stack_tick(self, tick_function: Callable | None):
+    self._nav_stack_tick = tick_function
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -545,6 +562,10 @@ class GuiApplication:
         else:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
+
+        # Allow a Widget to still run a function regardless of the stack depth
+        if self._nav_stack_tick is not None:
+          self._nav_stack_tick()
 
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:

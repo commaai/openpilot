@@ -38,6 +38,7 @@ class Updater(Widget):
 
     self._network_setup_page = NetworkSetupPage(self._wifi_manager, self._network_setup_continue_callback,
                                                 self._network_setup_back_callback)
+    self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()

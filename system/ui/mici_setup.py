@@ -439,6 +439,7 @@ class NetworkSetupPage(Widget):
     back_txt = gui_app.texture("icons_mici/setup/back_new.png", 37, 32)
     self._back_button = SmallCircleIconButton(back_txt)
     self._back_button.set_click_callback(back_callback)
+    self._back_button.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._wifi_button = SmallerRoundedButton("wifi")
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
@@ -447,8 +448,6 @@ class NetworkSetupPage(Widget):
     self._continue_button = WidishRoundedButton("continue")
     self._continue_button.set_enabled(False)
     self._continue_button.set_click_callback(continue_callback)
-
-    self._prev_has_internet = False
 
   def set_has_internet(self, has_internet: bool):
     if has_internet:
@@ -459,20 +458,6 @@ class NetworkSetupPage(Widget):
       self._network_header.set_title(self._waiting_text)
       self._network_header.set_icon(self._no_wifi_txt)
       self._continue_button.set_enabled(False)
-
-    if has_internet and not self._prev_has_internet:
-      pass
-      # gui_app.pop_widgets_to(self)
-    self._prev_has_internet = has_internet
-
-  def show_event(self):
-    super().show_event()
-    self._wifi_ui.show_event()
-
-  def hide_event(self):
-    super().hide_event()
-    if self._state == NetworkSetupState.WIFI_PANEL:
-      self._wifi_ui.hide_event()
 
   def _render(self, _):
     self._network_header.render(rl.Rectangle(
@@ -518,14 +503,15 @@ class Setup(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
     self._prev_has_internet = False
-    # TODO: fix this if broken
-    gui_app.set_modal_overlay_tick(self._modal_overlay_tick)
+    gui_app.set_nav_stack_tick(self._nav_stack_tick)
 
     self._start_page = StartPage()
     self._start_page.set_click_callback(self._getting_started_button_callback)
 
     self._network_setup_page = NetworkSetupPage(self._wifi_manager, self._network_setup_continue_button_callback,
                                                 self._network_setup_back_button_callback)
+    # TODO: change these to touch_valid
+    self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._software_selection_page = SoftwareSelectionPage(self._software_selection_continue_button_callback,
                                                           self._software_selection_custom_software_button_callback)
@@ -537,10 +523,10 @@ class Setup(Widget):
 
     self._downloading_page = DownloadingPage()
 
-  def _modal_overlay_tick(self):
+  def _nav_stack_tick(self):
     has_internet = self._network_monitor.network_connected.is_set()
     if has_internet and not self._prev_has_internet:
-      gui_app.set_modal_overlay(None)
+      gui_app.pop_widgets_to(self)
     self._prev_has_internet = has_internet
 
   def _update_state(self):
@@ -612,7 +598,6 @@ class Setup(Widget):
 
   def render_network_setup(self, rect: rl.Rectangle):
     has_internet = self._network_monitor.network_connected.is_set()
-    self._prev_has_internet = has_internet
     self._network_setup_page.set_has_internet(has_internet)
     self._network_setup_page.render(rect)
 
