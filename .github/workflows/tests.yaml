@@ -20,7 +20,7 @@ concurrency:
 env:
   CI: 1
   PYTHONPATH: ${{ github.workspace }}
-  PYTEST: pytest --continue-on-collection-errors --durations=0 --full-trace -n logical
+  PYTEST: pytest --continue-on-collection-errors --durations=0 --full-trace -n logical -vvv
 
 jobs:
   build_release:
