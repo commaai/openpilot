@@ -106,7 +106,6 @@ if __name__ == "__main__":
   gui_app.init_window("pairing device")
   pairing = PairingDialog()
   gui_app.push_widget(pairing)
-  # TODO: black screen?
   try:
     for _ in gui_app.render():
       pass
