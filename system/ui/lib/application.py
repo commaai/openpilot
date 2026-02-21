@@ -564,17 +564,9 @@ class GuiApplication:
         if self._nav_stack_tick is not None:
           self._nav_stack_tick()
 
-        # Only render top widgets; suppress mouse events for non-active (background) widgets
-        # so their children can't process touches either
-        widgets_to_render = self._nav_stack[-self._nav_stack_widgets_to_render:]
-        for i, widget in enumerate(widgets_to_render):
-          if i < len(widgets_to_render) - 1:
-            saved_events = self._mouse_events
-            self._mouse_events = []
-            widget.render(rl.Rectangle(0, 0, self.width, self.height))
-            self._mouse_events = saved_events
-          else:
-            widget.render(rl.Rectangle(0, 0, self.width, self.height))
+        # Only render top widgets
+        for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
+          widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
         # print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
 
