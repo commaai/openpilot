@@ -220,8 +220,8 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._nav_stack: list[object] = []
-    self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
     self._nav_stack_tick: Callable[[], None] | None = None
+    self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -371,18 +371,14 @@ class GuiApplication:
       cloudlog.warning("Widget already in stack, cannot push again!")
       return
 
-    # disable previous widget to prevent input processing, but keep rendering for smooth transitions
+    # disable previous widget to prevent input processing
     if len(self._nav_stack) > 0:
       prev_widget = self._nav_stack[-1]
-      print('Disabling and hide_event for', prev_widget.__class__.__name__)
-      # prev_widget.hide_event()
       # TODO: change these to touch_valid
       prev_widget.set_enabled(False)
 
-    print('Pushing and show_event for', widget.__class__.__name__)
     self._nav_stack.append(widget)
     widget.show_event()
-    print()
 
   def pop_widget(self):
     if len(self._nav_stack) < 2:
@@ -392,14 +388,10 @@ class GuiApplication:
     # re-enable previous widget and pop current
     # TODO: switch to touch_valid
     prev_widget = self._nav_stack[-2]
-    print('Re-enabling and show_event for', prev_widget.__class__.__name__)
-    # prev_widget.show_event()
     prev_widget.set_enabled(True)
 
-    print('Popping and hide_event for', self._nav_stack[-1].__class__.__name__)
     widget = self._nav_stack.pop()
     widget.hide_event()
-    print()
 
   def pop_widgets_to(self, widget):
     if widget not in self._nav_stack:
@@ -567,8 +559,6 @@ class GuiApplication:
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
-
-        # print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
 
         yield True
 
