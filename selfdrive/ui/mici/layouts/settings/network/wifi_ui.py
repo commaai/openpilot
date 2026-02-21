@@ -229,7 +229,6 @@ class NetworkInfoPage(NavWidget):
     self._subtitle = UnifiedLabel("", 36, FontWeight.ROMAN, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                   alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
-    # self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
     self.set_back_callback(gui_app.pop_widget)
 
     # State
@@ -249,8 +248,6 @@ class NetworkInfoPage(NavWidget):
         break
     else:
       # network disappeared, close page
-      # FIXME: this closes wifi page
-      # gui_app.set_modal_overlay(None)
       if gui_app.get_active_widget() == self:
         gui_app.pop_widget()
 
@@ -369,11 +366,9 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def hide_event(self):
     super().hide_event()
-    print('WifiUIMici->hide_event')
     self._scroller.hide_event()
 
   def _on_network_updated(self, networks: list[Network]):
-    print('WifiUIMici->_on_network_updated')
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
     self._network_info_page.update_networks(self._networks)
@@ -408,7 +403,6 @@ class WifiUIMici(BigMultiOptionDialog):
 
   def _on_option_selected(self, option: str):
     super()._on_option_selected(option)
-    print(f"WifiUIMici->_on_option_selected: {option}")
 
     if option in self._networks:
       self._network_info_page.set_current_network(self._networks[option])
