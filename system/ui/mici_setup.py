@@ -127,7 +127,9 @@ class SoftwareSelectionPage(Widget):
     super().__init__()
 
     self._openpilot_slider = LargerSlider("slide to use\nopenpilot", use_openpilot_callback)
+    self._openpilot_slider.set_enabled(lambda: self.enabled)
     self._custom_software_slider = LargerSlider("slide to use\ncustom software", use_custom_software_callback, green=False)
+    self._custom_software_slider.set_enabled(lambda: self.enabled)
 
   def reset(self):
     self._openpilot_slider.reset()
@@ -389,9 +391,11 @@ class FailedPage(Widget):
 
     self._reboot_button = SmallRedPillButton("reboot")
     self._reboot_button.set_click_callback(reboot_callback)
+    self._reboot_button.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._retry_button = WideRoundedButton("retry")
     self._retry_button.set_click_callback(retry_callback)
+    self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
 
   def set_reason(self, reason: str):
     self._reason_label.set_text(reason)
@@ -515,11 +519,14 @@ class Setup(Widget):
 
     self._software_selection_page = SoftwareSelectionPage(self._software_selection_continue_button_callback,
                                                           self._software_selection_custom_software_button_callback)
+    self._software_selection_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._download_failed_page = FailedPage(HARDWARE.reboot, self._download_failed_startover_button_callback)
+    self._download_failed_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._custom_software_warning_page = CustomSoftwareWarningPage(self._software_selection_custom_software_continue,
                                                                    self._custom_software_warning_back_button_callback)
+    self._custom_software_warning_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._downloading_page = DownloadingPage()
 
