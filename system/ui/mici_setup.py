@@ -546,7 +546,6 @@ class Setup(Widget):
       self._network_setup_page.hide_event()
 
   def _render(self, rect: rl.Rectangle):
-    print(f"Rendering state: {self.state.name}")
     if self.state == SetupState.GETTING_STARTED:
       self._start_page.render(rect)
     elif self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE):

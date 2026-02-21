@@ -367,9 +367,6 @@ class GuiApplication:
         break
 
   def push_widget(self, widget: object):
-    import traceback
-    traceback.print_stack(limit=5)
-
     if widget in self._nav_stack:
       cloudlog.warning("Widget already in stack, cannot push again!")
       return
@@ -392,16 +389,16 @@ class GuiApplication:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    # re-enable previous widget if exists
-    if len(self._nav_stack) > 1:
-      prev_widget = self._nav_stack[-2]
-      print('Re-enabling and show_event for', prev_widget.__class__.__name__)
-      # prev_widget.show_event()
-      prev_widget.set_enabled(True)
-    if len(self._nav_stack) > 1:
-      print('Popping and hide_event for', self._nav_stack[-1].__class__.__name__)
-      widget = self._nav_stack.pop()
-      widget.hide_event()
+    # re-enable previous widget and pop current
+    # TODO: switch to touch_valid
+    prev_widget = self._nav_stack[-2]
+    print('Re-enabling and show_event for', prev_widget.__class__.__name__)
+    # prev_widget.show_event()
+    prev_widget.set_enabled(True)
+
+    print('Popping and hide_event for', self._nav_stack[-1].__class__.__name__)
+    widget = self._nav_stack.pop()
+    widget.hide_event()
     print()
 
   def pop_widgets_to(self, widget):
@@ -571,7 +568,7 @@ class GuiApplication:
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
-        print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
+        # print('widget stack', len(self._nav_stack), [w.__class__.__name__ for w in self._nav_stack])
 
         yield True
 
