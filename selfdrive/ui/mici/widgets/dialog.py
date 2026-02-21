@@ -26,9 +26,6 @@ class BigDialogBase(NavWidget, abc.ABC):
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     self.set_back_callback(gui_app.pop_widget)
 
-  # def _render(self, _):
-  #   pass
-
 
 class BigDialog(BigDialogBase):
   def __init__(self,
