@@ -33,13 +33,13 @@ sys.path.insert(0, CACHE)
 # ---------------------------------------------------------------------------
 # Phase 2: imports (native libs are now on sys.path)
 # ---------------------------------------------------------------------------
-import re        # noqa: E402
-import subprocess  # noqa: E402
-import time       # noqa: E402
+import re
+import subprocess
+import time
 
-import pyray as rl  # noqa: E402
+import pyray as rl
 
-import config  # noqa: E402  — generated at build time (BRANCH, INTERNAL, GIT_URL)
+import config  # generated at build time (BRANCH, INTERNAL, GIT_URL)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -109,7 +109,7 @@ def run(cmd):
 
 
 def system_time_valid():
-    return time.time() > 1704067200  # 2024-01-01 UTC
+    return time.clock_gettime(time.CLOCK_REALTIME) > 1704067200  # 2024-01-01 UTC
 
 
 # ---------------------------------------------------------------------------
@@ -179,8 +179,7 @@ def execute_git_command(cmd):
 
 
 def fresh_clone(branch):
-    cmd = (f"git clone --progress {config.GIT_URL} -b {branch} "
-           f"--depth=1 --recurse-submodules {TMP_INSTALL_PATH} 2>&1")
+    cmd = f"git clone --progress {config.GIT_URL} -b {branch} --depth=1 --recurse-submodules {TMP_INSTALL_PATH} 2>&1"
     return execute_git_command(cmd)
 
 
@@ -220,9 +219,8 @@ def clone_finished(exit_code, branch):
         for key, value in {"SshEnabled": "1", "RecordFrontLock": "1", "GithubSshKeys": ssh_keys}.items():
             with open(f"/data/params/d/{key}", "w") as f:
                 f.write(value)
-        run(f"cd {INSTALL_PATH} && "
-            f"git remote set-url origin --push {GIT_SSH_URL} && "
-            f'git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"')
+        run(f"cd {INSTALL_PATH} && git remote set-url origin --push {GIT_SSH_URL} && "
+            + 'git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"')
 
     with open("/data/continue.sh.new", "wb") as f:
         f.write(CONTINUE_SH)
