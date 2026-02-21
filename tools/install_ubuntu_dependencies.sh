@@ -42,21 +42,15 @@ function install_ubuntu_common_requirements() {
     ffmpeg \
     libavformat-dev \
     libavcodec-dev \
-    libavdevice-dev \
     libavutil-dev \
-    libavfilter-dev \
     libbz2-dev \
     libeigen3-dev \
-    libffi-dev \
     libgles2-mesa-dev \
-    libglfw3-dev \
-    libglib2.0-0 \
     libjpeg-dev \
     libncurses5-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
     libzstd-dev \
-    libsqlite3-dev \
     portaudio19-dev \
     gettext
 }
@@ -66,7 +60,6 @@ function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
   $SUDO apt-get install -y --no-install-recommends \
-    g++-12 \
     python3-dev \
     python3-venv
 }
