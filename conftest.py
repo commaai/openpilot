@@ -1,13 +1,9 @@
 import contextlib
 import gc
 import os
-import signal
 import pytest
 
 from openpilot.common.prefix import OpenpilotPrefix
-
-signal.signal(signal.SIGTERM, lambda signum, frame: (_ for _ in ()).throw(KeyboardInterrupt))
-
 from openpilot.system.manager import manager
 from openpilot.system.hardware import TICI, HARDWARE
 
