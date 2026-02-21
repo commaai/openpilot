@@ -46,9 +46,10 @@ FfmpegEncoder::~FfmpegEncoder() {
 }
 
 void FfmpegEncoder::encoder_open() {
-  auto codec_id = encoder_info.get_settings(in_width).encode_type == cereal::EncodeIndex::Type::QCAMERA_H264
-                      ? AV_CODEC_ID_H264
-                      : AV_CODEC_ID_FFVHUFF;
+  auto encode_type = encoder_info.get_settings(in_width).encode_type;
+  auto codec_id = encode_type == cereal::EncodeIndex::Type::QCAMERA_H264 ? AV_CODEC_ID_H264
+                : encode_type == cereal::EncodeIndex::Type::QCAMERA_H_E_V_C ? AV_CODEC_ID_HEVC
+                : AV_CODEC_ID_FFVHUFF;
   const AVCodec *codec = avcodec_find_encoder(codec_id);
 
   this->codec_ctx = avcodec_alloc_context3(codec);

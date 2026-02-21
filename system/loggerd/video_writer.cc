@@ -21,7 +21,8 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
 
     // set codec correctly. needed?
     assert(codec != cereal::EncodeIndex::Type::FULL_H_E_V_C);
-    const AVCodec *avcodec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : AV_CODEC_ID_H264);
+    bool is_hevc = (codec == cereal::EncodeIndex::Type::QCAMERA_H_E_V_C);
+    const AVCodec *avcodec = avcodec_find_encoder(raw ? AV_CODEC_ID_FFVHUFF : (is_hevc ? AV_CODEC_ID_HEVC : AV_CODEC_ID_H264));
     assert(avcodec);
 
     this->codec_ctx = avcodec_alloc_context3(avcodec);
