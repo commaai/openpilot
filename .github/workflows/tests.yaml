@@ -148,7 +148,7 @@ jobs:
         # Pre-compile Python bytecode so each pytest worker doesn't need to
         $PYTEST --collect-only -m 'not slow' -qq
         TIMEOUT_MINS=${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
-        timeout --foreground --signal=INT --kill-after=5 $((TIMEOUT_MINS * 60 - 15)) env MAX_EXAMPLES=1 $PYTEST -m 'not slow'
+        timeout --foreground --signal=INT --kill-after=5 30 env MAX_EXAMPLES=1 $PYTEST -m 'not slow'
 
   process_replay:
     name: process replay
