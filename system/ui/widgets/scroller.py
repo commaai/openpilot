@@ -226,7 +226,7 @@ class Scroller(Widget):
     item = self._items.pop(from_idx)
     self._items.insert(to_idx, item)
 
-    # store original position of all affected widgets to update later
+    # store original position of all affected widgets to animate from
     # TODO: remove scroller positioning so it's relative to rect/viewport and user
     #  scrolling while animating won't cause filters to not delete immediately
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
@@ -245,7 +245,7 @@ class Scroller(Widget):
 
   @property
   def moving_items(self) -> bool:
-    return len(self._move_animations) > 0
+    return len(self._move_animations) > 0 or len(self._move_lift) > 0
 
   def _layout(self):
     self._visible_items = [item for item in self._items if item.is_visible]
@@ -292,13 +292,20 @@ class Scroller(Widget):
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
-      # if id(item) in self._move_lift:
-      #   lift_filter = self._move_lift[id(item)]
-      #   lift_offset = lift_filter.update(1.0) * 20
-      #   y -= lift_offset
-      #   print('lifting item', item, 'to offset', lift_offset)
-      #   if abs(lift_filter.x - 1.0) < 0.01:
-      #     del self._move_lift[id(item)]
+      if id(item) in self._move_lift:
+        # when move animation for this item is deleted, animate down and delete when done
+        lift_filter = self._move_lift[id(item)]
+        if id(item) in self._move_animations:
+          # if still moving, keep lifted
+          lift_offset = lift_filter.update(20)
+        else:
+          # if done moving, animate down
+          lift_offset = lift_filter.update(0)
+          print('lifting item', item, 'to offset', lift_offset)
+          # TODO: delete earlier, this takes a while
+          if abs(lift_filter.x) < 1:
+            del self._move_lift[id(item)]
+        y -= lift_offset
 
       if id(item) in self._move_animations:
         print('item', item, 'animating from', self._move_animations[id(item)].x, 'to', x)
@@ -317,6 +324,8 @@ class Scroller(Widget):
       item.set_parent_rect(self._rect)
 
   def _render(self, _):
+    print('moving items', len(self._move_animations), 'lifting items', len(self._move_lift))
+
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
@@ -340,9 +349,9 @@ class Scroller(Widget):
     rl.end_scissor_mode()
 
     # dim rect if moving items
-    self._overlay_filter.update(0.65 if self.moving_items else 0.0)
-    if self._overlay_filter.x > 0.01:
-      rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
+    # self._overlay_filter.update(0.65 if self.moving_items else 0.0)
+    # if self._overlay_filter.x > 0.01:
+    #   rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
 
     # Draw edge shadows on top of scroller content
     if self._edge_shadows:
