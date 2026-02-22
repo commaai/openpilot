@@ -284,7 +284,6 @@ class WifiManager:
     return self._tethering_password
 
   def _set_connecting(self, ssid: str | None):
-    print('SET CONNECTING', ssid)
     self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
@@ -358,8 +357,6 @@ class WifiManager:
         # PropertiesChanged on wifi device (LastScan = scan complete)
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
-          # if 'AccessPoints' not in changed:
-          #   print('Properties changed', (iface, changed))
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
             self._update_networks()
 
@@ -376,7 +373,6 @@ class WifiManager:
         #    user-initiated connections already have ssid set via _set_connecting.
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
-          print('  State change', (NMDeviceState(new_state), NMDeviceStateReason(change_reason)))
 
           if new_state == NMDeviceState.DISCONNECTED:
             if change_reason != NMDeviceStateReason.NEW_ACTIVATION:
@@ -404,7 +400,6 @@ class WifiManager:
             if self._wifi_state.ssid:
               self._enqueue_callbacks(self._need_auth, self._wifi_state.ssid)
 
-            print('connection failed to', self._wifi_state.ssid, (new_state, change_reason))
             self._set_connecting(None)
 
           elif new_state in (NMDeviceState.NEED_AUTH, NMDeviceState.IP_CONFIG, NMDeviceState.IP_CHECK,
@@ -438,11 +433,6 @@ class WifiManager:
             if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
               # When connection is forgotten
               self._set_connecting(None)
-
-          else:
-            cloudlog.warning(f"Unhandled state change: new_state={repr(NMDeviceState(new_state))}, previous_state={repr(NMDeviceState(previous_state))}, "
-                             f"change_reason={change_reason}")
-            raise Exception
 
   def _network_scanner(self):
     while not self._exit:
@@ -580,7 +570,6 @@ class WifiManager:
 
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
-      print('forgetting connections to', ssid)
       self.forget_connection(ssid, block=True)
 
       connection = {
@@ -823,8 +812,6 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        # print(aps)
-        # print()
         networks = [Network.from_dbus(ssid, ap_list) for ssid, ap_list in aps.items()]
         networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
         self._networks = networks

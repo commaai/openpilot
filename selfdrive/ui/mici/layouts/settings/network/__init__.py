@@ -128,10 +128,6 @@ class NetworkLayoutMici(NavWidget):
       self._wifi_button.set_text("wi-fi")
       self._wifi_button.set_value("not connected")
 
-    # print('display_network', display_network)
-    # print('----')
-    # print()
-
     if display_network is not None:
       strength = WifiIcon.get_strength_icon_idx(display_network.strength)
       self._wifi_button.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
@@ -173,9 +169,6 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), ui_state.params.get("GsmApn") or "", checked)
 
   def _on_network_updated(self, networks: list[Network]):
-    # print('----')
-    # print('Network: _on_network_updated', rl.get_time())
-
     # Update tethering state
     tethering_active = self._wifi_manager.is_tethering_active()
     # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
