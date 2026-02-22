@@ -400,7 +400,7 @@ class WifiUIMici(BigMultiOptionDialog):
         btn.set_network_missing(True)
 
   def _connect_with_password(self, ssid: str, password: str):
-    self._wifi_manager.connect_to_network(ssid, 'ldkjaskldjkladadas')
+    self._wifi_manager.connect_to_network(ssid, password)
     self._update_buttons()
 
   def _on_option_selected(self, option: str):
@@ -426,8 +426,8 @@ class WifiUIMici(BigMultiOptionDialog):
       self._on_need_auth(network.ssid, False)
 
   def _on_need_auth(self, ssid, incorrect_password=True):
-    hint = f"wrong {ssid}" if incorrect_password else "enter password..."
-    dlg = BigInputDialog(hint, "", minimum_length=0,
+    hint = "wrong password..." if incorrect_password else "enter password..."
+    dlg = BigInputDialog(hint, "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
     gui_app.push_widget(dlg)
 
