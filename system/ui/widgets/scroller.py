@@ -108,7 +108,6 @@ class Scroller(Widget):
     # these are used to wait before moving/dropping, also to move onto next part of the animation earlier for timing
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
-    self._lift_groups: dict[Widget, set[Widget]] = {}  # lifted item -> all items waiting for its lift
 
     for item in items:
       self.add_widget(item)
@@ -138,7 +137,8 @@ class Scroller(Widget):
 
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
-    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None)
+    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None
+                                          and not self.moving_items)
 
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     """Set whether scrolling is enabled (does not affect widget enabled state)."""
@@ -216,9 +216,9 @@ class Scroller(Widget):
     if from_idx == to_idx:
       return
 
-    # if self.moving_items:
-    #   cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
-    #   return
+    if self.moving_items:
+      cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
+      return
 
     # TODO: handle moving to same position
     assert self._horizontal
@@ -230,23 +230,20 @@ class Scroller(Widget):
     item = self._items.pop(from_idx)
     self._items.insert(to_idx, item)
 
-    # store position in content space (without scroll) so animation is scroll-independent
-    affected = set()
+    # store original position of all affected widgets to animate from
+    # TODO: remove scroller positioning so it's relative to rect/viewport and user
+    #  scrolling while animating won't cause filters to not delete immediately
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
       affected_item = self._items[idx]
-      if affected_item not in self._move_animations:
-        content_pos = affected_item.rect.x - self._scroll_offset
-        self._move_animations[affected_item] = FirstOrderFilter(content_pos, 0.15, 1 / gui_app.target_fps)
+      # store position in content space (without scroll) so animation is scroll-independent
+      self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, 0.15, 1 / gui_app.target_fps)
       self._pending_move.add(affected_item)
-      affected.add(affected_item)
-
-    # all affected items wait for the lifted item's lift before sliding
-    self._pending_lift.update(affected)
-    self._lift_groups[item] = affected
+      print('setting original position of affected item', idx, 'to', affected_item.rect.x - self._scroll_offset)
 
     # lift only src widget to make it more clear which one is moving
-    if item not in self._move_lift:
-      self._move_lift[item] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    self._move_lift[item] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    print('setting lift for item to', self._move_lift[item].x)
+    self._pending_lift.add(item)
 
   @property
   def moving_items(self) -> bool:
@@ -254,28 +251,35 @@ class Scroller(Widget):
 
   def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
     if item in self._move_lift:
+      # when move animation for this item is deleted, animate down and delete when done
       lift_filter = self._move_lift[item]
 
-      if item in self._pending_move:
-        # still moving, keep lifted
+      if len(self._pending_move) > 0:  # only lift when pending move to avoid jumping back to original position before move starts
+
+        # if item in self._move_animations:
+        # if still moving, keep lifted
         lift_filter.update(MOVE_LIFT)
+        # move early
         if abs(lift_filter.x - MOVE_LIFT) < 2:
-          self._pending_lift -= self._lift_groups.pop(item, set())
+          self._pending_lift.discard(item)
       else:
-        # done moving, animate down
+        # if done moving, animate down
         lift_filter.update(0)
+        # print('lifting item', item, 'to offset', lift_filter.x)
+        # TODO: delete earlier, this takes a while
         if abs(lift_filter.x) < 1:
           del self._move_lift[item]
       target_y -= lift_filter.x
 
     if item in self._move_animations:
+      # print('item', item, 'animating from', self._move_animations[item].x, 'to', target_x)
       anim_filter = self._move_animations[item]
 
       content_x = target_x - self._scroll_offset  # compare/update in content space to match filter
-      if item not in self._pending_lift:  # wait for this item's lift before sliding
+      if len(self._pending_lift) == 0:  # only move when not pending lift to avoid jumping back to original position before lift starts
         anim_filter.update(content_x)
 
-      # drop early when close
+      # drop early
       if abs(anim_filter.x - content_x) < 10:
         self._pending_move.discard(item)
 
