@@ -246,9 +246,10 @@ class Scroller(Widget):
     #  scrolling while animating won't cause filters to not delete immediately
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
       affected_item = self._items[idx]
-      self._move_animations[id(affected_item)] = FirstOrderFilter(affected_item.rect.x, 0.15, 1 / gui_app.target_fps)
+      # store position in content space (without scroll) so animation is scroll-independent
+      self._move_animations[id(affected_item)] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, 0.15, 1 / gui_app.target_fps)
       self._pending_move.add(id(affected_item))
-      print('setting original position of affected item', idx, 'to', affected_item.rect.x)
+      print('setting original position of affected item', idx, 'to', affected_item.rect.x - self._scroll_offset)
 
     item_id = id(item)
     # lift only src widget to make it more clear which one is moving
@@ -336,17 +337,18 @@ class Scroller(Widget):
         print('item', item, 'animating from', self._move_animations[item_id].x, 'to', x)
         anim_filter = self._move_animations[item_id]
 
+        content_x = x - self._scroll_offset  # compare/update in content space to match filter
         if len(self._pending_lift) == 0:  # only move when not pending lift to avoid jumping back to original position before lift starts
-          anim_filter.update(x)
+          anim_filter.update(content_x)
 
         # drop early
-        if abs(anim_filter.x - x) < 10:
+        if abs(anim_filter.x - content_x) < 10:
           self._pending_move.discard(item_id)
 
         # finished moving
-        if abs(anim_filter.x - x) < 1:
+        if abs(anim_filter.x - content_x) < 1:
           del self._move_animations[item_id]
-        x = anim_filter.x
+        x = anim_filter.x + self._scroll_offset
 
       # Update item state
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
