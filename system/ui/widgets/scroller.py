@@ -360,6 +360,8 @@ class Scroller(Widget):
     for item in self._move_lift:
       self._render_item(item)
 
+    rl.end_scissor_mode()
+
     # Draw edge shadows on top of scroller content
     if self._edge_shadows:
       rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y),
@@ -370,7 +372,6 @@ class Scroller(Widget):
       rl.draw_rectangle_gradient_h(right_x, int(self._rect.y),
                                    EDGE_SHADOW_WIDTH, int(self._rect.height),
                                    rl.BLANK, rl.Color(0, 0, 0, 204))
-    rl.end_scissor_mode()
 
     # Draw scroll indicator on top of edge shadows
     if self._show_scroll_indicator and len(self._visible_items) > 0:
