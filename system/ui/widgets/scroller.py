@@ -136,8 +136,7 @@ class Scroller(Widget):
 
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
-    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None
-                                          and not self.moving_items)
+    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None)
 
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     """Set whether scrolling is enabled (does not affect widget enabled state)."""
@@ -220,9 +219,9 @@ class Scroller(Widget):
     if from_idx == to_idx:
       return
 
-    if self.moving_items:
-      cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
-      return
+    # if self.moving_items:
+    #   cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
+    #   return
 
     item = self._items.pop(from_idx)
     self._items.insert(to_idx, item)
@@ -242,12 +241,13 @@ class Scroller(Widget):
       lift_filter = self._move_lift[item]
 
       # Animate lift
-      if len(self._pending_move) > 0:
+      # if len(self._pending_move) > 0:
+      if item in self._pending_move:
         lift_filter.update(MOVE_LIFT)
         # start moving when almost lifted
         if abs(lift_filter.x - MOVE_LIFT) < 2:
           self._pending_lift.discard(item)
-      else:
+      else:  # elif len(self._pending_move) == 0:
         # if done moving, animate down
         lift_filter.update(0)
         if abs(lift_filter.x) < 1:
@@ -275,6 +275,8 @@ class Scroller(Widget):
     return target_x, target_y
 
   def _layout(self):
+    print('Move animations:', len(self._move_animations), 'Move lift:', len(self._move_lift))
+
     self._visible_items = [item for item in self._items if item.is_visible]
 
     self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in self._visible_items)
