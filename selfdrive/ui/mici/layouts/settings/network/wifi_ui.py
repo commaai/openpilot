@@ -8,7 +8,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR, LABEL_HORIZONTAL_PADDING, LABEL_VERTICAL_PADDING
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
-from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType
 
@@ -284,7 +285,7 @@ class ForgetButton(Widget):
     super()._handle_mouse_release(mouse_pos)
     dlg = BigConfirmationDialogV2("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
                                   confirm_callback=self._forget_network)
-    gui_app.set_modal_overlay(dlg)
+    gui_app.push_widget(dlg)
 
   def _render(self, _):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
@@ -297,13 +298,10 @@ class ForgetButton(Widget):
 
 
 class WifiUIMici(NavWidget):
-  def __init__(self, wifi_manager: WifiManager, back_callback: Callable):
+  def __init__(self, wifi_manager: WifiManager):
     super().__init__()
 
     self._scroller = Scroller([], snap_items=False)
-
-    # Set up back navigation
-    self.set_back_callback(back_callback)
 
     self._loading_animation = LoadingAnimation()
 
@@ -392,7 +390,7 @@ class WifiUIMici(NavWidget):
 
     dlg = BigInputDialog("enter password...", "", minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
-    gui_app.set_modal_overlay(dlg)
+    gui_app.push_widget(dlg)
 
   def _on_forgotten(self, ssid):
     # For eager UI forget
