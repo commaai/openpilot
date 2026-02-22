@@ -324,7 +324,7 @@ class DeviceLayoutMici(NavWidget):
       regulatory_btn,
       reboot_btn,
       self._power_off_btn,
-    ], snap_items=False)
+    ])
 
     # Set up back navigation
     # TODO: can this somehow be generic in widgets/__init__.py or application.py?

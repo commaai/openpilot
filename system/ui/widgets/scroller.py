@@ -20,21 +20,6 @@ DO_ZOOM = False
 DO_JELLO = False
 
 
-class LineSeparator(Widget):
-  def __init__(self, height: int = 1):
-    super().__init__()
-    self._rect = rl.Rectangle(0, 0, 0, height)
-
-  def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
-    super().set_parent_rect(parent_rect)
-    self._rect.width = parent_rect.width
-
-  def _render(self, _):
-    rl.draw_line(int(self._rect.x) + LINE_PADDING, int(self._rect.y),
-                 int(self._rect.x + self._rect.width) - LINE_PADDING, int(self._rect.y),
-                 LINE_COLOR)
-
-
 class ScrollIndicator(Widget):
   HORIZONTAL_MARGIN = 4
 
@@ -78,17 +63,14 @@ class ScrollIndicator(Widget):
 
 
 class Scroller(Widget):
-  def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = True, spacing: int = ITEM_SPACING,
-               line_separator: bool = False, pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING,
-               scroll_indicator: bool = True, edge_shadows: bool = True):
+  def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
+               pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
     self._snap_items = snap_items
     self._spacing = spacing
-    self._line_separator = LineSeparator() if line_separator else None
-    self._pad_start = pad_start
-    self._pad_end = pad_end
+    self._pad = pad
 
     self._reset_scroll_at_show = True
 
@@ -215,15 +197,9 @@ class Scroller(Widget):
   def _layout(self):
     self._visible_items = [item for item in self._items if item.is_visible]
 
-    # Add line separator between items
-    if self._line_separator is not None:
-      l = len(self._visible_items)
-      for i in range(1, len(self._visible_items)):
-        self._visible_items.insert(l - i, self._line_separator)
-
     self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in self._visible_items)
     self._content_size += self._spacing * (len(self._visible_items) - 1)
-    self._content_size += self._pad_start + self._pad_end
+    self._content_size += self._pad * 2
 
     self._scroll_offset = self._get_scroll(self._visible_items, self._content_size)
 
@@ -231,7 +207,7 @@ class Scroller(Widget):
 
     cur_pos = 0
     for idx, item in enumerate(self._visible_items):
-      spacing = self._spacing if (idx > 0) else self._pad_start
+      spacing = self._spacing if (idx > 0) else self._pad
       # Nicely lay out items horizontally/vertically
       if self._horizontal:
         x = self._rect.x + cur_pos + spacing

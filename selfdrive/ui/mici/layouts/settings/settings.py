@@ -50,7 +50,7 @@ class SettingsLayout(NavWidget):
       #BigDialogButton("manual", "", "icons_mici/settings/manual_icon.png", "Check out the mici user\nmanual at comma.ai/setup"),
       firehose_btn,
       developer_btn,
-    ], snap_items=False)
+    ])
 
     # Set up back navigation
     self.set_back_callback(gui_app.pop_widget)
