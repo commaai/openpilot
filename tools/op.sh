@@ -62,7 +62,8 @@ function op_get_openpilot_dir() {
   done
 
   # Fallback to hardcoded directories if not found
-  for dir in "$HOME/openpilot" "/data/openpilot"; do
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+  for dir in "${SCRIPT_DIR%/tools}" "$HOME/openpilot" "/data/openpilot"; do
     if [[ -f "$dir/launch_openpilot.sh" ]]; then
       OPENPILOT_ROOT="$dir"
       return 0
