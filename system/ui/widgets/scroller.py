@@ -1,3 +1,5 @@
+from enum import IntEnum
+
 import pyray as rl
 import numpy as np
 from collections.abc import Callable
@@ -61,6 +63,13 @@ class ScrollIndicator(Widget):
                         rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
+class MoveAnimationState(IntEnum):
+  STEADY = 0
+  PICKING_UP = 1
+  MOVING = 2
+  DROPPING = 3
+
+
 class Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
@@ -95,6 +104,12 @@ class Scroller(Widget):
     self._scroll_indicator = ScrollIndicator()
     self._edge_shadows = edge_shadows and self._horizontal
 
+    # move animation state
+    self._overlay_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    self._move_animations: dict[int, FirstOrderFilter] = {}
+    self._move_lift: dict[int, FirstOrderFilter] = {}
+    # self._move_states: dict[int, MoveAnimationState] = {}
+
     for item in items:
       self.add_widget(item)
 
@@ -123,7 +138,8 @@ class Scroller(Widget):
 
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
-    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled)
+    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None
+                                          and not self.moving_items)
 
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     """Set whether scrolling is enabled (does not affect widget enabled state)."""
@@ -197,6 +213,39 @@ class Scroller(Widget):
 
     return self.scroll_panel.get_offset()
 
+  def move_item(self, from_idx: int, to_idx: int):
+    # TODO: handle moving to same position
+    assert self._horizontal
+    # smoothly picks up from idx item, then moves to new idx, then smoothly drops it there
+    # first we just move smoothly without raising for simplicity
+    # TODO: index bound checks
+
+    # assert from_idx < len(self._move_animations) + len(self._move_lift)  # can't start another move while one is in progress
+    item = self._items.pop(from_idx)
+    self._items.insert(to_idx, item)
+
+    # store original position to update later
+    # TODO: remove scroller positioning so it's relative to rect/viewport and user
+    #  scrolling while animating won't cause filters to not delete immediately
+    self._move_animations[id(item)] = FirstOrderFilter(item.rect.x, 0.15, 1 / gui_app.target_fps)
+    print('setting original position to', item.rect.x)
+
+    # add animation for item that was at to_idx
+    # TODO: check not at end of list
+    dst_item = self._items[to_idx + 1]
+    self._move_animations[id(dst_item)] = FirstOrderFilter(dst_item.rect.x, 0.15, 1 / gui_app.target_fps)
+    print('setting original position of dst item to', dst_item.rect.x)
+
+
+    # self._layout()
+
+    # scroll_to new position of item
+    # self.scroll_to(item.rect.x - self._pad, smooth=True)
+
+  @property
+  def moving_items(self) -> bool:
+    return len(self._move_animations) > 0
+
   def _layout(self):
     self._visible_items = [item for item in self._items if item.is_visible]
 
@@ -242,6 +291,14 @@ class Scroller(Widget):
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
+      if id(item) in self._move_animations:
+        print('item', item, 'animating from', self._move_animations[id(item)].x, 'to', x)
+        anim_filter = self._move_animations[id(item)]
+        new_x = anim_filter.update(x)
+        if abs(anim_filter.x - x) < 1:
+          del self._move_animations[id(item)]
+        x = new_x
+
       # Update item state
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
       item.set_parent_rect(self._rect)
@@ -268,6 +325,12 @@ class Scroller(Widget):
         item.render()
 
     rl.end_scissor_mode()
+
+    # dim rect if moving items
+    self._overlay_filter.update(0.65 if self.moving_items else 0.0)
+    print('overlay filter', self._overlay_filter.x)
+    if self._overlay_filter.x > 0.01:
+      rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
 
     # Draw edge shadows on top of scroller content
     if self._edge_shadows:
