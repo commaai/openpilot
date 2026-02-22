@@ -132,7 +132,6 @@ class WifiButton(BigButton):
 
     self._network_forgetting = True
     self._forget_btn.set_visible(False)
-    print('forgetting network:', self._network.ssid)
     self._wifi_manager.forget_connection(self._network.ssid)
 
   def on_forgotten(self):
@@ -231,12 +230,6 @@ class WifiButton(BigButton):
     return self._wifi_manager.connected_ssid == self._network.ssid
 
   def _update_state(self):
-    # if normalize_ssid(self._network.ssid) == "Shane's iPhone":
-    # if normalize_ssid(self._network.ssid) == "CoxWiFi":
-    #   print(f"_update_state: ssid={self._network.ssid}, is_connected={self._network.is_connected}, is_connecting={self._is_connecting}, network_forgetting={self._network_forgetting}, network_missing={self._network_missing}")
-
-    # print(f'{self._network.ssid}, {self._network_forgetting=}, {self._network_missing=}, {self._is_connecting=}, {self._network.is_connected=}, {self._network.security_type=}, {self._wrong_password=}')
-
     if any((self._network_forgetting, self._network_missing, self._is_connecting, self._is_connected,
             self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)
@@ -348,7 +341,6 @@ class WifiUIMici(NavWidget):
     front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
                           if isinstance(btn, WifiButton) and not btn._network_missing
                           and btn.network.ssid == front_ssid), None) if front_ssid else None
-    print('front_ssid:', front_ssid, front_btn_idx)
 
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
