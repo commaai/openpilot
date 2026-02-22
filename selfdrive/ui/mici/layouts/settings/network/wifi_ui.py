@@ -319,7 +319,7 @@ class WifiUIMici(NavWidget):
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
 
-  def _update_buttons(self, move: bool = True):
+  def _update_buttons(self):
     # Update existing buttons, add new ones to the end
     existing = {btn.network.ssid: btn for btn in self._scroller.items if isinstance(btn, WifiButton)}
 
@@ -336,16 +336,11 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
         btn.set_network_missing(True)
 
-    if move:
-      front_ssid = self._wifi_manager.wifi_state.ssid
-      if front_ssid:
-        self._move_network_to_front(front_ssid)
-
-  def _move_network_to_front(self, ssid: str):
     # Move connecting/connected network to the front with animation
+    front_ssid = self._wifi_manager.wifi_state.ssid
     front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
                           if isinstance(btn, WifiButton) and
-                          btn.network.ssid == ssid), None) if ssid else None
+                          btn.network.ssid == front_ssid), None) if front_ssid else None
 
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
@@ -353,10 +348,7 @@ class WifiUIMici(NavWidget):
   def _connect_with_password(self, ssid: str, password: str):
     self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
     self._wifi_manager.connect_to_network(ssid, password)
-    self._update_buttons(move=False)
-    # in case we get need_auth from another connection and it momentarily clears wifi state
-    # TODO: improve wifi manager to not clear if we have pending connection and start a new one by tracking prev ssid
-    self._move_network_to_front(ssid)
+    self._update_buttons()
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -373,8 +365,7 @@ class WifiUIMici(NavWidget):
       return
 
     self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
-    self._update_buttons(move=False)
-    self._move_network_to_front(ssid)
+    self._update_buttons()
 
   def _on_need_auth(self, ssid, incorrect_password=True):
     if incorrect_password:
