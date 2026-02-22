@@ -63,15 +63,13 @@ class ScrollIndicator(Widget):
 
 class Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = True, spacing: int = ITEM_SPACING,
-               pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING,
-               scroll_indicator: bool = True, edge_shadows: bool = True):
+               pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
     self._snap_items = snap_items
     self._spacing = spacing
-    self._pad_start = pad_start
-    self._pad_end = pad_end
+    self._pad = pad
 
     self._reset_scroll_at_show = True
 
@@ -200,7 +198,7 @@ class Scroller(Widget):
 
     self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in self._visible_items)
     self._content_size += self._spacing * (len(self._visible_items) - 1)
-    self._content_size += self._pad_start + self._pad_end
+    self._content_size += self._pad * 2
 
     self._scroll_offset = self._get_scroll(self._visible_items, self._content_size)
 
@@ -208,7 +206,7 @@ class Scroller(Widget):
 
     cur_pos = 0
     for idx, item in enumerate(self._visible_items):
-      spacing = self._spacing if (idx > 0) else self._pad_start
+      spacing = self._spacing if (idx > 0) else self._pad
       # Nicely lay out items horizontally/vertically
       if self._horizontal:
         x = self._rect.x + cur_pos + spacing
