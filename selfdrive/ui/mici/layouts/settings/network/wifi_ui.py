@@ -230,7 +230,7 @@ class WifiButton(BigButton):
     return self._wifi_manager.connected_ssid == self._network.ssid
 
   def _update_state(self):
-    if any((self._network_forgetting, self._network_missing, self._is_connecting, self._is_connected,
+    if any((self._network_missing, self._is_connecting, self._is_connected, self._network_forgetting,
             self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)
       self._sub_label.set_color(rl.Color(255, 255, 255, int(255 * 0.585)))
