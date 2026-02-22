@@ -7,7 +7,7 @@ from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.widgets import NavWidget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets.label import MiciLabel
 
@@ -19,7 +19,7 @@ class PairingDialog(NavWidget):
 
   def __init__(self):
     super().__init__()
-    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
+    self.set_back_callback(gui_app.pop_widget)
     self._params = Params()
     self._qr_texture: rl.Texture | None = None
     self._last_qr_generation = float("-inf")
@@ -72,7 +72,7 @@ class PairingDialog(NavWidget):
     if ui_state.prime_state.is_paired():
       self._playing_dismiss_animation = True
 
-  def _render(self, rect: rl.Rectangle) -> int:
+  def _render(self, rect: rl.Rectangle):
     self._check_qr_refresh()
 
     self._render_qr_code()
@@ -84,8 +84,6 @@ class PairingDialog(NavWidget):
 
     rl.draw_texture_ex(self._txt_pair, rl.Vector2(label_x, self._rect.y + self._rect.height - self._txt_pair.height - 16),
                        0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.35)))
-
-    return -1
 
   def _render_qr_code(self) -> None:
     if not self._qr_texture:
@@ -107,10 +105,9 @@ class PairingDialog(NavWidget):
 if __name__ == "__main__":
   gui_app.init_window("pairing device")
   pairing = PairingDialog()
+  gui_app.push_widget(pairing)
   try:
     for _ in gui_app.render():
-      result = pairing.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-      if result != -1:
-        break
+      pass
   finally:
     del pairing

@@ -46,7 +46,6 @@ def run_replay(variant: LayoutVariant) -> None:
   else:
     from openpilot.selfdrive.ui.layouts.main import MainLayout
   main_layout = MainLayout()
-  main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
   script = build_script(pm, main_layout, variant)
@@ -59,7 +58,7 @@ def run_replay(variant: LayoutVariant) -> None:
   rl.get_time = lambda: frame / FPS
 
   # Main loop to replay events and render frames
-  for should_render in gui_app.render():
+  for _ in gui_app.render():
     # Handle all events for the current frame
     while script_index < len(script) and script[script_index][0] == frame:
       _, event = script[script_index]
@@ -81,9 +80,6 @@ def run_replay(variant: LayoutVariant) -> None:
       send_fn()
 
     ui_state.update()
-
-    if should_render:
-      main_layout.render()
 
     frame += 1
 

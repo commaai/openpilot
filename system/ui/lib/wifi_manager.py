@@ -40,6 +40,10 @@ DEBUG = False
 _dbus_call_idx = 0
 
 
+def normalize_ssid(ssid: str) -> str:
+  return ssid.replace("’", "'")  # for iPhone hotspots
+
+
 def _wrap_router(router):
   def _wrap(orig):
     def wrapper(msg, **kw):

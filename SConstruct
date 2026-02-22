@@ -211,10 +211,8 @@ SConscript(['third_party/SConscript'])
 
 SConscript(['selfdrive/SConscript'])
 
-if Dir('#tools/cabana/').exists() and GetOption('extras'):
-  SConscript(['tools/replay/SConscript'])
-  if arch != "larch64":
-    SConscript(['tools/cabana/SConscript'])
+if Dir('#tools/cabana/').exists() and arch != "larch64":
+  SConscript(['tools/cabana/SConscript'])
 
 
 env.CompilationDatabase('compile_commands.json')

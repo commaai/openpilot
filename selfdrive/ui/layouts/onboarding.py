@@ -81,6 +81,9 @@ class TrainingGuide(Widget):
         if self._completed_callback:
           self._completed_callback()
 
+        # NOTE: this pops OnboardingWindow during real onboarding
+        gui_app.pop_widget()
+
   def _update_state(self):
     if len(self._image_objs):
       self._textures.append(gui_app._load_texture_from_image(self._image_objs.pop(0)))
@@ -194,11 +197,10 @@ class OnboardingWindow(Widget):
     ui_state.params.put("HasAcceptedTerms", terms_version)
     self._state = OnboardingState.ONBOARDING
     if self._training_done:
-      gui_app.set_modal_overlay(None)
+      gui_app.pop_widget()
 
   def _on_completed_training(self):
     ui_state.params.put("CompletedTrainingVersion", training_version)
-    gui_app.set_modal_overlay(None)
 
   def _render(self, _):
     if self._training_guide is None:

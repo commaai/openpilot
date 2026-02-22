@@ -1,7 +1,7 @@
 import os
 import tempfile
 from typing import Dict
-from parameterized import parameterized
+from openpilot.common.parameterized import parameterized
 
 import cereal.services as services
 from cereal.services import SERVICE_LIST

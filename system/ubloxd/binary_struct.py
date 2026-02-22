@@ -174,7 +174,7 @@ class BinaryStruct:
     if not is_dataclass(cls):
       dataclass(init=False)(cls)
     fields = list(getattr(cls, '__annotations__', {}).items())
-    cls.__binary_fields__ = fields  # type: ignore[attr-defined]
+    cls.__binary_fields__ = fields
 
     @classmethod
     def _read(inner_cls, reader: BinaryReader):
@@ -184,7 +184,7 @@ class BinaryStruct:
         setattr(obj, name, value)
       return obj
 
-    cls._read = _read  # type: ignore[attr-defined]
+    cls._read = _read
 
   @classmethod
   def from_bytes(cls: type[T], data: bytes) -> T:

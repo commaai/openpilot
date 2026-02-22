@@ -83,7 +83,6 @@ if __name__ == "__main__":
 
   gui_app.init_window("UI Profiling", fps=600)
   main_layout = MiciMainLayout()
-  main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
   print("Running...")
   patch_submaster(message_chunks)
@@ -95,15 +94,13 @@ if __name__ == "__main__":
   yuv_buffer_size = W * H + (W // 2) * (H // 2) * 2
   yuv_data = np.random.randint(0, 256, yuv_buffer_size, dtype=np.uint8).tobytes()
   with cProfile.Profile() as pr:
-    for should_render in gui_app.render():
+    for _ in gui_app.render():
       if ui_state.sm.frame >= len(message_chunks):
         break
       if ui_state.sm.frame % 3 == 0:
         eof = int((ui_state.sm.frame % 3) * 0.05 * 1e9)
         vipc.send(VisionStreamType.VISION_STREAM_ROAD, yuv_data, ui_state.sm.frame % 3, eof, eof)
       ui_state.update()
-      if should_render:
-        main_layout.render()
     pr.dump_stats(f'{args.output}_deterministic.stats')
 
   rl.close_window()

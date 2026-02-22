@@ -2,7 +2,9 @@
 set -euo pipefail
 
 # Forward all openpilot service ports
-mapfile -t SERVICE_PORTS < <(python3 - <<'PY'
+while IFS=' ' read -r name port; do
+  adb forward "tcp:${port}" "tcp:${port}" > /dev/null
+done < <(python3 - <<'PY'
 from cereal.services import SERVICE_LIST
 
 FNV_PRIME = 0x100000001b3
@@ -28,12 +30,6 @@ for name, port in sorted(ports):
   print(f"{name} {port}")
 PY
 )
-
-for entry in "${SERVICE_PORTS[@]}"; do
-  name="${entry% *}"
-  port="${entry##* }"
-  adb forward "tcp:${port}" "tcp:${port}" > /dev/null
-done
 
 # Forward SSH port first for interactive shell access.
 adb forward tcp:2222 tcp:22

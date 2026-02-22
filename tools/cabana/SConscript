@@ -1,14 +1,27 @@
 import subprocess
 import os
+import shutil
 
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib', 'cereal')
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+
+# Detect Qt - skip build if not available
+if arch == "Darwin":
+  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
+  has_qt = os.path.isdir(os.path.join(brew_prefix, "opt/qt@5"))
+else:
+  has_qt = shutil.which('qmake') is not None
+
+if not has_qt:
+  Return()
+
+SConscript(['#tools/replay/SConscript'])
+Import('replay_lib')
 
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
   qt_env['QTDIR'] = f"{brew_prefix}/opt/qt@5"
   qt_dirs = [
     os.path.join(qt_env['QTDIR'], "include"),
@@ -31,12 +44,7 @@ else:
   qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
-  qt_libs = [f"Qt5{m}" for m in qt_modules]
-  if arch == "larch64":
-    qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
-  elif arch != "Darwin":
-    qt_libs += ["GL"]
+  qt_libs = [f"Qt5{m}" for m in qt_modules] + ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']
 qt_env.Tool('qt3')
 
@@ -83,7 +91,7 @@ cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/socketcans
                                                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
                                                'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
                                                'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
-cabana_env.Program('cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):
   cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])

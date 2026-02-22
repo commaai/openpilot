@@ -1,4 +1,4 @@
-from parameterized import parameterized
+from openpilot.common.parameterized import parameterized
 
 from openpilot.selfdrive.test.process_replay.regen import regen_segment
 from openpilot.selfdrive.test.process_replay.process_replay import check_openpilot_enabled

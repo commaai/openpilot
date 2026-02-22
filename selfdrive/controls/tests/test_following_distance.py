@@ -1,6 +1,6 @@
 import pytest
 import itertools
-from parameterized import parameterized_class
+from openpilot.common.parameterized import parameterized_class
 
 from cereal import log
 

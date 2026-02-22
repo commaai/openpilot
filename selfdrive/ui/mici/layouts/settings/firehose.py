@@ -13,7 +13,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
-from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
@@ -132,9 +133,6 @@ class FirehoseLayoutBase(Widget):
       y = self._draw_wrapped_text(x, y, w, tr(answer), gui_app.font(FontWeight.ROMAN), 32, self.LIGHT_GRAY)
       y += 20
 
-    # return value not used by NavWidget
-    return -1
-
   def _draw_wrapped_text(self, x, y, width, text, font, font_size, color):
     wrapped = wrap_text(font, text, font_size, width)
     for line in wrapped:
@@ -223,6 +221,6 @@ class FirehoseLayoutBase(Widget):
 class FirehoseLayout(FirehoseLayoutBase, NavWidget):
   BACK_TOUCH_AREA_PERCENTAGE = 0.1
 
-  def __init__(self, back_callback):
+  def __init__(self):
     super().__init__()
-    self.set_back_callback(back_callback)
+    self.set_back_callback(gui_app.pop_widget)
