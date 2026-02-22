@@ -193,18 +193,10 @@ class MiciHomeLayout(Widget):
         self._did_long_press = True
 
     if rl.get_time() - self._last_refresh > 5.0:
-      # device_state = ui_state.sm['deviceState']
-      # self._update_network_status(device_state)
-
       # Update version text
       self._version_text = self._get_version_text()
       self._last_refresh = rl.get_time()
       self._update_params()
-
-  # def _update_network_status(self, device_state):
-  #   self._net_type = device_state.networkType
-  #   strength = device_state.networkStrength
-  #   self._net_strength = max(0, min(5, strength.raw + 1)) if strength.raw > 0 else 0
 
   def set_callbacks(self, on_settings: Callable | None = None):
     self._on_settings_click = on_settings
