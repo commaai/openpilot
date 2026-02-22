@@ -1,5 +1,3 @@
-from enum import IntEnum
-
 import pyray as rl
 import numpy as np
 from collections.abc import Callable
@@ -68,13 +66,6 @@ class ScrollIndicator(Widget):
                         rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
-class MoveAnimationState(IntEnum):
-  STEADY = 0
-  PICKING_UP = 1
-  MOVING = 2
-  DROPPING = 3
-
-
 class Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
@@ -117,7 +108,6 @@ class Scroller(Widget):
     # these are used to wait before moving/dropping, also to move onto next part of the animation earlier for timing
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
-    # self._move_states: dict[Widget, MoveAnimationState] = {}
 
     for item in items:
       self.add_widget(item)
