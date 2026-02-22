@@ -4,6 +4,7 @@ from openpilot.system.ui.widgets import Widget
 
 class Alignment(IntFlag):
   LEFT = 0
+  # TODO: implement
   # H_CENTER = 2
   # RIGHT = 4
 
@@ -24,8 +25,6 @@ class HBoxLayout(Widget):
     self._spacing = spacing
     self._alignment = alignment
 
-    self._visible_widgets: list[Widget] = []  # tracks offscreen widgets for performance
-
     if widgets is not None:
       for widget in widgets:
         self.add_widget(widget)
@@ -37,17 +36,16 @@ class HBoxLayout(Widget):
   def add_widget(self, widget: Widget) -> None:
     self._widgets.append(widget)
 
-  def _layout(self) -> None:
-    self._visible_widgets = [w for w in self._widgets if w.is_visible]
-
   def _render(self, _):
-    cur_x = 0  #self._rect.x
-    # cur_y = self._rect.y
+    visible_widgets = [w for w in self._widgets if w.is_visible]
 
-    for idx, widget in enumerate(self._visible_widgets):
-      spacing = self._spacing if (idx > 0) else 0  # self._pad_start
+    cur_offset_x = 0
 
-      x = self._rect.x + cur_x + spacing
+    for idx, widget in enumerate(visible_widgets):
+      spacing = self._spacing if (idx > 0) else 0
+
+      x = self._rect.x + cur_offset_x + spacing
+      cur_offset_x += widget.rect.width + spacing
 
       if self._alignment & Alignment.TOP:
         y = self._rect.y
@@ -56,10 +54,8 @@ class HBoxLayout(Widget):
       else:  # center
         y = self._rect.y + (self._rect.height - widget.rect.height) / 2
 
-      cur_x += widget.rect.width + spacing
-
+      # Update widget position and render
       widget.set_position(round(x), round(y))
       widget.set_parent_rect(self._rect)
 
       widget.render()
-
