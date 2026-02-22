@@ -382,7 +382,7 @@ class WifiUIMici(NavWidget):
 
   def _on_forgotten(self, ssid):
     # For eager UI forget
-    for i, btn in enumerate(self._scroller.items):
+    for btn in self._scroller.items:
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
 
