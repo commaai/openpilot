@@ -3,11 +3,10 @@ import numpy as np
 from collections.abc import Callable
 
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
-
-from common.swaglog import cloudlog
 
 ITEM_SPACING = 20
 LINE_COLOR = rl.GRAY
@@ -217,14 +216,13 @@ class Scroller(Widget):
     return len(self._move_animations) > 0 or len(self._move_lift) > 0
 
   def move_item(self, from_idx: int, to_idx: int):
+    assert self._horizontal
     if from_idx == to_idx:
       return
 
     if self.moving_items:
       cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
       return
-
-    assert self._horizontal
 
     item = self._items.pop(from_idx)
     self._items.insert(to_idx, item)
@@ -355,7 +353,7 @@ class Scroller(Widget):
       self._render_item(item)
 
     # Dim background if moving items, lifted items are above
-    self._overlay_filter.update(0.65 if self.moving_items else 0.0)
+    self._overlay_filter.update(MOVE_OVERLAY_ALPHA if self.moving_items else 0.0)
     if self._overlay_filter.x > 0.01:
       rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
 
@@ -389,5 +387,9 @@ class Scroller(Widget):
 
   def hide_event(self):
     super().hide_event()
+    self._move_animations.clear()
+    self._move_lift.clear()
+    self._pending_lift.clear()
+    self._pending_move.clear()
     for item in self._items:
       item.hide_event()
