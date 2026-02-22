@@ -83,6 +83,8 @@ class NetworkIcon(Widget):
   def __init__(self):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 54, 44))
+    self._net_type = NetworkType.none
+    self._net_strength = 0
 
     self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 50, 44)
     self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 50, 37)
@@ -111,27 +113,23 @@ class NetworkIcon(Widget):
                       3: self._wifi_medium_txt,
                       4: self._wifi_full_txt,
                       5: self._wifi_full_txt}.get(self._net_strength, self._wifi_low_txt)
-      rl.draw_texture(draw_net_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - draw_net_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, int(255 * 0.9)))
-      # last_x += draw_net_txt.width + ITEM_SPACING
-
     elif self._net_type in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
       draw_net_txt = {0: self._cell_none_txt,
                       2: self._cell_low_txt,
                       3: self._cell_medium_txt,
                       4: self._cell_high_txt,
                       5: self._cell_full_txt}.get(self._net_strength, self._cell_none_txt)
-      rl.draw_texture(draw_net_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - draw_net_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, int(255 * 0.9)))
-      # last_x += draw_net_txt.width + ITEM_SPACING
-
     else:
-      # No network
+      draw_net_txt = self._wifi_slash_txt
+
+    draw_x = self._rect.x + (self._rect.width - draw_net_txt.width) / 2
+    draw_y = self._rect.y + (self._rect.height - draw_net_txt.height) / 2
+
+    if draw_net_txt == self._wifi_slash_txt:
       # Offset by difference in height between slashless and slash icons to make center align match
-      rl.draw_texture(self._wifi_slash_txt, int(last_x), int(self._rect.y + self.rect.height - self._wifi_slash_txt.height / 2 -
-                                                             (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2 - Y_CENTER),
-                      rl.Color(255, 255, 255, int(255 * 0.9)))
-      # last_x += self._wifi_slash_txt.width + ITEM_SPACING
+      draw_y -= (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2
+
+    rl.draw_texture(draw_net_txt, int(draw_x), int(draw_y), rl.Color(255, 255, 255, int(255 * 0.9)))
 
 
 class MiciHomeLayout(Widget):
@@ -151,15 +149,17 @@ class MiciHomeLayout(Widget):
     # self._settings_txt = gui_app.texture("icons_mici/settings.png", 48, 48)
     # self._experimental_txt = gui_app.texture("icons_mici/experimental_mode.png", 48, 48)
     # self._mic_txt = gui_app.texture("icons_mici/microphone.png", 32, 46)
-    self._settings_img = ImageWidget("icons_mici/settings.png", (48, 48))
-    self._experimental_img = ImageWidget("icons_mici/experimental_mode.png", (48, 48))
-    self._mic_img = ImageWidget("icons_mici/microphone.png", (32, 46))
+    self._settings_icon = IconWidget("icons_mici/settings.png", (48, 48))
+    self._network_icon = NetworkIcon()
+    self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
+    self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
 
-    self._footer_layout = HBoxLayout([
-      self._settings_img,
-      self._experimental_img,
-      self._mic_img,
-    ], spacing=18)
+    self._status_bar_layout = HBoxLayout([
+      self._settings_icon,
+      self._network_icon,
+      self._experimental_icon,
+      self._mic_icon,
+    ], spacing=18)#, alignment=Alignment.LEFT | Alignment.BOTTOM)
 
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
     self._net_strength = 0
@@ -261,69 +261,9 @@ class MiciHomeLayout(Widget):
         self._version_commit_label.set_position(version_pos.x, version_pos.y + self._date_label.font_size + 7)
         self._version_commit_label.render()
 
-    self._render_bottom_status_bar()
-    # footer_rect = rl.Rectangle(self.rect.x, self.rect.y + self.rect.height - 60, self.rect.width, 60)
-    # self._footer_layout.render(footer_rect)
-
-  def _render_bottom_status_bar(self):
-    self._mic_img.set_visible(ui_state.recording_audio)
+    # ***** Center-aligned bottom section icons *****
+    self._experimental_icon.set_visible(self._experimental_mode)
+    self._mic_icon.set_visible(ui_state.recording_audio)
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
-    self._footer_layout.render(footer_rect)
-
-    return
-
-    # ***** Center-aligned bottom section icons *****
-
-    # TODO: refactor repeated icon drawing into a small loop
-    ITEM_SPACING = 18
-    Y_CENTER = 24
-
-    last_x = self.rect.x + HOME_PADDING
-
-    # Draw settings icon in bottom left corner
-    rl.draw_texture(self._settings_txt, int(last_x), int(self._rect.y + self.rect.height - self._settings_txt.height / 2 - Y_CENTER),
-                    rl.Color(255, 255, 255, int(255 * 0.9)))
-    last_x = last_x + self._settings_txt.width + ITEM_SPACING
-
-    # draw network
-    if self._net_type == NetworkType.wifi:
-      # There is no 1
-      draw_net_txt = {0: self._wifi_none_txt,
-                      2: self._wifi_low_txt,
-                      3: self._wifi_medium_txt,
-                      4: self._wifi_full_txt,
-                      5: self._wifi_full_txt}.get(self._net_strength, self._wifi_low_txt)
-      rl.draw_texture(draw_net_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - draw_net_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, int(255 * 0.9)))
-      last_x += draw_net_txt.width + ITEM_SPACING
-
-    elif self._net_type in (NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G):
-      draw_net_txt = {0: self._cell_none_txt,
-                      2: self._cell_low_txt,
-                      3: self._cell_medium_txt,
-                      4: self._cell_high_txt,
-                      5: self._cell_full_txt}.get(self._net_strength, self._cell_none_txt)
-      rl.draw_texture(draw_net_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - draw_net_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, int(255 * 0.9)))
-      last_x += draw_net_txt.width + ITEM_SPACING
-
-    else:
-      # No network
-      # Offset by difference in height between slashless and slash icons to make center align match
-      rl.draw_texture(self._wifi_slash_txt, int(last_x), int(self._rect.y + self.rect.height - self._wifi_slash_txt.height / 2 -
-                                                             (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2 - Y_CENTER),
-                      rl.Color(255, 255, 255, int(255 * 0.9)))
-      last_x += self._wifi_slash_txt.width + ITEM_SPACING
-
-    # draw experimental icon
-    if self._experimental_mode:
-      rl.draw_texture(self._experimental_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - self._experimental_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, 255))
-      last_x += self._experimental_txt.width + ITEM_SPACING
-
-    # draw microphone icon when recording audio is enabled
-    if ui_state.recording_audio:
-      rl.draw_texture(self._mic_txt, int(last_x),
-                      int(self._rect.y + self.rect.height - self._mic_txt.height / 2 - Y_CENTER), rl.Color(255, 255, 255, 255))
-      last_x += self._mic_txt.width + ITEM_SPACING
+    self._status_bar_layout.render(footer_rect)

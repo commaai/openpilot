@@ -1,15 +1,16 @@
-from enum import IntEnum
+from enum import IntFlag
 from openpilot.system.ui.widgets import Widget
 
 
-class Alignment(IntEnum):
+# TODO: use rl text alignment enum?
+class Alignment(IntFlag):
   LEFT = 0
-  H_CENTER = 1
-  RIGHT = 2
+  H_CENTER = 2
+  RIGHT = 4
 
-  TOP = 3
-  V_CENTER = 4
-  BOTTOM = 5
+  TOP = 8
+  V_CENTER = 16
+  BOTTOM = 32
 
 
 class HBoxLayout(Widget):
@@ -18,7 +19,7 @@ class HBoxLayout(Widget):
   """
 
   def __init__(self, widgets: list[Widget] | None = None, spacing: int = 0,
-               alignment: Alignment = Alignment.LEFT):
+               alignment: Alignment = Alignment.LEFT | Alignment.V_CENTER):
     super().__init__()
     self._widgets: list[Widget] = []
     self._spacing = spacing
@@ -47,7 +48,14 @@ class HBoxLayout(Widget):
       spacing = self._spacing if (idx > 0) else 0  # self._pad_start
 
       x = self._rect.x + cur_x + spacing
-      y = self._rect.y + (self._rect.height - widget.rect.height) / 2
+
+      if self._alignment & Alignment.TOP:
+        y = self._rect.y
+      elif self._alignment & Alignment.BOTTOM:
+        y = self._rect.y + self._rect.height - widget.rect.height
+      else:  # center
+        y = self._rect.y + (self._rect.height - widget.rect.height) / 2
+
       cur_x += widget.rect.width + spacing
 
       widget.set_position(round(x), round(y))

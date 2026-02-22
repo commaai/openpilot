@@ -3,7 +3,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 
 
-class ImageIcon(Widget):
+class IconWidget(Widget):
   def __init__(self, image_path: str, size: tuple[int, int]):
     super().__init__()
     self._texture = gui_app.texture(image_path, size[0], size[1])
