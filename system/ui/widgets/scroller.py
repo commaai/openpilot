@@ -265,14 +265,14 @@ class Scroller(Widget):
       else:
         # if done moving, animate down
         lift_filter.update(0)
-        print('lifting item', item, 'to offset', lift_filter.x)
+        # print('lifting item', item, 'to offset', lift_filter.x)
         # TODO: delete earlier, this takes a while
         if abs(lift_filter.x) < 1:
           del self._move_lift[item]
       target_y -= lift_filter.x
 
     if item in self._move_animations:
-      print('item', item, 'animating from', self._move_animations[item].x, 'to', target_x)
+      # print('item', item, 'animating from', self._move_animations[item].x, 'to', target_x)
       anim_filter = self._move_animations[item]
 
       content_x = target_x - self._scroll_offset  # compare/update in content space to match filter
@@ -342,33 +342,39 @@ class Scroller(Widget):
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
       item.set_parent_rect(self._rect)
 
+  def _render_item(self, item: Widget):
+    # Skip rendering if not in viewport
+    if not rl.check_collision_recs(item.rect, self._rect):
+      return
+
+    # Scale each element around its own origin when scrolling
+    scale = self._zoom_filter.x
+    if scale != 1.0:
+      rl.rl_push_matrix()
+      rl.rl_scalef(scale, scale, 1.0)
+      rl.rl_translatef((1 - scale) * (item.rect.x + item.rect.width / 2) / scale,
+                       (1 - scale) * (item.rect.y + item.rect.height / 2) / scale, 0)
+      item.render()
+      rl.rl_pop_matrix()
+    else:
+      item.render()
+
   def _render(self, _):
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
     for item in reversed(self._visible_items):
-      # Skip rendering if not in viewport
-      if not rl.check_collision_recs(item.rect, self._rect):
+      if item in self._move_lift:
         continue
+      self._render_item(item)
 
-      # Scale each element around its own origin when scrolling
-      scale = self._zoom_filter.x
-      if scale != 1.0:
-        rl.rl_push_matrix()
-        rl.rl_scalef(scale, scale, 1.0)
-        rl.rl_translatef((1 - scale) * (item.rect.x + item.rect.width / 2) / scale,
-                         (1 - scale) * (item.rect.y + item.rect.height / 2) / scale, 0)
-        item.render()
-        rl.rl_pop_matrix()
-      else:
-        item.render()
-
-    rl.end_scissor_mode()
-
-    # dim rect if moving items
+    # Dim background if moving items, lifted items are above
     self._overlay_filter.update(0.65 if self.moving_items else 0.0)
     if self._overlay_filter.x > 0.01:
       rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
+
+    for item in self._move_lift:
+      self._render_item(item)
 
     # Draw edge shadows on top of scroller content
     if self._edge_shadows:
@@ -385,6 +391,7 @@ class Scroller(Widget):
     if self._show_scroll_indicator and len(self._visible_items) > 0:
       self._scroll_indicator.update(self._scroll_offset, self._content_size, self._rect)
       self._scroll_indicator.render()
+    rl.end_scissor_mode()
 
   def show_event(self):
     super().show_event()
