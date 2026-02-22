@@ -4,8 +4,8 @@ from openpilot.system.ui.widgets import Widget
 
 class Alignment(IntFlag):
   LEFT = 0
-  H_CENTER = 2
-  RIGHT = 4
+  # H_CENTER = 2
+  # RIGHT = 4
 
   TOP = 8
   V_CENTER = 16
@@ -37,13 +37,14 @@ class HBoxLayout(Widget):
   def add_widget(self, widget: Widget) -> None:
     self._widgets.append(widget)
 
-  def _render(self, _):
-    visible_widgets = [w for w in self._widgets if w.is_visible]
+  def _layout(self) -> None:
+    self._visible_widgets = [w for w in self._widgets if w.is_visible]
 
+  def _render(self, _):
     cur_x = 0  #self._rect.x
     # cur_y = self._rect.y
 
-    for idx, widget in enumerate(visible_widgets):
+    for idx, widget in enumerate(self._visible_widgets):
       spacing = self._spacing if (idx > 0) else 0  # self._pad_start
 
       x = self._rect.x + cur_x + spacing
