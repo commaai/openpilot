@@ -145,10 +145,6 @@ class MiciHomeLayout(Widget):
     self._version_text = None
     self._experimental_mode = False
 
-
-    # self._settings_txt = gui_app.texture("icons_mici/settings.png", 48, 48)
-    # self._experimental_txt = gui_app.texture("icons_mici/experimental_mode.png", 48, 48)
-    # self._mic_txt = gui_app.texture("icons_mici/microphone.png", 32, 46)
     self._settings_icon = IconWidget("icons_mici/settings.png", (48, 48))
     self._network_icon = NetworkIcon()
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
@@ -159,7 +155,7 @@ class MiciHomeLayout(Widget):
       self._network_icon,
       self._experimental_icon,
       self._mic_icon,
-    ], spacing=18)#, alignment=Alignment.LEFT | Alignment.BOTTOM)
+    ], spacing=18)
 
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
     self._net_strength = 0

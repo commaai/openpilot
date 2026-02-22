@@ -2,7 +2,6 @@ from enum import IntFlag
 from openpilot.system.ui.widgets import Widget
 
 
-# TODO: use rl text alignment enum?
 class Alignment(IntFlag):
   LEFT = 0
   H_CENTER = 2
