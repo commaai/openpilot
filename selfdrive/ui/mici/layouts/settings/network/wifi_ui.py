@@ -311,7 +311,7 @@ class WifiUIMici(NavWidget):
     super().show_event()
     self._scroller.show_event()
     self._wifi_manager.set_active(True)
-    self._scroller._items.clear()
+    self._scroller.items.clear()
     self._update_buttons()
 
   def hide_event(self):
@@ -325,7 +325,7 @@ class WifiUIMici(NavWidget):
 
   def _update_buttons(self):
     # Update existing buttons, add new ones to the end
-    existing = {btn.network.ssid: btn for btn in self._scroller._items if isinstance(btn, WifiButton)}
+    existing = {btn.network.ssid: btn for btn in self._scroller.items if isinstance(btn, WifiButton)}
 
     for network in self._networks.values():
       if network.ssid in existing:
@@ -336,13 +336,13 @@ class WifiUIMici(NavWidget):
         self._scroller.add_widget(btn)
 
     # Mark networks no longer in scan results (display handled by _update_state)
-    for btn in self._scroller._items:
+    for btn in self._scroller.items:
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
         btn.set_network_missing(True)
 
     # Move connecting/connected network to the front with animation
     front_ssid = self._wifi_manager.wifi_state.ssid
-    front_btn_idx = next((i for i, btn in enumerate(self._scroller._items)
+    front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
                           if isinstance(btn, WifiButton) and not btn._network_missing
                           and btn.network.ssid == front_ssid), None) if front_ssid else None
     print('front_ssid:', front_ssid, front_btn_idx)
@@ -374,7 +374,7 @@ class WifiUIMici(NavWidget):
 
   def _on_need_auth(self, ssid, incorrect_password=True):
     if incorrect_password:
-      for btn in self._scroller._items:
+      for btn in self._scroller.items:
         if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
           btn.set_wrong_password()
           break
@@ -386,7 +386,7 @@ class WifiUIMici(NavWidget):
 
   def _on_forgotten(self, ssid):
     # For eager UI forget
-    for i, btn in enumerate(self._scroller._items):
+    for i, btn in enumerate(self._scroller.items):
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
 
