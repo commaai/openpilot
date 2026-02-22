@@ -311,6 +311,11 @@ function op_ssh() {
   op_run_command tools/scripts/ssh.py "$@"
 }
 
+function op_som_debug() {
+  op_before_cmd
+  op_run_command panda/scripts/som_debug.sh $@
+}
+
 function op_check() {
   VERBOSE=1
   op_before_cmd
@@ -440,6 +445,7 @@ function op_default() {
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
+  echo -e "  ${BOLD}som-debug${NC}    SOM serial debug console via panda"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
@@ -500,6 +506,7 @@ function _op() {
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     adb )           shift 1; op_adb "$@" ;;
     ssh )           shift 1; op_ssh "$@" ;;
+    som-debug )     shift 1; op_som_debug "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
