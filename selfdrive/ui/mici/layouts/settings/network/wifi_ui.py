@@ -344,8 +344,8 @@ class WifiUIMici(NavWidget):
   def _move_network_to_front(self, ssid: str):
     # Move connecting/connected network to the front with animation
     front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
-                          if isinstance(btn, WifiButton) and not btn._network_missing
-                          and btn.network.ssid == ssid), None) if ssid else None
+                          if isinstance(btn, WifiButton) and
+                          btn.network.ssid == ssid), None) if ssid else None
 
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
