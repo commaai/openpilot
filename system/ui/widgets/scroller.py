@@ -266,6 +266,48 @@ class Scroller(Widget):
   def moving_items(self) -> bool:
     return len(self._move_animations) > 0 or len(self._move_lift) > 0
 
+  def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
+    item_id = id(item)
+    if item_id in self._move_lift:
+      # when move animation for this item is deleted, animate down and delete when done
+      lift_filter = self._move_lift[item_id]
+
+      if len(self._pending_move) > 0:  # only lift when pending move to avoid jumping back to original position before move starts
+
+        # if item_id in self._move_animations:
+        # if still moving, keep lifted
+        lift_filter.update(MOVE_LIFT)
+        # move early
+        if abs(lift_filter.x - MOVE_LIFT) < 2:
+          self._pending_lift.discard(item_id)
+      else:
+        # if done moving, animate down
+        lift_filter.update(0)
+        print('lifting item', item, 'to offset', lift_filter.x)
+        # TODO: delete earlier, this takes a while
+        if abs(lift_filter.x) < 1:
+          del self._move_lift[item_id]
+      target_y -= lift_filter.x
+
+    if item_id in self._move_animations:
+      print('item', item, 'animating from', self._move_animations[item_id].x, 'to', target_x)
+      anim_filter = self._move_animations[item_id]
+
+      content_x = target_x - self._scroll_offset  # compare/update in content space to match filter
+      if len(self._pending_lift) == 0:  # only move when not pending lift to avoid jumping back to original position before lift starts
+        anim_filter.update(content_x)
+
+      # drop early
+      if abs(anim_filter.x - content_x) < 10:
+        self._pending_move.discard(item_id)
+
+      # finished moving
+      if abs(anim_filter.x - content_x) < 1:
+        del self._move_animations[item_id]
+      target_x = anim_filter.x + self._scroll_offset
+
+    return target_x, target_y
+
   def _layout(self):
     self._visible_items = [item for item in self._items if item.is_visible]
 
@@ -311,44 +353,7 @@ class Scroller(Widget):
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
-      item_id = id(item)
-      if item_id in self._move_lift:
-        # when move animation for this item is deleted, animate down and delete when done
-        lift_filter = self._move_lift[item_id]
-
-        if len(self._pending_move) > 0:  # only lift when pending move to avoid jumping back to original position before move starts
-
-        # if item_id in self._move_animations:
-          # if still moving, keep lifted
-          lift_filter.update(MOVE_LIFT)
-          # move early
-          if abs(lift_filter.x - MOVE_LIFT) < 2:
-            self._pending_lift.discard(item_id)
-        else:
-          # if done moving, animate down
-          lift_filter.update(0)
-          print('lifting item', item, 'to offset', lift_filter.x)
-          # TODO: delete earlier, this takes a while
-          if abs(lift_filter.x) < 1:
-            del self._move_lift[item_id]
-        y -= lift_filter.x
-
-      if item_id in self._move_animations:
-        print('item', item, 'animating from', self._move_animations[item_id].x, 'to', x)
-        anim_filter = self._move_animations[item_id]
-
-        content_x = x - self._scroll_offset  # compare/update in content space to match filter
-        if len(self._pending_lift) == 0:  # only move when not pending lift to avoid jumping back to original position before lift starts
-          anim_filter.update(content_x)
-
-        # drop early
-        if abs(anim_filter.x - content_x) < 10:
-          self._pending_move.discard(item_id)
-
-        # finished moving
-        if abs(anim_filter.x - content_x) < 1:
-          del self._move_animations[item_id]
-        x = anim_filter.x + self._scroll_offset
+      x, y = self._do_move_animation(item, x, y)
 
       # Update item state
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
