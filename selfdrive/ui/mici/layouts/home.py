@@ -6,11 +6,10 @@ from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
-from openpilot.system.ui.widgets.label import gui_label, MiciLabel, UnifiedLabel
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR, MousePos
+from openpilot.system.ui.widgets.label import MiciLabel, UnifiedLabel
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.text import wrap_text
-from openpilot.system.version import training_version, RELEASE_BRANCHES
+from openpilot.system.version import RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
 HOME_PADDING = 8
@@ -26,57 +25,6 @@ NETWORK_TYPES = {
   NetworkType.cell5G: "5G",
   NetworkType.ethernet: "Ethernet",
 }
-
-
-class DeviceStatus(Widget):
-  def __init__(self):
-    super().__init__()
-    self.set_rect(rl.Rectangle(0, 0, 300, 175))
-    self._update_state()
-    self._version_text = self._get_version_text()
-
-    self._do_welcome()
-
-  def _do_welcome(self):
-    ui_state.params.put("CompletedTrainingVersion", training_version)
-
-  def refresh(self):
-    self._update_state()
-    self._version_text = self._get_version_text()
-
-  def _get_version_text(self) -> str:
-    brand = "openpilot"
-    description = ui_state.params.get("UpdaterCurrentDescription")
-    return f"{brand} {description}" if description else brand
-
-  def _update_state(self):
-    # TODO: refresh function that can be called periodically, not at 60 fps, so we can update version
-    # update system status
-    self._system_status = "SYSTEM READY ✓" if ui_state.panda_type != log.PandaState.PandaType.unknown else "BOOTING UP..."
-
-    # update network status
-    strength = ui_state.sm['deviceState'].networkStrength.raw
-    strength_text = "● " * strength + "○ " * (4 - strength)  # ◌ also works
-    network_type = NETWORK_TYPES[ui_state.sm['deviceState'].networkType.raw]
-    self._network_status = f"{network_type} {strength_text}"
-
-  def _render(self, _):
-    # draw status
-    status_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, 40)
-    gui_label(status_rect, self._system_status, font_size=HEAD_BUTTON_FONT_SIZE, color=DEFAULT_TEXT_COLOR,
-              font_weight=FontWeight.BOLD, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
-
-    # draw network status
-    network_rect = rl.Rectangle(self._rect.x, self._rect.y + 60, self._rect.width, 40)
-    gui_label(network_rect, self._network_status, font_size=40, color=DEFAULT_TEXT_COLOR,
-              font_weight=FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
-
-    # draw version
-    version_font_size = 30
-    version_rect = rl.Rectangle(self._rect.x, self._rect.y + 140, self._rect.width + 20, 40)
-    wrapped_text = '\n'.join(wrap_text(self._version_text, version_font_size, version_rect.width))
-    gui_label(version_rect, wrapped_text, font_size=version_font_size, color=DEFAULT_TEXT_COLOR,
-              font_weight=FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT)
 
 
 class NetworkIcon(Widget):
@@ -105,7 +53,6 @@ class NetworkIcon(Widget):
     self._net_strength = max(0, min(5, strength.raw + 1)) if strength.raw > 0 else 0
 
   def _render(self, _):
-    # draw network
     if self._net_type == NetworkType.wifi:
       # There is no 1
       draw_net_txt = {0: self._wifi_none_txt,
