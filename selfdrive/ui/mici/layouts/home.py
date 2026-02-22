@@ -82,7 +82,7 @@ class DeviceStatus(Widget):
 class NetworkIcon(Widget):
   def __init__(self):
     super().__init__()
-    self.set_rect(rl.Rectangle(0, 0, 54, 44))
+    self.set_rect(rl.Rectangle(0, 0, 54, 44))  # max size of all icons
     self._net_type = NetworkType.none
     self._net_strength = 0
 
@@ -149,7 +149,7 @@ class MiciHomeLayout(Widget):
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
 
     self._status_bar_layout = HBoxLayout([
-      IconWidget("icons_mici/settings.png", (48, 48)),
+      IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
       self._experimental_icon,
       self._mic_icon,
