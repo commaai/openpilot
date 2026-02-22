@@ -145,20 +145,15 @@ class MiciHomeLayout(Widget):
     self._version_text = None
     self._experimental_mode = False
 
-    self._settings_icon = IconWidget("icons_mici/settings.png", (48, 48))
-    self._network_icon = NetworkIcon()
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
 
     self._status_bar_layout = HBoxLayout([
-      self._settings_icon,
-      self._network_icon,
+      IconWidget("icons_mici/settings.png", (48, 48)),
+      NetworkIcon(),
       self._experimental_icon,
       self._mic_icon,
     ], spacing=18)
-
-    self._net_type = NETWORK_TYPES.get(NetworkType.none)
-    self._net_strength = 0
 
     self._openpilot_label = MiciLabel("openpilot", font_size=96, color=rl.Color(255, 255, 255, int(255 * 0.9)), font_weight=FontWeight.DISPLAY)
     self._version_label = MiciLabel("", font_size=36, font_weight=FontWeight.ROMAN)
