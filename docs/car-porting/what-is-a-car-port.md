@@ -23,8 +23,8 @@ Each car brand is supported by a standard interface structure in `opendbc/car/[b
 
 ## safety
 
-* `opendbc/safety/modes/[brand].h`: Brand-specific safety logic
-* `opendbc/tests/safety/test_[brand].py`: Brand-specific safety CI tests
+* `opendbc_repo/opendbc/safety/modes/[brand].h`: Brand-specific safety logic
+* `opendbc_repo/opendbc/safety/tests/test_[brand].py`: Brand-specific safety CI tests
 
 ## openpilot
 
