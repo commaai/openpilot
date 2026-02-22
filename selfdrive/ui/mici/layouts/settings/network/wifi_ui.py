@@ -23,13 +23,13 @@ class LoadingAnimation(Widget):
     self._opacity_target = 1.0
     self._hide_time = 0.0
 
-  def set_opacity(self, opacity: float):
-    self._opacity_target = opacity
+  def show_event(self):
+    self._opacity_target = 1.0
     self._hide_time = rl.get_time()
 
   def _render(self, _):
     if rl.get_time() - self._hide_time > self.HIDE_TIME:
-      self.set_opacity(1.0)
+      self._opacity_target = 0.0
 
     self._opacity_filter.update(self._opacity_target)
 
@@ -40,7 +40,7 @@ class LoadingAnimation(Widget):
     cy = int(self._rect.y + self._rect.height / 2)
 
     y_mag = 7
-    anim_scale = 5
+    anim_scale = 4
     spacing = 14
 
     for i in range(3):
@@ -313,6 +313,7 @@ class WifiUIMici(NavWidget):
     # Clear scroller items and update from latest scan results
     super().show_event()
     self._scroller.show_event()
+    self._loading_animation.show_event()
     self._wifi_manager.set_active(True)
     self._scroller.items.clear()
     self._update_buttons()
@@ -324,7 +325,6 @@ class WifiUIMici(NavWidget):
   def _on_network_updated(self, networks: list[Network]):
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
-    self._loading_animation.set_opacity(0.0)
 
   def _update_buttons(self):
     # Update existing buttons, add new ones to the end
@@ -393,10 +393,16 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
 
+  def _update_state(self):
+    super()._update_state()
+
+    # Show loading animation near end
+    max_scroll = max(self._scroller.content_size - self._scroller.rect.width, 1)
+    progress = -self._scroller.scroll_panel.get_offset() / max_scroll
+    if progress > 0.8 or len(self._scroller.items) <= 1:
+      self._loading_animation.show_event()
+
   def _render(self, _):
-
-    # print('WifiState:', self._wifi_manager.wifi_state)
-
     self._scroller.render(self._rect)
 
     anim_w = 90

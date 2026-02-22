@@ -135,6 +135,10 @@ class Scroller(Widget):
   def items(self) -> list[Widget]:
     return self._items
 
+  @property
+  def content_size(self) -> float:
+    return self._content_size
+
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
     item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None
