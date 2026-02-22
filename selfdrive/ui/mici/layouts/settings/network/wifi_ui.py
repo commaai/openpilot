@@ -293,7 +293,10 @@ class WifiUIMici(NavWidget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
 
-    self._scroller = Scroller([], snap_items=False)
+    # Set up back navigation
+    self.set_back_callback(gui_app.pop_widget)
+
+    self._scroller = Scroller([])
 
     self._loading_animation = LoadingAnimation()
 

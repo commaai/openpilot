@@ -135,6 +135,8 @@ class Scroller(Widget):
                                           and self._overlay_filter.x < 0.01)
 
   def move_item(self, from_idx: int, to_idx: int) -> None:
+    print('CALLED MOVE_ITEM, FROM', from_idx, 'TO', to_idx)
+
     """Pop item at from_idx and insert at to_idx, with animated transition."""
     n = len(self._items)
     if not (0 <= from_idx < n and 0 <= to_idx < n) or from_idx == to_idx:
