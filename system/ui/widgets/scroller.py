@@ -9,6 +9,8 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
 
+from common.swaglog import cloudlog
+
 ITEM_SPACING = 20
 LINE_COLOR = rl.GRAY
 LINE_PADDING = 40
@@ -109,10 +111,13 @@ class Scroller(Widget):
 
     # move animation state
     # on move; lift src widget -> wait -> move all -> wait -> drop src widget
+    # TODO: don't use id, it's not as safe and slower vs. just using instance
     self._overlay_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
     self._move_animations: dict[int, FirstOrderFilter] = {}
     self._move_lift: dict[int, FirstOrderFilter] = {}
-    self._pending_lift: set[int] = set()  # used to wait before moving widgets
+    # these are used to wait before moving/dropping, also to move onto next part of the animation earlier for timing
+    self._pending_lift: set[int] = set()
+    self._pending_move: set[int] = set()
     # self._move_states: dict[int, MoveAnimationState] = {}
 
     for item in items:
@@ -221,6 +226,11 @@ class Scroller(Widget):
   def move_item(self, from_idx: int, to_idx: int):
     if from_idx == to_idx:
       return
+
+    if self.moving_items:
+      cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
+      return
+
     # TODO: handle moving to same position
     assert self._horizontal
     # smoothly picks up from idx item, then moves to new idx, then smoothly drops it there
@@ -237,6 +247,7 @@ class Scroller(Widget):
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
       affected_item = self._items[idx]
       self._move_animations[id(affected_item)] = FirstOrderFilter(affected_item.rect.x, 0.15, 1 / gui_app.target_fps)
+      self._pending_move.add(id(affected_item))
       print('setting original position of affected item', idx, 'to', affected_item.rect.x)
 
     item_id = id(item)
@@ -303,12 +314,14 @@ class Scroller(Widget):
       if item_id in self._move_lift:
         # when move animation for this item is deleted, animate down and delete when done
         lift_filter = self._move_lift[item_id]
-        if item_id in self._move_animations:
+
+        if len(self._pending_move) > 0:  # only lift when pending move to avoid jumping back to original position before move starts
+
+        # if item_id in self._move_animations:
           # if still moving, keep lifted
           lift_filter.update(MOVE_LIFT)
-          if abs(lift_filter.x - MOVE_LIFT) < 1:
-            # TODO: do this everywhere?
-            lift_filter.x = MOVE_LIFT
+          # move early
+          if abs(lift_filter.x - MOVE_LIFT) < 2:
             self._pending_lift.discard(item_id)
         else:
           # if done moving, animate down
@@ -326,6 +339,11 @@ class Scroller(Widget):
         if len(self._pending_lift) == 0:  # only move when not pending lift to avoid jumping back to original position before lift starts
           anim_filter.update(x)
 
+        # drop early
+        if abs(anim_filter.x - x) < 10:
+          self._pending_move.discard(item_id)
+
+        # finished moving
         if abs(anim_filter.x - x) < 1:
           del self._move_animations[item_id]
         x = anim_filter.x
