@@ -103,6 +103,7 @@ class Widget(abc.ABC):
 
     self._layout()
     ret = self._render(self._rect)
+
     if gui_app.show_touches:
       self._draw_debug_rect()
 
