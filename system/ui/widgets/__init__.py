@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import abc
 import pyray as rl
 from enum import IntEnum

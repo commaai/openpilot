@@ -1,11 +1,9 @@
-from __future__ import annotations
-
 import abc
 import pyray as rl
 from collections.abc import Callable
+from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
-
 
 SWIPE_AWAY_THRESHOLD = 80  # px to dismiss after releasing
 START_DISMISSING_THRESHOLD = 40  # px to start dismissing while dragging
