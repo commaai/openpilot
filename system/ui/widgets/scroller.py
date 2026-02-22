@@ -6,6 +6,7 @@ from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.layouts import HBoxLayout
 
 ITEM_SPACING = 20
 LINE_COLOR = rl.GRAY
@@ -95,6 +96,8 @@ class Scroller(Widget):
     self._scroll_indicator = ScrollIndicator()
     self._edge_shadows = edge_shadows and self._horizontal
 
+    self._hbox = HBoxLayout(spacing=self._spacing) if self._horizontal else None
+
     for item in items:
       self.add_widget(item)
 
@@ -119,6 +122,8 @@ class Scroller(Widget):
 
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
+    if self._hbox:
+      self._hbox.add_widget(item)
     item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled)
 
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
@@ -204,43 +209,31 @@ class Scroller(Widget):
 
     self._item_pos_filter.update(self._scroll_offset)
 
-    cur_pos = 0
-    for idx, item in enumerate(self._visible_items):
-      spacing = self._spacing if (idx > 0) else self._pad
-      # Nicely lay out items horizontally/vertically
-      if self._horizontal:
-        x = self._rect.x + cur_pos + spacing
-        y = self._rect.y + (self._rect.height - item.rect.height) / 2
-        cur_pos += item.rect.width + spacing
-      else:
+    if self._hbox:
+      self._hbox.set_rect(rl.Rectangle(
+        self._rect.x + self._scroll_offset + self._pad,
+        self._rect.y,
+        self._content_size,
+        self._rect.height,
+      ))
+      self._hbox._layout()
+      for item in self._visible_items:
+        item.set_parent_rect(self._rect)
+    else:
+      cur_pos = 0
+      for idx, item in enumerate(self._visible_items):
+        spacing = self._spacing if (idx > 0) else self._pad
         x = self._rect.x + (self._rect.width - item.rect.width) / 2
-        y = self._rect.y + cur_pos + spacing
+        y = self._rect.y + cur_pos + spacing + self._scroll_offset
         cur_pos += item.rect.height + spacing
-
-      # Consider scroll
-      if self._horizontal:
-        x += self._scroll_offset
-      else:
-        y += self._scroll_offset
-
-      # Add some jello effect when scrolling
-      if DO_JELLO:
-        if self._horizontal:
-          cx = self._rect.x + self._rect.width / 2
-          jello_offset = self._scroll_offset - np.interp(x + item.rect.width / 2,
-                                                         [self._rect.x, cx, self._rect.x + self._rect.width],
-                                                         [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
-          x -= np.clip(jello_offset, -20, 20)
-        else:
+        if DO_JELLO:
           cy = self._rect.y + self._rect.height / 2
           jello_offset = self._scroll_offset - np.interp(y + item.rect.height / 2,
                                                          [self._rect.y, cy, self._rect.y + self._rect.height],
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
-
-      # Update item state
-      item.set_position(round(x), round(y))  # round to prevent jumping when settling
-      item.set_parent_rect(self._rect)
+        item.set_position(round(x), round(y))
+        item.set_parent_rect(self._rect)
 
   def _render(self, _):
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
