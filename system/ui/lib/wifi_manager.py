@@ -146,20 +146,7 @@ class ConnectStatus(IntEnum):
 @dataclass
 class WifiState:
   ssid: str | None = None
-  prev_ssid: str | None = None
   status: ConnectStatus = ConnectStatus.DISCONNECTED
-
-  # @property
-  # def ssid(self) -> str | None:
-  #   return self._prev_ssid or self._ssid
-  #
-  # def set_ssid(self, ssid: str | None):
-  #   self._prev_ssid = self._ssid
-  #   self._ssid = ssid
-  #
-  # def clear_ssids(self):
-  #   self._prev_ssid = None
-  #   self._ssid = None
 
 
 class WifiManager:
@@ -297,9 +284,7 @@ class WifiManager:
     return self._tethering_password
 
   def _set_connecting(self, ssid: str | None):
-    self._wifi_state = WifiState(ssid=ssid,
-                                 prev_ssid=self._wifi_state.ssid,
-                                 status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
+    self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
@@ -423,7 +408,7 @@ class WifiManager:
 
           elif new_state == NMDeviceState.ACTIVATED:
             # Note that IP address from Ip4Config may not be propagated immediately and could take until the next scan results
-            wifi_state = replace(self._wifi_state, prev_ssid=None, status=ConnectStatus.CONNECTED)
+            wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
             conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
             if conn_path is None:
