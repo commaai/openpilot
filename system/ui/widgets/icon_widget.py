@@ -9,6 +9,7 @@ class IconWidget(Widget):
     self._texture = gui_app.texture(image_path, size[0], size[1])
     self._opacity = opacity
     self.set_rect(rl.Rectangle(0, 0, float(size[0]), float(size[1])))
+    self.set_enabled(False)
 
   def _render(self, _) -> None:
     color = rl.Color(255, 255, 255, int(self._opacity * 255))

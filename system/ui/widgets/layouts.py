@@ -15,7 +15,7 @@ class Alignment(IntFlag):
 
 class HBoxLayout(Widget):
   """
-  A Widget that lays out child Widgets.
+  A Widget that lays out child Widgets horizontally.
   """
 
   def __init__(self, widgets: list[Widget] | None = None, spacing: int = 0,
