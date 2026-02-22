@@ -408,7 +408,6 @@ class WifiManager:
 
           elif new_state == NMDeviceState.ACTIVATED:
             # Note that IP address from Ip4Config may not be propagated immediately and could take until the next scan results
-
             wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
             conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)

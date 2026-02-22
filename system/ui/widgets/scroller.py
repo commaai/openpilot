@@ -108,7 +108,6 @@ class Scroller(Widget):
     # these are used to wait before moving/dropping, also to move onto next part of the animation earlier for timing
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
-    self._can_start_move = True
 
     for item in items:
       self.add_widget(item)
@@ -161,10 +160,7 @@ class Scroller(Widget):
     if self._scrolling_to is not None and (self.scroll_panel.state == ScrollState.PRESSED or self.scroll_panel.state == ScrollState.MANUAL_SCROLL):
       self._scrolling_to = None
 
-    # Latch once per frame so scroll and move begin together
-    self._can_start_move = len(self._pending_lift) == 0
-
-    if self._scrolling_to is not None and self._can_start_move:
+    if self._scrolling_to is not None and len(self._pending_lift) == 0:
       self._scroll_filter.update(self._scrolling_to)
       self.scroll_panel.set_offset(self._scroll_filter.x)
 
@@ -243,6 +239,9 @@ class Scroller(Widget):
     self._pending_lift.add(item)
 
   def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
+    # wait a frame before moving so we match potential pending scroll animation
+    can_start_move = len(self._pending_lift) == 0
+
     if item in self._move_lift:
       lift_filter = self._move_lift[item]
 
@@ -265,7 +264,7 @@ class Scroller(Widget):
 
       # compare/update in content space to match filter
       content_x = target_x - self._scroll_offset
-      if self._can_start_move:
+      if can_start_move:
         move_filter.update(content_x)
 
         # drop when close to target
