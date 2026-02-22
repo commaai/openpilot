@@ -347,8 +347,8 @@ class WifiUIMici(NavWidget):
       self._scroller.move_item(front_btn_idx, 0)
 
   def _connect_with_password(self, ssid: str, password: str):
-    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
     self._wifi_manager.connect_to_network(ssid, password)
+    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
     self._update_buttons()
 
   def _connect_to_network(self, ssid: str):
