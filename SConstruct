@@ -5,6 +5,10 @@ import sysconfig
 import platform
 import shlex
 import numpy as np
+import opendbc
+import panda as _panda
+import rednose
+import msgq as _msgq
 
 import SCons.Errors
 
@@ -65,7 +69,9 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
     "#",
-    "#msgq",
+    _msgq.INCLUDE_PATH,
+    _panda.INCLUDE_PATH,
+    rednose.BASEDIR,
     "#third_party",
     "#third_party/json11",
     "#third_party/linux/include",
@@ -77,19 +83,18 @@ env = Environment(
   ],
   LIBPATH=[
     "#common",
-    "#msgq_repo",
     "#third_party",
     "#selfdrive/pandad",
-    "#rednose/helpers",
+    "#build/rednose",
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
   ],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#",
+  REDNOSE_ROOT=rednose.INCLUDE_PATH,
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
+  toolpath=["#site_scons/site_tools", rednose.SITE_SCONS_TOOLS],
 )
 
 # Arch-specific flags and paths
@@ -182,21 +187,53 @@ Export('common')
 # Enable swaglog include in submodules
 env_swaglog = env.Clone()
 env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
-SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
-SConscript(['opendbc_repo/SConscript'], exports={'env': env_swaglog})
+
+# Build msgq/visionipc static libraries (for linking into openpilot C++ binaries)
+# Note: Cython extensions (ipc_pyx.so, visionipc_pyx.so) are built by pip install
+msgq_dir = _msgq.BASEDIR
+vipc_dir = os.path.join(msgq_dir, 'visionipc')
+
+msgq_cc = ['ipc.cc', 'event.cc', 'impl_msgq.cc', 'impl_fake.cc', 'msgq.cc']
+msgq_objects = [env_swaglog.SharedObject(f'#build/msgq/{f.replace(".cc", ".os")}', os.path.join(msgq_dir, f)) for f in msgq_cc]
+msgq_lib = env.Library('msgq', msgq_objects)
+
+vipc_files = ['visionipc.cc', 'visionipc_server.cc', 'visionipc_client.cc']
+vipc_files += ['visionbuf_ion.cc'] if arch == "larch64" else ['visionbuf.cc']
+vipc_objects = [env.SharedObject(f'#build/visionipc/{f.replace(".cc", ".os")}', os.path.join(vipc_dir, f)) for f in vipc_files]
+visionipc = env.Library('visionipc', vipc_objects)
+Export('visionipc', 'msgq_lib')
 
 SConscript(['cereal/SConscript'])
 
-Import('socketmaster', 'msgq')
-messaging = [socketmaster, msgq, 'capnp', 'kj',]
+Import('socketmaster')
+messaging = [socketmaster, msgq_lib, 'capnp', 'kj',]
 Export('messaging')
 
 
-# Build other submodules
-SConscript(['panda/SConscript'])
+# Build rednose static library (for linking into openpilot C++ binaries)
+# Note: Cython extension (ekf_sym_pyx.so) is built by pip install
+Import('_common')
+rednose_helpers = rednose.HELPERS_PATH
+rednose_cc_files = ['ekf_load.cc', 'ekf_sym.cc']
+ekf_objects = [env.SharedObject(f'#build/rednose/{f.replace(".cc", ".os")}', os.path.join(rednose_helpers, f)) for f in rednose_cc_files]
+rednose_lib = env.Library('#build/rednose/ekf_sym', ekf_objects, LIBS=['dl', _common, 'zmq'])
+Export('rednose_lib')
 
-# Build rednose library
-SConscript(['rednose/SConscript'])
+# Build opendbc libsafety for tests
+safety_dir = os.path.join(os.path.dirname(opendbc.__file__), 'safety', 'tests', 'libsafety')
+if GetOption('extras') and os.path.exists(os.path.join(safety_dir, 'safety.c')):
+  safety_env = Environment(
+    CC='clang',
+    CFLAGS=['-Wall', '-Wextra', '-Werror', '-nostdlib', '-fno-builtin', '-std=gnu11',
+            '-Wfatal-errors', '-Wno-pointer-to-int-cast', '-g', '-O0',
+            '-fno-omit-frame-pointer', '-grecord-command-line', '-DALLOW_DEBUG'],
+    LINKFLAGS=['-fsanitize=undefined', '-fno-sanitize-recover=undefined'],
+    CPPPATH=[os.path.dirname(opendbc.__file__) + "/.."],
+    tools=["default"],
+  )
+  safety = safety_env.SharedObject('#build/opendbc/safety.os', os.path.join(safety_dir, "safety.c"))
+  # libsafety.so must be in opendbc's package dir (loaded via cffi dlopen from __file__'s dir)
+  safety_env.SharedLibrary(os.path.join(safety_dir, "libsafety.so"), [safety])
 
 # Build system services
 SConscript([

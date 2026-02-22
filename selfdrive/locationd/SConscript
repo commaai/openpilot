@@ -1,4 +1,4 @@
-Import('env', 'rednose')
+Import('env', 'rednose_lib')
 
 # build ekf models
 rednose_gen_dir = 'models/generated'

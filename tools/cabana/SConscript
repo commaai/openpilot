@@ -1,6 +1,7 @@
 import subprocess
 import os
 import shutil
+import opendbc
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
 
@@ -76,7 +77,7 @@ qt_libs = base_libs
 cabana_env = qt_env.Clone()
 
 cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
-opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
+opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % opendbc.DBC_PATH
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
 # build assets
@@ -100,4 +101,4 @@ output_json_file = 'tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,
                                   ['dbc/generate_dbc_json.py'],
                                   "python3 tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
-cabana_env.Depends(generate_dbc, ["#common", '#opendbc_repo', "#cereal", "#msgq_repo"])
+cabana_env.Depends(generate_dbc, ["#common", "#cereal"])
