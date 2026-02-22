@@ -342,40 +342,33 @@ class Scroller(Widget):
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
       item.set_parent_rect(self._rect)
 
-  def _render_item(self, item: Widget):
-    if not rl.check_collision_recs(item.rect, self._rect):
-      return
-    scale = self._zoom_filter.x
-    if scale != 1.0:
-      rl.rl_push_matrix()
-      rl.rl_scalef(scale, scale, 1.0)
-      rl.rl_translatef((1 - scale) * (item.rect.x + item.rect.width / 2) / scale,
-                       (1 - scale) * (item.rect.y + item.rect.height / 2) / scale, 0)
-      item.render()
-      rl.rl_pop_matrix()
-    else:
-      item.render()
-
   def _render(self, _):
-    self._overlay_filter.update(MOVE_OVERLAY_ALPHA if self.moving_items else 0.0)
-    has_overlay = self._overlay_filter.x > 0.01
-
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
     for item in reversed(self._visible_items):
-      if has_overlay and item in self._move_lift:
+      # Skip rendering if not in viewport
+      if not rl.check_collision_recs(item.rect, self._rect):
         continue
-      self._render_item(item)
 
-    if has_overlay:
-      rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
-      for item in reversed(self._visible_items):
-        if item not in self._move_lift:
-          continue
-        self._render_item(item)
+      # Scale each element around its own origin when scrolling
+      scale = self._zoom_filter.x
+      if scale != 1.0:
+        rl.rl_push_matrix()
+        rl.rl_scalef(scale, scale, 1.0)
+        rl.rl_translatef((1 - scale) * (item.rect.x + item.rect.width / 2) / scale,
+                         (1 - scale) * (item.rect.y + item.rect.height / 2) / scale, 0)
+        item.render()
+        rl.rl_pop_matrix()
+      else:
+        item.render()
 
     rl.end_scissor_mode()
+
+    # dim rect if moving items
+    self._overlay_filter.update(0.65 if self.moving_items else 0.0)
+    if self._overlay_filter.x > 0.01:
+      rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
 
     # Draw edge shadows on top of scroller content
     if self._edge_shadows:
