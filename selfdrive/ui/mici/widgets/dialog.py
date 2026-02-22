@@ -297,7 +297,7 @@ class BigMultiOptionDialog(BigDialogBase):
     # Widget doesn't differentiate between click and drag
     self._can_click = True
 
-    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
+    self._scroller = Scroller([], horizontal=False, pad=100, spacing=0, snap_items=True)
 
     for option in options:
       self._scroller.add_widget(BigDialogOptionButton(option))
