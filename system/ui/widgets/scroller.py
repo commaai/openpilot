@@ -214,6 +214,8 @@ class Scroller(Widget):
     return self.scroll_panel.get_offset()
 
   def move_item(self, from_idx: int, to_idx: int):
+    if from_idx == to_idx:
+      return
     # TODO: handle moving to same position
     assert self._horizontal
     # smoothly picks up from idx item, then moves to new idx, then smoothly drops it there
@@ -224,18 +226,17 @@ class Scroller(Widget):
     item = self._items.pop(from_idx)
     self._items.insert(to_idx, item)
 
-    # store original position to update later
+    # store original position of all affected widgets to update later
     # TODO: remove scroller positioning so it's relative to rect/viewport and user
     #  scrolling while animating won't cause filters to not delete immediately
-    self._move_animations[id(item)] = FirstOrderFilter(item.rect.x, 0.15, 1 / gui_app.target_fps)
-    print('setting original position to', item.rect.x)
+    for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
+      affected_item = self._items[idx]
+      self._move_animations[id(affected_item)] = FirstOrderFilter(affected_item.rect.x, 0.15, 1 / gui_app.target_fps)
+      print('setting original position of affected item', idx, 'to', affected_item.rect.x)
 
-    # add animation for item that was at to_idx
-    # TODO: check not at end of list
-    dst_item = self._items[to_idx + 1]
-    self._move_animations[id(dst_item)] = FirstOrderFilter(dst_item.rect.x, 0.15, 1 / gui_app.target_fps)
-    print('setting original position of dst item to', dst_item.rect.x)
-
+    # lift only src widget to make it more clear which one is moving
+    self._move_lift[id(item)] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    print('setting lift for item to', self._move_lift[id(item)].x)
 
     # self._layout()
 
@@ -291,10 +292,22 @@ class Scroller(Widget):
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
+      # if id(item) in self._move_lift:
+      #   lift_filter = self._move_lift[id(item)]
+      #   lift_offset = lift_filter.update(1.0) * 20
+      #   y -= lift_offset
+      #   print('lifting item', item, 'to offset', lift_offset)
+      #   if abs(lift_filter.x - 1.0) < 0.01:
+      #     del self._move_lift[id(item)]
+
       if id(item) in self._move_animations:
         print('item', item, 'animating from', self._move_animations[id(item)].x, 'to', x)
         anim_filter = self._move_animations[id(item)]
-        new_x = anim_filter.update(x)
+
+        if 1 or len(self._move_lift) == 0:  # only move horizontally when not lifting to avoid weirdness of moving while lifted
+          anim_filter.update(x)
+
+        new_x = anim_filter.x
         if abs(anim_filter.x - x) < 1:
           del self._move_animations[id(item)]
         x = new_x
@@ -328,7 +341,6 @@ class Scroller(Widget):
 
     # dim rect if moving items
     self._overlay_filter.update(0.65 if self.moving_items else 0.0)
-    print('overlay filter', self._overlay_filter.x)
     if self._overlay_filter.x > 0.01:
       rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
 
