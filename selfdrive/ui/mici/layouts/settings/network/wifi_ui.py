@@ -243,6 +243,7 @@ class WifiButton(BigButton):
       elif self._is_connected:
         self.set_value("connected")
       elif self._network_missing:
+        # after connecting/connected since NM will still attempt to connect/stay connected for a while
         self.set_value("not in range")
       else:
         self.set_value("unsupported")
