@@ -11,11 +11,7 @@ from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType
-
-
-def normalize_ssid(ssid: str) -> str:
-  return ssid.replace("’", "'")  # for iPhone hotspots
+from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType, normalize_ssid
 
 
 class LoadingAnimation(Widget):
@@ -55,7 +51,7 @@ class LoadingAnimation(Widget):
 
 
 class WifiIcon(Widget):
-  def __init__(self):
+  def __init__(self, network: Network):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 48 + 5, 36 + 5))
 
@@ -65,10 +61,10 @@ class WifiIcon(Widget):
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 48, 36)
     self._lock_txt = gui_app.texture("icons_mici/settings/network/new/lock.png", 21, 27)
 
-    self._network: Network | None = None
+    self._network: Network = network
     self._network_missing = False  # if network disappeared from scan results
 
-  def set_current_network(self, network: Network):
+  def update_network(self, network: Network):
     self._network = network
 
   def set_network_missing(self, missing: bool):
@@ -79,9 +75,6 @@ class WifiIcon(Widget):
     return round(strength / 100 * 2)
 
   def _render(self, _):
-    if self._network is None:
-      return
-
     # Determine which wifi strength icon to use
     strength = self.get_strength_icon_idx(self._network.strength)
     if self._network_missing:
@@ -113,8 +106,7 @@ class WifiButton(BigButton):
     self._network = network
     self._wifi_manager = wifi_manager
 
-    self._wifi_icon = WifiIcon()
-    self._wifi_icon.set_current_network(network)
+    self._wifi_icon = WifiIcon(network)
     self._forget_btn = ForgetButton(self._forget_network)
     self._check_txt = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 32, 32)
 
@@ -124,9 +116,9 @@ class WifiButton(BigButton):
     self._wrong_password = False
     self._shake_start: float | None = None
 
-  def set_current_network(self, network: Network):
+  def update_network(self, network: Network):
     self._network = network
-    self._wifi_icon.set_current_network(network)
+    self._wifi_icon.update_network(network)
 
     # We can assume network is not missing if got new Network
     self._network_missing = False
@@ -337,7 +329,7 @@ class WifiUIMici(NavWidget):
 
     for network in self._networks.values():
       if network.ssid in existing:
-        existing[network.ssid].set_current_network(network)
+        existing[network.ssid].update_network(network)
       else:
         btn = WifiButton(network, self._wifi_manager)
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
