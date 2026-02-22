@@ -378,8 +378,8 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
-          # Handle (FAILED, SSID_NOT_FOUND) and emit for ui to show error
-          # Happens when network drops off after starting connection
+          # TODO: Handle (FAILED, SSID_NOT_FOUND) and emit for ui to show error
+          #  Happens when network drops off after starting connection
 
           if new_state == NMDeviceState.DISCONNECTED:
             if change_reason != NMDeviceStateReason.NEW_ACTIVATION:
