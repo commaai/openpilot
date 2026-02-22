@@ -111,14 +111,13 @@ class Scroller(Widget):
 
     # move animation state
     # on move; lift src widget -> wait -> move all -> wait -> drop src widget
-    # TODO: don't use id, it's not as safe and slower vs. just using instance
     self._overlay_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
-    self._move_animations: dict[int, FirstOrderFilter] = {}
-    self._move_lift: dict[int, FirstOrderFilter] = {}
+    self._move_animations: dict[Widget, FirstOrderFilter] = {}
+    self._move_lift: dict[Widget, FirstOrderFilter] = {}
     # these are used to wait before moving/dropping, also to move onto next part of the animation earlier for timing
-    self._pending_lift: set[int] = set()
-    self._pending_move: set[int] = set()
-    # self._move_states: dict[int, MoveAnimationState] = {}
+    self._pending_lift: set[Widget] = set()
+    self._pending_move: set[Widget] = set()
+    # self._move_states: dict[Widget, MoveAnimationState] = {}
 
     for item in items:
       self.add_widget(item)
@@ -247,51 +246,44 @@ class Scroller(Widget):
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
       affected_item = self._items[idx]
       # store position in content space (without scroll) so animation is scroll-independent
-      self._move_animations[id(affected_item)] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, 0.15, 1 / gui_app.target_fps)
-      self._pending_move.add(id(affected_item))
+      self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, 0.15, 1 / gui_app.target_fps)
+      self._pending_move.add(affected_item)
       print('setting original position of affected item', idx, 'to', affected_item.rect.x - self._scroll_offset)
 
-    item_id = id(item)
     # lift only src widget to make it more clear which one is moving
-    self._move_lift[item_id] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
-    print('setting lift for item to', self._move_lift[item_id].x)
-    self._pending_lift.add(item_id)
-
-    # self._layout()
-
-    # scroll_to new position of item
-    # self.scroll_to(item.rect.x - self._pad, smooth=True)
+    self._move_lift[item] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    print('setting lift for item to', self._move_lift[item].x)
+    self._pending_lift.add(item)
 
   @property
   def moving_items(self) -> bool:
     return len(self._move_animations) > 0 or len(self._move_lift) > 0
 
   def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
-    item_id = id(item)
-    if item_id in self._move_lift:
+    if item in self._move_lift:
       # when move animation for this item is deleted, animate down and delete when done
-      lift_filter = self._move_lift[item_id]
+      lift_filter = self._move_lift[item]
 
       if len(self._pending_move) > 0:  # only lift when pending move to avoid jumping back to original position before move starts
 
-        # if item_id in self._move_animations:
+        # if item in self._move_animations:
         # if still moving, keep lifted
         lift_filter.update(MOVE_LIFT)
         # move early
         if abs(lift_filter.x - MOVE_LIFT) < 2:
-          self._pending_lift.discard(item_id)
+          self._pending_lift.discard(item)
       else:
         # if done moving, animate down
         lift_filter.update(0)
         print('lifting item', item, 'to offset', lift_filter.x)
         # TODO: delete earlier, this takes a while
         if abs(lift_filter.x) < 1:
-          del self._move_lift[item_id]
+          del self._move_lift[item]
       target_y -= lift_filter.x
 
-    if item_id in self._move_animations:
-      print('item', item, 'animating from', self._move_animations[item_id].x, 'to', target_x)
-      anim_filter = self._move_animations[item_id]
+    if item in self._move_animations:
+      print('item', item, 'animating from', self._move_animations[item].x, 'to', target_x)
+      anim_filter = self._move_animations[item]
 
       content_x = target_x - self._scroll_offset  # compare/update in content space to match filter
       if len(self._pending_lift) == 0:  # only move when not pending lift to avoid jumping back to original position before lift starts
@@ -299,11 +291,11 @@ class Scroller(Widget):
 
       # drop early
       if abs(anim_filter.x - content_x) < 10:
-        self._pending_move.discard(item_id)
+        self._pending_move.discard(item)
 
       # finished moving
       if abs(anim_filter.x - content_x) < 1:
-        del self._move_animations[item_id]
+        del self._move_animations[item]
       target_x = anim_filter.x + self._scroll_offset
 
     return target_x, target_y
@@ -353,6 +345,7 @@ class Scroller(Widget):
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
+      # Animate moves if needed
       x, y = self._do_move_animation(item, x, y)
 
       # Update item state
@@ -360,8 +353,6 @@ class Scroller(Widget):
       item.set_parent_rect(self._rect)
 
   def _render(self, _):
-    print('moving items', len(self._move_animations), 'lifting items', len(self._move_lift))
-
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
@@ -385,9 +376,9 @@ class Scroller(Widget):
     rl.end_scissor_mode()
 
     # dim rect if moving items
-    # self._overlay_filter.update(0.65 if self.moving_items else 0.0)
-    # if self._overlay_filter.x > 0.01:
-    #   rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
+    self._overlay_filter.update(0.65 if self.moving_items else 0.0)
+    if self._overlay_filter.x > 0.01:
+      rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
 
     # Draw edge shadows on top of scroller content
     if self._edge_shadows:
