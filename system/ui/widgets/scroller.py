@@ -387,6 +387,7 @@ class Scroller(Widget):
 
   def hide_event(self):
     super().hide_event()
+    self._overlay_filter.x = 0.0
     self._move_animations.clear()
     self._move_lift.clear()
     self._pending_lift.clear()
