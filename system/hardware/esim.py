@@ -33,11 +33,6 @@ if __name__ == '__main__':
   else:
     parser.print_help()
 
-  if mutated:
-    HARDWARE.reboot_modem()
-    # eUICC needs a small delay post-reboot before querying profiles
-    time.sleep(.5)
-
   profiles = lpa.list_profiles()
   print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
   for p in profiles:
