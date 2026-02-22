@@ -212,6 +212,10 @@ class Scroller(Widget):
 
     return self.scroll_panel.get_offset()
 
+  @property
+  def moving_items(self) -> bool:
+    return len(self._move_animations) > 0 or len(self._move_lift) > 0
+
   def move_item(self, from_idx: int, to_idx: int):
     if from_idx == to_idx:
       return
@@ -235,10 +239,6 @@ class Scroller(Widget):
     self._move_lift[item] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
     self._pending_lift.add(item)
 
-  @property
-  def moving_items(self) -> bool:
-    return len(self._move_animations) > 0 or len(self._move_lift) > 0
-
   def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
     if item in self._move_lift:
       lift_filter = self._move_lift[item]
@@ -246,7 +246,7 @@ class Scroller(Widget):
       # Animate lift
       if len(self._pending_move) > 0:
         lift_filter.update(MOVE_LIFT)
-        # start moving when close to target
+        # start moving when almost lifted
         if abs(lift_filter.x - MOVE_LIFT) < 2:
           self._pending_lift.discard(item)
       else:
