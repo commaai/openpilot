@@ -93,7 +93,7 @@ class NetworkLayoutMici(NavWidget):
       self._apn_btn,
       self._cellular_metered_btn,
       # */
-    ], snap_items=False)
+    ])
 
     # Set initial config
     roaming_enabled = ui_state.params.get_bool("GsmRoaming")
