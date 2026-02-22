@@ -188,7 +188,7 @@ class WifiButton(BigButton):
       sub_label_w = self.SUB_LABEL_WIDTH - (self._forget_btn.rect.width if self._show_forget_btn else 0)
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
-      if self._is_connected and not self._network_forgetting and not self._network_missing:
+      if self._is_connected and not self._network_forgetting:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
         rl.draw_texture(self._check_txt, int(sub_label_x), check_y, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)))
         sub_label_x += self._check_txt.width + 14
@@ -238,12 +238,12 @@ class WifiButton(BigButton):
 
       if self._network_forgetting:
         self.set_value("forgetting...")
-      elif self._network_missing:
-        self.set_value("not in range")
       elif self._is_connecting:
         self.set_value("connecting...")
       elif self._is_connected:
         self.set_value("connected")
+      elif self._network_missing:
+        self.set_value("not in range")
       else:
         self.set_value("unsupported")
 
