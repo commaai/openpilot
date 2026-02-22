@@ -169,7 +169,6 @@ class MiciHomeLayout(Widget):
 
   def show_event(self):
     self._version_text = self._get_version_text()
-    self._update_network_status(ui_state.sm['deviceState'])
     self._update_params()
 
   def _update_params(self):
