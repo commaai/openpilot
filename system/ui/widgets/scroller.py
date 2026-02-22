@@ -15,6 +15,7 @@ ANIMATION_SCALE = 0.6
 
 MOVE_LIFT = 20
 MOVE_OVERLAY_ALPHA = 0.65
+SCROLL_RC = 0.15
 
 EDGE_SHADOW_WIDTH = 20
 
@@ -78,7 +79,7 @@ class Scroller(Widget):
     self._reset_scroll_at_show = True
 
     self._scrolling_to: float | None = None
-    self._scroll_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._scroll_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
 
@@ -107,6 +108,7 @@ class Scroller(Widget):
     # these are used to wait before moving/dropping, also to move onto next part of the animation earlier for timing
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
+    self._can_start_move = True
 
     for item in items:
       self.add_widget(item)
@@ -159,7 +161,10 @@ class Scroller(Widget):
     if self._scrolling_to is not None and (self.scroll_panel.state == ScrollState.PRESSED or self.scroll_panel.state == ScrollState.MANUAL_SCROLL):
       self._scrolling_to = None
 
-    if self._scrolling_to is not None:
+    # Latch once per frame so scroll and move begin together
+    self._can_start_move = len(self._pending_lift) == 0
+
+    if self._scrolling_to is not None and self._can_start_move:
       self._scroll_filter.update(self._scrolling_to)
       self.scroll_panel.set_offset(self._scroll_filter.x)
 
@@ -230,11 +235,11 @@ class Scroller(Widget):
     # store original position in content space of all affected widgets to animate from
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
       affected_item = self._items[idx]
-      self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, 0.15, 1 / gui_app.target_fps)
+      self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, SCROLL_RC, 1 / gui_app.target_fps)
       self._pending_move.add(affected_item)
 
     # lift only src widget to make it more clear which one is moving
-    self._move_lift[item] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    self._move_lift[item] = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._pending_lift.add(item)
 
   def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
@@ -260,7 +265,7 @@ class Scroller(Widget):
 
       # compare/update in content space to match filter
       content_x = target_x - self._scroll_offset
-      if len(self._pending_lift) == 0:
+      if self._can_start_move:
         move_filter.update(content_x)
 
         # drop when close to target
