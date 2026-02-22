@@ -220,29 +220,19 @@ class Scroller(Widget):
       cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
       return
 
-    # TODO: handle moving to same position
     assert self._horizontal
-    # smoothly picks up from idx item, then moves to new idx, then smoothly drops it there
-    # first we just move smoothly without raising for simplicity
-    # TODO: index bound checks
 
-    # assert from_idx < len(self._move_animations) + len(self._move_lift)  # can't start another move while one is in progress
     item = self._items.pop(from_idx)
     self._items.insert(to_idx, item)
 
-    # store original position of all affected widgets to animate from
-    # TODO: remove scroller positioning so it's relative to rect/viewport and user
-    #  scrolling while animating won't cause filters to not delete immediately
+    # store original position in content space of all affected widgets to animate from
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
       affected_item = self._items[idx]
-      # store position in content space (without scroll) so animation is scroll-independent
       self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, 0.15, 1 / gui_app.target_fps)
       self._pending_move.add(affected_item)
-      print('setting original position of affected item', idx, 'to', affected_item.rect.x - self._scroll_offset)
 
     # lift only src widget to make it more clear which one is moving
     self._move_lift[item] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
-    print('setting lift for item to', self._move_lift[item].x)
     self._pending_lift.add(item)
 
   @property
@@ -251,42 +241,38 @@ class Scroller(Widget):
 
   def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
     if item in self._move_lift:
-      # when move animation for this item is deleted, animate down and delete when done
       lift_filter = self._move_lift[item]
 
-      if len(self._pending_move) > 0:  # only lift when pending move to avoid jumping back to original position before move starts
-
-        # if item in self._move_animations:
-        # if still moving, keep lifted
+      # Animate lift
+      if len(self._pending_move) > 0:
         lift_filter.update(MOVE_LIFT)
-        # move early
+        # start moving when close to target
         if abs(lift_filter.x - MOVE_LIFT) < 2:
           self._pending_lift.discard(item)
       else:
         # if done moving, animate down
         lift_filter.update(0)
-        # print('lifting item', item, 'to offset', lift_filter.x)
-        # TODO: delete earlier, this takes a while
         if abs(lift_filter.x) < 1:
           del self._move_lift[item]
       target_y -= lift_filter.x
 
+    # Animate move
     if item in self._move_animations:
-      # print('item', item, 'animating from', self._move_animations[item].x, 'to', target_x)
-      anim_filter = self._move_animations[item]
+      move_filter = self._move_animations[item]
 
-      content_x = target_x - self._scroll_offset  # compare/update in content space to match filter
-      if len(self._pending_lift) == 0:  # only move when not pending lift to avoid jumping back to original position before lift starts
-        anim_filter.update(content_x)
+      # compare/update in content space to match filter
+      content_x = target_x - self._scroll_offset
+      if len(self._pending_lift) == 0:
+        move_filter.update(content_x)
 
-      # drop early
-      if abs(anim_filter.x - content_x) < 10:
-        self._pending_move.discard(item)
+        # drop when close to target
+        if abs(move_filter.x - content_x) < 10:
+          self._pending_move.discard(item)
 
-      # finished moving
-      if abs(anim_filter.x - content_x) < 1:
-        del self._move_animations[item]
-      target_x = anim_filter.x + self._scroll_offset
+        # finished moving
+        if abs(move_filter.x - content_x) < 1:
+          del self._move_animations[item]
+      target_x = move_filter.x + self._scroll_offset
 
     return target_x, target_y
 
