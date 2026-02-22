@@ -104,6 +104,9 @@ class Widget(abc.ABC):
     self._layout()
     ret = self._render(self._rect)
 
+    if gui_app.show_touches:
+      self._draw_debug_rect()
+
     # Keep track of whether mouse down started within the widget's rectangle
     if self.enabled and self.__was_awake:
       self._process_mouse_events()
@@ -115,6 +118,10 @@ class Widget(abc.ABC):
     self.__was_awake = device.awake
 
     return ret
+
+  def _draw_debug_rect(self) -> None:
+    rl.draw_rectangle_lines(int(self._rect.x), int(self._rect.y),
+                            max(int(self._rect.width), 1), max(int(self._rect.height), 1), rl.RED)
 
   def _process_mouse_events(self) -> None:
     hit_rect = self._hit_rect
