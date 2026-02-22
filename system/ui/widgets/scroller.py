@@ -6,6 +6,7 @@ from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.layouts import HBoxLayout#, VBoxLayout
 
 ITEM_SPACING = 20
 LINE_COLOR = rl.GRAY
