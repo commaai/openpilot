@@ -57,5 +57,4 @@ class HBoxLayout(Widget):
       # Update widget position and render
       widget.set_position(round(x), round(y))
       widget.set_parent_rect(self._rect)
-
       widget.render()
