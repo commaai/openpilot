@@ -108,6 +108,8 @@ class Scroller(Widget):
     self._overlay_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
     self._move_animations: dict[int, FirstOrderFilter] = {}
     self._move_lift: dict[int, FirstOrderFilter] = {}
+    self._lifted_complete: set[int] = set()  # ids of items that have completed lift animation and are now just waiting to drop
+    self._pending_lift: set[int] = set()  # ids of items that have started lift animation but haven't completed yet, used to prevent starting drop animation before lift is done
     # self._move_states: dict[int, MoveAnimationState] = {}
 
     for item in items:
@@ -234,9 +236,11 @@ class Scroller(Widget):
       self._move_animations[id(affected_item)] = FirstOrderFilter(affected_item.rect.x, 0.15, 1 / gui_app.target_fps)
       print('setting original position of affected item', idx, 'to', affected_item.rect.x)
 
+    item_id = id(item)
     # lift only src widget to make it more clear which one is moving
-    self._move_lift[id(item)] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
-    print('setting lift for item to', self._move_lift[id(item)].x)
+    self._move_lift[item_id] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    print('setting lift for item to', self._move_lift[item_id].x)
+    self._pending_lift.add(item_id)
 
     # self._layout()
 
@@ -292,31 +296,42 @@ class Scroller(Widget):
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
-      if id(item) in self._move_lift:
+      item_id = id(item)
+      if item_id in self._move_lift:
         # when move animation for this item is deleted, animate down and delete when done
-        lift_filter = self._move_lift[id(item)]
-        if id(item) in self._move_animations:
+        lift_filter = self._move_lift[item_id]
+        if item_id in self._move_animations:
           # if still moving, keep lifted
           lift_offset = lift_filter.update(20)
+          self._lifted_complete.add(item_id)
+          if abs(lift_offset - 20) < 1:
+            # TODO: do this everywhere?
+            lift_filter.x = 20
+            lift_offset = 20
+            self._pending_lift.discard(item_id)
         else:
+          # self._lifted_complete.remove(item_id)
+          # self._lifted_complete.discard(item_id)
           # if done moving, animate down
           lift_offset = lift_filter.update(0)
           print('lifting item', item, 'to offset', lift_offset)
           # TODO: delete earlier, this takes a while
           if abs(lift_filter.x) < 1:
-            del self._move_lift[id(item)]
+            del self._move_lift[item_id]
         y -= lift_offset
 
-      if id(item) in self._move_animations:
-        print('item', item, 'animating from', self._move_animations[id(item)].x, 'to', x)
-        anim_filter = self._move_animations[id(item)]
+      if item_id in self._move_animations:
+        print('item', item, 'animating from', self._move_animations[item_id].x, 'to', x)
+        anim_filter = self._move_animations[item_id]
 
-        if 1 or len(self._move_lift) == 0:  # only move horizontally when not lifting to avoid weirdness of moving while lifted
+        # if len(self._move_lift) == 0:  # only move horizontally when not lifting to avoid weirdness of moving while lifted
+        #   anim_filter.update(x)
+        if len(self._pending_lift) == 0:  # only move when not pending lift to avoid jumping back to original position before lift starts
           anim_filter.update(x)
 
         new_x = anim_filter.x
         if abs(anim_filter.x - x) < 1:
-          del self._move_animations[id(item)]
+          del self._move_animations[item_id]
         x = new_x
 
       # Update item state
