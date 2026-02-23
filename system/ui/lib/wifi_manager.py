@@ -539,14 +539,6 @@ class WifiManager:
     return dict(reply.body[0])
 
   def _add_tethering_connection(self):
-    iface = "wlan0"
-    try:
-      if self._wifi_device is not None:
-        dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
-        iface = str(self._router_main.send_and_get_reply(Properties(dev_addr).get('Interface')).body[0][1])
-    except Exception:
-      pass
-
     connection = {
       'connection': {
         'type': ('s', '802-11-wireless'),
@@ -581,10 +573,7 @@ class WifiManager:
     }
 
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-    reply = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
-
-    if reply.header.message_type == MessageType.error:
-      cloudlog.warning(f"Failed to add tethering connection: {reply}")
+    self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
     self._set_connecting(ssid)
