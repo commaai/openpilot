@@ -197,7 +197,7 @@ class MiciOffroadAlerts(Widget):
     self._last_refresh = 0.0
 
     # Create vertical scroller
-    self._scroller = Scroller([], horizontal=False, spacing=12, pad_start=0, pad_end=0, snap_items=False)
+    self._scroller = Scroller([], horizontal=False, spacing=12, pad=0)
 
     # Create empty state label
     self._empty_label = UnifiedLabel(tr("no alerts"), 65, FontWeight.DISPLAY, rl.WHITE,

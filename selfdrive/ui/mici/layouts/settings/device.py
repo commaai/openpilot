@@ -16,7 +16,8 @@ from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCamera
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets.label import MiciLabel
 from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
@@ -323,7 +324,7 @@ class DeviceLayoutMici(NavWidget):
       regulatory_btn,
       reboot_btn,
       self._power_off_btn,
-    ], snap_items=False)
+    ])
 
     # Set up back navigation
     # TODO: can this somehow be generic in widgets/__init__.py or application.py?

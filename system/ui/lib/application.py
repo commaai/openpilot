@@ -249,6 +249,10 @@ class GuiApplication:
     self._show_fps = show
 
   @property
+  def show_touches(self) -> bool:
+    return self._show_touches
+
+  @property
   def target_fps(self):
     return self._target_fps
 

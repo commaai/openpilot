@@ -7,7 +7,8 @@ import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
-from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import SmallSlider

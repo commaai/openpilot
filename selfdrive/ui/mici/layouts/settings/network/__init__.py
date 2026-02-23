@@ -7,7 +7,7 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.widgets import NavWidget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType, ConnectStatus, normalize_ssid
 
 
@@ -93,7 +93,7 @@ class NetworkLayoutMici(NavWidget):
       self._apn_btn,
       self._cellular_metered_btn,
       # */
-    ], snap_items=False)
+    ])
 
     # Set initial config
     roaming_enabled = ui_state.params.get_bool("GsmRoaming")

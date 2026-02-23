@@ -35,7 +35,6 @@ brew "ffmpeg"
 brew "libusb"
 brew "llvm"
 brew "zeromq"
-cask "gcc-arm-embedded"
 brew "portaudio"
 EOS
 

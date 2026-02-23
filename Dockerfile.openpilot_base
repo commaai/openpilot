@@ -14,9 +14,7 @@ ENV LC_ALL=en_US.UTF-8
 
 COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
 RUN /tmp/tools/install_ubuntu_dependencies.sh && \
-    rm -rf /var/lib/apt/lists/* /tmp/* && \
-    cd /usr/lib/gcc/arm-none-eabi/* && \
-    rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
+    rm -rf /var/lib/apt/lists/* /tmp/*
 
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute

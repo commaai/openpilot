@@ -5,7 +5,7 @@ from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.widgets import NavWidget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
@@ -65,7 +65,7 @@ class DeveloperLayoutMici(NavWidget):
       self._long_maneuver_toggle,
       self._alpha_long_toggle,
       self._debug_mode_toggle,
-    ], snap_items=False)
+    ])
 
     # Toggle lists
     self._refresh_toggles = (

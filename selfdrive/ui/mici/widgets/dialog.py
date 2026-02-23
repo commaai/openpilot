@@ -4,7 +4,8 @@ import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from typing import cast
-from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -296,7 +297,7 @@ class BigMultiOptionDialog(BigDialogBase):
     # Widget doesn't differentiate between click and drag
     self._can_click = True
 
-    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
+    self._scroller = Scroller([], horizontal=False, snap_items=True, pad=100, spacing=0)
 
     for option in options:
       self._scroller.add_widget(BigDialogOptionButton(option))
@@ -312,7 +313,7 @@ class BigMultiOptionDialog(BigDialogBase):
 
   def _on_option_selected(self, option: str):
     y_pos = 0.0
-    for btn in self._scroller._items:
+    for btn in self._scroller.items:
       btn = cast(BigDialogOptionButton, btn)
       if btn.option == option:
         rect_center_y = self._rect.y + self._rect.height / 2
@@ -349,7 +350,7 @@ class BigMultiOptionDialog(BigDialogBase):
       return
 
     # select current option
-    for btn in self._scroller._items:
+    for btn in self._scroller.items:
       btn = cast(BigDialogOptionButton, btn)
       if btn.option == self._selected_option:
         self._on_option_selected(btn.option)
@@ -361,13 +362,13 @@ class BigMultiOptionDialog(BigDialogBase):
     # get selection by whichever button is closest to center
     center_y = self._rect.y + self._rect.height / 2
     closest_btn = (None, float('inf'))
-    for btn in self._scroller._items:
+    for btn in self._scroller.items:
       dist_y = abs((btn.rect.y + btn.rect.height / 2) - center_y)
       if dist_y < closest_btn[1]:
         closest_btn = (btn, dist_y)
 
     if closest_btn[0]:
-      for btn in self._scroller._items:
+      for btn in self._scroller.items:
         btn.set_selected(btn.option == closest_btn[0].option)
       self._selected_option = closest_btn[0].option
 

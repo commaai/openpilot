@@ -3,6 +3,7 @@ import numpy as np
 from collections.abc import Callable
 
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
@@ -12,26 +13,15 @@ LINE_COLOR = rl.GRAY
 LINE_PADDING = 40
 ANIMATION_SCALE = 0.6
 
+MOVE_LIFT = 20
+MOVE_OVERLAY_ALPHA = 0.65
+SCROLL_RC = 0.15
+
 EDGE_SHADOW_WIDTH = 20
 
 MIN_ZOOM_ANIMATION_TIME = 0.075  # seconds
 DO_ZOOM = False
 DO_JELLO = False
-
-
-class LineSeparator(Widget):
-  def __init__(self, height: int = 1):
-    super().__init__()
-    self._rect = rl.Rectangle(0, 0, 0, height)
-
-  def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
-    super().set_parent_rect(parent_rect)
-    self._rect.width = parent_rect.width
-
-  def _render(self, _):
-    rl.draw_line(int(self._rect.x) + LINE_PADDING, int(self._rect.y),
-                 int(self._rect.x + self._rect.width) - LINE_PADDING, int(self._rect.y),
-                 LINE_COLOR)
 
 
 class ScrollIndicator(Widget):
@@ -77,22 +67,19 @@ class ScrollIndicator(Widget):
 
 
 class Scroller(Widget):
-  def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = True, spacing: int = ITEM_SPACING,
-               line_separator: bool = False, pad_start: int = ITEM_SPACING, pad_end: int = ITEM_SPACING,
-               scroll_indicator: bool = True, edge_shadows: bool = True):
+  def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
+               pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
     self._items: list[Widget] = []
     self._horizontal = horizontal
     self._snap_items = snap_items
     self._spacing = spacing
-    self._line_separator = LineSeparator() if line_separator else None
-    self._pad_start = pad_start
-    self._pad_end = pad_end
+    self._pad = pad
 
     self._reset_scroll_at_show = True
 
     self._scrolling_to: float | None = None
-    self._scroll_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._scroll_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
 
@@ -112,6 +99,15 @@ class Scroller(Widget):
     self._show_scroll_indicator = scroll_indicator and self._horizontal
     self._scroll_indicator = ScrollIndicator()
     self._edge_shadows = edge_shadows and self._horizontal
+
+    # move animation state
+    # on move; lift src widget -> wait -> move all -> wait -> drop src widget
+    self._overlay_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    self._move_animations: dict[Widget, FirstOrderFilter] = {}
+    self._move_lift: dict[Widget, FirstOrderFilter] = {}
+    # these are used to wait before moving/dropping, also to move onto next part of the animation earlier for timing
+    self._pending_lift: set[Widget] = set()
+    self._pending_move: set[Widget] = set()
 
     for item in items:
       self.add_widget(item)
@@ -135,9 +131,18 @@ class Scroller(Widget):
   def is_auto_scrolling(self) -> bool:
     return self._scrolling_to is not None
 
+  @property
+  def items(self) -> list[Widget]:
+    return self._items
+
+  @property
+  def content_size(self) -> float:
+    return self._content_size
+
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
-    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled)
+    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None
+                                          and not self.moving_items)
 
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     """Set whether scrolling is enabled (does not affect widget enabled state)."""
@@ -159,7 +164,7 @@ class Scroller(Widget):
     if self._scrolling_to is not None and (self.scroll_panel.state == ScrollState.PRESSED or self.scroll_panel.state == ScrollState.MANUAL_SCROLL):
       self._scrolling_to = None
 
-    if self._scrolling_to is not None:
+    if self._scrolling_to is not None and len(self._pending_lift) == 0:
       self._scroll_filter.update(self._scrolling_to)
       self.scroll_panel.set_offset(self._scroll_filter.x)
 
@@ -211,18 +216,78 @@ class Scroller(Widget):
 
     return self.scroll_panel.get_offset()
 
+  @property
+  def moving_items(self) -> bool:
+    return len(self._move_animations) > 0 or len(self._move_lift) > 0
+
+  def move_item(self, from_idx: int, to_idx: int):
+    assert self._horizontal
+    if from_idx == to_idx:
+      return
+
+    if self.moving_items:
+      cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
+      return
+
+    item = self._items.pop(from_idx)
+    self._items.insert(to_idx, item)
+
+    # store original position in content space of all affected widgets to animate from
+    for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
+      affected_item = self._items[idx]
+      self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, SCROLL_RC, 1 / gui_app.target_fps)
+      self._pending_move.add(affected_item)
+
+    # lift only src widget to make it more clear which one is moving
+    self._move_lift[item] = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
+    self._pending_lift.add(item)
+
+  def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
+    # wait a frame before moving so we match potential pending scroll animation
+    can_start_move = len(self._pending_lift) == 0
+
+    if item in self._move_lift:
+      lift_filter = self._move_lift[item]
+
+      # Animate lift
+      if len(self._pending_move) > 0:
+        lift_filter.update(MOVE_LIFT)
+        # start moving when almost lifted
+        if abs(lift_filter.x - MOVE_LIFT) < 2:
+          self._pending_lift.discard(item)
+      else:
+        # if done moving, animate down
+        lift_filter.update(0)
+        if abs(lift_filter.x) < 1:
+          del self._move_lift[item]
+      target_y -= lift_filter.x
+
+    # Animate move
+    if item in self._move_animations:
+      move_filter = self._move_animations[item]
+
+      # compare/update in content space to match filter
+      content_x = target_x - self._scroll_offset
+      if can_start_move:
+        move_filter.update(content_x)
+
+        # drop when close to target
+        if abs(move_filter.x - content_x) < 10:
+          self._pending_move.discard(item)
+
+        # finished moving
+        if abs(move_filter.x - content_x) < 1:
+          del self._move_animations[item]
+      target_x = move_filter.x + self._scroll_offset
+
+    return target_x, target_y
+
   def _layout(self):
     self._visible_items = [item for item in self._items if item.is_visible]
 
-    # Add line separator between items
-    if self._line_separator is not None:
-      l = len(self._visible_items)
-      for i in range(1, len(self._visible_items)):
-        self._visible_items.insert(l - i, self._line_separator)
-
     self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in self._visible_items)
     self._content_size += self._spacing * (len(self._visible_items) - 1)
-    self._content_size += self._pad_start + self._pad_end
+    self._content_size += self._pad * 2
 
     self._scroll_offset = self._get_scroll(self._visible_items, self._content_size)
 
@@ -230,7 +295,7 @@ class Scroller(Widget):
 
     cur_pos = 0
     for idx, item in enumerate(self._visible_items):
-      spacing = self._spacing if (idx > 0) else self._pad_start
+      spacing = self._spacing if (idx > 0) else self._pad
       # Nicely lay out items horizontally/vertically
       if self._horizontal:
         x = self._rect.x + cur_pos + spacing
@@ -262,30 +327,46 @@ class Scroller(Widget):
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
           y -= np.clip(jello_offset, -20, 20)
 
+      # Animate moves if needed
+      x, y = self._do_move_animation(item, x, y)
+
       # Update item state
       item.set_position(round(x), round(y))  # round to prevent jumping when settling
       item.set_parent_rect(self._rect)
+
+  def _render_item(self, item: Widget):
+    # Skip rendering if not in viewport
+    if not rl.check_collision_recs(item.rect, self._rect):
+      return
+
+    # Scale each element around its own origin when scrolling
+    scale = self._zoom_filter.x
+    if scale != 1.0:
+      rl.rl_push_matrix()
+      rl.rl_scalef(scale, scale, 1.0)
+      rl.rl_translatef((1 - scale) * (item.rect.x + item.rect.width / 2) / scale,
+                       (1 - scale) * (item.rect.y + item.rect.height / 2) / scale, 0)
+      item.render()
+      rl.rl_pop_matrix()
+    else:
+      item.render()
 
   def _render(self, _):
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
 
     for item in reversed(self._visible_items):
-      # Skip rendering if not in viewport
-      if not rl.check_collision_recs(item.rect, self._rect):
+      if item in self._move_lift:
         continue
+      self._render_item(item)
 
-      # Scale each element around its own origin when scrolling
-      scale = self._zoom_filter.x
-      if scale != 1.0:
-        rl.rl_push_matrix()
-        rl.rl_scalef(scale, scale, 1.0)
-        rl.rl_translatef((1 - scale) * (item.rect.x + item.rect.width / 2) / scale,
-                         (1 - scale) * (item.rect.y + item.rect.height / 2) / scale, 0)
-        item.render()
-        rl.rl_pop_matrix()
-      else:
-        item.render()
+    # Dim background if moving items, lifted items are above
+    self._overlay_filter.update(MOVE_OVERLAY_ALPHA if len(self._pending_move) else 0.0)
+    if self._overlay_filter.x > 0.01:
+      rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
+
+    for item in self._move_lift:
+      self._render_item(item)
 
     rl.end_scissor_mode()
 
@@ -315,5 +396,10 @@ class Scroller(Widget):
 
   def hide_event(self):
     super().hide_event()
+    self._overlay_filter.x = 0.0
+    self._move_animations.clear()
+    self._move_lift.clear()
+    self._pending_lift.clear()
+    self._pending_move.clear()
     for item in self._items:
       item.hide_event()
