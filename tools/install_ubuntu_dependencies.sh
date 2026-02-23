@@ -43,7 +43,6 @@ function install_ubuntu_common_requirements() {
     libusb-1.0-0-dev \
     libzmq3-dev \
     libzstd-dev \
-    portaudio19-dev \
     gettext
 }
 
