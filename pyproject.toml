@@ -90,6 +90,7 @@ testing = [
 dev = [
   "matplotlib",
   "opencv-python-headless",
+  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=gcc-arm-none-eabi",
 ]
 
 tools = [

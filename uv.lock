@@ -417,6 +417,11 @@ wheels = [
 ]
 
 [[package]]
+name = "gcc-arm-none-eabi"
+version = "13.2.1"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#e769f658aad6ab46e98490bf0800e69b99e22f7a" }
+
+[[package]]
 name = "ghp-import"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -778,6 +783,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "gcc-arm-none-eabi" },
     { name = "matplotlib" },
     { name = "opencv-python-headless" },
 ]
@@ -816,6 +822,7 @@ requires-dist = [
     { name = "crcmod-plus" },
     { name = "cython" },
     { name = "dearpygui", marker = "(platform_machine != 'aarch64' and extra == 'tools') or (sys_platform != 'linux' and extra == 'tools')", specifier = ">=2.1.0" },
+    { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },
     { name = "jeepney" },
