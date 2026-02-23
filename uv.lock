@@ -116,7 +116,7 @@ wheels = [
 [[package]]
 name = "capnproto"
 version = "1.0.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#5fc3994af75440c9222d627d14a24550f27a1e7f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
 
 [[package]]
 name = "casadi"
@@ -385,7 +385,7 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#5fc3994af75440c9222d627d14a24550f27a1e7f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
 
 [[package]]
 name = "fonttools"
@@ -432,7 +432,7 @@ wheels = [
 [[package]]
 name = "gcc-arm-none-eabi"
 version = "13.2.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#5fc3994af75440c9222d627d14a24550f27a1e7f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
 
 [[package]]
 name = "ghp-import"
@@ -449,7 +449,7 @@ wheels = [
 [[package]]
 name = "git-lfs"
 version = "3.6.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=git-lfs#43041e45d709896831950bb65b8281ef014e587f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
 
 [[package]]
 name = "google-crc32c"
@@ -846,7 +846,7 @@ requires-dist = [
     { name = "dearpygui", marker = "(platform_machine != 'aarch64' and extra == 'tools') or (sys_platform != 'linux' and extra == 'tools')", specifier = ">=2.1.0" },
     { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases" },
     { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
-    { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=git-lfs" },
+    { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },
     { name = "jeepney" },
@@ -883,7 +883,7 @@ requires-dist = [
     { name = "spidev", marker = "sys_platform == 'linux'" },
     { name = "sympy" },
     { name = "tqdm" },
-    { name = "ty", marker = "extra == 'testing'" },
+    { name = "ty", marker = "extra == 'testing'", specifier = "==0.0.17" },
     { name = "websocket-client" },
     { name = "xattr" },
     { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases" },
@@ -1623,7 +1623,7 @@ wheels = [
 [[package]]
 name = "zeromq"
 version = "4.3.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#5fc3994af75440c9222d627d14a24550f27a1e7f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
 
 [[package]]
 name = "zstandard"

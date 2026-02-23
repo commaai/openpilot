@@ -29,7 +29,6 @@ fi
 brew bundle --file=- <<-EOS
 brew "coreutils"
 brew "eigen"
-brew "llvm"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
