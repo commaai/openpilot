@@ -753,7 +753,12 @@ class UnifiedLabel(Widget):
       # draw black fade on left and right
       fade_width = 20
       rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.BLANK, rl.BLACK)
-      if self._scroll_state != ScrollState.STARTING:
+
+      # stop drawing left fade once text scrolls past
+      text_width = visible_sizes[0].x if visible_sizes else 0
+      first_copy_in_view = self._scroll_offset + text_width > 0
+      draw_left_fade = self._scroll_state != ScrollState.STARTING and first_copy_in_view
+      if draw_left_fade:
         rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.BLANK)
 
       rl.end_scissor_mode()

@@ -152,6 +152,9 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
+    if self._network.is_tethering:
+      return False
+
     return (self._is_saved and not self._wrong_password) or self._is_connecting
 
   def _handle_mouse_release(self, mouse_pos: MousePos):

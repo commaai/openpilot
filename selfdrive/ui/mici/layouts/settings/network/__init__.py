@@ -8,7 +8,27 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType, ConnectStatus, normalize_ssid
+from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType, ConnectStatus, SecurityType, normalize_ssid
+
+
+class WifiNetworkButton(BigButton):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self._lock_txt = gui_app.texture("icons_mici/settings/network/new/lock.png", 28, 36)
+    self._draw_lock = False
+
+  def set_draw_lock(self, draw: bool):
+    self._draw_lock = draw
+
+  def _draw_content(self, btn_y: float):
+    super()._draw_content(btn_y)
+    # Render lock icon at lower right of wifi icon if secured
+    if self._draw_lock:
+      icon_x = self._rect.x + self._rect.width - 30 - self._txt_icon.width
+      icon_y = btn_y + 30
+      lock_x = icon_x + self._txt_icon.width - self._lock_txt.width + 7
+      lock_y = icon_y + self._txt_icon.height - self._lock_txt.height + 8
+      rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, 1.0, rl.WHITE)
 
 
 class NetworkLayoutMici(NavWidget):
@@ -68,7 +88,7 @@ class NetworkLayoutMici(NavWidget):
     self._wifi_medium_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_medium.png", 64, 47)
     self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 64, 47)
 
-    self._wifi_button = BigButton("wi-fi", "not connected", self._wifi_slash_txt, scroll=True)
+    self._wifi_button = WifiNetworkButton("wi-fi", "not connected", self._wifi_slash_txt, scroll=True)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
     # ******** Advanced settings ********
@@ -131,8 +151,10 @@ class NetworkLayoutMici(NavWidget):
     if display_network is not None:
       strength = WifiIcon.get_strength_icon_idx(display_network.strength)
       self._wifi_button.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
+      self._wifi_button.set_draw_lock(display_network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED))
     else:
       self._wifi_button.set_icon(self._wifi_slash_txt)
+      self._wifi_button.set_draw_lock(False)
 
   def show_event(self):
     super().show_event()

@@ -1,6 +1,5 @@
 #include "tools/replay/util.h"
 
-#include <bzlib.h>
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
@@ -278,47 +277,6 @@ bool httpDownload(const std::string &url, const std::string &file, size_t chunk_
   std::ofstream of(file, std::ios::binary | std::ios::out);
   of.seekp(size - 1).write("\0", 1);
   return httpDownload(url, of, chunk_size, size, abort);
-}
-
-std::string decompressBZ2(const std::string &in, std::atomic<bool> *abort) {
-  return decompressBZ2((std::byte *)in.data(), in.size(), abort);
-}
-
-std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
-  if (in_size == 0) return {};
-
-  bz_stream strm = {};
-  int bzerror = BZ2_bzDecompressInit(&strm, 0, 0);
-  assert(bzerror == BZ_OK);
-
-  strm.next_in = (char *)in;
-  strm.avail_in = in_size;
-  std::string out(in_size * 5, '\0');
-  do {
-    strm.next_out = (char *)(&out[strm.total_out_lo32]);
-    strm.avail_out = out.size() - strm.total_out_lo32;
-
-    const char *prev_write_pos = strm.next_out;
-    bzerror = BZ2_bzDecompress(&strm);
-    if (bzerror == BZ_OK && prev_write_pos == strm.next_out) {
-      // content is corrupt
-      bzerror = BZ_STREAM_END;
-      rWarning("decompressBZ2 error: content is corrupt");
-      break;
-    }
-
-    if (bzerror == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
-      out.resize(out.size() * 2);
-    }
-  } while (bzerror == BZ_OK && !(abort && *abort));
-
-  BZ2_bzDecompressEnd(&strm);
-  if (bzerror == BZ_STREAM_END && !(abort && *abort)) {
-    out.resize(strm.total_out_lo32);
-    out.shrink_to_fit();
-    return out;
-  }
-  return {};
 }
 
 std::string decompressZST(const std::string &in, std::atomic<bool> *abort) {

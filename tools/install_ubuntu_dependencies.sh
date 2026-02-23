@@ -31,26 +31,13 @@ function install_ubuntu_common_requirements() {
     libcurl4-openssl-dev \
     locales \
     git \
-    git-lfs \
     xvfb
 
-  # TODO: vendor the rest of these in third_party/
   $SUDO apt-get install -y --no-install-recommends \
-    capnproto \
-    libcapnp-dev \
-    ffmpeg \
-    libavformat-dev \
-    libavcodec-dev \
-    libavutil-dev \
-    libbz2-dev \
-    libeigen3-dev \
     libgles2-mesa-dev \
     libjpeg-dev \
     libncurses5-dev \
-    libusb-1.0-0-dev \
-    libzmq3-dev \
     libzstd-dev \
-    portaudio19-dev \
     gettext
 }
 

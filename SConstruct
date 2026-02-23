@@ -38,6 +38,16 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
+if arch != "larch64":
+  import capnproto
+  import eigen
+  import ffmpeg as ffmpeg_pkg
+  import zeromq
+  pkgs = [capnproto, eigen, ffmpeg_pkg, zeromq]
+else:
+  # TODO: remove when AGNOS has our new vendor pkgs
+  pkgs = []
+
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
@@ -74,6 +84,7 @@ env = Environment(
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
+    [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
     "#common",
@@ -83,6 +94,7 @@ env = Environment(
     "#rednose/helpers",
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
+    [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
@@ -106,7 +118,6 @@ elif arch == "Darwin":
   env.Append(LIBPATH=[
     f"{brew_prefix}/lib",
     f"{brew_prefix}/opt/openssl@3.0/lib",
-    f"{brew_prefix}/opt/llvm/lib/c++",
     "/System/Library/Frameworks/OpenGL.framework/Libraries",
   ])
   env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])

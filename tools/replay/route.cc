@@ -174,9 +174,9 @@ void Route::addFileToSegment(int n, const std::string &file) {
   auto pos = name.find_last_of("--");
   name = pos != std::string::npos ? name.substr(pos + 2) : name;
 
-  if (name == "rlog.bz2" || name == "rlog.zst" || name == "rlog") {
+  if (name == "rlog.zst" || name == "rlog") {
     segments_[n].rlog = file;
-  } else if (name == "qlog.bz2" || name == "qlog.zst" || name == "qlog") {
+  } else if (name == "qlog.zst" || name == "qlog") {
     segments_[n].qlog = file;
   } else if (name == "fcamera.hevc") {
     segments_[n].road_cam = file;
