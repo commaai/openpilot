@@ -750,16 +750,14 @@ class UnifiedLabel(Widget):
         current_y += size.y * self._line_height
 
     if self._needs_scroll:
+      # draw black fade on left and right
       fade_width = 20
       rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.BLANK, rl.BLACK)
 
+      # stop drawing left fade once text scrolls past
       text_width = visible_sizes[0].x if visible_sizes else 0
-      first_copy_spans_left = self._scroll_offset + text_width > 0
-      draw_left_fade = self._scroll_state != ScrollState.STARTING and first_copy_spans_left
-      if draw_left_fade != getattr(self, '_prev_draw_left_fade', False):
-        print(f"[UnifiedLabel] {'drawing' if draw_left_fade else 'stopped drawing'} left fade")
-        self._prev_draw_left_fade = draw_left_fade
-
+      first_copy_in_view = self._scroll_offset + text_width > 0
+      draw_left_fade = self._scroll_state != ScrollState.STARTING and first_copy_in_view
       if draw_left_fade:
         rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.BLANK)
 
