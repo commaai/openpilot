@@ -29,6 +29,7 @@ dependencies = [
   "capnproto @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=capnproto",
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
   "zeromq @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zeromq",
+  "git-lfs @ git+https://github.com/commaai/dependencies.git@git-lfs#subdirectory=git-lfs",
 
   # body / webrtcd
   "av",

@@ -31,7 +31,6 @@ function install_ubuntu_common_requirements() {
     libcurl4-openssl-dev \
     locales \
     git \
-    git-lfs \
     xvfb
 
   $SUDO apt-get install -y --no-install-recommends \

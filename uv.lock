@@ -447,6 +447,11 @@ wheels = [
 ]
 
 [[package]]
+name = "git-lfs"
+version = "3.6.1"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=git-lfs#43041e45d709896831950bb65b8281ef014e587f" }
+
+[[package]]
 name = "google-crc32c"
 version = "1.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -768,6 +773,7 @@ dependencies = [
     { name = "crcmod-plus" },
     { name = "cython" },
     { name = "ffmpeg" },
+    { name = "git-lfs" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "json-rpc" },
@@ -840,6 +846,7 @@ requires-dist = [
     { name = "dearpygui", marker = "(platform_machine != 'aarch64' and extra == 'tools') or (sys_platform != 'linux' and extra == 'tools')", specifier = ">=2.1.0" },
     { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases" },
     { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
+    { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=git-lfs" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },
     { name = "jeepney" },
@@ -876,7 +883,7 @@ requires-dist = [
     { name = "spidev", marker = "sys_platform == 'linux'" },
     { name = "sympy" },
     { name = "tqdm" },
-    { name = "ty", marker = "extra == 'testing'", specifier = "==0.0.17" },
+    { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
     { name = "xattr" },
     { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases" },

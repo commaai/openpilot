@@ -27,7 +27,6 @@ else
 fi
 
 brew bundle --file=- <<-EOS
-brew "git-lfs"
 brew "coreutils"
 brew "eigen"
 brew "llvm"
