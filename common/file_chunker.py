@@ -12,7 +12,7 @@ def get_manifest_path(name):
 
 def get_chunk_paths(path, file_size):
   num_chunks = math.ceil(file_size / CHUNK_SIZE)
-  return [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
+  return [get_manifest_path(path),] + [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
 
 def chunk_file(path, num_chunks):
   with open(path, 'rb') as f:
