@@ -152,9 +152,7 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
-    # disable forget for tethering network since it doesn't make sense
-    is_tethering = self._network.ssid == self._wifi_manager.tethering_ssid
-    return ((self._is_saved and not self._wrong_password) or self._is_connecting) and not is_tethering
+    return ((self._is_saved and not self._wrong_password) or self._is_connecting) and not self._network.is_tethering
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
