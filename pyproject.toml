@@ -33,7 +33,6 @@ dependencies = [
   "av",
   "aiohttp",
   "aiortc",
-  "pyaudio",
 
   # panda
   "libusb1",
