@@ -24,7 +24,6 @@ function install_ubuntu_common_requirements() {
   # normal stuff, mostly for the bare docker image
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
-    clang \
     build-essential \
     curl \
     libssl-dev \

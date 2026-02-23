@@ -21,8 +21,8 @@ struct PandaTest : public Panda {
   capnp::List<cereal::CanData>::Reader can_data_list;
 };
 
-PandaTest::PandaTest(int can_list_size, cereal::PandaState::PandaType hw_type) : can_list_size(can_list_size), Panda() {
-  this->hw_type = hw_type;
+PandaTest::PandaTest(int can_list_size_, cereal::PandaState::PandaType hw_type_) : can_list_size(can_list_size_), Panda() {
+  this->hw_type = hw_type_;
   int data_limit = ((hw_type == cereal::PandaState::PandaType::RED_PANDA) ? std::size(dlc_to_len) : 8);
   // prepare test data
   for (int i = 0; i < data_limit; ++i) {

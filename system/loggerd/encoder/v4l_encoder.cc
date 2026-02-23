@@ -43,29 +43,29 @@ static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=N
 
 static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={}) {
   v4l2_plane plane = {
+    .bytesused = (uint32_t)buf->len,
     .length = (unsigned int)buf->len,
     .m = { .userptr = (unsigned long)buf->addr, },
-    .bytesused = (uint32_t)buf->len,
     .reserved = {(unsigned int)buf->fd}
   };
 
   v4l2_buffer v4l_buf = {
-    .type = buf_type,
     .index = index,
+    .type = buf_type,
+    .flags = V4L2_BUF_FLAG_TIMESTAMP_COPY,
+    .timestamp = timestamp,
     .memory = V4L2_MEMORY_USERPTR,
     .m = { .planes = &plane, },
     .length = 1,
-    .flags = V4L2_BUF_FLAG_TIMESTAMP_COPY,
-    .timestamp = timestamp
   };
   util::safe_ioctl(fd, VIDIOC_QBUF, &v4l_buf, "VIDIOC_QBUF failed");
 }
 
 static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) {
   struct v4l2_requestbuffers reqbuf = {
+    .count = count,
     .type = buf_type,
     .memory = V4L2_MEMORY_USERPTR,
-    .count = count
   };
   util::safe_ioctl(fd, VIDIOC_REQBUFS, &reqbuf, "VIDIOC_REQBUFS failed");
 }
