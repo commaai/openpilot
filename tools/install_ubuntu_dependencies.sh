@@ -34,7 +34,6 @@ function install_ubuntu_common_requirements() {
     xvfb
 
   $SUDO apt-get install -y --no-install-recommends \
-    libbz2-dev \
     libgles2-mesa-dev \
     libjpeg-dev \
     libncurses5-dev \
