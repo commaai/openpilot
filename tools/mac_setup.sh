@@ -35,14 +35,6 @@ EOS
 
 echo "[ ] finished brew install t=$SECONDS"
 
-BREW_PREFIX=$(brew --prefix)
-
-# archive backend tools for pip dependencies
-export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/zlib/lib"
-export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/bzip2/lib"
-export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/zlib/include"
-export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/bzip2/include"
-
 # install python dependencies
 $DIR/install_python_dependencies.sh
 echo "[ ] installed python dependencies t=$SECONDS"
