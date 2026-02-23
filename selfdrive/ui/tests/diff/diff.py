@@ -18,8 +18,10 @@ DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
 HTML_TEMPLATE_PATH = Path(__file__).with_name("diff_template.html")
 
 # extra frames of context to include before/after each diff chunk
-CLIP_PADDING_BEFORE = 0
-CLIP_PADDING_AFTER = 0
+# NOTE: adding this can make it difficult to view the exact frames that changed if they are small,
+# but it could be useful for added context or to reduce any video flickering.
+CHUNK_PADDING_BEFORE = 0
+CHUNK_PADDING_AFTER = 0
 
 
 def extract_framehashes(video_path: Path) -> list[str]:
@@ -90,9 +92,9 @@ def get_video_fps(video_path: Path) -> float:
 
 def extract_clip(video_path: Path, start_frame: int, end_frame: int, output_path: Path, fps: float) -> int:
   """Extract [start_frame, end_frame] plus padding before/after into *output_path*. Returns the actual number of frames written."""
-  padded_start = max(0, start_frame - CLIP_PADDING_BEFORE)
+  padded_start = max(0, start_frame - CHUNK_PADDING_BEFORE)
   padding_before = start_frame - padded_start
-  total_frames = (end_frame - start_frame + 1) + padding_before + CLIP_PADDING_AFTER
+  total_frames = (end_frame - start_frame + 1) + padding_before + CHUNK_PADDING_AFTER
   start_time = padded_start / fps
   cmd = ['ffmpeg', '-nostdin', '-i', str(video_path), '-ss', f"{start_time:.6f}", '-frames:v', str(total_frames), '-vsync', '0', '-y', str(output_path)]
   subprocess.run(cmd, capture_output=True, check=True)
@@ -145,7 +147,7 @@ def extract_chunk_clips(video1: Path, video2: Path, chunks: list[DiffChunk], fps
       clips['diff'] = get_rel_path(diff_clip)
 
     # thumbnail (middle frame of the diff content inside the clip)
-    padding_used = min((v1_start if chunk_type != 'insert' else v2_start), CLIP_PADDING_BEFORE)
+    padding_used = min((v1_start if chunk_type != 'insert' else v2_start), CHUNK_PADDING_BEFORE)
     content_count = v1_count if chunk_type != 'insert' else v2_count
     thumb_frame = padding_used + content_count // 2
     thumb_ext = 'png' if chunk_type == 'replace' else 'jpg'  # Use PNG for the diff thumbnails for clarity; JPG is smaller for the other thumbnails
