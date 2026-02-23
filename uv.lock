@@ -789,6 +789,7 @@ dependencies = [
     { name = "tqdm" },
     { name = "websocket-client" },
     { name = "xattr" },
+    { name = "zeromq" },
     { name = "zstandard" },
 ]
 
@@ -875,6 +876,7 @@ requires-dist = [
     { name = "ty", marker = "extra == 'testing'" },
     { name = "websocket-client" },
     { name = "xattr" },
+    { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=zmq" },
     { name = "zstandard" },
 ]
 provides-extras = ["docs", "testing", "dev", "tools"]
@@ -1604,6 +1606,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/44/c5/c21b562d1680a77634d748e30c653c3ca918beb35555cff24986fff54598/yarl-1.22.0-cp312-cp312-win_arm64.whl", hash = "sha256:ea70f61a47f3cc93bdf8b2f368ed359ef02a01ca6393916bc8ff877427181e74", size = 81330, upload-time = "2025-10-06T14:10:13.112Z" },
     { url = "https://files.pythonhosted.org/packages/73/ae/b48f95715333080afb75a4504487cbe142cae1268afc482d06692d605ae6/yarl-1.22.0-py3-none-any.whl", hash = "sha256:1380560bdba02b6b6c90de54133c81c9f2a453dee9912fe58c1dcced1edb7cff", size = 46814, upload-time = "2025-10-06T14:12:53.872Z" },
 ]
+
+[[package]]
+name = "zeromq"
+version = "4.3.5"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=zmq#dc0cf0012a50e0d5820510ceaeca9bd4018d9a39" }
 
 [[package]]
 name = "zstandard"

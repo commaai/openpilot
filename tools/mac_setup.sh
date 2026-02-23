@@ -31,7 +31,6 @@ brew "git-lfs"
 brew "coreutils"
 brew "eigen"
 brew "llvm"
-brew "zeromq"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
