@@ -185,6 +185,7 @@ def generate_html_report(
     else f"❌ Found {diff_frame_count} different frames out of {total_frames} total ({diff_frame_count / total_frames * 100:.1f}%)."
     + (f" Video {'2' if frame_delta > 0 else '1'} is longer by {abs(frame_delta)} frames." if frame_delta != 0 else "")
   )
+  print(f"  Results: {result_text}")
 
   # Load HTML template and replace placeholders
   html = HTML_TEMPLATE_PATH.read_text()
