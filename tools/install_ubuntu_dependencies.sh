@@ -37,8 +37,7 @@ function install_ubuntu_common_requirements() {
     libgles2-mesa-dev \
     libjpeg-dev \
     libncurses5-dev \
-    libzstd-dev \
-    gettext
+    libzstd-dev
 }
 
 # Install Ubuntu 24.04 LTS packages
