@@ -122,7 +122,7 @@ jobs:
 
             cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.html" "${{ github.workspace }}/pr_ui/"
             cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.mp4" "${{ github.workspace }}/pr_ui/"
-            [ -d "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}-chunks" ] && cp -r "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}-chunks" "${{ github.workspace }}/pr_ui/" || true
+            cp -r "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}-chunks" "${{ github.workspace }}/pr_ui/" || true
 
             REPORT_URL="https://commaai.github.io/ci-artifacts/${diff_name}_pr_${{ github.event.number }}.html"
             if [ $diff_exit_code -eq 0 ]; then
