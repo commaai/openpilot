@@ -257,9 +257,11 @@ def main():
   if chunks:
     print(f"[4/5] Extracting {len(chunks)} diff chunk(s)...")
     print("  Getting video fps...", end=' ')
-    fps = get_video_fps(video1)
-    print(f"{fps:.2f} fps")
-    clip_sets = extract_chunk_clips(video1, video2, chunks, fps, args.basedir, chunks_folder_name)
+    fps1, fps2 = get_video_fps(video1), get_video_fps(video2)
+    if abs(fps1 - fps2) > 0.01:
+      raise ValueError(f"Videos have different fps values: {fps1:.2f} vs {fps2:.2f}")
+    print(f"{fps1:.2f} fps")
+    clip_sets = extract_chunk_clips(video1, video2, chunks, fps1, args.basedir, chunks_folder_name)
   else:
     print("[4/5] No diff chunks found, skipping clip extraction.")
 
