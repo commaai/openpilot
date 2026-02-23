@@ -8,9 +8,6 @@ import numpy as np
 
 import SCons.Errors
 
-import capnproto
-import ffmpeg as ffmpeg_pkg
-
 SCons.Warnings.warningAsException(True)
 
 Decider('MD5-timestamp')
