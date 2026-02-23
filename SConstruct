@@ -40,9 +40,10 @@ assert arch in [
 
 if arch != "larch64":
   import capnproto
+  import eigen
   import ffmpeg as ffmpeg_pkg
   import zeromq
-  pkgs = [capnproto, ffmpeg_pkg, zeromq]
+  pkgs = [capnproto, eigen, ffmpeg_pkg, zeromq]
 else:
   # TODO: remove when AGNOS has our new vendor pkgs
   pkgs = []

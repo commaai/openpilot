@@ -35,7 +35,6 @@ function install_ubuntu_common_requirements() {
 
   $SUDO apt-get install -y --no-install-recommends \
     libbz2-dev \
-    libeigen3-dev \
     libgles2-mesa-dev \
     libjpeg-dev \
     libncurses5-dev \
