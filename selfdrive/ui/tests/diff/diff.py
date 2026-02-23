@@ -156,7 +156,7 @@ def extract_chunk_clips(video1: Path, video2: Path, chunks: list[DiffChunk], fps
     generate_thumbnail(thumb_source, thumb_frame, thumb_path, fps)
 
     return {
-      'type': chunk_type, 'clips': clips, 'thumb': get_rel_path(thumb_path),
+      'index': i, 'type': chunk_type, 'clips': clips, 'thumb': get_rel_path(thumb_path),
       'v1_start': v1_start, 'v1_end': v1_end, 'v1_count': v1_count,
       'v2_start': v2_start, 'v2_end': v2_end, 'v2_count': v2_count,
     }
@@ -169,8 +169,8 @@ def extract_chunk_clips(video1: Path, video2: Path, chunks: list[DiffChunk], fps
     futures = [executor.submit(process_chunk, i, chunk) for i, chunk in enumerate(chunks)]
     for future in tqdm(as_completed(futures), total=len(futures), desc="Processing chunks"):
       results.append(future.result())
-  # results will be out of order due to parallel processing, so sort them back to the original order based on v1_start frame index
-  clip_sets = sorted(results, key=lambda x: x['v1_start'])
+  # results will be out of order due to parallel processing, so sort them back to the original order
+  clip_sets = sorted(results, key=lambda x: x['index'])
 
   return clip_sets
 
