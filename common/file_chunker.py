@@ -2,7 +2,7 @@ import math
 import os
 from pathlib import Path
 
-CHUNK_SIZE = 115 * 1024 * 1024  # 45MB, under GitHub's 50MB limit
+CHUNK_SIZE = 45 * 1024 * 1024  # 45MB, under GitHub's 50MB limit
 
 def get_chunk_name(name, idx, num_chunks):
   return f"{name}.chunk{idx+1:02d}of{num_chunks:02d}"
