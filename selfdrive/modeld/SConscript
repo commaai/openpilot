@@ -36,12 +36,7 @@ warp_targets = []
 for cam in [_ar_ox_fisheye, _os_fisheye]:
   w, h = cam.width, cam.height
   warp_targets += [File(f"models/warp_{w}x{h}_tinygrad.pkl").abspath, File(f"models/dm_warp_{w}x{h}_tinygrad.pkl").abspath]
-def chunk_warps(target, source, env):
-  for t in warp_targets:
-    chunk_file(t, 1)
-chunk_targets = sum([get_chunk_paths(t, estimate_pickle_max_size(0)) for t in warp_targets], [])
-lenv.Command(chunk_targets, tinygrad_files + script_files + [chunker_file],
-             [compile_warp_cmd, chunk_warps])
+lenv.Command(warp_targets, tinygrad_files + script_files, cmd)
 
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
