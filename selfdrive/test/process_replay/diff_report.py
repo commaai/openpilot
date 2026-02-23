@@ -31,17 +31,15 @@ def diff_process(cfg, ref_msgs, new_msgs) -> tuple | None:
     for i, (r, n) in enumerate(zip(ref[sub], new[sub], strict=False)):
       for d in compare_logs([r], [n], cfg.ignore, tolerance=cfg.tolerance):
         if d[0] == "change":
-          path = ".".join(str(p) for p in d[1]) if isinstance(d[1], list) else d[1]
           a, b = d[2]
           if a != a and b != b:
             continue
-          diffs.append((path, i, d[2], r.logMonoTime))
+          diffs.append((d[1], i, d[2], r.logMonoTime))
         elif d[0] in ("add", "remove"):
-          path = ".".join(str(p) for p in d[1]) if isinstance(d[1], list) else d[1]
           for item in d[2]:
             if item[1] != item[1]:
               continue
-            diffs.append((f"{path}.{item[0]}", i, (d[0], item[1]), r.logMonoTime))
+            diffs.append((f"{d[1]}.{item[0]}", i, (d[0], item[1]), r.logMonoTime))
   return (diffs, ref, new) if diffs else None
 
 
