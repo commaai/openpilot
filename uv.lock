@@ -116,7 +116,7 @@ wheels = [
 [[package]]
 name = "capnproto"
 version = "1.0.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
 
 [[package]]
 name = "casadi"
@@ -376,7 +376,7 @@ wheels = [
 [[package]]
 name = "eigen"
 version = "3.4.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=eigen#acb479e6db0ba160b7d73770e0f26bc492ece67a" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
 
 [[package]]
 name = "execnet"
@@ -390,7 +390,7 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
 
 [[package]]
 name = "fonttools"
@@ -437,7 +437,7 @@ wheels = [
 [[package]]
 name = "gcc-arm-none-eabi"
 version = "13.2.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
 
 [[package]]
 name = "ghp-import"
@@ -454,7 +454,7 @@ wheels = [
 [[package]]
 name = "git-lfs"
 version = "3.6.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
 
 [[package]]
 name = "google-crc32c"
@@ -850,7 +850,7 @@ requires-dist = [
     { name = "crcmod-plus" },
     { name = "cython" },
     { name = "dearpygui", marker = "(platform_machine != 'aarch64' and extra == 'tools') or (sys_platform != 'linux' and extra == 'tools')", specifier = ">=2.1.0" },
-    { name = "eigen", git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=eigen" },
+    { name = "eigen", git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases" },
     { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases" },
     { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
     { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases" },
@@ -890,7 +890,7 @@ requires-dist = [
     { name = "spidev", marker = "sys_platform == 'linux'" },
     { name = "sympy" },
     { name = "tqdm" },
-    { name = "ty", marker = "extra == 'testing'" },
+    { name = "ty", marker = "extra == 'testing'", specifier = "==0.0.17" },
     { name = "websocket-client" },
     { name = "xattr" },
     { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases" },
@@ -1630,7 +1630,7 @@ wheels = [
 [[package]]
 name = "zeromq"
 version = "4.3.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#d9eaf5b01ed0b0f036a0463e13d6e101352ffdd6" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
 
 [[package]]
 name = "zstandard"
