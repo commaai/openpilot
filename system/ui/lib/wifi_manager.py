@@ -35,7 +35,6 @@ TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
 SCAN_PERIOD_SECONDS = 5
-NM_WIFI_CAPABILITY_AP = 0x40
 
 DEBUG = False
 _dbus_call_idx = 0
@@ -94,19 +93,17 @@ class Network:
   ssid: str
   strength: int
   security_type: SecurityType
-  is_tethering: bool
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_tethering: bool) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"]) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
 
     return cls(
       ssid=ssid,
-      strength=100 if is_tethering else strongest_ap.strength,
+      strength=strongest_ap.strength,
       security_type=security_type,
-      is_tethering=is_tethering,
     )
 
 
@@ -209,9 +206,7 @@ class WifiManager:
       self._wait_for_wifi_device()
 
       self._init_connections()
-      print(Params, self._tethering_ssid, self._connections)
       if Params is not None and self._tethering_ssid not in self._connections:
-        print('ADDING TETHERRING')
         self._add_tethering_connection()
 
       self._init_wifi_state()
@@ -288,10 +283,6 @@ class WifiManager:
   @property
   def tethering_password(self) -> str:
     return self._tethering_password
-
-  @property
-  def tethering_ssid(self) -> str:
-    return self._tethering_ssid
 
   def _set_connecting(self, ssid: str | None):
     # Track prev ssid so late NEED_AUTH signals target the right network
@@ -480,23 +471,6 @@ class WifiManager:
       cloudlog.exception(f"Error getting adapter type {adapter_type}: {e}")
     return None
 
-  def _get_ap_capable_wifi_device(self) -> str | None:
-    try:
-      device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
-      for device_path in device_paths:
-        dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
-        dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
-        if dev_type != NM_DEVICE_TYPE_WIFI:
-          continue
-
-        wifi_addr = DBusAddress(device_path, bus_name=NM, interface=NM_WIRELESS_IFACE)
-        caps = int(self._router_main.send_and_get_reply(Properties(wifi_addr).get('WirelessCapabilities')).body[0][1])
-        if caps & NM_WIFI_CAPABILITY_AP:
-          return str(device_path)
-    except Exception as e:
-      cloudlog.exception(f"Error getting AP-capable WiFi device: {e}")
-    return None
-
   def _init_connections(self) -> None:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
     known_connections = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
@@ -563,21 +537,13 @@ class WifiManager:
     return dict(reply.body[0])
 
   def _add_tethering_connection(self):
-    iface = "wlan0"
-    try:
-      if self._wifi_device is not None:
-        dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
-        iface = str(self._router_main.send_and_get_reply(Properties(dev_addr).get('Interface')).body[0][1])
-    except Exception:
-      pass
-
     connection = {
       'connection': {
         'type': ('s', '802-11-wireless'),
         'uuid': ('s', str(uuid.uuid4())),
         'id': ('s', 'Hotspot'),
         'autoconnect-retries': ('i', 0),
-        'interface-name': ('s', iface),
+        'interface-name': ('s', 'wlan0'),
         'autoconnect': ('b', False),
       },
       '802-11-wireless': {
@@ -605,10 +571,7 @@ class WifiManager:
     }
 
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-    reply = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
-
-    if reply.header.message_type == MessageType.error:
-      cloudlog.warning(f"Failed to add tethering connection: {reply}")
+    self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
     self._set_connecting(ssid)
@@ -746,7 +709,6 @@ class WifiManager:
 
   def _get_tethering_password(self) -> str:
     conn_path = self._connections.get(self._tethering_ssid, None)
-    print('GETTING TETHERING PASSWORD', self._connections, self._tethering_ssid, conn_path)
     if conn_path is None:
       cloudlog.warning('No tethering connection found')
       return ''
@@ -772,23 +734,6 @@ class WifiManager:
   def set_tethering_active(self, active: bool):
     def worker():
       if active:
-        tether_device = self._get_ap_capable_wifi_device() or self._wifi_device
-        conn_path = self._connections.get(self._tethering_ssid, None)
-        if conn_path is not None and tether_device is not None:
-          try:
-            dev_addr = DBusAddress(tether_device, bus_name=NM, interface=NM_DEVICE_IFACE)
-            iface = str(self._router_main.send_and_get_reply(Properties(dev_addr).get('Interface')).body[0][1])
-            settings = self._get_connection_settings(conn_path)
-            if settings:
-              settings['connection']['interface-name'] = ('s', iface)
-              conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-              self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Update', 'a{sa{sv}}', (settings,)))
-          except Exception:
-            pass
-
-        if tether_device is not None:
-          self._wifi_device = tether_device
-
         self.activate_connection(self._tethering_ssid, block=True)
 
         if not self._ipv4_forward:
@@ -875,10 +820,9 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        networks = [Network.from_dbus(ssid, ap_list, ssid == self._tethering_ssid) for ssid, ap_list in aps.items()]
+        networks = [Network.from_dbus(ssid, ap_list) for ssid, ap_list in aps.items()]
         networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
         self._networks = networks
-        print(self._networks)
 
         self._update_active_connection_info()
 
