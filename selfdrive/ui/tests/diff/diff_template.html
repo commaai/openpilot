@@ -54,7 +54,7 @@
       { title: 'Full Video', desc: '', type: '', srcs: ['$VIDEO1_SRC', '$VIDEO2_SRC', '$DIFF_SRC'], loop: true },
       ...chunks.map(({ v1_start, v1_end, v2_start, v2_end, v1_count, v2_count, type, clips, thumb }, i) => {
         // Build title based on type and frame counts
-        let title = '';
+        let title = 'Unknown change';
         if (type === 'insert') {
           title = `➕ Added ${frames_label(v2_count)}`;
         } else if (type === 'delete') {
@@ -66,8 +66,6 @@
             const changeType = v2_count > v1_count ? '➕' : '➖';
             title = `✏️${changeType} Changed ${v1_count}→${v2_count} frames`;
           }
-        } else {
-          title = frames_label(v1_count || 0, v2_count || 0);
         }
 
         // Build description with frame ranges
