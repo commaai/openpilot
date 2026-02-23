@@ -876,6 +876,7 @@ class WifiManager:
         networks = [Network.from_dbus(ssid, ap_list) for ssid, ap_list in aps.items()]
         networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
         self._networks = networks
+        print(self._networks)
 
         self._update_active_connection_info()
 
