@@ -56,8 +56,8 @@ env = Environment(
     "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
     "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
   },
-  CC='clang',
-  CXX='clang++',
+  CC='gcc',
+  CXX='g++',
   CCFLAGS=[
     "-g",
     "-fPIC",
