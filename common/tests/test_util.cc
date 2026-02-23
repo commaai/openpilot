@@ -36,7 +36,7 @@ TEST_CASE("util::read_file") {
     REQUIRE(util::read_file(filename).empty());
 
     std::string content = random_bytes(64 * 1024);
-    [[maybe_unused]] ssize_t n = write(fd, content.c_str(), content.size());
+    REQUIRE(write(fd, content.c_str(), content.size()) == (ssize_t)content.size());
     std::string ret = util::read_file(filename);
     bool equal = (ret == content);
     REQUIRE(equal);
@@ -114,7 +114,7 @@ TEST_CASE("util::safe_fwrite") {
 }
 
 TEST_CASE("util::create_directories") {
-  [[maybe_unused]] int ret = system("rm /tmp/test_create_directories -rf");
+  REQUIRE(system("rm /tmp/test_create_directories -rf") == 0);
   std::string dir = "/tmp/test_create_directories/a/b/c/d/e/f";
 
   auto check_dir_permissions = [](const std::string &path, mode_t mode) -> bool {

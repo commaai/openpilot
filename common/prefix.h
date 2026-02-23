@@ -27,14 +27,14 @@ public:
     auto param_path = Params().getParamPath();
     if (util::file_exists(param_path)) {
       std::string real_path = util::readlink(param_path);
-      [[maybe_unused]] int r1 = system(util::string_format("rm %s -rf", real_path.c_str()).c_str());
+      if (system(util::string_format("rm %s -rf", real_path.c_str()).c_str())) {}
       unlink(param_path.c_str());
     }
     if (getenv("COMMA_CACHE") == nullptr) {
-      [[maybe_unused]] int r2 = system(util::string_format("rm %s -rf", Path::download_cache_root().c_str()).c_str());
+      if (system(util::string_format("rm %s -rf", Path::download_cache_root().c_str()).c_str())) {}
     }
-    [[maybe_unused]] int r3 = system(util::string_format("rm %s -rf", Path::comma_home().c_str()).c_str());
-    [[maybe_unused]] int r4 = system(util::string_format("rm %s -rf", msgq_path.c_str()).c_str());
+    if (system(util::string_format("rm %s -rf", Path::comma_home().c_str()).c_str())) {}
+    if (system(util::string_format("rm %s -rf", msgq_path.c_str()).c_str())) {}
     unsetenv("OPENPILOT_PREFIX");
   }
 
