@@ -277,7 +277,7 @@ def main():
     print(f"Opening {args.output} in browser...")
     webbrowser.open(f'file://{os.path.abspath(output_path)}')
 
-  if (diff_thread.is_alive()):
+  if diff_thread.is_alive():
     print("Waiting for diff video generation to finish...")
   diff_thread.join()
 
