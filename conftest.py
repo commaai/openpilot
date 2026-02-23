@@ -3,9 +3,12 @@ import gc
 import os
 import pytest
 
-from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.system.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
+# Heavy imports (OpenpilotPrefix, manager, HARDWARE, TICI) are deferred to
+# first use so that `pytest --collect-only` does not pay for them upfront.
+# OpenpilotPrefix, manager, and HARDWARE are only needed at test-execution
+# time (inside fixtures).  TICI is needed during collection_modifyitems but
+# is cached after the first import so the hardware module is loaded at most
+# once.
 
 # TODO: pytest-cpp doesn't support FAIL, and we need to create test translations in sessionstart
 # pending https://github.com/pytest-dev/pytest-cpp/pull/147
@@ -47,6 +50,9 @@ def clean_env():
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
+  from openpilot.common.prefix import OpenpilotPrefix
+  from openpilot.system.manager import manager
+
   with clean_env():
     # setup a clean environment for each test
     with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
@@ -78,9 +84,21 @@ def tici_setup_fixture(request, openpilot_function_fixture):
   """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
   if 'skip_tici_setup' in request.keywords:
     return
+  from openpilot.system.hardware import HARDWARE
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
+
+
+_tici_cached = None
+
+
+def _is_tici():
+  global _tici_cached
+  if _tici_cached is None:
+    from openpilot.system.hardware import TICI
+    _tici_cached = TICI
+  return _tici_cached
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -88,7 +106,7 @@ def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
     if "tici" in item.keywords:
-      if not TICI:
+      if not _is_tici():
         item.add_marker(skipper)
       else:
         item.fixturenames.append('tici_setup_fixture')
