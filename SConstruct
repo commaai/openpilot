@@ -41,6 +41,14 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
+if arch != "larch64":
+  import capnproto
+  import ffmpeg as ffmpeg_pkg
+  pkgs = [capnproto, ffmpeg_pkg]
+else:
+  # TODO: remove when AGNOS has our new vendor pkgs
+  pkgs = []
+
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
@@ -77,8 +85,7 @@ env = Environment(
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
-    capnproto.INCLUDE_DIR,
-    ffmpeg_pkg.INCLUDE_DIR,
+    [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
     "#common",
@@ -88,8 +95,7 @@ env = Environment(
     "#rednose/helpers",
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
-    capnproto.LIB_DIR,
-    ffmpeg_pkg.LIB_DIR,
+    [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
