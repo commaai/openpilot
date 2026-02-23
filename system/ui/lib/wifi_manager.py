@@ -545,7 +545,7 @@ class WifiManager:
         'uuid': ('s', str(uuid.uuid4())),
         'id': ('s', 'Hotspot'),
         'autoconnect-retries': ('i', 0),
-        'interface-name': ('s', iface),
+        'interface-name': ('s', 'wlan0'),
         'autoconnect': ('b', False),
       },
       '802-11-wireless': {
