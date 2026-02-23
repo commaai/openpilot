@@ -30,7 +30,6 @@ brew bundle --file=- <<-EOS
 brew "git-lfs"
 brew "coreutils"
 brew "eigen"
-brew "libusb"
 brew "llvm"
 brew "zeromq"
 brew "portaudio"

@@ -40,7 +40,6 @@ function install_ubuntu_common_requirements() {
     libgles2-mesa-dev \
     libjpeg-dev \
     libncurses5-dev \
-    libusb-1.0-0-dev \
     libzmq3-dev \
     libzstd-dev \
     portaudio19-dev \
