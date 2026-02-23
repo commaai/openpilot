@@ -120,6 +120,11 @@ wheels = [
 ]
 
 [[package]]
+name = "capnproto"
+version = "1.0.1"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#acf53363042d92d3206b8ce6b9da4bfb75b200c7" }
+
+[[package]]
 name = "casadi"
 version = "3.7.2"
 source = { registry = "https://pypi.org/simple" }
@@ -375,6 +380,11 @@ wheels = [
 ]
 
 [[package]]
+name = "ffmpeg"
+version = "7.1.0"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#acf53363042d92d3206b8ce6b9da4bfb75b200c7" }
+
+[[package]]
 name = "fonttools"
 version = "4.61.1"
 source = { registry = "https://pypi.org/simple" }
@@ -419,7 +429,7 @@ wheels = [
 [[package]]
 name = "gcc-arm-none-eabi"
 version = "13.2.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#e769f658aad6ab46e98490bf0800e69b99e22f7a" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#acf53363042d92d3206b8ce6b9da4bfb75b200c7" }
 
 [[package]]
 name = "ghp-import"
@@ -749,10 +759,12 @@ dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
+    { name = "capnproto" },
     { name = "casadi" },
     { name = "cffi" },
     { name = "crcmod-plus" },
     { name = "cython" },
+    { name = "ffmpeg" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "json-rpc" },
@@ -815,6 +827,7 @@ requires-dist = [
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
+    { name = "capnproto", git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases" },
     { name = "casadi", specifier = ">=3.6.6" },
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
@@ -822,6 +835,7 @@ requires-dist = [
     { name = "crcmod-plus" },
     { name = "cython" },
     { name = "dearpygui", marker = "(platform_machine != 'aarch64' and extra == 'tools') or (sys_platform != 'linux' and extra == 'tools')", specifier = ">=2.1.0" },
+    { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases" },
     { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },

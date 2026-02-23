@@ -8,6 +8,9 @@ import numpy as np
 
 import SCons.Errors
 
+import capnproto
+import ffmpeg as ffmpeg_pkg
+
 SCons.Warnings.warningAsException(True)
 
 Decider('MD5-timestamp')
@@ -74,6 +77,8 @@ env = Environment(
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
+    capnproto.INCLUDE_DIR,
+    ffmpeg_pkg.INCLUDE_DIR,
   ],
   LIBPATH=[
     "#common",
@@ -83,6 +88,8 @@ env = Environment(
     "#rednose/helpers",
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
+    capnproto.LIB_DIR,
+    ffmpeg_pkg.LIB_DIR,
   ],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",

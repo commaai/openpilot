@@ -34,14 +34,7 @@ function install_ubuntu_common_requirements() {
     git-lfs \
     xvfb
 
-  # TODO: vendor the rest of these in third_party/
   $SUDO apt-get install -y --no-install-recommends \
-    capnproto \
-    libcapnp-dev \
-    ffmpeg \
-    libavformat-dev \
-    libavcodec-dev \
-    libavutil-dev \
     libbz2-dev \
     libeigen3-dev \
     libgles2-mesa-dev \

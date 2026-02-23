@@ -25,6 +25,10 @@ dependencies = [
   "setuptools",
   "numpy >=2.0",
 
+  # vendored native dependencies
+  "capnproto @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=capnproto",
+  "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
+
   # body / webrtcd
   "av",
   "aiohttp",
