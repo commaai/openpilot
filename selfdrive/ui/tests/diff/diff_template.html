@@ -115,7 +115,7 @@
     videos.forEach((v, vi) => {
       v.addEventListener('loadedmetadata', () => {
         // Once metadata is available for this video, update scene ratio from this video and hide its placeholder
-        if (!active[vi]) return
+        if (!active[vi]) return;
         if (v.videoWidth > 0 && v.videoHeight > 0) applySceneAspectRatio(`${v.videoWidth}/${v.videoHeight}`);
         noVideoEls[vi].style.display = 'none';
         v.style.display = '';
