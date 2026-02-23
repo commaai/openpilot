@@ -30,7 +30,6 @@ brew bundle --file=- <<-EOS
 brew "git-lfs"
 brew "coreutils"
 brew "eigen"
-brew "llvm"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
