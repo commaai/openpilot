@@ -110,8 +110,12 @@ class MiciHomeLayout(Widget):
     self._version_commit_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
 
   def show_event(self):
+    print('HOME GOT SHOW EVENT')
     self._version_text = self._get_version_text()
     self._update_params()
+
+  def hide_event(self):
+    print('HOME GOT HIDE EVENT')
 
   def _update_params(self):
     self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
