@@ -381,12 +381,13 @@ class GuiApplication:
       # TODO: change these to touch_valid
       prev_widget.set_enabled(False)
 
+    # do hide event on the newly unrendered widget
+    if len(self._nav_stack) > self._nav_stack_widgets_to_render - 1:
+      print('HIDING', self._nav_stack[-self._nav_stack_widgets_to_render])
+      self._nav_stack[-self._nav_stack_widgets_to_render].hide_event()
+
     self._nav_stack.append(widget)
     widget.show_event()
-
-    # do hide event on widget 2 underneath
-    if len(self._nav_stack) > 2:
-      self._nav_stack[-3].hide_event()
 
   def pop_widget(self):
     if len(self._nav_stack) < 2:
@@ -401,9 +402,8 @@ class GuiApplication:
     widget = self._nav_stack.pop()
     widget.hide_event()
 
-    # do show event on widget 2 underneath
-    if len(self._nav_stack) > 1:
-      self._nav_stack[-2].show_event()
+    if len(self._nav_stack) > self._nav_stack_widgets_to_render - 1:
+      self._nav_stack[-self._nav_stack_widgets_to_render].show_event()
 
   def pop_widgets_to(self, widget):
     if widget not in self._nav_stack:
