@@ -223,6 +223,10 @@ class WifiManager:
 
   def _init_wifi_state(self, block: bool = True):
     def worker():
+      if self._wifi_device is None:
+        cloudlog.warning("No WiFi device found")
+        return
+
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
 
