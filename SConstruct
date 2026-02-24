@@ -161,7 +161,7 @@ if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
 # ********** Cython build environment **********
-py_include = python3_dev.INCLUDE_DIR if python3_dev else sysconfig.get_paths()['include']
+py_include = sysconfig.get_paths()['include'] + ([python3_dev.INCLUDE_DIR if python3_dev else [])
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
 envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]
