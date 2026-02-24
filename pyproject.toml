@@ -242,9 +242,7 @@ not-subscriptable = "ignore"
 # not-iterable errors are now fixed
 
 [tool.ty.analysis]
-# Some third-party packages expose attributes dynamically at runtime and ship incomplete stubs.
-# Treat them as `Any` to avoid noisy `unresolved-attribute` diagnostics while keeping the rule
-# enabled for first-party code.
+# Ignore these false positives
 replace-imports-with-any = [
   "capnp",
   "capnp.**",
