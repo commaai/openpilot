@@ -50,7 +50,6 @@ function install_ubuntu_deps() {
 
   $SUDO apt-get install -y --no-install-recommends \
     python3-dev \
-    libgles2-mesa-dev \
     libncurses5-dev \
     libzstd-dev \
     gettext
