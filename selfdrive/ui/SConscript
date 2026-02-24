@@ -17,7 +17,7 @@ env.Command(
 )
 
 
-if GetOption('extras'):
+if GetOption('extras') and arch == "larch64":
   # build installers
   if arch != "Darwin":
     raylib_env = env.Clone()
