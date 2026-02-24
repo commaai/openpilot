@@ -210,14 +210,14 @@ class TermsPage(Widget):
       self._continue_button = FullRoundedButton(continue_text)
     self._continue_button.set_enabled(False)
     self._continue_button.set_opacity(0.0)
-    self._continue_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
+    self._continue_button.add_touch_valid_callback(self._scroll_panel.is_touch_valid)
     if not self._continue_slider:
       self._continue_button.set_click_callback(continue_callback)
 
     self._enable_back = back_callback is not None
     self._back_button = SmallButton(back_text)
     self._back_button.set_opacity(0.0)
-    self._back_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
+    self._back_button.add_touch_valid_callback(self._scroll_panel.is_touch_valid)
     self._back_button.set_click_callback(back_callback)
 
     self._scroll_down_indicator = IconButton(gui_app.texture("icons_mici/setup/scroll_down_indicator.png", 64, 78))

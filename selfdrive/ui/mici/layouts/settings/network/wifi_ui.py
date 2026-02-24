@@ -108,6 +108,7 @@ class WifiButton(BigButton):
 
     self._wifi_icon = WifiIcon(network)
     self._forget_btn = ForgetButton(self._forget_network)
+    self.add_touch_valid_callback(lambda: not self._forget_btn.is_pressed)
     self._check_txt = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 32, 32)
 
     # Eager state (not sourced from Network)
@@ -216,9 +217,10 @@ class WifiButton(BigButton):
         self._forget_btn.rect.height,
       ))
 
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    super().set_touch_valid_callback(lambda: touch_callback() and not self._forget_btn.is_pressed)
-    self._forget_btn.set_touch_valid_callback(touch_callback)
+  def add_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    # TODO: broken
+    super().add_touch_valid_callback(touch_callback)
+    self._forget_btn.add_touch_valid_callback(touch_callback)
 
   @property
   def _is_saved(self):

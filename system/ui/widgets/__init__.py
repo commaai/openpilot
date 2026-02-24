@@ -29,7 +29,7 @@ class Widget(abc.ABC):
     self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
-    self._touch_valid_callback: Callable[[], bool] | None = None
+    self._touch_valid_callbacks: list[Callable[[], bool]] = []
     self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
     self.__was_awake = True
@@ -71,13 +71,13 @@ class Widget(abc.ABC):
     """Set a callback to be called when the widget is clicked."""
     self._click_callback = click_callback
 
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    """Set a callback to determine if the widget can be clicked."""
-    self._touch_valid_callback = touch_callback
+  def add_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    """Add a callback to determine if the widget can be interacted with."""
+    self._touch_valid_callbacks.append(touch_callback)
 
   def _touch_valid(self) -> bool:
     """Check if the widget can be touched."""
-    return self._touch_valid_callback() if self._touch_valid_callback else True
+    return all(callback() for callback in self._touch_valid_callbacks)
 
   def set_position(self, x: float, y: float) -> None:
     changed = (self._rect.x != x or self._rect.y != y)

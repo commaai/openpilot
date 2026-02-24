@@ -62,9 +62,9 @@ class ToggleAction(ItemAction):
     super().__init__(width, enabled)
     self.toggle = Toggle(initial_state=initial_state, callback=callback)
 
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    super().set_touch_valid_callback(touch_callback)
-    self.toggle.set_touch_valid_callback(touch_callback)
+  def add_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().add_touch_valid_callback(touch_callback)
+    self.toggle.add_touch_valid_callback(touch_callback)
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
@@ -108,9 +108,9 @@ class ButtonAction(ItemAction):
     else:
       return BUTTON_WIDTH
 
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    super().set_touch_valid_callback(touch_callback)
-    self._button.set_touch_valid_callback(touch_callback)
+  def add_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().add_touch_valid_callback(touch_callback)
+    self._button.add_touch_valid_callback(touch_callback)
 
   def set_text(self, text: str | Callable[[], str]):
     self._text_source = text
@@ -180,10 +180,10 @@ class DualButtonAction(ItemAction):
     self.left_button = Button(left_text, click_callback=left_callback, button_style=ButtonStyle.NORMAL, text_padding=0)
     self.right_button = Button(right_text, click_callback=right_callback, button_style=ButtonStyle.DANGER, text_padding=0)
 
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    super().set_touch_valid_callback(touch_callback)
-    self.left_button.set_touch_valid_callback(touch_callback)
-    self.right_button.set_touch_valid_callback(touch_callback)
+  def add_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().add_touch_valid_callback(touch_callback)
+    self.left_button.add_touch_valid_callback(touch_callback)
+    self.right_button.add_touch_valid_callback(touch_callback)
 
   def _render(self, rect: rl.Rectangle):
     button_spacing = 30
@@ -298,10 +298,10 @@ class ListItem(Widget):
   def set_description_opened_callback(self, callback: Callable) -> None:
     self.description_opened_callback = callback
 
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    super().set_touch_valid_callback(touch_callback)
+  def add_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().add_touch_valid_callback(touch_callback)
     if self.action_item:
-      self.action_item.set_touch_valid_callback(touch_callback)
+      self.action_item.add_touch_valid_callback(touch_callback)
 
   def set_parent_rect(self, parent_rect: rl.Rectangle):
     super().set_parent_rect(parent_rect)

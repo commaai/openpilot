@@ -37,7 +37,7 @@ class Scroller(Widget):
 
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
-    item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
+    item.add_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
   def _render(self, _):
     # TODO: don't draw items that are not in the viewport

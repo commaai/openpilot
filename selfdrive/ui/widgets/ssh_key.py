@@ -47,9 +47,9 @@ class SshKeyAction(ItemAction):
 
     self._refresh_state()
 
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    super().set_touch_valid_callback(touch_callback)
-    self._button.set_touch_valid_callback(touch_callback)
+  def add_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().add_touch_valid_callback(touch_callback)
+    self._button.add_touch_valid_callback(touch_callback)
 
   def _refresh_state(self):
     self._username = self._params.get("GithubUsername")
