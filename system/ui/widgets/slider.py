@@ -107,8 +107,8 @@ class SmallSlider(Widget):
       # activate once animation completes, small threshold for small floats
       if self._scroll_x_circle_filter.x < (activated_pos + 1):
         if not self._confirm_callback_called and (rl.get_time() - self._confirmed_time) >= self.CONFIRM_DELAY:
-          self._on_confirm()
           self._confirm_callback_called = True
+          self._on_confirm()
 
     elif not self._is_dragging_circle:
       # reset back to right

@@ -43,7 +43,7 @@ class BigCircleButton(Widget):
     self._txt_btn_disabled_bg = gui_app.texture("icons_mici/buttons/button_circle_disabled.png", 180, 180)
 
     self._txt_btn_bg = gui_app.texture("icons_mici/buttons/button_circle.png", 180, 180)
-    self._txt_btn_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_hover.png", 180, 180)
+    self._txt_btn_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_pressed.png", 180, 180)
 
     self._txt_btn_red_bg = gui_app.texture("icons_mici/buttons/button_circle_red.png", 180, 180)
     self._txt_btn_red_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_red_hover.png", 180, 180)
