@@ -78,7 +78,7 @@ class Scroller(Widget):
 
     self._reset_scroll_at_show = True
 
-    self._scrolling_to: float | None = None
+    self._scrolling_to: tuple[float | None, bool] = (None, False)
     self._scrolling_to_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
@@ -123,14 +123,14 @@ class Scroller(Widget):
     # FIXME: the padding correction doesn't seem correct
     scroll_offset = self.scroll_panel.get_offset() - pos
     if smooth:
-      self._scrolling_to = scroll_offset
+      self._scrolling_to = scroll_offset, False
       self._scrolling_to_filter.x = self.scroll_panel.get_offset()
     else:
       self.scroll_panel.set_offset(scroll_offset)
 
   @property
   def is_auto_scrolling(self) -> bool:
-    return self._scrolling_to is not None
+    return self._scrolling_to[0] is not None
 
   @property
   def items(self) -> list[Widget]:
@@ -145,7 +145,7 @@ class Scroller(Widget):
 
     # preserve original touch valid callback
     original_touch_valid_callback = item._touch_valid_callback
-    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None
+    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to[0] is None
                                           and not self.moving_items and (original_touch_valid_callback() if
                                                                          original_touch_valid_callback else True))
 
@@ -155,7 +155,7 @@ class Scroller(Widget):
 
   def _update_state(self):
     if DO_ZOOM:
-      if self._scrolling_to is not None or self.scroll_panel.state != ScrollState.STEADY:
+      if self._scrolling_to[0] is not None or self.scroll_panel.state != ScrollState.STEADY:
         self._zoom_out_t = rl.get_time() + MIN_ZOOM_ANIMATION_TIME
         self._zoom_filter.update(0.85)
       else:
@@ -166,16 +166,16 @@ class Scroller(Widget):
             self._zoom_filter.update(0.85)
 
     # Cancel auto-scroll if user starts manually scrolling
-    if self._scrolling_to is not None and (self.scroll_panel.state == ScrollState.PRESSED or self.scroll_panel.state == ScrollState.MANUAL_SCROLL):
-      self._scrolling_to = None
+    if self._scrolling_to[0] is not None and (self.scroll_panel.state == ScrollState.PRESSED or self.scroll_panel.state == ScrollState.MANUAL_SCROLL):
+      self._scrolling_to = None, False
 
-    if self._scrolling_to is not None and len(self._pending_lift) == 0:
-      self._scrolling_to_filter.update(self._scrolling_to)
+    if self._scrolling_to[0] is not None and len(self._pending_lift) == 0:
+      self._scrolling_to_filter.update(self._scrolling_to[0])
       self.scroll_panel.set_offset(self._scrolling_to_filter.x)
 
-      if abs(self._scrolling_to_filter.x - self._scrolling_to) < 1:
-        self.scroll_panel.set_offset(self._scrolling_to)
-        self._scrolling_to = None
+      if abs(self._scrolling_to_filter.x - self._scrolling_to[0]) < 1:
+        self.scroll_panel.set_offset(self._scrolling_to[0])
+        self._scrolling_to = None, False
 
   def _get_scroll(self, visible_items: list[Widget], content_size: float) -> float:
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
