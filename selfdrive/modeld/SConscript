@@ -1,13 +1,17 @@
 import os
 import glob
+from openpilot.common.file_chunker import chunk_file, get_chunk_paths
 
 Import('env', 'arch')
+chunker_file = File("#common/file_chunker.py")
 lenv = env.Clone()
-CHUNK_BYTES = int(os.environ.get("TG_CHUNK_BYTES", str(45 * 1024 * 1024)))
 
 tinygrad_root = env.Dir("#").abspath
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=tinygrad_root)
                   if 'pycache' not in x and os.path.isfile(os.path.join(tinygrad_root, x))]
+
+def estimate_pickle_max_size(onnx_size):
+  return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
@@ -26,38 +30,28 @@ image_flag = {
      'larch64': 'IMAGE=2',
 }.get(arch, 'IMAGE=0')
 script_files = [File(Dir("#selfdrive/modeld").File("compile_warp.py").abspath)]
-cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/compile_warp.py '
+compile_warp_cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/compile_warp.py '
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 warp_targets = []
 for cam in [_ar_ox_fisheye, _os_fisheye]:
   w, h = cam.width, cam.height
   warp_targets += [File(f"models/warp_{w}x{h}_tinygrad.pkl").abspath, File(f"models/dm_warp_{w}x{h}_tinygrad.pkl").abspath]
-lenv.Command(warp_targets, tinygrad_files + script_files, cmd)
+lenv.Command(warp_targets, tinygrad_files + script_files, compile_warp_cmd)
 
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
-
-  out = fn + "_tinygrad.pkl"
-  full = out + ".full"
-  parts = out + ".parts"
-
-  full_node = lenv.Command(
-    full,
-    [fn + ".onnx"] + tinygrad_files,
-    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {full}'
+  pkl = fn + "_tinygrad.pkl"
+  onnx_path = fn + ".onnx"
+  chunk_targets = get_chunk_paths(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
+  def do_chunk(target, source, env):
+    chunk_file(pkl, chunk_targets)
+  return lenv.Command(
+    chunk_targets,
+    [onnx_path] + tinygrad_files + [chunker_file],
+    [f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
+     do_chunk]
   )
-
-  split_script = File(Dir("#selfdrive/modeld").File("external_pickle.py").abspath)
-  parts_node = lenv.Command(
-    parts,
-    [full_node, split_script, Value(str(CHUNK_BYTES))],
-    [f'python3 {split_script.abspath} {full} {out} {CHUNK_BYTES}', Delete(full)],
-  )
-
-  lenv.NoCache(parts_node)
-  lenv.AlwaysBuild(parts_node)
-  return parts_node
 
 # Compile small models
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:

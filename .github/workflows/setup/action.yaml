@@ -38,10 +38,18 @@ runs:
       uses: ./.github/workflows/auto-cache
       with:
         path: /tmp/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        key: scons-${{ runner.os }}-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
+          scons-${{ runner.os }}-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.os }}-${{ runner.arch }}
+    # venv cache
+    - id: venv-cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: ${{ github.workspace }}/.venv
+        key: venv-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          venv-${{ runner.os }}-${{ runner.arch }}
     - shell: bash
       name: Run setup
       run: ./tools/op.sh setup

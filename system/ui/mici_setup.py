@@ -14,8 +14,10 @@ from collections.abc import Callable
 import pyray as rl
 
 from cereal import log
+from openpilot.common.realtime import config_realtime_process, set_core_affinity
+from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import run_cmd
-from openpilot.system.hardware import HARDWARE
+from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
@@ -49,11 +51,10 @@ exec ./launch_openpilot.sh
 
 
 class NetworkConnectivityMonitor:
-  def __init__(self, should_check: Callable[[], bool] | None = None, check_interval: float = 1.0):
+  def __init__(self, should_check: Callable[[], bool] | None = None):
     self.network_connected = threading.Event()
     self.wifi_connected = threading.Event()
     self._should_check = should_check or (lambda: True)
-    self._check_interval = check_interval
     self._stop_event = threading.Event()
     self._thread: threading.Thread | None = None
 
@@ -78,7 +79,7 @@ class NetworkConnectivityMonitor:
       if self._should_check():
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
-          urllib.request.urlopen(request, timeout=1.0)
+          urllib.request.urlopen(request, timeout=2.0)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -87,7 +88,7 @@ class NetworkConnectivityMonitor:
       else:
         self.reset()
 
-      if self._stop_event.wait(timeout=self._check_interval):
+      if self._stop_event.wait(timeout=1.0):
         break
 
 
@@ -704,6 +705,14 @@ class Setup(Widget):
 
 
 def main():
+  config_realtime_process(0, 51)
+  # attempt to affine. AGNOS will start setup with all cores, should only fail when manually launching with screen off
+  if TICI:
+    try:
+      set_core_affinity([5])
+    except OSError:
+      cloudlog.exception("Failed to set core affinity for setup process")
+
   try:
     gui_app.init_window("Setup")
     setup = Setup()

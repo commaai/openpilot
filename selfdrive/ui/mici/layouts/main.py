@@ -63,9 +63,11 @@ class MiciMainLayout(Widget):
     device.add_interactive_timeout_callback(self._on_interactive_timeout)
 
   def show_event(self):
+    super().show_event()
     self._scroller.show_event()
 
   def hide_event(self):
+    super().hide_event()
     self._scroller.hide_event()
 
   def _scroll_to(self, layout: Widget):

@@ -66,22 +66,9 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - name: Install dependencies
-      run: ./tools/mac_setup.sh
-      env:
-        HOMEBREW_DISPLAY_INSTALL_TIMES: 1
-    - run: git lfs pull
-    - name: Getting scons cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: /tmp/scons_cache
-        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}-macos
+    - uses: ./.github/workflows/setup-with-retry
     - name: Building openpilot
-      run: . .venv/bin/activate && scons
+      run: scons
 
   static_analysis:
     name: static analysis
