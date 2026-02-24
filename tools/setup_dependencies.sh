@@ -49,7 +49,6 @@ function install_ubuntu_deps() {
     xvfb
 
   $SUDO apt-get install -y --no-install-recommends \
-    python3-dev \
     libgles2-mesa-dev \
     libjpeg-dev \
     libncurses5-dev \
