@@ -325,9 +325,11 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
         btn.set_network_missing(True)
 
+    self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
+
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)
-    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+    self._move_network_to_front(ssid, scroll=True)
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -343,7 +345,7 @@ class WifiUIMici(NavWidget):
       self._on_need_auth(network.ssid, False)
       return
 
-    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+    self._move_network_to_front(ssid, scroll=True)
 
   def _on_need_auth(self, ssid, incorrect_password=True):
     if incorrect_password:
@@ -363,17 +365,23 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
 
-  def _update_state(self):
-    super()._update_state()
-
+  def _move_network_to_front(self, ssid: str | None, scroll: bool = False):
     # Move connecting/connected network to the front with animation
-    front_ssid = self._wifi_manager.wifi_state.ssid
     front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
                           if isinstance(btn, WifiButton) and
-                          btn.network.ssid == front_ssid), None) if front_ssid else None
+                          btn.network.ssid == ssid), None) if ssid else None
 
+    print(f"Front btn idx: {front_btn_idx} for ssid: {ssid}")
     if front_btn_idx is not None and front_btn_idx > 0:
+      print('Moving connected network to front')
       self._scroller.move_item(front_btn_idx, 0)
+
+      if scroll:
+        # Scroll to the new position of the network
+        self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+
+  def _update_state(self):
+    super()._update_state()
 
     # Show loading animation near end
     max_scroll = max(self._scroller.content_size - self._scroller.rect.width, 1)
