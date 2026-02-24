@@ -12,17 +12,18 @@ def get_manifest_path(name):
 
 def get_chunk_paths(path, file_size):
   num_chunks = math.ceil(file_size / CHUNK_SIZE)
-  return [get_manifest_path(path),] + [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
+  return [get_manifest_path(path)] + [get_chunk_name(path, i, num_chunks) for i in range(num_chunks)]
 
-def chunk_file(path, num_chunks):
+def chunk_file(path, targets):
+  manifest_path, *chunk_paths = targets
   with open(path, 'rb') as f:
     data = f.read()
   actual_num_chunks = max(1, math.ceil(len(data) / CHUNK_SIZE))
-  assert num_chunks >= actual_num_chunks, f"Allowed {num_chunks} chunks but needs at least {actual_num_chunks}, for path {path}"
-  for i in range(num_chunks):
-    with open(get_chunk_name(path, i, num_chunks), 'wb') as f:
+  assert len(chunk_paths) >= actual_num_chunks, f"Allowed {len(chunk_paths)} chunks but needs at least {actual_num_chunks}, for path {path}"
+  for i, chunk_path in enumerate(chunk_paths):
+    with open(chunk_path, 'wb') as f:
       f.write(data[i * CHUNK_SIZE:(i + 1) * CHUNK_SIZE])
-  Path(get_manifest_path(path)).write_text(str(num_chunks))
+  Path(manifest_path).write_text(str(len(chunk_paths)))
   os.remove(path)
 
 
