@@ -242,7 +242,7 @@ not-subscriptable = "ignore"
 # not-iterable errors are now fixed
 
 [tool.ty.analysis]
-# Ignore these false positives
+# Ignore these false positives (unresolved-attribute)
 replace-imports-with-any = [
   "capnp",
   "capnp.**",
