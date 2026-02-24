@@ -46,7 +46,7 @@ class BigCircleButton(Widget):
     self._txt_btn_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_pressed.png", 180, 180)
 
     self._txt_btn_red_bg = gui_app.texture("icons_mici/buttons/button_circle_red.png", 180, 180)
-    self._txt_btn_red_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_red_hover.png", 180, 180)
+    self._txt_btn_red_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_red_pressed.png", 180, 180)
 
   def _draw_content(self, btn_y: float):
     # draw icon
