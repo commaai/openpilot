@@ -79,7 +79,7 @@ class Scroller(Widget):
     self._reset_scroll_at_show = True
 
     self._scrolling_to: float | None = None
-    self._scroll_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
+    self._scrolling_to_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
 
@@ -124,6 +124,7 @@ class Scroller(Widget):
     scroll_offset = self.scroll_panel.get_offset() - pos
     if smooth:
       self._scrolling_to = scroll_offset
+      self._scrolling_to_filter.x = self.scroll_panel.get_offset()
     else:
       self.scroll_panel.set_offset(scroll_offset)
 
@@ -169,15 +170,12 @@ class Scroller(Widget):
       self._scrolling_to = None
 
     if self._scrolling_to is not None and len(self._pending_lift) == 0:
-      self._scroll_filter.update(self._scrolling_to)
-      self.scroll_panel.set_offset(self._scroll_filter.x)
+      self._scrolling_to_filter.update(self._scrolling_to)
+      self.scroll_panel.set_offset(self._scrolling_to_filter.x)
 
-      if abs(self._scroll_filter.x - self._scrolling_to) < 1:
+      if abs(self._scrolling_to_filter.x - self._scrolling_to) < 1:
         self.scroll_panel.set_offset(self._scrolling_to)
         self._scrolling_to = None
-    else:
-      # keep current scroll position up to date
-      self._scroll_filter.x = self.scroll_panel.get_offset()
 
   def _get_scroll(self, visible_items: list[Widget], content_size: float) -> float:
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
