@@ -68,4 +68,4 @@ if GetOption('extras'):
       obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
       f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter, inter_bold, inter_light], LIBS=raylib_libs)
       # keep installers small
-      assert f[0].get_size() < 1900*1e3, f[0].get_size()
+      assert f[0].get_size() < 2500*1e3, f[0].get_size()

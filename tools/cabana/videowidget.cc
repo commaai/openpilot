@@ -16,13 +16,14 @@
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
 
+// Indexed by TimelineType: None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserBookmark
 static const QColor timeline_colors[] = {
-  [(int)TimelineType::None] = QColor(111, 143, 175),
-  [(int)TimelineType::Engaged] = QColor(0, 163, 108),
-  [(int)TimelineType::UserBookmark] = Qt::magenta,
-  [(int)TimelineType::AlertInfo] = Qt::green,
-  [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
-  [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
+  QColor(111, 143, 175),
+  QColor(0, 163, 108),
+  Qt::green,
+  QColor(255, 195, 0),
+  QColor(199, 0, 57),
+  Qt::magenta,
 };
 
 static Replay *getReplay() {

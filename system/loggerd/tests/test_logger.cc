@@ -56,7 +56,7 @@ void write_msg(LoggerState *logger) {
 TEST_CASE("logger") {
   const int segment_cnt = 100;
   const std::string log_root = "/tmp/test_logger";
-  system(("rm " + log_root + " -rf").c_str());
+  REQUIRE(system(("rm " + log_root + " -rf").c_str()) == 0);
   std::string route_name;
   {
     LoggerState logger(log_root);

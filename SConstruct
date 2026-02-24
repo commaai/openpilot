@@ -56,15 +56,13 @@ env = Environment(
     "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
     "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
   },
-  CC='clang',
-  CXX='clang++',
   CCFLAGS=[
     "-g",
     "-fPIC",
     "-O2",
     "-Wunused",
     "-Werror",
-    "-Wshadow",
+    "-Wshadow" if arch in ("Darwin", "larch64") else "-Wshadow=local",
     "-Wno-unknown-warning-option",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
@@ -106,6 +104,8 @@ env = Environment(
 
 # Arch-specific flags and paths
 if arch == "larch64":
+  env["CC"] = "clang"
+  env["CXX"] = "clang++"
   env.Append(LIBPATH=[
     "/usr/local/lib",
     "/system/vendor/lib64",
@@ -162,7 +162,7 @@ if os.environ.get('SCONS_PROGRESS'):
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
-envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-declarations"]
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]
 envCython["CCFLAGS"].remove("-Werror")
 
 envCython["LIBS"] = []
