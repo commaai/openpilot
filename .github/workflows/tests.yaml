@@ -23,12 +23,7 @@ env:
 jobs:
   build_release:
     name: build release
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: ubuntu-24.04
     env:
       STRIPPED_DIR: /tmp/releasepilot
       PYTHONPATH: /tmp/releasepilot
@@ -61,7 +56,7 @@ jobs:
 
   build_mac:
     name: build macOS
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v6
       with:
@@ -72,12 +67,7 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v6
       with:
@@ -89,12 +79,7 @@ jobs:
 
   unit_tests:
     name: unit tests
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v6
       with:
@@ -104,7 +89,7 @@ jobs:
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      timeout-minutes: 20
       run: |
         source selfdrive/test/setup_xvfb.sh
         # Pre-compile Python bytecode so each pytest worker doesn't need to
@@ -113,12 +98,7 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v6
       with:
@@ -134,7 +114,7 @@ jobs:
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Run replay
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      timeout-minutes: 20
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
       run: selfdrive/test/process_replay/test_processes.py -j$(nproc)
     - name: Print diff
@@ -176,12 +156,7 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: ubuntu-24.04
     if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v6
@@ -192,19 +167,14 @@ jobs:
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Driving test
-      timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
+      timeout-minutes: 20
       run: |
         source selfdrive/test/setup_xvfb.sh
         pytest -s tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     name: Create UI Report
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
