@@ -42,7 +42,7 @@ class SmallSlider(Widget):
 
     self._bg_txt = gui_app.texture("icons_mici/setup/small_slider/slider_bg.png", 316, 100)
     self._circle_bg_txt = gui_app.texture("icons_mici/setup/small_slider/slider_red_circle.png", 100, 100)
-    self._circle_bg_pressed_txt = self._circle_bg_txt
+    self._circle_bg_pressed_txt = gui_app.texture("icons_mici/setup/small_slider/slider_red_circle_pressed.png", 100, 100)
     self._circle_arrow_txt = gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 37, 32)
 
   @property
