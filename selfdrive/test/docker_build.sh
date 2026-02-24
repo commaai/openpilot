@@ -15,7 +15,7 @@ else
   TAG_SUFFIX=""
 fi
 
-source $SCRIPT_DIR/docker_common.sh $1 "$TAG_SUFFIX"
+source $SCRIPT_DIR/docker_common.sh "$TAG_SUFFIX"
 
 DOCKER_BUILDKIT=1 docker buildx build --provenance false --pull --platform $PLATFORM --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $DOCKER_IMAGE:latest -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
 

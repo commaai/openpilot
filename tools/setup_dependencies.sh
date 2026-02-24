@@ -4,13 +4,6 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd "$DIR/../" && pwd)"
 
-ONLY_PYTHON=0
-for arg in "$@"; do
-  case $arg in
-    --only-python) ONLY_PYTHON=1 ;;
-  esac
-done
-
 function install_ubuntu_deps() {
   SUDO=""
 
@@ -120,16 +113,14 @@ function install_python_deps() {
 
 # --- Main ---
 
-if [[ "$ONLY_PYTHON" -eq 0 ]]; then
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    install_ubuntu_deps
-    echo "[ ] installed system dependencies t=$SECONDS"
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ $SHELL == "/bin/zsh" ]]; then
-      RC_FILE="$HOME/.zshrc"
-    elif [[ $SHELL == "/bin/bash" ]]; then
-      RC_FILE="$HOME/.bash_profile"
-    fi
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  install_ubuntu_deps
+  echo "[ ] installed system dependencies t=$SECONDS"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  if [[ $SHELL == "/bin/zsh" ]]; then
+    RC_FILE="$HOME/.zshrc"
+  elif [[ $SHELL == "/bin/bash" ]]; then
+    RC_FILE="$HOME/.bash_profile"
   fi
 fi
 
