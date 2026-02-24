@@ -15,8 +15,6 @@ ENV LC_ALL=en_US.UTF-8
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
 
-RUN dbus-uuidgen > /etc/machine-id
-
 ARG USER=batman
 ARG USER_UID=1001
 RUN useradd -m -s /bin/bash -u $USER_UID $USER
