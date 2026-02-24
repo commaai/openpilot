@@ -12,8 +12,8 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
-RUN /tmp/tools/install_ubuntu_dependencies.sh && \
+COPY tools/setup_dependencies.sh /tmp/tools/
+RUN /tmp/tools/setup_dependencies.sh && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
 ENV NVIDIA_VISIBLE_DEVICES=all
@@ -30,12 +30,12 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USER
 
 COPY --chown=$USER pyproject.toml uv.lock /home/$USER
-COPY --chown=$USER tools/install_python_dependencies.sh /home/$USER/tools/
+COPY --chown=$USER tools/setup_dependencies.sh /home/$USER/tools/
 
 ENV VIRTUAL_ENV=/home/$USER/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN cd /home/$USER && \
-    tools/install_python_dependencies.sh && \
+    tools/setup_dependencies.sh --only-python && \
     rm -rf tools/ pyproject.toml uv.lock .cache
 
 USER root

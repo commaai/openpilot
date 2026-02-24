@@ -216,11 +216,7 @@ function op_setup() {
 
   echo "Installing dependencies..."
   st="$(date +%s)"
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    SETUP_SCRIPT="tools/ubuntu_setup.sh"
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    SETUP_SCRIPT="tools/mac_setup.sh"
-  fi
+  SETUP_SCRIPT="tools/setup_dependencies.sh"
   if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
     loge "ERROR_DEPENDENCIES_INSTALLATION"
