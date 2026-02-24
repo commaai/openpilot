@@ -13,19 +13,20 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "
 def estimate_pickle_max_size(onnx_size):
   return 1.2 * onnx_size  + 10 * 1024 * 1024  # 20% + 10MB is plenty
 
-# Get model metadata
-for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
-  fn = File(f"models/{model_name}").abspath
-  script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
-  cmd = f'python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
-  lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
-
 # compile warp
 # THREADS=0 is need to prevent bug: https://github.com/tinygrad/tinygrad/issues/14689
 tg_flags = {
     'larch64': 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0',
     'Darwin': f'DEV=CPU THREADS=0 HOME={os.path.expanduser("~")}', # tinygrad calls brew which needs a $HOME in the env
 }.get(arch, 'DEV=CPU CPU_LLVM=1 THREADS=0')
+
+# Get model metadata
+for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+  fn = File(f"models/{model_name}").abspath
+  script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
+  cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+  lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
+
 image_flag = {
      'larch64': 'IMAGE=2',
 }.get(arch, 'IMAGE=0')
