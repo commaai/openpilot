@@ -176,6 +176,9 @@ class BigButton(Widget):
   def get_text(self):
     return self.text
 
+  def trigger_shake(self):
+    self._shake_start = rl.get_time()
+
   @property
   def _shake_offset(self) -> float:
     SHAKE_DURATION = 0.5
