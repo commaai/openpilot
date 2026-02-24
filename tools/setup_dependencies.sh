@@ -49,7 +49,6 @@ function install_ubuntu_deps() {
     xvfb
 
   $SUDO apt-get install -y --no-install-recommends \
-    python3-dev \
     libncurses5-dev \
     libzstd-dev
 
