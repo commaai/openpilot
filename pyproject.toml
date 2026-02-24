@@ -223,11 +223,9 @@ exclude = [
 [tool.ty.rules]
 # Ignore unresolved imports for Cython-compiled modules (.pyx)
 unresolved-import = "ignore"
-# Report missing attributes by default (use per-module Any overrides below for dynamic deps).
-unresolved-attribute = "error"
 # Ignore invalid method overrides - signature variance issues
 invalid-method-override = "ignore"
-# Too noisy across the codebase; keep off for now.
+# Ignore possibly-missing-attribute - too many false positives
 possibly-missing-attribute = "ignore"
 # Ignore invalid assignment - often intentional monkey-patching
 invalid-assignment = "ignore"
