@@ -62,7 +62,7 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Werror",
-    "-Wshadow" if arch == "Darwin" else "-Wshadow=local",
+    "-Wshadow" if arch in ("Darwin", "larch64") else "-Wshadow=local",
     "-Wno-unknown-warning-option",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
@@ -104,6 +104,8 @@ env = Environment(
 
 # Arch-specific flags and paths
 if arch == "larch64":
+  env["CC"] = "clang"
+  env["CXX"] = "clang++"
   env.Append(LIBPATH=[
     "/usr/local/lib",
     "/system/vendor/lib64",
