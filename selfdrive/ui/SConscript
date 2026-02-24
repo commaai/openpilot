@@ -1,6 +1,4 @@
-import os
 import re
-import json
 from pathlib import Path
 Import('env', 'arch', 'common')
 
@@ -18,18 +16,6 @@ env.Command(
   action=f"python3 {generator}",
 )
 
-# compile gettext .po -> .mo translations
-with open(File("translations/languages.json").abspath) as f:
-  languages = json.loads(f.read())
-
-po_sources = [f"#selfdrive/ui/translations/app_{l}.po" for l in languages.values()]
-po_sources = [src for src in po_sources if os.path.exists(File(src).abspath)]
-mo_targets = [src.replace(".po", ".mo") for src in po_sources]
-mo_build = []
-for src, tgt in zip(po_sources, mo_targets):
-  mo_build.append(env.Command(tgt, src, "msgfmt -o $TARGET $SOURCE"))
-mo_alias = env.Alias('mo', mo_build)
-env.AlwaysBuild(mo_alias)
 
 if GetOption('extras'):
   # build installers

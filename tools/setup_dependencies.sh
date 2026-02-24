@@ -51,8 +51,7 @@ function install_ubuntu_deps() {
   $SUDO apt-get install -y --no-install-recommends \
     python3-dev \
     libncurses5-dev \
-    libzstd-dev \
-    gettext
+    libzstd-dev
 
   if [[ -d "/etc/udev/rules.d/" ]]; then
     # Setup jungle udev rules
