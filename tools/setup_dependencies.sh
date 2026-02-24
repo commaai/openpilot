@@ -49,11 +49,8 @@ function install_ubuntu_deps() {
     xvfb
 
   $SUDO apt-get install -y --no-install-recommends \
-    libgles2-mesa-dev \
-    libjpeg-dev \
     libncurses5-dev \
-    libzstd-dev \
-    gettext
+    libzstd-dev
 
   if [[ -d "/etc/udev/rules.d/" ]]; then
     # Setup jungle udev rules
