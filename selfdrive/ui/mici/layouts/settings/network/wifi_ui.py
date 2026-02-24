@@ -327,7 +327,7 @@ class WifiUIMici(NavWidget):
 
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)
-    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+    self._move_network_to_front(ssid, scroll=True)
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -363,7 +363,7 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
 
-  def _move_network_to_front(self, ssid: str | None, scroll: bool = False) -> None:
+  def _move_network_to_front(self, ssid: str | None, scroll: bool = False):
     if not ssid:
       return
     idx = next((i for i, btn in enumerate(self._scroller.items)
