@@ -42,6 +42,7 @@ class SmallSlider(Widget):
 
     self._bg_txt = gui_app.texture("icons_mici/setup/small_slider/slider_bg.png", 316, 100)
     self._circle_bg_txt = gui_app.texture("icons_mici/setup/small_slider/slider_red_circle.png", 100, 100)
+    self._circle_bg_pressed_txt = gui_app.texture("icons_mici/setup/small_slider/slider_red_circle_pressed.png", 100, 100)
     self._circle_arrow_txt = gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 37, 32)
 
   @property
@@ -107,8 +108,8 @@ class SmallSlider(Widget):
       # activate once animation completes, small threshold for small floats
       if self._scroll_x_circle_filter.x < (activated_pos + 1):
         if not self._confirm_callback_called and (rl.get_time() - self._confirmed_time) >= self.CONFIRM_DELAY:
-          self._on_confirm()
           self._confirm_callback_called = True
+          self._on_confirm()
 
     elif not self._is_dragging_circle:
       # reset back to right
@@ -140,7 +141,8 @@ class SmallSlider(Widget):
       self._label.render(label_rect)
 
     # circle and arrow
-    rl.draw_texture_ex(self._circle_bg_txt, rl.Vector2(btn_x, btn_y), 0.0, 1.0, white)
+    circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self._confirmed_time > 0 else self._circle_bg_txt
+    rl.draw_texture_ex(circle_bg_txt, rl.Vector2(btn_x, btn_y), 0.0, 1.0, white)
 
     arrow_x = btn_x + (self._circle_bg_txt.width - self._circle_arrow_txt.width) / 2
     arrow_y = btn_y + (self._circle_bg_txt.height - self._circle_arrow_txt.height) / 2
@@ -158,6 +160,7 @@ class LargerSlider(SmallSlider):
     self._bg_txt = gui_app.texture("icons_mici/setup/small_slider/slider_bg_larger.png", 520, 115)
     circle_fn = "slider_green_rounded_rectangle" if self._green else "slider_black_rounded_rectangle"
     self._circle_bg_txt = gui_app.texture(f"icons_mici/setup/small_slider/{circle_fn}.png", 180, 115)
+    self._circle_bg_pressed_txt = gui_app.texture(f"icons_mici/setup/small_slider/{circle_fn}_pressed.png", 180, 115)
     self._circle_arrow_txt = gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 55)
 
 
@@ -174,6 +177,7 @@ class BigSlider(SmallSlider):
 
     self._bg_txt = gui_app.texture("icons_mici/buttons/slider_bg.png", 520, 180)
     self._circle_bg_txt = gui_app.texture("icons_mici/buttons/button_circle.png", 180, 180)
+    self._circle_bg_pressed_txt = gui_app.texture("icons_mici/buttons/button_circle_pressed.png", 180, 180)
     self._circle_arrow_txt = self._icon
 
 
@@ -183,4 +187,5 @@ class RedBigSlider(BigSlider):
 
     self._bg_txt = gui_app.texture("icons_mici/buttons/slider_bg.png", 520, 180)
     self._circle_bg_txt = gui_app.texture("icons_mici/buttons/button_circle_red.png", 180, 180)
+    self._circle_bg_pressed_txt = gui_app.texture("icons_mici/buttons/button_circle_red_pressed.png", 180, 180)
     self._circle_arrow_txt = self._icon
