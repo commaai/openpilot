@@ -75,7 +75,11 @@
         } else if (type === 'delete') {
           desc = video_frames_range_label(1, v1_start, v1_end);
         } else if (type === 'replace') {
-          desc = `${video_frames_range_label(1, v1_start, v1_end)} → ${video_frames_range_label(2, v2_start, v2_end)}`;
+          if (v1_start === v2_start && v1_end === v2_end) {
+            desc = frames_range_label(v1_start, v1_end);
+          } else {
+            desc = `${video_frames_range_label(1, v1_start, v1_end)} → ${video_frames_range_label(2, v2_start, v2_end)}`;
+          }
         }
 
         return {
