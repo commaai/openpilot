@@ -371,9 +371,7 @@ class WifiUIMici(NavWidget):
                           if isinstance(btn, WifiButton) and
                           btn.network.ssid == ssid), None) if ssid else None
 
-    print(f"Front btn idx: {front_btn_idx} for ssid: {ssid}")
     if front_btn_idx is not None and front_btn_idx > 0:
-      print('Moving connected network to front')
       self._scroller.move_item(front_btn_idx, 0)
 
       if scroll:
