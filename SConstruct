@@ -45,10 +45,11 @@ if arch != "larch64":
   import python3_dev
   import zeromq
   pkgs = [capnproto, eigen, ffmpeg_pkg, zeromq]
+  py_include = python3_dev.INCLUDE_DIR
 else:
   # TODO: remove when AGNOS has our new vendor pkgs
-  python3_dev = None
   pkgs = []
+  py_include = sysconfig.get_paths()['include']
 
 env = Environment(
   ENV={
@@ -161,7 +162,6 @@ if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
 # ********** Cython build environment **********
-py_include = sysconfig.get_paths()['include'] + ([python3_dev.INCLUDE_DIR if python3_dev else [])
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
 envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]

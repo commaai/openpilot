@@ -116,7 +116,7 @@ wheels = [
 [[package]]
 name = "capnproto"
 version = "1.0.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#7c17c720197a770e2ff9754c4aaebd75ba17b95c" }
 
 [[package]]
 name = "casadi"
@@ -376,7 +376,7 @@ wheels = [
 [[package]]
 name = "eigen"
 version = "3.4.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#7c17c720197a770e2ff9754c4aaebd75ba17b95c" }
 
 [[package]]
 name = "execnet"
@@ -390,7 +390,7 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#7c17c720197a770e2ff9754c4aaebd75ba17b95c" }
 
 [[package]]
 name = "fonttools"
@@ -437,7 +437,7 @@ wheels = [
 [[package]]
 name = "gcc-arm-none-eabi"
 version = "13.2.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#7c17c720197a770e2ff9754c4aaebd75ba17b95c" }
 
 [[package]]
 name = "ghp-import"
@@ -454,7 +454,7 @@ wheels = [
 [[package]]
 name = "git-lfs"
 version = "3.6.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#7c17c720197a770e2ff9754c4aaebd75ba17b95c" }
 
 [[package]]
 name = "google-crc32c"
@@ -790,6 +790,7 @@ dependencies = [
     { name = "pycryptodome" },
     { name = "pyjwt" },
     { name = "pyserial" },
+    { name = "python3-dev" },
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "raylib" },
@@ -877,6 +878,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'testing'" },
     { name = "pytest-subtests", marker = "extra == 'testing'" },
     { name = "pytest-xdist", marker = "extra == 'testing'", git = "https://github.com/sshane/pytest-xdist?rev=2b4372bd62699fb412c4fe2f95bf9f01bd2018da" },
+    { name = "python3-dev", git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases" },
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "raylib", specifier = ">5.5.0.3" },
@@ -1265,6 +1267,11 @@ wheels = [
 ]
 
 [[package]]
+name = "python3-dev"
+version = "3.12.8"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases#7c17c720197a770e2ff9754c4aaebd75ba17b95c" }
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1630,7 +1637,7 @@ wheels = [
 [[package]]
 name = "zeromq"
 version = "4.3.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#7c17c720197a770e2ff9754c4aaebd75ba17b95c" }
 
 [[package]]
 name = "zstandard"
