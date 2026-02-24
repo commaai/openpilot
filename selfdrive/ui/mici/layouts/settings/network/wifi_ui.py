@@ -114,7 +114,6 @@ class WifiButton(BigButton):
     self._network_missing = False
     self._network_forgetting = False
     self._wrong_password = False
-    self._shake_start: float | None = None
 
   def update_network(self, network: Network):
     self._network = network
@@ -144,7 +143,7 @@ class WifiButton(BigButton):
 
   def set_wrong_password(self):
     self._wrong_password = True
-    self._shake_start = rl.get_time()
+    self.trigger_shake()
 
   @property
   def network(self) -> Network:
@@ -164,20 +163,6 @@ class WifiButton(BigButton):
 
   def _get_label_font_size(self):
     return 48
-
-  @property
-  def _shake_offset(self) -> float:
-    SHAKE_DURATION = 0.5
-    SHAKE_AMPLITUDE = 24.0
-    SHAKE_FREQUENCY = 32.0
-    t = rl.get_time() - (self._shake_start or 0.0)
-    if t > SHAKE_DURATION:
-      return 0.0
-    decay = 1.0 - t / SHAKE_DURATION
-    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
-
-  def set_position(self, x: float, y: float) -> None:
-    super().set_position(x + self._shake_offset, y)
 
   def _draw_content(self, btn_y: float):
     self._label.set_color(LABEL_COLOR)
