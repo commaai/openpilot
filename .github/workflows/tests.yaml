@@ -86,6 +86,8 @@ jobs:
     - name: Static analysis
       timeout-minutes: 1
       run: scripts/lint/lint.sh
+    - name: clean build
+      run: scons -c && scons
 
   unit_tests:
     name: unit tests
