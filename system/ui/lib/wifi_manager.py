@@ -384,6 +384,8 @@ class WifiManager:
         #    user-initiated connections already have ssid set via _set_connecting.
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
+          cloudlog.warning(f'New state: {NMDeviceState(new_state).name}, Prev state: {NMDeviceState(previous_state).name}, ' +
+                           f'Reason: {NMDeviceStateReason(change_reason).name}')
 
           # TODO: Handle (FAILED, SSID_NOT_FOUND) and emit for ui to show error
           #  Happens when network drops off after starting connection
@@ -408,7 +410,9 @@ class WifiManager:
           # BAD PASSWORD - use prev if current has already moved on to a new connection
           # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
           # - weak/gone network fails with FAILED+NO_SECRETS
-          elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT) or
+          elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT
+                 # only NEED_AUTH if not switching between networks
+                 and previous_state not in (NMDeviceState.DEACTIVATING, NMDeviceState.DISCONNECTED)) or
                 (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
 
             failed_ssid = self._wifi_state.prev_ssid or self._wifi_state.ssid
