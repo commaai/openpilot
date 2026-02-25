@@ -66,6 +66,9 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
+    - name: Remove Homebrew from environment
+      run: |
+        echo "PATH=$(echo "$PATH" | tr ':' '\n' | grep -v homebrew | paste -sd ':')" >> $GITHUB_ENV
     - uses: ./.github/workflows/setup-with-retry
     - name: Building openpilot
       run: scons
