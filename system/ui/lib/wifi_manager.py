@@ -194,7 +194,7 @@ class WifiManager:
     self._need_auth: list[Callable[[str], None]] = []
     self._activated: list[Callable[[], None]] = []
     self._forgotten: list[Callable[[str | None], None]] = []
-    self._networks_updated: list[Callable[[], None]] = []
+    self._networks_updated: list[Callable[[list[Network]], None]] = []
     self._disconnected: list[Callable[[], None]] = []
 
     self._lock = threading.Lock()
@@ -249,7 +249,7 @@ class WifiManager:
   def add_callbacks(self, need_auth: Callable[[str], None] | None = None,
                     activated: Callable[[], None] | None = None,
                     forgotten: Callable[[str], None] | None = None,
-                    networks_updated: Callable[[], None] | None = None,
+                    networks_updated: Callable[[list[Network]], None] | None = None,
                     disconnected: Callable[[], None] | None = None):
     if need_auth is not None:
       self._need_auth.append(need_auth)
@@ -829,7 +829,7 @@ class WifiManager:
 
         self._networks = [Network.from_dbus(ssid, ap_list, ssid == self._tethering_ssid) for ssid, ap_list in aps.items()]
         self._update_active_connection_info()
-        self._enqueue_callbacks(self._networks_updated)
+        self._enqueue_callbacks(self._networks_updated, self.networks)  # sorted
 
     if block:
       worker()
