@@ -85,7 +85,7 @@ def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityTyp
   elif (flags & NM_802_11_AP_FLAGS_PRIVACY) and (wpa_props & supports_wpa) and not (wpa_props & NM_802_11_AP_SEC_KEY_MGMT_802_1X):
     return SecurityType.WPA
   else:
-    # cloudlog.warning(f"Unsupported network! flags: {flags}, wpa_flags: {wpa_flags}, rsn_flags: {rsn_flags}")
+    cloudlog.warning(f"Unsupported network! flags: {flags}, wpa_flags: {wpa_flags}, rsn_flags: {rsn_flags}")
     return SecurityType.UNSUPPORTED
 
 
@@ -229,7 +229,6 @@ class WifiManager:
 
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
-      print('dev_addr', dev_addr, dev_state)
 
       wifi_state = WifiState()
       if NMDeviceState.PREPARE <= dev_state <= NMDeviceState.SECONDARIES and dev_state != NMDeviceState.NEED_AUTH:
@@ -238,12 +237,9 @@ class WifiManager:
         wifi_state.status = ConnectStatus.CONNECTED
 
       conn_path, _ = self._get_active_wifi_connection()
-      print('Initial active connection path', conn_path)
       if conn_path:
-        print('Connections', self._connections)
         wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
       self._wifi_state = wifi_state
-      print('Final initial wifi state', self._wifi_state)
 
     if block:
       worker()
@@ -314,7 +310,6 @@ class WifiManager:
     # Update networks and WiFi state (to self-heal) immediately when activating for UI
     if active:
       self._init_wifi_state(block=False)
-      print('    Calling _update_networks from set_active with active=True')
       self._update_networks(block=False)
 
   def _monitor_state(self):
@@ -371,13 +366,11 @@ class WifiManager:
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
-            print('    Calling _update_networks from PropertiesChanged signal with LastScan')
             self._update_networks()
 
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
-          print('New state', (NMDeviceState(new_state).name, NMDeviceState(previous_state).name, NMDeviceStateReason(change_reason).name))
 
           self._handle_state_change(new_state, previous_state, change_reason)
 
@@ -813,10 +806,6 @@ class WifiManager:
   def _update_networks(self, block: bool = True):
     if not self._active:
       return
-
-    global nu
-    nu += 1
-    print('Network update count', nu)
 
     def worker():
       with self._lock:
