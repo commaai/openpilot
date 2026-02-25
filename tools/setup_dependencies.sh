@@ -42,19 +42,10 @@ function install_ubuntu_deps() {
     ca-certificates \
     build-essential \
     curl \
-    libssl-dev \
     libcurl4-openssl-dev \
     locales \
     git \
     xvfb
-
-  $SUDO apt-get install -y --no-install-recommends \
-    python3-dev \
-    libgles2-mesa-dev \
-    libjpeg-dev \
-    libncurses5-dev \
-    libzstd-dev \
-    gettext
 
   if [[ -d "/etc/udev/rules.d/" ]]; then
     # Setup jungle udev rules

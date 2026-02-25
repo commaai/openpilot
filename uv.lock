@@ -116,7 +116,7 @@ wheels = [
 [[package]]
 name = "capnproto"
 version = "1.0.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "casadi"
@@ -376,7 +376,7 @@ wheels = [
 [[package]]
 name = "eigen"
 version = "3.4.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "execnet"
@@ -390,7 +390,7 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "fonttools"
@@ -437,7 +437,7 @@ wheels = [
 [[package]]
 name = "gcc-arm-none-eabi"
 version = "13.2.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "ghp-import"
@@ -454,7 +454,7 @@ wheels = [
 [[package]]
 name = "git-lfs"
 version = "3.6.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "google-crc32c"
@@ -568,6 +568,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/41/85d82b0291db7504da3c2defe35c9a8a5c9803a730f297bd823d11d5fb77/kiwisolver-1.4.9-cp312-cp312-win_amd64.whl", hash = "sha256:f68208a520c3d86ea51acf688a3e3002615a7f0238002cccc17affecc86a8a54", size = 73895, upload-time = "2025-08-10T21:26:24.37Z" },
     { url = "https://files.pythonhosted.org/packages/e2/92/5f3068cf15ee5cb624a0c7596e67e2a0bb2adee33f71c379054a491d07da/kiwisolver-1.4.9-cp312-cp312-win_arm64.whl", hash = "sha256:2c1a4f57df73965f3f14df20b80ee29e6a7930a57d2d9e8491a25f676e197c60", size = 64992, upload-time = "2025-08-10T21:26:25.732Z" },
 ]
+
+[[package]]
+name = "libjpeg"
+version = "3.1.0"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "libusb1"
@@ -728,6 +733,11 @@ wheels = [
 ]
 
 [[package]]
+name = "ncurses"
+version = "6.5"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
+
+[[package]]
 name = "numpy"
 version = "2.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -783,13 +793,17 @@ dependencies = [
     { name = "inputs" },
     { name = "jeepney" },
     { name = "json-rpc" },
+    { name = "libjpeg" },
     { name = "libusb1" },
+    { name = "ncurses" },
     { name = "numpy" },
+    { name = "openssl3" },
     { name = "psutil" },
     { name = "pycapnp" },
     { name = "pycryptodome" },
     { name = "pyjwt" },
     { name = "pyserial" },
+    { name = "python3-dev" },
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "raylib" },
@@ -806,6 +820,7 @@ dependencies = [
     { name = "xattr" },
     { name = "zeromq" },
     { name = "zstandard" },
+    { name = "zstd" },
 ]
 
 [package.optional-dependencies]
@@ -859,12 +874,15 @@ requires-dist = [
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "json-rpc" },
+    { name = "libjpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases" },
     { name = "libusb1" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", git = "https://github.com/commaai/metadrive.git?rev=minimal" },
     { name = "mkdocs", marker = "extra == 'docs'" },
+    { name = "ncurses", git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opencv-python-headless", marker = "extra == 'dev'" },
+    { name = "openssl3", git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
     { name = "pycapnp" },
@@ -877,6 +895,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'testing'" },
     { name = "pytest-subtests", marker = "extra == 'testing'" },
     { name = "pytest-xdist", marker = "extra == 'testing'", git = "https://github.com/sshane/pytest-xdist?rev=2b4372bd62699fb412c4fe2f95bf9f01bd2018da" },
+    { name = "python3-dev", git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases" },
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "raylib", specifier = ">5.5.0.3" },
@@ -895,8 +914,14 @@ requires-dist = [
     { name = "xattr" },
     { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases" },
     { name = "zstandard" },
+    { name = "zstd", git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases" },
 ]
 provides-extras = ["docs", "testing", "dev", "tools"]
+
+[[package]]
+name = "openssl3"
+version = "3.4.1"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "packaging"
@@ -1265,6 +1290,11 @@ wheels = [
 ]
 
 [[package]]
+name = "python3-dev"
+version = "3.12.8"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1630,7 +1660,7 @@ wheels = [
 [[package]]
 name = "zeromq"
 version = "4.3.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#96208e8726374ab5229366102a17401edb68076c" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "zstandard"
@@ -1656,3 +1686,8 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/79/3b/fa54d9015f945330510cb5d0b0501e8253c127cca7ebe8ba46a965df18c5/zstandard-0.25.0-cp312-cp312-win_amd64.whl", hash = "sha256:ffef5a74088f1e09947aecf91011136665152e0b4b359c42be3373897fb39b01", size = 506276, upload-time = "2025-09-14T22:17:21.429Z" },
     { url = "https://files.pythonhosted.org/packages/ea/6b/8b51697e5319b1f9ac71087b0af9a40d8a6288ff8025c36486e0c12abcc4/zstandard-0.25.0-cp312-cp312-win_arm64.whl", hash = "sha256:181eb40e0b6a29b3cd2849f825e0fa34397f649170673d385f3598ae17cca2e9", size = 462679, upload-time = "2025-09-14T22:17:23.147Z" },
 ]
+
+[[package]]
+name = "zstd"
+version = "1.5.6"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases#31af284805d0787a689e129311d992bec14a2400" }

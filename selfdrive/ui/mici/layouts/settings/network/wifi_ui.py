@@ -114,7 +114,6 @@ class WifiButton(BigButton):
     self._network_missing = False
     self._network_forgetting = False
     self._wrong_password = False
-    self._shake_start: float | None = None
 
   def update_network(self, network: Network):
     self._network = network
@@ -144,7 +143,7 @@ class WifiButton(BigButton):
 
   def set_wrong_password(self):
     self._wrong_password = True
-    self._shake_start = rl.get_time()
+    self.trigger_shake()
 
   @property
   def network(self) -> Network:
@@ -164,20 +163,6 @@ class WifiButton(BigButton):
 
   def _get_label_font_size(self):
     return 48
-
-  @property
-  def _shake_offset(self) -> float:
-    SHAKE_DURATION = 0.5
-    SHAKE_AMPLITUDE = 24.0
-    SHAKE_FREQUENCY = 32.0
-    t = rl.get_time() - (self._shake_start or 0.0)
-    if t > SHAKE_DURATION:
-      return 0.0
-    decay = 1.0 - t / SHAKE_DURATION
-    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
-
-  def set_position(self, x: float, y: float) -> None:
-    super().set_position(x + self._shake_offset, y)
 
   def _draw_content(self, btn_y: float):
     self._label.set_color(LABEL_COLOR)
@@ -313,7 +298,8 @@ class WifiUIMici(NavWidget):
     self._loading_animation.show_event()
     self._wifi_manager.set_active(True)
     self._scroller.items.clear()
-    self._update_buttons()
+    # trigger button update on latest sorted networks
+    self._on_network_updated(self._wifi_manager.networks)
 
   def hide_event(self):
     super().hide_event()
@@ -340,19 +326,11 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
         btn.set_network_missing(True)
 
-    # Move connecting/connected network to the front with animation
-    front_ssid = self._wifi_manager.wifi_state.ssid
-    front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
-                          if isinstance(btn, WifiButton) and
-                          btn.network.ssid == front_ssid), None) if front_ssid else None
-
-    if front_btn_idx is not None and front_btn_idx > 0:
-      self._scroller.move_item(front_btn_idx, 0)
+    self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
 
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)
-    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
-    self._update_buttons()
+    self._move_network_to_front(ssid, scroll=True)
 
   def _connect_to_network(self, ssid: str):
     network = self._networks.get(ssid)
@@ -368,8 +346,7 @@ class WifiUIMici(NavWidget):
       self._on_need_auth(network.ssid, False)
       return
 
-    self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
-    self._update_buttons()
+    self._move_network_to_front(ssid, scroll=True)
 
   def _on_need_auth(self, ssid, incorrect_password=True):
     if incorrect_password:
@@ -388,6 +365,19 @@ class WifiUIMici(NavWidget):
     for btn in self._scroller.items:
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
+
+  def _move_network_to_front(self, ssid: str | None, scroll: bool = False):
+    # Move connecting/connected network to the front with animation
+    front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
+                          if isinstance(btn, WifiButton) and
+                          btn.network.ssid == ssid), None) if ssid else None
+
+    if front_btn_idx is not None and front_btn_idx > 0:
+      self._scroller.move_item(front_btn_idx, 0)
+
+      if scroll:
+        # Scroll to the new position of the network
+        self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
 
   def _update_state(self):
     super()._update_state()

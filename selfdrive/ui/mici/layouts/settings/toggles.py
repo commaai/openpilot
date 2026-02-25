@@ -71,6 +71,10 @@ class TogglesLayoutMici(NavWidget):
     self._scroller.show_event()
     self._update_toggles()
 
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
   def _update_toggles(self):
     ui_state.update_params()
 

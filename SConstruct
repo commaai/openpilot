@@ -28,7 +28,6 @@ AddOption('--minimal',
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
 elif arch == "aarch64" and os.path.isfile('/TICI'):
   arch = "larch64"
 assert arch in [
@@ -42,11 +41,18 @@ if arch != "larch64":
   import capnproto
   import eigen
   import ffmpeg as ffmpeg_pkg
+  import libjpeg
+  import ncurses
+  import openssl3
+  import python3_dev
   import zeromq
-  pkgs = [capnproto, eigen, ffmpeg_pkg, zeromq]
+  import zstd
+  pkgs = [capnproto, eigen, ffmpeg_pkg, libjpeg, ncurses, openssl3, zeromq, zstd]
+  py_include = python3_dev.INCLUDE_DIR
 else:
   # TODO: remove when AGNOS has our new vendor pkgs
   pkgs = []
+  py_include = sysconfig.get_paths()['include']
 
 env = Environment(
   ENV={
@@ -116,16 +122,10 @@ if arch == "larch64":
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":
   env.Append(LIBPATH=[
-    f"{brew_prefix}/lib",
-    f"{brew_prefix}/opt/openssl@3.0/lib",
     "/System/Library/Frameworks/OpenGL.framework/Libraries",
   ])
   env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
   env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
-  env.Append(CPPPATH=[
-    f"{brew_prefix}/include",
-    f"{brew_prefix}/opt/openssl@3.0/include",
-  ])
 else:
   env.Append(LIBPATH=[
     "/usr/lib",
@@ -159,7 +159,6 @@ if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
 # ********** Cython build environment **********
-py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
 envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]

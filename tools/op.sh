@@ -225,6 +225,8 @@ function op_setup() {
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
 
+  op_activate_venv
+
   echo "Getting git submodules..."
   st="$(date +%s)"
   if ! git submodule update --jobs 4 --init --recursive; then
