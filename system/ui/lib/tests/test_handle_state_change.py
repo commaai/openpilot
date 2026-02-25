@@ -96,7 +96,10 @@ class TestDisconnected:
 class TestDeactivating:
   @pytest.mark.xfail(reason="TODO: DEACTIVATING should be a no-op")
   def test_deactivating_is_noop(self, mocker):
-    """DEACTIVATING should be a no-op — DISCONNECTED follows with correct state."""
+    """DEACTIVATING should be a no-op — DISCONNECTED follows with correct state.
+
+    Fix: remove the entire DEACTIVATING elif block — do nothing for any reason.
+    """
     wm = _make_wm(mocker)
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
 
@@ -225,6 +228,10 @@ class TestNeedAuth:
     Reproduced on device: rapidly switching between two saved networks can trigger a
     rare false "wrong password" dialog for the previous network, even though both have
     correct passwords. The stale NEED_AUTH has prev_state=DISCONNECTED (not CONFIG).
+
+    Fix: the handler's second param is currently `_` (unused). Rename to `prev_state`
+    and only fire the NEED_AUTH callback when prev_state indicates a real auth failure
+    (e.g. prev_state == CONFIG), not a stale signal from a prior connection.
     """
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
@@ -243,7 +250,9 @@ class TestNeedAuth:
     """Switch A→B, late NEED_AUTH arrives: prev_ssid mechanism fires callback for A.
 
     This tests current prev_ssid behavior which we plan to remove.
-    After removal, this scenario should be handled by the previous_state guard instead.
+    Migration: (1) add prev_state guard to NEED_AUTH (see test_interrupted_auth_ignored),
+    (2) remove prev_ssid from WifiState and handler, (3) delete this test — it becomes
+    redundant with test_interrupted_auth_ignored once prev_state is the guard mechanism.
     """
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
@@ -322,6 +331,11 @@ class TestActivated:
 # Thread races: _set_connecting on main thread vs _handle_state_change on monitor thread.
 # Uses side_effect on the DBus mock to simulate _set_connecting running mid-handler.
 # ---------------------------------------------------------------------------
+# The deterministic fixes (skip DBus lookup when ssid already set, prev_state guard
+# on NEED_AUTH) also shrink these race windows to near-zero. If races are still
+# visible after, make WifiState frozen (replace() + single atomic assignment) and/or
+# add a narrow lock around _wifi_state reads/writes (not around DBus calls).
+# The NEED_AUTH prev_ssid mutation race is eliminated by removing prev_ssid entirely.
 
 class TestThreadRaces:
   @pytest.mark.xfail(reason="TODO: PREPARE overwrites _set_connecting via stale DBus lookup")
@@ -617,6 +631,8 @@ class TestFullSequences:
     NOTE: SSID_NOT_FOUND is rare. On-device testing with a disappearing hotspot typically
     produces FAILED(NO_SECRETS) instead. May be driver-specific or require the network
     to vanish from scan results mid-connection.
+
+    The UI error callback mechanism is intentionally deferred — for now just clear state.
     """
     wm = _make_wm(mocker, connections={"GoneNet": "/path/gone"})
     cb = mocker.MagicMock()
