@@ -35,6 +35,17 @@ def fire(wm: WifiManager, new_state: int, prev_state: int = NMDeviceState.UNKNOW
   wm._handle_state_change(new_state, prev_state, reason)
 
 
+def fire_wpa_connect(wm: WifiManager) -> None:
+  """WPA handshake then IP negotiation through ACTIVATED, as seen on device."""
+  fire(wm, NMDeviceState.NEED_AUTH)
+  fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+  fire(wm, NMDeviceState.CONFIG)
+  fire(wm, NMDeviceState.IP_CONFIG)
+  fire(wm, NMDeviceState.IP_CHECK)
+  fire(wm, NMDeviceState.SECONDARIES)
+  fire(wm, NMDeviceState.ACTIVATED)
+
+
 # ---------------------------------------------------------------------------
 # Basic transitions
 # ---------------------------------------------------------------------------
@@ -459,13 +470,7 @@ class TestFullSequences:
     wm._get_active_wifi_connection.return_value = ("/path/sec", {})
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.IP_CONFIG)
-    fire(wm, NMDeviceState.IP_CHECK)
-    fire(wm, NMDeviceState.SECONDARIES)
-    fire(wm, NMDeviceState.ACTIVATED)
+    fire_wpa_connect(wm)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
 
   def test_switch_saved_networks(self, mocker):
@@ -491,13 +496,7 @@ class TestFullSequences:
 
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.IP_CONFIG)
-    fire(wm, NMDeviceState.IP_CHECK)
-    fire(wm, NMDeviceState.SECONDARIES)
-    fire(wm, NMDeviceState.ACTIVATED)
+    fire_wpa_connect(wm)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "B"
 
@@ -537,13 +536,7 @@ class TestFullSequences:
 
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.IP_CONFIG)
-    fire(wm, NMDeviceState.IP_CHECK)
-    fire(wm, NMDeviceState.SECONDARIES)
-    fire(wm, NMDeviceState.ACTIVATED)
+    fire_wpa_connect(wm)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
 
   @pytest.mark.xfail(reason="TODO: forget A while connecting to B should not clear B")
@@ -582,13 +575,7 @@ class TestFullSequences:
     wm._get_active_wifi_connection.return_value = ("/path/B", {})
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.IP_CONFIG)
-    fire(wm, NMDeviceState.IP_CHECK)
-    fire(wm, NMDeviceState.SECONDARIES)
-    fire(wm, NMDeviceState.ACTIVATED)
+    fire_wpa_connect(wm)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "B"
 
@@ -632,13 +619,7 @@ class TestFullSequences:
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
     fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.IP_CONFIG)
-    fire(wm, NMDeviceState.IP_CHECK)
-    fire(wm, NMDeviceState.SECONDARIES)
-    fire(wm, NMDeviceState.ACTIVATED)
+    fire_wpa_connect(wm)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "B"
 
@@ -652,13 +633,7 @@ class TestFullSequences:
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
     fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
-    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
-    fire(wm, NMDeviceState.CONFIG)
-    fire(wm, NMDeviceState.IP_CONFIG)
-    fire(wm, NMDeviceState.IP_CHECK)
-    fire(wm, NMDeviceState.SECONDARIES)
-    fire(wm, NMDeviceState.ACTIVATED)
+    fire_wpa_connect(wm)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "AutoNet"
 
