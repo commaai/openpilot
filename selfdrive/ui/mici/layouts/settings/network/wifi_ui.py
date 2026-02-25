@@ -298,15 +298,15 @@ class WifiUIMici(NavWidget):
     self._loading_animation.show_event()
     self._wifi_manager.set_active(True)
     self._scroller.items.clear()
-    # self._update_buttons()
+    self._update_buttons()
     self._wifi_manager.resort_networks()
 
   def hide_event(self):
     super().hide_event()
     self._scroller.hide_event()
 
-  def _on_network_updated(self, networks: list[Network]):
-    self._networks = {network.ssid: network for network in networks}
+  def _on_network_updated(self):
+    self._networks = {network.ssid: network for network in self._wifi_manager.networks}
     self._update_buttons()
 
   def _update_buttons(self):
@@ -326,7 +326,7 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
         btn.set_network_missing(True)
 
-    self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
+    # self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
 
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)

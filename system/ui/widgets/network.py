@@ -161,7 +161,7 @@ class AdvancedNetworkSettings(Widget):
     metered = self._params.get_bool("GsmMetered")
     self._wifi_manager.update_gsm_settings(roaming_enabled, self._params.get("GsmApn") or "", metered)
 
-  def _on_network_updated(self, networks: list[Network]):
+  def _on_network_updated(self):
     self._tethering_action.set_enabled(True)
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
     self._tethering_password_action.set_enabled(True)
@@ -450,8 +450,8 @@ class WifiManagerUI(Widget):
     self._state_network = network
     self._wifi_manager.forget_connection(network.ssid)
 
-  def _on_network_updated(self, networks: list[Network]):
-    self._networks = networks
+  def _on_network_updated(self):
+    self._networks = self._wifi_manager.networks
     for n in self._networks:
       self._networks_buttons[n.ssid] = Button(normalize_ssid(n.ssid), partial(self._networks_buttons_callback, n), font_size=55,
                                               text_alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT, button_style=ButtonStyle.TRANSPARENT_WHITE_TEXT)

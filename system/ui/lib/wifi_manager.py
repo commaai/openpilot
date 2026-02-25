@@ -44,13 +44,6 @@ def normalize_ssid(ssid: str) -> str:
   return ssid.replace("’", "'")  # for iPhone hotspots
 
 
-def sort_networks(networks: list["Network"], wifi_state: "WifiState") -> list["Network"]:
-  # Sort by connected/connecting, then strength, then alphabetically
-  # networks = [Network.from_dbus(ssid, ap_list, ssid == self._tethering_ssid) for ssid, ap_list in aps.items()]
-  networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
-  return networks
-
-
 def _wrap_router(router):
   def _wrap(orig):
     def wrapper(msg, **kw):
@@ -161,7 +154,7 @@ class WifiState:
 
 class WifiManager:
   def __init__(self):
-    self._networks: list[Network] = []  # a network can be comprised of multiple APs
+    self._networks: list[Network] = []  # an unsorted list of available Networks. a Network can be comprised of multiple APs
     self._active = True  # used to not run when not in settings
     self._exit = False
 
@@ -201,7 +194,7 @@ class WifiManager:
     self._need_auth: list[Callable[[str], None]] = []
     self._activated: list[Callable[[], None]] = []
     self._forgotten: list[Callable[[str | None], None]] = []
-    self._networks_updated: list[Callable[[list[Network]], None]] = []
+    self._networks_updated: list[Callable[[], None]] = []
     self._disconnected: list[Callable[[], None]] = []
 
     self._lock = threading.Lock()
@@ -256,7 +249,7 @@ class WifiManager:
   def add_callbacks(self, need_auth: Callable[[str], None] | None = None,
                     activated: Callable[[], None] | None = None,
                     forgotten: Callable[[str], None] | None = None,
-                    networks_updated: Callable[[list[Network]], None] | None = None,
+                    networks_updated: Callable[[], None] | None = None,
                     disconnected: Callable[[], None] | None = None):
     if need_auth is not None:
       self._need_auth.append(need_auth)
@@ -271,7 +264,8 @@ class WifiManager:
 
   @property
   def networks(self) -> list[Network]:
-    return self._networks
+    # Sort by connected/connecting, then known, then strength, then alphabetically. This is a pure UI ordering and should not affect underlying state.
+    return sorted(self._networks, key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
 
   @property
   def wifi_state(self) -> WifiState:
@@ -794,11 +788,6 @@ class WifiManager:
     if reply.header.message_type == MessageType.error:
       cloudlog.warning(f"Failed to request scan: {reply}")
 
-  def resort_networks(self):
-    # networks = [Network.from_dbus(ssid, ap_list, ssid == self._tethering_ssid) for ssid, ap_list in aps.items()]
-    self._networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
-    self._enqueue_callbacks(self._networks_updated, self._networks)
-
   def _update_networks(self, block: bool = True):
     if not self._active:
       return
@@ -838,13 +827,9 @@ class WifiManager:
             # catch all for parsing errors
             cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-        networks = [Network.from_dbus(ssid, ap_list, ssid == self._tethering_ssid) for ssid, ap_list in aps.items()]
-        networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
-        self._networks = networks
-
+        self._networks = [Network.from_dbus(ssid, ap_list, ssid == self._tethering_ssid) for ssid, ap_list in aps.items()]
         self._update_active_connection_info()
-
-        self._enqueue_callbacks(self._networks_updated, self._networks)
+        self._enqueue_callbacks(self._networks_updated)
 
     if block:
       worker()
