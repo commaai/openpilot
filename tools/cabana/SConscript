@@ -77,6 +77,9 @@ else:
 qt_libs = base_libs
 
 cabana_env = qt_env.Clone()
+if arch == "Darwin":
+  cabana_env['CPPPATH'] += [f"{brew_prefix}/include"]
+  cabana_env['LIBPATH'] += [f"{brew_prefix}/lib"]
 
 cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
