@@ -190,6 +190,10 @@ class TogglesLayout(Widget):
 
         self._toggles["ExperimentalMode"].set_description("<b>" + long_desc + "</b><br><br>" + e2e_description)
     else:
+      self._toggles["ExperimentalMode"].action_item.set_enabled(False)
+      self._toggles["ExperimentalMode"].action_item.set_state(False)
+      self._long_personality_setting.action_item.set_enabled(False)
+      self._params.remove("ExperimentalMode")
       self._toggles["ExperimentalMode"].set_description(e2e_description)
 
     self._update_experimental_mode_icon()

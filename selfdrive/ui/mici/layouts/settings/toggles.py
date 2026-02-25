@@ -89,6 +89,11 @@ class TogglesLayoutMici(NavWidget):
         self._experimental_btn.set_checked(False)
         self._personality_toggle.set_visible(False)
         ui_state.params.remove("ExperimentalMode")
+    else:
+      self._experimental_btn.set_visible(False)
+      self._experimental_btn.set_checked(False)
+      self._personality_toggle.set_visible(False)
+      ui_state.params.remove("ExperimentalMode")
 
     # Refresh toggles from params to mirror external changes
     for key, item in self._refresh_toggles:
