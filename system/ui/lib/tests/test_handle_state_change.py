@@ -97,7 +97,12 @@ class TestDeactivating:
 class TestPrepareConfig:
   @pytest.mark.xfail(reason="TODO: should skip DBus lookup when ssid already set")
   def test_user_initiated_skips_dbus_lookup(self, mocker):
-    """User called _set_connecting('B') — PREPARE must not overwrite via DBus."""
+    """User called _set_connecting('B') — PREPARE must not overwrite via DBus.
+
+    Reproduced on device: rapidly tap A then B. PREPARE's DBus lookup returns A's
+    stale conn_path, overwriting ssid to A for 1-2 frames. UI shows the "connecting"
+    indicator briefly jump to the wrong network row then back.
+    """
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
     wm._set_connecting("B")
     wm._get_active_wifi_connection.return_value = ("/path/A", {})
