@@ -109,8 +109,6 @@ class Scroller(Widget):
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
 
-    self._overlay_debug_last_t: float = 0.0
-
     for item in items:
       self.add_widget(item)
 
@@ -232,8 +230,6 @@ class Scroller(Widget):
     if from_idx == to_idx:
       return
 
-    print(f"[Scroller] move_item: from_idx={from_idx} to_idx={to_idx}")
-
     if self.moving_items:
       cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
       return
@@ -264,7 +260,6 @@ class Scroller(Widget):
         # start moving when almost lifted
         if abs(lift_filter.x - MOVE_LIFT) < 2:
           self._pending_lift.discard(item)
-          print(f"[Scroller] _do_move_animation: discarded from pending_lift, remaining={len(self._pending_lift)}")
       else:
         # if done moving, animate down
         lift_filter.update(0)
@@ -284,7 +279,6 @@ class Scroller(Widget):
         # drop when close to target
         if abs(move_filter.x - content_x) < 10:
           self._pending_move.discard(item)
-          print(f"[Scroller] _do_move_animation: discarded from pending_move, remaining={len(self._pending_move)}")
 
         # finished moving
         if abs(move_filter.x - content_x) < 1:
@@ -372,17 +366,9 @@ class Scroller(Widget):
       self._render_item(item)
 
     # Dim background if moving items, lifted items are above
-    pending = len(self._pending_move)
-    self._overlay_filter.update(MOVE_OVERLAY_ALPHA if pending else 0.0)
+    self._overlay_filter.update(MOVE_OVERLAY_ALPHA if len(self._pending_move) else 0.0)
     if self._overlay_filter.x > 0.01:
       rl.draw_rectangle_rec(self._rect, rl.Color(0, 0, 0, int(255 * self._overlay_filter.x)))
-      t = rl.get_time()
-      if t - self._overlay_debug_last_t > 1.0:
-        self._overlay_debug_last_t = t
-        print(
-            f"[Scroller] _render overlay: pending_move={pending} pending_lift={len(self._pending_lift)} "
-            + f"overlay_filter.x={self._overlay_filter.x:.3f}"
-        )
 
     for item in self._move_lift:
       self._render_item(item)
@@ -407,6 +393,9 @@ class Scroller(Widget):
 
   def show_event(self):
     super().show_event()
+    for item in self._items:
+      item.show_event()
+
     if self._reset_scroll_at_show:
       self.scroll_panel.set_offset(0.0)
 
@@ -418,27 +407,7 @@ class Scroller(Widget):
     self._scrolling_to = None, False
     self._scrolling_to_filter.x = 0.0
 
-    for item in self._items:
-      item.show_event()
-
-    print(
-        f"[Scroller] show_event: pending_move={len(self._pending_move)} pending_lift={len(self._pending_lift)} "
-        + f"overlay_filter.x={self._overlay_filter.x:.3f} move_anims={len(self._move_animations)} move_lift={len(self._move_lift)}"
-    )
-
   def hide_event(self):
     super().hide_event()
-    print(
-        f"[Scroller] hide_event (before clear): pending_move={len(self._pending_move)} "
-        + f"pending_lift={len(self._pending_lift)} overlay_filter.x={self._overlay_filter.x:.3f}"
-    )
-    # self._overlay_filter.x = 0.0
-    # self._move_animations.clear()
-    # self._move_lift.clear()
-    # self._pending_lift.clear()
-    # self._pending_move.clear()
-    # self._scrolling_to = None, False
-    # self._scrolling_to_filter.x = 0.0
     for item in self._items:
       item.hide_event()
-    print(f"[Scroller] hide_event (after clear): overlay_filter.x={self._overlay_filter.x:.3f}")
