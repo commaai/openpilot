@@ -229,6 +229,7 @@ class WifiManager:
 
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
+      print('dev_addr', dev_addr, dev_state)
 
       wifi_state = WifiState()
       if NMDeviceState.PREPARE <= dev_state <= NMDeviceState.SECONDARIES and dev_state != NMDeviceState.NEED_AUTH:
@@ -237,9 +238,12 @@ class WifiManager:
         wifi_state.status = ConnectStatus.CONNECTED
 
       conn_path, _ = self._get_active_wifi_connection()
+      print('Initial active connection path', conn_path)
       if conn_path:
+        print('Connections', self._connections)
         wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
       self._wifi_state = wifi_state
+      print('Final initial wifi state', self._wifi_state)
 
     if block:
       worker()
@@ -373,6 +377,7 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
+          print('New state', (NMDeviceState(new_state).name, NMDeviceState(previous_state).name, NMDeviceStateReason(change_reason).name))
 
           self._handle_state_change(new_state, previous_state, change_reason)
 
@@ -427,6 +432,7 @@ class WifiManager:
     # prev_state guard: real auth failures come from CONFIG (supplicant handshake).
     # Stale NEED_AUTH from a prior connection during network switching arrives with
     # prev_state=DISCONNECTED and must be ignored to avoid a false wrong-password callback.
+    # TODO: sometimes on PC it's observed no future signals are fired if mouse is held down blocking wrong password dialog
     elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT
            and prev_state == NMDeviceState.CONFIG) or
           (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
@@ -448,14 +454,12 @@ class WifiManager:
         cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
         self._wifi_state = wifi_state
         self._enqueue_callbacks(self._activated)
-        print('    Calling _update_networks from ACTIVATED state with no active wifi connection')
-        self._update_networks()
+        self._update_active_connection_info()
       else:
         wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
         self._wifi_state = wifi_state
         self._enqueue_callbacks(self._activated)
-        print('    Calling _update_networks from ACTIVATED state')
-        self._update_networks()
+        self._update_active_connection_info()
 
         # Persist volatile connections (created by AddAndActivateConnection2) to disk
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
@@ -657,8 +661,6 @@ class WifiManager:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
-      print('    Calling update networks from forget_connection')
-      self._update_networks()
       self._enqueue_callbacks(self._forgotten, ssid)
 
     if block:
