@@ -59,6 +59,7 @@ class TestDisconnected:
 
     assert wm._wifi_state.ssid is None
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+    wm._update_networks.assert_not_called()
 
   def test_new_activation_is_noop(self, mocker):
     """NEW_ACTIVATION means NM is about to connect to another network — don't clear."""
@@ -238,6 +239,24 @@ class TestNeedAuth:
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
     assert len(wm._callback_queue) == 0
 
+  def test_need_auth_targets_previous_ssid_via_prev_ssid(self, mocker):
+    """Switch A→B, late NEED_AUTH arrives: prev_ssid mechanism fires callback for A.
+
+    This tests current prev_ssid behavior which we plan to remove.
+    After removal, this scenario should be handled by the previous_state guard instead.
+    """
+    wm = _make_wm(mocker)
+    cb = mocker.MagicMock()
+    wm.add_callbacks(need_auth=cb)
+    wm._set_connecting("A")
+    wm._set_connecting("B")
+
+    fire(wm, NMDeviceState.NEED_AUTH, reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
+
+    assert len(wm._callback_queue) == 1
+    wm.process_callbacks()
+    cb.assert_called_once_with("A")
+
 
 class TestPassthroughStates:
   """NEED_AUTH (generic), IP_CONFIG, IP_CHECK, SECONDARIES, FAILED (generic) are no-ops."""
@@ -297,39 +316,6 @@ class TestActivated:
 
     wm._conn_monitor.send_and_get_reply.assert_called_once()
     wm._update_networks.assert_called_once()
-
-
-# ---------------------------------------------------------------------------
-# Side effects
-# ---------------------------------------------------------------------------
-
-class TestSideEffects:
-  def test_disconnected_does_not_call_update_networks(self, mocker):
-    """DISCONNECTED should not trigger a full network scan."""
-    wm = _make_wm(mocker)
-    wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
-
-    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.UNKNOWN)
-
-    wm._update_networks.assert_not_called()
-
-  def test_need_auth_targets_previous_ssid_via_prev_ssid(self, mocker):
-    """Switch A→B, late NEED_AUTH arrives: prev_ssid mechanism fires callback for A.
-
-    This tests current prev_ssid behavior which we plan to remove.
-    After removal, this scenario should be handled by the previous_state guard instead.
-    """
-    wm = _make_wm(mocker)
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("A")
-    wm._set_connecting("B")
-
-    fire(wm, NMDeviceState.NEED_AUTH, reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
-
-    assert len(wm._callback_queue) == 1
-    wm.process_callbacks()
-    cb.assert_called_once_with("A")
 
 
 # ---------------------------------------------------------------------------

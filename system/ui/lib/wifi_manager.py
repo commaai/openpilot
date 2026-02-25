@@ -374,6 +374,7 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
+
           self._handle_state_change(new_state, previous_state, change_reason)
 
   def _handle_state_change(self, new_state: int, _: int, change_reason: int):
