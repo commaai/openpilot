@@ -326,7 +326,7 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
         btn.set_network_missing(True)
 
-    # self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
+    self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
 
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)
