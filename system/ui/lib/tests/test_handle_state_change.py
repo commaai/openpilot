@@ -221,7 +221,6 @@ class TestNeedAuth:
 
     assert len(wm._callback_queue) == 0
 
-  @pytest.mark.xfail(reason="TODO: interrupted auth (prev=DISCONNECTED) should be ignored")
   def test_interrupted_auth_ignored(self, mocker):
     """Switching A->B: NEED_AUTH from A (prev=DISCONNECTED) must not fire callback.
 
@@ -245,26 +244,6 @@ class TestNeedAuth:
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
     assert len(wm._callback_queue) == 0
-
-  def test_need_auth_targets_previous_ssid_via_prev_ssid(self, mocker):
-    """Switch A→B, late NEED_AUTH arrives: prev_ssid mechanism fires callback for A.
-
-    This tests current prev_ssid behavior which we plan to remove.
-    Migration: (1) add prev_state guard to NEED_AUTH (see test_interrupted_auth_ignored),
-    (2) remove prev_ssid from WifiState and handler, (3) delete this test — it becomes
-    redundant with test_interrupted_auth_ignored once prev_state is the guard mechanism.
-    """
-    wm = _make_wm(mocker)
-    cb = mocker.MagicMock()
-    wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("A")
-    wm._set_connecting("B")
-
-    fire(wm, NMDeviceState.NEED_AUTH, reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
-
-    assert len(wm._callback_queue) == 1
-    wm.process_callbacks()
-    cb.assert_called_once_with("A")
 
 
 class TestPassthroughStates:
@@ -482,7 +461,6 @@ class TestFullSequences:
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "B"
 
-  @pytest.mark.xfail(reason="TODO: interrupted auth from switching should not fire need_auth")
   def test_rapid_switch_no_false_wrong_password(self, mocker):
     """Switch A→B quickly: A's interrupted NEED_AUTH must NOT show wrong password.
 

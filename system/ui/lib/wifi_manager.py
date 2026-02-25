@@ -377,7 +377,7 @@ class WifiManager:
 
           self._handle_state_change(new_state, previous_state, change_reason)
 
-  def _handle_state_change(self, new_state: int, _: int, change_reason: int):
+  def _handle_state_change(self, new_state: int, prev_state: int, change_reason: int):
     # TODO: known race conditions when switching networks (e.g. forget A, connect to B):
     # 1. DEACTIVATING/DISCONNECTED + CONNECTION_REMOVED: fires before NewConnection for B
     #    arrives, so _set_connecting(None) clears B's CONNECTING state causing UI flicker.
@@ -427,7 +427,8 @@ class WifiManager:
     # BAD PASSWORD - use prev if current has already moved on to a new connection
     # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
     # - weak/gone network fails with FAILED+NO_SECRETS
-    elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT) or
+    elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT
+           and prev_state == NMDeviceState.CONFIG) or
           (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
 
       failed_ssid = self._wifi_state.prev_ssid or self._wifi_state.ssid
