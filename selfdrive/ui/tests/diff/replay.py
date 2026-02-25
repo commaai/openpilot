@@ -7,6 +7,7 @@ import pyray as rl
 from typing import Literal
 from collections.abc import Callable
 from cereal.messaging import PubMaster
+from openpilot.common.api import Api
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
@@ -24,6 +25,9 @@ def setup_state():
   params.put("CompletedTrainingVersion", training_version)
   params.put("DongleId", "test123456789")
   params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
+
+  # Patch Api.get_token to return a fixed token so the pairing QR code is deterministic across runs
+  Api.get_token = lambda self, payload_extra=None, expiry_hours=0: "test_token"
 
 
 def run_replay(variant: LayoutVariant) -> None:
