@@ -68,7 +68,9 @@ jobs:
         submodules: true
     - name: Remove Homebrew from environment
       run: |
-        echo "PATH=$(echo "$PATH" | tr ':' '\n' | grep -v homebrew | paste -sd ':')" >> $GITHUB_ENV
+        STOCK_PATHS="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        FILTERED=$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/homebrew' | paste -sd ':')
+        echo "PATH=${FILTERED:+$FILTERED:}$STOCK_PATHS" >> $GITHUB_ENV
     - uses: ./.github/workflows/setup-with-retry
     - name: Building openpilot
       run: scons
