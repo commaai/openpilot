@@ -375,9 +375,9 @@ class WifiUIMici(NavWidget):
     if front_btn_idx is not None and front_btn_idx > 0:
       self._scroller.move_item(front_btn_idx, 0)
 
-      if scroll:
-        # Scroll to the new position of the network
-        self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+      # if scroll:
+      #   # Scroll to the new position of the network
+      #   self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
 
   def _update_state(self):
     super()._update_state()
