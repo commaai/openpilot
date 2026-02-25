@@ -168,7 +168,7 @@ class TestNeedAuth:
 
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert len(wm._callback_queue) == 1
-    wm._callback_queue[0]()
+    wm.process_callbacks()
     cb.assert_called_once_with("SecNet")
 
   def test_failed_no_secrets_fires_callback(self, mocker):
@@ -182,7 +182,7 @@ class TestNeedAuth:
 
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert len(wm._callback_queue) == 1
-    wm._callback_queue[0]()
+    wm.process_callbacks()
     cb.assert_called_once_with("WeakNet")
 
   def test_need_auth_then_failed_no_double_fire(self, mocker):
@@ -203,6 +203,9 @@ class TestNeedAuth:
     fire(wm, NMDeviceState.FAILED, prev_state=NMDeviceState.NEED_AUTH,
          reason=NMDeviceStateReason.NO_SECRETS)
     assert len(wm._callback_queue) == 1  # no duplicate
+
+    wm.process_callbacks()
+    cb.assert_called_once_with("BadPass")
 
   def test_no_ssid_no_callback(self, mocker):
     """If ssid is None when NEED_AUTH fires, no callback enqueued."""
@@ -271,7 +274,7 @@ class TestActivated:
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "MyNet"
     assert len(wm._callback_queue) == 1
-    wm._callback_queue[0]()
+    wm.process_callbacks()
     cb.assert_called_once()
 
   def test_conn_path_none_still_connected(self, mocker):
@@ -325,7 +328,7 @@ class TestSideEffects:
     fire(wm, NMDeviceState.NEED_AUTH, reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
     assert len(wm._callback_queue) == 1
-    wm._callback_queue[0]()
+    wm.process_callbacks()
     cb.assert_called_once_with("A")
 
 
