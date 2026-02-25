@@ -84,7 +84,7 @@ class TestDisconnected:
   def test_connection_removed_clears_when_forgotten(self, mocker):
     """Forget A: A is no longer in _connections, so state should clear."""
     wm = _make_wm(mocker, connections={})
-    wm._set_connecting("A")
+    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
 
     fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
 
@@ -600,11 +600,13 @@ class TestFullSequences:
     wm._set_connecting("B")
     del wm._connections["A"]
 
-    fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
+          reason=NMDeviceStateReason.CONNECTION_REMOVED)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
-    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
+          reason=NMDeviceStateReason.CONNECTION_REMOVED)
     # B not in _connections yet, so state clears — this is the known edge case
     assert wm._wifi_state.ssid is None
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
@@ -685,9 +687,8 @@ class TestFullSequences:
     wm = _make_wm(mocker)
     wm._wifi_state = WifiState(ssid="MyNet", status=ConnectStatus.CONNECTED)
 
-    USER_REQUESTED = 39
-    fire(wm, NMDeviceState.DEACTIVATING, reason=USER_REQUESTED)
-    fire(wm, NMDeviceState.DISCONNECTED, reason=USER_REQUESTED)
+    fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.USER_REQUESTED)
+    fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.USER_REQUESTED)
 
     assert wm._wifi_state.ssid is None
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
