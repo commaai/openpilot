@@ -410,6 +410,14 @@ class Scroller(Widget):
     if self._reset_scroll_at_show:
       self.scroll_panel.set_offset(0.0)
 
+    self._overlay_filter.x = 0.0
+    self._move_animations.clear()
+    self._move_lift.clear()
+    self._pending_lift.clear()
+    self._pending_move.clear()
+    self._scrolling_to = None, False
+    self._scrolling_to_filter.x = 0.0
+
     for item in self._items:
       item.show_event()
 
@@ -424,13 +432,13 @@ class Scroller(Widget):
         f"[Scroller] hide_event (before clear): pending_move={len(self._pending_move)} "
         + f"pending_lift={len(self._pending_lift)} overlay_filter.x={self._overlay_filter.x:.3f}"
     )
-    self._overlay_filter.x = 0.0
-    self._move_animations.clear()
-    self._move_lift.clear()
-    self._pending_lift.clear()
-    self._pending_move.clear()
-    self._scrolling_to = None, False
-    self._scrolling_to_filter.x = 0.0
+    # self._overlay_filter.x = 0.0
+    # self._move_animations.clear()
+    # self._move_lift.clear()
+    # self._pending_lift.clear()
+    # self._pending_move.clear()
+    # self._scrolling_to = None, False
+    # self._scrolling_to_filter.x = 0.0
     for item in self._items:
       item.hide_event()
     print(f"[Scroller] hide_event (after clear): overlay_filter.x={self._overlay_filter.x:.3f}")
