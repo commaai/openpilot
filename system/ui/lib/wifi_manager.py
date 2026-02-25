@@ -38,6 +38,7 @@ SCAN_PERIOD_SECONDS = 5
 
 DEBUG = False
 _dbus_call_idx = 0
+nu = 0
 
 
 def normalize_ssid(ssid: str) -> str:
@@ -84,7 +85,7 @@ def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityTyp
   elif (flags & NM_802_11_AP_FLAGS_PRIVACY) and (wpa_props & supports_wpa) and not (wpa_props & NM_802_11_AP_SEC_KEY_MGMT_802_1X):
     return SecurityType.WPA
   else:
-    cloudlog.warning(f"Unsupported network! flags: {flags}, wpa_flags: {wpa_flags}, rsn_flags: {rsn_flags}")
+    # cloudlog.warning(f"Unsupported network! flags: {flags}, wpa_flags: {wpa_flags}, rsn_flags: {rsn_flags}")
     return SecurityType.UNSUPPORTED
 
 
@@ -309,6 +310,7 @@ class WifiManager:
     # Update networks and WiFi state (to self-heal) immediately when activating for UI
     if active:
       self._init_wifi_state(block=False)
+      print('    Calling _update_networks from set_active with active=True')
       self._update_networks(block=False)
 
   def _monitor_state(self):
@@ -365,6 +367,7 @@ class WifiManager:
         while len(props_q):
           iface, changed, _ = props_q.popleft().body
           if iface == NM_WIRELESS_IFACE and 'LastScan' in changed:
+            print('    Calling _update_networks from PropertiesChanged signal with LastScan')
             self._update_networks()
 
         # Device state changes
@@ -445,11 +448,13 @@ class WifiManager:
         cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
         self._wifi_state = wifi_state
         self._enqueue_callbacks(self._activated)
+        print('    Calling _update_networks from ACTIVATED state with no active wifi connection')
         self._update_networks()
       else:
         wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
         self._wifi_state = wifi_state
         self._enqueue_callbacks(self._activated)
+        print('    Calling _update_networks from ACTIVATED state')
         self._update_networks()
 
         # Persist volatile connections (created by AddAndActivateConnection2) to disk
@@ -652,6 +657,7 @@ class WifiManager:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
+      print('    Calling update networks from forget_connection')
       self._update_networks()
       self._enqueue_callbacks(self._forgotten, ssid)
 
@@ -805,6 +811,10 @@ class WifiManager:
   def _update_networks(self, block: bool = True):
     if not self._active:
       return
+
+    global nu
+    nu += 1
+    print('Network update count', nu)
 
     def worker():
       with self._lock:
