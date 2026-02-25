@@ -30,7 +30,7 @@ def _make_wm(mocker: MockerFixture, connections=None):
 
 
 def fire(wm: WifiManager, new_state: int, prev_state: int = NMDeviceState.UNKNOWN,
-          reason: int = NMDeviceStateReason.NONE) -> None:
+         reason: int = NMDeviceStateReason.NONE) -> None:
   """Feed a state change into the handler."""
   wm._handle_state_change(new_state, prev_state, reason)
 
@@ -164,7 +164,7 @@ class TestNeedAuth:
     wm._set_connecting("SecNet")
 
     fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
-          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
+         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert len(wm._callback_queue) == 1
@@ -197,11 +197,11 @@ class TestNeedAuth:
     wm._set_connecting("BadPass")
 
     fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
-          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
+         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
     assert len(wm._callback_queue) == 1
 
     fire(wm, NMDeviceState.FAILED, prev_state=NMDeviceState.NEED_AUTH,
-          reason=NMDeviceStateReason.NO_SECRETS)
+         reason=NMDeviceStateReason.NO_SECRETS)
     assert len(wm._callback_queue) == 1  # no duplicate
 
   def test_no_ssid_no_callback(self, mocker):
@@ -229,7 +229,7 @@ class TestNeedAuth:
     wm._set_connecting("B")
 
     fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.DISCONNECTED,
-          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
+         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
@@ -454,7 +454,7 @@ class TestFullSequences:
     fire(wm, NMDeviceState.CONFIG)
 
     fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
-          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
+         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert len(wm._callback_queue) == 1
 
@@ -488,9 +488,9 @@ class TestFullSequences:
     wm._set_connecting("B")
 
     fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-          reason=NMDeviceStateReason.NEW_ACTIVATION)
+         reason=NMDeviceStateReason.NEW_ACTIVATION)
     fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-          reason=NMDeviceStateReason.NEW_ACTIVATION)
+         reason=NMDeviceStateReason.NEW_ACTIVATION)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
@@ -524,11 +524,11 @@ class TestFullSequences:
     wm._set_connecting("B")
 
     fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-          reason=NMDeviceStateReason.NEW_ACTIVATION)
+         reason=NMDeviceStateReason.NEW_ACTIVATION)
     fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-          reason=NMDeviceStateReason.NEW_ACTIVATION)
+         reason=NMDeviceStateReason.NEW_ACTIVATION)
     fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.DISCONNECTED,
-          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
+         reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
@@ -563,12 +563,12 @@ class TestFullSequences:
     wm._connections["B"] = "/path/B"
 
     fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-          reason=NMDeviceStateReason.CONNECTION_REMOVED)
+         reason=NMDeviceStateReason.CONNECTION_REMOVED)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
     fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-          reason=NMDeviceStateReason.CONNECTION_REMOVED)
+         reason=NMDeviceStateReason.CONNECTION_REMOVED)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
@@ -601,12 +601,12 @@ class TestFullSequences:
     del wm._connections["A"]
 
     fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
-          reason=NMDeviceStateReason.CONNECTION_REMOVED)
+         reason=NMDeviceStateReason.CONNECTION_REMOVED)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
     fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
-          reason=NMDeviceStateReason.CONNECTION_REMOVED)
+         reason=NMDeviceStateReason.CONNECTION_REMOVED)
     # B not in _connections yet, so state clears — this is the known edge case
     assert wm._wifi_state.ssid is None
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
