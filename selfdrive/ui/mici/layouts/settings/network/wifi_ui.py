@@ -298,7 +298,8 @@ class WifiUIMici(NavWidget):
     self._loading_animation.show_event()
     self._wifi_manager.set_active(True)
     self._scroller.items.clear()
-    self._update_buttons()
+    # self._update_buttons()
+    self._wifi_manager.resort_networks()
 
   def hide_event(self):
     super().hide_event()

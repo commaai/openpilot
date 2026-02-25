@@ -787,6 +787,11 @@ class WifiManager:
     if reply.header.message_type == MessageType.error:
       cloudlog.warning(f"Failed to request scan: {reply}")
 
+  def resort_networks(self):
+    # networks = [Network.from_dbus(ssid, ap_list, ssid == self._tethering_ssid) for ssid, ap_list in aps.items()]
+    self._networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
+    self._enqueue_callbacks(self._networks_updated, self._networks)
+
   def _update_networks(self, block: bool = True):
     if not self._active:
       return
