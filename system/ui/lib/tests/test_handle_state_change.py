@@ -340,6 +340,54 @@ class TestSideEffects:
 
 
 # ---------------------------------------------------------------------------
+# Thread races: _set_connecting on main thread vs _handle_state_change on monitor thread.
+# Uses side_effect on the DBus mock to simulate _set_connecting running mid-handler.
+# ---------------------------------------------------------------------------
+
+class TestThreadRaces:
+  @pytest.mark.xfail(reason="TODO: PREPARE overwrites _set_connecting via stale DBus lookup")
+  def test_prepare_race_user_tap_during_dbus(self, mocker):
+    """User taps B while PREPARE's DBus call is in flight for auto-connect.
+
+    Monitor thread reads wifi_state (ssid=None), starts DBus call.
+    Main thread: _set_connecting("B"). Monitor thread writes back stale ssid from DBus.
+    """
+    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
+
+    def user_taps_b_during_dbus(*args, **kwargs):
+      wm._set_connecting("B")
+      return ("/path/A", {})
+
+    wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
+
+    fire(wm, NMDeviceState.PREPARE)
+
+    assert wm._wifi_state.ssid == "B"
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING
+
+  @pytest.mark.xfail(reason="TODO: ACTIVATED overwrites _set_connecting with stale CONNECTED state")
+  def test_activated_race_user_tap_during_dbus(self, mocker):
+    """User taps B right as A finishes connecting (ACTIVATED handler running).
+
+    Monitor thread reads wifi_state (A, CONNECTING), starts DBus call.
+    Main thread: _set_connecting("B"). Monitor thread writes (A, CONNECTED), losing B.
+    """
+    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
+    wm._set_connecting("A")
+
+    def user_taps_b_during_dbus(*args, **kwargs):
+      wm._set_connecting("B")
+      return ("/path/A", {})
+
+    wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
+
+    fire(wm, NMDeviceState.ACTIVATED)
+
+    assert wm._wifi_state.ssid == "B"
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING
+
+
+# ---------------------------------------------------------------------------
 # Full sequences (NM signal order from real devices)
 # ---------------------------------------------------------------------------
 
