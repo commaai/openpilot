@@ -148,7 +148,7 @@ class Scroller(Widget):
     # preserve original touch valid callback
     original_touch_valid_callback = item._touch_valid_callback
     item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to[0] is None
-                                          and not self.moving_items and (original_touch_valid_callback() if
+                                          and (original_touch_valid_callback() if
                                                                          original_touch_valid_callback else True))
 
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
@@ -226,6 +226,7 @@ class Scroller(Widget):
     return len(self._move_animations) > 0 or len(self._move_lift) > 0
 
   def move_item(self, from_idx: int, to_idx: int):
+    return
     assert self._horizontal
     if from_idx == to_idx:
       return

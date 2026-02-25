@@ -23,6 +23,7 @@ class NMDeviceStateReason(IntEnum):
   # https://networkmanager.dev/docs/api/1.46/nm-dbus-types.html#NMDeviceStateReason
   NONE = 0
   UNKNOWN = 1
+  IP_CONFIG_UNAVAILABLE = 5
   NO_SECRETS = 7
   SUPPLICANT_DISCONNECT = 8
   CONNECTION_REMOVED = 38

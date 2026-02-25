@@ -455,6 +455,8 @@ class WifiManager:
         # When connection is forgotten
         self._set_connecting(None)
 
+    print(f"  → wifi_state: ({self._wifi_state.ssid}, {self._wifi_state.status.name})")
+
   def _network_scanner(self):
     while not self._exit:
       if self._active:
@@ -587,6 +589,7 @@ class WifiManager:
     self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
+    print(f"connect_to_network: ssid={ssid}")
     self._set_connecting(ssid)
 
     def worker():
@@ -653,6 +656,7 @@ class WifiManager:
       threading.Thread(target=worker, daemon=True).start()
 
   def activate_connection(self, ssid: str, block: bool = False):
+    print(f"activate_connection: ssid={ssid}")
     self._set_connecting(ssid)
 
     def worker():
