@@ -427,6 +427,9 @@ class WifiManager:
     # BAD PASSWORD - use prev if current has already moved on to a new connection
     # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
     # - weak/gone network fails with FAILED+NO_SECRETS
+    # prev_state guard: real auth failures come from CONFIG (supplicant handshake).
+    # Stale NEED_AUTH from a prior connection during network switching arrives with
+    # prev_state=DISCONNECTED and must be ignored to avoid a false wrong-password callback.
     elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT
            and prev_state == NMDeviceState.CONFIG) or
           (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
