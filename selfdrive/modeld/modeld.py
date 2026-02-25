@@ -13,7 +13,6 @@ if USBGPU:
   os.environ['FLOAT16'] = '1'
   os.environ['JIT_BATCH_SIZE'] = '0'
   # TODO: double check following flags are useful
-  os.environ['IMAGE'] = '0' # not real?
   os.environ['GRAPH_ONE_KERNEL'] = '1'
   os.environ['AMD_SDMA_BIND'] = '1'
 MODEL_PREFIX = 'big_' if USBGPU else ''
