@@ -314,7 +314,6 @@ class TestActivated:
 # on NEED_AUTH) also shrink these race windows to near-zero. If races are still
 # visible after, make WifiState frozen (replace() + single atomic assignment) and/or
 # add a narrow lock around _wifi_state reads/writes (not around DBus calls).
-# The NEED_AUTH prev_ssid mutation race is eliminated by removing prev_ssid entirely.
 
 class TestThreadRaces:
   @pytest.mark.xfail(reason="TODO: PREPARE overwrites _set_connecting via stale DBus lookup")

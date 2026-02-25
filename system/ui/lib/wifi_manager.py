@@ -148,7 +148,6 @@ class ConnectStatus(IntEnum):
 @dataclass
 class WifiState:
   ssid: str | None = None
-  prev_ssid: str | None = None
   status: ConnectStatus = ConnectStatus.DISCONNECTED
 
 
@@ -292,10 +291,7 @@ class WifiManager:
     return self._tethering_password
 
   def _set_connecting(self, ssid: str | None):
-    # Track prev ssid so late NEED_AUTH signals target the right network
-    self._wifi_state = WifiState(ssid=ssid,
-                                 prev_ssid=self.connecting_to_ssid if ssid is not None else None,
-                                 status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
+    self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
@@ -398,8 +394,6 @@ class WifiManager:
     #   deterministic fix (skip DBus lookup when ssid is set) also shrinks the race
     #   window to near-zero since the read/write happen back-to-back under the GIL.
     #   ACTIVATED: same read-then-write pattern with a DBus call in between.
-    #   NEED_AUTH: mutates _wifi_state.prev_ssid in place, which can corrupt a new
-    #   WifiState created by _set_connecting on the main thread.
     # The deterministic fixes (skip DBus lookup when ssid set, prev_state guard) shrink
     # the race windows significantly. If still visible, add a narrow lock around
     # _wifi_state reads/writes (not around DBus calls, to avoid blocking the UI thread).
@@ -424,7 +418,7 @@ class WifiManager:
 
       self._wifi_state = wifi_state
 
-    # BAD PASSWORD - use prev if current has already moved on to a new connection
+    # BAD PASSWORD
     # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
     # - weak/gone network fails with FAILED+NO_SECRETS
     # prev_state guard: real auth failures come from CONFIG (supplicant handshake).
@@ -434,12 +428,9 @@ class WifiManager:
            and prev_state == NMDeviceState.CONFIG) or
           (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
 
-      failed_ssid = self._wifi_state.prev_ssid or self._wifi_state.ssid
-      if failed_ssid:
-        self._enqueue_callbacks(self._need_auth, failed_ssid)
-        self._wifi_state.prev_ssid = None
-        if self._wifi_state.ssid == failed_ssid:
-          self._set_connecting(None)
+      if self._wifi_state.ssid:
+        self._enqueue_callbacks(self._need_auth, self._wifi_state.ssid)
+        self._set_connecting(None)
 
     elif new_state in (NMDeviceState.NEED_AUTH, NMDeviceState.IP_CONFIG, NMDeviceState.IP_CHECK,
                        NMDeviceState.SECONDARIES, NMDeviceState.FAILED):
@@ -447,7 +438,7 @@ class WifiManager:
 
     elif new_state == NMDeviceState.ACTIVATED:
       # Note that IP address from Ip4Config may not be propagated immediately and could take until the next scan results
-      wifi_state = replace(self._wifi_state, prev_ssid=None, status=ConnectStatus.CONNECTED)
+      wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
       conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
       if conn_path is None:
