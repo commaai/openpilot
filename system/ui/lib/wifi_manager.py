@@ -375,6 +375,8 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
+          print('New state', (NMDeviceState(new_state).name, NMDeviceState(previous_state).name, NMDeviceStateReason(change_reason).name))
+
           self._handle_state_change(new_state, previous_state, change_reason)
 
   def _handle_state_change(self, new_state: int, _: int, change_reason: int):

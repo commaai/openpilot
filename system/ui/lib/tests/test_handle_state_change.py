@@ -100,7 +100,7 @@ class TestPrepareConfig:
     """User called _set_connecting('B') — PREPARE must not overwrite via DBus."""
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
     wm._set_connecting("B")
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/A", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/A", {})
 
     _fire(wm, NMDeviceState.PREPARE)
 
@@ -112,8 +112,7 @@ class TestPrepareConfig:
   def test_auto_connect_looks_up_ssid(self, mocker, state):
     """Auto-connection (ssid=None): PREPARE and CONFIG must look up ssid from NM."""
     wm = _make_wm(mocker, connections={"AutoNet": "/path/auto"})
-    wm._wifi_state = WifiState()
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/auto", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/auto", {})
 
     _fire(wm, state)
 
@@ -132,8 +131,7 @@ class TestPrepareConfig:
   def test_auto_connect_conn_path_not_in_connections(self, mocker):
     """DBus returns a conn_path that doesn't match any known connection."""
     wm = _make_wm(mocker, connections={"Other": "/path/other"})
-    wm._wifi_state = WifiState()
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/unknown", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/unknown", {})
 
     _fire(wm, NMDeviceState.PREPARE)
 
@@ -176,7 +174,6 @@ class TestNeedAuth:
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
-    wm._wifi_state = WifiState()
 
     _fire(wm, NMDeviceState.NEED_AUTH, reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
@@ -227,7 +224,7 @@ class TestActivated:
     cb = mocker.MagicMock()
     wm.add_callbacks(activated=cb)
     wm._set_connecting("MyNet")
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/mynet", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/mynet", {})
 
     _fire(wm, NMDeviceState.ACTIVATED)
 
@@ -249,7 +246,7 @@ class TestActivated:
     """ACTIVATED calls Save on the connection to persist volatile connections to disk."""
     wm = _make_wm(mocker, connections={"NewNet": "/path/newnet"})
     wm._set_connecting("NewNet")
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/newnet", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/newnet", {})
 
     _fire(wm, NMDeviceState.ACTIVATED)
 
@@ -259,7 +256,7 @@ class TestActivated:
     """ACTIVATED triggers _update_networks."""
     wm = _make_wm(mocker, connections={"Net": "/path/net"})
     wm._set_connecting("Net")
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/net", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/net", {})
 
     _fire(wm, NMDeviceState.ACTIVATED)
 
@@ -304,7 +301,7 @@ class TestSideEffects:
     cb = mocker.MagicMock()
     wm.add_callbacks(activated=cb)
     wm._set_connecting("Net")
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/net", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/net", {})
 
     _fire(wm, NMDeviceState.ACTIVATED)
 
@@ -321,7 +318,7 @@ class TestFullSequences:
   def test_normal_connect(self, mocker):
     """User connects to saved network: full happy path."""
     wm = _make_wm(mocker, connections={"Home": "/path/home"})
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/home", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/home", {})
 
     wm._set_connecting("Home")
     _fire(wm, NMDeviceState.PREPARE)
@@ -355,7 +352,7 @@ class TestFullSequences:
 
     wm._callback_queue.clear()
     wm._set_connecting("Sec")
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/sec", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/sec", {})
     _fire(wm, NMDeviceState.PREPARE)
     _fire(wm, NMDeviceState.CONFIG)
     _fire(wm, NMDeviceState.ACTIVATED)
@@ -365,7 +362,7 @@ class TestFullSequences:
     """Switch from A to B (both saved): NM signal sequence from real device."""
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/B", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/B", {})
 
     wm._set_connecting("B")
 
@@ -394,7 +391,7 @@ class TestFullSequences:
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/B", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/B", {})
 
     wm._set_connecting("B")
 
@@ -439,7 +436,7 @@ class TestFullSequences:
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/B", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/B", {})
     _fire(wm, NMDeviceState.PREPARE)
     _fire(wm, NMDeviceState.CONFIG)
     _fire(wm, NMDeviceState.ACTIVATED)
@@ -478,7 +475,7 @@ class TestFullSequences:
 
     # NewConnection arrives late
     wm._connections["B"] = "/path/B"
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/B", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/B", {})
 
     # PREPARE recovers: ssid is None so it looks up from DBus
     _fire(wm, NMDeviceState.PREPARE)
@@ -493,7 +490,7 @@ class TestFullSequences:
   def test_auto_connect(self, mocker):
     """NM auto-connects (no user action, ssid starts None)."""
     wm = _make_wm(mocker, connections={"AutoNet": "/path/auto"})
-    wm._get_active_wifi_connection = mocker.MagicMock(return_value=("/path/auto", {}))
+    wm._get_active_wifi_connection.return_value = ("/path/auto", {})
 
     _fire(wm, NMDeviceState.PREPARE)
     assert wm._wifi_state.ssid == "AutoNet"
