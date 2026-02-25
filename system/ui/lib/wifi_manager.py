@@ -44,6 +44,13 @@ def normalize_ssid(ssid: str) -> str:
   return ssid.replace("’", "'")  # for iPhone hotspots
 
 
+def sort_networks(networks: list["Network"], wifi_state: "WifiState") -> list["Network"]:
+  # Sort by connected/connecting, then strength, then alphabetically
+  # networks = [Network.from_dbus(ssid, ap_list, ssid == self._tethering_ssid) for ssid, ap_list in aps.items()]
+  networks.sort(key=lambda n: (n.ssid != self._wifi_state.ssid, not self.is_connection_saved(n.ssid), -n.strength, n.ssid.lower()))
+  return networks
+
+
 def _wrap_router(router):
   def _wrap(orig):
     def wrapper(msg, **kw):
