@@ -227,10 +227,6 @@ class TestNeedAuth:
     Reproduced on device: rapidly switching between two saved networks can trigger a
     rare false "wrong password" dialog for the previous network, even though both have
     correct passwords. The stale NEED_AUTH has prev_state=DISCONNECTED (not CONFIG).
-
-    Fix: the handler's second param is currently `_` (unused). Rename to `prev_state`
-    and only fire the NEED_AUTH callback when prev_state indicates a real auth failure
-    (e.g. prev_state == CONFIG), not a stale signal from a prior connection.
     """
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
