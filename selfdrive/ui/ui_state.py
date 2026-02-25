@@ -1,5 +1,8 @@
+from weakref import WeakSet
+
 import pyray as rl
 import numpy as np
+import weakref
 import time
 import threading
 from collections.abc import Callable
@@ -82,7 +85,8 @@ class UIState:
     self._param_update_time: float = 0.0
 
     # Callbacks
-    self._offroad_transition_callbacks: list[Callable[[], None]] = []
+    # self._offroad_transition_callbacks: list[Callable[[], None]] = []
+    self._offroad_transition_callbacks: list[weakref.WeakMethod[Callable[[], None]]] = []
     self._engaged_transition_callbacks: list[Callable[[], None]] = []
 
     self.update_params()
@@ -104,6 +108,7 @@ class UIState:
     return not self.started
 
   def update(self) -> None:
+    # print(len(self._offroad_transition_callbacks), len(self._engaged_transition_callbacks))
     self.prime_state.start()  # start thread after manager forks ui
     self.sm.update(0)
     self._update_state()
@@ -188,7 +193,7 @@ class Device:
     self._ignition = False
     self._interaction_time: float = -1
     self._override_interactive_timeout: int | None = None
-    self._interactive_timeout_callbacks: list[Callable] = []
+    self._interactive_timeout_callbacks: list[weakref.WeakMethod[Callable]] = []
     self._prev_timed_out = False
     self._awake: bool = True
 
@@ -218,9 +223,10 @@ class Device:
     self._interaction_time = time.monotonic() + self.interactive_timeout
 
   def add_interactive_timeout_callback(self, callback: Callable):
-    self._interactive_timeout_callbacks.append(callback)
+    self._interactive_timeout_callbacks.append(weakref.WeakMethod(callback))
 
   def update(self):
+    print(len(self._interactive_timeout_callbacks))
     # do initial reset
     if self._interaction_time <= 0:
       self._reset_interactive_timeout()
@@ -264,11 +270,14 @@ class Device:
 
     if ignition_just_turned_off or any(ev.left_down for ev in gui_app.mouse_events):
       self._reset_interactive_timeout()
+    print([ref() for ref in self._interactive_timeout_callbacks])
 
     interaction_timeout = time.monotonic() > self._interaction_time
     if interaction_timeout and not self._prev_timed_out:
-      for callback in self._interactive_timeout_callbacks:
-        callback()
+      for ref in self._interactive_timeout_callbacks:
+        callback = ref()
+        if callback is not None:
+          callback()
     self._prev_timed_out = interaction_timeout
 
     self._set_awake(ui_state.ignition or not interaction_timeout or PC)
