@@ -25,6 +25,7 @@ def _make_wm(mocker: MockerFixture, connections=None):
   wm._need_auth = []
   wm._activated = []
   wm._update_networks = mocker.MagicMock()
+  wm._update_active_connection_info = mocker.MagicMock()
   wm._get_active_wifi_connection = mocker.MagicMock(return_value=(None, None))
   return wm
 
@@ -291,7 +292,7 @@ class TestActivated:
     assert wm._wifi_state.ssid == "MyNet"
 
   def test_activated_side_effects(self, mocker):
-    """ACTIVATED persists the volatile connection to disk and triggers _update_networks."""
+    """ACTIVATED persists the volatile connection to disk and updates active connection info."""
     wm = _make_wm(mocker, connections={"Net": "/path/net"})
     wm._set_connecting("Net")
     wm._get_active_wifi_connection.return_value = ("/path/net", {})
@@ -299,7 +300,8 @@ class TestActivated:
     fire(wm, NMDeviceState.ACTIVATED)
 
     wm._conn_monitor.send_and_get_reply.assert_called_once()
-    wm._update_networks.assert_called_once()
+    wm._update_active_connection_info.assert_called_once()
+    wm._update_networks.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
