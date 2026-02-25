@@ -174,6 +174,25 @@ class TestNeedAuth:
     wm._callback_queue[0]()
     cb.assert_called_once_with("WeakNet")
 
+  def test_need_auth_then_failed_no_double_fire(self, mocker):
+    """Real device sends NEED_AUTH(SUPPLICANT_DISCONNECT) then FAILED(NO_SECRETS) back-to-back.
+
+    The first clears ssid, so the second must not fire a duplicate callback.
+    Real device sequence: NEED_AUTH(CONFIG, SUPPLICANT_DISCONNECT) → FAILED(NEED_AUTH, NO_SECRETS)
+    """
+    wm = _make_wm(mocker)
+    cb = mocker.MagicMock()
+    wm.add_callbacks(need_auth=cb)
+    wm._set_connecting("BadPass")
+
+    _fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
+          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
+    assert len(wm._callback_queue) == 1
+
+    _fire(wm, NMDeviceState.FAILED, prev_state=NMDeviceState.NEED_AUTH,
+          reason=NMDeviceStateReason.NO_SECRETS)
+    assert len(wm._callback_queue) == 1  # no duplicate
+
   def test_no_ssid_no_callback(self, mocker):
     """If ssid is None when NEED_AUTH fires, no callback enqueued."""
     wm = _make_wm(mocker)
@@ -186,7 +205,12 @@ class TestNeedAuth:
 
   @pytest.mark.xfail(reason="TODO: interrupted auth (prev=DISCONNECTED) should be ignored")
   def test_interrupted_auth_ignored(self, mocker):
-    """Switching A->B: NEED_AUTH from A (prev=DISCONNECTED) must not fire callback."""
+    """Switching A->B: NEED_AUTH from A (prev=DISCONNECTED) must not fire callback.
+
+    Reproduced on device: rapidly switching between two saved networks can trigger a
+    rare false "wrong password" dialog for the previous network, even though both have
+    correct passwords. The stale NEED_AUTH has prev_state=DISCONNECTED (not CONFIG).
+    """
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
@@ -321,14 +345,21 @@ class TestSideEffects:
 
 class TestFullSequences:
   def test_normal_connect(self, mocker):
-    """User connects to saved network: full happy path."""
+    """User connects to saved network: full happy path.
+
+    Real device sequence (switching from another connected network):
+      DEACTIVATING(ACTIVATED, NEW_ACTIVATION) → DISCONNECTED(DEACTIVATING, NEW_ACTIVATION)
+      PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH, NONE) → CONFIG
+      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED
+    """
     wm = _make_wm(mocker, connections={"Home": "/path/home"})
     wm._get_active_wifi_connection.return_value = ("/path/home", {})
 
     wm._set_connecting("Home")
     _fire(wm, NMDeviceState.PREPARE)
-    assert wm._wifi_state.status == ConnectStatus.CONNECTING
-
+    _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
+    _fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
     _fire(wm, NMDeviceState.CONFIG)
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
@@ -341,7 +372,17 @@ class TestFullSequences:
     assert wm._wifi_state.ssid == "Home"
 
   def test_wrong_password_then_retry(self, mocker):
-    """Wrong password → NEED_AUTH → user retries → success."""
+    """Wrong password → NEED_AUTH → FAILED → NM auto-reconnects to saved network.
+
+    Real device sequence:
+      PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE)                 ← WPA handshake
+      → PREPARE(NEED_AUTH, NONE) → CONFIG
+      → NEED_AUTH(CONFIG, SUPPLICANT_DISCONNECT)                 ← wrong password
+      → FAILED(NEED_AUTH, NO_SECRETS)                            ← NM gives up
+      → DISCONNECTED(FAILED, NONE)
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE    ← auto-reconnect
+      → CONFIG → IP_CONFIG → ... → ACTIVATED
+    """
     wm = _make_wm(mocker, connections={"Sec": "/path/sec"})
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
@@ -349,35 +390,65 @@ class TestFullSequences:
     wm._set_connecting("Sec")
     _fire(wm, NMDeviceState.PREPARE)
     _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
+    _fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+    _fire(wm, NMDeviceState.CONFIG)
 
     _fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
           reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert len(wm._callback_queue) == 1
 
+    # FAILED(NO_SECRETS) follows but ssid is already cleared — no double-fire
+    _fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.NO_SECRETS)
+    assert len(wm._callback_queue) == 1
+
+    _fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.FAILED)
+
+    # Retry
     wm._callback_queue.clear()
     wm._set_connecting("Sec")
     wm._get_active_wifi_connection.return_value = ("/path/sec", {})
     _fire(wm, NMDeviceState.PREPARE)
     _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
+    _fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+    _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.IP_CONFIG)
+    _fire(wm, NMDeviceState.IP_CHECK)
+    _fire(wm, NMDeviceState.SECONDARIES)
     _fire(wm, NMDeviceState.ACTIVATED)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
 
   def test_switch_saved_networks(self, mocker):
-    """Switch from A to B (both saved): NM signal sequence from real device."""
+    """Switch from A to B (both saved): NM signal sequence from real device.
+
+    Real device sequence:
+      DEACTIVATING(ACTIVATED, NEW_ACTIVATION) → DISCONNECTED(DEACTIVATING, NEW_ACTIVATION)
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH, NONE) → CONFIG
+      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED
+    """
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
     wm._get_active_wifi_connection.return_value = ("/path/B", {})
 
     wm._set_connecting("B")
 
-    _fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.NEW_ACTIVATION)
-    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
+          reason=NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
+          reason=NMDeviceStateReason.NEW_ACTIVATION)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
     _fire(wm, NMDeviceState.PREPARE)
     _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
+    _fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+    _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.IP_CONFIG)
+    _fire(wm, NMDeviceState.IP_CHECK)
+    _fire(wm, NMDeviceState.SECONDARIES)
     _fire(wm, NMDeviceState.ACTIVATED)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "B"
@@ -386,11 +457,16 @@ class TestFullSequences:
   def test_rapid_switch_no_false_wrong_password(self, mocker):
     """Switch A→B quickly: A's interrupted NEED_AUTH must NOT show wrong password.
 
-    Real NM signal sequence observed on device:
-      DEACTIVATING (NEW_ACTIVATION)
-      DISCONNECTED (NEW_ACTIVATION)
-      NEED_AUTH (SUPPLICANT_DISCONNECT)  ← A's interrupted auth
-      PREPARE → CONFIG → ... → ACTIVATED  ← B connects
+    NOTE: The late NEED_AUTH(DISCONNECTED, SUPPLICANT_DISCONNECT) is common when rapidly
+    switching between networks with wrong/new passwords. Less common when switching between
+    saved networks with correct passwords. Not guaranteed — some switches skip it and go
+    straight from DISCONNECTED to PREPARE. The prev_state is consistently DISCONNECTED
+    for stale signals, so the prev_state guard reliably distinguishes them.
+
+    Worst-case signal sequence this protects against:
+      DEACTIVATING(NEW_ACTIVATION) → DISCONNECTED(NEW_ACTIVATION)
+      → NEED_AUTH(DISCONNECTED, SUPPLICANT_DISCONNECT)  ← A's stale auth failure
+      → PREPARE → CONFIG → ... → ACTIVATED  ← B connects
     """
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
     cb = mocker.MagicMock()
@@ -400,18 +476,25 @@ class TestFullSequences:
 
     wm._set_connecting("B")
 
-    _fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.NEW_ACTIVATION)
-    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
+          reason=NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
+          reason=NMDeviceStateReason.NEW_ACTIVATION)
     _fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.DISCONNECTED,
           reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
-    # A's interrupted auth must not fire callback or clear B's connecting state
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
     assert len(wm._callback_queue) == 0
 
     _fire(wm, NMDeviceState.PREPARE)
     _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
+    _fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+    _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.IP_CONFIG)
+    _fire(wm, NMDeviceState.IP_CHECK)
+    _fire(wm, NMDeviceState.SECONDARIES)
     _fire(wm, NMDeviceState.ACTIVATED)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
 
@@ -419,12 +502,17 @@ class TestFullSequences:
   def test_forget_A_connect_B(self, mocker):
     """Forget A while connecting to B: full signal sequence.
 
+    Real device sequence:
+      DEACTIVATING(ACTIVATED, CONNECTION_REMOVED) → DISCONNECTED(DEACTIVATING, CONNECTION_REMOVED)
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH, NONE) → CONFIG
+      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED
+
     Signal order:
       1. User: _set_connecting("B"), forget("A") removes A from _connections
       2. NewConnection for B arrives → _connections["B"] = ...
       3. DEACTIVATING(CONNECTION_REMOVED) — should be no-op
       4. DISCONNECTED(CONNECTION_REMOVED) — B is in _connections, must not clear
-      5. PREPARE → CONFIG → ACTIVATED
+      5. PREPARE → CONFIG → NEED_AUTH → PREPARE → CONFIG → ... → ACTIVATED
     """
     wm = _make_wm(mocker, connections={"A": "/path/A"})
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
@@ -433,17 +521,25 @@ class TestFullSequences:
     del wm._connections["A"]
     wm._connections["B"] = "/path/B"
 
-    _fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    _fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
+          reason=NMDeviceStateReason.CONNECTION_REMOVED)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
-    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    _fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
+          reason=NMDeviceStateReason.CONNECTION_REMOVED)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
     wm._get_active_wifi_connection.return_value = ("/path/B", {})
     _fire(wm, NMDeviceState.PREPARE)
     _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
+    _fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+    _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.IP_CONFIG)
+    _fire(wm, NMDeviceState.IP_CHECK)
+    _fire(wm, NMDeviceState.SECONDARIES)
     _fire(wm, NMDeviceState.ACTIVATED)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "B"
@@ -488,6 +584,12 @@ class TestFullSequences:
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
     _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
+    _fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+    _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.IP_CONFIG)
+    _fire(wm, NMDeviceState.IP_CHECK)
+    _fire(wm, NMDeviceState.SECONDARIES)
     _fire(wm, NMDeviceState.ACTIVATED)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "B"
@@ -502,6 +604,12 @@ class TestFullSequences:
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
     _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake
+    _fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+    _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.IP_CONFIG)
+    _fire(wm, NMDeviceState.IP_CHECK)
+    _fire(wm, NMDeviceState.SECONDARIES)
     _fire(wm, NMDeviceState.ACTIVATED)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "AutoNet"
@@ -512,6 +620,10 @@ class TestFullSequences:
 
     NM docs: SSID_NOT_FOUND (53) = "The WiFi network could not be found"
     Expected sequence: PREPARE → CONFIG → FAILED(SSID_NOT_FOUND) → DISCONNECTED
+
+    NOTE: SSID_NOT_FOUND is rare. On-device testing with a disappearing hotspot typically
+    produces FAILED(NO_SECRETS) instead. May be driver-specific or require the network
+    to vanish from scan results mid-connection.
     """
     wm = _make_wm(mocker, connections={"GoneNet": "/path/gone"})
     cb = mocker.MagicMock()
