@@ -391,6 +391,21 @@ class WifiManager:
     #    Fix: only do DBus lookup when wifi_state.ssid is None (auto-connections);
     #    user-initiated connections already have ssid set via _set_connecting.
 
+    # TODO: Thread safety — _wifi_state is read/written by both the monitor thread (this
+    # handler) and the main thread (_set_connecting via connect/activate). The GIL makes
+    # individual assignments atomic, but read-then-write patterns can lose main thread writes:
+    #   PREPARE/CONFIG: reads _wifi_state, does slow DBus call, writes back — if
+    #   _set_connecting runs in between, the handler overwrites it with stale state.
+    #   This is both a deterministic bug (stale DBus data) and a thread race. The
+    #   deterministic fix (skip DBus lookup when ssid is set) also shrinks the race
+    #   window to near-zero since the read/write happen back-to-back under the GIL.
+    #   ACTIVATED: same read-then-write pattern with a DBus call in between.
+    #   NEED_AUTH: mutates _wifi_state.prev_ssid in place, which can corrupt a new
+    #   WifiState created by _set_connecting on the main thread.
+    # The deterministic fixes (skip DBus lookup when ssid set, prev_state guard) shrink
+    # the race windows significantly. If still visible, add a narrow lock around
+    # _wifi_state reads/writes (not around DBus calls, to avoid blocking the UI thread).
+
     # TODO: Handle (FAILED, SSID_NOT_FOUND) and emit for ui to show error
     #  Happens when network drops off after starting connection
 
