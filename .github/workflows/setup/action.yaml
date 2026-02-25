@@ -26,10 +26,6 @@ runs:
           exit 1
         fi
 
-    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
-    - shell: bash
-      run: git lfs pull
-
     # build cache
     - id: date
       shell: bash
