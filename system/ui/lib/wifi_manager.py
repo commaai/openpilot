@@ -227,6 +227,8 @@ class WifiManager:
         cloudlog.warning("No WiFi device found")
         return
 
+      # self._update_active_connection_info()
+
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
 
@@ -308,12 +310,18 @@ class WifiManager:
       cb()
 
   def set_active(self, active: bool):
+    print('SET ACTIVE')
+    update = active and not self._active
     self._active = active
 
     # Update networks and WiFi state (to self-heal) immediately when activating for UI
-    if active:
+    if update:
       self._init_wifi_state(block=False)
+      self._last_network_scan = time.monotonic()
+      # if len(self._networks) == 0:
       self._update_networks(block=False)
+      # self._update_networks(block=False)
+
 
   def _monitor_state(self):
     # Filter for signals
@@ -431,12 +439,14 @@ class WifiManager:
               cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
               self._wifi_state = wifi_state
               self._enqueue_callbacks(self._activated)
-              self._update_networks()
+              self._update_active_connection_info()
+              # self._update_networks()
             else:
               wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
               self._wifi_state = wifi_state
               self._enqueue_callbacks(self._activated)
-              self._update_networks()
+              self._update_active_connection_info()
+              # self._update_networks()
 
               # Persist volatile connections (created by AddAndActivateConnection2) to disk
               conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
@@ -633,12 +643,13 @@ class WifiManager:
     def worker():
       conn_path = self._connections.get(ssid, None)
       if conn_path is None:
+        # still fire callback since UI may show "forgetting..." state
         cloudlog.warning(f"Trying to forget unknown connection: {ssid}")
       else:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
-      self._update_networks()
+      # self._update_networks()
       self._enqueue_callbacks(self._forgotten, ssid)
 
     if block:
@@ -782,6 +793,8 @@ class WifiManager:
       cloudlog.warning("No WiFi device found")
       return
 
+    print('       Requesting scan!')
+
     wifi_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_WIRELESS_IFACE)
     reply = self._router_main.send_and_get_reply(new_method_call(wifi_addr, 'RequestScan', 'a{sv}', ({},)))
 
@@ -790,7 +803,10 @@ class WifiManager:
 
   def _update_networks(self, block: bool = True):
     if not self._active:
+      print('       Skipping network update since not active!?!???')
       return
+    else:
+      print('       upDATING netWORKS!')
 
     def worker():
       with self._lock:
