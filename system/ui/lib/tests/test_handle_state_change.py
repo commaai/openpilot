@@ -271,6 +271,8 @@ class TestActivated:
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "MyNet"
     assert len(wm._callback_queue) == 1
+    wm._callback_queue[0]()
+    cb.assert_called_once()
 
   def test_conn_path_none_still_connected(self, mocker):
     """ACTIVATED but DBus returns None: status CONNECTED, ssid unchanged."""
@@ -282,24 +284,15 @@ class TestActivated:
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "MyNet"
 
-  def test_persists_volatile_connection(self, mocker):
-    """ACTIVATED calls Save on the connection to persist volatile connections to disk."""
-    wm = _make_wm(mocker, connections={"NewNet": "/path/newnet"})
-    wm._set_connecting("NewNet")
-    wm._get_active_wifi_connection.return_value = ("/path/newnet", {})
-
-    fire(wm, NMDeviceState.ACTIVATED)
-
-    wm._conn_monitor.send_and_get_reply.assert_called_once()
-
-  def test_update_networks_called(self, mocker):
-    """ACTIVATED triggers _update_networks."""
+  def test_activated_side_effects(self, mocker):
+    """ACTIVATED persists the volatile connection to disk and triggers _update_networks."""
     wm = _make_wm(mocker, connections={"Net": "/path/net"})
     wm._set_connecting("Net")
     wm._get_active_wifi_connection.return_value = ("/path/net", {})
 
     fire(wm, NMDeviceState.ACTIVATED)
 
+    wm._conn_monitor.send_and_get_reply.assert_called_once()
     wm._update_networks.assert_called_once()
 
 
@@ -334,20 +327,6 @@ class TestSideEffects:
     assert len(wm._callback_queue) == 1
     wm._callback_queue[0]()
     cb.assert_called_once_with("A")
-
-  def test_activated_fires_callback(self, mocker):
-    """ACTIVATED fires the _activated callback list."""
-    wm = _make_wm(mocker, connections={"Net": "/path/net"})
-    cb = mocker.MagicMock()
-    wm.add_callbacks(activated=cb)
-    wm._set_connecting("Net")
-    wm._get_active_wifi_connection.return_value = ("/path/net", {})
-
-    fire(wm, NMDeviceState.ACTIVATED)
-
-    assert len(wm._callback_queue) == 1
-    wm._callback_queue[0]()
-    cb.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
