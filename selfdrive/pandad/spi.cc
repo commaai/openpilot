@@ -32,7 +32,7 @@ const std::string SPI_DEVICE = "/dev/spidev0.0";
 
 class LockEx {
 public:
-  LockEx(int fd, std::recursive_mutex &m) : fd(fd), m(m) {
+  LockEx(int fd_, std::recursive_mutex &m_) : fd(fd_), m(m_) {
     m.lock();
     flock(fd, LOCK_EX);
   }

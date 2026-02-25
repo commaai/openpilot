@@ -219,11 +219,11 @@ void handle_preserve_segment(LoggerdState *s) {
 
 void loggerd_thread() {
   // setup messaging
-  typedef struct ServiceState {
+  struct ServiceState {
     std::string name;
     int counter, freq;
     bool encoder, preserve_segment, record_audio;
-  } ServiceState;
+  };
   std::unordered_map<SubSocket*, ServiceState> service_state;
   std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 

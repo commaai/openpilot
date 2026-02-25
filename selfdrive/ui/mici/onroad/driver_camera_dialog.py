@@ -7,7 +7,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.widgets import NavWidget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import gui_label
 
 EventName = log.OnroadEvent.EventName

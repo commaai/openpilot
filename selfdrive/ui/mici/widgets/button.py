@@ -1,3 +1,4 @@
+import math
 import pyray as rl
 from typing import Union
 from enum import Enum
@@ -36,7 +37,6 @@ class BigCircleButton(Widget):
 
     # State
     self.set_rect(rl.Rectangle(0, 0, 180, 180))
-    self._press_state_enabled = True
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
     # Icons
@@ -44,13 +44,10 @@ class BigCircleButton(Widget):
     self._txt_btn_disabled_bg = gui_app.texture("icons_mici/buttons/button_circle_disabled.png", 180, 180)
 
     self._txt_btn_bg = gui_app.texture("icons_mici/buttons/button_circle.png", 180, 180)
-    self._txt_btn_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_hover.png", 180, 180)
+    self._txt_btn_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_pressed.png", 180, 180)
 
     self._txt_btn_red_bg = gui_app.texture("icons_mici/buttons/button_circle_red.png", 180, 180)
-    self._txt_btn_red_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_red_hover.png", 180, 180)
-
-  def set_enable_pressed_state(self, pressed: bool):
-    self._press_state_enabled = pressed
+    self._txt_btn_red_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_red_pressed.png", 180, 180)
 
   def _draw_content(self, btn_y: float):
     # draw icon
@@ -63,10 +60,10 @@ class BigCircleButton(Widget):
     txt_bg = self._txt_btn_bg if not self._red else self._txt_btn_red_bg
     if not self.enabled:
       txt_bg = self._txt_btn_disabled_bg
-    elif self.is_pressed and self._press_state_enabled:
+    elif self.is_pressed:
       txt_bg = self._txt_btn_pressed_bg if not self._red else self._txt_btn_red_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed and self._press_state_enabled else 1.0)
+    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
@@ -119,6 +116,7 @@ class BigButton(Widget):
     self.set_icon(icon)
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._shake_start: float | None = None
 
     self._rotate_icon_t: float | None = None
 
@@ -178,6 +176,23 @@ class BigButton(Widget):
   def get_text(self):
     return self.text
 
+  def trigger_shake(self):
+    self._shake_start = rl.get_time()
+
+  @property
+  def _shake_offset(self) -> float:
+    SHAKE_DURATION = 0.5
+    SHAKE_AMPLITUDE = 24.0
+    SHAKE_FREQUENCY = 32.0
+    t = rl.get_time() - (self._shake_start or 0.0)
+    if t > SHAKE_DURATION:
+      return 0.0
+    decay = 1.0 - t / SHAKE_DURATION
+    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
+
+  def set_position(self, x: float, y: float) -> None:
+    super().set_position(x + self._shake_offset, y)
+
   def _draw_content(self, btn_y: float):
     # LABEL ------------------------------------------------------------------
     label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
@@ -220,12 +235,16 @@ class BigButton(Widget):
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
 
-    # draw black background since images are transparent
-    scaled_rect = rl.Rectangle(btn_x, btn_y, self._rect.width * scale, self._rect.height * scale)
-    rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.5)))
+    if self._scroll:
+      # draw black background since images are transparent
+      scaled_rect = rl.Rectangle(btn_x, btn_y, self._rect.width * scale, self._rect.height * scale)
+      rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.5)))
 
-    self._draw_content(btn_y)
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+      self._draw_content(btn_y)
+      rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+    else:
+      rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+      self._draw_content(btn_y)
 
 
 class BigToggle(BigButton):

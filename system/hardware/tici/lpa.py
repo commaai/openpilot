@@ -2,6 +2,7 @@
 
 import atexit
 import base64
+import math
 import os
 import serial
 import sys
@@ -16,6 +17,8 @@ DEFAULT_BAUD = 9600
 DEFAULT_TIMEOUT = 5.0
 # https://euicc-manual.osmocom.org/docs/lpa/applet-id/
 ISDR_AID = "A0000005591010FFFFFFFF8900000100"
+MM = "org.freedesktop.ModemManager1"
+MM_MODEM = MM + ".Modem"
 ES10X_MSS = 120
 DEBUG = os.environ.get("DEBUG") == "1"
 
@@ -34,10 +37,15 @@ def b64e(data: bytes) -> str:
 
 class AtClient:
   def __init__(self, device: str, baud: int, timeout: float, debug: bool) -> None:
-    self.serial = serial.Serial(device, baudrate=baud, timeout=timeout)
     self.debug = debug
     self.channel: str | None = None
-    self.serial.reset_input_buffer()
+    self._timeout = timeout
+    self._serial: serial.Serial | None = None
+    try:
+      self._serial = serial.Serial(device, baudrate=baud, timeout=timeout)
+      self._serial.reset_input_buffer()
+    except (serial.SerialException, PermissionError, OSError):
+      pass
 
   def close(self) -> None:
     try:
@@ -45,33 +53,57 @@ class AtClient:
         self.query(f"AT+CCHC={self.channel}")
         self.channel = None
     finally:
-      self.serial.close()
+      if self._serial:
+        self._serial.close()
 
-  def send(self, cmd: str) -> None:
+  def _send(self, cmd: str) -> None:
     if self.debug:
-      print(f">> {cmd}", file=sys.stderr)
-    self.serial.write((cmd + "\r").encode("ascii"))
+      print(f"SER >> {cmd}", file=sys.stderr)
+    self._serial.write((cmd + "\r").encode("ascii"))
 
-  def expect(self) -> list[str]:
+  def _expect(self) -> list[str]:
     lines: list[str] = []
     while True:
-      raw = self.serial.readline()
+      raw = self._serial.readline()
       if not raw:
         raise TimeoutError("AT command timed out")
       line = raw.decode(errors="ignore").strip()
       if not line:
         continue
       if self.debug:
-        print(f"<< {line}", file=sys.stderr)
+        print(f"SER << {line}", file=sys.stderr)
       if line == "OK":
         return lines
       if line == "ERROR" or line.startswith("+CME ERROR"):
         raise RuntimeError(f"AT command failed: {line}")
       lines.append(line)
 
+  def _get_modem(self):
+    import dbus
+    bus = dbus.SystemBus()
+    mm = bus.get_object(MM, '/org/freedesktop/ModemManager1')
+    objects = mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager", timeout=self._timeout)
+    modem_path = list(objects.keys())[0]
+    return bus.get_object(MM, modem_path)
+
+  def _dbus_query(self, cmd: str) -> list[str]:
+    if self.debug:
+      print(f"DBUS >> {cmd}", file=sys.stderr)
+    try:
+      result = str(self._get_modem().Command(cmd, math.ceil(self._timeout), dbus_interface=MM_MODEM, timeout=self._timeout))
+    except Exception as e:
+      raise RuntimeError(f"AT command failed: {e}") from e
+    lines = [line.strip() for line in result.splitlines() if line.strip()]
+    if self.debug:
+      for line in lines:
+        print(f"DBUS << {line}", file=sys.stderr)
+    return lines
+
   def query(self, cmd: str) -> list[str]:
-    self.send(cmd)
-    return self.expect()
+    if self._serial:
+      self._send(cmd)
+      return self._expect()
+    return self._dbus_query(cmd)
 
   def open_isdr(self) -> None:
     # close any stale logical channel from a previous crashed session

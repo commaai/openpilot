@@ -197,7 +197,7 @@ class MiciOffroadAlerts(Widget):
     self._last_refresh = 0.0
 
     # Create vertical scroller
-    self._scroller = Scroller([], horizontal=False, spacing=12, pad_start=0, pad_end=0, snap_items=False)
+    self._scroller = Scroller([], horizontal=False, spacing=12, pad=0)
 
     # Create empty state label
     self._empty_label = UnifiedLabel(tr("no alerts"), 65, FontWeight.DISPLAY, rl.WHITE,
@@ -289,9 +289,14 @@ class MiciOffroadAlerts(Widget):
 
   def show_event(self):
     """Reset scroll position when shown and refresh alerts."""
+    super().show_event()
     self._scroller.show_event()
     self._last_refresh = time.monotonic()
     self.refresh()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
 
   def _update_state(self):
     """Periodically refresh alerts."""

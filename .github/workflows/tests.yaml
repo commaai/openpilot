@@ -19,8 +19,6 @@ concurrency:
 
 env:
   CI: 1
-  PYTHONPATH: ${{ github.workspace }}
-  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
   build_release:
@@ -61,21 +59,6 @@ jobs:
       timeout-minutes: 3
       run: release/check-submodules.sh
 
-  build:
-    runs-on: ${{
-      (github.repository == 'commaai/openpilot') &&
-      ((github.event_name != 'pull_request') ||
-      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
-      || fromJSON('["ubuntu-24.04"]') }}
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - uses: ./.github/workflows/compile-openpilot
-      timeout-minutes: 30
-
   build_mac:
     name: build macOS
     runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
@@ -83,30 +66,13 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - name: Homebrew cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: ~/Library/Caches/Homebrew
-        key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          brew-macos-${{ env.CACHE_COMMIT_DATE }}
-          brew-macos
-    - name: Install dependencies
-      run: ./tools/mac_setup.sh
-      env:
-        HOMEBREW_DISPLAY_INSTALL_TIMES: 1
-    - run: git lfs pull
-    - name: Getting scons cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: /tmp/scons_cache
-        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}-macos
+    - name: Remove Homebrew from environment
+      run: |
+        FILTERED=$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/homebrew' | tr '\n' ':')
+        echo "PATH=${FILTERED}/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" >> $GITHUB_ENV
+    - uses: ./.github/workflows/setup-with-retry
     - name: Building openpilot
-      run: . .venv/bin/activate && scons -j$(nproc)
+      run: scons
 
   static_analysis:
     name: static analysis
@@ -146,8 +112,8 @@ jobs:
       run: |
         source selfdrive/test/setup_xvfb.sh
         # Pre-compile Python bytecode so each pytest worker doesn't need to
-        $PYTEST --collect-only -m 'not slow' -qq
-        MAX_EXAMPLES=1 $PYTEST -m 'not slow'
+        pytest --collect-only -m 'not slow' -qq
+        MAX_EXAMPLES=1 pytest -m 'not slow'
 
   process_replay:
     name: process replay
@@ -210,7 +176,7 @@ jobs:
       timeout-minutes: 4
       env:
         ONNXCPU: 1
-      run: $PYTEST selfdrive/test/process_replay/test_regen.py
+      run: pytest selfdrive/test/process_replay/test_regen.py
 
   simulator_driving:
     name: simulator driving
@@ -233,7 +199,6 @@ jobs:
       timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
       run: |
         source selfdrive/test/setup_xvfb.sh
-        source selfdrive/test/setup_vsound.sh
         pytest -s tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
