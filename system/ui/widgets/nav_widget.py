@@ -81,14 +81,17 @@ class NavWidget(Widget, abc.ABC):
   def set_back_callback(self, callback: Callable[[], None]) -> None:
     self._back_callback = callback
 
+  def _reset_swipe_state(self):
+    self._back_button_start_pos = None
+    self._swiping_away = False
+    self._playing_dismiss_animation = False
+
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
     if not self.back_enabled:
-      self._back_button_start_pos = None
-      self._swiping_away = False
-      self._can_swipe_away = True
+      self._reset_swipe_state()
       return
 
     if mouse_event.left_pressed:
@@ -160,7 +163,7 @@ class NavWidget(Widget, abc.ABC):
     new_y = 0.0
 
     if not self.enabled:
-      self._back_button_start_pos = None
+      self._reset_swipe_state()
 
     # TODO: why is this not in handle_mouse_event? have to hack above
     if self._back_button_start_pos is not None:
@@ -183,10 +186,7 @@ class NavWidget(Widget, abc.ABC):
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       if self._back_callback is not None:
         self._back_callback()
-
-      self._playing_dismiss_animation = False
-      self._back_button_start_pos = None
-      self._swiping_away = False
+      self._reset_swipe_state()
 
     self.set_position(self._rect.x, new_y)
 
@@ -225,3 +225,6 @@ class NavWidget(Widget, abc.ABC):
     #  so we need this hacky bool for now
     self._trigger_animate_in = True
     self._nav_bar.show_event()
+
+    self._reset_swipe_state()
+    self._pos_filter.velocity.x = 0.0

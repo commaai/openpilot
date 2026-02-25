@@ -2,6 +2,7 @@ import pyray as rl
 import numpy as np
 import time
 import threading
+import weakref
 from collections.abc import Callable
 from enum import Enum
 from cereal import messaging, car, log
@@ -13,6 +14,11 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.hardware import HARDWARE, PC
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
+
+
+def _add_weak_callback(cb_list: list[weakref.WeakMethod], callback: Callable[[], None]):
+  ref = weakref.WeakMethod(callback, lambda r: cb_list.remove(r))
+  cb_list.append(ref)
 
 
 class UIStatus(Enum):
@@ -82,16 +88,16 @@ class UIState:
     self._param_update_time: float = 0.0
 
     # Callbacks
-    self._offroad_transition_callbacks: list[Callable[[], None]] = []
-    self._engaged_transition_callbacks: list[Callable[[], None]] = []
+    self._offroad_transition_callbacks: list[weakref.WeakMethod] = []
+    self._engaged_transition_callbacks: list[weakref.WeakMethod] = []
 
     self.update_params()
 
   def add_offroad_transition_callback(self, callback: Callable[[], None]):
-    self._offroad_transition_callbacks.append(callback)
+    _add_weak_callback(self._offroad_transition_callbacks, callback)
 
   def add_engaged_transition_callback(self, callback: Callable[[], None]):
-    self._engaged_transition_callbacks.append(callback)
+    _add_weak_callback(self._engaged_transition_callbacks, callback)
 
   @property
   def engaged(self) -> bool:
@@ -154,8 +160,10 @@ class UIState:
 
     # Check for engagement state changes
     if self.engaged != self._engaged_prev:
-      for callback in self._engaged_transition_callbacks:
-        callback()
+      for ref in list(self._engaged_transition_callbacks):
+        cb = ref()
+        if cb is not None:
+          cb()
       self._engaged_prev = self.engaged
 
     # Handle onroad/offroad transition
@@ -165,8 +173,10 @@ class UIState:
         self.started_frame = self.sm.frame
         self.started_time = time.monotonic()
 
-      for callback in self._offroad_transition_callbacks:
-        callback()
+      for ref in list(self._offroad_transition_callbacks):
+        cb = ref()
+        if cb is not None:
+          cb()
 
       self._started_prev = self.started
 

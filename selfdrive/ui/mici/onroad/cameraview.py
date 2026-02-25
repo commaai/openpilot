@@ -186,17 +186,18 @@ class CameraView(Widget):
     return self._stream_type
 
   def close(self) -> None:
-    self._clear_textures()
+    # Guard GL resource cleanup: __del__ may fire after rl.close_window()
+    # during deferred garbage collection of reference cycles.
+    if rl.is_window_ready():
+      self._clear_textures()
 
-    # Clean up EGL texture
-    if TICI and self.egl_texture:
-      rl.unload_texture(self.egl_texture)
-      self.egl_texture = None
+      if TICI and self.egl_texture:
+        rl.unload_texture(self.egl_texture)
+        self.egl_texture = None
 
-    # Clean up shader
-    if self.shader and self.shader.id:
-      rl.unload_shader(self.shader)
-      self.shader.id = 0
+      if self.shader and self.shader.id:
+        rl.unload_shader(self.shader)
+        self.shader.id = 0
 
     self.frame = None
     self.available_streams.clear()

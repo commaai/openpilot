@@ -24,13 +24,10 @@ from openpilot.system.ui.widgets.keyboard import Keyboard
 
 # FIXME: known small leaks not worth worrying about at the moment
 KNOWN_LEAKS = {
-  "openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog.DriverCameraView",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.TermsPage",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.TrainingGuide",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.DeclinePage",
   "openpilot.selfdrive.ui.mici.layouts.onboarding.OnboardingWindow",
-  "openpilot.selfdrive.ui.onroad.driver_state.DriverStateRenderer",
-  "openpilot.selfdrive.ui.onroad.driver_camera_dialog.DriverCameraDialog",
   "openpilot.selfdrive.ui.layouts.onboarding.TermsPage",
   "openpilot.selfdrive.ui.layouts.onboarding.DeclinePage",
   "openpilot.selfdrive.ui.layouts.onboarding.OnboardingWindow",
@@ -38,10 +35,9 @@ KNOWN_LEAKS = {
   "openpilot.system.ui.widgets.label.Label",
   "openpilot.system.ui.widgets.button.Button",
   "openpilot.system.ui.widgets.html_render.HtmlRenderer",
-  "openpilot.system.ui.widgets.NavBar",
+  "openpilot.system.ui.widgets.nav_widget.NavBar",
   "openpilot.system.ui.widgets.inputbox.InputBox",
   "openpilot.system.ui.widgets.scroller_tici.Scroller",
-  "openpilot.system.ui.widgets.scroller.Scroller",
   "openpilot.system.ui.widgets.label.UnifiedLabel",
   "openpilot.system.ui.widgets.mici_keyboard.MiciKeyboard",
   "openpilot.selfdrive.ui.mici.widgets.dialog.BigConfirmationDialogV2",
@@ -60,7 +56,6 @@ def get_child_widgets(widget: Widget) -> list[Widget]:
   return children
 
 
-@pytest.mark.skip(reason="segfaults")
 def test_dialogs_do_not_leak():
   gui_app.init_window("ref-test")
 

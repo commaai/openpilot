@@ -312,7 +312,15 @@ class WifiUIMici(NavWidget):
     # Update existing buttons, add new ones to the end
     existing = {btn.network.ssid: btn for btn in self._scroller.items if isinstance(btn, WifiButton)}
 
-    for network in self._networks.values():
+    # Iterate active network first so it's at index 0 on fresh rebuilds (avoids move animation)
+    active_ssid = self._wifi_manager.wifi_state.ssid
+    networks = list(self._networks.values())
+    if active_ssid and active_ssid in self._networks and active_ssid not in existing:
+      active_net = self._networks[active_ssid]
+      networks.remove(active_net)
+      networks.insert(0, active_net)
+
+    for network in networks:
       if network.ssid in existing:
         existing[network.ssid].update_network(network)
       else:
