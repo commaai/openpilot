@@ -38,7 +38,6 @@ SCAN_PERIOD_SECONDS = 5
 
 DEBUG = False
 _dbus_call_idx = 0
-nu = 0
 
 
 def normalize_ssid(ssid: str) -> str:
