@@ -6,8 +6,11 @@ Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
 
 # Detect Qt - skip build if not available
 if arch == "Darwin":
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-  has_qt = os.path.isdir(os.path.join(brew_prefix, "opt/qt@5"))
+  try:
+    brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
+    has_qt = os.path.isdir(os.path.join(brew_prefix, "opt/qt@5"))
+  except (FileNotFoundError, subprocess.CalledProcessError):
+    has_qt = False
 else:
   has_qt = shutil.which('qmake') is not None
 
