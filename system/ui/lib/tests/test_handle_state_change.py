@@ -6,49 +6,32 @@ DBus, then calling _handle_state_change directly with NM state transitions.
 Many tests assert *desired* behavior that the current code doesn't implement yet.
 These are marked with pytest.mark.xfail and document the intended fix.
 """
-import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from openpilot.system.ui.lib.networkmanager import NMDeviceState, NMDeviceStateReason
-from openpilot.system.ui.lib.wifi_manager import WifiManager, WifiState, ConnectStatus, MeteredType, DEFAULT_TETHERING_PASSWORD
+from openpilot.system.ui.lib.wifi_manager import WifiManager, WifiState, ConnectStatus
 
 
 def _make_wm(connections=None):
-  """Create a WifiManager with mocked DBus."""
+  """Create a WifiManager with only the fields _handle_state_change touches."""
   with patch.object(WifiManager, '_initialize'):
     wm = WifiManager.__new__(WifiManager)
-    wm._networks = []
-    wm._active = True
-    wm._exit = True
-    wm._router_main = MagicMock()
+    wm._exit = True  # prevent stop() from doing anything in __del__
     wm._conn_monitor = MagicMock()
-    wm._wifi_device = '/mock/wifi0'
     wm._connections = dict(connections or {})
     wm._wifi_state = WifiState()
-    wm._ipv4_address = ""
-    wm._current_network_metered = MeteredType.UNKNOWN
-    wm._tethering_password = DEFAULT_TETHERING_PASSWORD
-    wm._ipv4_forward = False
-    wm._last_network_scan = 0.0
     wm._callback_queue = []
-    wm._tethering_ssid = "weedle"
     wm._need_auth = []
     wm._activated = []
-    wm._forgotten = []
-    wm._networks_updated = []
-    wm._disconnected = []
-    wm._lock = threading.Lock()
-    wm._scan_thread = MagicMock()
-    wm._state_thread = MagicMock()
     wm._update_networks = MagicMock()
-    wm._update_active_connection_info = MagicMock()
     wm._get_active_wifi_connection = MagicMock(return_value=(None, None))
   return wm
 
 
-def _fire(wm, new_state, reason=NMDeviceStateReason.NONE, prev_state=NMDeviceState.UNKNOWN):
+def _fire(wm: WifiManager, new_state: int, prev_state: int = NMDeviceState.UNKNOWN,
+          reason: int = NMDeviceStateReason.NONE) -> None:
   """Feed a state change into the handler."""
   wm._handle_state_change(new_state, prev_state, reason)
 
@@ -62,7 +45,7 @@ class TestDisconnected:
     wm = _make_wm()
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
 
-    _fire(wm, NMDeviceState.DISCONNECTED, NMDeviceStateReason.UNKNOWN)
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.UNKNOWN)
 
     assert wm._wifi_state.ssid is None
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
@@ -72,7 +55,7 @@ class TestDisconnected:
     wm = _make_wm()
     wm._wifi_state = WifiState(ssid="OldNet", status=ConnectStatus.CONNECTED)
 
-    _fire(wm, NMDeviceState.DISCONNECTED, NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.NEW_ACTIVATION)
 
     assert wm._wifi_state.ssid == "OldNet"
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
@@ -83,7 +66,7 @@ class TestDisconnected:
     wm = _make_wm(connections={"B": "/path/B"})
     wm._wifi_state = WifiState(ssid="B", status=ConnectStatus.CONNECTING)
 
-    _fire(wm, NMDeviceState.DISCONNECTED, NMDeviceStateReason.CONNECTION_REMOVED)
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
 
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
@@ -93,7 +76,7 @@ class TestDisconnected:
     wm = _make_wm(connections={})
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTING)
 
-    _fire(wm, NMDeviceState.DISCONNECTED, NMDeviceStateReason.CONNECTION_REMOVED)
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
 
     assert wm._wifi_state.ssid is None
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
@@ -106,7 +89,7 @@ class TestDeactivating:
     wm = _make_wm()
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
 
-    _fire(wm, NMDeviceState.DEACTIVATING, NMDeviceStateReason.CONNECTION_REMOVED)
+    _fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.CONNECTION_REMOVED)
 
     assert wm._wifi_state.ssid == "Net"
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
@@ -126,13 +109,14 @@ class TestPrepareConfig:
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
     wm._get_active_wifi_connection.assert_not_called()
 
-  def test_auto_connect_looks_up_ssid(self):
-    """Auto-connection (ssid=None): must look up ssid from NM."""
+  @pytest.mark.parametrize("state", [NMDeviceState.PREPARE, NMDeviceState.CONFIG])
+  def test_auto_connect_looks_up_ssid(self, state):
+    """Auto-connection (ssid=None): PREPARE and CONFIG must look up ssid from NM."""
     wm = _make_wm(connections={"AutoNet": "/path/auto"})
     wm._wifi_state = WifiState()
     wm._get_active_wifi_connection = MagicMock(return_value=("/path/auto", {}))
 
-    _fire(wm, NMDeviceState.PREPARE)
+    _fire(wm, state)
 
     assert wm._wifi_state.ssid == "AutoNet"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
@@ -157,8 +141,8 @@ class TestNeedAuth:
     wm._need_auth = [cb]
     wm._wifi_state = WifiState(ssid="SecNet", status=ConnectStatus.CONNECTING)
 
-    _fire(wm, NMDeviceState.NEED_AUTH, NMDeviceStateReason.SUPPLICANT_DISCONNECT,
-          prev_state=NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
+          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert len(wm._callback_queue) == 1
@@ -172,7 +156,7 @@ class TestNeedAuth:
     wm._need_auth = [cb]
     wm._wifi_state = WifiState(ssid="WeakNet", status=ConnectStatus.CONNECTING)
 
-    _fire(wm, NMDeviceState.FAILED, NMDeviceStateReason.NO_SECRETS)
+    _fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.NO_SECRETS)
 
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert len(wm._callback_queue) == 1
@@ -186,7 +170,7 @@ class TestNeedAuth:
     wm._need_auth = [cb]
     wm._wifi_state = WifiState()
 
-    _fire(wm, NMDeviceState.NEED_AUTH, NMDeviceStateReason.SUPPLICANT_DISCONNECT)
+    _fire(wm, NMDeviceState.NEED_AUTH, reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
     assert len(wm._callback_queue) == 0
 
@@ -199,8 +183,8 @@ class TestNeedAuth:
     wm._set_connecting("A")
     wm._set_connecting("B")
 
-    _fire(wm, NMDeviceState.NEED_AUTH, NMDeviceStateReason.SUPPLICANT_DISCONNECT,
-          prev_state=NMDeviceState.DISCONNECTED)
+    _fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.DISCONNECTED,
+          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
@@ -221,7 +205,7 @@ class TestPassthroughStates:
     wm = _make_wm()
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTING)
 
-    _fire(wm, state, NMDeviceStateReason.NONE)
+    _fire(wm, state, reason=NMDeviceStateReason.NONE)
 
     assert wm._wifi_state.ssid == "Net"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
@@ -289,8 +273,8 @@ class TestFullSequences:
     _fire(wm, NMDeviceState.PREPARE)
     _fire(wm, NMDeviceState.CONFIG)
 
-    _fire(wm, NMDeviceState.NEED_AUTH, NMDeviceStateReason.SUPPLICANT_DISCONNECT,
-          prev_state=NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
+          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
     assert len(wm._callback_queue) == 1
 
@@ -310,8 +294,8 @@ class TestFullSequences:
 
     wm._set_connecting("B")
 
-    _fire(wm, NMDeviceState.DEACTIVATING, NMDeviceStateReason.NEW_ACTIVATION)
-    _fire(wm, NMDeviceState.DISCONNECTED, NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.NEW_ACTIVATION)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
@@ -339,10 +323,10 @@ class TestFullSequences:
 
     wm._set_connecting("B")
 
-    _fire(wm, NMDeviceState.DEACTIVATING, NMDeviceStateReason.NEW_ACTIVATION)
-    _fire(wm, NMDeviceState.DISCONNECTED, NMDeviceStateReason.NEW_ACTIVATION)
-    _fire(wm, NMDeviceState.NEED_AUTH, NMDeviceStateReason.SUPPLICANT_DISCONNECT,
-          prev_state=NMDeviceState.DISCONNECTED)
+    _fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.NEW_ACTIVATION)
+    _fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.DISCONNECTED,
+          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
 
     # A's interrupted auth must not fire callback or clear B's connecting state
     assert wm._wifi_state.ssid == "B"
@@ -372,11 +356,11 @@ class TestFullSequences:
     del wm._connections["A"]
     wm._connections["B"] = "/path/B"
 
-    _fire(wm, NMDeviceState.DEACTIVATING, NMDeviceStateReason.CONNECTION_REMOVED)
+    _fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.CONNECTION_REMOVED)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
-    _fire(wm, NMDeviceState.DISCONNECTED, NMDeviceStateReason.CONNECTION_REMOVED)
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
@@ -400,3 +384,54 @@ class TestFullSequences:
     _fire(wm, NMDeviceState.ACTIVATED)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "AutoNet"
+
+  @pytest.mark.xfail(reason="TODO: FAILED(SSID_NOT_FOUND) should emit error for UI")
+  def test_ssid_not_found(self):
+    """Network drops off after connection starts.
+
+    NM docs: SSID_NOT_FOUND (53) = "The WiFi network could not be found"
+    Expected sequence: PREPARE → CONFIG → FAILED(SSID_NOT_FOUND) → DISCONNECTED
+    """
+    wm = _make_wm(connections={"GoneNet": "/path/gone"})
+    cb = MagicMock()
+    wm._need_auth = [cb]
+
+    wm._set_connecting("GoneNet")
+    _fire(wm, NMDeviceState.PREPARE)
+    _fire(wm, NMDeviceState.CONFIG)
+    _fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.SSID_NOT_FOUND)
+
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+    assert wm._wifi_state.ssid is None
+
+  def test_failed_then_disconnected_clears_state(self):
+    """After FAILED, NM always transitions to DISCONNECTED to clean up.
+
+    NM docs: FAILED (120) = "failed to connect, cleaning up the connection request"
+    Full sequence: ... → FAILED(reason) → DISCONNECTED(NONE)
+    """
+    wm = _make_wm()
+    wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTING)
+
+    _fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.NONE)
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING  # FAILED(NONE) is a no-op
+
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.NONE)
+    assert wm._wifi_state.ssid is None
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+
+  def test_user_requested_disconnect(self):
+    """User explicitly disconnects from the network.
+
+    NM docs: USER_REQUESTED (39) = "Device disconnected by user or client"
+    Expected sequence: DEACTIVATING(USER_REQUESTED) → DISCONNECTED(USER_REQUESTED)
+    """
+    wm = _make_wm()
+    wm._wifi_state = WifiState(ssid="MyNet", status=ConnectStatus.CONNECTED)
+
+    USER_REQUESTED = 39
+    _fire(wm, NMDeviceState.DEACTIVATING, reason=USER_REQUESTED)
+    _fire(wm, NMDeviceState.DISCONNECTED, reason=USER_REQUESTED)
+
+    assert wm._wifi_state.ssid is None
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
