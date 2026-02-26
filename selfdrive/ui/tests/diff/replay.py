@@ -4,9 +4,9 @@ import argparse
 import coverage
 import pyray as rl
 from tqdm import tqdm
-
 from typing import Literal
 from collections.abc import Callable
+
 from cereal.messaging import PubMaster
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
@@ -62,7 +62,6 @@ def run_replay(variant: LayoutVariant) -> None:
   with tqdm(total=len(script), desc="Replaying") as pbar:
     for _ in gui_app.render():
       # Handle all events for the current frame
-      prev_index = script_index
       while script_index < len(script) and script[script_index][0] == frame:
         _, event = script[script_index]
         # Call setup function, if any
@@ -77,7 +76,7 @@ def run_replay(variant: LayoutVariant) -> None:
           send_fn = event.send_fn
         # Move to next script event
         script_index += 1
-      pbar.update(script_index - prev_index)
+        pbar.update(1)
 
       # Keep sending cereal messages for persistent states (onroad, alerts)
       if send_fn:
