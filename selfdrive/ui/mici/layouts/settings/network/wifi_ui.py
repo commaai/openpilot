@@ -6,7 +6,7 @@ from collections.abc import Callable
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR, LABEL_HORIZONTAL_PADDING, LABEL_VERTICAL_PADDING
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
@@ -98,7 +98,7 @@ class WifiIcon(Widget):
 class WifiButton(BigButton):
   LABEL_PADDING = 98
   LABEL_WIDTH = 402 - 98 - 28  # button width - left padding - right padding
-  SUB_LABEL_WIDTH = 402 - LABEL_HORIZONTAL_PADDING * 2
+  SUB_LABEL_WIDTH = 402 - BigButton.LABEL_HORIZONTAL_PADDING * 2
 
   def __init__(self, network: Network, wifi_manager: WifiManager):
     super().__init__(normalize_ssid(network.ssid), scroll=True)
@@ -166,13 +166,13 @@ class WifiButton(BigButton):
 
   def _draw_content(self, btn_y: float):
     self._label.set_color(LABEL_COLOR)
-    label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + LABEL_VERTICAL_PADDING,
-                              self.LABEL_WIDTH, self._rect.height - LABEL_VERTICAL_PADDING * 2)
+    label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + self.LABEL_VERTICAL_PADDING,
+                              self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
-      sub_label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
-      label_y = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
+      sub_label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
+      label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
       sub_label_w = self.SUB_LABEL_WIDTH - (self._forget_btn.rect.width if self._show_forget_btn else 0)
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
