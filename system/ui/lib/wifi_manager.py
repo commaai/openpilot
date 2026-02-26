@@ -446,6 +446,7 @@ class WifiManager:
       self._enqueue_callbacks(self._activated)
       self._update_active_connection_info()
 
+      # Persist volatile connections (created by AddAndActivateConnection2) to disk
       if conn_path is not None:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         save_reply = self._conn_monitor.send_and_get_reply(new_method_call(conn_addr, 'Save'))
