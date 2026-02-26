@@ -467,6 +467,7 @@ class TermsPage(Widget):
                     "• You are fully responsible for driving the car."),
       SmallGreyBigButton("scan for\nfull terms", gui_app.texture("icons_mici/settings/device/pair.png", 64, 48)),
       QRCodeWidget("https://comma.ai/terms"),
+      GreyBigButton("", "You must accept the Terms & Conditions to use openpilot. Read the latest at https://comma.ai/terms"),
       self._accept_button,
       self._decline_button,
     ])
