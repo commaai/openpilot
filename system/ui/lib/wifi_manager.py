@@ -424,12 +424,13 @@ class WifiManager:
     # BAD PASSWORD
     # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
     # - weak/gone network fails with FAILED+NO_SECRETS
-    # prev_state guard: real auth failures come from CONFIG (supplicant handshake).
-    # Stale NEED_AUTH from a prior connection during network switching arrives with
-    # prev_state=DISCONNECTED and must be ignored to avoid a false wrong-password callback.
     elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT
            and prev_state == NMDeviceState.CONFIG) or
           (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
+
+      # prev_state guard: real auth failures come from CONFIG (supplicant handshake).
+      # Stale NEED_AUTH from a prior connection during network switching arrives with
+      # prev_state=DISCONNECTED and must be ignored to avoid a false wrong-password callback.
       if self._wifi_state.ssid:
         self._enqueue_callbacks(self._need_auth, self._wifi_state.ssid)
         self._set_connecting(None)
