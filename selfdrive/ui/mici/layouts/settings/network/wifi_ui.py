@@ -1,4 +1,6 @@
 import math
+import time
+
 import numpy as np
 import pyray as rl
 from collections.abc import Callable
@@ -380,7 +382,9 @@ class WifiUIMici(NavWidget):
   def _update_state(self):
     super()._update_state()
 
+    t = time.monotonic()
     self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
+    print('took', (time.monotonic() - t) * 1000, 'ms to move network to front')
 
     # Show loading animation near end
     max_scroll = max(self._scroller.content_size - self._scroller.rect.width, 1)
