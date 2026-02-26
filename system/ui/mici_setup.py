@@ -406,7 +406,7 @@ class DownloadingPage(Widget):
 
 
 class FailedPage(NavWidget):
-  def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
+  def __init__(self, reboot_callback: Callable, title: str = "download failed"):
     super().__init__()
     self.set_back_callback(gui_app.pop_widget)
 
@@ -415,11 +415,11 @@ class FailedPage(NavWidget):
     self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                       font_weight=FontWeight.ROMAN)
 
-    self._reboot_button = SmallRedPillButton("reboot")
+    self._reboot_button = SmallSlider("reboot", reboot_callback)
     self._reboot_button.set_click_callback(reboot_callback)
     self._reboot_button.set_enabled(lambda: self.enabled)  # for nav stack
 
-    self._retry_button = WideRoundedButton("retry")
+    self._retry_button = SmallButton("retry")
     self._retry_button.set_click_callback(gui_app.pop_widget)
     self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
 
@@ -441,18 +441,19 @@ class FailedPage(NavWidget):
       36,
     ))
 
-    self._reboot_button.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y + rect.height - self._reboot_button.rect.height,
-      self._reboot_button.rect.width,
-      self._reboot_button.rect.height,
-    ))
-
+    self._retry_button.set_opacity(1 - self._reboot_button.slider_percentage)
     self._retry_button.render(rl.Rectangle(
-      rect.x + 8 + self._reboot_button.rect.width + 8,
-      rect.y + rect.height - self._retry_button.rect.height,
+      self._rect.x + 8,
+      self._rect.y + self._rect.height - self._retry_button.rect.height,
       self._retry_button.rect.width,
       self._retry_button.rect.height,
+    ))
+
+    self._reboot_button.render(rl.Rectangle(
+      self._rect.x + self._rect.width - self._reboot_button.rect.width,
+      self._rect.y + self._rect.height - self._reboot_button.rect.height,
+      self._reboot_button.rect.width,
+      self._reboot_button.rect.height,
     ))
 
 
@@ -681,7 +682,7 @@ class Setup(Widget):
                                                           self._software_selection_custom_software_button_callback)
     self._software_selection_page.set_enabled(lambda: self.enabled)  # for nav stack
 
-    self._download_failed_page = FailedPage(HARDWARE.reboot, lambda: self._set_state(SetupState.START))
+    self._download_failed_page = FailedPage(HARDWARE.reboot)
 
     self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._back_to_software_selection)
     # self._custom_software_warning_page.set_enabled(lambda: self.enabled)  # for nav stack
