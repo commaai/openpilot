@@ -19,6 +19,7 @@ from cereal import log
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import run_cmd
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
@@ -117,12 +118,14 @@ class StartPage(Widget):
 
     self._start_bg_txt = gui_app.texture("icons_mici/setup/start_button.png", 500, 224, keep_aspect_ratio=False)
     self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/start_button_pressed.png", 500, 224, keep_aspect_ratio=False)
+    self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
   def _render(self, rect: rl.Rectangle):
-    draw_x = rect.x + (rect.width - self._start_bg_txt.width) / 2
-    draw_y = rect.y + (rect.height - self._start_bg_txt.height) / 2
+    scale = self._scale_filter.update(1.07 if self.is_pressed else 1.0)
+    draw_x = rect.x + (rect.width - self._start_bg_txt.width) / 2 + (self._start_bg_txt.width * (1 - scale)) / 2
+    draw_y = rect.y + (rect.height - self._start_bg_txt.height) / 2 + (self._start_bg_txt.height * (1 - scale)) / 2
     texture = self._start_bg_pressed_txt if self.is_pressed else self._start_bg_txt
-    rl.draw_texture(texture, int(draw_x), int(draw_y), rl.WHITE)
+    rl.draw_texture_ex(texture, (draw_x, draw_y), 0, scale, rl.WHITE)
 
     self._title.render(rect)
 
