@@ -119,7 +119,7 @@ class VehicleParamsLearner:
 
       in_linear_region = abs(steering_angle) < 45
       self.observed_speed = msg.vEgo
-      in_reverse = msg.gearPosition == car.CarState.GearPosition.reverse
+      in_reverse = msg.gearShifter == car.CarState.GearShifter.reverse
 
       self.active = self.observed_speed > MIN_ACTIVE_SPEED and not in_reverse
 
