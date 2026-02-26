@@ -93,15 +93,41 @@ class TestDisconnected:
 
 
 class TestDeactivating:
-  def test_deactivating_is_noop(self, mocker):
-    """DEACTIVATING is a no-op — DISCONNECTED follows with the correct reason."""
+  def test_deactivating_noop_for_non_connection_removed(self, mocker):
+    """DEACTIVATING with non-CONNECTION_REMOVED reason is a no-op."""
     wm = _make_wm(mocker)
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
 
-    fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.USER_REQUESTED)
 
     assert wm._wifi_state.ssid == "Net"
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
+
+  @pytest.mark.parametrize("status, expected_clears", [
+    (ConnectStatus.CONNECTED, True),
+    (ConnectStatus.CONNECTING, False),
+  ])
+  def test_deactivating_connection_removed(self, mocker, status, expected_clears):
+    """DEACTIVATING(CONNECTION_REMOVED) clears CONNECTED but preserves CONNECTING.
+
+    CONNECTED: forgetting the current network. The forgotten callback fires between
+    DEACTIVATING and DISCONNECTED — must clear here so the UI doesn't flash "connected"
+    after the eager _network_forgetting flag resets.
+
+    CONNECTING: forget A while connecting to B. DEACTIVATING fires for A's removal,
+    but B's CONNECTING state must be preserved.
+    """
+    wm = _make_wm(mocker, connections={"B": "/path/B"})
+    wm._wifi_state = WifiState(ssid="B" if status == ConnectStatus.CONNECTING else "A", status=status)
+
+    fire(wm, NMDeviceState.DEACTIVATING, reason=NMDeviceStateReason.CONNECTION_REMOVED)
+
+    if expected_clears:
+      assert wm._wifi_state.ssid is None
+      assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+    else:
+      assert wm._wifi_state.ssid == "B"
+      assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
 
 class TestPrepareConfig:
@@ -170,7 +196,17 @@ class TestNeedAuth:
     cb.assert_called_once_with("SecNet")
 
   def test_failed_no_secrets_fires_callback(self, mocker):
-    """FAILED+NO_SECRETS = wrong password (weak/gone network)."""
+    """FAILED+NO_SECRETS = wrong password (weak/gone network).
+
+    Confirmed on device: also fires when a hotspot turns off during connection.
+    NM can't complete the WPA handshake (AP vanished) and reports NO_SECRETS
+    rather than SSID_NOT_FOUND. The need_auth callback fires, so the UI shows
+    "wrong password" — a false positive, but same signal path.
+
+    Real device sequence (new connection, hotspot turned off immediately):
+      PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
+      → NEED_AUTH(CONFIG, NONE) → FAILED(NEED_AUTH, NO_SECRETS) → DISCONNECTED(FAILED, NONE)
+    """
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
@@ -304,8 +340,9 @@ class TestActivated:
 # and discards the stale update.
 # ---------------------------------------------------------------------------
 # The deterministic fixes (skip DBus lookup when ssid already set, prev_state guard
-# on NEED_AUTH, DEACTIVATING no-op, CONNECTION_REMOVED guard) shrink these race
-# windows significantly. The epoch counter closes the remaining gaps.
+# on NEED_AUTH, DEACTIVATING clears CONNECTED on CONNECTION_REMOVED, CONNECTION_REMOVED
+# guard) shrink these race windows significantly. The epoch counter closes the
+# remaining gaps.
 
 class TestThreadRaces:
   def test_prepare_race_user_tap_during_dbus(self, mocker):
@@ -410,14 +447,17 @@ class TestFullSequences:
   def test_wrong_password_then_retry(self, mocker):
     """Wrong password → NEED_AUTH → FAILED → NM auto-reconnects to saved network.
 
-    Real device sequence:
-      PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE)                 ← WPA handshake
+    Confirmed on device: wrong password for Shane's iPhone, NM auto-connected to unifi.
+
+    Real device sequence (switching from a connected network):
+      DEACTIVATING(ACTIVATED, NEW_ACTIVATION) → DISCONNECTED(DEACTIVATING, NEW_ACTIVATION)
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE)              ← WPA handshake
       → PREPARE(NEED_AUTH, NONE) → CONFIG
       → NEED_AUTH(CONFIG, SUPPLICANT_DISCONNECT)                 ← wrong password
       → FAILED(NEED_AUTH, NO_SECRETS)                            ← NM gives up
       → DISCONNECTED(FAILED, NONE)
-      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE    ← auto-reconnect
-      → CONFIG → IP_CONFIG → ... → ACTIVATED
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
+      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED          ← auto-reconnect to other saved network
     """
     wm = _make_wm(mocker, connections={"Sec": "/path/sec"})
     cb = mocker.MagicMock()
@@ -514,6 +554,80 @@ class TestFullSequences:
     fire(wm, NMDeviceState.CONFIG)
     fire_wpa_connect(wm)
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
+
+  def test_forget_while_connecting(self, mocker):
+    """Forget the network we're currently connecting to (not yet ACTIVATED).
+
+    Confirmed on device: connected to unifi, tapped Shane's iPhone, then forgot
+    Shane's iPhone while at CONFIG. NM auto-connected to unifi afterward.
+
+    Real device sequence (switching then forgetting mid-connection):
+      DEACTIVATING(ACTIVATED, NEW_ACTIVATION) → DISCONNECTED(DEACTIVATING, NEW_ACTIVATION)
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
+      → DEACTIVATING(CONFIG, CONNECTION_REMOVED)                ← forget at CONFIG
+      → DISCONNECTED(DEACTIVATING, CONNECTION_REMOVED)
+      → PREPARE → CONFIG → ... → ACTIVATED                     ← NM auto-connects to other saved network
+
+    Note: DEACTIVATING fires from CONFIG (not ACTIVATED). wifi_state.status is
+    CONNECTING, so the DEACTIVATING handler is a no-op. DISCONNECTED clears state
+    (ssid removed from _connections by ConnectionRemoved), then PREPARE recovers
+    via DBus lookup for the auto-connect.
+    """
+    wm = _make_wm(mocker, connections={"A": "/path/A", "Other": "/path/other"})
+    wm._get_active_wifi_connection.return_value = ("/path/other", {})
+
+    wm._set_connecting("A")
+
+    fire(wm, NMDeviceState.PREPARE)
+    fire(wm, NMDeviceState.CONFIG)
+    assert wm._wifi_state.ssid == "A"
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING
+
+    # User forgets A: ConnectionRemoved processed first, then state changes
+    del wm._connections["A"]
+
+    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.CONFIG,
+         reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    assert wm._wifi_state.ssid == "A"
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING  # DEACTIVATING preserves CONNECTING
+
+    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
+         reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    assert wm._wifi_state.ssid is None
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+
+    # NM auto-connects to another saved network
+    fire(wm, NMDeviceState.PREPARE)
+    assert wm._wifi_state.ssid == "Other"
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING
+
+    fire(wm, NMDeviceState.CONFIG)
+    fire_wpa_connect(wm)
+    assert wm._wifi_state.status == ConnectStatus.CONNECTED
+    assert wm._wifi_state.ssid == "Other"
+
+  def test_forget_connected_network(self, mocker):
+    """Forget the currently connected network (not switching to another).
+
+    Real device sequence:
+      DEACTIVATING(ACTIVATED, CONNECTION_REMOVED) → DISCONNECTED(DEACTIVATING, CONNECTION_REMOVED)
+
+    ConnectionRemoved signal may or may not have been processed before state changes.
+    Either way, state must clear — we're forgetting what we're connected to, not switching.
+    """
+    wm = _make_wm(mocker, connections={"A": "/path/A"})
+    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
+
+    fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
+         reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    assert wm._wifi_state.ssid is None
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+
+    # DISCONNECTED follows — harmless since state is already cleared
+    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.DEACTIVATING,
+         reason=NMDeviceStateReason.CONNECTION_REMOVED)
+    assert wm._wifi_state.ssid is None
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
 
   def test_forget_A_connect_B(self, mocker):
     """Forget A while connecting to B: full signal sequence.
@@ -613,16 +727,69 @@ class TestFullSequences:
     assert wm._wifi_state.status == ConnectStatus.CONNECTED
     assert wm._wifi_state.ssid == "AutoNet"
 
+  def test_network_lost_during_connection(self, mocker):
+    """Hotspot turned off while connecting (before ACTIVATED).
+
+    Confirmed on device: started new connection to Shane's iPhone, immediately
+    turned off the hotspot. NM can't complete WPA handshake and reports
+    FAILED(NO_SECRETS) — same signal as wrong password (false positive).
+
+    Real device sequence:
+      PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
+      → NEED_AUTH(CONFIG, NONE) → FAILED(NEED_AUTH, NO_SECRETS) → DISCONNECTED(FAILED, NONE)
+
+    Note: no DEACTIVATING, no SUPPLICANT_DISCONNECT. The NEED_AUTH(CONFIG, NONE) is the
+    normal WPA handshake (not an error). NM gives up with NO_SECRETS because the AP
+    vanished mid-handshake.
+    """
+    wm = _make_wm(mocker, connections={"Hotspot": "/path/hs"})
+    cb = mocker.MagicMock()
+    wm.add_callbacks(need_auth=cb)
+
+    wm._set_connecting("Hotspot")
+    fire(wm, NMDeviceState.PREPARE)
+    fire(wm, NMDeviceState.CONFIG)
+    fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
+    fire(wm, NMDeviceState.PREPARE, prev_state=NMDeviceState.NEED_AUTH)
+    fire(wm, NMDeviceState.CONFIG)
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING
+
+    # Second NEED_AUTH(CONFIG, NONE) — NM retries handshake, AP vanishing
+    fire(wm, NMDeviceState.NEED_AUTH)
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING
+
+    # NM gives up — reports NO_SECRETS (same as wrong password)
+    fire(wm, NMDeviceState.FAILED, prev_state=NMDeviceState.NEED_AUTH,
+         reason=NMDeviceStateReason.NO_SECRETS)
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+    assert len(wm._callback_queue) == 1
+
+    fire(wm, NMDeviceState.DISCONNECTED, prev_state=NMDeviceState.FAILED)
+    assert wm._wifi_state.ssid is None
+    assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+
+    wm.process_callbacks()
+    cb.assert_called_once_with("Hotspot")
+
   @pytest.mark.xfail(reason="TODO: FAILED(SSID_NOT_FOUND) should emit error for UI")
   def test_ssid_not_found(self, mocker):
-    """Network drops off after connection starts.
+    """Network drops off while connected — hotspot turned off.
 
     NM docs: SSID_NOT_FOUND (53) = "The WiFi network could not be found"
-    Expected sequence: PREPARE → CONFIG → FAILED(SSID_NOT_FOUND) → DISCONNECTED
 
-    NOTE: SSID_NOT_FOUND is rare. On-device testing with a disappearing hotspot typically
-    produces FAILED(NO_SECRETS) instead. May be driver-specific or require the network
-    to vanish from scan results mid-connection.
+    Confirmed on device: connected to Shane's iPhone, then turned off the hotspot.
+    No DEACTIVATING fires — NM goes straight from ACTIVATED to FAILED(SSID_NOT_FOUND).
+    NM retries connecting (PREPARE → CONFIG → ... → FAILED(CONFIG, SSID_NOT_FOUND))
+    before finally giving up with DISCONNECTED.
+
+    NOTE: turning off a hotspot during initial connection (before ACTIVATED) typically
+    produces FAILED(NO_SECRETS) instead of SSID_NOT_FOUND (see test_failed_no_secrets).
+
+    Real device sequence (hotspot turned off while connected):
+      FAILED(ACTIVATED, SSID_NOT_FOUND) → DISCONNECTED(FAILED, NONE)
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
+      → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
+      → FAILED(CONFIG, SSID_NOT_FOUND) → DISCONNECTED(FAILED, NONE)
 
     The UI error callback mechanism is intentionally deferred — for now just clear state.
     """
