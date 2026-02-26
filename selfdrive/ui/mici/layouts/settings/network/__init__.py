@@ -42,10 +42,14 @@ class WifiNetworkButton(BigButton):
       self.set_text("wi-fi")
       self.set_value("not connected")
 
-    if display_network is not None:
-      strength = WifiIcon.get_strength_icon_idx(display_network.strength)
+    if display_network is not None or wifi_state.status in (ConnectStatus.CONNECTING, ConnectStatus.CONNECTED):
+      # Use display_network strength when available; when connecting/connected it can be 0 or missing, show full
+      strength_val = display_network.strength if display_network is not None else 0
+      if wifi_state.status in (ConnectStatus.CONNECTING, ConnectStatus.CONNECTED):
+        strength_val = max(strength_val, 100)
+      strength = WifiIcon.get_strength_icon_idx(strength_val)
       self.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
-      self._draw_lock = display_network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED)
+      self._draw_lock = display_network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED) if display_network else False
     else:
       self.set_icon(self._wifi_slash_txt)
       self._draw_lock = False
@@ -75,22 +79,10 @@ class NetworkLayoutMici(NavWidget):
 
     # ******** Tethering ********
     def tethering_toggle_callback(checked: bool):
-      def tethering_finished():
-        tethering_active = self._wifi_manager.is_tethering_active()
-        # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
-        self._tethering_toggle_btn.set_enabled(True)
-        self._tethering_password_btn.set_enabled(True)
-        self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
-        self._tethering_toggle_btn.set_checked(tethering_active)
-
-        # self._tethering_toggle_btn.set_enabled(True)
-        # self._tethering_password_btn.set_enabled(True)
-        # # self._network_metered_btn.set_enabled(lambda: not checked and bool(self._wifi_manager.ipv4_address))
-
       self._tethering_toggle_btn.set_enabled(False)
       self._tethering_password_btn.set_enabled(False)
       self._network_metered_btn.set_enabled(False)
-      self._wifi_manager.set_tethering_active(checked, tethering_finished)
+      self._wifi_manager.set_tethering_active(checked)
 
     self._tethering_toggle_btn = BigToggle("enable tethering", "", toggle_callback=tethering_toggle_callback)
 
@@ -209,10 +201,10 @@ class NetworkLayoutMici(NavWidget):
     # Update tethering state
     tethering_active = self._wifi_manager.is_tethering_active()
     # TODO: use real signals (like activated/settings changed, etc.) to speed up re-enabling buttons
-    # self._tethering_toggle_btn.set_enabled(True)
+    self._tethering_toggle_btn.set_enabled(True)
     self._tethering_password_btn.set_enabled(True)
     self._network_metered_btn.set_enabled(lambda: not tethering_active and bool(self._wifi_manager.ipv4_address))
-    # self._tethering_toggle_btn.set_checked(tethering_active)
+    self._tethering_toggle_btn.set_checked(tethering_active)
 
     # Update network metered
     self._network_metered_btn.set_value(

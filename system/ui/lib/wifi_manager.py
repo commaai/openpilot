@@ -788,14 +788,10 @@ class WifiManager:
   def set_ipv4_forward(self, enabled: bool):
     self._ipv4_forward = enabled
 
-  def set_tethering_active(self, active: bool, finished_callback: Callable[[], None] | None = None):
+  def set_tethering_active(self, active: bool):
     def worker():
       if active:
         self.activate_connection(self._tethering_ssid, block=True)
-
-        # we need to call finished callback in main thread, enqueue
-        if finished_callback is not None:
-          self._enqueue_callbacks([finished_callback])
 
         if not self._ipv4_forward:
           time.sleep(5)
@@ -803,10 +799,6 @@ class WifiManager:
           subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
       else:
         self._deactivate_connection(self._tethering_ssid)
-
-        # we need to call finished callback in main thread, enqueue
-        if finished_callback is not None:
-          self._enqueue_callbacks([finished_callback])
 
     threading.Thread(target=worker, daemon=True).start()
 
