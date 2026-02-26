@@ -119,11 +119,14 @@ class VehicleParamsLearner:
 
       in_linear_region = abs(steering_angle) < 45
       self.observed_speed = msg.vEgo
-      self.active = self.observed_speed > MIN_ACTIVE_SPEED and in_linear_region
+      in_reverse = msg.gearPosition != car.CarState.GearPosition.reverse
+
+      self.active = self.observed_speed > MIN_ACTIVE_SPEED and not in_reverse
 
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[np.radians(steering_angle)]]))
         self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.observed_speed]]))
+        if in_linear_region:
+          self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[np.radians(steering_angle)]]))
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
