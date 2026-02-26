@@ -65,6 +65,7 @@ class WifiIcon(Widget):
 
     self._network: Network = network
     self._network_missing = False  # if network disappeared from scan results
+    self._display_strength_override: int | None = None  # e.g. 100 when connecting/connected
 
   def update_network(self, network: Network):
     self._network = network
@@ -72,13 +73,17 @@ class WifiIcon(Widget):
   def set_network_missing(self, missing: bool):
     self._network_missing = missing
 
+  def set_display_strength_override(self, strength: int | None):
+    self._display_strength_override = strength
+
   @staticmethod
   def get_strength_icon_idx(strength: int) -> int:
     return round(strength / 100 * 2)
 
   def _render(self, _):
     # Determine which wifi strength icon to use
-    strength = self.get_strength_icon_idx(self._network.strength)
+    strength_val = self._display_strength_override if self._display_strength_override is not None else self._network.strength
+    strength = self.get_strength_icon_idx(strength_val)
     if self._network_missing:
       strength_icon = self._wifi_slash_txt
     elif strength == 2:
@@ -220,6 +225,9 @@ class WifiButton(BigButton):
     return self._wifi_manager.connected_ssid == self._network.ssid
 
   def _update_state(self):
+    # Show full bars when connecting/connected so we don't flash 0 or "out of range"
+    self._wifi_icon.set_display_strength_override(100 if (self._is_connecting or self._is_connected) else None)
+
     if any((self._network_missing, self._is_connecting, self._is_connected, self._network_forgetting,
             self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)
@@ -229,9 +237,9 @@ class WifiButton(BigButton):
       if self._network_forgetting:
         self.set_value("forgetting...")
       elif self._is_connecting:
-        self.set_value("connecting...")
+        self.set_value("starting" if self._network.is_tethering else "connecting...")
       elif self._is_connected:
-        self.set_value("connected")
+        self.set_value("tethering" if self._network.is_tethering else "connected")
       elif self._network_missing:
         # after connecting/connected since NM will still attempt to connect/stay connected for a while
         self.set_value("not in range")
@@ -323,10 +331,13 @@ class WifiUIMici(NavWidget):
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
-    # Mark networks no longer in scan results (display handled by _update_state)
+    # Mark networks no longer in scan results (display handled by _update_state).
+    # Don't mark the connecting/connected network as missing — it can drop from scan briefly.
+    current_ssid = self._wifi_manager.wifi_state.ssid
     for btn in self._scroller.items:
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
-        btn.set_network_missing(True)
+        if btn.network.ssid != current_ssid:
+          btn.set_network_missing(True)
 
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)

@@ -33,7 +33,7 @@ class WifiNetworkButton(BigButton):
     display_network = next((n for n in self._wifi_manager.networks if n.ssid == wifi_state.ssid), None)
     if wifi_state.status == ConnectStatus.CONNECTING:
       self.set_text(normalize_ssid(wifi_state.ssid or "wi-fi"))
-      self.set_value("connecting...")
+      self.set_value("starting" if self._wifi_manager.is_tethering_active() else "connecting...")
     elif wifi_state.status == ConnectStatus.CONNECTED:
       self.set_text(normalize_ssid(wifi_state.ssid or "wi-fi"))
       self.set_value(self._wifi_manager.ipv4_address or "obtaining IP...")
