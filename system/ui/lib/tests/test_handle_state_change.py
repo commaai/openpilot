@@ -456,7 +456,8 @@ class TestFullSequences:
       → NEED_AUTH(CONFIG, SUPPLICANT_DISCONNECT)                 ← wrong password
       → FAILED(NEED_AUTH, NO_SECRETS)                            ← NM gives up
       → DISCONNECTED(FAILED, NONE)
-      → PREPARE → CONFIG → ... → ACTIVATED                      ← auto-reconnect to other saved network
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH) → CONFIG
+      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED          ← auto-reconnect to other saved network
     """
     wm = _make_wm(mocker, connections={"Sec": "/path/sec"})
     cb = mocker.MagicMock()
