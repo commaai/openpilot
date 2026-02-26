@@ -3,8 +3,8 @@
 Tests the state machine in isolation by constructing a WifiManager with mocked
 DBus, then calling _handle_state_change directly with NM state transitions.
 
-Many tests assert *desired* behavior that the current code doesn't implement yet.
-These are marked with pytest.mark.xfail and document the intended fix.
+Remaining xfail tests cover thread races (monitor vs main thread) and deferred
+features (SSID_NOT_FOUND UI error).
 """
 import pytest
 from pytest_mock import MockerFixture
@@ -95,10 +95,7 @@ class TestDisconnected:
 
 class TestDeactivating:
   def test_deactivating_is_noop(self, mocker):
-    """DEACTIVATING should be a no-op — DISCONNECTED follows with correct state.
-
-    Fix: remove the entire DEACTIVATING elif block — do nothing for any reason.
-    """
+    """DEACTIVATING is a no-op — DISCONNECTED follows with the correct reason."""
     wm = _make_wm(mocker)
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
 
@@ -306,9 +303,9 @@ class TestActivated:
 # Uses side_effect on the DBus mock to simulate _set_connecting running mid-handler.
 # ---------------------------------------------------------------------------
 # The deterministic fixes (skip DBus lookup when ssid already set, prev_state guard
-# on NEED_AUTH) also shrink these race windows to near-zero. If races are still
-# visible after, make WifiState frozen (replace() + single atomic assignment) and/or
-# add a narrow lock around _wifi_state reads/writes (not around DBus calls).
+# on NEED_AUTH, DEACTIVATING no-op, CONNECTION_REMOVED guard) shrink these race
+# windows to near-zero. If still visible, make WifiState frozen (replace() + single
+# atomic assignment) and/or add a narrow lock around _wifi_state reads/writes.
 
 class TestThreadRaces:
   @pytest.mark.xfail(reason="TODO: PREPARE overwrites _set_connecting via stale DBus lookup")
