@@ -95,7 +95,10 @@ class TestDisconnected:
 
 class TestDeactivating:
   def test_deactivating_is_noop(self, mocker):
-    """DEACTIVATING is a no-op — DISCONNECTED follows with correct state."""
+    """DEACTIVATING should be a no-op — DISCONNECTED follows with correct state.
+
+    Fix: remove the entire DEACTIVATING elif block — do nothing for any reason.
+    """
     wm = _make_wm(mocker)
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
 
@@ -493,12 +496,17 @@ class TestFullSequences:
   def test_forget_A_connect_B(self, mocker):
     """Forget A while connecting to B: full signal sequence.
 
+    Real device sequence:
+      DEACTIVATING(ACTIVATED, CONNECTION_REMOVED) → DISCONNECTED(DEACTIVATING, CONNECTION_REMOVED)
+      → PREPARE → CONFIG → NEED_AUTH(CONFIG, NONE) → PREPARE(NEED_AUTH, NONE) → CONFIG
+      → IP_CONFIG → IP_CHECK → SECONDARIES → ACTIVATED
+
     Signal order:
       1. User: _set_connecting("B"), forget("A") removes A from _connections
       2. NewConnection for B arrives → _connections["B"] = ...
       3. DEACTIVATING(CONNECTION_REMOVED) — no-op
       4. DISCONNECTED(CONNECTION_REMOVED) — B is in _connections, must not clear
-      5. PREPARE → CONFIG → ... → ACTIVATED
+      5. PREPARE → CONFIG → NEED_AUTH → PREPARE → CONFIG → ... → ACTIVATED
     """
     wm = _make_wm(mocker, connections={"A": "/path/A"})
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
@@ -527,8 +535,16 @@ class TestFullSequences:
   def test_forget_A_connect_B_late_new_connection(self, mocker):
     """Forget A, connect B: NewConnection for B arrives AFTER DISCONNECTED.
 
-    Worst-case: B isn't in _connections when DISCONNECTED fires, so the guard
-    can't protect it and state clears. PREPARE recovers via DBus lookup.
+    This is the worst-case race: B isn't in _connections when DISCONNECTED fires,
+    so the guard can't protect it and state clears. PREPARE must recover by doing
+    the DBus lookup (ssid is None at that point).
+
+    Signal order:
+      1. User: _set_connecting("B"), forget("A") removes A from _connections
+      2. DEACTIVATING(CONNECTION_REMOVED) — B NOT in _connections, should be no-op
+      3. DISCONNECTED(CONNECTION_REMOVED) — B STILL NOT in _connections, clears state
+      4. NewConnection for B arrives late → _connections["B"] = ...
+      5. PREPARE (ssid=None, so DBus lookup recovers) → CONFIG → ACTIVATED
     """
     wm = _make_wm(mocker, connections={"A": "/path/A"})
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
