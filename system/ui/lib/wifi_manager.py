@@ -287,13 +287,13 @@ class WifiManager:
 
   @property
   def connecting_to_ssid(self) -> str | None:
-    state = self._wifi_state
-    return state.ssid if state.status == ConnectStatus.CONNECTING else None
+    wifi_state = self._wifi_state
+    return wifi_state.ssid if wifi_state.status == ConnectStatus.CONNECTING else None
 
   @property
   def connected_ssid(self) -> str | None:
-    state = self._wifi_state
-    return state.ssid if state.status == ConnectStatus.CONNECTED else None
+    wifi_state = self._wifi_state
+    return wifi_state.ssid if wifi_state.status == ConnectStatus.CONNECTED else None
 
   @property
   def tethering_password(self) -> str:
