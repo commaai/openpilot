@@ -403,7 +403,7 @@ class WifiManager:
         self._wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
         return
 
-      # Auto-connection (ssid=None): look up ssid from NM
+      # Auto-connection when NetworkManager connects to known networks on its own (ssid=None): look up ssid from NM
       wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
 
       conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
