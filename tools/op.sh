@@ -123,25 +123,14 @@ function op_check_git() {
 function op_check_os() {
   echo "Checking for compatible os version..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-
     if [ -f "/etc/os-release" ]; then
       source /etc/os-release
-      case "$VERSION_CODENAME" in
-        "jammy" | "kinetic" | "noble" | "focal")
-          echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
-          ;;
-        * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
-          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
-          return 1
-          ;;
-      esac
+      echo -e " ↳ [${GREEN}✔${NC}] ${PRETTY_NAME:-$ID} detected."
     else
-      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
-      loge "ERROR_UNKNOWN_UBUNTU"
+      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release found. Make sure you're running a supported Linux distribution."
+      loge "ERROR_UNKNOWN_DISTRO"
       return 1
     fi
-
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
@@ -225,6 +214,7 @@ function op_setup() {
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
 
+  # Activate venv so vendored tools (git-lfs, etc.) are on PATH
   op_activate_venv
 
   echo "Getting git submodules..."
@@ -239,6 +229,7 @@ function op_setup() {
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
+  git lfs install --skip-smudge --skip-repo
   if ! git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     loge "ERROR_GIT_LFS"

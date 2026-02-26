@@ -4,50 +4,55 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd "$DIR/../" && pwd)"
 
-function install_ubuntu_deps() {
+function detect_sudo() {
   SUDO=""
 
   if [[ ! $(id -u) -eq 0 ]]; then
-    if [[ -z $(which sudo) ]]; then
+    if ! command -v sudo > /dev/null 2>&1; then
       echo "Please install sudo or run as root"
       exit 1
     fi
     SUDO="sudo"
   fi
+}
 
-  # Detect OS using /etc/os-release file
-  if [ -f "/etc/os-release" ]; then
-    source /etc/os-release
-    case "$VERSION_CODENAME" in
-      "jammy" | "kinetic" | "noble")
-        ;;
-      *)
-        echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 24.04."
-        read -p "Would you like to attempt installation anyway? " -n 1 -r
-        echo ""
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-          exit 1
-        fi
-        ;;
+function install_system_deps() {
+  detect_sudo
+
+  if [ ! -f "/etc/os-release" ]; then
+    echo "No /etc/os-release found. Cannot detect distribution."
+    exit 1
+  fi
+  source /etc/os-release
+
+  # Detect distro family from $ID and $ID_LIKE
+  local family=""
+  for id in $ID $ID_LIKE; do
+    case "$id" in
+      ubuntu|debian|linuxmint|pop|zorin|elementary|neon) family="apt";    break ;;
+      fedora|rhel|centos|almalinux|rocky)                family="dnf";    break ;;
+      arch|manjaro|endeavouros|cachyos|garuda)           family="pacman"; break ;;
+      opensuse*|sles)                                    family="zypper"; break ;;
     esac
-  else
-    echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
+  done
+
+  if [[ -z "$family" ]]; then
+    echo "Unsupported distribution: ${PRETTY_NAME:-$ID}. Supported families: apt (Debian/Ubuntu), dnf (Fedora/RHEL), pacman (Arch), zypper (openSUSE)."
     exit 1
   fi
 
-  $SUDO apt-get update
+  case "$family" in
+    apt)    $SUDO apt-get update && $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl file libcurl4-openssl-dev zlib1g-dev locales git xvfb libgl1-mesa-dri ;;
+    dnf)    $SUDO dnf install -y gcc gcc-c++ make ca-certificates curl file git libcurl-devel zlib-devel libubsan glibc-langpack-en xorg-x11-server-Xvfb mesa-dri-drivers ;;
+    pacman) $SUDO pacman -Syu --noconfirm base-devel ca-certificates curl file git zlib xorg-server-xvfb mesa ;;
+    zypper) $SUDO zypper install -y gcc gcc-c++ make ca-certificates curl file git libcurl-devel zlib-devel glibc-locale xorg-x11-server-Xvfb Mesa-dri ;;
+  esac
+}
 
-  # normal stuff, mostly for the bare docker image
-  $SUDO apt-get install -y --no-install-recommends \
-    ca-certificates \
-    build-essential \
-    curl \
-    libcurl4-openssl-dev \
-    locales \
-    git \
-    xvfb
-
+function install_udev_rules() {
   if [[ -d "/etc/udev/rules.d/" ]]; then
+    detect_sudo
+
     # Setup jungle udev rules
     $SUDO tee /etc/udev/rules.d/12-panda_jungle.rules > /dev/null <<EOF
 SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcf", MODE="0666"
@@ -105,7 +110,8 @@ function install_python_deps() {
 # --- Main ---
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  install_ubuntu_deps
+  install_system_deps
+  install_udev_rules
   echo "[ ] installed system dependencies t=$SECONDS"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   if [[ $SHELL == "/bin/zsh" ]]; then
@@ -118,11 +124,4 @@ fi
 if [ -f "$ROOT/pyproject.toml" ]; then
   install_python_deps
   echo "[ ] installed python dependencies t=$SECONDS"
-fi
-
-if [[ "$OSTYPE" == "darwin"* ]] && [[ -n "${RC_FILE:-}" ]]; then
-  echo
-  echo "----   OPENPILOT SETUP DONE   ----"
-  echo "Open a new shell or configure your active shell env by running:"
-  echo "source $RC_FILE"
 fi

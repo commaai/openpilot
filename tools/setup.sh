@@ -6,7 +6,7 @@ GREEN='\033[0;32m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-if [ -z "$OPENPILOT_ROOT" ]; then
+if [ -z "${OPENPILOT_ROOT:-}" ]; then
   # default to current directory for installation
   OPENPILOT_ROOT="$(pwd)/openpilot"
 fi
@@ -79,7 +79,7 @@ function check_stdin() {
 function ask_dir() {
   echo -n "Enter directory in which to install openpilot (default $OPENPILOT_ROOT): "
 
-  if [[ -z $INTERACTIVE ]]; then
+  if [[ -z ${INTERACTIVE:-} ]]; then
     echo -e "\nBecause your are running in non-interactive mode, the installation"
     echo -e "will default to $OPENPILOT_ROOT\n"
     return 0
@@ -111,7 +111,7 @@ function check_dir() {
     fi
 
     # by default, don't try installing in already existing directory
-    if [[ -z $INTERACTIVE ]]; then
+    if [[ -z ${INTERACTIVE:-} ]]; then
       return 0
     fi
 
@@ -141,7 +141,7 @@ function check_git() {
 function git_clone() {
   st="$(date +%s)"
   echo "Cloning openpilot..."
-  if $(git clone --filter=blob:none https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
+  if $(git clone --filter=blob:none ${OPENPILOT_BRANCH:+--branch "$OPENPILOT_BRANCH"} https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
     if [[ -f $OPENPILOT_ROOT/launch_openpilot.sh ]]; then
       et="$(date +%s)"
       echo -e " ↳ [${GREEN}✔${NC}] Successfully cloned openpilot in $((et - st)) seconds.\n"
@@ -184,5 +184,5 @@ check_stdin
 ask_dir
 check_dir
 check_git
-[ -z $SKIP_GIT_CLONE ] && git_clone
+[ -z ${SKIP_GIT_CLONE:-} ] && git_clone
 install_with_op

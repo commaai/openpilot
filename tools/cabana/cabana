@@ -13,15 +13,18 @@ install_qt() {
     if [[ ! $(id -u) -eq 0 ]]; then
       SUDO="sudo"
     fi
-    $SUDO apt-get install -y --no-install-recommends \
-      qtbase5-dev \
-      qtbase5-dev-tools \
-      qttools5-dev-tools \
-      libqt5charts5-dev \
-      libqt5svg5-dev \
-      libqt5serialbus5-dev \
-      libqt5x11extras5-dev \
-      libqt5opengl5-dev
+    if command -v apt-get &> /dev/null; then
+      $SUDO apt-get install -y --no-install-recommends qtbase5-dev qtbase5-dev-tools qttools5-dev-tools libqt5charts5-dev libqt5svg5-dev libqt5serialbus5-dev libqt5x11extras5-dev libqt5opengl5-dev
+    elif command -v dnf &> /dev/null; then
+      $SUDO dnf install -y qt5-qtbase-devel qt5-qtbase-gui qt5-qttools-devel qt5-qtcharts-devel qt5-qtsvg-devel qt5-qtserialbus-devel qt5-qtx11extras-devel
+    elif command -v pacman &> /dev/null; then
+      $SUDO pacman -Syu --noconfirm qt5-base qt5-tools qt5-charts qt5-svg qt5-serialbus qt5-x11extras
+    elif command -v zypper &> /dev/null; then
+      $SUDO zypper install -y libqt5-qtbase-devel libqt5-qttools-devel libQt5Charts5-devel libQt5Svg5-devel libQt5SerialBus5-devel libQt5X11Extras5-devel
+    else
+      echo "No supported package manager found. Install Qt5 development packages manually."
+      exit 1
+    fi
   fi
 }
 
