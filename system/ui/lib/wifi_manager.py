@@ -432,6 +432,7 @@ class WifiManager:
       pass
 
     elif new_state == NMDeviceState.ACTIVATED:
+      # IP address from Ip4Config may not be propagated immediately and could take until the next scan
       wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
       conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
@@ -451,6 +452,7 @@ class WifiManager:
           cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
 
     elif new_state == NMDeviceState.DEACTIVATING:
+      # no-op — DISCONNECTED always follows with the correct reason
       pass
 
   def _network_scanner(self):
