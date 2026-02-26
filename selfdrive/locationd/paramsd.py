@@ -119,7 +119,7 @@ class VehicleParamsLearner:
 
       in_linear_region = abs(steering_angle) < 45
       # gross testing hack
-      steer_angle_obs_noise = np.atleast_2d(np.radians(0.05)**2) if in_linear_region else np.atleast_2d(np.radians(5.0)**2)
+      steer_angle_obs_noise = np.array([np.atleast_2d(np.radians(0.05)**2)]) if in_linear_region else np.array([np.atleast_2d(np.radians(5.0)**2)])
       self.observed_speed = msg.vEgo
       in_reverse = msg.gearShifter == car.CarState.GearShifter.reverse
 
