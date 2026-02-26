@@ -173,12 +173,12 @@ class WifiManager:
     # Store wifi device path
     self._wifi_device: str | None = None
 
-    # State — _wifi_state is written by the monitor thread (signal handlers) and drained
-    # from _action_queue. The UI thread communicates user intent via the queue; the monitor
-    # thread drains it before each signal, so user actions always take priority.
+    # State — _wifi_state is written only by the monitor thread. The UI thread enqueues
+    # actions (callable, args) via _action_queue; the monitor thread drains it before
+    # each signal, sets _wifi_state to CONNECTING, and spawns the worker thread.
     self._connections: dict[str, str] = {}  # ssid -> connection path, updated via NM signals
     self._wifi_state: WifiState = WifiState()
-    self._action_queue: queue.Queue[WifiState] = queue.Queue()
+    self._action_queue: queue.Queue[tuple[Callable, tuple]] = queue.Queue()
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
@@ -312,10 +312,6 @@ class WifiManager:
   def tethering_password(self) -> str:
     return self._tethering_password
 
-  def _set_connecting(self, ssid: str | None):
-    """Queue a user-initiated state change. Drained by the monitor thread."""
-    self._action_queue.put(WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING))
-
   def _drain_queue(self):
     """Apply the latest pending user action. Only the last item matters (click A then B = B)."""
     latest = None
@@ -325,7 +321,9 @@ class WifiManager:
       except queue.Empty:
         break
     if latest is not None:
-      self._wifi_state = latest
+      fn, args = latest
+      self._wifi_state = WifiState(ssid=args[0], status=ConnectStatus.CONNECTING)
+      threading.Thread(target=fn, args=args, daemon=True).start()
 
   def _enqueue_callbacks(self, cbs: list[Callable], *args):
     for cb in cbs:
@@ -410,12 +408,12 @@ class WifiManager:
           self._handle_state_change(new_state, previous_state, change_reason)
 
   def _handle_state_change(self, new_state: int, prev_state: int, change_reason: int):
-    # Thread safety: _wifi_state is written by this handler (monitor thread) and by
-    # _drain_queue (also monitor thread). The UI thread communicates user intent via
-    # _action_queue; _drain_queue applies it before each handler invocation.
+    # Thread safety: _wifi_state is written only by the monitor thread — both this
+    # handler and _drain_queue run on it. The UI thread enqueues actions via
+    # _action_queue; _drain_queue applies them before each handler invocation.
     # Handlers with slow DBus calls check `not self._action_queue.empty()` after the
     # call — if the user acted during the call, the stale result is discarded and the
-    # next drain applies the user's intent.
+    # next drain spawns the new worker.
 
     # TODO: Handle (FAILED, SSID_NOT_FOUND) and emit for UI to show error
     #  Happens when network drops off after starting connection
@@ -635,55 +633,52 @@ class WifiManager:
     self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
-    self._set_connecting(ssid)
+    self._action_queue.put((self._connect_to_network, (ssid, password, hidden)))
 
-    def worker():
-      # Clear all connections that may already exist to the network we are connecting to
-      self.forget_connection(ssid, block=True)
+  def _connect_to_network(self, ssid: str, password: str, hidden: bool = False):
+    self.forget_connection(ssid, block=True)
 
-      connection = {
-        'connection': {
-          'type': ('s', '802-11-wireless'),
-          'uuid': ('s', str(uuid.uuid4())),
-          'id': ('s', f'openpilot connection {ssid}'),
-          'autoconnect-retries': ('i', 0),
-        },
-        '802-11-wireless': {
-          'ssid': ('ay', ssid.encode("utf-8")),
-          'hidden': ('b', hidden),
-          'mode': ('s', 'infrastructure'),
-        },
-        'ipv4': {
-          'method': ('s', 'auto'),
-          'dns-priority': ('i', 600),
-        },
-        'ipv6': {'method': ('s', 'ignore')},
+    connection = {
+      'connection': {
+        'type': ('s', '802-11-wireless'),
+        'uuid': ('s', str(uuid.uuid4())),
+        'id': ('s', f'openpilot connection {ssid}'),
+        'autoconnect-retries': ('i', 0),
+      },
+      '802-11-wireless': {
+        'ssid': ('ay', ssid.encode("utf-8")),
+        'hidden': ('b', hidden),
+        'mode': ('s', 'infrastructure'),
+      },
+      'ipv4': {
+        'method': ('s', 'auto'),
+        'dns-priority': ('i', 600),
+      },
+      'ipv6': {'method': ('s', 'ignore')},
+    }
+
+    if password:
+      connection['802-11-wireless-security'] = {
+        'key-mgmt': ('s', 'wpa-psk'),
+        'auth-alg': ('s', 'open'),
+        'psk': ('s', password),
       }
 
-      if password:
-        connection['802-11-wireless-security'] = {
-          'key-mgmt': ('s', 'wpa-psk'),
-          'auth-alg': ('s', 'open'),
-          'psk': ('s', password),
-        }
+    # Volatile connection auto-deletes on disconnect (wrong password, user switches networks)
+    # Persisted to disk on ACTIVATED via Save()
+    if self._wifi_device is None:
+      cloudlog.warning("No WiFi device found")
+      # TODO: expose a failed connection state in the UI
+      self._init_wifi_state()
+      return
 
-      # Volatile connection auto-deletes on disconnect (wrong password, user switches networks)
-      # Persisted to disk on ACTIVATED via Save()
-      if self._wifi_device is None:
-        cloudlog.warning("No WiFi device found")
-        # TODO: expose a failed connection state in the UI
-        self._init_wifi_state()
-        return
+    reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'AddAndActivateConnection2', 'a{sa{sv}}ooa{sv}',
+                                                                 (connection, self._wifi_device, "/", {'persist': ('s', 'volatile')})))
 
-      reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'AddAndActivateConnection2', 'a{sa{sv}}ooa{sv}',
-                                                                   (connection, self._wifi_device, "/", {'persist': ('s', 'volatile')})))
-
-      if reply.header.message_type == MessageType.error:
-        cloudlog.warning(f"Failed to add and activate connection for {ssid}: {reply}")
-        # TODO: expose a failed connection state in the UI
-        self._init_wifi_state()
-
-    threading.Thread(target=worker, daemon=True).start()
+    if reply.header.message_type == MessageType.error:
+      cloudlog.warning(f"Failed to add and activate connection for {ssid}: {reply}")
+      # TODO: expose a failed connection state in the UI
+      self._init_wifi_state()
 
   def forget_connection(self, ssid: str, block: bool = False):
     def worker():
@@ -701,29 +696,24 @@ class WifiManager:
     else:
       threading.Thread(target=worker, daemon=True).start()
 
-  def activate_connection(self, ssid: str, block: bool = False):
-    self._set_connecting(ssid)
+  def activate_connection(self, ssid: str):
+    self._action_queue.put((self._activate_connection, (ssid,)))
 
-    def worker():
-      conn_path = self._connections.get(ssid, None)
-      if conn_path is None or self._wifi_device is None:
-        cloudlog.warning(f"Failed to activate connection for {ssid}: conn_path={conn_path}, wifi_device={self._wifi_device}")
-        # TODO: expose a failed connection state in the UI
-        self._init_wifi_state()
-        return
+  def _activate_connection(self, ssid: str):
+    conn_path = self._connections.get(ssid, None)
+    if conn_path is None or self._wifi_device is None:
+      cloudlog.warning(f"Failed to activate connection for {ssid}: conn_path={conn_path}, wifi_device={self._wifi_device}")
+      # TODO: expose a failed connection state in the UI
+      self._init_wifi_state()
+      return
 
-      reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
-                                                                   (conn_path, self._wifi_device, "/")))
+    reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
+                                                                 (conn_path, self._wifi_device, "/")))
 
-      if reply.header.message_type == MessageType.error:
-        cloudlog.warning(f"Failed to activate connection for {ssid}: {reply}")
-        # TODO: expose a failed connection state in the UI
-        self._init_wifi_state()
-
-    if block:
-      worker()
-    else:
-      threading.Thread(target=worker, daemon=True).start()
+    if reply.header.message_type == MessageType.error:
+      cloudlog.warning(f"Failed to activate connection for {ssid}: {reply}")
+      # TODO: expose a failed connection state in the UI
+      self._init_wifi_state()
 
   def _deactivate_connection(self, ssid: str):
     for active_conn in self._get_active_connections():
@@ -775,7 +765,7 @@ class WifiManager:
 
       self._tethering_password = password
       if self.is_tethering_active():
-        self.activate_connection(self._tethering_ssid, block=True)
+        self._activate_connection(self._tethering_ssid)
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -806,7 +796,7 @@ class WifiManager:
   def set_tethering_active(self, active: bool):
     def worker():
       if active:
-        self.activate_connection(self._tethering_ssid, block=True)
+        self._activate_connection(self._tethering_ssid)
 
         if not self._ipv4_forward:
           time.sleep(5)

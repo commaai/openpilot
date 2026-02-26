@@ -33,6 +33,11 @@ def _make_wm(mocker: MockerFixture, connections=None):
   return wm
 
 
+def _set_connecting(wm: WifiManager, ssid: str):
+  """Test helper: simulate user tap by queuing a no-op action with the given ssid."""
+  wm._action_queue.put((lambda *a: None, (ssid,)))
+
+
 def fire(wm: WifiManager, new_state: int, prev_state: int = NMDeviceState.UNKNOWN,
          reason: int = NMDeviceStateReason.NONE) -> None:
   """Simulate the monitor thread: drain queue, run handler, drain again."""
@@ -80,7 +85,7 @@ class TestDisconnected:
   def test_connection_removed_keeps_other_connecting(self, mocker):
     """Forget A while connecting to B: CONNECTION_REMOVED for A must not clear B."""
     wm = _make_wm(mocker, connections={"B": "/path/B"})
-    wm._set_connecting("B")
+    _set_connecting(wm, "B")
 
     fire(wm, NMDeviceState.DISCONNECTED, reason=NMDeviceStateReason.CONNECTION_REMOVED)
 
@@ -145,7 +150,7 @@ class TestPrepareConfig:
     indicator briefly jump to the wrong network row then back.
     """
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-    wm._set_connecting("B")
+    _set_connecting(wm, "B")
     wm._get_active_wifi_connection.return_value = ("/path/A", {})
 
     fire(wm, NMDeviceState.PREPARE)
@@ -191,7 +196,7 @@ class TestNeedAuth:
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("SecNet")
+    _set_connecting(wm, "SecNet")
 
     fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
@@ -216,7 +221,7 @@ class TestNeedAuth:
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("WeakNet")
+    _set_connecting(wm, "WeakNet")
 
     fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.NO_SECRETS)
 
@@ -234,7 +239,7 @@ class TestNeedAuth:
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("BadPass")
+    _set_connecting(wm, "BadPass")
 
     fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.CONFIG,
          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
@@ -267,8 +272,8 @@ class TestNeedAuth:
     wm = _make_wm(mocker)
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
-    wm._set_connecting("A")
-    wm._set_connecting("B")
+    _set_connecting(wm, "A")
+    _set_connecting(wm, "B")
 
     fire(wm, NMDeviceState.NEED_AUTH, prev_state=NMDeviceState.DISCONNECTED,
          reason=NMDeviceStateReason.SUPPLICANT_DISCONNECT)
@@ -290,7 +295,7 @@ class TestPassthroughStates:
   ])
   def test_passthrough_is_noop(self, mocker, state):
     wm = _make_wm(mocker)
-    wm._set_connecting("Net")
+    _set_connecting(wm, "Net")
 
     fire(wm, state, reason=NMDeviceStateReason.NONE)
 
@@ -305,7 +310,7 @@ class TestActivated:
     wm = _make_wm(mocker, connections={"MyNet": "/path/mynet"})
     cb = mocker.MagicMock()
     wm.add_callbacks(activated=cb)
-    wm._set_connecting("MyNet")
+    _set_connecting(wm, "MyNet")
     wm._get_active_wifi_connection.return_value = ("/path/mynet", {})
 
     fire(wm, NMDeviceState.ACTIVATED)
@@ -319,7 +324,7 @@ class TestActivated:
   def test_conn_path_none_still_connected(self, mocker):
     """ACTIVATED but DBus returns None: status CONNECTED, ssid unchanged."""
     wm = _make_wm(mocker)
-    wm._set_connecting("MyNet")
+    _set_connecting(wm, "MyNet")
 
     fire(wm, NMDeviceState.ACTIVATED)
 
@@ -329,7 +334,7 @@ class TestActivated:
   def test_activated_side_effects(self, mocker):
     """ACTIVATED persists the volatile connection to disk and updates active connection info."""
     wm = _make_wm(mocker, connections={"Net": "/path/net"})
-    wm._set_connecting("Net")
+    _set_connecting(wm, "Net")
     wm._get_active_wifi_connection.return_value = ("/path/net", {})
 
     fire(wm, NMDeviceState.ACTIVATED)
@@ -361,7 +366,7 @@ class TestThreadRaces:
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
 
     def user_taps_b_during_dbus(*args, **kwargs):
-      wm._set_connecting("B")
+      _set_connecting(wm, "B")
       return ("/path/A", {})
 
     wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
@@ -379,10 +384,10 @@ class TestThreadRaces:
     Post-handler drain applies CONNECTING("B").
     """
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
-    wm._set_connecting("A")
+    _set_connecting(wm, "A")
 
     def user_taps_b_during_dbus(*args, **kwargs):
-      wm._set_connecting("B")
+      _set_connecting(wm, "B")
       return ("/path/A", {})
 
     wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
@@ -409,7 +414,7 @@ class TestThreadRaces:
     wm._router_main.send_and_get_reply.return_value = state_reply
 
     def user_taps_b_during_dbus(*args, **kwargs):
-      wm._set_connecting("B")
+      _set_connecting(wm, "B")
       return ("/path/A", {})
 
     wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
@@ -437,7 +442,7 @@ class TestFullSequences:
     wm = _make_wm(mocker, connections={"Home": "/path/home"})
     wm._get_active_wifi_connection.return_value = ("/path/home", {})
 
-    wm._set_connecting("Home")
+    _set_connecting(wm, "Home")
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
     fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
@@ -472,7 +477,7 @@ class TestFullSequences:
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
 
-    wm._set_connecting("Sec")
+    _set_connecting(wm, "Sec")
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
     fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
@@ -492,7 +497,7 @@ class TestFullSequences:
 
     # Retry
     wm._callback_queue.clear()
-    wm._set_connecting("Sec")
+    _set_connecting(wm, "Sec")
     wm._get_active_wifi_connection.return_value = ("/path/sec", {})
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
@@ -511,7 +516,7 @@ class TestFullSequences:
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
     wm._get_active_wifi_connection.return_value = ("/path/B", {})
 
-    wm._set_connecting("B")
+    _set_connecting(wm, "B")
 
     fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
          reason=NMDeviceStateReason.NEW_ACTIVATION)
@@ -546,7 +551,7 @@ class TestFullSequences:
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
     wm._get_active_wifi_connection.return_value = ("/path/B", {})
 
-    wm._set_connecting("B")
+    _set_connecting(wm, "B")
 
     fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
          reason=NMDeviceStateReason.NEW_ACTIVATION)
@@ -585,7 +590,7 @@ class TestFullSequences:
     wm = _make_wm(mocker, connections={"A": "/path/A", "Other": "/path/other"})
     wm._get_active_wifi_connection.return_value = ("/path/other", {})
 
-    wm._set_connecting("A")
+    _set_connecting(wm, "A")
 
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
@@ -656,7 +661,7 @@ class TestFullSequences:
     wm = _make_wm(mocker, connections={"A": "/path/A"})
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
 
-    wm._set_connecting("B")
+    _set_connecting(wm, "B")
     del wm._connections["A"]
     wm._connections["B"] = "/path/B"
 
@@ -694,7 +699,7 @@ class TestFullSequences:
     wm = _make_wm(mocker, connections={"A": "/path/A"})
     wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
 
-    wm._set_connecting("B")
+    _set_connecting(wm, "B")
     del wm._connections["A"]
 
     fire(wm, NMDeviceState.DEACTIVATING, prev_state=NMDeviceState.ACTIVATED,
@@ -755,7 +760,7 @@ class TestFullSequences:
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
 
-    wm._set_connecting("Hotspot")
+    _set_connecting(wm, "Hotspot")
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
     fire(wm, NMDeviceState.NEED_AUTH)  # WPA handshake (reason=NONE)
@@ -806,7 +811,7 @@ class TestFullSequences:
     cb = mocker.MagicMock()
     wm.add_callbacks(need_auth=cb)
 
-    wm._set_connecting("GoneNet")
+    _set_connecting(wm, "GoneNet")
     fire(wm, NMDeviceState.PREPARE)
     fire(wm, NMDeviceState.CONFIG)
     fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.SSID_NOT_FOUND)
@@ -821,7 +826,7 @@ class TestFullSequences:
     Full sequence: ... → FAILED(reason) → DISCONNECTED(NONE)
     """
     wm = _make_wm(mocker)
-    wm._set_connecting("Net")
+    _set_connecting(wm, "Net")
 
     fire(wm, NMDeviceState.FAILED, reason=NMDeviceStateReason.NONE)
     assert wm._wifi_state.status == ConnectStatus.CONNECTING  # FAILED(NONE) is a no-op
@@ -881,7 +886,7 @@ class TestWorkerErrorRecovery:
 
     mock_init = self._mock_init_restores(wm, mocker, "A", ConnectStatus.CONNECTED)
 
-    wm.activate_connection("B", block=True)
+    wm._activate_connection("B")
 
     mock_init.assert_called_once()
     assert wm._wifi_state.ssid == "A"
@@ -902,13 +907,7 @@ class TestWorkerErrorRecovery:
 
     mock_init = self._mock_init_restores(wm, mocker, "A", ConnectStatus.CONNECTED)
 
-    # Run worker thread synchronously
-    workers = []
-    mocker.patch('openpilot.system.ui.lib.wifi_manager.threading.Thread',
-                 side_effect=lambda target, **kw: type('T', (), {'start': lambda self: workers.append(target)})())
-
-    wm.connect_to_network("B", "password123")
-    workers[-1]()
+    wm._connect_to_network("B", "password123")
 
     mock_init.assert_called_once()
     assert wm._wifi_state.ssid == "A"
