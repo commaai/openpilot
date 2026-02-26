@@ -592,6 +592,7 @@ struct PandaState @0xa7649e2575e4591e {
   harnessStatus @21 :HarnessStatus;
   sbu1Voltage @35 :Float32;
   sbu2Voltage @36 :Float32;
+  soundOutputLevel @37 :UInt16;
 
   # can health
   canState0 @29 :PandaCanState;
