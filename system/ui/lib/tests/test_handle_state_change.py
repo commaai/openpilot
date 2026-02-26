@@ -347,7 +347,6 @@ class TestThreadRaces:
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
-  @pytest.mark.xfail(reason="TODO: _init_wifi_state has no epoch check — overwrites user's _set_connecting")
   def test_init_wifi_state_race_user_tap_during_dbus(self, mocker):
     """User taps B while _init_wifi_state's DBus calls are in flight.
 

@@ -227,6 +227,8 @@ class WifiManager:
         cloudlog.warning("No WiFi device found")
         return
 
+      epoch = self._user_epoch
+
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
 
@@ -239,6 +241,10 @@ class WifiManager:
       conn_path, _ = self._get_active_wifi_connection()
       if conn_path:
         wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+
+      if self._user_epoch != epoch:
+        return
+
       self._wifi_state = wifi_state
 
     if block:
