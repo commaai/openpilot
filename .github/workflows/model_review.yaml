@@ -32,7 +32,7 @@ jobs:
         run: |
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "## Model Review" >> $GITHUB_OUTPUT
-          MASTER_PATH=${{ github.workspace }}/base python scripts/reporter.py >> $GITHUB_OUTPUT
+          PYTHONPATH=${{ github.workspace }} MASTER_PATH=${{ github.workspace }}/base python scripts/reporter.py >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Post model report comment
