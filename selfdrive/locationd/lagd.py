@@ -216,7 +216,7 @@ class LateralLagEstimator:
       liveDelay.status = log.LiveDelayData.Status.unestimated
 
     if liveDelay.status == log.LiveDelayData.Status.estimated:
-      liveDelay.lateralDelay = valid_mean_lag
+      liveDelay.lateralDelay = min(MAX_LAG, max(MIN_LAG, valid_mean_lag))
     else:
       liveDelay.lateralDelay = self.initial_lag
 
