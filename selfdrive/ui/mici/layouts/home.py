@@ -240,12 +240,15 @@ class MiciHomeLayout(Widget):
     # Status bar icons: sequential fade-in left to right, delayed 0.4s
     self._experimental_icon.set_visible(self._experimental_mode)
     self._mic_icon.set_visible(ui_state.recording_audio)
-    for i, (icon, orig_op, af) in enumerate(zip(self._status_bar_icons, self._icon_orig_opacities, self._icon_alpha_filters)):
-      if elapsed >= 0.4 + i * 0.12:
-        af.update(1.0)
-      icon._opacity = orig_op * max(0.0, min(1.0, af.x))
+    icon_anim_active = elapsed < 2.0
+    if icon_anim_active:
+      for i, (icon, orig_op, af) in enumerate(zip(self._status_bar_icons, self._icon_orig_opacities, self._icon_alpha_filters)):
+        if elapsed >= 0.4 + i * 0.12:
+          af.update(1.0)
+        icon._opacity = orig_op * max(0.0, min(1.0, af.x))
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
-    for icon, orig_op in zip(self._status_bar_icons, self._icon_orig_opacities):
-      icon._opacity = orig_op
+    if icon_anim_active:
+      for icon, orig_op in zip(self._status_bar_icons, self._icon_orig_opacities):
+        icon._opacity = orig_op
