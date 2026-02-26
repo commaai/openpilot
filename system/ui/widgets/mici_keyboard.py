@@ -18,6 +18,9 @@ KEY_TOUCH_AREA_OFFSET = 10  # px
 KEY_DRAG_HYSTERESIS = 5  # px
 KEY_MIN_ANIMATION_TIME = 0.075  # s
 
+# On special-chars layer, these keys switch back to letters (iOS-like) instead of inserting
+SPECIAL_CHARS_BACK_TO_LETTERS = ('.', '/')
+
 DEBUG = False
 ANIMATION_SCALE = 0.65
 
@@ -205,6 +208,8 @@ class MiciKeyboard(Widget):
     self._selected_key_t: float | None = None  # time key was initially selected
     self._unselect_key_t: float | None = None  # time to unselect key after release
     self._dragging_on_keyboard = False
+    # Keys under the pointer (from all mouse events); cleared each _update_state. On release we use the latest.
+    self._closest_keys: list[tuple[Key | None, float]] = []
 
     self._text: str = ""
 
@@ -249,13 +254,13 @@ class MiciKeyboard(Widget):
       self._dragging_on_keyboard = False
 
     if mouse_event.left_down and self._dragging_on_keyboard:
-      self._closest_key = self._get_closest_key(mouse_event.pos)
       if self._selected_key_t is None:
         self._selected_key_t = rl.get_time()
 
-      # unselect key temporarily if mouse goes above keyboard
       if mouse_event.pos.y <= keyboard_pos_y:
-        self._closest_key = (None, float('inf'))
+        self._closest_keys.append((None, float('inf')))
+      else:
+        self._closest_keys.append(self._get_closest_key(mouse_event.pos))
 
     if DEBUG:
       print('HANDLE MOUSE EVENT', mouse_event, self._closest_key[0].char if self._closest_key[0] else 'None')
@@ -288,17 +293,22 @@ class MiciKeyboard(Widget):
         self._set_uppercase(False)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if self._closest_key[0] is not None:
-      if self._closest_key[0] == self._caps_key:
+    # On release use the latest key we were over (from list if any, else _closest_key from previous frame)
+    release_key = (self._closest_keys[-1][0] if self._closest_keys else self._closest_key[0])
+    if release_key is not None:
+      if release_key == self._caps_key:
         self._set_uppercase(True)
-      elif self._closest_key[0] in (self._123_key, self._123_key2):
+      elif release_key in (self._123_key, self._123_key2):
         self._set_keys(self._special_keys)
-      elif self._closest_key[0] == self._abc_key:
+      elif release_key == self._abc_key:
         self._set_uppercase(False)
-      elif self._closest_key[0] == self._super_special_key:
+      elif release_key == self._super_special_key:
         self._set_keys(self._super_special_keys)
+      elif self._current_keys is self._special_keys and release_key.char in SPECIAL_CHARS_BACK_TO_LETTERS:
+        # iOS-like: tap . or / to return to letter layout
+        self._set_uppercase(False)
       else:
-        self._text += self._closest_key[0].char
+        self._text += release_key.char
 
         # Reset caps state
         if self._caps_state == CapsState.UPPER:
@@ -317,6 +327,10 @@ class MiciKeyboard(Widget):
     self._text += ' '
 
   def _update_state(self):
+    if self._closest_keys:
+      self._closest_key = self._closest_keys[-1]
+    self._closest_keys.clear()
+
     # update selected key filter
     self._selected_key_filter.update(self._closest_key[0] is not None)
 
@@ -326,7 +340,8 @@ class MiciKeyboard(Widget):
       self._unselect_key_t = None
       self._selected_key_t = None
 
-  def _lay_out_keys(self, bg_x, bg_y, keys: list[list[Key]]):
+  def _apply_key_layout(self, bg_x, bg_y, keys: list[list[Key]]) -> None:
+    """Update key filters (position, size, alpha) for current _closest_key. No drawing."""
     key_rect = rl.Rectangle(bg_x, bg_y, self._txt_bg.width, self._txt_bg.height)
     for row_idx, row in enumerate(keys):
       padding = KEYBOARD_ROW_PADDING[row_idx]
@@ -339,18 +354,11 @@ class MiciKeyboard(Widget):
           key.set_alpha(1.0)
           key.set_font_size(CHAR_FONT_SIZE)
         elif key == self._closest_key[0]:
-          # push key up with a max and inward so user can see key easier
           key_y = max(key_y - 120, 40)
           key_x += np.interp(key_x, [self._rect.x, self._rect.x + self._rect.width], [100, -100])
           key.set_alpha(1.0)
           key.set_font_size(SELECTED_CHAR_FONT_SIZE)
-
-          # draw black circle behind selected key
-          circle_alpha = int(self._selected_key_filter.x * 225)
-          rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
-                                  SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
         else:
-          # move other keys away from selected key a bit
           dx = key.original_position.x - self._closest_key[0].original_position.x
           dy = key.original_position.y - self._closest_key[0].original_position.y
           distance_from_selected_key = fast_euclidean_distance(dx, dy)
@@ -359,21 +367,28 @@ class MiciKeyboard(Widget):
           ux = dx * inv
           uy = dy * inv
 
-          # NOTE: hardcode to 20 to get entire keyboard to move
           push_pixels = np.interp(distance_from_selected_key, [0, 250], [20, 0])
           key_x += ux * push_pixels
           key_y += uy * push_pixels
 
-          # TODO: slow enough to use an approximation or nah? also caching might work
           font_size = np.interp(distance_from_selected_key, [0, 150], [CHAR_NEAR_FONT_SIZE, CHAR_FONT_SIZE])
-
           key_alpha = np.interp(distance_from_selected_key, [0, 100], [1.0, 0.35])
           key.set_alpha(key_alpha)
           key.set_font_size(font_size)
 
-        # TODO: I like the push amount, so we should clip the pos inside the keyboard rect
         key.set_parent_rect(self._rect)
         key.set_position(key_x, key_y)
+
+  def _lay_out_keys(self, bg_x, bg_y, keys: list[list[Key]]):
+    self._apply_key_layout(bg_x, bg_y, keys)
+    # draw black circle behind selected key (only in render path)
+    if self._closest_key[0] is not None:
+      key = self._closest_key[0]
+      key_x = key.rect.x
+      key_y = key.rect.y
+      circle_alpha = int(self._selected_key_filter.x * 225)
+      rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
+                              SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
 
   def _render(self, _):
     # draw bg
