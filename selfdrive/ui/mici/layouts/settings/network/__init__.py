@@ -42,7 +42,7 @@ class WifiNetworkButton(BigButton):
       self.set_text("wi-fi")
       self.set_value("not connected")
 
-    print('display_network', display_network.ssid if display_network else None, wifi_state.ssid, wifi_state.status)
+    print('display_network', display_network, wifi_state.ssid, wifi_state.status)
     if display_network is not None:
       strength = WifiIcon.get_strength_icon_idx(display_network.strength)
       self.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
