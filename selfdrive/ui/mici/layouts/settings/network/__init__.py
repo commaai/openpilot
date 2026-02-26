@@ -48,6 +48,7 @@ class WifiNetworkButton(BigButton):
       self.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
       self._draw_lock = display_network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED)
     elif self._wifi_manager.is_tethering_active():
+      # takes a while to get Network
       self.set_icon(self._wifi_full_txt)
       self._draw_lock = True
     else:
