@@ -421,6 +421,12 @@ class WifiManager:
 
       self._wifi_state = wifi_state
 
+    # BAD PASSWORD
+    # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
+    # - weak/gone network fails with FAILED+NO_SECRETS
+    # prev_state guard: real auth failures come from CONFIG (supplicant handshake).
+    # Stale NEED_AUTH from a prior connection during network switching arrives with
+    # prev_state=DISCONNECTED and must be ignored to avoid a false wrong-password callback.
     elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT
            and prev_state == NMDeviceState.CONFIG) or
           (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
@@ -433,6 +439,7 @@ class WifiManager:
       pass
 
     elif new_state == NMDeviceState.ACTIVATED:
+      # Note that IP address from Ip4Config may not be propagated immediately and could take until the next scan results
       epoch = self._user_epoch
       wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
