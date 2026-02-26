@@ -379,6 +379,17 @@ class WifiManager:
           print('  -> Final Wifi state', self._wifi_state)
 
   def _handle_state_change(self, new_state: int, prev_state: int, change_reason: int):
+    # Thread safety: _wifi_state is read/written by both the monitor thread (this handler)
+    # and the main thread (_set_connecting via connect/activate). PREPARE/CONFIG and ACTIVATED
+    # have a read-then-write pattern with a slow DBus call in between — if _set_connecting
+    # runs mid-call, the handler would overwrite the user's newer state with stale data.
+    #
+    # The _user_epoch counter solves this without locks. _set_connecting increments the epoch
+    # on every user action. Handlers snapshot the epoch before their DBus call and compare
+    # after: if it changed, a user action occurred during the call and the stale result is
+    # discarded. Combined with deterministic fixes (skip DBus lookup when ssid already set,
+    # DEACTIVATING no-op, CONNECTION_REMOVED guard), all known race windows are closed.
+
     # TODO: Handle (FAILED, SSID_NOT_FOUND) and emit for UI to show error
     #  Happens when network drops off after starting connection
 
