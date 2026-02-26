@@ -18,6 +18,9 @@ KEY_TOUCH_AREA_OFFSET = 10  # px
 KEY_DRAG_HYSTERESIS = 5  # px
 KEY_MIN_ANIMATION_TIME = 0.075  # s
 
+# On special-chars layer, these keys switch back to letters (iOS-like) when allowed (e.g. URL input)
+SPECIAL_CHARS_BACK_TO_LETTERS = ('.', '/')
+
 DEBUG = False
 ANIMATION_SCALE = 0.65
 
@@ -205,6 +208,7 @@ class MiciKeyboard(Widget):
     self._selected_key_t: float | None = None  # time key was initially selected
     self._unselect_key_t: float | None = None  # time to unselect key after release
     self._dragging_on_keyboard = False
+    self._allow_special_chars_back_to_letters = False  # only True for URL input (iOS-like)
 
     self._text: str = ""
 
@@ -236,6 +240,9 @@ class MiciKeyboard(Widget):
 
   def set_text(self, text: str):
     self._text = text
+
+  def set_allow_special_chars_back_to_letters(self, allow: bool):
+    self._allow_special_chars_back_to_letters = allow
 
   def text(self) -> str:
     return self._text
@@ -298,6 +305,10 @@ class MiciKeyboard(Widget):
         self._set_uppercase(False)
       elif self._closest_key[0] == self._super_special_key:
         self._set_keys(self._super_special_keys)
+      elif (self._allow_special_chars_back_to_letters and self._current_keys is self._special_keys
+            and self._closest_key[0].char in SPECIAL_CHARS_BACK_TO_LETTERS):
+        # iOS-like: tap . or / to return to letter layout (URL input only)
+        self._set_uppercase(False)
       else:
         self._text += self._closest_key[0].char
 
