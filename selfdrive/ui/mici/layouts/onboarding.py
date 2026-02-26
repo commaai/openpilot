@@ -3,6 +3,7 @@ from enum import IntEnum
 import weakref
 import math
 import numpy as np
+import qrcode
 import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
@@ -302,36 +303,6 @@ class TrainingGuideRecordFront(SetupTermsPage):
     ))
 
 
-class TrainingGuideAttentionNotice(SetupTermsPage):
-  def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="continue")
-    self._title_header = TermsHeader("driver assistance", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-    self._warning_label = UnifiedLabel("1. openpilot is a driver assistance system.\n\n" +
-                                       "2. You must pay attention at all times.\n\n" +
-                                       "3. You must be ready to take over at any time.\n\n" +
-                                       "4. You are fully responsible for driving the car.", 42,
-                                       FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._warning_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._warning_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-
 class TrainingGuide(Widget):
   def __init__(self, completed_callback=None):
     super().__init__()
@@ -345,7 +316,6 @@ class TrainingGuide(Widget):
         obj._advance_step()
 
     self._steps = [
-      TrainingGuideAttentionNotice(continue_callback=on_continue),
       TrainingGuidePreDMTutorial(continue_callback=on_continue),
       TrainingGuideDMTutorial(continue_callback=on_continue),
       TrainingGuideRecordFront(continue_callback=on_continue),
@@ -413,6 +383,28 @@ class TrainingGuide(Widget):
 #     ))
 
 
+class SmallGreyBigButton(GreyBigButton):
+  def __init__(self, text: str, icon: rl.Texture):
+    super().__init__("", text, icon)
+    self._rect.width = 198
+    self._rect.height = 180
+
+  def _draw_content(self, btn_y: float):
+    if self._txt_icon:
+      x = self._rect.x + 30
+      y = btn_y + 30
+      rl.draw_texture_ex(self._txt_icon, (x, y), 0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9)))
+
+    label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
+    label_y = btn_y + self.LABEL_VERTICAL_PADDING + (self._txt_icon.height + 10 if self._txt_icon else 0)
+    sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
+    self._sub_label.render(rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height))
+
+  def _render(self, _):
+    rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(34, 34, 34, 255))
+    self._draw_content(self._rect.y)
+
+
 class TermsPage(Widget):
   def __init__(self, on_accept, on_decline):
     super().__init__()
@@ -438,7 +430,7 @@ class TermsPage(Widget):
                     "• You must pay attention\nat all times."),
       GreyBigButton("", "• You must be ready to\ntake over at any time.\n" +
                     "• You are fully responsible for driving the car."),
-      SmallGreyBigButton("scan for\nfull terms", gui_app.texture("icons_mici/settings/device/pair.png", 64, 64)),
+      SmallGreyBigButton("scan for\nfull terms", gui_app.texture("icons_mici/settings/device/pair.png", 64, 48)),
       self._accept_button,
       self._decline_button,
     ])
