@@ -393,14 +393,12 @@ class Scroller(Widget):
 
   def show_event(self):
     super().show_event()
-    if self._reset_scroll_at_show:
-      self.scroll_panel.set_offset(0.0)
-
     for item in self._items:
       item.show_event()
 
-  def hide_event(self):
-    super().hide_event()
+    if self._reset_scroll_at_show:
+      self.scroll_panel.set_offset(0.0)
+
     self._overlay_filter.x = 0.0
     self._move_animations.clear()
     self._move_lift.clear()
@@ -408,5 +406,8 @@ class Scroller(Widget):
     self._pending_move.clear()
     self._scrolling_to = None, False
     self._scrolling_to_filter.x = 0.0
+
+  def hide_event(self):
+    super().hide_event()
     for item in self._items:
       item.hide_event()

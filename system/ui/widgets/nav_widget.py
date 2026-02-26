@@ -225,3 +225,8 @@ class NavWidget(Widget, abc.ABC):
     #  so we need this hacky bool for now
     self._trigger_animate_in = True
     self._nav_bar.show_event()
+
+    # Reset state
+    self._pos_filter.update_alpha(0.1)
+    self._back_button_start_pos = None
+    self._swiping_away = False
