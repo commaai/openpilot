@@ -7,6 +7,7 @@ Remaining xfail tests cover thread races (monitor vs main thread) and deferred
 features (SSID_NOT_FOUND UI error).
 """
 import pytest
+from jeepney.low_level import MessageType
 from pytest_mock import MockerFixture
 
 from openpilot.system.ui.lib.networkmanager import NMDeviceState, NMDeviceStateReason
@@ -643,3 +644,72 @@ class TestFullSequences:
 
     assert wm._wifi_state.ssid is None
     assert wm._wifi_state.status == ConnectStatus.DISCONNECTED
+
+
+# ---------------------------------------------------------------------------
+# Worker error recovery: DBus errors in activate/connect re-sync with NM
+# ---------------------------------------------------------------------------
+# Verified on device: when ActivateConnection returns UnknownConnection error,
+# NM emits no state signals. The worker error path is the only recovery point.
+
+class TestWorkerErrorRecovery:
+  """Worker threads re-sync with NM via _init_wifi_state on DBus errors,
+  preserving actual NM state instead of blindly clearing to DISCONNECTED."""
+
+  def _mock_init_restores(self, wm, mocker, ssid, status):
+    """Replace _init_wifi_state with a mock that simulates NM reporting the given state."""
+    mock = mocker.MagicMock(
+      side_effect=lambda: setattr(wm, '_wifi_state', WifiState(ssid=ssid, status=status))
+    )
+    wm._init_wifi_state = mock
+    return mock
+
+  def test_activate_dbus_error_resyncs(self, mocker):
+    """ActivateConnection returns DBus error while A is connected.
+    NM rejects the request — no state signals emitted. Worker must re-read NM
+    state to discover A is still connected, not clear to DISCONNECTED.
+    """
+    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
+    wm._wifi_device = "/dev/wifi0"
+    wm._nm = mocker.MagicMock()
+    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
+    wm._router_main = mocker.MagicMock()
+
+    error_reply = mocker.MagicMock()
+    error_reply.header.message_type = MessageType.error
+    wm._router_main.send_and_get_reply.return_value = error_reply
+
+    mock_init = self._mock_init_restores(wm, mocker, "A", ConnectStatus.CONNECTED)
+
+    wm.activate_connection("B", block=True)
+
+    mock_init.assert_called_once()
+    assert wm._wifi_state.ssid == "A"
+    assert wm._wifi_state.status == ConnectStatus.CONNECTED
+
+  def test_connect_to_network_dbus_error_resyncs(self, mocker):
+    """AddAndActivateConnection2 returns DBus error while A is connected."""
+    wm = _make_wm(mocker, connections={"A": "/path/A"})
+    wm._wifi_device = "/dev/wifi0"
+    wm._nm = mocker.MagicMock()
+    wm._wifi_state = WifiState(ssid="A", status=ConnectStatus.CONNECTED)
+    wm._router_main = mocker.MagicMock()
+    wm._forgotten = []
+
+    error_reply = mocker.MagicMock()
+    error_reply.header.message_type = MessageType.error
+    wm._router_main.send_and_get_reply.return_value = error_reply
+
+    mock_init = self._mock_init_restores(wm, mocker, "A", ConnectStatus.CONNECTED)
+
+    # Run worker thread synchronously
+    workers = []
+    mocker.patch('openpilot.system.ui.lib.wifi_manager.threading.Thread',
+                 side_effect=lambda target, **kw: type('T', (), {'start': lambda self: workers.append(target)})())
+
+    wm.connect_to_network("B", "password123")
+    workers[-1]()
+
+    mock_init.assert_called_once()
+    assert wm._wifi_state.ssid == "A"
+    assert wm._wifi_state.status == ConnectStatus.CONNECTED

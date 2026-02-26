@@ -626,7 +626,8 @@ class WifiManager:
       # Persisted to disk on ACTIVATED via Save()
       if self._wifi_device is None:
         cloudlog.warning("No WiFi device found")
-        self._set_connecting(None)
+        # TODO: expose a failed connection state in the UI
+        self._init_wifi_state()
         return
 
       reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'AddAndActivateConnection2', 'a{sa{sv}}ooa{sv}',
@@ -634,7 +635,8 @@ class WifiManager:
 
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f"Failed to add and activate connection for {ssid}: {reply}")
-        self._set_connecting(None)
+        # TODO: expose a failed connection state in the UI
+        self._init_wifi_state()
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -661,7 +663,8 @@ class WifiManager:
       conn_path = self._connections.get(ssid, None)
       if conn_path is None or self._wifi_device is None:
         cloudlog.warning(f"Failed to activate connection for {ssid}: conn_path={conn_path}, wifi_device={self._wifi_device}")
-        self._set_connecting(None)
+        # TODO: expose a failed connection state in the UI
+        self._init_wifi_state()
         return
 
       reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
@@ -669,7 +672,8 @@ class WifiManager:
 
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f"Failed to activate connection for {ssid}: {reply}")
-        self._set_connecting(None)
+        # TODO: expose a failed connection state in the UI
+        self._init_wifi_state()
 
     if block:
       worker()
