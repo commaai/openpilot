@@ -131,7 +131,7 @@ class StartPage(Widget):
     now = rl.get_time()
     if now >= self._next_grow_at:
       self._grow_animation_until = now + self.GROW_DURATION_S
-      self._next_grow_at = now + self.GROW_INTERVAL_S
+      self._next_grow_at = now + self.GROW_INTERVAL_S * 2  # then 10s
 
     is_pressed_like = self.is_pressed or now < self._grow_animation_until
     scale = self._scale_filter.update(1.07 if is_pressed_like else 1.0)
