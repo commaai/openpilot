@@ -334,13 +334,13 @@ class CustomSoftwareWarningPage(NavWidget):
 
     self._scroller = Scroller([
       GreyBigButton("use caution", "you are installing\n3rd party software",
-                    gui_app.texture("icons_mici/setup/warning.png", 64, 58), wide=True),
+                    gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
       GreyBigButton("", "• It has not been tested by comma.\n" +
-                    "• It may not comply with relevant safety standards.", wide=True),
+                    "• It may not comply with relevant safety standards."),
       GreyBigButton("", "• It may cause damage to your device and/or vehicle.\n" +
-                    "• You are fully responsible for your device.", wide=True),
+                    "• You are fully responsible for your device."),
       GreyBigButton("to restore to a\nfactory state later", "https://flash.comma.ai",
-                    gui_app.texture("icons_mici/setup/restore.png", 64, 64), wide=True),
+                    gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
       self._continue_button,
       self._back_button,
     ])
@@ -443,14 +443,11 @@ class GreyBigButton(BigButton):
 
   LABEL_HORIZONTAL_PADDING = 30
 
-  def __init__(self, *args, wide: bool = False, **kwargs):
+  def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.set_touch_valid_callback(lambda: False)
 
-    wide = True
-
-    if wide:
-      self._rect.width = 476
+    self._rect.width = 476
 
     self._label.set_font_size(36)
     self._label.set_font_weight(FontWeight.BOLD)
@@ -467,7 +464,7 @@ class GreyBigButton(BigButton):
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 
   def _render(self, _):
-    rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(255, 255, 255, int(255 * 0.15)))
+    rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(34, 34, 34, 255))
     self._draw_content(self._rect.y)
 
 
