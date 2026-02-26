@@ -249,7 +249,7 @@ class MiciKeyboard(Widget):
       self._dragging_on_keyboard = False
 
     if mouse_event.left_down and self._dragging_on_keyboard:
-      self._closest_key = self._get_closest_key()
+      self._closest_key = self._get_closest_key(mouse_event.pos)
       if self._selected_key_t is None:
         self._selected_key_t = rl.get_time()
 
@@ -260,11 +260,10 @@ class MiciKeyboard(Widget):
     if DEBUG:
       print('HANDLE MOUSE EVENT', mouse_event, self._closest_key[0].char if self._closest_key[0] else 'None')
 
-  def _get_closest_key(self) -> tuple[Key | None, float]:
+  def _get_closest_key(self, mouse_pos: MousePos) -> tuple[Key | None, float]:
     closest_key: tuple[Key | None, float] = (None, float('inf'))
     for row in self._current_keys:
       for key in row:
-        mouse_pos = gui_app.last_mouse_event.pos
         # approximate distance for comparison is accurate enough
         # use local y coords so parent widget offset (e.g. during NavWidget animate-in) doesn't affect hit testing
         dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - (mouse_pos.y - self._rect.y))
