@@ -162,15 +162,15 @@ jobs:
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
       working-directory: ${{ github.workspace }}/ci-artifacts
       run: |
-        git checkout --orphan process-replay
-        git rm -rf .
         git config user.name "GitHub Actions Bot"
         git config user.email "<>"
+        git fetch origin process-replay || true
+        git checkout process-replay 2>/dev/null || git checkout --orphan process-replay
         cp ${{ github.workspace }}/selfdrive/test/process_replay/fakedata/*.zst .
         echo "${{ github.sha }}" > ref_commit
         git add .
-        git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}"
-        git push origin process-replay --force
+        git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}" || echo "No changes to commit"
+        git push origin process-replay
     - name: Run regen
       if: false
       timeout-minutes: 4

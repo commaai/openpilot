@@ -227,9 +227,9 @@ class WifiButton(BigButton):
       if self._network_forgetting:
         self.set_value("forgetting...")
       elif self._is_connecting:
-        self.set_value("connecting...")
+        self.set_value("starting..." if self._network.is_tethering else "connecting...")
       elif self._is_connected:
-        self.set_value("connected")
+        self.set_value("tethering" if self._network.is_tethering else "connected")
       elif self._network_missing:
         # after connecting/connected since NM will still attempt to connect/stay connected for a while
         self.set_value("not in range")
@@ -326,8 +326,6 @@ class WifiUIMici(NavWidget):
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
         btn.set_network_missing(True)
 
-    self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
-
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)
     self._move_network_to_front(ssid, scroll=True)
@@ -381,6 +379,8 @@ class WifiUIMici(NavWidget):
 
   def _update_state(self):
     super()._update_state()
+
+    self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
 
     # Show loading animation near end
     max_scroll = max(self._scroller.content_size - self._scroller.rect.width, 1)
