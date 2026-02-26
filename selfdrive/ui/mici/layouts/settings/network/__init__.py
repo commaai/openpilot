@@ -42,14 +42,11 @@ class WifiNetworkButton(BigButton):
       self.set_text("wi-fi")
       self.set_value("not connected")
 
-    if display_network is not None or wifi_state.status in (ConnectStatus.CONNECTING, ConnectStatus.CONNECTED):
-      # Use display_network strength when available; when connecting/connected it can be 0 or missing, show full
-      strength_val = display_network.strength if display_network is not None else 0
-      if wifi_state.status in (ConnectStatus.CONNECTING, ConnectStatus.CONNECTED):
-        strength_val = max(strength_val, 100)
-      strength = WifiIcon.get_strength_icon_idx(strength_val)
+    print('display_network', display_network.ssid if display_network else None, wifi_state.ssid, wifi_state.status)
+    if display_network is not None:
+      strength = WifiIcon.get_strength_icon_idx(display_network.strength)
       self.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
-      self._draw_lock = display_network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED) if display_network else False
+      self._draw_lock = display_network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED)
     else:
       self.set_icon(self._wifi_slash_txt)
       self._draw_lock = False
