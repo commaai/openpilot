@@ -2,6 +2,8 @@ Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
 
 replay_env = env.Clone()
 replay_env['CCFLAGS'] += ['-Wno-deprecated-declarations']
+if arch != "Darwin":
+  replay_env.Append(LINKFLAGS=["-Wl,--exclude-libs,libssl.a", "-Wl,--exclude-libs,libcrypto.a"])
 
 base_frameworks = []
 base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread']
