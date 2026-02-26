@@ -381,13 +381,14 @@ class WifiManager:
     if new_state == NMDeviceState.DISCONNECTED:
       if change_reason == NMDeviceStateReason.NEW_ACTIVATION:
         return
+
       # Guard: forget A while connecting to B fires CONNECTION_REMOVED. Don't clear B's state
       # if B is still a known connection. If B hasn't arrived in _connections yet (late
       # NewConnection), state clears here but PREPARE recovers via DBus lookup.
-      if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-        if self._wifi_state.ssid and self._wifi_state.ssid in self._connections:
-          print('WOULD HAVE DISCONNECTED RACE CONDITION!')
-          return
+      if (change_reason == NMDeviceStateReason.CONNECTION_REMOVED and self._wifi_state.ssid and
+        self._wifi_state.ssid in self._connections):
+        return
+
       self._set_connecting(None)
 
     elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
@@ -398,7 +399,7 @@ class WifiManager:
         self._wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
         return
 
-      # Auto-connection (ssid=None): look up ssid from NM
+      # Auto-connection when NetworkManager connects to known networks on its own (ssid=None): look up ssid from NM
       wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
 
       print(f'  PREPARE/CONFIG: ssid=None (auto-connect), doing DBus lookup... tap now to test race')
@@ -432,7 +433,7 @@ class WifiManager:
       wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
       print(f'  ACTIVATED: current state={self._wifi_state}, doing DBus lookup... tap now to test race')
-      time.sleep(1)
+      time.sleep(3)
       conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
 
       if self._user_epoch != epoch:
