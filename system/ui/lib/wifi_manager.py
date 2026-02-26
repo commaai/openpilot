@@ -429,6 +429,7 @@ class WifiManager:
     # BAD PASSWORD
     # - strong network rejects with NEED_AUTH+SUPPLICANT_DISCONNECT
     # - weak/gone network fails with FAILED+NO_SECRETS
+    # TODO: sometimes on PC it's observed no future signals are fired if mouse is held down blocking wrong password dialog
     elif ((new_state == NMDeviceState.NEED_AUTH and change_reason == NMDeviceStateReason.SUPPLICANT_DISCONNECT
            and prev_state == NMDeviceState.CONFIG) or
           (new_state == NMDeviceState.FAILED and change_reason == NMDeviceStateReason.NO_SECRETS)):
