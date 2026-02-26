@@ -25,17 +25,17 @@ dependencies = [
   "setuptools",
   "numpy >=2.0",
 
-  # vendored native dependencies
-  "capnproto @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=capnproto",
-  "eigen @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=eigen",
-  "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
-  "libjpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libjpeg",
-  "openssl3 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=openssl3",
-  "python3-dev @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=python3-dev",
-  "zstd @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zstd",
-  "ncurses @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ncurses",
-  "zeromq @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zeromq",
-  "git-lfs @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=git-lfs",
+  # vendored native dependencies (from commaai/dependencies)
+  "capnproto",
+  "eigen",
+  "ffmpeg",
+  "libjpeg",
+  "openssl3",
+  "python3-dev",
+  "zstd",
+  "ncurses",
+  "zeromq",
+  "git-lfs",
 
   # body / webrtcd
   "av",
@@ -101,7 +101,7 @@ testing = [
 dev = [
   "matplotlib",
   "opencv-python-headless",
-  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=gcc-arm-none-eabi",
+  "gcc-arm-none-eabi",
 ]
 
 tools = [
@@ -111,6 +111,9 @@ tools = [
 
 [project.urls]
 Homepage = "https://github.com/commaai/openpilot"
+
+[tool.uv]
+extra-index-url = ["https://commaai.github.io/dependencies/simple/"]
 
 [build-system]
 requires = ["hatchling"]
