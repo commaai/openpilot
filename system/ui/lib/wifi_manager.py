@@ -301,6 +301,7 @@ class WifiManager:
 
   def _set_connecting(self, ssid: str | None):
     # Called by user action, or sequentially from state change handler
+    print('setting connecting to', ssid)
     self._user_epoch += 1
     self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
@@ -382,7 +383,11 @@ class WifiManager:
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
 
+          print('  -> New state', (NMDeviceState(new_state).name, NMDeviceState(previous_state).name, NMDeviceStateReason(change_reason).name))
+
           self._handle_state_change(new_state, previous_state, change_reason)
+
+          print('  -> final wifi state', self._wifi_state)
 
   def _handle_state_change(self, new_state: int, prev_state: int, change_reason: int):
     # Thread safety: _wifi_state is read/written by both the monitor thread (this handler)
@@ -394,7 +399,8 @@ class WifiManager:
     # on every user action. Handlers snapshot the epoch before their DBus call and compare
     # after: if it changed, a user action occurred during the call and the stale result is
     # discarded. Combined with deterministic fixes (skip DBus lookup when ssid already set,
-    # DEACTIVATING no-op, CONNECTION_REMOVED guard), all known race windows are closed.
+    # DEACTIVATING clears CONNECTED on CONNECTION_REMOVED, CONNECTION_REMOVED guard),
+    # all known race windows are closed.
 
     # TODO: Handle (FAILED, SSID_NOT_FOUND) and emit for UI to show error
     #  Happens when network drops off after starting connection
@@ -480,8 +486,12 @@ class WifiManager:
           cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
 
     elif new_state == NMDeviceState.DEACTIVATING:
-      # no-op — DISCONNECTED always follows with the correct reason
-      pass
+      # Must clear state when forgetting the currently connected network so the UI
+      # doesn't flash "connected" after the eager "forgetting..." state resets
+      # (the forgotten callback fires between DEACTIVATING and DISCONNECTED).
+      # Only clear CONNECTED — CONNECTING must be preserved for forget-A-connect-B.
+      if change_reason == NMDeviceStateReason.CONNECTION_REMOVED and self._wifi_state.status == ConnectStatus.CONNECTED:
+        self._set_connecting(None)
 
   def _network_scanner(self):
     while not self._exit:
