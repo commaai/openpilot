@@ -116,7 +116,8 @@ class MiciHomeLayout(Widget):
     self._info_alpha_filter = FirstOrderFilter(0, 0.27, dt)
     self._info_y_filter = FirstOrderFilter(25, 0.13, dt)
     self._icon_alpha_filters = [FirstOrderFilter(0, 0.2, dt) for _ in range(4)]
-    self._reset_anim()
+    self._anim_start = time.monotonic()
+    self._first_render = True
 
   def show_event(self):
     self._version_text = self._get_version_text()
@@ -199,6 +200,10 @@ class MiciHomeLayout(Widget):
   def _render(self, _):
     # TODO: why is there extra space here to get it to be flush?
     text_pos = rl.Vector2(self.rect.x - 2 + HOME_PADDING, self.rect.y - 16)
+
+    if self._first_render:
+      self._reset_anim()
+      self._first_render = False
 
     elapsed = time.monotonic() - self._anim_start
 
