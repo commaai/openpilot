@@ -486,10 +486,9 @@ class TermsPage(Widget):
     self._scroller.render(self._rect)
 
 
-class OnboardingWindow(NavWidget):
+class OnboardingWindow(Widget):
   def __init__(self):
     super().__init__()
-    self.set_back_enabled(False)
 
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
@@ -538,6 +537,7 @@ class OnboardingWindow(NavWidget):
     self.close()
 
   def _render(self, _):
+    rl.draw_rectangle_rec(self._rect, rl.BLACK)
     if self._state == OnboardingState.TERMS:
       self._terms.render(self._rect)
     else:
