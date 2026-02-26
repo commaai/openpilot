@@ -409,7 +409,7 @@ class TermsPage(Widget):
 
     def show_decline_dialog():
       gui_app.push_widget(BigConfirmationDialogV2("decline &\nuninstall", "icons_mici/setup/cancel.png",
-                                                  red=True, confirm_callback=on_decline))
+                                                  red=True, exit_on_confirm=False, confirm_callback=on_decline))
 
     self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
     self._accept_button.set_click_callback(show_accept_dialog)
@@ -459,10 +459,9 @@ class OnboardingWindow(Widget):
     # Windows
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_uninstall)
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
-    self._terms.set_enabled(lambda: self.enabled)  # for nav stack
+    self._terms.set_enabled(lambda: self.enabled)
 
   def _on_uninstall(self):
-    print('uninstalling!')
     ui_state.params.put_bool("DoUninstall", True)
     gui_app.request_close()
 
