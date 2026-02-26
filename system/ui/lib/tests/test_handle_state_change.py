@@ -663,7 +663,6 @@ class TestWorkerErrorRecovery:
 
   def test_activate_dbus_error_resyncs(self, mocker):
     """ActivateConnection returns DBus error while A is connected.
-
     NM rejects the request — no state signals emitted. Worker must re-read NM
     state to discover A is still connected, not clear to DISCONNECTED.
     """
