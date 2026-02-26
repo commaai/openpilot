@@ -3,6 +3,7 @@ import os
 import argparse
 import coverage
 import pyray as rl
+from tqdm import tqdm
 
 from typing import Literal
 from collections.abc import Callable
@@ -58,33 +59,36 @@ def run_replay(variant: LayoutVariant) -> None:
   rl.get_time = lambda: frame / FPS
 
   # Main loop to replay events and render frames
-  for _ in gui_app.render():
-    # Handle all events for the current frame
-    while script_index < len(script) and script[script_index][0] == frame:
-      _, event = script[script_index]
-      # Call setup function, if any
-      if event.setup:
-        event.setup()
-      # Send mouse events to the application
-      if event.mouse_events:
-        with gui_app._mouse._lock:
-          gui_app._mouse._events.extend(event.mouse_events)
-      # Update persistent send function
-      if event.send_fn is not None:
-        send_fn = event.send_fn
-      # Move to next script event
-      script_index += 1
+  with tqdm(total=len(script), desc="Replaying") as pbar:
+    for _ in gui_app.render():
+      # Handle all events for the current frame
+      prev_index = script_index
+      while script_index < len(script) and script[script_index][0] == frame:
+        _, event = script[script_index]
+        # Call setup function, if any
+        if event.setup:
+          event.setup()
+        # Send mouse events to the application
+        if event.mouse_events:
+          with gui_app._mouse._lock:
+            gui_app._mouse._events.extend(event.mouse_events)
+        # Update persistent send function
+        if event.send_fn is not None:
+          send_fn = event.send_fn
+        # Move to next script event
+        script_index += 1
+      pbar.update(script_index - prev_index)
 
-    # Keep sending cereal messages for persistent states (onroad, alerts)
-    if send_fn:
-      send_fn()
+      # Keep sending cereal messages for persistent states (onroad, alerts)
+      if send_fn:
+        send_fn()
 
-    ui_state.update()
+      ui_state.update()
 
-    frame += 1
+      frame += 1
 
-    if script_index >= len(script):
-      break
+      if script_index >= len(script):
+        break
 
   gui_app.close()
 
