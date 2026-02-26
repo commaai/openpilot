@@ -713,11 +713,19 @@ class WifiManager:
   def _deactivate_connection(self, ssid: str):
     for active_conn in self._get_active_connections():
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      specific_obj_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('SpecificObject')).body[0][1]
+      reply = self._router_main.send_and_get_reply(Properties(conn_addr).get('SpecificObject'))
+      if reply.header.message_type == MessageType.error:
+        continue  # object gone (e.g. rapid connect/disconnect)
+
+      specific_obj_path = reply.body[0][1]
 
       if specific_obj_path != "/":
         ap_addr = DBusAddress(specific_obj_path, bus_name=NM, interface=NM_ACCESS_POINT_IFACE)
-        ap_ssid = bytes(self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid')).body[0][1]).decode("utf-8", "replace")
+        ap_reply = self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid'))
+        if ap_reply.header.message_type == MessageType.error:
+          continue  # AP gone (e.g. mode switch)
+
+        ap_ssid = bytes(ap_reply.body[0][1]).decode("utf-8", "replace")
 
         if ap_ssid == ssid:
           self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (active_conn,)))
