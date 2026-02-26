@@ -20,6 +20,7 @@ from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import run_cmd
 from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
@@ -107,6 +108,14 @@ class SetupState(IntEnum):
   DOWNLOADING = 2
 
 
+# Scale when start button is pressed (matches BigButton PRESSED_SCALE behavior)
+_START_BUTTON_PRESSED_SCALE = 1.07
+_START_BUTTON_PULSE_INTERVAL_S = 5.0
+_START_BUTTON_PULSE_DURATION_S = 0.65
+# Match mici keyboard minimum selected animation time.
+_START_BUTTON_MIN_PRESSED_TIME_S = 0.075
+
+
 class StartPage(Widget):
   def __init__(self):
     super().__init__()
@@ -118,13 +127,63 @@ class StartPage(Widget):
     self._start_bg_txt = gui_app.texture("icons_mici/setup/start_button.png", 500, 224, keep_aspect_ratio=False)
     self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/start_button_pressed.png", 500, 224, keep_aspect_ratio=False)
 
-  def _render(self, rect: rl.Rectangle):
-    draw_x = rect.x + (rect.width - self._start_bg_txt.width) / 2
-    draw_y = rect.y + (rect.height - self._start_bg_txt.height) / 2
-    texture = self._start_bg_pressed_txt if self.is_pressed else self._start_bg_txt
-    rl.draw_texture(texture, int(draw_x), int(draw_y), rl.WHITE)
+    self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    now = rl.get_time()
+    self._pulse_until = 0.0
+    self._next_pulse_at = now + _START_BUTTON_PULSE_INTERVAL_S
+    self._was_pressed_last_frame = False
+    self._pressed_release_latch = False
+    self._pressed_started_t: float | None = None
+    self._pressed_release_min_until = 0.0
+    self._pending_click = False
 
-    self._title.render(rect)
+  def _handle_mouse_release(self, _mouse_pos):
+    # Defer click callback until pressed animation has fully returned to rest.
+    self._pending_click = True
+
+  def _render(self, rect: rl.Rectangle):
+    now = rl.get_time()
+    if now >= self._next_pulse_at:
+      self._pulse_until = now + _START_BUTTON_PULSE_DURATION_S
+      self._next_pulse_at = now + _START_BUTTON_PULSE_INTERVAL_S
+
+    pulse_active = now < self._pulse_until
+    just_pressed = not self._was_pressed_last_frame and self.is_pressed
+    just_released = self._was_pressed_last_frame and not self.is_pressed
+    if just_pressed:
+      self._pressed_started_t = now
+    if just_released:
+      self._pressed_release_latch = True
+      held_dt = now - (self._pressed_started_t or now)
+      self._pressed_release_min_until = now + max(0.0, _START_BUTTON_MIN_PRESSED_TIME_S - held_dt)
+
+    # Keep pressed target latched until min hold time is met and press scale was reached.
+    if (self._pressed_release_latch and now >= self._pressed_release_min_until and
+        self._scale_filter.x >= (_START_BUTTON_PRESSED_SCALE - 0.001) and
+        not self.is_pressed and not pulse_active):
+      self._pressed_release_latch = False
+
+    is_pressed_like = self.is_pressed or pulse_active or self._pressed_release_latch
+    scale_target = _START_BUTTON_PRESSED_SCALE if is_pressed_like else 1.0
+    scale = self._scale_filter.update(scale_target)
+    w = self._start_bg_txt.width
+    h = self._start_bg_txt.height
+    base_draw_x = rect.x + (rect.width - w) / 2
+    base_draw_y = rect.y + (rect.height - h) / 2
+    draw_x = base_draw_x + (w * (1 - scale)) / 2
+    draw_y = base_draw_y + (h * (1 - scale)) / 2
+    texture = self._start_bg_pressed_txt if is_pressed_like else self._start_bg_txt
+    rl.draw_texture_ex(texture, (draw_x, draw_y), 0, scale, rl.WHITE)
+
+    title_rect = rl.Rectangle(rect.x, rect.y + (draw_y - base_draw_y), rect.width, rect.height)
+    self._title.render(title_rect)
+
+    if self._pending_click and not is_pressed_like and self._scale_filter.x <= 1.001:
+      self._pending_click = False
+      if self._click_callback:
+        self._click_callback()
+
+    self._was_pressed_last_frame = self.is_pressed
 
 
 class SoftwareSelectionPage(Widget):
@@ -334,13 +393,13 @@ class CustomSoftwareWarningPage(NavWidget):
 
     self._scroller = Scroller([
       GreyBigButton("use caution", "you are installing\n3rd party software",
-                    gui_app.texture("icons_mici/setup/warning.png", 64, 58), wide=True),
+                    gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
       GreyBigButton("", "• It has not been tested by comma.\n" +
-                    "• It may not comply with relevant safety standards.", wide=True),
+                    "• It may not comply with relevant safety standards."),
       GreyBigButton("", "• It may cause damage to your device and/or vehicle.\n" +
-                    "• You are fully responsible for your device.", wide=True),
+                    "• You are fully responsible for your device."),
       GreyBigButton("to restore to a\nfactory state later", "https://flash.comma.ai",
-                    gui_app.texture("icons_mici/setup/restore.png", 64, 64), wide=True),
+                    gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
       self._continue_button,
       self._back_button,
     ])
@@ -443,14 +502,11 @@ class GreyBigButton(BigButton):
 
   LABEL_HORIZONTAL_PADDING = 30
 
-  def __init__(self, *args, wide: bool = False, **kwargs):
+  def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.set_touch_valid_callback(lambda: False)
 
-    wide = True
-
-    if wide:
-      self._rect.width = 476
+    self._rect.width = 476
 
     self._label.set_font_size(36)
     self._label.set_font_weight(FontWeight.BOLD)
@@ -467,7 +523,7 @@ class GreyBigButton(BigButton):
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 
   def _render(self, _):
-    rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(255, 255, 255, int(255 * 0.15)))
+    rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(34, 34, 34, 255))
     self._draw_content(self._rect.y)
 
 

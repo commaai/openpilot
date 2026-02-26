@@ -28,6 +28,7 @@ class SmallSlider(Widget):
     self._confirmed_time = 0.0
     self._confirm_callback_called = False  # we keep dialog open by default, only call once
     self._start_x_circle = 0.0
+    self._start_scroll_x_circle = 0.0
     self._scroll_x_circle = 0.0
     self._scroll_x_circle_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
@@ -54,6 +55,7 @@ class SmallSlider(Widget):
     self._is_dragging_circle = False
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
+    self._start_scroll_x_circle = 0.0
 
   def set_opacity(self, opacity: float, smooth: bool = False):
     if smooth:
@@ -83,6 +85,9 @@ class SmallSlider(Widget):
       )
       if rl.check_collision_point_rec(mouse_event.pos, circle_button_rect):
         self._start_x_circle = mouse_event.pos.x
+        # Continue dragging from current animated position to avoid snap-to-start.
+        self._start_scroll_x_circle = self._scroll_x_circle_filter.x
+        self._scroll_x_circle = self._scroll_x_circle_filter.x
         self._is_dragging_circle = True
 
     elif mouse_event.left_released:
@@ -93,7 +98,7 @@ class SmallSlider(Widget):
       self._is_dragging_circle = False
 
     if self._is_dragging_circle:
-      self._scroll_x_circle = mouse_event.pos.x - self._start_x_circle
+      self._scroll_x_circle = self._start_scroll_x_circle + (mouse_event.pos.x - self._start_x_circle)
 
   def _update_state(self):
     super()._update_state()
