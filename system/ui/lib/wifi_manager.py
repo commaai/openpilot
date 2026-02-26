@@ -373,10 +373,8 @@ class WifiManager:
         # Device state changes
         while len(state_q):
           new_state, previous_state, change_reason = state_q.popleft().body
-          print('  -> New state', (NMDeviceState(new_state).name, NMDeviceState(previous_state).name, NMDeviceStateReason(change_reason).name))
 
           self._handle_state_change(new_state, previous_state, change_reason)
-          print('  -> Final Wifi state', self._wifi_state)
 
   def _handle_state_change(self, new_state: int, prev_state: int, change_reason: int):
     # Thread safety: _wifi_state is read/written by both the monitor thread (this handler)
@@ -410,19 +408,15 @@ class WifiManager:
       epoch = self._user_epoch
 
       if self._wifi_state.ssid is not None:
-        print(f'  PREPARE/CONFIG: ssid already set to {self._wifi_state.ssid!r}, skipping DBus lookup')
         self._wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
         return
 
       # Auto-connection when NetworkManager connects to known networks on its own (ssid=None): look up ssid from NM
       wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
 
-      print(f'  PREPARE/CONFIG: ssid=None (auto-connect), doing DBus lookup... tap now to test race')
-      time.sleep(3)
       conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
 
       if self._user_epoch != epoch:
-        print(f'  PREPARE/CONFIG: *** epoch changed ({epoch} -> {self._user_epoch}), discarding stale DBus result')
         return
 
       if conn_path is None:
@@ -455,12 +449,9 @@ class WifiManager:
       epoch = self._user_epoch
       wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTED)
 
-      print(f'  ACTIVATED: current state={self._wifi_state}, doing DBus lookup... tap now to test race')
-      time.sleep(3)
       conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
 
       if self._user_epoch != epoch:
-        print(f'  ACTIVATED: *** epoch changed ({epoch} -> {self._user_epoch}), discarding stale DBus result')
         return
 
       if conn_path is None:
