@@ -744,8 +744,7 @@ class Setup(Widget):
         if url:
           self.download(url)
 
-      keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result,
-                         allow_special_chars_back_to_letters=True)
+      keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
       gui_app.push_widget(keyboard)
 
   def close(self):
