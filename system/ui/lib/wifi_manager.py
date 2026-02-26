@@ -393,10 +393,10 @@ class WifiManager:
     elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
       epoch = self._user_epoch
 
-      # if self._wifi_state.ssid is not None:
-      #   print(f'  PREPARE/CONFIG: ssid already set to {self._wifi_state.ssid!r}, skipping DBus lookup')
-      #   self._wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
-      #   return
+      if self._wifi_state.ssid is not None:
+        print(f'  PREPARE/CONFIG: ssid already set to {self._wifi_state.ssid!r}, skipping DBus lookup')
+        self._wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
+        return
 
       # Auto-connection (ssid=None): look up ssid from NM
       wifi_state = replace(self._wifi_state, status=ConnectStatus.CONNECTING)
