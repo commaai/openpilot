@@ -111,7 +111,7 @@ class MiciHomeLayout(Widget):
     self._version_commit_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
 
     dt = 1 / gui_app.target_fps
-    self._title_alpha_filter = FirstOrderFilter(0, 0.27, dt)
+    self._title_alpha_filter = FirstOrderFilter(0, 0.33, dt)
     self._title_y_filter = FirstOrderFilter(25, 0.13, dt)
     self._info_alpha_filter = FirstOrderFilter(0, 0.27, dt)
     self._info_y_filter = FirstOrderFilter(25, 0.13, dt)
@@ -153,7 +153,7 @@ class MiciHomeLayout(Widget):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:
-      if mouse_pos.x > self._rect.x + self._rect.width / 2:
+      if mouse_pos.x > self._rect.x + self._rect.width / 2:  # TODO: temp, right-half tap retriggers animation for testing
         self._reset_anim()
       elif self._on_settings_click:
         self._on_settings_click()
@@ -194,7 +194,7 @@ class MiciHomeLayout(Widget):
       except Exception:
         return None
 
-    return ("0.9.8", "release3", "a1b2c3d4", "2025-06-15")
+    return ("0.9.8", "release3", "a1b2c3d4", "2025-06-15")  # TODO: temp, fake version text for testing
 
   def _render(self, _):
     # TODO: why is there extra space here to get it to be flush?
