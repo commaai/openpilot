@@ -184,6 +184,8 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Settings - Device (click sidebar settings button) ===
   script.click(150, 90)
+  script.click(2000, 450)  # pair device
+  script.click(110, 110)  # close pairing dialog
   script.click(1985, 790)  # reset calibration confirmation
   script.click(650, 750)  # cancel
 
