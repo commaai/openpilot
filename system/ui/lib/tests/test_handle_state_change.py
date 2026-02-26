@@ -3,6 +3,9 @@
 Tests the state machine in isolation by constructing a WifiManager with mocked
 DBus, then calling _handle_state_change directly with NM state transitions.
 """
+import queue
+import threading
+
 import pytest
 from jeepney.low_level import MessageType
 from pytest_mock import MockerFixture
@@ -19,7 +22,8 @@ def _make_wm(mocker: MockerFixture, connections=None):
   wm._conn_monitor = mocker.MagicMock()
   wm._connections = dict(connections or {})
   wm._wifi_state = WifiState()
-  wm._user_epoch = 0
+  wm._action_queue = queue.Queue()
+  wm._init_lock = threading.Lock()
   wm._callback_queue = []
   wm._need_auth = []
   wm._activated = []
@@ -31,8 +35,10 @@ def _make_wm(mocker: MockerFixture, connections=None):
 
 def fire(wm: WifiManager, new_state: int, prev_state: int = NMDeviceState.UNKNOWN,
          reason: int = NMDeviceStateReason.NONE) -> None:
-  """Feed a state change into the handler."""
+  """Simulate the monitor thread: drain queue, run handler, drain again."""
+  wm._drain_queue()
   wm._handle_state_change(new_state, prev_state, reason)
+  wm._drain_queue()
 
 
 def fire_wpa_connect(wm: WifiManager) -> None:
@@ -335,13 +341,13 @@ class TestActivated:
 
 # ---------------------------------------------------------------------------
 # Thread races: _set_connecting on main thread vs _handle_state_change on monitor thread.
-# Uses side_effect on the DBus mock to simulate _set_connecting running mid-handler.
-# The epoch counter detects that a user action occurred during the slow DBus call
-# and discards the stale update.
+# Uses side_effect on the DBus mock to simulate _set_connecting (queue put) running
+# mid-handler. The handler checks `not action_queue.empty()` after the slow DBus call
+# and discards the stale update. The post-handler drain applies the user's intent.
 # ---------------------------------------------------------------------------
 # The deterministic fixes (skip DBus lookup when ssid already set, prev_state guard
 # on NEED_AUTH, DEACTIVATING clears CONNECTED on CONNECTION_REMOVED, CONNECTION_REMOVED
-# guard) shrink these race windows significantly. The epoch counter closes the
+# guard) shrink these race windows significantly. The queue-empty check closes the
 # remaining gaps.
 
 class TestThreadRaces:
@@ -349,7 +355,8 @@ class TestThreadRaces:
     """User taps B while PREPARE's DBus call is in flight for auto-connect.
 
     Monitor thread reads wifi_state (ssid=None), starts DBus call.
-    Main thread: _set_connecting("B"). Monitor thread writes back stale ssid from DBus.
+    Main thread: _set_connecting("B") queues action. Handler sees non-empty queue,
+    discards stale result. Post-handler drain applies CONNECTING("B").
     """
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
 
@@ -367,8 +374,9 @@ class TestThreadRaces:
   def test_activated_race_user_tap_during_dbus(self, mocker):
     """User taps B right as A finishes connecting (ACTIVATED handler running).
 
-    Monitor thread reads wifi_state (A, CONNECTING), starts DBus call.
-    Main thread: _set_connecting("B"). Monitor thread writes (A, CONNECTED), losing B.
+    Monitor thread starts DBus call for ACTIVATED. Main thread: _set_connecting("B")
+    queues action. Handler sees non-empty queue, discards stale CONNECTED("A").
+    Post-handler drain applies CONNECTING("B").
     """
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
     wm._set_connecting("A")
@@ -387,10 +395,10 @@ class TestThreadRaces:
   def test_init_wifi_state_race_user_tap_during_dbus(self, mocker):
     """User taps B while _init_wifi_state's DBus calls are in flight.
 
-    _init_wifi_state runs from set_active(True) or worker error paths. It does
-    2 DBus calls (device State property + _get_active_wifi_connection) then
-    unconditionally writes _wifi_state. If the user taps a network during those
-    calls, _set_connecting("B") is overwritten with stale NM ground truth.
+    _init_wifi_state runs from set_active(True) or worker error paths. It clears
+    stale queue items first, then does 2 DBus calls. If the user taps a network
+    during those calls, _set_connecting("B") queues a new action.
+    _init_wifi_state sees non-empty queue and skips the stale write.
     """
     wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
     wm._wifi_device = "/dev/wifi0"
@@ -407,6 +415,7 @@ class TestThreadRaces:
     wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
 
     wm._init_wifi_state()
+    wm._drain_queue()
 
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
