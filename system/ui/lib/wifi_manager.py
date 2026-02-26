@@ -448,6 +448,7 @@ class WifiManager:
       self._enqueue_callbacks(self._activated)
       self._update_active_connection_info()
 
+      # Persist volatile connections (created by AddAndActivateConnection2) to disk
       if conn_path is not None:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         save_reply = self._conn_monitor.send_and_get_reply(new_method_call(conn_addr, 'Save'))
@@ -455,6 +456,7 @@ class WifiManager:
           cloudlog.warning(f"Failed to persist connection to disk: {save_reply}")
 
     elif new_state == NMDeviceState.DEACTIVATING:
+      # no-op — DISCONNECTED always follows with the correct reason
       pass
 
   def _network_scanner(self):

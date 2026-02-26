@@ -2,6 +2,9 @@
 
 Tests the state machine in isolation by constructing a WifiManager with mocked
 DBus, then calling _handle_state_change directly with NM state transitions.
+
+Remaining xfail tests cover thread races (monitor vs main thread) and deferred
+features (SSID_NOT_FOUND UI error).
 """
 import pytest
 from pytest_mock import MockerFixture
@@ -93,7 +96,7 @@ class TestDisconnected:
 
 class TestDeactivating:
   def test_deactivating_is_noop(self, mocker):
-    """DEACTIVATING is a no-op — DISCONNECTED follows with correct state."""
+    """DEACTIVATING is a no-op — DISCONNECTED follows with the correct reason."""
     wm = _make_wm(mocker)
     wm._wifi_state = WifiState(ssid="Net", status=ConnectStatus.CONNECTED)
 
@@ -302,6 +305,10 @@ class TestActivated:
 # The epoch counter detects that a user action occurred during the slow DBus call
 # and discards the stale update.
 # ---------------------------------------------------------------------------
+# The deterministic fixes (skip DBus lookup when ssid already set, prev_state guard
+# on NEED_AUTH, DEACTIVATING no-op, CONNECTION_REMOVED guard) shrink these race
+# windows to near-zero. If still visible, make WifiState frozen (replace() + single
+# atomic assignment) and/or add a narrow lock around _wifi_state reads/writes.
 
 class TestThreadRaces:
   def test_prepare_race_user_tap_during_dbus(self, mocker):
