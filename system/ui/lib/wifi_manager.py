@@ -292,6 +292,7 @@ class WifiManager:
     return self._tethering_password
 
   def _set_connecting(self, ssid: str | None):
+    # Called by user action, or sequentially from state change handler
     self._user_epoch += 1
     self._wifi_state = WifiState(ssid=ssid, status=ConnectStatus.DISCONNECTED if ssid is None else ConnectStatus.CONNECTING)
 
@@ -378,6 +379,9 @@ class WifiManager:
           print('  -> Final Wifi state', self._wifi_state)
 
   def _handle_state_change(self, new_state: int, prev_state: int, change_reason: int):
+    # TODO: Handle (FAILED, SSID_NOT_FOUND) and emit for UI to show error
+    #  Happens when network drops off after starting connection
+
     if new_state == NMDeviceState.DISCONNECTED:
       if change_reason == NMDeviceStateReason.NEW_ACTIVATION:
         return
