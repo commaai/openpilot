@@ -30,7 +30,14 @@ MAX_LAT_ACCEL_DIFF = 0.6
 MIN_CONFIDENCE = 0.7
 CORR_BORDER_OFFSET = 5
 LAG_CANDIDATE_CORR_THRESHOLD = 0.9
+SMOOTH_K_SIZE = 5
 
+
+def symetric_moving_average(signal: np.ndarray, k: int):
+  kernel = np.ones(k) / k
+  pad = k // 2
+  padded = np.pad(signal, pad, mode='edge')
+  return np.convolve(padded, kernel, mode='valid')
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
   """
@@ -308,6 +315,9 @@ class LateralLagEstimator:
   @staticmethod
   def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
+    expected_sig = symetric_moving_average(expected_sig, SMOOTH_K_SIZE)
+    actual_sig = symetric_moving_average(actual_sig, SMOOTH_K_SIZE)
+
     max_lag_samples = int(max_lag / dt)
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
 
