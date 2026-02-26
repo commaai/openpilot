@@ -347,6 +347,34 @@ class TestThreadRaces:
     assert wm._wifi_state.ssid == "B"
     assert wm._wifi_state.status == ConnectStatus.CONNECTING
 
+  @pytest.mark.xfail(reason="TODO: _init_wifi_state has no epoch check — overwrites user's _set_connecting")
+  def test_init_wifi_state_race_user_tap_during_dbus(self, mocker):
+    """User taps B while _init_wifi_state's DBus calls are in flight.
+
+    _init_wifi_state runs from set_active(True) or worker error paths. It does
+    2 DBus calls (device State property + _get_active_wifi_connection) then
+    unconditionally writes _wifi_state. If the user taps a network during those
+    calls, _set_connecting("B") is overwritten with stale NM ground truth.
+    """
+    wm = _make_wm(mocker, connections={"A": "/path/A", "B": "/path/B"})
+    wm._wifi_device = "/dev/wifi0"
+    wm._router_main = mocker.MagicMock()
+
+    state_reply = mocker.MagicMock()
+    state_reply.body = [('u', NMDeviceState.ACTIVATED)]
+    wm._router_main.send_and_get_reply.return_value = state_reply
+
+    def user_taps_b_during_dbus(*args, **kwargs):
+      wm._set_connecting("B")
+      return ("/path/A", {})
+
+    wm._get_active_wifi_connection.side_effect = user_taps_b_during_dbus
+
+    wm._init_wifi_state()
+
+    assert wm._wifi_state.ssid == "B"
+    assert wm._wifi_state.status == ConnectStatus.CONNECTING
+
 
 # ---------------------------------------------------------------------------
 # Full sequences (NM signal order from real devices)
