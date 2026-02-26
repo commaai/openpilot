@@ -284,6 +284,7 @@ class WifiUIMici(NavWidget):
 
     self._wifi_manager = wifi_manager
     self._networks: dict[str, Network] = {}
+    self._fronted_ssid: str | None = None
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -292,13 +293,12 @@ class WifiUIMici(NavWidget):
     )
 
   def show_event(self):
-    # Clear scroller items and update from latest scan results
     super().show_event()
     self._scroller.show_event()
     self._loading_animation.show_event()
     self._wifi_manager.set_active(True)
     self._scroller.items.clear()
-    # trigger button update on latest sorted networks
+    self._fronted_ssid = None
     self._on_network_updated(self._wifi_manager.networks)
 
   def hide_event(self):
@@ -321,12 +321,9 @@ class WifiUIMici(NavWidget):
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
-    # Mark networks no longer in scan results (display handled by _update_state)
     for btn in self._scroller.items:
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
         btn.set_network_missing(True)
-
-    self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
 
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)
@@ -367,7 +364,6 @@ class WifiUIMici(NavWidget):
         btn.on_forgotten()
 
   def _move_network_to_front(self, ssid: str | None, scroll: bool = False):
-    # Move connecting/connected network to the front with animation
     front_btn_idx = next((i for i, btn in enumerate(self._scroller.items)
                           if isinstance(btn, WifiButton) and
                           btn.network.ssid == ssid), None) if ssid else None
@@ -376,13 +372,18 @@ class WifiUIMici(NavWidget):
       self._scroller.move_item(front_btn_idx, 0)
 
       if scroll:
-        # Scroll to the new position of the network
         self._scroller.scroll_to(self._scroller.scroll_panel.get_offset(), smooth=True)
+
+    if front_btn_idx is not None:
+      self._fronted_ssid = ssid
 
   def _update_state(self):
     super()._update_state()
 
-    # Show loading animation near end
+    current_ssid = self._wifi_manager.wifi_state.ssid
+    if current_ssid and current_ssid != self._fronted_ssid:
+      self._move_network_to_front(current_ssid)
+
     max_scroll = max(self._scroller.content_size - self._scroller.rect.width, 1)
     progress = -self._scroller.scroll_panel.get_offset() / max_scroll
     if progress > 0.8 or len(self._scroller.items) <= 1:
