@@ -315,10 +315,11 @@ class WifiManager:
       cb()
 
   def set_active(self, active: bool):
+    was_active = self._active
     self._active = active
 
     # Update networks and WiFi state (to self-heal) immediately when activating for UI
-    if active:
+    if active and not was_active:
       self._init_wifi_state(block=False)
       self._update_networks(block=False)
 
