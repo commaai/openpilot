@@ -17,8 +17,6 @@ except ImportError:
 SCROLLING_SPEED_PX_S = 50
 COMPLICATION_SIZE    = 36
 LABEL_COLOR          = rl.Color(255, 255, 255, int(255 * 0.9))
-LABEL_HORIZONTAL_PADDING = 40
-LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
 COMPLICATION_GREY    = rl.Color(0xAA, 0xAA, 0xAA, 255)
 PRESSED_SCALE = 1.15 if DO_ZOOM else 1.07
 
@@ -103,6 +101,9 @@ class BigCircleToggle(BigCircleButton):
 
 
 class BigButton(Widget):
+  LABEL_HORIZONTAL_PADDING = 40
+  LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
+
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
   def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", icon_size: tuple[int, int] = (64, 64),
@@ -145,7 +146,7 @@ class BigButton(Widget):
   def _width_hint(self) -> int:
     # Single line if scrolling, so hide behind icon if exists
     icon_size = self._icon_size[0] if self._txt_icon and self._scroll and self.value else 0
-    return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - icon_size)
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _get_label_font_size(self):
     if len(self.text) <= 18:
@@ -195,16 +196,16 @@ class BigButton(Widget):
 
   def _draw_content(self, btn_y: float):
     # LABEL ------------------------------------------------------------------
-    label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
+    label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    label_rect = rl.Rectangle(label_x, btn_y + LABEL_VERTICAL_PADDING, self._width_hint(),
-                              self._rect.height - LABEL_VERTICAL_PADDING * 2)
+    label_rect = rl.Rectangle(label_x, btn_y + self.LABEL_VERTICAL_PADDING, self._width_hint(),
+                              self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
-      label_y = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
+      label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
       sub_label_height = self._sub_label.get_content_height(self._width_hint())
       sub_label_rect = rl.Rectangle(label_x, label_y - sub_label_height, self._width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
@@ -293,7 +294,7 @@ class BigMultiToggle(BigToggle):
     self.set_value(self._options[0])
 
   def _width_hint(self) -> int:
-    return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
