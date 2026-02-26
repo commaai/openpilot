@@ -41,6 +41,7 @@ function install_ubuntu_deps() {
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
+    libbz2-dev \
     curl \
     libcurl4-openssl-dev \
     locales \
