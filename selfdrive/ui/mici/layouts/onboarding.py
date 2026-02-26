@@ -11,8 +11,11 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.slider import SmallSlider
-from openpilot.system.ui.mici_setup import TermsHeader, TermsPage as SetupTermsPage
+from openpilot.system.ui.mici_setup import GreyBigButton, TermsHeader, TermsPage as SetupTermsPage
+from selfdrive.ui.mici.widgets.button import BigCircleButton
+from selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
@@ -24,7 +27,6 @@ from openpilot.system.version import terms_version, training_version
 class OnboardingState(IntEnum):
   TERMS = 0
   ONBOARDING = 1
-  DECLINE = 2
 
 
 class DriverCameraSetupDialog(DriverCameraDialog):
@@ -372,70 +374,87 @@ class TrainingGuide(Widget):
       self._steps[self._step].render(self._rect)
 
 
-class DeclinePage(Widget):
-  def __init__(self, back_callback=None):
+# class DeclinePage(Widget):
+#   def __init__(self, back_callback=None):
+#     super().__init__()
+#     self._uninstall_slider = SmallSlider("uninstall openpilot", self._on_uninstall)
+#
+#     self._back_button = SmallButton("back")
+#     self._back_button.set_click_callback(back_callback)
+#
+#     self._warning_header = TermsHeader("you must accept the\nterms to use openpilot",
+#                                        gui_app.texture("icons_mici/setup/red_warning.png", 66, 60))
+#
+#   def _on_uninstall(self):
+#     ui_state.params.put_bool("DoUninstall", True)
+#     gui_app.request_close()
+#
+#   def _render(self, _):
+#     self._warning_header.render(rl.Rectangle(
+#       self._rect.x + 16,
+#       self._rect.y + 16,
+#       self._warning_header.rect.width,
+#       self._warning_header.rect.height,
+#     ))
+#
+#     self._back_button.set_opacity(1 - self._uninstall_slider.slider_percentage)
+#     self._back_button.render(rl.Rectangle(
+#       self._rect.x + 8,
+#       self._rect.y + self._rect.height - self._back_button.rect.height,
+#       self._back_button.rect.width,
+#       self._back_button.rect.height,
+#     ))
+#
+#     self._uninstall_slider.render(rl.Rectangle(
+#       self._rect.x + self._rect.width - self._uninstall_slider.rect.width,
+#       self._rect.y + self._rect.height - self._uninstall_slider.rect.height,
+#       self._uninstall_slider.rect.width,
+#       self._uninstall_slider.rect.height,
+#     ))
+
+
+class TermsPage(Widget):
+  def __init__(self, on_accept, on_decline):
     super().__init__()
-    self._uninstall_slider = SmallSlider("uninstall openpilot", self._on_uninstall)
 
-    self._back_button = SmallButton("back")
-    self._back_button.set_click_callback(back_callback)
+    def show_accept_dialog():
+      gui_app.push_widget(BigConfirmationDialogV2("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png",
+                                                  confirm_callback=on_accept))
 
-    self._warning_header = TermsHeader("you must accept the\nterms to use openpilot",
-                                       gui_app.texture("icons_mici/setup/red_warning.png", 66, 60))
+    def show_decline_dialog():
+      gui_app.push_widget(BigConfirmationDialogV2("decline &\nuninstall", "icons_mici/setup/cancel.png",
+                                                  red=True, confirm_callback=on_decline))
 
-  def _on_uninstall(self):
-    ui_state.params.put_bool("DoUninstall", True)
-    gui_app.request_close()
+    self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
+    self._accept_button.set_click_callback(show_accept_dialog)
+
+    self._decline_button = BigCircleButton("icons_mici/setup/cancel.png", red=True)
+    self._decline_button.set_click_callback(show_decline_dialog)
+
+    self._scroller = Scroller([
+      GreyBigButton("terms and\nconditions", "scroll to read and accept",
+                    gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
+      GreyBigButton("", "• openpilot is a driver assistance system.\n" +
+                    "• You must pay attention\nat all times."),
+      GreyBigButton("", "• You must be ready to\ntake over at any time.\n" +
+                    "• You are fully responsible for driving the car."),
+      SmallGreyBigButton("scan for\nfull terms", gui_app.texture("icons_mici/settings/device/pair.png", 64, 64)),
+      self._accept_button,
+      self._decline_button,
+    ])
+
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
 
   def _render(self, _):
-    self._warning_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16,
-      self._warning_header.rect.width,
-      self._warning_header.rect.height,
-    ))
-
-    self._back_button.set_opacity(1 - self._uninstall_slider.slider_percentage)
-    self._back_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._back_button.rect.height,
-      self._back_button.rect.width,
-      self._back_button.rect.height,
-    ))
-
-    self._uninstall_slider.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._uninstall_slider.rect.width,
-      self._rect.y + self._rect.height - self._uninstall_slider.rect.height,
-      self._uninstall_slider.rect.width,
-      self._uninstall_slider.rect.height,
-    ))
-
-
-class TermsPage(SetupTermsPage):
-  def __init__(self, on_accept=None, on_decline=None):
-    super().__init__(on_accept, on_decline, "decline")
-
-    info_txt = gui_app.texture("icons_mici/setup/green_info.png", 60, 60)
-    self._title_header = TermsHeader("terms & conditions", info_txt)
-
-    self._terms_label = UnifiedLabel("You must accept the Terms and Conditions to use openpilot. " +
-                                     "Read the latest terms at https://comma.ai/terms before continuing.", 36,
-                                     FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._terms_label.rect.y + self._terms_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.set_position(self._rect.x + 16, self._rect.y + 12 + scroll_offset)
-    self._title_header.render()
-
-    self._terms_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + self.ITEM_SPACING,
-      self._rect.width - 100,
-      self._terms_label.get_content_height(int(self._rect.width - 100)),
-    ))
+    self._scroller.render(self._rect)
 
 
 class OnboardingWindow(NavWidget):
@@ -451,9 +470,16 @@ class OnboardingWindow(NavWidget):
     self.set_rect(rl.Rectangle(0, 0, 458, gui_app.height))
 
     # Windows
-    self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_terms_declined)
+    self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_uninstall)
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
-    self._decline_page = DeclinePage(back_callback=self._on_decline_back)
+    self._terms.set_enabled(lambda: self.enabled)  # for nav stack
+
+    # self._decline_page = DeclinePage(back_callback=self._on_decline_back)
+
+  def _on_uninstall(self):
+    print('uninstalling!')
+    ui_state.params.put_bool("DoUninstall", True)
+    gui_app.request_close()
 
   def show_event(self):
     super().show_event()
@@ -466,9 +492,6 @@ class OnboardingWindow(NavWidget):
   @property
   def completed(self) -> bool:
     return self._accepted_terms and self._training_done
-
-  def _on_terms_declined(self):
-    self._state = OnboardingState.DECLINE
 
   def _on_decline_back(self):
     self._state = OnboardingState.TERMS
@@ -488,7 +511,5 @@ class OnboardingWindow(NavWidget):
   def _render(self, _):
     if self._state == OnboardingState.TERMS:
       self._terms.render(self._rect)
-    elif self._state == OnboardingState.ONBOARDING:
+    else:
       self._training_guide.render(self._rect)
-    elif self._state == OnboardingState.DECLINE:
-      self._decline_page.render(self._rect)
