@@ -145,7 +145,7 @@ class ConnectStatus(IntEnum):
   CONNECTED = 2
 
 
-@dataclass
+@dataclass(frozen=True)
 class WifiState:
   ssid: str | None = None
   status: ConnectStatus = ConnectStatus.DISCONNECTED
@@ -232,20 +232,21 @@ class WifiManager:
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
 
-      wifi_state = WifiState()
+      ssid: str | None = None
+      status = ConnectStatus.DISCONNECTED
       if NMDeviceState.PREPARE <= dev_state <= NMDeviceState.SECONDARIES and dev_state != NMDeviceState.NEED_AUTH:
-        wifi_state.status = ConnectStatus.CONNECTING
+        status = ConnectStatus.CONNECTING
       elif dev_state == NMDeviceState.ACTIVATED:
-        wifi_state.status = ConnectStatus.CONNECTED
+        status = ConnectStatus.CONNECTED
 
       conn_path, _ = self._get_active_wifi_connection()
       if conn_path:
-        wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+        ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
 
       if self._user_epoch != epoch:
         return
 
-      self._wifi_state = wifi_state
+      self._wifi_state = WifiState(ssid=ssid, status=status)
 
     if block:
       worker()
@@ -431,7 +432,7 @@ class WifiManager:
       if conn_path is None:
         cloudlog.warning("Failed to get active wifi connection during PREPARE/CONFIG state")
       else:
-        wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+        wifi_state = replace(wifi_state, ssid=next((s for s, p in self._connections.items() if p == conn_path), None))
 
       self._wifi_state = wifi_state
 
@@ -467,7 +468,7 @@ class WifiManager:
       if conn_path is None:
         cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
       else:
-        wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+        wifi_state = replace(wifi_state, ssid=next((s for s, p in self._connections.items() if p == conn_path), None))
 
       self._wifi_state = wifi_state
       self._enqueue_callbacks(self._activated)
