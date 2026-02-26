@@ -382,6 +382,7 @@ class WifiUIMici(NavWidget):
 
     self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
 
+    # Show loading animation near end
     max_scroll = max(self._scroller.content_size - self._scroller.rect.width, 1)
     progress = -self._scroller.scroll_panel.get_offset() / max_scroll
     if progress > 0.8 or len(self._scroller.items) <= 1:
