@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import numpy as np
 import traceback
 from abc import abstractmethod
 import os
@@ -23,10 +24,11 @@ from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRoundedButton, SmallCircleIconButton,
-                                                SmallRedPillButton, FullRoundedButton)
+from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRoundedButton, SmallerRoundedButton,
+                                                SmallCircleIconButton, WidishRoundedButton, SmallRedPillButton,
+                                                FullRoundedButton)
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
@@ -87,6 +89,7 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
+          # time.sleep(3)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -153,6 +156,7 @@ class SoftwareSelectionPage(Widget):
     self._custom_software_slider.set_enabled(lambda: self.enabled)
 
   def reset(self):
+    print('RESETTING SLIDERS')
     self._openpilot_slider.reset()
     self._custom_software_slider.reset()
 
@@ -216,6 +220,7 @@ class TermsPage(Widget):
                back_text: str = "back", continue_text: str = "accept"):
     super().__init__()
 
+    # TODO: use Scroller
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
 
     self._continue_text = continue_text
@@ -412,11 +417,11 @@ class FailedPage(NavWidget):
 
     self._reboot_button = SmallRedPillButton("reboot")
     self._reboot_button.set_click_callback(reboot_callback)
-    self._reboot_button.set_enabled(lambda: self.enabled)
+    self._reboot_button.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._retry_button = WideRoundedButton("retry")
     self._retry_button.set_click_callback(gui_app.pop_widget)
-    self._retry_button.set_enabled(lambda: self.enabled)
+    self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
 
   def set_reason(self, reason: str):
     self._reason_label.set_text(reason)
@@ -545,6 +550,8 @@ class NetworkSetupPage(NavWidget):
       self._pending_shake = True
 
     def on_continue_click():
+      # if not self._custom_software:
+      #   gui_app.pop_widget()
       continue_callback(self._custom_software)
 
     self._waiting_button = BigPillButton("waiting for\ninternet...", disabled_background=True)
@@ -559,10 +566,19 @@ class NetworkSetupPage(NavWidget):
       self._waiting_button,
     ])
 
+    # set up position for invisible items so that scroll_to works
+    # self._scroller._layout()
+
     gui_app.set_nav_stack_tick(self._nav_stack_tick)
 
   def set_custom_software(self, custom_software: bool):
     self._custom_software = custom_software
+
+    # "download\n& install" if self._custom_software else "continue", green=not self._custom_software
+    # if self._custom_software:
+    #   self._continue_button.set_text("choose custom software")
+    # else:
+    #   self._continue_button.set_text("install\nopenpilot")
     self._continue_button.set_text("install openpilot" if not custom_software else "choose software")
     self._continue_button.set_green(not custom_software)
 
@@ -570,6 +586,8 @@ class NetworkSetupPage(NavWidget):
     super().show_event()
     self._scroller.show_event()
     self._prev_has_internet = False
+    print('SHOW EVENT')
+    # self._network_monitor.reset()
 
   def hide_event(self):
     super().hide_event()
@@ -577,6 +595,16 @@ class NetworkSetupPage(NavWidget):
 
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
+
+    # has_internet = self._network_monitor.network_connected.is_set()
+    # if has_internet and not self._prev_has_internet and gui_app.get_active_widget() == self:
+    #   gui_app.pop_widgets_to(self)
+    #   end_offset = -(self._scroller.content_size - self._rect.width)
+    #   remaining = self._scroller.scroll_panel.get_offset() - end_offset
+    #   self._scroller.scroll_to(remaining, smooth=True, block=True)
+    #   self._pending_grow_animation = True
+    #
+    #   self._prev_has_internet = has_internet
 
   def _update_state(self):
     super()._update_state()
@@ -599,15 +627,22 @@ class NetworkSetupPage(NavWidget):
       self._continue_button.set_visible(False)
       self._waiting_button.set_visible(True)
 
+    # print('content', self._scroller.content_size, 'rect', self._rect.width)
+    # print('offset', self._scroller.scroll_panel.get_offset())
+
+    # This intentionally doesn't trigger pop when in keyboard or forget dialog
     has_internet = self._network_monitor.network_connected.is_set()
-    if has_internet and not self._prev_has_internet:
+    if has_internet and not self._prev_has_internet:  # and gui_app.get_active_widget() == self:
       self._pending_has_internet_scroll = rl.get_time()
     self._prev_has_internet = has_internet
+
+    # print('offset', self._scroller.scroll_panel.get_offset(), has_internet)
 
     if self._pending_has_internet_scroll is not None:
       elapsed = rl.get_time() - self._pending_has_internet_scroll
       if elapsed > 0.5:
         self._pending_has_internet_scroll = None
+        # print('SCROLLING OVER')
         gui_app.pop_widgets_to(self)
 
         # ensure layout is up to date for scroll_to
@@ -636,38 +671,56 @@ class Setup(Widget):
 
     self._start_page = StartPage()
     self._start_page.set_click_callback(lambda: self._set_state(SetupState.SOFTWARE_SELECTION))
-    self._start_page.set_enabled(lambda: self.enabled)
+    self._start_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback, self._back_to_software_selection)
+    # TODO: change these to touch_valid
+    # self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._software_selection_page = SoftwareSelectionPage(self._software_selection_continue_button_callback,
                                                           self._software_selection_custom_software_button_callback)
-    self._software_selection_page.set_enabled(lambda: self.enabled)
+    self._software_selection_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._download_failed_page = FailedPage(HARDWARE.reboot, lambda: self._set_state(SetupState.START))
 
     self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._back_to_software_selection)
+    # self._custom_software_warning_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._downloading_page = DownloadingPage()
 
   def _back_to_software_selection(self):
+    # pop and reset sliders
     gui_app.pop_widgets_to(self)
     self._set_state(SetupState.SOFTWARE_SELECTION)
 
   def _update_state(self):
     pass
+    # self._wifi_manager.process_callbacks()
+
+    # self._network_setup_page.set_has_internet(self._network_monitor.network_connected.is_set())
+    # self._network_setup_page.render(rect)
 
   def _set_state(self, state: SetupState):
+    print('SETTING STATE', state)
     self.state = state
     if self.state == SetupState.SOFTWARE_SELECTION:
       self._software_selection_page.reset()
 
   def _push_network_setup(self, custom_software: bool = False):
-    self._network_setup_page.set_custom_software(custom_software)
+    # self._network_setup_page.show_event()
+    # TODO: move this to network setup page's show event and remove from Setup
+    # self._network_monitor.reset()
+    # self._network_setup_page.set_has_internet(False)
+    self._network_setup_page.set_custom_software(custom_software)  # to fire the correct continue callback after continuing
+
+    print('SHOWING NETWORK SETUP PAGE')
+    # gui_app.set_modal_overlay(self._network_setup_page)
     gui_app.pop_widgets_to(self)
     gui_app.push_widget(self._network_setup_page)
+    # self._set_state(SetupState.SOFTWARE_SELECTION)
 
   def _render(self, rect: rl.Rectangle):
+    # print('state', repr(self.state))
     if self.state == SetupState.START:
       self._start_page.render(rect)
     elif self.state == SetupState.SOFTWARE_SELECTION:
@@ -695,6 +748,12 @@ class Setup(Widget):
 
   def close(self):
     self._network_monitor.stop()
+
+  # def render_network_setup(self, rect: rl.Rectangle):
+  #   # gui_app.set_modal_overlay(self._network_setup_page)
+  #   has_internet = self._network_monitor.network_connected.is_set()
+  #   self._network_setup_page.set_has_internet(has_internet)
+  #   self._network_setup_page.render(rect)
 
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_page.set_progress(self.download_progress)
