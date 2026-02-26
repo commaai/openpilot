@@ -627,23 +627,17 @@ class WifiManager:
       # Persisted to disk on ACTIVATED via Save()
       if self._wifi_device is None:
         cloudlog.warning("No WiFi device found")
+        # TODO: expose a failed connection state in the UI
         self._init_wifi_state()
         return
 
-      # TEST: force error for "unifi"
-      test_connection = dict(connection)
-      if ssid == "unifi":
-        test_connection['connection']['uuid'] = ('s', 'bogus-uuid-that-will-fail')
-        print(f'  [TEST connect_to_network] forcing bogus connection for "{ssid}"')
-
       reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'AddAndActivateConnection2', 'a{sa{sv}}ooa{sv}',
-                                                                   (test_connection, self._wifi_device, "/", {'persist': ('s', 'volatile')})))
+                                                                   (connection, self._wifi_device, "/", {'persist': ('s', 'volatile')})))
 
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f"Failed to add and activate connection for {ssid}: {reply}")
-        print(f'  [TEST connect_to_network] error, calling _init_wifi_state(). Current: {self._wifi_state}')
+        # TODO: expose a failed connection state in the UI
         self._init_wifi_state()
-        print(f'  [TEST connect_to_network] after _init_wifi_state(): {self._wifi_state}')
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -664,30 +658,23 @@ class WifiManager:
       threading.Thread(target=worker, daemon=True).start()
 
   def activate_connection(self, ssid: str, block: bool = False):
-    print('activate connection', ssid)
     self._set_connecting(ssid)
 
     def worker():
       conn_path = self._connections.get(ssid, None)
       if conn_path is None or self._wifi_device is None:
         cloudlog.warning(f"Failed to activate connection for {ssid}: conn_path={conn_path}, wifi_device={self._wifi_device}")
+        # TODO: expose a failed connection state in the UI
         self._init_wifi_state()
         return
 
-      # TEST: force error for "unifi"
-      use_path = conn_path
-      if ssid == "unifi":
-        use_path = "/org/freedesktop/NetworkManager/Settings/999999"
-        print(f'  [TEST activate_connection] forcing bogus path for "{ssid}"')
-
       reply = self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
-                                                                   (use_path, self._wifi_device, "/")))
+                                                                   (conn_path, self._wifi_device, "/")))
 
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f"Failed to activate connection for {ssid}: {reply}")
-        print(f'  [TEST activate_connection] error, calling _init_wifi_state(). Current: {self._wifi_state}')
+        # TODO: expose a failed connection state in the UI
         self._init_wifi_state()
-        print(f'  [TEST activate_connection] after _init_wifi_state(): {self._wifi_state}')
 
     if block:
       worker()
