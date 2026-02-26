@@ -323,13 +323,10 @@ class WifiUIMici(NavWidget):
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
-    # Mark networks no longer in scan results (display handled by _update_state).
-    # Don't mark the connecting/connected network as missing — it can drop from scan briefly.
-    current_ssid = self._wifi_manager.wifi_state.ssid
+    # Mark networks no longer in scan results (display handled by _update_state)
     for btn in self._scroller.items:
       if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
-        if btn.network.ssid != current_ssid:
-          btn.set_network_missing(True)
+        btn.set_network_missing(True)
 
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)
