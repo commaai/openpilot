@@ -405,6 +405,41 @@ class SmallGreyBigButton(GreyBigButton):
     self._draw_content(self._rect.y)
 
 
+class QRCodeWidget(Widget):
+  def __init__(self, url: str, size: int = 180):
+    super().__init__()
+    self.set_rect(rl.Rectangle(0, 0, size, size))
+    self._size = size
+    self._qr_texture: rl.Texture | None = None
+    self._generate_qr(url)
+
+  def _generate_qr(self, url: str):
+    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=0)
+    qr.add_data(url)
+    qr.make(fit=True)
+
+    pil_img = qr.make_image(fill_color="white", back_color="black").convert('RGBA')
+    img_array = np.array(pil_img, dtype=np.uint8)
+
+    rl_image = rl.Image()
+    rl_image.data = rl.ffi.cast("void *", img_array.ctypes.data)
+    rl_image.width = pil_img.width
+    rl_image.height = pil_img.height
+    rl_image.mipmaps = 1
+    rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+
+    self._qr_texture = rl.load_texture_from_image(rl_image)
+
+  def _render(self, _):
+    if self._qr_texture:
+      scale = self._size / self._qr_texture.height
+      rl.draw_texture_ex(self._qr_texture, rl.Vector2(self._rect.x, self._rect.y), 0.0, scale, rl.WHITE)
+
+  def __del__(self):
+    if self._qr_texture and self._qr_texture.id != 0:
+      rl.unload_texture(self._qr_texture)
+
+
 class TermsPage(Widget):
   def __init__(self, on_accept, on_decline):
     super().__init__()
@@ -431,6 +466,7 @@ class TermsPage(Widget):
       GreyBigButton("", "• You must be ready to\ntake over at any time.\n" +
                     "• You are fully responsible for driving the car."),
       SmallGreyBigButton("scan for\nfull terms", gui_app.texture("icons_mici/settings/device/pair.png", 64, 48)),
+      QRCodeWidget("https://comma.ai/terms"),
       self._accept_button,
       self._decline_button,
     ])
