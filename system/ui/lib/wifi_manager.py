@@ -197,7 +197,7 @@ class WifiManager:
     self._networks_updated: list[Callable[[list[Network]], None]] = []
     self._disconnected: list[Callable[[], None]] = []
 
-    self._lock = threading.Lock()
+    self._scan_lock = threading.Lock()
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
     self._state_thread = threading.Thread(target=self._monitor_state, daemon=True)
     self._initialize()
@@ -287,11 +287,13 @@ class WifiManager:
 
   @property
   def connecting_to_ssid(self) -> str | None:
-    return self._wifi_state.ssid if self._wifi_state.status == ConnectStatus.CONNECTING else None
+    state = self._wifi_state
+    return state.ssid if state.status == ConnectStatus.CONNECTING else None
 
   @property
   def connected_ssid(self) -> str | None:
-    return self._wifi_state.ssid if self._wifi_state.status == ConnectStatus.CONNECTED else None
+    state = self._wifi_state
+    return state.ssid if state.status == ConnectStatus.CONNECTED else None
 
   @property
   def tethering_password(self) -> str:
@@ -828,7 +830,7 @@ class WifiManager:
       return
 
     def worker():
-      with self._lock:
+      with self._scan_lock:
         if self._wifi_device is None:
           cloudlog.warning("No WiFi device found")
           return
