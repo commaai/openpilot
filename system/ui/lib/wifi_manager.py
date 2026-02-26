@@ -796,6 +796,10 @@ class WifiManager:
       else:
         self._deactivate_connection(self._tethering_ssid)
 
+        # we need to call finished callback in main thread, enqueue
+        if finished_callback is not None:
+          self._enqueue_callbacks([finished_callback])
+
     threading.Thread(target=worker, daemon=True).start()
 
   def set_current_network_metered(self, metered: MeteredType):
