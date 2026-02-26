@@ -121,10 +121,6 @@ class MiciHomeLayout(Widget):
 
   def show_event(self):
     self._version_text = self._get_version_text()
-    self._update_params()
-
-  def _update_params(self):
-    self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
 
   def _update_state(self):
     if self.is_pressed and not self._is_pressed_prev:
@@ -143,11 +139,11 @@ class MiciHomeLayout(Widget):
         self._mouse_down_t = None
         self._did_long_press = True
 
+    self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
+
     if rl.get_time() - self._last_refresh > 5.0:
-      # Update version text
       self._version_text = self._get_version_text()
       self._last_refresh = rl.get_time()
-      self._update_params()
 
   def set_callbacks(self, on_settings: Callable | None = None):
     self._on_settings_click = on_settings
