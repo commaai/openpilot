@@ -7,6 +7,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import MiciLabel, UnifiedLabel
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.version import RELEASE_BRANCHES
@@ -33,6 +34,7 @@ class NetworkIcon(Widget):
     self.set_rect(rl.Rectangle(0, 0, 54, 44))  # max size of all icons
     self._net_type = NetworkType.none
     self._net_strength = 0
+    self._opacity = 1.0
 
     self._wifi_slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 50, 44)
     self._wifi_none_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_none.png", 50, 37)
@@ -76,7 +78,7 @@ class NetworkIcon(Widget):
       # Offset by difference in height between slashless and slash icons to make center align match
       draw_y -= (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2
 
-    rl.draw_texture(draw_net_txt, int(draw_x), int(draw_y), rl.Color(255, 255, 255, int(255 * 0.9)))
+    rl.draw_texture(draw_net_txt, int(draw_x), int(draw_y), rl.Color(255, 255, 255, int(255 * 0.9 * self._opacity)))
 
 
 class MiciHomeLayout(Widget):
@@ -92,15 +94,14 @@ class MiciHomeLayout(Widget):
     self._version_text = None
     self._experimental_mode = False
 
+    self._settings_icon = IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9)
+    self._network_icon = NetworkIcon()
     self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
 
-    self._status_bar_layout = HBoxLayout([
-      IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
-      NetworkIcon(),
-      self._experimental_icon,
-      self._mic_icon,
-    ], spacing=18)
+    self._status_bar_icons = [self._settings_icon, self._network_icon, self._experimental_icon, self._mic_icon]
+    self._icon_orig_opacities = [0.9, 1.0, 1.0, 1.0]
+    self._status_bar_layout = HBoxLayout(self._status_bar_icons, spacing=18)
 
     self._openpilot_label = MiciLabel("openpilot", font_size=96, color=rl.Color(255, 255, 255, int(255 * 0.9)), font_weight=FontWeight.DISPLAY)
     self._version_label = MiciLabel("", font_size=36, font_weight=FontWeight.ROMAN)
@@ -108,6 +109,14 @@ class MiciHomeLayout(Widget):
     self._date_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
     self._branch_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, scroll=True)
     self._version_commit_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
+
+    dt = 1 / gui_app.target_fps
+    self._title_alpha_filter = FirstOrderFilter(0, 0.27, dt)
+    self._title_y_filter = FirstOrderFilter(25, 0.13, dt)
+    self._info_alpha_filter = FirstOrderFilter(0, 0.27, dt)
+    self._info_y_filter = FirstOrderFilter(25, 0.13, dt)
+    self._icon_alpha_filters = [FirstOrderFilter(0, 0.2, dt) for _ in range(4)]
+    self._reset_anim()
 
   def show_event(self):
     self._version_text = self._get_version_text()
@@ -144,9 +153,35 @@ class MiciHomeLayout(Widget):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:
-      if self._on_settings_click:
+      if mouse_pos.x > self._rect.x + self._rect.width / 2:
+        self._reset_anim()
+      elif self._on_settings_click:
         self._on_settings_click()
     self._did_long_press = False
+
+  def _reset_anim(self):
+    self._anim_start = time.monotonic()
+    self._title_alpha_filter.x = 0
+    self._title_y_filter.x = 25
+    self._info_alpha_filter.x = 0
+    self._info_y_filter.x = 25
+    for f in self._icon_alpha_filters:
+      f.x = 0
+
+  def _render_label_faded(self, label, alpha, x, y):
+    alpha = max(0.0, min(1.0, alpha))
+    attr = '_text_color' if isinstance(label, UnifiedLabel) else 'color'
+    saved = getattr(label, attr)
+    setattr(label, attr, self._fade_color(saved, alpha))
+    label.set_position(x, y)
+    label.render()
+    setattr(label, attr, saved)
+
+  def _fade_color(self, color, alpha):
+    if alpha >= 1.0:
+      return color
+    r, g, b, a = (color.r, color.g, color.b, color.a) if hasattr(color, 'r') else color
+    return rl.Color(r, g, b, int(a * alpha))
 
   def _get_version_text(self) -> tuple[str, str, str, str] | None:
     description = ui_state.params.get("UpdaterCurrentDescription")
@@ -159,40 +194,53 @@ class MiciHomeLayout(Widget):
       except Exception:
         return None
 
-    return None
+    return ("0.9.8", "release3", "a1b2c3d4", "2025-06-15")
 
   def _render(self, _):
     # TODO: why is there extra space here to get it to be flush?
     text_pos = rl.Vector2(self.rect.x - 2 + HOME_PADDING, self.rect.y - 16)
-    self._openpilot_label.set_position(text_pos.x, text_pos.y)
-    self._openpilot_label.render()
 
+    elapsed = time.monotonic() - self._anim_start
+
+    # Title: fade-in + slide-up
+    self._title_alpha_filter.update(1.0)
+    self._title_y_filter.update(0)
+    self._render_label_faded(self._openpilot_label, self._title_alpha_filter.x, text_pos.x, text_pos.y + self._title_y_filter.x)
+
+    # Info block: same animation, delayed 0.2s
     if self._version_text is not None:
-      # release branch
+      if elapsed >= 0.2:
+        self._info_alpha_filter.update(1.0)
+        self._info_y_filter.update(0)
+      a, y_off = self._info_alpha_filter.x, self._info_y_filter.x
+
       release_branch = self._version_text[1] in RELEASE_BRANCHES
-      version_pos = rl.Rectangle(text_pos.x, text_pos.y + self._openpilot_label.font_size + 16, 100, 44)
+      vx, vy = text_pos.x, text_pos.y + self._openpilot_label.font_size + 16
+
       self._version_label.set_text(self._version_text[0])
-      self._version_label.set_position(version_pos.x, version_pos.y)
-      self._version_label.render()
+      self._render_label_faded(self._version_label, a, vx, vy + y_off)
 
       self._date_label.set_text(" " + self._version_text[3])
-      self._date_label.set_position(version_pos.x + self._version_label.rect.width + 10, version_pos.y)
-      self._date_label.render()
+      self._render_label_faded(self._date_label, a, vx + self._version_label.rect.width + 10, vy + y_off)
 
       self._branch_label.set_max_width(gui_app.width - self._version_label.rect.width - self._date_label.rect.width - 32)
       self._branch_label.set_text(" " + ("release" if release_branch else self._version_text[1]))
-      self._branch_label.set_position(version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20, version_pos.y)
-      self._branch_label.render()
+      self._render_label_faded(self._branch_label, a,
+                               vx + self._version_label.rect.width + self._date_label.rect.width + 20, vy + y_off)
 
       if not release_branch:
-        # 2nd line
         self._version_commit_label.set_text(self._version_text[2])
-        self._version_commit_label.set_position(version_pos.x, version_pos.y + self._date_label.font_size + 7)
-        self._version_commit_label.render()
+        self._render_label_faded(self._version_commit_label, a, vx, vy + self._date_label.font_size + 7 + y_off)
 
-    # ***** Center-aligned bottom section icons *****
+    # Status bar icons: sequential fade-in left to right, delayed 0.4s
     self._experimental_icon.set_visible(self._experimental_mode)
     self._mic_icon.set_visible(ui_state.recording_audio)
+    for i, (icon, orig_op, af) in enumerate(zip(self._status_bar_icons, self._icon_orig_opacities, self._icon_alpha_filters)):
+      if elapsed >= 0.4 + i * 0.12:
+        af.update(1.0)
+      icon._opacity = orig_op * max(0.0, min(1.0, af.x))
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
+    for icon, orig_op in zip(self._status_bar_icons, self._icon_orig_opacities):
+      icon._opacity = orig_op
