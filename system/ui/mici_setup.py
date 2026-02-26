@@ -109,7 +109,7 @@ class SetupState(IntEnum):
 
 
 class StartPage(Widget):
-  GROW_INTERVAL_S = 5.0
+  GROW_INTERVAL_S = 8
   # Match BigButton trigger_grow_animation() default duration.
   GROW_DURATION_S = 0.65
 
@@ -131,7 +131,7 @@ class StartPage(Widget):
     now = rl.get_time()
     if now >= self._next_grow_at:
       self._grow_animation_until = now + self.GROW_DURATION_S
-      self._next_grow_at = now + self.GROW_INTERVAL_S * 2  # then 10s
+      self._next_grow_at = now + self.GROW_INTERVAL_S / 2
 
     is_pressed_like = self.is_pressed or now < self._grow_animation_until
     scale = self._scale_filter.update(1.07 if is_pressed_like else 1.0)
