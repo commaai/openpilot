@@ -112,9 +112,9 @@ class MiciHomeLayout(Widget):
 
     dt = 1 / gui_app.target_fps
     self._title_alpha_filter = FirstOrderFilter(0, 0.33, dt)
-    self._title_y_filter = FirstOrderFilter(40, 0.13, dt)
+    self._title_y_filter = FirstOrderFilter(44, 0.13, dt)
     self._info_alpha_filter = FirstOrderFilter(0, 0.27, dt)
-    self._info_y_filter = FirstOrderFilter(25, 0.13, dt)
+    self._info_y_filter = FirstOrderFilter(22, 0.13, dt)
     self._icon_alpha_filters = [FirstOrderFilter(0, 0.2, dt) for _ in range(4)]
     self._anim_start = time.monotonic()
     self._first_render = True
@@ -159,9 +159,9 @@ class MiciHomeLayout(Widget):
   def _reset_anim(self):
     self._anim_start = time.monotonic()
     self._title_alpha_filter.x = 0
-    self._title_y_filter.x = 40
+    self._title_y_filter.x = 44
     self._info_alpha_filter.x = 0
-    self._info_y_filter.x = 25
+    self._info_y_filter.x = 22
     for f in self._icon_alpha_filters:
       f.x = 0
 
