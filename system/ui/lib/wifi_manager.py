@@ -387,14 +387,14 @@ class WifiManager:
 
     if new_state == NMDeviceState.DISCONNECTED:
       if change_reason == NMDeviceStateReason.NEW_ACTIVATION:
-        pass
-      elif change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
-        # Only clear if the current ssid was actually forgotten (no longer in known connections).
-        # Protects against: forget A while connecting to B — B is in _connections, so don't clear.
-        if self._wifi_state.ssid not in self._connections:
-          self._set_connecting(None)
-      else:
-        self._set_connecting(None)
+        return
+      # Guard: forget A while connecting to B fires CONNECTION_REMOVED. Don't clear B's state
+      # if B is still a known connection. If B hasn't arrived in _connections yet (late
+      # NewConnection), state clears here but PREPARE recovers via DBus lookup.
+      if change_reason == NMDeviceStateReason.CONNECTION_REMOVED:
+        if self._wifi_state.ssid and self._wifi_state.ssid in self._connections:
+          return
+      self._set_connecting(None)
 
     elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
       if self._wifi_state.ssid is None:
