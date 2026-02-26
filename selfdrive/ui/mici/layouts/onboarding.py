@@ -9,11 +9,9 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
+from openpilot.system.ui.widgets.button import SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.slider import SmallSlider
 from openpilot.system.ui.mici_setup import GreyBigButton, TermsHeader, TermsPage as SetupTermsPage
 from selfdrive.ui.mici.widgets.button import BigCircleButton
 from selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
@@ -344,45 +342,6 @@ class TrainingGuide(Widget):
       self._steps[self._step].render(self._rect)
 
 
-# class DeclinePage(Widget):
-#   def __init__(self, back_callback=None):
-#     super().__init__()
-#     self._uninstall_slider = SmallSlider("uninstall openpilot", self._on_uninstall)
-#
-#     self._back_button = SmallButton("back")
-#     self._back_button.set_click_callback(back_callback)
-#
-#     self._warning_header = TermsHeader("you must accept the\nterms to use openpilot",
-#                                        gui_app.texture("icons_mici/setup/red_warning.png", 66, 60))
-#
-#   def _on_uninstall(self):
-#     ui_state.params.put_bool("DoUninstall", True)
-#     gui_app.request_close()
-#
-#   def _render(self, _):
-#     self._warning_header.render(rl.Rectangle(
-#       self._rect.x + 16,
-#       self._rect.y + 16,
-#       self._warning_header.rect.width,
-#       self._warning_header.rect.height,
-#     ))
-#
-#     self._back_button.set_opacity(1 - self._uninstall_slider.slider_percentage)
-#     self._back_button.render(rl.Rectangle(
-#       self._rect.x + 8,
-#       self._rect.y + self._rect.height - self._back_button.rect.height,
-#       self._back_button.rect.width,
-#       self._back_button.rect.height,
-#     ))
-#
-#     self._uninstall_slider.render(rl.Rectangle(
-#       self._rect.x + self._rect.width - self._uninstall_slider.rect.width,
-#       self._rect.y + self._rect.height - self._uninstall_slider.rect.height,
-#       self._uninstall_slider.rect.width,
-#       self._uninstall_slider.rect.height,
-#     ))
-
-
 class SmallGreyBigButton(GreyBigButton):
   def __init__(self, text: str, icon: rl.Texture):
     super().__init__("", text, icon)
@@ -502,8 +461,6 @@ class OnboardingWindow(Widget):
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
     self._terms.set_enabled(lambda: self.enabled)  # for nav stack
 
-    # self._decline_page = DeclinePage(back_callback=self._on_decline_back)
-
   def _on_uninstall(self):
     print('uninstalling!')
     ui_state.params.put_bool("DoUninstall", True)
@@ -520,9 +477,6 @@ class OnboardingWindow(Widget):
   @property
   def completed(self) -> bool:
     return self._accepted_terms and self._training_done
-
-  def _on_decline_back(self):
-    self._state = OnboardingState.TERMS
 
   def close(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
