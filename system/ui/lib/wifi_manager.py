@@ -780,10 +780,14 @@ class WifiManager:
   def set_ipv4_forward(self, enabled: bool):
     self._ipv4_forward = enabled
 
-  def set_tethering_active(self, active: bool):
+  def set_tethering_active(self, active: bool, finished_callback: Callable[[], None] | None = None):
     def worker():
       if active:
         self.activate_connection(self._tethering_ssid, block=True)
+
+        # we need to call finished callback in main thread, enqueue
+        if finished_callback is not None:
+          self._enqueue_callbacks([finished_callback])
 
         if not self._ipv4_forward:
           time.sleep(5)
