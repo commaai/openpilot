@@ -311,9 +311,17 @@ function op_ssh() {
   op_run_command tools/scripts/ssh.py "$@"
 }
 
-function op_som_debug() {
+function op_script() {
   op_before_cmd
-  op_run_command panda/scripts/som_debug.sh $@
+
+  case $1 in
+    som-debug )  op_run_command panda/scripts/som_debug.sh "${@:2}" ;;
+    * )
+      echo -e "Unknown script '$1'. Available scripts:"
+      echo -e "  ${BOLD}som-debug${NC}    SOM serial debug console via panda"
+      return 1
+      ;;
+  esac
 }
 
 function op_check() {
@@ -445,7 +453,9 @@ function op_default() {
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
-  echo -e "  ${BOLD}som-debug${NC}    SOM serial debug console via panda"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Commands [Scripts]:${NC}"
+  echo -e "  ${BOLD}script${NC}       Run a script (e.g. op script som-debug)"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
@@ -506,7 +516,7 @@ function _op() {
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     adb )           shift 1; op_adb "$@" ;;
     ssh )           shift 1; op_ssh "$@" ;;
-    som-debug )     shift 1; op_som_debug "$@" ;;
+    script )        shift 1; op_script "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
