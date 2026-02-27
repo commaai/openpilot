@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import numpy as np
 import traceback
 from abc import abstractmethod
 import os
@@ -32,7 +31,6 @@ from openpilot.system.ui.widgets.scroller import Scroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton, WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2, BigInputDialog
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
 
 NetworkType = log.DeviceState.NetworkType
@@ -598,7 +596,7 @@ class NetworkSetupPage(NavWidget):
 
     # This intentionally doesn't trigger pop when in keyboard or forget dialog
     has_internet = self._network_monitor.network_connected.is_set()
-    if has_internet and not self._prev_has_internet:  # and gui_app.get_active_widget() == self:
+    if has_internet and not self._prev_has_internet:
       self._pending_has_internet_scroll = rl.get_time()
     self._prev_has_internet = has_internet
 
@@ -782,6 +780,7 @@ class Setup(Widget):
       self.download_failed(self.download_url, error_msg)
 
   def download_failed(self, url: str, reason: str):
+    # go back to start
     self.failed_url = url
     self.failed_reason = reason
     self._download_failed_page.set_reason(reason)
