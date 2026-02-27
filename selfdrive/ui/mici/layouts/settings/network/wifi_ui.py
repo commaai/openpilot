@@ -284,6 +284,7 @@ class WifiUIMici(NavWidget):
 
     self._wifi_manager = wifi_manager
     self._networks: dict[str, Network] = {}
+    self._wrong_password_ssids: set[str] = set()
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -316,9 +317,13 @@ class WifiUIMici(NavWidget):
     for network in self._networks.values():
       if network.ssid in existing:
         existing[network.ssid].update_network(network)
+        if self._wifi_manager.connected_ssid == network.ssid or self._wifi_manager.connecting_to_ssid == network.ssid:
+          self._wrong_password_ssids.discard(network.ssid)
       else:
         btn = WifiButton(network, self._wifi_manager)
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
+        if network.ssid in self._wrong_password_ssids:
+          btn.set_wrong_password()
         self._scroller.add_widget(btn)
 
     # Mark networks no longer in scan results (display handled by _update_state)
@@ -348,6 +353,7 @@ class WifiUIMici(NavWidget):
 
   def _on_need_auth(self, ssid, incorrect_password=True):
     if incorrect_password:
+      self._wrong_password_ssids.add(ssid)
       for btn in self._scroller.items:
         if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
           btn.set_wrong_password()
