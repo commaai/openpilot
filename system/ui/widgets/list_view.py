@@ -43,6 +43,7 @@ class ItemAction(Widget, ABC):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, width, 0))
     self._enabled_source = enabled
+    self._on_activated: Callable[[], None] | None = None
 
   def get_width_hint(self) -> float:
     # Return's action ideal width, 0 means use full width
@@ -50,6 +51,10 @@ class ItemAction(Widget, ABC):
 
   def set_enabled(self, enabled: bool | Callable[[], bool]):
     self._enabled_source = enabled
+
+  def set_on_activated(self, callback: Callable[[], None] | None) -> None:
+    """Called when the action is activated (e.g. button pressed). Used by ListItem to invoke row callback."""
+    self._on_activated = callback
 
   @property
   def enabled(self):
@@ -66,10 +71,9 @@ class ToggleAction(ItemAction):
     super().set_touch_valid_callback(touch_callback)
     self.toggle.set_touch_valid_callback(touch_callback)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> None:
     self.toggle.set_enabled(self.enabled)
-    clicked = self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
-    return bool(clicked)
+    self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
 
   def set_state(self, state: bool):
     self.toggle.set_state(state)
@@ -83,11 +87,11 @@ class ButtonAction(ItemAction):
     super().__init__(width, enabled)
     self._text_source = text
     self._value_source: str | Callable[[], str] | None = None
-    self._pressed = False
     self._font = gui_app.font(FontWeight.NORMAL)
 
-    def pressed():
-      self._pressed = True
+    def on_press() -> None:
+      if self._on_activated:
+        self._on_activated()
 
     self._button = Button(
       self.text,
@@ -95,7 +99,7 @@ class ButtonAction(ItemAction):
       font_weight=BUTTON_FONT_WEIGHT,
       button_style=ButtonStyle.LIST_ACTION,
       border_radius=BUTTON_BORDER_RADIUS,
-      click_callback=pressed,
+      click_callback=on_press,
       text_padding=0,
     )
     self.set_enabled(enabled)
@@ -126,7 +130,7 @@ class ButtonAction(ItemAction):
   def value(self):
     return _resolve_value(self._value_source, "")
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> None:
     self._button.set_text(self.text)
     self._button.set_enabled(_resolve_value(self.enabled))
     button_rect = rl.Rectangle(rect.x + rect.width - BUTTON_WIDTH, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
@@ -138,11 +142,6 @@ class ButtonAction(ItemAction):
       gui_label(value_rect, value_text, font_size=ITEM_TEXT_FONT_SIZE, color=ITEM_TEXT_VALUE_COLOR,
                 font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
-
-    # TODO: just use the generic Widget click callbacks everywhere, no returning from render
-    pressed = self._pressed
-    self._pressed = False
-    return pressed
 
 
 class TextAction(ItemAction):
@@ -163,11 +162,10 @@ class TextAction(ItemAction):
     text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
     return text_width + TEXT_PADDING
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> None:
     gui_label(self._rect, self.text, font_size=ITEM_TEXT_FONT_SIZE, color=self.color,
               font_weight=FontWeight.NORMAL, alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
-    return False
 
   def set_text(self, text: str | Callable[[], str]):
     self._text_source = text
@@ -222,7 +220,7 @@ class MultipleButtonAction(ItemAction):
   def get_selected_button(self) -> int:
     return self.selected_button
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle) -> None:
     spacing = RIGHT_ITEM_PADDING
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
 
@@ -281,6 +279,8 @@ class ListItem(Widget):
     self.callback = callback
     self.description_opened_callback: Callable | None = None
     self.action_item = action_item
+    if action_item and callback:
+      action_item.set_on_activated(callback)
 
     self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
     self._font = gui_app.font(FontWeight.NORMAL)
@@ -338,7 +338,7 @@ class ListItem(Widget):
     if new_description != self._prev_description:
       self._parse_description(new_description)
 
-  def _render(self, _):
+  def _render(self, _) -> None:
     if not self.is_visible:
       return
 
@@ -378,10 +378,7 @@ class ListItem(Widget):
     if self.action_item:
       right_rect = self.get_right_item_rect(self._rect)
       right_rect.y = self._rect.y
-      if self.action_item.render(right_rect) and self.action_item.enabled:
-        # Right item was clicked/activated
-        if self.callback:
-          self.callback()
+      self.action_item.render(right_rect)
 
   def set_icon(self, icon: str | None):
     self.icon = icon

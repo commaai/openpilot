@@ -121,7 +121,7 @@ class Reset(Widget):
           self._reboot_button.rect.width,
           self._reboot_button.rect.height))
 
-    return self._render_status
+    return True
 
   def _confirm(self):
     self.start_reset()

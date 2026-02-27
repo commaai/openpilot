@@ -102,7 +102,7 @@ class Widget(abc.ABC):
       return None
 
     self._layout()
-    ret = self._render(self._rect)
+    self._render(self._rect)
 
     if gui_app.show_touches:
       self._draw_debug_rect()
@@ -116,8 +116,6 @@ class Widget(abc.ABC):
       self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
 
     self.__was_awake = device.awake
-
-    return ret
 
   def _draw_debug_rect(self) -> None:
     rl.draw_rectangle_lines(int(self._rect.x), int(self._rect.y),

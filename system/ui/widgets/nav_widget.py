@@ -198,8 +198,8 @@ class NavWidget(Widget, abc.ABC):
     bounce_height = 20
     rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height + bounce_height), rl.BLACK)
 
-  def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
-    ret = super().render(rect)
+  def render(self, rect: rl.Rectangle | None = None) -> None:
+    super().render(rect)
 
     if self.back_enabled:
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
@@ -216,8 +216,6 @@ class NavWidget(Widget, abc.ABC):
 
       self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
       self._nav_bar.render()
-
-    return ret
 
   def show_event(self):
     super().show_event()
