@@ -14,9 +14,9 @@ from openpilot.system.ui.lib.application import gui_app
 ONROAD_DELAY = 2.5  # seconds
 
 
-class MiciMainLayout(Widget):
+class MiciMainLayout(Scroller):
   def __init__(self):
-    super().__init__()
+    super().__init__(snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
@@ -36,11 +36,11 @@ class MiciMainLayout(Widget):
       # TODO: set parent rect and use it if never passed rect from render (like in Scroller)
       widget.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       self._alerts_layout,
       self._home_layout,
       self._onroad_layout,
-    ], snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
+    ])
     self._scroller.set_reset_scroll_at_show(False)
     self._scroller.set_enabled(lambda: self.enabled)  # for nav stack
 
@@ -61,14 +61,6 @@ class MiciMainLayout(Widget):
     self._home_layout.set_callbacks(on_settings=lambda: gui_app.push_widget(self._settings_layout))
     self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
     device.add_interactive_timeout_callback(self._on_interactive_timeout)
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
 
   def _scroll_to(self, layout: Widget):
     layout_x = int(layout.rect.x)

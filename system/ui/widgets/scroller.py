@@ -417,59 +417,19 @@ class _Scroller(Widget):
 
 
 class Scroller(Widget):
-  """Wrapper around _Scroller that forwards show_event, hide_event, render, set_enabled so callers don't need to call them manually on the inner scroller."""
-
-  def __init__(self, items: list[Widget], *args, **kwargs):
+  def __init__(self, **kwargs):
     super().__init__()
-    self._scroller = _Scroller(items, *args, **kwargs)
+    self._scroller = _Scroller([], **kwargs)
+    # pass down enabled to child widget for nav stack, only needed since we don't use NavWidget here
+    self._scroller.set_enabled(lambda: self.enabled)
 
-  def show_event(self) -> None:
+  def show_event(self):
     super().show_event()
     self._scroller.show_event()
 
-  def hide_event(self) -> None:
+  def hide_event(self):
     super().hide_event()
     self._scroller.hide_event()
 
-  def render(self, rect: rl.Rectangle | None = None):
-    return self._scroller.render(rect)
-
-  def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
-    super().set_enabled(enabled)
-    self._scroller.set_enabled(enabled)
-
-  # Forward public _Scroller API for drop-in use
-  @property
-  def items(self) -> list[Widget]:
-    return self._scroller.items
-
-  @property
-  def content_size(self) -> float:
-    return self._scroller.content_size
-
-  @property
-  def is_auto_scrolling(self) -> bool:
-    return self._scroller.is_auto_scrolling
-
-  @property
-  def scroll_panel(self):
-    return self._scroller.scroll_panel
-
-  def add_widget(self, item: Widget) -> None:
-    self._scroller.add_widget(item)
-
-  def add_widgets(self, items: list[Widget]) -> None:
-    self._scroller.add_widgets(items)
-
-  def scroll_to(self, pos: float, smooth: bool = False, block_interaction: bool = False) -> None:
-    self._scroller.scroll_to(pos, smooth, block_interaction)
-
-  def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
-    self._scroller.set_scrolling_enabled(enabled)
-
-  def set_reset_scroll_at_show(self, scroll: bool) -> None:
-    self._scroller.set_reset_scroll_at_show(scroll)
-
-  def move_item(self, from_idx: int, to_idx: int) -> None:
-    self._scroller.move_item(from_idx, to_idx)
-
+  def _render(self, _):
+    self._scroller.render(self._rect)

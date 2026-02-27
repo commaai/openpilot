@@ -266,7 +266,7 @@ class UpdateOpenpilotBigButton(BigButton):
       self._waiting_for_updater_t = None
 
 
-class DeviceLayoutMici(NavWidget):
+class DeviceLayoutMici(NavWidget, Scroller):
   def __init__(self):
     super().__init__()
 
@@ -313,7 +313,7 @@ class DeviceLayoutMici(NavWidget):
     review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(TrainingGuide(completed_callback=gui_app.pop_widget)))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       DeviceInfoLayoutMici(),
       UpdateOpenpilotBigButton(),
       PairBigButton(),
@@ -340,14 +340,3 @@ class DeviceLayoutMici(NavWidget):
 
   def _offroad_transition(self):
     self._power_off_btn.set_visible(ui_state.is_offroad())
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def _render(self, rect: rl.Rectangle):
-    self._scroller.render(rect)

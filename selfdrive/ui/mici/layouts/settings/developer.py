@@ -11,7 +11,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
 
 
-class DeveloperLayoutMici(NavWidget):
+class DeveloperLayoutMici(NavWidget, Scroller):
   def __init__(self):
     super().__init__()
     self.set_back_callback(gui_app.pop_widget)
@@ -61,7 +61,7 @@ class DeveloperLayoutMici(NavWidget):
                                               toggle_callback=lambda checked: (gui_app.set_show_touches(checked),
                                                                                gui_app.set_show_fps(checked)))
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys_btn,
@@ -105,15 +105,7 @@ class DeveloperLayoutMici(NavWidget):
 
   def show_event(self):
     super().show_event()
-    self._scroller.show_event()
     self._update_toggles()
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def _render(self, rect: rl.Rectangle):
-    self._scroller.render(rect)
 
   def _update_toggles(self):
     ui_state.update_params()
