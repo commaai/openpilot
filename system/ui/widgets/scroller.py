@@ -7,6 +7,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 ITEM_SPACING = 20
 LINE_COLOR = rl.GRAY
@@ -66,7 +67,8 @@ class ScrollIndicator(Widget):
                         rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
-class Scroller(Widget):
+class _Scroller(Widget):
+  """Should use wrapper below to reduce boilerplate"""
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
@@ -414,3 +416,31 @@ class Scroller(Widget):
     super().hide_event()
     for item in self._items:
       item.hide_event()
+
+
+class Scroller(Widget):
+  """Wrapper for _Scroller so that children do not need to call events or pass down enabled for nav stack."""
+  def __init__(self, **kwargs):
+    super().__init__()
+    self._scroller = _Scroller([], **kwargs)
+    # pass down enabled to child widget for nav stack
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
+  def _render(self, _):
+    self._scroller.render(self._rect)
+
+
+class NavScroller(NavWidget, Scroller):
+  """Full screen Scroller that properly supports nav stack w/ animations"""
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    # pass down enabled to child widget for nav stack + disable while swiping away NavWidget
+    self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away)

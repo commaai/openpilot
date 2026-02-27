@@ -1,17 +1,15 @@
-import pyray as rl
 from cereal import log
 
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
 
-class TogglesLayoutMici(NavWidget):
+class TogglesLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
     self.set_back_callback(gui_app.pop_widget)
@@ -25,7 +23,7 @@ class TogglesLayoutMici(NavWidget):
     record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback)
     enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       self._personality_toggle,
       self._experimental_btn,
       is_metric_toggle,
@@ -68,12 +66,7 @@ class TogglesLayoutMici(NavWidget):
 
   def show_event(self):
     super().show_event()
-    self._scroller.show_event()
     self._update_toggles()
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
 
   def _update_toggles(self):
     ui_state.update_params()
@@ -93,6 +86,3 @@ class TogglesLayoutMici(NavWidget):
     # Refresh toggles from params to mirror external changes
     for key, item in self._refresh_toggles:
       item.set_checked(ui_state.params.get_bool(key))
-
-  def _render(self, rect: rl.Rectangle):
-    self._scroller.render(rect)
