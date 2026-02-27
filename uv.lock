@@ -570,11 +570,6 @@ wheels = [
 ]
 
 [[package]]
-name = "libjpeg"
-version = "3.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
-
-[[package]]
 name = "libusb1"
 version = "3.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -733,11 +728,6 @@ wheels = [
 ]
 
 [[package]]
-name = "ncurses"
-version = "6.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
-
-[[package]]
 name = "numpy"
 version = "2.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -793,11 +783,8 @@ dependencies = [
     { name = "inputs" },
     { name = "jeepney" },
     { name = "json-rpc" },
-    { name = "libjpeg" },
     { name = "libusb1" },
-    { name = "ncurses" },
     { name = "numpy" },
-    { name = "openssl3" },
     { name = "psutil" },
     { name = "pycapnp" },
     { name = "pycryptodome" },
@@ -820,7 +807,6 @@ dependencies = [
     { name = "xattr" },
     { name = "zeromq" },
     { name = "zstandard" },
-    { name = "zstd" },
 ]
 
 [package.optional-dependencies]
@@ -874,15 +860,12 @@ requires-dist = [
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "json-rpc" },
-    { name = "libjpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases" },
     { name = "libusb1" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", git = "https://github.com/commaai/metadrive.git?rev=minimal" },
     { name = "mkdocs", marker = "extra == 'docs'" },
-    { name = "ncurses", git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opencv-python-headless", marker = "extra == 'dev'" },
-    { name = "openssl3", git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
     { name = "pycapnp" },
@@ -914,14 +897,8 @@ requires-dist = [
     { name = "xattr" },
     { name = "zeromq", git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases" },
     { name = "zstandard" },
-    { name = "zstd", git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases" },
 ]
 provides-extras = ["docs", "testing", "dev", "tools"]
-
-[[package]]
-name = "openssl3"
-version = "3.4.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
 
 [[package]]
 name = "packaging"
@@ -1686,8 +1663,3 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/79/3b/fa54d9015f945330510cb5d0b0501e8253c127cca7ebe8ba46a965df18c5/zstandard-0.25.0-cp312-cp312-win_amd64.whl", hash = "sha256:ffef5a74088f1e09947aecf91011136665152e0b4b359c42be3373897fb39b01", size = 506276, upload-time = "2025-09-14T22:17:21.429Z" },
     { url = "https://files.pythonhosted.org/packages/ea/6b/8b51697e5319b1f9ac71087b0af9a40d8a6288ff8025c36486e0c12abcc4/zstandard-0.25.0-cp312-cp312-win_arm64.whl", hash = "sha256:181eb40e0b6a29b3cd2849f825e0fa34397f649170673d385f3598ae17cca2e9", size = 462679, upload-time = "2025-09-14T22:17:23.147Z" },
 ]
-
-[[package]]
-name = "zstd"
-version = "1.5.6"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
