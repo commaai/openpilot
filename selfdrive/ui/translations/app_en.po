@@ -793,7 +793,7 @@ msgstr "Review the rules, features, and limitations of openpilot"
 #: selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "SELECT"
-msgstr ""
+msgstr "SELECT"
 
 #: selfdrive/ui/layouts/settings/developer.py:53
 #, python-format
@@ -813,7 +813,7 @@ msgstr "Select"
 #: selfdrive/ui/layouts/settings/software.py:183
 #, python-format
 msgid "Select a branch"
-msgstr ""
+msgstr "Select a branch"
 
 #: selfdrive/ui/layouts/settings/device.py:91
 #, python-format
@@ -870,7 +870,7 @@ msgstr "TEMP"
 #: selfdrive/ui/layouts/settings/software.py:61
 #, python-format
 msgid "Target Branch"
-msgstr ""
+msgstr "Target Branch"
 
 #: system/ui/widgets/network.py:124
 #, python-format
