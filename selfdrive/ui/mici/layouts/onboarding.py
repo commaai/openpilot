@@ -429,8 +429,9 @@ class OnboardingWindow(Widget):
 
     # Windows
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_uninstall)
-    self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
     self._terms.set_enabled(lambda: self.enabled)  # for nav stack
+    self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
+    self._training_guide.set_enabled(lambda: self.enabled)  # for nav stack
 
   def _on_uninstall(self):
     ui_state.params.put_bool("DoUninstall", True)
