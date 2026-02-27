@@ -7,8 +7,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
-
-from system.ui.widgets.nav_widget import NavWidget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 ITEM_SPACING = 20
 LINE_COLOR = rl.GRAY
@@ -439,7 +438,8 @@ class Scroller(Widget):
 
 
 class NavScroller(NavWidget, Scroller):
+  """Full screen Scroller that properly supports nav stack w/ animations"""
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
-    # pass down enabled for nav stack + not swiping away NavWidget to child widget
+    # pass down enabled to child widget for nav stack + disable while swiping away NavWidget
     self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away)
