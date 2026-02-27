@@ -30,7 +30,7 @@ from openpilot.system.ui.widgets.scroller import Scroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton, WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2, BigInputDialog
-from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -319,17 +319,11 @@ class CustomSoftwareWarningPage(NavWidget):
       gui_app.push_widget(BigConfirmationDialogV2("I want to\ncontinue", "icons_mici/setup/driver_monitoring/dm_check.png",
                                                   confirm_callback=continue_callback))
 
-    self._continue_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
+    self._continue_button = BigPillButton("next")
     self._continue_button.set_click_callback(show_confirm_dialog)
 
-    def show_back_dialog():
-      gui_app.push_widget(BigConfirmationDialogV2("I want to\ngo back", "icons_mici/setup/cancel.png", confirm_callback=back_callback))
-
-    self._back_button = BigCircleButton("icons_mici/setup/cancel.png")
-    self._back_button.set_click_callback(show_back_dialog)
-
     self._scroller = Scroller([
-      GreyBigButton("use caution", "you are installing\n3rd party software",
+      GreyBigButton("use caution", "when installing\n3rd party software",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
       GreyBigButton("", "• It has not been tested by comma.\n" +
                     "• It may not comply with relevant safety standards."),
@@ -338,7 +332,6 @@ class CustomSoftwareWarningPage(NavWidget):
       GreyBigButton("to restore to a\nfactory state later", "https://flash.comma.ai",
                     gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
       self._continue_button,
-      self._back_button,
     ])
 
   def hide_event(self):
