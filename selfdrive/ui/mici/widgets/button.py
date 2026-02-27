@@ -202,7 +202,7 @@ class BigButton(Widget):
     elif self.is_pressed:
       txt_bg = self._txt_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed or self._grow_animation_until is not None else 1.0)
+    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     return txt_bg, btn_x, btn_y, scale
