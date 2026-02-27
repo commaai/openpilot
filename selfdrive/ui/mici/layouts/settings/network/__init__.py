@@ -1,13 +1,12 @@
 import pyray as rl
 
-from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici, WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.widgets.nav_widget import NavWidget
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType, ConnectStatus, SecurityType, normalize_ssid
 
 
@@ -65,7 +64,7 @@ class WifiNetworkButton(BigButton):
       rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, 1.0, rl.WHITE)
 
 
-class NetworkLayoutMici(NavWidget, Scroller):
+class NetworkLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
 

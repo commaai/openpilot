@@ -419,10 +419,11 @@ class _Scroller(Widget):
 
 
 class Scroller(Widget):
+  """Wrapper for _Scroller so that children do not need to call events or pass down enabled for nav stack."""
   def __init__(self, **kwargs):
     super().__init__()
     self._scroller = _Scroller([], **kwargs)
-    # pass down enabled to child widget for nav stack, only needed since we don't use NavWidget here
+    # pass down enabled to child widget for nav stack
     self._scroller.set_enabled(lambda: self.enabled)
 
   def show_event(self):
@@ -437,7 +438,8 @@ class Scroller(Widget):
     self._scroller.render(self._rect)
 
 
-class ScrollerNavWidget(Scroller, NavWidget):
+class NavScroller(NavWidget, Scroller):
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
+    # pass down enabled for nav stack + not swiping away NavWidget to child widget
     self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away)

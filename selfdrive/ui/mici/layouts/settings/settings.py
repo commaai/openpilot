@@ -1,7 +1,7 @@
 import pyray as rl
 
 from openpilot.common.params import Params
-from openpilot.system.ui.widgets.scroller import Scroller, ScrollerNavWidget
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.toggles import TogglesLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMici
@@ -17,7 +17,7 @@ class SettingsBigButton(BigButton):
     return 64
 
 
-class SettingsLayout(ScrollerNavWidget):
+class SettingsLayout(NavScroller):
   def __init__(self):
     super().__init__()
     self._params = Params()
