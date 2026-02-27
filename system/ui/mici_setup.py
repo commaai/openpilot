@@ -101,10 +101,6 @@ class SetupState(IntEnum):
 
 
 class StartPage(Widget):
-  GROW_INTERVAL_S = 8
-  # Match BigButton trigger_grow_animation() default duration.
-  GROW_DURATION_S = 0.65
-
   def __init__(self):
     super().__init__()
 
@@ -116,22 +112,13 @@ class StartPage(Widget):
     self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/start_button_pressed.png", 500, 224, keep_aspect_ratio=False)
     self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
-    self._grow_animation_until = 0.0
-    self._next_grow_at = rl.get_time() + self.GROW_INTERVAL_S
-
   def _render(self, rect: rl.Rectangle):
-    now = rl.get_time()
-    if now >= self._next_grow_at:
-      self._grow_animation_until = now + self.GROW_DURATION_S
-      self._next_grow_at = now + self.GROW_INTERVAL_S / 2
-
-    is_pressed_like = self.is_pressed or now < self._grow_animation_until
-    scale = self._scale_filter.update(1.07 if is_pressed_like else 1.0)
+    scale = self._scale_filter.update(1.07 if self.is_pressed else 1.0)
     base_draw_x = rect.x + (rect.width - self._start_bg_txt.width) / 2
     base_draw_y = rect.y + (rect.height - self._start_bg_txt.height) / 2
     draw_x = base_draw_x + (self._start_bg_txt.width * (1 - scale)) / 2
     draw_y = base_draw_y + (self._start_bg_txt.height * (1 - scale)) / 2
-    texture = self._start_bg_pressed_txt if is_pressed_like else self._start_bg_txt
+    texture = self._start_bg_pressed_txt if self.is_pressed else self._start_bg_txt
     rl.draw_texture_ex(texture, (draw_x, draw_y), 0, scale, rl.WHITE)
 
     self._title.render(rl.Rectangle(rect.x, rect.y + (draw_y - base_draw_y), rect.width, rect.height))
@@ -686,7 +673,7 @@ class Setup(Widget):
         if url:
           self.download(url)
 
-      keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
+      keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result)
       gui_app.push_widget(keyboard)
 
   def close(self):
