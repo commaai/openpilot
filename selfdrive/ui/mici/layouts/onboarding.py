@@ -264,7 +264,7 @@ class TrainingGuideRecordFront(Scroller):
         ui_state.params.put_bool("RecordFront", True)
         continue_callback()
 
-      gui_app.push_widget(BigConfirmationDialogV2("allow data uploads", "icons_mici/setup/driver_monitoring/dm_check.png", confirm_callback=on_accept))
+      gui_app.push_widget(BigConfirmationDialogV2("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", confirm_callback=on_accept))
 
     def show_decline_dialog():
       def on_decline():
