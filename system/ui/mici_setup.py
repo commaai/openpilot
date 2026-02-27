@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import traceback
 from abc import abstractmethod
 import os
 import re
@@ -805,7 +804,6 @@ def main():
       pass
     setup.close()
   except Exception as e:
-    traceback.print_exc()
     print(f"Setup error: {e}")
   finally:
     gui_app.close()

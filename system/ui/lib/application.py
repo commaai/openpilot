@@ -564,8 +564,6 @@ class GuiApplication:
         if self._nav_stack_tick is not None:
           self._nav_stack_tick()
 
-        # print([type(w).__name__ for w in self._nav_stack])
-
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
@@ -777,11 +775,11 @@ class GuiApplication:
 
   @staticmethod
   def _default_width() -> int:
-    return 2160 if GuiApplication.big_ui() else 536 # * 2
+    return 2160 if GuiApplication.big_ui() else 536
 
   @staticmethod
   def _default_height() -> int:
-    return 1080 if GuiApplication.big_ui() else 240 # * 2
+    return 1080 if GuiApplication.big_ui() else 240
 
   @staticmethod
   def big_ui() -> bool:
