@@ -538,7 +538,7 @@ class NetworkSetupPage(NavWidget):
 
     def on_waiting_click():
       offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
-      self._scroller.scroll_to(offset, smooth=True, block=True)
+      self._scroller.scroll_to(offset, smooth=True, block_interaction=True)
       self._pending_shake = True
 
     self._waiting_button = BigPillButton("waiting for\ninternet...", disabled_background=True)
@@ -609,7 +609,7 @@ class NetworkSetupPage(NavWidget):
         self._scroller._layout()
         end_offset = -(self._scroller.content_size - self._rect.width)
         remaining = self._scroller.scroll_panel.get_offset() - end_offset
-        self._scroller.scroll_to(remaining, smooth=True, block=True)
+        self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
         self._pending_grow_animation = True
 
   def _render(self, _):

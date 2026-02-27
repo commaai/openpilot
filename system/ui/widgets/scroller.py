@@ -78,7 +78,7 @@ class Scroller(Widget):
 
     self._reset_scroll_at_show = True
 
-    self._scrolling_to: tuple[float | None, bool] = (None, False)  # target offset, block user scrolling
+    self._scrolling_to: tuple[float | None, bool] = (None, False)  # target offset, block_interaction
     self._scrolling_to_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
@@ -115,8 +115,8 @@ class Scroller(Widget):
   def set_reset_scroll_at_show(self, scroll: bool):
     self._reset_scroll_at_show = scroll
 
-  def scroll_to(self, pos: float, smooth: bool = False, block: bool = False):
-    assert not block or smooth, "Instant scroll cannot be blocking"
+  def scroll_to(self, pos: float, smooth: bool = False, block_interaction: bool = False):
+    assert not block_interaction or smooth, "Instant scroll cannot be blocking"
 
     # already there
     if abs(pos) < 1:
@@ -126,7 +126,7 @@ class Scroller(Widget):
     scroll_offset = self.scroll_panel.get_offset() - pos
     if smooth:
       self._scrolling_to_filter.x = self.scroll_panel.get_offset()
-      self._scrolling_to = scroll_offset, block
+      self._scrolling_to = scroll_offset, block_interaction
     else:
       self.scroll_panel.set_offset(scroll_offset)
 
@@ -167,7 +167,7 @@ class Scroller(Widget):
           else:
             self._zoom_filter.update(0.85)
 
-    # Cancel auto-scroll if user starts manually scrolling (unless blocking)
+    # Cancel auto-scroll if user starts manually scrolling (unless block_interaction)
     if (self.scroll_panel.state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL) and
         self._scrolling_to[0] is not None and not self._scrolling_to[1]):
       self._scrolling_to = None, False
