@@ -110,8 +110,8 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       run: |
         source selfdrive/test/setup_xvfb.sh
-        # Pre-compile Python bytecode so each pytest worker doesn't need to
-        pytest --collect-only -m 'not slow' -qq
+        # Pre-compile Python bytecode so each pytest-xdist worker doesn't need to
+        python -m compileall -q -j0 common selfdrive system tools cereal
         MAX_EXAMPLES=1 pytest -m 'not slow'
 
   process_replay:
