@@ -9,7 +9,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import Scroller as _Scroller
 from openpilot.system.ui.mici_setup import GreyBigButton, BigPillButton
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
@@ -24,6 +24,26 @@ from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCamera
 class OnboardingState(IntEnum):
   TERMS = 0
   ONBOARDING = 1
+
+
+# TODO: use this helper everywhere!
+class Scroller(Widget):
+  def __init__(self, **kwargs):
+    super().__init__()
+    self._scroller = _Scroller(**kwargs)
+    # pass down enabled to child widget for nav stack, only needed since we don't use NavWidget here
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
+  def _render(self, _):
+    self._scroller.render(self._rect)
 
 
 class DriverCameraSetupDialog(DriverCameraDialog):
@@ -57,14 +77,14 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     rl.end_scissor_mode()
 
 
-class TrainingGuidePreDMTutorial(Widget):
+class TrainingGuidePreDMTutorial(Scroller):
   def __init__(self, continue_callback):
     super().__init__()
 
     continue_button = BigPillButton("next")
     continue_button.set_click_callback(continue_callback)
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       GreyBigButton("driver monitoring\ncheck", "scroll to read",
                     gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
       GreyBigButton("", "Next, we'll check if comma four can detect the driver properly."),
@@ -73,48 +93,25 @@ class TrainingGuidePreDMTutorial(Widget):
       continue_button,
     ])
 
-    self._scroller.set_enabled(lambda: self.enabled)
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
   def show_event(self):
     super().show_event()
-    self._scroller.show_event()
     # Get driver monitoring model ready for next step
     ui_state.params.put_bool("IsDriverViewEnabled", True)
 
-  def _render(self, _):
-    self._scroller.render(self._rect)
 
-
-class DMBadFaceDetected(Widget):
+class DMBadFaceDetected(Scroller):
   def __init__(self, back_callback):
     super().__init__()
 
     retry_button = BigPillButton("retry")
     retry_button.set_click_callback(back_callback)
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       GreyBigButton("looking for driver", "make sure comma\nfour can see your face",
                     gui_app.texture("icons_mici/setup/orange_dm.png", 64, 64)),
       GreyBigButton("", "Re-mount if your face is occluded or driver monitoring has difficulty tracking your face."),
       retry_button,
     ])
-
-    self._scroller.set_enabled(lambda: self.enabled)
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def _render(self, _):
-    self._scroller.render(self._rect)
 
 
 class TrainingGuideDMTutorial(Widget):
@@ -258,7 +255,7 @@ class TrainingGuideDMTutorial(Widget):
     rl.draw_rectangle_rounded_lines_ex(self._rect, 0.2 * 1.02, 10, 50, rl.BLACK)
 
 
-class TrainingGuideRecordFront(Widget):
+class TrainingGuideRecordFront(Scroller):
   def __init__(self, continue_callback):
     super().__init__()
 
@@ -282,7 +279,7 @@ class TrainingGuideRecordFront(Widget):
     self._decline_button = BigCircleButton("icons_mici/setup/cancel.png")
     self._decline_button.set_click_callback(show_decline_dialog)
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       GreyBigButton("driver camera data", "do you want to share video data for training?",
                     gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
       GreyBigButton("", "openpilot uses video data for training. Sharing your data allows us to improve openpilot faster."),
@@ -290,28 +287,15 @@ class TrainingGuideRecordFront(Widget):
       self._decline_button,
     ])
 
-    self._scroller.set_enabled(lambda: self.enabled)
 
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def _render(self, _):
-    self._scroller.render(self._rect)
-
-
-class TrainingGuideAttentionNotice(Widget):
+class TrainingGuideAttentionNotice(Scroller):
   def __init__(self, continue_callback):
     super().__init__()
 
     continue_button = BigPillButton("next")
     continue_button.set_click_callback(continue_callback)
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       GreyBigButton("what is openpilot?", "scroll to read",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
       GreyBigButton("", "1. openpilot is a driver assistance system."),
@@ -320,19 +304,6 @@ class TrainingGuideAttentionNotice(Widget):
       GreyBigButton("", "4. You are fully responsible for driving the car."),
       continue_button,
     ])
-
-    self._scroller.set_enabled(lambda: self.enabled)
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def _render(self, _):
-    self._scroller.render(self._rect)
 
 
 class TrainingGuide(Widget):
@@ -415,7 +386,7 @@ class QRCodeWidget(Widget):
       rl.unload_texture(self._qr_texture)
 
 
-class TermsPage(Widget):
+class TermsPage(Scroller):
   def __init__(self, on_accept, on_decline):
     super().__init__()
 
@@ -433,7 +404,7 @@ class TermsPage(Widget):
     self._decline_button = BigCircleButton("icons_mici/setup/cancel.png", red=True)
     self._decline_button.set_click_callback(show_decline_dialog)
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       GreyBigButton("terms and\nconditions", "scroll to read and accept",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
       GreyBigButton("swipe for QR code", "or go to https://comma.ai/terms",
@@ -443,19 +414,6 @@ class TermsPage(Widget):
       self._accept_button,
       self._decline_button,
     ])
-
-    self._scroller.set_enabled(lambda: self.enabled)
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def _render(self, _):
-    self._scroller.render(self._rect)
 
 
 class OnboardingWindow(Widget):
