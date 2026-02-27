@@ -75,7 +75,7 @@ class MiciMainLayout(Scroller):
       self._setup = True
 
     # Render
-    self._scroller.render(self._rect)
+    super()._render(self._rect)
 
     self._handle_transitions()
 
