@@ -243,13 +243,15 @@ int random_int(int min, int max) {
 }
 
 std::string random_string(std::string::size_type length) {
-  const std::string chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  static const char chrs[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  static constexpr size_t chr_count = sizeof(chrs) - 1;
+
   std::mt19937 rg{std::random_device{}()};
-  std::uniform_int_distribution<std::string::size_type> pick(0, chrs.length() - 1);
-  std::string s;
-  s.reserve(length);
-  while (length--) {
-    s += chrs[pick(rg)];
+  std::uniform_int_distribution<size_t> pick(0, chr_count - 1);
+
+  std::string s(length, '\0');
+  for (std::string::size_type i = 0; i < length; ++i) {
+    s[i] = chrs[pick(rg)];
   }
   return s;
 }
