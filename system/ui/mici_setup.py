@@ -640,8 +640,7 @@ class Setup(Widget):
     # TODO: change these to touch_valid
     # self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
 
-    self._software_selection_page = SoftwareSelectionPage(self._software_selection_continue_button_callback,
-                                                          self._software_selection_custom_software_button_callback)
+    self._software_selection_page = SoftwareSelectionPage(self.use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
     self._software_selection_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._download_failed_page = FailedPage(HARDWARE.reboot)
@@ -662,32 +661,19 @@ class Setup(Widget):
       self._software_selection_page.reset()
 
   def _push_network_setup(self, custom_software: bool = False):
-    # self._network_setup_page.show_event()
-    # TODO: move this to network setup page's show event and remove from Setup
-    # self._network_monitor.reset()
-    # self._network_setup_page.set_has_internet(False)
-    self._network_setup_page.set_custom_software(custom_software)  # to fire the correct continue callback after continuing
+    # to fire the correct continue callback
+    self._network_setup_page.set_custom_software(custom_software)
 
-    print('SHOWING NETWORK SETUP PAGE')
-    # gui_app.set_modal_overlay(self._network_setup_page)
     gui_app.pop_widgets_to(self)
     gui_app.push_widget(self._network_setup_page)
-    # self._set_state(SetupState.SOFTWARE_SELECTION)
 
   def _render(self, rect: rl.Rectangle):
-    # print('state', repr(self.state))
     if self.state == SetupState.START:
       self._start_page.render(rect)
     elif self.state == SetupState.SOFTWARE_SELECTION:
       self._software_selection_page.render(rect)
     elif self.state == SetupState.DOWNLOADING:
       self.render_downloading(rect)
-
-  def _software_selection_continue_button_callback(self):
-    self.use_openpilot()
-
-  def _software_selection_custom_software_button_callback(self):
-    gui_app.push_widget(self._custom_software_warning_page)
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
