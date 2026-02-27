@@ -208,7 +208,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(1880, 100)  # advanced network settings
 
   # Keyboard (tethering password)
-  script.click(2000, 420)  # open tether password keyboard
+  script.click(2000, 420, wait_after=FAST_CLICK)  # open tether password keyboard
   script.click(2000, 950, wait_after=FAST_CLICK)  # click confirm (disabled, should not close)
   script.click(2000, 115)  # cancel (close without typing)
   script.click(2000, 420, wait_after=FAST_CLICK)  # open keyboard again
