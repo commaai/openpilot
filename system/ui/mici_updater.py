@@ -8,7 +8,6 @@ from enum import IntEnum
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_text_box, gui_label, UnifiedLabel
 from openpilot.system.ui.widgets.button import FullRoundedButton
