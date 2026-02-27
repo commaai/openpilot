@@ -21,17 +21,17 @@ options:
 
 Example using route name:
 
-`./pluggle.py "a2a0ccea32023010/2023-07-27--13-01-19"`
+`./pluggle.py "5beb9b58bd12b691/0000010a--a51155e496"`
 
 Examples using segment:
 
-`./pluggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1"`
+`./pluggle.py "5beb9b58bd12b691/0000010a--a51155e496/1"`
 
-`./pluggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1/q" # use qlogs`
+`./pluggle.py "5beb9b58bd12b691/0000010a--a51155e496/1/q" # use qlogs`
 
 Example using segment range:
 
-`./pluggle.py "a2a0ccea32023010/2023-07-27--13-01-19/0:1"`
+`./pluggle.py "5beb9b58bd12b691/0000010a--a51155e496/0:1"`
 
 ## Demo
 
@@ -41,7 +41,7 @@ For a quick demo, run this command:
 
 
 ## Basic Usage/Features:
-- The text box to load a route is a the top left of the page, accepts standard openpilot format routes (e.g. `a2a0ccea32023010/2023-07-27--13-01-19/0:1`, `https://connect.comma.ai/a2a0ccea32023010/2023-07-27--13-01-19/`)
+- The text box to load a route is a the top left of the page, accepts standard openpilot format routes (e.g. `5beb9b58bd12b691/0000010a--a51155e496/0:1`, `https://connect.comma.ai/5beb9b58bd12b691/0000010a--a51155e496/`)
 - The Play/Pause button is at the bottom of the screen, you can drag the bottom slider to seek. The timeline in timeseries plots are synced with the slider.
 - The Timeseries List sidebar has several dropdowns, the fields each show the field name and value, synced with the timeline (will show N/A until the time of the first message in that field is reached).
 - There is a search bar for the timeseries list, you can search for structs or fields, or both by separating with a "/"

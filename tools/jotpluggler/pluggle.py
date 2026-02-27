@@ -12,7 +12,7 @@ from openpilot.tools.jotpluggler.data import DataManager
 from openpilot.tools.jotpluggler.datatree import DataTree
 from openpilot.tools.jotpluggler.layout import LayoutManager
 
-DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+DEMO_ROUTE = "5beb9b58bd12b691/0000010a--a51155e496"
 
 
 class WorkerManager:
