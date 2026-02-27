@@ -24,7 +24,7 @@ from openpilot.common.utils import Timer
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 FRAMERATE = 20
-DEMO_ROUTE, DEMO_START, DEMO_END = 'a2a0ccea32023010/2023-07-27--13-01-19', 90, 105
+DEMO_ROUTE, DEMO_START, DEMO_END = '5beb9b58bd12b691/0000010a--a51155e496', 90, 105
 
 logger = logging.getLogger('clip')
 
@@ -81,6 +81,7 @@ def _download_segment(path: str) -> bytes:
 def _parse_and_chunk_segment(args: tuple) -> list[dict]:
   raw_data, fps = args
   from openpilot.tools.lib.logreader import _LogFileReader
+
   messages = migrate_all(list(_LogFileReader("", dat=raw_data, sort_by_time=True)))
   if not messages:
     return []
@@ -122,6 +123,7 @@ def patch_submaster(message_chunks, ui_state):
           sm.data[svc] = getattr(msg.as_builder(), svc)
           sm.logMonoTime[svc], sm.recv_time[svc], sm.recv_frame[svc] = msg.logMonoTime, t, sm.frame
     sm.frame += 1
+
   ui_state.sm.update = mock_update
 
 
@@ -150,8 +152,7 @@ def iter_segment_frames(camera_paths, start_time, end_time, fps=20, use_qcam=Fal
       if use_qcam:
         w, h = frame_size or get_frame_dimensions(path)
         with FileReader(path) as f:
-          result = subprocess.run(["ffmpeg", "-v", "quiet", "-i", "-", "-f", "rawvideo", "-pix_fmt", "nv12", "-"],
-                                  input=f.read(), capture_output=True)
+          result = subprocess.run(["ffmpeg", "-v", "quiet", "-i", "-", "-f", "rawvideo", "-pix_fmt", "nv12", "-"], input=f.read(), capture_output=True)
         if result.returncode != 0:
           raise RuntimeError(f"ffmpeg failed: {result.stderr.decode()}")
         seg_frames = np.frombuffer(result.stdout, dtype=np.uint8).reshape(-1, w * h * 3 // 2)
@@ -172,8 +173,7 @@ class FrameQueue:
     self.frame_w, self.frame_h = get_frame_dimensions(first_path)
 
     self._queue, self._stop, self._error = queue.Queue(maxsize=prefetch_count), threading.Event(), None
-    self._thread = threading.Thread(target=self._worker,
-                                    args=(camera_paths, start_time, end_time, fps, use_qcam, (self.frame_w, self.frame_h)), daemon=True)
+    self._thread = threading.Thread(target=self._worker, args=(camera_paths, start_time, end_time, fps, use_qcam, (self.frame_w, self.frame_h)), daemon=True)
     self._thread.start()
 
   def _worker(self, camera_paths, start_time, end_time, fps, use_qcam, frame_size):
@@ -208,6 +208,7 @@ class FrameQueue:
 
 def load_route_metadata(route):
   from openpilot.common.params import Params, UnknownKeyName
+
   path = next((item for item in route.log_paths() if item), None)
   if not path:
     raise Exception('error getting route metadata: cannot find any uploaded logs')
@@ -223,15 +224,20 @@ def load_route_metadata(route):
 
   origin = init_data.gitRemote.split('/')[3] if len(init_data.gitRemote.split('/')) > 3 else 'unknown'
   return {
-    'version': init_data.version, 'route': route.name.canonical_name,
-    'car': car_params.carFingerprint if car_params else 'unknown', 'origin': origin,
-    'branch': init_data.gitBranch, 'commit': init_data.gitCommit[:7], 'modified': str(init_data.dirty).lower(),
+    'version': init_data.version,
+    'route': route.name.canonical_name,
+    'car': car_params.carFingerprint if car_params else 'unknown',
+    'origin': origin,
+    'branch': init_data.gitBranch,
+    'commit': init_data.gitCommit[:7],
+    'modified': str(init_data.dirty).lower(),
   }
 
 
 def draw_text_box(text, x, y, size, gui_app, font, color=None, center=False):
   import pyray as rl
   from openpilot.system.ui.lib.text_measure import measure_text_cached
+
   box_color, text_color = rl.Color(0, 0, 0, 85), color or rl.WHITE
   text_size = measure_text_cached(font, text, size)
   text_width, text_height = int(text_size.x), int(text_size.y)
@@ -244,6 +250,7 @@ def draw_text_box(text, x, y, size, gui_app, font, color=None, center=False):
 def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
   from openpilot.system.ui.lib.text_measure import measure_text_cached
   from openpilot.system.ui.lib.wrap_text import wrap_text
+
   metadata_size = 16 if big else 12
   title_size = 32 if big else 24
   time_size = 24 if big else 16
@@ -259,8 +266,17 @@ def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, 
   # Metadata overlay (first 5 seconds)
   if show_metadata and metadata and frame_idx < FRAMERATE * 5:
     m = metadata
-    text = ", ".join([f"openpilot v{m['version']}", f"route: {m['route']}", f"car: {m['car']}", f"origin: {m['origin']}",
-                      f"branch: {m['branch']}", f"commit: {m['commit']}", f"modified: {m['modified']}"])
+    text = ", ".join(
+      [
+        f"openpilot v{m['version']}",
+        f"route: {m['route']}",
+        f"car: {m['car']}",
+        f"origin: {m['origin']}",
+        f"branch: {m['branch']}",
+        f"commit: {m['commit']}",
+        f"modified: {m['modified']}",
+      ]
+    )
     # Wrap text if too wide (leave margin on each side)
     margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
     max_width = gui_app.width - margin
@@ -278,17 +294,29 @@ def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, 
     draw_text_box(title, 0, 60, title_size, gui_app, font, center=True)
 
 
-def clip(route: Route, output: str, start: int, end: int, headless: bool = True, big: bool = False,
-         title: str | None = None, show_metadata: bool = True, show_time: bool = True, use_qcam: bool = False):
+def clip(
+  route: Route,
+  output: str,
+  start: int,
+  end: int,
+  headless: bool = True,
+  big: bool = False,
+  title: str | None = None,
+  show_metadata: bool = True,
+  show_time: bool = True,
+  use_qcam: bool = False,
+):
   timer, duration = Timer(), end - start
 
   import pyray as rl
+
   if big:
     from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
   else:
     from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
   from openpilot.selfdrive.ui.ui_state import ui_state
   from openpilot.system.ui.lib.application import gui_app, FontWeight
+
   timer.lap("import")
 
   logger.info(f"Clipping {route.name.canonical_name}, {start}s-{end}s ({duration}s)")
@@ -297,7 +325,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
   timer.lap("logs")
 
   frame_start = (start - seg_start * 60) * FRAMERATE
-  message_chunks = all_chunks[frame_start:frame_start + duration * FRAMERATE]
+  message_chunks = all_chunks[frame_start : frame_start + duration * FRAMERATE]
   if not message_chunks:
     logger.error("No messages to render")
     sys.exit(1)
@@ -350,8 +378,18 @@ def main():
   args = parse_args()
 
   setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start)
-  clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, not args.windowed,
-       args.big, args.title, not args.no_metadata, not args.no_time_overlay, args.qcam)
+  clip(
+    Route(args.route, data_dir=args.data_dir),
+    args.output,
+    args.start,
+    args.end,
+    not args.windowed,
+    args.big,
+    args.title,
+    not args.no_metadata,
+    not args.no_time_overlay,
+    args.qcam,
+  )
 
 
 if __name__ == "__main__":

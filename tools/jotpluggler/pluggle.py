@@ -12,7 +12,7 @@ from openpilot.tools.jotpluggler.data import DataManager
 from openpilot.tools.jotpluggler.datatree import DataTree
 from openpilot.tools.jotpluggler.layout import LayoutManager
 
-DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+DEMO_ROUTE = "5beb9b58bd12b691/0000010a--a51155e496"
 
 
 class WorkerManager:
@@ -120,6 +120,7 @@ class PlaybackManager:
     if callback in self.x_axis_observers:
       self.x_axis_observers.remove(callback)
 
+
 class MainController:
   def __init__(self, scale: float = 1.0):
     self.scale = scale
@@ -197,8 +198,12 @@ class MainController:
     if dpg.does_item_exist("save_layout_dialog"):
       dpg.delete_item("save_layout_dialog")
     with dpg.file_dialog(
-      callback=self._save_layout_callback, tag="save_layout_dialog", width=int(700 * self.scale), height=int(400 * self.scale),
-      default_filename="layout", default_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "layouts")
+      callback=self._save_layout_callback,
+      tag="save_layout_dialog",
+      width=int(700 * self.scale),
+      height=int(400 * self.scale),
+      default_filename="layout",
+      default_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "layouts"),
     ):
       dpg.add_file_extension(".yaml")
 
@@ -206,8 +211,11 @@ class MainController:
     if dpg.does_item_exist("load_layout_dialog"):
       dpg.delete_item("load_layout_dialog")
     with dpg.file_dialog(
-      callback=self._load_layout_callback, tag="load_layout_dialog", width=int(700 * self.scale), height=int(400 * self.scale),
-      default_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "layouts")
+      callback=self._load_layout_callback,
+      tag="load_layout_dialog",
+      width=int(700 * self.scale),
+      height=int(400 * self.scale),
+      default_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "layouts"),
     ):
       dpg.add_file_extension(".yaml")
 
@@ -314,21 +322,23 @@ def main(route_to_load=None, layout_to_load=None):
   dpg.create_context()
 
   # TODO: find better way of calculating display scaling
-  #try:
+  # try:
   #  w, h = next(tuple(map(int, l.split()[0].split('x'))) for l in subprocess.check_output(['xrandr']).decode().split('\n') if '*' in l)  # actual resolution
   #  scale = pyautogui.size()[0] / w  # scaled resolution
-  #except Exception:
+  # except Exception:
   #  scale = 1
   scale = 1
 
   with dpg.font_registry():
-    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf"), int(13 * scale * 2)) # 2x then scale for hidpi
+    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf"), int(13 * scale * 2))  # 2x then scale for hidpi
   dpg.bind_font(default_font)
   dpg.set_global_font_scale(0.5)
 
   viewport_width, viewport_height = int(1200 * scale), int(800 * scale)
   dpg.create_viewport(
-    title='JotPluggler', width=viewport_width, height=viewport_height,
+    title='JotPluggler',
+    width=viewport_width,
+    height=viewport_height,
   )
   dpg.setup_dearpygui()
 
@@ -357,6 +367,7 @@ def main(route_to_load=None, layout_to_load=None):
   finally:
     controller.shutdown()
     dpg.destroy_context()
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for visualizing openpilot logs.")

@@ -8,13 +8,14 @@ import numpy as np
 from openpilot.common.utils import tabulate
 from openpilot.tools.lib.logreader import LogReader
 
-DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+DEMO_ROUTE = "5beb9b58bd12b691/0000010a--a51155e496"
 MB = 1024 * 1024
 TABULATE_OPTS = dict(tablefmt="simple_grid", stralign="center", numalign="center")
 
 
 def _get_procs():
   from openpilot.selfdrive.test.test_onroad import PROCS
+
   return PROCS
 
 
@@ -137,9 +138,9 @@ def print_process_tables(op_procs, other_procs, total_mb, use_pss):
 
   op_rows, op_total = process_table_rows(op_procs, total_mb, use_pss, show_detail)
   # filter other: >5MB avg and not bare interpreter paths (test infra noise)
-  other_filtered = {n: v for n, v in other_procs.items()
-                    if np.mean(v['pss' if use_pss else 'rss']) > 5.0
-                    and os.path.basename(n.split()[0]) not in ('python', 'python3')}
+  other_filtered = {
+    n: v for n, v in other_procs.items() if np.mean(v['pss' if use_pss else 'rss']) > 5.0 and os.path.basename(n.split()[0]) not in ('python', 'python3')
+  }
   other_rows, other_total = process_table_rows(other_filtered, total_mb, use_pss, show_detail)
 
   rows = op_rows
