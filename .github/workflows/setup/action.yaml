@@ -1,21 +1,13 @@
 name: 'openpilot env setup'
 
-inputs:
-  is_retried:
-    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
-    required: false
-    default: 'false'
+outputs:
+  duration:
+    description: 'Duration of the setup process in seconds'
+    value: ${{ steps.get_duration.outputs.duration }}
 
 runs:
   using: "composite"
   steps:
-    # assert that this action is retried using the setup-with-retry
-    - shell: bash
-      if: ${{ inputs.is_retried == 'false' }}
-      run: |
-        echo "You should not run this action directly. Use setup-with-retry instead"
-        exit 1
-
     - shell: bash
       name: No retries!
       run: |
@@ -26,6 +18,9 @@ runs:
           exit 1
         fi
 
+    - id: start_time
+      shell: bash
+      run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
     - shell: bash
       name: Run setup
       run: ./tools/op.sh setup
@@ -33,3 +28,10 @@ runs:
       name: Add venv to PATH
       run: |
         echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
+    - id: get_duration
+      shell: bash
+      run: |
+        END_TIME=$(date +%s)
+        DURATION=$((END_TIME - START_TIME))
+        echo "Total duration: $DURATION seconds"
+        echo "duration=$DURATION" >> $GITHUB_OUTPUT

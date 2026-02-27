@@ -35,6 +35,21 @@ function loge() {
   fi
 }
 
+function retry() {
+  local attempts=$1
+  shift
+  for i in $(seq 1 "$attempts"); do
+    if "$@"; then
+      return 0
+    fi
+    if [ "$i" -lt "$attempts" ]; then
+      echo "  Attempt $i/$attempts failed, retrying in 5s..."
+      sleep 5
+    fi
+  done
+  return 1
+}
+
 function op_run_command() {
   CMD="$@"
 
@@ -229,7 +244,7 @@ function op_setup() {
 
   echo "Getting git submodules..."
   st="$(date +%s)"
-  if ! git submodule update --jobs 4 --init --recursive; then
+  if ! retry 3 git submodule update --jobs 4 --init --recursive; then
     echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
     loge "ERROR_GIT_SUBMODULES"
     return 1
@@ -239,7 +254,7 @@ function op_setup() {
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
-  if ! git lfs pull; then
+  if ! retry 3 git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     loge "ERROR_GIT_LFS"
     return 1
