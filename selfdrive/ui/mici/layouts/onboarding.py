@@ -13,14 +13,14 @@ from openpilot.system.ui.widgets.button import SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.mici_setup import GreyBigButton, TermsHeader, TermsPage as SetupTermsPage
-from selfdrive.ui.mici.widgets.button import BigCircleButton
-from selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
-from openpilot.selfdrive.ui.ui_state import ui_state, device
-from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
-from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.version import terms_version, training_version
+from openpilot.selfdrive.ui.ui_state import ui_state, device
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
+from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
 
 
 class OnboardingState(IntEnum):
