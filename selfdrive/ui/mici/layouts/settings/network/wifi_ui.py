@@ -284,6 +284,7 @@ class WifiUIMici(NavWidget):
 
     self._wifi_manager = wifi_manager
     self._networks: dict[str, Network] = {}
+    self._last_passwords: dict[str, str] = {}  # ssid -> last entered password (for wrong-password retry)
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -327,6 +328,7 @@ class WifiUIMici(NavWidget):
         btn.set_network_missing(True)
 
   def _connect_with_password(self, ssid: str, password: str):
+    self._last_passwords[ssid] = password
     self._wifi_manager.connect_to_network(ssid, password)
     self._move_network_to_front(ssid, scroll=True)
 
@@ -354,12 +356,14 @@ class WifiUIMici(NavWidget):
           break
       return
 
-    dlg = BigInputDialog("enter password...", "", minimum_length=8,
+    initial_password = self._last_passwords.get(ssid, "")
+    dlg = BigInputDialog("enter password...", initial_password, minimum_length=8,
                          confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
     gui_app.push_widget(dlg)
 
   def _on_forgotten(self, ssid):
     # For eager UI forget
+    self._last_passwords.pop(ssid, None)
     for btn in self._scroller.items:
       if isinstance(btn, WifiButton) and btn.network.ssid == ssid:
         btn.on_forgotten()
