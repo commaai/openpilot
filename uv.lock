@@ -114,6 +114,11 @@ wheels = [
 ]
 
 [[package]]
+name = "bzip2"
+version = "1.0.8"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=bzip2#5d675e9fc3a6c61c361b9803f5813cd57d6e2653" }
+
+[[package]]
 name = "capnproto"
 version = "1.0.1"
 source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#31af284805d0787a689e129311d992bec14a2400" }
@@ -782,6 +787,7 @@ dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
+    { name = "bzip2" },
     { name = "capnproto" },
     { name = "casadi" },
     { name = "cffi" },
@@ -857,6 +863,7 @@ requires-dist = [
     { name = "aiohttp" },
     { name = "aiortc" },
     { name = "av" },
+    { name = "bzip2", git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=bzip2" },
     { name = "capnproto", git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases" },
     { name = "casadi", specifier = ">=3.6.6" },
     { name = "cffi" },
