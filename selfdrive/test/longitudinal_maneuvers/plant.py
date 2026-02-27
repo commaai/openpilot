@@ -25,6 +25,7 @@ class Plant:
       Plant.car_state = messaging.pub_sock('carState')
       Plant.plan = messaging.sub_sock('longitudinalPlan')
       Plant.messaging_initialized = True
+      time.sleep(0.1)
 
     self.v_lead_prev = 0.0
 
@@ -45,7 +46,6 @@ class Plant:
 
     self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
-    time.sleep(0.1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
     from opendbc.car.honda.values import CAR

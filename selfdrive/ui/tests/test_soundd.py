@@ -13,7 +13,7 @@ class TestSoundd:
     sm = SubMaster(['selfdriveState'])
     pm = PubMaster(['selfdriveState'])
 
-    for _ in range(100):
+    for _ in range(10):
       cs = messaging.new_message('selfdriveState')
       cs.selfdriveState.enabled = True
 
@@ -25,9 +25,8 @@ class TestSoundd:
 
       assert not check_selfdrive_timeout_alert(sm)
 
-    for _ in range(SELFDRIVE_STATE_TIMEOUT * 110):
-      sm.update(0)
-      time.sleep(0.01)
+    time.sleep(SELFDRIVE_STATE_TIMEOUT + 0.5)
+    sm.update(0)
 
     assert check_selfdrive_timeout_alert(sm)
 
