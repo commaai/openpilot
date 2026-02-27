@@ -1,4 +1,3 @@
-import pyray as rl
 from cereal import log
 
 from openpilot.system.ui.widgets.scroller import NavScroller
