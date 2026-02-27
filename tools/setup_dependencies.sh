@@ -95,7 +95,7 @@ function install_python_deps() {
   fi
 
   echo "installing python packages..."
-  uv sync --frozen --all-extras ${CI:+--no-install-project}
+  uv sync --frozen --all-extras
   source .venv/bin/activate
 
   if [[ "$(uname)" == 'Darwin' ]]; then
