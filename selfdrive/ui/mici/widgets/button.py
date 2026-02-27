@@ -194,6 +194,19 @@ class BigButton(Widget):
   def set_position(self, x: float, y: float) -> None:
     super().set_position(x + self._shake_offset, y)
 
+  def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
+    # draw _txt_default_bg
+    txt_bg = self._txt_default_bg
+    if not self.enabled:
+      txt_bg = self._txt_disabled_bg
+    elif self.is_pressed:
+      txt_bg = self._txt_pressed_bg
+
+    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed or self._grow_animation_until is not None else 1.0)
+    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
+    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
+    return txt_bg, btn_x, btn_y, scale
+
   def _draw_content(self, btn_y: float):
     # LABEL ------------------------------------------------------------------
     label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
@@ -225,16 +238,7 @@ class BigButton(Widget):
       rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.Color(255, 255, 255, int(255 * 0.9)))
 
   def _render(self, _):
-    # draw _txt_default_bg
-    txt_bg = self._txt_default_bg
-    if not self.enabled:
-      txt_bg = self._txt_disabled_bg
-    elif self.is_pressed:
-      txt_bg = self._txt_pressed_bg
-
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
-    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
-    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
+    txt_bg, btn_x, btn_y, scale = self._handle_background()
 
     if self._scroll:
       # draw black background since images are transparent
