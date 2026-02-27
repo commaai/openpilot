@@ -642,7 +642,7 @@ class Setup(Widget):
       self._software_selection_page.reset()
 
   def _push_network_setup(self, custom_software: bool = False):
-    # to fire the correct continue callback
+    # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
 
     gui_app.pop_widgets_to(self)
@@ -768,7 +768,7 @@ class Setup(Widget):
     self.failed_reason = reason
     self._download_failed_page.set_reason(reason)
     gui_app.push_widget(self._download_failed_page)
-    self._set_state(SetupState.START)
+    self._set_state(SetupState.SOFTWARE_SELECTION)
 
 
 def main():
