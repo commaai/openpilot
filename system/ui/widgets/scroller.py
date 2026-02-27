@@ -68,6 +68,7 @@ class ScrollIndicator(Widget):
 
 
 class _Scroller(Widget):
+  """Should use wrapper below to reduce boilerplate"""
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
