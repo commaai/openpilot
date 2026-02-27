@@ -29,3 +29,7 @@ runs:
     - shell: bash
       name: Run setup
       run: ./tools/op.sh setup
+    - shell: bash
+      name: Add venv to PATH
+      run: |
+        echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
