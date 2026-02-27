@@ -11,7 +11,9 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.ui.tests.diff.replay import FPS, LayoutVariant
 from openpilot.system.updated.updated import parse_release_notes
 
-WAIT = FPS // 2  # Default frames to wait after events
+# Default frames to wait after events
+WAIT = FPS // 2
+FAST_CLICK = FPS // 6
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -180,7 +182,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
       SPACE, SPACE, BACKSPACE, BACKSPACE,  # test multiple space and backspace
       NUMBERS, KEY, KEY, SHIFT, KEY, KEY  # test numbers and symbols
     ]:
-      script.click(*key, wait_after=10)
+      script.click(*key, wait_after=FAST_CLICK)
 
   # TODO: Better way of organizing the events
 
@@ -207,11 +209,11 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # Keyboard (tethering password)
   script.click(2000, 420)  # open tether password keyboard
-  script.click(2000, 950)  # click confirm (disabled, should not close)
+  script.click(2000, 950, wait_after=FAST_CLICK)  # click confirm (disabled, should not close)
   script.click(2000, 115)  # cancel (close without typing)
-  script.click(2000, 420)  # open keyboard again
+  script.click(2000, 420, wait_after=FAST_CLICK)  # open keyboard again
   type_keyboard()  # test various keyboard layouts and interactions
-  script.click(2050, 250)  # toggle show/hide password
+  script.click(2050, 250, wait_after=FAST_CLICK)  # toggle show/hide password
   script.click(2000, 950)  # confirm (close keyboard)
 
   script.click(630, 80)  # back from advanced network
