@@ -6,13 +6,11 @@ import numpy as np
 import qrcode
 import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
-from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.mici_setup import GreyBigButton, TermsHeader, BigPillButton, TermsPage as SetupTermsPage
+from openpilot.system.ui.mici_setup import GreyBigButton, BigPillButton
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.version import terms_version, training_version
