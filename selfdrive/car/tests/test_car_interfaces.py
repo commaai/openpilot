@@ -1,7 +1,7 @@
 import os
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
-from parameterized import parameterized
+from openpilot.common.parameterized import parameterized
 
 from cereal import car
 from opendbc.car import DT_CTRL

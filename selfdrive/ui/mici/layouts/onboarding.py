@@ -8,6 +8,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import SmallSlider
@@ -42,7 +43,7 @@ class DriverCameraSetupDialog(DriverCameraDialog):
       gui_label(rect, tr("camera starting"), font_size=64, font_weight=FontWeight.BOLD,
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       rl.end_scissor_mode()
-      return -1
+      return
 
     # Position dmoji on opposite side from driver
     is_rhd = self.driver_state_renderer.is_rhd
@@ -55,7 +56,6 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     self._draw_face_detection(rect)
 
     rl.end_scissor_mode()
-    return -1
 
 
 class TrainingGuidePreDMTutorial(SetupTermsPage):
@@ -124,8 +124,11 @@ class TrainingGuideDMTutorial(Widget):
 
   def __init__(self, continue_callback):
     super().__init__()
+
+    self_ref = weakref.ref(self)
+
     self._back_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_question.png", 28, 48))
-    self._back_button.set_click_callback(self._show_bad_face_page)
+    self._back_button.set_click_callback(lambda: self_ref() and self_ref()._show_bad_face_page())
     self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 42, 42))
 
     # Wrap the continue callback to restore settings
@@ -138,7 +141,7 @@ class TrainingGuideDMTutorial(Widget):
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
     self._dialog = DriverCameraSetupDialog()
-    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, self._hide_bad_face_page)
+    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, lambda: self_ref() and self_ref()._hide_bad_face_page())
     self._should_show_bad_face_page = False
 
     # Disable driver monitoring model when device times out for inactivity
@@ -364,9 +367,9 @@ class TrainingGuide(Widget):
         self._completed_callback()
 
   def _render(self, _):
+    rl.draw_rectangle_rec(self._rect, rl.BLACK)
     if self._step < len(self._steps):
       self._steps[self._step].render(self._rect)
-    return -1
 
 
 class DeclinePage(Widget):
@@ -435,9 +438,11 @@ class TermsPage(SetupTermsPage):
     ))
 
 
-class OnboardingWindow(Widget):
+class OnboardingWindow(NavWidget):
   def __init__(self):
     super().__init__()
+    self.set_back_enabled(False)
+
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 
@@ -470,7 +475,7 @@ class OnboardingWindow(Widget):
 
   def close(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    gui_app.set_modal_overlay(None)
+    gui_app.pop_widget()
 
   def _on_terms_accepted(self):
     ui_state.params.put("HasAcceptedTerms", terms_version)
@@ -487,4 +492,3 @@ class OnboardingWindow(Widget):
       self._training_guide.render(self._rect)
     elif self._state == OnboardingState.DECLINE:
       self._decline_page.render(self._rect)
-    return -1

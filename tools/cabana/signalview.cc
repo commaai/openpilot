@@ -34,12 +34,12 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 }
 
 void SignalModel::insertItem(SignalModel::Item *root_item, int pos, const cabana::Signal *sig) {
-  Item *parent_item = new Item{.sig = sig, .parent = root_item, .title = sig->name, .type = Item::Sig};
+  Item *parent_item = new Item{.type = Item::Sig, .parent = root_item, .sig = sig, .title = sig->name};
   root_item->children.insert(pos, parent_item);
   QString titles[]{"Name", "Size", "Receiver Nodes", "Little Endian", "Signed", "Offset", "Factor", "Type",
                    "Multiplex Value", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Table"};
   for (int i = 0; i < std::size(titles); ++i) {
-    auto item = new Item{.sig = sig, .parent = parent_item, .title = titles[i], .type = (Item::Type)(i + Item::Name)};
+    auto item = new Item{.type = (Item::Type)(i + Item::Name), .parent = parent_item, .sig = sig, .title = titles[i]};
     parent_item->children.push_back(item);
     if (item->type == Item::ExtraInfo) {
       parent_item = item;

@@ -307,11 +307,13 @@ class ProcessContainer:
             h, w = frs[m.which()].h, frs[m.which()].w
             stride, y_height, _, yuv_size = get_nv12_info(w, h)
             uv_offset = stride * y_height
-            padded_img = np.zeros((yuv_size), dtype=np.uint8).reshape((-1, stride))
+            padded_img = np.zeros(((uv_offset //stride) + (h // 2), stride))
             padded_img[:h, :w] = img[:h * w].reshape((-1, w))
             padded_img[uv_offset // stride:uv_offset // stride + h // 2, :w] = img[h * w:].reshape((-1, w))
+            img_bytes = np.zeros((yuv_size,), dtype=np.uint8)
+            img_bytes[:padded_img.size] = padded_img.flatten()
 
-            self.vipc_server.send(camera_meta.stream, padded_img.flatten().tobytes(),
+            self.vipc_server.send(camera_meta.stream, img_bytes.tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 

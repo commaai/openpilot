@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import pyautogui
-import subprocess
 import dearpygui.dearpygui as dpg
 import multiprocessing
 import uuid
@@ -316,11 +314,12 @@ def main(route_to_load=None, layout_to_load=None):
   dpg.create_context()
 
   # TODO: find better way of calculating display scaling
-  try:
-    w, h = next(tuple(map(int, l.split()[0].split('x'))) for l in subprocess.check_output(['xrandr']).decode().split('\n') if '*' in l)  # actual resolution
-    scale = pyautogui.size()[0] / w  # scaled resolution
-  except Exception:
-    scale = 1
+  #try:
+  #  w, h = next(tuple(map(int, l.split()[0].split('x'))) for l in subprocess.check_output(['xrandr']).decode().split('\n') if '*' in l)  # actual resolution
+  #  scale = pyautogui.size()[0] / w  # scaled resolution
+  #except Exception:
+  #  scale = 1
+  scale = 1
 
   with dpg.font_registry():
     default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf"), int(13 * scale * 2)) # 2x then scale for hidpi
@@ -328,9 +327,8 @@ def main(route_to_load=None, layout_to_load=None):
   dpg.set_global_font_scale(0.5)
 
   viewport_width, viewport_height = int(1200 * scale), int(800 * scale)
-  mouse_x, mouse_y = pyautogui.position()  # TODO: find better way of creating the window where the user is (default dpg behavior annoying on multiple displays)
   dpg.create_viewport(
-    title='JotPluggler', width=viewport_width, height=viewport_height, x_pos=mouse_x - viewport_width // 2, y_pos=mouse_y - viewport_height // 2
+    title='JotPluggler', width=viewport_width, height=viewport_height,
   )
   dpg.setup_dearpygui()
 

@@ -2,26 +2,27 @@
 import os
 import sys
 import subprocess
-import tempfile
 import webbrowser
 import argparse
 from pathlib import Path
 from openpilot.common.basedir import BASEDIR
 
 DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
+HTML_TEMPLATE_PATH = Path(__file__).with_name("diff_template.html")
 
 
-def extract_frames(video_path, output_dir):
-  output_pattern = str(output_dir / "frame_%04d.png")
-  cmd = ['ffmpeg', '-i', video_path, '-vsync', '0', output_pattern, '-y']
-  subprocess.run(cmd, capture_output=True, check=True)
-  frames = sorted(output_dir.glob("frame_*.png"))
-  return frames
-
-
-def compare_frames(frame1_path, frame2_path):
-  result = subprocess.run(['cmp', '-s', frame1_path, frame2_path])
-  return result.returncode == 0
+def extract_framehashes(video_path):
+  cmd = ['ffmpeg', '-i', video_path, '-map', '0:v:0', '-vsync', '0', '-f', 'framehash', '-hash', 'md5', '-']
+  result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+  hashes = []
+  for line in result.stdout.splitlines():
+    if not line or line.startswith('#'):
+      continue
+    parts = line.split(',')
+    if len(parts) < 4:
+      continue
+    hashes.append(parts[-1].strip())
+  return hashes
 
 
 def create_diff_video(video1, video2, output_path):
@@ -31,38 +32,24 @@ def create_diff_video(video1, video2, output_path):
   subprocess.run(cmd, capture_output=True, check=True)
 
 
-def find_differences(video1, video2):
-  with tempfile.TemporaryDirectory() as tmpdir:
-    tmpdir = Path(tmpdir)
+def find_differences(video1, video2) -> tuple[list[int], tuple[int, int]]:
+  print(f"Hashing frames from {video1}...")
+  hashes1 = extract_framehashes(video1)
 
-    print(f"Extracting frames from {video1}...")
-    frames1_dir = tmpdir / "frames1"
-    frames1_dir.mkdir()
-    frames1 = extract_frames(video1, frames1_dir)
+  print(f"Hashing frames from {video2}...")
+  hashes2 = extract_framehashes(video2)
 
-    print(f"Extracting frames from {video2}...")
-    frames2_dir = tmpdir / "frames2"
-    frames2_dir.mkdir()
-    frames2 = extract_frames(video2, frames2_dir)
+  print(f"Comparing {len(hashes1)} frames...")
+  different_frames = []
 
-    if len(frames1) != len(frames2):
-      print(f"WARNING: Frame count mismatch: {len(frames1)} vs {len(frames2)}")
-      min_frames = min(len(frames1), len(frames2))
-      frames1 = frames1[:min_frames]
-      frames2 = frames2[:min_frames]
+  for i, (h1, h2) in enumerate(zip(hashes1, hashes2, strict=False)):
+    if h1 != h2:
+      different_frames.append(i)
 
-    print(f"Comparing {len(frames1)} frames...")
-    different_frames = []
-
-    for i, (f1, f2) in enumerate(zip(frames1, frames2, strict=False)):
-      is_different = not compare_frames(f1, f2)
-      if is_different:
-        different_frames.append(i)
-
-    return different_frames, len(frames1)
+  return different_frames, (len(hashes1), len(hashes2))
 
 
-def generate_html_report(video1, video2, basedir, different_frames, total_frames):
+def generate_html_report(videos: tuple[str, str], basedir: str, different_frames: list[int], frame_counts: tuple[int, int], diff_video_name):
   chunks = []
   if different_frames:
     current_chunk = [different_frames[0]]
@@ -74,71 +61,28 @@ def generate_html_report(video1, video2, basedir, different_frames, total_frames
         current_chunk = [different_frames[i]]
     chunks.append(current_chunk)
 
+  total_frames = max(frame_counts)
+  frame_delta = frame_counts[1] - frame_counts[0]
+  different_total = len(different_frames) + abs(frame_delta)
+
   result_text = (
     f"✅ Videos are identical! ({total_frames} frames)"
-    if len(different_frames) == 0
-    else f"❌ Found {len(different_frames)} different frames out of {total_frames} total ({(len(different_frames) / total_frames * 100):.1f}%)"
+    if different_total == 0
+    else f"❌ Found {different_total} different frames out of {total_frames} total ({different_total / total_frames * 100:.1f}%)."
+    + (f" Video {'2' if frame_delta > 0 else '1'} is longer by {abs(frame_delta)} frames." if frame_delta != 0 else "")
   )
 
-  html = f"""<h2>UI Diff</h2>
-<table>
-<tr>
-<td width='33%'>
-  <p><strong>Video 1</strong></p>
-  <video id='video1' width='100%' autoplay muted loop onplay='syncVideos()'>
-    <source src='{os.path.join(basedir, os.path.basename(video1))}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
-<td width='33%'>
-  <p><strong>Video 2</strong></p>
-  <video id='video2' width='100%' autoplay muted loop onplay='syncVideos()'>
-    <source src='{os.path.join(basedir, os.path.basename(video2))}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
-<td width='33%'>
-  <p><strong>Pixel Diff</strong></p>
-  <video id='diffVideo' width='100%' autoplay muted loop>
-    <source src='{os.path.join(basedir, 'diff.mp4')}' type='video/mp4'>
-    Your browser does not support the video tag.
-  </video>
-</td>
-</tr>
-</table>
-<script>
-function syncVideos() {{
-  const video1 = document.getElementById('video1');
-  const video2 = document.getElementById('video2');
-  const diffVideo = document.getElementById('diffVideo');
-  video1.currentTime = video2.currentTime = diffVideo.currentTime;
-}}
-video1.addEventListener('timeupdate', () => {{
-  if (Math.abs(video1.currentTime - video2.currentTime) > 0.1) {{
-    video2.currentTime = video1.currentTime;
-  }}
-  if (Math.abs(video1.currentTime - diffVideo.currentTime) > 0.1) {{
-    diffVideo.currentTime = video1.currentTime;
-  }}
-}});
-video2.addEventListener('timeupdate', () => {{
-  if (Math.abs(video2.currentTime - video1.currentTime) > 0.1) {{
-    video1.currentTime = video2.currentTime;
-  }}
-  if (Math.abs(video2.currentTime - diffVideo.currentTime) > 0.1) {{
-    diffVideo.currentTime = video2.currentTime;
-  }}
-}});
-diffVideo.addEventListener('timeupdate', () => {{
-  if (Math.abs(diffVideo.currentTime - video1.currentTime) > 0.1) {{
-    video1.currentTime = diffVideo.currentTime;
-    video2.currentTime = diffVideo.currentTime;
-  }}
-}});
-</script>
-<hr>
-<p><strong>Results:</strong> {result_text}</p>
-"""
+  # Load HTML template and replace placeholders
+  html = HTML_TEMPLATE_PATH.read_text()
+  placeholders = {
+    "VIDEO1_SRC": os.path.join(basedir, os.path.basename(videos[0])),
+    "VIDEO2_SRC": os.path.join(basedir, os.path.basename(videos[1])),
+    "DIFF_SRC": os.path.join(basedir, diff_video_name),
+    "RESULT_TEXT": result_text,
+  }
+  for key, value in placeholders.items():
+    html = html.replace(f"${key}", value)
+
   return html
 
 
@@ -152,6 +96,9 @@ def main():
 
   args = parser.parse_args()
 
+  if not args.output.lower().endswith('.html'):
+    args.output += '.html'
+
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
   print("=" * 60)
@@ -162,18 +109,19 @@ def main():
   print(f"Output: {args.output}")
   print()
 
-  # Create diff video
-  diff_video_path = os.path.join(os.path.dirname(args.output), DIFF_OUT_DIR / "diff.mp4")
+  # Create diff video with name derived from output HTML
+  diff_video_name = Path(args.output).stem + '.mp4'
+  diff_video_path = str(DIFF_OUT_DIR / diff_video_name)
   create_diff_video(args.video1, args.video2, diff_video_path)
 
-  different_frames, total_frames = find_differences(args.video1, args.video2)
+  different_frames, frame_counts = find_differences(args.video1, args.video2)
 
   if different_frames is None:
     sys.exit(1)
 
   print()
   print("Generating HTML report...")
-  html = generate_html_report(args.video1, args.video2, args.basedir, different_frames, total_frames)
+  html = generate_html_report((args.video1, args.video2), args.basedir, different_frames, frame_counts, diff_video_name)
 
   with open(DIFF_OUT_DIR / args.output, 'w') as f:
     f.write(html)
@@ -183,7 +131,8 @@ def main():
     print(f"Opening {args.output} in browser...")
     webbrowser.open(f'file://{os.path.abspath(DIFF_OUT_DIR / args.output)}')
 
-  return 0 if len(different_frames) == 0 else 1
+  extra_frames = abs(frame_counts[0] - frame_counts[1])
+  return 0 if (len(different_frames) + extra_frames) == 0 else 1
 
 
 if __name__ == "__main__":

@@ -3,51 +3,103 @@ import time
 import pytest
 import numpy as np
 
-import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
-from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
+from openpilot.system.camerad.snapshot import get_snapshots
+from openpilot.selfdrive.test.helpers import collect_logs, log_collector, processes_context
 
 TEST_TIMESPAN = 10
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
+EXPOSURE_STABLE_COUNT = 3
+EXPOSURE_RANGE = (0.15, 0.35)
+MAX_TEST_TIME = 25
+
+
+def _numpy_rgb2gray(im):
+  return np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
+
+def _exposure_stats(im):
+  h, w = im.shape[:2]
+  gray = _numpy_rgb2gray(im[h//10:9*h//10, w//10:9*w//10])
+  return float(np.median(gray) / 255.), float(np.mean(gray) / 255.)
+
+def _in_range(median, mean):
+  lo, hi = EXPOSURE_RANGE
+  return lo < median < hi and lo < mean < hi
+
+def _exposure_stable(results):
+  return all(
+    len(v) >= EXPOSURE_STABLE_COUNT and all(_in_range(*s) for s in v[-EXPOSURE_STABLE_COUNT:])
+    for v in results.values()
+  )
 
 
 def run_and_log(procs, services, duration):
-  logs = []
-
-  try:
-    for p in procs:
-      managed_processes[p].start()
-    socks = [messaging.sub_sock(s, conflate=False, timeout=100) for s in services]
-
-    start_time = time.monotonic()
-    while time.monotonic() - start_time < duration:
-      for s in socks:
-        logs.extend(messaging.drain_sock(s))
-    for p in procs:
-      assert managed_processes[p].proc.is_alive()
-  finally:
-    for p in procs:
-      managed_processes[p].stop()
-
-  return logs
+  with processes_context(procs):
+    return collect_logs(services, duration)
 
 @pytest.fixture(scope="module")
-def logs():
-  logs = run_and_log(["camerad", ], CAMERAS, TEST_TIMESPAN)
-  ts = msgs_to_time_series(logs)
+def _camera_session():
+  """Single camerad session that collects logs and exposure data.
+     Runs until exposure stabilizes (min TEST_TIMESPAN seconds for enough log data)."""
+  with processes_context(["camerad"]), log_collector(CAMERAS) as (raw_logs, lock):
+    exposure = {cam: [] for cam in CAMERAS}
+    start = time.monotonic()
+    while time.monotonic() - start < MAX_TEST_TIME:
+      rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
+      wpic, _ = get_snapshots(frame="wideRoadCameraState")
+      for cam, img in zip(CAMERAS, [rpic, dpic, wpic], strict=True):
+        exposure[cam].append(_exposure_stats(img))
+
+      if time.monotonic() - start >= TEST_TIMESPAN and _exposure_stable(exposure):
+        break
+
+    elapsed = time.monotonic() - start
+
+  with lock:
+    ts = msgs_to_time_series(raw_logs)
 
   for cam in CAMERAS:
-    expected_frames = SERVICE_LIST[cam].frequency * TEST_TIMESPAN
+    expected_frames = SERVICE_LIST[cam].frequency * elapsed
     cnt = len(ts[cam]['t'])
     assert expected_frames*0.8 < cnt < expected_frames*1.2, f"unexpected frame count {cam}: {expected_frames=}, got {cnt}"
 
     dts = np.abs(np.diff([ts[cam]['timestampSof']/1e6]) - 1000/SERVICE_LIST[cam].frequency)
     assert (dts < 1.0).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
-  return ts
+
+  return ts, exposure
+
+@pytest.fixture(scope="module")
+def logs(_camera_session):
+  return _camera_session[0]
+
+@pytest.fixture(scope="module")
+def exposure_data(_camera_session):
+  return _camera_session[1]
 
 @pytest.mark.tici
 class TestCamerad:
+  @pytest.mark.parametrize("cam", CAMERAS)
+  def test_camera_exposure(self, exposure_data, cam):
+    lo, hi = EXPOSURE_RANGE
+    checks = exposure_data[cam]
+    assert len(checks) >= EXPOSURE_STABLE_COUNT, f"{cam}: only got {len(checks)} samples"
+
+    # check that exposure converges into the valid range
+    passed = sum(_in_range(med, mean) for med, mean in checks)
+    assert passed >= EXPOSURE_STABLE_COUNT, \
+      f"{cam}: only {passed}/{len(checks)} checks in range. " + \
+      " | ".join(f"#{i+1}: med={m:.4f} mean={u:.4f}" for i, (m, u) in enumerate(checks))
+
+    # check that exposure is stable once converged (no regressions)
+    in_range = False
+    for i, (median, mean) in enumerate(checks):
+      ok = _in_range(median, mean)
+      if in_range and not ok:
+        pytest.fail(f"{cam}: exposure regressed on sample {i+1} " +
+                    f"(median={median:.4f}, mean={mean:.4f}, expected: ({lo}, {hi}))")
+      in_range = ok
+
   def test_frame_skips(self, logs):
     for c in CAMERAS:
       assert set(np.diff(logs[c]['frameId'])) == {1, }, f"{c} has frame skips"
@@ -91,7 +143,10 @@ class TestCamerad:
 
   def test_stress_test(self):
     os.environ['SPECTRA_ERROR_PROB'] = '0.008'
-    logs = run_and_log(["camerad", ], CAMERAS, 10)
+    try:
+      logs = run_and_log(["camerad", ], CAMERAS, 10)
+    finally:
+      del os.environ['SPECTRA_ERROR_PROB']
     ts = msgs_to_time_series(logs)
 
     # we should see some jumps from introduced errors

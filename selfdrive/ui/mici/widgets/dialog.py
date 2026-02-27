@@ -3,18 +3,15 @@ import math
 import pyray as rl
 from typing import Union
 from collections.abc import Callable
-from typing import cast
-from openpilot.system.ui.widgets import Widget, NavWidget, DialogResult
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
-from openpilot.selfdrive.ui.mici.widgets.side_button import SideButton
 
 DEBUG = False
 
@@ -22,47 +19,21 @@ PADDING = 20
 
 
 class BigDialogBase(NavWidget, abc.ABC):
-  def __init__(self, right_btn: str | None = None, right_btn_callback: Callable | None = None):
+  def __init__(self):
     super().__init__()
-    self._ret = DialogResult.NO_ACTION
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    self.set_back_callback(lambda: setattr(self, '_ret', DialogResult.CANCEL))
-
-    self._right_btn = None
-    if right_btn:
-      def right_btn_callback_wrapper():
-        gui_app.set_modal_overlay(None)
-        if right_btn_callback:
-          right_btn_callback()
-
-      self._right_btn = SideButton(right_btn)
-      self._right_btn.set_click_callback(right_btn_callback_wrapper)
-      # move to right side
-      self._right_btn._rect.x = self._rect.x + self._rect.width - self._right_btn._rect.width
-
-  def _render(self, _) -> DialogResult:
-    """
-    Allows `gui_app.set_modal_overlay(BigDialog(...))`.
-    The overlay runner keeps calling until result != NO_ACTION.
-    """
-    if self._right_btn:
-      self._right_btn.set_position(self._right_btn._rect.x, self._rect.y)
-      self._right_btn.render()
-
-    return self._ret
+    self.set_back_callback(gui_app.pop_widget)
 
 
 class BigDialog(BigDialogBase):
   def __init__(self,
                title: str,
-               description: str,
-               right_btn: str | None = None,
-               right_btn_callback: Callable | None = None):
-    super().__init__(right_btn, right_btn_callback)
+               description: str):
+    super().__init__()
     self._title = title
     self._description = description
 
-  def _render(self, _) -> DialogResult:
+  def _render(self, _):
     super()._render(_)
 
     # draw title
@@ -70,8 +41,6 @@ class BigDialog(BigDialogBase):
     # TODO: coming up with these numbers manually is a pain and not scalable
     # TODO: no clue what any of these numbers mean. VBox and HBox would remove all of this shite
     max_width = self._rect.width - PADDING * 2
-    if self._right_btn:
-      max_width -= self._right_btn._rect.width
 
     title_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.BOLD), self._title, 50, int(max_width)))
     title_size = measure_text_cached(gui_app.font(FontWeight.BOLD), title_wrapped, 50)
@@ -94,8 +63,6 @@ class BigDialog(BigDialogBase):
     gui_label(desc_rect, desc_wrapped, 30, font_weight=FontWeight.MEDIUM,
               alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
-    return self._ret
-
 
 class BigConfirmationDialogV2(BigDialogBase):
   def __init__(self, title: str, icon: str, red: bool = False,
@@ -111,22 +78,21 @@ class BigConfirmationDialogV2(BigDialogBase):
       self._slider = RedBigSlider(title, icon_txt, confirm_callback=self._on_confirm)
     else:
       self._slider = BigSlider(title, icon_txt, confirm_callback=self._on_confirm)
-    self._slider.set_enabled(lambda: not self._swiping_away)
+    self._slider.set_enabled(lambda: self.enabled and not self._swiping_away)  # self.enabled for nav stack
 
   def _on_confirm(self):
+    if self._exit_on_confirm:
+      gui_app.pop_widget()
     if self._confirm_callback:
       self._confirm_callback()
-    if self._exit_on_confirm:
-      self._ret = DialogResult.CONFIRM
 
   def _update_state(self):
     super()._update_state()
     if self._swiping_away and not self._slider.confirmed:
       self._slider.reset()
 
-  def _render(self, _) -> DialogResult:
+  def _render(self, _):
     self._slider.render(self._rect)
-    return self._ret
 
 
 class BigInputDialog(BigDialogBase):
@@ -139,11 +105,12 @@ class BigInputDialog(BigDialogBase):
                default_text: str = "",
                minimum_length: int = 1,
                confirm_callback: Callable[[str], None] | None = None):
-    super().__init__(None, None)
+    super().__init__()
     self._hint_label = UnifiedLabel(hint, font_size=35, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
                                     font_weight=FontWeight.MEDIUM)
     self._keyboard = MiciKeyboard()
     self._keyboard.set_text(default_text)
+    self._keyboard.set_enabled(lambda: self.enabled)  # for nav stack
     self._minimum_length = minimum_length
 
     self._backspace_held_time: float | None = None
@@ -160,9 +127,10 @@ class BigInputDialog(BigDialogBase):
     self._top_right_button_rect = rl.Rectangle(0, 0, 0, 0)
 
     def confirm_callback_wrapper():
-      self._ret = DialogResult.CONFIRM
+      text = self._keyboard.text()
+      gui_app.pop_widget()
       if confirm_callback:
-        confirm_callback(self._keyboard.text())
+        confirm_callback(text)
     self._confirm_callback = confirm_callback_wrapper
 
   def _update_state(self):
@@ -215,11 +183,13 @@ class BigInputDialog(BigDialogBase):
                                    rl.BLACK, rl.BLANK)
 
     # draw cursor
+    blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
     if text:
-      blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
       cursor_x = min(text_x + text_size.x + 3, text_field_rect.x + text_field_rect.width)
-      rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
-                                1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
+    else:
+      cursor_x = text_field_rect.x - 6
+    rl.draw_rectangle_rounded(rl.Rectangle(int(cursor_x), int(text_field_rect.y), 4, int(text_size.y)),
+                              1, 4, rl.Color(255, 255, 255, int(255 * blink_alpha)))
 
     # draw backspace icon with nice fade
     self._backspace_img_alpha.update(255 * bool(text))
@@ -229,7 +199,10 @@ class BigInputDialog(BigDialogBase):
 
     if not text and self._hint_label.text and not candidate_char:
       # draw description if no text entered yet and not drawing candidate char
-      self._hint_label.render(text_field_rect)
+      hint_rect = rl.Rectangle(text_field_rect.x, text_field_rect.y,
+                               self._rect.width - text_field_rect.x - PADDING,
+                               text_field_rect.height)
+      self._hint_label.render(hint_rect)
 
     # TODO: move to update state
     # make rect take up entire area so it's easier to click
@@ -253,8 +226,6 @@ class BigInputDialog(BigDialogBase):
       rl.draw_rectangle_lines_ex(self._top_right_button_rect, 1, rl.Color(0, 255, 0, 255))
       rl.draw_rectangle_lines_ex(self._top_left_button_rect, 1, rl.Color(0, 255, 0, 255))
 
-    return self._ret
-
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
     # TODO: need to track where press was so enter and back can activate on release rather than press
@@ -267,152 +238,6 @@ class BigInputDialog(BigDialogBase):
       self._confirm_callback()
 
 
-class BigDialogOptionButton(Widget):
-  HEIGHT = 64
-  SELECTED_HEIGHT = 74
-
-  def __init__(self, option: str):
-    super().__init__()
-    self.option = option
-    self.set_rect(rl.Rectangle(0, 0, int(gui_app.width / 2 + 220), self.HEIGHT))
-
-    self._selected = False
-
-    self._label = UnifiedLabel(option, font_size=70, text_color=rl.Color(255, 255, 255, int(255 * 0.58)),
-                               font_weight=FontWeight.DISPLAY_REGULAR, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-                               scroll=True)
-
-  def show_event(self):
-    super().show_event()
-    self._label.reset_scroll()
-
-  def set_selected(self, selected: bool):
-    self._selected = selected
-    self._rect.height = self.SELECTED_HEIGHT if selected else self.HEIGHT
-
-  def _render(self, _):
-    if DEBUG:
-      rl.draw_rectangle_lines_ex(self._rect, 1, rl.Color(0, 255, 0, 255))
-
-    # FIXME: offset x by -45 because scroller centers horizontally
-    if self._selected:
-      self._label.set_font_size(self.SELECTED_HEIGHT)
-      self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
-      self._label.set_font_weight(FontWeight.DISPLAY)
-    else:
-      self._label.set_font_size(self.HEIGHT)
-      self._label.set_color(rl.Color(255, 255, 255, int(255 * 0.58)))
-      self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
-
-    self._label.render(self._rect)
-
-
-class BigMultiOptionDialog(BigDialogBase):
-  BACK_TOUCH_AREA_PERCENTAGE = 0.1
-
-  def __init__(self, options: list[str], default: str | None,
-               right_btn: str | None = 'check', right_btn_callback: Callable[[], None] | None = None):
-    super().__init__(right_btn, right_btn_callback=right_btn_callback)
-    self._options = options
-    if default is not None:
-      assert default in options
-
-    self._default_option: str | None = default
-    self._selected_option: str = self._default_option or (options[0] if len(options) > 0 else "")
-    self._last_selected_option: str = self._selected_option
-
-    # Widget doesn't differentiate between click and drag
-    self._can_click = True
-
-    self._scroller = Scroller([], horizontal=False, pad_start=100, pad_end=100, spacing=0, snap_items=True)
-    if self._right_btn is not None:
-      self._scroller.set_enabled(lambda: not cast(Widget, self._right_btn).is_pressed)
-
-    for option in options:
-      self._scroller.add_widget(BigDialogOptionButton(option))
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-    if self._default_option is not None:
-      self._on_option_selected(self._default_option)
-
-  def get_selected_option(self) -> str:
-    return self._selected_option
-
-  def _on_option_selected(self, option: str):
-    y_pos = 0.0
-    for btn in self._scroller._items:
-      btn = cast(BigDialogOptionButton, btn)
-      if btn.option == option:
-        rect_center_y = self._rect.y + self._rect.height / 2
-        if btn._selected:
-          height = btn.rect.height
-        else:
-          # when selecting an option under current, account for changing heights
-          btn_center_y = btn.rect.y + btn.rect.height / 2  # not accurate, just to determine direction
-          height_offset = BigDialogOptionButton.SELECTED_HEIGHT - BigDialogOptionButton.HEIGHT
-          height = (BigDialogOptionButton.HEIGHT - height_offset) if rect_center_y < btn_center_y else BigDialogOptionButton.SELECTED_HEIGHT
-        y_pos = rect_center_y - (btn.rect.y + height / 2)
-        break
-
-    self._scroller.scroll_to(-y_pos)
-
-  def _selected_option_changed(self):
-    pass
-
-  def _handle_mouse_press(self, mouse_pos: MousePos):
-    super()._handle_mouse_press(mouse_pos)
-    self._can_click = True
-
-  def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
-    super()._handle_mouse_event(mouse_event)
-
-    # # TODO: add generic _handle_mouse_click handler to Widget
-    if not self._scroller.scroll_panel.is_touch_valid():
-      self._can_click = False
-
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-
-    if not self._can_click:
-      return
-
-    # select current option
-    for btn in self._scroller._items:
-      btn = cast(BigDialogOptionButton, btn)
-      if btn.option == self._selected_option:
-        self._on_option_selected(btn.option)
-        break
-
-  def _update_state(self):
-    super()._update_state()
-
-    # get selection by whichever button is closest to center
-    center_y = self._rect.y + self._rect.height / 2
-    closest_btn = (None, float('inf'))
-    for btn in self._scroller._items:
-      dist_y = abs((btn.rect.y + btn.rect.height / 2) - center_y)
-      if dist_y < closest_btn[1]:
-        closest_btn = (btn, dist_y)
-
-    if closest_btn[0]:
-      for btn in self._scroller._items:
-        btn.set_selected(btn.option == closest_btn[0].option)
-      self._selected_option = closest_btn[0].option
-
-    # Signal to subclasses if selection changed
-    if self._selected_option != self._last_selected_option:
-      self._selected_option_changed()
-      self._last_selected_option = self._selected_option
-
-  def _render(self, _):
-    super()._render(_)
-    self._scroller.render(self._rect)
-
-    return self._ret
-
-
 class BigDialogButton(BigButton):
   def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", description: str = ""):
     super().__init__(text, value, icon)
@@ -422,4 +247,4 @@ class BigDialogButton(BigButton):
     super()._handle_mouse_release(mouse_pos)
 
     dlg = BigDialog(self.text, self._description)
-    gui_app.set_modal_overlay(dlg)
+    gui_app.push_widget(dlg)

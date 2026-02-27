@@ -2,16 +2,21 @@
 
 #include "tools/cabana/streams/livestream.h"
 
+#include <QProcess>
+
 class DeviceStream : public LiveStream {
   Q_OBJECT
 public:
   DeviceStream(QObject *parent, QString address = {});
+  ~DeviceStream();
   inline QString routeName() const override {
     return QString("Live Streaming From %1").arg(zmq_address.isEmpty() ? "127.0.0.1" : zmq_address);
   }
 
 protected:
+  void start() override;
   void streamThread() override;
+  QProcess *bridge_process = nullptr;
   const QString zmq_address;
 };
 

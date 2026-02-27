@@ -61,7 +61,7 @@ class Key(Widget):
       self._x_filter.x = x
       self._y_filter.x = local_y
       # keep track of original position so dragging around feels consistent. also move touch area down a bit
-      self.original_position = rl.Vector2(x, y + KEY_TOUCH_AREA_OFFSET)
+      self.original_position = rl.Vector2(x, local_y + KEY_TOUCH_AREA_OFFSET)
       self._position_initialized = True
 
     if not smooth:
@@ -227,6 +227,8 @@ class MiciKeyboard(Widget):
     for current_row, row in zip(self._current_keys, keys, strict=False):
       # not all layouts have the same number of keys
       for current_key, key in zip_repeat(current_row, row):
+        # reset parent rect for new keys
+        key.set_parent_rect(self._rect)
         current_pos = current_key.get_position()
         key.set_position(current_pos[0], current_pos[1], smooth=False)
 
@@ -264,7 +266,8 @@ class MiciKeyboard(Widget):
       for key in row:
         mouse_pos = gui_app.last_mouse_event.pos
         # approximate distance for comparison is accurate enough
-        dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - mouse_pos.y)
+        # use local y coords so parent widget offset (e.g. during NavWidget animate-in) doesn't affect hit testing
+        dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - (mouse_pos.y - self._rect.y))
         if dist < closest_key[1]:
           if self._closest_key[0] is None or key is self._closest_key[0] or dist < self._closest_key[1] - KEY_DRAG_HYSTERESIS:
             closest_key = (key, dist)
