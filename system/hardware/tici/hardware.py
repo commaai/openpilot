@@ -15,6 +15,7 @@ from openpilot.system.hardware.tici import iwlist
 from openpilot.system.hardware.tici.lpa import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
+from openpilot.system.hardware.tici.pure_python_modem import QuectelATClient, QuectelModemStateMachine, enforce_wifi_over_lte_priority
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -455,6 +456,15 @@ class Tici(HardwareBase):
 
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
+    strict_pure_modem = os.getenv("OPENPILOT_PURE_MODEM_STRICT", "1") == "1"
+    if os.getenv("OPENPILOT_FORCE_MODEMMANAGER", "0") != "1":
+      try:
+        self._configure_modem_pure_python(sim_id)
+        return
+      except Exception as err:
+        print(f"pure_python_modem_config_failed: {err}")
+        if strict_pure_modem:
+          raise
 
     cmds = []
     modem = self.get_modem()
@@ -504,8 +514,29 @@ class Tici(HardwareBase):
         tf.flush()
 
         # needs to be root
-        os.system(f"sudo cp {tf.name} {dest}")
+      os.system(f"sudo cp {tf.name} {dest}")
       os.system(f"sudo nmcli con load {dest}")
+
+  def _configure_modem_pure_python(self, sim_id: str) -> None:
+    port = os.getenv("OPENPILOT_MODEM_TTY", "/dev/ttyUSB2")
+    apn = os.getenv("OPENPILOT_MODEM_APN", "")
+    client = QuectelATClient(port=port, timeout=0.8, write_timeout=0.8)
+    sm = QuectelModemStateMachine(
+      client=client,
+      apn=apn,
+      registration_timeout=45.0,
+      registration_poll_interval=0.1,
+      fast_boot=True,
+    )
+    snapshot = sm.run_startup_sequence(sim_id=sim_id or "")
+    if not snapshot.sim_ready:
+      raise RuntimeError(f"SIM not ready: {snapshot.last_response}")
+
+    if not snapshot.attached:
+      raise RuntimeError(f"packet_attach_failed model={snapshot.model}: {snapshot.last_response}")
+
+    # Route preference policy required by the bounty: WiFi takes priority over LTE.
+    enforce_wifi_over_lte_priority()
 
   def reboot_modem(self):
     modem = self.get_modem()
