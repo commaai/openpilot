@@ -42,7 +42,6 @@ class MiciMainLayout(Scroller):
       self._onroad_layout,
     ])
     self._scroller.set_reset_scroll_at_show(False)
-    self._scroller.set_enabled(lambda: self.enabled)  # for nav stack
 
     # Disable scrolling when onroad is interacting with bookmark
     self._scroller.set_scrolling_enabled(lambda: not self._onroad_layout.is_swiping_left())
