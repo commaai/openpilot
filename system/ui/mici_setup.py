@@ -564,6 +564,7 @@ class NetworkSetupPage(NavWidget):
     super().show_event()
     self._scroller.show_event()
     self._prev_has_internet = False
+    self._pending_has_internet_scroll = None
 
   def hide_event(self):
     super().hide_event()
