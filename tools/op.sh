@@ -275,6 +275,11 @@ function op_activate_venv() {
   set +e
   source $OPENPILOT_ROOT/.venv/bin/activate &> /dev/null || true
   set -e
+
+  # persist venv on PATH across GitHub Actions steps
+  if [ -n "$GITHUB_PATH" ]; then
+    echo "$OPENPILOT_ROOT/.venv/bin" >> "$GITHUB_PATH"
+  fi
 }
 
 function op_venv() {

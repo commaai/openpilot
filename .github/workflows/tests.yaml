@@ -45,7 +45,7 @@ jobs:
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_stripped.sh
-    - uses: ./.github/workflows/setup
+    - run: ./tools/op.sh setup
     - name: Build openpilot and run checks
       timeout-minutes: 30
       working-directory: ${{ env.STRIPPED_DIR }}
@@ -70,7 +70,7 @@ jobs:
       run: |
         FILTERED=$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/homebrew' | tr '\n' ':')
         echo "PATH=${FILTERED}/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" >> $GITHUB_ENV
-    - uses: ./.github/workflows/setup
+    - run: ./tools/op.sh setup
     - name: Building openpilot
       run: scons
 
@@ -86,7 +86,7 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
+    - run: ./tools/op.sh setup
     - name: Static analysis
       timeout-minutes: 1
       run: scripts/lint/lint.sh
@@ -103,12 +103,11 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
-      id: setup-step
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       run: |
         source selfdrive/test/setup_xvfb.sh
         # Pre-compile Python bytecode so each pytest worker doesn't need to
@@ -127,12 +126,11 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
-      id: setup-step
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Run replay
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
       run: selfdrive/test/process_replay/test_processes.py -j$(nproc)
     - name: Print diff
@@ -185,12 +183,11 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup
-      id: setup-step
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Driving test
-      timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
+      timeout-minutes: 2
       run: |
         source selfdrive/test/setup_xvfb.sh
         pytest -s tools/sim/tests/test_metadrive_bridge.py
@@ -207,7 +204,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: ./.github/workflows/setup
+      - run: ./tools/op.sh setup
       - name: Build openpilot
         run: scons -j$(nproc)
       - name: Create UI Report
