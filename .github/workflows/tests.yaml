@@ -27,7 +27,7 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
@@ -80,7 +80,7 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v6
@@ -97,7 +97,7 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v6
@@ -121,7 +121,7 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v6
@@ -129,16 +129,10 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
       id: setup-step
-    - name: Cache test routes
-      id: dependency-cache
-      uses: actions/cache@v5
-      with:
-        path: /tmp/comma_download_cache
-        key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/test_processes.py') }}
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Run replay
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
       run: selfdrive/test/process_replay/test_processes.py -j$(nproc)
     - name: Print diff
@@ -184,7 +178,7 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     if: false  # FIXME: Started to timeout recently
     steps:
@@ -207,7 +201,7 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
       - uses: actions/checkout@v6
