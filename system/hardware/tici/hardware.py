@@ -520,12 +520,15 @@ class Tici(HardwareBase):
   def _configure_modem_pure_python(self, sim_id: str) -> None:
     port = os.getenv("OPENPILOT_MODEM_TTY", "/dev/ttyUSB2")
     apn = os.getenv("OPENPILOT_MODEM_APN", "")
+    registration_timeout = float(os.getenv("OPENPILOT_MODEM_REG_TIMEOUT", "45.0"))
+    startup_retries = int(os.getenv("OPENPILOT_MODEM_STARTUP_RETRIES", "1"))
     client = QuectelATClient(port=port, timeout=0.8, write_timeout=0.8)
     sm = QuectelModemStateMachine(
       client=client,
       apn=apn,
-      registration_timeout=45.0,
+      registration_timeout=registration_timeout,
       registration_poll_interval=0.1,
+      startup_retries=startup_retries,
       fast_boot=True,
     )
     snapshot = sm.run_startup_sequence(sim_id=sim_id or "")

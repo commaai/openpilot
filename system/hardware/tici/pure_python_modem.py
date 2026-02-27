@@ -140,6 +140,7 @@ class QuectelModemStateMachine:
     apn: str = "",
     registration_timeout: float = 60.0,
     registration_poll_interval: float = 0.1,
+    startup_retries: int = 1,
     fast_boot: bool = True,
     state_path: Path = MODEM_STATE_PATH,
   ) -> None:
@@ -147,6 +148,7 @@ class QuectelModemStateMachine:
     self.apn = apn
     self.registration_timeout = registration_timeout
     self.registration_poll_interval = registration_poll_interval
+    self.startup_retries = max(0, startup_retries)
     self.fast_boot = fast_boot
     self.state_path = state_path
     self._last_state: ModemState | None = None
@@ -255,8 +257,23 @@ class QuectelModemStateMachine:
     self.client.send("AT+CGATT=1", timeout=5.0 if self.fast_boot else 8.0)
     self.client.send("AT+CGACT=1,1", timeout=6.0 if self.fast_boot else 10.0)
     lines = self.client.send("AT+CGPADDR=1", timeout=2.0 if self.fast_boot else 4.0)
-    attached = self._contains(lines, "+CGPADDR:")
+    attached = self._has_routable_cgpaddr(lines)
     return attached, "\n".join(lines)
+
+  @staticmethod
+  def _has_routable_cgpaddr(lines: Sequence[str]) -> bool:
+    for line in lines:
+      if not line.startswith("+CGPADDR:"):
+        continue
+      payload = line.split(":", 1)[-1]
+      fields = [x.strip().strip('"') for x in payload.split(",")]
+      for token in fields[1:]:
+        if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", token):
+          if token != "0.0.0.0":
+            return True
+        elif ":" in token and token not in {"::", "0:0:0:0:0:0:0:0"}:
+          return True
+    return False
 
   def recover_link(self) -> None:
     self.client.send("AT+CFUN=0", timeout=4.0 if self.fast_boot else 8.0)
@@ -264,7 +281,7 @@ class QuectelModemStateMachine:
     self.client.send("AT+CFUN=1", timeout=6.0 if self.fast_boot else 10.0)
     time.sleep(0.5 if self.fast_boot else 1.0)
 
-  def run_startup_sequence(self, sim_id: str = "") -> ModemSnapshot:
+  def _run_startup_once(self, sim_id: str = "") -> ModemSnapshot:
     self._publish_state(ModemState.REGISTERING)
     self.client.send("AT", timeout=2.0 if self.fast_boot else 3.0)
     model = self.identify_model()
@@ -316,6 +333,29 @@ class QuectelModemStateMachine:
       model=model,
       last_response=att_resp,
     )
+
+  def run_startup_sequence(self, sim_id: str = "") -> ModemSnapshot:
+    total_attempts = self.startup_retries + 1
+    last_snapshot: ModemSnapshot | None = None
+
+    for attempt in range(total_attempts):
+      snapshot = self._run_startup_once(sim_id=sim_id)
+      last_snapshot = snapshot
+      if snapshot.attached:
+        return snapshot
+      if snapshot.state == ModemState.SIM_PENDING:
+        return snapshot
+      if attempt >= (total_attempts - 1):
+        break
+
+      self._publish_state(ModemState.DISCONNECTED)
+      try:
+        self.recover_link()
+      except Exception:
+        break
+
+    assert last_snapshot is not None
+    return last_snapshot
 
 
 def enforce_wifi_over_lte_priority(

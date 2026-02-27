@@ -134,3 +134,56 @@ def test_at_client_send_with_mocked_serial_stream(monkeypatch):
   assert fake_serial.reset_output_buffer_calls >= 1
   assert fake_serial.write_calls == [b"AT+CPIN?\r"]
   assert fake_serial.flush_calls == 1
+
+
+def test_cgpaddr_requires_non_zero_ip():
+  assert QuectelModemStateMachine._has_routable_cgpaddr([
+    "+CGPADDR: 1,0.0.0.0",
+    "OK",
+  ]) is False
+  assert QuectelModemStateMachine._has_routable_cgpaddr([
+    "+CGPADDR: 1,10.0.0.2",
+    "OK",
+  ]) is True
+
+
+def test_startup_sequence_retries_after_attach_failure(monkeypatch, tmp_path):
+  fake = FakeATClient(
+    scripted=[
+      ["OK"],                         # first AT
+      ["Quectel EG25", "OK"],         # first ATI
+      ["+CPIN: READY", "OK"],         # first CPIN
+      ["OK"],                         # first QSIMDET
+      ["OK"],                         # first QSIMSTAT
+      ["OK"],                         # first APN
+      ["+CEREG: 2,1", "OK"],          # first registration
+      ["OK"],                         # first CGATT
+      ["OK"],                         # first CGACT
+      ["+CGPADDR: 1,0.0.0.0", "OK"],  # first address (invalid)
+      ["OK"],                         # recovery CFUN=0
+      ["OK"],                         # recovery CFUN=1
+      ["OK"],                         # second AT
+      ["Quectel EG25", "OK"],         # second ATI
+      ["+CPIN: READY", "OK"],         # second CPIN
+      ["OK"],                         # second QSIMDET
+      ["OK"],                         # second QSIMSTAT
+      ["OK"],                         # second APN
+      ["+CEREG: 2,1", "OK"],          # second registration
+      ["OK"],                         # second CGATT
+      ["OK"],                         # second CGACT
+      ["+CGPADDR: 1,10.0.0.2", "OK"], # second address (valid)
+    ]
+  )
+  monkeypatch.setattr(pure_python_modem.time, "sleep", lambda _s: None)
+  sm = QuectelModemStateMachine(
+    client=fake,
+    apn="internet",
+    startup_retries=1,
+    registration_timeout=1.0,
+    state_path=tmp_path / "modem_state.txt",
+  )
+  snap = sm.run_startup_sequence(sim_id="123")
+
+  assert snap.attached is True
+  assert "AT+CFUN=0" in fake.calls
+  assert "AT+CFUN=1" in fake.calls
