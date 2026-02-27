@@ -276,11 +276,6 @@ class DeviceLayoutMici(NavWidget):
       ui_state.params.put_bool("DoShutdown", True)
 
     def reboot_callback():
-      try:
-        os.remove("/data/.openpilot_setup_done")
-      except FileNotFoundError:
-        pass
-      ui_state.params.remove("HasAcceptedTerms"); ui_state.params.remove("CompletedTrainingVersion")
       ui_state.params.put_bool("DoReboot", True)
 
     def reset_calibration_callback():
