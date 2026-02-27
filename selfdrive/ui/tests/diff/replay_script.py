@@ -170,15 +170,15 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   def type_keyboard():
     """Types 8 characters using the big keyboard to test different layouts and interactions."""
-    KEY1 = (150, 430)  # e.g. 'Q' key
+    KEY = (150, 430)  # e.g. 'Q' key
     SHIFT = (150, 750)  # also symbols key in number mode
     NUMBERS = (150, 950)
     SPACE = (1060, 950)
     BACKSPACE = (2000, 780)
     for key in [
-      SHIFT, KEY1, KEY1, SHIFT, SHIFT, KEY1, KEY1,  # test casing (upper, lower, caps lock)
+      SHIFT, KEY, KEY, SHIFT, SHIFT, KEY, KEY,  # test casing (upper, lower, caps lock)
       SPACE, SPACE, BACKSPACE, BACKSPACE,  # test multiple space and backspace
-      NUMBERS, KEY1, KEY1, SHIFT, KEY1, KEY1  # test numbers and symbols
+      NUMBERS, KEY, KEY, SHIFT, KEY, KEY  # test numbers and symbols
     ]:
       script.click(*key, wait_after=10)
 
