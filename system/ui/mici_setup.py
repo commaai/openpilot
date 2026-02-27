@@ -397,7 +397,7 @@ class DownloadingPage(Widget):
 
 
 class FailedPage(NavWidget):
-  def __init__(self, reboot_callback: Callable, title: str = "download failed"):
+  def __init__(self, reboot_callback: Callable, retry_callback: Callable | None = None, title: str = "download failed"):
     super().__init__()
     self.set_back_callback(gui_app.pop_widget)
 
@@ -411,7 +411,7 @@ class FailedPage(NavWidget):
     self._reboot_button.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._retry_button = SmallButton("retry")
-    self._retry_button.set_click_callback(gui_app.pop_widget)
+    self._retry_button.set_click_callback(retry_callback if retry_callback is not None else gui_app.pop_widget)
     self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
 
   def set_reason(self, reason: str):
@@ -515,7 +515,8 @@ class BigPillButton(BigButton):
 
 
 class NetworkSetupPage(NavWidget):
-  def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable, back_callback: Callable):
+  def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable,
+               back_callback: Callable, disable_connect_hint: bool = False):
     super().__init__()
     self.set_back_callback(back_callback)
 
@@ -528,6 +529,7 @@ class NetworkSetupPage(NavWidget):
 
     self._connect_button = GreyBigButton("connect to\ninternet", "or swipe down to go back",
                                          gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True))
+    self._connect_button.set_visible(not disable_connect_hint)
 
     self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
@@ -559,6 +561,10 @@ class NetworkSetupPage(NavWidget):
     self._custom_software = custom_software
     self._continue_button.set_text("install openpilot" if not custom_software else "choose software")
     self._continue_button.set_green(not custom_software)
+
+  def set_is_updater(self):
+    self._continue_button.set_text("download\n& install")
+    self._continue_button.set_green(False)
 
   def show_event(self):
     super().show_event()
