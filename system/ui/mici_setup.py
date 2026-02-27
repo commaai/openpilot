@@ -632,11 +632,10 @@ class Setup(Widget):
 
     self._start_page = StartPage()
     self._start_page.set_click_callback(lambda: self._set_state(SetupState.SOFTWARE_SELECTION))
+    # TODO: change these to touch_valid
     self._start_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback, self._back_to_software_selection)
-    # TODO: change these to touch_valid
-    # self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._software_selection_page = SoftwareSelectionPage(self.use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
     self._software_selection_page.set_enabled(lambda: self.enabled)  # for nav stack
@@ -644,7 +643,6 @@ class Setup(Widget):
     self._download_failed_page = FailedPage(HARDWARE.reboot)
 
     self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._back_to_software_selection)
-    # self._custom_software_warning_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._downloading_page = DownloadingPage()
 
