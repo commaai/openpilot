@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from abc import abstractmethod
 import os
 import re
 import threading
@@ -21,10 +20,9 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
-from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.button import IconButton, SmallButton, WideRoundedButton, FullRoundedButton
+from openpilot.system.ui.widgets.button import SmallButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
@@ -157,157 +155,6 @@ class SoftwareSelectionPage(Widget):
       rect.height / 2,
     )
     self._custom_software_slider.render(custom_software_rect)
-
-
-class TermsHeader(Widget):
-  def __init__(self, text: str, icon_texture: rl.Texture):
-    super().__init__()
-
-    self._title = UnifiedLabel(text, 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                               font_weight=FontWeight.BOLD, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-                               line_height=0.8)
-    self._icon_texture = icon_texture
-
-    self.set_rect(rl.Rectangle(0, 0, gui_app.width - 16 * 2, self._icon_texture.height))
-
-  def set_title(self, text: str):
-    self._title.set_text(text)
-
-  def set_icon(self, icon_texture: rl.Texture):
-    self._icon_texture = icon_texture
-
-  def _render(self, _):
-    rl.draw_texture_ex(self._icon_texture, rl.Vector2(self._rect.x, self._rect.y),
-                       0.0, 1.0, rl.WHITE)
-
-    # May expand outside parent rect
-    title_content_height = self._title.get_content_height(int(self._rect.width - self._icon_texture.width - 16))
-    title_rect = rl.Rectangle(
-      self._rect.x + self._icon_texture.width + 16,
-      self._rect.y + (self._rect.height - title_content_height) / 2,
-      self._rect.width - self._icon_texture.width - 16,
-      title_content_height,
-    )
-    self._title.render(title_rect)
-
-
-class TermsPage(Widget):
-  ITEM_SPACING = 20
-
-  def __init__(self, continue_callback: Callable, back_callback: Callable | None = None,
-               back_text: str = "back", continue_text: str = "accept"):
-    super().__init__()
-
-    # TODO: use Scroller
-    self._scroll_panel = GuiScrollPanel2(horizontal=False)
-
-    self._continue_text = continue_text
-    self._continue_slider: bool = continue_text in ("reboot", "power off")
-    self._continue_button: WideRoundedButton | FullRoundedButton | SmallSlider
-    if self._continue_slider:
-      self._continue_button = SmallSlider(continue_text, confirm_callback=continue_callback)
-      self._scroll_panel.set_enabled(lambda: not self._continue_button.is_pressed)
-    elif back_callback is not None:
-      self._continue_button = WideRoundedButton(continue_text)
-    else:
-      self._continue_button = FullRoundedButton(continue_text)
-    self._continue_button.set_enabled(False)
-    self._continue_button.set_opacity(0.0)
-    self._continue_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
-    if not self._continue_slider:
-      self._continue_button.set_click_callback(continue_callback)
-
-    self._enable_back = back_callback is not None
-    self._back_button = SmallButton(back_text)
-    self._back_button.set_opacity(0.0)
-    self._back_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
-    self._back_button.set_click_callback(back_callback)
-
-    self._scroll_down_indicator = IconButton(gui_app.texture("icons_mici/setup/scroll_down_indicator.png", 64, 78))
-    self._scroll_down_indicator.set_enabled(False)
-
-  def reset(self):
-    self._scroll_panel.set_offset(0)
-    self._continue_button.set_enabled(False)
-    self._continue_button.set_opacity(0.0)
-    self._back_button.set_enabled(False)
-    self._back_button.set_opacity(0.0)
-    self._scroll_down_indicator.set_opacity(1.0)
-
-  def show_event(self):
-    super().show_event()
-    self.reset()
-
-  @property
-  @abstractmethod
-  def _content_height(self):
-    pass
-
-  @property
-  def _scrolled_down_offset(self):
-    return -self._content_height + (self._continue_button.rect.height + 16 + 30)
-
-  @abstractmethod
-  def _render_content(self, scroll_offset):
-    pass
-
-  def _render(self, _):
-    scroll_offset = round(self._scroll_panel.update(self._rect, self._content_height + self._continue_button.rect.height + 16))
-
-    if scroll_offset <= self._scrolled_down_offset:
-      # don't show back if not enabled
-      if self._enable_back:
-        self._back_button.set_enabled(True)
-        self._back_button.set_opacity(1.0, smooth=True)
-      self._continue_button.set_enabled(True)
-      self._continue_button.set_opacity(1.0, smooth=True)
-      self._scroll_down_indicator.set_opacity(0.0, smooth=True)
-    else:
-      self._back_button.set_enabled(False)
-      self._back_button.set_opacity(0.0, smooth=True)
-      self._continue_button.set_enabled(False)
-      self._continue_button.set_opacity(0.0, smooth=True)
-      self._scroll_down_indicator.set_opacity(1.0, smooth=True)
-
-    # Render content
-    self._render_content(scroll_offset)
-
-    # black gradient at top and bottom for scrolling content
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y),
-                                 int(self._rect.width), 20, rl.BLACK, rl.BLANK)
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - 20),
-                                 int(self._rect.width), 20, rl.BLANK, rl.BLACK)
-
-    # fade out back button as slider is moved
-    if self._continue_slider and scroll_offset <= self._scrolled_down_offset:
-      self._back_button.set_opacity(1.0 - self._continue_button.slider_percentage)
-      self._back_button.set_visible(self._continue_button.slider_percentage < 0.99)
-
-    self._back_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._back_button.rect.height,
-      self._back_button.rect.width,
-      self._back_button.rect.height,
-    ))
-
-    continue_x = self._rect.x + 8
-    if self._enable_back:
-      continue_x = self._rect.x + self._rect.width - self._continue_button.rect.width - 8
-    if self._continue_slider:
-      continue_x += 8
-    self._continue_button.render(rl.Rectangle(
-      continue_x,
-      self._rect.y + self._rect.height - self._continue_button.rect.height,
-      self._continue_button.rect.width,
-      self._continue_button.rect.height,
-    ))
-
-    self._scroll_down_indicator.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._scroll_down_indicator.rect.width - 8,
-      self._rect.y + self._rect.height - self._scroll_down_indicator.rect.height - 8,
-      self._scroll_down_indicator.rect.width,
-      self._scroll_down_indicator.rect.height,
-    ))
 
 
 class CustomSoftwareWarningPage(NavWidget):
