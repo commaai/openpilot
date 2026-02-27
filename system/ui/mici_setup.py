@@ -407,7 +407,6 @@ class FailedPage(NavWidget):
                                       font_weight=FontWeight.ROMAN)
 
     self._reboot_button = SmallSlider("reboot", reboot_callback)
-    self._reboot_button.set_click_callback(reboot_callback)
     self._reboot_button.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._retry_button = SmallButton("retry")
@@ -541,6 +540,7 @@ class NetworkSetupPage(NavWidget):
     def on_waiting_click():
       offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
       self._scroller.scroll_to(offset, smooth=True, block_interaction=True)
+      # show shake when wifi button in view
       self._pending_shake = True
 
     self._waiting_button = BigPillButton("waiting for\ninternet...", disabled_background=True)
