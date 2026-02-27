@@ -8,10 +8,15 @@ from cereal import log
 
 DrawType = Callable[[st.SearchStrategy], Any]
 
+# Module-level cache for strategies built from deterministic schemas (no union fields).
+# Keyed by (schema node id, real_floats). Avoids rebuilding the strategy tree per hypothesis example.
+_struct_strategy_cache: dict[tuple[int, bool], st.SearchStrategy] = {}
+
 
 class FuzzyGenerator:
   def __init__(self, draw: DrawType, real_floats: bool):
     self.draw = draw
+    self.real_floats = real_floats
     self.native_type_map = FuzzyGenerator._get_native_type_map(real_floats)
 
   def generate_native_type(self, field: str) -> st.SearchStrategy[bool | int | float | str | bytes]:
@@ -45,9 +50,22 @@ class FuzzyGenerator:
       return self.generate_struct(field.schema)
 
   def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: str | None = None) -> st.SearchStrategy[dict[str, Any]]:
+    # Cache strategies for schemas without union fields — the strategy tree is deterministic
+    # and identical across hypothesis examples, so we only need to build it once
+    if not event and not schema.union_fields:
+      cache_key = (schema.node.id, self.real_floats)
+      cached = _struct_strategy_cache.get(cache_key)
+      if cached is not None:
+        return cached
+
     single_fill: tuple[str, ...] = (event,) if event else (self.draw(st.sampled_from(schema.union_fields)),) if schema.union_fields else ()
     fields_to_generate = schema.non_union_fields + single_fill
-    return st.fixed_dictionaries({field: self.generate_field(schema.fields[field]) for field in fields_to_generate if not field.endswith('DEPRECATED')})
+    strategy = st.fixed_dictionaries({field: self.generate_field(schema.fields[field]) for field in fields_to_generate if not field.endswith('DEPRECATED')})
+
+    if not event and not schema.union_fields:
+      _struct_strategy_cache[cache_key] = strategy
+
+    return strategy
 
   @staticmethod
   @cache

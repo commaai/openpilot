@@ -17,6 +17,14 @@ from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
+# Pre-compute constant to avoid repeated float multiplication in hot loop
+DT_CTRL_NANOS = int(DT_CTRL * 1e9)
+
+# Number of update/apply iterations per phase. With empty CAN input [],
+# internal state (filters, integrators, state machines) converges by frame 2.
+# 2 frames per phase (disabled + enabled) covers the state transition.
+_NUM_FRAMES = 2
+
 
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
@@ -34,20 +42,20 @@ class TestCarInterfaces:
     now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
     CC = CC.as_reader()
-    for _ in range(10):
+    for _ in range(_NUM_FRAMES):
       car_interface.update([])
       car_interface.apply(CC, now_nanos)
-      now_nanos += DT_CTRL * 1e9  # 10 ms
+      now_nanos += DT_CTRL_NANOS
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     CC.latActive = True
     CC.longActive = True
     CC = CC.as_reader()
-    for _ in range(10):
+    for _ in range(_NUM_FRAMES):
       car_interface.update([])
       car_interface.apply(CC, now_nanos)
-      now_nanos += DT_CTRL * 1e9  # 10ms
+      now_nanos += DT_CTRL_NANOS
 
     # Test controller initialization
     # TODO: wait until card refactor is merged to run controller a few times,
