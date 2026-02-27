@@ -71,7 +71,7 @@ class PairingDialog(Widget):
     if ui_state.prime_state.is_paired():
       gui_app.pop_widget()
 
-  def _render(self, rect: rl.Rectangle) -> int:
+  def _render(self, rect: rl.Rectangle) -> None:
     rl.clear_background(rl.Color(224, 224, 224, 255))
 
     self._check_qr_refresh()
@@ -109,8 +109,6 @@ class PairingDialog(Widget):
     qr_x = content_rect.x + left_width + 40 + (right_width - qr_size) // 2
     qr_y = content_rect.y
     self._render_qr_code(rl.Rectangle(qr_x, qr_y, qr_size, qr_size))
-
-    return -1
 
   def _render_instructions(self, rect: rl.Rectangle) -> None:
     instructions = [

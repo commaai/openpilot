@@ -55,7 +55,7 @@ class SshKeyAction(ItemAction):
     self._username = self._params.get("GithubUsername")
     self._state = SshKeyActionState.REMOVE if self._params.get("GithubSshKeys") else SshKeyActionState.ADD
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> None:
     # Show error dialog if there's an error
     if self._error_message:
       message = copy.copy(self._error_message)
@@ -81,7 +81,6 @@ class SshKeyAction(ItemAction):
     self._button.set_text(tr(self._state.value))
     self._button.set_enabled(self._state != SshKeyActionState.LOADING)
     self._button.render(button_rect)
-    return False
 
   def _handle_button_click(self):
     if self._state == SshKeyActionState.ADD:

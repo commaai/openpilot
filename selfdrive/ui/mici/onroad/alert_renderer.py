@@ -215,7 +215,7 @@ class AlertRenderer(Widget):
     icon_layout = IconLayout(txt_icon, icon_side, icon_margin_x, icon_margin_y) if txt_icon is not None and icon_side is not None else None
     return AlertLayout(text_rect, icon_layout)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> None:
     alert = self.get_alert(ui_state.sm)
 
     # Animate fade and slide in/out
@@ -228,15 +228,13 @@ class AlertRenderer(Widget):
         alert = self._prev_alert
       else:
         self._prev_alert = None
-        return False
+        return
 
     self._draw_background(alert)
 
     alert_layout = self._icon_helper(alert)
     self._draw_text(alert, alert_layout)
     self._draw_icons(alert_layout)
-
-    return True
 
   def _draw_icons(self, alert_layout: AlertLayout) -> None:
     if alert_layout.icon is None:
