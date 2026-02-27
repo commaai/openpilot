@@ -11,7 +11,7 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.ui.tests.diff.replay import FPS, LayoutVariant
 from openpilot.system.updated.updated import parse_release_notes
 
-WAIT = int(FPS * 0.5)  # Default frames to wait after events
+WAIT = FPS // 2  # Default frames to wait after events
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -79,26 +79,24 @@ class Script:
 
 # --- Setup functions ---
 
-def put_update_params(params: Params | None = None) -> None:
-  if params is None:
-    params = Params()
-  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
-  params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
-  params.put("UpdaterTargetBranch", BRANCH_NAME)
-
 
 def setup_offroad_alerts() -> None:
-  put_update_params(Params())
   set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
   set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
   set_offroad_alert("Offroad_IsTakingSnapshot", True)
 
 
-def setup_update_available() -> None:
+def setup_update_available(available: bool = True) -> None:
   params = Params()
-  params.put_bool("UpdateAvailable", True)
-  params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
-  put_update_params(params)
+  params.put_bool("UpdateAvailable", available)
+  if available:
+    params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
+    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+    params.put("UpdaterTargetBranch", BRANCH_NAME)
+  else:
+    params.remove("UpdaterNewDescription")
+    params.remove("UpdaterNewReleaseNotes")
+    params.remove("UpdaterTargetBranch")
 
 
 def setup_developer_params() -> None:
@@ -132,7 +130,6 @@ def make_network_state_setup(pm: PubMaster, network_type) -> Callable:
 
 def make_alert_setup(pm: PubMaster, size, text1, text2, status) -> Callable:
   def _send() -> None:
-    send_onroad(pm)
     alert = messaging.new_message('selfdriveState')
     ss = alert.selfdriveState
     ss.alertSize = size
@@ -171,16 +168,31 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
     return setup
 
+  def type_keyboard():
+    """Types 8 characters using the big keyboard to test different layouts and interactions."""
+    KEY1 = (150, 430)  # e.g. 'Q' key
+    SHIFT = (150, 750)  # also symbols key in number mode
+    NUMBERS = (150, 950)
+    SPACE = (1060, 950)
+    BACKSPACE = (2000, 780)
+    for key in [
+      SHIFT, KEY1, KEY1, SHIFT, SHIFT, KEY1, KEY1,  # test casing (upper, lower, caps lock)
+      SPACE, SPACE, BACKSPACE, BACKSPACE,  # test multiple space and backspace
+      NUMBERS, KEY1, KEY1, SHIFT, KEY1, KEY1  # test numbers and symbols
+    ]:
+      script.click(*key, wait_after=10)
+
   # TODO: Better way of organizing the events
 
   # === Homescreen ===
   script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
 
-  # === Offroad Alerts (auto-transitions via HomeLayout refresh) ===
-  script.setup(make_home_refresh_setup(setup_offroad_alerts))
-
   # === Update Available (auto-transitions via HomeLayout refresh) ===
   script.setup(make_home_refresh_setup(setup_update_available))
+
+  # === Offroad Alerts (auto-transitions via HomeLayout refresh, overrides update) ===
+  script.setup(make_home_refresh_setup(setup_offroad_alerts))
+  script.click(620, 950)  # close alerts
 
   # === Settings - Device (click sidebar settings button) ===
   script.click(150, 90)
@@ -192,15 +204,30 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   # === Settings - Network ===
   script.click(278, 450)
   script.click(1880, 100)  # advanced network settings
-  script.click(630, 80)  # back
+
+  # Keyboard (tethering password)
+  script.click(2000, 420)  # open tether password keyboard
+  script.click(2000, 950)  # click confirm (disabled, should not close)
+  script.click(2000, 115)  # cancel (close without typing)
+  script.click(2000, 420)  # open keyboard again
+  type_keyboard()  # test various keyboard layouts and interactions
+  script.click(2050, 250)  # toggle show/hide password
+  script.click(2000, 950)  # confirm (close keyboard)
+
+  script.click(630, 80)  # back from advanced network
 
   # === Settings - Toggles ===
   script.click(278, 600)
   script.click(1200, 280)  # experimental mode description
 
   # === Settings - Software ===
-  script.setup(put_update_params, wait_after=0)
-  script.click(278, 720)
+  script.setup(lambda: setup_update_available(False), wait_after=0)  # start with no update available
+  script.click(278, 720)  # software
+  for _ in range(2):
+    script.click(720, 120)  # toggle current release notes
+  script.setup(setup_update_available)  # set update available
+  for _ in range(2):
+    script.click(720, 450)  # toggle new release notes
 
   # === Settings - Firehose ===
   script.click(278, 845)
