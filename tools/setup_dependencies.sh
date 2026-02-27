@@ -88,12 +88,14 @@ function install_python_deps() {
     PATH="$UV_BIN:$PATH"
   fi
 
-  echo "updating uv..."
-  # ok to fail, can also fail due to installing with brew
-  uv self update || true
+  if [[ -z "$CI" ]]; then
+    echo "updating uv..."
+    # ok to fail, can also fail due to installing with brew
+    uv self update || true
+  fi
 
   echo "installing python packages..."
-  uv sync --frozen --all-extras
+  uv sync --frozen --all-extras ${CI:+--no-install-project}
   source .venv/bin/activate
 
   if [[ "$(uname)" == 'Darwin' ]]; then
