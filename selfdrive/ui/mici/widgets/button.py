@@ -218,9 +218,9 @@ class BigButton(Widget):
     self._label.render(label_rect)
 
     if self.value:
-      label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
-      sub_label_height = self._sub_label.get_content_height(self._width_hint())
-      sub_label_rect = rl.Rectangle(label_x, label_y - sub_label_height, self._width_hint(), sub_label_height)
+      label_y = btn_y + self.LABEL_VERTICAL_PADDING + self._label.get_content_height(self._width_hint())
+      sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
+      sub_label_rect = rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
