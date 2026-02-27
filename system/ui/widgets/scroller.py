@@ -7,6 +7,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 ITEM_SPACING = 20
 LINE_COLOR = rl.GRAY
@@ -15,6 +16,7 @@ ANIMATION_SCALE = 0.6
 
 MOVE_LIFT = 20
 MOVE_OVERLAY_ALPHA = 0.65
+SCROLL_RC = 0.15
 
 EDGE_SHADOW_WIDTH = 20
 
@@ -65,7 +67,8 @@ class ScrollIndicator(Widget):
                         rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
-class Scroller(Widget):
+class _Scroller(Widget):
+  """Should use wrapper below to reduce boilerplate"""
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
@@ -77,8 +80,8 @@ class Scroller(Widget):
 
     self._reset_scroll_at_show = True
 
-    self._scrolling_to: float | None = None
-    self._scroll_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._scrolling_to: tuple[float | None, bool] = (None, False)  # target offset, block_interaction
+    self._scrolling_to_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
 
@@ -108,13 +111,14 @@ class Scroller(Widget):
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
 
-    for item in items:
-      self.add_widget(item)
+    self.add_widgets(items)
 
   def set_reset_scroll_at_show(self, scroll: bool):
     self._reset_scroll_at_show = scroll
 
-  def scroll_to(self, pos: float, smooth: bool = False):
+  def scroll_to(self, pos: float, smooth: bool = False, block_interaction: bool = False):
+    assert not block_interaction or smooth, "Instant scroll cannot block user interaction"
+
     # already there
     if abs(pos) < 1:
       return
@@ -122,22 +126,35 @@ class Scroller(Widget):
     # FIXME: the padding correction doesn't seem correct
     scroll_offset = self.scroll_panel.get_offset() - pos
     if smooth:
-      self._scrolling_to = scroll_offset
+      self._scrolling_to_filter.x = self.scroll_panel.get_offset()
+      self._scrolling_to = scroll_offset, block_interaction
     else:
       self.scroll_panel.set_offset(scroll_offset)
 
   @property
   def is_auto_scrolling(self) -> bool:
-    return self._scrolling_to is not None
+    return self._scrolling_to[0] is not None
 
   @property
   def items(self) -> list[Widget]:
     return self._items
 
+  @property
+  def content_size(self) -> float:
+    return self._content_size
+
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
-    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to is None
-                                          and not self.moving_items)
+
+    # preserve original touch valid callback
+    original_touch_valid_callback = item._touch_valid_callback
+    item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to[0] is None
+                                          and not self.moving_items and (original_touch_valid_callback() if
+                                                                         original_touch_valid_callback else True))
+
+  def add_widgets(self, items: list[Widget]) -> None:
+    for item in items:
+      self.add_widget(item)
 
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     """Set whether scrolling is enabled (does not affect widget enabled state)."""
@@ -145,7 +162,7 @@ class Scroller(Widget):
 
   def _update_state(self):
     if DO_ZOOM:
-      if self._scrolling_to is not None or self.scroll_panel.state != ScrollState.STEADY:
+      if self._scrolling_to[0] is not None or self.scroll_panel.state != ScrollState.STEADY:
         self._zoom_out_t = rl.get_time() + MIN_ZOOM_ANIMATION_TIME
         self._zoom_filter.update(0.85)
       else:
@@ -155,24 +172,22 @@ class Scroller(Widget):
           else:
             self._zoom_filter.update(0.85)
 
-    # Cancel auto-scroll if user starts manually scrolling
-    if self._scrolling_to is not None and (self.scroll_panel.state == ScrollState.PRESSED or self.scroll_panel.state == ScrollState.MANUAL_SCROLL):
-      self._scrolling_to = None
+    # Cancel auto-scroll if user starts manually scrolling (unless block_interaction)
+    if (self.scroll_panel.state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL) and
+        self._scrolling_to[0] is not None and not self._scrolling_to[1]):
+      self._scrolling_to = None, False
 
-    if self._scrolling_to is not None:
-      self._scroll_filter.update(self._scrolling_to)
-      self.scroll_panel.set_offset(self._scroll_filter.x)
+    if self._scrolling_to[0] is not None and len(self._pending_lift) == 0:
+      self._scrolling_to_filter.update(self._scrolling_to[0])
+      self.scroll_panel.set_offset(self._scrolling_to_filter.x)
 
-      if abs(self._scroll_filter.x - self._scrolling_to) < 1:
-        self.scroll_panel.set_offset(self._scrolling_to)
-        self._scrolling_to = None
-    else:
-      # keep current scroll position up to date
-      self._scroll_filter.x = self.scroll_panel.get_offset()
+      if abs(self._scrolling_to_filter.x - self._scrolling_to[0]) < 1:
+        self.scroll_panel.set_offset(self._scrolling_to[0])
+        self._scrolling_to = None, False
 
   def _get_scroll(self, visible_items: list[Widget], content_size: float) -> float:
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
-    self.scroll_panel.set_enabled(scroll_enabled and self.enabled)
+    self.scroll_panel.set_enabled(scroll_enabled and self.enabled and not self._scrolling_to[1])
     self.scroll_panel.update(self._rect, content_size)
     if not self._snap_items:
       return round(self.scroll_panel.get_offset())
@@ -230,14 +245,17 @@ class Scroller(Widget):
     # store original position in content space of all affected widgets to animate from
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
       affected_item = self._items[idx]
-      self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, 0.15, 1 / gui_app.target_fps)
+      self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, SCROLL_RC, 1 / gui_app.target_fps)
       self._pending_move.add(affected_item)
 
     # lift only src widget to make it more clear which one is moving
-    self._move_lift[item] = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    self._move_lift[item] = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._pending_lift.add(item)
 
   def _do_move_animation(self, item: Widget, target_x: float, target_y: float) -> tuple[float, float]:
+    # wait a frame before moving so we match potential pending scroll animation
+    can_start_move = len(self._pending_lift) == 0
+
     if item in self._move_lift:
       lift_filter = self._move_lift[item]
 
@@ -260,7 +278,7 @@ class Scroller(Widget):
 
       # compare/update in content space to match filter
       content_x = target_x - self._scroll_offset
-      if len(self._pending_lift) == 0:
+      if can_start_move:
         move_filter.update(content_x)
 
         # drop when close to target
@@ -380,18 +398,49 @@ class Scroller(Widget):
 
   def show_event(self):
     super().show_event()
-    if self._reset_scroll_at_show:
-      self.scroll_panel.set_offset(0.0)
-
     for item in self._items:
       item.show_event()
 
-  def hide_event(self):
-    super().hide_event()
+    if self._reset_scroll_at_show:
+      self.scroll_panel.set_offset(0.0)
+
     self._overlay_filter.x = 0.0
     self._move_animations.clear()
     self._move_lift.clear()
     self._pending_lift.clear()
     self._pending_move.clear()
+    self._scrolling_to = None, False
+    self._scrolling_to_filter.x = 0.0
+
+  def hide_event(self):
+    super().hide_event()
     for item in self._items:
       item.hide_event()
+
+
+class Scroller(Widget):
+  """Wrapper for _Scroller so that children do not need to call events or pass down enabled for nav stack."""
+  def __init__(self, **kwargs):
+    super().__init__()
+    self._scroller = _Scroller([], **kwargs)
+    # pass down enabled to child widget for nav stack
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
+  def _render(self, _):
+    self._scroller.render(self._rect)
+
+
+class NavScroller(NavWidget, Scroller):
+  """Full screen Scroller that properly supports nav stack w/ animations"""
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    # pass down enabled to child widget for nav stack + disable while swiping away NavWidget
+    self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away)

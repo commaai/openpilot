@@ -1,7 +1,5 @@
-import pyray as rl
-
 from openpilot.common.params import Params
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.toggles import TogglesLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMici
@@ -9,7 +7,6 @@ from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayout
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 
 class SettingsBigButton(BigButton):
@@ -17,7 +14,7 @@ class SettingsBigButton(BigButton):
     return 64
 
 
-class SettingsLayout(NavWidget):
+class SettingsLayout(NavScroller):
   def __init__(self):
     super().__init__()
     self._params = Params()
@@ -42,7 +39,7 @@ class SettingsLayout(NavWidget):
     firehose_btn = SettingsBigButton("firehose", "", "icons_mici/settings/firehose.png", icon_size=(52, 62))
     firehose_btn.set_click_callback(lambda: gui_app.push_widget(firehose_panel))
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       toggles_btn,
       network_btn,
       device_btn,
@@ -56,14 +53,3 @@ class SettingsLayout(NavWidget):
     self.set_back_callback(gui_app.pop_widget)
 
     self._font_medium = gui_app.font(FontWeight.MEDIUM)
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def _render(self, rect: rl.Rectangle):
-    self._scroller.render(rect)

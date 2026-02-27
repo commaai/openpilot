@@ -166,13 +166,13 @@ UnixSignalHandler::~UnixSignalHandler() {
 }
 
 void UnixSignalHandler::signalHandler(int s) {
-  ::write(sig_fd[0], &s, sizeof(s));
+  (void)!::write(sig_fd[0], &s, sizeof(s));
 }
 
 void UnixSignalHandler::handleSigTerm() {
   sn->setEnabled(false);
   int tmp;
-  ::read(sig_fd[1], &tmp, sizeof(tmp));
+  (void)!::read(sig_fd[1], &tmp, sizeof(tmp));
 
   printf("\nexiting...\n");
   qApp->closeAllWindows();

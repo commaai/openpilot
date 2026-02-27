@@ -181,9 +181,9 @@ bool file_exists(const std::string& fn) {
 }
 
 static bool createDirectory(std::string dir, mode_t mode) {
-  auto verify_dir = [](const std::string& dir) -> bool {
+  auto verify_dir = [](const std::string& path) -> bool {
     struct stat st = {};
-    return (stat(dir.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR);
+    return (stat(path.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR);
   };
   // remove trailing /'s
   while (dir.size() > 1 && dir.back() == '/') {
@@ -288,7 +288,7 @@ std::string strip(const std::string &str) {
 std::string check_output(const std::string& command) {
   char buffer[128];
   std::string result;
-  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+  std::unique_ptr<FILE, int(*)(FILE*)> pipe(popen(command.c_str(), "r"), pclose);
 
   if (!pipe) {
     return "";
@@ -303,7 +303,7 @@ std::string check_output(const std::string& command) {
 
 bool system_time_valid() {
   // Default to August 26, 2024
-  tm min_tm = {.tm_year = 2024 - 1900, .tm_mon = 7, .tm_mday = 26};
+  tm min_tm = {.tm_mday = 26, .tm_mon = 7, .tm_year = 2024 - 1900};
   time_t min_date = mktime(&min_tm);
 
   struct stat st;

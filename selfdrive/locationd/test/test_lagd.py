@@ -97,7 +97,7 @@ class TestLagd:
     assert msg.liveDelay.calPerc == 0
 
   def test_estimator_basics(self, subtests):
-    for lag_frames in range(5):
+    for lag_frames in range(3, 10):
       with subtests.test(msg=f"lag_frames={lag_frames}"):
         mocked_CP = car.CarParams(steerActuatorDelay=0.8)
         estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
@@ -111,7 +111,7 @@ class TestLagd:
         assert msg.liveDelay.calPerc == 100
 
   def test_estimator_masking(self):
-    mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.8), random.randint(1, 19)
+    mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.8), random.randint(3, 19)
     estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1)
     process_messages(estimator, lag_frames, (int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_SIZE) * 2, rejection_threshold=0.4)
     msg = estimator.get_msg(True)

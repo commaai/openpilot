@@ -218,7 +218,7 @@ class Setup(Widget):
     while not self.stop_network_check_thread.is_set():
       if self.state == SetupState.NETWORK_SETUP:
         try:
-          urllib.request.urlopen(OPENPILOT_URL, timeout=2)
+          urllib.request.urlopen(OPENPILOT_URL, timeout=2.0)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -226,7 +226,7 @@ class Setup(Widget):
             self.wifi_connected.clear()
         except Exception:
           self.network_connected.clear()
-      time.sleep(1)
+      time.sleep(1.0)
 
   def start_network_check(self):
     if self.network_check_thread is None or not self.network_check_thread.is_alive():
