@@ -13,7 +13,7 @@ from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButto
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialogV2
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
-from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide
+from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
@@ -313,15 +313,20 @@ class DeviceLayoutMici(NavWidget):
     review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(TrainingGuide(completed_callback=gui_app.pop_widget)))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
+    terms_btn = BigButton("terms &\nconditions", "", "icons_mici/settings/device/info.png")
+    terms_btn.set_click_callback(lambda: gui_app.push_widget(TermsPage(on_accept=gui_app.pop_widget, on_decline=gui_app.pop_widget, hide_decline=True)))
+    terms_btn.set_enabled(lambda: ui_state.is_offroad())
+
     self._scroller = Scroller([
       DeviceInfoLayoutMici(),
       UpdateOpenpilotBigButton(),
       PairBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
+      terms_btn,
+      regulatory_btn,
       reset_calibration_btn,
       uninstall_openpilot_btn,
-      regulatory_btn,
       reboot_btn,
       self._power_off_btn,
     ])
