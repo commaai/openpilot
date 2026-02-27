@@ -315,7 +315,7 @@ class LateralLagEstimator:
 
     ncc = masked_normalized_cross_correlation(expected_sig, actual_sig, mask, padded_size)
 
-    # only consider lags from 0 to max_lag
+    # only consider lags from min_lag to max_lag
     roi = np.s_[len(expected_sig) - 1 + min_lag_samples: len(expected_sig) - 1 + max_lag_samples]
     extended_roi = np.s_[roi.start - CORR_BORDER_OFFSET: roi.stop + CORR_BORDER_OFFSET]
     roi_ncc = ncc[roi]
