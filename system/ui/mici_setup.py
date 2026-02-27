@@ -444,6 +444,10 @@ class GreyBigButton(BigButton):
                                            rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
     self._sub_label.set_line_height(0.95)
 
+  @property
+  def LABEL_VERTICAL_PADDING(self):
+    return BigButton.LABEL_VERTICAL_PADDING if self._label.text else 18
+
   def _width_hint(self) -> int:
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
 

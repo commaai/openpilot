@@ -59,64 +59,64 @@ class DriverCameraSetupDialog(DriverCameraDialog):
     rl.end_scissor_mode()
 
 
-class TrainingGuidePreDMTutorial(SetupTermsPage):
+class TrainingGuidePreDMTutorial(Widget):
   def __init__(self, continue_callback):
-    super().__init__(continue_callback, continue_text="continue")
-    self._title_header = TermsHeader("driver monitoring setup", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
+    super().__init__()
 
-    self._dm_label = UnifiedLabel("Next, we'll ensure comma four is mounted properly.\n\nIf it does not have a clear view of the driver, " +
-                                  "unplug and remount before continuing.", 42,
-                                  FontWeight.ROMAN)
+    continue_button = BigPillButton("next")
+    continue_button.set_click_callback(continue_callback)
+
+    self._scroller = Scroller([
+      GreyBigButton("driver monitoring\ncheck", "scroll to read",
+                    gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
+      GreyBigButton("", "Next, we'll check if comma four can detect the driver properly."),
+      GreyBigButton("", "openpilot requires an unobstructed view of the driver to function fully."),
+      GreyBigButton("", "If it does not have a clear view of the driver, unplug and remount before continuing."),
+      continue_button,
+    ])
+
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
 
   def show_event(self):
     super().show_event()
+    self._scroller.show_event()
     # Get driver monitoring model ready for next step
     ui_state.params.put_bool("IsDriverViewEnabled", True)
 
-  @property
-  def _content_height(self):
-    return self._dm_label.rect.y + self._dm_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._dm_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._dm_label.get_content_height(int(self._rect.width - 32)),
-    ))
+  def _render(self, _):
+    self._scroller.render(self._rect)
 
 
-class DMBadFaceDetected(SetupTermsPage):
-  def __init__(self, continue_callback, back_callback):
-    super().__init__(continue_callback, back_callback, continue_text="power off")
-    self._title_header = TermsHeader("make sure comma four can see your face", gui_app.texture("icons_mici/setup/orange_dm.png", 60, 60))
-    self._dm_label = UnifiedLabel("Re-mount if your face is occluded or driver monitoring has difficulty tracking your face.", 42, FontWeight.ROMAN)
+class DMBadFaceDetected(Widget):
+  def __init__(self, back_callback):
+    super().__init__()
 
-  @property
-  def _content_height(self):
-    return self._dm_label.rect.y + self._dm_label.rect.height - self._scroll_panel.get_offset()
+    retry_button = BigPillButton("retry")
+    retry_button.set_click_callback(back_callback)
 
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
+    self._scroller = Scroller([
+      GreyBigButton("looking for driver", "make sure comma\nfour can see your face",
+                    gui_app.texture("icons_mici/setup/orange_dm.png", 64, 64)),
+      GreyBigButton("", "Re-mount if your face is occluded or driver monitoring has difficulty tracking your face."),
+      retry_button,
+    ])
 
-    self._dm_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._dm_label.get_content_height(int(self._rect.width - 32)),
-    ))
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
+
+  def _render(self, _):
+    self._scroller.render(self._rect)
 
 
 class TrainingGuideDMTutorial(Widget):
@@ -142,7 +142,7 @@ class TrainingGuideDMTutorial(Widget):
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
     self._dialog = DriverCameraSetupDialog()
-    self._bad_face_page = DMBadFaceDetected(HARDWARE.shutdown, lambda: self_ref() and self_ref()._hide_bad_face_page())
+    self._bad_face_page = DMBadFaceDetected(lambda: self_ref() and self_ref()._hide_bad_face_page())
     self._should_show_bad_face_page = False
 
     # Disable driver monitoring model when device times out for inactivity
@@ -260,100 +260,61 @@ class TrainingGuideDMTutorial(Widget):
     rl.draw_rectangle_rounded_lines_ex(self._rect, 0.2 * 1.02, 10, 50, rl.BLACK)
 
 
-class TrainingGuideRecordFront(SetupTermsPage):
+class TrainingGuideRecordFront(Widget):
   def __init__(self, continue_callback):
-    def on_back():
-      ui_state.params.put_bool("RecordFront", False)
-      continue_callback()
+    super().__init__()
 
-    def on_continue():
-      ui_state.params.put_bool("RecordFront", True)
-      continue_callback()
+    def show_accept_dialog():
+      def on_accept():
+        ui_state.params.put_bool("RecordFront", True)
+        continue_callback()
 
-    super().__init__(on_continue, back_callback=on_back, back_text="no", continue_text="yes")
-    self._title_header = TermsHeader("improve driver monitoring", gui_app.texture("icons_mici/setup/green_dm.png", 60, 60))
+      gui_app.push_widget(BigConfirmationDialogV2("allow data uploads", "icons_mici/setup/driver_monitoring/dm_check.png", confirm_callback=on_accept))
 
-    self._dm_label = UnifiedLabel("Do you want to upload driver camera data?", 42,
-                                  FontWeight.ROMAN)
+    def show_decline_dialog():
+      def on_decline():
+        ui_state.params.put_bool("RecordFront", False)
+        continue_callback()
+
+      gui_app.push_widget(BigConfirmationDialogV2("no, don't upload", "icons_mici/setup/cancel.png", confirm_callback=on_decline))
+
+    self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
+    self._accept_button.set_click_callback(show_accept_dialog)
+
+    self._decline_button = BigCircleButton("icons_mici/setup/cancel.png")
+    self._decline_button.set_click_callback(show_decline_dialog)
+
+    self._scroller = Scroller([
+      GreyBigButton("driver camera data", "do you want to share video data for training?",
+                    gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
+      GreyBigButton("", "openpilot uses video data for training. Sharing your data allows us to improve openpilot faster."),
+      self._accept_button,
+      self._decline_button,
+    ])
+
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
 
   def show_event(self):
     super().show_event()
-    # Disable driver monitoring model after last step
-    ui_state.params.put_bool("IsDriverViewEnabled", False)
+    self._scroller.show_event()
 
-  @property
-  def _content_height(self):
-    return self._dm_label.rect.y + self._dm_label.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16 + scroll_offset,
-      self._title_header.rect.width,
-      self._title_header.rect.height,
-    ))
-
-    self._dm_label.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._title_header.rect.y + self._title_header.rect.height + 16,
-      self._rect.width - 32,
-      self._dm_label.get_content_height(int(self._rect.width - 32)),
-    ))
-
-
-# class TrainingGuideAttentionNotice(Widget):
-#   def __init__(self, continue_callback):
-#     super().__init__(continue_callback, continue_text="continue")
-#     self._title_header = TermsHeader("driver assistance", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
-#     self._warning_label = UnifiedLabel("1. openpilot is a driver assistance system.\n\n" +
-#                                        "2. You must pay attention at all times.\n\n" +
-#                                        "3. You must be ready to take over at any time.\n\n" +
-#                                        "4. You are fully responsible for driving the car.", 42,
-#                                        FontWeight.ROMAN)
-#
-#   @property
-#   def _content_height(self):
-#     return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
-#
-#   def _render_content(self, scroll_offset):
-#     self._title_header.render(rl.Rectangle(
-#       self._rect.x + 16,
-#       self._rect.y + 16 + scroll_offset,
-#       self._title_header.rect.width,
-#       self._title_header.rect.height,
-#     ))
-#
-#     self._warning_label.render(rl.Rectangle(
-#       self._rect.x + 16,
-#       self._title_header.rect.y + self._title_header.rect.height + 16,
-#       self._rect.width - 32,
-#       self._warning_label.get_content_height(int(self._rect.width - 32)),
-#     ))
+  def _render(self, _):
+    self._scroller.render(self._rect)
 
 
 class TrainingGuideAttentionNotice(Widget):
   def __init__(self, continue_callback):
     super().__init__()
 
-    # def show_accept_dialog():
-    #   gui_app.push_widget(BigConfirmationDialogV2("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png",
-    #                                               confirm_callback=on_accept))
-    #
-    # def show_decline_dialog():
-    #   gui_app.push_widget(BigConfirmationDialogV2("decline &\nuninstall", "icons_mici/setup/cancel.png",
-    #                                               red=True, exit_on_confirm=False, confirm_callback=on_decline))
-
-    # self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
-    # self._accept_button.set_click_callback(show_accept_dialog)
-    #
-    # self._decline_button = BigCircleButton("icons_mici/setup/cancel.png", red=True)
-    # self._decline_button.set_click_callback(show_decline_dialog)
-
     continue_button = BigPillButton("next")
     continue_button.set_click_callback(continue_callback)
 
     self._scroller = Scroller([
-      GreyBigButton("driving disclaimer", "scroll to read",
+      GreyBigButton("what is openpilot?", "scroll to read",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
       GreyBigButton("", "1. openpilot is a driver assistance system."),
       GreyBigButton("", "2. You must pay attention at all times."),
@@ -395,6 +356,9 @@ class TrainingGuide(Widget):
       TrainingGuideRecordFront(continue_callback=on_continue),
     ]
 
+    for step in self._steps:
+      step.set_enabled(lambda: self.enabled)  # for nav stack
+
   def show_event(self):
     super().show_event()
     device.set_override_interactive_timeout(300)
@@ -416,28 +380,6 @@ class TrainingGuide(Widget):
     rl.draw_rectangle_rec(self._rect, rl.BLACK)
     if self._step < len(self._steps):
       self._steps[self._step].render(self._rect)
-
-
-# class SmallGreyBigButton(GreyBigButton):
-#   def __init__(self, text: str, icon: rl.Texture):
-#     super().__init__("", text, icon)
-#     self._rect.width = 198
-#     self._rect.height = 180
-#
-#   def _draw_content(self, btn_y: float):
-#     if self._txt_icon:
-#       x = self._rect.x + 30
-#       y = btn_y + 30
-#       rl.draw_texture_ex(self._txt_icon, (x, y), 0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9)))
-#
-#     label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
-#     label_y = btn_y + self.LABEL_VERTICAL_PADDING + (self._txt_icon.height + 10 if self._txt_icon else 0)
-#     sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
-#     self._sub_label.render(rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height))
-#
-#   def _render(self, _):
-#     rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(34, 34, 34, 255))
-#     self._draw_content(self._rect.y)
 
 
 class QRCodeWidget(Widget):
@@ -532,7 +474,7 @@ class OnboardingWindow(Widget):
     # Windows
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_uninstall)
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
-    self._terms.set_enabled(lambda: self.enabled)
+    self._terms.set_enabled(lambda: self.enabled)  # for nav stack
 
   def _on_uninstall(self):
     ui_state.params.put_bool("DoUninstall", True)
