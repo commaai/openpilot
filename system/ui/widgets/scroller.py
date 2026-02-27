@@ -109,14 +109,13 @@ class Scroller(Widget):
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
 
-    for item in items:
-      self.add_widget(item)
+    self.add_widgets(items)
 
   def set_reset_scroll_at_show(self, scroll: bool):
     self._reset_scroll_at_show = scroll
 
   def scroll_to(self, pos: float, smooth: bool = False, block_interaction: bool = False):
-    assert not block_interaction or smooth, "Instant scroll cannot be blocking"
+    assert not block_interaction or smooth, "Instant scroll cannot block user interaction"
 
     # already there
     if abs(pos) < 1:

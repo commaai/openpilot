@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - run: ./tools/op.sh setup
     - name: Push badges
       run: |
         python3 selfdrive/ui/translations/create_badges.py

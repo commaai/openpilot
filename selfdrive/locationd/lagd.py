@@ -24,6 +24,7 @@ MIN_ABS_YAW_RATE = 0.0
 MAX_YAW_RATE_SANITY_CHECK = 1.0
 MIN_NCC = 0.95
 MAX_LAG = 1.0
+MIN_LAG = 0.15
 MAX_LAG_STD = 0.1
 MAX_LAT_ACCEL = 2.0
 MAX_LAT_ACCEL_DIFF = 0.6
@@ -215,7 +216,7 @@ class LateralLagEstimator:
       liveDelay.status = log.LiveDelayData.Status.unestimated
 
     if liveDelay.status == log.LiveDelayData.Status.estimated:
-      liveDelay.lateralDelay = valid_mean_lag
+      liveDelay.lateralDelay = min(MAX_LAG, max(MIN_LAG, valid_mean_lag))
     else:
       liveDelay.lateralDelay = self.initial_lag
 
@@ -298,7 +299,7 @@ class LateralLagEstimator:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
-    delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
+    delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MIN_LAG, MAX_LAG)
     if corr < self.min_ncc or confidence < self.min_confidence or not is_valid:
       return
 
@@ -306,22 +307,23 @@ class LateralLagEstimator:
     self.last_estimate_t = self.t
 
   @staticmethod
-  def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
+  def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray,
+                     dt: float, min_lag: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
-    max_lag_samples = int(max_lag / dt)
+    min_lag_samples, max_lag_samples = int(round(min_lag / dt)), int(round(max_lag / dt))
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
 
     ncc = masked_normalized_cross_correlation(expected_sig, actual_sig, mask, padded_size)
 
-    # only consider lags from 0 to max_lag
-    roi = np.s_[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
+    # only consider lags from min_lag to max_lag
+    roi = np.s_[len(expected_sig) - 1 + min_lag_samples: len(expected_sig) - 1 + max_lag_samples]
     extended_roi = np.s_[roi.start - CORR_BORDER_OFFSET: roi.stop + CORR_BORDER_OFFSET]
     roi_ncc = ncc[roi]
     extended_roi_ncc = ncc[extended_roi]
 
     max_corr_index = np.argmax(roi_ncc)
     corr = roi_ncc[max_corr_index]
-    lag = parabolic_peak_interp(roi_ncc, max_corr_index) * dt
+    lag = parabolic_peak_interp(roi_ncc, max_corr_index) * dt + min_lag
 
     # to estimate lag confidence, gather all high-correlation candidates and see how spread they are
     # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
