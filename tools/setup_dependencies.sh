@@ -88,11 +88,9 @@ function install_python_deps() {
     PATH="$UV_BIN:$PATH"
   fi
 
-  if [[ -z "$CI" ]]; then
-    echo "updating uv..."
-    # ok to fail, can also fail due to installing with brew
-    uv self update || true
-  fi
+  echo "updating uv..."
+  # ok to fail, can also fail due to installing with brew
+  uv self update || true
 
   echo "installing python packages..."
   uv sync --frozen --all-extras
