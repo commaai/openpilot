@@ -131,7 +131,7 @@ def check_reformulation(model, gnsf, print_info):
                 A @ x0[I_x1] + B @ u0 + C_phi + c - E @ vertcat(x0dot[I_x1], z0[I_z1])
             )
             # gnsf_1 = (A @ x[I_x1] + B @ u + C_phi + c - E @ vertcat(xdot[I_x1], z[I_z1]))
-        except:
+        except Exception:
             import pdb
 
             pdb.set_trace()

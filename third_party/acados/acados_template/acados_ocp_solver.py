@@ -1984,7 +1984,7 @@ class AcadosOcpSolver:
 
             try:
                 self.dlclose(self.shared_lib._handle)
-            except:
+            except Exception:
                 print(f"WARNING: acados Python interface could not close shared_lib handle of AcadosOcpSolver {self.model_name}.\n",
                      "Attempting to create a new one with the same name will likely result in the old one being used!")
                 pass
