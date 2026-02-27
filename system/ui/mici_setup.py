@@ -315,21 +315,16 @@ class CustomSoftwareWarningPage(NavWidget):
     super().__init__()
     self.set_back_callback(back_callback)
 
-    def show_confirm_dialog():
-      gui_app.push_widget(BigConfirmationDialogV2("I want to\ncontinue", "icons_mici/setup/driver_monitoring/dm_check.png",
-                                                  confirm_callback=continue_callback))
-
     self._continue_button = BigPillButton("next")
-    self._continue_button.set_click_callback(show_confirm_dialog)
+    self._continue_button.set_click_callback(continue_callback)
 
     self._scroller = Scroller([
       GreyBigButton("use caution", "when installing\n3rd party software",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
-      GreyBigButton("", "• It has not been tested by comma.\n" +
-                    "• It may not comply with relevant safety standards."),
-      GreyBigButton("", "• It may cause damage to your device and/or vehicle.\n" +
-                    "• You are fully responsible for your device."),
-      GreyBigButton("to restore to a\nfactory state later", "https://flash.comma.ai",
+      GreyBigButton("", "• It has not been tested by comma"),
+      GreyBigButton("", "• It may not comply with relevant safety standards."),
+      GreyBigButton("", "• It may cause damage to your device and/or vehicle."),
+      GreyBigButton("how to restore to a\nfactory state later", "https://flash.comma.ai",
                     gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
       self._continue_button,
     ])
@@ -442,7 +437,7 @@ class GreyBigButton(BigButton):
     self._label.set_font_weight(FontWeight.BOLD)
     self._label.set_line_height(1.0)
 
-    self._sub_label.set_font_size(32)
+    self._sub_label.set_font_size(36)
     self._sub_label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.9)))
     self._sub_label.set_font_weight(FontWeight.DISPLAY_REGULAR)
     self._sub_label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE if not self._label.text else
@@ -506,7 +501,7 @@ class NetworkSetupPage(NavWidget):
     self._prev_has_internet = False
     self._wifi_ui = WifiUIMici(self._wifi_manager)
 
-    self._connect_button = GreyBigButton("connect to\ninternet", "or swipe down to go back",
+    self._connect_button = GreyBigButton("connect to\ninternet", "swipe down to go back",
                                          gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True))
     self._connect_button.set_visible(not disable_connect_hint)
 
