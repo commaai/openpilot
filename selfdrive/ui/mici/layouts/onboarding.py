@@ -30,7 +30,7 @@ class OnboardingState(IntEnum):
 class Scroller(Widget):
   def __init__(self, **kwargs):
     super().__init__()
-    self._scroller = _Scroller(**kwargs)
+    self._scroller = _Scroller([], **kwargs)
     # pass down enabled to child widget for nav stack, only needed since we don't use NavWidget here
     self._scroller.set_enabled(lambda: self.enabled)
 
