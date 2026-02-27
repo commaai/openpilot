@@ -84,9 +84,10 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v6
-      with:
-        submodules: true
-    - run: ./tools/op.sh setup
+    - name: Install dependencies
+      run: |
+        tools/setup_dependencies.sh
+        echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
     - name: Static analysis
       timeout-minutes: 1
       run: scripts/lint/lint.sh
@@ -210,8 +211,12 @@ jobs:
       - name: Create UI Report
         run: |
           source selfdrive/test/setup_xvfb.sh
-          python3 selfdrive/ui/tests/diff/replay.py
-          python3 selfdrive/ui/tests/diff/replay.py --big
+          python3 selfdrive/ui/tests/diff/replay.py &
+          pid1=$!
+          python3 selfdrive/ui/tests/diff/replay.py --big &
+          pid2=$!
+          wait $pid1
+          wait $pid2
       - name: Upload UI Report
         uses: actions/upload-artifact@v6
         with:

@@ -12,7 +12,7 @@ SCons.Warnings.warningAsException(True)
 
 Decider('MD5-timestamp')
 
-SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
+SetOption('num_jobs', os.cpu_count() or 1)
 
 AddOption('--asan', action='store_true', help='turn on ASAN')
 AddOption('--ubsan', action='store_true', help='turn on UBSan')
