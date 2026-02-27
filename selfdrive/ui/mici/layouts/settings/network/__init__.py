@@ -1,13 +1,12 @@
 import pyray as rl
 
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici, WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigMultiToggle, BigParamControl, BigToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredType, ConnectStatus, SecurityType, normalize_ssid
 
 
@@ -33,7 +32,7 @@ class WifiNetworkButton(BigButton):
     display_network = next((n for n in self._wifi_manager.networks if n.ssid == wifi_state.ssid), None)
     if wifi_state.status == ConnectStatus.CONNECTING:
       self.set_text(normalize_ssid(wifi_state.ssid or "wi-fi"))
-      self.set_value("connecting...")
+      self.set_value("starting" if self._wifi_manager.is_tethering_active() else "connecting...")
     elif wifi_state.status == ConnectStatus.CONNECTED:
       self.set_text(normalize_ssid(wifi_state.ssid or "wi-fi"))
       self.set_value(self._wifi_manager.ipv4_address or "obtaining IP...")
@@ -46,6 +45,10 @@ class WifiNetworkButton(BigButton):
       strength = WifiIcon.get_strength_icon_idx(display_network.strength)
       self.set_icon(self._wifi_full_txt if strength == 2 else self._wifi_medium_txt if strength == 1 else self._wifi_low_txt)
       self._draw_lock = display_network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED)
+    elif self._wifi_manager.is_tethering_active():
+      # takes a while to get Network
+      self.set_icon(self._wifi_full_txt)
+      self._draw_lock = True
     else:
       self.set_icon(self._wifi_slash_txt)
       self._draw_lock = False
@@ -61,7 +64,7 @@ class WifiNetworkButton(BigButton):
       rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, 1.0, rl.WHITE)
 
 
-class NetworkLayoutMici(NavWidget):
+class NetworkLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
 
@@ -128,7 +131,7 @@ class NetworkLayoutMici(NavWidget):
     self._cellular_metered_btn = BigParamControl("cellular metered", "GsmMetered", toggle_callback=self._toggle_cellular_metered)
 
     # Main scroller ----------------------------------
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       self._wifi_button,
       self._network_metered_btn,
       self._tethering_toggle_btn,
@@ -161,14 +164,12 @@ class NetworkLayoutMici(NavWidget):
   def show_event(self):
     super().show_event()
     self._wifi_manager.set_active(True)
-    self._scroller.show_event()
 
     # Process wifi callbacks while at any point in the nav stack
     gui_app.set_nav_stack_tick(self._wifi_manager.process_callbacks)
 
   def hide_event(self):
     super().hide_event()
-    self._scroller.hide_event()
     self._wifi_manager.set_active(False)
 
     gui_app.set_nav_stack_tick(None)
@@ -209,6 +210,3 @@ class NetworkLayoutMici(NavWidget):
         MeteredType.YES: 'metered',
         MeteredType.NO: 'unmetered'
       }.get(self._wifi_manager.current_network_metered, 'default'))
-
-  def _render(self, rect: rl.Rectangle):
-    self._scroller.render(rect)

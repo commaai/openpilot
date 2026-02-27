@@ -69,8 +69,6 @@ class NavWidget(Widget, abc.ABC):
 
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-    self._set_up = False
-
   @property
   def back_enabled(self) -> bool:
     return self._back_enabled() if callable(self._back_enabled) else self._back_enabled
@@ -96,6 +94,7 @@ class NavWidget(Widget, abc.ABC):
       self._pos_filter.update_alpha(0.04)
       in_dismiss_area = mouse_event.pos.y < self._rect.height * self.BACK_TOUCH_AREA_PERCENTAGE
 
+      # TODO: remove vertical scrolling and then this hacky logic to check if scroller is at top
       scroller_at_top = False
       vertical_scroller = False
       # TODO: -20? snapping in WiFi dialog can make offset not be positive at the top
@@ -137,19 +136,6 @@ class NavWidget(Widget, abc.ABC):
 
   def _update_state(self):
     super()._update_state()
-
-    # Disable self's scroller while swiping away
-    if not self._set_up:
-      self._set_up = True
-      if hasattr(self, '_scroller'):
-        # TODO: use touch_valid
-        original_enabled = self._scroller._enabled
-        self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                                        original_enabled))
-      elif hasattr(self, '_scroll_panel'):
-        original_enabled = self._scroll_panel.enabled
-        self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                                            original_enabled))
 
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height

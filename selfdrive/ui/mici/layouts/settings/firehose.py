@@ -224,3 +224,4 @@ class FirehoseLayout(FirehoseLayoutBase, NavWidget):
   def __init__(self):
     super().__init__()
     self.set_back_callback(gui_app.pop_widget)
+    self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away)
