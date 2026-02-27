@@ -12,7 +12,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.mici_setup import GreyBigButton, TermsHeader, TermsPage as SetupTermsPage
+from openpilot.system.ui.mici_setup import GreyBigButton, TermsHeader, BigPillButton, TermsPage as SetupTermsPage
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.version import terms_version, training_version
@@ -301,6 +301,81 @@ class TrainingGuideRecordFront(SetupTermsPage):
     ))
 
 
+# class TrainingGuideAttentionNotice(Widget):
+#   def __init__(self, continue_callback):
+#     super().__init__(continue_callback, continue_text="continue")
+#     self._title_header = TermsHeader("driver assistance", gui_app.texture("icons_mici/setup/warning.png", 60, 60))
+#     self._warning_label = UnifiedLabel("1. openpilot is a driver assistance system.\n\n" +
+#                                        "2. You must pay attention at all times.\n\n" +
+#                                        "3. You must be ready to take over at any time.\n\n" +
+#                                        "4. You are fully responsible for driving the car.", 42,
+#                                        FontWeight.ROMAN)
+#
+#   @property
+#   def _content_height(self):
+#     return self._warning_label.rect.y + self._warning_label.rect.height - self._scroll_panel.get_offset()
+#
+#   def _render_content(self, scroll_offset):
+#     self._title_header.render(rl.Rectangle(
+#       self._rect.x + 16,
+#       self._rect.y + 16 + scroll_offset,
+#       self._title_header.rect.width,
+#       self._title_header.rect.height,
+#     ))
+#
+#     self._warning_label.render(rl.Rectangle(
+#       self._rect.x + 16,
+#       self._title_header.rect.y + self._title_header.rect.height + 16,
+#       self._rect.width - 32,
+#       self._warning_label.get_content_height(int(self._rect.width - 32)),
+#     ))
+
+
+class TrainingGuideAttentionNotice(Widget):
+  def __init__(self, continue_callback):
+    super().__init__()
+
+    # def show_accept_dialog():
+    #   gui_app.push_widget(BigConfirmationDialogV2("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png",
+    #                                               confirm_callback=on_accept))
+    #
+    # def show_decline_dialog():
+    #   gui_app.push_widget(BigConfirmationDialogV2("decline &\nuninstall", "icons_mici/setup/cancel.png",
+    #                                               red=True, exit_on_confirm=False, confirm_callback=on_decline))
+
+    # self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
+    # self._accept_button.set_click_callback(show_accept_dialog)
+    #
+    # self._decline_button = BigCircleButton("icons_mici/setup/cancel.png", red=True)
+    # self._decline_button.set_click_callback(show_decline_dialog)
+
+    continue_button = BigPillButton("next")
+    continue_button.set_click_callback(continue_callback)
+
+    self._scroller = Scroller([
+      GreyBigButton("driving disclaimer", "scroll to read",
+                    gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
+      GreyBigButton("", "1. openpilot is a driver assistance system."),
+      GreyBigButton("", "2. You must pay attention at all times."),
+      GreyBigButton("", "3. You must be ready to take over at any time."),
+      GreyBigButton("", "4. You are fully responsible for driving the car."),
+      continue_button,
+    ])
+
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
+
+  def _render(self, _):
+    self._scroller.render(self._rect)
+
+
 class TrainingGuide(Widget):
   def __init__(self, completed_callback=None):
     super().__init__()
@@ -314,6 +389,7 @@ class TrainingGuide(Widget):
         obj._advance_step()
 
     self._steps = [
+      TrainingGuideAttentionNotice(continue_callback=on_continue),
       TrainingGuidePreDMTutorial(continue_callback=on_continue),
       TrainingGuideDMTutorial(continue_callback=on_continue),
       TrainingGuideRecordFront(continue_callback=on_continue),
@@ -342,26 +418,26 @@ class TrainingGuide(Widget):
       self._steps[self._step].render(self._rect)
 
 
-class SmallGreyBigButton(GreyBigButton):
-  def __init__(self, text: str, icon: rl.Texture):
-    super().__init__("", text, icon)
-    self._rect.width = 198
-    self._rect.height = 180
-
-  def _draw_content(self, btn_y: float):
-    if self._txt_icon:
-      x = self._rect.x + 30
-      y = btn_y + 30
-      rl.draw_texture_ex(self._txt_icon, (x, y), 0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9)))
-
-    label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
-    label_y = btn_y + self.LABEL_VERTICAL_PADDING + (self._txt_icon.height + 10 if self._txt_icon else 0)
-    sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
-    self._sub_label.render(rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height))
-
-  def _render(self, _):
-    rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(34, 34, 34, 255))
-    self._draw_content(self._rect.y)
+# class SmallGreyBigButton(GreyBigButton):
+#   def __init__(self, text: str, icon: rl.Texture):
+#     super().__init__("", text, icon)
+#     self._rect.width = 198
+#     self._rect.height = 180
+#
+#   def _draw_content(self, btn_y: float):
+#     if self._txt_icon:
+#       x = self._rect.x + 30
+#       y = btn_y + 30
+#       rl.draw_texture_ex(self._txt_icon, (x, y), 0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9)))
+#
+#     label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
+#     label_y = btn_y + self.LABEL_VERTICAL_PADDING + (self._txt_icon.height + 10 if self._txt_icon else 0)
+#     sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
+#     self._sub_label.render(rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height))
+#
+#   def _render(self, _):
+#     rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(34, 34, 34, 255))
+#     self._draw_content(self._rect.y)
 
 
 class QRCodeWidget(Widget):
@@ -420,13 +496,10 @@ class TermsPage(Widget):
     self._scroller = Scroller([
       GreyBigButton("terms and\nconditions", "scroll to read and accept",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
-      GreyBigButton("", "• openpilot is a driver assistance system.\n" +
-                    "• You must pay attention\nat all times."),
-      GreyBigButton("", "• You must be ready to\ntake over at any time.\n" +
-                    "• You are fully responsible for driving the car."),
-      SmallGreyBigButton("scan for\nfull terms", gui_app.texture("icons_mici/settings/device/pair.png", 64, 48)),
+      GreyBigButton("swipe for QR code", "or go to https://comma.ai/terms",
+                    gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True)),
       QRCodeWidget("https://comma.ai/terms"),
-      GreyBigButton("", "You must accept the Terms & Conditions to use openpilot. Read the latest at https://comma.ai/terms"),
+      GreyBigButton("", "You must accept the Terms & Conditions to use openpilot."),
       self._accept_button,
       self._decline_button,
     ])
