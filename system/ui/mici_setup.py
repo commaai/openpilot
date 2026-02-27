@@ -514,14 +514,14 @@ class NetworkSetupPage(NavWidget):
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
     self._pending_has_internet_scroll = None
-    self._pending_grow_animation = False
-    self._pending_shake = False
+    self._pending_continue_grow_animation = False
+    self._pending_wifi_grow_animation = False
 
     def on_waiting_click():
       offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
       self._scroller.scroll_to(offset, smooth=True, block_interaction=True)
-      # show shake when wifi button in view
-      self._pending_shake = True
+      # trigger grow when wifi button in view
+      self._pending_wifi_grow_animation = True
 
     self._waiting_button = BigPillButton("waiting for\ninternet...", disabled_background=True)
     self._waiting_button.set_click_callback(on_waiting_click)
@@ -562,16 +562,16 @@ class NetworkSetupPage(NavWidget):
   def _update_state(self):
     super()._update_state()
 
-    if self._pending_grow_animation:
+    if self._pending_continue_grow_animation:
       btn_right = self._continue_button.rect.x + self._continue_button.rect.width
       visible_right = self._rect.x + self._rect.width
       if btn_right < visible_right + 50:
-        self._pending_grow_animation = False
+        self._pending_continue_grow_animation = False
         self._continue_button.trigger_grow_animation()
 
-    if self._pending_shake and abs(self._wifi_button.rect.x - ITEM_SPACING) < 50:
-      self._pending_shake = False
-      self._wifi_button.trigger_shake()
+    if self._pending_wifi_grow_animation and abs(self._wifi_button.rect.x - ITEM_SPACING) < 50:
+      self._pending_wifi_grow_animation = False
+      self._wifi_button.trigger_grow_animation()
 
     if self._network_monitor.network_connected.is_set():
       self._continue_button.set_visible(True)
@@ -597,7 +597,7 @@ class NetworkSetupPage(NavWidget):
         end_offset = -(self._scroller.content_size - self._rect.width)
         remaining = self._scroller.scroll_panel.get_offset() - end_offset
         self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
-        self._pending_grow_animation = True
+        self._pending_continue_grow_animation = True
 
   def _render(self, _):
     self._scroller.render(self._rect)
