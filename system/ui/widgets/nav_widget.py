@@ -69,6 +69,8 @@ class NavWidget(Widget, abc.ABC):
 
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
+    # self.set_enabled(lambda: not self._swiping_away)
+
     self._set_up = False
 
   @property
@@ -135,21 +137,41 @@ class NavWidget(Widget, abc.ABC):
       self._back_button_start_pos = None
       self._swiping_away = False
 
+  # def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
+  #   # Override Widget and add NavWidget's enabled check
+  #
+  #   def new_enabled():
+  #     print('NavWidget', self.__class__.__name__, 'enabled check. original enabled:', enabled() if callable(enabled) else enabled, 'swiping away:', self._swiping_away)
+  #     enabled_val = enabled() if callable(enabled) else enabled
+  #     return enabled_val and not self._swiping_away
+  #
+  #
+  #   super().set_enabled(new_enabled)
+  #
+  #   # original_enabled = self._enabled
+  #
+  #
+  #
+  #   # self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
+  #   #                                              original_enabled)
+  #
+  #   # super().set_enabled(lambda: (enabled() if callable(enabled) else enabled) and not self._swiping_away and (original_enabled() if callable(original_enabled) else original_enabled))
+
   def _update_state(self):
     super()._update_state()
 
     # Disable self's scroller while swiping away
-    if not self._set_up:
-      self._set_up = True
-      if hasattr(self, '_scroller'):
-        # TODO: use touch_valid
-        original_enabled = self._scroller._enabled
-        self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                                        original_enabled))
-      elif hasattr(self, '_scroll_panel'):
-        original_enabled = self._scroll_panel.enabled
-        self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                                            original_enabled))
+    # if not self._set_up:
+    #   self._set_up = True
+    #   if hasattr(self, '_scroller'):
+    #     # TODO: use touch_valid
+    #     original_enabled = self._scroller._enabled
+    #     self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
+    #                                                                                     original_enabled))
+    #   elif hasattr(self, '_scroll_panel'):
+    #     original_enabled = self._scroll_panel.enabled
+    #     self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
+    #                                                                                         original_enabled))
 
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
