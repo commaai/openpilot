@@ -463,7 +463,6 @@ class OnboardingWindow(Widget):
 
   def _on_uninstall(self):
     ui_state.params.put_bool("DoUninstall", True)
-    gui_app.request_close()
 
   def show_event(self):
     super().show_event()
