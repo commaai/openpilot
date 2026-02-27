@@ -109,7 +109,7 @@ class DMBadFaceDetected(Scroller):
     self._scroller.add_widgets([
       GreyBigButton("looking for driver", "make sure comma\nfour can see your face",
                     gui_app.texture("icons_mici/setup/orange_dm.png", 64, 64)),
-      GreyBigButton("", "Re-mount if your face is occluded or driver monitoring has difficulty tracking your face."),
+      GreyBigButton("", "Remount if your face is occluded or driver monitoring has difficulty tracking your face."),
       retry_button,
     ])
 
@@ -405,7 +405,7 @@ class TermsPage(Scroller):
     self._decline_button.set_click_callback(show_decline_dialog)
 
     self._scroller.add_widgets([
-      GreyBigButton("terms and\nconditions", "scroll to read and accept",
+      GreyBigButton("terms and\nconditions", "scroll to read",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
       GreyBigButton("swipe for QR code", "or go to https://comma.ai/terms",
                     gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True)),
