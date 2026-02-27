@@ -423,6 +423,7 @@ class TermsPage(Scroller):
     ])
 
   def _render(self, _):
+    # TODO: remove with NavWidget
     rl.draw_rectangle_rec(self._rect, rl.BLACK)
     super()._render(_)
 
