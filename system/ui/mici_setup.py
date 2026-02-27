@@ -24,7 +24,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.button import SmallButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import Scroller, ITEM_SPACING
+from openpilot.system.ui.widgets.scroller import NavScroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton, WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
@@ -157,7 +157,7 @@ class SoftwareSelectionPage(Widget):
     self._custom_software_slider.render(custom_software_rect)
 
 
-class CustomSoftwareWarningPage(NavWidget):
+class CustomSoftwareWarningPage(NavScroller):
   def __init__(self, continue_callback: Callable, back_callback: Callable):
     super().__init__()
     self.set_back_callback(back_callback)
@@ -165,7 +165,7 @@ class CustomSoftwareWarningPage(NavWidget):
     self._continue_button = BigPillButton("next")
     self._continue_button.set_click_callback(continue_callback)
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       GreyBigButton("use caution", "when installing\n3rd party software",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
       GreyBigButton("", "• It has not been tested by comma"),
@@ -175,17 +175,6 @@ class CustomSoftwareWarningPage(NavWidget):
                     gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
       self._continue_button,
     ])
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def _render(self, _):
-    self._scroller.render(self._rect)
 
 
 class DownloadingPage(Widget):
@@ -339,7 +328,7 @@ class BigPillButton(BigButton):
     self._txt_disabled_bg = gui_app.texture("icons_mici/setup/continue_disabled.png", 402, 180)
 
 
-class NetworkSetupPage(NavWidget):
+class NetworkSetupPage(NavScroller):
   def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable,
                back_callback: Callable, disable_connect_hint: bool = False):
     super().__init__()
@@ -374,7 +363,7 @@ class NetworkSetupPage(NavWidget):
     self._continue_button = BigPillButton("install openpilot", green=True)
     self._continue_button.set_click_callback(lambda: continue_callback(self._custom_software))
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       self._connect_button,
       self._wifi_button,
       self._continue_button,
@@ -394,13 +383,8 @@ class NetworkSetupPage(NavWidget):
 
   def show_event(self):
     super().show_event()
-    self._scroller.show_event()
     self._prev_has_internet = False
     self._pending_has_internet_scroll = None
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
 
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
@@ -444,9 +428,6 @@ class NetworkSetupPage(NavWidget):
         remaining = self._scroller.scroll_panel.get_offset() - end_offset
         self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
         self._pending_continue_grow_animation = True
-
-  def _render(self, _):
-    self._scroller.render(self._rect)
 
 
 class Setup(Widget):

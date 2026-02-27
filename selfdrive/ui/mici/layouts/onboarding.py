@@ -9,7 +9,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
-from openpilot.system.ui.widgets.scroller import Scroller as _Scroller
+from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.mici_setup import GreyBigButton, BigPillButton
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
@@ -24,26 +24,6 @@ from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCamera
 class OnboardingState(IntEnum):
   TERMS = 0
   ONBOARDING = 1
-
-
-# TODO: use this helper everywhere!
-class Scroller(Widget):
-  def __init__(self, **kwargs):
-    super().__init__()
-    self._scroller = _Scroller([], **kwargs)
-    # pass down enabled to child widget for nav stack, only needed since we don't use NavWidget here
-    self._scroller.set_enabled(lambda: self.enabled)
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
-
-  def _render(self, _):
-    self._scroller.render(self._rect)
 
 
 class DriverCameraSetupDialog(DriverCameraDialog):
