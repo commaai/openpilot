@@ -220,7 +220,7 @@ class FailedPage(NavWidget):
     self._reboot_button.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._retry_button = SmallButton("retry")
-    self._retry_button.set_click_callback(retry_callback if retry_callback is not None else gui_app.pop_widget)
+    self._retry_button.set_click_callback(retry_callback if retry_callback is not None else self.dismiss)
     self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
 
   def set_reason(self, reason: str):
@@ -520,7 +520,7 @@ class Setup(Widget):
       self._push_network_setup()
 
   def download(self, url: str):
-    gui_app.pop_widgets_to(self)
+    gui_app.pop_widgets_to(self, instant=True)
 
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
