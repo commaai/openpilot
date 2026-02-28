@@ -217,8 +217,7 @@ def main():
   if not args.output.lower().endswith('.html'):
     args.output += '.html'
 
-  video1 = Path(args.video1)
-  video2 = Path(args.video2)
+  video1, video2 = Path(args.video1), Path(args.video2)
   missing = [str(p) for p in (video1, video2) if not p.exists()]
   if missing:
     parser.error(f"Video file(s) not found: {', '.join(missing)}")
