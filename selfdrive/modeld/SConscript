@@ -47,11 +47,12 @@ def tg_compile(flags, model_name):
   chunk_targets = get_chunk_paths(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
   def do_chunk(target, source, env):
     chunk_file(pkl, chunk_targets)
+  chunk_action = Action(do_chunk, lambda *args: f"Chunking {pkl}")
   return lenv.Command(
     chunk_targets,
     [onnx_path] + tinygrad_files + [chunker_file],
     [f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
-     do_chunk]
+     chunk_action]
   )
 
 # Compile small models
