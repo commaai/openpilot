@@ -68,7 +68,7 @@ class PairingDialog(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-    if ui_state.prime_state.is_paired() and not self.is_dismissing():
+    if ui_state.prime_state.is_paired() and not self.is_dismissing:
       self.dismiss()
 
   def _render(self, rect: rl.Rectangle):
