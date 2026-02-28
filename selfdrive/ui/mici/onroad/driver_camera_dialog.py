@@ -232,7 +232,7 @@ class DriverCameraDialog(NavWidget, BaseDriverCameraDialog):
   def __init__(self):
     super().__init__()
     # TODO: this can grow unbounded, should be given some thought
-    device.add_interactive_timeout_callback(lambda: gui_app.pop_widget(self))
+    device.add_interactive_timeout_callback(gui_app.pop_widget_cb(self))
 
 
 if __name__ == "__main__":

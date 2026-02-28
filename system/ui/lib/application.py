@@ -1,3 +1,4 @@
+import weakref
 import atexit
 import cffi
 import os
@@ -383,6 +384,16 @@ class GuiApplication:
 
     self._nav_stack.append(widget)
     widget.show_event()
+
+  def pop_widget_cb(self, widget: object):
+    ref = weakref.ref(widget)
+
+    def callback():
+      w = ref()
+      if w is not None:
+        self.pop_widget(w)
+
+    return callback
 
   def pop_widget(self, widget: object):
     if len(self._nav_stack) < 2:

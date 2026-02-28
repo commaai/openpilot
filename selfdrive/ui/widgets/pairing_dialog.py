@@ -26,7 +26,7 @@ class PairingDialog(Widget):
     self.qr_texture: rl.Texture | None = None
     self.last_qr_generation = float('-inf')
     self._close_btn = IconButton(gui_app.texture("icons/close.png", 80, 80))
-    self._close_btn.set_click_callback(lambda: gui_app.pop_widget(self))
+    self._close_btn.set_click_callback(gui_app.pop_widget_cb(self))
 
   def _get_pairing_url(self) -> str:
     try:
