@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import pyray as rl
-from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
@@ -56,16 +55,17 @@ class NavWidget(Widget, abc.ABC):
 
   def __init__(self, show_nav_bar: bool = True):
     super().__init__()
-    self._drag_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
-    self._dragging_down = False  # swiped down enough to trigger dismissing on release
-
-    self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
-    self._playing_dismiss_animation = False  # released and animating away
-
-    self._nav_bar_show_time = 0.0
-    self._nav_bar = NavBar()
     self._show_nav_bar = show_nav_bar
 
+    # State
+    self._drag_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
+    self._dragging_down = False  # swiped down enough to trigger dismissing on release
+    self._playing_dismiss_animation = False  # released and animating away
+    self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
+
+    # TODO: move this state into NavBar
+    self._nav_bar = NavBar()
+    self._nav_bar_show_time = 0.0
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
   def _back_enabled(self) -> bool:
@@ -74,7 +74,6 @@ class NavWidget(Widget, abc.ABC):
     return True
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
-    # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
     if mouse_event.left_pressed:
@@ -120,6 +119,7 @@ class NavWidget(Widget, abc.ABC):
     if self._dragging_down:
       self._nav_bar.set_alpha(1.0)
 
+    # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     if not self.enabled:
       self._drag_start_pos = None
 
@@ -186,6 +186,6 @@ class NavWidget(Widget, abc.ABC):
     # Start NavWidget off-screen, no matter how tall it is
     self._y_pos_filter.update_alpha(0.1)
     self._y_pos_filter.x = gui_app.height
-    # TODO: why the hell do we manage nav bar state?
+
     self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
     self._nav_bar_show_time = rl.get_time()
