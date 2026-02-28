@@ -410,6 +410,7 @@ class GuiApplication:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
 
+    # pops all widgets after specified widget
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
 
