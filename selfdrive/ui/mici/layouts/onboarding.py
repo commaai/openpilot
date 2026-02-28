@@ -9,7 +9,8 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import Scroller, NavScroller
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.mici_setup import GreyBigButton, BigPillButton
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
@@ -21,9 +22,9 @@ from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import BaseDriverCameraDialog
 
 
-class OnboardingState(IntEnum):
-  TERMS = 0
-  ONBOARDING = 1
+# class OnboardingState(IntEnum):
+#   TERMS = 0
+#   ONBOARDING = 1
 
 
 class DriverCameraSetupDialog(BaseDriverCameraDialog):
@@ -57,7 +58,7 @@ class DriverCameraSetupDialog(BaseDriverCameraDialog):
     rl.end_scissor_mode()
 
 
-class TrainingGuidePreDMTutorial(Scroller):
+class TrainingGuidePreDMTutorial(NavScroller):
   def __init__(self, continue_callback):
     super().__init__()
 
@@ -72,6 +73,9 @@ class TrainingGuidePreDMTutorial(Scroller):
       GreyBigButton("", "If it does not have a clear view of the driver, unplug and remount before continuing."),
       continue_button,
     ])
+
+  def _back_enabled(self) -> bool:
+    return False
 
   def show_event(self):
     super().show_event()
@@ -94,7 +98,7 @@ class DMBadFaceDetected(Scroller):
     ])
 
 
-class TrainingGuideDMTutorial(Widget):
+class TrainingGuideDMTutorial(NavScroller):
   PROGRESS_DURATION = 4
   LOOKING_THRESHOLD_DEG = 30.0
 
@@ -125,6 +129,9 @@ class TrainingGuideDMTutorial(Widget):
       ui_state.params.put_bool("IsDriverViewEnabled", False)
 
     device.add_interactive_timeout_callback(inactivity_callback)
+
+  def _back_enabled(self) -> bool:
+    return False
 
   def _show_bad_face_page(self):
     self._bad_face_page.show_event()
@@ -235,7 +242,7 @@ class TrainingGuideDMTutorial(Widget):
     rl.draw_rectangle_rounded_lines_ex(self._rect, 0.2 * 1.02, 10, 50, rl.BLACK)
 
 
-class TrainingGuideRecordFront(Scroller):
+class TrainingGuideRecordFront(NavScroller):
   def __init__(self, continue_callback):
     super().__init__()
 
@@ -267,8 +274,11 @@ class TrainingGuideRecordFront(Scroller):
       self._decline_button,
     ])
 
+  def _back_enabled(self) -> bool:
+    return False
 
-class TrainingGuideAttentionNotice(Scroller):
+
+class TrainingGuideAttentionNotice(NavScroller):
   def __init__(self, continue_callback):
     super().__init__()
 
@@ -285,8 +295,11 @@ class TrainingGuideAttentionNotice(Scroller):
       continue_button,
     ])
 
+  def _back_enabled(self) -> bool:
+    return False
 
-class TrainingGuide(Widget):
+
+class TrainingGuide(NavWidget):
   def __init__(self, completed_callback=None):
     super().__init__()
     self._completed_callback = completed_callback
@@ -295,40 +308,56 @@ class TrainingGuide(Widget):
     self_ref = weakref.ref(self)
 
     def on_continue():
-      if obj := self_ref():
-        obj._advance_step()
+      active_step = gui_app.get_active_widget()
+
+      if active_step == self._steps[-1]:  # last step
+        active_step.dismiss(self._completed_callback)
+      else:
+        active_step.dismiss()
+
+      # if obj := self_ref():
+      #   obj._advance_step()
 
     self._steps = [
       TrainingGuideAttentionNotice(continue_callback=on_continue),
       TrainingGuidePreDMTutorial(continue_callback=on_continue),
-      TrainingGuideDMTutorial(continue_callback=on_continue),
+      # TrainingGuideDMTutorial(continue_callback=on_continue),
       TrainingGuideRecordFront(continue_callback=on_continue),
     ]
 
     for step in self._steps:
       step.set_enabled(lambda: self.enabled)  # for nav stack
 
+  def _back_enabled(self) -> bool:
+    return False
+
   def show_event(self):
     super().show_event()
     device.set_override_interactive_timeout(300)
+
+    for step in reversed(self._steps[1:]):
+      gui_app.push_widget(step)
 
   def hide_event(self):
     super().hide_event()
     device.set_override_interactive_timeout(None)
 
-  def _advance_step(self):
-    if self._step < len(self._steps) - 1:
-      self._step += 1
-      self._steps[self._step].show_event()
-    else:
-      self._step = 0
-      if self._completed_callback:
-        self._completed_callback()
+  # def _advance_step(self):
+  #   if self._step < len(self._steps) - 1:
+  #     self._step += 1
+  #     gui_app.push_widget(self._steps[self._step])
+  #     # self._steps[self._step].show_event()
+  #   else:
+  #     self._step = 0
+  #     if self._completed_callback:
+  #       self._completed_callback()
 
   def _render(self, _):
-    rl.draw_rectangle_rec(self._rect, rl.BLACK)
-    if self._step < len(self._steps):
-      self._steps[self._step].render(self._rect)
+    pass
+    # rl.draw_rectangle_rec(self._rect, rl.BLACK)
+    self._steps[0].render(self._rect)
+    # if self._step < len(self._steps):
+    #   self._steps[self._step].render(self._rect)
 
 
 class QRCodeWidget(Widget):
@@ -402,19 +431,22 @@ class TermsPage(Scroller):
       self._close_button
     ])
 
-  def _render(self, _):
-    # TODO: remove with NavWidget
-    rl.draw_rectangle_rec(self._rect, rl.BLACK)
-    super()._render(_)
+  # def _back_enabled(self) -> bool:
+  #   return False
+
+  # def _render(self, _):
+  #   # TODO: remove with NavWidget
+  #   rl.draw_rectangle_rec(self._rect, rl.BLACK)
+  #   super()._render(_)
 
 
-class OnboardingWindow(Widget):
+class OnboardingWindow(NavScroller):
   def __init__(self):
     super().__init__()
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 
-    self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
+    # self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
 
     self.set_rect(rl.Rectangle(0, 0, 458, gui_app.height))
 
@@ -424,12 +456,26 @@ class OnboardingWindow(Widget):
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
     self._training_guide.set_enabled(lambda: self.enabled)  # for nav stack
 
+  def _back_enabled(self) -> bool:
+    return False
+
   def _on_uninstall(self):
     ui_state.params.put_bool("DoUninstall", True)
 
   def show_event(self):
     super().show_event()
     device.set_override_interactive_timeout(300)
+
+    if not self._accepted_terms:
+      pass
+      # gui_app.push_widget(self._terms)
+    else:
+      gui_app.push_widget(self._training_guide)
+
+    # if self._state == OnboardingState.TERMS:
+    #   self._terms.show_event()
+    # else:
+    #   self._training_guide.show_event()
 
   def hide_event(self):
     super().hide_event()
@@ -441,19 +487,23 @@ class OnboardingWindow(Widget):
 
   def close(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    gui_app.pop_widget()
+    print('closing onboarding! popping', gui_app._nav_stack)
+    # gui_app.pop_widget()
+    gui_app.pop_widgets_to(self, instant=True)
+    self.dismiss()
 
   def _on_terms_accepted(self):
     ui_state.params.put("HasAcceptedTerms", terms_version)
-    self._state = OnboardingState.ONBOARDING
+    # self._state = OnboardingState.ONBOARDING
+    # self._training_guide.show_event()
+    if not self._training_done:
+      gui_app.push_widget(self._training_guide)
+    else:
+      self._on_completed_training()
 
   def _on_completed_training(self):
     ui_state.params.put("CompletedTrainingVersion", training_version)
     self.close()
 
   def _render(self, _):
-    rl.draw_rectangle_rec(self._rect, rl.BLACK)
-    if self._state == OnboardingState.TERMS:
-      self._terms.render(self._rect)
-    else:
-      self._training_guide.render(self._rect)
+    self._terms.render(self._rect)
