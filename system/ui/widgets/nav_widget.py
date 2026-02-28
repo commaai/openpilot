@@ -60,7 +60,6 @@ class NavWidget(Widget, abc.ABC):
     self._playing_dismiss_animation = False  # released and animating away
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
 
-    self._can_swipe_away = True  # swipe away is blocked after certain horizontal movement
     self._trigger_animate_in = False
     self._back_enabled: bool | Callable[[], bool] = True
 
