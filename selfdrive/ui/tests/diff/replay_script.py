@@ -236,6 +236,8 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(2000, 630)  # open select branch dialog
   script.click(1000, 300)  # select 1st option
   script.click(1600, 900)  # confirm selection
+  script.click(2000, 800)  # uninstall
+  script.click(650, 750)  # cancel uninstall
 
   # === Settings - Firehose ===
   script.click(278, 845)
