@@ -423,21 +423,19 @@ class GuiApplication:
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
 
-  def request_pop_widgets_to(self, widget, callback: Callable | None = None):
+  def request_pop_widgets_to(self, widget):
     """Request to close widgets down to the given widget. Middle widgets are removed via pop_widget logic; only the top animates down."""
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
 
     if len(self._nav_stack) < 2 or self._nav_stack[-1] == widget:
-      if callback:
-        callback()
       return
 
     # Pop second-from-top repeatedly until stack is [target, top]; each goes through re-enable + hide_event
     while len(self._nav_stack) > 2 and self._nav_stack[-2] != widget:
       self.pop_widget(len(self._nav_stack) - 2)
-    self.request_pop_widget(callback)
+    self.request_pop_widget()
 
   def get_active_widget(self):
     if len(self._nav_stack) > 0:
