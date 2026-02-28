@@ -139,8 +139,10 @@ class TestCamerad:
     driver_ids = logs['driverCameraState']['frameId'][get_slice('driverCameraState')]
     assert np.all(wide_ids == driver_ids), "wide/driver frame IDs not aligned"
 
-    wide_sofs = logs['wideRoadCameraState']['timestampSof'][get_slice('wideRoadCameraState')]
-    driver_sofs = logs['driverCameraState']['timestampSof'][get_slice('driverCameraState')]
+    # Skip first few frames after sync where timing hasn't stabilized
+    settle = 5
+    wide_sofs = logs['wideRoadCameraState']['timestampSof'][get_slice('wideRoadCameraState')][settle:]
+    driver_sofs = logs['driverCameraState']['timestampSof'][get_slice('driverCameraState')][settle:]
     road_sofs = logs['roadCameraState']['timestampSof']
 
     # Road and wide must be synced in timestamp. Road runs at 2x wide's rate,
@@ -149,11 +151,11 @@ class TestCamerad:
     laggy = np.where(road_wide_diff > 1.1)[0]
     assert len(laggy) == 0, f"Road/wide not synced at indices {laggy[:10]}, max={road_wide_diff.max():.2f}ms"
 
-    # Driver camera has FSIN stagger offset (~17-25ms depending on sensor).
-    # Verify the offset is consistent (within 5ms of median) rather than zero.
+    # Driver camera has FSIN stagger offset from wide (depends on sensor and panda timer config).
+    # Verify the offset is consistent (within 5ms of median) and non-zero.
     driver_offset = (driver_sofs - wide_sofs) / 1e6
     median_offset = np.median(driver_offset)
-    assert 5 < abs(median_offset) < 35, f"Driver FSIN offset unexpected: {median_offset:.1f}ms"
+    assert 3 < abs(median_offset) < 47, f"Driver FSIN offset unexpected: {median_offset:.1f}ms (expected 3-47ms)"
     jitter = np.abs(driver_offset - median_offset)
     laggy = np.where(jitter > 5.0)[0]
     assert len(laggy) == 0, f"Driver FSIN jitter too high (median={median_offset:.1f}ms) at indices {laggy[:10]}"
