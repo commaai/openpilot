@@ -385,33 +385,26 @@ class GuiApplication:
     widget.show_event()
     widget.set_enabled(True)
 
-  def pop_widget(self, widget: object | None = None):
+  def pop_widget(self, idx: int | None = None):
     # Pops widget instantly without animation
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    if widget is not None:
-      if widget not in self._nav_stack:
-        cloudlog.warning("Widget not in stack, cannot pop!")
-        return
-
-      idx_to_pop = self._nav_stack.index(widget)
-      if idx_to_pop == 0:
-        cloudlog.warning("Cannot pop the bottom widget!")
-        return
-    else:
-      idx_to_pop = len(self._nav_stack) - 1
+    idx_to_pop = idx if idx is not None else len(self._nav_stack) - 1
+    if idx_to_pop <= 0 or idx_to_pop >= len(self._nav_stack):
+      cloudlog.warning(f"Invalid index {idx_to_pop} to pop, ignoring!")
+      return
 
     # only re-enable previous widget if popping top widget
     if idx_to_pop == len(self._nav_stack) - 1:
       prev_widget = self._nav_stack[idx_to_pop - 1]
       prev_widget.set_enabled(True)
 
-    popped_widget = self._nav_stack.pop(idx_to_pop)
-    popped_widget.hide_event()
+    widget = self._nav_stack.pop(idx_to_pop)
+    widget.hide_event()
 
-  def pop_widgets_to(self, widget: object, callback: Callable[[], None] = None):
+  def pop_widgets_to(self, widget: object, callback: Callable[[], None] | None = None):
     # Pops middle widgets instantly without animation + pops top w/ dismiss (w or w/o animation), then fires callback
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
@@ -425,9 +418,8 @@ class GuiApplication:
       return
 
     # instantly pop widgets in between, then dismiss top widget for animation
-    end_idx = self._nav_stack.index(widget)
-    for w in reversed(self._nav_stack[end_idx + 1:-1]):
-      self.pop_widget(w)
+    while len(self._nav_stack) > 1 and self._nav_stack[-2] != widget:
+      self.pop_widget(len(self._nav_stack) - 2)
 
     top_widget.dismiss(callback)
 
