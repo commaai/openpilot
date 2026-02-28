@@ -197,6 +197,6 @@ class Widget(abc.ABC):
     """Optionally handle hide event. Parent must manually call this"""
 
   def dismiss(self, callback: Callable[[], None] | None = None):
-    gui_app.pop_widget(self)
+    gui_app.pop_widget()
     if callback:
       callback()
