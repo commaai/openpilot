@@ -202,6 +202,8 @@ class NavWidget(Widget, abc.ABC):
     # Reset state
     self._drag_start_pos = None
     self._dragging_down = False
+    self._playing_dismiss_animation = False
+    self._dismiss_callback = None
     # Start NavWidget off-screen, no matter how tall it is
     self._y_pos_filter.update_alpha(0.1)
     self._y_pos_filter.x = gui_app.height
