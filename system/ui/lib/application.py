@@ -222,8 +222,6 @@ class GuiApplication:
     self._nav_stack: list[object] = []
     self._nav_stack_tick: Callable[[], None] | None = None
     self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
-    self._pop_to_target: object | None = None
-
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
     self._last_mouse_event: MouseEvent = MouseEvent(MousePos(0, 0), 0, False, False, False, 0.0)
@@ -409,13 +407,6 @@ class GuiApplication:
     widget = self._nav_stack.pop()
     widget.hide_event()
 
-    # If we're in a "pop to target" flow, request the new top to dismiss next (sequential animation)
-    if self._pop_to_target is not None:
-      if len(self._nav_stack) >= 2 and self._nav_stack[-1] != self._pop_to_target:
-        self.request_pop_widget()
-      else:
-        self._pop_to_target = None
-
   def pop_widgets_to(self, widget):
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
@@ -426,11 +417,20 @@ class GuiApplication:
       self.pop_widget()
 
   def request_pop_widgets_to(self, widget):
-    """Request to close widgets down to the given widget. NavWidgets animate sequentially (one after another)."""
+    """Request to close widgets down to the given widget. Middle widgets are removed immediately; only the top animates down."""
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
-    self._pop_to_target = widget
+
+    if len(self._nav_stack) < 2 or self._nav_stack[-1] == widget:
+      return
+
+    idx = self._nav_stack.index(widget)
+    # Remove all widgets between target and top (instant); keep target and top
+    for w in self._nav_stack[idx + 1:-1]:
+      w.hide_event()
+    widget.set_enabled(True)
+    self._nav_stack = self._nav_stack[:idx + 1] + [self._nav_stack[-1]]
     self.request_pop_widget()
 
   def get_active_widget(self):
@@ -586,6 +586,8 @@ class GuiApplication:
         else:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
+
+        print('Nav stack widgets', [type(w).__name__ for w in self._nav_stack])
 
         # Allow a Widget to still run a function regardless of the stack depth
         if self._nav_stack_tick is not None:
