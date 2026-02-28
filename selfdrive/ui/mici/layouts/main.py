@@ -113,8 +113,10 @@ class MiciMainLayout(Scroller):
       if not ui_state.sm["carState"].standstill:
         gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
     else:
-      # TODO: Screen turns off on timeout offroad, so pop immediately without animation
-      gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._home_layout))
+      # Screen turns off on timeout offroad, so pop immediately without animation
+      gui_app.pop_widgets_to(self)  # pop all but top, then pop top without animation
+      gui_app.pop_widget()
+      self._scroll_to(self._home_layout)
 
   def _on_bookmark_clicked(self):
     user_bookmark = messaging.new_message('bookmarkButton')
