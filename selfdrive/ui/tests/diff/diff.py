@@ -6,7 +6,6 @@ import sys
 import subprocess
 import webbrowser
 import argparse
-import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 from pathlib import Path
@@ -239,8 +238,8 @@ def main():
   print()
 
   print("[1/5] Starting full video diff generation in background thread...")
-  diff_thread = threading.Thread(target=create_diff_video, args=(video1, video2, DIFF_OUT_DIR / diff_video_name))
-  diff_thread.start()
+  diff_executor = ThreadPoolExecutor(max_workers=1)
+  diff_future = diff_executor.submit(create_diff_video, video1, video2, DIFF_OUT_DIR / diff_video_name)
 
   print("[2/5] Hashing frames...")
   hashes1, hashes2 = get_video_frame_hashes(video1, video2)
@@ -278,9 +277,11 @@ def main():
     print(f"Opening {args.output} in browser...")
     webbrowser.open(f'file://{os.path.abspath(output_path)}')
 
-  if diff_thread.is_alive():
+  # Wait for diff video generation to finish before exiting
+  if not diff_future.done():
     print("Waiting for diff video generation to finish...")
-  diff_thread.join()
+  diff_future.result()
+  diff_executor.shutdown()
 
   return 0 if diff_frame_count == 0 else 1
 
