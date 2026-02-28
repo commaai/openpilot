@@ -543,6 +543,8 @@ class Setup(Widget):
         time.sleep(0.02)
       shutil.copy(staged, INSTALLER_DESTINATION_PATH)
       os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
+      time.sleep(0.5)
+      gui_app.request_close()
       return
 
     try:
