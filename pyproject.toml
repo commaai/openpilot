@@ -26,6 +26,7 @@ dependencies = [
   "numpy >=2.0",
 
   # vendored native dependencies
+  "bzip2 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=bzip2",
   "capnproto @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=capnproto",
   "eigen @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=eigen",
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
@@ -124,7 +125,7 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=20 --maxprocesses=8 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
