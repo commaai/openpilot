@@ -384,19 +384,6 @@ class GuiApplication:
     self._nav_stack.append(widget)
     widget.show_event()
 
-  def request_pop_widget(self, callback: Callable | None = None):
-    """Request the top widget to close. NavWidgets dismiss (animate then pop); others pop immediately. Callback runs after pop."""
-    if len(self._nav_stack) < 2:
-      cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
-      return
-    top = self._nav_stack[-1]
-    if hasattr(top, "dismiss") and callable(getattr(top, "dismiss")):
-      top.dismiss(callback)
-    else:
-      self.pop_widget()
-      if callback:
-        callback()
-
   # pop_widget and pop_widgets_to are immediate (no animation). Use request_* variants for animated dismiss.
   def pop_widget(self, idx: int | None = None):
     if len(self._nav_stack) < 2:
@@ -425,6 +412,19 @@ class GuiApplication:
 
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
+
+  def request_pop_widget(self, callback: Callable | None = None):
+    """Request the top widget to close. NavWidgets dismiss (animate then pop); others pop immediately. Callback runs after pop."""
+    if len(self._nav_stack) < 2:
+      cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
+      return
+    top = self._nav_stack[-1]
+    if hasattr(top, "dismiss") and callable(getattr(top, "dismiss")):
+      top.dismiss(callback)
+    else:
+      self.pop_widget()
+      if callback:
+        callback()
 
   def request_pop_widgets_to(self, widget):
     """Request to close widgets down to the given widget. Middle widgets are removed via pop_widget logic; only the top animates down."""
