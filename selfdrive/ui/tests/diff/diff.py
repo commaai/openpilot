@@ -46,13 +46,10 @@ def create_diff_video(video1: Path, video2: Path, output: Path) -> None:
 
 def find_frame_differences(hashes1: list[str], hashes2: list[str]) -> tuple[list[int], tuple[int, int]]:
   """Compare two lists of frame hashes and return the indices of different frames along with the total frame counts."""
-  print(f"Comparing {len(hashes1)} frames...")
   different_frames = []
-
   for i, (h1, h2) in enumerate(zip(hashes1, hashes2, strict=False)):
     if h1 != h2:
       different_frames.append(i)
-
   return different_frames, (len(hashes1), len(hashes2))
 
 
