@@ -198,6 +198,6 @@ class Widget(abc.ABC):
 
   def dismiss(self, callback: Callable[[], None] | None = None):
     """Immediately dismiss the widget, firing the callback after."""
-    gui_app.pop_widget(self)
+    gui_app.pop_widget()
     if callback:
       callback()
