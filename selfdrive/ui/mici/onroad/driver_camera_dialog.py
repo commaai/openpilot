@@ -26,7 +26,7 @@ class DriverCameraView(CameraView):
 
 class DriverCameraDialog(NavWidget):
   def __init__(self, no_escape=False):
-    super().__init__()
+    super().__init__(back_enabled=not no_escape)
     self._camera_view = DriverCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
@@ -35,7 +35,6 @@ class DriverCameraDialog(NavWidget):
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(gui_app.pop_widget)
-    self.set_back_enabled(not no_escape)
 
     # Load eye icons
     self._eye_fill_texture = None

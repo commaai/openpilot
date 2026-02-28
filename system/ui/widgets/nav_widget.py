@@ -54,7 +54,7 @@ class NavWidget(Widget, abc.ABC):
   """
   BACK_TOUCH_AREA_PERCENTAGE = 0.65
 
-  def __init__(self):
+  def __init__(self, back_enabled: bool = True):
     super().__init__()
     self._back_button_start_pos: MousePos | None = None
     self._swiping_away = False  # currently swiping away
@@ -63,26 +63,21 @@ class NavWidget(Widget, abc.ABC):
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False
     self._nav_bar_show_time = 0.0
-    self._back_enabled: bool | Callable[[], bool] = True
+    self._back_enabled = back_enabled
     self._nav_bar = NavBar()
 
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-  @property
-  def back_enabled(self) -> bool:
-    return self._back_enabled() if callable(self._back_enabled) else self._back_enabled
-
-  def set_back_enabled(self, enabled: bool | Callable[[], bool]) -> None:
-    self._back_enabled = enabled
+  def _can_swipe_away_scroller(self) -> bool:  # TODO: better name
+    # Children can override this to block swipe away, like when not at
+    # the top of a vertical scroll panel to prevent erroneous swipes
+    return True
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
-    if not self.back_enabled:
-      self._back_button_start_pos = None
-      self._swiping_away = False
-      self._can_swipe_away = True
+    if not self._back_enabled:
       return
 
     if mouse_event.left_pressed:
@@ -90,19 +85,7 @@ class NavWidget(Widget, abc.ABC):
       self._y_pos_filter.update_alpha(0.04)
       in_dismiss_area = mouse_event.pos.y < self._rect.height * self.BACK_TOUCH_AREA_PERCENTAGE
 
-      # TODO: remove vertical scrolling and then this hacky logic to check if scroller is at top
-      scroller_at_top = False
-      vertical_scroller = False
-      # TODO: -20? snapping in WiFi dialog can make offset not be positive at the top
-      if hasattr(self, '_scroller'):
-        scroller_at_top = self._scroller.scroll_panel.get_offset() >= -20 and not self._scroller._horizontal
-        vertical_scroller = not self._scroller._horizontal
-      elif hasattr(self, '_scroll_panel'):
-        scroller_at_top = self._scroll_panel.get_offset() >= -20 and not self._scroll_panel._horizontal
-        vertical_scroller = not self._scroll_panel._horizontal
-
-      # Vertical scrollers need to be at the top to swipe away to prevent erroneous swipes
-      if (not vertical_scroller and in_dismiss_area) or scroller_at_top:
+      if in_dismiss_area and self._can_swipe_away_scroller():
         self._can_swipe_away = True
         self._back_button_start_pos = mouse_event.pos
 
@@ -176,7 +159,8 @@ class NavWidget(Widget, abc.ABC):
   def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
 
-    if self.back_enabled:
+    # Draw nav bar if back is enabled
+    if self._back_enabled:
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
       nav_bar_delayed = rl.get_time() - self._nav_bar_show_time < 0.4
       # User dragging or dismissing, nav bar follows NavWidget

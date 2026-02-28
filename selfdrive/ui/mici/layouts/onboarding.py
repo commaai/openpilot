@@ -440,8 +440,7 @@ class TermsPage(SetupTermsPage):
 
 class OnboardingWindow(NavWidget):
   def __init__(self):
-    super().__init__()
-    self.set_back_enabled(False)
+    super().__init__(back_enabled=False)
 
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
