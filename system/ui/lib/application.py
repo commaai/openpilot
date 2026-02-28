@@ -419,7 +419,7 @@ class GuiApplication:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
     top = self._nav_stack[-1]
-    if hasattr(top, "dismiss") and callable(getattr(top, "dismiss")):
+    if hasattr(top, "dismiss"):
       top.dismiss(callback)
     else:
       self.pop_widget()
