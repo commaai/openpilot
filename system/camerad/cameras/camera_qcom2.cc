@@ -326,26 +326,38 @@ void camerad_thread() {
 
   v.start_listener();
 
+  // Configure FSIN delay on secondary cameras BEFORE starting sensors.
+  // The delay staggers the secondary SOF after the primary readout completes,
+  // so both cameras can be processed within one frame period (20fps each).
+  // FSIN delay is in half-line units (line_time / 2).
+  for (auto &cam : cams) {
+    if (cam->camera.ife_primary_ptr) {
+      std::vector<i2c_random_wr_payload> fsin_delay;
+      std::string delay_desc;
+
+      if (cam->camera.sensor->image_sensor == cereal::FrameData::ImageSensor::OS04C10) {
+        // OS04C10: VTS=1692, half-line=14.78µs, readout~11ms, target SOF~25ms
+        // 1669 * 14.78µs ≈ 25ms
+        fsin_delay = {{0x382a, 0x06}, {0x382b, 0x85}};
+        delay_desc = "OS04C10: 1669 lines, 25ms";
+      } else if (cam->camera.sensor->image_sensor == cereal::FrameData::ImageSensor::OX03C10) {
+        // OX03C10: VTS=2069, half-line=12.08µs, readout~14.7ms, target SOF~17ms
+        // 1407 * 12.08µs ≈ 17ms
+        fsin_delay = {{0x3882, 0x05}, {0x3883, 0x7F}};
+        delay_desc = "OX03C10: 1407 lines, 17ms";
+      }
+
+      if (!fsin_delay.empty()) {
+        cam->camera.sensors_i2c(fsin_delay.data(), fsin_delay.size(),
+                                 CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, cam->camera.sensor->data_word);
+        LOG("IFE sharing: configured FSIN delay on cam %d (%s)", cam->camera.cc.camera_num, delay_desc.c_str());
+      }
+    }
+  }
+
   // start devices
   LOG("-- Starting devices");
   for (auto &cam : cams) cam->camera.sensors_start();
-
-  // Configure FSIN delay on secondary cameras for IFE sharing
-  // Without ife_downscale (normal mode, VTS=1692):
-  //   FSIN delay line_time ≈ 14.98µs (= 29.55µs sensor line / 2)
-  //   Readout ~23ms (760 active lines * 29.55µs/line)
-  //   Need driver SOF at ~25ms (just after primary fence at ~23ms)
-  //   25ms / 14.98µs ≈ 1669 lines = 0x0685
-  for (auto &cam : cams) {
-    if (cam->camera.ife_primary_ptr) {
-      struct i2c_random_wr_payload fsin_delay[] = {
-        {0x382a, 0x06}, {0x382b, 0x85},  // OS04C10: 1669 lines ≈ 25ms delay
-      };
-      cam->camera.sensors_i2c(fsin_delay, std::size(fsin_delay),
-                               CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, cam->camera.sensor->data_word);
-      LOG("IFE sharing: configured FSIN delay on cam %d (1669 lines ≈ 25ms)", cam->camera.cc.camera_num);
-    }
-  }
 
   // poll events
   LOG("-- Dequeueing Video events");

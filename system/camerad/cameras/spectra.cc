@@ -1458,13 +1458,17 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     uint32_t primary_phy = cc.phy - CAM_ISP_IFE_IN_RES_PHY_0;
     switch_phy(primary_phy);
 
-    if (ret) {
+    if (ret && last_primary_sof > 0) {
+      // Only publish once we have a valid primary SOF reference.
+      // The first secondary frame after sync might arrive before the first successful
+      // primary frame, so last_primary_sof could still be 0. Skipping that frame avoids
+      // a startup timing glitch in the published SOF sequence.
       ife_secondary->buf.cur_buf_idx = secondary_out_idx_slot[buf_idx];
       ife_secondary->buf.cur_frame_data = buf.cur_frame_data;
       ife_secondary->buf.cur_frame_data.frame_id = (uint32_t)(secondary_frame_count);
-      ife_secondary->buf.cur_frame_data.request_id = (uint32_t)(secondary_frame_count);
-      // Correct timestamp_eof: use secondary's sensor readout time, not primary's
-      ife_secondary->buf.cur_frame_data.timestamp_eof = timestamp + ife_secondary->sensor->readout_time_ns;
+      ife_secondary->buf.cur_frame_data.request_id = (uint32_t)(secondary_frame_count + 1);
+      ife_secondary->buf.cur_frame_data.timestamp_sof = last_primary_sof;
+      ife_secondary->buf.cur_frame_data.timestamp_eof = last_primary_sof + ife_secondary->sensor->readout_time_ns;
       secondary_frame_ready = true;
       secondary_frame_count++;
     }
@@ -1474,6 +1478,15 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     // Primary frame — process, then switch PHY to secondary for next frame
     bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
     destroySyncObjectAt(buf_idx);
+
+    // Override frame_id/request_id with contiguous primary counter
+    // (raw IDs increment for both P+S frames, causing gaps in published data)
+    if (ret) {
+      last_primary_sof = timestamp;
+      buf.cur_frame_data.frame_id = (uint32_t)(primary_frame_count);
+      buf.cur_frame_data.request_id = (uint32_t)(primary_frame_count + 1);
+      primary_frame_count++;
+    }
 
     uint32_t secondary_phy = ife_secondary->cc.phy - CAM_ISP_IFE_IN_RES_PHY_0;
     switch_phy(secondary_phy);

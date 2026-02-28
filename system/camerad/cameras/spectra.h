@@ -130,6 +130,8 @@ public:
   int secondary_out_idx_slot[MAX_IFE_BUFS] = {}; // per-slot: which secondary VIPC buf
   int override_buf_handle_yuv = -1;              // if >= 0, next config_ife uses this output buffer
   bool secondary_frame_ready = false;            // secondary frame was captured, ready for sendState
+  uint64_t last_primary_sof = 0;                 // SOF timestamp from last primary frame (for secondary sync)
+  uint64_t primary_frame_count = 0;              // incrementing counter for primary frame IDs
   uint64_t secondary_frame_count = 0;            // incrementing counter for secondary frame IDs
   uint64_t secondary_enqueue_count = 0;
   bool next_enqueue_is_secondary = false;
