@@ -411,6 +411,7 @@ class GuiApplication:
     prev_widget.set_enabled(True)
 
     widget = self._nav_stack.pop(idx)
+    widget.set_enabled(True)
     widget.hide_event()
 
   def pop_widgets_to(self, widget):

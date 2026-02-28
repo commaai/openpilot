@@ -71,8 +71,6 @@ class NavWidget(Widget, abc.ABC):
 
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-    self._can_pop: bool = False  # something like this?
-
   @property
   def back_enabled(self) -> bool:
     return self._back_enabled() if callable(self._back_enabled) else self._back_enabled
@@ -87,7 +85,8 @@ class NavWidget(Widget, abc.ABC):
     # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
-    if not self.back_enabled:
+    # Don't let touch events change filter state during dismiss animation
+    if not self.back_enabled or self._playing_dismiss_animation:
       self._back_button_start_pos = None
       self._swiping_away = False
       self._can_swipe_away = True
@@ -129,8 +128,8 @@ class NavWidget(Widget, abc.ABC):
             self._swiping_away = True
 
     elif mouse_event.left_released:
-      self._pos_filter.update_alpha(DISMISS_ANIMATION_RC)
-      # if far enough, trigger back navigation callback
+      self._pos_filter.update_alpha(0.1)
+      # if far enough, trigger dismiss
       if self._back_button_start_pos is not None:
         if mouse_event.pos.y - self._back_button_start_pos.y > SWIPE_AWAY_THRESHOLD:
           self._playing_dismiss_animation = True
@@ -175,9 +174,8 @@ class NavWidget(Widget, abc.ABC):
         self._back_callback()
 
       if self._dismiss_callback is not None:
-        cb = self._dismiss_callback
+        self._dismiss_callback()
         self._dismiss_callback = None
-        cb()
 
       self._playing_dismiss_animation = False
       self._back_button_start_pos = None
