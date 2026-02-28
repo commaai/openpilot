@@ -68,7 +68,7 @@ class PairingDialog(Widget):
       self.last_qr_generation = current_time
 
   def _update_state(self):
-    if ui_state.prime_state.is_paired():
+    if ui_state.prime_state.is_paired() and not self.is_dismissing():
       gui_app.pop_widget()
 
   def _render(self, rect: rl.Rectangle) -> int:

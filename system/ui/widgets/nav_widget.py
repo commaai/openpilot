@@ -193,7 +193,7 @@ class NavWidget(Widget, abc.ABC):
     if not self._playing_dismiss_animation:
       self._playing_dismiss_animation = True
       self._y_pos_filter.update_alpha(DISMISS_ANIMATION_RC)
-    self._dismiss_callback = callback
+      self._dismiss_callback = callback
 
   def show_event(self):
     super().show_event()
