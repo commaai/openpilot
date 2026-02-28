@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import pyray as rl
+from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
@@ -15,6 +16,7 @@ NAV_BAR_WIDTH = 205
 NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = NAV_BAR_MARGIN + NAV_BAR_HEIGHT + 50  # px extra to push down when dismissing
+DISMISS_ANIMATION_RC = 0.2  # slightly slower for non-user triggered dismiss animation
 
 
 class NavBar(Widget):
@@ -60,6 +62,8 @@ class NavWidget(Widget, abc.ABC):
     self._dragging_down = False  # swiped down enough to trigger dismissing on release
     self._playing_dismiss_animation = False  # released and animating away
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
+
+    self._dismiss_callback: Callable[[], None] | None = None
 
     # TODO: move this state into NavBar
     self._nav_bar = NavBar()
@@ -140,7 +144,11 @@ class NavWidget(Widget, abc.ABC):
       new_y = self._y_pos_filter.x = 0.0
 
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
-      gui_app.pop_widget()
+      gui_app.pop_widget(self)
+
+      if self._dismiss_callback is not None:
+        self._dismiss_callback()
+        self._dismiss_callback = None
 
       self._playing_dismiss_animation = False
       self._drag_start_pos = None
@@ -180,6 +188,13 @@ class NavWidget(Widget, abc.ABC):
   def is_dismissing(self) -> bool:
     return self._dragging_down or self._playing_dismiss_animation
 
+  def dismiss(self, callback: Callable[[], None] | None = None):
+    """Programmatically trigger the dismiss animation. Calls pop_widget when done, then callback."""
+    if not self._playing_dismiss_animation:
+      self._playing_dismiss_animation = True
+      self._y_pos_filter.update_alpha(DISMISS_ANIMATION_RC)
+    self._dismiss_callback = callback
+
   def show_event(self):
     super().show_event()
     self._nav_bar.show_event()
@@ -188,6 +203,7 @@ class NavWidget(Widget, abc.ABC):
     self._drag_start_pos = None
     self._dragging_down = False
     self._playing_dismiss_animation = False
+    self._dismiss_callback = None
     # Start NavWidget off-screen, no matter how tall it is
     self._y_pos_filter.update_alpha(0.1)
     self._y_pos_filter.x = gui_app.height
