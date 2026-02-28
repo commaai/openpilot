@@ -77,7 +77,7 @@ class BigConfirmationDialogV2(BigDialogBase):
       self._slider = RedBigSlider(title, icon_txt, confirm_callback=self._on_confirm)
     else:
       self._slider = BigSlider(title, icon_txt, confirm_callback=self._on_confirm)
-    self._slider.set_enabled(lambda: self.enabled and not self._swiping_away)  # self.enabled for nav stack
+    self._slider.set_enabled(lambda: self.enabled and not self._dragging_down)  # self.enabled for nav stack
 
   def _on_confirm(self):
     if self._exit_on_confirm:
@@ -87,7 +87,7 @@ class BigConfirmationDialogV2(BigDialogBase):
 
   def _update_state(self):
     super()._update_state()
-    if self._swiping_away and not self._slider.confirmed:
+    if self._dragging_down and not self._slider.confirmed:
       self._slider.reset()
 
   def _render(self, _):

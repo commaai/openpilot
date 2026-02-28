@@ -19,7 +19,7 @@ DISMISS_PUSH_OFFSET = NAV_BAR_MARGIN + NAV_BAR_HEIGHT + 50  # px extra to push d
 
 
 class NavBar(Widget):
-  DISMISS_TIME_SECONDS = 2.0
+  FADE_AFTER_SECONDS = 2.0
 
   def __init__(self):
     super().__init__()
@@ -39,7 +39,7 @@ class NavBar(Widget):
     self._fade_time = rl.get_time()
 
   def _render(self, _):
-    if rl.get_time() - self._fade_time > self.DISMISS_TIME_SECONDS:
+    if rl.get_time() - self._fade_time > self.FADE_AFTER_SECONDS:
       self._alpha = 0.0
     alpha = self._alpha_filter.update(self._alpha)
 
@@ -57,7 +57,7 @@ class NavWidget(Widget, abc.ABC):
   def __init__(self, show_nav_bar: bool = True):
     super().__init__()
     self._swipe_down_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
-    self._swiping_away = False  # currently swiping away
+    self._dragging_down = False  # swiped down enough to trigger dismissing on release
 
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False  # released and animating away
@@ -95,9 +95,9 @@ class NavWidget(Widget, abc.ABC):
         if not (horizontal_movement or upward_movement):
           # no blocking movement, check if we should start dismissing
           if mouse_event.pos.y - self._swipe_down_start_pos.y > START_DISMISSING_THRESHOLD:
-            self._swiping_away = True
+            self._dragging_down = True
         else:
-          if not self._swiping_away:
+          if not self._dragging_down:
             self._swipe_down_start_pos = None
 
     elif mouse_event.left_released:
@@ -110,14 +110,14 @@ class NavWidget(Widget, abc.ABC):
           self._playing_dismiss_animation = True
 
       self._swipe_down_start_pos = None
-      self._swiping_away = False
+      self._dragging_down = False
 
   def _update_state(self):
     super()._update_state()
 
     new_y = 0.0
 
-    if self._swiping_away:
+    if self._dragging_down:
       self._nav_bar.set_alpha(1.0)
 
     if not self.enabled:
@@ -142,7 +142,7 @@ class NavWidget(Widget, abc.ABC):
 
       self._playing_dismiss_animation = False
       self._swipe_down_start_pos = None
-      self._swiping_away = False
+      self._dragging_down = False
 
     self.set_position(self._rect.x, new_y)
 
@@ -182,7 +182,7 @@ class NavWidget(Widget, abc.ABC):
 
     # Reset state
     self._swipe_down_start_pos = None
-    self._swiping_away = False
+    self._dragging_down = False
     # Start NavWidget off-screen, no matter how tall it is
     self._y_pos_filter.update_alpha(0.1)
     self._y_pos_filter.x = gui_app.height
