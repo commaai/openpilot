@@ -44,9 +44,6 @@ class BaseDriverCameraDialog(Widget):
 
     self._load_eye_textures()
 
-  def _back_enabled(self):
-    return not self._no_escape
-
   def show_event(self):
     super().show_event()
     ui_state.params.put_bool("IsDriverViewEnabled", True)
