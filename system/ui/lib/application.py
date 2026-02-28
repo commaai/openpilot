@@ -384,18 +384,33 @@ class GuiApplication:
     self._nav_stack.append(widget)
     widget.show_event()
 
-  def pop_widget(self):
+  def pop_widget(self, widget: object | None = None):
+    # TODO: make it require widget?
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    # re-enable previous widget and pop current
-    # TODO: switch to touch_valid
-    prev_widget = self._nav_stack[-2]
+    if widget is not None and widget not in self._nav_stack:
+      cloudlog.warning("Widget not in stack, cannot pop!")
+      return
+
+    idx_to_pop = -1 if widget is None else self._nav_stack.index(widget)
+    prev_widget = self._nav_stack[idx_to_pop - 1]
     prev_widget.set_enabled(True)
 
-    widget = self._nav_stack.pop()
+    widget = self._nav_stack.pop(idx_to_pop)
     widget.hide_event()
+    # request_pop_widgets_to pops widgets out of order for animation, re-enable popped widget for later push
+    # TODO: remove pop_widgets_to? re-enable in push?
+    widget.set_enabled(True)
+
+    # # re-enable previous widget and pop current
+    # # TODO: switch to touch_valid
+    # prev_widget = self._nav_stack[-2]
+    # prev_widget.set_enabled(True)
+    #
+    # widget = self._nav_stack.pop()
+    # widget.hide_event()
 
   def pop_widgets_to(self, widget):
     if widget not in self._nav_stack:
@@ -405,6 +420,35 @@ class GuiApplication:
     # pops all widgets after specified widget
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
+
+  def request_pop_widgets_to(self, widget: object, callback: Callable[[], None] = None):
+    if widget not in self._nav_stack:
+      cloudlog.warning("Widget not in stack, cannot pop to it!")
+      return
+
+    top_widget = self._nav_stack[-1]
+    if top_widget == widget:
+      # Nothing to pop, ensure we still run callback
+      if callback:
+        callback()
+      return
+
+    end_idx = self._nav_stack.index(widget)
+    print("requesting pop to", widget, "with callback", callback)
+    print('idx to pop to:', end_idx, 'popping', self._nav_stack[end_idx + 1:-1])
+
+    # instantly pop widgets in between, then request pop on target widget for animation
+    for w in reversed(self._nav_stack[end_idx + 1:-1]):
+      print('popping', w)
+      self.pop_widget(w)
+
+    print('after intermediate pops, stack is:', self._nav_stack)
+
+    if top_widget != widget:
+      print('dismissing top widget', top_widget, 'to reveal target widget', widget)
+      top_widget.dismiss(callback)
+    # widget.dismiss()
+
 
   # def request_pop_widget(self, callback: Callable[[], None] = None):
   #   # Takes a callback to run after animation
