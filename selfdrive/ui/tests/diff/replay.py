@@ -59,7 +59,7 @@ def run_replay(variant: LayoutVariant) -> None:
   rl.get_time = lambda: frame / FPS
 
   # Main loop to replay events and render frames
-  with tqdm(total=len(script), desc="Replaying") as pbar:
+  with tqdm(total=script[-1][0], desc="Replaying", unit="frame") as pbar:
     for _ in gui_app.render():
       # Handle all events for the current frame
       while script_index < len(script) and script[script_index][0] == frame:
@@ -76,7 +76,6 @@ def run_replay(variant: LayoutVariant) -> None:
           send_fn = event.send_fn
         # Move to next script event
         script_index += 1
-        pbar.update(1)
 
       # Keep sending cereal messages for persistent states (onroad, alerts)
       if send_fn:
@@ -85,6 +84,7 @@ def run_replay(variant: LayoutVariant) -> None:
       ui_state.update()
 
       frame += 1
+      pbar.update(1)
 
       if script_index >= len(script):
         break
