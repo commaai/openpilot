@@ -136,7 +136,7 @@ class NavWidget(Widget, abc.ABC):
       new_y = self._y_pos_filter.x = 0.0
 
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
-      gui_app.pop_widget()
+      gui_app.pop_widget(self)
 
       self._playing_dismiss_animation = False
       self._drag_start_pos = None

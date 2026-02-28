@@ -81,7 +81,7 @@ class BigConfirmationDialogV2(BigDialogBase):
 
   def _on_confirm(self):
     if self._exit_on_confirm:
-      gui_app.pop_widget()
+      gui_app.pop_widget(self)
     if self._confirm_callback:
       self._confirm_callback()
 
@@ -127,7 +127,7 @@ class BigInputDialog(BigDialogBase):
 
     def confirm_callback_wrapper():
       text = self._keyboard.text()
-      gui_app.pop_widget()
+      gui_app.pop_widget(self)
       if confirm_callback:
         confirm_callback(text)
     self._confirm_callback = confirm_callback_wrapper
