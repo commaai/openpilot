@@ -61,7 +61,7 @@ def run_replay(variant: LayoutVariant) -> None:
   main_layout = MainLayout()
 
   # Disable interactive timeout — replay clicks use left_down=False so they never reset the timer,
-  # and after 30s of real wall-clock time the callback would close the settings panel.
+  # and after 30s of real wall-clock time the settings panel would close automatically.
   device.set_override_interactive_timeout(99999)
 
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
