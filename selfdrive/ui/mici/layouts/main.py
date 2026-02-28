@@ -99,9 +99,7 @@ class MiciMainLayout(Scroller):
 
     # When car leaves standstill, pop nav stack and scroll to onroad
     CS = ui_state.sm["carState"]
-    print(f"standstill: {CS.standstill}, prev_standstill: {self._prev_standstill}")
     if not CS.standstill and self._prev_standstill:
-      print('popping to onroad from standstill')
       gui_app.request_pop_widgets_to(self)
       self._scroll_to(self._onroad_layout)
     self._prev_standstill = CS.standstill

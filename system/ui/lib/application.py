@@ -222,6 +222,7 @@ class GuiApplication:
     self._nav_stack: list[object] = []
     self._nav_stack_ticks: list[Callable[[], None]] = []
     self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
+
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
     self._last_mouse_event: MouseEvent = MouseEvent(MousePos(0, 0), 0, False, False, False, 0.0)
