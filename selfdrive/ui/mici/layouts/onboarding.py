@@ -452,9 +452,6 @@ class OnboardingWindow(Widget):
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
     self._decline_page = DeclinePage(back_callback=self._on_decline_back)
 
-  def _back_enabled(self):
-    return False
-
   def show_event(self):
     super().show_event()
     device.set_override_interactive_timeout(300)
