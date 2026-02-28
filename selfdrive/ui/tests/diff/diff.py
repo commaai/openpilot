@@ -43,13 +43,13 @@ def create_diff_video(video1: Path, video2: Path, output: Path) -> None:
   subprocess.run(cmd, capture_output=True, check=True)
 
 
-def find_frame_differences(hashes1: list[str], hashes2: list[str]) -> tuple[list[int], tuple[int, int]]:
-  """Compare two lists of frame hashes and return the indices of different frames along with the total frame counts."""
+def find_frame_differences(hashes1: list[str], hashes2: list[str]) -> list[int]:
+  """Compare two lists of frame hashes and return the indices of different frames."""
   different_frames = []
   for i, (h1, h2) in enumerate(zip(hashes1, hashes2, strict=False)):
     if h1 != h2:
       different_frames.append(i)
-  return different_frames, (len(hashes1), len(hashes2))
+  return different_frames
 
 
 def generate_html_report(videos: tuple[Path, Path], basedir: str, different_frames: list[int], frame_counts: tuple[int, int], diff_video_name: str) -> str:
@@ -120,7 +120,7 @@ def main():
   print(f"  Found {frame_counts[0]} frames in video 1 and {frame_counts[1]} frames in video 2.")
 
   print("[3/4] Finding different frames...")
-  different_frames, frame_counts = find_frame_differences(hashes1, hashes2)
+  different_frames = find_frame_differences(hashes1, hashes2)
   print(f"  Found {len(different_frames)} different frames.")
 
   print("[4/4] Generating HTML report...")
