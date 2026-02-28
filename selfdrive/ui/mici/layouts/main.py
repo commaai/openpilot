@@ -92,6 +92,7 @@ class MiciMainLayout(Scroller):
       else:
         self._scroll_to(self._home_layout)
 
+    # TODO: these two pops can interrupt user interacting in the settings
     if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
       gui_app.request_pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
       self._onroad_time_delay = None
@@ -111,8 +112,8 @@ class MiciMainLayout(Scroller):
       # Don't pop if at standstill
       if not ui_state.sm["carState"].standstill:
         gui_app.request_pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
-
     else:
+      # TODO: Screen turns off on timeout offroad, so pop immediately without animation
       gui_app.request_pop_widgets_to(self, lambda: self._scroll_to(self._home_layout))
 
   def _on_bookmark_clicked(self):
