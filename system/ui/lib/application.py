@@ -383,28 +383,34 @@ class GuiApplication:
     self._nav_stack.append(widget)
     widget.show_event()
 
-  def request_pop_widget(self):
-    """Request the top widget to close. NavWidgets dismiss (animate then pop); others pop immediately."""
+  def request_pop_widget(self, callback: Callable | None = None):
+    """Request the top widget to close. NavWidgets dismiss (animate then pop); others pop immediately. Callback runs after pop."""
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
     top = self._nav_stack[-1]
     if hasattr(top, "dismiss") and callable(getattr(top, "dismiss")):
-      top.dismiss(None)
+      top.dismiss(callback)
     else:
       self.pop_widget()
+      if callback:
+        callback()
 
-  def pop_widget(self):
+  def pop_widget(self, idx: int | None = None):
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    # re-enable previous widget and pop current
-    # TODO: switch to touch_valid
-    prev_widget = self._nav_stack[-2]
+    if idx is None:
+      idx = -1
+    else:
+      if idx < 1 or idx >= len(self._nav_stack):
+        return
+
+    prev_widget = self._nav_stack[idx - 1]
     prev_widget.set_enabled(True)
 
-    widget = self._nav_stack.pop()
+    widget = self._nav_stack.pop(idx)
     widget.hide_event()
 
   def pop_widgets_to(self, widget):
@@ -417,7 +423,7 @@ class GuiApplication:
       self.pop_widget()
 
   def request_pop_widgets_to(self, widget):
-    """Request to close widgets down to the given widget. Middle widgets are removed immediately; only the top animates down."""
+    """Request to close widgets down to the given widget. Middle widgets are removed via pop_widget logic; only the top animates down."""
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
@@ -425,12 +431,9 @@ class GuiApplication:
     if len(self._nav_stack) < 2 or self._nav_stack[-1] == widget:
       return
 
-    idx = self._nav_stack.index(widget)
-    # Remove all widgets between target and top (instant); keep target and top
-    for w in self._nav_stack[idx + 1:-1]:
-      w.hide_event()
-    widget.set_enabled(True)
-    self._nav_stack = self._nav_stack[:idx + 1] + [self._nav_stack[-1]]
+    # Pop second-from-top repeatedly until stack is [target, top]; each goes through re-enable + hide_event
+    while len(self._nav_stack) > 2 and self._nav_stack[-2] != widget:
+      self.pop_widget(len(self._nav_stack) - 2)
     self.request_pop_widget()
 
   def get_active_widget(self):
