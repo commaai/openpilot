@@ -82,7 +82,6 @@ class NavWidget(Widget, abc.ABC):
     if not self.back_enabled:
       self._drag_start_pos = None
       self._dragging_down = False
-      self._can_swipe_away = True
       return
 
     if mouse_event.left_pressed:
@@ -103,7 +102,6 @@ class NavWidget(Widget, abc.ABC):
 
       # Vertical scrollers need to be at the top to swipe away to prevent erroneous swipes
       if (not vertical_scroller and in_dismiss_area) or scroller_at_top:
-        self._can_swipe_away = True
         self._drag_start_pos = mouse_event.pos
 
     elif mouse_event.left_down:
@@ -111,14 +109,14 @@ class NavWidget(Widget, abc.ABC):
         # block swiping away if too much horizontal or upward movement
         horizontal_movement = abs(mouse_event.pos.x - self._drag_start_pos.x) > BLOCK_SWIPE_AWAY_THRESHOLD
         upward_movement = mouse_event.pos.y - self._drag_start_pos.y < -BLOCK_SWIPE_AWAY_THRESHOLD
-        if not self._dragging_down and (horizontal_movement or upward_movement):
-          self._can_swipe_away = False
-          self._drag_start_pos = None
 
-        # block horizontal swiping if now swiping away
-        if self._can_swipe_away:
+        if not (horizontal_movement or upward_movement):
+          # no blocking movement, check if we should start dismissing
           if mouse_event.pos.y - self._drag_start_pos.y > START_DISMISSING_THRESHOLD:
             self._dragging_down = True
+        else:
+          if not self._dragging_down:
+            self._drag_start_pos = None
 
     elif mouse_event.left_released:
       self._y_pos_filter.update_alpha(0.1)
