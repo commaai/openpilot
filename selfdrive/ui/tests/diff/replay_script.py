@@ -112,16 +112,16 @@ def setup_update_available(available: bool = True) -> None:
 
 def setup_calibration_params() -> None:
   params = Params()
-
+  # live calibration
   calib = messaging.new_message('liveCalibration')
   calib.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
   calib.liveCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
   params.put("CalibrationParams", calib.to_bytes())
-
+  # live delay
   delay = messaging.new_message('liveDelay')
   delay.liveDelay.calPerc = 75
   params.put("LiveDelay", delay.to_bytes())
-
+  # live torque parameters
   torque = messaging.new_message('liveTorqueParameters')
   torque.liveTorqueParameters.useParams = True
   torque.liveTorqueParameters.calPerc = 60
