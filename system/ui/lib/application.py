@@ -391,7 +391,7 @@ class GuiApplication:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    idx_to_pop = idx if idx is not None else len(self._nav_stack) - 1
+    idx_to_pop = len(self._nav_stack) - 1 if idx is None else idx
     if idx_to_pop <= 0 or idx_to_pop >= len(self._nav_stack):
       cloudlog.warning(f"Invalid index {idx_to_pop} to pop, ignoring!")
       return
