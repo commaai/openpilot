@@ -92,7 +92,7 @@ class MiciMainLayout(Scroller):
       else:
         self._scroll_to(self._home_layout)
 
-    # TODO: these two pops can interrupt user interacting in the settings
+    # FIXME: these two pops can interrupt user interacting in the settings
     if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
       gui_app.request_pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
       self._onroad_time_delay = None
