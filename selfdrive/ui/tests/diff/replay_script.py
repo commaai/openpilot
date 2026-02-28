@@ -217,7 +217,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(2000, 450)  # pair device
   script.click(110, 110)  # close pairing dialog
   script.click(1985, 790)  # reset calibration confirmation
-  script.click(650, 750)  # cancel
+  script.click(1500, 750)  # confirm reset
   add_prime_state_setup(PrimeType.NONE)  # changed from unpaired to hide pair device button
   script.click(2000, 970)  # regulatory button
   script.click(2000, 970)  # OK
