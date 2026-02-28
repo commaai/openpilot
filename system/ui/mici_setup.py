@@ -439,7 +439,6 @@ class Setup(Widget):
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
-    self._pending_stage_installer = False
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
@@ -535,17 +534,6 @@ class Setup(Widget):
     self.download_thread.start()
 
   def _download_thread(self):
-    # If installer is pre-staged by continue.sh, copy it into place with fake progress
-    staged = "/data/installer_staged"
-    if os.path.isfile(staged):
-      for i in range(101):
-        self.download_progress = i
-        self._downloading_page.set_progress(i)
-        time.sleep(0.02)
-      self._pending_stage_installer = True
-      gui_app.request_close()
-      return
-
     try:
       import tempfile
 
@@ -627,11 +615,6 @@ def main():
     for _ in gui_app.render():
       pass
     setup.close()
-
-    if setup._pending_stage_installer:
-      staged = "/data/installer_staged"
-      shutil.copy(staged, INSTALLER_DESTINATION_PATH)
-      os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
   except Exception as e:
     print(f"Setup error: {e}")
   finally:

@@ -91,7 +91,6 @@ void finishInstall() {
       DrawTextEx(font_display, "finishing setup", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
     }
   EndDrawing();
-  std::ofstream("/data/installer_done").close();
   util::sleep_for(60 * 1000);
 }
 
@@ -189,8 +188,17 @@ void cloneFinished(int exitCode) {
 
   renderProgress(100);
 
-  // cleanup clone without replacing /data/openpilot
-  run("rm -rf " TMP_INSTALL_PATH);
+  // ensure correct branch is checked out
+  int err = chdir(TMP_INSTALL_PATH);
+  assert(err == 0);
+  run(("git checkout " + migrated_branch).c_str());
+  run(("git reset --hard origin/" + migrated_branch).c_str());
+  run("git submodule update --init");
+
+  // move into place
+  run(("rm -f " + VALID_CACHE_PATH).c_str());
+  run(("rm -rf " + INSTALL_PATH).c_str());
+  run(util::string_format("mv %s %s", TMP_INSTALL_PATH, INSTALL_PATH.c_str()).c_str());
 
 #ifdef INTERNAL
   run("mkdir -p /data/params/d/");
@@ -213,6 +221,18 @@ void cloneFinished(int exitCode) {
       "git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"").c_str());
 #endif
 
+  // write continue.sh
+  FILE *of = fopen("/data/continue.sh.new", "wb");
+  assert(of != NULL);
+
+  size_t num = str_continue_end - str_continue;
+  size_t num_written = fwrite(str_continue, 1, num, of);
+  assert(num == num_written);
+  fclose(of);
+
+  run("chmod +x /data/continue.sh.new");
+  run("mv /data/continue.sh.new " CONTINUE_PATH);
+
   // wait for the installed software's UI to take over
   finishInstall();
 }
@@ -233,9 +253,13 @@ int main(int argc, char *argv[]) {
 
   branchMigration();
 
-  renderProgress(0);
-  int result = doInstall();
-  cloneFinished(result);
+  if (util::file_exists(CONTINUE_PATH)) {
+    finishInstall();
+  } else {
+    renderProgress(0);
+    int result = doInstall();
+    cloneFinished(result);
+  }
 
   CloseWindow();
   UnloadFont(font_inter);
