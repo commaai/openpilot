@@ -93,14 +93,14 @@ class MiciMainLayout(Scroller):
         self._scroll_to(self._home_layout)
 
     if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
-      gui_app.request_pop_widgets_to(self)
+      gui_app.pop_widgets_to(self)
       self._scroll_to(self._onroad_layout)
       self._onroad_time_delay = None
 
     # When car leaves standstill, pop nav stack and scroll to onroad
     CS = ui_state.sm["carState"]
     if not CS.standstill and self._prev_standstill:
-      gui_app.request_pop_widgets_to(self)
+      gui_app.pop_widgets_to(self)
       self._scroll_to(self._onroad_layout)
     self._prev_standstill = CS.standstill
 
@@ -112,10 +112,9 @@ class MiciMainLayout(Scroller):
     if ui_state.started:
       # Don't pop if at standstill
       if not ui_state.sm["carState"].standstill:
-        gui_app.request_pop_widgets_to(self)
+        gui_app.pop_widgets_to(self)
         self._scroll_to(self._onroad_layout)
     else:
-      # Screen turns off on timeout offroad, so pop immediately without animation
       gui_app.pop_widgets_to(self)
       self._scroll_to(self._home_layout)
 
