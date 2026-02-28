@@ -114,8 +114,7 @@ class MiciMainLayout(Scroller):
         gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
     else:
       # Screen turns off on timeout offroad, so pop immediately without animation
-      gui_app.pop_widgets_to(self)  # pop all but top, then pop top without animation
-      gui_app.pop_widget()
+      gui_app.pop_widgets_to(self, instant=True)
       self._scroll_to(self._home_layout)
 
   def _on_bookmark_clicked(self):

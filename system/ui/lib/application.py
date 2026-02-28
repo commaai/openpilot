@@ -404,7 +404,7 @@ class GuiApplication:
     widget = self._nav_stack.pop(idx_to_pop)
     widget.hide_event()
 
-  def pop_widgets_to(self, widget: object, callback: Callable[[], None] | None = None):
+  def pop_widgets_to(self, widget: object, callback: Callable[[], None] | None = None, instant: bool = False):
     # Pops middle widgets instantly without animation + pops top w/ dismiss (w or w/o animation), then fires callback
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
@@ -421,7 +421,10 @@ class GuiApplication:
     while len(self._nav_stack) > 1 and self._nav_stack[-2] != widget:
       self.pop_widget(len(self._nav_stack) - 2)
 
-    top_widget.dismiss(callback)
+    if not instant:
+      top_widget.dismiss(callback)
+    else:
+      self.pop_widget()
 
   def get_active_widget(self):
     if len(self._nav_stack) > 0:
