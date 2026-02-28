@@ -290,15 +290,37 @@ void SpectraCamera::camera_open(VisionIpcServer *v) {
   uv_offset = stride * y_height;
 
   open = true;
-  configISP();
-  if (cc.output_type == ISP_BPS_PROCESSED) configICP();
-  configCSIPHY();
-  linkDevices();
+  if (is_ife_secondary()) {
+    // Secondary IFE camera: only init sensor + CSIPHY, no ISP acquire or link
+    configCSIPHY();
+    linkDevices();  // starts CSIPHY so MIPI data flows on this PHY
+    LOGD("camera init %d (IFE secondary)", cc.camera_num);
+    buf.init(this, v, ife_buf_depth, cc.stream_type);
+    camera_map_bufs();
+    // Allocate IOMMU-mapped CDM buffer for secondary frame processing
+    ife_cmd.init(m, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, 1);
+    // don't clearAndRequeue — primary drives our frame processing
+  } else {
+    configISP();
+    if (cc.output_type == ISP_BPS_PROCESSED) configICP();
+    configCSIPHY();
+    linkDevices();
 
-  LOGD("camera init %d", cc.camera_num);
-  buf.init(this, v, ife_buf_depth, cc.stream_type);
-  camera_map_bufs();
-  clearAndRequeue(1);
+    LOGD("camera init %d", cc.camera_num);
+    buf.init(this, v, ife_buf_depth, cc.stream_type);
+    camera_map_bufs();
+
+    // Check if this camera will be an IFE-sharing primary.
+    // If so, defer clearAndRequeue until after ife_secondary is wired,
+    // so the initial batch gets correct primary/secondary slot alternation.
+    bool will_have_secondary = false;
+    for (const auto &cfg : ALL_CAMERA_CONFIGS) {
+      if (cfg.ife_share_primary == cc.camera_num) { will_have_secondary = true; break; }
+    }
+    if (!will_have_secondary) {
+      clearAndRequeue(1);
+    }
+  }
 }
 
 void SpectraCamera::sensors_start() {
@@ -690,6 +712,23 @@ void SpectraCamera::config_bps(int idx, int request_id) {
   assert(ret == 0);
 }
 
+void SpectraCamera::switch_phy(uint32_t phy_num) {
+  if (phy_sel_fd >= 0) {
+    char phy_str[2] = {(char)('0' + (phy_num & 0x3)), '\n'};
+    lseek(phy_sel_fd, 0, SEEK_SET);
+    if (write(phy_sel_fd, phy_str, 2) != 2) {
+      LOGE("PHY switch: sysfs write failed (errno=%d)", errno);
+      return;
+    }
+  } else {
+    return;
+  }
+
+  // Allow CSID to re-sync with new PHY's MIPI clock/data lanes
+  usleep(500);
+  LOGD("PHY switch: cam %d -> PHY %d", cc.camera_num, phy_num);
+}
+
 void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   /*
     Handles initial + per-frame IFE config.
@@ -835,8 +874,14 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
       io_cfg[0].subsample_pattern = 0x1;
       io_cfg[0].framedrop_pattern = 0x1;
     } else {
-      io_cfg[0].mem_handle[0] = buf_handle_yuv[idx];
-      io_cfg[0].mem_handle[1] = buf_handle_yuv[idx];
+      // IFE sharing: use overridden buffer handle for secondary frames
+      int yuv_handle = buf_handle_yuv[idx];
+      if (override_buf_handle_yuv >= 0) {
+        yuv_handle = override_buf_handle_yuv;
+        override_buf_handle_yuv = -1;
+      }
+      io_cfg[0].mem_handle[0] = yuv_handle;
+      io_cfg[0].mem_handle[1] = yuv_handle;
       io_cfg[0].planes[0] = (struct cam_plane_cfg){
         .width = buf.out_img_width,
         .height = buf.out_img_height,
@@ -890,7 +935,19 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
 
 void SpectraCamera::enqueue_frame(uint64_t request_id) {
   int i = request_id % ife_buf_depth;
-  assert(sync_objs_ife[i] == 0);
+  if (sync_objs_ife[i] != 0) {
+    LOGE("camera %d: sync object leak at slot %d (request %lu), destroying stale fence", cc.camera_num, i, request_id);
+    destroySyncObjectAt(i);
+  }
+
+  // IFE sharing: mark slot as primary or secondary (alternating)
+  secondary_frame_slot[i] = (ife_secondary != nullptr) && next_enqueue_is_secondary;
+  if (secondary_frame_slot[i]) {
+    int sec_buf_idx = (secondary_enqueue_count++) % ife_secondary->ife_buf_depth;
+    secondary_out_idx_slot[i] = sec_buf_idx;
+    override_buf_handle_yuv = ife_secondary->buf_handle_yuv[sec_buf_idx];
+  }
+  if (ife_secondary) next_enqueue_is_secondary = !next_enqueue_is_secondary;
 
   // create output fences
   struct cam_sync_info sync_create = {0};
@@ -987,7 +1044,13 @@ bool SpectraCamera::openSensor() {
   LOGD("-- Probing sensor %d", cc.camera_num);
 
   auto init_sensor_lambda = [this](SensorInfo *s) {
-    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && cc.output_type == ISP_IFE_PROCESSED) {
+    // Skip ife_downscale for IFE-sharing cameras — readout drops from 33ms to 23ms,
+    // enabling two frames per 50ms period. The IFE scaler now handles 1:1 dynamically.
+    bool ife_sharing = (cc.ife_share_primary >= 0);
+    for (const auto &cfg : ALL_CAMERA_CONFIGS) {
+      if (cfg.ife_share_primary == cc.camera_num) { ife_sharing = true; break; }
+    }
+    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && cc.output_type == ISP_IFE_PROCESSED && !ife_sharing) {
       ((OS04C10*)s)->ife_downscale_configure();
     }
     sensor.reset(s);
@@ -1217,6 +1280,15 @@ void SpectraCamera::configCSIPHY() {
 }
 
 void SpectraCamera::linkDevices() {
+  if (is_ife_secondary()) {
+    // Secondary camera: no link or ISP start, just start CSIPHY so MIPI data flows
+    LOG("-- Start CSIPHY only (IFE secondary) %d", cc.camera_num);
+    int ret = device_control(csiphy_fd, CAM_START_DEV, session_handle, csiphy_dev_handle);
+    LOGD("start csiphy: %d", ret);
+    assert(ret == 0);
+    return;
+  }
+
   LOG("-- Link devices");
   struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = session_handle;
@@ -1253,57 +1325,71 @@ void SpectraCamera::camera_close() {
   LOG("-- Stop devices %d", cc.camera_num);
 
   if (enabled) {
-    clear_req_queue();
-
-    // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
-    // LOGD("stop sensor: %d", ret);
-    int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
-    LOGD("stop isp: %d", ret);
-    if (cc.output_type == ISP_BPS_PROCESSED) {
-      ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
-      LOGD("stop icp: %d", ret);
-    }
-    ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
-    LOGD("stop csiphy: %d", ret);
-
-    // link control stop
-    LOG("-- Stop link control");
-    struct cam_req_mgr_link_control req_mgr_link_control = {0};
-    req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
-    req_mgr_link_control.session_hdl = session_handle;
-    req_mgr_link_control.num_links = 1;
-    req_mgr_link_control.link_hdls[0] = link_handle;
-    ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
-    LOGD("link control stop: %d", ret);
-
-    // unlink
-    LOG("-- Unlink");
-    struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
-    req_mgr_unlink_info.session_hdl = session_handle;
-    req_mgr_unlink_info.link_hdl = link_handle;
-    ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
-    LOGD("unlink: %d", ret);
-
-    // release devices
-    LOGD("-- Release devices");
-    ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
-    LOGD("release isp: %d", ret);
-    if (cc.output_type == ISP_BPS_PROCESSED) {
-      ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
-      LOGD("release icp: %d", ret);
-    }
-    ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
-    LOGD("release csiphy: %d", ret);
-
-    for (int i = 0; i < ife_buf_depth; i++) {
-      if (buf_handle_raw[i]) {
-        release(m->video0_fd, buf_handle_raw[i]);
+    if (is_ife_secondary()) {
+      // Secondary: only stop/release CSIPHY and buffers, no ISP/link
+      int ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
+      LOGD("stop csiphy: %d", ret);
+      ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
+      LOGD("release csiphy: %d", ret);
+      for (int i = 0; i < ife_buf_depth; i++) {
+        if (buf_handle_yuv[i]) {
+          release(m->video0_fd, buf_handle_yuv[i]);
+        }
       }
-      if (buf_handle_yuv[i]) {
-        release(m->video0_fd, buf_handle_yuv[i]);
+      LOGD("released buffers");
+    } else {
+      clear_req_queue();
+
+      // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
+      // LOGD("stop sensor: %d", ret);
+      int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
+      LOGD("stop isp: %d", ret);
+      if (cc.output_type == ISP_BPS_PROCESSED) {
+        ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
+        LOGD("stop icp: %d", ret);
       }
+      ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
+      LOGD("stop csiphy: %d", ret);
+
+      // link control stop
+      LOG("-- Stop link control");
+      struct cam_req_mgr_link_control req_mgr_link_control = {0};
+      req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
+      req_mgr_link_control.session_hdl = session_handle;
+      req_mgr_link_control.num_links = 1;
+      req_mgr_link_control.link_hdls[0] = link_handle;
+      ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
+      LOGD("link control stop: %d", ret);
+
+      // unlink
+      LOG("-- Unlink");
+      struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
+      req_mgr_unlink_info.session_hdl = session_handle;
+      req_mgr_unlink_info.link_hdl = link_handle;
+      ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
+      LOGD("unlink: %d", ret);
+
+      // release devices
+      LOGD("-- Release devices");
+      ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
+      LOGD("release isp: %d", ret);
+      if (cc.output_type == ISP_BPS_PROCESSED) {
+        ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
+        LOGD("release icp: %d", ret);
+      }
+      ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
+      LOGD("release csiphy: %d", ret);
+
+      for (int i = 0; i < ife_buf_depth; i++) {
+        if (buf_handle_raw[i]) {
+          release(m->video0_fd, buf_handle_raw[i]);
+        }
+        if (buf_handle_yuv[i]) {
+          release(m->video0_fd, buf_handle_yuv[i]);
+        }
+      }
+      LOGD("released buffers");
     }
-    LOGD("released buffers");
   }
 
   int ret = device_control(sensor_fd, CAM_RELEASE_DEV, session_handle, sensor_dev_handle);
@@ -1323,7 +1409,6 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the camera request manager
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;  // raw as opposed to our re-indexed frame ID
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
-  //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
 
   // if there's a lag, some more frames could have already come in before
   // we cleared the queue, so we'll still get them with valid (> 0) request IDs.
@@ -1356,10 +1441,51 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   }
 
   int buf_idx = request_id % ife_buf_depth;
-  bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
-  destroySyncObjectAt(buf_idx);
-  enqueue_frame(request_id + ife_buf_depth);  // request next frame for this slot
-  return ret;
+
+  // IFE sharing: add secondary camera to sync data so first-frame sync can complete
+  // (secondary doesn't have its own link/events, so it can't register itself)
+  if (ife_secondary && !first_frame_synced) {
+    camera_sync_data[ife_secondary->cc.camera_num] = SyncData{timestamp, frame_id_raw + 1};
+  }
+
+  // IFE sharing: handle alternating primary/secondary frames
+  if (ife_secondary && secondary_frame_slot[buf_idx]) {
+    // Secondary frame — captured from driver PHY
+    bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+    destroySyncObjectAt(buf_idx);
+
+    // Switch PHY back to primary for next frame
+    uint32_t primary_phy = cc.phy - CAM_ISP_IFE_IN_RES_PHY_0;
+    switch_phy(primary_phy);
+
+    if (ret) {
+      ife_secondary->buf.cur_buf_idx = secondary_out_idx_slot[buf_idx];
+      ife_secondary->buf.cur_frame_data = buf.cur_frame_data;
+      ife_secondary->buf.cur_frame_data.frame_id = (uint32_t)(secondary_frame_count);
+      ife_secondary->buf.cur_frame_data.request_id = (uint32_t)(secondary_frame_count);
+      // Correct timestamp_eof: use secondary's sensor readout time, not primary's
+      ife_secondary->buf.cur_frame_data.timestamp_eof = timestamp + ife_secondary->sensor->readout_time_ns;
+      secondary_frame_ready = true;
+      secondary_frame_count++;
+    }
+    enqueue_frame(request_id + ife_buf_depth);
+    return false;
+  } else if (ife_secondary && !secondary_frame_slot[buf_idx]) {
+    // Primary frame — process, then switch PHY to secondary for next frame
+    bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+    destroySyncObjectAt(buf_idx);
+
+    uint32_t secondary_phy = ife_secondary->cc.phy - CAM_ISP_IFE_IN_RES_PHY_0;
+    switch_phy(secondary_phy);
+
+    enqueue_frame(request_id + ife_buf_depth);
+    return ret;
+  } else {
+    bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+    destroySyncObjectAt(buf_idx);
+    enqueue_frame(request_id + ife_buf_depth);
+    return ret;
+  }
 }
 
 bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
@@ -1393,10 +1519,24 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
 }
 
 void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
+  // Cooldown: prevent rapid re-entry (at least 100ms between requeues)
+  uint64_t now = nanos_since_boot();
+  if (last_requeue_ts > 0 && (now - last_requeue_ts) < 100000000ULL) {
+    LOGW("camera %d: clearAndRequeue cooldown, skipping (last requeue %llums ago)",
+         cc.camera_num, (unsigned long long)(now - last_requeue_ts) / 1000000ULL);
+    return;
+  }
+
   // clear everything, then queue up a fresh set of frames
   LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, from_request_id);
+  if (ife_secondary) {
+    uint32_t primary_phy = cc.phy - CAM_ISP_IFE_IN_RES_PHY_0;
+    switch_phy(primary_phy);
+  }
   clear_req_queue();
   last_requeue_ts = nanos_since_boot();
+  next_enqueue_is_secondary = false;  // start batch with primary
+  secondary_enqueue_count = 0;        // reset secondary buffer cycling
   for (uint64_t id = from_request_id; id < from_request_id + ife_buf_depth; ++id) {
     enqueue_frame(id);
   }
@@ -1405,7 +1545,10 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
 
 bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   int buf_idx = request_id % ife_buf_depth;
-  assert(sync_objs_ife[buf_idx]);
+  if (sync_objs_ife[buf_idx] == 0) {
+    LOGE("camera %d: sync object missing for request %lu buf_idx %d", cc.camera_num, request_id, buf_idx);
+    return false;  // triggers clearAndRequeue recovery
+  }
 
   if (stress_test("sync sleep time")) {
     util::sleep_for(350);

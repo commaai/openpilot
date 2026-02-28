@@ -1,8 +1,11 @@
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/spectra.h"
 
+#include <dirent.h>
+#include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cassert>
@@ -75,7 +78,12 @@ void CameraState::init(VisionIpcServer *v) {
   pm = std::make_unique<PubMaster>(std::vector{camera.cc.publish_name});
 }
 
-CameraState::~CameraState() {}
+CameraState::~CameraState() {
+  if (camera.phy_sel_fd >= 0) {
+    close(camera.phy_sel_fd);
+    camera.phy_sel_fd = -1;
+  }
+}
 
 void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
@@ -263,11 +271,81 @@ void camerad_thread() {
     cams.emplace_back(std::move(cam));
   }
 
+  // Wire up IFE sharing pointers
+  for (auto &cam : cams) {
+    if (cam->camera.cc.ife_share_primary >= 0) {
+      // This is a secondary — find its primary
+      for (auto &primary : cams) {
+        if (primary->camera.cc.camera_num == cam->camera.cc.ife_share_primary) {
+          primary->camera.ife_secondary = &cam->camera;
+          cam->camera.ife_primary_ptr = &primary->camera;
+          LOG("IFE sharing: cam %d (secondary) shares IFE with cam %d (primary)",
+              cam->camera.cc.camera_num, primary->camera.cc.camera_num);
+          break;
+        }
+      }
+    }
+  }
+
+  // Set up IFE sharing: open sysfs phy_sel for PHY switching
+  for (auto &cam : cams) {
+    if (cam->camera.ife_secondary) {
+      // Find CSID0's phy_sel sysfs attribute (from kernel patch)
+      // Search /sys/devices/platform/soc/ for csid devices with phy_sel
+      int phy_fd = -1;
+      const char *soc_path = "/sys/devices/platform/soc";
+      DIR *dir = opendir(soc_path);
+      if (dir) {
+        struct dirent *ent;
+        while ((ent = readdir(dir)) != nullptr) {
+          // Match CSID0 device (base addr acb3000, e.g. "acb3000.qcom,csid")
+          if (strstr(ent->d_name, "acb3000")) {
+            char path[256];
+            snprintf(path, sizeof(path), "%s/%s/phy_sel", soc_path, ent->d_name);
+            phy_fd = open(path, O_RDWR);
+            if (phy_fd >= 0) {
+              LOGW("IFE sharing: opened %s for PHY switching", path);
+              break;
+            }
+          }
+        }
+        closedir(dir);
+      }
+      if (phy_fd < 0) {
+        LOGE("IFE sharing: no phy_sel sysfs found. Need kernel with CSID phy_sel patch.");
+        assert(phy_fd >= 0);
+      }
+      cam->camera.phy_sel_fd = phy_fd;
+
+      // Now that ife_secondary is wired, do the deferred clearAndRequeue.
+      // This was skipped in camera_open so the initial batch gets correct P/S alternation.
+      // Safe here because sensors haven't started yet (no MIPI data flowing).
+      cam->camera.clearAndRequeue(1);
+    }
+  }
+
   v.start_listener();
 
   // start devices
   LOG("-- Starting devices");
   for (auto &cam : cams) cam->camera.sensors_start();
+
+  // Configure FSIN delay on secondary cameras for IFE sharing
+  // Without ife_downscale (normal mode, VTS=1692):
+  //   FSIN delay line_time ≈ 14.98µs (= 29.55µs sensor line / 2)
+  //   Readout ~23ms (760 active lines * 29.55µs/line)
+  //   Need driver SOF at ~25ms (just after primary fence at ~23ms)
+  //   25ms / 14.98µs ≈ 1669 lines = 0x0685
+  for (auto &cam : cams) {
+    if (cam->camera.ife_primary_ptr) {
+      struct i2c_random_wr_payload fsin_delay[] = {
+        {0x382a, 0x06}, {0x382b, 0x85},  // OS04C10: 1669 lines ≈ 25ms delay
+      };
+      cam->camera.sensors_i2c(fsin_delay, std::size(fsin_delay),
+                               CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, cam->camera.sensor->data_word);
+      LOG("IFE sharing: configured FSIN delay on cam %d (1669 lines ≈ 25ms)", cam->camera.cc.camera_num);
+    }
+  }
 
   // poll events
   LOG("-- Dequeueing Video events");
@@ -297,6 +375,16 @@ void camerad_thread() {
           if (event_data->session_hdl == cam->camera.session_handle) {
             if (cam->camera.handle_camera_event(event_data)) {
               cam->sendState();
+            }
+            // IFE sharing: send secondary camera state if a frame was captured
+            if (cam->camera.secondary_frame_ready) {
+              cam->camera.secondary_frame_ready = false;
+              for (auto &sec : cams) {
+                if (&sec->camera == cam->camera.ife_secondary) {
+                  sec->sendState();
+                  break;
+                }
+              }
             }
             break;
           }

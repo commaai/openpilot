@@ -25,6 +25,7 @@ struct CameraConfig {
   uint32_t phy;
   bool vignetting_correction;
   SpectraOutputType output_type;
+  int ife_share_primary;  // camera_num of the primary camera to share IFE with, -1 = standalone
 };
 
 // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
@@ -39,6 +40,7 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .phy = CAM_ISP_IFE_IN_RES_PHY_0,
   .vignetting_correction = false,
   .output_type = ISP_IFE_PROCESSED,
+  .ife_share_primary = -1,
 };
 
 const CameraConfig ROAD_CAMERA_CONFIG = {
@@ -51,6 +53,7 @@ const CameraConfig ROAD_CAMERA_CONFIG = {
   .phy = CAM_ISP_IFE_IN_RES_PHY_1,
   .vignetting_correction = true,
   .output_type = ISP_IFE_PROCESSED,
+  .ife_share_primary = -1,
 };
 
 const CameraConfig DRIVER_CAMERA_CONFIG = {
@@ -62,7 +65,8 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .enabled = !getenv("DISABLE_DRIVER"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
   .vignetting_correction = false,
-  .output_type = ISP_BPS_PROCESSED,
+  .output_type = ISP_IFE_PROCESSED,
+  .ife_share_primary = 0,  // shares IFE with wide (cam 0)
 };
 
 const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};

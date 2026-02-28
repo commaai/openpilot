@@ -183,15 +183,25 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
   patches.push_back(addr - (uint64_t)start);
 
   // output size/scaling
+  // Scale factor = 0x30000000 | round(in/out * 0x1B333)
+  // 0x1B333 is the base unit (1:1 scaling), derived from known 2:1 value 0x36666/2
+  auto ife_scale_factor = [](uint32_t in_size, uint32_t out_size) -> uint32_t {
+    return 0x30000000 | (uint32_t)((double)in_size / out_size * 0x1B333 + 0.5);
+  };
+  uint32_t y_h_scale = ife_scale_factor(s->frame_width, out_width);
+  uint32_t y_v_scale = ife_scale_factor(s->frame_height, out_height);
+  uint32_t uv_h_scale = ife_scale_factor(s->frame_width, out_width / 2);
+  uint32_t uv_v_scale = ife_scale_factor(s->frame_height, out_height / 2);
+
   dst += write_cont(dst, 0xa3c, {
     0x00000003,
     ((out_width - 1) << 16) | (s->frame_width - 1),
-    0x30036666,
+    y_h_scale,
     0x00000000,
     0x00000000,
     s->frame_width - 1,
     ((out_height - 1) << 16) | (s->frame_height - 1),
-    0x30036666,
+    y_v_scale,
     0x00000000,
     0x00000000,
     s->frame_height - 1,
@@ -199,12 +209,12 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
   dst += write_cont(dst, 0xa68, {
     0x00000003,
     ((out_width / 2 - 1) << 16) | (s->frame_width - 1),
-    0x3006cccc,
+    uv_h_scale,
     0x00000000,
     0x00000000,
     s->frame_width - 1,
     ((out_height / 2 - 1) << 16) | (s->frame_height - 1),
-    0x3006cccc,
+    uv_v_scale,
     0x00000000,
     0x00000000,
     s->frame_height - 1,
