@@ -8,14 +8,13 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.button import SmallButton, SmallCircleIconButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import SmallSlider
 from openpilot.system.ui.mici_setup import TermsHeader, TermsPage as SetupTermsPage
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
-from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
+from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import BaseDriverCameraDialog
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.version import terms_version, training_version
@@ -27,9 +26,9 @@ class OnboardingState(IntEnum):
   DECLINE = 2
 
 
-class DriverCameraSetupDialog(DriverCameraDialog):
+class DriverCameraSetupDialog(BaseDriverCameraDialog):
   def __init__(self):
-    super().__init__(no_escape=True)
+    super().__init__()
     self.driver_state_renderer = DriverStateRenderer(inset=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 120, 120))
     self.driver_state_renderer.load_icons()
@@ -438,11 +437,9 @@ class TermsPage(SetupTermsPage):
     ))
 
 
-class OnboardingWindow(NavWidget):
+class OnboardingWindow(Widget):
   def __init__(self):
     super().__init__()
-    self.set_back_enabled(False)
-
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 
@@ -486,6 +483,7 @@ class OnboardingWindow(NavWidget):
     self.close()
 
   def _render(self, _):
+    rl.draw_rectangle_rec(self._rect, rl.BLACK)
     if self._state == OnboardingState.TERMS:
       self._terms.render(self._rect)
     elif self._state == OnboardingState.ONBOARDING:

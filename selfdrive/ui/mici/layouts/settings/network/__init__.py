@@ -148,9 +148,6 @@ class NetworkLayoutMici(NavScroller):
     metered = ui_state.params.get_bool("GsmMetered")
     self._wifi_manager.update_gsm_settings(roaming_enabled, ui_state.params.get("GsmApn") or "", metered)
 
-    # Set up back navigation
-    self.set_back_callback(gui_app.pop_widget)
-
   def _update_state(self):
     super()._update_state()
 

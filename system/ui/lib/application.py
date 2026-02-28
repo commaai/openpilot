@@ -383,27 +383,47 @@ class GuiApplication:
 
     self._nav_stack.append(widget)
     widget.show_event()
+    widget.set_enabled(True)
 
-  def pop_widget(self):
+  def pop_widget(self, idx: int | None = None):
+    # Pops widget instantly without animation
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    # re-enable previous widget and pop current
-    # TODO: switch to touch_valid
-    prev_widget = self._nav_stack[-2]
-    prev_widget.set_enabled(True)
+    idx_to_pop = len(self._nav_stack) - 1 if idx is None else idx
+    if idx_to_pop <= 0 or idx_to_pop >= len(self._nav_stack):
+      cloudlog.warning(f"Invalid index {idx_to_pop} to pop, ignoring!")
+      return
 
-    widget = self._nav_stack.pop()
+    # only re-enable previous widget if popping top widget
+    if idx_to_pop == len(self._nav_stack) - 1:
+      prev_widget = self._nav_stack[idx_to_pop - 1]
+      prev_widget.set_enabled(True)
+
+    widget = self._nav_stack.pop(idx_to_pop)
     widget.hide_event()
 
-  def pop_widgets_to(self, widget):
+  def pop_widgets_to(self, widget: object, callback: Callable[[], None] | None = None, instant: bool = False):
+    # Pops middle widgets instantly without animation then dismisses top, animated out if NavWidget
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
 
-    # pops all widgets after specified widget
-    while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
+    # Nothing to pop, ensure we still run callback
+    top_widget = self._nav_stack[-1]
+    if top_widget == widget:
+      if callback:
+        callback()
+      return
+
+    # instantly pop widgets in between, then dismiss top widget for animation
+    while len(self._nav_stack) > 1 and self._nav_stack[-2] != widget:
+      self.pop_widget(len(self._nav_stack) - 2)
+
+    if not instant:
+      top_widget.dismiss(callback)
+    else:
       self.pop_widget()
 
   def get_active_widget(self):
