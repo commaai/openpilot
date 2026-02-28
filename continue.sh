@@ -6,6 +6,7 @@ INSTALLER_BIN="/tmp/installer"
 INSTALLER_DONE="/data/installer_done"
 
 cd /data/openpilot
+touch prebuilt
 rm -f "$INSTALLER_DONE"
 if [[ ! -f "$SETUP_DONE" ]]; then
   rm -f "$PARAMS_D/HasAcceptedTerms" "$PARAMS_D/CompletedTrainingVersion"
