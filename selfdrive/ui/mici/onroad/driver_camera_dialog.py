@@ -26,7 +26,8 @@ class DriverCameraView(CameraView):
 
 class DriverCameraDialog(NavWidget):
   def __init__(self, no_escape=False):
-    super().__init__(back_enabled=not no_escape)
+    super().__init__(show_nav_bar=not no_escape)
+    self._no_escape = no_escape
     self._camera_view = DriverCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
@@ -44,6 +45,9 @@ class DriverCameraDialog(NavWidget):
     self._glasses_size = 171
 
     self._load_eye_textures()
+
+  def _back_enabled(self):
+    return not self._no_escape
 
   def show_event(self):
     super().show_event()

@@ -54,7 +54,7 @@ class NavWidget(Widget, abc.ABC):
   """
   BACK_TOUCH_AREA_PERCENTAGE = 0.65
 
-  def __init__(self, back_enabled: bool = True):
+  def __init__(self, show_nav_bar: bool = True):
     super().__init__()
     self._back_button_start_pos: MousePos | None = None
     self._swiping_away = False  # currently swiping away
@@ -63,12 +63,12 @@ class NavWidget(Widget, abc.ABC):
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False
     self._nav_bar_show_time = 0.0
-    self._back_enabled = back_enabled
     self._nav_bar = NavBar()
+    self._show_nav_bar = show_nav_bar
 
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-  def _can_swipe_away_scroller(self) -> bool:  # TODO: better name
+  def _back_enabled(self) -> bool:
     # Children can override this to block swipe away, like when not at
     # the top of a vertical scroll panel to prevent erroneous swipes
     return True
@@ -77,15 +77,12 @@ class NavWidget(Widget, abc.ABC):
     # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
-    if not self._back_enabled:
-      return
-
     if mouse_event.left_pressed:
       # user is able to swipe away if starting near top of screen, or anywhere if scroller is at top
       self._y_pos_filter.update_alpha(0.04)
       in_dismiss_area = mouse_event.pos.y < self._rect.height * self.BACK_TOUCH_AREA_PERCENTAGE
 
-      if in_dismiss_area and self._can_swipe_away_scroller():
+      if in_dismiss_area and self._back_enabled():
         self._can_swipe_away = True
         self._back_button_start_pos = mouse_event.pos
 
@@ -160,7 +157,7 @@ class NavWidget(Widget, abc.ABC):
     ret = super().render(rect)
 
     # Draw nav bar if back is enabled
-    if self._back_enabled:
+    if self._show_nav_bar:
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
       nav_bar_delayed = rl.get_time() - self._nav_bar_show_time < 0.4
       # User dragging or dismissing, nav bar follows NavWidget

@@ -445,7 +445,7 @@ class NavScroller(NavWidget, Scroller):
     # pass down enabled to child widget for nav stack + disable while swiping away NavWidget
     self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away)
 
-  def _can_swipe_away_scroller(self) -> bool:
+  def _back_enabled(self) -> bool:
     # Vertical scrollers need to be at the top to swipe away to prevent erroneous swipes
     # TODO: only used for offroad alerts, remove when horizontal
     return self._scroller._horizontal or self._scroller.scroll_panel.get_offset() >= -20  # some tolerance
@@ -465,6 +465,6 @@ class NavRawScrollPanel(NavWidget):
     super().show_event()
     self._scroll_panel.set_offset(0)
 
-  def _can_swipe_away_scroller(self) -> bool:
+  def _back_enabled(self) -> bool:
     scroller_at_top = self._scroll_panel.get_offset() >= -20
     return scroller_at_top
