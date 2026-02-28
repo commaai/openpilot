@@ -59,7 +59,7 @@ def run_replay(variant: LayoutVariant) -> None:
   rl.get_time = lambda: frame / FPS
 
   # Main loop to replay events and render frames
-  with tqdm(total=script[-1][0], desc="Replaying", unit="frame") as pbar:
+  with tqdm(total=script[-1][0], desc="Replaying", unit="frame", disable=bool(os.getenv("CI"))) as pbar:
     for _ in gui_app.render():
       # Handle all events for the current frame
       while script_index < len(script) and script[script_index][0] == frame:
