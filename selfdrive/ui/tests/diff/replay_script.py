@@ -8,6 +8,7 @@ from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.tests.diff.replay import FPS, LayoutVariant
 from openpilot.system.updated.updated import parse_release_notes
 
@@ -80,6 +81,11 @@ class Script:
 
 
 # --- Setup functions ---
+
+
+def set_prime_state(prime_type: PrimeType) -> None:
+  from openpilot.selfdrive.ui.ui_state import ui_state
+  ui_state.prime_state.set_type(prime_type)
 
 
 def setup_offroad_alerts() -> None:
@@ -171,7 +177,10 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
     return setup
 
-  def type_keyboard():
+  def add_prime_state_setup(prime_type: PrimeType) -> None:
+    script.set_send(lambda: set_prime_state(prime_type))
+
+  def type_keyboard() -> None:
     """Types 8 characters using the big keyboard to test different layouts and interactions."""
     KEY = (150, 430)  # e.g. 'Q' key
     SHIFT = (150, 750)  # also symbols key in number mode
@@ -191,6 +200,10 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Homescreen ===
   script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
+  # Go through different prime state layouts
+  add_prime_state_setup(PrimeType.LITE)
+  add_prime_state_setup(PrimeType.NONE)
+  add_prime_state_setup(PrimeType.UNPAIRED)
 
   # === Update Available (auto-transitions via HomeLayout refresh) ===
   script.setup(make_home_refresh_setup(setup_update_available))
@@ -199,12 +212,16 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.setup(make_home_refresh_setup(setup_offroad_alerts))
   script.click(620, 950)  # close alerts
 
-  # === Settings - Device (click sidebar settings button) ===
+  # === Settings (click sidebar settings button) ===
   script.click(150, 90)
+
+  # === Settings - Device ===
   script.click(2000, 450)  # pair device
   script.click(110, 110)  # close pairing dialog
+  # TODO: Click reset calibration description
   script.click(1985, 790)  # reset calibration confirmation
   script.click(650, 750)  # cancel
+  add_prime_state_setup(PrimeType.NONE)  # changed from unpaired to hide pair device button
 
   # === Settings - Network ===
   script.click(278, 450)
