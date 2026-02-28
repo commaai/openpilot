@@ -11,7 +11,6 @@ from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
 class DeveloperLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
-    self.set_back_callback(gui_app.pop_widget)
 
     def github_username_callback(username: str):
       if username:

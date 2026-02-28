@@ -35,7 +35,6 @@ class DriverCameraDialog(NavWidget):
     if not no_escape:
       # TODO: this can grow unbounded, should be given some thought
       device.add_interactive_timeout_callback(gui_app.pop_widget)
-    self.set_back_callback(gui_app.pop_widget)
     self.set_back_enabled(not no_escape)
 
     # Load eye icons

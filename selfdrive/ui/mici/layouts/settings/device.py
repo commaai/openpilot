@@ -29,7 +29,6 @@ class MiciFccModal(NavWidget):
 
   def __init__(self, file_path: str | None = None, text: str | None = None):
     super().__init__()
-    self.set_back_callback(gui_app.pop_widget)
     self._content = HtmlRenderer(file_path=file_path, text=text)
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
     self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away)
@@ -327,10 +326,6 @@ class DeviceLayoutMici(NavScroller):
       reboot_btn,
       self._power_off_btn,
     ])
-
-    # Set up back navigation
-    # TODO: can this somehow be generic in widgets/__init__.py or application.py?
-    self.set_back_callback(gui_app.pop_widget)
 
   def _on_regulatory(self):
     if not self._fcc_dialog:
