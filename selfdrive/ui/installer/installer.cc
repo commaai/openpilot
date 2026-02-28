@@ -190,15 +190,7 @@ void cloneFinished(int exitCode) {
 
   renderProgress(100);
 
-  // ensure correct branch is checked out
-  int err = chdir(TMP_INSTALL_PATH);
-  assert(err == 0);
-  run(("git checkout " + migrated_branch).c_str());
-  run(("git reset --hard origin/" + migrated_branch).c_str());
-  run("git submodule update --init");
-
-  // move into place
-  run(("rm -f " + VALID_CACHE_PATH).c_str());
+  // cleanup clone without replacing /data/openpilot
   run("rm -rf " TMP_INSTALL_PATH);
 
 #ifdef INTERNAL
@@ -242,13 +234,9 @@ int main(int argc, char *argv[]) {
 
   branchMigration();
 
-  if (util::file_exists(CONTINUE_PATH)) {
-    finishInstall();
-  } else {
-    renderProgress(0);
-    int result = doInstall();
-    cloneFinished(result);
-  }
+  renderProgress(0);
+  int result = doInstall();
+  cloneFinished(result);
 
   CloseWindow();
   UnloadFont(font_inter);
