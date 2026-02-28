@@ -55,19 +55,17 @@ class NavWidget(Widget, abc.ABC):
 
   def __init__(self):
     super().__init__()
-    # State
     self._drag_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
     self._dragging_down = False  # swiped down enough to trigger dismissing on release
     self._playing_dismiss_animation = False  # released and animating away
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
 
     self._can_swipe_away = True  # swipe away is blocked after certain horizontal movement
-
     self._trigger_animate_in = False
-    self._nav_bar_show_time = 0.0
     self._back_enabled: bool | Callable[[], bool] = True
-    self._nav_bar = NavBar()
 
+    self._nav_bar = NavBar()
+    self._nav_bar_show_time = 0.0
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
   @property
