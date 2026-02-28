@@ -184,6 +184,10 @@ class NavWidget(Widget, abc.ABC):
 
     return ret
 
+  @property
+  def is_dismissing(self) -> bool:
+    return self._dragging_down or self._playing_dismiss_animation
+
   def dismiss(self, callback: Callable[[], None] | None = None):
     """Programmatically trigger the dismiss animation. Calls pop_widget when done, then callback."""
     if not self._playing_dismiss_animation:
