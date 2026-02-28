@@ -7,6 +7,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 ITEM_SPACING = 20
 LINE_COLOR = rl.GRAY
@@ -66,7 +67,8 @@ class ScrollIndicator(Widget):
                         rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
-class Scroller(Widget):
+class _Scroller(Widget):
+  """Should use wrapper below to reduce boilerplate"""
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
@@ -78,7 +80,7 @@ class Scroller(Widget):
 
     self._reset_scroll_at_show = True
 
-    self._scrolling_to: tuple[float | None, bool] = (None, False)  # target offset, block user scrolling
+    self._scrolling_to: tuple[float | None, bool] = (None, False)  # target offset, block_interaction
     self._scrolling_to_filter = FirstOrderFilter(0.0, SCROLL_RC, 1 / gui_app.target_fps)
     self._zoom_filter = FirstOrderFilter(1.0, 0.2, 1 / gui_app.target_fps)
     self._zoom_out_t: float = 0.0
@@ -109,14 +111,13 @@ class Scroller(Widget):
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
 
-    for item in items:
-      self.add_widget(item)
+    self.add_widgets(items)
 
   def set_reset_scroll_at_show(self, scroll: bool):
     self._reset_scroll_at_show = scroll
 
-  def scroll_to(self, pos: float, smooth: bool = False, block: bool = False):
-    assert not block or smooth, "Instant scroll cannot be blocking"
+  def scroll_to(self, pos: float, smooth: bool = False, block_interaction: bool = False):
+    assert not block_interaction or smooth, "Instant scroll cannot block user interaction"
 
     # already there
     if abs(pos) < 1:
@@ -126,7 +127,7 @@ class Scroller(Widget):
     scroll_offset = self.scroll_panel.get_offset() - pos
     if smooth:
       self._scrolling_to_filter.x = self.scroll_panel.get_offset()
-      self._scrolling_to = scroll_offset, block
+      self._scrolling_to = scroll_offset, block_interaction
     else:
       self.scroll_panel.set_offset(scroll_offset)
 
@@ -151,6 +152,10 @@ class Scroller(Widget):
                                           and not self.moving_items and (original_touch_valid_callback() if
                                                                          original_touch_valid_callback else True))
 
+  def add_widgets(self, items: list[Widget]) -> None:
+    for item in items:
+      self.add_widget(item)
+
   def set_scrolling_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     """Set whether scrolling is enabled (does not affect widget enabled state)."""
     self._scroll_enabled = enabled
@@ -167,7 +172,7 @@ class Scroller(Widget):
           else:
             self._zoom_filter.update(0.85)
 
-    # Cancel auto-scroll if user starts manually scrolling (unless blocking)
+    # Cancel auto-scroll if user starts manually scrolling (unless block_interaction)
     if (self.scroll_panel.state in (ScrollState.PRESSED, ScrollState.MANUAL_SCROLL) and
         self._scrolling_to[0] is not None and not self._scrolling_to[1]):
       self._scrolling_to = None, False
@@ -411,3 +416,31 @@ class Scroller(Widget):
     super().hide_event()
     for item in self._items:
       item.hide_event()
+
+
+class Scroller(Widget):
+  """Wrapper for _Scroller so that children do not need to call events or pass down enabled for nav stack."""
+  def __init__(self, **kwargs):
+    super().__init__()
+    self._scroller = _Scroller([], **kwargs)
+    # pass down enabled to child widget for nav stack
+    self._scroller.set_enabled(lambda: self.enabled)
+
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._scroller.hide_event()
+
+  def _render(self, _):
+    self._scroller.render(self._rect)
+
+
+class NavScroller(NavWidget, Scroller):
+  """Full screen Scroller that properly supports nav stack w/ animations"""
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    # pass down enabled to child widget for nav stack + disable while swiping away NavWidget
+    self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away)

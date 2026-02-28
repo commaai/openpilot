@@ -456,14 +456,10 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
-    modem = self.get_modem()
-    try:
-      manufacturer = str(modem.Get(MM_MODEM, 'Manufacturer', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
-    except Exception:
-      manufacturer = None
-
     cmds = []
+    modem = self.get_modem()
 
+    # Quectel EG25
     if self.get_device_type() in ("tizi", ):
       # clear out old blue prime initial APN
       os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
@@ -478,16 +474,8 @@ class Tici(HardwareBase):
         'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
         'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
       ]
-    elif manufacturer == 'Cavli Inc.':
-      cmds += [
-        'AT^SIMSWAP=1',     # use SIM slot, instead of internal eSIM
-        'AT$QCSIMSLEEP=0',  # disable SIM sleep
-        'AT$QCSIMCFG=SimPowerSave,0',  # more sleep disable
 
-        # ethernet config
-        'AT$QCPCFG=usbNet,0',
-        'AT$QCNETDEVCTL=3,1',
-      ]
+    # Quectel EG916
     else:
       # this modem gets upset with too many AT commands
       if sim_id is None or len(sim_id) == 0:

@@ -220,7 +220,7 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._nav_stack: list[object] = []
-    self._nav_stack_tick: Callable[[], None] | None = None
+    self._nav_stack_ticks: list[Callable[[], None]] = []
     self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
 
     self._mouse = MouseState(self._scale)
@@ -384,17 +384,25 @@ class GuiApplication:
     self._nav_stack.append(widget)
     widget.show_event()
 
-  def pop_widget(self):
+  # pop_widget and pop_widgets_to are immediate (no animation). Use request_* variants for animated dismiss.
+  def pop_widget(self, idx: int | None = None):
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    # re-enable previous widget and pop current
+    if idx is None:
+      idx = -1
+    else:
+      if idx < 1 or idx >= len(self._nav_stack):
+        return
+
+    # re-enable widget below, and re-enable popped widget so it's clean if pushed again
     # TODO: switch to touch_valid
-    prev_widget = self._nav_stack[-2]
+    prev_widget = self._nav_stack[idx - 1]
     prev_widget.set_enabled(True)
 
-    widget = self._nav_stack.pop()
+    widget = self._nav_stack.pop(idx)
+    widget.set_enabled(True)
     widget.hide_event()
 
   def pop_widgets_to(self, widget):
@@ -406,13 +414,45 @@ class GuiApplication:
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
 
+  def request_pop_widget(self, callback: Callable | None = None):
+    """Request the top widget to close. NavWidgets dismiss (animate then pop); others pop immediately. Callback runs after pop."""
+    if len(self._nav_stack) < 2:
+      cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
+      return
+    top = self._nav_stack[-1]
+    if hasattr(top, "dismiss"):
+      top.dismiss(callback)
+    else:
+      self.pop_widget()
+      if callback:
+        callback()
+
+  def request_pop_widgets_to(self, widget):
+    """Request to close widgets down to the given widget. Middle widgets are removed via pop_widget logic; only the top animates down."""
+    if widget not in self._nav_stack:
+      cloudlog.warning("Widget not in stack, cannot pop to it!")
+      return
+
+    if len(self._nav_stack) < 2 or self._nav_stack[-1] == widget:
+      return
+
+    # Pop second-from-top repeatedly until stack is [target, top]; each goes through re-enable + hide_event
+    while len(self._nav_stack) > 2 and self._nav_stack[-2] != widget:
+      self.pop_widget(len(self._nav_stack) - 2)
+    self.request_pop_widget()
+
   def get_active_widget(self):
     if len(self._nav_stack) > 0:
       return self._nav_stack[-1]
     return None
 
-  def set_nav_stack_tick(self, tick_function: Callable | None):
-    self._nav_stack_tick = tick_function
+  def add_nav_stack_tick(self, tick_function: Callable[[], None]):
+    if tick_function not in self._nav_stack_ticks:
+      self._nav_stack_ticks.append(tick_function)
+
+  def remove_nav_stack_tick(self, tick_function: Callable[[], None]):
+    if tick_function in self._nav_stack_ticks:
+      self._nav_stack_ticks.remove(tick_function)
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -561,8 +601,8 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
 
         # Allow a Widget to still run a function regardless of the stack depth
-        if self._nav_stack_tick is not None:
-          self._nav_stack_tick()
+        for tick in self._nav_stack_ticks:
+          tick()
 
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:

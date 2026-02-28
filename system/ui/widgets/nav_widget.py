@@ -17,6 +17,7 @@ NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = 50 + NAV_BAR_MARGIN + NAV_BAR_HEIGHT  # px extra to push down when dismissing
 DISMISS_TIME_SECONDS = 2.0
+DISMISS_ANIMATION_RC = 0.2  # time constant for non-user triggered dismiss animation
 
 
 class NavBar(Widget):
@@ -62,14 +63,13 @@ class NavWidget(Widget, abc.ABC):
 
     self._pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False
+    self._dismiss_callback: Callable | None = None
     self._trigger_animate_in = False
     self._nav_bar_show_time = 0.0
     self._back_enabled: bool | Callable[[], bool] = True
     self._nav_bar = NavBar()
 
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
-
-    self._set_up = False
 
   @property
   def back_enabled(self) -> bool:
@@ -85,7 +85,8 @@ class NavWidget(Widget, abc.ABC):
     # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
-    if not self.back_enabled:
+    # Don't let touch events change filter state during dismiss animation
+    if not self.back_enabled or self._playing_dismiss_animation:
       self._back_button_start_pos = None
       self._swiping_away = False
       self._can_swipe_away = True
@@ -96,6 +97,7 @@ class NavWidget(Widget, abc.ABC):
       self._pos_filter.update_alpha(0.04)
       in_dismiss_area = mouse_event.pos.y < self._rect.height * self.BACK_TOUCH_AREA_PERCENTAGE
 
+      # TODO: remove vertical scrolling and then this hacky logic to check if scroller is at top
       scroller_at_top = False
       vertical_scroller = False
       # TODO: -20? snapping in WiFi dialog can make offset not be positive at the top
@@ -138,19 +140,6 @@ class NavWidget(Widget, abc.ABC):
   def _update_state(self):
     super()._update_state()
 
-    # Disable self's scroller while swiping away
-    if not self._set_up:
-      self._set_up = True
-      if hasattr(self, '_scroller'):
-        # TODO: use touch_valid
-        original_enabled = self._scroller._enabled
-        self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                                        original_enabled))
-      elif hasattr(self, '_scroll_panel'):
-        original_enabled = self._scroll_panel.enabled
-        self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away and (original_enabled() if callable(original_enabled) else
-                                                                                            original_enabled))
-
     if self._trigger_animate_in:
       self._pos_filter.x = self._rect.height
       self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
@@ -183,6 +172,10 @@ class NavWidget(Widget, abc.ABC):
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       if self._back_callback is not None:
         self._back_callback()
+
+      if self._dismiss_callback is not None:
+        self._dismiss_callback()
+        self._dismiss_callback = None
 
       self._playing_dismiss_animation = False
       self._back_button_start_pos = None
@@ -218,6 +211,13 @@ class NavWidget(Widget, abc.ABC):
       self._nav_bar.render()
 
     return ret
+
+  def dismiss(self, callback: Callable | None = None):
+    """Programmatically trigger the dismiss animation. Calls pop_widget when done, then callback."""
+    if not self._playing_dismiss_animation:
+      self._pos_filter.update_alpha(DISMISS_ANIMATION_RC)
+      self._playing_dismiss_animation = True
+    self._dismiss_callback = callback
 
   def show_event(self):
     super().show_event()

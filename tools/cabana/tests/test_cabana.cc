@@ -5,7 +5,7 @@
 #include "catch2/catch.hpp"
 #include "tools/cabana/dbc/dbcmanager.h"
 
-const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.zst";
+const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
 TEST_CASE("DBCFile::generateDBC") {
   QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "tesla_can");

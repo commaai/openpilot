@@ -9,7 +9,9 @@
 bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
   std::string data = FileReader(local_cache, chunk_size, retries).read(url, abort);
   if (!data.empty()) {
-    if (url.find(".zst") != std::string::npos || util::starts_with(data, "\x28\xB5\x2F\xFD")) {
+    if (url.find(".bz2") != std::string::npos || util::starts_with(data, "BZh9")) {
+      data = decompressBZ2(data, abort);
+    } else if (url.find(".zst") != std::string::npos || util::starts_with(data, "\x28\xB5\x2F\xFD")) {
       data = decompressZST(data, abort);
     }
   }

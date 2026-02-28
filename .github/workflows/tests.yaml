@@ -27,7 +27,7 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
@@ -45,7 +45,7 @@ jobs:
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_stripped.sh
-    - uses: ./.github/workflows/setup-with-retry
+    - run: ./tools/op.sh setup
     - name: Build openpilot and run checks
       timeout-minutes: 30
       working-directory: ${{ env.STRIPPED_DIR }}
@@ -70,7 +70,7 @@ jobs:
       run: |
         FILTERED=$(echo "$PATH" | tr ':' '\n' | grep -v '/opt/homebrew' | tr '\n' ':')
         echo "PATH=${FILTERED}/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" >> $GITHUB_ENV
-    - uses: ./.github/workflows/setup-with-retry
+    - run: ./tools/op.sh setup
     - name: Building openpilot
       run: scons
 
@@ -80,13 +80,13 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - run: ./tools/op.sh setup
     - name: Static analysis
       timeout-minutes: 1
       run: scripts/lint/lint.sh
@@ -97,18 +97,17 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-      id: setup-step
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       run: |
         source selfdrive/test/setup_xvfb.sh
         # Pre-compile Python bytecode so each pytest worker doesn't need to
@@ -121,24 +120,17 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-      id: setup-step
-    - name: Cache test routes
-      id: dependency-cache
-      uses: actions/cache@v5
-      with:
-        path: /tmp/comma_download_cache
-        key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/test_processes.py') }}
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Run replay
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       continue-on-error: ${{ github.ref == 'refs/heads/master' }}
       run: selfdrive/test/process_replay/test_processes.py -j$(nproc)
     - name: Print diff
@@ -184,19 +176,18 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     if: false  # FIXME: Started to timeout recently
     steps:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-      id: setup-step
+    - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons -j$(nproc)
     - name: Driving test
-      timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
+      timeout-minutes: 2
       run: |
         source selfdrive/test/setup_xvfb.sh
         pytest -s tools/sim/tests/test_metadrive_bridge.py
@@ -207,13 +198,13 @@ jobs:
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
+      && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: ./.github/workflows/setup-with-retry
+      - run: ./tools/op.sh setup
       - name: Build openpilot
         run: scons -j$(nproc)
       - name: Create UI Report

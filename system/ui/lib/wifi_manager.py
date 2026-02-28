@@ -145,7 +145,7 @@ class ConnectStatus(IntEnum):
   CONNECTED = 2
 
 
-@dataclass
+@dataclass(frozen=True)
 class WifiState:
   ssid: str | None = None
   status: ConnectStatus = ConnectStatus.DISCONNECTED
@@ -232,20 +232,22 @@ class WifiManager:
       dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_state = self._router_main.send_and_get_reply(Properties(dev_addr).get('State')).body[0][1]
 
-      wifi_state = WifiState()
+      ssid: str | None = None
+      status = ConnectStatus.DISCONNECTED
       if NMDeviceState.PREPARE <= dev_state <= NMDeviceState.SECONDARIES and dev_state != NMDeviceState.NEED_AUTH:
-        wifi_state.status = ConnectStatus.CONNECTING
+        status = ConnectStatus.CONNECTING
       elif dev_state == NMDeviceState.ACTIVATED:
-        wifi_state.status = ConnectStatus.CONNECTED
+        status = ConnectStatus.CONNECTED
 
       conn_path, _ = self._get_active_wifi_connection()
       if conn_path:
-        wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+        ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
 
+      # Discard if user acted during DBus calls
       if self._user_epoch != epoch:
         return
 
-      self._wifi_state = wifi_state
+      self._wifi_state = WifiState(ssid=ssid, status=status)
 
     if block:
       worker()
@@ -425,13 +427,14 @@ class WifiManager:
 
       conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
 
+      # Discard if user acted during DBus call
       if self._user_epoch != epoch:
         return
 
       if conn_path is None:
         cloudlog.warning("Failed to get active wifi connection during PREPARE/CONFIG state")
       else:
-        wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+        wifi_state = replace(wifi_state, ssid=next((s for s, p in self._connections.items() if p == conn_path), None))
 
       self._wifi_state = wifi_state
 
@@ -461,13 +464,14 @@ class WifiManager:
 
       conn_path, _ = self._get_active_wifi_connection(self._conn_monitor)
 
+      # Discard if user acted during DBus call
       if self._user_epoch != epoch:
         return
 
       if conn_path is None:
         cloudlog.warning("Failed to get active wifi connection during ACTIVATED state")
       else:
-        wifi_state.ssid = next((s for s, p in self._connections.items() if p == conn_path), None)
+        wifi_state = replace(wifi_state, ssid=next((s for s, p in self._connections.items() if p == conn_path), None))
 
       self._wifi_state = wifi_state
       self._enqueue_callbacks(self._activated)
@@ -713,11 +717,19 @@ class WifiManager:
   def _deactivate_connection(self, ssid: str):
     for active_conn in self._get_active_connections():
       conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-      specific_obj_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('SpecificObject')).body[0][1]
+      reply = self._router_main.send_and_get_reply(Properties(conn_addr).get('SpecificObject'))
+      if reply.header.message_type == MessageType.error:
+        continue  # object gone (e.g. rapid connect/disconnect)
+
+      specific_obj_path = reply.body[0][1]
 
       if specific_obj_path != "/":
         ap_addr = DBusAddress(specific_obj_path, bus_name=NM, interface=NM_ACCESS_POINT_IFACE)
-        ap_ssid = bytes(self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid')).body[0][1]).decode("utf-8", "replace")
+        ap_reply = self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid'))
+        if ap_reply.header.message_type == MessageType.error:
+          continue  # AP gone (e.g. mode switch)
+
+        ap_ssid = bytes(ap_reply.body[0][1]).decode("utf-8", "replace")
 
         if ap_ssid == ssid:
           self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (active_conn,)))
