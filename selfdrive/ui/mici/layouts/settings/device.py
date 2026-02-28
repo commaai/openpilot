@@ -277,6 +277,11 @@ class DeviceLayoutMici(NavScroller):
       ui_state.params.put_bool("DoShutdown", True)
 
     def reboot_callback():
+      ui_state.params.remove("HasAcceptedTerms")
+      ui_state.params.remove("CompletedTrainingVersion")
+      for f in ("/data/.openpilot_setup_done", "/data/installer_done"):
+        if os.path.exists(f):
+          os.remove(f)
       ui_state.params.put_bool("DoReboot", True)
 
     def reset_calibration_callback():

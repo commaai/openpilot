@@ -93,6 +93,7 @@ void finishInstall() {
                  (Color){255, 255, 255, (unsigned char)(255 * 0.9 * 0.65)});
     }
   EndDrawing();
+  std::ofstream("/data/installer_done").close();
   util::sleep_for(60 * 1000);
 }
 
