@@ -142,7 +142,6 @@ def main():
     print("Waiting for diff video generation to finish...")
   diff_thread.join()
 
-
   extra_frames = abs(frame_counts[0] - frame_counts[1])
   return 0 if (len(different_frames) + extra_frames) == 0 else 1
 
