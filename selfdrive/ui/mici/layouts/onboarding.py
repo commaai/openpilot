@@ -65,7 +65,7 @@ class TrainingGuidePreDMTutorial(Scroller):
     continue_button.set_click_callback(continue_callback)
 
     self._scroller.add_widgets([
-      GreyBigButton("driver monitoring\ncheck", "scroll to read",
+      GreyBigButton("driver monitoring\ncheck", "scroll to continue",
                     gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
       GreyBigButton("", "Next, we'll check if comma four can detect the driver properly."),
       GreyBigButton("", "openpilot requires an unobstructed view of the driver to function fully."),
@@ -83,14 +83,14 @@ class DMBadFaceDetected(Scroller):
   def __init__(self, back_callback):
     super().__init__()
 
-    retry_button = BigPillButton("retry")
-    retry_button.set_click_callback(back_callback)
+    back_button = BigPillButton("back")
+    back_button.set_click_callback(back_callback)
 
     self._scroller.add_widgets([
       GreyBigButton("looking for driver", "make sure comma\nfour can see your face",
                     gui_app.texture("icons_mici/setup/orange_dm.png", 64, 64)),
-      GreyBigButton("", "Remount if your face is occluded or driver monitoring has difficulty tracking your face."),
-      retry_button,
+      GreyBigButton("", "Remount if your face is obstructed or driver monitoring has difficulty tracking your face."),
+      back_button,
     ])
 
 
@@ -276,7 +276,7 @@ class TrainingGuideAttentionNotice(Scroller):
     continue_button.set_click_callback(continue_callback)
 
     self._scroller.add_widgets([
-      GreyBigButton("what is openpilot?", "scroll to read",
+      GreyBigButton("what is openpilot?", "scroll to continue",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
       GreyBigButton("", "1. openpilot is a driver assistance system."),
       GreyBigButton("", "2. You must pay attention at all times."),
@@ -391,7 +391,7 @@ class TermsPage(Scroller):
     self._close_button.set_visible(hide_decline)
 
     self._scroller.add_widgets([
-      GreyBigButton("terms and\nconditions", "scroll to read",
+      GreyBigButton("terms and\nconditions", "scroll to continue",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
       GreyBigButton("swipe for QR code", "or go to https://comma.ai/terms",
                     gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True)),
