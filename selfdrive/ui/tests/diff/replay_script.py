@@ -196,8 +196,6 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # TODO: Better way of organizing the events
 
-  # TODO: Add prime state test
-
   # === Homescreen ===
   script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
   # Go through different prime state layouts
