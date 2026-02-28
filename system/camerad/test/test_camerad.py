@@ -14,6 +14,15 @@ EXPOSURE_STABLE_COUNT = 3
 EXPOSURE_RANGE = (0.15, 0.35)
 MAX_TEST_TIME = 25
 
+# IFE-shared cameras (wide + driver share one IFE) run at half the nominal rate
+IFE_SHARED_CAMERAS = ('wideRoadCameraState', 'driverCameraState')
+
+def _cam_freq(cam):
+  freq = SERVICE_LIST[cam].frequency
+  if cam in IFE_SHARED_CAMERAS:
+    freq /= 2
+  return freq
+
 
 def _numpy_rgb2gray(im):
   return np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
@@ -60,12 +69,13 @@ def _camera_session():
     ts = msgs_to_time_series(raw_logs)
 
   for cam in CAMERAS:
-    expected_frames = SERVICE_LIST[cam].frequency * elapsed
+    freq = _cam_freq(cam)
+    expected_frames = freq * elapsed
     cnt = len(ts[cam]['t'])
-    assert expected_frames*0.8 < cnt < expected_frames*1.2, f"unexpected frame count {cam}: {expected_frames=}, got {cnt}"
+    assert expected_frames*0.8 < cnt < expected_frames*1.2, f"unexpected frame count {cam}: {expected_frames=:.1f} ({freq}Hz), got {cnt}"
 
-    dts = np.abs(np.diff([ts[cam]['timestampSof']/1e6]) - 1000/SERVICE_LIST[cam].frequency)
-    if cam in ('wideRoadCameraState', 'driverCameraState'):
+    dts = np.abs(np.diff([ts[cam]['timestampSof']/1e6]) - 1000/freq)
+    if cam in IFE_SHARED_CAMERAS:
       # IFE-shared cameras have SOF timestamp jitter from PHY switching
       good_pct = np.mean(dts < 1.0) * 100
       assert good_pct > 90, f"{cam} dts(ms): only {good_pct:.0f}% within 1ms (need >90%)"
@@ -110,30 +120,38 @@ class TestCamerad:
       assert set(np.diff(logs[c]['frameId'])) == {1, }, f"{c} has frame skips"
 
   def test_frame_sync(self, logs):
-    # Align cameras by common frame_id range (cameras may start publishing at different times)
-    start_id = max(int(logs[cam]['frameId'][0]) for cam in CAMERAS)
-    end_id = min(int(logs[cam]['frameId'][-1]) for cam in CAMERAS)
-    n = end_id - start_id - 10  # safety margin
-    assert n > 20, f"not enough overlapping frames: {n}"
+    # IFE sharing: wide and driver share one IFE at 10fps each, road has its own IFE at 20fps.
+    # Compare wide and driver directly (both at 10fps), and match road to wide by nearest timestamp.
+
+    # Align wide and driver by common frame_id range (both at 10fps from shared IFE)
+    ife_cams = ('wideRoadCameraState', 'driverCameraState')
+    start_id = max(int(logs[cam]['frameId'][0]) for cam in ife_cams)
+    end_id = min(int(logs[cam]['frameId'][-1]) for cam in ife_cams)
+    n = end_id - start_id - 10
+    assert n > 20, f"not enough overlapping IFE-shared frames: {n}"
 
     def get_slice(cam):
       offset = start_id - int(logs[cam]['frameId'][0])
       return slice(offset, offset + n)
 
-    # All three cameras must have matching frame IDs in the common range
-    ids = {cam: logs[cam]['frameId'][get_slice(cam)] for cam in CAMERAS}
-    assert np.all(ids['roadCameraState'] == ids['driverCameraState']), "frame IDs not aligned (road vs driver)"
-    assert np.all(ids['roadCameraState'] == ids['wideRoadCameraState']), "frame IDs not aligned (road vs wide)"
+    # Wide and driver frame IDs must match (both use contiguous counters from shared IFE)
+    wide_ids = logs['wideRoadCameraState']['frameId'][get_slice('wideRoadCameraState')]
+    driver_ids = logs['driverCameraState']['frameId'][get_slice('driverCameraState')]
+    assert np.all(wide_ids == driver_ids), "wide/driver frame IDs not aligned"
 
-    # Road and wide road must be tightly synced in timestamp
-    sofs = {cam: logs[cam]['timestampSof'][get_slice(cam)] for cam in CAMERAS}
-    road_wide_diff = np.abs(sofs['roadCameraState'] - sofs['wideRoadCameraState']) / 1e6
+    wide_sofs = logs['wideRoadCameraState']['timestampSof'][get_slice('wideRoadCameraState')]
+    driver_sofs = logs['driverCameraState']['timestampSof'][get_slice('driverCameraState')]
+    road_sofs = logs['roadCameraState']['timestampSof']
+
+    # Road and wide must be synced in timestamp. Road runs at 2x wide's rate,
+    # so match each wide frame to the closest road frame.
+    road_wide_diff = np.array([np.min(np.abs(road_sofs - ws)) / 1e6 for ws in wide_sofs])
     laggy = np.where(road_wide_diff > 1.1)[0]
     assert len(laggy) == 0, f"Road/wide not synced at indices {laggy[:10]}, max={road_wide_diff.max():.2f}ms"
 
     # Driver camera has FSIN stagger offset (~17-25ms depending on sensor).
     # Verify the offset is consistent (within 5ms of median) rather than zero.
-    driver_offset = (sofs['driverCameraState'] - sofs['roadCameraState']) / 1e6
+    driver_offset = (driver_sofs - wide_sofs) / 1e6
     median_offset = np.median(driver_offset)
     assert 5 < abs(median_offset) < 35, f"Driver FSIN offset unexpected: {median_offset:.1f}ms"
     jitter = np.abs(driver_offset - median_offset)
