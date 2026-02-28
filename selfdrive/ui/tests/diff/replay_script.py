@@ -264,12 +264,10 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   # === Settings - Developer (set CarParamsPersistent first) ===
   script.setup(setup_developer_params, wait_after=0)
   script.click(278, 950)
+  script.click(1930, 470)  # SSH keys (keyboard)
+  script.click(1930, 115)  # click cancel on keyboard
   script.click(2000, 960)  # toggle alpha long
   script.click(1500, 875)  # confirm
-
-  # === Keyboard modal (SSH keys button in developer panel) ===
-  script.click(1930, 470)  # click SSH keys
-  script.click(1930, 115)  # click cancel on keyboard
 
   # === Close settings ===
   script.click(250, 160)
