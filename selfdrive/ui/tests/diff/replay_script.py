@@ -91,6 +91,7 @@ def setup_offroad_alerts() -> None:
 def setup_update_available(available: bool = True) -> None:
   params = Params()
   params.put_bool("UpdateAvailable", available)
+  params.put("UpdaterAvailableBranches", ",".join(["test-branch", "test-branch-2", BRANCH_NAME]))
   if available:
     params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
     params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
@@ -186,6 +187,8 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # TODO: Better way of organizing the events
 
+  # TODO: Add prime state test
+
   # === Homescreen ===
   script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
 
@@ -230,6 +233,9 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.setup(setup_update_available)  # set update available
   for _ in range(2):
     script.click(720, 450)  # toggle new release notes
+  script.click(2000, 630)  # open select branch dialog
+  script.click(1000, 300)  # select 1st option
+  script.click(1600, 900)  # confirm selection
 
   # === Settings - Firehose ===
   script.click(278, 845)
