@@ -466,5 +466,4 @@ class NavRawScrollPanel(NavWidget):
     self._scroll_panel.set_offset(0)
 
   def _back_enabled(self) -> bool:
-    scroller_at_top = self._scroll_panel.get_offset() >= -20
-    return scroller_at_top
+    return self._scroll_panel.get_offset() >= -20
