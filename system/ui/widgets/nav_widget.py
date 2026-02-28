@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import abc
+from enum import IntEnum
+
 import pyray as rl
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
@@ -16,6 +18,13 @@ NAV_BAR_WIDTH = 205
 NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = NAV_BAR_MARGIN + NAV_BAR_HEIGHT + 50  # px extra to push down when dismissing
+
+
+class NavState(IntEnum):
+  IDLE = 0  # either animating up or idle
+  TRACKING = 1  # tracking mouse drag, but not far enough to trigger dismiss on release
+  STARTING_DISMISS = 2  # dragged down enough to trigger dismiss on release
+  DISMISSING = 3  # mouse released, animating away
 
 
 class NavBar(Widget):
@@ -56,8 +65,8 @@ class NavWidget(Widget, abc.ABC):
 
   def __init__(self, show_nav_bar: bool = True):
     super().__init__()
-    self._swipe_down_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
-    self._dragging_down = False  # swiped down enough to trigger dismissing on release
+    self._state = NavState.IDLE
+    self._drag_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
 
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False  # released and animating away
@@ -83,50 +92,52 @@ class NavWidget(Widget, abc.ABC):
       in_dismiss_area = mouse_event.pos.y < self._rect.height * self.BACK_TOUCH_AREA_PERCENTAGE
 
       if in_dismiss_area and self._back_enabled():
-        self._swipe_down_start_pos = mouse_event.pos
+        self._state = NavState.TRACKING
+        self._drag_start_pos = mouse_event.pos
 
     elif mouse_event.left_down:
-      if self._swipe_down_start_pos is not None:
+      if self._state == NavState.TRACKING:
         # block swiping away if too much horizontal or upward movement
         # block (lock-in) threshold is higher than start dismissing
-        horizontal_movement = abs(mouse_event.pos.x - self._swipe_down_start_pos.x) > BLOCK_SWIPE_AWAY_THRESHOLD
-        upward_movement = mouse_event.pos.y - self._swipe_down_start_pos.y < -BLOCK_SWIPE_AWAY_THRESHOLD
+        horizontal_movement = abs(mouse_event.pos.x - self._drag_start_pos.x) > BLOCK_SWIPE_AWAY_THRESHOLD
+        upward_movement = mouse_event.pos.y - self._drag_start_pos.y < -BLOCK_SWIPE_AWAY_THRESHOLD
 
         if not (horizontal_movement or upward_movement):
           # no blocking movement, check if we should start dismissing
-          if mouse_event.pos.y - self._swipe_down_start_pos.y > START_DISMISSING_THRESHOLD:
-            self._dragging_down = True
+          if mouse_event.pos.y - self._drag_start_pos.y > START_DISMISSING_THRESHOLD:
+            self._state = NavState.STARTING_DISMISS
         else:
-          if not self._dragging_down:
-            self._swipe_down_start_pos = None
+          if self._state != NavState.STARTING_DISMISS:
+            self._state = NavState.IDLE
+            self._drag_start_pos = None
 
     elif mouse_event.left_released:
       # reset rc for either slide up or down animation
       self._y_pos_filter.update_alpha(0.1)
 
-      # if far enough, trigger back navigation callback
-      if self._swipe_down_start_pos is not None:
-        if mouse_event.pos.y - self._swipe_down_start_pos.y > SWIPE_AWAY_THRESHOLD:
-          self._playing_dismiss_animation = True
+      if self._state == NavState.STARTING_DISMISS and mouse_event.pos.y - self._drag_start_pos.y > SWIPE_AWAY_THRESHOLD:
+        self._state = NavState.DISMISSING
+        self._playing_dismiss_animation = True
+      else:
+        self._state = NavState.IDLE
 
-      self._swipe_down_start_pos = None
-      self._dragging_down = False
+      self._drag_start_pos = None
 
   def _update_state(self):
     super()._update_state()
 
     new_y = 0.0
 
-    if self._dragging_down:
+    if self._state in (NavState.STARTING_DISMISS, NavState.DISMISSING):
       self._nav_bar.set_alpha(1.0)
 
     if not self.enabled:
-      self._swipe_down_start_pos = None
+      self._drag_start_pos = None
 
-    if self._swipe_down_start_pos is not None:
+    if self._drag_start_pos is not None:
       last_mouse_event = gui_app.last_mouse_event
       # push entire widget as user drags it away
-      new_y = max(last_mouse_event.pos.y - self._swipe_down_start_pos.y, 0)
+      new_y = max(last_mouse_event.pos.y - self._drag_start_pos.y, 0)
       if new_y < SWIPE_AWAY_THRESHOLD:
         new_y /= 2  # resistance until mouse release would dismiss widget
 
@@ -141,8 +152,8 @@ class NavWidget(Widget, abc.ABC):
       gui_app.pop_widget()
 
       self._playing_dismiss_animation = False
-      self._swipe_down_start_pos = None
-      self._dragging_down = False
+      self._drag_start_pos = None
+      self._state = NavState.IDLE
 
     self.set_position(self._rect.x, new_y)
 
@@ -162,7 +173,7 @@ class NavWidget(Widget, abc.ABC):
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
       nav_bar_delayed = rl.get_time() - self._nav_bar_show_time < 0.4
       # User dragging or dismissing, nav bar follows NavWidget
-      if self._swipe_down_start_pos is not None or self._playing_dismiss_animation:
+      if self._drag_start_pos is not None or self._playing_dismiss_animation:
         self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._y_pos_filter.x
       # Waiting to show
       elif nav_bar_delayed:
@@ -181,8 +192,8 @@ class NavWidget(Widget, abc.ABC):
     self._nav_bar.show_event()
 
     # Reset state
-    self._swipe_down_start_pos = None
-    self._dragging_down = False
+    self._state = NavState.IDLE
+    self._drag_start_pos = None
     # Start NavWidget off-screen, no matter how tall it is
     self._y_pos_filter.update_alpha(0.1)
     self._y_pos_filter.x = gui_app.height
