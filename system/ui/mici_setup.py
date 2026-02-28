@@ -390,6 +390,25 @@ class NetworkSetupPage(NavScroller):
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
 
+    has_internet = self._network_monitor.network_connected.is_set()
+    if has_internet and not self._prev_has_internet:
+      self._pending_has_internet_scroll = rl.get_time()
+    self._prev_has_internet = has_internet
+
+    if self._pending_has_internet_scroll is not None:
+      elapsed = rl.get_time() - self._pending_has_internet_scroll
+      if elapsed > 0.5:
+        self._pending_has_internet_scroll = None
+
+        def scroll_to_download():
+          self._scroller._layout()
+          end_offset = -(self._scroller.content_size - self._rect.width)
+          remaining = self._scroller.scroll_panel.get_offset() - end_offset
+          self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
+          self._pending_continue_grow_animation = True
+
+        gui_app.request_pop_widgets_to(self, scroll_to_download)
+
   def _update_state(self):
     super()._update_state()
 
@@ -410,26 +429,6 @@ class NetworkSetupPage(NavScroller):
     else:
       self._continue_button.set_visible(False)
       self._waiting_button.set_visible(True)
-
-    # This intentionally doesn't trigger pop when in keyboard or forget dialog
-    has_internet = self._network_monitor.network_connected.is_set()
-    if has_internet and not self._prev_has_internet:
-      self._pending_has_internet_scroll = rl.get_time()
-    self._prev_has_internet = has_internet
-
-    if self._pending_has_internet_scroll is not None:
-      elapsed = rl.get_time() - self._pending_has_internet_scroll
-      if elapsed > 0.5:
-        self._pending_has_internet_scroll = None
-
-        def scroll_to_download():
-          self._scroller._layout()
-          end_offset = -(self._scroller.content_size - self._rect.width)
-          remaining = self._scroller.scroll_panel.get_offset() - end_offset
-          self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
-          self._pending_continue_grow_animation = True
-
-        gui_app.request_pop_widgets_to(self, scroll_to_download)
 
 
 class Setup(Widget):
