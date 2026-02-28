@@ -221,10 +221,11 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   add_prime_state_setup(PrimeType.NONE)  # changed from unpaired to hide pair device button
   script.click(2000, 970)  # regulatory button
   script.click(2000, 970)  # OK
-  script.click(1000, 620)  # expand calibration description
+  script.click(1000, 620)  # expand calibration description (test dynamic height)
 
   # === Settings - Network ===
   script.click(278, 450)
+  # TODO: mock networks
   script.click(1880, 100)  # advanced network settings
 
   # Keyboard (tethering password)
@@ -240,7 +241,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Settings - Toggles ===
   script.click(278, 600)
-  script.click(1200, 280)  # experimental mode description
+  script.click(1200, 280)  # expand experimental mode description
 
   # === Settings - Software ===
   script.setup(lambda: setup_update_available(False), wait_after=0)  # start with no update available
