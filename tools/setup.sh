@@ -158,6 +158,7 @@ function install_with_op() {
   cd $OPENPILOT_ROOT
   $OPENPILOT_ROOT/tools/op.sh install
   $OPENPILOT_ROOT/tools/op.sh post-commit
+  $OPENPILOT_ROOT/tools/op.sh pre-push
 
   LOG_FILE=$(mktemp)
 
