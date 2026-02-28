@@ -34,7 +34,7 @@ github_lfs_url() {
 }
 
 lfs_url=$(github_lfs_url "$url") || {
-  # Non-GitHub remote — fall through to default LFS behaviour
+  # Non-GitHub remote — fall through to default LFS behavior
   git lfs pre-push "$remote" "$url"
   exit $?
 }
