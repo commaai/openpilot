@@ -443,7 +443,7 @@ class NavScroller(NavWidget, Scroller):
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
     # pass down enabled to child widget for nav stack + disable while swiping away NavWidget
-    self._scroller.set_enabled(lambda: self.enabled and not self._dragging_down)
+    self._scroller.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def _back_enabled(self) -> bool:
     # Vertical scrollers need to be at the top to swipe away to prevent erroneous swipes
@@ -459,7 +459,7 @@ class NavRawScrollPanel(NavWidget):
   def __init__(self):
     super().__init__()
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
-    self._scroll_panel.set_enabled(lambda: self.enabled and not self._dragging_down)
+    self._scroll_panel.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def show_event(self):
     super().show_event()
