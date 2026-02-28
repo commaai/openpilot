@@ -534,7 +534,7 @@ class Setup(Widget):
   def _nav_stack_tick(self):
     has_internet = self._network_monitor.network_connected.is_set()
     if has_internet and not self._prev_has_internet:
-      gui_app.pop_widgets_to(self)
+      gui_app.request_pop_widgets_to(self)
     self._prev_has_internet = has_internet
 
   def _update_state(self):
