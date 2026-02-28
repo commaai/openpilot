@@ -291,12 +291,8 @@ class DeviceLayoutMici(NavScroller):
     def uninstall_openpilot_callback():
       ui_state.params.put_bool("DoUninstall", True)
 
-    def _debug_confirm_push():
-      reset_calibration_callback()
-      gui_app.push_widget(BigDialog("debug", "this widget was pushed inside a confirm callback"))
-
     reset_calibration_btn = BigButton("reset calibration", "", "icons_mici/settings/device/lkas.png", icon_size=(114, 60))
-    reset_calibration_btn.set_click_callback(lambda: _engaged_confirmation_callback(_debug_confirm_push, "reset"))
+    reset_calibration_btn.set_click_callback(lambda: _engaged_confirmation_callback(reset_calibration_callback, "reset"))
 
     uninstall_openpilot_btn = BigButton("uninstall openpilot", "", "icons_mici/settings/device/uninstall.png")
     uninstall_openpilot_btn.set_click_callback(lambda: _engaged_confirmation_callback(uninstall_openpilot_callback, "uninstall"))
