@@ -386,19 +386,22 @@ class GuiApplication:
     widget.set_enabled(True)
 
   def pop_widget(self, widget: object | None = None):
-    # TODO: make it require widget?
+    # Pops widget instantly without animation
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    if widget is not None and widget not in self._nav_stack:
-      cloudlog.warning("Widget not in stack, cannot pop!")
-      return
+    if widget is not None:
+      if widget not in self._nav_stack:
+        cloudlog.warning("Widget not in stack, cannot pop!")
+        return
 
-    idx_to_pop = len(self._nav_stack) - 1 if widget is None else self._nav_stack.index(widget)
-    if idx_to_pop == 0:
-      cloudlog.warning("Cannot pop the bottom widget!")
-      return
+      idx_to_pop = self._nav_stack.index(widget)
+      if idx_to_pop == 0:
+        cloudlog.warning("Cannot pop the bottom widget!")
+        return
+    else:
+      idx_to_pop = len(self._nav_stack) - 1
 
     # only re-enable previous widget if popping top widget
     if idx_to_pop == len(self._nav_stack) - 1:
@@ -408,7 +411,8 @@ class GuiApplication:
     popped_widget = self._nav_stack.pop(idx_to_pop)
     popped_widget.hide_event()
 
-  def request_pop_widgets_to(self, widget: object, callback: Callable[[], None] = None):
+  def pop_widgets_to(self, widget: object, callback: Callable[[], None] = None):
+    # Pops middle widgets instantly without animation + pops top w/ dismiss (w or w/o animation), then fires callback
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
