@@ -385,7 +385,6 @@ class GuiApplication:
     widget.show_event()
 
   def request_pop_widget(self, callback: Callable | None = None):
-    print("Request pop widget, callback:", callback)
     """Request the top widget to close. NavWidgets dismiss (animate then pop); others pop immediately. Callback runs after pop."""
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
@@ -429,19 +428,16 @@ class GuiApplication:
       self.pop_widget()
 
   def request_pop_widgets_to(self, widget):
-    print("Request pop widgets to", widget)
     """Request to close widgets down to the given widget. Middle widgets are removed via pop_widget logic; only the top animates down."""
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
 
     if len(self._nav_stack) < 2 or self._nav_stack[-1] == widget:
-      print("Nothing to pop, already at target widget")
       return
 
     # Pop second-from-top repeatedly until stack is [target, top]; each goes through re-enable + hide_event
     while len(self._nav_stack) > 2 and self._nav_stack[-2] != widget:
-      print("Popping intermediate widget", self._nav_stack[-2])
       self.pop_widget(len(self._nav_stack) - 2)
     self.request_pop_widget()
 
