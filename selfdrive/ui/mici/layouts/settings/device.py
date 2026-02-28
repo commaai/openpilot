@@ -31,7 +31,7 @@ class MiciFccModal(NavWidget):
     super().__init__()
     self._content = HtmlRenderer(file_path=file_path, text=text)
     self._scroll_panel = GuiScrollPanel2(horizontal=False)
-    self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away)
+    self._scroll_panel.set_enabled(lambda: self.enabled and not self._dragging_down)
     self._fcc_logo = gui_app.texture("icons_mici/settings/device/fcc_logo.png", 76, 64)
 
   def _render(self, rect: rl.Rectangle):

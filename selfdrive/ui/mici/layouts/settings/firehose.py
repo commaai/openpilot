@@ -223,4 +223,4 @@ class FirehoseLayout(FirehoseLayoutBase, NavWidget):
 
   def __init__(self):
     super().__init__()
-    self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away)
+    self._scroll_panel.set_enabled(lambda: self.enabled and not self._dragging_down)

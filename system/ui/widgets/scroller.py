@@ -443,4 +443,4 @@ class NavScroller(NavWidget, Scroller):
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
     # pass down enabled to child widget for nav stack + disable while swiping away NavWidget
-    self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away)
+    self._scroller.set_enabled(lambda: self.enabled and not self._dragging_down)
