@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 from collections.abc import Callable
 from dataclasses import dataclass
 
+import math
+
 from cereal import car, log, messaging
 from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
@@ -106,6 +108,24 @@ def setup_update_available(available: bool = True) -> None:
     params.remove("UpdaterNewDescription")
     params.remove("UpdaterNewReleaseNotes")
     params.remove("UpdaterTargetBranch")
+
+
+def setup_calibration_params() -> None:
+  params = Params()
+
+  calib = messaging.new_message('liveCalibration')
+  calib.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
+  calib.liveCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
+  params.put("CalibrationParams", calib.to_bytes())
+
+  delay = messaging.new_message('liveDelay')
+  delay.liveDelay.calPerc = 75
+  params.put("LiveDelay", delay.to_bytes())
+
+  torque = messaging.new_message('liveTorqueParameters')
+  torque.liveTorqueParameters.useParams = True
+  torque.liveTorqueParameters.calPerc = 60
+  params.put("LiveTorqueParameters", torque.to_bytes())
 
 
 def setup_developer_params() -> None:
@@ -222,10 +242,12 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(2000, 970)  # regulatory button
   script.click(2000, 970)  # OK
   # calibration
-  script.click(1000, 620)  # expand calibration description (test dynamic height)
+  script.setup(setup_calibration_params, wait_after=0)
+  script.click(1000, 620)  # expand calibration description
   script.click(2000, 620)  # reset calibration confirmation
   script.click(1500, 750)  # confirm reset
-  # TODO: show calibration description with CalibrationParams and LiveDelay set
+
+  # TODO: go through training guide
 
   # === Settings - Network ===
   script.click(278, 450)
