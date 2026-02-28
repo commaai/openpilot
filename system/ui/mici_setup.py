@@ -534,13 +534,15 @@ class Setup(Widget):
     self.download_thread.start()
 
   def _download_thread(self):
-    # If installer is already pre-staged (e.g. by continue.sh for demo), skip the download
-    if os.path.isfile(INSTALLER_DESTINATION_PATH):
+    # If installer is pre-staged by continue.sh, copy it into place with fake progress
+    staged = "/data/installer_staged"
+    if os.path.isfile(staged):
       for i in range(101):
         self.download_progress = i
         self._downloading_page.set_progress(i)
         time.sleep(0.02)
-      gui_app.request_close()
+      shutil.copy(staged, INSTALLER_DESTINATION_PATH)
+      os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
       return
 
     try:
