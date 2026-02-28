@@ -411,6 +411,8 @@ class GuiApplication:
       if idx < 1 or idx >= len(self._nav_stack):
         return
 
+    # re-enable widget below, and re-enable popped widget so it's clean if pushed again
+    # TODO: switch to touch_valid
     prev_widget = self._nav_stack[idx - 1]
     prev_widget.set_enabled(True)
 
