@@ -19,9 +19,9 @@ jobs:
         run: git -c lfs.url=https://github.com/${{ github.repository }}.git/info/lfs lfs pull
 
       - name: Push LFS objects to GitLab
-        if: env.GITLAB_LFS_TOKEN != ''
+        if: env.GITLAB_TOKEN != ''
         env:
-          GITLAB_LFS_TOKEN: ${{ secrets.GITLAB_LFS_TOKEN }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         run: |
-          git remote add gitlab https://oauth2:${GITLAB_LFS_TOKEN}@gitlab.com/commaai/openpilot-lfs.git
+          git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/commaai/openpilot-lfs.git
           git lfs push gitlab HEAD
