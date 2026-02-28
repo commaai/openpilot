@@ -100,7 +100,7 @@ class MiciHomeLayout(Widget):
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
 
     self._status_bar_icons = [self._settings_icon, self._network_icon, self._experimental_icon, self._mic_icon]
-    self._icon_orig_opacities = [0.9, 1.0, 1.0, 1.0]
+    self._dimmed_icons = (self._settings_icon,)
     self._status_bar_layout = HBoxLayout(self._status_bar_icons, spacing=18)
 
     self._openpilot_label = MiciLabel("openpilot", font_size=96, color=rl.Color(255, 255, 255, int(255 * 0.9)), font_weight=FontWeight.DISPLAY)
@@ -112,10 +112,10 @@ class MiciHomeLayout(Widget):
 
     dt = 1 / gui_app.target_fps
     self._title_alpha_filter = FirstOrderFilter(0, 0.33, dt)
-    self._title_y_filter = FirstOrderFilter(44, 0.13, dt)
+    self._title_y_filter = FirstOrderFilter(0, 0.13, dt)
     self._info_alpha_filter = FirstOrderFilter(0, 0.27, dt)
-    self._info_y_filter = FirstOrderFilter(22, 0.13, dt)
-    self._icon_alpha_filters = [FirstOrderFilter(0, 0.2, dt) for _ in range(4)]
+    self._info_y_filter = FirstOrderFilter(0, 0.13, dt)
+    self._icon_filters = [FirstOrderFilter(0, 0.2, dt) for _ in range(4)]
     self._anim_start = time.monotonic()
     self._first_render = True
 
@@ -159,10 +159,10 @@ class MiciHomeLayout(Widget):
   def _reset_anim(self):
     self._anim_start = time.monotonic()
     self._title_alpha_filter.x = 0
-    self._title_y_filter.x = 44
+    self._title_y_filter.x = 0
     self._info_alpha_filter.x = 0
-    self._info_y_filter.x = 22
-    for f in self._icon_alpha_filters:
+    self._info_y_filter.x = 0
+    for f in self._icon_filters:
       f.x = 0
 
   def _render_label_faded(self, label, alpha, x, y):
@@ -205,15 +205,17 @@ class MiciHomeLayout(Widget):
 
     # Title: fade-in + slide-up
     self._title_alpha_filter.update(1.0)
-    self._title_y_filter.update(0)
-    self._render_label_faded(self._openpilot_label, self._title_alpha_filter.x, text_pos.x, text_pos.y + self._title_y_filter.x)
+    self._title_y_filter.update(1.0)
+    self._render_label_faded(self._openpilot_label, self._title_alpha_filter.x,
+                             text_pos.x, text_pos.y + (1 - self._title_y_filter.x) * 44)
 
     # Info block: same animation, delayed 0.2s
     if self._version_text is not None:
       if elapsed >= 0.2:
         self._info_alpha_filter.update(1.0)
-        self._info_y_filter.update(0)
-      a, y_off = self._info_alpha_filter.x, self._info_y_filter.x
+        self._info_y_filter.update(1.0)
+      a = self._info_alpha_filter.x
+      y_off = (1 - self._info_y_filter.x) * 22
 
       release_branch = self._version_text[1] in RELEASE_BRANCHES
       vx, vy = text_pos.x, text_pos.y + self._openpilot_label.font_size + 16
@@ -238,13 +240,13 @@ class MiciHomeLayout(Widget):
     self._mic_icon.set_visible(ui_state.recording_audio)
     icon_anim_active = elapsed < 2.0
     if icon_anim_active:
-      for i, (icon, orig_op, af) in enumerate(zip(self._status_bar_icons, self._icon_orig_opacities, self._icon_alpha_filters)):
+      for i, (icon, af) in enumerate(zip(self._status_bar_icons, self._icon_filters)):
         if elapsed >= 0.4 + i * 0.12:
           af.update(1.0)
-        icon._opacity = orig_op * max(0.0, min(1.0, af.x))
+        icon._opacity = af.x * (0.9 if icon in self._dimmed_icons else 1.0)
 
     footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
     self._status_bar_layout.render(footer_rect)
     if icon_anim_active:
-      for icon, orig_op in zip(self._status_bar_icons, self._icon_orig_opacities):
-        icon._opacity = orig_op
+      for icon in self._status_bar_icons:
+        icon._opacity = 0.9 if icon in self._dimmed_icons else 1.0
