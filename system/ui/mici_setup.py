@@ -407,7 +407,7 @@ class NetworkSetupPage(NavScroller):
           self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
           self._pending_continue_grow_animation = True
 
-        gui_app.request_pop_widgets_to(self, scroll_to_download)
+        gui_app.pop_widgets_to(self, scroll_to_download)
 
   def _update_state(self):
     super()._update_state()
@@ -462,7 +462,7 @@ class Setup(Widget):
 
   def _back_to_software_selection(self):
     # pop and reset sliders
-    gui_app.pop_widgets_to(self)  # TODO: instant?
+    gui_app.pop_widgets_to(self, instant=True)
     self._set_state(SetupState.SOFTWARE_SELECTION)
 
   def _set_state(self, state: SetupState):
@@ -474,7 +474,7 @@ class Setup(Widget):
     # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
 
-    gui_app.pop_widgets_to(self)
+    gui_app.pop_widgets_to(self, instant=True)
     gui_app.push_widget(self._network_setup_page)
 
   def _render(self, rect: rl.Rectangle):
