@@ -370,7 +370,7 @@ class NetworkSetupPage(NavScroller):
       self._waiting_button,
     ])
 
-    gui_app.set_nav_stack_tick(self._nav_stack_tick)
+    gui_app.add_nav_stack_tick(self._nav_stack_tick)
 
   def set_custom_software(self, custom_software: bool):
     self._custom_software = custom_software

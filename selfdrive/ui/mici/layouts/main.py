@@ -49,6 +49,7 @@ class MiciMainLayout(Scroller):
     # Set callbacks
     self._setup_callbacks()
 
+    gui_app.add_nav_stack_tick(self._handle_transitions)
     gui_app.push_widget(self)
 
     # Start onboarding if terms or training not completed, make sure to push after self
@@ -76,8 +77,6 @@ class MiciMainLayout(Scroller):
     # Render
     super()._render(self._rect)
 
-    self._handle_transitions()
-
   def _handle_transitions(self):
     # Don't pop if onboarding
     if gui_app.get_active_widget() == self._onboarding_window:
@@ -94,14 +93,14 @@ class MiciMainLayout(Scroller):
         self._scroll_to(self._home_layout)
 
     if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
-      gui_app.pop_widgets_to(self)
+      gui_app.request_pop_widgets_to(self)
       self._scroll_to(self._onroad_layout)
       self._onroad_time_delay = None
 
     # When car leaves standstill, pop nav stack and scroll to onroad
     CS = ui_state.sm["carState"]
     if not CS.standstill and self._prev_standstill:
-      gui_app.pop_widgets_to(self)
+      gui_app.request_pop_widgets_to(self)
       self._scroll_to(self._onroad_layout)
     self._prev_standstill = CS.standstill
 
@@ -113,9 +112,10 @@ class MiciMainLayout(Scroller):
     if ui_state.started:
       # Don't pop if at standstill
       if not ui_state.sm["carState"].standstill:
-        gui_app.pop_widgets_to(self)
+        gui_app.request_pop_widgets_to(self)
         self._scroll_to(self._onroad_layout)
     else:
+      # Screen turns off on timeout offroad, so pop immediately without animation
       gui_app.pop_widgets_to(self)
       self._scroll_to(self._home_layout)
 

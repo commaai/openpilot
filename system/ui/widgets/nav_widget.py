@@ -17,6 +17,7 @@ NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = 50 + NAV_BAR_MARGIN + NAV_BAR_HEIGHT  # px extra to push down when dismissing
 DISMISS_TIME_SECONDS = 2.0
+DISMISS_ANIMATION_RC = 0.2  # time constant for non-user triggered dismiss animation
 
 
 class NavBar(Widget):
@@ -62,6 +63,7 @@ class NavWidget(Widget, abc.ABC):
 
     self._pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False
+    self._dismiss_callback: Callable | None = None
     self._trigger_animate_in = False
     self._nav_bar_show_time = 0.0
     self._back_enabled: bool | Callable[[], bool] = True
@@ -83,7 +85,8 @@ class NavWidget(Widget, abc.ABC):
     # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
 
-    if not self.back_enabled:
+    # Don't let touch events change filter state during dismiss animation
+    if not self.back_enabled or self._playing_dismiss_animation:
       self._back_button_start_pos = None
       self._swiping_away = False
       self._can_swipe_away = True
@@ -170,6 +173,10 @@ class NavWidget(Widget, abc.ABC):
       if self._back_callback is not None:
         self._back_callback()
 
+      if self._dismiss_callback is not None:
+        self._dismiss_callback()
+        self._dismiss_callback = None
+
       self._playing_dismiss_animation = False
       self._back_button_start_pos = None
       self._swiping_away = False
@@ -204,6 +211,13 @@ class NavWidget(Widget, abc.ABC):
       self._nav_bar.render()
 
     return ret
+
+  def dismiss(self, callback: Callable | None = None):
+    """Programmatically trigger the dismiss animation. Calls pop_widget when done, then callback."""
+    if not self._playing_dismiss_animation:
+      self._pos_filter.update_alpha(DISMISS_ANIMATION_RC)
+      self._playing_dismiss_animation = True
+    self._dismiss_callback = callback
 
   def show_event(self):
     super().show_event()

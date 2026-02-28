@@ -1,3 +1,4 @@
+import datetime
 import time
 
 from cereal import log
@@ -149,17 +150,22 @@ class MiciHomeLayout(Widget):
     self._did_long_press = False
 
   def _get_version_text(self) -> tuple[str, str, str, str] | None:
-    description = ui_state.params.get("UpdaterCurrentDescription")
+    version = ui_state.params.get("Version")
+    branch = ui_state.params.get("GitBranch")
+    commit = ui_state.params.get("GitCommit")
 
-    if description is not None and len(description) > 0:
-      # Expect "version / branch / commit / date"; be tolerant of other formats
-      try:
-        version, branch, commit, date = description.split(" / ")
-        return version, branch, commit, date
-      except Exception:
-        return None
+    if not all((version, branch, commit)):
+      return None
 
-    return None
+    commit_date_raw = ui_state.params.get("GitCommitDate")
+    try:
+      # GitCommitDate format from get_commit_date(): '%ct %ci' e.g. "'1708012345 2024-02-15 ...'"
+      unix_ts = int(commit_date_raw.strip("'").split()[0])
+      date_str = datetime.datetime.fromtimestamp(unix_ts).strftime("%b %d")
+    except (ValueError, IndexError, TypeError, AttributeError):
+      date_str = ""
+
+    return version, branch, commit[:7], date_str
 
   def _render(self, _):
     # TODO: why is there extra space here to get it to be flush?
