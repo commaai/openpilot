@@ -129,12 +129,10 @@ class WifiButton(BigButton):
       return
 
     self._network_forgetting = True
-    self._forget_btn.set_visible(False)
     self._wifi_manager.forget_connection(self._network.ssid)
 
   def on_forgotten(self):
     self._network_forgetting = False
-    self._forget_btn.set_visible(True)
 
   def set_network_missing(self, missing: bool):
     self._network_missing = missing
@@ -150,7 +148,7 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
-    if self._network.is_tethering:
+    if self._network.is_tethering or self._network_forgetting:
       return False
 
     return (self._is_saved and not self._wrong_password) or self._is_connecting
