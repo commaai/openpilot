@@ -101,7 +101,9 @@ class NavWidget(Widget, abc.ABC):
             self._swipe_down_start_pos = None
 
     elif mouse_event.left_released:
+      # reset rc for either slide up or down animation
       self._y_pos_filter.update_alpha(0.1)
+
       # if far enough, trigger back navigation callback
       if self._swipe_down_start_pos is not None:
         if mouse_event.pos.y - self._swipe_down_start_pos.y > SWIPE_AWAY_THRESHOLD:
@@ -115,19 +117,18 @@ class NavWidget(Widget, abc.ABC):
 
     new_y = 0.0
 
+    if self._swiping_away:
+      self._nav_bar.set_alpha(1.0)
+
     if not self.enabled:
       self._swipe_down_start_pos = None
 
-    # TODO: why is this not in handle_mouse_event? have to hack above
     if self._swipe_down_start_pos is not None:
       last_mouse_event = gui_app.last_mouse_event
       # push entire widget as user drags it away
       new_y = max(last_mouse_event.pos.y - self._swipe_down_start_pos.y, 0)
       if new_y < SWIPE_AWAY_THRESHOLD:
         new_y /= 2  # resistance until mouse release would dismiss widget
-
-    if self._swiping_away:
-      self._nav_bar.set_alpha(1.0)
 
     if self._playing_dismiss_animation:
       new_y = self._rect.height + DISMISS_PUSH_OFFSET
