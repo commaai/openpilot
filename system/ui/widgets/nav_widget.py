@@ -16,7 +16,7 @@ NAV_BAR_WIDTH = 205
 NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = NAV_BAR_MARGIN + NAV_BAR_HEIGHT + 50  # px extra to push down when dismissing
-DISMISS_ANIMATION_RC = 5  # time constant for non-user triggered dismiss animation
+DISMISS_ANIMATION_RC = 0.2  # time constant for non-user triggered dismiss animation
 
 
 class NavBar(Widget):
@@ -61,8 +61,7 @@ class NavWidget(Widget, abc.ABC):
     self._drag_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
     self._dragging_down = False  # swiped down enough to trigger dismissing on release
     self._playing_dismiss_animation = False  # released and animating away
-    # self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
-    self._y_pos_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
 
     self._dismiss_callback: Callable | None = None
 
@@ -108,7 +107,7 @@ class NavWidget(Widget, abc.ABC):
 
     elif mouse_event.left_released:
       # reset rc for either slide up or down animation
-      self._y_pos_filter.update_alpha(5)
+      self._y_pos_filter.update_alpha(0.1)
 
       # if far enough, trigger back navigation callback
       if self._drag_start_pos is not None:
@@ -141,10 +140,10 @@ class NavWidget(Widget, abc.ABC):
       new_y = self._rect.height + DISMISS_PUSH_OFFSET
 
     new_y = round(self._y_pos_filter.update(new_y))
-    if abs(new_y) < 1:# and self._y_pos_filter.velocity.x == 0.0:
+    if abs(new_y) < 1 and self._y_pos_filter.velocity.x == 0.0:
       new_y = self._y_pos_filter.x = 0.0
 
-    if new_y > self._rect.height - 10:
+    if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       gui_app.pop_widget(self)
 
       if self._dismiss_callback is not None:
