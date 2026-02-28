@@ -196,19 +196,14 @@ class NavWidget(Widget, abc.ABC):
 
   def show_event(self):
     super().show_event()
-    # FIXME: we don't know the height of the rect at first show_event since it's before the first render :(
-    #  so we need this hacky bool for now
-
-    # start widget off-screen, no matter how high it is
-    self._y_pos_filter.x = gui_app.height
-    # TODO: why the hell do we manage nav bar position?
-    self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
-    self._nav_bar_show_time = rl.get_time()
-
-    print('NavWidget show_event, rect:', self._rect.x, self._rect.y, self._rect.width, self._rect.height)
     self._nav_bar.show_event()
 
     # Reset state
-    self._y_pos_filter.update_alpha(0.1)
     self._back_button_start_pos = None
     self._swiping_away = False
+    # Start NavWidget off-screen, no matter how tall it is
+    self._y_pos_filter.update_alpha(0.1)
+    self._y_pos_filter.x = gui_app.height
+    # TODO: why the hell do we manage nav bar state?
+    self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
+    self._nav_bar_show_time = rl.get_time()
