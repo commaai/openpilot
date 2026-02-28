@@ -48,9 +48,10 @@ if arch != "larch64":
   import ncurses
   import openssl3
   import python3_dev
+  import raylib
   import zeromq
   import zstd
-  pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, libjpeg, libyuv, ncurses, openssl3, zeromq, zstd]
+  pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, libjpeg, libyuv, ncurses, openssl3, raylib, zeromq, zstd]
   py_include = python3_dev.INCLUDE_DIR
 else:
   # TODO: remove when AGNOS has our new vendor pkgs
