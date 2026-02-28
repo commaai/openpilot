@@ -55,11 +55,11 @@ class NavWidget(Widget, abc.ABC):
 
   def __init__(self):
     super().__init__()
-    self._back_button_start_pos: MousePos | None = None
-    self._swiping_away = False  # currently swiping away
+    self._drag_start_pos: MousePos | None = None
+    self._dragging_down = False  # currently swiping away
     self._can_swipe_away = True  # swipe away is blocked after certain horizontal movement
 
-    self._pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
+    self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
     self._playing_dismiss_animation = False
     self._trigger_animate_in = False
     self._nav_bar_show_time = 0.0
@@ -80,14 +80,14 @@ class NavWidget(Widget, abc.ABC):
     super()._handle_mouse_event(mouse_event)
 
     if not self.back_enabled:
-      self._back_button_start_pos = None
-      self._swiping_away = False
+      self._drag_start_pos = None
+      self._dragging_down = False
       self._can_swipe_away = True
       return
 
     if mouse_event.left_pressed:
       # user is able to swipe away if starting near top of screen, or anywhere if scroller is at top
-      self._pos_filter.update_alpha(0.04)
+      self._y_pos_filter.update_alpha(0.04)
       in_dismiss_area = mouse_event.pos.y < self._rect.height * self.BACK_TOUCH_AREA_PERCENTAGE
 
       # TODO: remove vertical scrolling and then this hacky logic to check if scroller is at top
@@ -104,37 +104,37 @@ class NavWidget(Widget, abc.ABC):
       # Vertical scrollers need to be at the top to swipe away to prevent erroneous swipes
       if (not vertical_scroller and in_dismiss_area) or scroller_at_top:
         self._can_swipe_away = True
-        self._back_button_start_pos = mouse_event.pos
+        self._drag_start_pos = mouse_event.pos
 
     elif mouse_event.left_down:
-      if self._back_button_start_pos is not None:
+      if self._drag_start_pos is not None:
         # block swiping away if too much horizontal or upward movement
-        horizontal_movement = abs(mouse_event.pos.x - self._back_button_start_pos.x) > BLOCK_SWIPE_AWAY_THRESHOLD
-        upward_movement = mouse_event.pos.y - self._back_button_start_pos.y < -BLOCK_SWIPE_AWAY_THRESHOLD
-        if not self._swiping_away and (horizontal_movement or upward_movement):
+        horizontal_movement = abs(mouse_event.pos.x - self._drag_start_pos.x) > BLOCK_SWIPE_AWAY_THRESHOLD
+        upward_movement = mouse_event.pos.y - self._drag_start_pos.y < -BLOCK_SWIPE_AWAY_THRESHOLD
+        if not self._dragging_down and (horizontal_movement or upward_movement):
           self._can_swipe_away = False
-          self._back_button_start_pos = None
+          self._drag_start_pos = None
 
         # block horizontal swiping if now swiping away
         if self._can_swipe_away:
-          if mouse_event.pos.y - self._back_button_start_pos.y > START_DISMISSING_THRESHOLD:
-            self._swiping_away = True
+          if mouse_event.pos.y - self._drag_start_pos.y > START_DISMISSING_THRESHOLD:
+            self._dragging_down = True
 
     elif mouse_event.left_released:
-      self._pos_filter.update_alpha(0.1)
+      self._y_pos_filter.update_alpha(0.1)
       # if far enough, trigger back navigation callback
-      if self._back_button_start_pos is not None:
-        if mouse_event.pos.y - self._back_button_start_pos.y > SWIPE_AWAY_THRESHOLD:
+      if self._drag_start_pos is not None:
+        if mouse_event.pos.y - self._drag_start_pos.y > SWIPE_AWAY_THRESHOLD:
           self._playing_dismiss_animation = True
 
-      self._back_button_start_pos = None
-      self._swiping_away = False
+      self._drag_start_pos = None
+      self._dragging_down = False
 
   def _update_state(self):
     super()._update_state()
 
     if self._trigger_animate_in:
-      self._pos_filter.x = self._rect.height
+      self._y_pos_filter.x = self._rect.height
       self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
       self._nav_bar_show_time = rl.get_time()
       self._trigger_animate_in = False
@@ -142,32 +142,32 @@ class NavWidget(Widget, abc.ABC):
     new_y = 0.0
 
     if not self.enabled:
-      self._back_button_start_pos = None
+      self._drag_start_pos = None
 
     # TODO: why is this not in handle_mouse_event? have to hack above
-    if self._back_button_start_pos is not None:
+    if self._drag_start_pos is not None:
       last_mouse_event = gui_app.last_mouse_event
       # push entire widget as user drags it away
-      new_y = max(last_mouse_event.pos.y - self._back_button_start_pos.y, 0)
+      new_y = max(last_mouse_event.pos.y - self._drag_start_pos.y, 0)
       if new_y < SWIPE_AWAY_THRESHOLD:
         new_y /= 2  # resistance until mouse release would dismiss widget
 
-    if self._swiping_away:
+    if self._dragging_down:
       self._nav_bar.set_alpha(1.0)
 
     if self._playing_dismiss_animation:
       new_y = self._rect.height + DISMISS_PUSH_OFFSET
 
-    new_y = round(self._pos_filter.update(new_y))
-    if abs(new_y) < 1 and self._pos_filter.velocity.x == 0.0:
-      new_y = self._pos_filter.x = 0.0
+    new_y = round(self._y_pos_filter.update(new_y))
+    if abs(new_y) < 1 and self._y_pos_filter.velocity.x == 0.0:
+      new_y = self._y_pos_filter.x = 0.0
 
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       gui_app.pop_widget()
 
       self._playing_dismiss_animation = False
-      self._back_button_start_pos = None
-      self._swiping_away = False
+      self._drag_start_pos = None
+      self._dragging_down = False
 
     self.set_position(self._rect.x, new_y)
 
@@ -186,8 +186,8 @@ class NavWidget(Widget, abc.ABC):
       bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
       nav_bar_delayed = rl.get_time() - self._nav_bar_show_time < 0.4
       # User dragging or dismissing, nav bar follows NavWidget
-      if self._back_button_start_pos is not None or self._playing_dismiss_animation:
-        self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._pos_filter.x
+      if self._drag_start_pos is not None or self._playing_dismiss_animation:
+        self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._y_pos_filter.x
       # Waiting to show
       elif nav_bar_delayed:
         self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
@@ -208,6 +208,6 @@ class NavWidget(Widget, abc.ABC):
     self._nav_bar.show_event()
 
     # Reset state
-    self._pos_filter.update_alpha(0.1)
-    self._back_button_start_pos = None
-    self._swiping_away = False
+    self._y_pos_filter.update_alpha(0.1)
+    self._drag_start_pos = None
+    self._dragging_down = False
