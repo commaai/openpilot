@@ -29,7 +29,7 @@ def setup_state():
   params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
   params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
 
-  # Patch Api.get_token to return a fixed token so the pairing QR code is deterministic across runs
+  # Patch Api.get_token to return a static token so the pairing QR code is deterministic across runs
   Api.get_token = lambda self, payload_extra=None, expiry_hours=0: "test_token"
 
 
@@ -54,8 +54,9 @@ def run_replay(variant: LayoutVariant) -> None:
     from openpilot.selfdrive.ui.layouts.main import MainLayout
   main_layout = MainLayout()
 
-  # Set high interactive timeout so the settings panel doesn't close automatically during the replay (after 30s clock time)
-  device.set_override_interactive_timeout(9999)
+  # Disable interactive timeout — replay clicks use left_down=False so they never reset the timer,
+  # and after 30s of real wall-clock time the callback would close the settings panel.
+  device.set_override_interactive_timeout(99999)
 
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
   script = build_script(pm, main_layout, variant)
