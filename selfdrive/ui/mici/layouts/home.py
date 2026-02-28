@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import MiciLabel, UnifiedLabel
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.version import RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
@@ -91,6 +91,7 @@ class MiciHomeLayout(Widget):
     self._mouse_down_t: None | float = None
     self._did_long_press = False
     self._is_pressed_prev = False
+    self._was_awake = False
 
     self._version_text = None
     self._experimental_mode = False
@@ -142,6 +143,10 @@ class MiciHomeLayout(Widget):
 
     self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
 
+    if device.awake and not self._was_awake:
+      self._reset_anim()
+    self._was_awake = device.awake
+
     if rl.get_time() - self._last_refresh > 5.0:
       self._version_text = self._get_version_text()
       self._last_refresh = rl.get_time()
@@ -151,9 +156,7 @@ class MiciHomeLayout(Widget):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._did_long_press:
-      if mouse_pos.x > self._rect.x + self._rect.width / 2:  # TODO: temp, right-half tap retriggers animation for testing
-        self._reset_anim()
-      elif self._on_settings_click:
+      if self._on_settings_click:
         self._on_settings_click()
     self._did_long_press = False
 
