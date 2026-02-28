@@ -16,7 +16,7 @@ NAV_BAR_WIDTH = 205
 NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = NAV_BAR_MARGIN + NAV_BAR_HEIGHT + 50  # px extra to push down when dismissing
-DISMISS_ANIMATION_RC = 0.2  # time constant for non-user triggered dismiss animation
+DISMISS_ANIMATION_RC = 0.2  # slightly slower for non-user triggered dismiss animation
 
 
 class NavBar(Widget):
