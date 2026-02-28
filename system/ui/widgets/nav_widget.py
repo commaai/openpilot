@@ -17,7 +17,7 @@ NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = 50 + NAV_BAR_MARGIN + NAV_BAR_HEIGHT  # px extra to push down when dismissing
 DISMISS_TIME_SECONDS = 2.0
-DISMISS_ANIMATION_RC = 0.3  # time constant for swipe-down dismiss (larger = slower)
+DISMISS_ANIMATION_RC = 0.2  # time constant for non-user triggered dismiss animation
 
 
 class NavBar(Widget):

@@ -110,13 +110,14 @@ class MiciMainLayout(Scroller):
     if gui_app.get_active_widget() == self._onboarding_window:
       return
 
+    # Screen turns off on timeout, so pop immediately without animation
     if ui_state.started:
       # Don't pop if at standstill
       if not ui_state.sm["carState"].standstill:
-        gui_app.request_pop_widgets_to(self)
+        gui_app.pop_widgets_to(self)
         self._scroll_to(self._onroad_layout)
     else:
-      gui_app.request_pop_widgets_to(self)
+      gui_app.pop_widgets_to(self)
       self._scroll_to(self._home_layout)
 
   def _on_bookmark_clicked(self):
