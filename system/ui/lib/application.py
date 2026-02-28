@@ -600,8 +600,6 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        # print('Nav stack widgets', [type(w).__name__ for w in self._nav_stack])
-
         # Allow a Widget to still run a function regardless of the stack depth
         for tick in self._nav_stack_ticks:
           tick()

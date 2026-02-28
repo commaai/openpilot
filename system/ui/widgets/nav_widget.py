@@ -129,7 +129,7 @@ class NavWidget(Widget, abc.ABC):
 
     elif mouse_event.left_released:
       self._pos_filter.update_alpha(0.1)
-      # if far enough, trigger dismiss
+      # if far enough, trigger back navigation callback
       if self._back_button_start_pos is not None:
         if mouse_event.pos.y - self._back_button_start_pos.y > SWIPE_AWAY_THRESHOLD:
           self._playing_dismiss_animation = True
