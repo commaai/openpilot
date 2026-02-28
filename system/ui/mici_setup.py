@@ -508,7 +508,7 @@ class Setup(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
     self._prev_has_internet = False
-    gui_app.set_nav_stack_tick(self._nav_stack_tick)
+    gui_app.add_nav_stack_tick(self._nav_stack_tick)
 
     self._start_page = StartPage()
     self._start_page.set_click_callback(self._getting_started_button_callback)
