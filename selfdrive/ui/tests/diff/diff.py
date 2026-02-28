@@ -4,6 +4,8 @@ import sys
 import subprocess
 import webbrowser
 import argparse
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from openpilot.common.basedir import BASEDIR
 
@@ -11,8 +13,8 @@ DIFF_OUT_DIR = Path(BASEDIR) / "selfdrive" / "ui" / "tests" / "diff" / "report"
 HTML_TEMPLATE_PATH = Path(__file__).with_name("diff_template.html")
 
 
-def extract_framehashes(video_path):
-  cmd = ['ffmpeg', '-i', video_path, '-map', '0:v:0', '-vsync', '0', '-f', 'framehash', '-hash', 'md5', '-']
+def extract_framehashes(video_path: Path) -> list[str]:
+  cmd = ['ffmpeg', '-nostdin', '-i', str(video_path), '-map', '0:v:0', '-vsync', '0', '-f', 'framehash', '-hash', 'md5', '-']
   result = subprocess.run(cmd, capture_output=True, text=True, check=True)
   hashes = []
   for line in result.stdout.splitlines():
@@ -25,20 +27,25 @@ def extract_framehashes(video_path):
   return hashes
 
 
-def create_diff_video(video1, video2, output_path):
-  """Create a diff video using ffmpeg blend filter with difference mode."""
-  print("Creating diff video...")
-  cmd = ['ffmpeg', '-i', video1, '-i', video2, '-filter_complex', '[0:v]blend=all_mode=difference', '-vsync', '0', '-y', output_path]
+def get_video_frame_hashes(video1: Path, video2: Path) -> tuple[list[str], list[str]]:
+  """Hash every frame of both videos in parallel and return the two hash lists."""
+  with ThreadPoolExecutor(max_workers=2) as executor:
+    print("Generating frame hashes for both videos...")
+    future1 = executor.submit(extract_framehashes, video1)
+    future2 = executor.submit(extract_framehashes, video2)
+    hashes1 = future1.result()
+    hashes2 = future2.result()
+  return hashes1, hashes2
+
+
+def create_diff_video(video1: Path, video2: Path, output: Path) -> None:
+  """Create a diff video of two clips using ffmpeg blend filter with difference mode."""
+  cmd = ['ffmpeg', '-nostdin', '-i', str(video1), '-i', str(video2), '-filter_complex', 'blend=all_mode=difference', '-vsync', '0', '-y', str(output)]
   subprocess.run(cmd, capture_output=True, check=True)
 
 
-def find_differences(video1, video2) -> tuple[list[int], tuple[int, int]]:
-  print(f"Hashing frames from {video1}...")
-  hashes1 = extract_framehashes(video1)
-
-  print(f"Hashing frames from {video2}...")
-  hashes2 = extract_framehashes(video2)
-
+def find_frame_differences(hashes1: list[str], hashes2: list[str]) -> tuple[list[int], tuple[int, int]]:
+  """Compare two lists of frame hashes and return the indices of different frames along with the total frame counts."""
   print(f"Comparing {len(hashes1)} frames...")
   different_frames = []
 
@@ -49,18 +56,7 @@ def find_differences(video1, video2) -> tuple[list[int], tuple[int, int]]:
   return different_frames, (len(hashes1), len(hashes2))
 
 
-def generate_html_report(videos: tuple[str, str], basedir: str, different_frames: list[int], frame_counts: tuple[int, int], diff_video_name):
-  chunks = []
-  if different_frames:
-    current_chunk = [different_frames[0]]
-    for i in range(1, len(different_frames)):
-      if different_frames[i] == different_frames[i - 1] + 1:
-        current_chunk.append(different_frames[i])
-      else:
-        chunks.append(current_chunk)
-        current_chunk = [different_frames[i]]
-    chunks.append(current_chunk)
-
+def generate_html_report(videos: tuple[Path, Path], basedir: str, different_frames: list[int], frame_counts: tuple[int, int], diff_video_name: str) -> str:
   total_frames = max(frame_counts)
   frame_delta = frame_counts[1] - frame_counts[0]
   different_total = len(different_frames) + abs(frame_delta)
@@ -71,12 +67,13 @@ def generate_html_report(videos: tuple[str, str], basedir: str, different_frames
     else f"❌ Found {different_total} different frames out of {total_frames} total ({different_total / total_frames * 100:.1f}%)."
     + (f" Video {'2' if frame_delta > 0 else '1'} is longer by {abs(frame_delta)} frames." if frame_delta != 0 else "")
   )
+  print(f"  Results: {result_text}")
 
   # Load HTML template and replace placeholders
   html = HTML_TEMPLATE_PATH.read_text()
   placeholders = {
-    "VIDEO1_SRC": os.path.join(basedir, os.path.basename(videos[0])),
-    "VIDEO2_SRC": os.path.join(basedir, os.path.basename(videos[1])),
+    "VIDEO1_SRC": os.path.join(basedir, videos[0].name),
+    "VIDEO2_SRC": os.path.join(basedir, videos[1].name),
     "DIFF_SRC": os.path.join(basedir, diff_video_name),
     "RESULT_TEXT": result_text,
   }
@@ -91,7 +88,7 @@ def main():
   parser.add_argument('video1', help='First video file')
   parser.add_argument('video2', help='Second video file')
   parser.add_argument('output', nargs='?', default='diff.html', help='Output HTML file (default: diff.html)')
-  parser.add_argument("--basedir", type=str, help="Base directory for output", default="")
+  parser.add_argument("--basedir", type=str, help="Base path for files in HTML report", default="")
   parser.add_argument('--no-open', action='store_true', help='Do not open HTML report in browser')
 
   args = parser.parse_args()
@@ -99,37 +96,55 @@ def main():
   if not args.output.lower().endswith('.html'):
     args.output += '.html'
 
+  video1, video2 = Path(args.video1), Path(args.video2)
+  missing = [str(p) for p in (video1, video2) if not p.exists()]
+  if missing:
+    parser.error(f"Video file(s) not found: {', '.join(missing)}")
+
+  diff_video_name = f"{Path(args.output).stem}.mp4"  # diff video name derived from output HTML name
+
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
   print("=" * 60)
-  print("VIDEO DIFF - HTML REPORT")
+  print("UI VIDEO DIFF - HTML REPORT")
   print("=" * 60)
-  print(f"Video 1: {args.video1}")
-  print(f"Video 2: {args.video2}")
-  print(f"Output: {args.output}")
+  print(f"Video 1:      {video1}")
+  print(f"Video 2:      {video2}")
+  print(f"HTML output:  {args.output}")
+  print(f"Diff video:   {diff_video_name}")
   print()
 
-  # Create diff video with name derived from output HTML
-  diff_video_name = Path(args.output).stem + '.mp4'
-  diff_video_path = str(DIFF_OUT_DIR / diff_video_name)
-  create_diff_video(args.video1, args.video2, diff_video_path)
+  print("[1/4] Starting full video diff generation in background thread...")
+  diff_thread = threading.Thread(target=create_diff_video, args=(video1, video2, DIFF_OUT_DIR / diff_video_name))
+  diff_thread.start()
 
-  different_frames, frame_counts = find_differences(args.video1, args.video2)
+  print("[2/4] Hashing frames...")
+  hashes1, hashes2 = get_video_frame_hashes(video1, video2)
+  frame_counts = (len(hashes1), len(hashes2))
+  print(f"  Found {frame_counts[0]} frames in video 1 and {frame_counts[1]} frames in video 2.")
 
-  if different_frames is None:
-    sys.exit(1)
+  print("[3/4] Finding different frames...")
+  different_frames, frame_counts = find_frame_differences(hashes1, hashes2)
+  print(f"  Found {len(different_frames)} different frames.")
 
-  print()
-  print("Generating HTML report...")
-  html = generate_html_report((args.video1, args.video2), args.basedir, different_frames, frame_counts, diff_video_name)
+  print("[4/4] Generating HTML report...")
+  html = generate_html_report((video1, video2), args.basedir, different_frames, frame_counts, diff_video_name)
 
-  with open(DIFF_OUT_DIR / args.output, 'w') as f:
+  output_path = DIFF_OUT_DIR / args.output
+  with open(output_path, 'w') as f:
     f.write(html)
+
+  print(f"  Report generated at: {output_path}")
 
   # Open in browser by default
   if not args.no_open:
     print(f"Opening {args.output} in browser...")
-    webbrowser.open(f'file://{os.path.abspath(DIFF_OUT_DIR / args.output)}')
+    webbrowser.open(f'file://{os.path.abspath(output_path)}')
+
+  if diff_thread.is_alive():
+    print("Waiting for diff video generation to finish...")
+  diff_thread.join()
+
 
   extra_frames = abs(frame_counts[0] - frame_counts[1])
   return 0 if (len(different_frames) + extra_frames) == 0 else 1
