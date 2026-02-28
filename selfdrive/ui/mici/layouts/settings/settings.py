@@ -49,7 +49,4 @@ class SettingsLayout(NavScroller):
       developer_btn,
     ])
 
-    # Set up back navigation
-    self.set_back_callback(gui_app.pop_widget)
-
     self._font_medium = gui_app.font(FontWeight.MEDIUM)

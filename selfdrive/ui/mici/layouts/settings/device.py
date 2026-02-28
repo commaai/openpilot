@@ -7,8 +7,7 @@ from collections.abc import Callable
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
-from openpilot.system.ui.widgets.scroller import NavScroller
-from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
+from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialogV2
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
@@ -17,22 +16,16 @@ from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsP
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets.label import MiciLabel
 from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
 
-class MiciFccModal(NavWidget):
-  BACK_TOUCH_AREA_PERCENTAGE = 0.1
-
+class MiciFccModal(NavRawScrollPanel):
   def __init__(self, file_path: str | None = None, text: str | None = None):
     super().__init__()
-    self.set_back_callback(gui_app.pop_widget)
     self._content = HtmlRenderer(file_path=file_path, text=text)
-    self._scroll_panel = GuiScrollPanel2(horizontal=False)
-    self._scroll_panel.set_enabled(lambda: self.enabled and not self._swiping_away)
     self._fcc_logo = gui_app.texture("icons_mici/settings/device/fcc_logo.png", 76, 64)
 
   def _render(self, rect: rl.Rectangle):
@@ -332,10 +325,6 @@ class DeviceLayoutMici(NavScroller):
       reboot_btn,
       self._power_off_btn,
     ])
-
-    # Set up back navigation
-    # TODO: can this somehow be generic in widgets/__init__.py or application.py?
-    self.set_back_callback(gui_app.pop_widget)
 
   def _on_regulatory(self):
     if not self._fcc_dialog:

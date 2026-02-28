@@ -18,7 +18,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
-from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
+from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import BaseDriverCameraDialog
 
 
 class OnboardingState(IntEnum):
@@ -26,9 +26,9 @@ class OnboardingState(IntEnum):
   ONBOARDING = 1
 
 
-class DriverCameraSetupDialog(DriverCameraDialog):
+class DriverCameraSetupDialog(BaseDriverCameraDialog):
   def __init__(self):
-    super().__init__(no_escape=True)
+    super().__init__()
     self.driver_state_renderer = DriverStateRenderer(inset=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 120, 120))
     self.driver_state_renderer.load_icons()
@@ -411,7 +411,6 @@ class TermsPage(Scroller):
 class OnboardingWindow(Widget):
   def __init__(self):
     super().__init__()
-
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 

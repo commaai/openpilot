@@ -462,7 +462,7 @@ class Setup(Widget):
 
   def _back_to_software_selection(self):
     # pop and reset sliders
-    gui_app.pop_widgets_to(self)
+    gui_app.pop_widgets_to(self)  # TODO: instant?
     self._set_state(SetupState.SOFTWARE_SELECTION)
 
   def _set_state(self, state: SetupState):

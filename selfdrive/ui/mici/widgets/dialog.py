@@ -22,7 +22,6 @@ class BigDialogBase(NavWidget, abc.ABC):
   def __init__(self):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    self.set_back_callback(gui_app.pop_widget)
 
 
 class BigDialog(BigDialogBase):
@@ -78,17 +77,17 @@ class BigConfirmationDialogV2(BigDialogBase):
       self._slider = RedBigSlider(title, icon_txt, confirm_callback=self._on_confirm)
     else:
       self._slider = BigSlider(title, icon_txt, confirm_callback=self._on_confirm)
-    self._slider.set_enabled(lambda: self.enabled and not self._swiping_away)  # self.enabled for nav stack
+    self._slider.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
 
   def _on_confirm(self):
     if self._exit_on_confirm:
-      gui_app.request_pop_widget(self._confirm_callback)
+      self.dismiss(self._confirm_callback)
     elif self._confirm_callback:
       self._confirm_callback()
 
   def _update_state(self):
     super()._update_state()
-    if self._swiping_away and not self._slider.confirmed:
+    if self.is_dismissing and not self._slider.confirmed:
       self._slider.reset()
 
   def _render(self, _):
@@ -110,7 +109,7 @@ class BigInputDialog(BigDialogBase):
                                     font_weight=FontWeight.MEDIUM)
     self._keyboard = MiciKeyboard()
     self._keyboard.set_text(default_text)
-    self._keyboard.set_enabled(lambda: self.enabled)  # for nav stack
+    self._keyboard.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
     self._minimum_length = minimum_length
 
     self._backspace_held_time: float | None = None
@@ -128,11 +127,15 @@ class BigInputDialog(BigDialogBase):
 
     def confirm_callback_wrapper():
       text = self._keyboard.text()
-      gui_app.request_pop_widget(lambda: confirm_callback(text) if confirm_callback else None)
+      self.dismiss((lambda: confirm_callback(text)) if confirm_callback else None)
     self._confirm_callback = confirm_callback_wrapper
 
   def _update_state(self):
     super()._update_state()
+
+    if self.is_dismissing:
+      self._backspace_held_time = None
+      return
 
     last_mouse_event = gui_app.last_mouse_event
     if last_mouse_event.left_down and rl.check_collision_point_rec(last_mouse_event.pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 1:
@@ -228,6 +231,10 @@ class BigInputDialog(BigDialogBase):
     super()._handle_mouse_press(mouse_pos)
     # TODO: need to track where press was so enter and back can activate on release rather than press
     #  or turn into icon widgets :eyes_open:
+
+    if self.is_dismissing:
+      return
+
     # handle backspace icon click
     if rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
       self._keyboard.backspace()
