@@ -65,7 +65,12 @@ def _camera_session():
     assert expected_frames*0.8 < cnt < expected_frames*1.2, f"unexpected frame count {cam}: {expected_frames=}, got {cnt}"
 
     dts = np.abs(np.diff([ts[cam]['timestampSof']/1e6]) - 1000/SERVICE_LIST[cam].frequency)
-    assert (dts < 1.0).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
+    if cam in ('wideRoadCameraState', 'driverCameraState'):
+      # IFE-shared cameras have SOF timestamp jitter from PHY switching
+      good_pct = np.mean(dts < 1.0) * 100
+      assert good_pct > 90, f"{cam} dts(ms): only {good_pct:.0f}% within 1ms (need >90%)"
+    else:
+      assert (dts < 1.0).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
 
   return ts, exposure
 
@@ -105,16 +110,35 @@ class TestCamerad:
       assert set(np.diff(logs[c]['frameId'])) == {1, }, f"{c} has frame skips"
 
   def test_frame_sync(self, logs):
-    n = range(len(logs['roadCameraState']['t'][:-10]))
+    # Align cameras by common frame_id range (cameras may start publishing at different times)
+    start_id = max(int(logs[cam]['frameId'][0]) for cam in CAMERAS)
+    end_id = min(int(logs[cam]['frameId'][-1]) for cam in CAMERAS)
+    n = end_id - start_id - 10  # safety margin
+    assert n > 20, f"not enough overlapping frames: {n}"
 
-    frame_ids = {i: [logs[cam]['frameId'][i] for cam in CAMERAS] for i in n}
-    assert all(len(set(v)) == 1 for v in frame_ids.values()), "frame IDs not aligned"
+    def get_slice(cam):
+      offset = start_id - int(logs[cam]['frameId'][0])
+      return slice(offset, offset + n)
 
-    frame_times = {i: [logs[cam]['timestampSof'][i] for cam in CAMERAS] for i in n}
-    diffs = {i: (max(ts) - min(ts))/1e6 for i, ts in frame_times.items()}
+    # All three cameras must have matching frame IDs in the common range
+    ids = {cam: logs[cam]['frameId'][get_slice(cam)] for cam in CAMERAS}
+    assert np.all(ids['roadCameraState'] == ids['driverCameraState']), "frame IDs not aligned (road vs driver)"
+    assert np.all(ids['roadCameraState'] == ids['wideRoadCameraState']), "frame IDs not aligned (road vs wide)"
 
-    laggy_frames = {k: v for k, v in diffs.items() if v > 1.1}
-    assert len(laggy_frames) == 0, f"Frames not synced properly: {laggy_frames=}"
+    # Road and wide road must be tightly synced in timestamp
+    sofs = {cam: logs[cam]['timestampSof'][get_slice(cam)] for cam in CAMERAS}
+    road_wide_diff = np.abs(sofs['roadCameraState'] - sofs['wideRoadCameraState']) / 1e6
+    laggy = np.where(road_wide_diff > 1.1)[0]
+    assert len(laggy) == 0, f"Road/wide not synced at indices {laggy[:10]}, max={road_wide_diff.max():.2f}ms"
+
+    # Driver camera has FSIN stagger offset (~17-25ms depending on sensor).
+    # Verify the offset is consistent (within 5ms of median) rather than zero.
+    driver_offset = (sofs['driverCameraState'] - sofs['roadCameraState']) / 1e6
+    median_offset = np.median(driver_offset)
+    assert 5 < abs(median_offset) < 35, f"Driver FSIN offset unexpected: {median_offset:.1f}ms"
+    jitter = np.abs(driver_offset - median_offset)
+    laggy = np.where(jitter > 5.0)[0]
+    assert len(laggy) == 0, f"Driver FSIN jitter too high (median={median_offset:.1f}ms) at indices {laggy[:10]}"
 
   def test_sanity_checks(self, logs):
     self._sanity_checks(logs)

@@ -1442,33 +1442,32 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
 
   int buf_idx = request_id % ife_buf_depth;
 
-  // IFE sharing: add secondary camera to sync data so first-frame sync can complete
-  // (secondary doesn't have its own link/events, so it can't register itself)
-  if (ife_secondary && !first_frame_synced) {
+  // IFE sharing: add secondary camera to sync data so first-frame sync can complete.
+  // Only inject during primary events — secondary events have FSIN-staggered timestamps
+  // that would corrupt the sync check (all cameras must be within 0.2ms).
+  if (ife_secondary && !first_frame_synced && !secondary_frame_slot[buf_idx]) {
     camera_sync_data[ife_secondary->cc.camera_num] = SyncData{timestamp, frame_id_raw + 1};
   }
 
   // IFE sharing: handle alternating primary/secondary frames
   if (ife_secondary && secondary_frame_slot[buf_idx]) {
-    // Secondary frame — captured from driver PHY
-    bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+    // Secondary frame — captured from driver PHY.
+    // Skip processFrame during sync to avoid corrupting camera 0's sync data with staggered timestamps.
+    bool ret = first_frame_synced ? processFrame(buf_idx, request_id, frame_id_raw, timestamp) : false;
     destroySyncObjectAt(buf_idx);
 
     // Switch PHY back to primary for next frame
     uint32_t primary_phy = cc.phy - CAM_ISP_IFE_IN_RES_PHY_0;
     switch_phy(primary_phy);
 
-    if (ret && last_primary_sof > 0) {
-      // Only publish once we have a valid primary SOF reference.
-      // The first secondary frame after sync might arrive before the first successful
-      // primary frame, so last_primary_sof could still be 0. Skipping that frame avoids
-      // a startup timing glitch in the published SOF sequence.
+    if (ret) {
       ife_secondary->buf.cur_buf_idx = secondary_out_idx_slot[buf_idx];
       ife_secondary->buf.cur_frame_data = buf.cur_frame_data;
       ife_secondary->buf.cur_frame_data.frame_id = (uint32_t)(secondary_frame_count);
       ife_secondary->buf.cur_frame_data.request_id = (uint32_t)(secondary_frame_count + 1);
-      ife_secondary->buf.cur_frame_data.timestamp_sof = last_primary_sof;
-      ife_secondary->buf.cur_frame_data.timestamp_eof = last_primary_sof + ife_secondary->sensor->readout_time_ns;
+      // timestamp_sof is the actual hardware SOF (offset by FSIN stagger from primary)
+      // Recalculate EOF with secondary sensor's readout time (processFrame used primary's)
+      ife_secondary->buf.cur_frame_data.timestamp_eof = ife_secondary->buf.cur_frame_data.timestamp_sof + ife_secondary->sensor->readout_time_ns;
       secondary_frame_ready = true;
       secondary_frame_count++;
     }
@@ -1482,7 +1481,6 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     // Override frame_id/request_id with contiguous primary counter
     // (raw IDs increment for both P+S frames, causing gaps in published data)
     if (ret) {
-      last_primary_sof = timestamp;
       buf.cur_frame_data.frame_id = (uint32_t)(primary_frame_count);
       buf.cur_frame_data.request_id = (uint32_t)(primary_frame_count + 1);
       primary_frame_count++;
