@@ -49,6 +49,7 @@ class MiciMainLayout(Scroller):
     # Set callbacks
     self._setup_callbacks()
 
+    gui_app.add_nav_stack_tick(self._handle_transitions)
     gui_app.push_widget(self)
 
     # Start onboarding if terms or training not completed, make sure to push after self
@@ -75,8 +76,6 @@ class MiciMainLayout(Scroller):
 
     # Render
     super()._render(self._rect)
-
-    self._handle_transitions()
 
   def _handle_transitions(self):
     # Don't pop if onboarding
