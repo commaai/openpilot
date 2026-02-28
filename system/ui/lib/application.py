@@ -220,7 +220,7 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._nav_stack: list[object] = []
-    self._nav_stack_tick: Callable[[], None] | None = None
+    self._nav_stack_ticks: list[Callable[[], None]] = []
     self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
 
     self._mouse = MouseState(self._scale)
@@ -411,8 +411,13 @@ class GuiApplication:
       return self._nav_stack[-1]
     return None
 
-  def set_nav_stack_tick(self, tick_function: Callable | None):
-    self._nav_stack_tick = tick_function
+  def add_nav_stack_tick(self, tick_function: Callable[[], None]):
+    if tick_function not in self._nav_stack_ticks:
+      self._nav_stack_ticks.append(tick_function)
+
+  def remove_nav_stack_tick(self, tick_function: Callable[[], None]):
+    if tick_function in self._nav_stack_ticks:
+      self._nav_stack_ticks.remove(tick_function)
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
@@ -561,8 +566,8 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
 
         # Allow a Widget to still run a function regardless of the stack depth
-        if self._nav_stack_tick is not None:
-          self._nav_stack_tick()
+        for tick in self._nav_stack_ticks:
+          tick()
 
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
