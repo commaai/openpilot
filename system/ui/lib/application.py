@@ -406,6 +406,20 @@ class GuiApplication:
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
 
+  # def request_pop_widget(self, callback: Callable[[], None] = None):
+  #   # Takes a callback to run after animation
+  #   if len(self._nav_stack) < 2:
+  #     cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
+  #     return
+  #
+  #   top_widget = self._nav_stack[-1]
+  #   if hasattr(top_widget, "dismiss"):
+  #     top_widget.dismiss(callback)
+  #   else:
+  #     self.pop_widget()
+  #     if callback:
+  #       callback()
+
   def get_active_widget(self):
     if len(self._nav_stack) > 0:
       return self._nav_stack[-1]
