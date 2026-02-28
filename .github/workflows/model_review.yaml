@@ -24,8 +24,8 @@ jobs:
         with:
           ref: master
           path: base
-      - run: git lfs pull
-      - run: cd base && git lfs pull
+      - run: uv sync --frozen --all-extras && .venv/bin/uv-lfs install && .venv/bin/uv-lfs checkout
+      - run: cd base && uv sync --frozen --all-extras && .venv/bin/uv-lfs install && .venv/bin/uv-lfs checkout
 
       - name: scripts/reporter.py
         id: report

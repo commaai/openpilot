@@ -112,6 +112,9 @@ function install_python_deps() {
   uv sync --frozen --all-extras
   source .venv/bin/activate
 
+  echo "configuring uv-lfs..."
+  .venv/bin/uv-lfs install
+
   if [[ "$(uname)" == 'Darwin' ]]; then
     touch "$ROOT"/.env
     echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> "$ROOT"/.env

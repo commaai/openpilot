@@ -118,11 +118,11 @@ function op_check_git() {
     echo -e " ↳ [${GREEN}✔${NC}] git found."
   fi
 
-  echo "Checking for git lfs files..."
+  echo "Checking for LFS files..."
   if [[ $(file -b $OPENPILOT_ROOT/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
+    echo -e " ↳ [${GREEN}✔${NC}] LFS files found."
   else
-    echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
+    echo -e " ↳ [${RED}✗${NC}] LFS files not found! Run 'uv-lfs checkout'"
     return 1
   fi
 
@@ -253,10 +253,11 @@ function op_setup() {
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
-  echo "Pulling git lfs files..."
+  echo "Pulling LFS files..."
   st="$(date +%s)"
-  if ! retry 3 git lfs pull; then
-    echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
+  uv-lfs install
+  if ! retry 3 uv-lfs checkout; then
+    echo -e " ↳ [${RED}✗${NC}] Pulling LFS files failed!"
     loge "ERROR_GIT_LFS"
     return 1
   fi

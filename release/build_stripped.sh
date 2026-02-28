@@ -65,8 +65,8 @@ master commit: $GIT_HASH
 
 # should be no submodules or LFS files
 git submodule status
-if [ ! -z "$(git lfs ls-files)" ]; then
-  echo "LFS files detected!"
+if git grep -q "^version https://git-lfs.github.com/spec/v1" HEAD -- 2>/dev/null; then
+  echo "LFS pointer files detected in commit!"
   exit 1
 fi
 
