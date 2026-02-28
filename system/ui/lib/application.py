@@ -411,11 +411,11 @@ class GuiApplication:
       return self._nav_stack[-1]
     return None
 
-  def add_nav_stack_tick(self, tick_function: Callable):
+  def add_nav_stack_tick(self, tick_function: Callable[[], None]):
     if tick_function not in self._nav_stack_ticks:
       self._nav_stack_ticks.append(tick_function)
 
-  def remove_nav_stack_tick(self, tick_function: Callable):
+  def remove_nav_stack_tick(self, tick_function: Callable[[], None]):
     if tick_function in self._nav_stack_ticks:
       self._nav_stack_ticks.remove(tick_function)
 
