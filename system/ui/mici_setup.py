@@ -80,6 +80,7 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
+          time.sleep(2)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -420,14 +421,15 @@ class NetworkSetupPage(NavScroller):
       elapsed = rl.get_time() - self._pending_has_internet_scroll
       if elapsed > 0.5:
         self._pending_has_internet_scroll = None
-        gui_app.pop_widgets_to(self)
 
-        # ensure layout is up to date for scroll_to
-        self._scroller._layout()
-        end_offset = -(self._scroller.content_size - self._rect.width)
-        remaining = self._scroller.scroll_panel.get_offset() - end_offset
-        self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
-        self._pending_continue_grow_animation = True
+        def scroll_to_download():
+          self._scroller._layout()
+          end_offset = -(self._scroller.content_size - self._rect.width)
+          remaining = self._scroller.scroll_panel.get_offset() - end_offset
+          self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
+          self._pending_continue_grow_animation = True
+
+        gui_app.request_pop_widgets_to(self, scroll_to_download)
 
 
 class Setup(Widget):
