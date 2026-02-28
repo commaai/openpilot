@@ -89,8 +89,6 @@ void finishInstall() {
       DrawTextEx(font_display, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + FONT_SIZE, (float)(GetScreenHeight() - FONT_SIZE)/2}, FONT_SIZE, 0, WHITE);
     } else {
       DrawTextEx(font_display, "finishing setup", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
-      DrawTextEx(font_inter, "...", (Vector2){12, (float)(GetScreenHeight() - 154 + 20)}, 154, 0,
-                 (Color){255, 255, 255, (unsigned char)(255 * 0.9 * 0.65)});
     }
   EndDrawing();
   std::ofstream("/data/installer_done").close();
