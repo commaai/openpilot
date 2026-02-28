@@ -405,7 +405,7 @@ class GuiApplication:
     widget.hide_event()
 
   def pop_widgets_to(self, widget: object, callback: Callable[[], None] | None = None, instant: bool = False):
-    # Pops middle widgets instantly without animation + pops top w/ dismiss (w or w/o animation), then fires callback
+    # Pops middle widgets instantly without animation then dismisses top, animated out if NavWidget
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
