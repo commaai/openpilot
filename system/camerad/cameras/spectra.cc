@@ -1044,13 +1044,7 @@ bool SpectraCamera::openSensor() {
   LOGD("-- Probing sensor %d", cc.camera_num);
 
   auto init_sensor_lambda = [this](SensorInfo *s) {
-    // Skip ife_downscale for IFE-sharing cameras — readout drops from 33ms to 23ms,
-    // enabling two frames per 50ms period. The IFE scaler now handles 1:1 dynamically.
-    bool ife_sharing = (cc.ife_share_primary >= 0);
-    for (const auto &cfg : ALL_CAMERA_CONFIGS) {
-      if (cfg.ife_share_primary == cc.camera_num) { ife_sharing = true; break; }
-    }
-    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && cc.output_type == ISP_IFE_PROCESSED && !ife_sharing) {
+    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && cc.output_type == ISP_IFE_PROCESSED) {
       ((OS04C10*)s)->ife_downscale_configure();
     }
     sensor.reset(s);
