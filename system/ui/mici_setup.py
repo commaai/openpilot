@@ -211,8 +211,6 @@ class DownloadingPage(Widget):
 class FailedPage(NavWidget):
   def __init__(self, reboot_callback: Callable, retry_callback: Callable | None = None, title: str = "download failed"):
     super().__init__()
-    self.set_back_callback(gui_app.pop_widget)
-
     self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                      font_weight=FontWeight.DISPLAY)
     self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
@@ -349,7 +347,8 @@ class NetworkSetupPage(NavScroller):
     self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
-    self._pending_has_internet_scroll = None
+    self._show_time = 0.0
+    self._pending_has_internet_scroll = False
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
 
@@ -384,21 +383,22 @@ class NetworkSetupPage(NavScroller):
 
   def show_event(self):
     super().show_event()
+    self._show_time = rl.get_time()
     self._prev_has_internet = False
-    self._pending_has_internet_scroll = None
+    self._pending_has_internet_scroll = False
 
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
 
     has_internet = self._network_monitor.network_connected.is_set()
     if has_internet and not self._prev_has_internet:
-      self._pending_has_internet_scroll = rl.get_time()
+      self._pending_has_internet_scroll = True
     self._prev_has_internet = has_internet
 
-    if self._pending_has_internet_scroll is not None:
-      elapsed = rl.get_time() - self._pending_has_internet_scroll
+    if self._pending_has_internet_scroll:
+      elapsed = rl.get_time() - self._show_time
       if elapsed > 0.5:
-        self._pending_has_internet_scroll = None
+        self._pending_has_internet_scroll = False
 
         def scroll_to_download():
           self._scroller._layout()
