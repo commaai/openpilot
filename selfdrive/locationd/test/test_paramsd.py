@@ -20,11 +20,14 @@ def get_random_live_parameters(CP):
 
 
 class TestParamsd:
+  @classmethod
+  def setup_class(cls):
+    cls.lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
+    cls.CP = next(m for m in cls.lr if m.which() == "carParams").carParams
+
   def test_read_saved_params(self):
     params = Params()
-
-    lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
-    CP = next(m for m in lr if m.which() == "carParams").carParams
+    CP = self.CP
 
     msg = get_random_live_parameters(CP)
     params.put("LiveParametersV2", msg.to_bytes())
@@ -41,9 +44,7 @@ class TestParamsd:
   # TODO Remove this test after the support for old format is removed
   def test_read_saved_params_old_format(self):
     params = Params()
-
-    lr = migrate(LogReader(TEST_ROUTE), [migrate_carParams])
-    CP = next(m for m in lr if m.which() == "carParams").carParams
+    CP = self.CP
 
     msg = get_random_live_parameters(CP)
     params.put("LiveParameters", msg.liveParameters.to_dict())

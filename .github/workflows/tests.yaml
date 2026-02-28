@@ -110,8 +110,8 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       run: |
         source selfdrive/test/setup_xvfb.sh
-        # Pre-compile Python bytecode so each pytest worker doesn't need to
-        pytest --collect-only -m 'not slow' -qq
+        # Pre-compile Python bytecode so each pytest-xdist worker doesn't need to
+        python -m compileall -q -j0 common selfdrive system tools cereal
         MAX_EXAMPLES=1 pytest -m 'not slow'
 
   process_replay:
@@ -210,8 +210,12 @@ jobs:
       - name: Create UI Report
         run: |
           source selfdrive/test/setup_xvfb.sh
-          python3 selfdrive/ui/tests/diff/replay.py
-          python3 selfdrive/ui/tests/diff/replay.py --big
+          python3 selfdrive/ui/tests/diff/replay.py &
+          pid1=$!
+          python3 selfdrive/ui/tests/diff/replay.py --big &
+          pid2=$!
+          wait $pid1
+          wait $pid2
       - name: Upload UI Report
         uses: actions/upload-artifact@v6
         with:
