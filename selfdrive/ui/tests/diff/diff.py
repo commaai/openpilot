@@ -167,7 +167,7 @@ def extract_chunk_clips(video1: Path, video2: Path, chunks: list[DiffChunk], fps
   results = []
   with ThreadPoolExecutor(max_workers) as executor:
     futures = [executor.submit(process_chunk, i, chunk) for i, chunk in enumerate(chunks)]
-    for future in tqdm(as_completed(futures), total=len(futures), desc="Processing chunks"):
+    for future in tqdm(as_completed(futures), total=len(futures), desc="Processing chunks", unit="chunk", disable=bool(os.getenv("CI"))):
       results.append(future.result())
   # results will be out of order due to parallel processing, so sort them back to the original order
   clip_sets = sorted(results, key=lambda x: x['index'])
