@@ -42,8 +42,8 @@ def read_pkt_line(stream) -> bytes | None:
     return None
   try:
     length = int(header, 16)
-  except ValueError:
-    raise EOFError(f"invalid pkt-line header: {header!r}")
+  except ValueError as e:
+    raise EOFError(f"invalid pkt-line header: {header!r}") from e
   if length <= 4:
     return b""
   return _read_exact(stream, length - 4)
