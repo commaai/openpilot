@@ -145,7 +145,6 @@ class NavWidget(Widget, abc.ABC):
 
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       gui_app.pop_widget()
-
       if self._dismiss_callback is not None:
         self._dismiss_callback()
         self._dismiss_callback = None
