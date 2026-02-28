@@ -399,6 +399,7 @@ class GuiApplication:
       if callback:
         callback()
 
+  # pop_widget and pop_widgets_to are immediate (no animation). Use request_* variants for animated dismiss.
   def pop_widget(self, idx: int | None = None):
     print("Pop widget at idx", idx)
     if len(self._nav_stack) < 2:
@@ -425,7 +426,6 @@ class GuiApplication:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
 
-    # pops all widgets after specified widget (immediate, no animation)
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
 
