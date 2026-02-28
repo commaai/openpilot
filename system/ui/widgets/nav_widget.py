@@ -53,7 +53,7 @@ class NavWidget(Widget, abc.ABC):
   """
   BACK_TOUCH_AREA_PERCENTAGE = 0.65
 
-  def __init__(self, show_nav_bar: bool = True):
+  def __init__(self):
     super().__init__()
     # State
     self._drag_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
