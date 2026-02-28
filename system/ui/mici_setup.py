@@ -534,6 +534,15 @@ class Setup(Widget):
     self.download_thread.start()
 
   def _download_thread(self):
+    # If installer is already pre-staged (e.g. by continue.sh for demo), skip the download
+    if os.path.isfile(INSTALLER_DESTINATION_PATH):
+      for i in range(101):
+        self.download_progress = i
+        self._downloading_page.set_progress(i)
+        time.sleep(0.02)
+      gui_app.request_close()
+      return
+
     try:
       import tempfile
 
