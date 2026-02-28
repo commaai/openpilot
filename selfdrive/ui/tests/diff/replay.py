@@ -3,10 +3,10 @@ import os
 import argparse
 import coverage
 import pyray as rl
+
 from tqdm import tqdm
 from typing import Literal
 from collections.abc import Callable
-
 from cereal.messaging import PubMaster
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
