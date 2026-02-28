@@ -391,17 +391,14 @@ class GuiApplication:
       return
     top = self._nav_stack[-1]
     if hasattr(top, "dismiss") and callable(getattr(top, "dismiss")):
-      print("Calling dismiss on top widget", top)
       top.dismiss(callback)
     else:
-      print("Top widget has no dismiss, popping immediately")
       self.pop_widget()
       if callback:
         callback()
 
   # pop_widget and pop_widgets_to are immediate (no animation). Use request_* variants for animated dismiss.
   def pop_widget(self, idx: int | None = None):
-    print("Pop widget at idx", idx)
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
