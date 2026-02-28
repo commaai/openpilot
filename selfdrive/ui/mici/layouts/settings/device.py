@@ -302,6 +302,7 @@ class DeviceLayoutMici(NavScroller):
 
     self._power_off_btn = BigCircleButton("icons_mici/settings/device/power.png", red=True, icon_size=(64, 66))
     self._power_off_btn.set_click_callback(lambda: _engaged_confirmation_callback(power_off_callback, "power off"))
+    self._power_off_btn.set_visible(lambda: not ui_state.ignition)
 
     regulatory_btn = BigButton("regulatory info", "", "icons_mici/settings/device/info.png")
     regulatory_btn.set_click_callback(self._on_regulatory)
@@ -331,13 +332,7 @@ class DeviceLayoutMici(NavScroller):
     # TODO: can this somehow be generic in widgets/__init__.py or application.py?
     self.set_back_callback(gui_app.pop_widget)
 
-    # Hide power off button when onroad
-    ui_state.add_offroad_transition_callback(self._offroad_transition)
-
   def _on_regulatory(self):
     if not self._fcc_dialog:
       self._fcc_dialog = MiciFccModal(os.path.join(BASEDIR, "selfdrive/assets/offroad/mici_fcc.html"))
     gui_app.push_widget(self._fcc_dialog)
-
-  def _offroad_transition(self):
-    self._power_off_btn.set_visible(ui_state.is_offroad())
