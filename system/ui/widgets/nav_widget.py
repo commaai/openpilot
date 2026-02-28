@@ -63,7 +63,7 @@ class NavWidget(Widget, abc.ABC):
     self._playing_dismiss_animation = False  # released and animating away
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
 
-    self._dismiss_callback: Callable | None = None
+    self._dismiss_callback: Callable[[], None] | None = None
 
     # TODO: move this state into NavBar
     self._nav_bar = NavBar()
