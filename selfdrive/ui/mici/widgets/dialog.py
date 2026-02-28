@@ -127,7 +127,7 @@ class BigInputDialog(BigDialogBase):
 
     def confirm_callback_wrapper():
       text = self._keyboard.text()
-      self.dismiss(lambda: confirm_callback(text) if confirm_callback else None)
+      self.dismiss((lambda: confirm_callback(text)) if confirm_callback else None)
     self._confirm_callback = confirm_callback_wrapper
 
   def _update_state(self):
