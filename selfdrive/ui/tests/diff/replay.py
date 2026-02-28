@@ -41,7 +41,7 @@ def run_replay(variant: LayoutVariant) -> None:
   setup_state()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
-  from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
+  from openpilot.selfdrive.ui.ui_state import ui_state, device  # Import within OpenpilotPrefix context so param values are setup correctly
   from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
   from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
 
@@ -53,6 +53,9 @@ def run_replay(variant: LayoutVariant) -> None:
   else:
     from openpilot.selfdrive.ui.layouts.main import MainLayout
   main_layout = MainLayout()
+
+  # Set high interactive timeout so the settings panel doesn't close automatically during the replay (after 30s clock time)
+  device.set_override_interactive_timeout(9999)
 
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
   script = build_script(pm, main_layout, variant)
