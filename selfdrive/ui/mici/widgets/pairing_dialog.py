@@ -69,7 +69,8 @@ class PairingDialog(NavWidget):
   def _update_state(self):
     super()._update_state()
     if ui_state.prime_state.is_paired():
-      self._playing_dismiss_animation = True
+      # TODO: test this
+      self.dismiss()
 
   def _render(self, rect: rl.Rectangle):
     self._check_qr_refresh()
