@@ -1,3 +1,4 @@
+import os
 import time
 import threading
 from collections import namedtuple
@@ -115,3 +116,119 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  # -- robustness tests for non-standard entries in the log root --
+
+  def _wait_for_path_removal(self, path: Path, timeout: float = 3) -> bool:
+    """Wait for a path to be removed. Returns True if removed.
+    Uses os.path.lexists to correctly detect broken symlinks."""
+    self.start_thread()
+    try:
+      start = time.monotonic()
+      while os.path.lexists(path) and time.monotonic() - start < timeout:
+        time.sleep(0.01)
+      return not os.path.lexists(path)
+    finally:
+      self.join_thread()
+
+  def test_delete_stray_file(self):
+    """A regular file (e.g. tar.gz archive) in the log root should be deleted."""
+    from openpilot.system.hardware.hw import Paths
+    stray = Path(Paths.log_root()) / "2023-09-23.tar.gz"
+    stray.write_bytes(os.urandom(1024))
+
+    assert self._wait_for_path_removal(stray), "Stray file was not deleted"
+
+  def test_delete_broken_symlink(self):
+    """A symlink pointing to a non-existent target should be deleted."""
+    from openpilot.system.hardware.hw import Paths
+    link = Path(Paths.log_root()) / "broken-link"
+    link.symlink_to("/does/not/exist")
+
+    assert self._wait_for_path_removal(link), "Broken symlink was not deleted"
+
+  def test_delete_valid_symlink_to_file(self):
+    """A symlink pointing to a real file should be removed (unlinked)."""
+    from openpilot.system.hardware.hw import Paths
+    target = Path(Paths.log_root()) / "target.txt"
+    target.write_bytes(b"data")
+    link = Path(Paths.log_root()) / "link-to-file"
+    link.symlink_to(target)
+
+    assert self._wait_for_path_removal(link), "Valid file symlink was not deleted"
+
+  def test_delete_empty_file(self):
+    """A zero-byte file should be deleted."""
+    from openpilot.system.hardware.hw import Paths
+    empty = Path(Paths.log_root()) / "empty_file"
+    empty.touch()
+
+    assert self._wait_for_path_removal(empty), "Empty file was not deleted"
+
+  def test_delete_hidden_file(self):
+    """A dotfile should be deleted."""
+    from openpilot.system.hardware.hw import Paths
+    hidden = Path(Paths.log_root()) / ".hidden_temp"
+    hidden.write_bytes(b"hidden")
+
+    assert self._wait_for_path_removal(hidden), "Hidden file was not deleted"
+
+  def test_delete_fifo(self):
+    """A named pipe (FIFO) should be deleted."""
+    from openpilot.system.hardware.hw import Paths
+    fifo = Path(Paths.log_root()) / "test.fifo"
+    os.mkfifo(fifo)
+
+    assert self._wait_for_path_removal(fifo), "FIFO was not deleted"
+
+  def test_stray_files_deleted_before_segments(self):
+    """Non-directory entries should be cleaned up alongside segment dirs."""
+    from openpilot.system.hardware.hw import Paths
+
+    stray = Path(Paths.log_root()) / "stray_backup.tar.gz"
+    stray.write_bytes(os.urandom(512))
+
+    seg_path = self.make_file_with_data(self.seg_dir, self.f_type)
+
+    self.start_thread()
+    try:
+      with Timeout(3, "Timeout waiting for cleanup"):
+        while stray.exists() or seg_path.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+
+  def test_mixed_entries_no_crash(self):
+    """Deleter should handle a mix of normal segments, stray files, symlinks,
+    and empty directories without crashing."""
+    from openpilot.system.hardware.hw import Paths
+    root = Path(Paths.log_root())
+
+    # normal segment directory
+    seg_path = self.make_file_with_data(self.seg_format.format(0), self.f_type)
+
+    # stray regular files
+    (root / "backup.tar.gz").write_bytes(os.urandom(256))
+    (root / "notes.txt").write_bytes(b"test")
+    (root / ".DS_Store").write_bytes(b"\x00" * 32)
+
+    # broken symlink
+    (root / "dead-link").symlink_to("/nonexistent/path")
+
+    # empty directory (not a segment)
+    (root / "tmp_work").mkdir()
+
+    # FIFO
+    os.mkfifo(root / "pipe")
+
+    self.start_thread()
+    try:
+      with Timeout(5, "Timeout waiting for mixed cleanup"):
+        # wait for all non-directory entries to be cleaned up
+        while any(os.path.lexists(root / f) for f in ["backup.tar.gz", "notes.txt", ".DS_Store", "dead-link", "pipe"]):
+          time.sleep(0.01)
+        # segment should also be deleted eventually
+        while seg_path.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
