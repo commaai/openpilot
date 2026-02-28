@@ -3,6 +3,7 @@
 import json
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 
@@ -38,6 +39,18 @@ def _batch_request(oids_sizes: list[tuple[str, int]], operation: str, url: str |
   return resp.json()
 
 
+def _download_one(oid: str, href: str, dl_headers: dict) -> str | None:
+  """Download a single object. Returns oid on success, None on failure."""
+  try:
+    resp = requests.get(href, headers=dl_headers, timeout=120)
+    resp.raise_for_status()
+    store_object(oid, resp.content)
+    return oid
+  except Exception as e:
+    print(f"  error downloading {oid[:12]}: {e}", file=sys.stderr)
+    return None
+
+
 def download_objects(oids_sizes: list[tuple[str, int]], progress: bool = True) -> int:
   """Download LFS objects that aren't in the local cache. Returns count downloaded."""
   # filter out already-cached objects
@@ -48,7 +61,8 @@ def download_objects(oids_sizes: list[tuple[str, int]], progress: bool = True) -
   downloaded = 0
   total = len(needed)
 
-  # process in batches
+  # collect all download URLs via batch API, then fetch in parallel
+  to_fetch: list[tuple[str, str, dict]] = []  # (oid, href, headers)
   for i in range(0, len(needed), BATCH_SIZE):
     batch = needed[i:i + BATCH_SIZE]
     result = _batch_request(batch, "download")
@@ -61,19 +75,17 @@ def download_objects(oids_sizes: list[tuple[str, int]], progress: bool = True) -
       actions = obj.get("actions", {})
       dl = actions.get("download")
       if dl is None:
-        # server says we already have it or it doesn't exist
         continue
+      to_fetch.append((oid, dl["href"], dl.get("header", {})))
 
-      href = dl["href"]
-      dl_headers = dl.get("header", {})
-      resp = requests.get(href, headers=dl_headers, timeout=120)
-      resp.raise_for_status()
-      data = resp.content
-
-      store_object(oid, data)
-      downloaded += 1
-      if progress:
-        print(f"\r  downloading: {downloaded}/{total}", end="", flush=True)
+  # parallel download
+  with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as pool:
+    futures = {pool.submit(_download_one, oid, href, hdrs): oid for oid, href, hdrs in to_fetch}
+    for future in as_completed(futures):
+      if future.result() is not None:
+        downloaded += 1
+        if progress:
+          print(f"\r  downloading: {downloaded}/{total}", end="", flush=True)
 
   if progress and downloaded > 0:
     print()
