@@ -37,7 +37,7 @@ class MultiOptionDialog(Widget):
     self.select_button = Button(lambda: tr("Select"), click_callback=lambda: self._set_result(DialogResult.CONFIRM), button_style=ButtonStyle.PRIMARY)
 
   def _set_result(self, result: DialogResult):
-    gui_app.pop_widget()
+    gui_app.pop_widget(self)
     if self._callback:
       self._callback(result)
 

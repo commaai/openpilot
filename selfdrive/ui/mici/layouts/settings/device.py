@@ -265,6 +265,7 @@ class DeviceLayoutMici(NavScroller):
     super().__init__()
 
     self._fcc_dialog: HtmlModal | None = None
+    self._training_guide: TrainingGuide | None = None
 
     def power_off_callback():
       ui_state.params.put_bool("DoShutdown", True)
@@ -304,8 +305,16 @@ class DeviceLayoutMici(NavScroller):
     driver_cam_btn.set_click_callback(lambda: gui_app.push_widget(DriverCameraDialog()))
     driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
+    def _on_training_guide():
+      def completed_callback():
+        gui_app.pop_widget(self._training_guide)
+
+      if not self._training_guide:
+        self._training_guide = TrainingGuide(completed_callback)
+      gui_app.push_widget(self._training_guide)
+
     review_training_guide_btn = BigButton("review\ntraining guide", "", "icons_mici/settings/device/info.png")
-    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(TrainingGuide(completed_callback=gui_app.pop_widget)))
+    review_training_guide_btn.set_click_callback(_on_training_guide)
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
     self._scroller.add_widgets([

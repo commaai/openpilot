@@ -38,12 +38,12 @@ class ConfirmDialog(Widget):
       self._html_renderer.parse_html_content(text)
 
   def _cancel_button_callback(self):
-    gui_app.pop_widget()
+    gui_app.pop_widget(self)
     if self._callback:
       self._callback(DialogResult.CANCEL)
 
   def _confirm_button_callback(self):
-    gui_app.pop_widget()
+    gui_app.pop_widget(self)
     if self._callback:
       self._callback(DialogResult.CONFIRM)
 

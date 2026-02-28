@@ -189,5 +189,8 @@ class DeviceLayout(Widget):
 
   def _on_review_training_guide(self):
     if not self._training_guide:
-      self._training_guide = TrainingGuide()
+      def completed_callback():
+        gui_app.pop_widget(self._training_guide)
+
+      self._training_guide = TrainingGuide(completed_callback)
     gui_app.push_widget(self._training_guide)
