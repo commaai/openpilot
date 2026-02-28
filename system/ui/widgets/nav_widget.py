@@ -60,27 +60,13 @@ class NavWidget(Widget, abc.ABC):
     self._playing_dismiss_animation = False  # released and animating away
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
 
-    self._back_enabled: bool | Callable[[], bool] = True
-
     self._nav_bar = NavBar()
     self._nav_bar_show_time = 0.0
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-  @property
-  def back_enabled(self) -> bool:
-    return self._back_enabled() if callable(self._back_enabled) else self._back_enabled
-
-  def set_back_enabled(self, enabled: bool | Callable[[], bool]) -> None:
-    self._back_enabled = enabled
-
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     # FIXME: disabling this widget on new push_widget still causes this widget to track mouse events without mouse down
     super()._handle_mouse_event(mouse_event)
-
-    if not self.back_enabled:
-      self._drag_start_pos = None
-      self._dragging_down = False
-      return
 
     if mouse_event.left_pressed:
       # user is able to swipe away if starting near top of screen, or anywhere if scroller is at top
@@ -172,21 +158,20 @@ class NavWidget(Widget, abc.ABC):
   def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
 
-    if self.back_enabled:
-      bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
-      nav_bar_delayed = rl.get_time() - self._nav_bar_show_time < 0.4
-      # User dragging or dismissing, nav bar follows NavWidget
-      if self._drag_start_pos is not None or self._playing_dismiss_animation:
-        self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._y_pos_filter.x
-      # Waiting to show
-      elif nav_bar_delayed:
-        self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
-      # Animate back to top
-      else:
-        self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
+    bar_x = self._rect.x + (self._rect.width - self._nav_bar.rect.width) / 2
+    nav_bar_delayed = rl.get_time() - self._nav_bar_show_time < 0.4
+    # User dragging or dismissing, nav bar follows NavWidget
+    if self._drag_start_pos is not None or self._playing_dismiss_animation:
+      self._nav_bar_y_filter.x = NAV_BAR_MARGIN + self._y_pos_filter.x
+    # Waiting to show
+    elif nav_bar_delayed:
+      self._nav_bar_y_filter.x = -NAV_BAR_MARGIN - NAV_BAR_HEIGHT
+    # Animate back to top
+    else:
+      self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
-      self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
-      self._nav_bar.render()
+    self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
+    self._nav_bar.render()
 
     return ret
 

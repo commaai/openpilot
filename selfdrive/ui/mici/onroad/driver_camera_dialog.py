@@ -7,6 +7,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import gui_label
 
@@ -24,18 +25,15 @@ class DriverCameraView(CameraView):
     return base
 
 
-class DriverCameraDialog(NavWidget):
-  def __init__(self, no_escape=False):
+class BaseDriverCameraDialog(Widget):
+  # Not a NavWidget so training guide can use this without back navigation
+  def __init__(self):
     super().__init__()
     self._camera_view = DriverCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
     self._pm: messaging.PubMaster | None = None
-    if not no_escape:
-      # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(gui_app.pop_widget)
-    self.set_back_enabled(not no_escape)
 
     # Load eye icons
     self._eye_fill_texture = None
@@ -228,6 +226,13 @@ class DriverCameraDialog(NavWidget):
     glasses_pos = rl.Vector2(glasses_x, glasses_y)
     glasses_prob = driver_data.sunglassesProb
     rl.draw_texture_v(self._glasses_texture, glasses_pos, rl.Color(70, 80, 161, int(255 * glasses_prob)))
+
+
+class DriverCameraDialog(NavWidget, BaseDriverCameraDialog):
+  def __init__(self):
+    super().__init__()
+    # TODO: this can grow unbounded, should be given some thought
+    device.add_interactive_timeout_callback(gui_app.pop_widget)
 
 
 if __name__ == "__main__":
