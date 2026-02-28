@@ -17,6 +17,7 @@ NAV_BAR_HEIGHT = 8
 
 DISMISS_PUSH_OFFSET = 50 + NAV_BAR_MARGIN + NAV_BAR_HEIGHT  # px extra to push down when dismissing
 DISMISS_TIME_SECONDS = 2.0
+DISMISS_ANIMATION_RC = 0.25  # time constant for swipe-down dismiss (larger = slower)
 
 
 class NavBar(Widget):
@@ -69,6 +70,8 @@ class NavWidget(Widget, abc.ABC):
     self._nav_bar = NavBar()
 
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+
+    self._can_pop: bool = False  # something like this?
 
   @property
   def back_enabled(self) -> bool:
@@ -126,7 +129,7 @@ class NavWidget(Widget, abc.ABC):
             self._swiping_away = True
 
     elif mouse_event.left_released:
-      self._pos_filter.update_alpha(0.1)
+      self._pos_filter.update_alpha(DISMISS_ANIMATION_RC)
       # if far enough, trigger back navigation callback
       if self._back_button_start_pos is not None:
         if mouse_event.pos.y - self._back_button_start_pos.y > SWIPE_AWAY_THRESHOLD:
@@ -214,7 +217,7 @@ class NavWidget(Widget, abc.ABC):
   def dismiss(self, callback: Callable | None = None):
     """Programmatically trigger the dismiss animation. Calls pop_widget when done, then callback."""
     if not self._playing_dismiss_animation:
-      self._pos_filter.update_alpha(0.1)
+      self._pos_filter.update_alpha(DISMISS_ANIMATION_RC)
       self._playing_dismiss_animation = True
     self._dismiss_callback = callback
 

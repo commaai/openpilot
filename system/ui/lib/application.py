@@ -222,6 +222,7 @@ class GuiApplication:
     self._nav_stack: list[object] = []
     self._nav_stack_tick: Callable[[], None] | None = None
     self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
+    self._pop_to_target: object | None = None
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -384,6 +385,17 @@ class GuiApplication:
     self._nav_stack.append(widget)
     widget.show_event()
 
+  def request_pop_widget(self):
+    """Request the top widget to close. NavWidgets dismiss (animate then pop); others pop immediately."""
+    if len(self._nav_stack) < 2:
+      cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
+      return
+    top = self._nav_stack[-1]
+    if hasattr(top, "dismiss") and callable(getattr(top, "dismiss")):
+      top.dismiss(None)
+    else:
+      self.pop_widget()
+
   def pop_widget(self):
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
@@ -397,14 +409,29 @@ class GuiApplication:
     widget = self._nav_stack.pop()
     widget.hide_event()
 
+    # If we're in a "pop to target" flow, request the new top to dismiss next (sequential animation)
+    if self._pop_to_target is not None:
+      if len(self._nav_stack) >= 2 and self._nav_stack[-1] != self._pop_to_target:
+        self.request_pop_widget()
+      else:
+        self._pop_to_target = None
+
   def pop_widgets_to(self, widget):
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
 
-    # pops all widgets after specified widget
+    # pops all widgets after specified widget (immediate, no animation)
     while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
       self.pop_widget()
+
+  def request_pop_widgets_to(self, widget):
+    """Request to close widgets down to the given widget. NavWidgets animate sequentially (one after another)."""
+    if widget not in self._nav_stack:
+      cloudlog.warning("Widget not in stack, cannot pop to it!")
+      return
+    self._pop_to_target = widget
+    self.request_pop_widget()
 
   def get_active_widget(self):
     if len(self._nav_stack) > 0:
