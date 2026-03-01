@@ -483,6 +483,9 @@ class NetworkSetupPage(NavWidget):
 
   def _nav_stack_tick(self):
     has_internet = self._network_monitor.network_connected.is_set()
+    if has_internet and not self._prev_has_internet:
+      gui_app.pop_widgets_to(self)
+    self._prev_has_internet = has_internet
 
     if has_internet:
       self._network_header.set_title("connected to internet")
@@ -492,10 +495,6 @@ class NetworkSetupPage(NavWidget):
       self._network_header.set_title(self._waiting_text)
       self._network_header.set_icon(self._no_wifi_txt)
       self._continue_button.set_enabled(False)
-
-    if has_internet and not self._prev_has_internet:
-      gui_app.pop_widgets_to(self)
-    self._prev_has_internet = has_internet
 
   def set_custom_software(self, custom_software: bool):
     self._custom_software = custom_software
@@ -567,30 +566,12 @@ class Setup(Widget):
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
 
-  def _software_selection_custom_software_continue(self):
-    gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-    self._push_network_setup(custom_software=True)
+  def close(self):
+    self._network_monitor.stop()
 
   def _pop_to_software_selection(self):
     # reset sliders after dismiss completes
     gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
-
-  def _network_setup_continue_button_callback(self, custom_software):
-    if not custom_software:
-      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-      self.download(OPENPILOT_URL)
-    else:
-      def handle_keyboard_result(text):
-        url = text.strip()
-        if url:
-          gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-          self.download(url)
-
-      keyboard = BigInputDialog("custom software URL", "openpilot.comma.ai", confirm_callback=handle_keyboard_result)
-      gui_app.push_widget(keyboard)
-
-  def close(self):
-    self._network_monitor.stop()
 
   def use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
@@ -610,6 +591,24 @@ class Setup(Widget):
   def _push_network_setup(self, custom_software: bool):
     self._network_setup_page.set_custom_software(custom_software)
     gui_app.push_widget(self._network_setup_page)
+
+  def _software_selection_custom_software_continue(self):
+    gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+    self._push_network_setup(custom_software=True)
+
+  def _network_setup_continue_button_callback(self, custom_software):
+    if not custom_software:
+      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+      self.download(OPENPILOT_URL)
+    else:
+      def handle_keyboard_result(text):
+        url = text.strip()
+        if url:
+          gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+          self.download(url)
+
+      keyboard = BigInputDialog("custom software URL", "openpilot.comma.ai", confirm_callback=handle_keyboard_result)
+      gui_app.push_widget(keyboard)
 
   def download(self, url: str):
     # autocomplete incomplete URLs
