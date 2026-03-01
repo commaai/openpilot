@@ -111,7 +111,7 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
       ssize_t n = read(stderr_pipe[0], buf, sizeof(buf));
       if (n <= 0) {
         stderr_open = false;
-      } else if (parse_progress) {
+      } else {
         stderr_buf.append(buf, n);
         // Parse complete lines from stderr
         size_t pos;
@@ -119,13 +119,13 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
           std::string line = stderr_buf.substr(0, pos);
           stderr_buf.erase(0, pos + 1);
 
-          if (line.rfind("PROGRESS:", 0) == 0) {
+          if (parse_progress && line.rfind("PROGRESS:", 0) == 0) {
             // Parse "PROGRESS:<cur>:<total>"
             auto colon1 = line.find(':', 9);
             if (colon1 != std::string::npos) {
               try {
-                uint64_t cur = std::stoull(line.substr(9, colon1 - 9));
-                uint64_t total = std::stoull(line.substr(colon1 + 1));
+                uint64_t cur = std::stoull(line.c_str() + 9);
+                uint64_t total = std::stoull(line.c_str() + colon1 + 1);
                 std::lock_guard<std::mutex> lk(handler_mutex);
                 if (progress_handler) {
                   progress_handler(cur, total, true);
@@ -140,16 +140,23 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
     }
   }
 
-  close(stdout_pipe[0]);
-  close(stderr_pipe[0]);
+  // Drain remaining pipe data to prevent child from blocking on write
+  for (int fd : {stdout_pipe[0], stderr_pipe[0]}) {
+    while (read(fd, buf, sizeof(buf)) > 0) {}
+    close(fd);
+  }
 
   int status;
   waitpid(pid, &status, 0);
 
-  bool failed = (abort && *abort) || (WIFEXITED(status) && WEXITSTATUS(status) != 0);
+  bool failed = (abort && *abort) ||
+                (WIFEXITED(status) && WEXITSTATUS(status) != 0) ||
+                WIFSIGNALED(status);
   if (failed) {
-    if (!abort || !*abort) {
+    if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
       rWarning("py_downloader: process exited with code %d", WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status)) {
+      rWarning("py_downloader: process killed by signal %d", WTERMSIG(status));
     }
     std::lock_guard<std::mutex> lk(handler_mutex);
     if (progress_handler) {

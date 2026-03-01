@@ -118,8 +118,8 @@ void RoutesDialog::fetchRoutes() {
     std::string result = PyDownloader::getDeviceRoutes(did, start_ms, end_ms, preserved);
     if (!self || self->fetch_id_ != request_id) return;
     auto [success, error_code] = checkApiResponse(result);
-    QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), success, error_code]() {
-      if (self) self->parseRouteList(r, success, error_code);
+    QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), success, error_code, request_id]() {
+      if (self && self->fetch_id_ == request_id) self->parseRouteList(r, success, error_code);
     }, Qt::QueuedConnection);
   });
 }

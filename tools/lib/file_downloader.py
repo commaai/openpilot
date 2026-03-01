@@ -51,12 +51,13 @@ def cmd_route_files(args):
 def cmd_download(args):
   url = args.url
   use_cache = not args.no_cache
-  local_path = cache_file_path(url)
 
-  if use_cache and os.path.exists(local_path):
-    sys.stdout.write(local_path + "\n")
-    sys.stdout.flush()
-    return
+  if use_cache:
+    local_path = cache_file_path(url)
+    if os.path.exists(local_path):
+      sys.stdout.write(local_path + "\n")
+      sys.stdout.flush()
+      return
 
   try:
     uf = URLFile(url, cache=False)
