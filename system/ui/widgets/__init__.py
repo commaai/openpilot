@@ -53,7 +53,7 @@ class Widget(abc.ABC):
 
   @property
   def is_pressed(self) -> bool:
-    # if actually pressed or delaying click callback
+    # if actually pressed or holding after release
     return any(self.__is_pressed) or self._click_release_time is not None
 
   @property
