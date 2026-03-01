@@ -36,6 +36,7 @@ class BigCircleButton(Widget):
     # State
     self.set_rect(rl.Rectangle(0, 0, 180, 180))
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_delay = 0.075
 
     # Icons
     self._txt_icon = gui_app.texture(icon, *icon_size)
@@ -117,6 +118,7 @@ class BigButton(Widget):
     self.set_icon(icon)
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_delay = 0.075
     self._shake_start: float | None = None
 
     self._rotate_icon_t: float | None = None
