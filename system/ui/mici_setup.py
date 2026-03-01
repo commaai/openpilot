@@ -570,7 +570,7 @@ class Setup(Widget):
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
 
-    # move to update state or somewhere else?
+    # TODO: move to update state or somewhere else?
     self._downloading_page.set_progress(self.download_progress)
 
   def _software_selection_custom_software_continue(self):
