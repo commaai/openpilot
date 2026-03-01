@@ -54,8 +54,7 @@ if arch != "larch64":
   py_include = python3_dev.INCLUDE_DIR
 else:
   # TODO: remove when AGNOS has our new vendor pkgs
-  import libyuv
-  pkgs = [libyuv]
+  pkgs = []
   py_include = sysconfig.get_paths()['include']
 
 env = Environment(
