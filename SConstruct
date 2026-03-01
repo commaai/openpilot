@@ -43,6 +43,7 @@ if arch != "larch64":
   import capnproto
   import eigen
   import ffmpeg as ffmpeg_pkg
+  import json11
   import libjpeg
   import libyuv
   import ncurses
@@ -50,11 +51,12 @@ if arch != "larch64":
   import python3_dev
   import zeromq
   import zstd
-  pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, libjpeg, libyuv, ncurses, openssl3, zeromq, zstd]
+  pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, json11, libjpeg, libyuv, ncurses, openssl3, zeromq, zstd]
   py_include = python3_dev.INCLUDE_DIR
 else:
+  import json11
   # TODO: remove when AGNOS has our new vendor pkgs
-  pkgs = []
+  pkgs = [json11]
   py_include = sysconfig.get_paths()['include']
 
 env = Environment(
@@ -84,7 +86,6 @@ env = Environment(
     "#",
     "#msgq",
     "#third_party",
-    "#third_party/json11",
     "#third_party/linux/include",
     "#third_party/acados/include",
     "#third_party/acados/include/blasfeo/include",
@@ -232,9 +233,6 @@ SConscript([
 
 if arch == "larch64":
   SConscript(['system/camerad/SConscript'])
-
-# Build openpilot
-SConscript(['third_party/SConscript'])
 
 SConscript(['selfdrive/SConscript'])
 
