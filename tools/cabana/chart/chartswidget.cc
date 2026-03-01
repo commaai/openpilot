@@ -327,7 +327,7 @@ QStringList ChartsWidget::serializeChartIds() const {
   for (auto c : charts) {
     QStringList ids;
     for (const auto& s : c->sigs)
-      ids += QString("%1|%2").arg(s.msg_id.toString(), s.sig->name);
+      ids += QString("%1|%2").arg(QString::fromStdString(s.msg_id.toString()), QString::fromStdString(s.sig->name));
     chart_ids += ids.join(',');
   }
   std::reverse(chart_ids.begin(), chart_ids.end());
@@ -340,9 +340,9 @@ void ChartsWidget::restoreChartsFromIds(const QStringList& chart_ids) {
     for (const auto& part : chart_id.split(',')) {
       const auto sig_parts = part.split('|');
       if (sig_parts.size() != 2) continue;
-      MessageId msg_id = MessageId::fromString(sig_parts[0]);
+      MessageId msg_id = MessageId::fromString(sig_parts[0].toStdString());
       if (auto* msg = dbc()->msg(msg_id))
-        if (auto* sig = msg->sig(sig_parts[1]))
+        if (auto* sig = msg->sig(sig_parts[1].toStdString()))
           showChart(msg_id, sig, true, index++ > 0);
     }
   }

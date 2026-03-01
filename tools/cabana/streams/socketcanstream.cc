@@ -12,7 +12,7 @@ SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_)
     throw std::runtime_error("SocketCAN plugin not available");
   }
 
-  qDebug() << "Connecting to SocketCAN device" << config.device;
+  qDebug() << "Connecting to SocketCAN device" << config.device.c_str();
   if (!connect()) {
     throw std::runtime_error("Failed to connect to SocketCAN device");
   }
@@ -26,7 +26,7 @@ bool SocketCanStream::connect() {
   // Connecting might generate some warnings about missing socketcan/libsocketcan libraries
   // These are expected and can be ignored, we don't need the advanced features of libsocketcan
   QString errorString;
-  device.reset(QCanBus::instance()->createDevice("socketcan", config.device, &errorString));
+  device.reset(QCanBus::instance()->createDevice("socketcan", QString::fromStdString(config.device), &errorString));
   device->setConfigurationParameter(QCanBusDevice::CanFdKey, true);
 
   if (!device) {
@@ -87,7 +87,7 @@ OpenSocketCanWidget::OpenSocketCanWidget(QWidget *parent) : AbstractOpenStreamWi
   main_layout->addStretch(1);
 
   QObject::connect(refresh, &QPushButton::clicked, this, &OpenSocketCanWidget::refreshDevices);
-  QObject::connect(device_edit, &QComboBox::currentTextChanged, this, [=]{ config.device = device_edit->currentText(); });
+  QObject::connect(device_edit, &QComboBox::currentTextChanged, this, [=]{ config.device = device_edit->currentText().toStdString(); });
 
   // Populate devices
   refreshDevices();

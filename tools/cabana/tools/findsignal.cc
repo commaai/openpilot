@@ -20,7 +20,7 @@ QVariant FindSignalModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     const auto &s = filtered_signals[index.row()];
     switch (index.column()) {
-      case 0: return s.id.toString();
+      case 0: return QString::fromStdString(s.id.toString());
       case 1: return QString("%1, %2").arg(s.sig.start_bit).arg(s.sig.size);
       case 2: return s.values.join(" ");
     }

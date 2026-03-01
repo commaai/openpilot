@@ -384,9 +384,9 @@ QPixmap StreamCameraView::generateThumbnail(QPixmap thumb, double seconds) {
 
 void StreamCameraView::drawScrubThumbnail(QPainter &p) {
   p.fillRect(rect(), Qt::black);
-  auto it = big_thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
+  auto it = big_thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
   if (it != big_thumbnails.end()) {
-    QPixmap scaled_thumb = it.value().scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QPixmap scaled_thumb = it->second.scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     QRect thumb_rect(rect().center() - scaled_thumb.rect().center(), scaled_thumb.size());
     p.drawPixmap(thumb_rect.topLeft(), scaled_thumb);
     drawTime(p, thumb_rect, thumbnail_dispaly_time);
@@ -394,9 +394,9 @@ void StreamCameraView::drawScrubThumbnail(QPainter &p) {
 }
 
 void StreamCameraView::drawThumbnail(QPainter &p) {
-  auto it = thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
+  auto it = thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
   if (it != thumbnails.end()) {
-    const QPixmap &thumb = it.value();
+    const QPixmap &thumb = it->second;
     auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
     int pos = (thumbnail_dispaly_time - min_sec) * width() / (max_sec - min_sec);
     int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, width() - thumb.width() - THUMBNAIL_MARGIN + 1);

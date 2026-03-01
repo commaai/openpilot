@@ -10,7 +10,7 @@
 #include "tools/cabana/streams/livestream.h"
 
 struct SocketCanStreamConfig {
-  QString device = ""; // TODO: support multiple devices/buses at once
+  std::string device = ""; // TODO: support multiple devices/buses at once
 };
 
 class SocketCanStream : public LiveStream {
@@ -20,8 +20,8 @@ public:
   ~SocketCanStream() { stop(); }
   static bool available();
 
-  inline QString routeName() const override {
-    return QString("Live Streaming From Socket CAN %1").arg(config.device);
+  inline std::string routeName() const override {
+    return "Live Streaming From Socket CAN " + config.device;
   }
 
 protected:

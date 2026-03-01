@@ -59,6 +59,7 @@ struct std::hash<MessageId> {
 };
 
 typedef std::vector<std::pair<double, std::string>> ValueDescription;
+Q_DECLARE_METATYPE(ValueDescription);
 
 namespace cabana {
 
