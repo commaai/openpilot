@@ -19,15 +19,13 @@ replay_libs = [replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264'
 pyx_env = envCython.Clone()
 try:
   import ffmpeg as ffmpeg_pkg
-  pyx_env['LIBPATH'] = [p for p in pyx_env['LIBPATH'] if ffmpeg_pkg.LIB_DIR not in str(p)]
+  pyx_env['LIBPATH'] = [p for p in pyx_env.Flatten(pyx_env['LIBPATH']) if str(p) != ffmpeg_pkg.LIB_DIR]
 except ImportError:
   pass
-# x264/yuv are vendored static-only without -fPIC; x264 is a transitive dep
-# of the system's shared libavcodec, and libyuv is only used by framereader
-# code paths that are inactive when --no-vipc is used.
-yuv_stub = pyx_env.Object('yuv_stub.cc')
-replay_pyx_libs = [replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'z', 'bz2', 'zstd', 'ncurses'] + base_libs
-pyx_env.Program('replay_pyx.so', ['replay_pyx.pyx', yuv_stub], LIBS=pyx_env['LIBS'] + replay_pyx_libs)
+# x264 is a vendored static-only lib without -fPIC; it's a transitive dep
+# of the system's shared libavcodec so we omit it from the explicit link list.
+replay_pyx_libs = [replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'z', 'bz2', 'zstd', 'yuv'] + base_libs
+pyx_env.Program('replay_pyx.so', ['replay_pyx.pyx'], LIBS=pyx_env['LIBS'] + replay_pyx_libs)
 
 if GetOption('extras'):
   replay_env.Program('tests/test_replay', ['tests/test_replay.cc'], LIBS=replay_libs)
