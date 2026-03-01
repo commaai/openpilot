@@ -7,7 +7,6 @@ import time
 import urllib.request
 import urllib.error
 from urllib.parse import urlparse
-from enum import IntEnum
 import shutil
 from collections.abc import Callable
 
@@ -81,7 +80,7 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
-          time.sleep(5)
+          # time.sleep(5)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -553,25 +552,20 @@ class Setup(Widget):
 
     self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_button_callback,
                                                 self._pop_to_software_selection)
-    # TODO: change these to touch_valid
-    # self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
-
     self._software_selection_page = SoftwareSelectionPage(self.use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
-    # self._software_selection_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._download_failed_page = FailedPage(HARDWARE.reboot, self._pop_to_software_selection)
-    # self._download_failed_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._custom_software_warning_page = CustomSoftwareWarningPage(self._software_selection_custom_software_continue, self._pop_to_software_selection)
-    # self._custom_software_warning_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._downloading_page = DownloadingPage()
 
+  def _update_state(self):
+    super()._update_state()
+    self._downloading_page.set_progress(self.download_progress)
+
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
-
-    # TODO: move to update state or somewhere else?
-    self._downloading_page.set_progress(self.download_progress)
 
   def _software_selection_custom_software_continue(self):
     gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
@@ -597,15 +591,6 @@ class Setup(Widget):
 
   def close(self):
     self._network_monitor.stop()
-
-  def render_network_setup(self, rect: rl.Rectangle):
-    # has_internet = self._network_monitor.network_connected.is_set()
-    # self._network_setup_page.set_has_internet(has_internet)
-    self._network_setup_page.render(rect)
-
-  def render_downloading(self, rect: rl.Rectangle):
-    self._downloading_page.set_progress(self.download_progress)
-    self._downloading_page.render(rect)
 
   def use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
@@ -700,8 +685,7 @@ class Setup(Widget):
     self.failed_url = url
     self.failed_reason = reason
     self._download_failed_page.set_reason(reason)
-    # self._pop_to_software_selection()
-    gui_app.pop_widgets_to(self._software_selection_page, instant=True)
+    gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
     gui_app.push_widget(self._download_failed_page)
 
 
@@ -714,12 +698,17 @@ def main():
     except OSError:
       cloudlog.exception("Failed to set core affinity for setup process")
 
-  gui_app.init_window("Setup")
-  setup = Setup()
-  gui_app.push_widget(setup)
-  for _ in gui_app.render():
-    pass
-  setup.close()
+  try:
+    gui_app.init_window("Setup")
+    setup = Setup()
+    gui_app.push_widget(setup)
+    for _ in gui_app.render():
+      pass
+    setup.close()
+  except Exception as e:
+    print(f"Setup error: {e}")
+  finally:
+    gui_app.close()
 
 
 if __name__ == "__main__":
