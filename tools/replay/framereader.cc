@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "common/util.h"
-#include "third_party/libyuv/include/libyuv.h"
+#include "libyuv.h"
 #include "tools/replay/py_downloader.h"
 #include "tools/replay/util.h"
 #include "system/hardware/hw.h"

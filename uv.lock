@@ -591,6 +591,11 @@ wheels = [
 ]
 
 [[package]]
+name = "libyuv"
+version = "1622.0"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=vendor-libyuv#de7e60b4005cff5ecd9a446a643029620858c14f" }
+
+[[package]]
 name = "markdown"
 version = "3.10.2"
 source = { registry = "https://pypi.org/simple" }
@@ -801,6 +806,7 @@ dependencies = [
     { name = "json-rpc" },
     { name = "libjpeg" },
     { name = "libusb1" },
+    { name = "libyuv" },
     { name = "ncurses" },
     { name = "numpy" },
     { name = "openssl3" },
@@ -883,6 +889,7 @@ requires-dist = [
     { name = "json-rpc" },
     { name = "libjpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases" },
     { name = "libusb1" },
+    { name = "libyuv", git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=vendor-libyuv" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", git = "https://github.com/commaai/metadrive.git?rev=minimal" },
     { name = "mkdocs", marker = "extra == 'docs'" },
