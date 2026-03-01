@@ -210,7 +210,6 @@ node {
       'HW + Unit Tests': {
         deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"),
           step("test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py", [diffPaths: ["system/loggerd/"]]),
           step("test manager", "pytest system/manager/test/test_manager.py"),
@@ -219,12 +218,14 @@ node {
       'camerad OX03C10': {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
+          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
+          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
