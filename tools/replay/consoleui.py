@@ -29,7 +29,7 @@ KEYBOARD_SHORTCUTS = [
     ("c", "Next Critical"),
   ],
   [
-    ("enter", "Enter seek request"),
+    ("enter", "Seek to seconds"),
     ("+/-", "Playback speed"),
     ("q", "Exit"),
   ],
@@ -171,7 +171,8 @@ class ConsoleUI:
     # Title bar
     self.wins[Win.Title].bkgd(' ', curses.A_REVERSE)
     try:
-      self.wins[Win.Title].addstr(0, 3, f"openpilot replay {self._version}")
+      title = f"openpilot replay {self._version}  |  {self.replay.route_name()}"
+      self.wins[Win.Title].addstr(0, 3, title[:self.max_width - 4])
     except curses.error:
       pass
 
@@ -212,12 +213,14 @@ class ConsoleUI:
       add_str(win, value, color, bold)
       add_str(win, unit)
 
+    speed = self.replay.get_speed()
     if self.replay.is_paused():
       status_str, status_color = "paused...", Color.Yellow
     else:
       status_str, status_color = "playing", Color.Green
 
-    write_item(0, 0, "STATUS:    ", status_str, "      ", False, status_color)
+    speed_str = f"  {speed:.1f}x" if speed != 1.0 else ""
+    write_item(0, 0, "STATUS:    ", status_str + speed_str, "      ", False, status_color)
 
     cur_ts = self.replay.route_date_time() + int(cur_sec)
     time_string = time.ctime(cur_ts)
@@ -375,6 +378,9 @@ class ConsoleUI:
 
     win.noutrefresh()
 
+  def _log_speed(self, speed):
+    self._log_message(ReplyMsgType.Warning, f"playback speed: {speed:.1f}x")
+
   def _handle_key(self, c):
     if c == ord('\n'):
       if self.max_height < 10:
@@ -390,9 +396,10 @@ class ConsoleUI:
 
       y = self.max_height - 9
       try:
+        prompt = "Seek to (seconds): "
         try:
           self.stdscr.move(y, BORDER_SIZE)
-          add_str(self.stdscr, "Enter seek request: ", Color.BrightWhite, True)
+          add_str(self.stdscr, prompt, Color.BrightWhite, True)
           self.stdscr.refresh()
         except curses.error:
           pass
@@ -400,16 +407,15 @@ class ConsoleUI:
         curses.echo()
         choice = None
         try:
-          input_str = self.stdscr.getstr(y, BORDER_SIZE + 20, 10)
-          choice = int(input_str)
+          input_str = self.stdscr.getstr(y, BORDER_SIZE + len(prompt), 10)
+          choice = float(input_str)
         except (ValueError, curses.error):
           pass
         curses.noecho()
 
         if choice is not None:
           self.replay.seek_to(choice, False)
-          self.replay.pause(False)
-        elif not was_paused:
+        if not was_paused:
           self.replay.pause(False)
       finally:
         curses.noecho()
@@ -427,6 +433,7 @@ class ConsoleUI:
       for s in SPEED_ARRAY:
         if s > cur_speed:
           self.replay.set_speed(s)
+          self._log_speed(s)
           break
 
     elif c in (ord('_'), ord('-')):
@@ -438,6 +445,7 @@ class ConsoleUI:
         prev = s
       if prev is not None:
         self.replay.set_speed(prev)
+        self._log_speed(prev)
 
     elif c == ord('e'):
       self.replay.seek_to_flag(FindFlag.nextEngagement)
