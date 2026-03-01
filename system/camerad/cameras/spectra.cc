@@ -1043,8 +1043,18 @@ bool SpectraCamera::openSensor() {
 
   LOGD("-- Probing sensor %d", cc.camera_num);
 
-  auto init_sensor_lambda = [this](SensorInfo *s) {
-    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && cc.output_type == ISP_IFE_PROCESSED) {
+  // Check if this camera is involved in IFE sharing (as primary or secondary).
+  // IFE-shared cameras must use sensor-side downscaling for faster readout (~23ms vs ~33ms)
+  // to fit within the FSIN stagger window.
+  bool ife_sharing = (cc.ife_share_primary >= 0);
+  if (!ife_sharing) {
+    for (const auto &cfg : ALL_CAMERA_CONFIGS) {
+      if (cfg.ife_share_primary == cc.camera_num) { ife_sharing = true; break; }
+    }
+  }
+
+  auto init_sensor_lambda = [this, ife_sharing](SensorInfo *s) {
+    if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && !ife_sharing && cc.output_type == ISP_IFE_PROCESSED) {
       ((OS04C10*)s)->ife_downscale_configure();
     }
     sensor.reset(s);
