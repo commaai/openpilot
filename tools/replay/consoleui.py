@@ -5,6 +5,7 @@ import time
 
 from cereal import messaging
 
+from openpilot.common.realtime import Ratekeeper
 from openpilot.system.version import get_version
 from openpilot.tools.replay.replay_pyx import (
   FindFlag, TimelineType, ReplyMsgType, formatted_data_size,
@@ -92,6 +93,8 @@ class ConsoleUI:
 
     # Cached timeline data (refreshed every ~1.25s)
     self._timeline_cache = []
+    self._cached_min_sec = 0.0
+    self._cached_max_sec = 0.0
 
     # Set up curses
     curses.curs_set(0)
@@ -167,7 +170,7 @@ class ConsoleUI:
     if self.max_height >= 23:
       self._display_help()
     self._update_summary()
-    self._update_timeline()
+    self._update_timeline(self.replay.current_seconds())
     for win in self.wins:
       if win is not None:
         win.noutrefresh()
@@ -181,7 +184,7 @@ class ConsoleUI:
       self.stdscr.refresh()
       self._init_windows()
 
-  def _update_status(self):
+  def _update_status(self, cur_sec):
     win = self.wins[Win.CarState]
     if win is None:
       return
@@ -204,7 +207,6 @@ class ConsoleUI:
 
     write_item(0, 0, "STATUS:    ", status_str, "      ", False, status_color)
 
-    cur_sec = self.replay.current_seconds()
     cur_ts = self.replay.route_date_time() + int(cur_sec)
     time_string = time.ctime(cur_ts)
     current_segment = " - " + str(int(cur_sec / 60))
@@ -296,7 +298,7 @@ class ConsoleUI:
       pass
     win.noutrefresh()
 
-  def _update_timeline(self):
+  def _update_timeline(self, cur_sec):
     win = self.wins[Win.Timeline]
     if win is None:
       return
@@ -313,8 +315,8 @@ class ConsoleUI:
     except curses.error:
       pass
 
-    min_sec = self.replay.min_seconds()
-    total_sec = self.replay.max_seconds() - min_sec
+    min_sec = self._cached_min_sec
+    total_sec = self._cached_max_sec - min_sec
     if total_sec <= 0:
       win.noutrefresh()
       return
@@ -351,7 +353,7 @@ class ConsoleUI:
         pass
 
     # Current position indicator
-    cur_pos = int(((self.replay.current_seconds() - min_sec) / total_sec) * width)
+    cur_pos = int(((cur_sec - min_sec) / total_sec) * width)
     cur_pos = max(0, min(cur_pos, width - 1))
     try:
       win.attron(curses.color_pair(Color.BrightWhite))
@@ -367,7 +369,7 @@ class ConsoleUI:
     if c == ord('\n'):
       # Pause and enter blocking seek mode
       self.replay.pause(True)
-      self._update_status()
+      self._update_status(self.replay.current_seconds())
       curses.doupdate()
       curses.curs_set(1)
       self.stdscr.nodelay(False)
@@ -448,7 +450,7 @@ class ConsoleUI:
     signal.signal(signal.SIGTERM, lambda *_: do_exit.set())
 
     try:
-      frame = 0
+      rk = Ratekeeper(20, print_delay_threshold=None)
       while not do_exit.is_set():
         c = self.stdscr.getch()
         if c in (ord('q'), ord('Q')):
@@ -456,13 +458,16 @@ class ConsoleUI:
         if c != -1:
           self._handle_key(c)
 
-        if frame == 0:
+        if rk.frame % 25 == 0:
           self._update_size()
           self._update_summary()
           self._timeline_cache = self.replay.get_timeline()
+          self._cached_min_sec = self.replay.min_seconds()
+          self._cached_max_sec = self.replay.max_seconds()
 
-        self._update_timeline()
-        self._update_status()
+        cur_sec = self.replay.current_seconds()
+        self._update_timeline(cur_sec)
+        self._update_status(cur_sec)
 
         with self._lock:
           self._update_progress_bar()
@@ -471,8 +476,7 @@ class ConsoleUI:
           self._logs.clear()
 
         curses.doupdate()
-        frame = (frame + 1) % 25
-        time.sleep(0.05)
+        rk.keep_time()
     finally:
       self.replay.install_download_progress_handler(None)
       self.replay.install_message_handler(None)

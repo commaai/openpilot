@@ -102,7 +102,7 @@ cdef void _message_trampoline(ReplyMsgType msg_type, const string msg) noexcept 
     handler = _py_message_handler
     if handler is not None:
         try:
-            handler(int(msg_type), msg.decode("utf-8", errors="replace"))
+            handler(msg_type, msg.decode("utf-8", errors="replace"))
         except:
             pass
 
@@ -241,7 +241,7 @@ cdef class PyReplay:
         return result
 
     def install_message_handler(self, handler):
-        """Install a Python callable(msg_type: int, msg: str) as the message handler."""
+        """Install a Python callable(msg_type: ReplyMsgType, msg: str) as the message handler."""
         global _py_message_handler
         _py_message_handler = handler
         if handler is not None:
