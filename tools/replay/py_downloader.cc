@@ -3,6 +3,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstring>
+#include <fcntl.h>
 #include <mutex>
 #include <sstream>
 #include <sys/wait.h>
@@ -44,7 +45,15 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   }
 
   if (pid == 0) {
-    // Child process
+    // Child process — detach from controlling terminal so Python
+    // cannot corrupt terminal settings needed by ncurses in the parent.
+    setsid();
+    int devnull = open("/dev/null", O_RDONLY);
+    if (devnull >= 0) {
+      dup2(devnull, STDIN_FILENO);
+      if (devnull > STDERR_FILENO) close(devnull);
+    }
+
     close(stdout_pipe[0]);
     close(stderr_pipe[0]);
     dup2(stdout_pipe[1], STDOUT_FILENO);
