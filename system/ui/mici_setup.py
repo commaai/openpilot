@@ -452,7 +452,7 @@ class Setup(Widget):
 
     self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback, self._back_to_software_selection)
 
-    self._software_selection_page = SoftwareSelectionPage(self.use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
+    self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
     self._software_selection_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._download_failed_page = FailedPage(HARDWARE.reboot)
@@ -461,23 +461,6 @@ class Setup(Widget):
 
     self._downloading_page = DownloadingPage()
 
-  def _back_to_software_selection(self):
-    # pop and reset sliders
-    gui_app.pop_widgets_to(self, instant=True)
-    self._set_state(SetupState.SOFTWARE_SELECTION)
-
-  def _set_state(self, state: SetupState):
-    self.state = state
-    if self.state == SetupState.SOFTWARE_SELECTION:
-      self._software_selection_page.reset()
-
-  def _push_network_setup(self, custom_software: bool = False):
-    # to fire the correct continue callback later
-    self._network_setup_page.set_custom_software(custom_software)
-
-    gui_app.pop_widgets_to(self, instant=True)
-    gui_app.push_widget(self._network_setup_page)
-
   def _render(self, rect: rl.Rectangle):
     if self.state == SetupState.START:
       self._start_page.render(rect)
@@ -485,6 +468,33 @@ class Setup(Widget):
       self._software_selection_page.render(rect)
     elif self.state == SetupState.DOWNLOADING:
       self.render_downloading(rect)
+
+  def _back_to_software_selection(self):
+    # pop and reset sliders
+    gui_app.pop_widgets_to(self, instant=True)
+    self._set_state(SetupState.SOFTWARE_SELECTION)
+
+  def _use_openpilot(self):
+    if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
+      os.remove(VALID_CACHE_PATH)
+      with open(TMP_CONTINUE_PATH, "w") as f:
+        f.write(CONTINUE)
+      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
+      shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
+      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
+
+      # give time for installer UI to take over
+      time.sleep(0.1)
+      gui_app.request_close()
+    else:
+      self._push_network_setup()
+
+  def _push_network_setup(self, custom_software: bool = False):
+    # to fire the correct continue callback later
+    self._network_setup_page.set_custom_software(custom_software)
+
+    gui_app.pop_widgets_to(self, instant=True)
+    gui_app.push_widget(self._network_setup_page)
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
@@ -500,25 +510,6 @@ class Setup(Widget):
 
   def close(self):
     self._network_monitor.stop()
-
-  def render_downloading(self, rect: rl.Rectangle):
-    self._downloading_page.set_progress(self.download_progress)
-    self._downloading_page.render(rect)
-
-  def use_openpilot(self):
-    if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
-      os.remove(VALID_CACHE_PATH)
-      with open(TMP_CONTINUE_PATH, "w") as f:
-        f.write(CONTINUE)
-      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
-      shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
-      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
-
-      # give time for installer UI to take over
-      time.sleep(0.1)
-      gui_app.request_close()
-    else:
-      self._push_network_setup()
 
   def download(self, url: str):
     gui_app.pop_widgets_to(self, instant=True)
@@ -569,7 +560,7 @@ class Setup(Widget):
         is_elf = header == b'\x7fELF'
 
       if not is_elf:
-        self.download_failed(self.download_url, "No custom software found at this URL.")
+        self._download_failed(self.download_url, "No custom software found at this URL.")
         return
 
       # AGNOS might try to execute the installer before this process exits.
@@ -587,18 +578,27 @@ class Setup(Widget):
     except urllib.error.HTTPError as e:
       if e.code == 409:
         error_msg = "Incompatible openpilot version"
-        self.download_failed(self.download_url, error_msg)
+        self._download_failed(self.download_url, error_msg)
     except Exception:
       error_msg = "Invalid URL"
-      self.download_failed(self.download_url, error_msg)
+      self._download_failed(self.download_url, error_msg)
 
-  def download_failed(self, url: str, reason: str):
+  def _download_failed(self, url: str, reason: str):
     # go back to start
     self.failed_url = url
     self.failed_reason = reason
     self._download_failed_page.set_reason(reason)
     gui_app.push_widget(self._download_failed_page)
     self._set_state(SetupState.SOFTWARE_SELECTION)
+
+  def _set_state(self, state: SetupState):
+    self.state = state
+    if self.state == SetupState.SOFTWARE_SELECTION:
+      self._software_selection_page.reset()
+
+  def render_downloading(self, rect: rl.Rectangle):
+    self._downloading_page.set_progress(self.download_progress)
+    self._downloading_page.render(rect)
 
 
 def main():
