@@ -117,6 +117,8 @@ class PairBigButton(BigButton):
     return 64
 
   def _update_state(self):
+    super()._update_state()
+
     if ui_state.prime_state.is_paired():
       self.set_text("paired")
       if ui_state.prime_state.is_prime():
@@ -164,6 +166,8 @@ class UpdateOpenpilotBigButton(BigButton):
       self.set_enabled(True)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+
     if not system_time_valid():
       dlg = BigDialog(tr("Please connect to Wi-Fi to update"), "")
       gui_app.push_widget(dlg)
@@ -191,6 +195,8 @@ class UpdateOpenpilotBigButton(BigButton):
       self.set_text("update openpilot")
 
   def _update_state(self):
+    super()._update_state()
+
     if ui_state.started:
       self.set_enabled(False)
       return
