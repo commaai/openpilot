@@ -79,7 +79,6 @@ class ConsoleUI:
     self.replay = replay
     self.stdscr = stdscr
     self.sm = messaging.SubMaster(["carState", "liveParameters"])
-    self.paused = False
     self.max_height = 0
     self.max_width = 0
     self.wins = [None] * Win.Max
@@ -90,6 +89,9 @@ class ConsoleUI:
     self._progress_cur = 0
     self._progress_total = 0
     self._download_success = False
+
+    # Cached timeline data (refreshed every ~1.25s)
+    self._timeline_cache = []
 
     # Set up curses
     curses.curs_set(0)
@@ -195,16 +197,17 @@ class ConsoleUI:
       add_str(win, value, color, bold)
       add_str(win, unit)
 
-    if self.paused:
+    if self.replay.is_paused():
       status_str, status_color = "paused...", Color.Yellow
     else:
       status_str, status_color = "playing", Color.Green
 
     write_item(0, 0, "STATUS:    ", status_str, "      ", False, status_color)
 
-    cur_ts = self.replay.route_date_time() + int(self.replay.current_seconds())
+    cur_sec = self.replay.current_seconds()
+    cur_ts = self.replay.route_date_time() + int(cur_sec)
     time_string = time.ctime(cur_ts)
-    current_segment = " - " + str(int(self.replay.current_seconds() / 60))
+    current_segment = " - " + str(int(cur_sec / 60))
     write_item(0, 25, "TIME:  ", time_string, current_segment, True)
 
     lp = self.sm["liveParameters"]
@@ -256,11 +259,11 @@ class ConsoleUI:
     if win is None:
       return
     color = Color.Default
-    if msg_type == int(ReplyMsgType.Debug):
+    if msg_type == ReplyMsgType.Debug:
       color = Color.Debug
-    elif msg_type == int(ReplyMsgType.Warning):
+    elif msg_type == ReplyMsgType.Warning:
       color = Color.Yellow
-    elif msg_type == int(ReplyMsgType.Critical):
+    elif msg_type == ReplyMsgType.Critical:
       color = Color.Red
     add_str(win, msg + "\n", color)
     win.noutrefresh()
@@ -310,14 +313,18 @@ class ConsoleUI:
     except curses.error:
       pass
 
-    total_sec = self.replay.max_seconds() - self.replay.min_seconds()
+    min_sec = self.replay.min_seconds()
+    total_sec = self.replay.max_seconds() - min_sec
     if total_sec <= 0:
       win.noutrefresh()
       return
 
-    min_sec = self.replay.min_seconds()
+    tl_engaged = TimelineType.Engaged
+    tl_bookmark = TimelineType.UserBookmark
+    tl_info = TimelineType.AlertInfo
+    tl_warning = TimelineType.AlertWarning
 
-    for start_time, end_time, entry_type in self.replay.get_timeline():
+    for start_time, end_time, entry_type in self._timeline_cache:
       start_pos = int(((start_time - min_sec) / total_sec) * width)
       end_pos = int(((end_time - min_sec) / total_sec) * width)
       start_pos = max(0, min(start_pos, width - 1))
@@ -327,15 +334,15 @@ class ConsoleUI:
         continue
 
       try:
-        if entry_type == int(TimelineType.Engaged):
+        if entry_type == tl_engaged:
           win.chgat(1, start_pos, n, curses.color_pair(Color.Engaged))
           win.chgat(2, start_pos, n, curses.color_pair(Color.Engaged))
-        elif entry_type == int(TimelineType.UserBookmark):
+        elif entry_type == tl_bookmark:
           win.chgat(3, start_pos, n, curses.color_pair(Color.Cyan))
         else:
-          if entry_type == int(TimelineType.AlertInfo):
+          if entry_type == tl_info:
             color_id = Color.Green
-          elif entry_type == int(TimelineType.AlertWarning):
+          elif entry_type == tl_warning:
             color_id = Color.Yellow
           else:
             color_id = Color.Red
@@ -356,14 +363,10 @@ class ConsoleUI:
 
     win.noutrefresh()
 
-  def _pause_replay(self, pause):
-    self.replay.pause(pause)
-    self.paused = pause
-
   def _handle_key(self, c):
     if c == ord('\n'):
       # Pause and enter blocking seek mode
-      self._pause_replay(True)
+      self.replay.pause(True)
       self._update_status()
       curses.doupdate()
       curses.curs_set(1)
@@ -385,7 +388,7 @@ class ConsoleUI:
         choice = 0
       curses.noecho()
 
-      self._pause_replay(False)
+      self.replay.pause(False)
       self.replay.seek_to(choice, False)
 
       try:
@@ -435,7 +438,7 @@ class ConsoleUI:
     elif c == ord('S'):
       self.replay.seek_to(-10, True)
     elif c == ord(' '):
-      self._pause_replay(not self.replay.is_paused())
+      self.replay.pause(not self.replay.is_paused())
 
   def exec(self):
     do_exit = threading.Event()
@@ -453,9 +456,10 @@ class ConsoleUI:
         if c != -1:
           self._handle_key(c)
 
-        if frame % 25 == 0:
+        if frame == 0:
           self._update_size()
           self._update_summary()
+          self._timeline_cache = self.replay.get_timeline()
 
         self._update_timeline()
         self._update_status()
@@ -467,7 +471,7 @@ class ConsoleUI:
           self._logs.clear()
 
         curses.doupdate()
-        frame += 1
+        frame = (frame + 1) % 25
         time.sleep(0.05)
     finally:
       self.replay.install_download_progress_handler(None)
