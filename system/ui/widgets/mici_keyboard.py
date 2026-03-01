@@ -245,6 +245,7 @@ class MiciKeyboard(Widget):
     # re-evaluate closest key for any slot still dragging on the new layout
     for slot in range(MAX_TOUCH_SLOTS):
       if self._dragging_on_keyboard[slot] and self._last_mouse_pos[slot] is not None:
+        self._closest_key[slot] = (None, float('inf'))  # clears hysteresis
         self._closest_key[slot] = self._get_closest_key(slot, self._last_mouse_pos[slot])
 
   def set_text(self, text: str):
