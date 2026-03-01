@@ -74,8 +74,8 @@ class TrainingGuidePreDMTutorial(NavScroller):
       continue_button,
     ])
 
-  # def _back_enabled(self) -> bool:
-  #   return False
+  def _back_enabled(self) -> bool:
+    return False
 
   def show_event(self):
     super().show_event()
@@ -274,11 +274,11 @@ class TrainingGuideRecordFront(NavScroller):
       self._decline_button,
     ])
 
-  # def _back_enabled(self) -> bool:
-  #   return False
+  def _back_enabled(self) -> bool:
+    return False
 
 
-class TrainingGuideAttentionNotice(Scroller):
+class TrainingGuideAttentionNotice(NavScroller):
   def __init__(self, continue_callback):
     super().__init__()
 
@@ -295,8 +295,8 @@ class TrainingGuideAttentionNotice(Scroller):
       continue_button,
     ])
 
-  # def _back_enabled(self) -> bool:
-  #   return False
+  def _back_enabled(self) -> bool:
+    return False
 
 
 class TrainingGuide(NavWidget):
@@ -308,36 +308,25 @@ class TrainingGuide(NavWidget):
     self_ref = weakref.ref(self)
 
     def on_continue():
-      # gui_app.push_widget(self._steps[self._step])
-      #
-      # active_step = gui_app.get_active_widget()
-      #
-      # if active_step == self._steps[-1]:  # last step
-      #   active_step.dismiss(self._completed_callback)
-      # else:
-      #   active_step.dismiss()
+      active_step = gui_app.get_active_widget()
 
-      if obj := self_ref():
-        obj._advance_step()
+      if active_step == self._steps[-1]:  # last step
+        active_step.dismiss(self._completed_callback)
+      else:
+        active_step.dismiss()
 
-    self._record_front = TrainingGuideRecordFront(continue_callback=completed_callback)
-    # self._dm_tutorial = TrainingGuideDMTutorial(continue_callback=lambda: gui_app.push_widget(self._record_front))
-    self._pre_dm_tutorial = TrainingGuidePreDMTutorial(continue_callback=lambda: gui_app.push_widget(self._record_front))
-    self._attention_notice = TrainingGuideAttentionNotice(continue_callback=lambda: gui_app.push_widget(self._pre_dm_tutorial))
-    # for step in (self._attention_notice, self._pre_dm_tutorial, self._record_front):
-    #   step.set_enabled(lambda: self.enabled)  # for nav stack
+      # if obj := self_ref():
+      #   obj._advance_step()
 
-    self._attention_notice.set_enabled(lambda: self.enabled)
+    self._steps = [
+      TrainingGuideAttentionNotice(continue_callback=on_continue),
+      TrainingGuidePreDMTutorial(continue_callback=on_continue),
+      # TrainingGuideDMTutorial(continue_callback=on_continue),
+      TrainingGuideRecordFront(continue_callback=on_continue),
+    ]
 
-    # self._steps = [
-    #   TrainingGuideAttentionNotice(continue_callback=on_continue),
-    #   TrainingGuidePreDMTutorial(continue_callback=on_continue),
-    #   # TrainingGuideDMTutorial(continue_callback=on_continue),
-    #   TrainingGuideRecordFront(continue_callback=on_continue),
-    # ]
-
-    # for step in self._steps:
-    #   step.set_enabled(lambda: self.enabled)  # for nav stack
+    for step in self._steps:
+      step.set_enabled(lambda: self.enabled)  # for nav stack
 
   def _back_enabled(self) -> bool:
     return False
@@ -346,30 +335,27 @@ class TrainingGuide(NavWidget):
     super().show_event()
     device.set_override_interactive_timeout(300)
 
-    # gui_app.push_widget(self._steps[self._step + 1])
-
-    # for step in self._steps[:-1]:
-    #   gui_app.push_widget(step)
+    for step in reversed(self._steps[1:]):
+      gui_app.push_widget(step)
 
   def hide_event(self):
     super().hide_event()
     device.set_override_interactive_timeout(None)
 
-  def _advance_step(self):
-    if self._step < len(self._steps) - 1:
-      self._step += 1
-      gui_app.push_widget(self._steps[self._step])
-      # self._steps[self._step].show_event()
-    else:
-      self._step = 0
-      self.dismiss(self._completed_callback)
-      # if self._completed_callback:
-      #   self._completed_callback()
+  # def _advance_step(self):
+  #   if self._step < len(self._steps) - 1:
+  #     self._step += 1
+  #     gui_app.push_widget(self._steps[self._step])
+  #     # self._steps[self._step].show_event()
+  #   else:
+  #     self._step = 0
+  #     if self._completed_callback:
+  #       self._completed_callback()
 
   def _render(self, _):
+    pass
     # rl.draw_rectangle_rec(self._rect, rl.BLACK)
-    self._attention_notice.render(self._rect)
-    # self._steps[0].render(self._rect)
+    self._steps[0].render(self._rect)
     # if self._step < len(self._steps):
     #   self._steps[self._step].render(self._rect)
 
@@ -520,5 +506,4 @@ class OnboardingWindow(NavScroller):
     self.close()
 
   def _render(self, _):
-    return
     self._terms.render(self._rect)
