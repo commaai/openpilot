@@ -3,11 +3,12 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QString>
 
-DBCFile::DBCFile(const QString &dbc_file_name) {
-  QFile file(dbc_file_name);
+DBCFile::DBCFile(const std::string &dbc_file_name) {
+  QFile file(QString::fromStdString(dbc_file_name));
   if (file.open(QIODevice::ReadOnly)) {
-    name_ = QFileInfo(dbc_file_name).baseName();
+    name_ = QFileInfo(QString::fromStdString(dbc_file_name)).baseName().toStdString();
     filename = dbc_file_name;
     parse(file.readAll());
   } else {
@@ -15,34 +16,35 @@ DBCFile::DBCFile(const QString &dbc_file_name) {
   }
 }
 
-DBCFile::DBCFile(const QString &name, const QString &content) : name_(name), filename("") {
-  parse(content);
+DBCFile::DBCFile(const std::string &name, const std::string &content) : name_(name), filename("") {
+  parse(QString::fromStdString(content));
 }
 
 bool DBCFile::save() {
-  assert(!filename.isEmpty());
+  assert(!filename.empty());
   return writeContents(filename);
 }
 
-bool DBCFile::saveAs(const QString &new_filename) {
+bool DBCFile::saveAs(const std::string &new_filename) {
   filename = new_filename;
   return save();
 }
 
-bool DBCFile::writeContents(const QString &fn) {
-  QFile file(fn);
+bool DBCFile::writeContents(const std::string &fn) {
+  QFile file(QString::fromStdString(fn));
   if (file.open(QIODevice::WriteOnly)) {
-    return file.write(generateDBC().toUtf8()) >= 0;
+    std::string content = generateDBC();
+    return file.write(content.c_str(), content.size()) >= 0;
   }
   return false;
 }
 
-void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment) {
+void DBCFile::updateMsg(const MessageId &id, const std::string &name, uint32_t size, const std::string &node, const std::string &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
   m.name = name;
   m.size = size;
-  m.transmitter = node.isEmpty() ? DEFAULT_NODE_NAME : node;
+  m.transmitter = node.empty() ? DEFAULT_NODE_NAME : node;
   m.comment = comment;
 }
 
@@ -51,12 +53,12 @@ cabana::Msg *DBCFile::msg(uint32_t address) {
   return it != msgs.end() ? &it->second : nullptr;
 }
 
-cabana::Msg *DBCFile::msg(const QString &name) {
+cabana::Msg *DBCFile::msg(const std::string &name) {
   auto it = std::find_if(msgs.begin(), msgs.end(), [&name](auto &m) { return m.second.name == name; });
   return it != msgs.end() ? &(it->second) : nullptr;
 }
 
-cabana::Signal *DBCFile::signal(uint32_t address, const QString &name) {
+cabana::Signal *DBCFile::signal(uint32_t address, const std::string &name) {
   auto m = msg(address);
   return m ? (cabana::Signal *)m->sig(name) : nullptr;
 }
@@ -93,13 +95,13 @@ void DBCFile::parse(const QString &content) {
         seen = false;
       }
     } catch (std::exception &e) {
-      throw std::runtime_error(QString("[%1:%2]%3: %4").arg(filename).arg(line_num).arg(e.what()).arg(line).toStdString());
+      throw std::runtime_error(QString("[%1:%2]%3: %4").arg(QString::fromStdString(filename)).arg(line_num).arg(e.what()).arg(line).toStdString());
     }
 
     if (seen) {
       seen_first = true;
     } else if (!seen_first) {
-      header += raw_line + "\n";
+      header += raw_line.toStdString() + "\n";
     }
   }
 
@@ -122,9 +124,9 @@ cabana::Msg *DBCFile::parseBO(const QString &line) {
   // Create a new message object
   cabana::Msg *msg = &msgs[address];
   msg->address = address;
-  msg->name = match.captured("name");
+  msg->name = match.captured("name").toStdString();
   msg->size = match.captured("size").toULong();
-  msg->transmitter = match.captured("transmitter").trimmed();
+  msg->transmitter = match.captured("transmitter").trimmed().toStdString();
   return msg;
 }
 
@@ -141,7 +143,7 @@ void DBCFile::parseCM_BO(const QString &line, const QString &content, const QStr
     throw std::runtime_error("Invalid message comment format");
 
   if (auto m = (cabana::Msg *)msg(match.captured("address").toUInt()))
-    m->comment = match.captured("comment").trimmed().replace("\\\"", "\"");
+    m->comment = match.captured("comment").trimmed().replace("\\\"", "\"").toStdString();
 }
 
 void DBCFile::parseSG(const QString &line, cabana::Msg *current_msg, int &multiplexor_cnt) {
@@ -160,7 +162,7 @@ void DBCFile::parseSG(const QString &line, cabana::Msg *current_msg, int &multip
   if (!match.hasMatch())
     throw std::runtime_error("Invalid SG_ line format");
 
-  QString name = match.captured(1);
+  std::string name = match.captured(1).toStdString();
   if (current_msg->sig(name) != nullptr)
     throw std::runtime_error("Duplicate signal name");
 
@@ -188,8 +190,8 @@ void DBCFile::parseSG(const QString &line, cabana::Msg *current_msg, int &multip
   s.offset = match.captured(offset + 7).toDouble();
   s.min = match.captured(8 + offset).toDouble();
   s.max = match.captured(9 + offset).toDouble();
-  s.unit = match.captured(10 + offset);
-  s.receiver_name = match.captured(11 + offset).trimmed();
+  s.unit = match.captured(10 + offset).toStdString();
+  s.receiver_name = match.captured(11 + offset).trimmed().toStdString();
   current_msg->sigs.push_back(new cabana::Signal(s));
 }
 
@@ -205,8 +207,8 @@ void DBCFile::parseCM_SG(const QString &line, const QString &content, const QStr
   if (!match.hasMatch())
     throw std::runtime_error("Invalid CM_ SG_ line format");
 
-  if (auto s = signal(match.captured(1).toUInt(), match.captured(2))) {
-    s->comment = match.captured(3).trimmed().replace("\\\"", "\"");
+  if (auto s = signal(match.captured(1).toUInt(), match.captured(2).toStdString())) {
+    s->comment = match.captured(3).trimmed().replace("\\\"", "\"").toStdString();
   }
 }
 
@@ -217,55 +219,60 @@ void DBCFile::parseVAL(const QString &line) {
   if (!match.hasMatch())
     throw std::runtime_error("invalid VAL_ line format");
 
-  if (auto s = signal(match.captured(1).toUInt(), match.captured(2))) {
+  if (auto s = signal(match.captured(1).toUInt(), match.captured(2).toStdString())) {
     QStringList desc_list = match.captured(3).trimmed().split('"');
     for (int i = 0; i < desc_list.size(); i += 2) {
       auto val = desc_list[i].trimmed();
       if (!val.isEmpty() && (i + 1) < desc_list.size()) {
         auto desc = desc_list[i + 1].trimmed();
-        s->val_desc.push_back({val.toDouble(), desc});
+        s->val_desc.push_back({val.toDouble(), desc.toStdString()});
       }
     }
   }
 }
 
-QString DBCFile::generateDBC() {
-  QString dbc_string, comment, val_desc;
+std::string DBCFile::generateDBC() {
+  std::string dbc_string, comment, val_desc;
   for (const auto &[address, m] : msgs) {
-    const QString transmitter = m.transmitter.isEmpty() ? DEFAULT_NODE_NAME : m.transmitter;
-    dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(transmitter);
-    if (!m.comment.isEmpty()) {
-      comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(QString(m.comment).replace("\"", "\\\""));
+    const std::string &transmitter = m.transmitter.empty() ? DEFAULT_NODE_NAME : m.transmitter;
+    dbc_string += "BO_ " + std::to_string(address) + " " + m.name + ": " + std::to_string(m.size) + " " + transmitter + "\n";
+    if (!m.comment.empty()) {
+      std::string escaped_comment = m.comment;
+      // Replace " with \"
+      for (size_t pos = 0; (pos = escaped_comment.find('"', pos)) != std::string::npos; pos += 2)
+        escaped_comment.replace(pos, 1, "\\\"");
+      comment += "CM_ BO_ " + std::to_string(address) + " \"" + escaped_comment + "\";\n";
     }
     for (auto sig : m.getSignals()) {
-      QString multiplexer_indicator;
+      std::string multiplexer_indicator;
       if (sig->type == cabana::Signal::Type::Multiplexor) {
         multiplexer_indicator = "M ";
       } else if (sig->type == cabana::Signal::Type::Multiplexed) {
-        multiplexer_indicator = QString("m%1 ").arg(sig->multiplex_value);
+        multiplexer_indicator = "m" + std::to_string(sig->multiplex_value) + " ";
       }
-      dbc_string += QString(" SG_ %1 %2: %3|%4@%5%6 (%7,%8) [%9|%10] \"%11\" %12\n")
-                        .arg(sig->name)
-                        .arg(multiplexer_indicator)
-                        .arg(sig->start_bit)
-                        .arg(sig->size)
-                        .arg(sig->is_little_endian ? '1' : '0')
-                        .arg(sig->is_signed ? '-' : '+')
-                        .arg(doubleToString(sig->factor))
-                        .arg(doubleToString(sig->offset))
-                        .arg(doubleToString(sig->min))
-                        .arg(doubleToString(sig->max))
-                        .arg(sig->unit)
-                        .arg(sig->receiver_name.isEmpty() ? DEFAULT_NODE_NAME : sig->receiver_name);
-      if (!sig->comment.isEmpty()) {
-        comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(QString(sig->comment).replace("\"", "\\\""));
+      const std::string &recv = sig->receiver_name.empty() ? DEFAULT_NODE_NAME : sig->receiver_name;
+      dbc_string += " SG_ " + sig->name + " " + multiplexer_indicator + ": " +
+                    std::to_string(sig->start_bit) + "|" + std::to_string(sig->size) + "@" +
+                    std::string(1, sig->is_little_endian ? '1' : '0') +
+                    std::string(1, sig->is_signed ? '-' : '+') +
+                    " (" + doubleToString(sig->factor) + "," + doubleToString(sig->offset) + ")" +
+                    " [" + doubleToString(sig->min) + "|" + doubleToString(sig->max) + "]" +
+                    " \"" + sig->unit + "\" " + recv + "\n";
+      if (!sig->comment.empty()) {
+        std::string escaped_comment = sig->comment;
+        for (size_t pos = 0; (pos = escaped_comment.find('"', pos)) != std::string::npos; pos += 2)
+          escaped_comment.replace(pos, 1, "\\\"");
+        comment += "CM_ SG_ " + std::to_string(address) + " " + sig->name + " \"" + escaped_comment + "\";\n";
       }
       if (!sig->val_desc.empty()) {
-        QStringList text;
+        std::string text;
         for (auto &[val, desc] : sig->val_desc) {
-          text << QString("%1 \"%2\"").arg(val).arg(desc);
+          if (!text.empty()) text += " ";
+          char val_buf[64];
+          snprintf(val_buf, sizeof(val_buf), "%g", val);
+          text += std::string(val_buf) + " \"" + desc + "\"";
         }
-        val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig->name).arg(text.join(" "));
+        val_desc += "VAL_ " + std::to_string(address) + " " + sig->name + " " + text + ";\n";
       }
     }
     dbc_string += "\n";

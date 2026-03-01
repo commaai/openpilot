@@ -16,8 +16,8 @@ PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(co
 
 bool PandaStream::connect() {
   try {
-    qDebug() << "Connecting to panda " << config.serial;
-    panda.reset(new Panda(config.serial.toStdString()));
+    qDebug() << "Connecting to panda " << config.serial.c_str();
+    panda.reset(new Panda(config.serial));
     config.bus_config.resize(3);
     qDebug() << "Connected";
   } catch (const std::exception& e) {
@@ -129,7 +129,7 @@ void OpenPandaWidget::buildConfigForm() {
   }
 
   if (has_panda) {
-    config.serial = serial;
+    config.serial = serial.toStdString();
     config.bus_config.resize(3);
     for (int i = 0; i < config.bus_config.size(); i++) {
       QHBoxLayout *bus_layout = new QHBoxLayout;
