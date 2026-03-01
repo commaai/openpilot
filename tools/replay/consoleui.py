@@ -1,4 +1,5 @@
 import curses
+import signal
 import threading
 import time
 
@@ -98,7 +99,6 @@ class ConsoleUI:
     stdscr.nodelay(True)
 
     curses.start_color()
-    curses.use_default_colors()
     # https://www.ditig.com/256-colors-cheat-sheet
     curses.init_pair(Color.Debug, 246, curses.COLOR_BLACK)        # #949494
     curses.init_pair(Color.Yellow, 184, curses.COLOR_BLACK)
@@ -438,29 +438,41 @@ class ConsoleUI:
       self._pause_replay(not self.replay.is_paused())
 
   def exec(self):
-    frame = 0
-    while True:
-      c = self.stdscr.getch()
-      if c in (ord('q'), ord('Q')):
-        break
-      if c != -1:
-        self._handle_key(c)
+    do_exit = threading.Event()
+    prev_sigint = signal.getsignal(signal.SIGINT)
+    prev_sigterm = signal.getsignal(signal.SIGTERM)
+    signal.signal(signal.SIGINT, lambda *_: do_exit.set())
+    signal.signal(signal.SIGTERM, lambda *_: do_exit.set())
 
-      if frame % 25 == 0:
-        self._update_size()
-        self._update_summary()
+    try:
+      frame = 0
+      while not do_exit.is_set():
+        c = self.stdscr.getch()
+        if c in (ord('q'), ord('Q')):
+          break
+        if c != -1:
+          self._handle_key(c)
 
-      self._update_timeline()
-      self._update_status()
+        if frame % 25 == 0:
+          self._update_size()
+          self._update_summary()
 
-      with self._lock:
-        self._update_progress_bar()
-        for msg_type, msg in self._logs:
-          self._log_message(msg_type, msg)
-        self._logs.clear()
+        self._update_timeline()
+        self._update_status()
 
-      curses.doupdate()
-      frame += 1
-      time.sleep(0.05)
+        with self._lock:
+          self._update_progress_bar()
+          for msg_type, msg in self._logs:
+            self._log_message(msg_type, msg)
+          self._logs.clear()
+
+        curses.doupdate()
+        frame += 1
+        time.sleep(0.05)
+    finally:
+      self.replay.install_download_progress_handler(None)
+      self.replay.install_message_handler(None)
+      signal.signal(signal.SIGINT, prev_sigint)
+      signal.signal(signal.SIGTERM, prev_sigterm)
 
     return 0
