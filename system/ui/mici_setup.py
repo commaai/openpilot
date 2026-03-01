@@ -23,8 +23,7 @@ from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRoundedButton, SmallerRoundedButton,
-                                                SmallCircleIconButton, WidishRoundedButton, SmallRedPillButton,
-                                                FullRoundedButton)
+                                                SmallCircleIconButton, WidishRoundedButton, FullRoundedButton)
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiUIMici
