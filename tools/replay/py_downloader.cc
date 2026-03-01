@@ -126,9 +126,13 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
               try {
                 uint64_t cur = std::stoull(line.c_str() + 9);
                 uint64_t total = std::stoull(line.c_str() + colon1 + 1);
-                std::lock_guard<std::mutex> lk(handler_mutex);
-                if (progress_handler) {
-                  progress_handler(cur, total, true);
+                DownloadProgressHandler handler_copy;
+                {
+                  std::lock_guard<std::mutex> lk(handler_mutex);
+                  handler_copy = progress_handler;
+                }
+                if (handler_copy) {
+                  handler_copy(cur, total, true);
                 }
               } catch (...) {}
             }
@@ -158,9 +162,15 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
     } else if (WIFSIGNALED(status)) {
       rWarning("py_downloader: process killed by signal %d", WTERMSIG(status));
     }
-    std::lock_guard<std::mutex> lk(handler_mutex);
-    if (progress_handler) {
-      progress_handler(0, 0, false);
+    {
+      DownloadProgressHandler handler_copy;
+      {
+        std::lock_guard<std::mutex> lk(handler_mutex);
+        handler_copy = progress_handler;
+      }
+      if (handler_copy) {
+        handler_copy(0, 0, false);
+      }
     }
     return {};
   }

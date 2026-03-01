@@ -390,35 +390,37 @@ class ConsoleUI:
 
       y = self.max_height - 9
       try:
-        self.stdscr.move(y, BORDER_SIZE)
-        add_str(self.stdscr, "Enter seek request: ", Color.BrightWhite, True)
+        try:
+          self.stdscr.move(y, BORDER_SIZE)
+          add_str(self.stdscr, "Enter seek request: ", Color.BrightWhite, True)
+          self.stdscr.refresh()
+        except curses.error:
+          pass
+
+        curses.echo()
+        choice = None
+        try:
+          input_str = self.stdscr.getstr(y, BORDER_SIZE + 20, 10)
+          choice = int(input_str)
+        except (ValueError, curses.error):
+          pass
+        curses.noecho()
+
+        if choice is not None:
+          self.replay.seek_to(choice, False)
+          self.replay.pause(False)
+        elif not was_paused:
+          self.replay.pause(False)
+      finally:
+        curses.noecho()
+        try:
+          self.stdscr.move(y, 0)
+          self.stdscr.clrtoeol()
+        except curses.error:
+          pass
+        self.stdscr.nodelay(True)
+        curses.curs_set(0)
         self.stdscr.refresh()
-      except curses.error:
-        pass
-
-      curses.echo()
-      choice = None
-      try:
-        input_str = self.stdscr.getstr(y, BORDER_SIZE + 20, 10)
-        choice = int(input_str)
-      except (ValueError, curses.error):
-        pass
-      curses.noecho()
-
-      if choice is not None:
-        self.replay.seek_to(choice, False)
-        self.replay.pause(False)
-      elif not was_paused:
-        self.replay.pause(False)
-
-      try:
-        self.stdscr.move(y, 0)
-        self.stdscr.clrtoeol()
-      except curses.error:
-        pass
-      self.stdscr.nodelay(True)
-      curses.curs_set(0)
-      self.stdscr.refresh()
 
     elif c in (ord('+'), ord('=')):
       cur_speed = self.replay.get_speed()

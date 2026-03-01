@@ -21,8 +21,6 @@ void installMessageHandler(ReplayMessageHandler handler) {
 }
 
 void logMessage(ReplyMsgType type, const char *fmt, ...) {
-  std::lock_guard lk(message_handler_lock);
-
   char *msg_buf = nullptr;
   va_list args;
   va_start(args, fmt);
@@ -30,8 +28,16 @@ void logMessage(ReplyMsgType type, const char *fmt, ...) {
   va_end(args);
   if (ret <= 0 || !msg_buf) return;
 
-  if (message_handler) {
-    message_handler(type, msg_buf);
+  // Copy handler under lock, call outside to avoid GIL-vs-mutex deadlock
+  // when the handler is a Python/Cython trampoline that acquires the GIL.
+  ReplayMessageHandler handler_copy;
+  {
+    std::lock_guard lk(message_handler_lock);
+    handler_copy = message_handler;
+  }
+
+  if (handler_copy) {
+    handler_copy(type, msg_buf);
   } else {
     if (type == ReplyMsgType::Debug) {
       std::cout << "\033[38;5;248m" << msg_buf << "\033[00m" << std::endl;
