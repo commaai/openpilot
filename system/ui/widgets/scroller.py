@@ -146,11 +146,14 @@ class _Scroller(Widget):
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
 
+    def any_widget_has_pending_click() -> bool:
+      return any(item._click_release_time is not None for item in self._items)
+
     # preserve original touch valid callback
     original_touch_valid_callback = item._touch_valid_callback
     item.set_touch_valid_callback(lambda: self.scroll_panel.is_touch_valid() and self.enabled and self._scrolling_to[0] is None
-                                          and not self.moving_items and (original_touch_valid_callback() if
-                                                                         original_touch_valid_callback else True))
+                                          and not self.moving_items and not any_widget_has_pending_click() and
+                                          (original_touch_valid_callback() if original_touch_valid_callback else True))
 
   def add_widgets(self, items: list[Widget]) -> None:
     for item in items:
@@ -187,7 +190,8 @@ class _Scroller(Widget):
 
   def _get_scroll(self, visible_items: list[Widget], content_size: float) -> float:
     scroll_enabled = self._scroll_enabled() if callable(self._scroll_enabled) else self._scroll_enabled
-    self.scroll_panel.set_enabled(scroll_enabled and self.enabled and not self._scrolling_to[1])
+    pending_click = any(item._click_release_time is not None for item in self._items)
+    self.scroll_panel.set_enabled(scroll_enabled and self.enabled and not self._scrolling_to[1] and not pending_click)
     self.scroll_panel.update(self._rect, content_size)
     if not self._snap_items:
       return round(self.scroll_panel.get_offset())
