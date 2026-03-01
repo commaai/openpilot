@@ -193,12 +193,6 @@ class MiciKeyboard(Widget):
     self._special_keys[2].insert(0, self._super_special_key)
     self._super_special_keys[2].insert(0, self._123_key2)
 
-    # set initial keys
-    self._current_keys: list[list[Key]] = []
-    self._set_keys(self._lower_keys)
-    self._caps_state = CapsState.LOWER
-    self._initialized = False
-
     self._load_images()
 
     self._multi_touch = True
@@ -208,7 +202,14 @@ class MiciKeyboard(Widget):
     self._selected_key_t: list[float | None] = [None] * MAX_TOUCH_SLOTS
     self._unselect_key_t: list[float | None] = [None] * MAX_TOUCH_SLOTS
     self._dragging_on_keyboard: list[bool] = [False] * MAX_TOUCH_SLOTS
+    self._last_mouse_pos: list[MousePos | None] = [None] * MAX_TOUCH_SLOTS
     self._releasing_slot: int = 0
+
+    # set initial keys
+    self._current_keys: list[list[Key]] = []
+    self._set_keys(self._lower_keys)
+    self._caps_state = CapsState.LOWER
+    self._initialized = False
 
     self._text: str = ""
 
@@ -241,6 +242,11 @@ class MiciKeyboard(Widget):
 
     self._current_keys = keys
 
+    # re-evaluate closest key for any slot still dragging on the new layout
+    for slot in range(MAX_TOUCH_SLOTS):
+      if self._dragging_on_keyboard[slot] and self._last_mouse_pos[slot] is not None:
+        self._closest_key[slot] = self._get_closest_key(slot, self._last_mouse_pos[slot])
+
   def set_text(self, text: str):
     self._text = text
 
@@ -258,7 +264,8 @@ class MiciKeyboard(Widget):
       self._dragging_on_keyboard[slot] = False
 
     if mouse_event.left_down and self._dragging_on_keyboard[slot]:
-      self._closest_key[slot] = self._get_closest_key(mouse_event)
+      self._last_mouse_pos[slot] = mouse_event.pos
+      self._closest_key[slot] = self._get_closest_key(slot, mouse_event.pos)
       if self._selected_key_t[slot] is None:
         self._selected_key_t[slot] = rl.get_time()
 
@@ -270,8 +277,7 @@ class MiciKeyboard(Widget):
       keys_str = ', '.join(ck[0].char if ck[0] else 'None' for ck in self._closest_key)
       print(f'HANDLE MOUSE EVENT slot={slot}', mouse_event, keys_str)
 
-  def _get_closest_key(self, mouse_event: MouseEvent) -> tuple[Key | None, float]:
-    slot = mouse_event.slot
+  def _get_closest_key(self, slot: int, mouse_pos: MousePos) -> tuple[Key | None, float]:
     current_closest = self._closest_key[slot]
     other_selected = {self._closest_key[i][0] for i in range(MAX_TOUCH_SLOTS) if i != slot and self._closest_key[i][0] is not None}
 
@@ -280,7 +286,6 @@ class MiciKeyboard(Widget):
       for key in row:
         if key in other_selected:
           continue
-        mouse_pos = mouse_event.pos
         # approximate distance for comparison is accurate enough
         # use local y coords so parent widget offset (e.g. during NavWidget animate-in) doesn't affect hit testing
         dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - (mouse_pos.y - self._rect.y))
