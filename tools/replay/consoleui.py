@@ -7,9 +7,8 @@ from cereal import messaging
 
 from openpilot.common.realtime import Ratekeeper
 from openpilot.system.version import get_version
-from openpilot.tools.replay.replay_pyx import (
-  FindFlag, TimelineType, ReplyMsgType, formatted_data_size,
-)
+from openpilot.tools.replay.replay_pyx import ReplyMsgType, formatted_data_size
+from openpilot.tools.replay.timeline_py import FindFlag, TimelineType
 
 BORDER_SIZE = 3
 SPEED_ARRAY = [0.2, 0.5, 1.0, 2.0, 4.0, 8.0]

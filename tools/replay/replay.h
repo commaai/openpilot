@@ -10,22 +10,10 @@
 
 #include "tools/replay/camera.h"
 #include "tools/replay/seg_mgr.h"
-#include "tools/replay/timeline.h"
 
 #define DEMO_ROUTE "5beb9b58bd12b691/0000010a--a51155e496"
 
-enum REPLAY_FLAGS {
-  REPLAY_FLAG_NONE = 0x0000,
-  REPLAY_FLAG_DCAM = 0x0002,
-  REPLAY_FLAG_ECAM = 0x0004,
-  REPLAY_FLAG_NO_LOOP = 0x0010,
-  REPLAY_FLAG_NO_FILE_CACHE = 0x0020,
-  REPLAY_FLAG_QCAMERA = 0x0040,
-  REPLAY_FLAG_NO_HW_DECODER = 0x0100,
-  REPLAY_FLAG_NO_VIPC = 0x0400,
-  REPLAY_FLAG_ALL_SERVICES = 0x0800,
-  REPLAY_FLAG_BENCHMARK = 0x1000,
-};
+// REPLAY_FLAGS is defined in route.h (used by both Segment and Replay)
 
 struct BenchmarkStats {
   uint64_t process_start_ts = 0;
@@ -34,14 +22,25 @@ struct BenchmarkStats {
 
 class Replay {
 public:
-  Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block, SubMaster *sm = nullptr,
-         uint32_t flags = REPLAY_FLAG_NONE, const std::string &data_dir = "", bool auto_source = false);
+  Replay(std::vector<std::string> allow, std::vector<std::string> block, SubMaster *sm = nullptr,
+         uint32_t flags = REPLAY_FLAG_NONE);
   ~Replay();
+
+  // Called from Python after route discovery — populates the route in seg_mgr_
+  void setRoute(const std::string &name, std::time_t datetime, const std::map<int, SegmentFile> &segments) {
+    seg_mgr_->route_.populate(name, datetime, segments);
+  }
+  void addSegment(int n, const std::string &rlog, const std::string &qlog,
+                  const std::string &road_cam, const std::string &driver_cam,
+                  const std::string &wide_road_cam, const std::string &qcamera) {
+    seg_mgr_->route_.addSegment(n, rlog, qlog, road_cam, driver_cam, wide_road_cam, qcamera);
+  }
+  void setRouteName(const std::string &name) { seg_mgr_->route_.setName(name); }
+  void setRouteDateTime(std::time_t dt) { seg_mgr_->route_.setDateTime(dt); }
+
   bool load();
-  RouteLoadError lastRouteError() const { return route().lastError(); }
   void start(int seconds = 0) { seekTo(min_seconds_ + seconds, false); }
   void pause(bool pause);
-  void seekToFlag(FindFlag flag);
   void seekTo(double seconds, bool relative);
   inline bool isPaused() const { return user_paused_; }
   inline int segmentCacheLimit() const { return seg_mgr_->segment_cache_limit_; }
@@ -59,8 +58,6 @@ public:
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
-  inline const std::shared_ptr<std::vector<Timeline::Entry>> getTimeline() const { return timeline_.getEntries(); }
-  inline const std::optional<Timeline::Entry> findAlertAtTime(double sec) const { return timeline_.findAlertAtTime(sec); }
   const std::shared_ptr<SegmentManager::EventData> getEventData() const { return seg_mgr_->getEventData(); }
   void installEventFilter(std::function<bool(const Event *)> filter) { event_filter_ = filter; }
   void waitForFinished();
@@ -70,7 +67,6 @@ public:
   std::function<void()> onSegmentsMerged = nullptr;
   std::function<void(double)> onSeeking = nullptr;
   std::function<void(double)> onSeekedTo = nullptr;
-  std::function<void(std::shared_ptr<LogReader>)> onQLogLoaded = nullptr;
 
 private:
   void setupServices(const std::vector<std::string> &allow, const std::vector<std::string> &block);
@@ -88,7 +84,6 @@ private:
   void checkSeekProgress();
 
   std::unique_ptr<SegmentManager> seg_mgr_;
-  Timeline timeline_;
 
   pthread_t stream_thread_id = 0;
   std::thread stream_thread_;

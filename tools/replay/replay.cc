@@ -16,9 +16,9 @@ void notifyEvent(Callback &callback, Args &&...args) {
   if (callback) callback(std::forward<Args>(args)...);
 }
 
-Replay::Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block,
-               SubMaster *sm, uint32_t flags, const std::string &data_dir, bool auto_source)
-    : sm_(sm), flags_(flags), seg_mgr_(std::make_unique<SegmentManager>(route, flags, data_dir, auto_source)) {
+Replay::Replay(std::vector<std::string> allow, std::vector<std::string> block,
+               SubMaster *sm, uint32_t flags)
+    : sm_(sm), flags_(flags), seg_mgr_(std::make_unique<SegmentManager>(flags)) {
   std::signal(SIGUSR1, interrupt_sleep_handler);
 
   if (flags_ & REPLAY_FLAG_BENCHMARK) {
@@ -149,12 +149,6 @@ void Replay::checkSeekProgress() {
   interruptStream([]() { return true; });
 }
 
-void Replay::seekToFlag(FindFlag flag) {
-  if (auto next = timeline_.find(currentSeconds(), flag)) {
-    seekTo(*next - 2, false);  // seek to 2 seconds before next
-  }
-}
-
 void Replay::pause(bool pause) {
   if (user_paused_ != pause) {
     interruptStream([=]() {
@@ -225,9 +219,6 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
     camera_server_ = std::make_unique<CameraServer>(camera_size);
   }
 
-  timeline_.initialize(seg_mgr_->route_, route_start_ts_, !(flags_ & REPLAY_FLAG_NO_FILE_CACHE),
-                       [this](std::shared_ptr<LogReader> log) { notifyEvent(onQLogLoaded, log); });
-
   stream_thread_ = std::thread(&Replay::streamThread, this);
 }
 
@@ -258,7 +249,7 @@ void Replay::publishFrame(const Event *e) {
   }
 
   if ((cam == DriverCam && !hasFlag(REPLAY_FLAG_DCAM)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_ECAM)))
-    return;  // Camera isdisabled
+    return;  // Camera is disabled
 
   auto seg_it = event_data_->segments.find(e->eidx_segnum);
   if (seg_it != event_data_->segments.end()) {

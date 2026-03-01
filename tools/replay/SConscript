@@ -7,7 +7,7 @@ base_frameworks = []
 base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread']
 
 replay_lib_src = ["replay.cc", "camera.cc", "filereader.cc", "logreader.cc", "framereader.cc",
-                  "route.cc", "util.cc", "seg_mgr.cc", "timeline.cc", "py_downloader.cc"]
+                  "route.cc", "util.cc", "seg_mgr.cc", "py_downloader.cc"]
 if arch != "Darwin":
   replay_lib_src.append("qcom_decoder.cc")
 replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)

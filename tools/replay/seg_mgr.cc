@@ -12,11 +12,7 @@ SegmentManager::~SegmentManager() {
 }
 
 bool SegmentManager::load() {
-  if (!route_.load()) {
-    rError("failed to load route: %s", route_.name().c_str());
-    return false;
-  }
-
+  // Route is already populated by Python before this call
   for (const auto &[n, file] : route_.segments()) {
     if (!file.rlog.empty() || !file.qlog.empty()) {
       segments_.insert({n, nullptr});

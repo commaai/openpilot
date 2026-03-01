@@ -8,26 +8,21 @@
 #include <thread>
 #include <vector>
 
-#include "third_party/json11/json11.hpp"
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"
 #include "tools/replay/util.h"
 
-enum class RouteLoadError {
-  None,
-  Unauthorized,
-  AccessDenied,
-  NetworkError,
-  FileNotFound,
-  UnknownError
-};
-
-struct RouteIdentifier {
-  std::string dongle_id;
-  std::string timestamp;
-  int begin_segment = 0;
-  int end_segment = -1;
-  std::string str;
+enum REPLAY_FLAGS {
+  REPLAY_FLAG_NONE = 0x0000,
+  REPLAY_FLAG_DCAM = 0x0002,
+  REPLAY_FLAG_ECAM = 0x0004,
+  REPLAY_FLAG_NO_LOOP = 0x0010,
+  REPLAY_FLAG_NO_FILE_CACHE = 0x0020,
+  REPLAY_FLAG_QCAMERA = 0x0040,
+  REPLAY_FLAG_NO_HW_DECODER = 0x0100,
+  REPLAY_FLAG_NO_VIPC = 0x0400,
+  REPLAY_FLAG_ALL_SERVICES = 0x0800,
+  REPLAY_FLAG_BENCHMARK = 0x1000,
 };
 
 struct SegmentFile {
@@ -41,31 +36,32 @@ struct SegmentFile {
 
 class Route {
 public:
-  Route(const std::string &route, const std::string &data_dir = {}, bool auto_source = false);
-  bool load();
-  RouteLoadError lastError() const { return err_; }
-  inline const std::string &name() const { return route_.str; }
-  inline const std::time_t datetime() const { return date_time_; }
-  inline const std::string &dir() const { return data_dir_; }
-  inline const RouteIdentifier &identifier() const { return route_; }
-  inline const std::map<int, SegmentFile> &segments() const { return segments_; }
-  inline const SegmentFile &at(int n) { return segments_.at(n); }
-  static RouteIdentifier parseRoute(const std::string &str);
+  Route() = default;
 
-protected:
-  bool loadSegments();
-  bool loadFromAutoSource();
-  bool loadFromLocal();
-  bool loadFromServer();
-  bool loadFromJson(const json11::Json &json);
-  void addFileToSegment(int seg_num, const std::string &file);
-  RouteIdentifier route_ = {};
-  std::string data_dir_;
+  void populate(const std::string &name, std::time_t datetime, const std::map<int, SegmentFile> &segments) {
+    name_ = name;
+    date_time_ = datetime;
+    segments_ = segments;
+  }
+
+  void addSegment(int n, const std::string &rlog, const std::string &qlog,
+                  const std::string &road_cam, const std::string &driver_cam,
+                  const std::string &wide_road_cam, const std::string &qcamera) {
+    segments_[n] = {rlog, qlog, road_cam, driver_cam, wide_road_cam, qcamera};
+  }
+
+  void setName(const std::string &name) { name_ = name; }
+  void setDateTime(std::time_t dt) { date_time_ = dt; }
+
+  const std::string &name() const { return name_; }
+  std::time_t datetime() const { return date_time_; }
+  const std::map<int, SegmentFile> &segments() const { return segments_; }
+  const SegmentFile &at(int n) const { return segments_.at(n); }
+
+private:
+  std::string name_;
   std::map<int, SegmentFile> segments_;
   std::time_t date_time_ = 0;
-  RouteLoadError err_ = RouteLoadError::None;
-  bool auto_source_ = false;
-  std::string route_string_;
 };
 
 class Segment {
