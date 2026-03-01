@@ -28,7 +28,7 @@ class LogReader {
 public:
   LogReader(const std::vector<bool> &filters = {}) { filters_ = filters; }
   bool load(const std::string &url, std::atomic<bool> *abort = nullptr,
-            bool local_cache = false, int chunk_size = -1, int retries = 0);
+            bool local_cache = false);
   bool load(const char *data, size_t size, std::atomic<bool> *abort = nullptr);
   std::vector<Event> events;
 

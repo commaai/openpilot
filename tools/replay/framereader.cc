@@ -7,6 +7,7 @@
 
 #include "common/util.h"
 #include "third_party/libyuv/include/libyuv.h"
+#include "tools/replay/py_downloader.h"
 #include "tools/replay/util.h"
 #include "system/hardware/hw.h"
 
@@ -71,13 +72,13 @@ FrameReader::~FrameReader() {
   if (input_ctx) avformat_close_input(&input_ctx);
 }
 
-bool FrameReader::load(CameraType type, const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
-  auto local_file_path = (url.find("https://") == 0 || url.find("http://") == 0) ? cacheFilePath(url) : url;
-  if (!util::file_exists(local_file_path)) {
-    FileReader f(local_cache, chunk_size, retries);
-    if (f.read(url, abort).empty()) {
-      return false;
-    }
+bool FrameReader::load(CameraType type, const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache) {
+  std::string local_file_path;
+  if (url.find("https://") == 0 || url.find("http://") == 0) {
+    local_file_path = PyDownloader::download(url, local_cache, abort);
+    if (local_file_path.empty()) return false;
+  } else {
+    local_file_path = url;
   }
   return loadFromFile(type, local_file_path, no_hw_decoder, abort);
 }

@@ -216,8 +216,8 @@ class FailedPage(NavWidget):
     self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                       font_weight=FontWeight.ROMAN)
 
-    self._reboot_button = SmallSlider("reboot", reboot_callback)
-    self._reboot_button.set_enabled(lambda: self.enabled)  # for nav stack
+    self._reboot_slider = SmallSlider("reboot", reboot_callback)
+    self._reboot_slider.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._retry_button = SmallButton("retry")
     self._retry_button.set_click_callback(retry_callback if retry_callback is not None else self.dismiss)
@@ -241,7 +241,7 @@ class FailedPage(NavWidget):
       36,
     ))
 
-    self._retry_button.set_opacity(1 - self._reboot_button.slider_percentage)
+    self._retry_button.set_opacity(1 - self._reboot_slider.slider_percentage)
     self._retry_button.render(rl.Rectangle(
       self._rect.x + 8,
       self._rect.y + self._rect.height - self._retry_button.rect.height,
@@ -249,11 +249,11 @@ class FailedPage(NavWidget):
       self._retry_button.rect.height,
     ))
 
-    self._reboot_button.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._reboot_button.rect.width,
-      self._rect.y + self._rect.height - self._reboot_button.rect.height,
-      self._reboot_button.rect.width,
-      self._reboot_button.rect.height,
+    self._reboot_slider.render(rl.Rectangle(
+      self._rect.x + self._rect.width - self._reboot_slider.rect.width,
+      self._rect.y + self._rect.height - self._reboot_slider.rect.height,
+      self._reboot_slider.rect.width,
+      self._reboot_slider.rect.height,
     ))
 
 
