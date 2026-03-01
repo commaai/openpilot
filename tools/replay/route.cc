@@ -6,7 +6,7 @@
 
 #include "third_party/json11/json11.hpp"
 #include "system/hardware/hw.h"
-#include "tools/replay/api.h"
+#include "tools/replay/py_downloader.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
 
@@ -104,31 +104,38 @@ bool Route::loadFromAutoSource() {
 }
 
 bool Route::loadFromServer(int retries) {
-  const std::string url = CommaApi2::BASE_URL + "/v1/route/" + route_.str + "/files";
-  for (int i = 1; i <= retries; ++i) {
-    long response_code = 0;
-    std::string result = CommaApi2::httpGet(url, &response_code);
-    if (response_code == 200) {
-      return loadFromJson(result);
-    }
-
-    if (response_code == 401 || response_code == 403) {
-      rWarning(">> Unauthorized. Authenticate with tools/lib/auth.py <<");
-      err_ = RouteLoadError::Unauthorized;
-      break;
-    }
-    if (response_code == 404) {
-      rWarning("The specified route could not be found on the server.");
-      err_ = RouteLoadError::FileNotFound;
-      break;
-    }
-
+  std::string result = PyDownloader::getRouteFiles(route_.str);
+  if (result.empty()) {
     err_ = RouteLoadError::NetworkError;
-    rWarning("Retrying %d/%d", i, retries);
-    util::sleep_for(3000);
+    rWarning("Failed to fetch route files from server");
+    return false;
   }
 
-  return false;
+  // Check for error field in JSON response
+  std::string parse_err;
+  auto json = json11::Json::parse(result, parse_err);
+  if (!parse_err.empty()) {
+    err_ = RouteLoadError::NetworkError;
+    rWarning("Failed to parse route files response");
+    return false;
+  }
+
+  if (json.is_object() && json["error"].is_string()) {
+    const std::string &error = json["error"].string_value();
+    if (error == "unauthorized") {
+      rWarning(">> Unauthorized. Authenticate with tools/lib/auth.py <<");
+      err_ = RouteLoadError::Unauthorized;
+    } else if (error == "not_found") {
+      rWarning("The specified route could not be found on the server.");
+      err_ = RouteLoadError::FileNotFound;
+    } else {
+      rWarning("API error: %s", error.c_str());
+      err_ = RouteLoadError::NetworkError;
+    }
+    return false;
+  }
+
+  return loadFromJson(result);
 }
 
 bool Route::loadFromJson(const std::string &json) {
