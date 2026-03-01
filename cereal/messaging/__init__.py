@@ -24,6 +24,13 @@ def _msgq_logger(level: int, file: str, line: int, message: str) -> None:
 if hasattr(msgq, "set_logger"):
   msgq.set_logger(_msgq_logger)
 
+try:
+  from msgq import visionipc as msgq_visionipc
+  if hasattr(msgq_visionipc, "set_logger"):
+    msgq_visionipc.set_logger(_msgq_logger)
+except ImportError:
+  pass
+
 
 def pub_sock(endpoint: str) -> PubSocket:
   service = SERVICE_LIST.get(endpoint)
