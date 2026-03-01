@@ -30,7 +30,7 @@ class Widget(abc.ABC):
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
-    self._click_delay: float | None = None  # seconds to hold is_pressed and delay click callback
+    self._click_delay: float | None = None  # seconds to hold is_pressed after release
     self._click_release_time: float | None = None
     self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
@@ -53,7 +53,7 @@ class Widget(abc.ABC):
 
   @property
   def is_pressed(self) -> bool:
-    # if actually pressed or delaying click callback
+    # if actually pressed or holding after release
     return any(self.__is_pressed) or self._click_release_time is not None
 
   @property
@@ -100,6 +100,9 @@ class Widget(abc.ABC):
       self.set_rect(rect)
 
     self._update_state()
+
+    if self._click_release_time is not None and rl.get_time() >= self._click_release_time:
+      self._click_release_time = None
 
     if not self.is_visible:
       return None
@@ -189,7 +192,10 @@ class Widget(abc.ABC):
 
   def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
     """Optionally handle mouse release events."""
-    self._click_release_time = rl.get_time()
+    if self._click_delay is not None:
+      self._click_release_time = rl.get_time() + self._click_delay
+    if self._click_callback:
+      self._click_callback()
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
