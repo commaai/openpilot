@@ -470,8 +470,7 @@ class ConsoleUI:
         self._update_status(cur_sec)
 
         with self._lock:
-          logs_snapshot = self._logs[:]
-          self._logs.clear()
+          self._logs, logs_snapshot = [], self._logs
           progress_cur = self._progress_cur
           progress_total = self._progress_total
           download_success = self._download_success
