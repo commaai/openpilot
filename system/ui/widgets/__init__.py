@@ -30,6 +30,10 @@ class Widget(abc.ABC):
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
+    self._pending_click = False  # wait for click animation to complete
+    self._click_press_duration: float = 0.0  # seconds to hold is_pressed True after release
+    self._click_delay: float = 0.0  # total seconds from release to firing callback (>= press_duration)
+    self._click_release_time: float = 0.0
     self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
     self.__was_awake = True
@@ -51,6 +55,9 @@ class Widget(abc.ABC):
 
   @property
   def is_pressed(self) -> bool:
+    if self._pending_click and self._click_press_duration > 0:
+      if (rl.get_time() - self._click_release_time) < self._click_press_duration:
+        return True
     return any(self.__is_pressed)
 
   @property
@@ -169,6 +176,11 @@ class Widget(abc.ABC):
 
   def _update_state(self):
     """Optionally update the widget's non-layout state. This is called before rendering."""
+    # wait for a widget-provided signal to fire click callback after mouse release, used for click animations
+    if self._pending_click and self._should_fire_click():
+      self._pending_click = False
+      if self._click_callback:
+        self._click_callback()
 
   @abc.abstractmethod
   def _render(self, rect: rl.Rectangle) -> bool | int | None:
@@ -182,12 +194,18 @@ class Widget(abc.ABC):
 
   def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
     """Optionally handle mouse release events."""
-    if self._click_callback:
-      self._click_callback()
+    self._pending_click = True
+    self._click_release_time = rl.get_time()
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
     # Default implementation does nothing, can be overridden by subclasses
+
+  def _should_fire_click(self) -> bool:
+    """Override or set _click_delay to wait for click animation before firing callback."""
+    if self._click_delay <= 0:
+      return True
+    return (rl.get_time() - self._click_release_time) >= self._click_delay
 
   def show_event(self):
     """Optionally handle show event. Parent must manually call this"""

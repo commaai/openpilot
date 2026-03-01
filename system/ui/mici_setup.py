@@ -113,6 +113,8 @@ class StartPage(Widget):
     self._start_bg_txt = gui_app.texture("icons_mici/setup/start_button.png", 500, 224, keep_aspect_ratio=False)
     self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/start_button_pressed.png", 500, 224, keep_aspect_ratio=False)
     self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_press_duration = 0.2
+    self._click_delay = 0.35
 
   def _render(self, rect: rl.Rectangle):
     scale = self._scale_filter.update(1.07 if self.is_pressed else 1.0)
