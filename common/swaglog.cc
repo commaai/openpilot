@@ -15,9 +15,22 @@
 #include "common/version.h"
 #include "system/hardware/hw.h"
 
+extern "C" {
+typedef void (*msgq_logger_callback_t)(int level, const char *file, int line, const char *msg);
+void msgq_set_logger(msgq_logger_callback_t callback) __attribute__((weak));
+}
+
+static void msgq_log_to_cloudlog(int level, const char *file, int line, const char *msg) {
+  cloudlog_e(level, file, line, "msgq", "%s", msg);
+}
+
 class SwaglogState {
 public:
   SwaglogState() {
+    if (msgq_set_logger != nullptr) {
+      msgq_set_logger(msgq_log_to_cloudlog);
+    }
+
     zctx = zmq_ctx_new();
     sock = zmq_socket(zctx, ZMQ_PUSH);
 

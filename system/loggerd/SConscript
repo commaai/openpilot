@@ -1,6 +1,6 @@
 Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
-libs = [common, messaging, visionipc,
+libs = [common, visionipc, messaging,
         'avformat', 'avcodec', 'swresample', 'avutil', 'x264',
         'yuv', 'pthread', 'z', 'm', 'zstd']
 

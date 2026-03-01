@@ -189,11 +189,8 @@ common = [_common, 'json11', 'zmq']
 Export('common')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)
-# Enable swaglog include in submodules
-env_swaglog = env.Clone()
-env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
-SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
-SConscript(['opendbc_repo/SConscript'], exports={'env': env_swaglog})
+SConscript(['msgq_repo/SConscript'], exports={'env': env})
+SConscript(['opendbc_repo/SConscript'], exports={'env': env})
 
 SConscript(['cereal/SConscript'])
 

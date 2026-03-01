@@ -4,7 +4,7 @@ replay_env = env.Clone()
 replay_env['CCFLAGS'] += ['-Wno-deprecated-declarations']
 
 base_frameworks = []
-base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread']
+base_libs = [common, cereal, visionipc, messaging, 'm', 'ssl', 'crypto', 'pthread']
 
 replay_lib_src = ["replay.cc", "consoleui.cc", "camera.cc", "filereader.cc", "logreader.cc", "framereader.cc",
                   "route.cc", "util.cc", "seg_mgr.cc", "timeline.cc", "api.cc"]

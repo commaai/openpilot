@@ -65,7 +65,7 @@ qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 
 base_frameworks = qt_env['FRAMEWORKS']
-base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, cereal, visionipc, messaging, 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
   base_frameworks.append('QtCharts')
@@ -81,7 +81,7 @@ if arch == "Darwin":
   cabana_env['CPPPATH'] += [f"{brew_prefix}/include"]
   cabana_env['LIBPATH'] += [f"{brew_prefix}/lib"]
 
-cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
+cabana_libs = [cereal, visionipc, messaging, replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 

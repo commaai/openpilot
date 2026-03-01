@@ -11,9 +11,18 @@ from typing import Optional, List, Union, Dict
 
 from cereal import log
 from cereal.services import SERVICE_LIST
+from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import MovingAverage
 
 NO_TRAVERSAL_LIMIT = 2**64-1
+
+
+def _msgq_logger(level: int, file: str, line: int, message: str) -> None:
+  cloudlog.log(level, f"[msgq] {file}:{line} {message}")
+
+
+if hasattr(msgq, "set_logger"):
+  msgq.set_logger(_msgq_logger)
 
 
 def pub_sock(endpoint: str) -> PubSocket:
