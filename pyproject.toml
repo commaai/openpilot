@@ -73,7 +73,7 @@ dependencies = [
   "zstandard",
 
   # ui
-  "raylib @ git+https://github.com/commaai/dependencies.git@vendor-raylib#subdirectory=raylib",
+  "raylib @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=raylib",
   "qrcode",
   "jeepney",
 ]
