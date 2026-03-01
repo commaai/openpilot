@@ -560,7 +560,7 @@ class Setup(Widget):
 
     self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_button_callback,
                                                 self._pop_to_software_selection)
-    self._software_selection_page = SoftwareSelectionPage(self.use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
+    self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
 
     self._download_failed_page = FailedPage(HARDWARE.reboot, self._pop_to_software_selection)
 
@@ -590,7 +590,7 @@ class Setup(Widget):
     # reset sliders after dismiss completes
     gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
 
-  def use_openpilot(self):
+  def _use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
       os.remove(VALID_CACHE_PATH)
       with open(TMP_CONTINUE_PATH, "w") as f:
@@ -616,18 +616,18 @@ class Setup(Widget):
   def _network_setup_continue_button_callback(self, custom_software):
     if not custom_software:
       gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-      self.download(OPENPILOT_URL)
+      self._download(OPENPILOT_URL)
     else:
       def handle_keyboard_result(text):
         url = text.strip()
         if url:
           gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-          self.download(url)
+          self._download(url)
 
       keyboard = BigInputDialog("custom software URL", "openpilot.comma.ai", confirm_callback=handle_keyboard_result)
       gui_app.push_widget(keyboard)
 
-  def download(self, url: str):
+  def _download(self, url: str):
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
       url = f"https://installer.comma.ai/{url}"
