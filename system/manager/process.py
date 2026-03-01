@@ -1,5 +1,6 @@
 import importlib
 import os
+import platform
 import signal
 import time
 import subprocess
@@ -178,7 +179,7 @@ class PythonProcess(ManagerProcess):
     self.restart_if_crash = restart_if_crash
 
   def prepare(self) -> None:
-    if self.enabled:
+    if self.enabled and platform.system() != "Darwin":
       cloudlog.info(f"preimporting {self.module}")
       importlib.import_module(self.module)
 
