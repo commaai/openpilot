@@ -63,7 +63,8 @@ class NavWidget(Widget, abc.ABC):
     self._playing_dismiss_animation = False  # released and animating away
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
 
-    self._dismiss_callback: Callable[[], None] | None = None
+    self._back_callback: Callable[[], None] | None = None  # persistent callback for any back navigation
+    self._dismiss_callback: Callable[[], None] | None = None  # transient callback for programmatic dismiss
 
     # TODO: move this state into NavBar
     self._nav_bar = NavBar()
@@ -74,6 +75,9 @@ class NavWidget(Widget, abc.ABC):
     # Children can override this to block swipe away, like when not at
     # the top of a vertical scroll panel to prevent erroneous swipes
     return True
+
+  def set_back_callback(self, callback: Callable[[], None]) -> None:
+    self._back_callback = callback
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     super()._handle_mouse_event(mouse_event)
@@ -145,6 +149,10 @@ class NavWidget(Widget, abc.ABC):
 
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       gui_app.pop_widget()
+
+      if self._back_callback is not None:
+        self._back_callback()
+
       if self._dismiss_callback is not None:
         self._dismiss_callback()
         self._dismiss_callback = None

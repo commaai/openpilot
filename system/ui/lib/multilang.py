@@ -181,7 +181,7 @@ class Multilang:
     self.setup()
 
   def tr(self, text: str) -> str:
-    return self._translations.get(text, text)
+    return self._translations.get(text, text) or text
 
   def trn(self, singular: str, plural: str, n: int) -> str:
     if singular in self._plurals:
