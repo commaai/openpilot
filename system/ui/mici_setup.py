@@ -484,13 +484,19 @@ class NetworkSetupPage(NavWidget):
     super().show_event()
     self._prev_has_internet = False
     self._network_monitor.reset()
+    self._set_has_internet(False)
 
   def _nav_stack_tick(self):
-    has_internet = self._network_monitor.network_connected.is_set()
-    if has_internet and not self._prev_has_internet:
-      gui_app.pop_widgets_to(self)
-    self._prev_has_internet = has_internet
+    self._wifi_manager.process_callbacks()
 
+    has_internet = self._network_monitor.network_connected.is_set()
+    if has_internet != self._prev_has_internet:
+      self._set_has_internet(has_internet)
+      if has_internet:
+        gui_app.pop_widgets_to(self)
+      self._prev_has_internet = has_internet
+
+  def _set_has_internet(self, has_internet: bool):
     if has_internet:
       self._network_header.set_title("connected to internet")
       self._network_header.set_icon(self._wifi_full_txt)
