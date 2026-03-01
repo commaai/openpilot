@@ -76,7 +76,6 @@ class Widget(abc.ABC):
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     """Set a callback to determine if the widget can be clicked."""
-    # assert not self._touch_valid_callback, "Cannot set touch valid callback more than once"
     self._touch_valid_callback = touch_callback
 
   def _touch_valid(self) -> bool:
