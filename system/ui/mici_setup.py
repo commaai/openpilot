@@ -211,6 +211,7 @@ class DownloadingPage(Widget):
 class FailedPage(NavWidget):
   def __init__(self, reboot_callback: Callable, retry_callback: Callable | None = None, title: str = "download failed"):
     super().__init__()
+
     self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                      font_weight=FontWeight.DISPLAY)
     self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
