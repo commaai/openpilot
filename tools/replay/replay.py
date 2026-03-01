@@ -23,8 +23,6 @@ def parse_args():
   parser.add_argument("-x", "--playback", type=float, default=-1.0, metavar="SPEED",
                       help=f"Playback speed ({SPEED_ARRAY[0]} to {SPEED_ARRAY[-1]})")
   parser.add_argument("--demo", action="store_true", help="Use a demo route")
-  parser.add_argument("--auto", action="store_true", dest="auto_source",
-                      help="Auto load route from best available source (no video)")
   parser.add_argument("-d", "--data_dir", default="", help="Local directory with routes")
   parser.add_argument("-p", "--prefix", default="", help="Set OPENPILOT_PREFIX for IPC isolation")
   parser.add_argument("--dcam", action="store_true", help="Load driver camera")
@@ -92,7 +90,7 @@ def main():
     allow = [s.strip() for s in args.allow.split(",") if s.strip()] if args.allow else []
     block = [s.strip() for s in args.block.split(",") if s.strip()] if args.block else []
 
-    replay = PyReplay(route, allow, block, flags=flags, data_dir=args.data_dir, auto_source=args.auto_source)
+    replay = PyReplay(route, allow, block, flags=flags, data_dir=args.data_dir)
 
     if args.cache > 0:
       replay.set_segment_cache_limit(args.cache)

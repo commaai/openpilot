@@ -25,7 +25,7 @@ cdef extern from "tools/replay/py_downloader.h":
   ctypedef void (*DownloadProgressHandler_raw)(uint64_t, uint64_t, bool)
   void installDownloadProgressHandler "installDownloadProgressHandler" (DownloadProgressHandler_raw) except +
 
-  ctypedef string (*DownloadHandler_raw)(const string&, bool)
+  ctypedef void (*DownloadHandler_raw)(const string&, bool, string*)
   void installDownloadHandler "installDownloadHandler" (DownloadHandler_raw) except +
 
 cdef extern from "tools/replay/route.h":
@@ -99,17 +99,16 @@ cdef void _progress_trampoline(uint64_t cur, uint64_t total, bool success) noexc
     except:
       pass
 
-cdef string _download_trampoline(const string& url, bool use_cache) noexcept with gil:
+cdef void _download_trampoline(const string& url, bool use_cache, string* out) noexcept with gil:
   global _py_download_handler
   handler = _py_download_handler
   if handler is not None:
     try:
       result = handler(url.decode("utf-8"), use_cache)
       if result:
-        return result.encode("utf-8")
+        out[0] = result.encode("utf-8")
     except:
       pass
-  return string()
 
 # Re-export TimelineType and FindFlag from Python timeline module
 from openpilot.tools.replay.timeline_py import TimelineType, FindFlag
@@ -124,14 +123,12 @@ def formatted_data_size(size_t size):
 
 cdef class PyReplay:
   cdef Replay* _r
-  cdef object _route_name   # str
   cdef object _qlog_paths   # dict[int, str]
   cdef object _timeline     # Timeline instance
   cdef object _timeline_started  # bool
 
   def __cinit__(self, str route, list allow=None, list block=None,
-                uint32_t flags=REPLAY_FLAG_NONE, str data_dir="",
-                bool auto_source=False):
+                uint32_t flags=REPLAY_FLAG_NONE, str data_dir=""):
     cdef vector[string] c_allow
     cdef vector[string] c_block
     if allow:
@@ -147,61 +144,37 @@ cdef class PyReplay:
     self._qlog_paths = {}
 
     # Install download handler
-    self._install_download_handler()
-
-    # Discover route in Python and populate C++ segments
-    self._discover_route(route, data_dir if data_dir else None)
-
-  def _install_download_handler(self):
-    """Install a Python download handler that uses file_downloader logic."""
+    _ensure_cache_dir()
     global _py_download_handler
     _py_download_handler = _do_download
     installDownloadHandler(_download_trampoline)
 
+    # Discover route in Python and populate C++ segments
+    self._discover_route(route, data_dir if data_dir else None)
+
   def _discover_route(self, str route_str, data_dir):
     """Use tools/lib/route.py to discover segments and populate C++."""
-    import re
     import time as time_mod
-    from openpilot.tools.lib.route import Route as LibRoute
+    from openpilot.tools.lib.route import Route as LibRoute, SegmentRange
 
-    # Parse segment range (e.g. "route_name/0:5" or "route_name--5")
-    # Simple parsing: split on / or -- to get range
-    begin_segment = 0
-    end_segment = -1
-    route_name = route_str
-
-    # Try to parse route/segment range
-    # Format: dongle_id|timestamp/begin:end or dongle_id|timestamp--seg
-    m = re.match(r'^([a-z0-9]{16}[|_/].{20})(?:(?:--|/)(.+))?$', route_str)
-    if m:
-      route_name = m.group(1).replace('_', '|').replace('/', '|')
-      range_str = m.group(2)
-      if range_str:
-        if '/' in route_str and ':' in range_str:
-          # Slash-separated range: route/begin:end
-          parts = range_str.split(':')
-          begin_segment = int(parts[0]) if parts[0] else 0
-          end_segment = int(parts[1]) if len(parts) > 1 and parts[1] else -1
-        elif ':' in range_str:
-          parts = range_str.split(':')
-          begin_segment = int(parts[0]) if parts[0] else 0
-          end_segment = int(parts[1]) if len(parts) > 1 and parts[1] else -1
-        else:
-          # Single segment number
-          begin_segment = int(range_str)
-          end_segment = begin_segment
-    else:
+    # Parse segment range using SegmentRange if it has a range specifier
+    seg_idxs = None
+    try:
+      sr = SegmentRange(route_str)
+      route_name = sr.route_name.replace('/', '|')
+      if sr.slice:
+        seg_idxs = set(sr.seg_idxs)
+    except Exception:
       route_name = route_str
 
     # Discover route using tools/lib/route.py
     py_route = LibRoute(route_name, data_dir=data_dir)
     canonical = str(py_route.name.canonical_name)
 
-    # Parse datetime from timestamp
+    # Parse datetime from timestamp (old format only; new format yields 0)
     dt = 0
     try:
-      ts = py_route.name.time_str
-      t = time_mod.strptime(ts, "%Y-%m-%d--%H-%M-%S")
+      t = time_mod.strptime(py_route.name.time_str, "%Y-%m-%d--%H-%M-%S")
       dt = int(time_mod.mktime(t))
     except (ValueError, AttributeError):
       pass
@@ -209,44 +182,29 @@ cdef class PyReplay:
     self._r.setRouteName(canonical.encode("utf-8"))
     self._r.setRouteDateTime(<time_t>dt)
 
-    # Build segment map
-    log_paths = py_route.log_paths()
-    qlog_paths = py_route.qlog_paths()
-    camera_paths = py_route.camera_paths()
-    dcamera_paths = py_route.dcamera_paths()
-    ecamera_paths = py_route.ecamera_paths()
-    qcamera_paths = py_route.qcamera_paths()
-
+    # Build segment map — single pass over segments
     qlog_map = {}
-    for i in range(len(qlog_paths)):
-      rlog = log_paths[i] if i < len(log_paths) and log_paths[i] else ""
-      qlog = qlog_paths[i] if qlog_paths[i] else ""
-      cam = camera_paths[i] if i < len(camera_paths) and camera_paths[i] else ""
-      dcam = dcamera_paths[i] if i < len(dcamera_paths) and dcamera_paths[i] else ""
-      ecam = ecamera_paths[i] if i < len(ecamera_paths) and ecamera_paths[i] else ""
-      qcam = qcamera_paths[i] if i < len(qcamera_paths) and qcamera_paths[i] else ""
+    for seg in py_route.segments:
+      n = seg.name.segment_num
+      if seg_idxs is not None and n not in seg_idxs:
+        continue
 
+      rlog = seg.log_path or ""
+      qlog = seg.qlog_path or ""
       if not rlog and not qlog:
         continue
 
-      # Apply segment range filter
-      if begin_segment > 0 and i < begin_segment:
-        continue
-      if end_segment >= 0 and i > end_segment:
-        continue
-
-      self._r.addSegment(i,
+      self._r.addSegment(n,
                          rlog.encode("utf-8"),
                          qlog.encode("utf-8"),
-                         cam.encode("utf-8"),
-                         dcam.encode("utf-8"),
-                         ecam.encode("utf-8"),
-                         qcam.encode("utf-8"))
+                         (seg.camera_path or "").encode("utf-8"),
+                         (seg.dcamera_path or "").encode("utf-8"),
+                         (seg.ecamera_path or "").encode("utf-8"),
+                         (seg.qcamera_path or "").encode("utf-8"))
 
       if qlog:
-        qlog_map[i] = qlog
+        qlog_map[n] = qlog
 
-    self._route_name = canonical
     self._qlog_paths = qlog_map
 
   def __dealloc__(self):
@@ -392,22 +350,30 @@ cdef class PyReplay:
 
 # -- Download handler implementation --
 
+cdef bint _cache_dir_ensured = False
+
+def _ensure_cache_dir():
+  """Create the download cache directory once."""
+  global _cache_dir_ensured
+  if not _cache_dir_ensured:
+    import os
+    from openpilot.system.hardware.hw import Paths
+    os.makedirs(Paths.download_cache_root(), exist_ok=True)
+    _cache_dir_ensured = True
+
 def _do_download(url, use_cache):
   """Download a URL to local cache, return local file path."""
-  import hashlib
   import os
   import shutil
   import tempfile
-  from openpilot.system.hardware.hw import Paths
+  from openpilot.tools.lib.file_downloader import cache_file_path
   from openpilot.tools.lib.url_file import URLFile
 
   if not url.startswith("http://") and not url.startswith("https://"):
-    # Local file, return as-is
     return url
 
   if use_cache:
-    url_without_query = url.split("?")[0]
-    local_path = os.path.join(Paths.download_cache_root(), hashlib.sha256(url_without_query.encode()).hexdigest())
+    local_path = cache_file_path(url)
     if os.path.exists(local_path):
       return local_path
   else:
@@ -419,7 +385,7 @@ def _do_download(url, use_cache):
     if total <= 0:
       return ""
 
-    os.makedirs(Paths.download_cache_root(), exist_ok=True)
+    from openpilot.system.hardware.hw import Paths
     tmp_fd, tmp_path = tempfile.mkstemp(dir=Paths.download_cache_root())
     try:
       downloaded = 0
@@ -431,7 +397,6 @@ def _do_download(url, use_cache):
             break
           f.write(data)
           downloaded += len(data)
-          # Report progress via the existing progress handler
           handler = _py_progress_handler
           if handler is not None:
             try:

@@ -35,12 +35,21 @@ _ALERT_TYPE_MAP = {
   capnp_log.SelfdriveState.AlertStatus.critical: TimelineType.AlertCritical,
 }
 
+_FIND_FLAG_TYPE = {
+  FindFlag.nextUserBookmark: TimelineType.UserBookmark,
+  FindFlag.nextInfo: TimelineType.AlertInfo,
+  FindFlag.nextWarning: TimelineType.AlertWarning,
+  FindFlag.nextCritical: TimelineType.AlertCritical,
+}
+
+_ALERT_SIZE_NONE = capnp_log.SelfdriveState.AlertSize.none
+
 
 class Timeline:
   """Builds an engagement/alert timeline from qlogs in a background thread."""
 
   def __init__(self):
-    self._entries = []  # list of [start, end, type, text1, text2]
+    self._entries = ()  # immutable tuple snapshot for lock-free reads
     self._lock = threading.Lock()
     self._thread = None
     self._stop = threading.Event()
@@ -65,28 +74,22 @@ class Timeline:
   def get_entries(self):
     """Return current timeline as list of (start_time, end_time, type_int)."""
     with self._lock:
-      return [(e[0], e[1], int(e[2])) for e in self._entries]
+      return list(self._entries)
 
   def find(self, cur_ts, flag):
     """Find next timeline event matching flag after cur_ts. Returns seconds or None."""
     with self._lock:
-      entries = list(self._entries)
+      entries = self._entries
 
-    for e in entries:
-      start, end, etype = e[0], e[1], e[2]
+    for start, end, etype in entries:
       if etype == TimelineType.Engaged:
         if flag == FindFlag.nextEngagement and start > cur_ts:
           return start
         elif flag == FindFlag.nextDisEngagement and end > cur_ts:
           return end
       elif start > cur_ts:
-        if flag == FindFlag.nextUserBookmark and etype == TimelineType.UserBookmark:
-          return start
-        elif flag == FindFlag.nextInfo and etype == TimelineType.AlertInfo:
-          return start
-        elif flag == FindFlag.nextWarning and etype == TimelineType.AlertWarning:
-          return start
-        elif flag == FindFlag.nextCritical and etype == TimelineType.AlertCritical:
+        target_type = _FIND_FLAG_TYPE.get(flag)
+        if target_type is not None and etype == target_type:
           return start
     return None
 
@@ -112,7 +115,8 @@ class Timeline:
         if self._stop.is_set():
           break
 
-        if msg.which() == "selfdriveState":
+        which = msg.which()
+        if which == "selfdriveState":
           seconds = (msg.logMonoTime - route_start_ts) / 1e9
           cs = msg.selfdriveState
 
@@ -131,8 +135,7 @@ class Timeline:
           if entry is not None:
             entry[1] = seconds
 
-          alert_size = str(cs.alertSize)
-          if alert_size != "none":
+          if cs.alertSize != _ALERT_SIZE_NONE:
             atype = _ALERT_TYPE_MAP.get(cs.alertStatus, TimelineType.AlertInfo)
             text1 = cs.alertText1
             text2 = cs.alertText2
@@ -142,11 +145,11 @@ class Timeline:
           else:
             current_alert_idx = None
 
-        elif msg.which() == "userBookmark":
+        elif which == "userBookmark":
           seconds = (msg.logMonoTime - route_start_ts) / 1e9
           staging.append([seconds, seconds, TimelineType.UserBookmark, "", ""])
 
-      # Sort and publish after each segment
-      sorted_entries = sorted(staging, key=lambda e: e[0])
+      # Publish snapshot after each segment (staging is already nearly sorted)
+      snapshot = tuple((e[0], e[1], int(e[2])) for e in sorted(staging, key=lambda e: e[0]))
       with self._lock:
-        self._entries = sorted_entries
+        self._entries = snapshot

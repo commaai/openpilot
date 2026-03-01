@@ -27,9 +27,6 @@ public:
   ~Replay();
 
   // Called from Python after route discovery — populates the route in seg_mgr_
-  void setRoute(const std::string &name, std::time_t datetime, const std::map<int, SegmentFile> &segments) {
-    seg_mgr_->route_.populate(name, datetime, segments);
-  }
   void addSegment(int n, const std::string &rlog, const std::string &qlog,
                   const std::string &road_cam, const std::string &driver_cam,
                   const std::string &wide_road_cam, const std::string &qcamera) {

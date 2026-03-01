@@ -31,7 +31,8 @@ std::string download(const std::string &url, bool use_cache, std::atomic<bool> *
     handler_copy = download_handler;
   }
   if (handler_copy) {
-    std::string result = handler_copy(url, use_cache);
+    std::string result;
+    handler_copy(url, use_cache, &result);
     if (result.empty()) {
       DownloadProgressHandler progress_copy;
       {

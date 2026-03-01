@@ -7,7 +7,8 @@
 typedef std::function<void(uint64_t cur, uint64_t total, bool success)> DownloadProgressHandler;
 void installDownloadProgressHandler(DownloadProgressHandler handler);
 
-typedef std::string (*DownloadHandlerFn)(const std::string &url, bool use_cache);
+// Download handler writes result path into *out. Empty string = failure.
+typedef void (*DownloadHandlerFn)(const std::string &url, bool use_cache, std::string *out);
 void installDownloadHandler(DownloadHandlerFn handler);
 
 namespace PyDownloader {
