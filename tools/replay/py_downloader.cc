@@ -1,11 +1,8 @@
 #include "tools/replay/py_downloader.h"
 
 #include <csignal>
-#include <cstdio>
-#include <cstring>
 #include <fcntl.h>
 #include <mutex>
-#include <sstream>
 #include <sys/wait.h>
 #include <unistd.h>
 

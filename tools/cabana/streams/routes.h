@@ -1,8 +1,8 @@
 #pragma once
 
+#include <atomic>
 #include <QComboBox>
 #include <QDialog>
-#include "tools/cabana/utils/pyapi.h"
 
 class RouteListWidget;
 
@@ -20,6 +20,5 @@ protected:
   QComboBox *device_list_;
   QComboBox *period_selector_;
   RouteListWidget *route_list_;
-  PyApiRequest *device_requester_;
-  PyApiRequest *route_requester_;
+  std::atomic<bool> fetch_cancelled_{false};
 };

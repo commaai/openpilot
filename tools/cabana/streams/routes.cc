@@ -5,9 +5,27 @@
 #include <QFormLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPainter>
+#include <QtConcurrent>
+
+#include "tools/replay/py_downloader.h"
+
+namespace {
+
+// Parse a PyDownloader JSON response into (success, error_code).
+std::pair<bool, int> checkApiResponse(const std::string &result) {
+  if (result.empty()) return {false, 500};
+  auto doc = QJsonDocument::fromJson(QByteArray::fromStdString(result));
+  if (doc.isObject() && doc.object().contains("error")) {
+    return {false, doc.object()["error"].toString() == "unauthorized" ? 401 : 500};
+  }
+  return {true, 0};
+}
+
+}  // namespace
 
 // The RouteListWidget class extends QListWidget to display a custom message when empty
 class RouteListWidget : public QListWidget {
@@ -27,10 +45,7 @@ public:
   QString empty_text_ = tr("No items");
 };
 
-RoutesDialog::RoutesDialog(QWidget *parent)
-    : QDialog(parent),
-      device_requester_(new PyApiRequest(this)),
-      route_requester_(new PyApiRequest(this)) {
+RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Remote routes"));
 
   QFormLayout *layout = new QFormLayout(this);
@@ -41,37 +56,37 @@ RoutesDialog::RoutesDialog(QWidget *parent)
   layout->addRow(button_box);
 
   device_list_->addItem(tr("Loading..."));
-  // Populate period selector with predefined durations
   period_selector_->addItem(tr("Last week"), 7);
   period_selector_->addItem(tr("Last 2 weeks"), 14);
   period_selector_->addItem(tr("Last month"), 30);
   period_selector_->addItem(tr("Last 6 months"), 180);
   period_selector_->addItem(tr("Preserved"), -1);
 
-  // Connect signals and slots
-  QObject::connect(route_requester_, &PyApiRequest::requestDone, this, &RoutesDialog::parseRouteList);
   connect(device_list_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
   connect(period_selector_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
   connect(route_list_, &QListWidget::itemDoubleClicked, this, &QDialog::accept);
-  QObject::connect(button_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
-  QObject::connect(button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  connect(button_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
+  connect(button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
   // Fetch devices
-  QObject::connect(device_requester_, &PyApiRequest::requestDone, this, &RoutesDialog::parseDeviceList);
-  device_requester_->fetchDevices();
+  QtConcurrent::run([this]() {
+    std::string result = PyDownloader::getDevices();
+    auto [success, error_code] = checkApiResponse(result);
+    QMetaObject::invokeMethod(this, [this, r = QString::fromStdString(result), success, error_code]() {
+      parseDeviceList(r, success, error_code);
+    }, Qt::QueuedConnection);
+  });
 }
 
 void RoutesDialog::parseDeviceList(const QString &json, bool success, int error_code) {
   if (success) {
     device_list_->clear();
-    auto devices = QJsonDocument::fromJson(json.toUtf8()).array();
-    for (const QJsonValue &device : devices) {
+    for (const QJsonValue &device : QJsonDocument::fromJson(json.toUtf8()).array()) {
       QString dongle_id = device["dongle_id"].toString();
       device_list_->addItem(dongle_id, dongle_id);
     }
   } else {
-    bool unauthorized = (error_code == 401);
-    QMessageBox::warning(this, tr("Error"), unauthorized ? tr("Unauthorized, Authenticate with tools/lib/auth.py") : tr("Network error"));
+    QMessageBox::warning(this, tr("Error"), error_code == 401 ? tr("Unauthorized. Authenticate with tools/lib/auth.py") : tr("Network error"));
     reject();
   }
 }
@@ -83,18 +98,27 @@ void RoutesDialog::fetchRoutes() {
   route_list_->clear();
   route_list_->setEmptyText(tr("Loading..."));
 
-  QString dongle_id = device_list_->currentText();
+  std::string did = device_list_->currentText().toStdString();
   int period = period_selector_->currentData().toInt();
+  fetch_cancelled_ = true;  // cancel any in-flight fetch
 
-  route_requester_->cancel();
-  if (period == -1) {
-    route_requester_->fetchRoutes(dongle_id, 0, 0, true);
-  } else {
+  bool preserved = (period == -1);
+  int64_t start_ms = 0, end_ms = 0;
+  if (!preserved) {
     QDateTime now = QDateTime::currentDateTime();
-    int64_t start_ms = now.addDays(-period).toMSecsSinceEpoch();
-    int64_t end_ms = now.toMSecsSinceEpoch();
-    route_requester_->fetchRoutes(dongle_id, start_ms, end_ms, false);
+    start_ms = now.addDays(-period).toMSecsSinceEpoch();
+    end_ms = now.toMSecsSinceEpoch();
   }
+
+  fetch_cancelled_ = false;
+  QtConcurrent::run([this, did, start_ms, end_ms, preserved]() {
+    std::string result = PyDownloader::getDeviceRoutes(did, start_ms, end_ms, preserved);
+    if (fetch_cancelled_) return;
+    auto [success, error_code] = checkApiResponse(result);
+    QMetaObject::invokeMethod(this, [this, r = QString::fromStdString(result), success, error_code]() {
+      parseRouteList(r, success, error_code);
+    }, Qt::QueuedConnection);
+  });
 }
 
 void RoutesDialog::parseRouteList(const QString &json, bool success, int error_code) {
