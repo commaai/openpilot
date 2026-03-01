@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-#include "third_party/json11/json11.hpp"
+#include "json11/json11.hpp"
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"
 #include "tools/replay/util.h"

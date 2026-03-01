@@ -30,6 +30,7 @@ dependencies = [
   "capnproto @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=capnproto",
   "eigen @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=eigen",
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
+  "json11 @ git+https://github.com/commaai/dependencies.git@vendor-libyuv#subdirectory=json11",
   "libjpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libjpeg",
   "libyuv @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libyuv",
   "openssl3 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=openssl3",
