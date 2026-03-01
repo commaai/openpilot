@@ -1,4 +1,4 @@
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+Import('env', 'envCython', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
 
 replay_env = env.Clone()
 replay_env['CCFLAGS'] += ['-Wno-deprecated-declarations']
@@ -14,6 +14,21 @@ replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEW
 Export('replay_lib')
 replay_libs = [replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'bz2', 'zstd', 'yuv', 'ncurses'] + base_libs
 replay_env.Program("replay", ["main.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
+
+# For the shared Cython extension, link ffmpeg as shared system libraries
+# to avoid non-PIC errors from the vendored static archives.
+pyx_env = envCython.Clone()
+try:
+  import ffmpeg as ffmpeg_pkg
+  pyx_env['LIBPATH'] = [p for p in pyx_env['LIBPATH'] if ffmpeg_pkg.LIB_DIR not in str(p)]
+except ImportError:
+  pass
+# x264/yuv are vendored static-only without -fPIC; x264 is a transitive dep
+# of the system's shared libavcodec, and libyuv is only used by framereader
+# code paths that are inactive when --no-vipc is used.
+yuv_stub = pyx_env.Object('yuv_stub.cc')
+replay_pyx_libs = [replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'z', 'bz2', 'zstd'] + base_libs
+pyx_env.Program('replay_pyx.so', ['replay_pyx.pyx', yuv_stub], LIBS=pyx_env['LIBS'] + replay_pyx_libs)
 
 if GetOption('extras'):
   replay_env.Program('tests/test_replay', ['tests/test_replay.cc'], LIBS=replay_libs)
