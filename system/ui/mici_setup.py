@@ -80,6 +80,7 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
+          time.sleep(3)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -366,6 +367,10 @@ class DownloadingPage(Widget):
                                         font_weight=FontWeight.ROMAN, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
     self._progress = 0
 
+  def show_event(self):
+    super().show_event()
+    self.set_progress(0)
+
   def set_progress(self, progress: int):
     self._progress = progress
     self._progress_label.set_text(f"{progress}%")
@@ -531,11 +536,10 @@ class NetworkSetupPage(NavWidget):
 class Setup(Widget):
   def __init__(self):
     super().__init__()
-    self.failed_url = ""
-    self.failed_reason = ""
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
+    self._download_failed_reason: str | None = None
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
@@ -558,9 +562,17 @@ class Setup(Widget):
 
     self._downloading_page = DownloadingPage()
 
-  def _update_state(self):
-    super()._update_state()
+    gui_app.add_nav_stack_tick(self._nav_stack_tick)
+
+  def _nav_stack_tick(self):
     self._downloading_page.set_progress(self.download_progress)
+
+    if self._download_failed_reason is not None:
+      reason = self._download_failed_reason
+      self._download_failed_reason = None
+      self._download_failed_page.set_reason(reason)
+      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+      gui_app.push_widget(self._download_failed_page)
 
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
@@ -616,6 +628,7 @@ class Setup(Widget):
 
     parsed = urlparse(url, scheme='https')
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
+    self.download_progress = 0
 
     gui_app.push_widget(self._downloading_page)
 
@@ -648,7 +661,6 @@ class Setup(Widget):
 
           if total_size:
             self.download_progress = int(downloaded * 100 / total_size)
-            self._downloading_page.set_progress(self.download_progress)
 
       is_elf = False
       with open(tmpfile, 'rb') as f:
@@ -656,7 +668,7 @@ class Setup(Widget):
         is_elf = header == b'\x7fELF'
 
       if not is_elf:
-        self.download_failed(self.download_url, "No custom software found at this URL.")
+        self._download_failed_reason = "No custom software found at this URL."
         return
 
       # AGNOS might try to execute the installer before this process exits.
@@ -673,18 +685,9 @@ class Setup(Widget):
 
     except urllib.error.HTTPError as e:
       if e.code == 409:
-        error_msg = "Incompatible openpilot version"
-        self.download_failed(self.download_url, error_msg)
+        self._download_failed_reason = "Incompatible openpilot version"
     except Exception:
-      error_msg = "Invalid URL"
-      self.download_failed(self.download_url, error_msg)
-
-  def download_failed(self, url: str, reason: str):
-    self.failed_url = url
-    self.failed_reason = reason
-    self._download_failed_page.set_reason(reason)
-    gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-    gui_app.push_widget(self._download_failed_page)
+      self._download_failed_reason = "Invalid URL"
 
 
 def main():
