@@ -175,10 +175,6 @@ class Widget(abc.ABC):
 
   def _update_state(self):
     """Optionally update the widget's non-layout state. This is called before rendering."""
-    if self._click_release_time is not None and self._should_fire_click():
-      self._click_release_time = None
-      if self._click_callback:
-        self._click_callback()
 
   @abc.abstractmethod
   def _render(self, rect: rl.Rectangle) -> bool | int | None:
@@ -200,12 +196,6 @@ class Widget(abc.ABC):
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
     # Default implementation does nothing, can be overridden by subclasses
-
-  def _should_fire_click(self) -> bool:
-    """Waits for click delay before firing click callback, used for click animations."""
-    if self._click_delay is None:
-      return True
-    return (rl.get_time() - self._click_release_time) >= self._click_delay
 
   def show_event(self):
     """Optionally handle show event. Parent must manually call this"""
