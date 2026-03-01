@@ -1,13 +1,13 @@
 #include "tools/cabana/chart/chartswidget.h"
 
 #include <algorithm>
+#include <future>
 
 #include <QApplication>
-#include <QFutureSynchronizer>
 #include <QMenu>
+#include <QMimeData>
 #include <QScrollBar>
 #include <QToolBar>
-#include <QtConcurrent>
 
 #include "tools/cabana/chart/chart.h"
 
@@ -171,10 +171,11 @@ void ChartsWidget::updateTabBar() {
 }
 
 void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
-  QFutureSynchronizer<void> future_synchronizer;
+  std::vector<std::future<void>> futures;
   for (auto c : charts) {
-    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, &new_events));
+    futures.push_back(std::async(std::launch::async, &ChartView::updateSeries, c, nullptr, &new_events));
   }
+  for (auto &f : futures) f.get();
 }
 
 void ChartsWidget::timeRangeChanged(const std::optional<std::pair<double, double>> &time_range) {

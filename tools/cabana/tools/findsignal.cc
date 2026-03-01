@@ -1,10 +1,11 @@
 #include "tools/cabana/tools/findsignal.h"
 
+#include <thread>
+
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QMenu>
-#include <QtConcurrent>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -35,22 +36,35 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
   const auto prev_sigs = !histories.isEmpty() ? histories.back() : initial_signals;
   filtered_signals.clear();
   filtered_signals.reserve(prev_sigs.size());
-  QtConcurrent::blockingMap(prev_sigs, [&](auto &s) {
-    const auto &events = can->events(s.id);
-    auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, CompareCanEvent());
-    auto last = events.cend();
-    if (last_time < std::numeric_limits<uint64_t>::max()) {
-      last = std::upper_bound(events.cbegin(), events.cend(), last_time, CompareCanEvent());
-    }
 
-    auto it = std::find_if(first, last, [&](const CanEvent *e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
-    if (it != last) {
-      auto values = s.values;
-      values += QString("(%1, %2)").arg(can->toSeconds((*it)->mono_time), 0, 'f', 3).arg(get_raw_value((*it)->dat, (*it)->size, s.sig));
-      std::lock_guard lk(lock);
-      filtered_signals.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
-    }
-  });
+  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
+  size_t chunk = (prev_sigs.size() + num_threads - 1) / num_threads;
+  std::vector<std::thread> threads;
+  for (unsigned int t = 0; t < num_threads && t * chunk < (size_t)prev_sigs.size(); ++t) {
+    size_t start = t * chunk;
+    size_t end = std::min(start + chunk, (size_t)prev_sigs.size());
+    threads.emplace_back([&, start, end]() {
+      for (size_t i = start; i < end; ++i) {
+        const auto &s = prev_sigs[i];
+        const auto &events = can->events(s.id);
+        auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, CompareCanEvent());
+        auto last = events.cend();
+        if (last_time < std::numeric_limits<uint64_t>::max()) {
+          last = std::upper_bound(events.cbegin(), events.cend(), last_time, CompareCanEvent());
+        }
+
+        auto it = std::find_if(first, last, [&](const CanEvent *e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
+        if (it != last) {
+          auto values = s.values;
+          values += QString("(%1, %2)").arg(can->toSeconds((*it)->mono_time), 0, 'f', 3).arg(get_raw_value((*it)->dat, (*it)->size, s.sig));
+          std::lock_guard lk(lock);
+          filtered_signals.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
+        }
+      }
+    });
+  }
+  for (auto &th : threads) th.join();
+
   histories.push_back(filtered_signals);
 
   endResetModel();

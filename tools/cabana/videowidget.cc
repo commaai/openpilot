@@ -1,6 +1,7 @@
 #include "tools/cabana/videowidget.h"
 
 #include <algorithm>
+#include <thread>
 
 #include <QAction>
 #include <QActionGroup>
@@ -9,7 +10,6 @@
 #include <QPainter>
 #include <QStyleOptionSlider>
 #include <QVBoxLayout>
-#include <QtConcurrent>
 
 #include "tools/cabana/tools/routeinfo.h"
 
@@ -334,19 +334,31 @@ StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType str
 
 void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
   std::mutex mutex;
-  QtConcurrent::blockingMap(qlog->events.cbegin(), qlog->events.cend(), [this, &mutex](const Event &e) {
-    if (e.which == cereal::Event::Which::THUMBNAIL) {
-      capnp::FlatArrayMessageReader reader(e.data);
-      auto thumb_data = reader.getRoot<cereal::Event>().getThumbnail();
-      auto image_data = thumb_data.getThumbnail();
-      if (QPixmap thumb; thumb.loadFromData(image_data.begin(), image_data.size(), "jpeg")) {
-        QPixmap generated_thumb = generateThumbnail(thumb, can->toSeconds(thumb_data.getTimestampEof()));
-        std::lock_guard lock(mutex);
-        thumbnails[thumb_data.getTimestampEof()] = generated_thumb;
-        big_thumbnails[thumb_data.getTimestampEof()] = thumb;
+  const auto &events = qlog->events;
+  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
+  size_t chunk = (events.size() + num_threads - 1) / num_threads;
+  std::vector<std::thread> threads;
+  for (unsigned int t = 0; t < num_threads && t * chunk < events.size(); ++t) {
+    size_t start = t * chunk;
+    size_t end = std::min(start + chunk, events.size());
+    threads.emplace_back([this, &mutex, &events, start, end]() {
+      for (size_t i = start; i < end; ++i) {
+        const Event &e = events[i];
+        if (e.which == cereal::Event::Which::THUMBNAIL) {
+          capnp::FlatArrayMessageReader reader(e.data);
+          auto thumb_data = reader.getRoot<cereal::Event>().getThumbnail();
+          auto image_data = thumb_data.getThumbnail();
+          if (QPixmap thumb; thumb.loadFromData(image_data.begin(), image_data.size(), "jpeg")) {
+            QPixmap generated_thumb = generateThumbnail(thumb, can->toSeconds(thumb_data.getTimestampEof()));
+            std::lock_guard lock(mutex);
+            thumbnails[thumb_data.getTimestampEof()] = generated_thumb;
+            big_thumbnails[thumb_data.getTimestampEof()] = thumb;
+          }
+        }
       }
-    }
-  });
+    });
+  }
+  for (auto &th : threads) th.join();
   update();
 }
 

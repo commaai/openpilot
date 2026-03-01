@@ -20,7 +20,7 @@ SConscript(['#tools/replay/SConscript'])
 Import('replay_lib')
 
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Concurrent"]
+qt_modules = ["Widgets", "Gui", "Core"]
 
 qt_libs = []
 if arch == "Darwin":

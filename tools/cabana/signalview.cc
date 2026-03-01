@@ -1,6 +1,7 @@
 #include "tools/cabana/signalview.h"
 
 #include <algorithm>
+#include <future>
 
 #include <QCompleter>
 #include <QDialogButtonBox>
@@ -11,7 +12,6 @@
 #include <QPainterPath>
 #include <QPushButton>
 #include <QScrollBar>
-#include <QtConcurrent>
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
@@ -641,13 +641,13 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
                delegate->button_size.height() - style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2);
 
     auto [first, last] = can->eventsInRange(model->msg_id, std::make_pair(last_msg.ts -settings.sparkline_range, last_msg.ts));
-    QFutureSynchronizer<void> synchronizer;
+    std::vector<std::future<void>> futures;
     for (int i = first_visible.row(); i <= last_visible.row(); ++i) {
       auto item = model->getItem(model->index(i, 1));
-      synchronizer.addFuture(QtConcurrent::run(
-          &item->sparkline, &Sparkline::update, item->sig, first, last, settings.sparkline_range, size));
+      futures.push_back(std::async(std::launch::async,
+          &Sparkline::update, &item->sparkline, item->sig, first, last, settings.sparkline_range, size));
     }
-    synchronizer.waitForFinished();
+    for (auto &f : futures) f.get();
   }
 
   for (int i = 0; i < model->rowCount(); ++i) {

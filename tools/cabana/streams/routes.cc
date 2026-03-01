@@ -11,7 +11,7 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPointer>
-#include <QtConcurrent>
+#include <thread>
 
 #include "tools/replay/py_downloader.h"
 
@@ -72,13 +72,13 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
 
   // Fetch devices
   QPointer<RoutesDialog> self = this;
-  QtConcurrent::run([self]() {
+  std::thread([self]() {
     std::string result = PyDownloader::getDevices();
     auto [success, error_code] = checkApiResponse(result);
     QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), success, error_code]() {
       if (self) self->parseDeviceList(r, success, error_code);
     }, Qt::QueuedConnection);
-  });
+  }).detach();
 }
 
 void RoutesDialog::parseDeviceList(const QString &json, bool success, int error_code) {
@@ -114,14 +114,14 @@ void RoutesDialog::fetchRoutes() {
 
   int request_id = ++fetch_id_;
   QPointer<RoutesDialog> self = this;
-  QtConcurrent::run([self, did, start_ms, end_ms, preserved, request_id]() {
+  std::thread([self, did, start_ms, end_ms, preserved, request_id]() {
     std::string result = PyDownloader::getDeviceRoutes(did, start_ms, end_ms, preserved);
     if (!self || self->fetch_id_ != request_id) return;
     auto [success, error_code] = checkApiResponse(result);
     QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), success, error_code, request_id]() {
       if (self && self->fetch_id_ == request_id) self->parseRouteList(r, success, error_code);
     }, Qt::QueuedConnection);
-  });
+  }).detach();
 }
 
 void RoutesDialog::parseRouteList(const QString &json, bool success, int error_code) {
