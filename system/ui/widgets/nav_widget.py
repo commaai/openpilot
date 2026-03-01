@@ -150,12 +150,13 @@ class NavWidget(Widget, abc.ABC):
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       gui_app.pop_widget()
 
-      if self._back_callback is not None:
-        self._back_callback()
-
       if self._dismiss_callback is not None:
         self._dismiss_callback()
         self._dismiss_callback = None
+      else:
+        # Only run back callback if not programmatically dismissed
+        if self._back_callback is not None:
+          self._back_callback()
 
       self._playing_dismiss_animation = False
       self._drag_start_pos = None
