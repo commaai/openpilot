@@ -30,8 +30,8 @@ class Widget(abc.ABC):
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
-    self._click_delay: float = 0.0  # seconds to hold is_pressed and delay callback after release
-    self._click_release_time: float = 0.0
+    self._click_delay: float | None = None  # seconds to hold is_pressed and delay click callback
+    self._click_release_time: float | None = None
     self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
     self.__was_awake = True
@@ -53,9 +53,8 @@ class Widget(abc.ABC):
 
   @property
   def is_pressed(self) -> bool:
-    if self._click_release_time > 0 and self._click_delay > 0:
-      return True
-    return any(self.__is_pressed)
+    # if actually pressed or delaying click callback
+    return any(self.__is_pressed) or self._click_release_time is not None
 
   @property
   def enabled(self) -> bool:
@@ -173,8 +172,8 @@ class Widget(abc.ABC):
 
   def _update_state(self):
     """Optionally update the widget's non-layout state. This is called before rendering."""
-    if self._click_release_time > 0 and self._should_fire_click():
-      self._click_release_time = 0.0
+    if self._click_release_time is not None and self._should_fire_click():
+      self._click_release_time = None
       if self._click_callback:
         self._click_callback()
 
@@ -197,8 +196,8 @@ class Widget(abc.ABC):
     # Default implementation does nothing, can be overridden by subclasses
 
   def _should_fire_click(self) -> bool:
-    """Override or set _click_delay to wait for click animation before firing callback."""
-    if self._click_delay <= 0:
+    """Waits for click delay before firing click callback, used for click animations."""
+    if self._click_delay is None:
       return True
     return (rl.get_time() - self._click_release_time) >= self._click_delay
 
