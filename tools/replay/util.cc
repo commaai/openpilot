@@ -13,12 +13,15 @@
 #include "common/timing.h"
 #include "common/util.h"
 
-ReplayMessageHandler message_handler = nullptr;
-void installMessageHandler(ReplayMessageHandler handler) { message_handler = handler; }
+static std::mutex message_handler_lock;
+static ReplayMessageHandler message_handler = nullptr;
+void installMessageHandler(ReplayMessageHandler handler) {
+  std::lock_guard lk(message_handler_lock);
+  message_handler = handler;
+}
 
 void logMessage(ReplyMsgType type, const char *fmt, ...) {
-  static std::mutex lock;
-  std::lock_guard lk(lock);
+  std::lock_guard lk(message_handler_lock);
 
   char *msg_buf = nullptr;
   va_list args;

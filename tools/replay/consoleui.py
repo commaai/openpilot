@@ -136,24 +136,33 @@ class ConsoleUI:
     self.max_height, self.max_width = self.stdscr.getmaxyx()
     self.wins = [None] * Win.Max
 
-    self.wins[Win.Title] = curses.newwin(1, self.max_width, 0, 0)
-    self.wins[Win.Stats] = curses.newwin(2, self.max_width - 2 * BORDER_SIZE, 2, BORDER_SIZE)
-    self.wins[Win.Timeline] = curses.newwin(4, self.max_width - 2 * BORDER_SIZE, 5, BORDER_SIZE)
-    self.wins[Win.TimelineDesc] = curses.newwin(1, 100, 10, BORDER_SIZE)
-    self.wins[Win.CarState] = curses.newwin(3, 100, 12, BORDER_SIZE)
-    self.wins[Win.DownloadBar] = curses.newwin(1, 100, 16, BORDER_SIZE)
+    w = self.max_width
+    inner_w = max(1, w - 2 * BORDER_SIZE)
+    stat_w = min(100, inner_w)
+
+    self.wins[Win.Title] = curses.newwin(1, w, 0, 0)
+    if self.max_height > 3 and inner_w > 0:
+      self.wins[Win.Stats] = curses.newwin(2, inner_w, 2, BORDER_SIZE)
+    if self.max_height > 8 and inner_w > 0:
+      self.wins[Win.Timeline] = curses.newwin(4, inner_w, 5, BORDER_SIZE)
+    if self.max_height > 10 and stat_w > 0:
+      self.wins[Win.TimelineDesc] = curses.newwin(1, stat_w, 10, BORDER_SIZE)
+    if self.max_height > 14 and stat_w > 0:
+      self.wins[Win.CarState] = curses.newwin(3, stat_w, 12, BORDER_SIZE)
+    if self.max_height > 16 and stat_w > 0:
+      self.wins[Win.DownloadBar] = curses.newwin(1, stat_w, 16, BORDER_SIZE)
 
     log_height = self.max_height - 27
-    if log_height > 4:
-      self.wins[Win.LogBorder] = curses.newwin(log_height, self.max_width - 2 * (BORDER_SIZE - 1), 17, BORDER_SIZE - 1)
+    if log_height > 4 and inner_w > 0:
+      self.wins[Win.LogBorder] = curses.newwin(log_height, w - 2 * (BORDER_SIZE - 1), 17, BORDER_SIZE - 1)
       self.wins[Win.LogBorder].box()
-      self.wins[Win.Log] = curses.newwin(log_height - 2, self.max_width - 2 * BORDER_SIZE, 18, BORDER_SIZE)
+      self.wins[Win.Log] = curses.newwin(log_height - 2, inner_w, 18, BORDER_SIZE)
       self.wins[Win.Log].scrollok(True)
 
-    if self.max_height >= 23:
-      self.wins[Win.Help] = curses.newwin(5, self.max_width - 2 * BORDER_SIZE, self.max_height - 6, BORDER_SIZE)
-    elif self.max_height >= 17:
-      self.wins[Win.Help] = curses.newwin(1, self.max_width - 2 * BORDER_SIZE, self.max_height - 1, BORDER_SIZE)
+    if self.max_height >= 23 and inner_w > 0:
+      self.wins[Win.Help] = curses.newwin(5, inner_w, self.max_height - 6, BORDER_SIZE)
+    elif self.max_height >= 17 and inner_w > 0:
+      self.wins[Win.Help] = curses.newwin(1, inner_w, self.max_height - 1, BORDER_SIZE)
       try:
         self.wins[Win.Help].addstr(0, 0, "Expand screen vertically to list available commands")
       except curses.error:
@@ -191,6 +200,7 @@ class ConsoleUI:
     if win is None:
       return
 
+    win.erase()
     self.sm.update(0)
 
     def write_item(y, x, key, value, unit, bold=False, color=Color.BrightWhite):
@@ -281,7 +291,7 @@ class ConsoleUI:
       width = 35
       progress = cur / total
       pos = int(width * progress)
-      bar = "=" * pos + ">" + " " * (width - pos)
+      bar = "=" * pos + ">" + " " * max(0, width - pos - 1)
       text = f"Downloading [{bar}]  {int(progress * 100)}% {formatted_data_size(total)}"
       try:
         win.addstr(0, 0, text)
@@ -293,6 +303,7 @@ class ConsoleUI:
     win = self.wins[Win.Stats]
     if win is None:
       return
+    win.erase()
     try:
       win.addstr(0, 0, f"Route: {self.replay.route_name()}, {self.replay.segment_count()} segments")
       win.addstr(1, 0, f"Car Fingerprint: {self.replay.car_fingerprint()}")
@@ -366,7 +377,11 @@ class ConsoleUI:
 
   def _handle_key(self, c):
     if c == ord('\n'):
+      if self.max_height < 10:
+        return
+
       # Pause and enter blocking seek mode
+      was_paused = self.replay.is_paused()
       self.replay.pause(True)
       self._update_status(self.replay.current_seconds())
       curses.doupdate()
@@ -382,15 +397,19 @@ class ConsoleUI:
         pass
 
       curses.echo()
+      choice = None
       try:
         input_str = self.stdscr.getstr(y, BORDER_SIZE + 20, 10)
         choice = int(input_str)
       except (ValueError, curses.error):
-        choice = 0
+        pass
       curses.noecho()
 
-      self.replay.pause(False)
-      self.replay.seek_to(choice, False)
+      if choice is not None:
+        self.replay.seek_to(choice, False)
+        self.replay.pause(False)
+      elif not was_paused:
+        self.replay.pause(False)
 
       try:
         self.stdscr.move(y, 0)
@@ -454,7 +473,7 @@ class ConsoleUI:
         c = self.stdscr.getch()
         if c in (ord('q'), ord('Q')):
           break
-        if c != -1:
+        if c != -1 and c != curses.KEY_RESIZE:
           self._handle_key(c)
 
         self._update_size()

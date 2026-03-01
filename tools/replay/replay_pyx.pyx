@@ -157,12 +157,16 @@ cdef class PyReplay:
 
   def __dealloc__(self):
     global _py_message_handler, _py_progress_handler
+    # Make trampolines no-ops while GIL is held
     _py_message_handler = None
     _py_progress_handler = None
+    # Clear C++ handlers (quick, GIL-safe)
     installMessageHandler(NULL)
     installDownloadProgressHandler(NULL)
     if self._r != NULL:
-      del self._r
+      # Release GIL so C++ background threads can finish
+      with nogil:
+        del self._r
       self._r = NULL
 
   def load(self) -> bool:
