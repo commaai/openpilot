@@ -93,12 +93,6 @@ class NetworkConnectivityMonitor:
         break
 
 
-class SetupState(IntEnum):
-  START = 0
-  SOFTWARE_SELECTION = 1
-  DOWNLOADING = 2
-
-
 class StartPage(Widget):
   def __init__(self):
     super().__init__()
@@ -123,7 +117,7 @@ class StartPage(Widget):
     self._title.render(rl.Rectangle(rect.x, rect.y + (draw_y - base_draw_y), rect.width, rect.height))
 
 
-class SoftwareSelectionPage(Widget):
+class SoftwareSelectionPage(NavWidget):
   def __init__(self, use_openpilot_callback: Callable,
                use_custom_software_callback: Callable):
     super().__init__()
@@ -132,6 +126,15 @@ class SoftwareSelectionPage(Widget):
     self._openpilot_slider.set_enabled(lambda: self.enabled)
     self._custom_software_slider = LargerSlider("slide to install\nother software", use_custom_software_callback, green=False)
     self._custom_software_slider.set_enabled(lambda: self.enabled)
+
+  def show_event(self):
+    super().show_event()
+    self._nav_bar._alpha = 0.0
+
+  def _update_state(self):
+    super()._update_state()
+    if self.is_dismissing:
+      self.reset()
 
   def reset(self):
     self._openpilot_slider.reset()
@@ -435,44 +438,52 @@ class NetworkSetupPage(NavScroller):
 class Setup(Widget):
   def __init__(self):
     super().__init__()
-    self.state = SetupState.START
     self.failed_url = ""
     self.failed_reason = ""
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
+    self._download_failed_reason: str | None = None
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
 
+    def getting_started_button_callback():
+      self._software_selection_page.reset()
+      gui_app.push_widget(self._software_selection_page)
+
     self._start_page = StartPage()
-    self._start_page.set_click_callback(lambda: self._set_state(SetupState.SOFTWARE_SELECTION))
-    # TODO: change these to touch_valid
+    self._start_page.set_click_callback(getting_started_button_callback)
     self._start_page.set_enabled(lambda: self.enabled)  # for nav stack
 
-    self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback, self._back_to_software_selection)
+    self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback, self._pop_to_software_selection)
 
     self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
-    self._software_selection_page.set_enabled(lambda: self.enabled)  # for nav stack
 
-    self._download_failed_page = FailedPage(HARDWARE.reboot)
+    self._download_failed_page = FailedPage(HARDWARE.reboot, self._pop_to_software_selection)
 
-    self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._back_to_software_selection)
+    self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._pop_to_software_selection)
 
     self._downloading_page = DownloadingPage()
 
-  def _render(self, rect: rl.Rectangle):
-    if self.state == SetupState.START:
-      self._start_page.render(rect)
-    elif self.state == SetupState.SOFTWARE_SELECTION:
-      self._software_selection_page.render(rect)
-    elif self.state == SetupState.DOWNLOADING:
-      self.render_downloading(rect)
+    gui_app.add_nav_stack_tick(self._nav_stack_tick)
 
-  def _back_to_software_selection(self):
-    # pop and reset sliders
-    gui_app.pop_widgets_to(self, instant=True)
-    self._set_state(SetupState.SOFTWARE_SELECTION)
+  def _nav_stack_tick(self):
+    self._downloading_page.set_progress(self.download_progress)
+
+    if self._download_failed_reason is not None:
+      reason = self._download_failed_reason
+      self._download_failed_reason = None
+      self._download_failed_page.set_reason(reason)
+      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+      gui_app.push_widget(self._download_failed_page)
+
+  def _render(self, rect: rl.Rectangle):
+    self._start_page.render(rect)
+
+  def _pop_to_software_selection(self):
+    # reset sliders after dismiss completes
+    gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
 
   def _use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
@@ -493,17 +504,20 @@ class Setup(Widget):
     # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
 
-    gui_app.pop_widgets_to(self, instant=True)
+    # TODO: ask nick if should dismiss first
+    gui_app.pop_widgets_to(self._software_selection_page, instant=True)
     gui_app.push_widget(self._network_setup_page)
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
-      self.download(OPENPILOT_URL)
+      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+      self._download(OPENPILOT_URL)
     else:
       def handle_keyboard_result(text):
         url = text.strip()
         if url:
-          self.download(url)
+          gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+          self._download(url)
 
       keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result)
       gui_app.push_widget(keyboard)
@@ -511,17 +525,16 @@ class Setup(Widget):
   def close(self):
     self._network_monitor.stop()
 
-  def download(self, url: str):
-    gui_app.pop_widgets_to(self, instant=True)
-
+  def _download(self, url: str):
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
       url = f"https://installer.comma.ai/{url}"
 
     parsed = urlparse(url, scheme='https')
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
+    self.download_progress = 0
 
-    self._set_state(SetupState.DOWNLOADING)
+    gui_app.push_widget(self._downloading_page)
 
     self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
     self.download_thread.start()
@@ -552,7 +565,6 @@ class Setup(Widget):
 
           if total_size:
             self.download_progress = int(downloaded * 100 / total_size)
-            self._downloading_page.set_progress(self.download_progress)
 
       is_elf = False
       with open(tmpfile, 'rb') as f:
@@ -560,7 +572,7 @@ class Setup(Widget):
         is_elf = header == b'\x7fELF'
 
       if not is_elf:
-        self._download_failed(self.download_url, "No custom software found at this URL.")
+        self._download_failed_reason = "No custom software found at this URL."
         return
 
       # AGNOS might try to execute the installer before this process exits.
@@ -577,28 +589,9 @@ class Setup(Widget):
 
     except urllib.error.HTTPError as e:
       if e.code == 409:
-        error_msg = "Incompatible openpilot version"
-        self._download_failed(self.download_url, error_msg)
+        self._download_failed_reason = "Incompatible openpilot version"
     except Exception:
-      error_msg = "Invalid URL"
-      self._download_failed(self.download_url, error_msg)
-
-  def _download_failed(self, url: str, reason: str):
-    # go back to start
-    self.failed_url = url
-    self.failed_reason = reason
-    self._download_failed_page.set_reason(reason)
-    gui_app.push_widget(self._download_failed_page)
-    self._set_state(SetupState.SOFTWARE_SELECTION)
-
-  def _set_state(self, state: SetupState):
-    self.state = state
-    if self.state == SetupState.SOFTWARE_SELECTION:
-      self._software_selection_page.reset()
-
-  def render_downloading(self, rect: rl.Rectangle):
-    self._downloading_page.set_progress(self.download_progress)
-    self._downloading_page.render(rect)
+      self._download_failed_reason = "Invalid URL"
 
 
 def main():
