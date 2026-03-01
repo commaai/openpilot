@@ -484,12 +484,8 @@ class Setup(Widget):
       reason = self._download_failed_reason
       self._download_failed_reason = None
       self._download_failed_page.set_reason(reason)
-      # insert below active widget, then dismiss active widget so download page doesn't flash on failed download
-      gui_app.push_widget(self._download_failed_page, len(gui_app._nav_stack) - 1)
-      gui_app.get_active_widget().dismiss(lambda: None)
-
-      # gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-      # gui_app.push_widget(self._download_failed_page)
+      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+      gui_app.push_widget(self._download_failed_page)
 
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
@@ -498,10 +494,6 @@ class Setup(Widget):
     self._network_monitor.stop()
 
   def _pop_to_software_selection(self):
-    # print source
-    import traceback
-    traceback.print_stack()
-    print("Popping to software selection")
     # reset sliders after dismiss completes
     gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
 
@@ -530,15 +522,13 @@ class Setup(Widget):
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
-      pass
-      # gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
+      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
       self._download(OPENPILOT_URL)
     else:
       def handle_keyboard_result(text):
         url = text.strip()
         if url:
-          # gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-          gui_app.pop_widget()
+          gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
           self._download(url)
 
       keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result)
@@ -553,11 +543,7 @@ class Setup(Widget):
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
     self.download_progress = 0
 
-
-    # insert under top, then dismiss top
-    # gui_app.push_widget(self._downloading_page)
-    gui_app.get_active_widget().dismiss(lambda: None)
-    gui_app.push_widget(self._downloading_page, len(gui_app._nav_stack) - 1)
+    gui_app.push_widget(self._downloading_page)
 
     self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
     self.download_thread.start()

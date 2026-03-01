@@ -370,8 +370,7 @@ class GuiApplication:
       except Exception:
         break
 
-  def push_widget(self, widget: object, idx: int | None = None):
-    print('pushing', type(widget).__name__, idx)
+  def push_widget(self, widget: object):
     if widget in self._nav_stack:
       cloudlog.warning("Widget already in stack, cannot push again!")
       return
@@ -382,16 +381,11 @@ class GuiApplication:
       # TODO: change these to touch_valid
       prev_widget.set_enabled(False)
 
-    if idx is None:
-      self._nav_stack.append(widget)
-    else:
-      assert 0 <= idx <= len(self._nav_stack), "Index out of bounds for nav stack"
-      self._nav_stack.insert(idx, widget)
+    self._nav_stack.append(widget)
     widget.show_event()
     widget.set_enabled(True)
 
   def pop_widget(self, idx: int | None = None):
-    print('popping', idx)
     # Pops widget instantly without animation
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
@@ -411,7 +405,6 @@ class GuiApplication:
     widget.hide_event()
 
   def pop_widgets_to(self, widget: object, callback: Callable[[], None] | None = None, instant: bool = False):
-    print('popping to', type(widget).__name__, 'instant' if instant else 'animated')
     # Pops middle widgets instantly without animation then dismisses top, animated out if NavWidget
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
@@ -595,8 +588,6 @@ class GuiApplication:
         # Allow a Widget to still run a function regardless of the stack depth
         for tick in self._nav_stack_ticks:
           tick()
-
-        print([type(w).__name__ for w in self._nav_stack])
 
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
