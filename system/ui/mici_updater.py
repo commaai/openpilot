@@ -7,10 +7,9 @@ from enum import IntEnum
 
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_text_box, gui_label, UnifiedLabel
+from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.button import FullRoundedButton
 from openpilot.system.ui.mici_setup import NetworkSetupPage, FailedPage, NetworkConnectivityMonitor
 
@@ -47,7 +46,7 @@ class Updater(Widget):
     self._continue_button = FullRoundedButton("continue")
     self._continue_button.set_click_callback(lambda: self.set_current_screen(Screen.WIFI))
 
-    self._title_label = UnifiedLabel("update required", 48, text_color=rl.Color(255, 115, 0, 255),
+    self._title_label = UnifiedLabel("update required", 48, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                      font_weight=FontWeight.DISPLAY)
     self._subtitle_label = UnifiedLabel("The download size is approximately 1GB.", 36,
                                         text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
@@ -55,6 +54,12 @@ class Updater(Widget):
 
     self._update_failed_page = FailedPage(HARDWARE.reboot, self._update_failed_retry_callback,
                                           title="update failed")
+
+    self._progress_title_label = UnifiedLabel("", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+                                              font_weight=FontWeight.DISPLAY, line_height=0.8)
+    self._progress_percent_label = UnifiedLabel("", 132, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
+                                                font_weight=FontWeight.ROMAN,
+                                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
   def _network_setup_back_callback(self):
     self.set_current_screen(Screen.PROMPT)
@@ -139,20 +144,21 @@ class Updater(Widget):
     ))
 
   def render_progress_screen(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(self._rect.x + 6, self._rect.y - 5, self._rect.width - 12, self._rect.height - 8)
-    if ' ' in self.progress_text:
-      font_size = 62
-    else:
-      font_size = 82
-    gui_text_box(title_rect, self.progress_text, font_size, font_weight=FontWeight.DISPLAY,
-                 color=rl.Color(255, 255, 255, int(255 * 0.9)))
+    self._progress_title_label.set_text(self.progress_text.replace("_", "_\n") + "...")
+    self._progress_title_label.render(rl.Rectangle(
+      rect.x + 12,
+      rect.y + 2,
+      rect.width,
+      self._progress_title_label.get_content_height(int(rect.width - 20)),
+    ))
 
-    progress_value = f"{self.progress_value}%"
-    text_height = measure_text_cached(gui_app.font(FontWeight.ROMAN), progress_value, 128).y
-    progress_rect = rl.Rectangle(self._rect.x + 6, self._rect.y + self._rect.height - text_height + 18,
-                                 self._rect.width - 12, text_height)
-    gui_label(progress_rect, progress_value, 128, font_weight=FontWeight.ROMAN,
-              color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.35)))
+    self._progress_percent_label.set_text(f"{self.progress_value}%")
+    self._progress_percent_label.render(rl.Rectangle(
+      rect.x + 12,
+      rect.y + 18,
+      rect.width,
+      rect.height,
+    ))
 
   def _update_state(self):
     self._wifi_manager.process_callbacks()
