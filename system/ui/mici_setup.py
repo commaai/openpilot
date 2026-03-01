@@ -481,6 +481,9 @@ class Setup(Widget):
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
 
+  def close(self):
+    self._network_monitor.stop()
+
   def _pop_to_software_selection(self):
     # reset sliders after dismiss completes
     gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
@@ -521,9 +524,6 @@ class Setup(Widget):
 
       keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result)
       gui_app.push_widget(keyboard)
-
-  def close(self):
-    self._network_monitor.stop()
 
   def _download(self, url: str):
     # autocomplete incomplete URLs
