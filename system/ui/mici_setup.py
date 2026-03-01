@@ -94,16 +94,6 @@ class NetworkConnectivityMonitor:
         break
 
 
-class SetupState(IntEnum):
-  GETTING_STARTED = 0
-  NETWORK_SETUP = 1
-  NETWORK_SETUP_CUSTOM_SOFTWARE = 2
-  SOFTWARE_SELECTION = 3
-  DOWNLOADING = 4
-  DOWNLOAD_FAILED = 5
-  CUSTOM_SOFTWARE_WARNING = 6
-
-
 class StartPage(Widget):
   def __init__(self):
     super().__init__()
@@ -544,7 +534,6 @@ class NetworkSetupPage(NavWidget):
 class Setup(Widget):
   def __init__(self):
     super().__init__()
-    self.state = SetupState.GETTING_STARTED
     self.failed_url = ""
     self.failed_reason = ""
     self.download_url = ""
@@ -553,8 +542,6 @@ class Setup(Widget):
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
-    # self._prev_has_internet = False
-    # gui_app.add_nav_stack_tick(self._nav_stack_tick)
 
     def getting_started_button_callback():
       self._software_selection_page.reset()
@@ -580,80 +567,28 @@ class Setup(Widget):
 
     self._downloading_page = DownloadingPage()
 
-  # def _nav_stack_tick(self):
-  #   has_internet = self._network_monitor.network_connected.is_set()
-  #   if has_internet and not self._prev_has_internet:
-  #     pass
-  #     # gui_app.pop_widgets_to(self)
-  #   self._prev_has_internet = has_internet
-
-  # def _set_state(self, state: SetupState):
-  #   self.state = state
-  #   print('Setting state to', SetupState(state).name)
-  #   if self.state == SetupState.SOFTWARE_SELECTION:
-  #     self._software_selection_page.reset()
-  #     gui_app.push_widget(self._software_selection_page)
-  #   elif self.state == SetupState.CUSTOM_SOFTWARE_WARNING:
-  #     self._custom_software_warning_page.reset()
-  #     gui_app.push_widget(self._custom_software_warning_page)
-  #
-  #   if self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE):
-  #     # self._network_setup_page.show_event()
-  #     self._network_setup_page.set_custom_software(self.state == SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
-  #     gui_app.push_widget(self._network_setup_page)
-  #   else:
-  #     # TODO: remove?
-  #     # self._network_setup_page.hide_event()
-  #     self._network_setup_page.dismiss()
-
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
 
     # move to update state or somewhere else?
     self._downloading_page.set_progress(self.download_progress)
-    # if self.state == SetupState.GETTING_STARTED:
-    #   pass
-    # elif self.state in (SetupState.NETWORK_SETUP, SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE):
-    #   # self.render_network_setup(rect)
-    #   pass
-    # elif self.state == SetupState.SOFTWARE_SELECTION:
-    #   pass
-    #   # self._software_selection_page.render(rect)
-    # elif self.state == SetupState.CUSTOM_SOFTWARE_WARNING:
-    #   pass
-    #   # self._custom_software_warning_page.render(rect)
-    # elif self.state == SetupState.DOWNLOADING:
-    #   self.render_downloading(rect)
-    # elif self.state == SetupState.DOWNLOAD_FAILED:
-    #   self._download_failed_page.render(rect)
 
   def _software_selection_custom_software_continue(self):
-    gui_app.pop_widgets_to(self._software_selection_page)
-    # gui_app.pop_widget()
-    # gui_app.push_widget(self._network_setup_page)
-    # self._set_state(SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
-
-    # self._network_setup_page.set_custom_software(self.state == SetupState.NETWORK_SETUP_CUSTOM_SOFTWARE)
-    # gui_app.push_widget(self._network_setup_page)
+    gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
     self._push_network_setup(custom_software=True)
 
   def _pop_to_software_selection(self):
-    # TODO: can also reset sliders AFTER dismiss animation with cb, ask nick
-    self._state = SetupState.SOFTWARE_SELECTION  # TODO: this line is temporary
+    # reset sliders after dismiss completes
     gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
 
   def _network_setup_continue_button_callback(self, custom_software):
-    # self._set_state(SetupState.SOFTWARE_SELECTION)
-    # self._pop_to_software_selection()
     if not custom_software:
       gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
       self.download(OPENPILOT_URL)
-      # self.download(OPENPILOT_URL)
     else:
       def handle_keyboard_result(text):
         url = text.strip()
         if url:
-          # TODO: add to callback?
           gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
           self.download(url)
 
@@ -699,7 +634,6 @@ class Setup(Widget):
     parsed = urlparse(url, scheme='https')
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
 
-    # self._set_state(SetupState.DOWNLOADING)
     gui_app.push_widget(self._downloading_page)
 
     self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
