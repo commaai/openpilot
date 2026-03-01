@@ -14,7 +14,6 @@ from collections.abc import Callable
 import pyray as rl
 
 from cereal import log
-from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import run_cmd
@@ -110,21 +109,16 @@ class StartPage(Widget):
                                font_weight=FontWeight.DISPLAY, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
-    self._start_bg_txt = gui_app.texture("icons_mici/setup/start_button.png", 500, 224, keep_aspect_ratio=False)
-    self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/start_button_pressed.png", 500, 224, keep_aspect_ratio=False)
-    self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
-    self._click_delay = 0.075
+    self._start_bg_txt = gui_app.texture("icons_mici/setup/green_button.png", 520, 224)
+    self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/green_button_pressed.png", 520, 224)
 
   def _render(self, rect: rl.Rectangle):
-    scale = self._scale_filter.update(1.07 if self.is_pressed else 1.0)
-    base_draw_x = rect.x + (rect.width - self._start_bg_txt.width) / 2
-    base_draw_y = rect.y + (rect.height - self._start_bg_txt.height) / 2
-    draw_x = base_draw_x + (self._start_bg_txt.width * (1 - scale)) / 2
-    draw_y = base_draw_y + (self._start_bg_txt.height * (1 - scale)) / 2
+    draw_x = rect.x + (rect.width - self._start_bg_txt.width) / 2
+    draw_y = rect.y + (rect.height - self._start_bg_txt.height) / 2
     texture = self._start_bg_pressed_txt if self.is_pressed else self._start_bg_txt
-    rl.draw_texture_ex(texture, (draw_x, draw_y), 0, scale, rl.WHITE)
+    rl.draw_texture(texture, int(draw_x), int(draw_y), rl.WHITE)
 
-    self._title.render(rl.Rectangle(rect.x, rect.y + (draw_y - base_draw_y), rect.width, rect.height))
+    self._title.render(rect)
 
 
 class SoftwareSelectionPage(Widget):
