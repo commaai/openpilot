@@ -355,9 +355,9 @@ class DownloadingPage(Widget):
   def __init__(self):
     super().__init__()
 
-    self._title_label = UnifiedLabel("downloading", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+    self._title_label = UnifiedLabel("downloading...", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                      font_weight=FontWeight.DISPLAY)
-    self._progress_label = UnifiedLabel("", 128, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.35)),
+    self._progress_label = UnifiedLabel("", 132, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                         font_weight=FontWeight.ROMAN, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
     self._progress = 0
 
@@ -367,15 +367,15 @@ class DownloadingPage(Widget):
 
   def _render(self, rect: rl.Rectangle):
     self._title_label.render(rl.Rectangle(
-      rect.x + 20,
-      rect.y + 10,
+      rect.x + 12,
+      rect.y + 2,
       rect.width,
       64,
     ))
 
     self._progress_label.render(rl.Rectangle(
-      rect.x + 20,
-      rect.y + 20,
+      rect.x + 12,
+      rect.y + 18,
       rect.width,
       rect.height,
     ))
@@ -390,11 +390,10 @@ class FailedPage(Widget):
     self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                       font_weight=FontWeight.ROMAN)
 
-    self._reboot_button = SmallRedPillButton("reboot")
-    self._reboot_button.set_click_callback(reboot_callback)
-    self._reboot_button.set_enabled(lambda: self.enabled)  # for nav stack
+    self._reboot_slider = SmallSlider("reboot", reboot_callback)
+    self._reboot_slider.set_enabled(lambda: self.enabled)  # for nav stack
 
-    self._retry_button = WideRoundedButton("retry")
+    self._retry_button = SmallButton("retry")
     self._retry_button.set_click_callback(retry_callback)
     self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
 
@@ -416,18 +415,19 @@ class FailedPage(Widget):
       36,
     ))
 
-    self._reboot_button.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y + rect.height - self._reboot_button.rect.height,
-      self._reboot_button.rect.width,
-      self._reboot_button.rect.height,
-    ))
-
+    self._retry_button.set_opacity(1 - self._reboot_slider.slider_percentage)
     self._retry_button.render(rl.Rectangle(
-      rect.x + 8 + self._reboot_button.rect.width + 8,
-      rect.y + rect.height - self._retry_button.rect.height,
+      self._rect.x + 8,
+      self._rect.y + self._rect.height - self._retry_button.rect.height,
       self._retry_button.rect.width,
       self._retry_button.rect.height,
+    ))
+
+    self._reboot_slider.render(rl.Rectangle(
+      self._rect.x + self._rect.width - self._reboot_slider.rect.width,
+      self._rect.y + self._rect.height - self._reboot_slider.rect.height,
+      self._reboot_slider.rect.width,
+      self._reboot_slider.rect.height,
     ))
 
 
