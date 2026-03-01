@@ -1,7 +1,7 @@
 from enum import IntEnum
 import pyray as rl
 import numpy as np
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent, MAX_TOUCH_SLOTS
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
@@ -148,7 +148,6 @@ class CapsState(IntEnum):
 class MiciKeyboard(Widget):
   def __init__(self):
     super().__init__()
-    self._multi_touch = True
 
     lower_chars = [
       "qwertyuiop",
@@ -205,7 +204,7 @@ class MiciKeyboard(Widget):
     self._closest_key: tuple[Key | None, float] = None, float('inf')
     self._selected_key_t: float | None = None  # time key was initially selected
     self._unselect_key_t: float | None = None  # time to unselect key after release
-    self._dragging_on_keyboard = [False] * MAX_TOUCH_SLOTS
+    self._dragging_on_keyboard = False
 
     self._text: str = ""
 
@@ -215,7 +214,7 @@ class MiciKeyboard(Widget):
   def get_candidate_character(self) -> str:
     # return str of character about to be added to text
     key = self._closest_key[0]
-    return key.char if key is not None and key.__class__ is Key and any(self._dragging_on_keyboard) else ""
+    return key.char if key is not None and key.__class__ is Key and self._dragging_on_keyboard else ""
 
   def get_keyboard_height(self) -> int:
     return int(self._txt_bg.height)
@@ -242,16 +241,15 @@ class MiciKeyboard(Widget):
     return self._text
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
-    slot = mouse_event.slot
     keyboard_pos_y = self._rect.y + self._rect.height - self._txt_bg.height
     if mouse_event.left_pressed:
       if mouse_event.pos.y > keyboard_pos_y:
-        self._dragging_on_keyboard[slot] = True
+        self._dragging_on_keyboard = True
     elif mouse_event.left_released:
-      self._dragging_on_keyboard[slot] = False
+      self._dragging_on_keyboard = False
 
-    if mouse_event.left_down and self._dragging_on_keyboard[slot]:
-      self._closest_key = self._get_closest_key(mouse_event.pos)
+    if mouse_event.left_down and self._dragging_on_keyboard:
+      self._closest_key = self._get_closest_key()
       if self._selected_key_t is None:
         self._selected_key_t = rl.get_time()
 
@@ -262,10 +260,11 @@ class MiciKeyboard(Widget):
     if DEBUG:
       print('HANDLE MOUSE EVENT', mouse_event, self._closest_key[0].char if self._closest_key[0] else 'None')
 
-  def _get_closest_key(self, mouse_pos: MousePos) -> tuple[Key | None, float]:
+  def _get_closest_key(self) -> tuple[Key | None, float]:
     closest_key: tuple[Key | None, float] = (None, float('inf'))
     for row in self._current_keys:
       for key in row:
+        mouse_pos = gui_app.last_mouse_event.pos
         # approximate distance for comparison is accurate enough
         # use local y coords so parent widget offset (e.g. during NavWidget animate-in) doesn't affect hit testing
         dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - (mouse_pos.y - self._rect.y))
