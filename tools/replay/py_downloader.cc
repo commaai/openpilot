@@ -54,6 +54,10 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
       if (devnull > STDERR_FILENO) close(devnull);
     }
 
+    // Clear OPENPILOT_PREFIX so the Python process uses default paths
+    // (e.g. ~/.comma/auth.json). The prefix is only for IPC in the parent.
+    unsetenv("OPENPILOT_PREFIX");
+
     close(stdout_pipe[0]);
     close(stderr_pipe[0]);
     dup2(stdout_pipe[1], STDOUT_FILENO);
