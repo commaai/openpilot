@@ -174,8 +174,8 @@ class Widget(abc.ABC):
     """Optionally update the widget's non-layout state. This is called before rendering."""
     if self._click_release_time is not None and self._should_fire_click():
       self._click_release_time = None
-      if self._click_callback:
-        self._click_callback()
+      # if self._click_callback:
+      #   self._click_callback()
 
   @abc.abstractmethod
   def _render(self, rect: rl.Rectangle) -> bool | int | None:
@@ -190,6 +190,8 @@ class Widget(abc.ABC):
   def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
     """Optionally handle mouse release events."""
     self._click_release_time = rl.get_time()
+    if self._click_callback:
+      self._click_callback()
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     """Optionally handle mouse events. This is called before rendering."""
