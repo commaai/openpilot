@@ -59,8 +59,7 @@ function install_ubuntu_deps() {
     curl \
     libcurl4-openssl-dev \
     locales \
-    git \
-    xvfb
+    git
 
   if [[ -d "/etc/udev/rules.d/" ]]; then
     # Setup jungle udev rules
