@@ -90,7 +90,19 @@ def main():
     allow = [s.strip() for s in args.allow.split(",") if s.strip()] if args.allow else []
     block = [s.strip() for s in args.block.split(",") if s.strip()] if args.block else []
 
-    replay = PyReplay(route, allow, block, flags=flags, data_dir=args.data_dir)
+    try:
+      replay = PyReplay(route, allow, block, flags=flags, data_dir=args.data_dir)
+    except ImportError:
+      raise
+    except Exception as e:
+      from openpilot.tools.lib.api import UnauthorizedError, APIError
+      if isinstance(e, UnauthorizedError):
+        print("Unauthorized. Authenticate with: python tools/lib/auth.py", file=sys.stderr)
+      elif isinstance(e, APIError) and getattr(e, 'status_code', 0) == 404:
+        print(f"Route not found: {route}", file=sys.stderr)
+      else:
+        print(f"Failed to load route: {e}", file=sys.stderr)
+      return 1
 
     if args.cache > 0:
       replay.set_segment_cache_limit(args.cache)

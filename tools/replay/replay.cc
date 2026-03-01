@@ -178,7 +178,7 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
   route_start_ts_ = events.front().mono_time;
   cur_mono_time_ += route_start_ts_ - 1;
 
-  // get datetime from INIT_DATA, fallback to datetime in the route name
+  // Get datetime from INIT_DATA, fallback to datetime in the route name
   route_date_time_ = route().datetime();
   auto it = std::find_if(events.cbegin(), events.cend(),
                          [](const Event &e) { return e.which == cereal::Event::Which::INIT_DATA; });
@@ -187,11 +187,11 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
     auto event = reader.getRoot<cereal::Event>();
     uint64_t wall_time = event.getInitData().getWallTimeNanos();
     if (wall_time > 0) {
-      route_date_time_ = wall_time / 1e6;
+      route_date_time_ = wall_time / 1e9;
     }
   }
 
-  // write CarParams
+  // Write CarParams
   it = std::find_if(events.begin(), events.end(), [](const Event &e) { return e.which == cereal::Event::Which::CAR_PARAMS; });
   if (it != events.end()) {
     capnp::FlatArrayMessageReader reader(it->data);

@@ -19,7 +19,6 @@ cdef extern from "tools/replay/util.h":
 
   ctypedef void (*ReplayMessageHandler_raw)(ReplyMsgType, const string)
   void installMessageHandler "installMessageHandler" (ReplayMessageHandler_raw) except +
-  string formattedDataSize(size_t) except +
 
 cdef extern from "tools/replay/py_downloader.h":
   ctypedef void (*DownloadProgressHandler_raw)(uint64_t, uint64_t, bool)
@@ -74,6 +73,7 @@ cdef extern from "tools/replay/replay.h":
     const Route& route()
     void setLoop(bool)
     bool loop()
+    void waitForFinished() except + nogil
 
 # -- Module-level callback storage --
 
@@ -87,7 +87,7 @@ cdef void _message_trampoline(ReplyMsgType msg_type, const string msg) noexcept 
   if handler is not None:
     try:
       handler(msg_type, msg.decode("utf-8", errors="replace"))
-    except:
+    except BaseException:
       pass
 
 cdef void _progress_trampoline(uint64_t cur, uint64_t total, bool success) noexcept with gil:
@@ -96,7 +96,7 @@ cdef void _progress_trampoline(uint64_t cur, uint64_t total, bool success) noexc
   if handler is not None:
     try:
       handler(cur, total, success)
-    except:
+    except BaseException:
       pass
 
 cdef void _download_trampoline(const string& url, bool use_cache, string* out) noexcept with gil:
@@ -107,7 +107,7 @@ cdef void _download_trampoline(const string& url, bool use_cache, string* out) n
       result = handler(url.decode("utf-8"), use_cache)
       if result:
         out[0] = result.encode("utf-8")
-    except:
+    except BaseException:
       pass
 
 # Re-export TimelineType and FindFlag from Python timeline module
@@ -116,16 +116,15 @@ from openpilot.tools.replay.timeline_py import TimelineType, FindFlag
 def get_demo_route():
   return DEMO_ROUTE.decode("utf-8")
 
-def formatted_data_size(size_t size):
-  return formattedDataSize(size).decode("utf-8")
-
 # -- PyReplay wrapper --
 
 cdef class PyReplay:
   cdef Replay* _r
-  cdef object _qlog_paths   # dict[int, str]
-  cdef object _timeline     # Timeline instance
-  cdef object _timeline_started  # bool
+  cdef object _qlog_paths      # dict[int, str]
+  cdef object _timeline         # Timeline instance
+  cdef object _timeline_started # bool
+  cdef object _wait_stop        # threading.Event for cancelling the wait thread
+  cdef object _wait_thread      # threading.Thread
 
   def __cinit__(self, str route, list allow=None, list block=None,
                 uint32_t flags=REPLAY_FLAG_NONE, str data_dir=""):
@@ -142,6 +141,8 @@ cdef class PyReplay:
     self._timeline = None
     self._timeline_started = False
     self._qlog_paths = {}
+    self._wait_stop = None
+    self._wait_thread = None
 
     # Install download handler
     _ensure_cache_dir()
@@ -154,20 +155,45 @@ cdef class PyReplay:
 
   def _discover_route(self, str route_str, data_dir):
     """Use tools/lib/route.py to discover segments and populate C++."""
+    import re
     import time as time_mod
-    from openpilot.tools.lib.route import Route as LibRoute, SegmentRange
+    from openpilot.tools.lib.route import Route as LibRoute
 
-    # Parse segment range using SegmentRange if it has a range specifier
-    seg_idxs = None
-    try:
-      sr = SegmentRange(route_str)
-      route_name = sr.route_name.replace('/', '|')
-      if sr.slice:
-        seg_idxs = set(sr.seg_idxs)
-    except Exception:
+    # Parse route string: extract route name and optional segment range.
+    # Supports formats:
+    #   dongle_id|timestamp          (full route)
+    #   dongle_id|timestamp--N       (segments N through end, old C++ compat)
+    #   dongle_id|timestamp/N        (single segment N)
+    #   dongle_id|timestamp/N:M      (segments N through M inclusive)
+    #   dongle_id|timestamp/:M       (segments 0 through M inclusive)
+    #   dongle_id|timestamp/N:       (segments N through end)
+    begin_segment = 0
+    end_segment = -1  # -1 means "to the end"
+
+    # Match: optional_dongle_id SEPARATOR timestamp OPTIONAL(-- or / RANGE)
+    m = re.match(r'^((?:[a-z0-9]{16}[|_/])?.{20})(?:(?:--|/)(.+))?$', route_str)
+    if m:
+      route_name = m.group(1).replace('_', '|').replace('/', '|')
+      range_str = m.group(2)
+      if range_str:
+        # Determine separator between route and range using match positions
+        sep = route_str[m.end(1):m.start(2)]
+        if ':' in range_str:
+          parts = range_str.split(':')
+          begin_segment = int(parts[0]) if parts[0] else 0
+          end_segment = int(parts[1]) if len(parts) > 1 and parts[1] else -1
+        elif sep == '--':
+          # route--N means "segments N through end" (old C++ compat)
+          begin_segment = int(range_str)
+          end_segment = -1
+        else:
+          # route/N means "only segment N"
+          begin_segment = int(range_str)
+          end_segment = int(range_str)
+    else:
       route_name = route_str
 
-    # Discover route using tools/lib/route.py
+    # Discover route
     py_route = LibRoute(route_name, data_dir=data_dir)
     canonical = str(py_route.name.canonical_name)
 
@@ -186,7 +212,11 @@ cdef class PyReplay:
     qlog_map = {}
     for seg in py_route.segments:
       n = seg.name.segment_num
-      if seg_idxs is not None and n not in seg_idxs:
+
+      # Apply segment range filter (inclusive on both ends, matching old C++ behavior)
+      if n < begin_segment:
+        continue
+      if end_segment >= 0 and n > end_segment:
         continue
 
       rlog = seg.log_path or ""
@@ -209,6 +239,11 @@ cdef class PyReplay:
 
   def __dealloc__(self):
     global _py_message_handler, _py_progress_handler, _py_download_handler
+    # Stop wait thread if running
+    if self._wait_stop is not None:
+      self._wait_stop.set()
+    if self._wait_thread is not None:
+      self._wait_thread.join(timeout=2)
     # Stop timeline thread
     if self._timeline is not None:
       self._timeline.stop()
@@ -245,10 +280,16 @@ cdef class PyReplay:
     self._timeline_started = True
 
     import threading
+    self._wait_stop = threading.Event()
+    stop_event = self._wait_stop
+    qlog_paths = self._qlog_paths
+
     def _wait_and_build():
       # Wait for route_start_nanos to be set
       import time as time_mod
       for _ in range(300):  # up to 30 seconds
+        if stop_event.is_set():
+          return
         ts = self._r.routeStartNanos()
         if ts != 0:
           break
@@ -259,10 +300,10 @@ cdef class PyReplay:
       from openpilot.tools.replay.timeline_py import Timeline
       tl = Timeline()
       self._timeline = tl
-      tl.build_async(self._qlog_paths, ts)
+      tl.build_async(qlog_paths, ts)
 
-    t = threading.Thread(target=_wait_and_build, daemon=True)
-    t.start()
+    self._wait_thread = threading.Thread(target=_wait_and_build, daemon=True)
+    self._wait_thread.start()
 
   def pause(self, bool pause):
     with nogil:
@@ -323,6 +364,10 @@ cdef class PyReplay:
   def loop(self) -> bool:
     return self._r.loop()
 
+  def wait_for_finished(self):
+    with nogil:
+      self._r.waitForFinished()
+
   def get_timeline(self) -> list:
     """Return timeline entries as list of (start_time, end_time, type_int) tuples."""
     if self._timeline is not None:
@@ -372,12 +417,10 @@ def _do_download(url, use_cache):
   if not url.startswith("http://") and not url.startswith("https://"):
     return url
 
-  if use_cache:
-    local_path = cache_file_path(url)
-    if os.path.exists(local_path):
-      return local_path
-  else:
-    local_path = None
+  # Always use cache path (even when use_cache=False, avoids temp file leak)
+  local_path = cache_file_path(url)
+  if use_cache and os.path.exists(local_path):
+    return local_path
 
   try:
     uf = URLFile(url, cache=False)
@@ -401,14 +444,11 @@ def _do_download(url, use_cache):
           if handler is not None:
             try:
               handler(downloaded, total, True)
-            except:
+            except Exception:
               pass
 
-      if local_path is not None:
-        shutil.move(tmp_path, local_path)
-        return local_path
-      else:
-        return tmp_path
+      shutil.move(tmp_path, local_path)
+      return local_path
     except Exception:
       try:
         os.unlink(tmp_path)

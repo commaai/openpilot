@@ -107,7 +107,7 @@ class Timeline:
         continue
 
       try:
-        lr = LogReader(path)
+        lr = LogReader(path, sort_by_time=True)
       except Exception:
         continue
 

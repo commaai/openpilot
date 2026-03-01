@@ -39,33 +39,10 @@ void logMessage(ReplyMsgType type, const char *fmt, ...) {
   if (handler_copy) {
     handler_copy(type, msg_buf);
   } else {
-    if (type == ReplyMsgType::Debug) {
-      std::cout << "\033[38;5;248m" << msg_buf << "\033[00m" << std::endl;
-    } else if (type == ReplyMsgType::Warning) {
-      std::cout << "\033[38;5;227m" << msg_buf << "\033[00m" << std::endl;
-    } else if (type == ReplyMsgType::Critical) {
-      std::cout << "\033[38;5;196m" << msg_buf << "\033[00m" << std::endl;
-    } else {
-      std::cout << msg_buf << std::endl;
-    }
+    std::cout << msg_buf << std::endl;
   }
 
   free(msg_buf);
-}
-
-std::string formattedDataSize(size_t size) {
-  if (size < 1024) {
-    return std::to_string(size) + " B";
-  } else if (size < 1024 * 1024) {
-    return util::string_format("%.2f KB", (float)size / 1024);
-  } else {
-    return util::string_format("%.2f MB", (float)size / (1024 * 1024));
-  }
-}
-
-std::string getUrlWithoutQuery(const std::string &url) {
-  size_t idx = url.find("?");
-  return (idx == std::string::npos ? url : url.substr(0, idx));
 }
 
 std::string decompressBZ2(const std::string &in, std::atomic<bool> *abort) {
@@ -191,13 +168,6 @@ std::vector<std::string> split(std::string_view source, char delimiter) {
   }
   fields.emplace_back(source.substr(last));
   return fields;
-}
-
-std::string extractFileName(const std::string &file) {
-  size_t queryPos = file.find_first_of("?");
-  std::string path = (queryPos != std::string::npos) ? file.substr(0, queryPos) : file;
-  size_t lastSlash = path.find_last_of("/\\");
-  return (lastSlash != std::string::npos) ? path.substr(lastSlash + 1) : path;
 }
 
 // MonotonicBuffer

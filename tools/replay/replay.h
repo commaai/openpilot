@@ -33,7 +33,7 @@ public:
     seg_mgr_->route_.addSegment(n, rlog, qlog, road_cam, driver_cam, wide_road_cam, qcamera);
   }
   void setRouteName(const std::string &name) { seg_mgr_->route_.setName(name); }
-  void setRouteDateTime(std::time_t dt) { seg_mgr_->route_.setDateTime(dt); }
+  void setRouteDateTime(std::time_t dt) { seg_mgr_->route_.setDateTime(dt); route_date_time_ = dt; }
 
   bool load();
   void start(int seconds = 0) { seekTo(min_seconds_ + seconds, false); }
@@ -92,7 +92,7 @@ private:
   std::atomic<bool> exit_ = false;
   std::atomic<bool> interrupt_requested_ = false;
   bool events_ready_ = false;
-  std::time_t route_date_time_;
+  std::time_t route_date_time_ = 0;
   uint64_t route_start_ts_ = 0;
   std::atomic<uint64_t> cur_mono_time_ = 0;
   cereal::Event::Which cur_which_ = cereal::Event::Which::INIT_DATA;

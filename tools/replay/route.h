@@ -38,12 +38,6 @@ class Route {
 public:
   Route() = default;
 
-  void populate(const std::string &name, std::time_t datetime, const std::map<int, SegmentFile> &segments) {
-    name_ = name;
-    date_time_ = datetime;
-    segments_ = segments;
-  }
-
   void addSegment(int n, const std::string &rlog, const std::string &qlog,
                   const std::string &road_cam, const std::string &driver_cam,
                   const std::string &wide_road_cam, const std::string &qcamera) {
