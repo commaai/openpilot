@@ -151,11 +151,11 @@ class TestCamerad:
     laggy = np.where(road_wide_diff > 1.1)[0]
     assert len(laggy) == 0, f"Road/wide not synced at indices {laggy[:10]}, max={road_wide_diff.max():.2f}ms"
 
-    # Driver camera has FSIN stagger offset from wide (depends on sensor and panda timer config).
-    # Verify the offset is consistent (within 5ms of median) and non-zero.
+    # Driver camera has FSIN stagger offset from wide. The offset magnitude varies
+    # by sensor type and panda timer config (e.g., ~41ms on OX03C10, ~50ms on OS04C10).
+    # Verify the offset is consistent (low jitter) rather than checking absolute value.
     driver_offset = (driver_sofs - wide_sofs) / 1e6
     median_offset = np.median(driver_offset)
-    assert 3 < abs(median_offset) < 47, f"Driver FSIN offset unexpected: {median_offset:.1f}ms (expected 3-47ms)"
     jitter = np.abs(driver_offset - median_offset)
     laggy = np.where(jitter > 5.0)[0]
     assert len(laggy) == 0, f"Driver FSIN jitter too high (median={median_offset:.1f}ms) at indices {laggy[:10]}"
