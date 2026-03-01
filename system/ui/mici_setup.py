@@ -104,6 +104,7 @@ class StartPage(Widget):
     self._start_bg_txt = gui_app.texture("icons_mici/setup/start_button.png", 500, 224, keep_aspect_ratio=False)
     self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/start_button_pressed.png", 500, 224, keep_aspect_ratio=False)
     self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_delay = 0.075
 
   def _render(self, rect: rl.Rectangle):
     scale = self._scale_filter.update(1.07 if self.is_pressed else 1.0)
@@ -123,9 +124,9 @@ class SoftwareSelectionPage(NavWidget):
     super().__init__()
 
     self._openpilot_slider = LargerSlider("slide to install\nopenpilot", use_openpilot_callback)
-    self._openpilot_slider.set_enabled(lambda: self.enabled)
+    self._openpilot_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
     self._custom_software_slider = LargerSlider("slide to install\nother software", use_custom_software_callback, green=False)
-    self._custom_software_slider.set_enabled(lambda: self.enabled)
+    self._custom_software_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def show_event(self):
     super().show_event()
@@ -191,11 +192,16 @@ class DownloadingPage(Widget):
                                         font_weight=FontWeight.ROMAN, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
     self._progress = 0
 
+  def show_event(self):
+    super().show_event()
+    self.set_progress(0)
+
   def set_progress(self, progress: int):
     self._progress = progress
     self._progress_label.set_text(f"{progress}%")
 
   def _render(self, rect: rl.Rectangle):
+    rl.draw_rectangle_rec(rect, rl.BLACK)
     self._title_label.render(rl.Rectangle(
       rect.x + 12,
       rect.y + 2,
@@ -214,6 +220,7 @@ class DownloadingPage(Widget):
 class FailedPage(NavWidget):
   def __init__(self, reboot_callback: Callable, retry_callback: Callable | None = None, title: str = "download failed"):
     super().__init__()
+    self.set_back_callback(retry_callback)
 
     self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                      font_weight=FontWeight.DISPLAY)
@@ -229,6 +236,10 @@ class FailedPage(NavWidget):
 
   def set_reason(self, reason: str):
     self._reason_label.set_text(reason)
+
+  def show_event(self):
+    super().show_event()
+    self._reboot_slider.reset()
 
   def _render(self, rect: rl.Rectangle):
     self._title_label.render(rl.Rectangle(
@@ -332,8 +343,8 @@ class BigPillButton(BigButton):
 
 
 class NetworkSetupPage(NavScroller):
-  def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable,
-               back_callback: Callable, disable_connect_hint: bool = False):
+  def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable[[bool], None],
+               back_callback: Callable[[], None] | None, disable_connect_hint: bool = False):
     super().__init__()
     self.set_back_callback(back_callback)
 
@@ -376,15 +387,6 @@ class NetworkSetupPage(NavScroller):
 
     gui_app.add_nav_stack_tick(self._nav_stack_tick)
 
-  def set_custom_software(self, custom_software: bool):
-    self._custom_software = custom_software
-    self._continue_button.set_text("install openpilot" if not custom_software else "choose software")
-    self._continue_button.set_green(not custom_software)
-
-  def set_is_updater(self):
-    self._continue_button.set_text("download\n& install")
-    self._continue_button.set_green(False)
-
   def show_event(self):
     super().show_event()
     self._show_time = rl.get_time()
@@ -413,6 +415,15 @@ class NetworkSetupPage(NavScroller):
 
         gui_app.pop_widgets_to(self, scroll_to_download)
 
+  def set_custom_software(self, custom_software: bool):
+    self._custom_software = custom_software
+    self._continue_button.set_text("install openpilot" if not custom_software else "choose software")
+    self._continue_button.set_green(not custom_software)
+
+  def set_is_updater(self):
+    self._continue_button.set_text("download\n& install")
+    self._continue_button.set_green(False)
+
   def _update_state(self):
     super()._update_state()
 
@@ -438,8 +449,6 @@ class NetworkSetupPage(NavScroller):
 class Setup(Widget):
   def __init__(self):
     super().__init__()
-    self.failed_url = ""
-    self.failed_reason = ""
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
