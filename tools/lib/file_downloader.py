@@ -73,7 +73,6 @@ def cmd_download(args):
       chunk_size = 1024 * 1024
       with os.fdopen(tmp_fd, 'wb') as f:
         while downloaded < total:
-          uf.seek(downloaded)
           data = uf.read_aux(min(chunk_size, total - downloaded))
           f.write(data)
           downloaded += len(data)

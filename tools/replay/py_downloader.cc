@@ -28,8 +28,13 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
 
   int stdout_pipe[2];
   int stderr_pipe[2];
-  if (pipe(stdout_pipe) != 0 || pipe(stderr_pipe) != 0) {
+  if (pipe(stdout_pipe) != 0) {
     rWarning("py_downloader: pipe() failed");
+    return {};
+  }
+  if (pipe(stderr_pipe) != 0) {
+    rWarning("py_downloader: pipe() failed");
+    close(stdout_pipe[0]); close(stdout_pipe[1]);
     return {};
   }
 
@@ -139,17 +144,11 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   int status;
   waitpid(pid, &status, 0);
 
-  if (abort && *abort) {
-    // Signal failure
-    std::lock_guard<std::mutex> lk(handler_mutex);
-    if (progress_handler) {
-      progress_handler(0, 0, false);
+  bool failed = (abort && *abort) || (WIFEXITED(status) && WEXITSTATUS(status) != 0);
+  if (failed) {
+    if (!abort || !*abort) {
+      rWarning("py_downloader: process exited with code %d", WEXITSTATUS(status));
     }
-    return {};
-  }
-
-  if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-    rWarning("py_downloader: process exited with code %d", WEXITSTATUS(status));
     std::lock_guard<std::mutex> lk(handler_mutex);
     if (progress_handler) {
       progress_handler(0, 0, false);

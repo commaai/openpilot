@@ -6,7 +6,7 @@
 #include "tools/replay/util.h"
 #include "common/util.h"
 
-bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache) {
   std::string data = FileReader(local_cache).read(url, abort);
   if (!data.empty()) {
     if (url.find(".bz2") != std::string::npos || util::starts_with(data, "BZh9")) {

@@ -12,5 +12,3 @@ public:
 private:
   bool cache_to_local_;
 };
-
-std::string cacheFilePath(const std::string &url);

@@ -1,5 +1,6 @@
 #include "tools/cabana/streams/routes.h"
 
+#include <QApplication>
 #include <QDateTime>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -9,6 +10,7 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPointer>
 #include <QtConcurrent>
 
 #include "tools/replay/py_downloader.h"
@@ -69,11 +71,12 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   connect(button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
   // Fetch devices
-  QtConcurrent::run([this]() {
+  QPointer<RoutesDialog> self = this;
+  QtConcurrent::run([self]() {
     std::string result = PyDownloader::getDevices();
     auto [success, error_code] = checkApiResponse(result);
-    QMetaObject::invokeMethod(this, [this, r = QString::fromStdString(result), success, error_code]() {
-      parseDeviceList(r, success, error_code);
+    QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), success, error_code]() {
+      if (self) self->parseDeviceList(r, success, error_code);
     }, Qt::QueuedConnection);
   });
 }
@@ -111,12 +114,13 @@ void RoutesDialog::fetchRoutes() {
   }
 
   fetch_cancelled_ = false;
-  QtConcurrent::run([this, did, start_ms, end_ms, preserved]() {
+  QPointer<RoutesDialog> self = this;
+  QtConcurrent::run([self, did, start_ms, end_ms, preserved]() {
     std::string result = PyDownloader::getDeviceRoutes(did, start_ms, end_ms, preserved);
-    if (fetch_cancelled_) return;
+    if (!self || self->fetch_cancelled_) return;
     auto [success, error_code] = checkApiResponse(result);
-    QMetaObject::invokeMethod(this, [this, r = QString::fromStdString(result), success, error_code]() {
-      parseRouteList(r, success, error_code);
+    QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), success, error_code]() {
+      if (self) self->parseRouteList(r, success, error_code);
     }, Qt::QueuedConnection);
   });
 }

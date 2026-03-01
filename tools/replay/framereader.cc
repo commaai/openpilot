@@ -72,7 +72,7 @@ FrameReader::~FrameReader() {
   if (input_ctx) avformat_close_input(&input_ctx);
 }
 
-bool FrameReader::load(CameraType type, const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+bool FrameReader::load(CameraType type, const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache) {
   std::string local_file_path;
   if (url.find("https://") == 0 || url.find("http://") == 0) {
     local_file_path = PyDownloader::download(url, local_cache, abort);

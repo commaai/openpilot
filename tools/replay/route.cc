@@ -103,7 +103,7 @@ bool Route::loadFromAutoSource() {
   return !segments_.empty();
 }
 
-bool Route::loadFromServer(int retries) {
+bool Route::loadFromServer() {
   std::string result = PyDownloader::getRouteFiles(route_.str);
   if (result.empty()) {
     err_ = RouteLoadError::NetworkError;
@@ -135,18 +135,12 @@ bool Route::loadFromServer(int retries) {
     return false;
   }
 
-  return loadFromJson(result);
+  return loadFromJson(json);
 }
 
-bool Route::loadFromJson(const std::string &json) {
+bool Route::loadFromJson(const json11::Json &json) {
   const static std::regex rx(R"(\/(\d+)\/)");
-  std::string err;
-  auto jsonData = json11::Json::parse(json, err);
-  if (!err.empty()) {
-    rWarning("JSON parsing error: %s", err.c_str());
-    return false;
-  }
-  for (const auto &value : jsonData.object_items()) {
+  for (const auto &value : json.object_items()) {
     const auto &urlArray = value.second.array_items();
     for (const auto &url : urlArray) {
       std::string url_str = url.string_value();
@@ -232,10 +226,10 @@ void Segment::loadFile(int id, const std::string file) {
   bool success = false;
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>();
-    success = frames[id]->load((CameraType)id, file, flags & REPLAY_FLAG_NO_HW_DECODER, &abort_, local_cache, 20 * 1024 * 1024, 3);
+    success = frames[id]->load((CameraType)id, file, flags & REPLAY_FLAG_NO_HW_DECODER, &abort_, local_cache);
   } else {
     log = std::make_unique<LogReader>(filters_);
-    success = log->load(file, &abort_, local_cache, 0, 3);
+    success = log->load(file, &abort_, local_cache);
   }
 
   if (!success) {

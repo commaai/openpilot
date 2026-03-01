@@ -1,19 +1,7 @@
 #include "tools/replay/filereader.h"
 
 #include "common/util.h"
-#include "system/hardware/hw.h"
 #include "tools/replay/py_downloader.h"
-#include "tools/replay/util.h"
-
-std::string cacheFilePath(const std::string &url) {
-  static std::string cache_path = [] {
-    const std::string comma_cache = Path::download_cache_root();
-    util::create_directories(comma_cache, 0755);
-    return comma_cache.back() == '/' ? comma_cache : comma_cache + "/";
-  }();
-
-  return cache_path + sha256(getUrlWithoutQuery(url));
-}
 
 std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
   const bool is_remote = (file.find("https://") == 0) || (file.find("http://") == 0);
