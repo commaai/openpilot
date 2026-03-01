@@ -114,6 +114,8 @@ class ConsoleUI:
     curses.init_pair(Color.Engaged, 28, 28)
     curses.init_pair(Color.Green, 34, curses.COLOR_BLACK)
 
+    self._version = get_version()
+
     self._init_windows()
 
     # Install callbacks
@@ -160,7 +162,7 @@ class ConsoleUI:
     # Title bar
     self.wins[Win.Title].bkgd(' ', curses.A_REVERSE)
     try:
-      self.wins[Win.Title].addstr(0, 3, f"openpilot replay {get_version()}")
+      self.wins[Win.Title].addstr(0, 3, f"openpilot replay {self._version}")
     except curses.error:
       pass
 
@@ -270,17 +272,17 @@ class ConsoleUI:
     add_str(win, msg + "\n", color)
     win.noutrefresh()
 
-  def _update_progress_bar(self):
+  def _update_progress_bar(self, cur, total, success):
     win = self.wins[Win.DownloadBar]
     if win is None:
       return
     win.erase()
-    if self._download_success and self._progress_cur < self._progress_total:
+    if success and cur < total:
       width = 35
-      progress = self._progress_cur / self._progress_total
+      progress = cur / total
       pos = int(width * progress)
       bar = "=" * pos + ">" + " " * (width - pos)
-      text = f"Downloading [{bar}]  {int(progress * 100)}% {formatted_data_size(self._progress_total)}"
+      text = f"Downloading [{bar}]  {int(progress * 100)}% {formatted_data_size(total)}"
       try:
         win.addstr(0, 0, text)
       except curses.error:
@@ -307,11 +309,8 @@ class ConsoleUI:
 
     # Draw disengaged background
     try:
-      win.attron(curses.color_pair(Color.Disengaged))
       for row in (1, 2):
-        win.move(row, 0)
-        win.addstr(" " * (width - 1))
-      win.attroff(curses.color_pair(Color.Disengaged))
+        win.hline(row, 0, ord(' ') | curses.color_pair(Color.Disengaged), width)
     except curses.error:
       pass
 
@@ -458,8 +457,9 @@ class ConsoleUI:
         if c != -1:
           self._handle_key(c)
 
+        self._update_size()
+
         if rk.frame % 25 == 0:
-          self._update_size()
           self._update_summary()
           self._timeline_cache = self.replay.get_timeline()
           self._cached_min_sec = self.replay.min_seconds()
@@ -470,10 +470,15 @@ class ConsoleUI:
         self._update_status(cur_sec)
 
         with self._lock:
-          self._update_progress_bar()
-          for msg_type, msg in self._logs:
-            self._log_message(msg_type, msg)
+          logs_snapshot = self._logs[:]
           self._logs.clear()
+          progress_cur = self._progress_cur
+          progress_total = self._progress_total
+          download_success = self._download_success
+
+        self._update_progress_bar(progress_cur, progress_total, download_success)
+        for msg_type, msg in logs_snapshot:
+          self._log_message(msg_type, msg)
 
         curses.doupdate()
         rk.keep_time()
