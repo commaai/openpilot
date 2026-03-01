@@ -17,8 +17,7 @@
 #include <QSurfaceFormat>
 #include <QFileInfo>
 #include <QPainterPath>
-#include <QTextStream>
-#include <QtXml/QDomDocument>
+#include <unordered_map>
 #include "common/util.h"
 
 // SegmentTree
@@ -325,36 +324,49 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   setSurfaceFormat();
 }
 
-static QHash<QString, QByteArray> load_bootstrap_icons() {
-  QHash<QString, QByteArray> icons;
+static std::unordered_map<std::string, std::string> load_bootstrap_icons() {
+  std::unordered_map<std::string, std::string> icons;
 
   QFile f(":/bootstrap-icons.svg");
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    QDomDocument xml;
-    xml.setContent(&f);
-    QDomNode n = xml.documentElement().firstChild();
-    while (!n.isNull()) {
-      QDomElement e = n.toElement();
-      if (!e.isNull() && e.hasAttribute("id")) {
-        QString svg_str;
-        QTextStream stream(&svg_str);
-        n.save(stream, 0);
-        svg_str.replace("<symbol", "<svg");
-        svg_str.replace("</symbol>", "</svg>");
-        icons[e.attribute("id")] = svg_str.toUtf8();
+    std::string content = f.readAll().toStdString();
+    const std::string sym_open = "<symbol ";
+    const std::string sym_close = "</symbol>";
+    const std::string id_attr = "id=\"";
+
+    size_t pos = 0;
+    while ((pos = content.find(sym_open, pos)) != std::string::npos) {
+      size_t end = content.find(sym_close, pos);
+      if (end == std::string::npos) break;
+      end += sym_close.size();
+
+      // extract id
+      size_t id_start = content.find(id_attr, pos);
+      if (id_start != std::string::npos && id_start < end) {
+        id_start += id_attr.size();
+        size_t id_end = content.find('"', id_start);
+        if (id_end != std::string::npos && id_end < end) {
+          std::string id = content.substr(id_start, id_end - id_start);
+          std::string svg_str = content.substr(pos, end - pos);
+          // replace <symbol with <svg, </symbol> with </svg>
+          svg_str.replace(0, 7, "<svg");               // "<symbol" (7) -> "<svg" (4)
+          svg_str.replace(svg_str.size() - 9, 9, "</svg>");  // "</symbol>" (9) -> "</svg>" (6)
+          icons[id] = std::move(svg_str);
+        }
       }
-      n = n.nextSibling();
+      pos = end;
     }
   }
   return icons;
 }
 
 QPixmap bootstrapPixmap(const QString &id) {
-  static QHash<QString, QByteArray> icons = load_bootstrap_icons();
+  static auto icons = load_bootstrap_icons();
 
   QPixmap pixmap;
-  if (auto it = icons.find(id); it != icons.end()) {
-    pixmap.loadFromData(it.value(), "svg");
+  auto it = icons.find(id.toStdString());
+  if (it != icons.end()) {
+    pixmap.loadFromData((const uchar *)it->second.data(), it->second.size(), "svg");
   }
   return pixmap;
 }
