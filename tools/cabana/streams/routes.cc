@@ -103,7 +103,6 @@ void RoutesDialog::fetchRoutes() {
 
   std::string did = device_list_->currentText().toStdString();
   int period = period_selector_->currentData().toInt();
-  fetch_cancelled_ = true;  // cancel any in-flight fetch
 
   bool preserved = (period == -1);
   int64_t start_ms = 0, end_ms = 0;
@@ -113,11 +112,11 @@ void RoutesDialog::fetchRoutes() {
     end_ms = now.toMSecsSinceEpoch();
   }
 
-  fetch_cancelled_ = false;
+  int request_id = ++fetch_id_;
   QPointer<RoutesDialog> self = this;
-  QtConcurrent::run([self, did, start_ms, end_ms, preserved]() {
+  QtConcurrent::run([self, did, start_ms, end_ms, preserved, request_id]() {
     std::string result = PyDownloader::getDeviceRoutes(did, start_ms, end_ms, preserved);
-    if (!self || self->fetch_cancelled_) return;
+    if (!self || self->fetch_id_ != request_id) return;
     auto [success, error_code] = checkApiResponse(result);
     QMetaObject::invokeMethod(qApp, [self, r = QString::fromStdString(result), success, error_code]() {
       if (self) self->parseRouteList(r, success, error_code);

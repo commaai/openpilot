@@ -123,12 +123,14 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
             // Parse "PROGRESS:<cur>:<total>"
             auto colon1 = line.find(':', 9);
             if (colon1 != std::string::npos) {
-              uint64_t cur = std::stoull(line.substr(9, colon1 - 9));
-              uint64_t total = std::stoull(line.substr(colon1 + 1));
-              std::lock_guard<std::mutex> lk(handler_mutex);
-              if (progress_handler) {
-                progress_handler(cur, total, true);
-              }
+              try {
+                uint64_t cur = std::stoull(line.substr(9, colon1 - 9));
+                uint64_t total = std::stoull(line.substr(colon1 + 1));
+                std::lock_guard<std::mutex> lk(handler_mutex);
+                if (progress_handler) {
+                  progress_handler(cur, total, true);
+                }
+              } catch (...) {}
             }
           } else if (line.rfind("ERROR:", 0) == 0) {
             rWarning("py_downloader: %s", line.c_str() + 6);

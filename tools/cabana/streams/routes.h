@@ -20,5 +20,5 @@ protected:
   QComboBox *device_list_;
   QComboBox *period_selector_;
   RouteListWidget *route_list_;
-  std::atomic<bool> fetch_cancelled_{false};
+  std::atomic<int> fetch_id_{0};
 };
