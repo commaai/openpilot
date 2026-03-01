@@ -220,7 +220,7 @@ class GuiApplication:
     self._frame = 0
     self._window_close_requested = False
     self._nav_stack: list[object] = []
-    self._nav_stack_tick: Callable[[], None] | None = None
+    self._nav_stack_ticks: list[Callable[[], None]] = []
     self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
 
     self._mouse = MouseState(self._scale)
@@ -247,6 +247,10 @@ class GuiApplication:
 
   def set_show_fps(self, show: bool):
     self._show_fps = show
+
+  @property
+  def show_touches(self) -> bool:
+    return self._show_touches
 
   @property
   def target_fps(self):
@@ -379,27 +383,47 @@ class GuiApplication:
 
     self._nav_stack.append(widget)
     widget.show_event()
+    widget.set_enabled(True)
 
-  def pop_widget(self):
+  def pop_widget(self, idx: int | None = None):
+    # Pops widget instantly without animation
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
       return
 
-    # re-enable previous widget and pop current
-    # TODO: switch to touch_valid
-    prev_widget = self._nav_stack[-2]
-    prev_widget.set_enabled(True)
+    idx_to_pop = len(self._nav_stack) - 1 if idx is None else idx
+    if idx_to_pop <= 0 or idx_to_pop >= len(self._nav_stack):
+      cloudlog.warning(f"Invalid index {idx_to_pop} to pop, ignoring!")
+      return
 
-    widget = self._nav_stack.pop()
+    # only re-enable previous widget if popping top widget
+    if idx_to_pop == len(self._nav_stack) - 1:
+      prev_widget = self._nav_stack[idx_to_pop - 1]
+      prev_widget.set_enabled(True)
+
+    widget = self._nav_stack.pop(idx_to_pop)
     widget.hide_event()
 
-  def pop_widgets_to(self, widget):
+  def pop_widgets_to(self, widget: object, callback: Callable[[], None] | None = None, instant: bool = False):
+    # Pops middle widgets instantly without animation then dismisses top, animated out if NavWidget
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
       return
 
-    # pops all widgets after specified widget
-    while len(self._nav_stack) > 0 and self._nav_stack[-1] != widget:
+    # Nothing to pop, ensure we still run callback
+    top_widget = self._nav_stack[-1]
+    if top_widget == widget:
+      if callback:
+        callback()
+      return
+
+    # instantly pop widgets in between, then dismiss top widget for animation
+    while len(self._nav_stack) > 1 and self._nav_stack[-2] != widget:
+      self.pop_widget(len(self._nav_stack) - 2)
+
+    if not instant:
+      top_widget.dismiss(callback)
+    else:
       self.pop_widget()
 
   def get_active_widget(self):
@@ -407,26 +431,31 @@ class GuiApplication:
       return self._nav_stack[-1]
     return None
 
-  def set_nav_stack_tick(self, tick_function: Callable | None):
-    self._nav_stack_tick = tick_function
+  def add_nav_stack_tick(self, tick_function: Callable[[], None]):
+    if tick_function not in self._nav_stack_ticks:
+      self._nav_stack_ticks.append(tick_function)
+
+  def remove_nav_stack_tick(self, tick_function: Callable[[], None]):
+    if tick_function in self._nav_stack_ticks:
+      self._nav_stack_ticks.remove(tick_function)
 
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
 
   def texture(self, asset_path: str, width: int | None = None, height: int | None = None,
-              alpha_premultiply=False, keep_aspect_ratio=True):
-    cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
+              alpha_premultiply=False, keep_aspect_ratio=True, flip_x: bool = False) -> rl.Texture:
+    cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}_{keep_aspect_ratio}_{flip_x}"
     if cache_key in self._textures:
       return self._textures[cache_key]
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-      image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
+      image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio, flip_x)
       texture_obj = self._load_texture_from_image(image_obj)
     self._textures[cache_key] = texture_obj
     return texture_obj
 
   def _load_image_from_path(self, image_path: str, width: int | None = None, height: int | None = None,
-                            alpha_premultiply: bool = False, keep_aspect_ratio: bool = True) -> rl.Image:
+                            alpha_premultiply: bool = False, keep_aspect_ratio: bool = True, flip_x: bool = False) -> rl.Image:
     """Load and resize an image, storing it for later automatic unloading."""
     image = rl.load_image(image_path)
 
@@ -455,6 +484,10 @@ class GuiApplication:
           rl.image_resize(image, width, height)
     else:
       assert keep_aspect_ratio, "Cannot resize without specifying width and height"
+
+    if flip_x:
+      rl.image_flip_horizontal(image)
+
     return image
 
   def _load_texture_from_image(self, image: rl.Image) -> rl.Texture:
@@ -553,8 +586,8 @@ class GuiApplication:
           rl.clear_background(rl.BLACK)
 
         # Allow a Widget to still run a function regardless of the stack depth
-        if self._nav_stack_tick is not None:
-          self._nav_stack_tick()
+        for tick in self._nav_stack_ticks:
+          tick()
 
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:

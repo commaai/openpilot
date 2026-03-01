@@ -13,7 +13,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
-from openpilot.system.ui.widgets import Widget, NavWidget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.scroller import NavRawScrollPanel
 
 TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
@@ -217,9 +218,5 @@ class FirehoseLayoutBase(Widget):
       time.sleep(self.UPDATE_INTERVAL)
 
 
-class FirehoseLayout(FirehoseLayoutBase, NavWidget):
-  BACK_TOUCH_AREA_PERCENTAGE = 0.1
-
-  def __init__(self):
-    super().__init__()
-    self.set_back_callback(gui_app.pop_widget)
+class FirehoseLayout(NavRawScrollPanel, FirehoseLayoutBase):
+  pass

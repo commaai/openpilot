@@ -322,7 +322,7 @@ class MiciKeyboard(Widget):
     self._selected_key_filter.update(self._closest_key[0] is not None)
 
     # unselect key after animation plays
-    if self._unselect_key_t is not None and rl.get_time() > self._unselect_key_t:
+    if (self._unselect_key_t is not None and rl.get_time() > self._unselect_key_t) or not self.enabled:
       self._closest_key = (None, float('inf'))
       self._unselect_key_t = None
       self._selected_key_t = None

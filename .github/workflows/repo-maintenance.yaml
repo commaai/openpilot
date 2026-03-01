@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: ./.github/workflows/setup-with-retry
+      - run: ./tools/op.sh setup
       - name: Update translations
         run: python3 selfdrive/ui/update_translations.py --vanish
       - name: Create Pull Request
@@ -39,7 +39,7 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - run: ./tools/op.sh setup
     - name: uv lock
       run: uv lock --upgrade
     - name: uv pip tree

@@ -571,7 +571,7 @@ void ChartView::showTip(double sec) {
     if (s.series->isVisible()) {
       QString value = "--";
       // use reverse iterator to find last item <= sec.
-      auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), sec, [](auto &p, double x) { return p.x() > x; });
+      auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), sec, [](auto &p, double v) { return p.x() > v; });
       if (it != s.vals.crend() && it->x() >= axis_x->min()) {
         value = s.sig->formatValue(it->y(), false);
         s.track_pt = *it;

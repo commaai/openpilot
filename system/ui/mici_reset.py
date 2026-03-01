@@ -38,17 +38,12 @@ class Reset(Widget):
     self._reset_state = ResetState.NONE
 
     self._cancel_button = SmallButton("cancel")
-    self._cancel_button.set_click_callback(self._cancel_callback)
+    self._cancel_button.set_click_callback(gui_app.request_close)
 
     self._reboot_button = FullRoundedButton("reboot")
     self._reboot_button.set_click_callback(self._do_reboot)
 
     self._confirm_slider = SmallSlider("reset", self._confirm)
-
-    self._render_status = True
-
-  def _cancel_callback(self):
-    self._render_status = False
 
   def _do_reboot(self):
     if PC:
@@ -120,8 +115,6 @@ class Reset(Widget):
           rect.y + rect.height - self._reboot_button.rect.height,
           self._reboot_button.rect.width,
           self._reboot_button.rect.height))
-
-    return self._render_status
 
   def _confirm(self):
     self.start_reset()
