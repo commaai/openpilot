@@ -8,6 +8,10 @@
 
 #include <QApplication>
 
+#include "imgui.h"
+#include "implot.h"
+#include "imgui_impl_opengl3.h"
+
 namespace {
 
 const char frame_vertex_shader[] =
@@ -61,6 +65,12 @@ CameraWidget::~CameraWidget() {
   makeCurrent();
   stopVipcThread();
   if (isValid()) {
+    if (imgui_initialized) {
+      ImGui_ImplOpenGL3_Shutdown();
+      ImPlot::DestroyContext();
+      ImGui::DestroyContext();
+      imgui_initialized = false;
+    }
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
@@ -113,6 +123,8 @@ void CameraWidget::initializeGL() {
   shader_program_->setUniformValue("uTextureY", 0);
   shader_program_->setUniformValue("uTextureUV", 1);
   shader_program_->release();
+
+  initImGui();
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
@@ -184,6 +196,8 @@ void CameraWidget::paintGL() {
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
   shader_program_->release();
+
+  renderImGui();
 }
 
 void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -258,4 +272,78 @@ void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
   current_frame_ = nullptr;
   available_streams.clear();
+}
+
+void CameraWidget::initImGui() {
+  ImGui::CreateContext();
+  ImPlot::CreateContext();
+
+#ifdef __APPLE__
+  const char *glsl_version = "#version 330 core";
+#else
+  const char *glsl_version = "#version 300 es";
+#endif
+  ImGui_ImplOpenGL3_Init(glsl_version);
+
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  io.IniFilename = nullptr;  // don't save layout state
+
+  ImGui::StyleColorsDark();
+  ImGuiStyle &style = ImGui::GetStyle();
+  style.WindowRounding = 6.0f;
+  style.Alpha = 0.9f;
+
+  imgui_initialized = true;
+}
+
+void CameraWidget::renderImGui() {
+  if (!imgui_initialized) return;
+
+  ImGuiIO &io = ImGui::GetIO();
+  io.DisplaySize = ImVec2((float)width(), (float)height());
+  io.DisplayFramebufferScale = ImVec2((float)devicePixelRatio(), (float)devicePixelRatio());
+
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui::NewFrame();
+
+  // Test overlay
+  ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowBgAlpha(0.5f);
+  ImGui::Begin("##imgui_overlay", nullptr,
+               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize |
+               ImGuiWindowFlags_NoSavedSettings);
+  ImGui::Text("ImGui Active");
+  ImGui::Text("%.1f FPS", io.Framerate);
+  ImGui::End();
+
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void CameraWidget::mousePressEvent(QMouseEvent *event) {
+  if (imgui_initialized) {
+    ImGuiIO &io = ImGui::GetIO();
+    io.AddMousePosEvent((float)event->x(), (float)event->y());
+    if (event->button() == Qt::LeftButton) io.AddMouseButtonEvent(0, true);
+    if (event->button() == Qt::RightButton) io.AddMouseButtonEvent(1, true);
+  }
+}
+
+void CameraWidget::mouseReleaseEvent(QMouseEvent *event) {
+  if (imgui_initialized) {
+    ImGuiIO &io = ImGui::GetIO();
+    io.AddMousePosEvent((float)event->x(), (float)event->y());
+    if (event->button() == Qt::LeftButton) io.AddMouseButtonEvent(0, false);
+    if (event->button() == Qt::RightButton) io.AddMouseButtonEvent(1, false);
+    if (io.WantCaptureMouse) return;
+  }
+  emit clicked();
+}
+
+void CameraWidget::mouseMoveEvent(QMouseEvent *event) {
+  if (imgui_initialized) {
+    ImGuiIO &io = ImGui::GetIO();
+    io.AddMousePosEvent((float)event->x(), (float)event->y());
+  }
 }

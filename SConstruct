@@ -43,6 +43,7 @@ if arch != "larch64":
   import capnproto
   import eigen
   import ffmpeg as ffmpeg_pkg
+  import imgui
   import libjpeg
   import libyuv
   import ncurses

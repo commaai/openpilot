@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 
+#include <QMouseEvent>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
@@ -34,9 +35,15 @@ protected:
   void paintGL() override;
   void initializeGL() override;
   void showEvent(QShowEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
+  void mousePressEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
   void vipcThread();
   void clearFrames();
+  void initImGui();
+  void renderImGui();
+
+  bool imgui_initialized = false;
 
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];
