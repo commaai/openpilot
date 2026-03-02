@@ -445,7 +445,7 @@ class OnboardingWindow(Widget):
 
     self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
 
-    self.set_rect(rl.Rectangle(0, 0, 458, gui_app.height))
+    self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     # Windows
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_terms_declined)
