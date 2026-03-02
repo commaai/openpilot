@@ -1,5 +1,3 @@
-from enum import IntEnum
-
 import weakref
 import math
 import numpy as np
@@ -21,11 +19,6 @@ from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import BaseDriverCameraDialog
-
-
-# class OnboardingState(IntEnum):
-#   TERMS = 0
-#   ONBOARDING = 1
 
 
 class DriverCameraSetupDialog(BaseDriverCameraDialog):
@@ -128,7 +121,7 @@ class TrainingGuideDMTutorial(NavWidget):
   def show_event(self):
     super().show_event()
     self._dialog.show_event()
-    self._progress.x = 1.0
+    self._progress.x = 0.0
 
   def _update_state(self):
     super()._update_state()
@@ -201,20 +194,20 @@ class TrainingGuideDMTutorial(NavWidget):
       ring_color,
     )
 
-    # if self._dialog._camera_view.frame:
-    self._back_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._back_button.rect.height,
-      self._back_button.rect.width,
-      self._back_button.rect.height,
-    ))
+    if self._dialog._camera_view.frame:
+      self._back_button.render(rl.Rectangle(
+        self._rect.x + 8,
+        self._rect.y + self._rect.height - self._back_button.rect.height,
+        self._back_button.rect.width,
+        self._back_button.rect.height,
+      ))
 
-    self._good_button.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._good_button.rect.width - 8,
-      self._rect.y + self._rect.height - self._good_button.rect.height,
-      self._good_button.rect.width,
-      self._good_button.rect.height,
-    ))
+      self._good_button.render(rl.Rectangle(
+        self._rect.x + self._rect.width - self._good_button.rect.width - 8,
+        self._rect.y + self._rect.height - self._good_button.rect.height,
+        self._good_button.rect.width,
+        self._good_button.rect.height,
+      ))
 
     # rounded border
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
@@ -377,9 +370,7 @@ class OnboardingWindow(Widget):
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
     self._training_done: bool = ui_state.params.get("CompletedTrainingVersion") == training_version
 
-    # self._state = OnboardingState.TERMS if not self._accepted_terms else OnboardingState.ONBOARDING
-
-    self.set_rect(rl.Rectangle(0, 0, 458, gui_app.height))
+    self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     # Windows
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_uninstall)
@@ -412,7 +403,6 @@ class OnboardingWindow(Widget):
   def _on_terms_accepted(self):
     ui_state.params.put("HasAcceptedTerms", terms_version)
     gui_app.push_widget(self._training_guide)
-    # self._state = OnboardingState.ONBOARDING
 
   def _on_completed_training(self):
     ui_state.params.put("CompletedTrainingVersion", training_version)
@@ -421,7 +411,3 @@ class OnboardingWindow(Widget):
   def _render(self, _):
     rl.draw_rectangle_rec(self._rect, rl.BLACK)
     self._terms.render(self._rect)
-    # if self._state == OnboardingState.TERMS:
-    #   self._terms.render(self._rect)
-    # else:
-    #   self._training_guide.render(self._rect)
