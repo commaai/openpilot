@@ -46,7 +46,7 @@ SignalSelector::SignalSelector(QString title, QWidget *parent) : QDialog(parent)
 
   for (const auto &[id, _] : can->lastMessages()) {
     if (auto m = dbc()->msg(id)) {
-      msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(id.toString()), QVariant::fromValue(id));
+      msgs_combo->addItem(QString("%1 (%2)").arg(QString::fromStdString(m->name)).arg(QString::fromStdString(id.toString())), QVariant::fromValue(id));
     }
   }
   msgs_combo->model()->sort(0);
@@ -92,8 +92,8 @@ void SignalSelector::updateAvailableList(int index) {
 }
 
 void SignalSelector::addItemToList(QListWidget *parent, const MessageId id, const cabana::Signal *sig, bool show_msg_name) {
-  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(sig->color.name(), sig->name);
-  if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(msgName(id), id.toString());
+  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(sig->color.name(), QString::fromStdString(sig->name));
+  if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(QString::fromStdString(msgName(id)), QString::fromStdString(id.toString()));
 
   QLabel *label = new QLabel(text);
   label->setContentsMargins(5, 0, 5, 0);
@@ -102,8 +102,8 @@ void SignalSelector::addItemToList(QListWidget *parent, const MessageId id, cons
   parent->setItemWidget(new_item, label);
 }
 
-QList<SignalSelector::ListItem *> SignalSelector::seletedItems() {
-  QList<SignalSelector::ListItem *> ret;
+std::vector<SignalSelector::ListItem *> SignalSelector::seletedItems() {
+  std::vector<SignalSelector::ListItem *> ret;
   for (int i = 0; i < selected_list->count(); ++i) ret.push_back((ListItem *)selected_list->item(i));
   return ret;
 }

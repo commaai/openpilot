@@ -205,7 +205,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
     auto msg = dbc()->msg(item.id);
     auto tooltip = item.name;
-    if (msg && !msg->comment.isEmpty()) tooltip += "<br /><span style=\"color:gray;\">" + msg->comment + "</span>";
+    if (msg && !msg->comment.empty()) tooltip += "<br /><span style=\"color:gray;\">" + QString::fromStdString(msg->comment) + "</span>";
     return tooltip;
   }
   return {};
@@ -277,7 +277,7 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
         if (!match) {
           const auto m = dbc()->msg(item.id);
           match = m && std::any_of(m->sigs.cbegin(), m->sigs.cend(),
-                                   [&txt](const auto &s) { return s->name.contains(txt, Qt::CaseInsensitive); });
+                                   [&txt](const auto &s) { return QString::fromStdString(s->name).contains(txt, Qt::CaseInsensitive); });
         }
         break;
       }
@@ -323,8 +323,8 @@ bool MessageListModel::filterAndSort() {
     if (show_inactive_messages || can->isMessageActive(id)) {
       auto msg = dbc()->msg(id);
       Item item = {.id = id,
-                  .name = msg ? msg->name : UNTITLED,
-                  .node = msg ? msg->transmitter : QString()};
+                  .name = msg ? QString::fromStdString(msg->name) : QString::fromStdString(UNTITLED),
+                  .node = msg ? QString::fromStdString(msg->transmitter) : QString()};
       if (match(item))
         items.emplace_back(item);
     }
