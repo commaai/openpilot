@@ -7,6 +7,9 @@
 #endif
 
 #include <QApplication>
+#include <QFont>
+#include <QFontInfo>
+#include <QProcess>
 
 #include "imgui.h"
 #include "implot.h"
@@ -290,6 +293,27 @@ void CameraWidget::initImGui() {
   ImGuiIO &io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.IniFilename = nullptr;  // don't save layout state
+
+  // Load the Qt application font into ImGui via fontconfig.
+  // Qt uses point sizes; ImGui uses pixels. Convert: px = pt * dpi / 72
+  float dpi = (float)logicalDpiY();
+  auto pt_to_px = [dpi](float pt) { return pt * dpi / 72.0f; };
+
+  QFontInfo fi(QApplication::font());
+  QString family = fi.family();
+
+  // Start both fc-match processes in parallel
+  QProcess fc_regular, fc_bold;
+  fc_regular.start("fc-match", {family + ":style=Regular", "--format=%{file}"});
+  fc_bold.start("fc-match", {family + ":style=Bold", "--format=%{file}"});
+
+  auto load_font = [&](QProcess &proc, float pt) -> ImFont * {
+    if (!proc.waitForFinished(1000)) return nullptr;
+    QString path = QString(proc.readAllStandardOutput()).trimmed();
+    return path.isEmpty() ? nullptr : io.Fonts->AddFontFromFileTTF(path.toUtf8().constData(), pt_to_px(pt));
+  };
+  imgui_font_regular = load_font(fc_regular, 10.0f);
+  imgui_font_bold = load_font(fc_bold, 16.0f);
 
   ImGui::StyleColorsDark();
   ImGuiStyle &style = ImGui::GetStyle();

@@ -50,7 +50,6 @@ private:
   std::map<uint64_t, QImage> thumbnails;
   std::map<uint64_t, GLuint> texture_cache;
   double thumbnail_dispaly_time = -1;
-  double pause_fade_start = -1;
   friend class VideoWidget;
 };
 

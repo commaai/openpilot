@@ -14,6 +14,8 @@
 
 #include "msgq/visionipc/visionipc_client.h"
 
+struct ImFont;
+
 class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
@@ -46,6 +48,8 @@ protected:
   virtual void drawImGuiOverlays() {}
 
   bool imgui_initialized = false;
+  ImFont *imgui_font_regular = nullptr;
+  ImFont *imgui_font_bold = nullptr;
 
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];

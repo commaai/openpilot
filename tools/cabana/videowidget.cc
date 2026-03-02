@@ -343,6 +343,15 @@ StreamCameraView::~StreamCameraView() {
 }
 
 void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
+  // Clear previous data. GL textures will be lazily re-uploaded.
+  // This runs on the main thread via QueuedConnection, so GL context is available.
+  makeCurrent();
+  for (auto &[_, tex] : texture_cache) glDeleteTextures(1, &tex);
+  doneCurrent();
+  texture_cache.clear();
+  thumbnails.clear();
+  big_thumbnails.clear();
+
   std::mutex mutex;
   const auto &events = qlog->events;
   unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
@@ -391,16 +400,41 @@ GLuint StreamCameraView::getOrUploadTexture(uint64_t key, const QImage &img) {
   return tex;
 }
 
+static void drawAlertOverlay(ImDrawList *draw, ImFont *font, const Timeline::Entry &alert, float x, float y, float w) {
+  float font_size = font->LegacySize;
+  const QColor &qc = timeline_colors[int(alert.type)];
+  ImU32 bg_color = IM_COL32(qc.red(), qc.green(), qc.blue(), 128);
+  std::string text = alert.text1;
+  if (!alert.text2.empty()) text += "\n" + alert.text2;
+  ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, w, text.c_str());
+  draw->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + text_size.y), bg_color);
+  draw->AddText(font, font_size, ImVec2(x + (w - text_size.x) / 2.0f, y),
+                IM_COL32(255, 255, 255, 255), text.c_str(), nullptr, w);
+}
+
+static void drawTimeLabel(ImDrawList *draw, ImFont *font, double seconds, float tx, float ty, float tw, float th) {
+  float font_size = font->LegacySize;
+  char time_buf[32];
+  snprintf(time_buf, sizeof(time_buf), "%.3f", seconds);
+  ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, time_buf);
+  draw->AddText(font, font_size,
+                ImVec2(tx + (tw - text_size.x) / 2.0f, ty + th - text_size.y - THUMBNAIL_MARGIN),
+                IM_COL32(255, 255, 255, 255), time_buf);
+}
+
 void StreamCameraView::drawImGuiOverlays() {
   auto *draw = ImGui::GetForegroundDrawList();
   float w = (float)width();
   float h = (float)height();
-
+  ImFont *font_regular = imgui_font_regular ? imgui_font_regular : ImGui::GetFont();
+  ImFont *font_bold = imgui_font_bold ? imgui_font_bold : ImGui::GetFont();
+  Replay *replay = getReplay();
+  bool paused = can->isPaused();
   bool scrubbing = false;
 
   // Thumbnails
   if (thumbnail_dispaly_time >= 0) {
-    scrubbing = can->isPaused();
+    scrubbing = paused;
     if (scrubbing) {
       // Full-size scrub thumbnail
       auto it = big_thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
@@ -421,17 +455,9 @@ void StreamCameraView::drawImGuiOverlays() {
         float tx = (w - tw) / 2.0f;
         float ty = (h - th) / 2.0f;
 
-        // Black background
         draw->AddRectFilled(ImVec2(0, 0), ImVec2(w, h), IM_COL32(0, 0, 0, 255));
         draw->AddImage((ImTextureID)(uintptr_t)tex, ImVec2(tx, ty), ImVec2(tx + tw, ty + th));
-
-        // Time label
-        char time_buf[32];
-        snprintf(time_buf, sizeof(time_buf), "%.3f", thumbnail_dispaly_time);
-        ImVec2 text_size = ImGui::CalcTextSize(time_buf);
-        float text_x = tx + (tw - text_size.x) / 2.0f;
-        float text_y = ty + th - text_size.y - THUMBNAIL_MARGIN;
-        draw->AddText(ImVec2(text_x, text_y), IM_COL32(255, 255, 255, 255), time_buf);
+        drawTimeLabel(draw, font_regular, thumbnail_dispaly_time, tx, ty, tw, th);
       }
     } else {
       // Small hover thumbnail
@@ -447,52 +473,32 @@ void StreamCameraView::drawImGuiOverlays() {
         float tx = std::clamp(pos - tw / 2.0f, (float)THUMBNAIL_MARGIN, w - tw - THUMBNAIL_MARGIN + 1.0f);
         float ty = h - th - THUMBNAIL_MARGIN;
 
-        // Border
         draw->AddRect(ImVec2(tx - 1, ty - 1), ImVec2(tx + tw + 1, ty + th + 1), IM_COL32(255, 255, 255, 255));
         draw->AddImage((ImTextureID)(uintptr_t)tex, ImVec2(tx, ty), ImVec2(tx + tw, ty + th));
 
-        // Time label
-        char time_buf[32];
-        snprintf(time_buf, sizeof(time_buf), "%.3f", thumbnail_dispaly_time);
-        ImVec2 text_size = ImGui::CalcTextSize(time_buf);
-        float text_x = tx + (tw - text_size.x) / 2.0f;
-        float text_y = ty + th - text_size.y - THUMBNAIL_MARGIN;
-        draw->AddText(ImVec2(text_x, text_y), IM_COL32(255, 255, 255, 255), time_buf);
+        if (replay) {
+          if (auto alert = replay->findAlertAtTime(thumbnail_dispaly_time))
+            drawAlertOverlay(draw, font_regular, *alert, tx, ty, tw);
+        }
+        drawTimeLabel(draw, font_regular, thumbnail_dispaly_time, tx, ty, tw, th);
       }
     }
   }
 
   // Alert bar
-  double alert_time = scrubbing ? thumbnail_dispaly_time : can->currentSec();
-  if (auto alert = getReplay()->findAlertAtTime(alert_time)) {
-    const QColor &qc = timeline_colors[int(alert->type)];
-    ImU32 bg_color = IM_COL32(qc.red(), qc.green(), qc.blue(), 128);
-
-    std::string text = alert->text1;
-    if (!alert->text2.empty()) text += "\n" + alert->text2;
-
-    ImVec2 text_size = ImGui::CalcTextSize(text.c_str(), nullptr, false, w - 2.0f);
-    draw->AddRectFilled(ImVec2(1, 1), ImVec2(w - 1, 1 + text_size.y), bg_color);
-    draw->AddText(nullptr, 0.0f, ImVec2((w - text_size.x) / 2.0f, 1), IM_COL32(255, 255, 255, 255),
-                  text.c_str(), nullptr, w - 2.0f);
+  if (replay) {
+    double alert_time = scrubbing ? thumbnail_dispaly_time : can->currentSec();
+    if (auto alert = replay->findAlertAtTime(alert_time))
+      drawAlertOverlay(draw, font_regular, *alert, 1.0f, 1.0f, w - 2.0f);
   }
 
   // PAUSED text
-  if (can->isPaused()) {
-    if (pause_fade_start < 0) pause_fade_start = ImGui::GetTime();
-    float t = (float)(ImGui::GetTime() - pause_fade_start);
-    float alpha = 0.2f + 0.5f * (0.5f + 0.5f * sinf(t * 3.0f));
-
+  if (paused) {
     const char *paused_text = "PAUSED";
-    ImFont *font = ImGui::GetFont();
-    float font_size = 24.0f;
-    ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, paused_text);
-    float tx = (w - text_size.x) / 2.0f;
-    float ty = (h - text_size.y) / 2.0f;
-    draw->AddText(font, font_size, ImVec2(tx, ty),
-                  IM_COL32(200, 200, 200, (int)(255 * alpha)), paused_text);
-    update();  // keep animating while paused
-  } else {
-    pause_fade_start = -1;
+    float font_size = font_bold->LegacySize;
+    ImVec2 text_size = font_bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, paused_text);
+    draw->AddText(font_bold, font_size,
+                  ImVec2((w - text_size.x) / 2.0f, (h - text_size.y) / 2.0f),
+                  IM_COL32(200, 200, 200, 128), paused_text);
   }
 }

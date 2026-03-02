@@ -73,7 +73,6 @@ dependencies = [
   "zstandard",
 
   # ui
-  "imgui @ git+https://github.com/commaai/dependencies.git@master#subdirectory=imgui",
   "raylib @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=raylib",
   "qrcode",
   "jeepney",
@@ -109,7 +108,7 @@ dev = [
 
 tools = [
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
-  "dearpygui>=2.1.0; (sys_platform != 'linux' or platform_machine != 'aarch64')", # not vended for linux aarch64
+  "imgui @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=imgui",
 ]
 
 [project.urls]
