@@ -112,12 +112,7 @@ class TrainingGuideDMTutorial(NavWidget):
     self._good_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 42, 42))
     self._good_button.set_touch_valid_callback(lambda: self.enabled and not self.is_dismissing)  # for nav stack
 
-    # Wrap the continue callback to restore settings
-    def wrapped_continue_callback():
-      device.set_offroad_brightness(None)
-      continue_callback()
-
-    self._good_button.set_click_callback(wrapped_continue_callback)
+    self._good_button.set_click_callback(continue_callback)
     self._good_button.set_enabled(False)
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
@@ -134,8 +129,6 @@ class TrainingGuideDMTutorial(NavWidget):
     super().show_event()
     self._dialog.show_event()
     self._progress.x = 1.0
-
-    device.set_offroad_brightness(100)
 
   def _update_state(self):
     super()._update_state()
@@ -287,69 +280,17 @@ class TrainingGuide(NavWidget):
     self._completed_callback = completed_callback
     self._step = 0
 
-    self_ref = weakref.ref(self)
-
-    # def on_continue():
-    #   if obj := self_ref():
-    #     obj._advance_step()
-
-    # self._steps = [
-    #   TrainingGuideAttentionNotice(continue_callback=on_continue),
-    #   TrainingGuidePreDMTutorial(continue_callback=on_continue),
-    #   TrainingGuideDMTutorial(continue_callback=on_continue),
-    #   TrainingGuideRecordFront(continue_callback=on_continue),
-    # ]
-
     self._steps = [
-      TrainingGuideAttentionNotice(continue_callback=lambda: gui_app.push_widget(self_ref()._steps[1])),
-      TrainingGuidePreDMTutorial(continue_callback=lambda: gui_app.push_widget(self_ref()._steps[2])),
-      TrainingGuideDMTutorial(continue_callback=lambda: gui_app.push_widget(self_ref()._steps[3])),
+      TrainingGuideAttentionNotice(continue_callback=lambda: gui_app.push_widget(self._steps[1])),
+      TrainingGuidePreDMTutorial(continue_callback=lambda: gui_app.push_widget(self._steps[2])),
+      TrainingGuideDMTutorial(continue_callback=lambda: gui_app.push_widget(self._steps[3])),
       TrainingGuideRecordFront(continue_callback=completed_callback),
     ]
 
-    # self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)
-    self._steps[0].set_enabled(lambda: (s := self_ref()) is not None and s.enabled and not s.is_dismissing)  # for nav stack
-
-    # for step in self._steps[1:]:
-    #   step.set_back_callback(lambda: self._retreat_step())
-
-
-
-    # for step in self._steps:
-    #   step.set_enabled(lambda: self.enabled)  # for nav stack
-
-  def show_event(self):
-    super().show_event()
-    device.set_override_interactive_timeout(300)
-
-  def hide_event(self):
-    # TODO: with nav stack this may fire hide_event for upper steps
-    super().hide_event()
-    device.set_override_interactive_timeout(None)
-
-  def _retreat_step(self):
-    if self._step > 0:
-      self._step -= 1
-
-  # def _advance_step(self):
-  #   if self._step < len(self._steps) - 1:
-  #     self._step += 1
-  #     gui_app.push_widget(self._steps[self._step])
-  #     # self._steps[self._step].show_event()
-  #   else:
-  #     self._step = 0
-  #     if self._completed_callback:
-  #       self._completed_callback()
-  #
-  # def _on_completed(self):
-  #   if self._completed_callback:
-  #     self._completed_callback()
+    self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack
 
   def _render(self, _):
     self._steps[0].render(self._rect)
-    # rl.draw_rectangle_rec(self._rect, rl.BLACK)
-    # if self._step < len(self._steps):
-    #   self._steps[self._step].render(self._rect)
 
 
 class QRCodeWidget(Widget):
@@ -452,10 +393,12 @@ class OnboardingWindow(Widget):
   def show_event(self):
     super().show_event()
     device.set_override_interactive_timeout(300)
+    device.set_offroad_brightness(100)
 
   def hide_event(self):
     super().hide_event()
     device.set_override_interactive_timeout(None)
+    device.set_offroad_brightness(None)
 
   @property
   def completed(self) -> bool:
