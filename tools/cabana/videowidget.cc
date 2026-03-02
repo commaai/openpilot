@@ -335,22 +335,20 @@ StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType str
 }
 
 StreamCameraView::~StreamCameraView() {
-  makeCurrent();
-  for (auto &[_, tex] : texture_cache) {
-    glDeleteTextures(1, &tex);
-  }
-  doneCurrent();
+  clearThumbnails();
 }
 
-void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
-  // Clear previous data. GL textures will be lazily re-uploaded.
-  // This runs on the main thread via QueuedConnection, so GL context is available.
+void StreamCameraView::clearThumbnails() {
   makeCurrent();
   for (auto &[_, tex] : texture_cache) glDeleteTextures(1, &tex);
   doneCurrent();
   texture_cache.clear();
   thumbnails.clear();
   big_thumbnails.clear();
+}
+
+void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
+  clearThumbnails();
 
   std::mutex mutex;
   const auto &events = qlog->events;

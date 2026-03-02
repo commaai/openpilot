@@ -45,6 +45,7 @@ protected:
 
 private:
   GLuint getOrUploadTexture(uint64_t key, const QImage &img);
+  void clearThumbnails();
 
   std::map<uint64_t, QImage> big_thumbnails;
   std::map<uint64_t, QImage> thumbnails;
