@@ -508,7 +508,7 @@ wheels = [
 [[package]]
 name = "imgui"
 version = "1.92.7"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=imgui-package#5c0e851a4f6f7c9964acc667ddfb7cffd5459f44" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=imgui-package#3b62a5f38f24c501fc68cf08b03d2cab85c91125" }
 
 [[package]]
 name = "iniconfig"
