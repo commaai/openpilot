@@ -76,7 +76,7 @@ else:
 qt_libs = base_libs
 
 cabana_env = qt_env.Clone()
-cabana_env['CPPPATH'] += [imgui.INCLUDE_DIR, imgui.SRC_DIR, '#tools/cabana/imgui']
+cabana_env['CPPPATH'] += [imgui.INCLUDE_DIR, imgui.SRC_DIR]
 if arch != "Darwin":
   cabana_env['CXXFLAGS'] += ['-DIMGUI_IMPL_OPENGL_ES3']
 if arch == "Darwin":
@@ -100,7 +100,7 @@ imgui_sources = [
   f'{imgui.SRC_DIR}/imgui_tables.cpp',
   f'{imgui.SRC_DIR}/implot.cpp',
   f'{imgui.SRC_DIR}/implot_items.cpp',
-  'imgui/imgui_impl_opengl3.cpp',
+  f'{imgui.SRC_DIR}/imgui_impl_opengl3.cpp',
 ]
 cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/socketcanstream.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
                                                'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',

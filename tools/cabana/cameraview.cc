@@ -307,16 +307,6 @@ void CameraWidget::renderImGui() {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui::NewFrame();
 
-  // Test overlay
-  ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowBgAlpha(0.5f);
-  ImGui::Begin("##imgui_overlay", nullptr,
-               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize |
-               ImGuiWindowFlags_NoSavedSettings);
-  ImGui::Text("ImGui Active");
-  ImGui::Text("%.1f FPS", io.Framerate);
-  ImGui::End();
-
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
