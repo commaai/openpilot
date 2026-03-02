@@ -33,7 +33,7 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
   beginResetModel();
 
   std::mutex lock;
-  const auto prev_sigs = !histories.isEmpty() ? histories.back() : initial_signals;
+  const auto prev_sigs = !histories.empty() ? histories.back() : initial_signals;
   filtered_signals.clear();
   filtered_signals.reserve(prev_sigs.size());
 
@@ -71,11 +71,11 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
 }
 
 void FindSignalModel::undo() {
-  if (!histories.isEmpty()) {
+  if (!histories.empty()) {
     beginResetModel();
     histories.pop_back();
     filtered_signals.clear();
-    if (!histories.isEmpty()) filtered_signals = histories.back();
+    if (!histories.empty()) filtered_signals = histories.back();
     endResetModel();
   }
 }
@@ -186,7 +186,7 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
 }
 
 void FindSignalDlg::search() {
-  if (model->histories.isEmpty()) {
+  if (model->histories.empty()) {
     setInitialSignals();
   }
   auto v1 = value1->text().toDouble();
@@ -260,12 +260,12 @@ void FindSignalDlg::setInitialSignals() {
 }
 
 void FindSignalDlg::modelReset() {
-  properties_group->setEnabled(model->histories.isEmpty());
-  message_group->setEnabled(model->histories.isEmpty());
-  search_btn->setText(model->histories.isEmpty() ? tr("Find") : tr("Find Next"));
-  reset_btn->setEnabled(!model->histories.isEmpty());
+  properties_group->setEnabled(model->histories.empty());
+  message_group->setEnabled(model->histories.empty());
+  search_btn->setText(model->histories.empty() ? tr("Find") : tr("Find Next"));
+  reset_btn->setEnabled(!model->histories.empty());
   undo_btn->setEnabled(model->histories.size() > 1);
-  search_btn->setEnabled(model->rowCount() > 0 || model->histories.isEmpty());
+  search_btn->setEnabled(model->rowCount() > 0 || model->histories.empty());
   stats_label->setVisible(true);
   stats_label->setText(tr("%1 matches. right click on an item to create signal. double click to open message").arg(model->filtered_signals.size()));
 }

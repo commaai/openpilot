@@ -1,6 +1,7 @@
 #include "tools/cabana/tools/findsimilarbits.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 #include <QGridLayout>
 #include <QHeaderView>
@@ -114,10 +115,10 @@ void FindSimilarBitsDlg::find() {
   search_btn->setEnabled(true);
 }
 
-QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx,
-                                                                          int bit_idx, uint8_t find_bus, bool equal, int min_msgs_cnt) {
-  QHash<uint32_t, QVector<uint32_t>> mismatches;
-  QHash<uint32_t, uint32_t> msg_count;
+std::vector<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx,
+                                                                               int bit_idx, uint8_t find_bus, bool equal, int min_msgs_cnt) {
+  std::unordered_map<uint32_t, std::vector<uint32_t>> mismatches;
+  std::unordered_map<uint32_t, uint32_t> msg_count;
   const auto &events = can->allEvents();
   int bit_to_find = -1;
   for (const CanEvent *e : events) {
@@ -143,14 +144,14 @@ QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_
     }
   }
 
-  QList<mismatched_struct> result;
+  std::vector<mismatched_struct> result;
   result.reserve(mismatches.size());
   for (auto it = mismatches.begin(); it != mismatches.end(); ++it) {
-    if (auto cnt = msg_count[it.key()]; cnt > min_msgs_cnt) {
-      auto &mismatched = it.value();
-      for (int i = 0; i < mismatched.size(); ++i) {
+    if (auto cnt = msg_count[it->first]; cnt > (uint32_t)min_msgs_cnt) {
+      auto &mismatched = it->second;
+      for (int i = 0; i < (int)mismatched.size(); ++i) {
         if (float perc = (mismatched[i] / (double)cnt) * 100; perc < 50) {
-          result.push_back({it.key(), (uint32_t)i / 8, (uint32_t)i % 8, mismatched[i], cnt, perc});
+          result.push_back({it->first, (uint32_t)i / 8, (uint32_t)i % 8, mismatched[i], cnt, perc});
         }
       }
     }

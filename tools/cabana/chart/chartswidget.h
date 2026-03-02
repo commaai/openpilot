@@ -81,7 +81,7 @@ private:
   bool eventFilter(QObject *obj, QEvent *event) override;
   void newTab();
   void removeTab(int index);
-  inline QList<ChartView *> &currentCharts() { return tab_charts[tabbar->tabData(tabbar->currentIndex()).toInt()]; }
+  inline std::vector<ChartView *> &currentCharts() { return tab_charts[tabbar->tabData(tabbar->currentIndex()).toInt()]; }
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
 
   QLabel *title_label;
@@ -100,8 +100,8 @@ private:
   QUndoStack *zoom_undo_stack;
 
   ToolButton *remove_all_btn;
-  QList<ChartView *> charts;
-  std::unordered_map<int, QList<ChartView *>> tab_charts;
+  std::vector<ChartView *> charts;
+  std::unordered_map<int, std::vector<ChartView *>> tab_charts;
   TabBar *tabbar;
   ChartsContainer *charts_container;
   QScrollArea *charts_scroll;

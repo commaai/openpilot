@@ -166,7 +166,7 @@ void ChartsWidget::removeTab(int index) {
 void ChartsWidget::updateTabBar() {
   for (int i = 0; i < tabbar->count(); ++i) {
     const auto &charts_in_tab = tab_charts[tabbar->tabData(i).toInt()];
-    tabbar->setTabText(i, QString("Tab %1 (%2)").arg(i + 1).arg(charts_in_tab.count()));
+    tabbar->setTabText(i, QString("Tab %1 (%2)").arg(i + 1).arg((int)charts_in_tab.size()));
   }
 }
 
@@ -204,7 +204,7 @@ void ChartsWidget::showValueTip(double sec) {
 }
 
 void ChartsWidget::updateState() {
-  if (charts.isEmpty()) return;
+  if (charts.empty()) return;
 
   const auto &time_range = can->timeRange();
   const double cur_sec = can->currentSec();
@@ -248,7 +248,7 @@ void ChartsWidget::updateToolBar() {
   redo_zoom_action->setVisible(is_zoomed);
   reset_zoom_action->setVisible(is_zoomed);
   reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(can->timeRange()->first, 0, 'f', 2).arg(can->timeRange()->second, 0, 'f', 2) : "");
-  remove_all_btn->setEnabled(!charts.isEmpty());
+  remove_all_btn->setEnabled(!charts.empty());
 }
 
 void ChartsWidget::settingChanged() {
@@ -282,9 +282,9 @@ ChartView *ChartsWidget::createChart(int pos) {
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, align_timer, qOverload<>(&QTimer::start));
-  pos = std::clamp(pos, 0, charts.size());
-  charts.insert(pos, chart);
-  currentCharts().insert(pos, chart);
+  pos = std::clamp(pos, 0, (int)charts.size());
+  charts.insert(charts.begin() + pos, chart);
+  currentCharts().insert(currentCharts().begin() + pos, chart);
   updateLayout(true);
   updateToolBar();
   return chart;
@@ -303,7 +303,7 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
 
 void ChartsWidget::splitChart(ChartView *src_chart) {
   if (src_chart->sigs.size() > 1) {
-    int pos = charts.indexOf(src_chart) + 1;
+    int pos = std::find(charts.begin(), charts.end(), src_chart) - charts.begin() + 1;
     for (auto it = src_chart->sigs.begin() + 1; it != src_chart->sigs.end(); /**/) {
       auto c = createChart(pos);
       src_chart->chart()->removeSeries(it->series);
@@ -434,7 +434,7 @@ void ChartsWidget::newChart() {
   SignalSelector dlg(tr("New Chart"), this);
   if (dlg.exec() == QDialog::Accepted) {
     auto items = dlg.seletedItems();
-    if (!items.isEmpty()) {
+    if (!items.empty()) {
       auto c = createChart();
       for (auto it : items) {
         c->addSignal(it->msg_id, it->sig);
@@ -444,10 +444,10 @@ void ChartsWidget::newChart() {
 }
 
 void ChartsWidget::removeChart(ChartView *chart) {
-  charts.removeOne(chart);
+  charts.erase(std::remove(charts.begin(), charts.end(), chart), charts.end());
   chart->deleteLater();
   for (auto &[_, list] : tab_charts) {
-    list.removeOne(chart);
+    list.erase(std::remove(list.begin(), list.end(), chart), list.end());
   }
   updateToolBar();
   updateLayout(true);
@@ -461,7 +461,7 @@ void ChartsWidget::removeAll() {
   }
   tab_charts.clear();
 
-  if (!charts.isEmpty()) {
+  if (!charts.empty()) {
     for (auto c : charts) {
       delete c;
     }
@@ -561,10 +561,11 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
     auto chart = qobject_cast<ChartView *>(event->source());
     if (w != chart) {
       for (auto &[_, list] : charts_widget->tab_charts) {
-        list.removeOne(chart);
+        list.erase(std::remove(list.begin(), list.end(), chart), list.end());
       }
-      int to = w ? charts_widget->currentCharts().indexOf(w) + 1 : 0;
-      charts_widget->currentCharts().insert(to, chart);
+      auto &cur = charts_widget->currentCharts();
+      int to = w ? std::find(cur.begin(), cur.end(), w) - cur.begin() + 1 : 0;
+      cur.insert(cur.begin() + to, chart);
       charts_widget->updateLayout(true);
       charts_widget->updateTabBar();
       event->acceptProposedAction();

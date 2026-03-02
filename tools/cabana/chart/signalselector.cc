@@ -102,8 +102,8 @@ void SignalSelector::addItemToList(QListWidget *parent, const MessageId id, cons
   parent->setItemWidget(new_item, label);
 }
 
-QList<SignalSelector::ListItem *> SignalSelector::seletedItems() {
-  QList<SignalSelector::ListItem *> ret;
+std::vector<SignalSelector::ListItem *> SignalSelector::seletedItems() {
+  std::vector<SignalSelector::ListItem *> ret;
   for (int i = 0; i < selected_list->count(); ++i) ret.push_back((ListItem *)selected_list->item(i));
   return ret;
 }

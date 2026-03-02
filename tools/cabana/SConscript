@@ -68,10 +68,8 @@ base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthrea
 
 if arch == "Darwin":
   base_frameworks.append('QtCharts')
-  base_frameworks.append('QtSerialBus')
 else:
   base_libs.append('Qt5Charts')
-  base_libs.append('Qt5SerialBus')
 
 qt_libs = base_libs
 

@@ -1,10 +1,5 @@
 #pragma once
 
-#include <memory>
-
-#include <QtSerialBus/QCanBus>
-#include <QtSerialBus/QCanBusDevice>
-#include <QtSerialBus/QCanBusDeviceInfo>
 #include <QComboBox>
 
 #include "tools/cabana/streams/livestream.h"
@@ -17,7 +12,7 @@ class SocketCanStream : public LiveStream {
   Q_OBJECT
 public:
   SocketCanStream(QObject *parent, SocketCanStreamConfig config_ = {});
-  ~SocketCanStream() { stop(); }
+  ~SocketCanStream();
   static bool available();
 
   inline std::string routeName() const override {
@@ -29,7 +24,7 @@ protected:
   bool connect();
 
   SocketCanStreamConfig config = {};
-  std::unique_ptr<QCanBusDevice> device;
+  int sock_fd = -1;
 };
 
 class OpenSocketCanWidget : public AbstractOpenStreamWidget {
