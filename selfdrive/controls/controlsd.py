@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import math
+from collections import deque
 from numbers import Number
 
 from cereal import car, log
@@ -10,6 +11,10 @@ from openpilot.common.realtime import config_realtime_process, DT_CTRL, Priority
 from openpilot.common.swaglog import cloudlog
 
 from opendbc.car.car_helpers import interfaces
+
+# ISO 11270: lateral jerk is averaged over this window
+JERK_WINDOW = 0.5  # seconds
+JERK_FRAMES = round(JERK_WINDOW / DT_CTRL)  # 50 frames at 100Hz
 from opendbc.car.vehicle_model import VehicleModel
 from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
@@ -44,6 +49,9 @@ class Controls:
     self.steer_limited_by_safety = False
     self.curvature = 0.0
     self.desired_curvature = 0.0
+
+    self.curvature_history = deque([0.0] * JERK_FRAMES, maxlen=JERK_FRAMES)
+    self.lat_active_prev = False
 
     self.pose_calibrator = PoseCalibrator()
     self.calibrated_pose: Pose | None = None
@@ -116,8 +124,13 @@ class Controls:
 
     # Steering PID loop and lateral MPC
     # Reset desired curvature to current to avoid violating the limits on engage
+    if CC.latActive and not self.lat_active_prev:
+      self.curvature_history = deque([self.curvature] * JERK_FRAMES, maxlen=JERK_FRAMES)
+    self.lat_active_prev = CC.latActive
+
     new_desired_curvature = model_v2.action.desiredCurvature if CC.latActive else self.curvature
-    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, new_desired_curvature, lp.roll)
+    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.curvature_history[0], new_desired_curvature, lp.roll, dt=JERK_WINDOW)
+    self.curvature_history.append(self.desired_curvature)
     lat_delay = self.sm["liveDelay"].lateralDelay + LAT_SMOOTH_SECONDS
 
     actuators.curvature = self.desired_curvature
