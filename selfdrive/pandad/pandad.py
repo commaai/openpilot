@@ -4,10 +4,8 @@ import os
 import usb1
 import time
 import signal
-import subprocess
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, McuType, FW_PATH
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
@@ -67,12 +65,13 @@ def main() -> None:
     cloudlog.info(f"Caught signal {signum}, exiting")
     nonlocal do_exit
     do_exit = True
-    if process is not None:
-      process.send_signal(signal.SIGINT)
+    # Also tell the daemon to exit
+    import openpilot.selfdrive.pandad.pandad_daemon as daemon_mod
+    daemon_mod.do_exit = True
 
-  process = None
   do_exit = False
   signal.signal(signal.SIGINT, signal_handler)
+  signal.signal(signal.SIGTERM, signal_handler)
 
   count = 0
   first_run = True
@@ -153,10 +152,10 @@ def main() -> None:
 
     first_run = False
 
-    # run pandad with all connected serials as arguments
+    # run Python pandad daemon
     os.environ['MANAGER_DAEMON'] = 'pandad'
-    process = subprocess.Popen(["./pandad", panda_serial], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
-    process.wait()
+    from openpilot.selfdrive.pandad.pandad_daemon import pandad_main_thread
+    pandad_main_thread(panda_serial)
 
 
 if __name__ == "__main__":
