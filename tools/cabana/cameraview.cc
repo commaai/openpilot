@@ -197,7 +197,9 @@ void CameraWidget::paintGL() {
 
   shader_program_->release();
 
-  renderImGui();
+  imguiBeginFrame();
+  drawImGuiOverlays();
+  imguiEndFrame();
 }
 
 void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -297,7 +299,7 @@ void CameraWidget::initImGui() {
   imgui_initialized = true;
 }
 
-void CameraWidget::renderImGui() {
+void CameraWidget::imguiBeginFrame() {
   if (!imgui_initialized) return;
 
   ImGuiIO &io = ImGui::GetIO();
@@ -306,6 +308,10 @@ void CameraWidget::renderImGui() {
 
   ImGui_ImplOpenGL3_NewFrame();
   ImGui::NewFrame();
+}
+
+void CameraWidget::imguiEndFrame() {
+  if (!imgui_initialized) return;
 
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

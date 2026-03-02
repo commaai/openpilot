@@ -41,7 +41,9 @@ protected:
   void vipcThread();
   void clearFrames();
   void initImGui();
-  void renderImGui();
+  void imguiBeginFrame();
+  void imguiEndFrame();
+  virtual void drawImGuiOverlays() {}
 
   bool imgui_initialized = false;
 

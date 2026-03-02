@@ -508,7 +508,7 @@ wheels = [
 [[package]]
 name = "imgui"
 version = "1.92.7"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=releases#2e5774ef32ff902c2f3f7268eb60ceb53f04b3e4" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=master#2e9aed768a3ec2bdc6d18313b86b422969460b61" }
 
 [[package]]
 name = "iniconfig"
@@ -889,7 +889,7 @@ requires-dist = [
     { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
     { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
-    { name = "imgui", git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=releases" },
+    { name = "imgui", git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=master" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
