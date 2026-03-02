@@ -506,6 +506,11 @@ wheels = [
 ]
 
 [[package]]
+name = "imgui"
+version = "1.92.7"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=imgui-package#5c0e851a4f6f7c9964acc667ddfb7cffd5459f44" }
+
+[[package]]
 name = "iniconfig"
 version = "2.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -801,6 +806,7 @@ dependencies = [
     { name = "eigen" },
     { name = "ffmpeg" },
     { name = "git-lfs" },
+    { name = "imgui" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "json-rpc" },
@@ -883,6 +889,7 @@ requires-dist = [
     { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
     { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
+    { name = "imgui", git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=imgui-package" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },

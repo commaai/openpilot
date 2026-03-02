@@ -74,6 +74,7 @@ dependencies = [
 
   # ui
   "raylib @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=raylib",
+  "imgui @ git+https://github.com/commaai/dependencies.git@imgui-package#subdirectory=imgui",
   "qrcode",
   "jeepney",
 ]

@@ -48,6 +48,7 @@ if arch != "larch64":
   import ncurses
   import openssl3
   import python3_dev
+  import imgui
   import raylib
   import zeromq
   import zstd
