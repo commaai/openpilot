@@ -282,6 +282,15 @@ class TrainingGuide(NavWidget):
 
     self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack
 
+  def show_event(self):
+    # Onboarding sets these. This is for previewing the training guide in settings
+    super().show_event()
+    device.set_override_interactive_timeout(300)
+
+  def hide_event(self):
+    super().hide_event()
+    device.set_override_interactive_timeout(None)
+
   def _render(self, _):
     self._steps[0].render(self._rect)
 
@@ -388,6 +397,7 @@ class OnboardingWindow(Widget):
 
   def hide_event(self):
     super().hide_event()
+    # FIXME: when nav stack sends hide event to widget 2 below on push, this needs to be moved
     device.set_override_interactive_timeout(None)
     device.set_offroad_brightness(None)
 
@@ -397,7 +407,6 @@ class OnboardingWindow(Widget):
 
   def close(self):
     ui_state.params.put_bool("IsDriverViewEnabled", False)
-    # gui_app.pop_widgets_to(self)
     self._completed_callback()
 
   def _on_terms_accepted(self):
