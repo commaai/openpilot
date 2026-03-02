@@ -364,7 +364,7 @@ class TermsPage(Scroller):
 
 
 class OnboardingWindow(Widget):
-  def __init__(self, completed_callback):
+  def __init__(self, completed_callback: Callable[[], None]):
     super().__init__()
     self._completed_callback = completed_callback
     self._accepted_terms: bool = ui_state.params.get("HasAcceptedTerms") == terms_version
