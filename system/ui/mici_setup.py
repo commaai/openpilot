@@ -56,6 +56,7 @@ class NetworkConnectivityMonitor:
     self.wifi_connected = threading.Event()
     self._should_check = should_check or (lambda: True)
     self._stop_event = threading.Event()
+    self._recheck_event = threading.Event()
     self._thread: threading.Thread | None = None
 
   def start(self):
@@ -73,6 +74,7 @@ class NetworkConnectivityMonitor:
   def reset(self):
     self.network_connected.clear()
     self.wifi_connected.clear()
+    self._recheck_event.set()
 
   def _run(self):
     while not self._stop_event.is_set():
@@ -80,7 +82,11 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
-          time.sleep(2)
+
+          if self._recheck_event.is_set():
+            self._recheck_event.clear()
+            continue
+
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -354,6 +360,7 @@ class NetworkSetupPage(NavScroller):
     self._custom_software = False
     self._prev_has_internet = False
     self._wifi_ui = WifiUIMici(self._wifi_manager)
+    self._wifi_ui.set_back_callback(self._network_monitor.reset)
 
     self._connect_button = GreyBigButton("connect to\ninternet", "swipe down to go back",
                                          gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True))
@@ -438,7 +445,10 @@ class NetworkSetupPage(NavScroller):
       self._pending_wifi_grow_animation = False
       self._wifi_button.trigger_grow_animation()
 
-    if self._network_monitor.network_connected.is_set():
+    wifi_ui_showing = gui_app.get_active_widget() == self._wifi_ui
+    has_internet = self._network_monitor.network_connected.is_set() and not wifi_ui_showing
+
+    if has_internet:
       self._continue_button.set_visible(True)
       self._waiting_button.set_visible(False)
     else:
