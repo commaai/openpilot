@@ -113,12 +113,24 @@ function install_python_deps() {
   source .venv/bin/activate
 }
 
+function install_macos_deps() {
+  if ! command -v brew > /dev/null 2>&1; then
+    echo "homebrew not found, skipping macOS system dependency install"
+    return 0
+  fi
+
+  if ! command -v cmake > /dev/null 2>&1; then
+    brew install cmake
+  fi
+}
+
 # --- Main ---
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   install_ubuntu_deps
   echo "[ ] installed system dependencies t=$SECONDS"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
+  install_macos_deps
   if [[ $SHELL == "/bin/zsh" ]]; then
     RC_FILE="$HOME/.zshrc"
   elif [[ $SHELL == "/bin/bash" ]]; then

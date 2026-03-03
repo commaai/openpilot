@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -47,8 +48,8 @@ private:
   void drawTime(QPainter &p, const QRect &rect, double seconds);
 
   QPropertyAnimation *fade_animation;
-  QMap<uint64_t, QPixmap> big_thumbnails;
-  QMap<uint64_t, QPixmap> thumbnails;
+  std::map<uint64_t, QPixmap> big_thumbnails;
+  std::map<uint64_t, QPixmap> thumbnails;
   double thumbnail_dispaly_time = -1;
   friend class VideoWidget;
 };
