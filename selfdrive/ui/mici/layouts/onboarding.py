@@ -285,6 +285,7 @@ class TrainingGuide(NavWidget):
   def show_event(self):
     # Onboarding sets these. This is for previewing the training guide in settings
     super().show_event()
+    self._steps[0].show_event()
     device.set_override_interactive_timeout(300)
 
   def hide_event(self):
