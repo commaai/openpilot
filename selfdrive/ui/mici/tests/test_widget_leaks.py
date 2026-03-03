@@ -68,7 +68,9 @@ def test_dialogs_do_not_leak():
 
   for ctor in (
     # mici
-    MiciDriverCameraDialog, MiciTrainingGuide, MiciOnboardingWindow, MiciPairingDialog,
+    MiciDriverCameraDialog, MiciPairingDialog,
+    lambda: MiciTrainingGuide(lambda: None),
+    lambda: MiciOnboardingWindow(lambda: None),
     lambda: BigDialog("test", "test"),
     lambda: BigConfirmationDialogV2("test", "icons_mici/settings/network/new/trash.png"),
     lambda: BigInputDialog("test"),
