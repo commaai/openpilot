@@ -393,6 +393,8 @@ class NetworkSetupPageBase(Scroller):
     self._show_time = rl.get_time()
     self._prev_has_internet = False
     self._pending_has_internet_scroll = False
+    self._pending_continue_grow_animation = False
+    self._pending_wifi_grow_animation = False
 
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
