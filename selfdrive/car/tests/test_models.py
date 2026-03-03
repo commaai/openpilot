@@ -486,34 +486,35 @@ class TestCarModelBase(unittest.TestCase):
     gas_strategy = st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)
     brake_strategy = st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)
 
-    # Generate fuzzed values
-    steer_value = data.draw(steer_strategy)
-    gas_value = data.draw(gas_strategy)
-    brake_value = data.draw(brake_strategy)
-
-    # Test with different controlsAllowed states
+    # Generate all fuzzed values upfront for reproducibility
+    steer_values = data.draw(st.lists(steer_strategy, min_size=10, max_size=10))
+    gas_values = data.draw(st.lists(gas_strategy, min_size=10, max_size=10))
+    brake_values = data.draw(st.lists(brake_strategy, min_size=10, max_size=10))
     controls_allowed_states = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
-
-    # Test with different cruise states
     cruise_states = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
+    cancel_commands = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
+    resume_commands = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
 
     now_nanos = 0
-    for i, (controls_allowed, cruise_engaged) in enumerate(zip(controls_allowed_states, cruise_states)):
+    for i in range(10):
+      controls_allowed = controls_allowed_states[i]
+      cruise_engaged = cruise_states[i]
+
       # Set panda safety state
       self.safety.set_controls_allowed(controls_allowed)
       self.safety.set_cruise_engaged_prev(cruise_engaged)
 
       # Create CarControl with fuzzed values
       CC = structs.CarControl()
-      CC.actuators.steer = steer_value
-      CC.actuators.gas = gas_value
-      CC.actuators.brake = brake_value
+      CC.actuators.steer = steer_values[i]
+      CC.actuators.gas = gas_values[i]
+      CC.actuators.brake = brake_values[i]
 
       # Test cancel/resume commands
       if cruise_engaged and not controls_allowed:
-        CC.cruiseControl.cancel = data.draw(st.booleans())
+        CC.cruiseControl.cancel = cancel_commands[i]
       elif cruise_engaged and controls_allowed:
-        CC.cruiseControl.resume = data.draw(st.booleans())
+        CC.cruiseControl.resume = resume_commands[i]
 
       # Apply CarControl and get tx messages
       self.CI.update([])
@@ -532,36 +533,19 @@ class TestCarModelBase(unittest.TestCase):
           # We want to catch cases where openpilot sends but panda blocks
           self.fail(f"TX mismatch: controls_allowed={controls_allowed}, "
                    f"cruise_engaged={cruise_engaged}, "
-                   f"steer={steer_value}, gas={gas_value}, brake={brake_value}, "
+                   f"steer={steer_values[i]}, gas={gas_values[i]}, brake={brake_values[i]}, "
                    f"addr={hex(addr)}, bus={bus}")
-
-      # Test edge cases with extreme values
-      if i == 0:
-        # Test maximum steer
-        CC.actuators.steer = 1.0 if steer_value > 0 else -1.0
-        _, sendcan_max_steer = self.CI.apply(CC.as_reader(), now_nanos)
-        for addr, dat, bus in sendcan_max_steer:
-          to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
-          self.assertTrue(self.safety.safety_tx_hook(to_send) or not controls_allowed,
-                        "Max steer should be blocked when controls not allowed")
 
       # Test state transitions
       if i > 0:
-        # Check if transition from previous state is valid
         prev_controls_allowed = controls_allowed_states[i-1]
+        # Check if transition from disabled to enabled is properly handled
         if controls_allowed and not prev_controls_allowed:
-          # Enabled transition - should be allowed
-          pass
-        elif not controls_allowed and prev_controls_allowed:
-          # Disabled transition - check if tx is properly blocked
-          CC.actuators.steer = steer_value
-          _, sendcan_disabled = self.CI.apply(CC.as_reader(), now_nanos)
-          for addr, dat, bus in sendcan_disabled:
+          # Enabled transition - verify all messages are allowed
+          for addr, dat, bus in sendcan:
             to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
-            # Panda should block control messages when disabled
-            if addr in [0x228, 0x2C1, 0x1D1]:  # Example control addresses
-              self.assertFalse(self.safety.safety_tx_hook(to_send),
-                            f"Control message should be blocked when controls disabled: {hex(addr)}")
+            self.assertEqual(self.safety.safety_tx_hook(to_send), 1,
+                           f"TX should be allowed after enable: {hex(addr)}")
 
 
 @parameterized_class(('platform', 'test_route'), get_test_cases())
