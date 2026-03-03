@@ -116,12 +116,12 @@ wheels = [
 [[package]]
 name = "bzip2"
 version = "1.0.8"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "capnproto"
 version = "1.0.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "casadi"
@@ -360,16 +360,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dearpygui"
-version = "2.2"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/c8/b4afdac89c7bf458513366af3143f7383d7b09721637989c95788d93e24c/dearpygui-2.2-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:34ceae1ca1b65444e49012d6851312e44f08713da1b8cc0150cf41f1c207af9c", size = 1931443, upload-time = "2026-02-17T14:21:54.394Z" },
-    { url = "https://files.pythonhosted.org/packages/43/93/a2d083b2e0edb095be815662cc41e40cf9ea7b65d6323e47bb30df7eb284/dearpygui-2.2-cp312-cp312-manylinux1_x86_64.whl", hash = "sha256:e1fae9ae59fec0e41773df64c80311a6ba67696219dde5506a2a4c013e8bcdfa", size = 2592645, upload-time = "2026-02-17T14:22:02.869Z" },
-    { url = "https://files.pythonhosted.org/packages/80/ba/eae13acaad479f522db853e8b1ccd695a7bc8da2b9685c1d70a3b318df89/dearpygui-2.2-cp312-cp312-win_amd64.whl", hash = "sha256:7d399543b5a26ab6426ef3bbd776e55520b491b3e169647bde5e6b2de3701b35", size = 1830531, upload-time = "2026-02-17T14:21:43.386Z" },
-]
-
-[[package]]
 name = "dnspython"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -381,7 +371,7 @@ wheels = [
 [[package]]
 name = "eigen"
 version = "3.4.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "execnet"
@@ -395,7 +385,7 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "fonttools"
@@ -442,7 +432,7 @@ wheels = [
 [[package]]
 name = "gcc-arm-none-eabi"
 version = "13.2.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "ghp-import"
@@ -459,7 +449,7 @@ wheels = [
 [[package]]
 name = "git-lfs"
 version = "3.6.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "google-crc32c"
@@ -504,6 +494,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/e8/ac/fb4c578f4a3256561
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9c/1f/19ebc343cc71a7ffa78f17018535adc5cbdd87afb31d7c34874680148b32/ifaddr-0.2.0-py3-none-any.whl", hash = "sha256:085e0305cfe6f16ab12d72e2024030f5d52674afad6911bb1eee207177b8a748", size = 12314, upload-time = "2022-06-15T21:40:25.756Z" },
 ]
+
+[[package]]
+name = "imgui"
+version = "1.92.7"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "iniconfig"
@@ -577,7 +572,7 @@ wheels = [
 [[package]]
 name = "libjpeg"
 version = "3.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "libusb1"
@@ -593,7 +588,7 @@ wheels = [
 [[package]]
 name = "libyuv"
 version = "1922.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "markdown"
@@ -745,7 +740,7 @@ wheels = [
 [[package]]
 name = "ncurses"
 version = "6.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "numpy"
@@ -860,7 +855,7 @@ testing = [
     { name = "ty" },
 ]
 tools = [
-    { name = "dearpygui", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "imgui" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'" },
 ]
 
@@ -877,12 +872,12 @@ requires-dist = [
     { name = "coverage", marker = "extra == 'testing'" },
     { name = "crcmod-plus" },
     { name = "cython" },
-    { name = "dearpygui", marker = "(platform_machine != 'aarch64' and extra == 'tools') or (sys_platform != 'linux' and extra == 'tools')", specifier = ">=2.1.0" },
     { name = "eigen", git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases" },
     { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases" },
     { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
     { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
+    { name = "imgui", marker = "extra == 'tools'", git = "https://github.com/commaai/dependencies.git?subdirectory=imgui&rev=releases" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "jinja2", marker = "extra == 'docs'" },
@@ -935,7 +930,7 @@ provides-extras = ["docs", "testing", "dev", "tools"]
 [[package]]
 name = "openssl3"
 version = "3.4.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "packaging"
@@ -1306,7 +1301,7 @@ wheels = [
 [[package]]
 name = "python3-dev"
 version = "3.12.8"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "pyyaml"
@@ -1373,8 +1368,8 @@ wheels = [
 
 [[package]]
 name = "raylib"
-version = "5.5.0.4"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=raylib&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+version = "5.5.0.8"
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=raylib&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 dependencies = [
     { name = "cffi" },
 ]
@@ -1633,38 +1628,40 @@ wheels = [
 
 [[package]]
 name = "yarl"
-version = "1.22.0"
+version = "1.23.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "idna" },
     { name = "multidict" },
     { name = "propcache" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/57/63/0c6ebca57330cd313f6102b16dd57ffaf3ec4c83403dcb45dbd15c6f3ea1/yarl-1.22.0.tar.gz", hash = "sha256:bebf8557577d4401ba8bd9ff33906f1376c877aa78d1fe216ad01b4d6745af71", size = 187169, upload-time = "2025-10-06T14:12:55.963Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/23/6e/beb1beec874a72f23815c1434518bfc4ed2175065173fb138c3705f658d4/yarl-1.23.0.tar.gz", hash = "sha256:53b1ea6ca88ebd4420379c330aea57e258408dd0df9af0992e5de2078dc9f5d5", size = 194676, upload-time = "2026-03-01T22:07:53.373Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/75/ff/46736024fee3429b80a165a732e38e5d5a238721e634ab41b040d49f8738/yarl-1.22.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:e340382d1afa5d32b892b3ff062436d592ec3d692aeea3bef3a5cfe11bbf8c6f", size = 142000, upload-time = "2025-10-06T14:09:44.631Z" },
-    { url = "https://files.pythonhosted.org/packages/5a/9a/b312ed670df903145598914770eb12de1bac44599549b3360acc96878df8/yarl-1.22.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:f1e09112a2c31ffe8d80be1b0988fa6a18c5d5cad92a9ffbb1c04c91bfe52ad2", size = 94338, upload-time = "2025-10-06T14:09:46.372Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/f5/0601483296f09c3c65e303d60c070a5c19fcdbc72daa061e96170785bc7d/yarl-1.22.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:939fe60db294c786f6b7c2d2e121576628468f65453d86b0fe36cb52f987bd74", size = 94909, upload-time = "2025-10-06T14:09:48.648Z" },
-    { url = "https://files.pythonhosted.org/packages/60/41/9a1fe0b73dbcefce72e46cf149b0e0a67612d60bfc90fb59c2b2efdfbd86/yarl-1.22.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:e1651bf8e0398574646744c1885a41198eba53dc8a9312b954073f845c90a8df", size = 372940, upload-time = "2025-10-06T14:09:50.089Z" },
-    { url = "https://files.pythonhosted.org/packages/17/7a/795cb6dfee561961c30b800f0ed616b923a2ec6258b5def2a00bf8231334/yarl-1.22.0-cp312-cp312-manylinux2014_armv7l.manylinux_2_17_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:b8a0588521a26bf92a57a1705b77b8b59044cdceccac7151bd8d229e66b8dedb", size = 345825, upload-time = "2025-10-06T14:09:52.142Z" },
-    { url = "https://files.pythonhosted.org/packages/d7/93/a58f4d596d2be2ae7bab1a5846c4d270b894958845753b2c606d666744d3/yarl-1.22.0-cp312-cp312-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:42188e6a615c1a75bcaa6e150c3fe8f3e8680471a6b10150c5f7e83f47cc34d2", size = 386705, upload-time = "2025-10-06T14:09:54.128Z" },
-    { url = "https://files.pythonhosted.org/packages/61/92/682279d0e099d0e14d7fd2e176bd04f48de1484f56546a3e1313cd6c8e7c/yarl-1.22.0-cp312-cp312-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:f6d2cb59377d99718913ad9a151030d6f83ef420a2b8f521d94609ecc106ee82", size = 396518, upload-time = "2025-10-06T14:09:55.762Z" },
-    { url = "https://files.pythonhosted.org/packages/db/0f/0d52c98b8a885aeda831224b78f3be7ec2e1aa4a62091f9f9188c3c65b56/yarl-1.22.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:50678a3b71c751d58d7908edc96d332af328839eea883bb554a43f539101277a", size = 377267, upload-time = "2025-10-06T14:09:57.958Z" },
-    { url = "https://files.pythonhosted.org/packages/22/42/d2685e35908cbeaa6532c1fc73e89e7f2efb5d8a7df3959ea8e37177c5a3/yarl-1.22.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:1e8fbaa7cec507aa24ea27a01456e8dd4b6fab829059b69844bd348f2d467124", size = 365797, upload-time = "2025-10-06T14:09:59.527Z" },
-    { url = "https://files.pythonhosted.org/packages/a2/83/cf8c7bcc6355631762f7d8bdab920ad09b82efa6b722999dfb05afa6cfac/yarl-1.22.0-cp312-cp312-musllinux_1_2_armv7l.whl", hash = "sha256:433885ab5431bc3d3d4f2f9bd15bfa1614c522b0f1405d62c4f926ccd69d04fa", size = 365535, upload-time = "2025-10-06T14:10:01.139Z" },
-    { url = "https://files.pythonhosted.org/packages/25/e1/5302ff9b28f0c59cac913b91fe3f16c59a033887e57ce9ca5d41a3a94737/yarl-1.22.0-cp312-cp312-musllinux_1_2_ppc64le.whl", hash = "sha256:b790b39c7e9a4192dc2e201a282109ed2985a1ddbd5ac08dc56d0e121400a8f7", size = 382324, upload-time = "2025-10-06T14:10:02.756Z" },
-    { url = "https://files.pythonhosted.org/packages/bf/cd/4617eb60f032f19ae3a688dc990d8f0d89ee0ea378b61cac81ede3e52fae/yarl-1.22.0-cp312-cp312-musllinux_1_2_s390x.whl", hash = "sha256:31f0b53913220599446872d757257be5898019c85e7971599065bc55065dc99d", size = 383803, upload-time = "2025-10-06T14:10:04.552Z" },
-    { url = "https://files.pythonhosted.org/packages/59/65/afc6e62bb506a319ea67b694551dab4a7e6fb7bf604e9bd9f3e11d575fec/yarl-1.22.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:a49370e8f711daec68d09b821a34e1167792ee2d24d405cbc2387be4f158b520", size = 374220, upload-time = "2025-10-06T14:10:06.489Z" },
-    { url = "https://files.pythonhosted.org/packages/e7/3d/68bf18d50dc674b942daec86a9ba922d3113d8399b0e52b9897530442da2/yarl-1.22.0-cp312-cp312-win32.whl", hash = "sha256:70dfd4f241c04bd9239d53b17f11e6ab672b9f1420364af63e8531198e3f5fe8", size = 81589, upload-time = "2025-10-06T14:10:09.254Z" },
-    { url = "https://files.pythonhosted.org/packages/c8/9a/6ad1a9b37c2f72874f93e691b2e7ecb6137fb2b899983125db4204e47575/yarl-1.22.0-cp312-cp312-win_amd64.whl", hash = "sha256:8884d8b332a5e9b88e23f60bb166890009429391864c685e17bd73a9eda9105c", size = 87213, upload-time = "2025-10-06T14:10:11.369Z" },
-    { url = "https://files.pythonhosted.org/packages/44/c5/c21b562d1680a77634d748e30c653c3ca918beb35555cff24986fff54598/yarl-1.22.0-cp312-cp312-win_arm64.whl", hash = "sha256:ea70f61a47f3cc93bdf8b2f368ed359ef02a01ca6393916bc8ff877427181e74", size = 81330, upload-time = "2025-10-06T14:10:13.112Z" },
-    { url = "https://files.pythonhosted.org/packages/73/ae/b48f95715333080afb75a4504487cbe142cae1268afc482d06692d605ae6/yarl-1.22.0-py3-none-any.whl", hash = "sha256:1380560bdba02b6b6c90de54133c81c9f2a453dee9912fe58c1dcced1edb7cff", size = 46814, upload-time = "2025-10-06T14:12:53.872Z" },
+    { url = "https://files.pythonhosted.org/packages/88/8a/94615bc31022f711add374097ad4144d569e95ff3c38d39215d07ac153a0/yarl-1.23.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:1932b6b8bba8d0160a9d1078aae5838a66039e8832d41d2992daa9a3a08f7860", size = 124737, upload-time = "2026-03-01T22:05:12.897Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/6f/c6554045d59d64052698add01226bc867b52fe4a12373415d7991fdca95d/yarl-1.23.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:411225bae281f114067578891bc75534cfb3d92a3b4dfef7a6ca78ba354e6069", size = 87029, upload-time = "2026-03-01T22:05:14.376Z" },
+    { url = "https://files.pythonhosted.org/packages/19/2a/725ecc166d53438bc88f76822ed4b1e3b10756e790bafd7b523fe97c322d/yarl-1.23.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:13a563739ae600a631c36ce096615fe307f131344588b0bc0daec108cdb47b25", size = 86310, upload-time = "2026-03-01T22:05:15.71Z" },
+    { url = "https://files.pythonhosted.org/packages/99/30/58260ed98e6ff7f90ba84442c1ddd758c9170d70327394a6227b310cd60f/yarl-1.23.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:9cbf44c5cb4a7633d078788e1b56387e3d3cf2b8139a3be38040b22d6c3221c8", size = 97587, upload-time = "2026-03-01T22:05:17.384Z" },
+    { url = "https://files.pythonhosted.org/packages/76/0a/8b08aac08b50682e65759f7f8dde98ae8168f72487e7357a5d684c581ef9/yarl-1.23.0-cp312-cp312-manylinux2014_armv7l.manylinux_2_17_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:53ad387048f6f09a8969631e4de3f1bf70c50e93545d64af4f751b2498755072", size = 92528, upload-time = "2026-03-01T22:05:18.804Z" },
+    { url = "https://files.pythonhosted.org/packages/52/07/0b7179101fe5f8385ec6c6bb5d0cb9f76bd9fb4a769591ab6fb5cdbfc69a/yarl-1.23.0-cp312-cp312-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:4a59ba56f340334766f3a4442e0efd0af895fae9e2b204741ef885c446b3a1a8", size = 105339, upload-time = "2026-03-01T22:05:20.235Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/8a/36d82869ab5ec829ca8574dfcb92b51286fcfb1e9c7a73659616362dc880/yarl-1.23.0-cp312-cp312-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:803a3c3ce4acc62eaf01eaca1208dcf0783025ef27572c3336502b9c232005e7", size = 105061, upload-time = "2026-03-01T22:05:22.268Z" },
+    { url = "https://files.pythonhosted.org/packages/66/3e/868e5c3364b6cee19ff3e1a122194fa4ce51def02c61023970442162859e/yarl-1.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a3d2bff8f37f8d0f96c7ec554d16945050d54462d6e95414babaa18bfafc7f51", size = 100132, upload-time = "2026-03-01T22:05:23.638Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/26/9c89acf82f08a52cb52d6d39454f8d18af15f9d386a23795389d1d423823/yarl-1.23.0-cp312-cp312-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:c75eb09e8d55bceb4367e83496ff8ef2bc7ea6960efb38e978e8073ea59ecb67", size = 99289, upload-time = "2026-03-01T22:05:25.749Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/54/5b0db00d2cb056922356104468019c0a132e89c8d3ab67d8ede9f4483d2a/yarl-1.23.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:877b0738624280e34c55680d6054a307aa94f7d52fa0e3034a9cc6e790871da7", size = 96950, upload-time = "2026-03-01T22:05:27.318Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/40/10fa93811fd439341fad7e0718a86aca0de9548023bbb403668d6555acab/yarl-1.23.0-cp312-cp312-musllinux_1_2_armv7l.whl", hash = "sha256:b5405bb8f0e783a988172993cfc627e4d9d00432d6bbac65a923041edacf997d", size = 93960, upload-time = "2026-03-01T22:05:28.738Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/d2/8ae2e6cd77d0805f4526e30ec43b6f9a3dfc542d401ac4990d178e4bf0cf/yarl-1.23.0-cp312-cp312-musllinux_1_2_ppc64le.whl", hash = "sha256:1c3a3598a832590c5a3ce56ab5576361b5688c12cb1d39429cf5dba30b510760", size = 104703, upload-time = "2026-03-01T22:05:30.438Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/0c/b3ceacf82c3fe21183ce35fa2acf5320af003d52bc1fcf5915077681142e/yarl-1.23.0-cp312-cp312-musllinux_1_2_riscv64.whl", hash = "sha256:8419ebd326430d1cbb7efb5292330a2cf39114e82df5cc3d83c9a0d5ebeaf2f2", size = 98325, upload-time = "2026-03-01T22:05:31.835Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/e0/12900edd28bdab91a69bd2554b85ad7b151f64e8b521fe16f9ad2f56477a/yarl-1.23.0-cp312-cp312-musllinux_1_2_s390x.whl", hash = "sha256:be61f6fff406ca40e3b1d84716fde398fc08bc63dd96d15f3a14230a0973ed86", size = 105067, upload-time = "2026-03-01T22:05:33.358Z" },
+    { url = "https://files.pythonhosted.org/packages/15/61/74bb1182cf79c9bbe4eb6b1f14a57a22d7a0be5e9cedf8e2d5c2086474c3/yarl-1.23.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:3ceb13c5c858d01321b5d9bb65e4cf37a92169ea470b70fec6f236b2c9dd7e34", size = 100285, upload-time = "2026-03-01T22:05:35.4Z" },
+    { url = "https://files.pythonhosted.org/packages/69/7f/cd5ef733f2550de6241bd8bd8c3febc78158b9d75f197d9c7baa113436af/yarl-1.23.0-cp312-cp312-win32.whl", hash = "sha256:fffc45637bcd6538de8b85f51e3df3223e4ad89bccbfca0481c08c7fc8b7ed7d", size = 82359, upload-time = "2026-03-01T22:05:36.811Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/be/25216a49daeeb7af2bec0db22d5e7df08ed1d7c9f65d78b14f3b74fd72fc/yarl-1.23.0-cp312-cp312-win_amd64.whl", hash = "sha256:f69f57305656a4852f2a7203efc661d8c042e6cc67f7acd97d8667fb448a426e", size = 87674, upload-time = "2026-03-01T22:05:38.171Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/35/aeab955d6c425b227d5b7247eafb24f2653fedc32f95373a001af5dfeb9e/yarl-1.23.0-cp312-cp312-win_arm64.whl", hash = "sha256:6e87a6e8735b44816e7db0b2fbc9686932df473c826b0d9743148432e10bb9b9", size = 81879, upload-time = "2026-03-01T22:05:40.006Z" },
+    { url = "https://files.pythonhosted.org/packages/69/68/c8739671f5699c7dc470580a4f821ef37c32c4cb0b047ce223a7f115757f/yarl-1.23.0-py3-none-any.whl", hash = "sha256:a2df6afe50dea8ae15fa34c9f824a3ee958d785fd5d089063d960bae1daa0a3f", size = 48288, upload-time = "2026-03-01T22:07:51.388Z" },
 ]
 
 [[package]]
 name = "zeromq"
 version = "4.3.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }
 
 [[package]]
 name = "zstandard"
@@ -1694,4 +1691,4 @@ wheels = [
 [[package]]
 name = "zstd"
 version = "1.5.6"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases#c6a5d6b395c2e68b85584e935fe3e6a32252cb5b" }

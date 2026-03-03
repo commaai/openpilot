@@ -6,12 +6,15 @@
 #include <string>
 #include <utility>
 
+#include <QMouseEvent>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
 #include <QThread>
 
 #include "msgq/visionipc/visionipc_client.h"
+
+struct ImFont;
 
 class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
@@ -34,9 +37,19 @@ protected:
   void paintGL() override;
   void initializeGL() override;
   void showEvent(QShowEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
+  void mousePressEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
   void vipcThread();
   void clearFrames();
+  void initImGui();
+  void imguiBeginFrame();
+  void imguiEndFrame();
+  virtual void drawImGuiOverlays() {}
+
+  bool imgui_initialized = false;
+  ImFont *imgui_font_regular = nullptr;
+  ImFont *imgui_font_bold = nullptr;
 
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];

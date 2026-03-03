@@ -7,7 +7,7 @@
 #include <utility>
 
 #include <QFrame>
-#include <QPropertyAnimation>
+#include <QImage>
 #include <QSlider>
 #include <QToolBar>
 #include <QTabBar>
@@ -36,20 +36,20 @@ class StreamCameraView : public CameraWidget {
 
 public:
   StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent = nullptr);
-  void paintGL() override;
-  void showPausedOverlay() { fade_animation->start(); }
+  ~StreamCameraView();
+  void showPausedOverlay() { update(); }
   void parseQLog(std::shared_ptr<LogReader> qlog);
 
-private:
-  QPixmap generateThumbnail(QPixmap thumbnail, double seconds);
-  void drawAlert(QPainter &p, const QRect &rect, const Timeline::Entry &alert);
-  void drawThumbnail(QPainter &p);
-  void drawScrubThumbnail(QPainter &p);
-  void drawTime(QPainter &p, const QRect &rect, double seconds);
+protected:
+  void drawImGuiOverlays() override;
 
-  QPropertyAnimation *fade_animation;
-  std::map<uint64_t, QPixmap> big_thumbnails;
-  std::map<uint64_t, QPixmap> thumbnails;
+private:
+  GLuint getOrUploadTexture(uint64_t key, const QImage &img);
+  void clearThumbnails();
+
+  std::map<uint64_t, QImage> big_thumbnails;
+  std::map<uint64_t, QImage> thumbnails;
+  std::map<uint64_t, GLuint> texture_cache;
   double thumbnail_dispaly_time = -1;
   friend class VideoWidget;
 };

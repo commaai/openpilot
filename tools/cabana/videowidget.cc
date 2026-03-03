@@ -1,7 +1,14 @@
 #include "tools/cabana/videowidget.h"
 
 #include <algorithm>
+#include <cmath>
 #include <thread>
+
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include <GLES3/gl3.h>
+#endif
 
 #include <QAction>
 #include <QActionGroup>
@@ -11,6 +18,7 @@
 #include <QStyleOptionSlider>
 #include <QVBoxLayout>
 
+#include "imgui.h"
 #include "tools/cabana/tools/routeinfo.h"
 
 const int MIN_VIDEO_HEIGHT = 100;
@@ -324,15 +332,24 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 // StreamCameraView
 StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent)
     : CameraWidget(stream_name, stream_type, parent) {
-  fade_animation = new QPropertyAnimation(this, "overlayOpacity");
-  fade_animation->setDuration(500);
-  fade_animation->setStartValue(0.2f);
-  fade_animation->setEndValue(0.7f);
-  fade_animation->setEasingCurve(QEasingCurve::InOutQuad);
-  connect(fade_animation, &QPropertyAnimation::valueChanged, this, QOverload<>::of(&StreamCameraView::update));
+}
+
+StreamCameraView::~StreamCameraView() {
+  clearThumbnails();
+}
+
+void StreamCameraView::clearThumbnails() {
+  makeCurrent();
+  for (auto &[_, tex] : texture_cache) glDeleteTextures(1, &tex);
+  doneCurrent();
+  texture_cache.clear();
+  thumbnails.clear();
+  big_thumbnails.clear();
 }
 
 void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
+  clearThumbnails();
+
   std::mutex mutex;
   const auto &events = qlog->events;
   unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
@@ -348,11 +365,12 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
           capnp::FlatArrayMessageReader reader(e.data);
           auto thumb_data = reader.getRoot<cereal::Event>().getThumbnail();
           auto image_data = thumb_data.getThumbnail();
-          if (QPixmap thumb; thumb.loadFromData(image_data.begin(), image_data.size(), "jpeg")) {
-            QPixmap generated_thumb = generateThumbnail(thumb, can->toSeconds(thumb_data.getTimestampEof()));
+          QImage img;
+          if (img.loadFromData(image_data.begin(), image_data.size(), "jpeg")) {
+            QImage small = img.scaledToHeight(MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2, Qt::SmoothTransformation);
             std::lock_guard lock(mutex);
-            thumbnails[thumb_data.getTimestampEof()] = generated_thumb;
-            big_thumbnails[thumb_data.getTimestampEof()] = thumb;
+            thumbnails[thumb_data.getTimestampEof()] = small.convertToFormat(QImage::Format_RGBA8888);
+            big_thumbnails[thumb_data.getTimestampEof()] = img.convertToFormat(QImage::Format_RGBA8888);
           }
         }
       }
@@ -362,78 +380,123 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
   update();
 }
 
-void StreamCameraView::paintGL() {
-  CameraWidget::paintGL();
+GLuint StreamCameraView::getOrUploadTexture(uint64_t key, const QImage &img) {
+  auto it = texture_cache.find(key);
+  if (it != texture_cache.end()) return it->second;
 
-  QPainter p(this);
+  GLuint tex;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width(), img.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, img.constBits());
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  texture_cache[key] = tex;
+  return tex;
+}
+
+static void drawAlertOverlay(ImDrawList *draw, ImFont *font, const Timeline::Entry &alert, float x, float y, float w) {
+  float font_size = font->LegacySize;
+  const QColor &qc = timeline_colors[int(alert.type)];
+  ImU32 bg_color = IM_COL32(qc.red(), qc.green(), qc.blue(), 128);
+  std::string text = alert.text1;
+  if (!alert.text2.empty()) text += "\n" + alert.text2;
+  ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, w, text.c_str());
+  draw->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + text_size.y), bg_color);
+  draw->AddText(font, font_size, ImVec2(x + (w - text_size.x) / 2.0f, y),
+                IM_COL32(255, 255, 255, 255), text.c_str(), nullptr, w);
+}
+
+static void drawTimeLabel(ImDrawList *draw, ImFont *font, double seconds, float tx, float ty, float tw, float th) {
+  float font_size = font->LegacySize;
+  char time_buf[32];
+  snprintf(time_buf, sizeof(time_buf), "%.3f", seconds);
+  ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, time_buf);
+  draw->AddText(font, font_size,
+                ImVec2(tx + (tw - text_size.x) / 2.0f, ty + th - text_size.y - THUMBNAIL_MARGIN),
+                IM_COL32(255, 255, 255, 255), time_buf);
+}
+
+void StreamCameraView::drawImGuiOverlays() {
+  auto *draw = ImGui::GetForegroundDrawList();
+  float w = (float)width();
+  float h = (float)height();
+  ImFont *font_regular = imgui_font_regular ? imgui_font_regular : ImGui::GetFont();
+  ImFont *font_bold = imgui_font_bold ? imgui_font_bold : ImGui::GetFont();
+  Replay *replay = getReplay();
+  bool paused = can->isPaused();
   bool scrubbing = false;
+
+  // Thumbnails
   if (thumbnail_dispaly_time >= 0) {
-    scrubbing = can->isPaused();
-    scrubbing ? drawScrubThumbnail(p) : drawThumbnail(p);
+    scrubbing = paused;
+    if (scrubbing) {
+      // Full-size scrub thumbnail
+      auto it = big_thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
+      if (it != big_thumbnails.end()) {
+        const QImage &img = it->second;
+        GLuint tex = getOrUploadTexture(it->first, img);
+
+        float img_ratio = (float)img.width() / img.height();
+        float widget_ratio = w / h;
+        float tw, th;
+        if (img_ratio > widget_ratio) {
+          tw = w;
+          th = w / img_ratio;
+        } else {
+          th = h;
+          tw = h * img_ratio;
+        }
+        float tx = (w - tw) / 2.0f;
+        float ty = (h - th) / 2.0f;
+
+        draw->AddRectFilled(ImVec2(0, 0), ImVec2(w, h), IM_COL32(0, 0, 0, 255));
+        draw->AddImage((ImTextureID)(uintptr_t)tex, ImVec2(tx, ty), ImVec2(tx + tw, ty + th));
+        drawTimeLabel(draw, font_regular, thumbnail_dispaly_time, tx, ty, tw, th);
+      }
+    } else {
+      // Small hover thumbnail
+      auto it = thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
+      if (it != thumbnails.end()) {
+        const QImage &img = it->second;
+        GLuint tex = getOrUploadTexture(it->first | (1ULL << 63), img);  // separate cache key from big_thumbnails
+
+        float tw = (float)img.width();
+        float th = (float)img.height();
+        auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
+        float pos = (float)((thumbnail_dispaly_time - min_sec) * w / (max_sec - min_sec));
+        float tx = std::clamp(pos - tw / 2.0f, (float)THUMBNAIL_MARGIN, w - tw - THUMBNAIL_MARGIN + 1.0f);
+        float ty = h - th - THUMBNAIL_MARGIN;
+
+        draw->AddRect(ImVec2(tx - 1, ty - 1), ImVec2(tx + tw + 1, ty + th + 1), IM_COL32(255, 255, 255, 255));
+        draw->AddImage((ImTextureID)(uintptr_t)tex, ImVec2(tx, ty), ImVec2(tx + tw, ty + th));
+
+        if (replay) {
+          if (auto alert = replay->findAlertAtTime(thumbnail_dispaly_time))
+            drawAlertOverlay(draw, font_regular, *alert, tx, ty, tw);
+        }
+        drawTimeLabel(draw, font_regular, thumbnail_dispaly_time, tx, ty, tw, th);
+      }
+    }
   }
-  if (auto alert = getReplay()->findAlertAtTime(scrubbing ? thumbnail_dispaly_time : can->currentSec())) {
-    drawAlert(p, rect(), *alert);
+
+  // Alert bar
+  if (replay) {
+    double alert_time = scrubbing ? thumbnail_dispaly_time : can->currentSec();
+    if (auto alert = replay->findAlertAtTime(alert_time))
+      drawAlertOverlay(draw, font_regular, *alert, 1.0f, 1.0f, w - 2.0f);
   }
 
-  if (can->isPaused()) {
-    p.setPen(QColor(200, 200, 200, static_cast<int>(255 * fade_animation->currentValue().toFloat())));
-    p.setFont(QFont(font().family(), 16, QFont::Bold));
-    p.drawText(rect(), Qt::AlignCenter, tr("PAUSED"));
+  // PAUSED text
+  if (paused) {
+    const char *paused_text = "PAUSED";
+    float font_size = font_bold->LegacySize;
+    ImVec2 text_size = font_bold->CalcTextSizeA(font_size, FLT_MAX, 0.0f, paused_text);
+    draw->AddText(font_bold, font_size,
+                  ImVec2((w - text_size.x) / 2.0f, (h - text_size.y) / 2.0f),
+                  IM_COL32(200, 200, 200, 128), paused_text);
   }
-}
-
-QPixmap StreamCameraView::generateThumbnail(QPixmap thumb, double seconds) {
-  QPixmap scaled = thumb.scaledToHeight(MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2, Qt::SmoothTransformation);
-  QPainter p(&scaled);
-  p.setPen(QPen(palette().color(QPalette::BrightText), 2));
-  p.drawRect(scaled.rect());
-  if (auto alert = getReplay()->findAlertAtTime(seconds)) {
-    p.setFont(QFont(font().family(), 10));
-    drawAlert(p, scaled.rect(), *alert);
-  }
-  return scaled;
-}
-
-void StreamCameraView::drawScrubThumbnail(QPainter &p) {
-  p.fillRect(rect(), Qt::black);
-  auto it = big_thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
-  if (it != big_thumbnails.end()) {
-    QPixmap scaled_thumb = it->second.scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    QRect thumb_rect(rect().center() - scaled_thumb.rect().center(), scaled_thumb.size());
-    p.drawPixmap(thumb_rect.topLeft(), scaled_thumb);
-    drawTime(p, thumb_rect, thumbnail_dispaly_time);
-  }
-}
-
-void StreamCameraView::drawThumbnail(QPainter &p) {
-  auto it = thumbnails.lower_bound(can->toMonoTime(thumbnail_dispaly_time));
-  if (it != thumbnails.end()) {
-    const QPixmap &thumb = it->second;
-    auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
-    int pos = (thumbnail_dispaly_time - min_sec) * width() / (max_sec - min_sec);
-    int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, width() - thumb.width() - THUMBNAIL_MARGIN + 1);
-    int y = height() - thumb.height() - THUMBNAIL_MARGIN;
-
-    p.drawPixmap(x, y, thumb);
-    drawTime(p, QRect{x, y, thumb.width(), thumb.height()}, thumbnail_dispaly_time);
-  }
-}
-
-void StreamCameraView::drawTime(QPainter &p, const QRect &rect, double seconds) {
-  p.setPen(palette().color(QPalette::BrightText));
-  p.setFont(QFont(font().family(), 10));
-  p.drawText(rect.adjusted(0, 0, 0, -THUMBNAIL_MARGIN), Qt::AlignHCenter | Qt::AlignBottom, QString::number(seconds, 'f', 3));
-}
-
-void StreamCameraView::drawAlert(QPainter &p, const QRect &rect, const Timeline::Entry &alert) {
-  p.setPen(QPen(palette().color(QPalette::BrightText), 2));
-  QColor color = timeline_colors[int(alert.type)];
-  color.setAlphaF(0.5);
-  QString text = QString::fromStdString(alert.text1);
-  if (!alert.text2.empty()) text += "\n" + QString::fromStdString(alert.text2);
-
-  QRect text_rect = rect.adjusted(1, 1, -1, -1);
-  QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
-  p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
-  p.drawText(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
 }

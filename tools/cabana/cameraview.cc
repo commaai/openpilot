@@ -7,6 +7,13 @@
 #endif
 
 #include <QApplication>
+#include <QFont>
+#include <QFontInfo>
+#include <QProcess>
+
+#include "imgui.h"
+#include "implot.h"
+#include "imgui_impl_opengl3.h"
 
 namespace {
 
@@ -61,6 +68,12 @@ CameraWidget::~CameraWidget() {
   makeCurrent();
   stopVipcThread();
   if (isValid()) {
+    if (imgui_initialized) {
+      ImGui_ImplOpenGL3_Shutdown();
+      ImPlot::DestroyContext();
+      ImGui::DestroyContext();
+      imgui_initialized = false;
+    }
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
@@ -113,6 +126,8 @@ void CameraWidget::initializeGL() {
   shader_program_->setUniformValue("uTextureY", 0);
   shader_program_->setUniformValue("uTextureUV", 1);
   shader_program_->release();
+
+  initImGui();
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
@@ -184,6 +199,10 @@ void CameraWidget::paintGL() {
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
   shader_program_->release();
+
+  imguiBeginFrame();
+  drawImGuiOverlays();
+  imguiEndFrame();
 }
 
 void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -258,4 +277,93 @@ void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
   current_frame_ = nullptr;
   available_streams.clear();
+}
+
+void CameraWidget::initImGui() {
+  ImGui::CreateContext();
+  ImPlot::CreateContext();
+
+#ifdef __APPLE__
+  const char *glsl_version = "#version 330 core";
+#else
+  const char *glsl_version = "#version 300 es";
+#endif
+  ImGui_ImplOpenGL3_Init(glsl_version);
+
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  io.IniFilename = nullptr;  // don't save layout state
+
+  // Load the Qt application font into ImGui via fontconfig.
+  // Qt uses point sizes; ImGui uses pixels. Convert: px = pt * dpi / 72
+  float dpi = (float)logicalDpiY();
+  auto pt_to_px = [dpi](float pt) { return pt * dpi / 72.0f; };
+
+  QFontInfo fi(QApplication::font());
+  QString family = fi.family();
+
+  // Start both fc-match processes in parallel
+  QProcess fc_regular, fc_bold;
+  fc_regular.start("fc-match", {family + ":style=Regular", "--format=%{file}"});
+  fc_bold.start("fc-match", {family + ":style=Bold", "--format=%{file}"});
+
+  auto load_font = [&](QProcess &proc, float pt) -> ImFont * {
+    if (!proc.waitForFinished(1000)) return nullptr;
+    QString path = QString(proc.readAllStandardOutput()).trimmed();
+    return path.isEmpty() ? nullptr : io.Fonts->AddFontFromFileTTF(path.toUtf8().constData(), pt_to_px(pt));
+  };
+  imgui_font_regular = load_font(fc_regular, 10.0f);
+  imgui_font_bold = load_font(fc_bold, 16.0f);
+
+  ImGui::StyleColorsDark();
+  ImGuiStyle &style = ImGui::GetStyle();
+  style.WindowRounding = 6.0f;
+  style.Alpha = 0.9f;
+
+  imgui_initialized = true;
+}
+
+void CameraWidget::imguiBeginFrame() {
+  if (!imgui_initialized) return;
+
+  ImGuiIO &io = ImGui::GetIO();
+  io.DisplaySize = ImVec2((float)width(), (float)height());
+  io.DisplayFramebufferScale = ImVec2((float)devicePixelRatio(), (float)devicePixelRatio());
+
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui::NewFrame();
+}
+
+void CameraWidget::imguiEndFrame() {
+  if (!imgui_initialized) return;
+
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void CameraWidget::mousePressEvent(QMouseEvent *event) {
+  if (imgui_initialized) {
+    ImGuiIO &io = ImGui::GetIO();
+    io.AddMousePosEvent((float)event->x(), (float)event->y());
+    if (event->button() == Qt::LeftButton) io.AddMouseButtonEvent(0, true);
+    if (event->button() == Qt::RightButton) io.AddMouseButtonEvent(1, true);
+  }
+}
+
+void CameraWidget::mouseReleaseEvent(QMouseEvent *event) {
+  if (imgui_initialized) {
+    ImGuiIO &io = ImGui::GetIO();
+    io.AddMousePosEvent((float)event->x(), (float)event->y());
+    if (event->button() == Qt::LeftButton) io.AddMouseButtonEvent(0, false);
+    if (event->button() == Qt::RightButton) io.AddMouseButtonEvent(1, false);
+    if (io.WantCaptureMouse) return;
+  }
+  emit clicked();
+}
+
+void CameraWidget::mouseMoveEvent(QMouseEvent *event) {
+  if (imgui_initialized) {
+    ImGuiIO &io = ImGui::GetIO();
+    io.AddMousePosEvent((float)event->x(), (float)event->y());
+  }
 }
