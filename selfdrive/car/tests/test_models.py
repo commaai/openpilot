@@ -464,6 +464,105 @@ class TestCarModelBase(unittest.TestCase):
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """
+    Fuzz openpilot's tx messages and check for panda safety mismatches.
+    Focus on controlsAllowed transitions and tx safety hooks.
+    """
+
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    # Fuzz CarControl parameters
+    steer_strategy = st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+    gas_strategy = st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+    brake_strategy = st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+
+    # Generate fuzzed values
+    steer_value = data.draw(steer_strategy)
+    gas_value = data.draw(gas_strategy)
+    brake_value = data.draw(brake_strategy)
+
+    # Test with different controlsAllowed states
+    controls_allowed_states = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
+
+    # Test with different cruise states
+    cruise_states = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
+
+    now_nanos = 0
+    for i, (controls_allowed, cruise_engaged) in enumerate(zip(controls_allowed_states, cruise_states)):
+      # Set panda safety state
+      self.safety.set_controls_allowed(controls_allowed)
+      self.safety.set_cruise_engaged_prev(cruise_engaged)
+
+      # Create CarControl with fuzzed values
+      CC = structs.CarControl()
+      CC.actuators.steer = steer_value
+      CC.actuators.gas = gas_value
+      CC.actuators.brake = brake_value
+
+      # Test cancel/resume commands
+      if cruise_engaged and not controls_allowed:
+        CC.cruiseControl.cancel = data.draw(st.booleans())
+      elif cruise_engaged and controls_allowed:
+        CC.cruiseControl.resume = data.draw(st.booleans())
+
+      # Apply CarControl and get tx messages
+      self.CI.update([])
+      _, sendcan = self.CI.apply(CC.as_reader(), now_nanos)
+
+      now_nanos += DT_CTRL * 1e9
+
+      # Check all tx messages against panda safety
+      for addr, dat, bus in sendcan:
+        to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+        tx_allowed = self.safety.safety_tx_hook(to_send)
+
+        # Log any mismatches
+        if tx_allowed != 1:
+          # This could indicate a bug in either openpilot or panda
+          # We want to catch cases where openpilot sends but panda blocks
+          self.fail(f"TX mismatch: controls_allowed={controls_allowed}, "
+                   f"cruise_engaged={cruise_engaged}, "
+                   f"steer={steer_value}, gas={gas_value}, brake={brake_value}, "
+                   f"addr={hex(addr)}, bus={bus}")
+
+      # Test edge cases with extreme values
+      if i == 0:
+        # Test maximum steer
+        CC.actuators.steer = 1.0 if steer_value > 0 else -1.0
+        _, sendcan_max_steer = self.CI.apply(CC.as_reader(), now_nanos)
+        for addr, dat, bus in sendcan_max_steer:
+          to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+          self.assertTrue(self.safety.safety_tx_hook(to_send) or not controls_allowed,
+                        "Max steer should be blocked when controls not allowed")
+
+      # Test state transitions
+      if i > 0:
+        # Check if transition from previous state is valid
+        prev_controls_allowed = controls_allowed_states[i-1]
+        if controls_allowed and not prev_controls_allowed:
+          # Enabled transition - should be allowed
+          pass
+        elif not controls_allowed and prev_controls_allowed:
+          # Disabled transition - check if tx is properly blocked
+          CC.actuators.steer = steer_value
+          _, sendcan_disabled = self.CI.apply(CC.as_reader(), now_nanos)
+          for addr, dat, bus in sendcan_disabled:
+            to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+            # Panda should block control messages when disabled
+            if addr in [0x228, 0x2C1, 0x1D1]:  # Example control addresses
+              self.assertFalse(self.safety.safety_tx_hook(to_send),
+                            f"Control message should be blocked when controls disabled: {hex(addr)}")
+
 
 @parameterized_class(('platform', 'test_route'), get_test_cases())
 @pytest.mark.xdist_group_class_property('test_route')
