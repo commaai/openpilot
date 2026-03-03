@@ -16,8 +16,8 @@ PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(co
 
 bool PandaStream::connect() {
   try {
-    qDebug() << "Connecting to panda " << config.serial;
-    panda.reset(new Panda(config.serial.toStdString()));
+    qDebug() << "Connecting to panda " << config.serial.c_str();
+    panda.reset(new Panda(config.serial));
     config.bus_config.resize(3);
     qDebug() << "Connected";
   } catch (const std::exception& e) {
@@ -81,7 +81,7 @@ void PandaStream::streamThread() {
 OpenPandaWidget::OpenPandaWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
   form_layout = new QFormLayout(this);
   if (can && dynamic_cast<PandaStream *>(can) != nullptr) {
-    form_layout->addWidget(new QLabel(tr("Already connected to %1.").arg(can->routeName())));
+    form_layout->addWidget(new QLabel(tr("Already connected to %1.").arg(QString::fromStdString(can->routeName()))));
     form_layout->addWidget(new QLabel("Close the current connection via [File menu -> Close Stream] before connecting to another Panda."));
     QTimer::singleShot(0, [this]() { emit enableOpenButton(false); });
     return;
@@ -129,7 +129,7 @@ void OpenPandaWidget::buildConfigForm() {
   }
 
   if (has_panda) {
-    config.serial = serial;
+    config.serial = serial.toStdString();
     config.bus_config.resize(3);
     for (int i = 0; i < config.bus_config.size(); i++) {
       QHBoxLayout *bus_layout = new QHBoxLayout;

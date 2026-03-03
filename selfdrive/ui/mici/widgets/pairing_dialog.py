@@ -19,7 +19,6 @@ class PairingDialog(NavWidget):
 
   def __init__(self):
     super().__init__()
-    self.set_back_callback(gui_app.pop_widget)
     self._params = Params()
     self._qr_texture: rl.Texture | None = None
     self._last_qr_generation = float("-inf")
@@ -69,8 +68,8 @@ class PairingDialog(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-    if ui_state.prime_state.is_paired():
-      self._playing_dismiss_animation = True
+    if ui_state.prime_state.is_paired() and not self.is_dismissing:
+      self.dismiss()
 
   def _render(self, rect: rl.Rectangle):
     self._check_qr_refresh()

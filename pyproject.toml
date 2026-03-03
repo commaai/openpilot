@@ -26,10 +26,12 @@ dependencies = [
   "numpy >=2.0",
 
   # vendored native dependencies
+  "bzip2 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=bzip2",
   "capnproto @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=capnproto",
   "eigen @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=eigen",
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
   "libjpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libjpeg",
+  "libyuv @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libyuv",
   "openssl3 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=openssl3",
   "python3-dev @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=python3-dev",
   "zstd @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zstd",
@@ -71,7 +73,7 @@ dependencies = [
   "zstandard",
 
   # ui
-  "raylib > 5.5.0.3",
+  "raylib @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=raylib",
   "qrcode",
   "jeepney",
 ]
@@ -124,7 +126,7 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=20 --maxprocesses=8 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"

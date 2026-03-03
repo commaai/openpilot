@@ -14,9 +14,9 @@ from openpilot.system.ui.lib.application import gui_app
 ONROAD_DELAY = 2.5  # seconds
 
 
-class MiciMainLayout(Widget):
+class MiciMainLayout(Scroller):
   def __init__(self):
-    super().__init__()
+    super().__init__(snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
@@ -36,13 +36,12 @@ class MiciMainLayout(Widget):
       # TODO: set parent rect and use it if never passed rect from render (like in Scroller)
       widget.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       self._alerts_layout,
       self._home_layout,
       self._onroad_layout,
-    ], snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
+    ])
     self._scroller.set_reset_scroll_at_show(False)
-    self._scroller.set_enabled(lambda: self.enabled)  # for nav stack
 
     # Disable scrolling when onroad is interacting with bookmark
     self._scroller.set_scrolling_enabled(lambda: not self._onroad_layout.is_swiping_left())
@@ -50,6 +49,7 @@ class MiciMainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
+    gui_app.add_nav_stack_tick(self._handle_transitions)
     gui_app.push_widget(self)
 
     # Start onboarding if terms or training not completed, make sure to push after self
@@ -61,14 +61,6 @@ class MiciMainLayout(Widget):
     self._home_layout.set_callbacks(on_settings=lambda: gui_app.push_widget(self._settings_layout))
     self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
     device.add_interactive_timeout_callback(self._on_interactive_timeout)
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
 
   def _scroll_to(self, layout: Widget):
     layout_x = int(layout.rect.x)
@@ -83,9 +75,7 @@ class MiciMainLayout(Widget):
       self._setup = True
 
     # Render
-    self._scroller.render(self._rect)
-
-    self._handle_transitions()
+    super()._render(self._rect)
 
   def _handle_transitions(self):
     # Don't pop if onboarding
@@ -102,16 +92,15 @@ class MiciMainLayout(Widget):
       else:
         self._scroll_to(self._home_layout)
 
+    # FIXME: these two pops can interrupt user interacting in the settings
     if self._onroad_time_delay is not None and rl.get_time() - self._onroad_time_delay >= ONROAD_DELAY:
-      gui_app.pop_widgets_to(self)
-      self._scroll_to(self._onroad_layout)
+      gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
       self._onroad_time_delay = None
 
     # When car leaves standstill, pop nav stack and scroll to onroad
     CS = ui_state.sm["carState"]
     if not CS.standstill and self._prev_standstill:
-      gui_app.pop_widgets_to(self)
-      self._scroll_to(self._onroad_layout)
+      gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
     self._prev_standstill = CS.standstill
 
   def _on_interactive_timeout(self):
@@ -122,10 +111,10 @@ class MiciMainLayout(Widget):
     if ui_state.started:
       # Don't pop if at standstill
       if not ui_state.sm["carState"].standstill:
-        gui_app.pop_widgets_to(self)
-        self._scroll_to(self._onroad_layout)
+        gui_app.pop_widgets_to(self, lambda: self._scroll_to(self._onroad_layout))
     else:
-      gui_app.pop_widgets_to(self)
+      # Screen turns off on timeout offroad, so pop immediately without animation
+      gui_app.pop_widgets_to(self, instant=True)
       self._scroll_to(self._home_layout)
 
   def _on_bookmark_clicked(self):

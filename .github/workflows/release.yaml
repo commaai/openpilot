@@ -22,10 +22,10 @@ jobs:
         running-workflow-name: 'build master-ci'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         check-regexp: ^((?!.*(build prebuilt|create badges).*).)*$
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: true
         fetch-depth: 0
-    - uses: ./.github/workflows/setup-with-retry
+    - run: ./tools/op.sh setup
     - name: Push master-ci
       run: BRANCH=__nightly release/build_stripped.sh

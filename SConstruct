@@ -18,6 +18,7 @@ AddOption('--asan', action='store_true', help='turn on ASAN')
 AddOption('--ubsan', action='store_true', help='turn on UBSan')
 AddOption('--mutation', action='store_true', help='generate mutation-ready code')
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
+AddOption('--verbose', action='store_true', default=False, help='show full build commands')
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -38,16 +39,19 @@ assert arch in [
 ]
 
 if arch != "larch64":
+  import bzip2
   import capnproto
   import eigen
   import ffmpeg as ffmpeg_pkg
   import libjpeg
+  import libyuv
   import ncurses
   import openssl3
   import python3_dev
+  import raylib
   import zeromq
   import zstd
-  pkgs = [capnproto, eigen, ffmpeg_pkg, libjpeg, ncurses, openssl3, zeromq, zstd]
+  pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, libjpeg, libyuv, ncurses, openssl3, raylib, zeromq, zstd]
   py_include = python3_dev.INCLUDE_DIR
 else:
   # TODO: remove when AGNOS has our new vendor pkgs
@@ -87,7 +91,6 @@ env = Environment(
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
-    "#third_party/libyuv/include",
     [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
@@ -96,7 +99,6 @@ env = Environment(
     "#third_party",
     "#selfdrive/pandad",
     "#rednose/helpers",
-    f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
     [x.LIB_DIR for x in pkgs],
   ],
@@ -147,6 +149,22 @@ if _extra_cc:
 # no --as-needed on mac linker
 if arch != "Darwin":
   env.Append(LINKFLAGS=["-Wl,--as-needed", "-Wl,--no-undefined"])
+
+# Shorter build output: show brief descriptions instead of full commands.
+# Full command lines are still printed on failure by scons.
+if not GetOption('verbose'):
+  for action, short in (
+    ("CC",     "CC"),
+    ("CXX",    "CXX"),
+    ("LINK",   "LINK"),
+    ("SHCC",   "CC"),
+    ("SHCXX",  "CXX"),
+    ("SHLINK", "LINK"),
+    ("AR",     "AR"),
+    ("RANLIB", "RANLIB"),
+    ("AS",     "AS"),
+  ):
+    env[f"{action}COMSTR"] = f"  [{short}] $TARGET"
 
 # progress output
 node_interval = 5

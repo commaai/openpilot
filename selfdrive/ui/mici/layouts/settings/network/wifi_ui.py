@@ -6,11 +6,10 @@ from collections.abc import Callable
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR, LABEL_HORIZONTAL_PADDING, LABEL_VERTICAL_PADDING
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType, normalize_ssid
 
 
@@ -98,7 +97,7 @@ class WifiIcon(Widget):
 class WifiButton(BigButton):
   LABEL_PADDING = 98
   LABEL_WIDTH = 402 - 98 - 28  # button width - left padding - right padding
-  SUB_LABEL_WIDTH = 402 - LABEL_HORIZONTAL_PADDING * 2
+  SUB_LABEL_WIDTH = 402 - BigButton.LABEL_HORIZONTAL_PADDING * 2
 
   def __init__(self, network: Network, wifi_manager: WifiManager):
     super().__init__(normalize_ssid(network.ssid), scroll=True)
@@ -130,12 +129,10 @@ class WifiButton(BigButton):
       return
 
     self._network_forgetting = True
-    self._forget_btn.set_visible(False)
     self._wifi_manager.forget_connection(self._network.ssid)
 
   def on_forgotten(self):
     self._network_forgetting = False
-    self._forget_btn.set_visible(True)
 
   def set_network_missing(self, missing: bool):
     self._network_missing = missing
@@ -151,7 +148,7 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self):
-    if self._network.is_tethering:
+    if self._network.is_tethering or self._network_forgetting:
       return False
 
     return (self._is_saved and not self._wrong_password) or self._is_connecting
@@ -166,13 +163,13 @@ class WifiButton(BigButton):
 
   def _draw_content(self, btn_y: float):
     self._label.set_color(LABEL_COLOR)
-    label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + LABEL_VERTICAL_PADDING,
-                              self.LABEL_WIDTH, self._rect.height - LABEL_VERTICAL_PADDING * 2)
+    label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + self.LABEL_VERTICAL_PADDING,
+                              self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
-      sub_label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
-      label_y = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
+      sub_label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
+      label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
       sub_label_w = self.SUB_LABEL_WIDTH - (self._forget_btn.rect.width if self._show_forget_btn else 0)
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
@@ -218,6 +215,8 @@ class WifiButton(BigButton):
     return self._wifi_manager.connected_ssid == self._network.ssid
 
   def _update_state(self):
+    super()._update_state()
+
     if any((self._network_missing, self._is_connecting, self._is_connected, self._network_forgetting,
             self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)
@@ -271,14 +270,9 @@ class ForgetButton(Widget):
     rl.draw_texture_ex(self._trash_txt, (trash_x, trash_y), 0, 1.0, rl.WHITE)
 
 
-class WifiUIMici(NavWidget):
+class WifiUIMici(NavScroller):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
-
-    # Set up back navigation
-    self.set_back_callback(gui_app.pop_widget)
-
-    self._scroller = Scroller([])
 
     self._loading_animation = LoadingAnimation()
 
@@ -294,16 +288,11 @@ class WifiUIMici(NavWidget):
   def show_event(self):
     # Clear scroller items and update from latest scan results
     super().show_event()
-    self._scroller.show_event()
     self._loading_animation.show_event()
     self._wifi_manager.set_active(True)
     self._scroller.items.clear()
     # trigger button update on latest sorted networks
     self._on_network_updated(self._wifi_manager.networks)
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
 
   def _on_network_updated(self, networks: list[Network]):
     self._networks = {network.ssid: network for network in networks}
@@ -389,7 +378,7 @@ class WifiUIMici(NavWidget):
       self._loading_animation.show_event()
 
   def _render(self, _):
-    self._scroller.render(self._rect)
+    super()._render(self._rect)
 
     anim_w = 90
     anim_x = self._rect.x + self._rect.width - anim_w

@@ -19,7 +19,7 @@ You can replay a route from your comma account by specifying the route name.
 tools/replay/replay <route-name>
 
 # Example:
-tools/replay/replay 'a2a0ccea32023010|2023-07-27--13-01-19'
+tools/replay/replay '5beb9b58bd12b691/0000010a--a51155e496'
 
 # Replay the default demo route:
 tools/replay/replay --demo
@@ -34,10 +34,10 @@ tools/replay/replay <route-name> --data_dir="/path_to/route"
 
 # Example:
 # If you have a local route stored at /path_to_routes with segments like:
-# a2a0ccea32023010|2023-07-27--13-01-19--0
-# a2a0ccea32023010|2023-07-27--13-01-19--1
+# 5beb9b58bd12b691/0000010a--a51155e496--0
+# 5beb9b58bd12b691/0000010a--a51155e496--1
 # You can replay it like this:
-tools/replay/replay "a2a0ccea32023010|2023-07-27--13-01-19" --data_dir="/path_to_routes"
+tools/replay/replay "5beb9b58bd12b691/0000010a--a51155e496" --data_dir="/path_to_routes"
 ```
 
 ## Send Messages via ZMQ
