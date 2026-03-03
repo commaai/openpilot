@@ -10,7 +10,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.button import FullRoundedButton
-from openpilot.system.ui.mici_setup import NetworkSetupPage, FailedPage, NetworkConnectivityMonitor
+from openpilot.system.ui.mici_setup import NetworkSetupPageBase, FailedPageBase, NetworkConnectivityMonitor
 
 
 class Screen(IntEnum):
@@ -34,10 +34,9 @@ class Updater(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
 
-    self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback,
-                                                lambda: None, disable_connect_hint=True)
+    self._network_setup_page = NetworkSetupPageBase(self._network_monitor, self._network_setup_continue_callback,
+                                                    disable_connect_hint=True)
     self._network_setup_page.set_is_updater()
-    self._network_setup_page.set_back_enabled(False)
     self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     # Buttons
@@ -50,9 +49,8 @@ class Updater(Widget):
                                         text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                         font_weight=FontWeight.ROMAN)
 
-    self._update_failed_page = FailedPage(HARDWARE.reboot, self._update_failed_retry_callback,
-                                          title="update failed")
-    self._update_failed_page.set_back_enabled(False)
+    self._update_failed_page = FailedPageBase(HARDWARE.reboot, self._update_failed_retry_callback,
+                                              title="update failed")
 
     self._progress_title_label = UnifiedLabel("", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                               font_weight=FontWeight.DISPLAY, line_height=0.8)

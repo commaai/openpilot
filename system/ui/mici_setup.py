@@ -24,7 +24,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.button import SmallButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import NavScroller, ITEM_SPACING
+from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton, WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
@@ -216,11 +216,9 @@ class DownloadingPage(Widget):
     ))
 
 
-class FailedPage(NavWidget):
-  def __init__(self, reboot_callback: Callable, retry_callback: Callable | None = None, title: str = "download failed"):
+class FailedPageBase(Widget):
+  def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
     super().__init__()
-    self.set_back_callback(retry_callback)
-
     self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                      font_weight=FontWeight.DISPLAY)
     self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
@@ -230,7 +228,7 @@ class FailedPage(NavWidget):
     self._reboot_slider.set_enabled(lambda: self.enabled)  # for nav stack
 
     self._retry_button = SmallButton("retry")
-    self._retry_button.set_click_callback(retry_callback if retry_callback is not None else self.dismiss)
+    self._retry_button.set_click_callback(retry_callback)
     self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
 
   def set_reason(self, reason: str):
@@ -269,6 +267,12 @@ class FailedPage(NavWidget):
       self._reboot_slider.rect.width,
       self._reboot_slider.rect.height,
     ))
+
+
+class FailedPage(FailedPageBase, NavWidget):
+  def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
+    super().__init__(reboot_callback, retry_callback, title)
+    self.set_back_callback(retry_callback)
 
 
 class GreyBigButton(BigButton):
@@ -341,11 +345,10 @@ class BigPillButton(BigButton):
     self._txt_disabled_bg = gui_app.texture("icons_mici/setup/continue_disabled.png", 402, 180)
 
 
-class NetworkSetupPage(NavScroller):
+class NetworkSetupPageBase(Scroller):
   def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable[[bool], None],
-               back_callback: Callable[[], None] | None, disable_connect_hint: bool = False):
+               disable_connect_hint: bool = False):
     super().__init__()
-    self.set_back_callback(back_callback)
 
     self._wifi_manager = WifiManager()
     self._wifi_manager.set_active(True)
@@ -443,6 +446,13 @@ class NetworkSetupPage(NavScroller):
     else:
       self._continue_button.set_visible(False)
       self._waiting_button.set_visible(True)
+
+
+class NetworkSetupPage(NetworkSetupPageBase, NavScroller):
+  def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable[[bool], None],
+               back_callback: Callable[[], None] | None):
+    super().__init__(network_monitor, continue_callback)
+    self.set_back_callback(back_callback)
 
 
 class Setup(Widget):
