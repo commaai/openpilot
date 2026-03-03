@@ -297,7 +297,7 @@ class TrainingGuide(NavWidget):
 
 
 class QRCodeWidget(Widget):
-  def __init__(self, url: str, size: int = 180):
+  def __init__(self, url: str, size: int = 170):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, size, size))
     self._size = size
