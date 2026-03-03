@@ -91,10 +91,12 @@ class NetworkConnectivityMonitor:
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
         except Exception:
+          import traceback
+          traceback.print_exc()
           self.reset()
-          # force time sync
-          if not system_time_valid():
-            run_cmd(["sudo", "systemctl", "restart", "systemd-timesyncd.service"])
+          # # force time sync
+          # if not system_time_valid():
+          #   run_cmd(["sudo", "systemctl", "restart", "systemd-timesyncd.service"])
       else:
         self.reset()
 
