@@ -323,8 +323,17 @@ class DeviceLayoutMici(NavScroller):
     driver_cam_btn.set_click_callback(lambda: gui_app.push_widget(DriverCameraDialog()))
     driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
+    def open_training_guide():
+      def cleanup():
+        ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
+        gui_app.pop_widgets_to(self)
+
+      guide = TrainingGuide(completed_callback=cleanup)
+      guide.set_back_callback(cleanup)
+      gui_app.push_widget(guide)
+
     review_training_guide_btn = BigButton("review\ntraining guide", "", "icons_mici/settings/device/info.png")
-    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(TrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
+    review_training_guide_btn.set_click_callback(open_training_guide)
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
     terms_btn = BigButton("terms &\nconditions", "", "icons_mici/settings/device/info.png")
