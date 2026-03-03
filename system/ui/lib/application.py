@@ -386,9 +386,6 @@ class GuiApplication:
     widget.set_enabled(True)
 
   def pop_widget(self, idx: int | None = None):
-    import traceback
-    traceback.print_stack()
-
     # Pops widget instantly without animation
     if len(self._nav_stack) < 2:
       cloudlog.warning("At least one widget should remain on the stack, ignoring pop!")
@@ -594,8 +591,6 @@ class GuiApplication:
         # Allow a Widget to still run a function regardless of the stack depth
         for tick in self._nav_stack_ticks:
           tick()
-
-        print([type(w).__name__ for w in self._nav_stack])
 
         # Only render top widgets
         for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
