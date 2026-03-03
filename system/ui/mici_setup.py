@@ -623,7 +623,7 @@ class Setup(Widget):
           gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
           self._download(url)
 
-      keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
+      keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result, auto_return_to_letters="./")
       gui_app.push_widget(keyboard)
 
   def _download(self, url: str):
