@@ -63,7 +63,7 @@ class TrainingGuidePreDMTutorial(NavScroller):
       GreyBigButton("driver monitoring\ncheck", "scroll to continue",
                     gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
       GreyBigButton("", "Next, we'll check if comma four can detect the driver properly."),
-      GreyBigButton("", "openpilot requires an unobstructed view of the driver to function fully."),
+      GreyBigButton("", "openpilot uses the cabin camera to check if the driver is distracted."),
       GreyBigButton("", "If it does not have a clear view of the driver, unplug and remount before continuing."),
       continue_button,
     ])
@@ -84,7 +84,7 @@ class DMBadFaceDetected(NavScroller):
     self._scroller.add_widgets([
       GreyBigButton("looking for driver", "make sure comma\nfour can see your face",
                     gui_app.texture("icons_mici/setup/orange_dm.png", 64, 64)),
-      GreyBigButton("", "Remount if your face is obstructed or driver monitoring has difficulty tracking your face."),
+      GreyBigButton("", "Remount if your face is blocked, or driver monitoring has difficulty tracking your face."),
       back_button,
     ])
 
@@ -243,7 +243,7 @@ class TrainingGuideRecordFront(NavScroller):
     self._scroller.add_widgets([
       GreyBigButton("driver camera data", "do you want to share video data for training?",
                     gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
-      GreyBigButton("", "openpilot uses video data for training. Sharing your data allows us to improve openpilot faster."),
+      GreyBigButton("", "Sharing your data with comma helps improve openpilot for everyone."),
       self._accept_button,
       self._decline_button,
     ])
