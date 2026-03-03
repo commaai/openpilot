@@ -3,11 +3,11 @@ import pyray as rl
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiIcon
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.wifi_manager import ConnectStatus, SecurityType, normalize_ssid
+from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus, SecurityType, normalize_ssid
 
 
 class WifiNetworkButton(BigButton):
-  def __init__(self, wifi_manager):
+  def __init__(self, wifi_manager: WifiManager):
     self._wifi_manager = wifi_manager
     self._lock_txt = gui_app.texture("icons_mici/settings/network/new/lock.png", 28, 36)
     self._draw_lock = False
