@@ -516,9 +516,7 @@ class Setup(Widget):
     # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
 
-    # TODO: ask nick if should dismiss first
-    gui_app.pop_widgets_to(self._software_selection_page, instant=True)
-    gui_app.push_widget(self._network_setup_page)
+    gui_app.pop_widgets_to(self._software_selection_page, lambda: gui_app.push_widget(self._network_setup_page))
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
