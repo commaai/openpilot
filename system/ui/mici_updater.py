@@ -58,9 +58,6 @@ class Updater(Widget):
                                                 font_weight=FontWeight.ROMAN,
                                                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
-  def _network_setup_back_callback(self):
-    self.set_current_screen(Screen.PROMPT)
-
   def _network_setup_continue_callback(self, _):
     self.install_update()
 

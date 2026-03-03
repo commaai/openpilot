@@ -1,4 +1,3 @@
-import weakref
 import math
 import numpy as np
 import qrcode
@@ -268,7 +267,6 @@ class TrainingGuide(NavWidget):
   def __init__(self, completed_callback: Callable[[], None]):
     super().__init__()
     self._completed_callback = completed_callback
-    self._step = 0
 
     self._steps = [
       TrainingGuideAttentionNotice(continue_callback=lambda: gui_app.push_widget(self._steps[1])),
