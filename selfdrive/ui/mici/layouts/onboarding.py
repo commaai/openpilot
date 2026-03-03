@@ -71,7 +71,7 @@ class TrainingGuidePreDMTutorial(NavScroller):
   def show_event(self):
     super().show_event()
     # Get driver monitoring model ready for next step
-    ui_state.params.put_bool("IsDriverViewEnabled", True)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
 
 
 class DMBadFaceDetected(NavScroller):
@@ -218,7 +218,7 @@ class TrainingGuideRecordFront(NavScroller):
 
     def show_accept_dialog():
       def on_accept():
-        ui_state.params.put_bool("RecordFront", True)
+        ui_state.params.put_bool_nonblocking("RecordFront", True)
         continue_callback()
 
       gui_app.push_widget(BigConfirmationDialogV2("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", exit_on_confirm=False,
@@ -226,7 +226,7 @@ class TrainingGuideRecordFront(NavScroller):
 
     def show_decline_dialog():
       def on_decline():
-        ui_state.params.put_bool("RecordFront", False)
+        ui_state.params.put_bool_nonblocking("RecordFront", False)
         continue_callback()
 
       gui_app.push_widget(BigConfirmationDialogV2("no, don't upload", "icons_mici/setup/cancel.png", exit_on_confirm=False, confirm_callback=on_decline))
@@ -280,7 +280,7 @@ class TrainingGuide(NavWidget):
     self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack
 
   def show_event(self):
-    # Onboarding sets these. This is for previewing the training guide in settings
+    # Onboarding sets these as well. This is for previewing the training guide in settings
     super().show_event()
     self._steps[0].show_event()
     device.set_override_interactive_timeout(300)
@@ -396,7 +396,7 @@ class OnboardingWindow(Widget):
     return self._accepted_terms and self._training_done
 
   def close(self):
-    ui_state.params.put_bool("IsDriverViewEnabled", False)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
     self._completed_callback()
 
   def _on_terms_accepted(self):
