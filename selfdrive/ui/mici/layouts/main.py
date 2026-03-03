@@ -79,7 +79,6 @@ class MiciMainLayout(Scroller):
 
   def _handle_transitions(self):
     # Don't pop if onboarding
-    # if gui_app.get_active_widget() == self._onboarding_window:
     if gui_app.widget_in_stack(self._onboarding_window):
       return
 
@@ -106,7 +105,6 @@ class MiciMainLayout(Scroller):
 
   def _on_interactive_timeout(self):
     # Don't pop if onboarding
-    # if gui_app.get_active_widget() == self._onboarding_window:
     if gui_app.widget_in_stack(self._onboarding_window):
       return
 
