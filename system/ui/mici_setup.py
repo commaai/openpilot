@@ -360,7 +360,7 @@ class NetworkSetupPage(NavScroller):
     self._custom_software = False
     self._prev_has_internet = False
     self._wifi_ui = WifiUIMici(self._wifi_manager)
-    self._wifi_manager.add_callbacks(disconnected=self._network_monitor.reset)
+    self._wifi_ui.set_back_callback(self._network_monitor.reset)
 
     self._connect_button = GreyBigButton("connect to\ninternet", "swipe down to go back",
                                          gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True))
@@ -445,7 +445,10 @@ class NetworkSetupPage(NavScroller):
       self._pending_wifi_grow_animation = False
       self._wifi_button.trigger_grow_animation()
 
-    if self._network_monitor.network_connected.is_set():
+    wifi_ui_showing = gui_app.get_active_widget() == self._wifi_ui
+    has_internet = self._network_monitor.network_connected.is_set() and not wifi_ui_showing
+
+    if has_internet:
       self._continue_button.set_visible(True)
       self._waiting_button.set_visible(False)
     else:
