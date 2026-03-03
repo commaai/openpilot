@@ -17,7 +17,7 @@ from openpilot.system.ui.mici_setup import BigPillButton
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets.label import MiciLabel
 from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
@@ -33,6 +33,18 @@ class ReviewTermsPage(TermsPage, NavScroller):
     close_button = BigPillButton("close")
     close_button.set_click_callback(self.dismiss)
     self._scroller.add_widget(close_button)
+
+
+class ReviewTrainingGuide(TrainingGuide):
+  def show_event(self):
+    super().show_event()
+    self._steps[0].show_event()
+    device.set_override_interactive_timeout(300)
+
+  def hide_event(self):
+    super().hide_event()
+    device.set_override_interactive_timeout(None)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
 
 
 class MiciFccModal(NavRawScrollPanel):
@@ -324,7 +336,7 @@ class DeviceLayoutMici(NavScroller):
     driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
     review_training_guide_btn = BigButton("review\ntraining guide", "", "icons_mici/settings/device/info.png")
-    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(TrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
+    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
     terms_btn = BigButton("terms &\nconditions", "", "icons_mici/settings/device/info.png")

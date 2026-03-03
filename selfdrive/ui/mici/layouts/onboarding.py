@@ -278,15 +278,8 @@ class TrainingGuide(NavWidget):
     self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack
 
   def show_event(self):
-    # Onboarding sets these as well. This is for previewing the training guide in settings
     super().show_event()
     self._steps[0].show_event()
-    device.set_override_interactive_timeout(300)
-
-  def hide_event(self):
-    super().hide_event()
-    device.set_override_interactive_timeout(None)
-    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
 
   def _render(self, _):
     self._steps[0].render(self._rect)
