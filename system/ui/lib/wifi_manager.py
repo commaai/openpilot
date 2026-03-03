@@ -414,6 +414,7 @@ class WifiManager:
         return
 
       self._set_connecting(None)
+      self._enqueue_callbacks(self._disconnected)
 
     elif new_state in (NMDeviceState.PREPARE, NMDeviceState.CONFIG):
       epoch = self._user_epoch
