@@ -12,6 +12,7 @@ from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, MeteredTy
 class NetworkLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
+
     self._wifi_manager = WifiManager()
     self._wifi_manager.set_active(False)
     self._wifi_ui = WifiUIMici(self._wifi_manager)
