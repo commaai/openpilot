@@ -318,6 +318,15 @@ class BigPillButton(BigButton):
     self._label.set_alignment(rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
     self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
 
+  def _load_images(self):
+    if self._green:
+      self._txt_default_bg = gui_app.texture("icons_mici/setup/start_button.png", 402, 180)
+      self._txt_pressed_bg = gui_app.texture("icons_mici/setup/start_button_pressed.png", 402, 180)
+    else:
+      self._txt_default_bg = gui_app.texture("icons_mici/setup/continue.png", 402, 180)
+      self._txt_pressed_bg = gui_app.texture("icons_mici/setup/continue_pressed.png", 402, 180)
+    self._txt_disabled_bg = gui_app.texture("icons_mici/setup/continue_disabled.png", 402, 180)
+
   def set_green(self, green: bool):
     if self._green != green:
       self._green = green
@@ -333,15 +342,6 @@ class BigPillButton(BigButton):
     if self._disabled_background:
       txt_bg = self._txt_disabled_bg
     return txt_bg, btn_x, btn_y, scale
-
-  def _load_images(self):
-    if self._green:
-      self._txt_default_bg = gui_app.texture("icons_mici/setup/start_button.png", 402, 180)
-      self._txt_pressed_bg = gui_app.texture("icons_mici/setup/start_button_pressed.png", 402, 180)
-    else:
-      self._txt_default_bg = gui_app.texture("icons_mici/setup/continue.png", 402, 180)
-      self._txt_pressed_bg = gui_app.texture("icons_mici/setup/continue_pressed.png", 402, 180)
-    self._txt_disabled_bg = gui_app.texture("icons_mici/setup/continue_disabled.png", 402, 180)
 
 
 class NetworkSetupPageBase(Scroller):
@@ -403,6 +403,7 @@ class NetworkSetupPageBase(Scroller):
     self._prev_has_internet = has_internet
 
     if self._pending_has_internet_scroll:
+      # Scrolls over to continue button, then grows once in view
       elapsed = rl.get_time() - self._show_time
       if elapsed > 0.5:
         self._pending_has_internet_scroll = False
@@ -414,6 +415,7 @@ class NetworkSetupPageBase(Scroller):
           self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
           self._pending_continue_grow_animation = True
 
+        # Animate WifiUi down first before scroll
         gui_app.pop_widgets_to(self, scroll_to_download)
 
   def set_custom_software(self, custom_software: bool):
@@ -523,7 +525,6 @@ class Setup(Widget):
   def _push_network_setup(self, custom_software: bool = False):
     # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
-
     gui_app.pop_widgets_to(self._software_selection_page, lambda: gui_app.push_widget(self._network_setup_page))
 
   def _network_setup_continue_callback(self, custom_software: bool):
