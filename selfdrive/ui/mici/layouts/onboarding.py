@@ -286,6 +286,7 @@ class TrainingGuide(NavWidget):
   def hide_event(self):
     super().hide_event()
     device.set_override_interactive_timeout(None)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
 
   def _render(self, _):
     self._steps[0].render(self._rect)
