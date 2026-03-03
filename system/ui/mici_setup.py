@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import os
 import re
-import ssl
-import subprocess
 import threading
 import time
 import urllib.request
@@ -59,7 +57,6 @@ class NetworkConnectivityMonitor:
     self._should_check = should_check or (lambda: True)
     self._stop_event = threading.Event()
     self._recheck_event = threading.Event()
-    self._time_sync_attempted = False
     self._thread: threading.Thread | None = None
 
   def start(self):
@@ -93,11 +90,6 @@ class NetworkConnectivityMonitor:
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
-        except urllib.error.URLError as e:
-          if isinstance(e.reason, ssl.SSLCertVerificationError) and not self._time_sync_attempted:
-            self._time_sync_attempted = True
-            subprocess.Popen(["sudo", "systemctl", "restart", "--no-block", "systemd-timesyncd"])
-          self.reset()
         except Exception:
           self.reset()
       else:
