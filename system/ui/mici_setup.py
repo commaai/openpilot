@@ -6,7 +6,6 @@ import time
 import urllib.request
 import urllib.error
 from urllib.parse import urlparse
-from enum import IntEnum
 import shutil
 from collections.abc import Callable
 
@@ -15,6 +14,7 @@ import pyray as rl
 from cereal import log
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.utils import run_cmd
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE, TICI
@@ -92,6 +92,9 @@ class NetworkConnectivityMonitor:
             self.wifi_connected.set()
         except Exception:
           self.reset()
+          # force time sync
+          if not system_time_valid():
+            run_cmd(["systemctl", "restart", "systemd-timesyncd.service"])
       else:
         self.reset()
 
