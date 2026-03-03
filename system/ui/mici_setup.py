@@ -12,12 +12,11 @@ from collections.abc import Callable
 import pyray as rl
 
 from cereal import log
-from openpilot.common.realtime import config_realtime_process, set_core_affinity
-from openpilot.common.swaglog import cloudlog
-from openpilot.common.time_helpers import system_time_valid
-from openpilot.common.utils import run_cmd
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.common.realtime import config_realtime_process, set_core_affinity
+from openpilot.common.swaglog import cloudlog
+from openpilot.common.utils import run_cmd
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
