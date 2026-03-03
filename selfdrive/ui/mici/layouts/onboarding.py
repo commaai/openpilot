@@ -266,7 +266,6 @@ class TrainingGuideAttentionNotice(Scroller):
 class TrainingGuide(NavWidget):
   def __init__(self, completed_callback: Callable[[], None]):
     super().__init__()
-    self._completed_callback = completed_callback
 
     self._steps = [
       TrainingGuideAttentionNotice(continue_callback=lambda: gui_app.push_widget(self._steps[1])),
