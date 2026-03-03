@@ -96,9 +96,6 @@ class TrainingGuideDMTutorial(NavWidget):
   def __init__(self, continue_callback: Callable[[], None]):
     super().__init__()
 
-    # TODO: bring back
-    self_ref = weakref.ref(self)
-
     self._back_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/driver_monitoring/dm_question.png", 28, 48))
     self._back_button.set_click_callback(lambda: gui_app.push_widget(self._bad_face_page))
     self._back_button.set_touch_valid_callback(lambda: self.enabled and not self.is_dismissing)  # for nav stack
