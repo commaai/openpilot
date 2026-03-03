@@ -27,6 +27,7 @@ MAX_LAG = 1.0
 MAX_LAG_STD = 0.1
 MAX_LAT_ACCEL = 2.0
 MAX_LAT_ACCEL_DIFF = 0.6
+MIN_LAT_ACCEL_RANGE = 0.5
 MIN_CONFIDENCE = 0.7
 CORR_BORDER_OFFSET = 5
 LAG_CANDIDATE_CORR_THRESHOLD = 0.9
@@ -300,7 +301,7 @@ class LateralLagEstimator:
 
     times, desired, actual, okay = self.points.get()
     # check if there are any new valid data points since the last update
-    is_valid = self.points_valid()
+    is_valid = self.points_valid() and (actual.max() - actual.min() >= MIN_LAT_ACCEL_RANGE)
     if self.last_estimate_t != 0 and times[0] <= self.last_estimate_t:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
@@ -315,7 +316,6 @@ class LateralLagEstimator:
   @staticmethod
   def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
-    expected_sig = symetric_moving_average(expected_sig, SMOOTH_K_SIZE)
     actual_sig = symetric_moving_average(actual_sig, SMOOTH_K_SIZE)
 
     max_lag_samples = int(max_lag / dt)
