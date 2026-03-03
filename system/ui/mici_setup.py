@@ -94,7 +94,7 @@ class NetworkConnectivityMonitor:
           self.reset()
           # force time sync
           if not system_time_valid():
-            run_cmd(["systemctl", "restart", "systemd-timesyncd.service"])
+            run_cmd(["sudo", "systemctl", "restart", "systemd-timesyncd.service"])
       else:
         self.reset()
 
