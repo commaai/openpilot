@@ -332,7 +332,7 @@ class QRCodeWidget(Widget):
 
 
 class TermsPage(Scroller):
-  def __init__(self, on_accept, on_decline, hide_decline=False):
+  def __init__(self, on_accept, on_decline):
     super().__init__()
 
     def show_accept_dialog():
@@ -345,15 +345,9 @@ class TermsPage(Scroller):
 
     self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
     self._accept_button.set_click_callback(show_accept_dialog)
-    self._accept_button.set_visible(not hide_decline)
 
     self._decline_button = BigCircleButton("icons_mici/setup/cancel.png", red=True)
     self._decline_button.set_click_callback(show_decline_dialog)
-    self._decline_button.set_visible(not hide_decline)
-
-    self._close_button = BigPillButton("close")
-    self._close_button.set_click_callback(on_accept)
-    self._close_button.set_visible(hide_decline)
 
     self._scroller.add_widgets([
       GreyBigButton("terms and\nconditions", "scroll to continue",
@@ -364,7 +358,6 @@ class TermsPage(Scroller):
       GreyBigButton("", "You must accept the Terms & Conditions to use openpilot."),
       self._accept_button,
       self._decline_button,
-      self._close_button
     ])
 
   def _render(self, _):
