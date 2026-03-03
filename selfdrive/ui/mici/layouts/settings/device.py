@@ -38,7 +38,6 @@ class ReviewTermsPage(TermsPage, NavScroller):
 class ReviewTrainingGuide(TrainingGuide):
   def show_event(self):
     super().show_event()
-    self._steps[0].show_event()
     device.set_override_interactive_timeout(300)
 
   def hide_event(self):
