@@ -809,7 +809,6 @@ dependencies = [
     { name = "libyuv" },
     { name = "ncurses" },
     { name = "numpy" },
-    { name = "openssl3" },
     { name = "psutil" },
     { name = "pycapnp" },
     { name = "pycryptodome" },
@@ -896,7 +895,6 @@ requires-dist = [
     { name = "ncurses", git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opencv-python-headless", marker = "extra == 'dev'" },
-    { name = "openssl3", git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
     { name = "pycapnp" },
@@ -931,11 +929,6 @@ requires-dist = [
     { name = "zstd", git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases" },
 ]
 provides-extras = ["docs", "testing", "dev", "tools"]
-
-[[package]]
-name = "openssl3"
-version = "3.4.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
 
 [[package]]
 name = "packaging"
