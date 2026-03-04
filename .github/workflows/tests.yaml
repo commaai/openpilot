@@ -44,7 +44,9 @@ jobs:
     steps:
     - name: Install git
       if: matrix.container
-      run: dnf install -y git-lfs
+      run: |
+        dnf install -y git-lfs
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v6
       with:
         submodules: true
