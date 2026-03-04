@@ -335,6 +335,7 @@ class ModelRenderer(Widget):
       return rl.Color(c.r, c.g, c.b, int(c.a * fade))
 
     if self._experimental_mode:
+      # Draw with acceleration coloring
       if len(self._exp_gradient.colors) > 1:
         g = self._exp_gradient
         faded_gradient = Gradient(start=g.start, end=g.end, colors=[_fade_color(c) for c in g.colors], stops=g.stops)
@@ -342,11 +343,12 @@ class ModelRenderer(Widget):
       else:
         draw_polygon(self._rect, self._path.projected_points, _fade_color(rl.Color(255, 255, 255, 30)))
     else:
+      # Blend throttle/no throttle colors based on transition
       blend_factor = round(self._blend_filter.x * 100) / 100
       blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, blend_factor)
       gradient = Gradient(
-        start=(0.0, 1.0),
-        end=(0.0, 0.0),
+        start=(0.0, 1.0),  # Bottom of path
+        end=(0.0, 0.0),  # Top of path
         colors=[_fade_color(c) for c in blended_colors],
         stops=[0.0, 0.5, 1.0],
       )
