@@ -306,6 +306,7 @@ class ModelRenderer(Widget):
 
   def _draw_lane_lines(self, fade: float = 1.0):
     """Draw lane lines and road edges"""
+    """Two closest lines should be green (lane line or road edges)"""
     for i, lane_line in enumerate(self._lane_lines):
       if lane_line.projected_points.size == 0:
         continue
