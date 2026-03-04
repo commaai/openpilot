@@ -90,6 +90,7 @@ class ModelRenderer(Widget):
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._ll_color_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._path_flow_distance = 0.0  # accumulated distance for arrow flow
+    self._path_wipe = 0.0  # animated wipe distance (meters) for engage/disengage
 
     # Transform matrix (3x3 for car space to screen space)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
@@ -156,10 +157,10 @@ class ModelRenderer(Widget):
         self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
 
-    # Draw elements (hide when disengaged)
+    # Draw elements (lane lines hide when disengaged, path wipes in/out)
     if ui_state.status != UIStatus.DISENGAGED:
       self._draw_lane_lines()
-      self._draw_path(sm)
+    self._draw_path(sm)
 
     if render_lead_indicator and radar_state:
       self._draw_lead_indicator(radar_state)
@@ -479,9 +480,17 @@ class ModelRenderer(Widget):
     allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
     self._blend_filter.update(int(allow_throttle))
 
-    if ui_state.status == UIStatus.DISENGAGED:
-      if self._path.projected_points.size:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(0, 0, 0, 90))
+    engaged = ui_state.status != UIStatus.DISENGAGED
+    dt = rl.get_frame_time()
+
+    # Animate wipe: expand outward on engage, retract on disengage
+    wipe_speed = 80.0  # meters per second
+    if engaged:
+      self._path_wipe = min(self._path_wipe + wipe_speed * dt, 150.0)
+    else:
+      self._path_wipe = max(self._path_wipe - wipe_speed * dt, 0.0)
+
+    if self._path_wipe <= 0.01:
       return
 
     # HACK: force chill mode for tuning
@@ -507,13 +516,13 @@ class ModelRenderer(Widget):
     arrow_w = 1.375  # halfway between 0.9 and 1.85
 
     # Accumulate actual distance traveled for smooth flow
-    dt = rl.get_frame_time()
     self._path_flow_distance += v_ego * dt
 
     # Uniform spacing for smooth flow, perspective naturally thins at distance
     spacing = 6.0
     phase = self._path_flow_distance % spacing
-    max_arrow_dist = min(max_x - arrow_len, 110.0)
+    wipe = self._path_wipe
+    max_arrow_dist = min(max_x - arrow_len, 110.0, wipe)
     arrow_x = np.arange(3.0 - phase, max_arrow_dist, spacing)
     arrow_x = arrow_x[arrow_x >= 2.0]
 
@@ -551,7 +560,9 @@ class ModelRenderer(Widget):
       dist_fade = float(np.clip(1.0 - ax / 150, 0.6, 1.0))
       # Fade in near car (arrows appearing from under car)
       near_fade = float(np.clip((ax - 2.0) / 3.0, 0.0, 1.0))
-      base_alpha = dist_fade * near_fade
+      # Fade out at wipe edge (soft 10m fade)
+      wipe_fade = float(np.clip((wipe - ax) / 10.0, 0.0, 1.0))
+      base_alpha = dist_fade * near_fade * wipe_fade
 
       # Color based on mode — grey past lead car
       alpha = int(255 * base_alpha)
