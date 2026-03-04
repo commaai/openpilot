@@ -360,16 +360,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dearpygui"
-version = "2.2"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/c8/b4afdac89c7bf458513366af3143f7383d7b09721637989c95788d93e24c/dearpygui-2.2-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:34ceae1ca1b65444e49012d6851312e44f08713da1b8cc0150cf41f1c207af9c", size = 1931443, upload-time = "2026-02-17T14:21:54.394Z" },
-    { url = "https://files.pythonhosted.org/packages/43/93/a2d083b2e0edb095be815662cc41e40cf9ea7b65d6323e47bb30df7eb284/dearpygui-2.2-cp312-cp312-manylinux1_x86_64.whl", hash = "sha256:e1fae9ae59fec0e41773df64c80311a6ba67696219dde5506a2a4c013e8bcdfa", size = 2592645, upload-time = "2026-02-17T14:22:02.869Z" },
-    { url = "https://files.pythonhosted.org/packages/80/ba/eae13acaad479f522db853e8b1ccd695a7bc8da2b9685c1d70a3b318df89/dearpygui-2.2-cp312-cp312-win_amd64.whl", hash = "sha256:7d399543b5a26ab6426ef3bbd776e55520b491b3e169647bde5e6b2de3701b35", size = 1830531, upload-time = "2026-02-17T14:21:43.386Z" },
-]
-
-[[package]]
 name = "dnspython"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -800,6 +790,7 @@ dependencies = [
     { name = "cython" },
     { name = "eigen" },
     { name = "ffmpeg" },
+    { name = "gcc-arm-none-eabi" },
     { name = "git-lfs" },
     { name = "inputs" },
     { name = "jeepney" },
@@ -836,7 +827,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "gcc-arm-none-eabi" },
     { name = "matplotlib" },
     { name = "opencv-python-headless" },
 ]
@@ -859,7 +849,6 @@ testing = [
     { name = "ty" },
 ]
 tools = [
-    { name = "dearpygui", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'" },
 ]
 
@@ -876,10 +865,9 @@ requires-dist = [
     { name = "coverage", marker = "extra == 'testing'" },
     { name = "crcmod-plus" },
     { name = "cython" },
-    { name = "dearpygui", marker = "(platform_machine != 'aarch64' and extra == 'tools') or (sys_platform != 'linux' and extra == 'tools')", specifier = ">=2.1.0" },
     { name = "eigen", git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases" },
     { name = "ffmpeg", git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases" },
-    { name = "gcc-arm-none-eabi", marker = "extra == 'dev'", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
+    { name = "gcc-arm-none-eabi", git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases" },
     { name = "git-lfs", git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases" },
     { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
     { name = "inputs" },
