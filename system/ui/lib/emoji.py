@@ -37,7 +37,7 @@ EMOJI_REGEX = re.compile(
 @functools.cache
 def _load_emoji_font() -> ImageFont.FreeTypeFont:
   with as_file(FONT_DIR.joinpath("NotoColorEmoji.ttf")) as font_path:
-    return ImageFont.truetype(str(font_path), 109)
+    return ImageFont.truetype(io.BytesIO(font_path.read_bytes()), 109)
 
 def find_emoji(text):
   return [(m.start(), m.end(), m.group()) for m in EMOJI_REGEX.finditer(text)]
