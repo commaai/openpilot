@@ -29,8 +29,8 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-          - os: fedora-41
-            container: fedora:41
+          - os: fedora-42
+            container: fedora:42
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
