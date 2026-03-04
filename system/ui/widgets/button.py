@@ -228,6 +228,7 @@ class SmallCircleIconButton(Widget):
 class SmallButton(Widget):
   def __init__(self, text: str):
     super().__init__()
+    self._click_delay = 0.075
     self._opacity_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
     self._load_assets()

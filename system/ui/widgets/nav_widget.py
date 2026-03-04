@@ -63,7 +63,7 @@ class NavWidget(Widget, abc.ABC):
     self._playing_dismiss_animation = False  # released and animating away
     self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / gui_app.target_fps, bounce=1)
 
-    self._back_callback: Callable[[], None] | None = None  # persistent callback for any back navigation
+    self._back_callback: Callable[[], None] | None = None  # persistent callback for user-initiated back navigation
     self._dismiss_callback: Callable[[], None] | None = None  # transient callback for programmatic dismiss
 
     # TODO: move this state into NavBar
@@ -150,12 +150,12 @@ class NavWidget(Widget, abc.ABC):
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       gui_app.pop_widget()
 
-      if self._back_callback is not None:
-        self._back_callback()
-
+      # Only one callback should ever be fired
       if self._dismiss_callback is not None:
         self._dismiss_callback()
         self._dismiss_callback = None
+      elif self._back_callback is not None:
+        self._back_callback()
 
       self._playing_dismiss_animation = False
       self._drag_start_pos = None

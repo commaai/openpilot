@@ -53,7 +53,7 @@ class MiciMainLayout(Scroller):
     gui_app.push_widget(self)
 
     # Start onboarding if terms or training not completed, make sure to push after self
-    self._onboarding_window = OnboardingWindow()
+    self._onboarding_window = OnboardingWindow(lambda: gui_app.pop_widgets_to(self))
     if not self._onboarding_window.completed:
       gui_app.push_widget(self._onboarding_window)
 
@@ -79,7 +79,7 @@ class MiciMainLayout(Scroller):
 
   def _handle_transitions(self):
     # Don't pop if onboarding
-    if gui_app.get_active_widget() == self._onboarding_window:
+    if gui_app.widget_in_stack(self._onboarding_window):
       return
 
     if ui_state.started != self._prev_onroad:
@@ -105,7 +105,7 @@ class MiciMainLayout(Scroller):
 
   def _on_interactive_timeout(self):
     # Don't pop if onboarding
-    if gui_app.get_active_widget() == self._onboarding_window:
+    if gui_app.widget_in_stack(self._onboarding_window):
       return
 
     if ui_state.started:

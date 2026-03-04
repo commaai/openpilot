@@ -6,7 +6,7 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
-#include "raylib.h"
+#include "third_party/raylib/include/raylib.h"
 
 int freshClone();
 int cachedFetch(const std::string &cache);
@@ -81,16 +81,14 @@ void run(const char* cmd) {
 }
 
 void finishInstall() {
-  BeginDrawing();
-    ClearBackground(BLACK);
-    if (tici_device) {
+  if (tici_device) {
+    BeginDrawing();
+      ClearBackground(BLACK);
       const char *m = "Finishing install...";
       int text_width = MeasureText(m, FONT_SIZE);
       DrawTextEx(font_display, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + FONT_SIZE, (float)(GetScreenHeight() - FONT_SIZE)/2}, FONT_SIZE, 0, WHITE);
-    } else {
-      DrawTextEx(font_display, "finishing setup", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
-    }
-  EndDrawing();
+    EndDrawing();
+  }
   util::sleep_for(60 * 1000);
 }
 
