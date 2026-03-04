@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from abc import abstractmethod
 import os
 import re
 import threading
@@ -14,21 +13,22 @@ import pyray as rl
 
 from cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import run_cmd
-from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
-from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.button import (IconButton, SmallButton, WideRoundedButton, SmallerRoundedButton,
-                                                SmallCircleIconButton, WidishRoundedButton, FullRoundedButton)
+from openpilot.system.ui.widgets.button import SmallButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
-from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiUIMici
+from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
+from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -122,9 +122,9 @@ class SoftwareSelectionPage(NavWidget):
                use_custom_software_callback: Callable):
     super().__init__()
 
-    self._openpilot_slider = LargerSlider("slide to use\nopenpilot", use_openpilot_callback)
+    self._openpilot_slider = LargerSlider("slide to install\nopenpilot", use_openpilot_callback)
     self._openpilot_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
-    self._custom_software_slider = LargerSlider("slide to use\ncustom software", use_custom_software_callback, green=False)
+    self._custom_software_slider = LargerSlider("slide to install\nother software", use_custom_software_callback, green=False)
     self._custom_software_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def show_event(self):
@@ -161,199 +161,24 @@ class SoftwareSelectionPage(NavWidget):
     self._custom_software_slider.render(custom_software_rect)
 
 
-class TermsHeader(Widget):
-  def __init__(self, text: str, icon_texture: rl.Texture):
-    super().__init__()
-
-    self._title = UnifiedLabel(text, 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                               font_weight=FontWeight.BOLD, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-                               line_height=0.8)
-    self._icon_texture = icon_texture
-
-    self.set_rect(rl.Rectangle(0, 0, gui_app.width - 16 * 2, self._icon_texture.height))
-
-  def set_title(self, text: str):
-    self._title.set_text(text)
-
-  def set_icon(self, icon_texture: rl.Texture):
-    self._icon_texture = icon_texture
-
-  def _render(self, _):
-    rl.draw_texture_ex(self._icon_texture, rl.Vector2(self._rect.x, self._rect.y),
-                       0.0, 1.0, rl.WHITE)
-
-    # May expand outside parent rect
-    title_content_height = self._title.get_content_height(int(self._rect.width - self._icon_texture.width - 16))
-    title_rect = rl.Rectangle(
-      self._rect.x + self._icon_texture.width + 16,
-      self._rect.y + (self._rect.height - title_content_height) / 2,
-      self._rect.width - self._icon_texture.width - 16,
-      title_content_height,
-    )
-    self._title.render(title_rect)
-
-
-class TermsPage(Widget):
-  ITEM_SPACING = 20
-
-  def __init__(self, continue_callback: Callable, back_callback: Callable | None = None,
-               back_text: str = "back", continue_text: str = "accept"):
-    super().__init__()
-
-    # TODO: use Scroller
-    self._scroll_panel = GuiScrollPanel2(horizontal=False)
-
-    self._continue_text = continue_text
-    self._continue_slider: bool = continue_text in ("reboot", "power off")
-    self._continue_button: WideRoundedButton | FullRoundedButton | SmallSlider
-    if self._continue_slider:
-      self._continue_button = SmallSlider(continue_text, confirm_callback=continue_callback)
-      self._scroll_panel.set_enabled(lambda: not self._continue_button.is_pressed)
-    elif back_callback is not None:
-      self._continue_button = WideRoundedButton(continue_text)
-    else:
-      self._continue_button = FullRoundedButton(continue_text)
-    self._continue_button.set_enabled(False)
-    self._continue_button.set_opacity(0.0)
-    self._continue_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
-    if not self._continue_slider:
-      self._continue_button.set_click_callback(continue_callback)
-
-    self._enable_back = back_callback is not None
-    self._back_button = SmallButton(back_text)
-    self._back_button.set_opacity(0.0)
-    self._back_button.set_touch_valid_callback(self._scroll_panel.is_touch_valid)
-    self._back_button.set_click_callback(back_callback)
-
-    self._scroll_down_indicator = IconButton(gui_app.texture("icons_mici/setup/scroll_down_indicator.png", 64, 78))
-    self._scroll_down_indicator.set_enabled(False)
-
-  def reset(self):
-    self._scroll_panel.set_offset(0)
-    self._continue_button.set_enabled(False)
-    self._continue_button.set_opacity(0.0)
-    self._back_button.set_enabled(False)
-    self._back_button.set_opacity(0.0)
-    self._scroll_down_indicator.set_opacity(1.0)
-
-  def show_event(self):
-    super().show_event()
-    self.reset()
-
-  @property
-  @abstractmethod
-  def _content_height(self):
-    pass
-
-  @property
-  def _scrolled_down_offset(self):
-    return -self._content_height + (self._continue_button.rect.height + 16 + 30)
-
-  @abstractmethod
-  def _render_content(self, scroll_offset):
-    pass
-
-  def _render(self, _):
-    rl.draw_rectangle_rec(self._rect, rl.BLACK)
-    scroll_offset = round(self._scroll_panel.update(self._rect, self._content_height + self._continue_button.rect.height + 16))
-
-    if scroll_offset <= self._scrolled_down_offset:
-      # don't show back if not enabled
-      if self._enable_back:
-        self._back_button.set_enabled(True)
-        self._back_button.set_opacity(1.0, smooth=True)
-      self._continue_button.set_enabled(True)
-      self._continue_button.set_opacity(1.0, smooth=True)
-      self._scroll_down_indicator.set_opacity(0.0, smooth=True)
-    else:
-      self._back_button.set_enabled(False)
-      self._back_button.set_opacity(0.0, smooth=True)
-      self._continue_button.set_enabled(False)
-      self._continue_button.set_opacity(0.0, smooth=True)
-      self._scroll_down_indicator.set_opacity(1.0, smooth=True)
-
-    # Render content
-    self._render_content(scroll_offset)
-
-    # black gradient at top and bottom for scrolling content
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y),
-                                 int(self._rect.width), 20, rl.BLACK, rl.BLANK)
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - 20),
-                                 int(self._rect.width), 20, rl.BLANK, rl.BLACK)
-
-    # fade out back button as slider is moved
-    if self._continue_slider and scroll_offset <= self._scrolled_down_offset:
-      self._back_button.set_opacity(1.0 - self._continue_button.slider_percentage)
-      self._back_button.set_visible(self._continue_button.slider_percentage < 0.99)
-
-    self._back_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._back_button.rect.height,
-      self._back_button.rect.width,
-      self._back_button.rect.height,
-    ))
-
-    continue_x = self._rect.x + 8
-    if self._enable_back:
-      continue_x = self._rect.x + self._rect.width - self._continue_button.rect.width - 8
-    if self._continue_slider:
-      continue_x += 8
-    self._continue_button.render(rl.Rectangle(
-      continue_x,
-      self._rect.y + self._rect.height - self._continue_button.rect.height,
-      self._continue_button.rect.width,
-      self._continue_button.rect.height,
-    ))
-
-    self._scroll_down_indicator.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._scroll_down_indicator.rect.width - 8,
-      self._rect.y + self._rect.height - self._scroll_down_indicator.rect.height - 8,
-      self._scroll_down_indicator.rect.width,
-      self._scroll_down_indicator.rect.height,
-    ))
-
-
-class CustomSoftwareWarningPage(TermsPage):
+class CustomSoftwareWarningPage(NavScroller):
   def __init__(self, continue_callback: Callable, back_callback: Callable):
-    super().__init__(continue_callback, back_callback)
+    super().__init__()
+    self.set_back_callback(back_callback)
 
-    self._title_header = TermsHeader("use caution installing\n3rd party software",
-                                     gui_app.texture("icons_mici/setup/warning.png", 66, 60))
-    self._body = UnifiedLabel("• It has not been tested by comma.\n" +
-                              "• It may not comply with relevant safety standards.\n" +
-                              "• It may cause damage to your device and/or vehicle.\n", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                              font_weight=FontWeight.ROMAN)
+    self._continue_button = BigPillButton("next")
+    self._continue_button.set_click_callback(continue_callback)
 
-    self._restore_header = TermsHeader("how to backup &\nrestore", gui_app.texture("icons_mici/setup/restore.png", 60, 60))
-    self._restore_body = UnifiedLabel("To restore your device to a factory state later, use https://flash.comma.ai",
-                                      36, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                                      font_weight=FontWeight.ROMAN)
-
-  @property
-  def _content_height(self):
-    return self._restore_body.rect.y + self._restore_body.rect.height - self._scroll_panel.get_offset()
-
-  def _render_content(self, scroll_offset):
-    self._title_header.set_position(self._rect.x + 16, self._rect.y + 8 + scroll_offset)
-    self._title_header.render()
-
-    body_rect = rl.Rectangle(
-      self._rect.x + 8,
-      self._title_header.rect.y + self._title_header.rect.height + self.ITEM_SPACING,
-      self._rect.width - 50,
-      self._body.get_content_height(int(self._rect.width - 50)),
-    )
-    self._body.render(body_rect)
-
-    self._restore_header.set_position(self._rect.x + 16, self._body.rect.y + self._body.rect.height + self.ITEM_SPACING)
-    self._restore_header.render()
-
-    self._restore_body.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._restore_header.rect.y + self._restore_header.rect.height + self.ITEM_SPACING,
-      self._rect.width - 50,
-      self._restore_body.get_content_height(int(self._rect.width - 50)),
-    ))
+    self._scroller.add_widgets([
+      GreyBigButton("use caution", "when installing\n3rd party software",
+                    gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
+      GreyBigButton("", "• It has not been tested by comma"),
+      GreyBigButton("", "• It may not comply with relevant safety standards."),
+      GreyBigButton("", "• It may cause damage to your device and/or vehicle."),
+      GreyBigButton("how to restore to a\nfactory state later", "https://flash.comma.ai",
+                    gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
+      self._continue_button,
+    ])
 
 
 class DownloadingPage(Widget):
@@ -391,11 +216,9 @@ class DownloadingPage(Widget):
     ))
 
 
-class FailedPage(NavWidget):
+class FailedPageBase(Widget):
   def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
     super().__init__()
-    self.set_back_callback(retry_callback)
-
     self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                      font_weight=FontWeight.DISPLAY)
     self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
@@ -446,11 +269,86 @@ class FailedPage(NavWidget):
     ))
 
 
-class NetworkSetupPage(NavWidget):
+class FailedPage(FailedPageBase, NavWidget):
+  def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
+    super().__init__(reboot_callback, retry_callback, title)
+    self.set_back_callback(retry_callback)
+
+
+class GreyBigButton(BigButton):
+  """Users should manage newlines with this class themselves"""
+
+  LABEL_HORIZONTAL_PADDING = 30
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.set_touch_valid_callback(lambda: False)
+
+    self._rect.width = 476
+
+    self._label.set_font_size(36)
+    self._label.set_font_weight(FontWeight.BOLD)
+    self._label.set_line_height(1.0)
+
+    self._sub_label.set_font_size(36)
+    self._sub_label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.9)))
+    self._sub_label.set_font_weight(FontWeight.DISPLAY_REGULAR)
+    self._sub_label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE if not self._label.text else
+                                           rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+    self._sub_label.set_line_height(0.95)
+
+  @property
+  def LABEL_VERTICAL_PADDING(self):
+    return BigButton.LABEL_VERTICAL_PADDING if self._label.text else 18
+
+  def _width_hint(self) -> int:
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
+
+  def _render(self, _):
+    rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(255, 255, 255, int(255 * 0.15)))
+    self._draw_content(self._rect.y)
+
+
+class BigPillButton(BigButton):
+  def __init__(self, *args, green: bool = False, disabled_background: bool = False, **kwargs):
+    self._green = green
+    self._disabled_background = disabled_background
+    super().__init__(*args, **kwargs)
+
+    self._label.set_font_size(48)
+    self._label.set_alignment(rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self._label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)
+
+  def _load_images(self):
+    if self._green:
+      self._txt_default_bg = gui_app.texture("icons_mici/setup/start_button.png", 402, 180)
+      self._txt_pressed_bg = gui_app.texture("icons_mici/setup/start_button_pressed.png", 402, 180)
+    else:
+      self._txt_default_bg = gui_app.texture("icons_mici/setup/continue.png", 402, 180)
+      self._txt_pressed_bg = gui_app.texture("icons_mici/setup/continue_pressed.png", 402, 180)
+    self._txt_disabled_bg = gui_app.texture("icons_mici/setup/continue_disabled.png", 402, 180)
+
+  def set_green(self, green: bool):
+    if self._green != green:
+      self._green = green
+      self._load_images()
+
+  def _update_label_layout(self):
+    # Don't change label text size
+    pass
+
+  def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
+    txt_bg, btn_x, btn_y, scale = super()._handle_background()
+
+    if self._disabled_background:
+      txt_bg = self._txt_disabled_bg
+    return txt_bg, btn_x, btn_y, scale
+
+
+class NetworkSetupPageBase(Scroller):
   def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable[[bool], None],
-               back_callback: Callable[[], None] | None):
+               disable_connect_hint: bool = False):
     super().__init__()
-    self.set_back_callback(back_callback)
 
     self._wifi_manager = WifiManager()
     self._wifi_manager.set_active(True)
@@ -459,83 +357,106 @@ class NetworkSetupPage(NavWidget):
     self._prev_has_internet = False
     self._wifi_ui = WifiUIMici(self._wifi_manager)
 
-    self._no_wifi_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 58, 50)
-    self._wifi_full_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_full.png", 58, 50)
-    self._waiting_text = "waiting for internet..."
-    self._network_header = TermsHeader(self._waiting_text, self._no_wifi_txt)
+    self._connect_button = GreyBigButton("connect to\ninternet", "swipe down to go back",
+                                         gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True))
+    self._connect_button.set_visible(not disable_connect_hint)
 
-    back_txt = gui_app.texture("icons_mici/setup/back_new.png", 37, 32)
-    self._back_button = SmallCircleIconButton(back_txt)
-    self._back_button.set_click_callback(back_callback)
-    self._back_button.set_enabled(lambda: self.enabled)  # for nav stack
-
-    self._wifi_button = SmallerRoundedButton("wifi")
+    self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
-    self._wifi_button.set_enabled(lambda: self.enabled)
 
-    self._continue_button = WidishRoundedButton("continue")
-    self._continue_button.set_enabled(False)
+    self._show_time = 0.0
+    self._pending_has_internet_scroll = False
+    self._pending_continue_grow_animation = False
+    self._pending_wifi_grow_animation = False
+
+    def on_waiting_click():
+      offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
+      self._scroller.scroll_to(offset, smooth=True, block_interaction=True)
+      # trigger grow when wifi button in view
+      self._pending_wifi_grow_animation = True
+
+    self._waiting_button = BigPillButton("waiting for\ninternet...", disabled_background=True)
+    self._waiting_button.set_click_callback(on_waiting_click)
+    self._continue_button = BigPillButton("install openpilot", green=True)
     self._continue_button.set_click_callback(lambda: continue_callback(self._custom_software))
+
+    self._scroller.add_widgets([
+      self._connect_button,
+      self._wifi_button,
+      self._continue_button,
+      self._waiting_button,
+    ])
 
     gui_app.add_nav_stack_tick(self._nav_stack_tick)
 
   def show_event(self):
     super().show_event()
+    self._show_time = rl.get_time()
     self._prev_has_internet = False
-    self._network_monitor.reset()
-    self._set_has_internet(False)
+    self._pending_has_internet_scroll = False
+    self._pending_continue_grow_animation = False
+    self._pending_wifi_grow_animation = False
 
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
 
     has_internet = self._network_monitor.network_connected.is_set()
-    if has_internet != self._prev_has_internet:
-      self._set_has_internet(has_internet)
-      if has_internet:
-        gui_app.pop_widgets_to(self)
-      self._prev_has_internet = has_internet
+    if has_internet and not self._prev_has_internet:
+      self._pending_has_internet_scroll = True
+    self._prev_has_internet = has_internet
 
-  def _set_has_internet(self, has_internet: bool):
-    if has_internet:
-      self._network_header.set_title("connected to internet")
-      self._network_header.set_icon(self._wifi_full_txt)
-      self._continue_button.set_enabled(lambda: self.enabled)
-    else:
-      self._network_header.set_title(self._waiting_text)
-      self._network_header.set_icon(self._no_wifi_txt)
-      self._continue_button.set_enabled(False)
+    if self._pending_has_internet_scroll:
+      # Scrolls over to continue button, then grows once in view
+      elapsed = rl.get_time() - self._show_time
+      if elapsed > 0.5:
+        self._pending_has_internet_scroll = False
+
+        def scroll_to_download():
+          self._scroller._layout()
+          end_offset = -(self._scroller.content_size - self._rect.width)
+          remaining = self._scroller.scroll_panel.get_offset() - end_offset
+          self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
+          self._pending_continue_grow_animation = True
+
+        # Animate WifiUi down first before scroll
+        gui_app.pop_widgets_to(self, scroll_to_download)
 
   def set_custom_software(self, custom_software: bool):
     self._custom_software = custom_software
+    self._continue_button.set_text("install openpilot" if not custom_software else "choose software")
+    self._continue_button.set_green(not custom_software)
 
-  def _render(self, _):
-    self._network_header.render(rl.Rectangle(
-      self._rect.x + 16,
-      self._rect.y + 16,
-      self._rect.width - 32,
-      self._network_header.rect.height,
-    ))
+  def set_is_updater(self):
+    self._continue_button.set_text("download\n& install")
+    self._continue_button.set_green(False)
 
-    self._back_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._back_button.rect.height,
-      self._back_button.rect.width,
-      self._back_button.rect.height,
-    ))
+  def _update_state(self):
+    super()._update_state()
 
-    self._wifi_button.render(rl.Rectangle(
-      self._rect.x + 8 + self._back_button.rect.width + 10,
-      self._rect.y + self._rect.height - self._wifi_button.rect.height,
-      self._wifi_button.rect.width,
-      self._wifi_button.rect.height,
-    ))
+    if self._pending_continue_grow_animation:
+      btn_right = self._continue_button.rect.x + self._continue_button.rect.width
+      visible_right = self._rect.x + self._rect.width
+      if btn_right < visible_right + 50:
+        self._pending_continue_grow_animation = False
+        self._continue_button.trigger_grow_animation()
 
-    self._continue_button.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._continue_button.rect.width - 8,
-      self._rect.y + self._rect.height - self._continue_button.rect.height,
-      self._continue_button.rect.width,
-      self._continue_button.rect.height,
-    ))
+    if self._pending_wifi_grow_animation and abs(self._wifi_button.rect.x - ITEM_SPACING) < 50:
+      self._pending_wifi_grow_animation = False
+      self._wifi_button.trigger_grow_animation()
+
+    if self._network_monitor.network_connected.is_set():
+      self._continue_button.set_visible(True)
+      self._waiting_button.set_visible(False)
+    else:
+      self._continue_button.set_visible(False)
+      self._waiting_button.set_visible(True)
+
+
+class NetworkSetupPage(NetworkSetupPageBase, NavScroller):
+  def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable[[bool], None],
+               back_callback: Callable[[], None] | None):
+    super().__init__(network_monitor, continue_callback)
+    self.set_back_callback(back_callback)
 
 
 class Setup(Widget):
@@ -557,13 +478,13 @@ class Setup(Widget):
     self._start_page.set_click_callback(getting_started_button_callback)
     self._start_page.set_enabled(lambda: self.enabled)  # for nav stack
 
-    self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_button_callback,
-                                                self._pop_to_software_selection)
+    self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback, self._pop_to_software_selection)
+
     self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
 
     self._download_failed_page = FailedPage(HARDWARE.reboot, self._pop_to_software_selection)
 
-    self._custom_software_warning_page = CustomSoftwareWarningPage(self._software_selection_custom_software_continue, self._pop_to_software_selection)
+    self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._pop_to_software_selection)
 
     self._downloading_page = DownloadingPage()
 
@@ -602,17 +523,14 @@ class Setup(Widget):
       time.sleep(0.1)
       gui_app.request_close()
     else:
-      self._push_network_setup(custom_software=False)
+      self._push_network_setup()
 
-  def _push_network_setup(self, custom_software: bool):
+  def _push_network_setup(self, custom_software: bool = False):
+    # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
-    gui_app.push_widget(self._network_setup_page)
+    gui_app.pop_widgets_to(self._software_selection_page, lambda: gui_app.push_widget(self._network_setup_page))
 
-  def _software_selection_custom_software_continue(self):
-    gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-    self._push_network_setup(custom_software=True)
-
-  def _network_setup_continue_button_callback(self, custom_software):
+  def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
       gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
       self._download(OPENPILOT_URL)
@@ -623,7 +541,7 @@ class Setup(Widget):
           gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
           self._download(url)
 
-      keyboard = BigInputDialog("custom software URL", confirm_callback=handle_keyboard_result)
+      keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result, auto_return_to_letters="./")
       gui_app.push_widget(keyboard)
 
   def _download(self, url: str):

@@ -7,11 +7,10 @@ from enum import IntEnum
 
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.button import FullRoundedButton
-from openpilot.system.ui.mici_setup import NetworkSetupPage, FailedPage, NetworkConnectivityMonitor
+from openpilot.system.ui.mici_setup import NetworkSetupPageBase, FailedPageBase, NetworkConnectivityMonitor
 
 
 class Screen(IntEnum):
@@ -32,15 +31,13 @@ class Updater(Widget):
     self.progress_text = "loading"
     self.process = None
     self.update_thread = None
-    self._wifi_manager = WifiManager()
-    self._wifi_manager.set_active(True)
-
-    self._network_setup_page = NetworkSetupPage(self._wifi_manager, self._network_setup_continue_callback,
-                                                self._network_setup_back_callback)
-    self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
-
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
+
+    self._network_setup_page = NetworkSetupPageBase(self._network_monitor, self._network_setup_continue_callback,
+                                                    disable_connect_hint=True)
+    self._network_setup_page.set_is_updater()
+    self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
 
     # Buttons
     self._continue_button = FullRoundedButton("continue")
@@ -52,8 +49,8 @@ class Updater(Widget):
                                         text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                         font_weight=FontWeight.ROMAN)
 
-    self._update_failed_page = FailedPage(HARDWARE.reboot, self._update_failed_retry_callback,
-                                          title="update failed")
+    self._update_failed_page = FailedPageBase(HARDWARE.reboot, self._update_failed_retry_callback,
+                                              title="update failed")
 
     self._progress_title_label = UnifiedLabel("", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                               font_weight=FontWeight.DISPLAY, line_height=0.8)
@@ -61,10 +58,7 @@ class Updater(Widget):
                                                 font_weight=FontWeight.ROMAN,
                                                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
-  def _network_setup_back_callback(self):
-    self.set_current_screen(Screen.PROMPT)
-
-  def _network_setup_continue_callback(self):
+  def _network_setup_continue_callback(self, _):
     self.install_update()
 
   def _update_failed_retry_callback(self):
@@ -160,14 +154,10 @@ class Updater(Widget):
       rect.height,
     ))
 
-  def _update_state(self):
-    self._wifi_manager.process_callbacks()
-
   def _render(self, rect: rl.Rectangle):
     if self.current_screen == Screen.PROMPT:
       self.render_prompt_screen(rect)
     elif self.current_screen == Screen.WIFI:
-      self._network_setup_page.set_has_internet(self._network_monitor.network_connected.is_set())
       self._network_setup_page.render(rect)
     elif self.current_screen == Screen.PROGRESS:
       self.render_progress_screen(rect)
