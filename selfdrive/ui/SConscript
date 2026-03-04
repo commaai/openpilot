@@ -16,12 +16,17 @@ env.Command(
   action=f"python3 {generator}",
 )
 
+try:
+  import raylib
+except ImportError:
+  raylib = None
 
-if GetOption('extras') and arch == "larch64":
+if GetOption('extras') and arch == "larch64" and raylib is not None:
   # build installers
   if arch != "Darwin":
     raylib_env = env.Clone()
-    raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+    raylib_env['CPPPATH'] += [raylib.INCLUDE_DIR]
+    raylib_env['LIBPATH'] += [raylib.LIB_DIR]
     raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
 
     raylib_libs = common + ["raylib"]

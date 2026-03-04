@@ -116,12 +116,12 @@ wheels = [
 [[package]]
 name = "bzip2"
 version = "1.0.8"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=bzip2&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "capnproto"
 version = "1.0.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=capnproto&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "casadi"
@@ -381,7 +381,7 @@ wheels = [
 [[package]]
 name = "eigen"
 version = "3.4.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=eigen&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "execnet"
@@ -395,7 +395,7 @@ wheels = [
 [[package]]
 name = "ffmpeg"
 version = "7.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ffmpeg&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "fonttools"
@@ -442,7 +442,7 @@ wheels = [
 [[package]]
 name = "gcc-arm-none-eabi"
 version = "13.2.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=gcc-arm-none-eabi&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "ghp-import"
@@ -459,7 +459,7 @@ wheels = [
 [[package]]
 name = "git-lfs"
 version = "3.6.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=git-lfs&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "google-crc32c"
@@ -577,7 +577,7 @@ wheels = [
 [[package]]
 name = "libjpeg"
 version = "3.1.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libjpeg&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "libusb1"
@@ -593,7 +593,7 @@ wheels = [
 [[package]]
 name = "libyuv"
 version = "1922.0"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=libyuv&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "markdown"
@@ -745,7 +745,7 @@ wheels = [
 [[package]]
 name = "ncurses"
 version = "6.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=ncurses&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "numpy"
@@ -912,7 +912,7 @@ requires-dist = [
     { name = "python3-dev", git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases" },
     { name = "pyzmq" },
     { name = "qrcode" },
-    { name = "raylib", specifier = ">5.5.0.3" },
+    { name = "raylib", git = "https://github.com/commaai/dependencies.git?subdirectory=raylib&rev=releases" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
     { name = "scons" },
@@ -935,7 +935,7 @@ provides-extras = ["docs", "testing", "dev", "tools"]
 [[package]]
 name = "openssl3"
 version = "3.4.1"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=openssl3&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "packaging"
@@ -1306,7 +1306,7 @@ wheels = [
 [[package]]
 name = "python3-dev"
 version = "3.12.8"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "pyyaml"
@@ -1374,19 +1374,9 @@ wheels = [
 [[package]]
 name = "raylib"
 version = "5.5.0.4"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=raylib&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 dependencies = [
     { name = "cffi" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7c/4b/858958762c075c54058ee3b0771838fd505ca908871e6a0397b01086e526/raylib-5.5.0.4.tar.gz", hash = "sha256:996506e8a533cd7a6a3ef6c44ec11f9d6936698f2c394a991af8022be33079a0", size = 184413, upload-time = "2025-12-11T15:32:12.465Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/95/21/9117d7013997a65f6d51c6f56145b2c583eeba8f7c1af71a60776eaae9b9/raylib-5.5.0.4-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:31f64f71e42fed10e8f3629028c9f5700906e0e573b915cfc2244d7a3f3b2ed9", size = 1635486, upload-time = "2025-12-11T15:27:31.05Z" },
-    { url = "https://files.pythonhosted.org/packages/1c/a3/e55039c8f49856c5a194f2b81f27ca6ba2d5900024f09435587e177bfaf2/raylib-5.5.0.4-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:80bfa053e765d47a9f58d59e321a999184b5a5190e369dd015c12fcfd08d6217", size = 1554132, upload-time = "2025-12-11T15:27:33.291Z" },
-    { url = "https://files.pythonhosted.org/packages/58/1c/86bee75ecaa577214da16b374f8de70b45885452703f622c63e06baa0b8e/raylib-5.5.0.4-cp312-cp312-manylinux2010_i686.manylinux_2_12_i686.whl", hash = "sha256:033240c61c1a1fc06fecff747a183671431a4ce63a0c8aafec59217845f86888", size = 2039888, upload-time = "2025-12-11T15:27:36.059Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/f9/00763899bb8a178a927b5dda90aca692c80ff6cec5f51e6fee88db3f45c2/raylib-5.5.0.4-cp312-cp312-manylinux2014_aarch64.whl", hash = "sha256:ba87ca50c5748cab75de37a991b7f3f836ce500efbb2d737a923a5f464169088", size = 2198926, upload-time = "2025-12-11T18:50:08.813Z" },
-    { url = "https://files.pythonhosted.org/packages/6b/e9/0123385e369904335985ebd59157f7a10c89c3a706dffcf6dace863a1fa2/raylib-5.5.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:788830bc371ce067c4930ff46a1b6eca0c9cf27bac88f81b035e4b73cc6bf197", size = 2205629, upload-time = "2025-12-11T15:27:39.491Z" },
-    { url = "https://files.pythonhosted.org/packages/5c/fa/c25087b39d2db2d833a52b4056ae62db74e64b4be677f816e0b368e65453/raylib-5.5.0.4-cp312-cp312-win32.whl", hash = "sha256:e09f395035484337776c90e6c9955c5876b988db7e13168dcadb6ed11974f8ee", size = 1457266, upload-time = "2025-12-11T15:27:43.798Z" },
-    { url = "https://files.pythonhosted.org/packages/2c/66/a307e61c953ace906ba68ba1174ed8f1e90e68d5fc3e3af9fb7dc46d68d1/raylib-5.5.0.4-cp312-cp312-win_amd64.whl", hash = "sha256:553043a050a31f2ef072f26d3a70373f838a04733f7c5b26a4e9ee3f8caf06ec", size = 1708354, upload-time = "2025-12-11T15:27:45.979Z" },
 ]
 
 [[package]]
@@ -1674,7 +1664,7 @@ wheels = [
 [[package]]
 name = "zeromq"
 version = "4.3.5"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zeromq&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
 
 [[package]]
 name = "zstandard"
@@ -1704,4 +1694,4 @@ wheels = [
 [[package]]
 name = "zstd"
 version = "1.5.6"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases#12581f30b45b570dd0bbc36055fe1532f5a8ef60" }
+source = { git = "https://github.com/commaai/dependencies.git?subdirectory=zstd&rev=releases#de7c914a461f68a5fb80d57d534181b6350afe8f" }
