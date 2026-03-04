@@ -91,6 +91,7 @@ class Reset(Widget):
 
       if self._mode == ResetMode.RECOVER:
         self._cancel_button.set_text("reboot")
+        self._cancel_button.set_click_callback(self._do_reboot)
         self._cancel_button.render(rl.Rectangle(
           rect.x + 8,
           rect.y + rect.height - self._cancel_button.rect.height,
