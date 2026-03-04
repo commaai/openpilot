@@ -189,8 +189,7 @@ class DriverStateRenderer(Widget):
       cal_rpy = [0.0, 0.0, 0.0]
 
     roll, pitch, yaw = face_orientation_from_net(driver_orient, driver_position, cal_rpy)
-    # TODO: do we need to invert if RHD?
-    yaw = -yaw  # function inverts yaw
+    yaw = -yaw  # undo sign flip in face_orientation_from_net to match UI convention
 
     pitch = self._pitch_filter.update(pitch)
     yaw = self._yaw_filter.update(yaw)
