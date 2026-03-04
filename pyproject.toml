@@ -33,7 +33,6 @@ dependencies = [
   "libjpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libjpeg",
   "libyuv @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libyuv",
   "openssl3 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=openssl3",
-  "python3-dev @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=python3-dev",
   "zstd @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zstd",
   "ncurses @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ncurses",
   "zeromq @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zeromq",
@@ -249,3 +248,6 @@ unsupported-operator = "ignore"
 # Ignore not-subscriptable - false positives from dynamic types
 not-subscriptable = "ignore"
 # not-iterable errors are now fixed
+
+[tool.uv]
+python-preference = "only-managed"

@@ -47,15 +47,12 @@ if arch != "larch64":
   import libyuv
   import ncurses
   import openssl3
-  import python3_dev
   import zeromq
   import zstd
   pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, libjpeg, libyuv, ncurses, openssl3, zeromq, zstd]
-  py_include = python3_dev.INCLUDE_DIR
 else:
   # TODO: remove when AGNOS has our new vendor pkgs
   pkgs = []
-  py_include = sysconfig.get_paths()['include']
 
 env = Environment(
   ENV={
@@ -177,7 +174,7 @@ if os.environ.get('SCONS_PROGRESS'):
 
 # ********** Cython build environment **********
 envCython = env.Clone()
-envCython["CPPPATH"] += [py_include, np.get_include()]
+envCython["CPPPATH"] += [sysconfig.get_paths()['include'], np.get_include()]
 envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]
 envCython["CCFLAGS"].remove("-Werror")
 
