@@ -13,6 +13,7 @@ from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, LPABase, ThermalConfig, ThermalZone
 from openpilot.system.hardware.tici import iwlist
 from openpilot.system.hardware.tici.lpa import TiciLPA
+from openpilot.system.hardware.tici.modem import at_cmd as modem_at_cmd, read_modem_state
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
@@ -179,18 +180,19 @@ class Tici(HardwareBase):
     return self.bus.get_object(NM, wwan_path)
 
   def get_sim_info(self):
-    modem = self.get_modem()
-    sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    try:
+      modem = self.get_modem()
+      sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
-    if sim_path == "/":
-      return {
-        'sim_id': '',
-        'mcc_mnc': None,
-        'network_type': ["Unknown"],
-        'sim_state': ["ABSENT"],
-        'data_connected': False
-      }
-    else:
+      if sim_path == "/":
+        return {
+          'sim_id': '',
+          'mcc_mnc': None,
+          'network_type': ["Unknown"],
+          'sim_state': ["ABSENT"],
+          'data_connected': False
+        }
+
       sim = self.bus.get_object(MM, sim_path)
       return {
         'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
@@ -198,6 +200,14 @@ class Tici(HardwareBase):
         'network_type': ["Unknown"],
         'sim_state': ["READY"],
         'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
+      }
+    except Exception:
+      return {
+        'sim_id': '',
+        'mcc_mnc': None,
+        'network_type': ["Unknown"],
+        'sim_state': ["UNKNOWN" if read_modem_state() is not None else "ABSENT"],
+        'data_connected': False,
       }
 
   def get_sim_lpa(self) -> LPABase:
@@ -207,7 +217,18 @@ class Tici(HardwareBase):
     if slot != 0:
       return ""
 
-    return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    try:
+      return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    except Exception:
+      resp = modem_at_cmd("AT+CGSN", timeout=TIMEOUT)
+      if resp is None:
+        return ""
+
+      for line in resp.splitlines():
+        stripped = line.strip()
+        if stripped and stripped not in ("OK", "ERROR") and not stripped.startswith("AT"):
+          return stripped
+      return ""
 
   def get_network_info(self):
     if self.get_device_type() == "mici":
@@ -299,6 +320,14 @@ class Tici(HardwareBase):
       modem = self.get_modem()
       return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
     except Exception:
+      resp = modem_at_cmd("AT+CGMR", timeout=TIMEOUT)
+      if resp is None:
+        return None
+
+      for line in resp.splitlines():
+        stripped = line.strip()
+        if stripped and stripped not in ("OK", "ERROR") and not stripped.startswith("AT"):
+          return stripped
       return None
 
   def get_modem_temperatures(self):
@@ -308,6 +337,18 @@ class Tici(HardwareBase):
       temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
       return list(filter(lambda t: t != 255, map(int, temps.split(' ')[1].split(','))))
     except Exception:
+      resp = modem_at_cmd("AT+QTEMP", timeout=timeout)
+      if resp is None:
+        return []
+
+      for line in resp.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("+QTEMP:"):
+          data = stripped.removeprefix("+QTEMP:").strip()
+          try:
+            return [t for t in map(int, data.split(',')) if t != 255]
+          except ValueError:
+            return []
       return []
 
 
@@ -459,14 +500,17 @@ class Tici(HardwareBase):
     sim_id = self.get_sim_info().get('sim_id', '')
 
     cmds = []
-    modem = self.get_modem()
+    try:
+      modem = self.get_modem()
+    except Exception:
+      modem = None
 
     # Quectel EG25
     if self.get_device_type() in ("tizi", ):
-      # clear out old blue prime initial APN
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
-
       cmds += [
+        # clear out old blue prime initial APN
+        'AT+CGDCONT=1,"IPV4V6",""',
+
         # SIM hot swap
         'AT+QSIMDET=1,0',
         'AT+QSIMSTAT=1',
@@ -492,7 +536,10 @@ class Tici(HardwareBase):
 
     for cmd in cmds:
       try:
-        modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+        if modem is not None:
+          modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+        else:
+          modem_at_cmd(cmd, timeout=TIMEOUT)
       except Exception:
         pass
 
