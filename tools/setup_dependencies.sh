@@ -109,7 +109,7 @@ function install_python_deps() {
   uv self update || true
 
   echo "installing python packages..."
-  uv sync --python-preference only-managed --frozen --all-extras
+  uv sync --frozen --all-extras
   source .venv/bin/activate
 }
 

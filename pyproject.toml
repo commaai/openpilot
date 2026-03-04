@@ -249,3 +249,6 @@ unsupported-operator = "ignore"
 # Ignore not-subscriptable - false positives from dynamic types
 not-subscriptable = "ignore"
 # not-iterable errors are now fixed
+
+[tool.uv]
+python-preference = "only-managed"
