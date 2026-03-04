@@ -72,7 +72,6 @@ class ModelRenderer(Widget):
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._ll_color_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._engage_fade = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
-    self._engage_delay = 0.0
 
     # Transform matrix (3x3 for car space to screen space)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
@@ -139,13 +138,8 @@ class ModelRenderer(Widget):
         self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
 
-    # Fade in/out on engage/disengage (0.1s delay on engage)
-    engaged = ui_state.status != UIStatus.DISENGAGED
-    if engaged:
-      self._engage_delay = min(self._engage_delay + rl.get_frame_time(), 0.1)
-    else:
-      self._engage_delay = 0.0
-    self._engage_fade.update(1.0 if engaged and self._engage_delay >= 0.1 else 0.0)
+    # Fade in/out on engage/disengage
+    self._engage_fade.update(1.0 if ui_state.status != UIStatus.DISENGAGED else 0.0)
     fade = self._engage_fade.x
     if fade > 0.01:
       self._draw_lane_lines(fade)
