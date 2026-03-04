@@ -92,8 +92,7 @@ function install_ubuntu_deps() {
     curl \
     libcurl4-openssl-dev \
     locales \
-    git \
-    xvfb
+    git
 
   install_udev_rules "$SUDO"
 }
@@ -140,8 +139,7 @@ function install_fedora_deps() {
     curl \
     libcurl-devel \
     git \
-    git-lfs \
-    xorg-x11-server-Xvfb
+    git-lfs
 
   install_udev_rules "$SUDO"
 }
