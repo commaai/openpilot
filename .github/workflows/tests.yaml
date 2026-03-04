@@ -45,7 +45,7 @@ jobs:
     - name: Install git
       if: matrix.container
       run: |
-        dnf install -y git-lfs
+        dnf install -y git-lfs python3
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v6
       with:
