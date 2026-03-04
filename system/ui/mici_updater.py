@@ -5,7 +5,9 @@ import threading
 import pyray as rl
 from enum import IntEnum
 
-from openpilot.system.hardware import HARDWARE
+from openpilot.common.realtime import config_realtime_process, set_core_affinity
+from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -34,6 +36,7 @@ class Updater(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
 
+    # TODO: network page is rendered inline, not pushed on nav stack, so auto-dismiss on internet connect doesn't work
     self._network_setup_page = NetworkSetupPageBase(self._network_monitor, self._network_setup_continue_callback,
                                                     disable_connect_hint=True)
     self._network_setup_page.set_is_updater()
@@ -93,9 +96,13 @@ class Updater(Widget):
 
   def _run_update_process(self):
     # TODO: just import it and run in a thread without a subprocess
-    cmd = [self.updater, "--swap", self.manifest]
-    self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    text=True, bufsize=1, universal_newlines=True)
+    try:
+      cmd = [self.updater, "--swap", self.manifest]
+      self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                      text=True, bufsize=1, universal_newlines=True)
+    except Exception:
+      self.set_current_screen(Screen.FAILED)
+      return
 
     if self.process.stdout is not None:
       for line in self.process.stdout:
@@ -169,6 +176,14 @@ class Updater(Widget):
 
 
 def main():
+  config_realtime_process(0, 51)
+  # attempt to affine. AGNOS will start setup with all cores, should only fail when manually launching with screen off
+  if TICI:
+    try:
+      set_core_affinity([5])
+    except OSError:
+      cloudlog.exception("Failed to set core affinity for updater process")
+
   if len(sys.argv) < 3:
     print("Usage: updater.py <updater_path> <manifest_path>")
     sys.exit(1)
