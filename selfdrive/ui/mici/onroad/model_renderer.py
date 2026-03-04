@@ -71,6 +71,8 @@ class ModelRenderer(Widget):
 
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._ll_color_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._engage_fade = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._engage_delay = 0.0
 
     # Transform matrix (3x3 for car space to screen space)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
@@ -137,10 +139,17 @@ class ModelRenderer(Widget):
         self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
 
-    # Draw elements (hide when disengaged)
-    if ui_state.status != UIStatus.DISENGAGED:
-      self._draw_lane_lines()
-      self._draw_path(sm)
+    # Fade in/out on engage/disengage (0.1s delay on engage)
+    engaged = ui_state.status != UIStatus.DISENGAGED
+    if engaged:
+      self._engage_delay = min(self._engage_delay + rl.get_frame_time(), 0.1)
+    else:
+      self._engage_delay = 0.0
+    self._engage_fade.update(1.0 if engaged and self._engage_delay >= 0.1 else 0.0)
+    fade = self._engage_fade.x
+    if fade > 0.01:
+      self._draw_lane_lines(fade)
+      self._draw_path(sm, fade)
 
     # if render_lead_indicator and radar_state:
     #   self._draw_lead_indicator()
@@ -299,19 +308,16 @@ class ModelRenderer(Widget):
     else:
       color = rl.Color(255, 255, 255, int(alpha * 255))
 
-    if ui_state.status == UIStatus.DISENGAGED:
-      color = rl.Color(0, 0, 0, int(alpha * 255))
-
     return color
 
-  def _draw_lane_lines(self):
+  def _draw_lane_lines(self, fade: float = 1.0):
     """Draw lane lines and road edges"""
-    """Two closest lines should be green (lane line or road edges)"""
     for i, lane_line in enumerate(self._lane_lines):
       if lane_line.projected_points.size == 0:
         continue
 
       color = self._get_ll_color(float(self._lane_line_probs[i]), i in (1, 2), i in (0, 1))
+      color = rl.Color(color.r, color.g, color.b, int(color.a * fade))
       draw_polygon(self._rect, lane_line.projected_points, color)
 
     for i, road_edge in enumerate(self._road_edges):
@@ -320,9 +326,10 @@ class ModelRenderer(Widget):
 
       # if closest lane lines are not confident, make road edges green
       color = self._get_ll_color(float(1.0 - self._road_edge_stds[i]), float(self._lane_line_probs[i + 1]) < 0.25, i == 0)
+      color = rl.Color(color.r, color.g, color.b, int(color.a * fade))
       draw_polygon(self._rect, road_edge.projected_points, color)
 
-  def _draw_path(self, sm):
+  def _draw_path(self, sm, fade: float = 1.0):
     """Draw path with dynamic coloring based on mode and throttle state."""
     if not self._path.projected_points.size:
       return
@@ -330,29 +337,26 @@ class ModelRenderer(Widget):
     allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
     self._blend_filter.update(int(allow_throttle))
 
+    def _fade_color(c):
+      return rl.Color(c.r, c.g, c.b, int(c.a * fade))
+
     if self._experimental_mode:
-      # Draw with acceleration coloring
-      if ui_state.status == UIStatus.DISENGAGED:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(0, 0, 0, 90))
-      elif len(self._exp_gradient.colors) > 1:
-        draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
+      if len(self._exp_gradient.colors) > 1:
+        g = self._exp_gradient
+        faded_gradient = Gradient(start=g.start, end=g.end, colors=[_fade_color(c) for c in g.colors], stops=g.stops)
+        draw_polygon(self._rect, self._path.projected_points, gradient=faded_gradient)
       else:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
+        draw_polygon(self._rect, self._path.projected_points, _fade_color(rl.Color(255, 255, 255, 30)))
     else:
-      # Blend throttle/no throttle colors based on transition
       blend_factor = round(self._blend_filter.x * 100) / 100
       blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, blend_factor)
       gradient = Gradient(
-        start=(0.0, 1.0),  # Bottom of path
-        end=(0.0, 0.0),  # Top of path
-        colors=blended_colors,
+        start=(0.0, 1.0),
+        end=(0.0, 0.0),
+        colors=[_fade_color(c) for c in blended_colors],
         stops=[0.0, 0.5, 1.0],
       )
-
-      if ui_state.status == UIStatus.DISENGAGED:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(0, 0, 0, 90))
-      else:
-        draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
+      draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
 
   def _draw_lead_indicator(self):
     # Draw lead vehicles if available
