@@ -64,7 +64,7 @@ jobs:
       run: TARGET_DIR=$STRIPPED_DIR release/build_stripped.sh
     - run: ./tools/op.sh setup
       env:
-        UV_LINK_MODE: ${{ matrix.container && 'copy' || '' }}
+        UV_LINK_MODE: ${{ matrix.container && 'copy' || 'clone' }}
     - name: Build openpilot and run checks
       timeout-minutes: 30
       working-directory: ${{ env.STRIPPED_DIR }}
