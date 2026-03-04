@@ -131,7 +131,7 @@ function install_fedora_deps() {
     SUDO="sudo"
   fi
 
-  $SUDO dnf install -y \
+  $SUDO dnf install -y --setopt=max_parallel_downloads=10 \
     ca-certificates \
     gcc \
     gcc-c++ \
