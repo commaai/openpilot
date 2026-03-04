@@ -1,12 +1,13 @@
 import io
 import re
+import functools
+from importlib.resources import as_file
 
 from PIL import Image, ImageDraw, ImageFont
 import pyray as rl
 
 from openpilot.system.ui.lib.application import FONT_DIR
 
-_emoji_font: ImageFont.FreeTypeFont | None = None
 _cache: dict[str, rl.Texture] = {}
 
 EMOJI_REGEX = re.compile(
@@ -33,11 +34,10 @@ EMOJI_REGEX = re.compile(
   flags=re.UNICODE
 )
 
-def _load_emoji_font() -> ImageFont.FreeTypeFont | None:
-  global _emoji_font
-  if _emoji_font is None:
-    _emoji_font = ImageFont.truetype(str(FONT_DIR.joinpath("NotoColorEmoji.ttf")), 109)
-  return _emoji_font
+@functools.cache
+def _load_emoji_font() -> ImageFont.FreeTypeFont:
+  with as_file(FONT_DIR.joinpath("NotoColorEmoji.ttf")) as font_path:
+    return ImageFont.truetype(io.BytesIO(font_path.read_bytes()), 109)
 
 def find_emoji(text):
   return [(m.start(), m.end(), m.group()) for m in EMOJI_REGEX.finditer(text)]
