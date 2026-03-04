@@ -299,6 +299,79 @@ class TestCarModelBase(unittest.TestCase):
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """
+      Fuzz TX messages: generate random CarControl inputs via Hypothesis,
+      run them through CI.apply(), and assert every resulting TX message
+      passes panda's safety_tx_hook(). Catches mismatches between openpilot's
+      control logic and panda's safety validation (e.g. rate limiting bugs).
+    """
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    # Reset panda safety state for each example so rate limiting
+    # doesn't carry over from the previous hypothesis run
+    cfg = self.CP.safetyConfigs[-1]
+    self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
+    self.safety.init_tests()
+
+    # Draw control parameters
+    controls_allowed = data.draw(st.booleans(), label="controls_allowed")
+    torque = data.draw(st.floats(-1.0, 1.0, allow_nan=False, allow_infinity=False), label="torque")
+    accel = data.draw(st.floats(-3.5, 2.0, allow_nan=False, allow_infinity=False), label="accel")
+    lat_active = data.draw(st.booleans(), label="lat_active") and controls_allowed
+    long_active = data.draw(st.booleans(), label="long_active") and controls_allowed
+    cancel = data.draw(st.booleans(), label="cancel") and not controls_allowed
+    resume = data.draw(st.booleans(), label="resume") and controls_allowed
+
+    # Set panda safety state to match drawn flags
+    self.safety.set_controls_allowed(controls_allowed)
+    if controls_allowed or cancel:
+      self.safety.set_cruise_engaged_prev(True)
+
+    # Build CarControl from drawn values
+    CC = structs.CarControl(
+      enabled=controls_allowed,
+      latActive=lat_active,
+      longActive=long_active,
+      actuators=structs.CarControl.Actuators(
+        torque=torque if lat_active else 0.0,
+        accel=accel if long_active else 0.0,
+      ),
+      cruiseControl=structs.CarControl.CruiseControl(
+        cancel=cancel,
+        resume=resume,
+      ),
+    )
+
+    # Run multiple frames to hit all message periods (like test_panda_safety_tx_cases)
+    CI = self.CarInterface(self.CP)
+    now_nanos = 0
+    msgs_sent = 0
+    for _ in range(round(10.0 / DT_CTRL)):
+      # Update panda's timer so real-time rate limiting works correctly
+      self.safety.set_timer(int(now_nanos // 1000))
+      CI.update([])
+      _, sendcan = CI.apply(CC.as_reader(), int(now_nanos))
+      now_nanos += DT_CTRL * 1e9
+      msgs_sent += len(sendcan)
+      for addr, dat, bus in sendcan:
+        to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+        self.assertTrue(
+          self.safety.safety_tx_hook(to_send),
+          f"TX blocked: addr=0x{addr:X} bus={bus} controls_allowed={controls_allowed} lat={lat_active} long={long_active} torque={torque:.3f} accel={accel:.3f}"
+        )
+
+    self.assertGreater(msgs_sent, 50)
+
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
   def test_panda_safety_carstate_fuzzy(self, data):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
