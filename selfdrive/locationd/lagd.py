@@ -28,18 +28,21 @@ MIN_LAG = 0.15
 MAX_LAG_STD = 0.1
 MAX_LAT_ACCEL = 2.0
 MAX_LAT_ACCEL_DIFF = 0.6
-MIN_LAT_ACCEL_RANGE = 0.5
+MIN_LAT_ACCEL_RANGE = 0.0
 MIN_CONFIDENCE = 0.7
 CORR_BORDER_OFFSET = 5
 LAG_CANDIDATE_CORR_THRESHOLD = 0.9
 SMOOTH_K_SIZE = 5
 
 
-def symetric_moving_average(signal: np.ndarray, k: int):
-  kernel = np.ones(k) / k
-  pad = k // 2
-  padded = np.pad(signal, pad, mode='edge')
-  return np.convolve(padded, kernel, mode='valid')
+def masked_symmetric_moving_average(x: np.ndarray, mask: np.ndarray, k: int) -> np.ndarray:
+    pad = k // 2
+    w = np.ones(k)
+    xp = np.pad(x * mask, pad, mode="edge")
+    mp = np.pad(mask, pad, mode="edge")
+    num = np.convolve(xp, w, mode="valid")
+    den = np.convolve(mp, w, mode="valid")
+    return np.divide(num, den, out=np.full_like(num, np.nan, dtype=float), where=den != 0)
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
   """
@@ -318,7 +321,7 @@ class LateralLagEstimator:
   def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray,
                      dt: float, min_lag: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
-    actual_sig = symetric_moving_average(actual_sig, SMOOTH_K_SIZE)
+    actual_sig = masked_symmetric_moving_average(actual_sig, mask, SMOOTH_K_SIZE)
 
     min_lag_samples, max_lag_samples = int(round(min_lag / dt)), int(round(max_lag / dt))
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
