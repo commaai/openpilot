@@ -75,7 +75,7 @@ class ModelRenderer(Widget):
 
     # Lead visualization styles: cycle through on click
     # 0=all, 1=diamond+underglow, 2=arrows+sky, 3=rings+brackets, 4=sky only, 5=diamond only
-    self._lead_style = 0
+    self._lead_style = 4  # default to sky arrow only
     self.LEAD_STYLE_COUNT = 6
 
     # Initialize ModelPoints objects
@@ -89,6 +89,7 @@ class ModelRenderer(Widget):
 
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._ll_color_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._path_flow_distance = 0.0  # accumulated distance for arrow flow
 
     # Transform matrix (3x3 for car space to screen space)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
@@ -196,12 +197,12 @@ class ModelRenderer(Widget):
         half_w = 2.0  # half-width in meters
         half_l = float(np.clip(d_rel * 0.18, 3.5, 10.0))  # half-length, bigger for visibility at distance
 
-        # 4 points of the diamond: front, right, back, left (in car space)
+        # 4 points of the diamond rotated 90°: left, front, right, back (in car space)
         diamond_3d = [
-          (d_rel + half_l, -y_rel, road_z),         # front tip
-          (d_rel, -y_rel + half_w, road_z),          # right
-          (d_rel - half_l, -y_rel, road_z),          # back tip
-          (d_rel, -y_rel - half_w, road_z),          # left
+          (d_rel, -y_rel - half_l, road_z),          # left tip
+          (d_rel + half_w, -y_rel, road_z),           # front
+          (d_rel, -y_rel + half_l, road_z),           # right tip
+          (d_rel - half_w, -y_rel, road_z),           # back
         ]
 
         diamond_2d = []
@@ -225,28 +226,35 @@ class ModelRenderer(Widget):
           if pt2:
             underglow_2d.append(pt2)
 
-        # Project NFS-style trail arrows at intermediate distances along path
+        # Project NFS-style chevron arrows flat on road plane
         trail_arrows_2d = []
         if d_rel > 8:
           num_arrows = int(np.clip(d_rel / 12, 2, 5))
+          arrow_len = 2.5   # forward length in meters
+          arrow_w = 1.2     # half-width of wings
           for a_i in range(num_arrows):
             frac = 0.25 + 0.55 * a_i / max(num_arrows - 1, 1)
             arrow_d = d_rel * frac
             a_idx = self._get_path_length_idx(path_x_array, arrow_d)
             az = self._path.raw_points[a_idx, 2] + self._path_offset_z if a_idx < len(self._path.raw_points) else road_z
-            arrow_y = -y_rel * frac  # lerp toward lead lateral position
-            tip = self._map_to_screen(arrow_d + 2.5, arrow_y, az)
-            left_wing = self._map_to_screen(arrow_d - 1.5, arrow_y - 1.8, az)
-            right_wing = self._map_to_screen(arrow_d - 1.5, arrow_y + 1.8, az)
-            if tip and left_wing and right_wing:
-              trail_arrows_2d.append([tip, left_wing, right_wing])
+            arrow_y = -y_rel * frac
+            # 4-point chevron on road plane: tip, right wing, notch (back indent), left wing
+            tip = self._map_to_screen(arrow_d + arrow_len, arrow_y, az)
+            rw = self._map_to_screen(arrow_d, arrow_y + arrow_w, az)
+            notch = self._map_to_screen(arrow_d + arrow_len * 0.35, arrow_y, az)
+            lw = self._map_to_screen(arrow_d, arrow_y - arrow_w, az)
+            if tip and rw and notch and lw:
+              trail_arrows_2d.append([tip, rw, notch, lw])
 
         # Project sky arrow in 3D: float above lead at avg car height (~1.5m) + 0.5m offset
-        sky_z = road_z + 2.0  # ~1.5m car height + 0.5m clearance
+        # Smaller Z = higher above road in this coordinate system
+        # Push back ~2.3m (half avg car length) since radar reports rear bumper
+        sky_d = d_rel + 2.3
+        sky_z = road_z - 2.5  # 2.5m above road surface
         sky_arrow_2d = []
-        sky_tip = self._map_to_screen(d_rel, -y_rel, sky_z + 1.2)  # tip points down
-        sky_left = self._map_to_screen(d_rel, -y_rel - 1.2, sky_z + 2.5)
-        sky_right = self._map_to_screen(d_rel, -y_rel + 1.2, sky_z + 2.5)
+        sky_tip = self._map_to_screen(sky_d, -y_rel, sky_z + 0.975)  # tip points down toward car
+        sky_left = self._map_to_screen(sky_d, -y_rel - 0.9, sky_z)
+        sky_right = self._map_to_screen(sky_d, -y_rel + 0.9, sky_z)
         if sky_tip and sky_left and sky_right:
           sky_arrow_2d = [sky_tip, sky_left, sky_right]
 
@@ -421,39 +429,106 @@ class ModelRenderer(Widget):
       draw_polygon(self._rect, road_edge.projected_points, color)
 
   def _draw_path(self, sm):
-    """Draw path with dynamic coloring based on mode and throttle state."""
-    if not self._path.projected_points.size:
+    """Draw path as NFS-style chevron arrows on the road plane."""
+    raw = self._path.raw_points
+    if len(raw) < 4:
       return
 
     allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
     self._blend_filter.update(int(allow_throttle))
 
-    if self._experimental_mode:
-      # Draw with acceleration coloring
-      if ui_state.status == UIStatus.DISENGAGED:
+    if ui_state.status == UIStatus.DISENGAGED:
+      if self._path.projected_points.size:
         draw_polygon(self._rect, self._path.projected_points, rl.Color(0, 0, 0, 90))
-      elif len(self._exp_gradient.colors) > 1:
-        draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
-      else:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
-    else:
-      # Blend throttle/no throttle colors based on transition
-      blend_factor = round(self._blend_filter.x * 100) / 100
-      blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, blend_factor)
-      # Breathing effect — subtle alpha pulse when engaged
-      breath = 1.0 + 0.12 * math.sin(rl.get_time() * 2.0)
-      blended_colors = [rl.Color(c.r, c.g, c.b, min(255, int(c.a * breath))) for c in blended_colors]
-      gradient = Gradient(
-        start=(0.0, 1.0),  # Bottom of path
-        end=(0.0, 0.0),  # Top of path
-        colors=blended_colors,
-        stops=[0.0, 0.5, 1.0],
-      )
+      return
 
-      if ui_state.status == UIStatus.DISENGAGED:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(0, 0, 0, 90))
+    # HACK: force chill mode for tuning
+    exp_mode = False  # self._experimental_mode
+
+    z_off = self._path_offset_z
+    accel_data = self._acceleration_x
+    v_ego = float(sm['carState'].vEgo)
+
+    # Path x-coordinates for interpolation
+    path_x = raw[:, 0]
+    path_y = raw[:, 1]
+    path_z = raw[:, 2]
+    max_x = float(path_x[-1]) if len(path_x) > 0 else 0
+
+    # Arrow parameters
+    arrow_len = 3.375  # 35% longer in forward direction on road plane
+    arrow_w = 1.375  # halfway between 0.9 and 1.85
+
+    # Accumulate actual distance traveled for smooth flow
+    dt = rl.get_frame_time()
+    self._path_flow_distance += v_ego * dt
+
+    # Uniform spacing for smooth flow, perspective naturally thins at distance
+    spacing = 6.0
+    phase = self._path_flow_distance % spacing
+    max_arrow_dist = min(max_x - arrow_len, 110.0)
+    arrow_x = np.arange(3.0 - phase, max_arrow_dist, spacing)
+    arrow_x = arrow_x[arrow_x >= 2.0]
+
+    for ax in arrow_x:
+      if ax < 2.0 or ax > max_x - arrow_len:
+        continue
+
+      # Interpolate path y and z at this arrow position
+      y = float(np.interp(ax, path_x, path_y))
+      z = float(np.interp(ax, path_x, path_z))
+      az = z + z_off
+
+      # Also interpolate acceleration for experimental color
+      accel_val = 0.0
+      if exp_mode and len(accel_data) > 0:
+        accel_val = float(np.interp(ax, path_x[:len(accel_data)], accel_data))
+
+      # Project 4-point chevron on road plane
+      tip = self._map_to_screen(ax + arrow_len, y, az)
+      rw = self._map_to_screen(ax, y + arrow_w, az)
+      notch = self._map_to_screen(ax + arrow_len * 0.35, y, az)
+      lw = self._map_to_screen(ax, y - arrow_w, az)
+
+      if not (tip and rw and notch and lw):
+        continue
+
+      # Distance fade — mostly opaque, gentle fade only at far end
+      dist_fade = float(np.clip(1.0 - ax / 150, 0.6, 1.0))
+      # Fade in near car (arrows appearing from under car)
+      near_fade = float(np.clip((ax - 2.0) / 3.0, 0.0, 1.0))
+      base_alpha = dist_fade * near_fade
+
+      # Color based on mode
+      if exp_mode:
+        path_hue = float(np.clip(60 + accel_val * 35, 0, 120))
+        sat = min(abs(accel_val * 1.5), 1.0)
+        rgb = colorsys.hls_to_rgb(path_hue / 360.0, 0.55, sat)
+        alpha = int(255 * base_alpha)
+        ac = rl.Color(int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255), alpha)
       else:
-        draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
+        blend = self._blend_filter.x
+        r = int(np.interp(blend, [0, 1], [242, 13]))
+        g = int(np.interp(blend, [0, 1], [242, 248]))
+        b = int(np.interp(blend, [0, 1], [242, 122]))
+        alpha = int(255 * base_alpha)
+        ac = rl.Color(r, g, b, alpha)
+
+      tv = rl.Vector2(tip[0], tip[1])
+      rv = rl.Vector2(rw[0], rw[1])
+      nv = rl.Vector2(notch[0], notch[1])
+      lv = rl.Vector2(lw[0], lw[1])
+
+      rl.draw_triangle(tv, rv, nv, ac)
+      rl.draw_triangle(tv, nv, rv, ac)
+      rl.draw_triangle(tv, nv, lv, ac)
+      rl.draw_triangle(tv, lv, nv, ac)
+
+      ec = rl.Color(min(255, ac.r + 60), min(255, ac.g + 60), min(255, ac.b + 60), int(alpha * 0.4))
+      rl.draw_line_ex(tv, rv, 1.5, ec)
+      rl.draw_line_ex(tv, lv, 1.5, ec)
+      rl.draw_line_ex(rv, nv, 1.0, ec)
+      rl.draw_line_ex(lv, nv, 1.0, ec)
 
   def _draw_lead_indicator(self, radar_state):
     for lead_idx, lead in enumerate(self._lead_vehicles):
@@ -508,18 +583,31 @@ class ModelRenderer(Widget):
           p1 = ug_pts[(j + 1) % len(ug_pts)]
           rl.draw_line_ex(rl.Vector2(p0[0], p0[1]), rl.Vector2(p1[0], p1[1]), 1.5, ug_edge_color)
 
-      # Trail arrows (styles 0, 2)
+      # Trail arrows — NFS chevrons flat on road plane (styles 0, 2)
       if s in (0, 2) and is_primary and lead.trail_arrows:
         t = rl.get_time()
         for a_i, arrow in enumerate(lead.trail_arrows):
-          tip, lw, rw = arrow
+          tip, rw, notch, lw = arrow
           frac = (a_i + 1) / (len(lead.trail_arrows) + 1)
           arrow_pulse = 0.6 + 0.4 * math.sin(t * 4.0 + a_i * 1.5)
           arrow_alpha = int(base_alpha * 160 * frac * arrow_pulse)
-          # NFS neon blue for trail arrows
           ac = rl.Color(0, 180, 255, arrow_alpha)
-          rl.draw_triangle(rl.Vector2(tip[0], tip[1]), rl.Vector2(lw[0], lw[1]), rl.Vector2(rw[0], rw[1]), ac)
-          rl.draw_triangle(rl.Vector2(tip[0], tip[1]), rl.Vector2(rw[0], rw[1]), rl.Vector2(lw[0], lw[1]), ac)
+          tv = rl.Vector2(tip[0], tip[1])
+          rv = rl.Vector2(rw[0], rw[1])
+          nv = rl.Vector2(notch[0], notch[1])
+          lv = rl.Vector2(lw[0], lw[1])
+          # Right half of chevron: tip → right wing → notch
+          rl.draw_triangle(tv, rv, nv, ac)
+          rl.draw_triangle(tv, nv, rv, ac)
+          # Left half of chevron: tip → notch → left wing
+          rl.draw_triangle(tv, nv, lv, ac)
+          rl.draw_triangle(tv, lv, nv, ac)
+          # Edge outlines
+          ec = rl.Color(100, 220, 255, int(arrow_alpha * 0.7))
+          rl.draw_line_ex(tv, rv, 2.0, ec)
+          rl.draw_line_ex(tv, lv, 2.0, ec)
+          rl.draw_line_ex(rv, nv, 1.5, ec)
+          rl.draw_line_ex(lv, nv, 1.5, ec)
 
       if lead.diamond and len(lead.diamond) >= 3:
         pts = lead.diamond
