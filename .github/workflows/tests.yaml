@@ -42,6 +42,9 @@ jobs:
       STRIPPED_DIR: /tmp/releasepilot
       PYTHONPATH: /tmp/releasepilot
     steps:
+    - name: Install git
+      if: matrix.container
+      run: dnf install -y git-lfs
     - uses: actions/checkout@v6
       with:
         submodules: true
