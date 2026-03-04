@@ -1,3 +1,4 @@
+import math
 import pyray as rl
 from typing import Union
 from enum import Enum
@@ -16,8 +17,6 @@ except ImportError:
 SCROLLING_SPEED_PX_S = 50
 COMPLICATION_SIZE    = 36
 LABEL_COLOR          = rl.Color(255, 255, 255, int(255 * 0.9))
-LABEL_HORIZONTAL_PADDING = 40
-LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
 COMPLICATION_GREY    = rl.Color(0xAA, 0xAA, 0xAA, 255)
 PRESSED_SCALE = 1.15 if DO_ZOOM else 1.07
 
@@ -36,25 +35,22 @@ class BigCircleButton(Widget):
 
     # State
     self.set_rect(rl.Rectangle(0, 0, 180, 180))
-    self._press_state_enabled = True
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_delay = 0.075
 
     # Icons
     self._txt_icon = gui_app.texture(icon, *icon_size)
     self._txt_btn_disabled_bg = gui_app.texture("icons_mici/buttons/button_circle_disabled.png", 180, 180)
 
     self._txt_btn_bg = gui_app.texture("icons_mici/buttons/button_circle.png", 180, 180)
-    self._txt_btn_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_hover.png", 180, 180)
+    self._txt_btn_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_pressed.png", 180, 180)
 
     self._txt_btn_red_bg = gui_app.texture("icons_mici/buttons/button_circle_red.png", 180, 180)
-    self._txt_btn_red_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_red_hover.png", 180, 180)
-
-  def set_enable_pressed_state(self, pressed: bool):
-    self._press_state_enabled = pressed
+    self._txt_btn_red_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_red_pressed.png", 180, 180)
 
   def _draw_content(self, btn_y: float):
     # draw icon
-    icon_color = rl.WHITE if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
+    icon_color = rl.Color(255, 255, 255, int(255 * 0.9)) if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     rl.draw_texture_ex(self._txt_icon, (self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0],
                                         btn_y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), 0, 1.0, icon_color)
 
@@ -63,10 +59,10 @@ class BigCircleButton(Widget):
     txt_bg = self._txt_btn_bg if not self._red else self._txt_btn_red_bg
     if not self.enabled:
       txt_bg = self._txt_btn_disabled_bg
-    elif self.is_pressed and self._press_state_enabled:
+    elif self.is_pressed:
       txt_bg = self._txt_btn_pressed_bg if not self._red else self._txt_btn_red_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed and self._press_state_enabled else 1.0)
+    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
@@ -106,6 +102,9 @@ class BigCircleToggle(BigCircleButton):
 
 
 class BigButton(Widget):
+  LABEL_HORIZONTAL_PADDING = 40
+  LABEL_VERTICAL_PADDING = 23  # visually matches 30 in figma
+
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
   def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", icon_size: tuple[int, int] = (64, 64),
@@ -119,6 +118,9 @@ class BigButton(Widget):
     self.set_icon(icon)
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_delay = 0.075
+    self._shake_start: float | None = None
+    self._grow_animation_until: float | None = None
 
     self._rotate_icon_t: float | None = None
 
@@ -143,12 +145,14 @@ class BigButton(Widget):
     self._txt_default_bg = gui_app.texture("icons_mici/buttons/button_rectangle.png", 402, 180)
     self._txt_pressed_bg = gui_app.texture("icons_mici/buttons/button_rectangle_pressed.png", 402, 180)
     self._txt_disabled_bg = gui_app.texture("icons_mici/buttons/button_rectangle_disabled.png", 402, 180)
-    self._txt_hover_bg = gui_app.texture("icons_mici/buttons/button_rectangle_hover.png", 402, 180)
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(lambda: touch_callback() and self._grow_animation_until is None)
 
   def _width_hint(self) -> int:
     # Single line if scrolling, so hide behind icon if exists
     icon_size = self._icon_size[0] if self._txt_icon and self._scroll and self.value else 0
-    return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - icon_size)
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _get_label_font_size(self):
     if len(self.text) <= 18:
@@ -179,20 +183,57 @@ class BigButton(Widget):
   def get_text(self):
     return self.text
 
+  def trigger_shake(self):
+    self._shake_start = rl.get_time()
+
+  def trigger_grow_animation(self, duration: float = 0.65):
+    self._grow_animation_until = rl.get_time() + duration
+
+  @property
+  def _shake_offset(self) -> float:
+    SHAKE_DURATION = 0.5
+    SHAKE_AMPLITUDE = 24.0
+    SHAKE_FREQUENCY = 32.0
+    t = rl.get_time() - (self._shake_start or 0.0)
+    if t > SHAKE_DURATION:
+      return 0.0
+    decay = 1.0 - t / SHAKE_DURATION
+    return decay * SHAKE_AMPLITUDE * math.sin(t * SHAKE_FREQUENCY)
+
+  def set_position(self, x: float, y: float) -> None:
+    super().set_position(x + self._shake_offset, y)
+
+  def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
+    if self._grow_animation_until is not None:
+      if rl.get_time() >= self._grow_animation_until:
+        self._grow_animation_until = None
+
+    # draw _txt_default_bg
+    txt_bg = self._txt_default_bg
+    if not self.enabled:
+      txt_bg = self._txt_disabled_bg
+    elif self.is_pressed:
+      txt_bg = self._txt_pressed_bg
+
+    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed or self._grow_animation_until is not None else 1.0)
+    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
+    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
+    return txt_bg, btn_x, btn_y, scale
+
   def _draw_content(self, btn_y: float):
     # LABEL ------------------------------------------------------------------
-    label_x = self._rect.x + LABEL_HORIZONTAL_PADDING
+    label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    label_rect = rl.Rectangle(label_x, btn_y + LABEL_VERTICAL_PADDING, self._width_hint(),
-                              self._rect.height - LABEL_VERTICAL_PADDING * 2)
+    label_rect = rl.Rectangle(label_x, btn_y + self.LABEL_VERTICAL_PADDING, self._width_hint(),
+                              self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
-      label_y = btn_y + self._rect.height - LABEL_VERTICAL_PADDING
-      sub_label_height = self._sub_label.get_content_height(self._width_hint())
-      sub_label_rect = rl.Rectangle(label_x, label_y - sub_label_height, self._width_hint(), sub_label_height)
+      label_y = btn_y + self.LABEL_VERTICAL_PADDING + self._label.get_content_height(self._width_hint())
+      sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
+      sub_label_rect = rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
@@ -207,22 +248,21 @@ class BigButton(Widget):
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
       dest_rec = rl.Rectangle(x, y, self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
-      rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.WHITE)
+      rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.Color(255, 255, 255, int(255 * 0.9)))
 
   def _render(self, _):
-    # draw _txt_default_bg
-    txt_bg = self._txt_default_bg
-    if not self.enabled:
-      txt_bg = self._txt_disabled_bg
-    elif self.is_pressed:
-      txt_bg = self._txt_hover_bg
+    txt_bg, btn_x, btn_y, scale = self._handle_background()
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
-    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
-    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+    if self._scroll:
+      # draw black background since images are transparent
+      scaled_rect = rl.Rectangle(btn_x, btn_y, self._rect.width * scale, self._rect.height * scale)
+      rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.5)))
 
-    self._draw_content(btn_y)
+      self._draw_content(btn_y)
+      rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+    else:
+      rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+      self._draw_content(btn_y)
 
 
 class BigToggle(BigButton):
@@ -271,7 +311,7 @@ class BigMultiToggle(BigToggle):
     self.set_value(self._options[0])
 
   def _width_hint(self) -> int:
-    return int(self._rect.width - LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - self._txt_enabled_toggle.width)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)

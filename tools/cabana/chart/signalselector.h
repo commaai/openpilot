@@ -15,7 +15,7 @@ public:
   };
 
   SignalSelector(QString title, QWidget *parent);
-  QList<ListItem *> seletedItems();
+  std::vector<ListItem *> seletedItems();
   inline void addSelected(const MessageId &id, const cabana::Signal *sig) { addItemToList(selected_list, id, sig, true); }
 
 private:

@@ -1,17 +1,15 @@
 Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
 libs = [common, messaging, visionipc,
-        'avformat', 'avcodec', 'avutil',
-        'yuv', 'OpenCL', 'pthread', 'zstd']
+        'avformat', 'avcodec', 'swresample', 'avutil', 'x264',
+        'pthread', 'z', 'm', 'zstd']
 
 src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch != "larch64":
   src += ['encoder/ffmpeg_encoder.cc']
+  libs += ['yuv']
 
 if arch == "Darwin":
-  # fix OpenCL
-  del libs[libs.index('OpenCL')]
-  env['FRAMEWORKS'] = ['OpenCL']
   # exclude v4l
   del src[src.index('encoder/v4l_encoder.cc')]
 
@@ -23,4 +21,4 @@ env.Program('encoderd', ['encoderd.cc'], LIBS=libs + ["jpeg"])
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('extras'):
-  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_zstd_writer.cc'], LIBS=libs + ['curl', 'crypto'])
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_zstd_writer.cc'], LIBS=libs)

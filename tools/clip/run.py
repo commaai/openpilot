@@ -24,7 +24,7 @@ from openpilot.common.utils import Timer
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 FRAMERATE = 20
-DEMO_ROUTE, DEMO_START, DEMO_END = 'a2a0ccea32023010/2023-07-27--13-01-19', 90, 105
+DEMO_ROUTE, DEMO_START, DEMO_END = '5beb9b58bd12b691/0000010a--a51155e496', 90, 105
 
 logger = logging.getLogger('clip')
 
@@ -85,7 +85,7 @@ def _parse_and_chunk_segment(args: tuple) -> list[dict]:
   if not messages:
     return []
 
-  dt_ns, chunks, current, next_time = 1e9 / fps, [], {}, messages[0].logMonoTime + 1e9 / fps  # type: ignore[var-annotated]
+  dt_ns, chunks, current, next_time = 1e9 / fps, [], {}, messages[0].logMonoTime + 1e9 / fps
   for msg in messages:
     if msg.logMonoTime >= next_time:
       chunks.append(current)
@@ -159,7 +159,7 @@ def iter_segment_frames(camera_paths, start_time, end_time, fps=20, use_qcam=Fal
         seg_frames = FrameReader(path, pix_fmt="nv12")
 
     assert seg_frames is not None
-    frame = seg_frames[local_idx] if use_qcam else seg_frames.get(local_idx)  # type: ignore[index, union-attr]
+    frame = seg_frames[local_idx] if use_qcam else seg_frames.get(local_idx)
     yield global_idx, frame
 
 
@@ -286,7 +286,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
   if big:
     from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
   else:
-    from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView  # type: ignore[assignment]
+    from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
   from openpilot.selfdrive.ui.ui_state import ui_state
   from openpilot.system.ui.lib.application import gui_app, FontWeight
   timer.lap("import")

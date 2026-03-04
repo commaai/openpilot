@@ -260,7 +260,7 @@ class HtmlModal(Widget):
     super().__init__()
     self._content = HtmlRenderer(file_path=file_path, text=text)
     self._scroll_panel = GuiScrollPanel()
-    self._ok_button = Button(tr("OK"), click_callback=lambda: gui_app.set_modal_overlay(None), button_style=ButtonStyle.PRIMARY)
+    self._ok_button = Button(tr("OK"), click_callback=gui_app.pop_widget, button_style=ButtonStyle.PRIMARY)
 
   def _render(self, rect: rl.Rectangle):
     margin = 50

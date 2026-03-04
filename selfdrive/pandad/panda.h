@@ -45,20 +45,19 @@ struct can_frame {
 
 class Panda {
 private:
-  std::unique_ptr<PandaCommsHandle> handle;
+  std::unique_ptr<PandaSpiHandle> handle;
 
 public:
-  Panda(std::string serial="", uint32_t bus_offset=0);
+  Panda(std::string serial);
 
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
-  const uint32_t bus_offset;
 
   bool connected();
   bool comms_healthy();
   std::string hw_serial();
 
   // Static functions
-  static std::vector<std::string> list(bool usb_only=false);
+  static std::vector<std::string> list();
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
@@ -91,7 +90,7 @@ protected:
   uint8_t receive_buffer[RECV_SIZE + sizeof(can_header) + 64];
   uint32_t receive_buffer_size = 0;
 
-  Panda(uint32_t bus_offset) : bus_offset(bus_offset) {}
+  Panda() {}
   void pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
                          std::function<void(uint8_t *, size_t)> write_func);
   bool unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_frame> &out_vec);

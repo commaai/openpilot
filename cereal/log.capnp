@@ -499,7 +499,8 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   pmicTempC @39 :List(Float32);
   intakeTempC @46 :Float32;
   exhaustTempC @47 :Float32;
-  caseTempC @48 :Float32;
+  gnssTempC @48 :Float32;
+  bottomSocTempC @50 :Float32;
   maxTempC @44 :Float32;  # max of other temps, used to control fan
   thermalZones @38 :List(ThermalZone);
   thermalStatus @14 :ThermalStatus;
@@ -592,6 +593,7 @@ struct PandaState @0xa7649e2575e4591e {
   harnessStatus @21 :HarnessStatus;
   sbu1Voltage @35 :Float32;
   sbu2Voltage @36 :Float32;
+  soundOutputLevel @37 :UInt16;
 
   # can health
   canState0 @29 :PandaCanState;
@@ -2232,9 +2234,9 @@ struct DriverMonitoringState @0xb83cda094a1da284 {
   isActiveMode @16 :Bool;
   isRHD @4 :Bool;
   uncertainCount @19 :UInt32;
-  phoneProbOffset @20 :Float32;
-  phoneProbValidCount @21 :UInt32;
 
+  phoneProbOffsetDEPRECATED @20 :Float32;
+  phoneProbValidCountDEPRECATED @21 :UInt32;
   isPreviewDEPRECATED @15 :Bool;
   rhdCheckedDEPRECATED @5 :Bool;
   eventsDEPRECATED @0 :List(Car.OnroadEventDEPRECATED);
