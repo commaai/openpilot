@@ -34,6 +34,7 @@ class Updater(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
 
+    # TODO: network page is rendered inline, not pushed on nav stack, so auto-dismiss on internet connect doesn't work
     self._network_setup_page = NetworkSetupPageBase(self._network_monitor, self._network_setup_continue_callback,
                                                     disable_connect_hint=True)
     self._network_setup_page.set_is_updater()
