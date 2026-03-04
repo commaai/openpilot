@@ -334,7 +334,7 @@ class TestCarModelBase(unittest.TestCase):
         result = self.safety.safety_tx_hook(to_send)
 
         # TX hook should never crash and should return a valid result
-        self.assertIn(result, [0, 1], f"Invalid tx_hook result: {result}")
+        assert result in (0, 1), f"Invalid tx_hook result: {result}"
 
         # Key invariant: if controls_allowed is False, certain messages
         # (like steering commands) should be blocked
