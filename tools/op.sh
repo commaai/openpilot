@@ -167,29 +167,6 @@ function op_check_os() {
   fi
 }
 
-function op_check_python() {
-  echo "Checking for compatible python version..."
-  REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml)
-  INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
-
-  if [[ -z $INSTALLED_PYTHON_VERSION ]]; then
-    echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version satisfying $(echo $REQUIRED_PYTHON_VERSION | cut -d '=' -f2-) to continue!"
-    loge "ERROR_PYTHON_NOT_FOUND"
-    return 1
-  else
-    LB=$(echo $REQUIRED_PYTHON_VERSION | tr -d '",' | awk '{ split($4, v, "."); printf "%d%02d%02d", v[1], v[2], v[3] }')
-    UB=$(echo $REQUIRED_PYTHON_VERSION | tr -d '",' | awk '{ split($6, v, "."); printf "%d%02d%02d", v[1], v[2], v[3] }')
-    VERSION=$(echo $INSTALLED_PYTHON_VERSION | awk '{ split($2, v, "."); printf "%d%02d%02d", v[1], v[2], v[3] }')
-    if [[ $VERSION -ge LB && $VERSION -lt UB ]]; then
-      echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
-    else
-      echo -e " ↳ [${RED}✗${NC}] You need a python version satisfying $(echo $REQUIRED_PYTHON_VERSION | cut -d '=' -f2-) to continue!"
-      loge "ERROR_PYTHON_VERSION" "$INSTALLED_PYTHON_VERSION"
-      return 1
-    fi
-  fi
-}
-
 function op_check_venv() {
   echo "Checking for venv..."
   if [[ -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
@@ -213,8 +190,6 @@ function op_before_cmd() {
   result="${result}\n$(( op_check_venv ) 2>&1)" || (echo -e "$result" && return 1)
 
   op_activate_venv
-
-  result="${result}\n$(( op_check_python ) 2>&1)" || (echo -e "$result" && return 1)
 
   if [[ -z $VERBOSE ]]; then
     echo -e "${BOLD}Checking system →${NC} [${GREEN}✔${NC}]"
@@ -436,7 +411,7 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [System]:${NC}"
   echo -e "  ${BOLD}auth${NC}         Authenticate yourself for API use"
-  echo -e "  ${BOLD}check${NC}        Check the development environment (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}check${NC}        Check the development environment (git, os) to start using openpilot"
   echo -e "  ${BOLD}esim${NC}         Manage eSIM profiles on your comma device"
   echo -e "  ${BOLD}venv${NC}         Activate the python virtual environment"
   echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
