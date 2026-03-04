@@ -16,6 +16,7 @@ from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
 from openpilot.selfdrive.modeld.constants import ModelConstants
+from openpilot.system.loggerd.config import CAMERA_FPS
 
 ACCEL_SANITY_CHECK = 100.0  # m/s^2
 ROTATION_SANITY_CHECK = 10.0  # rad/s
@@ -156,7 +157,8 @@ class LocationEstimator:
         self.device_from_calib = rot_from_euler(calib)
 
     elif which == "cameraOdometry":
-      t = t - ((ModelConstants.N_FRAMES - 1) * ModelConstants.MODEL_CONTEXT_FREQ) * 0.5 * DT_MDL  # compensate for model pose delay
+      frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
+      t = t - ((ModelConstants.N_FRAMES - 1) * (frame_skip + 1)) * 0.5 * DT_MDL  # compensate for model pose delay
       if not self._validate_timestamp(t):
         return HandleLogResult.TIMING_INVALID
 
