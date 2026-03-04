@@ -139,7 +139,8 @@ function install_fedora_deps() {
     curl \
     libcurl-devel \
     git \
-    git-lfs
+    git-lfs \
+    llvm-libs
 
   install_udev_rules "$SUDO"
 }
