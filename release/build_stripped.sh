@@ -38,7 +38,7 @@ git submodule foreach --recursive git clean -xdff
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-cp -pR --parents $(./release/release_files.py) $TARGET_DIR/
+cp -pR --parents $(./release/release_files.sh) $TARGET_DIR/
 
 # in the directory
 cd $TARGET_DIR
