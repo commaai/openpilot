@@ -142,19 +142,31 @@ function op_check_os() {
 
     if [ -f "/etc/os-release" ]; then
       source /etc/os-release
-      case "$VERSION_CODENAME" in
-        "jammy" | "kinetic" | "noble" | "focal")
-          echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
+      case "$ID $ID_LIKE" in
+        *fedora*)
+          echo -e " ↳ [${GREEN}✔${NC}] $NAME $VERSION_ID detected."
+          ;;
+        *ubuntu*)
+          case "$VERSION_CODENAME" in
+            "jammy" | "kinetic" | "noble" | "focal")
+              echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
+              ;;
+            * )
+              echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+              loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
+              return 1
+              ;;
+          esac
           ;;
         * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
-          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
+          echo -e " ↳ [${RED}✗${NC}] Incompatible OS $ID detected!"
+          loge "ERROR_INCOMPATIBLE_OS" "$ID"
           return 1
           ;;
       esac
     else
-      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
-      loge "ERROR_UNKNOWN_UBUNTU"
+      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, Fedora, or similar!"
+      loge "ERROR_UNKNOWN_OS"
       return 1
     fi
 

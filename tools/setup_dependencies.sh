@@ -19,6 +19,39 @@ function retry() {
   return 1
 }
 
+function install_udev_rules() {
+  local SUDO="$1"
+
+  if [[ ! -d "/etc/udev/rules.d/" ]]; then
+    return 0
+  fi
+
+  # Setup jungle udev rules
+  $SUDO tee /etc/udev/rules.d/12-panda_jungle.rules > /dev/null <<EOF
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcf", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddef", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcf", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddef", MODE="0666"
+
+EOF
+
+  # Setup panda udev rules
+  $SUDO tee /etc/udev/rules.d/11-panda.rules > /dev/null <<EOF
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcc", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddee", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
+EOF
+
+  # Setup adb udev rules
+  $SUDO tee /etc/udev/rules.d/50-comma-adb.rules > /dev/null <<EOF
+SUBSYSTEM=="usb", ATTR{idVendor}=="04d8", ATTR{idProduct}=="1234", ENV{adb_user}="yes"
+EOF
+
+  $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
+}
+
 function install_ubuntu_deps() {
   SUDO=""
 
@@ -62,32 +95,7 @@ function install_ubuntu_deps() {
     git \
     xvfb
 
-  if [[ -d "/etc/udev/rules.d/" ]]; then
-    # Setup jungle udev rules
-    $SUDO tee /etc/udev/rules.d/12-panda_jungle.rules > /dev/null <<EOF
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcf", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddef", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcf", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddef", MODE="0666"
-
-EOF
-
-    # Setup panda udev rules
-    $SUDO tee /etc/udev/rules.d/11-panda.rules > /dev/null <<EOF
-SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcc", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddee", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
-EOF
-
-    # Setup adb udev rules
-    $SUDO tee /etc/udev/rules.d/50-comma-adb.rules > /dev/null <<EOF
-SUBSYSTEM=="usb", ATTR{idVendor}=="04d8", ATTR{idProduct}=="1234", ENV{adb_user}="yes"
-EOF
-
-    $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
-  fi
+  install_udev_rules "$SUDO"
 }
 
 function install_python_deps() {
@@ -113,6 +121,31 @@ function install_python_deps() {
   source .venv/bin/activate
 }
 
+function install_fedora_deps() {
+  SUDO=""
+
+  if [[ ! $(id -u) -eq 0 ]]; then
+    if [[ -z $(which sudo) ]]; then
+      echo "Please install sudo or run as root"
+      exit 1
+    fi
+    SUDO="sudo"
+  fi
+
+  $SUDO dnf install -y \
+    ca-certificates \
+    gcc \
+    gcc-c++ \
+    make \
+    curl \
+    libcurl-devel \
+    git \
+    git-lfs \
+    xorg-x11-server-Xvfb
+
+  install_udev_rules "$SUDO"
+}
+
 function install_macos_deps() {
   if ! command -v brew > /dev/null 2>&1; then
     echo "homebrew not found, skipping macOS system dependency install"
@@ -127,7 +160,17 @@ function install_macos_deps() {
 # --- Main ---
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  install_ubuntu_deps
+  if [ -f "/etc/os-release" ]; then
+    source /etc/os-release
+  fi
+  if [[ "$ID $ID_LIKE" == *fedora* ]]; then
+    install_fedora_deps
+  elif [[ "$ID $ID_LIKE" == *ubuntu* ]]; then
+    install_ubuntu_deps
+  else
+    echo "$ID is unsupported. This setup script is written for Ubuntu and Fedora."
+    exit 1
+  fi
   echo "[ ] installed system dependencies t=$SECONDS"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   install_macos_deps
