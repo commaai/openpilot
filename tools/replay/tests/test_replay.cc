@@ -1,5 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
+#include "tools/replay/filereader.h"
 #include "tools/replay/replay.h"
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";

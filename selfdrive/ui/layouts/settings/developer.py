@@ -164,7 +164,7 @@ class DeveloperLayout(Widget):
 
   def _on_alpha_long_enabled(self, state: bool):
     if state:
-      def confirm_callback(result: int):
+      def confirm_callback(result: DialogResult):
         if result == DialogResult.CONFIRM:
           self._params.put_bool("AlphaLongitudinalEnabled", True)
           self._params.put_bool("OnroadCycleRequested", True)
@@ -176,8 +176,8 @@ class DeveloperLayout(Widget):
       content = (f"<h1>{self._alpha_long_toggle.title}</h1><br>" +
                  f"<p>{self._alpha_long_toggle.description}</p>")
 
-      dlg = ConfirmDialog(content, tr("Enable"), rich=True)
-      gui_app.set_modal_overlay(dlg, callback=confirm_callback)
+      dlg = ConfirmDialog(content, tr("Enable"), rich=True, callback=confirm_callback)
+      gui_app.push_widget(dlg)
 
     else:
       self._params.put_bool("AlphaLongitudinalEnabled", False)

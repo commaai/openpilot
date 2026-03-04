@@ -274,7 +274,7 @@ int SpectraCamera::clear_req_queue() {
   return ret;
 }
 
-void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
+void SpectraCamera::camera_open(VisionIpcServer *v) {
   if (!openSensor()) {
     return;
   }
@@ -296,7 +296,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   linkDevices();
 
   LOGD("camera init %d", cc.camera_num);
-  buf.init(device_id, ctx, this, v, ife_buf_depth, cc.stream_type);
+  buf.init(this, v, ife_buf_depth, cc.stream_type);
   camera_map_bufs();
   clearAndRequeue(1);
 }

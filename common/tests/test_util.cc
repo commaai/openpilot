@@ -36,7 +36,7 @@ TEST_CASE("util::read_file") {
     REQUIRE(util::read_file(filename).empty());
 
     std::string content = random_bytes(64 * 1024);
-    write(fd, content.c_str(), content.size());
+    REQUIRE(write(fd, content.c_str(), content.size()) == (ssize_t)content.size());
     std::string ret = util::read_file(filename);
     bool equal = (ret == content);
     REQUIRE(equal);
@@ -114,12 +114,12 @@ TEST_CASE("util::safe_fwrite") {
 }
 
 TEST_CASE("util::create_directories") {
-  system("rm /tmp/test_create_directories -rf");
+  REQUIRE(system("rm /tmp/test_create_directories -rf") == 0);
   std::string dir = "/tmp/test_create_directories/a/b/c/d/e/f";
 
-  auto check_dir_permissions = [](const std::string &dir, mode_t mode) -> bool {
+  auto check_dir_permissions = [](const std::string &path, mode_t mode) -> bool {
     struct stat st = {};
-    return stat(dir.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR && (st.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) == mode;
+    return stat(path.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR && (st.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) == mode;
   };
 
   SECTION("create_directories") {
@@ -132,7 +132,7 @@ TEST_CASE("util::create_directories") {
   }
   SECTION("a file exists with the same name") {
     REQUIRE(util::create_directories(dir, 0755));
-    int f = open((dir + "/file").c_str(), O_RDWR | O_CREAT);
+    int f = open((dir + "/file").c_str(), O_RDWR | O_CREAT, 0644);
     REQUIRE(f != -1);
     close(f);
     REQUIRE(util::create_directories(dir + "/file", 0755) == false);

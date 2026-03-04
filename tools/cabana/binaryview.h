@@ -1,10 +1,9 @@
 #pragma once
 
+#include <set>
 #include <tuple>
 #include <vector>
 
-#include <QList>
-#include <QSet>
 #include <QStyledItemDelegate>
 #include <QTableView>
 
@@ -51,7 +50,7 @@ public:
     bool is_msb = false;
     bool is_lsb = false;
     uint8_t val;
-    QList<const cabana::Signal *> sigs;
+    std::vector<const cabana::Signal *> sigs;
     bool valid = false;
   };
   std::vector<Item> items;
@@ -68,7 +67,7 @@ public:
   BinaryView(QWidget *parent = nullptr);
   void setMessage(const MessageId &message_id);
   void highlight(const cabana::Signal *sig);
-  QSet<const cabana::Signal*> getOverlappingSignals() const;
+  std::set<const cabana::Signal*> getOverlappingSignals() const;
   void updateState() { model->updateState(); }
   void paintEvent(QPaintEvent *event) override {
     is_message_active = can->isMessageActive(model->msg_id);

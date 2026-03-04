@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 
+#include "third_party/json11/json11.hpp"
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"
 #include "tools/replay/util.h"
@@ -55,8 +56,8 @@ protected:
   bool loadSegments();
   bool loadFromAutoSource();
   bool loadFromLocal();
-  bool loadFromServer(int retries = 3);
-  bool loadFromJson(const std::string &json);
+  bool loadFromServer();
+  bool loadFromJson(const json11::Json &json);
   void addFileToSegment(int seg_num, const std::string &file);
   RouteIdentifier route_ = {};
   std::string data_dir_;

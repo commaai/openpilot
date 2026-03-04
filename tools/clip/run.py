@@ -24,7 +24,7 @@ from openpilot.common.utils import Timer
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 FRAMERATE = 20
-DEMO_ROUTE, DEMO_START, DEMO_END = 'a2a0ccea32023010/2023-07-27--13-01-19', 90, 105
+DEMO_ROUTE, DEMO_START, DEMO_END = '5beb9b58bd12b691/0000010a--a51155e496', 90, 105
 
 logger = logging.getLogger('clip')
 
@@ -40,7 +40,7 @@ def parse_args():
   parser.add_argument("-f", "--file-size", type=float, default=9.0, help="Target file size in MB")
   parser.add_argument("-x", "--speed", type=int, default=1, help="Speed multiplier")
   parser.add_argument("--demo", action="store_true", help="Use demo route with default timing")
-  parser.add_argument("--big", action="store_true", default=True, help="Use big UI (2160x1080)")
+  parser.add_argument("--big", action="store_true", help="Use big UI (2160x1080)")
   parser.add_argument("--qcam", action="store_true", help="Use qcamera instead of fcamera")
   parser.add_argument("--windowed", action="store_true", help="Show window")
   parser.add_argument("--no-metadata", action="store_true", help="Disable metadata overlay")
@@ -85,7 +85,7 @@ def _parse_and_chunk_segment(args: tuple) -> list[dict]:
   if not messages:
     return []
 
-  dt_ns, chunks, current, next_time = 1e9 / fps, [], {}, messages[0].logMonoTime + 1e9 / fps  # type: ignore[var-annotated]
+  dt_ns, chunks, current, next_time = 1e9 / fps, [], {}, messages[0].logMonoTime + 1e9 / fps
   for msg in messages:
     if msg.logMonoTime >= next_time:
       chunks.append(current)
@@ -159,7 +159,7 @@ def iter_segment_frames(camera_paths, start_time, end_time, fps=20, use_qcam=Fal
         seg_frames = FrameReader(path, pix_fmt="nv12")
 
     assert seg_frames is not None
-    frame = seg_frames[local_idx] if use_qcam else seg_frames.get(local_idx)  # type: ignore[index, union-attr]
+    frame = seg_frames[local_idx] if use_qcam else seg_frames.get(local_idx)
     yield global_idx, frame
 
 
@@ -208,7 +208,10 @@ class FrameQueue:
 
 def load_route_metadata(route):
   from openpilot.common.params import Params, UnknownKeyName
-  lr = LogReader(route.log_paths()[0])
+  path = next((item for item in route.log_paths() if item), None)
+  if not path:
+    raise Exception('error getting route metadata: cannot find any uploaded logs')
+  lr = LogReader(path)
   init_data, car_params = lr.first('initData'), lr.first('carParams')
 
   params = Params()
@@ -226,11 +229,11 @@ def load_route_metadata(route):
   }
 
 
-def draw_text_box(rl, text, x, y, size, gui_app, font, font_scale, color=None, center=False):
+def draw_text_box(text, x, y, size, gui_app, font, color=None, center=False):
+  import pyray as rl
+  from openpilot.system.ui.lib.text_measure import measure_text_cached
   box_color, text_color = rl.Color(0, 0, 0, 85), color or rl.WHITE
-  # measure_text_ex is NOT auto-scaled, so multiply by font_scale
-  # draw_text_ex IS auto-scaled, so pass size directly
-  text_size = rl.measure_text_ex(font, text, size * font_scale, 0)
+  text_size = measure_text_cached(font, text, size)
   text_width, text_height = int(text_size.x), int(text_size.y)
   if center:
     x = (gui_app.width - text_width) // 2
@@ -238,25 +241,41 @@ def draw_text_box(rl, text, x, y, size, gui_app, font, font_scale, color=None, c
   rl.draw_text_ex(font, text, rl.Vector2(x, y), size, 0, text_color)
 
 
-def render_overlays(rl, gui_app, font, font_scale, metadata, title, start_time, frame_idx, show_metadata, show_time):
+def render_overlays(gui_app, font, big, metadata, title, start_time, frame_idx, show_metadata, show_time):
+  from openpilot.system.ui.lib.text_measure import measure_text_cached
+  from openpilot.system.ui.lib.wrap_text import wrap_text
+  metadata_size = 16 if big else 12
+  title_size = 32 if big else 24
+  time_size = 24 if big else 16
+
+  # Time overlay
+  time_width = 0
+  if show_time:
+    t = start_time + frame_idx / FRAMERATE
+    time_text = f"{int(t) // 60:02d}:{int(t) % 60:02d}"
+    time_width = int(measure_text_cached(font, time_text, time_size).x)
+    draw_text_box(time_text, gui_app.width - time_width - 5, 0, time_size, gui_app, font)
+
+  # Metadata overlay (first 5 seconds)
   if show_metadata and metadata and frame_idx < FRAMERATE * 5:
     m = metadata
     text = ", ".join([f"openpilot v{m['version']}", f"route: {m['route']}", f"car: {m['car']}", f"origin: {m['origin']}",
                       f"branch: {m['branch']}", f"commit: {m['commit']}", f"modified: {m['modified']}"])
-    # Truncate if too wide (leave 20px margin on each side)
-    max_width = gui_app.width - 40
-    while rl.measure_text_ex(font, text, 15 * font_scale, 0).x > max_width and len(text) > 20:
-      text = text[:-4] + "..."
-    draw_text_box(rl, text, 0, 8, 15, gui_app, font, font_scale, center=True)
+    # Wrap text if too wide (leave margin on each side)
+    margin = 2 * (time_width + 10 if show_time else 20)  # leave enough margin for time overlay
+    max_width = gui_app.width - margin
+    lines = wrap_text(font, text, metadata_size, max_width)
 
+    # Draw wrapped metadata text
+    y_offset = 6
+    for line in lines:
+      draw_text_box(line, 0, y_offset, metadata_size, gui_app, font, center=True)
+      line_height = int(measure_text_cached(font, line, metadata_size).y) + 4
+      y_offset += line_height
+
+  # Title overlay
   if title:
-    draw_text_box(rl, title, 0, 60, 32, gui_app, font, font_scale, center=True)
-
-  if show_time:
-    t = start_time + frame_idx / FRAMERATE
-    time_text = f"{int(t)//60:02d}:{int(t)%60:02d}"
-    time_width = int(rl.measure_text_ex(font, time_text, 24 * font_scale, 0).x)
-    draw_text_box(rl, time_text, gui_app.width - time_width - 45, 45, 24, gui_app, font, font_scale)
+    draw_text_box(title, 0, 60, title_size, gui_app, font, center=True)
 
 
 def clip(route: Route, output: str, start: int, end: int, headless: bool = True, big: bool = False,
@@ -267,9 +286,9 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
   if big:
     from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
   else:
-    from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView  # type: ignore[assignment]
+    from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
   from openpilot.selfdrive.ui.ui_state import ui_state
-  from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
+  from openpilot.system.ui.lib.application import gui_app, FontWeight
   timer.lap("import")
 
   logger.info(f"Clipping {route.name.canonical_name}, {start}s-{end}s ({duration}s)")
@@ -313,7 +332,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
         ui_state.update()
         if should_render:
           road_view.render()
-          render_overlays(rl, gui_app, font, FONT_SCALE, metadata, title, start, frame_idx, show_metadata, show_time)
+          render_overlays(gui_app, font, big, metadata, title, start, frame_idx, show_metadata, show_time)
         frame_idx += 1
         pbar.update(1)
     timer.lap("render")
@@ -329,7 +348,6 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
 def main():
   logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s\t%(message)s")
   args = parse_args()
-  assert args.big, "Clips doesn't support mici UI yet. TODO: make it work"
 
   setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start)
   clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, not args.windowed,
