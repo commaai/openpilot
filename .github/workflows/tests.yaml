@@ -49,7 +49,7 @@ jobs:
       if: matrix.container
       run: |
         if command -v dnf &>/dev/null; then
-          dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=nodocs --setopt=max_parallel_downloads=10 git-lfs file
+          dnf install -y --disablerepo=fedora-cisco-openh264 --setopt=install_weak_deps=False --setopt=tsflags=nodocs --setopt=max_parallel_downloads=10 git-lfs file
         fi
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v6
