@@ -24,13 +24,20 @@ env:
 
 jobs:
   build_release:
-    name: build release
+    name: build release (${{ matrix.os }})
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+          - os: fedora-41
+            container: fedora:41
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
+    container: ${{ matrix.container || '' }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
       PYTHONPATH: /tmp/releasepilot
