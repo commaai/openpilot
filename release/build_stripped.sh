@@ -38,9 +38,11 @@ git submodule foreach --recursive git clean -xdff
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
+set +x
 ./release/release_files.sh | while IFS= read -r f; do
   cp -pR --parents "$f" $TARGET_DIR/
 done
+set -x
 
 # in the directory
 cd $TARGET_DIR
