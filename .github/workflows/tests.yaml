@@ -45,10 +45,12 @@ jobs:
       STRIPPED_DIR: /tmp/releasepilot
       PYTHONPATH: /tmp/releasepilot
     steps:
-    - name: Install git
+    - name: Bootstrap container
       if: matrix.container
       run: |
-        dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=nodocs --setopt=max_parallel_downloads=10 --disablerepo=fedora-cisco-openh264 git-lfs file
+        if command -v dnf &>/dev/null; then
+          dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=nodocs --setopt=max_parallel_downloads=10 git-lfs file
+        fi
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v6
       with:
