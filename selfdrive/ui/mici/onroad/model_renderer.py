@@ -71,6 +71,7 @@ class ModelRenderer(Widget):
 
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._ll_color_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._path_wipe = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
 
     # Transform matrix (3x3 for car space to screen space)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
@@ -137,10 +138,9 @@ class ModelRenderer(Widget):
         self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
 
-    # Draw elements (hide when disengaged)
-    if ui_state.status != UIStatus.DISENGAGED:
-      self._draw_lane_lines()
-      self._draw_path(sm)
+    # Draw elements (wipe in/out on engage/disengage)
+    self._draw_lane_lines()
+    self._draw_path(sm)
 
     # if render_lead_indicator and radar_state:
     #   self._draw_lead_indicator()
@@ -304,23 +304,57 @@ class ModelRenderer(Widget):
 
     return color
 
+  @staticmethod
+  def _wipe_polygon(points: np.ndarray, wipe: float) -> np.ndarray | None:
+    """Truncate a polygon with interpolated boundary for smooth road-plane wipe."""
+    n_total = len(points)
+    if n_total < 4 or wipe <= 0.01:
+      return None
+
+    n_half = n_total // 2
+    if wipe >= 0.99:
+      return points
+
+    keep_f = n_half * wipe
+    keep = min(int(keep_f), n_half - 1)
+    frac = keep_f - keep
+    if keep < 1:
+      return None
+
+    left = points[:keep]
+    right = points[n_total - keep:]
+
+    if keep < n_half - 1 and frac > 0:
+      left_boundary = points[keep] * frac + points[keep - 1] * (1 - frac)
+      right_boundary = points[n_total - keep - 1] * frac + points[n_total - keep] * (1 - frac)
+      left = np.vstack([left, left_boundary])
+      right = np.vstack([right_boundary, right])
+
+    return np.concatenate([left, right])
+
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
-    """Two closest lines should be green (lane line or road edges)"""
+    wipe = self._path_wipe.x
+
     for i, lane_line in enumerate(self._lane_lines):
       if lane_line.projected_points.size == 0:
         continue
+      pts = self._wipe_polygon(lane_line.projected_points, wipe)
+      if pts is None:
+        continue
 
       color = self._get_ll_color(float(self._lane_line_probs[i]), i in (1, 2), i in (0, 1))
-      draw_polygon(self._rect, lane_line.projected_points, color)
+      draw_polygon(self._rect, pts, color)
 
     for i, road_edge in enumerate(self._road_edges):
       if road_edge.projected_points.size == 0:
         continue
+      pts = self._wipe_polygon(road_edge.projected_points, wipe)
+      if pts is None:
+        continue
 
-      # if closest lane lines are not confident, make road edges green
       color = self._get_ll_color(float(1.0 - self._road_edge_stds[i]), float(self._lane_line_probs[i + 1]) < 0.25, i == 0)
-      draw_polygon(self._rect, road_edge.projected_points, color)
+      draw_polygon(self._rect, pts, color)
 
   def _draw_path(self, sm):
     """Draw path with dynamic coloring based on mode and throttle state."""
@@ -330,29 +364,30 @@ class ModelRenderer(Widget):
     allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
     self._blend_filter.update(int(allow_throttle))
 
+    # Animate wipe: smooth expand on engage, retract on disengage
+    engaged = ui_state.status != UIStatus.DISENGAGED
+    self._path_wipe.update(1.0 if engaged else 0.0)
+    wipe = self._path_wipe.x
+
+    points = self._wipe_polygon(self._path.projected_points, wipe)
+    if points is None:
+      return
+
     if self._experimental_mode:
-      # Draw with acceleration coloring
-      if ui_state.status == UIStatus.DISENGAGED:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(0, 0, 0, 90))
-      elif len(self._exp_gradient.colors) > 1:
-        draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
+      if len(self._exp_gradient.colors) > 1:
+        draw_polygon(self._rect, points, gradient=self._exp_gradient)
       else:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
+        draw_polygon(self._rect, points, rl.Color(255, 255, 255, 30))
     else:
-      # Blend throttle/no throttle colors based on transition
       blend_factor = round(self._blend_filter.x * 100) / 100
       blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, blend_factor)
       gradient = Gradient(
-        start=(0.0, 1.0),  # Bottom of path
-        end=(0.0, 0.0),  # Top of path
+        start=(0.0, 1.0),
+        end=(0.0, 0.0),
         colors=blended_colors,
         stops=[0.0, 0.5, 1.0],
       )
-
-      if ui_state.status == UIStatus.DISENGAGED:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(0, 0, 0, 90))
-      else:
-        draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
+      draw_polygon(self._rect, points, gradient=gradient)
 
   def _draw_lead_indicator(self):
     # Draw lead vehicles if available
