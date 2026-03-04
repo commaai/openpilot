@@ -10,11 +10,12 @@ from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
 from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
+from openpilot.selfdrive.ui.mici.effects import SpeedAurora, TorqueParticleSystem, ExplosionEffect, SpeedLines
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
-from openpilot.common.filter_simple import BounceFilter
+from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 from enum import IntEnum
@@ -53,9 +54,15 @@ class BookmarkIcon(Widget):
     self._state = BookmarkState.HIDDEN
     self._swipe_start_x = 0.0
     self._swipe_current_x = 0.0
+    self._swipe_prev_x = 0.0
+    self._swipe_prev_time = 0.0
+    self._swipe_velocity_x = 0.0
     self._is_swiping = False
     self._is_swiping_left: bool = False
     self._triggered_time: float = 0.0
+
+    # Explosion effect
+    self._explosion = ExplosionEffect()
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
@@ -93,11 +100,20 @@ class BookmarkIcon(Widget):
       # Store relative position within widget
       self._swipe_start_x = mouse_event.pos.x
       self._swipe_current_x = mouse_event.pos.x
+      self._swipe_prev_x = mouse_event.pos.x
+      self._swipe_prev_time = rl.get_time()
+      self._swipe_velocity_x = 0.0
       self._is_swiping = True
       self._is_swiping_left = False
       self._state = BookmarkState.DRAGGING
 
     elif mouse_event.left_down and self._is_swiping:
+      now = rl.get_time()
+      dt = now - self._swipe_prev_time
+      if dt > 0.001:
+        self._swipe_velocity_x = (mouse_event.pos.x - self._swipe_prev_x) / dt
+      self._swipe_prev_x = mouse_event.pos.x
+      self._swipe_prev_time = now
       self._swipe_current_x = mouse_event.pos.x
       swipe_offset = self._swipe_start_x - self._swipe_current_x
       self._is_swiping_left = swipe_offset > 0
@@ -112,6 +128,12 @@ class BookmarkIcon(Widget):
         if swipe_distance > self.PEEK_THRESHOLD:
           self._state = BookmarkState.TRIGGERED
           self._triggered_time = rl.get_time()
+          # Trigger explosion at the bookmark icon position, inheriting swipe velocity
+          icon_x = self.rect.x + self.rect.width - self.FULL_VISIBLE_OFFSET + 90
+          icon_y = self.rect.y + self.rect.height / 2
+          # Clamp velocity so it biases direction but doesn't overwhelm
+          vel_x = max(-400, min(0, self._swipe_velocity_x * 0.5))
+          self._explosion.trigger(icon_x, icon_y, rl.Color(255, 200, 50, 255), velocity_x=vel_x)
           self._bookmark_callback()
         else:
           # Otherwise, transition back to hidden
@@ -128,8 +150,18 @@ class BookmarkIcon(Widget):
       icon_y = self.rect.y + (self.rect.height - self._icon.height) / 2  # Vertically centered
       rl.draw_texture(self._icon, int(icon_x), int(icon_y), rl.WHITE)
 
+    # Explosion particles
+    if self._explosion.is_active:
+      self._explosion.update(rl.get_frame_time())
+      self._explosion.render()
+
 
 class AugmentedRoadView(CameraView):
+  def cycle_lead_style(self):
+    """Cycle through lead indicator visualization styles."""
+    r = self._model_renderer
+    r._lead_style = (r._lead_style + 1) % r.LEAD_STYLE_COUNT
+
   def __init__(self, bookmark_callback=None, stream_type: VisionStreamType = VisionStreamType.VISION_STREAM_ROAD):
     super().__init__("camerad", stream_type)
     self._bookmark_callback = bookmark_callback
@@ -154,6 +186,11 @@ class AugmentedRoadView(CameraView):
     self._alert_renderer = AlertRenderer()
     self._driver_state_renderer = DriverStateRenderer()
     self._confidence_ball = ConfidenceBall()
+    self._speed_aurora = SpeedAurora()
+    self._particles = TorqueParticleSystem()
+    self._speed_lines = SpeedLines()
+    self._prev_engaged = False
+    self._engage_flash_alpha = FirstOrderFilter(0.0, 0.08, 1 / gui_app.target_fps)
     self._offroad_label = UnifiedLabel("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
@@ -212,14 +249,29 @@ class AugmentedRoadView(CameraView):
     # Draw all UI overlays
     self._model_renderer.render(self._content_rect)
 
+    # Engagement flash
+    engaged_now = ui_state.status != UIStatus.DISENGAGED
+    if engaged_now and not self._prev_engaged:
+      self._engage_flash_alpha.x = 0.3
+    self._prev_engaged = engaged_now
+    self._engage_flash_alpha.update(0.0)
+    if self._engage_flash_alpha.x > 0.01:
+      flash_alpha = int(self._engage_flash_alpha.x * 255)
+      rl.draw_rectangle(int(self._content_rect.x), int(self._content_rect.y),
+                        int(self._content_rect.width), int(self._content_rect.height),
+                        rl.Color(0, 255, 80, flash_alpha))
+
+    # Speed Aurora effect
+    if ui_state.started:
+      self._speed_aurora.render(self._content_rect, ui_state.sm['carState'].vEgo, ui_state.status != UIStatus.DISENGAGED)
+
     # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
 
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
 
-    # Hide DMoji when disengaged unless AlwaysOnDM is enabled
-    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and ui_state.is_onroad() and
-                         (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
+    # Hide DMoji when disengaged unless AlwaysOnDM is enabled (forced on for testing)
+    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and ui_state.is_onroad())
     self._driver_state_renderer.set_should_draw(should_draw_dmoji)
     self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
     self._driver_state_renderer.render()
@@ -232,8 +284,20 @@ class AugmentedRoadView(CameraView):
       self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
 
+    # Torque particles — rendered after HUD so torque_value is current
+    if ui_state.started:
+      dt = rl.get_frame_time()
+      torque = self._hud_renderer.torque_value
+      speed = ui_state.sm['carState'].vEgo
+      engaged = ui_state.status != UIStatus.DISENGAGED
+      self._particles.update(self._content_rect, torque, speed, dt, engaged)
+      self._particles.render()
+      self._speed_lines.update(self._content_rect, speed, dt, engaged)
+      self._speed_lines.render()
+
     # Draw fake rounded border
     rl.draw_rectangle_rounded_lines_ex(self._content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
+
 
     # End clipping region
     rl.end_scissor_mode()

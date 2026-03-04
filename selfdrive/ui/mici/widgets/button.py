@@ -36,6 +36,8 @@ class BigCircleButton(Widget):
     # State
     self.set_rect(rl.Rectangle(0, 0, 180, 180))
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._scale_x_filter = BounceFilter(1.0, 0.08, 1 / gui_app.target_fps, bounce=3)
+    self._scale_y_filter = BounceFilter(1.0, 0.08, 1 / gui_app.target_fps, bounce=3)
     self._click_delay = 0.075
 
     # Icons
@@ -62,10 +64,24 @@ class BigCircleButton(Widget):
     elif self.is_pressed:
       txt_bg = self._txt_btn_pressed_bg if not self._red else self._txt_btn_red_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
-    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
-    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+    # Keep legacy filter updated for backward compat
+    self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
+
+    # Squish effect: wider and shorter when pressed
+    PRESS_X = 1.12 if DO_ZOOM else 1.05
+    PRESS_Y = 0.90 if DO_ZOOM else 0.95
+    scale_x = self._scale_x_filter.update(PRESS_X if self.is_pressed else 1.0)
+    scale_y = self._scale_y_filter.update(PRESS_Y if self.is_pressed else 1.0)
+
+    scaled_w = self._rect.width * scale_x
+    scaled_h = self._rect.height * scale_y
+    btn_x = self._rect.x + (self._rect.width - scaled_w) / 2
+    btn_y = self._rect.y + (self._rect.height - scaled_h) / 2
+
+    source = rl.Rectangle(0, 0, txt_bg.width, txt_bg.height)
+    dest = rl.Rectangle(btn_x + scaled_w / 2, btn_y + scaled_h / 2, scaled_w, scaled_h)
+    origin = rl.Vector2(scaled_w / 2, scaled_h / 2)
+    rl.draw_texture_pro(txt_bg, source, dest, origin, 0, rl.WHITE)
 
     self._draw_content(btn_y)
 
@@ -118,6 +134,8 @@ class BigButton(Widget):
     self.set_icon(icon)
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._scale_x_filter = BounceFilter(1.0, 0.08, 1 / gui_app.target_fps, bounce=3)
+    self._scale_y_filter = BounceFilter(1.0, 0.08, 1 / gui_app.target_fps, bounce=3)
     self._click_delay = 0.075
     self._shake_start: float | None = None
     self._grow_animation_until: float | None = None
@@ -203,7 +221,7 @@ class BigButton(Widget):
   def set_position(self, x: float, y: float) -> None:
     super().set_position(x + self._shake_offset, y)
 
-  def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
+  def _handle_background(self) -> tuple[rl.Texture, float, float, float, float, float]:
     if self._grow_animation_until is not None:
       if rl.get_time() >= self._grow_animation_until:
         self._grow_animation_until = None
@@ -215,10 +233,22 @@ class BigButton(Widget):
     elif self.is_pressed:
       txt_bg = self._txt_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed or self._grow_animation_until is not None else 1.0)
-    btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
-    btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    return txt_bg, btn_x, btn_y, scale
+    is_active = self.is_pressed or self._grow_animation_until is not None
+
+    # Keep legacy filter updated for backward compat
+    self._scale_filter.update(PRESSED_SCALE if is_active else 1.0)
+
+    # Squish effect: wider and shorter when pressed
+    PRESS_X = 1.12 if DO_ZOOM else 1.05
+    PRESS_Y = 0.90 if DO_ZOOM else 0.95
+    scale_x = self._scale_x_filter.update(PRESS_X if is_active else 1.0)
+    scale_y = self._scale_y_filter.update(PRESS_Y if is_active else 1.0)
+
+    scaled_w = self._rect.width * scale_x
+    scaled_h = self._rect.height * scale_y
+    btn_x = self._rect.x + (self._rect.width - scaled_w) / 2
+    btn_y = self._rect.y + (self._rect.height - scaled_h) / 2
+    return txt_bg, btn_x, btn_y, scale_x, scale_y, scaled_w
 
   def _draw_content(self, btn_y: float):
     # LABEL ------------------------------------------------------------------
@@ -251,17 +281,22 @@ class BigButton(Widget):
       rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.Color(255, 255, 255, int(255 * 0.9)))
 
   def _render(self, _):
-    txt_bg, btn_x, btn_y, scale = self._handle_background()
+    txt_bg, btn_x, btn_y, scale_x, scale_y, scaled_w = self._handle_background()
+    scaled_h = self._rect.height * scale_y
+
+    source = rl.Rectangle(0, 0, txt_bg.width, txt_bg.height)
+    dest = rl.Rectangle(btn_x + scaled_w / 2, btn_y + scaled_h / 2, scaled_w, scaled_h)
+    origin = rl.Vector2(scaled_w / 2, scaled_h / 2)
 
     if self._scroll:
       # draw black background since images are transparent
-      scaled_rect = rl.Rectangle(btn_x, btn_y, self._rect.width * scale, self._rect.height * scale)
+      scaled_rect = rl.Rectangle(btn_x, btn_y, scaled_w, scaled_h)
       rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.5)))
 
       self._draw_content(btn_y)
-      rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+      rl.draw_texture_pro(txt_bg, source, dest, origin, 0, rl.WHITE)
     else:
-      rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+      rl.draw_texture_pro(txt_bg, source, dest, origin, 0, rl.WHITE)
       self._draw_content(btn_y)
 
 

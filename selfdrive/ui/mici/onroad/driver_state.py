@@ -43,6 +43,11 @@ class DriverStateRenderer(Widget):
     self._rotation_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
     self._looking_center_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
+    # Track rotation activity for scaling effect
+    self._prev_rotation = 0.0
+    self._rotation_activity_filter = FirstOrderFilter(0.0, 0.8, 1 / gui_app.target_fps)  # slow decay
+    self._scale_filter = FirstOrderFilter(1.0, 0.15, 1 / gui_app.target_fps)
+
     # Load the driver face icons
     self.load_icons()
 
@@ -88,41 +93,55 @@ class DriverStateRenderer(Widget):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
-    rl.draw_texture(self._dm_background,
-                    int(self._rect.x),
-                    int(self._rect.y),
-                    rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
+    # Scale entire DM icon based on head rotation activity
+    scale = self._scale_filter.x
+    cx = self._rect.x + self._rect.width / 2
+    cy = self._rect.y + self._rect.height / 2
 
-    rl.draw_texture(self._dm_person,
-                    int(self._rect.x + (self._rect.width - self._dm_person.width) / 2),
-                    int(self._rect.y + (self._rect.height - self._dm_person.height) / 2),
-                    rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
+    # Background - scaled
+    bg_src = rl.Rectangle(0, 0, self._dm_background.width, self._dm_background.height)
+    bg_w = self._rect.width * scale
+    bg_h = self._rect.height * scale
+    bg_dest = rl.Rectangle(cx, cy, bg_w, bg_h)
+    bg_origin = rl.Vector2(bg_w / 2, bg_h / 2)
+    rl.draw_texture_pro(self._dm_background, bg_src, bg_dest, bg_origin, 0,
+                        rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
+
+    # Person icon - scaled
+    p_src = rl.Rectangle(0, 0, self._dm_person.width, self._dm_person.height)
+    p_w = self._dm_person.width * scale
+    p_h = self._dm_person.height * scale
+    p_dest = rl.Rectangle(cx, cy, p_w, p_h)
+    p_origin = rl.Vector2(p_w / 2, p_h / 2)
+    rl.draw_texture_pro(self._dm_person, p_src, p_dest, p_origin, 0,
+                        rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     if self.effective_active:
+      cone_w = self._dm_cone.width * scale
+      cone_h = self._dm_cone.height * scale
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
-      dest_rect = rl.Rectangle(
-        self._rect.x + self._rect.width / 2,
-        self._rect.y + self._rect.height / 2,
-        self._dm_cone.width,
-        self._dm_cone.height,
-      )
+      dest_rect = rl.Rectangle(cx, cy, cone_w, cone_h)
 
       if not self._lines:
         rl.draw_texture_pro(
           self._dm_cone,
           source_rect,
           dest_rect,
-          rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
+          rl.Vector2(cone_w / 2, cone_h / 2),
           self._rotation_filter.x - 90,
           rl.Color(255, 255, 255, int(255 * self._fade_filter.x * (1 - self._looking_center_filter.x))),
         )
 
-        rl.draw_texture_ex(
+        center_w = self._dm_center.width * scale
+        center_h = self._dm_center.height * scale
+        center_src = rl.Rectangle(0, 0, self._dm_center.width, self._dm_center.height)
+        center_dest = rl.Rectangle(cx, cy, center_w, center_h)
+        rl.draw_texture_pro(
           self._dm_center,
-          (int(self._rect.x + (self._rect.width - self._dm_center.width) / 2),
-           int(self._rect.y + (self._rect.height - self._dm_center.height) / 2)),
+          center_src,
+          center_dest,
+          rl.Vector2(center_w / 2, center_h / 2),
           0,
-          1.0,
           rl.Color(255, 255, 255, int(255 * self._fade_filter.x * self._looking_center_filter.x)),
         )
 
@@ -211,6 +230,16 @@ class DriverStateRenderer(Widget):
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)
+
+    # Track rotation activity — how much the cone angle changes over time
+    rot_delta = abs(self._rotation_filter.x - self._prev_rotation)
+    self._prev_rotation = self._rotation_filter.x
+    # Accumulate rotation speed (degrees/frame), slow decay
+    self._rotation_activity_filter.update(rot_delta)
+    # Map activity to scale: idle=1.0, active head movement=up to 1.4
+    activity = min(1.0, self._rotation_activity_filter.x / 3.0)  # normalize: 3 deg/frame = max
+    target_scale = 1.0 + activity * 0.4
+    self._scale_filter.update(target_scale)
 
     if not self.should_draw:
       self._fade_filter.update(0.0)

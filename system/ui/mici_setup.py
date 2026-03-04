@@ -337,12 +337,12 @@ class BigPillButton(BigButton):
     # Don't change label text size
     pass
 
-  def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
-    txt_bg, btn_x, btn_y, scale = super()._handle_background()
+  def _handle_background(self) -> tuple[rl.Texture, float, float, float, float, float]:
+    txt_bg, btn_x, btn_y, scale_x, scale_y, scaled_w = super()._handle_background()
 
     if self._disabled_background:
       txt_bg = self._txt_disabled_bg
-    return txt_bg, btn_x, btn_y, scale
+    return txt_bg, btn_x, btn_y, scale_x, scale_y, scaled_w
 
 
 class NetworkSetupPageBase(Scroller):

@@ -155,6 +155,11 @@ class TorqueBar(Widget):
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._torque_line_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
+  @property
+  def torque_value(self) -> float:
+    """Current smoothed torque value (-1 to 1)."""
+    return self._torque_filter.x
+
   def update_filter(self, value: float):
     """Update the torque filter value (for demo mode)."""
     self._torque_filter.update(value)

@@ -1,4 +1,5 @@
 import colorsys
+import math
 import numpy as np
 import pyray as rl
 from cereal import messaging, car
@@ -46,6 +47,16 @@ class LeadVehicle:
   glow: list[float] = field(default_factory=list)
   chevron: list[float] = field(default_factory=list)
   fill_alpha: int = 0
+  # 3D projected diamond points for road-plane indicator
+  diamond: list[tuple[float, float]] = field(default_factory=list)
+  # Car-sized underglow rectangle projected on road surface
+  underglow: list[tuple[float, float]] = field(default_factory=list)
+  # NFS-style trail arrows along path to lead
+  trail_arrows: list[list[tuple[float, float]]] = field(default_factory=list)
+  # 3D-projected sky arrow (tip, left, right) floating above lead
+  sky_arrow: list[tuple[float, float]] = field(default_factory=list)
+  d_rel: float = 0.0
+  v_rel: float = 0.0
 
 
 class ModelRenderer(Widget):
@@ -59,6 +70,13 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._path_offset_z = HEIGHT_INIT[0]
+    self._lead_glow_filter = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    self._lead_pulse_filter = FirstOrderFilter(0.0, 0.2, 1 / gui_app.target_fps)
+
+    # Lead visualization styles: cycle through on click
+    # 0=all, 1=diamond+underglow, 2=arrows+sky, 3=rings+brackets, 4=sky only, 5=diamond only
+    self._lead_style = 0
+    self.LEAD_STYLE_COUNT = 6
 
     # Initialize ModelPoints objects
     self._path = ModelPoints()
@@ -142,8 +160,8 @@ class ModelRenderer(Widget):
       self._draw_lane_lines()
       self._draw_path(sm)
 
-    # if render_lead_indicator and radar_state:
-    #   self._draw_lead_indicator()
+    if render_lead_indicator and radar_state:
+      self._draw_lead_indicator(radar_state)
 
   def _update_raw_points(self, model):
     """Update raw 3D points from model data"""
@@ -160,7 +178,7 @@ class ModelRenderer(Widget):
     self._acceleration_x = np.array(model.acceleration.x, dtype=np.float32)
 
   def _update_leads(self, radar_state, path_x_array):
-    """Update positions of lead vehicles"""
+    """Update positions of lead vehicles with 3D projected diamond on road surface"""
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     leads = [radar_state.leadOne, radar_state.leadTwo]
 
@@ -171,9 +189,85 @@ class ModelRenderer(Widget):
 
         # Get z-coordinate from path at the lead vehicle position
         z = self._path.raw_points[idx, 2] if idx < len(self._path.raw_points) else 0.0
-        point = self._map_to_screen(d_rel, -y_rel, z + self._path_offset_z)
-        if point:
-          self._lead_vehicles[i] = self._update_lead_vehicle(d_rel, v_rel, point, self._rect)
+        road_z = z + self._path_offset_z
+
+        # Project a diamond shape on the road plane in 3D car space
+        # Diamond sits flat on the road at the lead's position
+        half_w = 2.0  # half-width in meters
+        half_l = float(np.clip(d_rel * 0.18, 3.5, 10.0))  # half-length, bigger for visibility at distance
+
+        # 4 points of the diamond: front, right, back, left (in car space)
+        diamond_3d = [
+          (d_rel + half_l, -y_rel, road_z),         # front tip
+          (d_rel, -y_rel + half_w, road_z),          # right
+          (d_rel - half_l, -y_rel, road_z),          # back tip
+          (d_rel, -y_rel - half_w, road_z),          # left
+        ]
+
+        diamond_2d = []
+        for pt3 in diamond_3d:
+          pt2 = self._map_to_screen(*pt3)
+          if pt2:
+            diamond_2d.append(pt2)
+
+        # Project car-sized underglow rectangle on road surface
+        car_len = 7.0   # generous car length for visual impact
+        car_w = 2.5     # generous car width
+        underglow_3d = [
+          (d_rel + car_len * 0.5, -y_rel - car_w / 2, road_z),   # front-left
+          (d_rel + car_len * 0.5, -y_rel + car_w / 2, road_z),   # front-right
+          (d_rel - car_len * 0.5, -y_rel + car_w / 2, road_z),   # back-right
+          (d_rel - car_len * 0.5, -y_rel - car_w / 2, road_z),   # back-left
+        ]
+        underglow_2d = []
+        for pt3 in underglow_3d:
+          pt2 = self._map_to_screen(*pt3)
+          if pt2:
+            underglow_2d.append(pt2)
+
+        # Project NFS-style trail arrows at intermediate distances along path
+        trail_arrows_2d = []
+        if d_rel > 8:
+          num_arrows = int(np.clip(d_rel / 12, 2, 5))
+          for a_i in range(num_arrows):
+            frac = 0.25 + 0.55 * a_i / max(num_arrows - 1, 1)
+            arrow_d = d_rel * frac
+            a_idx = self._get_path_length_idx(path_x_array, arrow_d)
+            az = self._path.raw_points[a_idx, 2] + self._path_offset_z if a_idx < len(self._path.raw_points) else road_z
+            arrow_y = -y_rel * frac  # lerp toward lead lateral position
+            tip = self._map_to_screen(arrow_d + 2.5, arrow_y, az)
+            left_wing = self._map_to_screen(arrow_d - 1.5, arrow_y - 1.8, az)
+            right_wing = self._map_to_screen(arrow_d - 1.5, arrow_y + 1.8, az)
+            if tip and left_wing and right_wing:
+              trail_arrows_2d.append([tip, left_wing, right_wing])
+
+        # Project sky arrow in 3D: float above lead at avg car height (~1.5m) + 0.5m offset
+        sky_z = road_z + 2.0  # ~1.5m car height + 0.5m clearance
+        sky_arrow_2d = []
+        sky_tip = self._map_to_screen(d_rel, -y_rel, sky_z + 1.2)  # tip points down
+        sky_left = self._map_to_screen(d_rel, -y_rel - 1.2, sky_z + 2.5)
+        sky_right = self._map_to_screen(d_rel, -y_rel + 1.2, sky_z + 2.5)
+        if sky_tip and sky_left and sky_right:
+          sky_arrow_2d = [sky_tip, sky_left, sky_right]
+
+        # Also get the center point for glow/fallback
+        center = self._map_to_screen(d_rel, -y_rel, road_z)
+
+        if len(diamond_2d) >= 3:
+          lv = LeadVehicle(diamond=diamond_2d, underglow=underglow_2d, trail_arrows=trail_arrows_2d,
+                           sky_arrow=sky_arrow_2d, d_rel=d_rel, v_rel=v_rel)
+          # Keep legacy chevron for fallback
+          if center:
+            lv_legacy = self._update_lead_vehicle(d_rel, v_rel, center, self._rect)
+            lv.chevron = lv_legacy.chevron
+            lv.glow = lv_legacy.glow
+            lv.fill_alpha = lv_legacy.fill_alpha
+          self._lead_vehicles[i] = lv
+        elif center:
+          lv = self._update_lead_vehicle(d_rel, v_rel, center, self._rect)
+          lv.d_rel = d_rel
+          lv.v_rel = v_rel
+          self._lead_vehicles[i] = lv
 
   def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
@@ -312,6 +406,10 @@ class ModelRenderer(Widget):
         continue
 
       color = self._get_ll_color(float(self._lane_line_probs[i]), i in (1, 2), i in (0, 1))
+      # Subtle pulse on adjacent lane lines when engaged
+      if ui_state.status != UIStatus.DISENGAGED and i in (1, 2):
+        pulse = 1.0 + 0.1 * math.sin(rl.get_time() * 3.0 + i * 0.5)
+        color = rl.Color(color.r, color.g, color.b, min(255, int(color.a * pulse)))
       draw_polygon(self._rect, lane_line.projected_points, color)
 
     for i, road_edge in enumerate(self._road_edges):
@@ -342,6 +440,9 @@ class ModelRenderer(Widget):
       # Blend throttle/no throttle colors based on transition
       blend_factor = round(self._blend_filter.x * 100) / 100
       blended_colors = self._blend_colors(NO_THROTTLE_COLORS, THROTTLE_COLORS, blend_factor)
+      # Breathing effect — subtle alpha pulse when engaged
+      breath = 1.0 + 0.12 * math.sin(rl.get_time() * 2.0)
+      blended_colors = [rl.Color(c.r, c.g, c.b, min(255, int(c.a * breath))) for c in blended_colors]
       gradient = Gradient(
         start=(0.0, 1.0),  # Bottom of path
         end=(0.0, 0.0),  # Top of path
@@ -354,14 +455,159 @@ class ModelRenderer(Widget):
       else:
         draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
 
-  def _draw_lead_indicator(self):
-    # Draw lead vehicles if available
-    for lead in self._lead_vehicles:
-      if not lead.glow or not lead.chevron:
+  def _draw_lead_indicator(self, radar_state):
+    for lead_idx, lead in enumerate(self._lead_vehicles):
+      if not lead.diamond and not lead.chevron:
+        if lead_idx == 0:
+          self._lead_glow_filter.update(0.0)
         continue
 
-      rl.draw_triangle_fan(lead.glow, len(lead.glow), rl.Color(218, 202, 37, 255))
-      rl.draw_triangle_fan(lead.chevron, len(lead.chevron), rl.Color(201, 34, 49, lead.fill_alpha))
+      d_rel = lead.d_rel
+      v_rel = lead.v_rel
+      is_primary = lead_idx == 0
+
+      # Color based on distance: far=green, medium=yellow, close=red
+      if d_rel > 25:
+        color = rl.Color(0, 200, 120, 255)
+      elif d_rel > 12:
+        f = (d_rel - 12) / 13
+        color = blend_colors(rl.Color(255, 180, 0, 255), rl.Color(0, 200, 120, 255), f)
+      else:
+        f = d_rel / 12
+        color = blend_colors(rl.Color(255, 40, 30, 255), rl.Color(255, 180, 0, 255), f)
+
+      if is_primary:
+        proximity = float(np.clip(1.0 - d_rel / 40.0, 0.0, 1.0))
+        closing = float(np.clip(-v_rel / 10.0, 0.0, 1.0))
+        intensity = max(proximity, closing)
+        self._lead_glow_filter.update(intensity)
+
+      alpha_mult = 1.0 if is_primary else 0.4
+      base_alpha = float(np.clip(0.5 + self._lead_glow_filter.x * 0.5, 0.3, 1.0)) * alpha_mult
+
+      # style: 0=all, 1=diamond+underglow, 2=arrows+sky, 3=rings+brackets, 4=sky only, 5=diamond only
+      s = self._lead_style
+
+      # Underglow (styles 0, 1)
+      if s in (0, 1) and lead.underglow and len(lead.underglow) >= 3:
+        ug_pts = lead.underglow
+        ug_pulse = 0.85 + 0.15 * math.sin(rl.get_time() * 3.0)
+        ug_alpha = int(base_alpha * 60 * ug_pulse)
+        ug_color = rl.Color(color.r, color.g, color.b, ug_alpha)
+        for j in range(1, len(ug_pts) - 1):
+          rl.draw_triangle(
+            rl.Vector2(ug_pts[0][0], ug_pts[0][1]),
+            rl.Vector2(ug_pts[j][0], ug_pts[j][1]),
+            rl.Vector2(ug_pts[j + 1][0], ug_pts[j + 1][1]),
+            ug_color,
+          )
+        ug_edge_alpha = int(base_alpha * 100 * ug_pulse)
+        ug_edge_color = rl.Color(color.r, color.g, color.b, ug_edge_alpha)
+        for j in range(len(ug_pts)):
+          p0 = ug_pts[j]
+          p1 = ug_pts[(j + 1) % len(ug_pts)]
+          rl.draw_line_ex(rl.Vector2(p0[0], p0[1]), rl.Vector2(p1[0], p1[1]), 1.5, ug_edge_color)
+
+      # Trail arrows (styles 0, 2)
+      if s in (0, 2) and is_primary and lead.trail_arrows:
+        t = rl.get_time()
+        for a_i, arrow in enumerate(lead.trail_arrows):
+          tip, lw, rw = arrow
+          frac = (a_i + 1) / (len(lead.trail_arrows) + 1)
+          arrow_pulse = 0.6 + 0.4 * math.sin(t * 4.0 + a_i * 1.5)
+          arrow_alpha = int(base_alpha * 160 * frac * arrow_pulse)
+          # NFS neon blue for trail arrows
+          ac = rl.Color(0, 180, 255, arrow_alpha)
+          rl.draw_triangle(rl.Vector2(tip[0], tip[1]), rl.Vector2(lw[0], lw[1]), rl.Vector2(rw[0], rw[1]), ac)
+          rl.draw_triangle(rl.Vector2(tip[0], tip[1]), rl.Vector2(rw[0], rw[1]), rl.Vector2(lw[0], lw[1]), ac)
+
+      if lead.diamond and len(lead.diamond) >= 3:
+        pts = lead.diamond
+        cx = sum(p[0] for p in pts) / len(pts)
+        cy = sum(p[1] for p in pts) / len(pts)
+
+        # Diamond fill + edges (styles 0, 1, 5)
+        if s in (0, 1, 5):
+          if is_primary:
+            closing_val = float(np.clip(-v_rel / 10.0, 0.0, 1.0))
+            pulse = 1.0
+            if closing_val > 0.3:
+              pulse = 0.8 + 0.2 * (0.5 + 0.5 * math.sin(rl.get_time() * 6))
+            glow_r = max(abs(pts[0][0] - pts[2][0]), abs(pts[1][1] - pts[3][1])) * 0.6 * pulse if len(pts) >= 4 else 20
+            glow_alpha = int(base_alpha * 50 * self._lead_glow_filter.x)
+            rl.draw_circle(int(cx), int(cy), glow_r, rl.Color(color.r, color.g, color.b, glow_alpha))
+
+          fill_alpha = int(base_alpha * 200)
+          fill_color = rl.Color(color.r, color.g, color.b, fill_alpha)
+          for j in range(1, len(pts) - 1):
+            rl.draw_triangle(
+              rl.Vector2(pts[0][0], pts[0][1]),
+              rl.Vector2(pts[j][0], pts[j][1]),
+              rl.Vector2(pts[j + 1][0], pts[j + 1][1]),
+              fill_color,
+            )
+
+          edge_alpha = int(base_alpha * 255)
+          edge_color = rl.Color(min(255, color.r + 80), min(255, color.g + 80), min(255, color.b + 80), edge_alpha)
+          for j in range(len(pts)):
+            p0 = pts[j]
+            p1 = pts[(j + 1) % len(pts)]
+            rl.draw_line_ex(rl.Vector2(p0[0], p0[1]), rl.Vector2(p1[0], p1[1]), 4.0, edge_color)
+
+        # Pulsing rings (styles 0, 3)
+        if s in (0, 3) and is_primary:
+          diamond_w = abs(pts[1][0] - pts[3][0]) if len(pts) >= 4 else 40
+          diamond_h = abs(pts[0][1] - pts[2][1]) if len(pts) >= 4 else 40
+          max_ring_r = max(diamond_w, diamond_h) * 0.7
+          t = rl.get_time()
+          for ring_i in range(3):
+            phase = (t * 0.7 + ring_i * 0.5) % 1.5
+            ring_r = max(5, max_ring_r * (0.3 + 0.7 * phase / 1.5))
+            ring_alpha = int(base_alpha * 100 * (1.0 - phase / 1.5))
+            if ring_alpha > 2:
+              ring_color = rl.Color(color.r, color.g, color.b, ring_alpha)
+              rl.draw_ring(rl.Vector2(cx, cy), max(0, ring_r - 2), ring_r + 2, 0, 360, 24, ring_color)
+
+        # Target brackets (styles 0, 3)
+        if s in (0, 3) and is_primary:
+          bracket_size = float(np.clip(30 * 30 / (d_rel + 10), 15, 50))
+          bracket_thick = 3.0
+          bracket_gap = bracket_size * 0.8
+          bracket_alpha = int(base_alpha * 220)
+          bc = rl.Color(min(255, color.r + 60), min(255, color.g + 60), min(255, color.b + 60), bracket_alpha)
+          for dx, dy in [(-1, -1), (1, -1), (-1, 1), (1, 1)]:
+            bx = cx + dx * bracket_gap
+            by = cy + dy * bracket_gap
+            rl.draw_line_ex(rl.Vector2(bx, by), rl.Vector2(bx - dx * bracket_size * 0.4, by), bracket_thick, bc)
+            rl.draw_line_ex(rl.Vector2(bx, by), rl.Vector2(bx, by - dy * bracket_size * 0.4), bracket_thick, bc)
+
+        # NFS floating sky arrow — 3D projected above lead (styles 0, 2, 4)
+        if s in (0, 2, 4) and is_primary and len(lead.sky_arrow) == 3:
+          sky_tip, sky_lw, sky_rw = lead.sky_arrow
+          sky_pulse = 0.8 + 0.2 * math.sin(rl.get_time() * 3.0)
+          sky_alpha = int(base_alpha * 255 * sky_pulse)
+          sky_fill = rl.Color(0, 220, 255, sky_alpha)
+          tv = rl.Vector2(sky_tip[0], sky_tip[1])
+          lv = rl.Vector2(sky_lw[0], sky_lw[1])
+          rv = rl.Vector2(sky_rw[0], sky_rw[1])
+          rl.draw_triangle(tv, lv, rv, sky_fill)
+          rl.draw_triangle(tv, rv, lv, sky_fill)
+          sky_edge = rl.Color(180, 255, 255, int(max(0, sky_alpha * 0.8)))
+          rl.draw_line_ex(tv, lv, 3.0, sky_edge)
+          rl.draw_line_ex(tv, rv, 3.0, sky_edge)
+          rl.draw_line_ex(lv, rv, 2.0, sky_edge)
+
+      elif lead.chevron:
+        # Fallback: 2D chevron
+        pts = lead.chevron
+        chevron_alpha = int(base_alpha * 255)
+        chevron_color = rl.Color(color.r, color.g, color.b, chevron_alpha)
+        rl.draw_triangle(
+          rl.Vector2(pts[0][0], pts[0][1]),
+          rl.Vector2(pts[1][0], pts[1][1]),
+          rl.Vector2(pts[2][0], pts[2][1]),
+          chevron_color,
+        )
 
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:

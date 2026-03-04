@@ -127,6 +127,11 @@ class HudRenderer(Widget):
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
+  @property
+  def torque_value(self) -> float:
+    """Current torque bar value (-1 to 1)."""
+    return self._torque_bar.torque_value
+
   def set_wheel_critical_icon(self, critical: bool):
     """Set the wheel icon to critical or normal state."""
     self._show_wheel_critical = critical
@@ -206,9 +211,13 @@ class HudRenderer(Widget):
       wheel_txt.height + turn_intent_margin * 2,
     ))
 
+    # Subtle scale pulse with torque
+    torque_scale = 1.0 + abs(self._torque_bar.torque_value) * 0.15
+    scaled_w = wheel_txt.width * torque_scale
+    scaled_h = wheel_txt.height * torque_scale
     src_rect = rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height)
-    dest_rect = rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height)
-    origin = (wheel_txt.width / 2, wheel_txt.height / 2)
+    dest_rect = rl.Rectangle(pos_x, pos_y, scaled_w, scaled_h)
+    origin = (scaled_w / 2, scaled_h / 2)
 
     # color and draw
     color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x))

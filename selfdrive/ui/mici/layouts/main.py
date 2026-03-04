@@ -1,5 +1,7 @@
+import math
 import pyray as rl
 import cereal.messaging as messaging
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.layouts.home import MiciHomeLayout
 from openpilot.selfdrive.ui.mici.layouts.settings.settings import SettingsLayout
 from openpilot.selfdrive.ui.mici.layouts.offroad_alerts import MiciOffroadAlerts
@@ -24,6 +26,11 @@ class MiciMainLayout(Scroller):
     self._prev_standstill = False
     self._onroad_time_delay: float | None = None
     self._setup = False
+
+    # Transition effect state
+    self._transition_alpha = FirstOrderFilter(0.0, 0.3, 1 / 60.0)
+    self._transition_active = False
+    self._transition_start = 0.0
 
     # Initialize widgets
     self._home_layout = MiciHomeLayout()
@@ -59,7 +66,7 @@ class MiciMainLayout(Scroller):
 
   def _setup_callbacks(self):
     self._home_layout.set_callbacks(on_settings=lambda: gui_app.push_widget(self._settings_layout))
-    self._onroad_layout.set_click_callback(lambda: self._scroll_to(self._home_layout))
+    self._onroad_layout.set_click_callback(self._onroad_layout.cycle_lead_style)
     device.add_interactive_timeout_callback(self._on_interactive_timeout)
 
   def _scroll_to(self, layout: Widget):
@@ -77,6 +84,18 @@ class MiciMainLayout(Scroller):
     # Render
     super()._render(self._rect)
 
+    # Transition overlay effect
+    if self._transition_active:
+      elapsed = rl.get_time() - self._transition_start
+      if elapsed < ONROAD_DELAY:
+        # Subtle pulsing overlay that builds anticipation
+        pulse = 0.5 + 0.5 * math.sin(elapsed * 3.0)
+        alpha = int(min(40, elapsed / ONROAD_DELAY * 40) * pulse)
+        rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height),
+                          rl.Color(0, 20, 40, alpha))
+      else:
+        self._transition_active = False
+
   def _handle_transitions(self):
     # Don't pop if onboarding
     if gui_app.widget_in_stack(self._onboarding_window):
@@ -89,6 +108,8 @@ class MiciMainLayout(Scroller):
       # offroad: immediately scroll to home, but don't pop nav stack (can stay in settings)
       if ui_state.started:
         self._onroad_time_delay = rl.get_time()
+        self._transition_active = True
+        self._transition_start = rl.get_time()
       else:
         self._scroll_to(self._home_layout)
 

@@ -101,8 +101,10 @@ class AlertRenderer(Widget):
 
     # animation filters
     # TODO: use 0.1 but with proper alert height calculation
-    self._alert_y_filter = BounceFilter(0, 0.1, 1 / gui_app.target_fps)
+    self._alert_y_filter = BounceFilter(0, 0.08, 1 / gui_app.target_fps, bounce=4)
     self._alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
+    self._alert_scale_filter = BounceFilter(1.0, 0.06, 1 / gui_app.target_fps, bounce=3)
+    self._prev_alert_text: str = ""
 
     self._turn_signal_timer = 0.0
     self._turn_signal_alpha_filter = FirstOrderFilter(0.0, 0.3, 1 / gui_app.target_fps)
@@ -221,6 +223,14 @@ class AlertRenderer(Widget):
     # Animate fade and slide in/out
     self._alert_y_filter.update(self._rect.y - 50 if alert is None else self._rect.y)
     self._alpha_filter.update(0 if alert is None else 1)
+
+    # Trigger scale bounce when alert text changes
+    current_text = alert.text1 if alert else ""
+    if current_text != self._prev_alert_text and current_text:
+      self._alert_scale_filter.x = 1.08  # start slightly enlarged
+      self._alert_scale_filter.velocity.x = 0.3  # give it initial bounce velocity
+    self._prev_alert_text = current_text
+    self._alert_scale_filter.update(1.0)
 
     if alert is None:
       # If still animating out, keep the previous alert

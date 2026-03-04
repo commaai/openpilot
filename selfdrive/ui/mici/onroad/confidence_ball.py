@@ -1,10 +1,14 @@
 import math
+from collections import deque
 import pyray as rl
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.filter_simple import FirstOrderFilter
+
+TRAIL_LENGTH = 8
+TRAIL_INTERVAL = 0.04  # seconds between trail snapshots
 
 
 def draw_circle_gradient(center_x: float, center_y: float, radius: int,
@@ -26,6 +30,10 @@ class ConfidenceBall(Widget):
     super().__init__()
     self._demo = demo
     self._confidence_filter = FirstOrderFilter(-0.5, 0.5, 1 / gui_app.target_fps)
+
+    # Trail state: deque of (dot_x, dot_y, top_color, bottom_color, time)
+    self._trail: deque[tuple[float, float, rl.Color, rl.Color, float]] = deque(maxlen=TRAIL_LENGTH)
+    self._last_trail_time = 0.0
 
   def update_filter(self, value: float):
     self._confidence_filter.update(value)
@@ -49,9 +57,12 @@ class ConfidenceBall(Widget):
       self.rect.height,
     )
 
-    status_dot_radius = 24
+    base_radius = 24
+    pulse = 1.0 + 0.06 * math.sin(rl.get_time() * 4.0)
+    status_dot_radius = int(base_radius * pulse)
     dot_height = (1 - self._confidence_filter.x) * (content_rect.height - 2 * status_dot_radius) + status_dot_radius
     dot_height = self._rect.y + dot_height
+    dot_x = content_rect.x + content_rect.width - status_dot_radius
 
     # confidence zones
     if ui_state.status == UIStatus.ENGAGED or self._demo:
@@ -73,6 +84,23 @@ class ConfidenceBall(Widget):
       top_dot_color = rl.Color(50, 50, 50, 255)
       bottom_dot_color = rl.Color(13, 13, 13, 255)
 
-    draw_circle_gradient(content_rect.x + content_rect.width - status_dot_radius,
-                         dot_height, status_dot_radius,
+    # Record trail snapshot
+    now = rl.get_time()
+    if now - self._last_trail_time >= TRAIL_INTERVAL:
+      self._trail.append((dot_x, dot_height, top_dot_color, bottom_dot_color, now))
+      self._last_trail_time = now
+
+    # Draw trail as simple faded circles (no gradient to avoid black ring artifact)
+    for idx, (tx, ty, tt, tb, t) in enumerate(self._trail):
+      age_frac = (idx + 1) / (len(self._trail) + 1)
+      trail_alpha = age_frac * 0.35
+      trail_radius = status_dot_radius * (0.3 + 0.5 * age_frac)
+      # Blend top and bottom colors for a single trail color
+      blend_r = (tt.r + tb.r) // 2
+      blend_g = (tt.g + tb.g) // 2
+      blend_b = (tt.b + tb.b) // 2
+      rl.draw_circle(int(tx), int(ty), trail_radius, rl.Color(blend_r, blend_g, blend_b, int(255 * trail_alpha)))
+
+    # Draw main ball
+    draw_circle_gradient(dot_x, dot_height, status_dot_radius,
                          top_dot_color, bottom_dot_color)

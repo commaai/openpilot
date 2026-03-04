@@ -4,12 +4,14 @@ import time
 from cereal import log
 import pyray as rl
 from collections.abc import Callable
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import MiciLabel, UnifiedLabel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.mici.effects import StaggeredReveal
 from openpilot.system.version import RELEASE_BRANCHES
 
 HEAD_BUTTON_FONT_SIZE = 40
@@ -110,9 +112,16 @@ class MiciHomeLayout(Widget):
     self._branch_label = UnifiedLabel("", font_size=36, text_color=rl.GRAY, font_weight=FontWeight.ROMAN, scroll=True)
     self._version_commit_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
 
+    # Wake animation: staggered reveal for 4 elements (openpilot, version, date/branch, status bar)
+    self._wake_anim = StaggeredReveal(4)
+
+    # Magnetic snap: smooth filter for status bar x-offset toward touch
+    self._magnetic_x_filter = FirstOrderFilter(0.0, 0.12, 1 / gui_app.target_fps)
+
   def show_event(self):
     self._version_text = self._get_version_text()
     self._update_params()
+    self._wake_anim.trigger()
 
   def _update_params(self):
     self._experimental_mode = ui_state.params.get_bool("ExperimentalMode")
@@ -133,6 +142,16 @@ class MiciHomeLayout(Widget):
           ui_state.params.put("ExperimentalMode", self._experimental_mode)
         self._mouse_down_t = None
         self._did_long_press = True
+
+    # Magnetic snap: track touch and apply subtle pull to status bar
+    if self.is_pressed:
+      mouse_x = gui_app.last_mouse_event.pos.x if gui_app.last_mouse_event else self.rect.x + self.rect.width / 2
+      center_x = self.rect.x + self.rect.width / 2
+      pull = (mouse_x - center_x) * 0.03  # subtle pull toward touch
+      pull = max(-8, min(8, pull))
+      self._magnetic_x_filter.update(pull)
+    else:
+      self._magnetic_x_filter.update(0.0)
 
     if rl.get_time() - self._last_refresh > 5.0:
       # Update version text
@@ -168,37 +187,73 @@ class MiciHomeLayout(Widget):
     return version, branch, commit[:7], date_str
 
   def _render(self, _):
+    # ── Parallax: compute scroll offset relative to home's resting position ──
+    scroll_offset = self.rect.x - gui_app.width  # home is at index 1
+
+    # ── Wake animation progress per element ──
+    prog_op = self._wake_anim.get_progress(0)      # openpilot text
+    prog_ver = self._wake_anim.get_progress(1)      # version label
+    prog_date = self._wake_anim.get_progress(2)     # date/branch row
+    prog_footer = self._wake_anim.get_progress(3)   # status bar
+
+    slide_op = self._wake_anim.get_slide_y(0)
+    slide_ver = self._wake_anim.get_slide_y(1)
+    slide_date = self._wake_anim.get_slide_y(2)
+    slide_footer = self._wake_anim.get_slide_y(3)
+
+    # ── Openpilot label ──
     # TODO: why is there extra space here to get it to be flush?
-    text_pos = rl.Vector2(self.rect.x - 2 + HOME_PADDING, self.rect.y - 16)
+    parallax_op = scroll_offset * 0.15
+    text_pos = rl.Vector2(self.rect.x - 2 + HOME_PADDING + parallax_op, self.rect.y - 16 + slide_op)
+    self._openpilot_label._color = rl.Color(255, 255, 255, int(255 * 0.9 * prog_op))
     self._openpilot_label.set_position(text_pos.x, text_pos.y)
     self._openpilot_label.render()
 
+    # ── Version / date / branch row ──
     if self._version_text is not None:
-      # release branch
       release_branch = self._version_text[1] in RELEASE_BRANCHES
-      version_pos = rl.Rectangle(text_pos.x, text_pos.y + self._openpilot_label.font_size + 16, 100, 44)
+
+      parallax_ver = scroll_offset * 0.08
+      ver_alpha = int(255 * 0.9 * prog_ver)
+      date_alpha = int(255 * 0.9 * prog_date)
+
+      version_pos = rl.Rectangle(text_pos.x + parallax_ver - parallax_op, text_pos.y + self._openpilot_label.font_size + 16 + slide_ver - slide_op, 100, 44)
+
       self._version_label.set_text(self._version_text[0])
+      self._version_label._color = rl.Color(255, 255, 255, ver_alpha)
       self._version_label.set_position(version_pos.x, version_pos.y)
       self._version_label.render()
 
       self._date_label.set_text(" " + self._version_text[3])
-      self._date_label.set_position(version_pos.x + self._version_label.rect.width + 10, version_pos.y)
+      self._date_label._color = rl.Color(128, 128, 128, date_alpha)
+      self._date_label.set_position(version_pos.x + self._version_label.rect.width + 10, version_pos.y + slide_date - slide_ver)
       self._date_label.render()
 
       self._branch_label.set_max_width(gui_app.width - self._version_label.rect.width - self._date_label.rect.width - 32)
       self._branch_label.set_text(" " + ("release" if release_branch else self._version_text[1]))
-      self._branch_label.set_position(version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20, version_pos.y)
+      self._branch_label._text_color = rl.Color(128, 128, 128, date_alpha)
+      self._branch_label.set_position(version_pos.x + self._version_label.rect.width + self._date_label.rect.width + 20, version_pos.y + slide_date - slide_ver)
       self._branch_label.render()
 
       if not release_branch:
         # 2nd line
         self._version_commit_label.set_text(self._version_text[2])
-        self._version_commit_label.set_position(version_pos.x, version_pos.y + self._date_label.font_size + 7)
+        self._version_commit_label._color = rl.Color(128, 128, 128, date_alpha)
+        self._version_commit_label.set_position(version_pos.x, version_pos.y + self._date_label.font_size + 7 + slide_date - slide_ver)
         self._version_commit_label.render()
 
-    # ***** Center-aligned bottom section icons *****
+    # ── Status bar (footer) ──
     self._experimental_icon.set_visible(self._experimental_mode)
     self._mic_icon.set_visible(ui_state.recording_audio)
 
-    footer_rect = rl.Rectangle(self.rect.x + HOME_PADDING, self.rect.y + self.rect.height - 48, self.rect.width - HOME_PADDING, 48)
+    parallax_footer = scroll_offset * 0.05
+    magnetic_x = self._magnetic_x_filter.x
+    footer_alpha_factor = prog_footer  # used conceptually; icons rendered via layout
+
+    footer_rect = rl.Rectangle(
+      self.rect.x + HOME_PADDING + parallax_footer + magnetic_x,
+      self.rect.y + self.rect.height - 48 + slide_footer,
+      self.rect.width - HOME_PADDING,
+      48,
+    )
     self._status_bar_layout.render(footer_rect)
