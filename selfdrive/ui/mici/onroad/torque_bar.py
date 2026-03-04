@@ -181,16 +181,10 @@ class TorqueBar(Widget):
       lateral_acceleration = actual_lateral_accel - roll_compensation
       max_lateral_acceleration = ui_state.CP.maxLateralAccel if ui_state.CP else DEFAULT_MAX_LAT_ACCEL
 
-      print(f"max lateral_acceleration: {max_lateral_acceleration}, roll accel: {live_parameters.roll * ACCELERATION_DUE_TO_GRAVITY}, roll compensated lateral accel: {lateral_acceleration}, actual_lateral_accel: {actual_lateral_accel}, desired_lateral_accel: {desired_lateral_accel}")
-      print(f"accel_diff: {accel_diff}, div: {lateral_acceleration / max_lateral_acceleration}, total: {lateral_acceleration / max_lateral_acceleration + accel_diff}")
-      print()
-      # print(f"lateral_acceleration: {lateral_acceleration}, accel_diff: {accel_diff}, div: {lateral_acceleration / max_lateral_acceleration}, total: {lateral_acceleration / max_lateral_acceleration + accel_diff}")
-
       if not car_control.latActive:
         self._torque_filter.update(0.0)
       else:
         self._torque_filter.update(np.clip((lateral_acceleration + accel_diff) / max_lateral_acceleration, -1, 1))
-        # self._torque_filter.update(0-live_parameters.roll * ACCELERATION_DUE_TO_GRAVITY)
     else:
       self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
 
