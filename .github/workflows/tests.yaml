@@ -48,7 +48,7 @@ jobs:
     - name: Install git
       if: matrix.container
       run: |
-        dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=nodocs git-lfs file
+        dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=nodocs --no-upgrade git-lfs file
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v6
       with:
