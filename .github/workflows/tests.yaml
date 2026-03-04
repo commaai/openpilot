@@ -29,14 +29,17 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-          - os: fedora-42
+          - os: fedora-42-x86
             container: fedora:42
+          - os: fedora-42-arm64
+            container: fedora:42
+            arch: arm64
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+      && fromJSON(matrix.arch == 'arm64' && '["namespace-profile-arm64-8x16"]' || '["namespace-profile-amd64-8x16"]')
+      || fromJSON(matrix.arch == 'arm64' && '["ubuntu-24.04-arm"]' || '["ubuntu-24.04"]') }}
     container: ${{ matrix.container || '' }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
@@ -63,6 +66,8 @@ jobs:
     - name: Build openpilot and run checks
       timeout-minutes: 30
       working-directory: ${{ env.STRIPPED_DIR }}
+      env:
+        UV_LINK_MODE: ${{ matrix.container && 'copy' || '' }}
       run: python3 system/manager/build.py
     - name: Run tests
       timeout-minutes: 1
