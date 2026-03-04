@@ -407,24 +407,66 @@ class ModelRenderer(Widget):
     return color
 
   def _draw_lane_lines(self):
-    """Draw lane lines and road edges"""
-    """Two closest lines should be green (lane line or road edges)"""
+    """Draw lane lines as flowing dashed segments (US standard: 3.05m stripe, 12.19m cycle)"""
+    STRIPE_LEN = 7.5    # longer stripe for visual presence
+    CYCLE_LEN = 12.19   # 40ft cycle (stripe + gap)
+    LINE_HALF_W = 0.10  # half-width of lane line in meters
+
     for i, lane_line in enumerate(self._lane_lines):
-      if lane_line.projected_points.size == 0:
+      raw = lane_line.raw_points
+      if len(raw) < 2:
         continue
 
       color = self._get_ll_color(float(self._lane_line_probs[i]), i in (1, 2), i in (0, 1))
-      # Subtle pulse on adjacent lane lines when engaged
       if ui_state.status != UIStatus.DISENGAGED and i in (1, 2):
         pulse = 1.0 + 0.1 * math.sin(rl.get_time() * 3.0 + i * 0.5)
         color = rl.Color(color.r, color.g, color.b, min(255, int(color.a * pulse)))
-      draw_polygon(self._rect, lane_line.projected_points, color)
 
+      ll_x = raw[:, 0]
+      ll_y = raw[:, 1]
+      ll_z = raw[:, 2]
+      max_ll = float(ll_x[-1]) if len(ll_x) > 0 else 0
+
+      # Flow phase synced with path arrows
+      phase = self._path_flow_distance % CYCLE_LEN
+
+      x = 2.0 - phase
+      while x < max_ll - STRIPE_LEN:
+        seg_start = x
+        seg_end = x + STRIPE_LEN
+        x += CYCLE_LEN
+
+        if seg_end < 2.0 or seg_start > max_ll:
+          continue
+        seg_start = max(seg_start, 2.0)
+
+        # Project 4 corners of the stripe as a quad on the road
+        sy0 = float(np.interp(seg_start, ll_x, ll_y))
+        sz0 = float(np.interp(seg_start, ll_x, ll_z))
+        sy1 = float(np.interp(seg_end, ll_x, ll_y))
+        sz1 = float(np.interp(seg_end, ll_x, ll_z))
+
+        fl = self._map_to_screen(seg_start, sy0 - LINE_HALF_W, sz0)
+        fr = self._map_to_screen(seg_start, sy0 + LINE_HALF_W, sz0)
+        bl = self._map_to_screen(seg_end, sy1 - LINE_HALF_W, sz1)
+        br = self._map_to_screen(seg_end, sy1 + LINE_HALF_W, sz1)
+
+        if not (fl and fr and bl and br):
+          continue
+
+        # Draw quad as two triangles (both windings)
+        flv, frv = rl.Vector2(fl[0], fl[1]), rl.Vector2(fr[0], fr[1])
+        blv, brv = rl.Vector2(bl[0], bl[1]), rl.Vector2(br[0], br[1])
+        rl.draw_triangle(flv, frv, brv, color)
+        rl.draw_triangle(flv, brv, frv, color)
+        rl.draw_triangle(flv, brv, blv, color)
+        rl.draw_triangle(flv, blv, brv, color)
+
+    # Road edges stay solid
     for i, road_edge in enumerate(self._road_edges):
       if road_edge.projected_points.size == 0:
         continue
 
-      # if closest lane lines are not confident, make road edges green
       color = self._get_ll_color(float(1.0 - self._road_edge_stds[i]), float(self._lane_line_probs[i + 1]) < 0.25, i == 0)
       draw_polygon(self._rect, road_edge.projected_points, color)
 
@@ -448,6 +490,11 @@ class ModelRenderer(Widget):
     z_off = self._path_offset_z
     accel_data = self._acceleration_x
     v_ego = float(sm['carState'].vEgo)
+
+    # Get lead car distance for grey-out beyond lead
+    lead_d = float('inf')
+    if self._lead_vehicles[0].d_rel > 0:
+      lead_d = self._lead_vehicles[0].d_rel
 
     # Path x-coordinates for interpolation
     path_x = raw[:, 0]
@@ -484,11 +531,18 @@ class ModelRenderer(Widget):
       if exp_mode and len(accel_data) > 0:
         accel_val = float(np.interp(ax, path_x[:len(accel_data)], accel_data))
 
-      # Project 4-point chevron on road plane
-      tip = self._map_to_screen(ax + arrow_len, y, az)
-      rw = self._map_to_screen(ax, y + arrow_w, az)
-      notch = self._map_to_screen(ax + arrow_len * 0.35, y, az)
-      lw = self._map_to_screen(ax, y - arrow_w, az)
+      # Compute path tangent at this position for arrow orientation
+      y_ahead = float(np.interp(ax + 1.0, path_x, path_y))
+      dy_dx = y_ahead - y
+      tang_len = math.sqrt(1.0 + dy_dx * dy_dx)
+      tx, ty = 1.0 / tang_len, dy_dx / tang_len  # tangent (forward along path)
+      nx, ny = ty, -tx  # right perpendicular
+
+      # Project 4-point chevron aligned to path direction
+      tip = self._map_to_screen(ax + arrow_len * tx, y + arrow_len * ty, az)
+      rw = self._map_to_screen(ax + arrow_w * nx, y + arrow_w * ny, az)
+      notch = self._map_to_screen(ax + arrow_len * 0.35 * tx, y + arrow_len * 0.35 * ty, az)
+      lw = self._map_to_screen(ax - arrow_w * nx, y - arrow_w * ny, az)
 
       if not (tip and rw and notch and lw):
         continue
@@ -499,19 +553,20 @@ class ModelRenderer(Widget):
       near_fade = float(np.clip((ax - 2.0) / 3.0, 0.0, 1.0))
       base_alpha = dist_fade * near_fade
 
-      # Color based on mode
-      if exp_mode:
+      # Color based on mode — grey past lead car
+      alpha = int(255 * base_alpha)
+      if ax > lead_d:
+        ac = rl.Color(160, 160, 160, alpha)
+      elif exp_mode:
         path_hue = float(np.clip(60 + accel_val * 35, 0, 120))
         sat = min(abs(accel_val * 1.5), 1.0)
         rgb = colorsys.hls_to_rgb(path_hue / 360.0, 0.55, sat)
-        alpha = int(255 * base_alpha)
         ac = rl.Color(int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255), alpha)
       else:
         blend = self._blend_filter.x
         r = int(np.interp(blend, [0, 1], [242, 13]))
         g = int(np.interp(blend, [0, 1], [242, 248]))
         b = int(np.interp(blend, [0, 1], [242, 122]))
-        alpha = int(255 * base_alpha)
         ac = rl.Color(r, g, b, alpha)
 
       tv = rl.Vector2(tip[0], tip[1])
