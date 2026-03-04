@@ -9,12 +9,13 @@ from collections import defaultdict
 from cereal import log, messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.transformations.orientation import rot_from_euler
-from openpilot.common.realtime import config_realtime_process
+from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 ACCEL_SANITY_CHECK = 100.0  # m/s^2
 ROTATION_SANITY_CHECK = 10.0  # rad/s
@@ -155,6 +156,7 @@ class LocationEstimator:
         self.device_from_calib = rot_from_euler(calib)
 
     elif which == "cameraOdometry":
+      t = t - ((ModelConstants.N_FRAMES - 1) * ModelConstants.MODEL_CONTEXT_FREQ) * 0.5 * DT_MDL  # compensate for model pose delay
       if not self._validate_timestamp(t):
         return HandleLogResult.TIMING_INVALID
 
