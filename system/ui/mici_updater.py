@@ -5,7 +5,9 @@ import threading
 import pyray as rl
 from enum import IntEnum
 
-from openpilot.system.hardware import HARDWARE
+from openpilot.common.realtime import config_realtime_process, set_core_affinity
+from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.system.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -174,6 +176,14 @@ class Updater(Widget):
 
 
 def main():
+  config_realtime_process(0, 51)
+  # attempt to affine. AGNOS will start setup with all cores, should only fail when manually launching with screen off
+  if TICI:
+    try:
+      set_core_affinity([5])
+    except OSError:
+      cloudlog.exception("Failed to set core affinity for updater process")
+
   if len(sys.argv) < 3:
     print("Usage: updater.py <updater_path> <manifest_path>")
     sys.exit(1)
