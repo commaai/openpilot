@@ -7,7 +7,7 @@ from enum import IntEnum
 
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.system.hardware import HARDWARE, TICI
-from openpilot.system.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
