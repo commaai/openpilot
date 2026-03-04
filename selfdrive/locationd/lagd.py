@@ -42,7 +42,7 @@ def masked_symmetric_moving_average(x: np.ndarray, mask: np.ndarray, k: int) -> 
     mp = np.pad(mask, pad, mode="edge")
     num = np.convolve(xp, w, mode="valid")
     den = np.convolve(mp, w, mode="valid")
-    return np.divide(num, den, out=np.full_like(num, np.nan, dtype=float), where=den != 0)
+    return np.divide(num, den, out=np.full_like(num, np.nan, dtype=np.float64), where=den != 0)
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
   """
