@@ -420,8 +420,6 @@ class NetworkSetupPageBase(Scroller):
     wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
     if (has_internet and not self._prev_has_internet) or (wifi_connected and not self._prev_wifi_connected and not has_internet):
       self._pending_has_internet_scroll = True
-    if has_internet and not self._prev_has_internet:
-      self._pending_continue_grow_animation = True
     self._prev_wifi_connected = wifi_connected
     self._prev_has_internet = has_internet
 
@@ -435,6 +433,7 @@ class NetworkSetupPageBase(Scroller):
           end_offset = -(self._scroller.content_size - self._rect.width)
           remaining = self._scroller.scroll_panel.get_offset() - end_offset
           self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
+          self._pending_continue_grow_animation = True
 
         gui_app.pop_widgets_to(self, scroll_to_end)
 
