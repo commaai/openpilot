@@ -12,6 +12,7 @@ from openpilot.common.utils import tabulate
 
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
+from openpilot.common.constants import CV
 from openpilot.selfdrive.controls.lib.drive_helpers import MIN_SPEED
 
 
@@ -100,9 +101,11 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax = fig.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 1]})
 
       ax[0].grid(linewidth=4)
-      ax[0].plot(t_lateralPlan, [m.desiredCurvature * max(v, MIN_SPEED) ** 2 for m, v in zip(lateralPlan, [s.vEgo for s in carState], strict=False)],
+      desired_lat_accel = [m.desiredCurvature * max(v, MIN_SPEED) ** 2 for m, v in zip(lateralPlan, [s.vEgo for s in carState], strict=False)]
+      ax[0].plot(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel,
                  label='desired lat accel', linewidth=6)
-      ax[0].plot(t_controlsState, [cs.curvature * max(v, MIN_SPEED) ** 2 for cs, v in zip(controlsState, [m.vEgo for m in carState], strict=False)],
+      actual_lat_accel = [cs.curvature * max(v, MIN_SPEED) ** 2 for cs, v in zip(controlsState, [m.vEgo for m in carState], strict=False)]
+      ax[0].plot(t_controlsState[:len(actual_lat_accel)], actual_lat_accel,
                  label='actual lat accel', linewidth=6)
       ax[0].set_ylabel('Lateral Accel (m/s^2)')
       ax[0].legend(prop={'size': 30})
@@ -113,8 +116,8 @@ def report(platform, route, _description, CP, ID, maneuvers):
         ax[0].plot(cross_time, target_accel, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
 
       ax[1].grid(linewidth=4)
-      ax[1].plot(t_carState, [m.vEgo for m in carState], 'g', label='vEgo', linewidth=6)
-      ax[1].set_ylabel('Velocity (m/s)')
+      ax[1].plot(t_carState, [m.vEgo * CV.MS_TO_MPH for m in carState], 'g', label='vEgo', linewidth=6)
+      ax[1].set_ylabel('Velocity (mph)')
       ax[1].legend()
 
       ax[2].plot(t_carState, [m.steeringPressed for m in carState], label='steeringPressed', linewidth=6)
