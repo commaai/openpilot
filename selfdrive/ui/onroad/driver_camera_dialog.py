@@ -20,8 +20,8 @@ class DriverCameraDialog(CameraView):
     device.add_interactive_timeout_callback(gui_app.pop_widget)
 
   def hide_event(self):
-    device.remove_interactive_timeout_callback(gui_app.pop_widget)
     super().hide_event()
+    device.remove_interactive_timeout_callback(gui_app.pop_widget)
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     self.close()
 
