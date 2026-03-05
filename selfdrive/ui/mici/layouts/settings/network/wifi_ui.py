@@ -296,19 +296,17 @@ class WifiUIMici(NavScroller):
     return any(btn.network_forgetting for btn in self._scroller.items if isinstance(btn, WifiButton))
 
   def show_event(self):
-    # Clear scroller items and update from latest scan results
+    # Re-sort scroller items and update from latest scan results
     super().show_event()
     self._wifi_manager.set_active(True)
-    self._scroller.items.clear()
-    self._scroller.add_widget(self._scanning_btn)
-    # trigger button update on latest sorted networks
-    self._on_network_updated(self._wifi_manager.networks)
+    self._networks = {n.ssid: n for n in self._wifi_manager.networks}
+    self._update_buttons(re_sort=True)
 
   def _on_network_updated(self, networks: list[Network]):
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
 
-  def _update_buttons(self):
+  def _update_buttons(self, re_sort: bool = False):
     # Update existing buttons, add new ones to the end
     existing = {btn.network.ssid: btn for btn in self._scroller.items if isinstance(btn, WifiButton)}
 
@@ -320,15 +318,22 @@ class WifiUIMici(NavScroller):
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
 
+    if re_sort:
+      # Remove stale buttons and sort to match scan order, preserving eager state
+      btn_map = {btn.network.ssid: btn for btn in self._scroller.items if isinstance(btn, WifiButton)}
+      self._scroller.items[:] = [btn_map[ssid] for ssid in self._networks if ssid in btn_map]
+    else:
+      # Mark networks no longer in scan results (display handled by _update_state)
+      for btn in self._scroller.items:
+        if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
+          btn.set_network_missing(True)
+
     # Keep scanning button at the end
     items = self._scroller.items
     if self._scanning_btn in items:
       items.append(items.pop(items.index(self._scanning_btn)))
-
-    # Mark networks no longer in scan results (display handled by _update_state)
-    for btn in self._scroller.items:
-      if isinstance(btn, WifiButton) and btn.network.ssid not in self._networks:
-        btn.set_network_missing(True)
+    else:
+      self._scroller.add_widget(self._scanning_btn)
 
   def _connect_with_password(self, ssid: str, password: str):
     self._wifi_manager.connect_to_network(ssid, password)
