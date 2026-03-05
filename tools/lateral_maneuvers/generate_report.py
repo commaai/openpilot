@@ -174,4 +174,9 @@ if __name__ == '__main__':
     if active_prev:
       maneuvers[-1][1][-1].append(msg)
 
+  # filter out aborted runs (steering override)
+  for i, (desc, runs) in enumerate(maneuvers):
+    maneuvers[i] = (desc, [r for r in runs if not any(m.carState.steeringPressed for m in r if m.which() == 'carState')])
+  maneuvers = [(desc, runs) for desc, runs in maneuvers if runs]
+
   report(platform, args.route, args.description, CP, ID, maneuvers)

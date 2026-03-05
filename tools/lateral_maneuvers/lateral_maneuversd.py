@@ -32,13 +32,10 @@ class Maneuver:
   _action_frames: int = 0
   _ready_cnt: int = 0
   _repeated: int = 0
-  _ready_curvature: float = 0.0
 
   def get_accel(self, v_ego: float, lat_active: bool, curvature: float) -> float:
-    stable = abs(v_ego - self.initial_speed) < 1.0 and lat_active and abs(curvature - self._ready_curvature) < 0.0002
-    if not stable:
-      self._ready_curvature = curvature
-    self._ready_cnt = (self._ready_cnt + 1) if stable else 0
+    ready = abs(v_ego - self.initial_speed) < 1.0 and lat_active and abs(curvature) < 0.001
+    self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
       self._active = True
@@ -87,40 +84,40 @@ def _sine_action(amplitude, period, duration):
 
 MANEUVERS = [
   Maneuver(
-    "step-up 60mph a=0.3",
+    "step-up 30mph a=0.3",
     [Action([0.3], [1.2])],
     repeat=2,
-    initial_speed=60. * CV.MPH_TO_MS,
+    initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "wind-down 60mph a=0.3",
-    [Action([0.3], [0.5]), Action([-0.3], [1.2])],
+    "wind-down 30mph a=0.3",
+    [Action([0.3], [1.0]), Action([-0.3], [1.2])],
     repeat=2,
-    initial_speed=60. * CV.MPH_TO_MS,
+    initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step-up 60mph a=-0.3",
+    "step-up 30mph a=-0.3",
     [Action([-0.3], [1.2])],
     repeat=2,
-    initial_speed=60. * CV.MPH_TO_MS,
+    initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "wind-down 60mph a=-0.3",
-    [Action([-0.3], [0.5]), Action([0.3], [1.2])],
+    "wind-down 30mph a=-0.3",
+    [Action([-0.3], [1.0]), Action([0.3], [1.2])],
     repeat=2,
-    initial_speed=60. * CV.MPH_TO_MS,
+    initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step-up 70mph a=0.3",
+    "step-up 40mph a=0.3",
     [Action([0.3], [1.2])],
     repeat=2,
-    initial_speed=70. * CV.MPH_TO_MS,
+    initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "wind-down 70mph a=0.3",
-    [Action([0.3], [0.5]), Action([-0.3], [1.2])],
+    "wind-down 40mph a=0.3",
+    [Action([0.3], [1.0]), Action([-0.3], [1.2])],
     repeat=2,
-    initial_speed=70. * CV.MPH_TO_MS,
+    initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "step-up 70mph a=-0.3",
@@ -129,34 +126,34 @@ MANEUVERS = [
     initial_speed=70. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "wind-down 70mph a=-0.3",
-    [Action([-0.3], [0.5]), Action([0.3], [1.2])],
+    "wind-down 40mph a=-0.3",
+    [Action([-0.3], [1.0]), Action([0.3], [1.2])],
     repeat=2,
-    initial_speed=70. * CV.MPH_TO_MS,
+    initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 60mph T=2s",
-    [_sine_action(0.3, 2.0, 4.0)],
+    "sine 30mph T=2s",
+    [_sine_action(0.3, 2.0, 2.0)],
     repeat=1,
-    initial_speed=60. * CV.MPH_TO_MS,
+    initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 60mph T=3s",
-    [_sine_action(0.3, 3.0, 6.0)],
+    "sine 30mph T=3s",
+    [_sine_action(0.3, 3.0, 3.0)],
     repeat=1,
-    initial_speed=60. * CV.MPH_TO_MS,
+    initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 70mph T=2s",
-    [_sine_action(0.3, 2.0, 4.0)],
+    "sine 40mph T=2s",
+    [_sine_action(0.3, 2.0, 2.0)],
     repeat=1,
-    initial_speed=70. * CV.MPH_TO_MS,
+    initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 70mph T=3s",
-    [_sine_action(0.3, 3.0, 6.0)],
+    "sine 40mph T=3s",
+    [_sine_action(0.3, 3.0, 3.0)],
     repeat=1,
-    initial_speed=70. * CV.MPH_TO_MS,
+    initial_speed=40. * CV.MPH_TO_MS,
   ),
 ]
 
@@ -199,12 +196,13 @@ def main():
 
       if maneuver.active:
         action_remaining = maneuver.actions[maneuver._action_index].time_bp[-1] - maneuver._action_frames * DT_MDL
-        alert_msg.alertDebug.alertText1 = f'{accel:+0.2f} m/s² | {max(action_remaining, 0):0.1f}s'
+        alert_msg.alertDebug.alertText1 = f'Active {accel:+0.2f} m/s² | {max(action_remaining, 0):0.1f}s'
       elif not (abs(v_ego - maneuver.initial_speed) < 1.0 and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
       else:
         ready_time = max(3. - maneuver._ready_cnt * DT_MDL, 0)
-        alert_msg.alertDebug.alertText1 = f'Start: {ready_time:0.1f}s'
+        alert_msg.alertDebug.alertText1 = 'Go straight'
+        alert_msg.alertDebug.alertText2 = f'{ready_time:0.1f}s'
       alert_msg.alertDebug.alertText2 = maneuver.description if maneuver.active else ''
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
