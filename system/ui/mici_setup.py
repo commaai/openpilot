@@ -78,7 +78,6 @@ class NetworkConnectivityMonitor:
     self.wifi_connected.clear()
 
   def invalidate(self):
-    """Discard stale in-flight results and force re-verification."""
     self.recheck_event.set()
 
   def _run(self):
@@ -87,10 +86,12 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
+
           # Discard stale result if invalidated during request
           if self.recheck_event.is_set():
             self.recheck_event.clear()
             continue
+
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -381,7 +382,7 @@ class NetworkSetupPageBase(Scroller):
     self._continue_button = BigPillButton("install openpilot", green=True)
     self._continue_button.set_click_callback(lambda: continue_callback(self._custom_software))
     # Block clicks while connectivity is being re-verified after WiFi UI dismiss
-    self._continue_button.set_touch_valid_callback(lambda: not self._network_monitor.recheck_event.is_set())
+    self._continue_button.set_enabled(lambda: not self._network_monitor.recheck_event.is_set())
 
     self._scroller.add_widgets([
       self._connect_button,
