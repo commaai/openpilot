@@ -132,33 +132,29 @@ class Updater(Scroller):
 
   def _run_update_process(self):
     # TODO: just import it and run in a thread without a subprocess
-    # try:
-    #   cmd = [self.updater, "--swap", self.manifest]
-    #   self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-    #                                   text=True, bufsize=1, universal_newlines=True)
-    # except Exception:
-    #   self._update_failed = True
-    #   return
+    try:
+      cmd = [self.updater, "--swap", self.manifest]
+      self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                      text=True, bufsize=1, universal_newlines=True)
+    except Exception:
+      self._update_failed = True
+      return
 
-    self.progress_value = 1
-    import time
-    time.sleep(2)
+    if self.process.stdout is not None:
+      for line in self.process.stdout:
+        parts = line.strip().split(":")
+        if len(parts) == 2:
+          self.progress_text = parts[0].lower()
+          try:
+            self.progress_value = int(float(parts[1]))
+          except ValueError:
+            pass
 
-    # if self.process.stdout is not None:
-    #   for line in self.process.stdout:
-    #     parts = line.strip().split(":")
-    #     if len(parts) == 2:
-    #       self.progress_text = parts[0].lower()
-    #       try:
-    #         self.progress_value = int(float(parts[1]))
-    #       except ValueError:
-    #         pass
-
-    # exit_code = self.process.wait()
-    # if exit_code == 0:
-    #   HARDWARE.reboot()
-    # else:
-    self._update_failed = True
+    exit_code = self.process.wait()
+    if exit_code == 0:
+      HARDWARE.reboot()
+    else:
+      self._update_failed = True
 
   def close(self):
     self._network_monitor.stop()
