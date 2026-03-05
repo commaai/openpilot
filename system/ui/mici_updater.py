@@ -109,6 +109,7 @@ class Updater(Widget):
 
     if self._update_failed:
       self._update_failed = False
+      self._prompt_page.show_event()
       gui_app.pop_widgets_to(self, instant=True)
       gui_app.push_widget(self._failed_page)
 
