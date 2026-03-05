@@ -221,18 +221,6 @@ class FailedPage(NavScroller):
     super().__init__()
     self.set_back_callback(retry_callback)
 
-    # self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-    #                                  font_weight=FontWeight.DISPLAY)
-    # self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
-    #                                   font_weight=FontWeight.ROMAN)
-    #
-    # self._reboot_slider = SmallSlider("reboot", reboot_callback)
-    # self._reboot_slider.set_enabled(lambda: self.enabled)  # for nav stack
-    #
-    # self._retry_button = SmallButton("retry")
-    # self._retry_button.set_click_callback(retry_callback)
-    # self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
-
     def show_reboot_dialog():
       dialog = BigConfirmationDialogV2("slide to reboot", "icons_mici/settings/device/reboot.png",
                                        exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
@@ -241,48 +229,17 @@ class FailedPage(NavScroller):
     reboot_button = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
     reboot_button.set_click_callback(show_reboot_dialog)
 
+    self._reason_card = GreyBigButton("", "")
+
     self._scroller.add_widgets([
       GreyBigButton(title, "swipe down to go\nback and try again",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
+      self._reason_card,
       reboot_button,
     ])
 
   def set_reason(self, reason: str):
-    self._reason_label.set_text(reason)
-
-  def show_event(self):
-    super().show_event()
-    self._reboot_slider.reset()
-
-  def _render(self, rect: rl.Rectangle):
-    self._title_label.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y + 10,
-      rect.width,
-      64,
-    ))
-
-    self._reason_label.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y + 10 + 64,
-      rect.width,
-      36,
-    ))
-
-    self._retry_button.set_opacity(1 - self._reboot_slider.slider_percentage)
-    self._retry_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._retry_button.rect.height,
-      self._retry_button.rect.width,
-      self._retry_button.rect.height,
-    ))
-
-    self._reboot_slider.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._reboot_slider.rect.width,
-      self._rect.y + self._rect.height - self._reboot_slider.rect.height,
-      self._reboot_slider.rect.width,
-      self._reboot_slider.rect.height,
-    ))
+    self._reason_card.set_value(reason)
 
 
 class GreyBigButton(BigButton):
@@ -313,6 +270,9 @@ class GreyBigButton(BigButton):
 
   def _width_hint(self) -> int:
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
+
+  def _get_label_font_size(self):
+    return 36
 
   def _render(self, _):
     rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(255, 255, 255, int(255 * 0.15)))
