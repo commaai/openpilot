@@ -7,16 +7,13 @@ from enum import IntEnum
 
 import pyray as rl
 
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-
-from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
 from openpilot.system.ui.mici_setup import GreyBigButton, FailedPage
-
-from system.hardware import HARDWARE
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
 
 USERDATA = "/dev/disk/by-partlabel/userdata"
 TIMEOUT = 3*60
@@ -69,7 +66,6 @@ class Reset(Scroller):
     super().__init__()
     self._mode = mode
     self._previous_active_widget = None
-
     self._reset_failed = False
 
     self._resetting_page = ResettingPage()
