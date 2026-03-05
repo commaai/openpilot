@@ -120,8 +120,7 @@ jobs:
               "${{ github.workspace }}/pr_ui/${video}_proposed.mp4" \
               "${diff_name}.html" --basedir "$baseurl" --no-open || diff_exit_code=$?
 
-            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.html" "${{ github.workspace }}/pr_ui/"
-            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.mp4" "${{ github.workspace }}/pr_ui/"
+            cp -r "${{ github.workspace }}/selfdrive/ui/tests/diff/report/"* "${{ github.workspace }}/pr_ui/"
 
             REPORT_URL="https://commaai.github.io/ci-artifacts/${diff_name}_pr_${{ github.event.number }}.html"
             if [ $diff_exit_code -eq 0 ]; then
