@@ -417,6 +417,7 @@ class NetworkSetupPageBase(Scroller):
                     not self._network_monitor.recheck_event.is_set())
     self._continue_button.set_visible(has_internet)
     self._waiting_button.set_visible(not has_internet)
+
     # TODO: fire show/hide events on visibility changes
     if not has_internet:
       self._pending_continue_grow_animation = False
