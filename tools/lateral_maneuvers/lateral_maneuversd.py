@@ -33,8 +33,8 @@ class Maneuver:
   _ready_cnt: int = 0
   _repeated: int = 0
 
-  def get_accel(self, v_ego: float, lat_active: bool) -> float:
-    ready = abs(v_ego - self.initial_speed) < 0.3 and lat_active
+  def get_accel(self, v_ego: float, lat_active: bool, curvature: float) -> float:
+    ready = abs(v_ego - self.initial_speed) < 0.3 and lat_active and abs(curvature) < 0.001
     self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
@@ -75,6 +75,12 @@ class Maneuver:
     return self._active
 
 
+def _sine_action(amplitude, period, duration):
+  t = np.linspace(0, duration, int(duration / DT_MDL) + 1)
+  a = amplitude * np.sin(2 * np.pi * t / period)
+  return Action(a.tolist(), t.tolist())
+
+
 MANEUVERS = [
   Maneuver(
     "step 60mph a=0.3",
@@ -98,6 +104,30 @@ MANEUVERS = [
     "step 70mph a=-0.3",
     [Action([-0.3], [1.5])],
     repeat=2,
+    initial_speed=70. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "sine 60mph T=2s",
+    [_sine_action(0.3, 2.0, 4.0)],
+    repeat=1,
+    initial_speed=60. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "sine 60mph T=3s",
+    [_sine_action(0.3, 3.0, 6.0)],
+    repeat=1,
+    initial_speed=60. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "sine 70mph T=2s",
+    [_sine_action(0.3, 2.0, 4.0)],
+    repeat=1,
+    initial_speed=70. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "sine 70mph T=3s",
+    [_sine_action(0.3, 3.0, 6.0)],
+    repeat=1,
     initial_speed=70. * CV.MPH_TO_MS,
   ),
 ]
@@ -130,7 +160,7 @@ def main():
     v_ego = max(sm['carState'].vEgo, 0)
 
     if maneuver is not None:
-      accel = maneuver.get_accel(v_ego, sm['carControl'].latActive)
+      accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, sm['controlsState'].curvature)
 
       if maneuver.active:
         alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
