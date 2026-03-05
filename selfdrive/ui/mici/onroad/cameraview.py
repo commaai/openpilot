@@ -155,11 +155,11 @@ class CameraView(Widget):
       # Prevent old frames from showing when going onroad. Qt has a separate thread
       # which drains the VisionIpcClient SubSocket for us. Re-connecting is not enough
       # and only clears internal buffers, not the message queue.
-      self.frame = None
       self.available_streams.clear()
       if self.client:
         del self.client
       self.client = VisionIpcClient(self._name, self._stream_type, conflate=True)
+    self.frame = None
 
   def _set_placeholder_color(self, color: rl.Color):
     """Set a placeholder color to be drawn when no frame is available."""

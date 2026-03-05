@@ -1,10 +1,11 @@
 #include "tools/cabana/tools/findsignal.h"
 
+#include <thread>
+
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QMenu>
-#include <QtConcurrent>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -20,7 +21,7 @@ QVariant FindSignalModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     const auto &s = filtered_signals[index.row()];
     switch (index.column()) {
-      case 0: return s.id.toString();
+      case 0: return QString::fromStdString(s.id.toString());
       case 1: return QString("%1, %2").arg(s.sig.start_bit).arg(s.sig.size);
       case 2: return s.values.join(" ");
     }
@@ -32,36 +33,49 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
   beginResetModel();
 
   std::mutex lock;
-  const auto prev_sigs = !histories.isEmpty() ? histories.back() : initial_signals;
+  const auto prev_sigs = !histories.empty() ? histories.back() : initial_signals;
   filtered_signals.clear();
   filtered_signals.reserve(prev_sigs.size());
-  QtConcurrent::blockingMap(prev_sigs, [&](auto &s) {
-    const auto &events = can->events(s.id);
-    auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, CompareCanEvent());
-    auto last = events.cend();
-    if (last_time < std::numeric_limits<uint64_t>::max()) {
-      last = std::upper_bound(events.cbegin(), events.cend(), last_time, CompareCanEvent());
-    }
 
-    auto it = std::find_if(first, last, [&](const CanEvent *e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
-    if (it != last) {
-      auto values = s.values;
-      values += QString("(%1, %2)").arg(can->toSeconds((*it)->mono_time), 0, 'f', 3).arg(get_raw_value((*it)->dat, (*it)->size, s.sig));
-      std::lock_guard lk(lock);
-      filtered_signals.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
-    }
-  });
+  unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
+  size_t chunk = (prev_sigs.size() + num_threads - 1) / num_threads;
+  std::vector<std::thread> threads;
+  for (unsigned int t = 0; t < num_threads && t * chunk < (size_t)prev_sigs.size(); ++t) {
+    size_t start = t * chunk;
+    size_t end = std::min(start + chunk, (size_t)prev_sigs.size());
+    threads.emplace_back([&, start, end]() {
+      for (size_t i = start; i < end; ++i) {
+        const auto &s = prev_sigs[i];
+        const auto &events = can->events(s.id);
+        auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, CompareCanEvent());
+        auto last = events.cend();
+        if (last_time < std::numeric_limits<uint64_t>::max()) {
+          last = std::upper_bound(events.cbegin(), events.cend(), last_time, CompareCanEvent());
+        }
+
+        auto it = std::find_if(first, last, [&](const CanEvent *e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
+        if (it != last) {
+          auto values = s.values;
+          values += QString("(%1, %2)").arg(can->toSeconds((*it)->mono_time), 0, 'f', 3).arg(get_raw_value((*it)->dat, (*it)->size, s.sig));
+          std::lock_guard lk(lock);
+          filtered_signals.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
+        }
+      }
+    });
+  }
+  for (auto &th : threads) th.join();
+
   histories.push_back(filtered_signals);
 
   endResetModel();
 }
 
 void FindSignalModel::undo() {
-  if (!histories.isEmpty()) {
+  if (!histories.empty()) {
     beginResetModel();
     histories.pop_back();
     filtered_signals.clear();
-    if (!histories.isEmpty()) filtered_signals = histories.back();
+    if (!histories.empty()) filtered_signals = histories.back();
     endResetModel();
   }
 }
@@ -172,7 +186,7 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
 }
 
 void FindSignalDlg::search() {
-  if (model->histories.isEmpty()) {
+  if (model->histories.empty()) {
     setInitialSignals();
   }
   auto v1 = value1->text().toDouble();
@@ -246,12 +260,12 @@ void FindSignalDlg::setInitialSignals() {
 }
 
 void FindSignalDlg::modelReset() {
-  properties_group->setEnabled(model->histories.isEmpty());
-  message_group->setEnabled(model->histories.isEmpty());
-  search_btn->setText(model->histories.isEmpty() ? tr("Find") : tr("Find Next"));
-  reset_btn->setEnabled(!model->histories.isEmpty());
+  properties_group->setEnabled(model->histories.empty());
+  message_group->setEnabled(model->histories.empty());
+  search_btn->setText(model->histories.empty() ? tr("Find") : tr("Find Next"));
+  reset_btn->setEnabled(!model->histories.empty());
   undo_btn->setEnabled(model->histories.size() > 1);
-  search_btn->setEnabled(model->rowCount() > 0 || model->histories.isEmpty());
+  search_btn->setEnabled(model->rowCount() > 0 || model->histories.empty());
   stats_label->setVisible(true);
   stats_label->setText(tr("%1 matches. right click on an item to create signal. double click to open message").arg(model->filtered_signals.size()));
 }

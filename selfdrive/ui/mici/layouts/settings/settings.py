@@ -2,7 +2,7 @@ from openpilot.common.params import Params
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.toggles import TogglesLayoutMici
-from openpilot.selfdrive.ui.mici.layouts.settings.network import NetworkLayoutMici
+from openpilot.selfdrive.ui.mici.layouts.settings.network.network_layout import NetworkLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.device import DeviceLayoutMici, PairBigButton
 from openpilot.selfdrive.ui.mici.layouts.settings.developer import DeveloperLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.firehose import FirehoseLayout
@@ -48,8 +48,5 @@ class SettingsLayout(NavScroller):
       firehose_btn,
       developer_btn,
     ])
-
-    # Set up back navigation
-    self.set_back_callback(gui_app.pop_widget)
 
     self._font_medium = gui_app.font(FontWeight.MEDIUM)

@@ -47,7 +47,7 @@ class ScrollIndicator(Widget):
     # position based on scroll ratio
     slide_range = self._viewport.width - indicator_w
     max_scroll = self._content_size - self._viewport.width
-    scroll_ratio = -self._scroll_offset / max_scroll
+    scroll_ratio = (-self._scroll_offset / abs(max_scroll)) if abs(max_scroll) > 1e-3 else 0.0
     x = self._viewport.x + scroll_ratio * slide_range
     # don't bounce up when NavWidget shows
     y = max(self._viewport.y, 0) + self._viewport.height - self._txt_scroll_indicator.height / 2
@@ -443,4 +443,27 @@ class NavScroller(NavWidget, Scroller):
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
     # pass down enabled to child widget for nav stack + disable while swiping away NavWidget
-    self._scroller.set_enabled(lambda: self.enabled and not self._swiping_away)
+    self._scroller.set_enabled(lambda: self.enabled and not self.is_dismissing)
+
+  def _back_enabled(self) -> bool:
+    # Vertical scrollers need to be at the top to swipe away to prevent erroneous swipes
+    # TODO: only used for offroad alerts, remove when horizontal
+    return self._scroller._horizontal or self._scroller.scroll_panel.get_offset() >= -20  # some tolerance
+
+
+# TODO: only used for a few vertical scrollers, remove when horizontal
+class NavRawScrollPanel(NavWidget):
+  # can swipe anywhere, only when at top
+  BACK_TOUCH_AREA_PERCENTAGE = 1.0
+
+  def __init__(self):
+    super().__init__()
+    self._scroll_panel = GuiScrollPanel2(horizontal=False)
+    self._scroll_panel.set_enabled(lambda: self.enabled and not self.is_dismissing)
+
+  def show_event(self):
+    super().show_event()
+    self._scroll_panel.set_offset(0)
+
+  def _back_enabled(self) -> bool:
+    return self._scroll_panel.get_offset() >= -20

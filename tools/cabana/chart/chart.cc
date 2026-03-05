@@ -237,8 +237,8 @@ void ChartView::updateTitle() {
   for (auto &s : sigs) {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
     s.series->setName(QString("<span style=\"text-decoration:%1; color:%2\"><b>%3</b> <font color=\"%4\">%5 %6</font></span>")
-                      .arg(decoration, titleColorCss, s.sig->name,
-                           msgColorCss, msgName(s.msg_id), s.msg_id.toString()));
+                      .arg(decoration, titleColorCss, QString::fromStdString(s.sig->name),
+                           msgColorCss, QString::fromStdString(msgName(s.msg_id)), QString::fromStdString(s.msg_id.toString())));
   }
   split_chart_act->setEnabled(sigs.size() > 1);
   resetChartCache();
@@ -339,13 +339,13 @@ void ChartView::updateAxisY() {
 
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
-  QString unit = sigs[0].sig->unit;
+  QString unit = QString::fromStdString(sigs[0].sig->unit);
 
   for (auto &s : sigs) {
     if (!s.series->isVisible()) continue;
 
     // Only show unit when all signals have the same unit
-    if (unit != s.sig->unit) {
+    if (unit != QString::fromStdString(s.sig->unit)) {
       unit.clear();
     }
 
@@ -573,11 +573,11 @@ void ChartView::showTip(double sec) {
       // use reverse iterator to find last item <= sec.
       auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), sec, [](auto &p, double v) { return p.x() > v; });
       if (it != s.vals.crend() && it->x() >= axis_x->min()) {
-        value = s.sig->formatValue(it->y(), false);
+        value = QString::fromStdString(s.sig->formatValue(it->y(), false));
         s.track_pt = *it;
         x = std::max(x, chart()->mapToPosition(*it).x());
       }
-      QString name = sigs.size() > 1 ? s.sig->name + ": " : "";
+      QString name = sigs.size() > 1 ? QString::fromStdString(s.sig->name) + ": " : "";
       QString min = s.min == std::numeric_limits<double>::max() ? "--" : QString::number(s.min);
       QString max = s.max == std::numeric_limits<double>::lowest() ? "--" : QString::number(s.max);
       text_list << QString("<span style=\"color:%1;\">■ </span>%2<b>%3</b> (%4, %5)")
@@ -766,7 +766,7 @@ void ChartView::drawSignalValue(QPainter *painter) {
   for (auto &s : sigs) {
     auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), cur_sec,
                                [](auto &p, double x) { return p.x() > x + EPSILON; });
-    QString value = (it != s.vals.crend() && it->x() >= axis_x->min()) ? s.sig->formatValue(it->y()) : "--";
+    QString value = (it != s.vals.crend() && it->x() >= axis_x->min()) ? QString::fromStdString(s.sig->formatValue(it->y())) : "--";
     QRectF marker_rect = legend_markers[i++]->sceneBoundingRect();
     QRectF value_rect(marker_rect.bottomLeft() - QPoint(0, 1), marker_rect.size());
     QString elided_val = painter->fontMetrics().elidedText(value, Qt::ElideRight, value_rect.width());

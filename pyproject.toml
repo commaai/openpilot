@@ -31,12 +31,13 @@ dependencies = [
   "eigen @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=eigen",
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
   "libjpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libjpeg",
-  "openssl3 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=openssl3",
+  "libyuv @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libyuv",
   "python3-dev @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=python3-dev",
   "zstd @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zstd",
   "ncurses @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ncurses",
   "zeromq @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zeromq",
   "git-lfs @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=git-lfs",
+  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=gcc-arm-none-eabi",
 
   # body / webrtcd
   "av",
@@ -75,6 +76,7 @@ dependencies = [
   "raylib > 5.5.0.3",
   "qrcode",
   "jeepney",
+  "pillow",
 ]
 
 [project.optional-dependencies]
@@ -102,12 +104,10 @@ testing = [
 dev = [
   "matplotlib",
   "opencv-python-headless",
-  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=gcc-arm-none-eabi",
 ]
 
 tools = [
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
-  "dearpygui>=2.1.0; (sys_platform != 'linux' or platform_machine != 'aarch64')", # not vended for linux aarch64
 ]
 
 [project.urls]
@@ -125,7 +125,7 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=20 --maxprocesses=8 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"

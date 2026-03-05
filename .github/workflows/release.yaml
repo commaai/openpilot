@@ -22,7 +22,7 @@ jobs:
         running-workflow-name: 'build master-ci'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         check-regexp: ^((?!.*(build prebuilt|create badges).*).)*$
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         submodules: true
         fetch-depth: 0

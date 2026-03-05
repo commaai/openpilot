@@ -38,10 +38,10 @@ KNOWN_LEAKS = {
   "openpilot.system.ui.widgets.label.Label",
   "openpilot.system.ui.widgets.button.Button",
   "openpilot.system.ui.widgets.html_render.HtmlRenderer",
-  "openpilot.system.ui.widgets.NavBar",
+  "openpilot.system.ui.widgets.nav_widget.NavBar",
+  "openpilot.selfdrive.ui.mici.layouts.settings.device.MiciFccModal",
   "openpilot.system.ui.widgets.inputbox.InputBox",
   "openpilot.system.ui.widgets.scroller_tici.Scroller",
-  "openpilot.system.ui.widgets.scroller.Scroller",
   "openpilot.system.ui.widgets.label.UnifiedLabel",
   "openpilot.system.ui.widgets.mici_keyboard.MiciKeyboard",
   "openpilot.selfdrive.ui.mici.widgets.dialog.BigConfirmationDialogV2",
@@ -68,7 +68,9 @@ def test_dialogs_do_not_leak():
 
   for ctor in (
     # mici
-    MiciDriverCameraDialog, MiciTrainingGuide, MiciOnboardingWindow, MiciPairingDialog,
+    MiciDriverCameraDialog, MiciPairingDialog,
+    lambda: MiciTrainingGuide(lambda: None),
+    lambda: MiciOnboardingWindow(lambda: None),
     lambda: BigDialog("test", "test"),
     lambda: BigConfirmationDialogV2("test", "icons_mici/settings/network/new/trash.png"),
     lambda: BigInputDialog("test"),

@@ -146,8 +146,9 @@ class CapsState(IntEnum):
 
 
 class MiciKeyboard(Widget):
-  def __init__(self):
+  def __init__(self, auto_return_to_letters: str = ""):
     super().__init__()
+    self._auto_return_to_letters = auto_return_to_letters
 
     lower_chars = [
       "qwertyuiop",
@@ -305,6 +306,10 @@ class MiciKeyboard(Widget):
         if self._caps_state == CapsState.UPPER:
           self._set_uppercase(False)
 
+        # Switch back to letters after common URL delimiters
+        if self._closest_key[0].char in self._auto_return_to_letters and self._current_keys in (self._special_keys, self._super_special_keys):
+          self._set_uppercase(False)
+
     # ensure minimum selected animation time
     key_selected_dt = rl.get_time() - (self._selected_key_t or 0)
     cur_t = rl.get_time()
@@ -322,7 +327,7 @@ class MiciKeyboard(Widget):
     self._selected_key_filter.update(self._closest_key[0] is not None)
 
     # unselect key after animation plays
-    if self._unselect_key_t is not None and rl.get_time() > self._unselect_key_t:
+    if (self._unselect_key_t is not None and rl.get_time() > self._unselect_key_t) or not self.enabled:
       self._closest_key = (None, float('inf'))
       self._unselect_key_t = None
       self._selected_key_t = None

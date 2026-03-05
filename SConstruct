@@ -44,12 +44,12 @@ if arch != "larch64":
   import eigen
   import ffmpeg as ffmpeg_pkg
   import libjpeg
+  import libyuv
   import ncurses
-  import openssl3
   import python3_dev
   import zeromq
   import zstd
-  pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, libjpeg, ncurses, openssl3, zeromq, zstd]
+  pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, libjpeg, libyuv, ncurses, zeromq, zstd]
   py_include = python3_dev.INCLUDE_DIR
 else:
   # TODO: remove when AGNOS has our new vendor pkgs
@@ -89,7 +89,6 @@ env = Environment(
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
-    "#third_party/libyuv/include",
     [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
@@ -98,7 +97,6 @@ env = Environment(
     "#third_party",
     "#selfdrive/pandad",
     "#rednose/helpers",
-    f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
     [x.LIB_DIR for x in pkgs],
   ],

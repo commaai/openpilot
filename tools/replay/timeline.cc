@@ -55,7 +55,7 @@ void Timeline::buildTimeline(const Route &route, uint64_t route_start_ts, bool l
     if (should_exit_) break;
 
     auto log = std::make_shared<LogReader>();
-    if (!log->load(segment.second.qlog, &should_exit_, local_cache, 0, 3) || log->events.empty()) {
+    if (!log->load(segment.second.qlog, &should_exit_, local_cache) || log->events.empty()) {
       continue;  // Skip if log loading fails or no events
     }
 
