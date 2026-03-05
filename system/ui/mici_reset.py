@@ -40,7 +40,7 @@ class ResettingPage(NavWidget):
   def __init__(self):
     super().__init__()
 
-    self._resetting_card = GreyBigButton("resetting device", "this may take up to a minute...",
+    self._resetting_card = GreyBigButton("resetting device", "this may take up to\na minute...",
                                          gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
   def show_event(self):
@@ -109,7 +109,6 @@ class Reset(Scroller):
 
   def _do_erase(self):
     if PC:
-      self._reset_failed = True
       return
 
     # Removing data and formatting
