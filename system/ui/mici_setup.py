@@ -21,10 +21,9 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.button import SmallButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPACING
-from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
+from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
@@ -181,7 +180,8 @@ class CustomSoftwareWarningPage(NavScroller):
     ])
 
 
-class DownloadingPage(Widget):
+# TODO: unifi with updater's progress page
+class DownloadingPage(NavWidget):
   def __init__(self):
     super().__init__()
 
@@ -191,8 +191,12 @@ class DownloadingPage(Widget):
                                         font_weight=FontWeight.ROMAN, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
     self._progress = 0
 
+  def _back_enabled(self) -> bool:
+    return False
+
   def show_event(self):
     super().show_event()
+    self._nav_bar._alpha = 0.0  # not dismissable
     self.set_progress(0)
 
   def set_progress(self, progress: int):
@@ -470,8 +474,7 @@ class Setup(Widget):
       reason = self._download_failed_reason
       self._download_failed_reason = None
       self._download_failed_page.set_reason(reason)
-      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-      gui_app.push_widget(self._download_failed_page)
+      gui_app.pop_widgets_to(self._software_selection_page, lambda: gui_app.push_widget(self._download_failed_page))
 
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
@@ -505,13 +508,11 @@ class Setup(Widget):
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
-      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
       self._download(OPENPILOT_URL)
     else:
       def handle_keyboard_result(text):
         url = text.strip()
         if url:
-          gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
           self._download(url)
 
       keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result, auto_return_to_letters="./")
@@ -526,10 +527,12 @@ class Setup(Widget):
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
     self.download_progress = 0
 
-    gui_app.push_widget(self._downloading_page)
+    def start_download():
+      self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
+      self.download_thread.start()
 
-    self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
-    self.download_thread.start()
+    self._downloading_page.set_shown_callback(start_download)
+    gui_app.push_widget(self._downloading_page)
 
   def _download_thread(self):
     try:
