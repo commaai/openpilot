@@ -128,23 +128,24 @@ class Updater(Scroller):
       cmd = [self.updater, "--swap", self.manifest]
       self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                       text=True, bufsize=1, universal_newlines=True)
-
-      if self.process.stdout is not None:
-        for line in self.process.stdout:
-          parts = line.strip().split(":")
-          if len(parts) == 2:
-            self.progress_text = parts[0].lower()
-            try:
-              self.progress_value = int(float(parts[1]))
-            except ValueError:
-              pass
-
-      exit_code = self.process.wait()
-      if exit_code == 0:
-        HARDWARE.reboot()
-      else:
-        self._update_failed = True
     except Exception:
+      self._update_failed = True
+      return
+
+    if self.process.stdout is not None:
+      for line in self.process.stdout:
+        parts = line.strip().split(":")
+        if len(parts) == 2:
+          self.progress_text = parts[0].lower()
+          try:
+            self.progress_value = int(float(parts[1]))
+          except ValueError:
+            pass
+
+    exit_code = self.process.wait()
+    if exit_code == 0:
+      HARDWARE.reboot()
+    else:
       self._update_failed = True
 
   def close(self):
