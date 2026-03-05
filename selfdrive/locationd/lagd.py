@@ -321,6 +321,7 @@ class LateralLagEstimator:
   def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray,
                      dt: float, min_lag: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
+    expected_sig = masked_symmetric_moving_average(expected_sig, mask, SMOOTH_K_SIZE)
     actual_sig = masked_symmetric_moving_average(actual_sig, mask, SMOOTH_K_SIZE)
 
     min_lag_samples, max_lag_samples = int(round(min_lag / dt)), int(round(max_lag / dt))
