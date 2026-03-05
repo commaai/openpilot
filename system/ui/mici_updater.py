@@ -8,7 +8,7 @@ from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.mici_setup import (NetworkSetupPage, FailedPage, NetworkConnectivityMonitor,
@@ -22,7 +22,7 @@ class UpdaterNetworkSetupPage(NetworkSetupPage):
     self._continue_button.set_green(False)
 
 
-class ProgressPage(Widget):
+class ProgressPage(NavWidget):
   def __init__(self):
     super().__init__()
 
@@ -32,12 +32,16 @@ class ProgressPage(Widget):
                                                 font_weight=FontWeight.ROMAN,
                                                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
+  def _back_enabled(self) -> bool:
+    return False
+
   def set_progress(self, text: str, value: int):
     self._progress_title_label.set_text(text.replace("_", "_\n") + "...")
     self._progress_percent_label.set_text(f"{value}%")
 
   def show_event(self):
     super().show_event()
+    self._nav_bar._alpha = 0.0  # not dismissable
     self.set_progress("downloading", 0)
 
   def _render(self, rect: rl.Rectangle):
@@ -82,7 +86,7 @@ class Updater(Scroller):
     self._continue_button.set_click_callback(lambda: gui_app.push_widget(self._network_setup_page))
 
     self._scroller.add_widgets([
-      GreyBigButton("update required", "The download size is\napproximately 1 GB",
+      GreyBigButton("update required", "the download size\nis approximately 1 GB",
                     gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
       self._continue_button,
     ])
@@ -101,45 +105,60 @@ class Updater(Scroller):
     if self._update_failed:
       self._update_failed = False
       self.show_event()
-      gui_app.pop_widgets_to(self, instant=True)
-      gui_app.push_widget(self._failed_page)
+      gui_app.pop_widgets_to(self, lambda: gui_app.push_widget(self._failed_page))
+
+
+      # self.show_event()
+      # gui_app.pop_widgets_to(self, lambda: gui_app.push_widget(self._failed_page))
+      # gui_app.pop_widgets_to(self, instant=True)
+      # gui_app.push_widget(self._failed_page)
+
+  def _show_failed_page(self):
+    gui_app.push_widget(self._failed_page)
+    # gui_app.pop_widgets_to(self, lambda: gui_app.push_widget(self._failed_page))
 
   def install_update(self):
     self.progress_value = 0
     self.progress_text = "downloading"
 
-    gui_app.pop_widgets_to(self, instant=True)
-    gui_app.push_widget(self._progress_page)
+    def start_update():
+      # Start the update process in a separate thread
+      self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
+      self.update_thread.start()
 
-    # Start the update process in a separate thread
-    self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
-    self.update_thread.start()
+    # gui_app.pop_widgets_to(self, instant=True)
+    self._progress_page.set_shown_callback(start_update)
+    gui_app.push_widget(self._progress_page)
 
   def _run_update_process(self):
     # TODO: just import it and run in a thread without a subprocess
-    try:
-      cmd = [self.updater, "--swap", self.manifest]
-      self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                      text=True, bufsize=1, universal_newlines=True)
-    except Exception:
-      self._update_failed = True
-      return
+    # try:
+    #   cmd = [self.updater, "--swap", self.manifest]
+    #   self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+    #                                   text=True, bufsize=1, universal_newlines=True)
+    # except Exception:
+    #   self._update_failed = True
+    #   return
 
-    if self.process.stdout is not None:
-      for line in self.process.stdout:
-        parts = line.strip().split(":")
-        if len(parts) == 2:
-          self.progress_text = parts[0].lower()
-          try:
-            self.progress_value = int(float(parts[1]))
-          except ValueError:
-            pass
+    self.progress_value = 1
+    import time
+    time.sleep(2)
 
-    exit_code = self.process.wait()
-    if exit_code == 0:
-      HARDWARE.reboot()
-    else:
-      self._update_failed = True
+    # if self.process.stdout is not None:
+    #   for line in self.process.stdout:
+    #     parts = line.strip().split(":")
+    #     if len(parts) == 2:
+    #       self.progress_text = parts[0].lower()
+    #       try:
+    #         self.progress_value = int(float(parts[1]))
+    #       except ValueError:
+    #         pass
+
+    # exit_code = self.process.wait()
+    # if exit_code == 0:
+    #   HARDWARE.reboot()
+    # else:
+    self._update_failed = True
 
   def close(self):
     self._network_monitor.stop()
