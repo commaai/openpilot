@@ -162,23 +162,28 @@ def main():
     plan_send = messaging.new_message('lateralManeuverPlan')
     plan_send.valid = sm.all_checks()
 
-    accel = 0
     v_ego = max(sm['carState'].vEgo, 0)
+    model_curvature = sm['modelV2'].action.desiredCurvature
 
+    maneuver_active = False
     if maneuver is not None:
       accel = maneuver.get_accel(v_ego, sm['carControl'].latActive)
+      maneuver_active = maneuver.active
 
-      if maneuver.active:
+      if maneuver_active:
         alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
       else:
-        alert_msg.alertDebug.alertText1 = f'Setting up to {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
+        alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
       alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
 
     pm.send('alertDebug', alert_msg)
 
-    plan_send.lateralManeuverPlan.desiredCurvature = accel / max(v_ego, MIN_SPEED) ** 2
+    if maneuver_active:
+      plan_send.lateralManeuverPlan.desiredCurvature = accel / max(v_ego, MIN_SPEED) ** 2
+    else:
+      plan_send.lateralManeuverPlan.desiredCurvature = model_curvature
     pm.send('lateralManeuverPlan', plan_send)
 
     if maneuver is not None and maneuver.finished:
