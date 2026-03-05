@@ -20,7 +20,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.utils import run_cmd
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus
+from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -57,7 +57,6 @@ class NetworkConnectivityMonitor:
     self.wifi_connected = threading.Event()
     self._should_check = should_check or (lambda: True)
     self._stop_event = threading.Event()
-    self._recheck_event = threading.Event()
     self._last_timesyncd_restart = 0.0
     self._thread: threading.Thread | None = None
 
@@ -73,21 +72,16 @@ class NetworkConnectivityMonitor:
       self._thread.join()
       self._thread = None
 
-  def reset(self, invalidate: bool = False):
+  def reset(self):
     self.network_connected.clear()
     self.wifi_connected.clear()
-    if invalidate:
-      self._recheck_event.set()
 
   def _run(self):
     while not self._stop_event.is_set():
       if self._should_check():
-        self._recheck_event.clear()
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
-          if self._recheck_event.is_set():
-            continue
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -351,7 +345,6 @@ class NetworkSetupPageBase(Scroller):
     self._network_monitor = network_monitor
     self._custom_software = False
     self._prev_has_internet = False
-    self._prev_wifi_connected = False
     self._wifi_ui = WifiUIMici(self._wifi_manager)
 
     self._connect_button = GreyBigButton("connect to\ninternet", "swipe down to go back",
@@ -390,20 +383,12 @@ class NetworkSetupPageBase(Scroller):
     super().show_event()
     self._show_time = rl.get_time()
     self._prev_has_internet = False
-    self._prev_wifi_connected = False
     self._pending_has_internet_scroll = False
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
 
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
-
-    # Invalidate connectivity on WiFi disconnect so stale network_connected is cleared
-    wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
-    print(self._wifi_manager.wifi_state)
-    if self._prev_wifi_connected and not wifi_connected:
-      self._network_monitor.reset(invalidate=True)
-    self._prev_wifi_connected = wifi_connected
 
     has_internet = self._network_monitor.network_connected.is_set()
     if has_internet and not self._prev_has_internet:
