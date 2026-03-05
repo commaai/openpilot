@@ -77,42 +77,6 @@ class Maneuver:
 
 MANEUVERS = [
   Maneuver(
-    "step 30mph a=0.3",
-    [Action([0.3], [1.5])],
-    repeat=2,
-    initial_speed=30. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
-    "step 30mph a=-0.3",
-    [Action([-0.3], [1.5])],
-    repeat=2,
-    initial_speed=30. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
-    "step 40mph a=0.3",
-    [Action([0.3], [1.5])],
-    repeat=2,
-    initial_speed=40. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
-    "step 40mph a=-0.3",
-    [Action([-0.3], [1.5])],
-    repeat=2,
-    initial_speed=40. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
-    "step 50mph a=0.3",
-    [Action([0.3], [1.5])],
-    repeat=2,
-    initial_speed=50. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
-    "step 50mph a=-0.3",
-    [Action([-0.3], [1.5])],
-    repeat=2,
-    initial_speed=50. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
     "step 60mph a=0.3",
     [Action([0.3], [1.5])],
     repeat=2,
