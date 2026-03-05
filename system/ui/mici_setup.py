@@ -70,12 +70,13 @@ class NetworkConnectivityMonitor:
       self._thread.join()
       self._thread = None
 
-  def reset(self, invalidate: bool = False):
-    """If invalidate, discard stale in-flight results and force re-verification."""
+  def reset(self):
     self.network_connected.clear()
     self.wifi_connected.clear()
-    if invalidate:
-      self.recheck_event.set()
+
+  def invalidate(self):
+    """Discard stale in-flight results and force re-verification."""
+    self.recheck_event.set()
 
   def _run(self):
     while not self._stop_event.is_set():
@@ -350,7 +351,7 @@ class NetworkSetupPageBase(Scroller):
     self._connect_button.set_visible(not disable_connect_hint)
 
     # Force re-verification after leaving WiFi UI to prevent stale continue button
-    self._wifi_ui.set_back_callback(lambda: self._network_monitor.reset(invalidate=True))
+    self._wifi_ui.set_back_callback(self._network_monitor.invalidate)
     self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
@@ -370,8 +371,7 @@ class NetworkSetupPageBase(Scroller):
     self._continue_button = BigPillButton("install openpilot", green=True)
     self._continue_button.set_click_callback(lambda: continue_callback(self._custom_software))
     # Block clicks while connectivity is being re-verified after WiFi UI dismiss
-    # TODO: change back to set_touch_valid_callback
-    self._continue_button.set_enabled(lambda: not self._network_monitor.recheck_event.is_set())
+    self._continue_button.set_touch_valid_callback(lambda: not self._network_monitor.recheck_event.is_set())
 
     self._scroller.add_widgets([
       self._connect_button,
