@@ -230,6 +230,7 @@ class FailedPage(NavScroller):
     reboot_button.set_click_callback(show_reboot_dialog)
 
     self._reason_card = GreyBigButton("", "")
+    self._reason_card.set_visible(False)
 
     self._scroller.add_widgets([
       GreyBigButton(title, "swipe down to go\nback and try again",
@@ -239,7 +240,11 @@ class FailedPage(NavScroller):
     ])
 
   def set_reason(self, reason: str):
-    self._reason_card.set_value(reason)
+    if reason:
+      self._reason_card.set_value(reason)
+      self._reason_card.set_visible(True)
+    else:
+      self._reason_card.set_visible(False)
 
 
 class GreyBigButton(BigButton):
@@ -557,7 +562,7 @@ class Setup(Widget):
         is_elf = header == b'\x7fELF'
 
       if not is_elf:
-        self._download_failed_reason = "No custom software found at this URL."
+        self._download_failed_reason = "No custom software found at this URL: " + self.download_url.replace("https://", "", 1)
         return
 
       # AGNOS might try to execute the installer before this process exits.
@@ -574,9 +579,9 @@ class Setup(Widget):
 
     except urllib.error.HTTPError as e:
       if e.code == 409:
-        self._download_failed_reason = "Incompatible openpilot version"
+        self._download_failed_reason = "Incompatible openpilot version."
     except Exception:
-      self._download_failed_reason = "Invalid URL"
+      self._download_failed_reason = "Invalid URL: " + self.download_url.replace("https://", "", 1)
 
 
 def main():
