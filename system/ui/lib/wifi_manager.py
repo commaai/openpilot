@@ -402,8 +402,6 @@ class WifiManager:
     # TODO: Handle (FAILED, SSID_NOT_FOUND) and emit for UI to show error
     #  Happens when network drops off after starting connection
 
-    print(f"State change: {NMDeviceState(prev_state).name} -> {NMDeviceState(new_state).name}, reason: {NMDeviceStateReason(change_reason).name}")
-
     if new_state == NMDeviceState.DISCONNECTED:
       if change_reason == NMDeviceStateReason.NEW_ACTIVATION:
         return
@@ -856,12 +854,12 @@ class WifiManager:
 
         # NOTE: AccessPoints property may exclude hidden APs (use GetAllAccessPoints method if needed)
         wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
-        reply = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all())
-        if reply.header.message_type == MessageType.error:
-          cloudlog.warning(f"Failed to get WiFi properties: {reply}")
+        wifi_props_reply = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all())
+        if wifi_props_reply.header.message_type == MessageType.error:
+          cloudlog.warning(f"Failed to get WiFi properties: {wifi_props_reply}")
           return
-        wifi_props = reply.body[0]
-        ap_paths = wifi_props.get('AccessPoints', ('ao', []))[1]
+
+        ap_paths = wifi_props_reply.body[0].get('AccessPoints', ('ao', []))[1]
 
         aps: dict[str, list[AccessPoint]] = {}
 
