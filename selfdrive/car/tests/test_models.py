@@ -464,6 +464,89 @@ class TestCarModelBase(unittest.TestCase):
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """
+    Fuzz openpilot's tx messages and check for panda safety mismatches.
+    Focus on controlsAllowed transitions and tx safety hooks.
+    """
+
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    # Fuzz CarControl parameters
+    steer_strategy = st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+    gas_strategy = st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+    brake_strategy = st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+
+    # Generate all fuzzed values upfront for reproducibility
+    steer_values = data.draw(st.lists(steer_strategy, min_size=10, max_size=10))
+    gas_values = data.draw(st.lists(gas_strategy, min_size=10, max_size=10))
+    brake_values = data.draw(st.lists(brake_strategy, min_size=10, max_size=10))
+    controls_allowed_states = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
+    cruise_states = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
+    cancel_commands = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
+    resume_commands = data.draw(st.lists(st.booleans(), min_size=10, max_size=10))
+
+    now_nanos = 0
+    for i in range(10):
+      controls_allowed = controls_allowed_states[i]
+      cruise_engaged = cruise_states[i]
+
+      # Set panda safety state
+      self.safety.set_controls_allowed(controls_allowed)
+      self.safety.set_cruise_engaged_prev(cruise_engaged)
+
+      # Create CarControl with fuzzed values
+      CC = structs.CarControl()
+      CC.actuators.steer = steer_values[i]
+      CC.actuators.gas = gas_values[i]
+      CC.actuators.brake = brake_values[i]
+
+      # Test cancel/resume commands
+      if cruise_engaged and not controls_allowed:
+        CC.cruiseControl.cancel = cancel_commands[i]
+      elif cruise_engaged and controls_allowed:
+        CC.cruiseControl.resume = resume_commands[i]
+
+      # Apply CarControl and get tx messages
+      self.CI.update([])
+      _, sendcan = self.CI.apply(CC.as_reader(), now_nanos)
+
+      now_nanos += DT_CTRL * 1e9
+
+      # Check all tx messages against panda safety
+      for addr, dat, bus in sendcan:
+        to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+        tx_allowed = self.safety.safety_tx_hook(to_send)
+
+        # Log any mismatches
+        if tx_allowed != 1:
+          # This could indicate a bug in either openpilot or panda
+          # We want to catch cases where openpilot sends but panda blocks
+          self.fail(f"TX mismatch: controls_allowed={controls_allowed}, "
+                   f"cruise_engaged={cruise_engaged}, "
+                   f"steer={steer_values[i]}, gas={gas_values[i]}, brake={brake_values[i]}, "
+                   f"addr={hex(addr)}, bus={bus}")
+
+      # Test state transitions
+      if i > 0:
+        prev_controls_allowed = controls_allowed_states[i-1]
+        # Check if transition from disabled to enabled is properly handled
+        if controls_allowed and not prev_controls_allowed:
+          # Enabled transition - verify all messages are allowed
+          for addr, dat, bus in sendcan:
+            to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+            self.assertEqual(self.safety.safety_tx_hook(to_send), 1,
+                           f"TX should be allowed after enable: {hex(addr)}")
+
 
 @parameterized_class(('platform', 'test_route'), get_test_cases())
 @pytest.mark.xdist_group_class_property('test_route')
