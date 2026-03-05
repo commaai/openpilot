@@ -401,7 +401,7 @@ class NetworkSetupPageBase(Scroller):
     self._pending_wifi_grow_animation = False
 
   def _nav_stack_tick(self):
-    # Don't run tick if we're downloading or not in any self child widget
+    # Only run tick when this page or its WiFi UI is on the stack
     if gui_app.get_active_widget() is not self and not gui_app.widget_in_stack(self._wifi_ui):
       self._wifi_manager.process_callbacks()
       return
