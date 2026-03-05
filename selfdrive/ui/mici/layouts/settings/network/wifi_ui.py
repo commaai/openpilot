@@ -16,11 +16,14 @@ from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityT
 class LoadingAnimation(Widget):
   HIDE_TIME = 4
 
-  def __init__(self):
+  def __init__(self, radius=5, spacing=14, y_mag=7):
     super().__init__()
     self._opacity_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._opacity_target = 1.0
     self._hide_time = 0.0
+    self._radius = radius
+    self._spacing = spacing
+    self._y_mag = y_mag
 
   def show_event(self):
     self._opacity_target = 1.0
@@ -38,15 +41,11 @@ class LoadingAnimation(Widget):
     cx = int(self._rect.x + self._rect.width / 2)
     cy = int(self._rect.y + self._rect.height / 2)
 
-    y_mag = 7
-    anim_scale = 4
-    spacing = 14
-
     for i in range(3):
-      x = cx - spacing + i * spacing
-      y = int(cy + min(math.sin((rl.get_time() - i * 0.2) * anim_scale) * y_mag, 0))
-      alpha = int(np.interp(cy - y, [0, y_mag], [255 * 0.45, 255 * 0.9]) * self._opacity_filter.x)
-      rl.draw_circle(x, y, 5, rl.Color(255, 255, 255, alpha))
+      x = cx - self._spacing + i * self._spacing
+      y = int(cy + min(math.sin((rl.get_time() - i * 0.2) * 4) * self._y_mag, 0))
+      alpha = int(np.interp(cy - y, [0, self._y_mag], [255 * 0.45, 255 * 0.9]) * self._opacity_filter.x)
+      rl.draw_circle(int(x), y, self._radius, rl.Color(255, 255, 255, alpha))
 
 
 class WifiIcon(Widget):
@@ -275,6 +274,7 @@ class WifiUIMici(NavScroller):
     super().__init__()
 
     self._loading_animation = LoadingAnimation()
+    self._loading_animation_large = LoadingAnimation(radius=15, spacing=42, y_mag=21)
 
     self._wifi_manager = wifi_manager
     self._networks: dict[str, Network] = {}
@@ -289,12 +289,17 @@ class WifiUIMici(NavScroller):
     # Clear scroller items and update from latest scan results
     super().show_event()
     self._loading_animation.show_event()
+    self._loading_animation_large.show_event()
     self._wifi_manager.set_active(True)
     self._scroller.items.clear()
     # trigger button update on latest sorted networks
     self._on_network_updated(self._wifi_manager.networks)
 
   def _on_network_updated(self, networks: list[Network]):
+    if not hasattr(self, '_fake_start'):
+      self._fake_start = rl.get_time()
+    if rl.get_time() - self._fake_start < 5.0:
+      networks = []
     self._networks = {network.ssid: network for network in networks}
     self._update_buttons()
 
@@ -376,11 +381,18 @@ class WifiUIMici(NavScroller):
     progress = -self._scroller.scroll_panel.get_offset() / max_scroll
     if progress > 0.8 or len(self._scroller.items) <= 1:
       self._loading_animation.show_event()
+      self._loading_animation_large.show_event()
 
   def _render(self, _):
     super()._render(self._rect)
 
-    anim_w = 90
-    anim_x = self._rect.x + self._rect.width - anim_w
-    anim_y = self._rect.y + self._rect.height - 25 + 2
-    self._loading_animation.render(rl.Rectangle(anim_x, anim_y, anim_w, 20))
+    if len(self._scroller.items) == 0:
+      anim_w, anim_h = 200, 60
+      anim_x = self._rect.x + (self._rect.width - anim_w) / 2
+      anim_y = self._rect.y + (self._rect.height - anim_h) / 2
+      self._loading_animation_large.render(rl.Rectangle(anim_x, anim_y, anim_w, anim_h))
+    else:
+      anim_w = 90
+      anim_x = self._rect.x + self._rect.width - anim_w
+      anim_y = self._rect.y + self._rect.height - 25 + 2
+      self._loading_animation.render(rl.Rectangle(anim_x, anim_y, anim_w, 20))
