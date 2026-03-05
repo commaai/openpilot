@@ -355,7 +355,6 @@ class NetworkSetupPageBase(Scroller):
     self._wifi_manager.set_active(True)
     self._network_monitor = network_monitor
     self._custom_software = False
-    self._prev_has_internet = False
     self._wifi_ui = WifiUIMici(self._wifi_manager)
 
     self._connect_button = GreyBigButton("connect to\ninternet", "swipe down to go back",
