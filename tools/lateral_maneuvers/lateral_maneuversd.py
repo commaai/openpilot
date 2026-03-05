@@ -35,7 +35,7 @@ class Maneuver:
   _ready_curvature: float = 0.0
 
   def get_accel(self, v_ego: float, lat_active: bool, curvature: float) -> float:
-    stable = abs(v_ego - self.initial_speed) < 1.0 and lat_active and abs(curvature - self._ready_curvature) < 0.001
+    stable = abs(v_ego - self.initial_speed) < 1.0 and lat_active and abs(curvature - self._ready_curvature) < 0.0002
     if not stable:
       self._ready_curvature = curvature
     self._ready_cnt = (self._ready_cnt + 1) if stable else 0
@@ -63,6 +63,7 @@ class Maneuver:
         self._action_index = 0
         self._action_frames = 0
         self._active = False
+        self._ready_cnt = 0
       # finish maneuver
       else:
         self._finished = True
@@ -87,49 +88,49 @@ def _sine_action(amplitude, period, duration):
 MANEUVERS = [
   Maneuver(
     "step-up 60mph a=0.3",
-    [Action([0.3], [1.5])],
+    [Action([0.3], [1.2])],
     repeat=2,
     initial_speed=60. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step-down 60mph a=0.3",
-    [Action([0.3], [0.5]), Action([0], [1.5])],
+    "wind-down 60mph a=0.3",
+    [Action([0.3], [0.5]), Action([-0.3], [1.2])],
     repeat=2,
     initial_speed=60. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "step-up 60mph a=-0.3",
-    [Action([-0.3], [1.5])],
+    [Action([-0.3], [1.2])],
     repeat=2,
     initial_speed=60. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step-down 60mph a=-0.3",
-    [Action([-0.3], [0.5]), Action([0], [1.5])],
+    "wind-down 60mph a=-0.3",
+    [Action([-0.3], [0.5]), Action([0.3], [1.2])],
     repeat=2,
     initial_speed=60. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "step-up 70mph a=0.3",
-    [Action([0.3], [1.5])],
+    [Action([0.3], [1.2])],
     repeat=2,
     initial_speed=70. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step-down 70mph a=0.3",
-    [Action([0.3], [0.5]), Action([0], [1.5])],
+    "wind-down 70mph a=0.3",
+    [Action([0.3], [0.5]), Action([-0.3], [1.2])],
     repeat=2,
     initial_speed=70. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "step-up 70mph a=-0.3",
-    [Action([-0.3], [1.5])],
+    [Action([-0.3], [1.2])],
     repeat=2,
     initial_speed=70. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step-down 70mph a=-0.3",
-    [Action([-0.3], [0.5]), Action([0], [1.5])],
+    "wind-down 70mph a=-0.3",
+    [Action([-0.3], [0.5]), Action([0.3], [1.2])],
     repeat=2,
     initial_speed=70. * CV.MPH_TO_MS,
   ),
@@ -192,6 +193,7 @@ def main():
         maneuver._active = False
         maneuver._action_frames = 0
         maneuver._action_index = 0
+        maneuver._ready_cnt = 0
 
       accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, cur_curvature)
 
@@ -200,8 +202,6 @@ def main():
         alert_msg.alertDebug.alertText1 = f'{accel:+0.2f} m/s² | {max(action_remaining, 0):0.1f}s'
       elif not (abs(v_ego - maneuver.initial_speed) < 1.0 and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
-      elif maneuver._ready_cnt == 0:
-        alert_msg.alertDebug.alertText1 = 'Stabilizing lateral...'
       else:
         ready_time = max(3. - maneuver._ready_cnt * DT_MDL, 0)
         alert_msg.alertDebug.alertText1 = f'Start: {ready_time:0.1f}s'
