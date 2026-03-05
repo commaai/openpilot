@@ -221,7 +221,8 @@ class DownloadingPage(NavWidget):
 
 
 class FailedPage(NavScroller):
-  def __init__(self, retry_callback: Callable, title: str = "download failed", red_icon: bool = False):
+  def __init__(self, retry_callback: Callable | None, title: str = "download failed",
+               description: str | None = None, icon: str = "icons_mici/setup/warning.png"):
     super().__init__()
     self.set_back_callback(retry_callback)
 
@@ -236,11 +237,9 @@ class FailedPage(NavScroller):
     self._reason_card = GreyBigButton("", "")
     self._reason_card.set_visible(False)
 
-    warning_icon = "icons_mici/setup/red_warning.png" if red_icon else "icons_mici/setup/warning.png"
-
     self._scroller.add_widgets([
-      GreyBigButton(title, "swipe down to go\nback and try again",
-                    gui_app.texture(warning_icon, 64, 58)),
+      GreyBigButton(title, description or "swipe down to go\nback and try again",
+                    gui_app.texture(icon, 64, 58)),
       self._reason_card,
       reboot_button,
     ])
@@ -459,7 +458,7 @@ class Setup(Widget):
 
     self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
 
-    self._download_failed_page = FailedPage(self._pop_to_software_selection, red_icon=True)
+    self._download_failed_page = FailedPage(self._pop_to_software_selection, icon="icons_mici/setup/red_warning.png")
 
     self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._pop_to_software_selection)
 
