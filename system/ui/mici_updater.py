@@ -112,10 +112,10 @@ class Updater(Scroller):
     self.progress_text = "downloading"
 
     def start_update():
-      # Start the update process in a separate thread
       self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
       self.update_thread.start()
 
+    # Start the update process in a separate thread *after* show animation completes
     self._progress_page.set_shown_callback(start_update)
     gui_app.push_widget(self._progress_page)
 
