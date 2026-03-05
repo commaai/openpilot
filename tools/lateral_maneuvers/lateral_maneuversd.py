@@ -87,74 +87,50 @@ def _sine_action(amplitude, period, duration):
 
 MANEUVERS = [
   Maneuver(
-    "wind-up right 30mph",
-    [Action([0.3], [1.2])],
+    "step right 30mph",
+    [Action([0.3], [1.5]), Action([-0.3], [1.5])],
     repeat=2,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "wind-down right 30mph",
-    [Action([0.3], [1.0]), Action([0.0], [0.5]), Action([-0.3], [1.2])],
+    "step left 30mph",
+    [Action([-0.3], [1.5]), Action([0.3], [1.5])],
     repeat=2,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
-  # Maneuver(
-  #   "wind-up left 30mph",
-  #   [Action([-0.3], [1.2])],
-  #   repeat=2,
-  #   initial_speed=30. * CV.MPH_TO_MS,
-  # ),
-  # Maneuver(
-  #   "wind-down left 30mph",
-  #   [Action([-0.3], [1.0]), Action([0.3], [1.2])],
-  #   repeat=2,
-  #   initial_speed=30. * CV.MPH_TO_MS,
-  # ),
   Maneuver(
-    "wind-up right 40mph",
-    [Action([0.3], [1.2])],
-    repeat=2,
-    initial_speed=40. * CV.MPH_TO_MS,
+    "sine 30mph 1Hz",
+    [_sine_action(0.3, 1.0, 1.0)],
+    repeat=1,
+    initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "wind-down right 40mph",
-    [Action([0.3], [1.0]), Action([0.0], [0.5]), Action([-0.3], [1.2])],
-    repeat=2,
-    initial_speed=40. * CV.MPH_TO_MS,
-  ),
-  # Maneuver(
-  #   "wind-up left 40mph",
-  #   [Action([-0.3], [1.2])],
-  #   repeat=2,
-  #   initial_speed=40. * CV.MPH_TO_MS,
-  # ),
-  # Maneuver(
-  #   "wind-down left 40mph",
-  #   [Action([-0.3], [1.0]), Action([0.3], [1.2])],
-  #   repeat=2,
-  #   initial_speed=40. * CV.MPH_TO_MS,
-  # ),
-  Maneuver(
-    "sine 30mph T=2s",
+    "sine 30mph 0.5Hz",
     [_sine_action(0.3, 2.0, 2.0)],
     repeat=1,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 30mph T=3s",
-    [_sine_action(0.3, 3.0, 3.0)],
-    repeat=1,
-    initial_speed=30. * CV.MPH_TO_MS,
+    "step right 40mph",
+    [Action([0.3], [1.5]), Action([-0.3], [1.5])],
+    repeat=2,
+    initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 40mph T=2s",
-    [_sine_action(0.3, 2.0, 2.0)],
+    "step left 40mph",
+    [Action([-0.3], [1.5]), Action([0.3], [1.5])],
+    repeat=2,
+    initial_speed=40. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "sine 40mph 1Hz",
+    [_sine_action(0.3, 1.0, 1.0)],
     repeat=1,
     initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 40mph T=3s",
-    [_sine_action(0.3, 3.0, 3.0)],
+    "sine 40mph 0.5Hz",
+    [_sine_action(0.3, 2.0, 2.0)],
     repeat=1,
     initial_speed=40. * CV.MPH_TO_MS,
   ),
@@ -199,7 +175,7 @@ def main():
 
       if maneuver.active:
         action_remaining = maneuver.actions[maneuver._action_index].time_bp[-1] - maneuver._action_frames * DT_MDL
-        alert_msg.alertDebug.alertText1 = f'Maneuver Active: {max(action_remaining, 0):0.1f}s'
+        alert_msg.alertDebug.alertText1 = f'Active {accel:+.1f}m/s² {max(action_remaining, 0):.1f}s'
         alert_msg.alertDebug.alertText2 = maneuver.description
       elif not (abs(v_ego - maneuver.initial_speed) < 1.0 and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'

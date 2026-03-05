@@ -65,22 +65,23 @@ def report(platform, route, _description, CP, ID, maneuvers):
       baseline_accel = controlsState[0].curvature * max(carState[0].vEgo, 1.0) ** 2
       target_accel = lateralPlan[0].desiredCurvature * max(carState[0].vEgo, 1.0) ** 2 - baseline_accel
       target_cross_time = None
-      builder.append(f'<h3 style="font-weight: normal">Initial target: {round(target_accel, 2)} m/s^2')
 
-      prev_crossed = False
-      for t, cs, v in zip(t_controlsState, controlsState, [m.vEgo for m in carState], strict=False):
-        actual_accel = cs.curvature * max(v, 1.0) ** 2 - baseline_accel
-        crossed = (0 < target_accel < actual_accel) or (0 > target_accel > actual_accel)
-        if crossed and prev_crossed:
-          builder.append(f', <strong>crossed in {t:.3f}s</strong>')
-          target_cross_time = t
-          if maneuver_valid:
-            target_cross_times[description].append(t)
-          break
-        prev_crossed = crossed
-      else:
-        builder.append(', <strong>not crossed</strong>')
-      builder.append('</h3>')
+      if not description.startswith('sine'):
+        builder.append(f'<h3 style="font-weight: normal">Initial target: {round(target_accel, 2)} m/s^2')
+        prev_crossed = False
+        for t, cs, v in zip(t_controlsState, controlsState, [m.vEgo for m in carState], strict=False):
+          actual_accel = cs.curvature * max(v, 1.0) ** 2 - baseline_accel
+          crossed = (0 < target_accel < actual_accel) or (0 > target_accel > actual_accel)
+          if crossed and prev_crossed:
+            builder.append(f', <strong>crossed in {t:.3f}s</strong>')
+            target_cross_time = t
+            if maneuver_valid:
+              target_cross_times[description].append(t)
+            break
+          prev_crossed = crossed
+        else:
+          builder.append(', <strong>not crossed</strong>')
+        builder.append('</h3>')
 
       plt.rcParams['font.size'] = 40
       fig = plt.figure(figsize=(30, 22))
@@ -97,7 +98,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[0].legend(prop={'size': 30})
 
       if target_cross_time is not None:
-        ax[0].plot(target_cross_time, target_accel, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
+        ax[0].plot(target_cross_time, target_accel + baseline_accel, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
 
       ax[1].grid(linewidth=4)
       ax[1].plot(t_carState, [m.vEgo * CV.MS_TO_MPH for m in carState], 'g', label='vEgo', linewidth=6)
