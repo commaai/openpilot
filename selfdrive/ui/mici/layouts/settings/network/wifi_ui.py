@@ -38,15 +38,16 @@ class LoadingAnimation(Widget):
     cx = int(self._rect.x + self._rect.width / 2)
     cy = int(self._rect.y + self._rect.height / 2)
 
-    y_mag = 7
+    radius = 8
+    y_mag = 11.2
     anim_scale = 4
-    spacing = 14
+    spacing = 24  # center-to-center: diameter (16) + gap (8)
 
     for i in range(3):
       x = cx - spacing + i * spacing
       y = int(cy + min(math.sin((rl.get_time() - i * 0.2) * anim_scale) * y_mag, 0))
       alpha = int(np.interp(cy - y, [0, y_mag], [255 * 0.45, 255 * 0.9]) * self._opacity_filter.x)
-      rl.draw_circle(x, y, 5, rl.Color(255, 255, 255, alpha))
+      rl.draw_circle(x, y, radius, rl.Color(255, 255, 255, alpha))
 
 
 class WifiIcon(Widget):
@@ -278,11 +279,12 @@ class ScanningButton(BigButton):
 
   def _draw_content(self, btn_y: float):
     super()._draw_content(btn_y)
-    anim_w, anim_h = 90, 20
-    anim_x = self._rect.x + self._rect.width - anim_w - 20
-    anim_y = btn_y + self._rect.height - anim_h - 25
+    # Position so rightmost ball right edge is 30px from button right,
+    # and ball bottom at rest is 39px from button bottom
+    cx = self._rect.x + self._rect.width - 40 - 8 - 24  # right edge - margin - radius - spacing
+    cy = btn_y + self._rect.height - 30 - 8  # bottom - margin - radius
     self._loading_animation.show_event()
-    self._loading_animation.render(rl.Rectangle(anim_x, anim_y, anim_w, anim_h))
+    self._loading_animation.render(rl.Rectangle(cx, cy, 0, 0))
 
 
 class WifiUIMici(NavScroller):
