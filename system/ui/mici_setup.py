@@ -27,8 +27,8 @@ from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPA
 from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -216,22 +216,36 @@ class DownloadingPage(Widget):
     ))
 
 
-class FailedPage(NavWidget):
-  def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
+class FailedPage(NavScroller):
+  def __init__(self, retry_callback: Callable, title: str = "download failed"):
     super().__init__()
     self.set_back_callback(retry_callback)
 
-    self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                                     font_weight=FontWeight.DISPLAY)
-    self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
-                                      font_weight=FontWeight.ROMAN)
+    # self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+    #                                  font_weight=FontWeight.DISPLAY)
+    # self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
+    #                                   font_weight=FontWeight.ROMAN)
+    #
+    # self._reboot_slider = SmallSlider("reboot", reboot_callback)
+    # self._reboot_slider.set_enabled(lambda: self.enabled)  # for nav stack
+    #
+    # self._retry_button = SmallButton("retry")
+    # self._retry_button.set_click_callback(retry_callback)
+    # self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
 
-    self._reboot_slider = SmallSlider("reboot", reboot_callback)
-    self._reboot_slider.set_enabled(lambda: self.enabled)  # for nav stack
+    def show_reboot_dialog():
+      dialog = BigConfirmationDialogV2("slide to reboot", "icons_mici/settings/device/reboot.png",
+                                       exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
+      gui_app.push_widget(dialog)
 
-    self._retry_button = SmallButton("retry")
-    self._retry_button.set_click_callback(retry_callback)
-    self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
+    reboot_button = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
+    reboot_button.set_click_callback(show_reboot_dialog)
+
+    self._scroller.add_widgets([
+      GreyBigButton(title, "swipe down to go\nback and try again",
+                    gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
+      reboot_button,
+    ])
 
   def set_reason(self, reason: str):
     self._reason_label.set_text(reason)
@@ -474,7 +488,7 @@ class Setup(Widget):
 
     self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
 
-    self._download_failed_page = FailedPage(HARDWARE.reboot, self._pop_to_software_selection)
+    self._download_failed_page = FailedPage(self._pop_to_software_selection)
 
     self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._pop_to_software_selection)
 

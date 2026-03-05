@@ -80,7 +80,7 @@ class Updater(Scroller):
 
     self._progress_page = ProgressPage()
 
-    self._failed_page = FailedPage(HARDWARE.reboot, self._retry, title="update failed")
+    self._failed_page = FailedPage(self._retry, title="update failed")
 
     self._continue_button = BigPillButton("next")
     self._continue_button.set_click_callback(lambda: gui_app.push_widget(self._network_setup_page))
