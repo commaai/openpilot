@@ -3,7 +3,6 @@ import numpy as np
 import pyray as rl
 from collections.abc import Callable
 
-from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
@@ -14,40 +13,26 @@ from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityT
 
 
 class LoadingAnimation(Widget):
-  HIDE_TIME = 4
+  RADIUS = 8
+  SPACING = 24  # center-to-center: diameter (16) + gap (8)
+  Y_MAG = 11.2
 
   def __init__(self):
     super().__init__()
-    self._opacity_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
-    self._opacity_target = 1.0
-    self._hide_time = 0.0
-
-  def show_event(self):
-    self._opacity_target = 1.0
-    self._hide_time = rl.get_time()
+    w = self.SPACING * 2 + self.RADIUS * 2
+    h = self.RADIUS * 2 + int(self.Y_MAG)
+    self.set_rect(rl.Rectangle(0, 0, w, h))
 
   def _render(self, _):
-    if rl.get_time() - self._hide_time > self.HIDE_TIME:
-      self._opacity_target = 0.0
-
-    self._opacity_filter.update(self._opacity_target)
-
-    if self._opacity_filter.x < 0.01:
-      return
-
-    cx = int(self._rect.x + self._rect.width / 2)
-    cy = int(self._rect.y + self._rect.height / 2)
-
-    radius = 8
-    y_mag = 11.2
-    anim_scale = 4
-    spacing = 24  # center-to-center: diameter (16) + gap (8)
+    # Balls rest at bottom center; bounce upward
+    base_x = int(self._rect.x + self._rect.width / 2)
+    base_y = int(self._rect.y + self._rect.height - self.RADIUS)
 
     for i in range(3):
-      x = cx - spacing + i * spacing
-      y = int(cy + min(math.sin((rl.get_time() - i * 0.2) * anim_scale) * y_mag, 0))
-      alpha = int(np.interp(cy - y, [0, y_mag], [255 * 0.45, 255 * 0.9]) * self._opacity_filter.x)
-      rl.draw_circle(x, y, radius, rl.Color(255, 255, 255, alpha))
+      x = base_x + (i - 1) * self.SPACING
+      y = int(base_y + min(math.sin((rl.get_time() - i * 0.2) * 4) * self.Y_MAG, 0))
+      alpha = int(np.interp(base_y - y, [0, self.Y_MAG], [255 * 0.45, 255 * 0.9]))
+      rl.draw_circle(x, y, self.RADIUS, rl.Color(255, 255, 255, alpha))
 
 
 class WifiIcon(Widget):
@@ -279,12 +264,11 @@ class ScanningButton(BigButton):
 
   def _draw_content(self, btn_y: float):
     super()._draw_content(btn_y)
-    # Position so rightmost ball right edge is 30px from button right,
-    # and ball bottom at rest is 39px from button bottom
-    cx = self._rect.x + self._rect.width - 40 - 8 - 24  # right edge - margin - radius - spacing
-    cy = btn_y + self._rect.height - 30 - 8  # bottom - margin - radius
-    self._loading_animation.show_event()
-    self._loading_animation.render(rl.Rectangle(cx, cy, 0, 0))
+    anim = self._loading_animation
+    x = self._rect.x + self._rect.width - anim.rect.width - 40
+    y = btn_y + self._rect.height - anim.rect.height - 30
+    anim.set_position(x, y)
+    anim.render()
 
 
 class WifiUIMici(NavScroller):
