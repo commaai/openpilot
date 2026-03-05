@@ -7,9 +7,12 @@ import pyray as rl
 from typing import Literal
 from collections.abc import Callable
 from cereal.messaging import PubMaster
+from openpilot.common.api import Api
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
+from openpilot.system.updated.updated import parse_release_notes
 from openpilot.system.version import terms_version, training_version
 
 LayoutVariant = Literal["mici", "tizi"]
@@ -25,12 +28,15 @@ def setup_state():
   params.put("DongleId", "test123456789")
   # Combined description for layouts that still use it (BIG home, settings/software)
   params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
-
+  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
   # Params for mici home
   params.put("Version", "0.10.1")
   params.put("GitBranch", "test-branch")
   params.put("GitCommit", "abc12340ff9131237ba23a1d0fbd8edf9c80e87")
   params.put("GitCommitDate", "'1732924800 2024-11-30 00:00:00 +0000'")
+
+  # Patch Api.get_token to return a static token so the pairing QR code is deterministic across runs
+  Api.get_token = lambda self, payload_extra=None, expiry_hours=0: "test_token"
 
 
 def run_replay(variant: LayoutVariant) -> None:
@@ -41,7 +47,7 @@ def run_replay(variant: LayoutVariant) -> None:
   setup_state()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
-  from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
+  from openpilot.selfdrive.ui.ui_state import ui_state, device  # Import within OpenpilotPrefix context so param values are setup correctly
   from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
   from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
 
@@ -53,6 +59,10 @@ def run_replay(variant: LayoutVariant) -> None:
   else:
     from openpilot.selfdrive.ui.layouts.main import MainLayout
   main_layout = MainLayout()
+
+  # Disable interactive timeout — replay clicks use left_down=False so they never reset the timer,
+  # and after 30s of real wall-clock time the settings panel would close automatically.
+  device.set_override_interactive_timeout(99999)
 
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
   script = build_script(pm, main_layout, variant)

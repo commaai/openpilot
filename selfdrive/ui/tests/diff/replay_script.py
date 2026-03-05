@@ -3,15 +3,20 @@ from typing import TYPE_CHECKING
 from collections.abc import Callable
 from dataclasses import dataclass
 
+import math
+
 from cereal import car, log, messaging
 from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.tests.diff.replay import FPS, LayoutVariant
 from openpilot.system.updated.updated import parse_release_notes
 
-WAIT = int(FPS * 0.5)  # Default frames to wait after events
+# Default frames to wait after events
+WAIT = FPS // 2
+FAST_CLICK = FPS // 6
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -79,26 +84,48 @@ class Script:
 
 # --- Setup functions ---
 
-def put_update_params(params: Params | None = None) -> None:
-  if params is None:
-    params = Params()
-  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
-  params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
-  params.put("UpdaterTargetBranch", BRANCH_NAME)
+
+def set_prime_state(prime_type: PrimeType) -> None:
+  from openpilot.selfdrive.ui.ui_state import ui_state
+  ui_state.prime_state.set_type(prime_type)
 
 
 def setup_offroad_alerts() -> None:
-  put_update_params(Params())
   set_offroad_alert("Offroad_TemperatureTooHigh", True, extra_text='99C')
   set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text='longitudinal')
   set_offroad_alert("Offroad_IsTakingSnapshot", True)
 
 
-def setup_update_available() -> None:
+def setup_update_available(available: bool = True) -> None:
   params = Params()
-  params.put_bool("UpdateAvailable", True)
-  params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
-  put_update_params(params)
+  params.put_bool("UpdateAvailable", available)
+  params.put("UpdaterAvailableBranches", ",".join(["test-branch", "test-branch-2", BRANCH_NAME]))
+  if available:
+    params.put("UpdaterNewDescription", f"0.10.2 / {BRANCH_NAME} / 0a1b2c3 / Jan 01")
+    params.put("UpdaterNewReleaseNotes", parse_release_notes(BASEDIR))
+    params.put("UpdaterTargetBranch", BRANCH_NAME)
+  else:
+    params.remove("UpdaterNewDescription")
+    params.remove("UpdaterNewReleaseNotes")
+    params.remove("UpdaterTargetBranch")
+
+
+def setup_calibration_params() -> None:
+  params = Params()
+  # live calibration
+  calib = messaging.new_message('liveCalibration')
+  calib.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
+  calib.liveCalibration.rpyCalib = [0.0, math.radians(2.5), math.radians(-1.2)]
+  params.put("CalibrationParams", calib.to_bytes())
+  # live delay
+  delay = messaging.new_message('liveDelay')
+  delay.liveDelay.calPerc = 75
+  params.put("LiveDelay", delay.to_bytes())
+  # live torque parameters
+  torque = messaging.new_message('liveTorqueParameters')
+  torque.liveTorqueParameters.useParams = True
+  torque.liveTorqueParameters.calPerc = 60
+  params.put("LiveTorqueParameters", torque.to_bytes())
 
 
 def setup_developer_params() -> None:
@@ -132,7 +159,6 @@ def make_network_state_setup(pm: PubMaster, network_type) -> Callable:
 
 def make_alert_setup(pm: PubMaster, size, text1, text2, status) -> Callable:
   def _send() -> None:
-    send_onroad(pm)
     alert = messaging.new_message('selfdriveState')
     ss = alert.selfdriveState
     ss.alertSize = size
@@ -171,34 +197,91 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
     return setup
 
+  def add_prime_state_setup(prime_type: PrimeType) -> None:
+    script.set_send(lambda: set_prime_state(prime_type))
+
+  def type_keyboard() -> None:
+    """Types 8 characters using the big keyboard to test different layouts and interactions."""
+    KEY = (150, 430)  # e.g. 'Q' key
+    SHIFT = (150, 750)  # also symbols key in number mode
+    NUMBERS = (150, 950)
+    SPACE = (1060, 950)
+    BACKSPACE = (2000, 780)
+    for key in [
+      SHIFT, KEY, KEY, SHIFT, SHIFT, KEY, KEY,  # test casing (upper, lower, caps lock)
+      SPACE, SPACE, BACKSPACE, BACKSPACE,  # test multiple space and backspace
+      NUMBERS, KEY, KEY, SHIFT, KEY, KEY  # test numbers and symbols
+    ]:
+      script.click(*key, wait_after=FAST_CLICK)
+
   # TODO: Better way of organizing the events
 
   # === Homescreen ===
   script.set_send(make_network_state_setup(pm, log.DeviceState.NetworkType.wifi))
-
-  # === Offroad Alerts (auto-transitions via HomeLayout refresh) ===
-  script.setup(make_home_refresh_setup(setup_offroad_alerts))
+  # Go through different prime state layouts
+  add_prime_state_setup(PrimeType.LITE)
+  add_prime_state_setup(PrimeType.NONE)
+  add_prime_state_setup(PrimeType.UNPAIRED)
 
   # === Update Available (auto-transitions via HomeLayout refresh) ===
   script.setup(make_home_refresh_setup(setup_update_available))
 
-  # === Settings - Device (click sidebar settings button) ===
+  # === Offroad Alerts (auto-transitions via HomeLayout refresh, overrides update) ===
+  script.setup(make_home_refresh_setup(setup_offroad_alerts))
+  script.click(620, 950)  # close alerts
+
+  # === Settings (click sidebar settings button) ===
   script.click(150, 90)
-  script.click(1985, 790)  # reset calibration confirmation
-  script.click(650, 750)  # cancel
+
+  # === Settings - Device ===
+  # pair device
+  script.click(2000, 450)  # pair device
+  script.click(110, 110)  # close pairing dialog
+  add_prime_state_setup(PrimeType.NONE)  # changed from unpaired to hide pair device button
+  # regulatory info
+  script.click(2000, 970)  # regulatory button
+  script.click(2000, 970)  # OK
+  # calibration
+  script.setup(setup_calibration_params, wait_after=0)
+  script.click(1000, 620)  # expand calibration description
+  script.click(2000, 620)  # reset calibration confirmation
+  script.click(1500, 750)  # confirm reset
+
+  # TODO: go through training guide
 
   # === Settings - Network ===
   script.click(278, 450)
+  # TODO: mock networks
   script.click(1880, 100)  # advanced network settings
-  script.click(630, 80)  # back
+
+  # Keyboard (tethering password)
+  script.click(2000, 420, wait_after=FAST_CLICK)  # open tether password keyboard
+  script.click(2000, 950, wait_after=FAST_CLICK)  # click confirm (disabled, should not close)
+  script.click(2000, 115)  # cancel (close without typing)
+  script.click(2000, 420, wait_after=FAST_CLICK)  # open keyboard again
+  type_keyboard()  # test various keyboard layouts and interactions
+  script.click(2050, 250, wait_after=FAST_CLICK)  # toggle show/hide password
+  script.click(2000, 950)  # confirm (close keyboard)
+
+  script.click(630, 80)  # back from advanced network
 
   # === Settings - Toggles ===
   script.click(278, 600)
-  script.click(1200, 280)  # experimental mode description
+  script.click(1200, 280)  # expand experimental mode description
 
   # === Settings - Software ===
-  script.setup(put_update_params, wait_after=0)
-  script.click(278, 720)
+  script.setup(lambda: setup_update_available(False), wait_after=0)  # start with no update available
+  script.click(278, 720)  # software
+  for _ in range(2):
+    script.click(720, 120)  # toggle current release notes
+  script.setup(setup_update_available)  # set update available
+  for _ in range(2):
+    script.click(720, 450)  # toggle new release notes
+  script.click(2000, 630)  # open select branch dialog
+  script.click(1000, 300)  # select 1st option
+  script.click(1600, 900)  # confirm selection
+  script.click(2000, 800)  # uninstall
+  script.click(650, 750)  # cancel uninstall
 
   # === Settings - Firehose ===
   script.click(278, 845)
@@ -206,12 +289,10 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   # === Settings - Developer (set CarParamsPersistent first) ===
   script.setup(setup_developer_params, wait_after=0)
   script.click(278, 950)
+  script.click(1930, 470)  # SSH keys (keyboard)
+  script.click(1930, 115)  # click cancel on keyboard
   script.click(2000, 960)  # toggle alpha long
   script.click(1500, 875)  # confirm
-
-  # === Keyboard modal (SSH keys button in developer panel) ===
-  script.click(1930, 470)  # click SSH keys
-  script.click(1930, 115)  # click cancel on keyboard
 
   # === Close settings ===
   script.click(250, 160)
