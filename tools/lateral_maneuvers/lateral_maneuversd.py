@@ -88,49 +88,49 @@ def _sine_action(amplitude, period, duration):
 MANEUVERS = [
   Maneuver(
     "step right 30mph",
-    [Action([0.3], [1.5]), Action([-0.3], [1.5])],
+    [Action([0.4], [1.2]), Action([-0.4], [1.2])],
     repeat=2,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "step left 30mph",
-    [Action([-0.3], [1.5]), Action([0.3], [1.5])],
+    [Action([-0.4], [1.2]), Action([0.4], [1.2])],
     repeat=2,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "sine 30mph 1Hz",
-    [_sine_action(0.3, 1.0, 1.0)],
+    [_sine_action(1.0, 1.0, 1.0)],
     repeat=1,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 30mph 0.5Hz",
-    [_sine_action(0.3, 2.0, 2.0)],
+    "sine 30mph 0.25Hz",
+    [_sine_action(0.5, 4.0, 4.0)],
     repeat=1,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "step right 40mph",
-    [Action([0.3], [1.5]), Action([-0.3], [1.5])],
+    [Action([0.4], [1.2]), Action([-0.4], [1.2])],
     repeat=2,
     initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "step left 40mph",
-    [Action([-0.3], [1.5]), Action([0.3], [1.5])],
+    [Action([-0.4], [1.2]), Action([0.4], [1.2])],
     repeat=2,
     initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "sine 40mph 1Hz",
-    [_sine_action(0.3, 1.0, 1.0)],
+    [_sine_action(1.0, 1.0, 1.0)],
     repeat=1,
     initial_speed=40. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 40mph 0.5Hz",
-    [_sine_action(0.3, 2.0, 2.0)],
+    "sine 40mph 0.25Hz",
+    [_sine_action(0.5, 4.0, 4.0)],
     repeat=1,
     initial_speed=40. * CV.MPH_TO_MS,
   ),
@@ -175,7 +175,11 @@ def main():
 
       if maneuver.active:
         action_remaining = maneuver.actions[maneuver._action_index].time_bp[-1] - maneuver._action_frames * DT_MDL
-        alert_msg.alertDebug.alertText1 = f'Active {accel:+.1f}m/s² {max(action_remaining, 0):.1f}s'
+        if maneuver.description.startswith('sine'):
+          freq = maneuver.description.split()[-1]
+          alert_msg.alertDebug.alertText1 = f'Active sine {freq} {max(action_remaining, 0):.1f}s'
+        else:
+          alert_msg.alertDebug.alertText1 = f'Active {accel:+.1f}m/s² {max(action_remaining, 0):.1f}s'
         alert_msg.alertDebug.alertText2 = maneuver.description
       elif not (abs(v_ego - maneuver.initial_speed) < 1.0 and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
