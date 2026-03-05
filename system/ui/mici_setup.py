@@ -371,6 +371,8 @@ class NetworkSetupPageBase(Scroller):
 
   def show_event(self):
     super().show_event()
+    # make sure we populate strength and ip immediately if already have wifi
+    self._wifi_manager.set_active(True)
     self._show_time = rl.get_time()
     self._prev_has_internet = False
     self._pending_has_internet_scroll = False
