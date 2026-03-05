@@ -231,8 +231,14 @@ class BaseDriverCameraDialog(Widget):
 class DriverCameraDialog(NavWidget, BaseDriverCameraDialog):
   def __init__(self):
     super().__init__()
-    # TODO: this can grow unbounded, should be given some thought
+
+  def show_event(self):
+    super().show_event()
     device.add_interactive_timeout_callback(gui_app.pop_widget)
+
+  def hide_event(self):
+    device.remove_interactive_timeout_callback(gui_app.pop_widget)
+    super().hide_event()
 
 
 if __name__ == "__main__":

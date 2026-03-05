@@ -13,11 +13,14 @@ class DriverCameraDialog(CameraView):
   def __init__(self):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
-    # TODO: this can grow unbounded, should be given some thought
-    device.add_interactive_timeout_callback(gui_app.pop_widget)
     ui_state.params.put_bool("IsDriverViewEnabled", True)
 
+  def show_event(self):
+    super().show_event()
+    device.add_interactive_timeout_callback(gui_app.pop_widget)
+
   def hide_event(self):
+    device.remove_interactive_timeout_callback(gui_app.pop_widget)
     super().hide_event()
     ui_state.params.put_bool("IsDriverViewEnabled", False)
     self.close()
