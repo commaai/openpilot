@@ -30,6 +30,8 @@ INPUT_INVALID_LIMIT = 2.0 # 1 (camodo) / 9 (sensor) bad input[s] ignored
 INPUT_INVALID_RECOVERY = 10.0 # ~10 secs to resume after exceeding allowed bad inputs by one
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
+CAM_ODO_FRAME_SKIP = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
+CAM_ODO_POSE_DELAY = ((ModelConstants.N_FRAMES - 1) * (CAM_ODO_FRAME_SKIP + 1)) * DT_MDL / 2
 
 
 def calculate_invalid_input_decay(invalid_limit, recovery_time, frequency):
@@ -157,8 +159,8 @@ class LocationEstimator:
         self.device_from_calib = rot_from_euler(calib)
 
     elif which == "cameraOdometry":
-      frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-      t = t - ((ModelConstants.N_FRAMES - 1) * (frame_skip + 1)) * 0.5 * DT_MDL  # compensate for model pose delay
+      # camera odometry is delayed depending on the model context frames and temporal frequency
+      t = t - CAM_ODO_POSE_DELAY
       if not self._validate_timestamp(t):
         return HandleLogResult.TIMING_INVALID
 
