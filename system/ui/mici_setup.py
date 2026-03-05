@@ -423,7 +423,7 @@ class NetworkSetupPageBase(Scroller):
 
     if self._pending_has_internet_scroll is not None:
       elapsed = rl.get_time() - self._pending_has_internet_scroll
-      if elapsed > 0.7:
+      if elapsed > 0.5:
         self._pending_has_internet_scroll = None
 
         def scroll_to_end():
