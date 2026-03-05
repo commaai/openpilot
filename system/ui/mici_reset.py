@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-import threading
 import time
 from enum import IntEnum
 
@@ -52,7 +51,6 @@ class ResettingPage(NavWidget):
     return False
 
   def _render(self, _):
-    # draw in center
     self._resetting_card.render(rl.Rectangle(
       self._rect.x + self._rect.width / 2 - self._resetting_card.rect.width / 2,
       self._rect.y + self._rect.height / 2 - self._resetting_card.rect.height / 2,
@@ -67,6 +65,7 @@ class Reset(Scroller):
     self._mode = mode
     self._previous_active_widget = None
     self._reset_failed = False
+    self._timeout_st = time.monotonic()
 
     self._resetting_page = ResettingPage()
     self._reset_failed_page = ResetFailedPage()
@@ -96,10 +95,10 @@ class Reset(Scroller):
     main_card = GreyBigButton("factory reset", "all content and\nsettings will be erased",
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
+    # cancel button becomes reboot button
     if mode == ResetMode.RECOVER:
       main_card.set_text("unable to mount\ndata partition")
       main_card.set_value("it may be corrupted")
-      # cancel button becomes reboot button
       self._cancel_button.set_click_callback(show_reboot_dialog)
 
     self._scroller.add_widgets([
