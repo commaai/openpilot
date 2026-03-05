@@ -292,6 +292,7 @@ class WifiUIMici(NavScroller):
 
   @property
   def any_network_forgetting(self) -> bool:
+    # TODO: deactivate before forget and add DISCONNECTING state
     return any(btn.network_forgetting for btn in self._scroller.items if isinstance(btn, WifiButton))
 
   def show_event(self):
