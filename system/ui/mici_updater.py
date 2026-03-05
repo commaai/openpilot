@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys
-import subprocess
+import os
 import threading
 import pyray as rl
 
@@ -116,19 +116,22 @@ class Updater(Scroller):
     self.update_thread.start()
 
   def _run_update_process(self):
-    # TODO: just import it and run in a thread without a subprocess
+    # use posix_spawn to avoid fork(), which freezes all threads while copying page tables
     try:
+      read_fd, write_fd = os.pipe()
       cmd = [self.updater, "--swap", self.manifest]
-      # avoid fork() which stops all threads while copying page tables
-      self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                      text=True, bufsize=1, universal_newlines=True,
-                                      process_group=0)
+      pid = os.posix_spawnp(cmd[0], cmd, os.environ, file_actions=[
+        (os.POSIX_SPAWN_CLOSE, read_fd),
+        (os.POSIX_SPAWN_DUP2, write_fd, 1),
+        (os.POSIX_SPAWN_CLOSE, write_fd),
+      ])
+      os.close(write_fd)
     except Exception:
       self._update_failed = True
       return
 
-    if self.process.stdout is not None:
-      for line in self.process.stdout:
+    with os.fdopen(read_fd, 'r') as stdout:
+      for line in stdout:
         parts = line.strip().split(":")
         if len(parts) == 2:
           self.progress_text = parts[0].lower()
@@ -137,8 +140,8 @@ class Updater(Scroller):
           except ValueError:
             pass
 
-    exit_code = self.process.wait()
-    if exit_code == 0:
+    _, status = os.waitpid(pid, 0)
+    if os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0:
       HARDWARE.reboot()
     else:
       self._update_failed = True
