@@ -175,8 +175,11 @@ def main():
       if maneuver_active:
         alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
       else:
-        countdown = max(0, 3. - maneuver._ready_cnt * DT_MDL)
-        alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:.0f} mph ({countdown:.1f}s)'
+        if maneuver._ready_cnt > 0:
+          countdown = max(0, 3. - maneuver._ready_cnt * DT_MDL)
+          alert_msg.alertDebug.alertText1 = f'Starting in {countdown:.1f}s'
+        else:
+          alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:.0f} mph'
       alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
