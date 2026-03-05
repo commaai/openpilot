@@ -78,8 +78,8 @@ class NetworkConnectivityMonitor:
     self.wifi_connected.clear()
 
   def invalidate(self):
-    self.reset()
     self.recheck_event.set()
+    self.reset()
 
   def _run(self):
     while not self._stop_event.is_set():
