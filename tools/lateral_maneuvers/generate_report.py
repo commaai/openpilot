@@ -89,9 +89,12 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       ax[0].grid(linewidth=4)
       desired_lat_accel = [m.desiredCurvature * max(v, 1.0) ** 2 for m, v in zip(lateralPlan, [s.vEgo for s in carState], strict=False)]
-      t_desired = [t_lateralPlan[0]] + t_lateralPlan[:len(desired_lat_accel)]
-      desired_lat_accel = [baseline_accel] + desired_lat_accel
-      ax[0].step(t_desired, desired_lat_accel, label='desired lat accel', linewidth=6, where='post')
+      if description.startswith('sine'):
+        ax[0].plot(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel, label='desired lat accel', linewidth=6)
+      else:
+        t_desired = [t_lateralPlan[0]] + t_lateralPlan[:len(desired_lat_accel)]
+        desired_lat_accel = [baseline_accel] + desired_lat_accel
+        ax[0].step(t_desired, desired_lat_accel, label='desired lat accel', linewidth=6, where='post')
       actual_lat_accel = [cs.curvature * max(v, 1.0) ** 2 for cs, v in zip(controlsState, [m.vEgo for m in carState], strict=False)]
       ax[0].plot(t_controlsState[:len(actual_lat_accel)], actual_lat_accel, label='actual lat accel', linewidth=6)
       ax[0].set_ylabel('Lateral Accel (m/s^2)')
@@ -103,7 +106,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[1].grid(linewidth=4)
       ax[1].plot(t_carState, [m.vEgo * CV.MS_TO_MPH for m in carState], 'g', label='vEgo', linewidth=6)
       ax[1].set_ylabel('Velocity (mph)')
-      ax[1].yaxis.set_major_formatter(plt.FormatStrFormatter('%.2f'))
+      ax[1].yaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
       ax[1].legend()
 
       ax[2].plot(t_carState, [m.steeringPressed for m in carState], label='steeringPressed', linewidth=6)

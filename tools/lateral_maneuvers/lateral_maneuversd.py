@@ -164,7 +164,7 @@ def main():
       if maneuver.active:
         action_remaining = maneuver.actions[maneuver._action_index].time_bp[-1] - maneuver._action_frames * DT_MDL
         if maneuver.description.startswith('sine'):
-          freq = maneuver.description.split()[-1]
+          freq = maneuver.description.split()[1]
           alert_msg.alertDebug.alertText1 = f'Active sine {freq} {max(action_remaining, 0):.1f}s'
         else:
           alert_msg.alertDebug.alertText1 = f'Active {accel:+.1f}m/s² {max(action_remaining, 0):.1f}s'
