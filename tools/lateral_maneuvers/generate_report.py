@@ -13,7 +13,6 @@ from openpilot.common.utils import tabulate
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.constants import CV
-from openpilot.selfdrive.controls.lib.drive_helpers import MIN_SPEED
 
 
 def format_car_params(CP):
@@ -62,55 +61,24 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       builder.append(f"<details {_open}><summary><h3 style='display: inline-block;'>{title}</h3></summary>\n")
 
-      # step response delay: time to reach 50% and 100% of step change
-      desired_lat_accel = [m.desiredCurvature * max(v, MIN_SPEED) ** 2 for m, v in zip(lateralPlan, [s.vEgo for s in carState], strict=False)]
-      initial_accel = desired_lat_accel[0]
-      final_accel = desired_lat_accel[-1]
-      step_change = final_accel - initial_accel
-      half_point = initial_accel + step_change / 2
+      # get first lateral acceleration target and first intersection
+      target_accel = lateralPlan[0].desiredCurvature * max(carState[0].vEgo, 1.0) ** 2
+      target_cross_time = None
+      builder.append(f'<h3 style="font-weight: normal">Initial target: {round(target_accel, 2)} m/s^2')
 
-      delay_time = None
-      cross_time = None
-      builder.append(f'<h3 style="font-weight: normal">Step: {initial_accel:.2f} &rarr; {final_accel:.2f} m/s^2')
-
-      if abs(step_change) > 1e-3:
-        # find step transition time
-        step_time = 0.0
-        for i in range(1, len(desired_lat_accel)):
-          if abs(desired_lat_accel[i] - initial_accel) > 1e-3:
-            step_time = t_lateralPlan[i]
-            break
-
-        prev_half = False
-        prev_full = False
-        for t, cs, v in zip(t_controlsState, controlsState, [m.vEgo for m in carState], strict=False):
-          if t < step_time:
-            continue
-          actual_accel = cs.curvature * max(v, MIN_SPEED) ** 2
-          if step_change > 0:
-            hit_half = actual_accel >= half_point
-            hit_full = actual_accel >= final_accel
-          else:
-            hit_half = actual_accel <= half_point
-            hit_full = actual_accel <= final_accel
-          if delay_time is None and hit_half and prev_half:
-            delay_time = t - step_time
-            if maneuver_valid:
-              target_cross_times[description].append(delay_time)
-          if cross_time is None and hit_full and prev_full:
-            cross_time = t - step_time
-          prev_half = hit_half
-          prev_full = hit_full
-          if delay_time is not None and cross_time is not None:
-            break
-        if delay_time is not None:
-          builder.append(f', <strong>delay: {delay_time:.3f}s</strong>')
-        else:
-          builder.append(', <strong>50% not reached</strong>')
-        if cross_time is not None:
-          builder.append(f', <strong>crossed in {cross_time:.3f}s</strong>')
-        else:
-          builder.append(', <strong>not crossed</strong>')
+      prev_crossed = False
+      for t, cs, v in zip(t_controlsState, controlsState, [m.vEgo for m in carState], strict=False):
+        actual_accel = cs.curvature * max(v, 1.0) ** 2
+        crossed = (0 < target_accel < actual_accel) or (0 > target_accel > actual_accel)
+        if crossed and prev_crossed:
+          builder.append(f', <strong>crossed in {t:.3f}s</strong>')
+          target_cross_time = t
+          if maneuver_valid:
+            target_cross_times[description].append(t)
+          break
+        prev_crossed = crossed
+      else:
+        builder.append(', <strong>not crossed</strong>')
       builder.append('</h3>')
 
       plt.rcParams['font.size'] = 40
@@ -118,18 +86,15 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax = fig.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 1]})
 
       ax[0].grid(linewidth=4)
-      ax[0].plot(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel,
-                 label='desired lat accel', linewidth=6, drawstyle='steps-post')
-      actual_lat_accel = [cs.curvature * max(v, MIN_SPEED) ** 2 for cs, v in zip(controlsState, [m.vEgo for m in carState], strict=False)]
-      ax[0].plot(t_controlsState[:len(actual_lat_accel)], actual_lat_accel,
-                 label='actual lat accel', linewidth=6)
+      desired_lat_accel = [m.desiredCurvature * max(v, 1.0) ** 2 for m, v in zip(lateralPlan, [s.vEgo for s in carState], strict=False)]
+      ax[0].plot(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel, label='desired lat accel', linewidth=6)
+      actual_lat_accel = [cs.curvature * max(v, 1.0) ** 2 for cs, v in zip(controlsState, [m.vEgo for m in carState], strict=False)]
+      ax[0].plot(t_controlsState[:len(actual_lat_accel)], actual_lat_accel, label='actual lat accel', linewidth=6)
       ax[0].set_ylabel('Lateral Accel (m/s^2)')
       ax[0].legend(prop={'size': 30})
 
-      if delay_time is not None:
-        ax[0].plot(step_time + delay_time, half_point, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
-      if cross_time is not None:
-        ax[0].plot(step_time + cross_time, final_accel, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
+      if target_cross_time is not None:
+        ax[0].plot(target_cross_time, target_accel, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
 
       ax[1].grid(linewidth=4)
       ax[1].plot(t_carState, [m.vEgo * CV.MS_TO_MPH for m in carState], 'g', label='vEgo', linewidth=6)
@@ -152,7 +117,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       builder.append("</details>\n")
 
   summary = ["<h2>Summary</h2>\n"]
-  cols = ['maneuver', 'delays', 'runs', 'mean', 'min', 'max']
+  cols = ['maneuver', 'crossed', 'runs', 'mean', 'min', 'max']
   table = []
   for description, runs in maneuvers:
     times = target_cross_times[description]

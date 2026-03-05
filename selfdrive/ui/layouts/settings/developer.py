@@ -72,6 +72,7 @@ class DeveloperLayout(Widget):
       description="",
       initial_state=self._params.get_bool("LateralManeuverMode"),
       callback=self._on_lat_maneuver_mode,
+      enabled=ui_state.is_offroad,
     )
 
     self._alpha_long_toggle = toggle_item(
@@ -133,8 +134,6 @@ class DeveloperLayout(Widget):
       if not long_man_enabled:
         self._long_maneuver_toggle.action_item.set_state(False)
         self._params.put_bool("LongitudinalManeuverMode", False)
-
-      self._lat_maneuver_toggle.action_item.set_enabled(ui_state.is_offroad())
     else:
       self._long_maneuver_toggle.action_item.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
@@ -165,25 +164,13 @@ class DeveloperLayout(Widget):
 
   def _on_joystick_debug_mode(self, state: bool):
     self._params.put_bool("JoystickDebugMode", state)
-    self._params.put_bool("LongitudinalManeuverMode", False)
-    self._long_maneuver_toggle.action_item.set_state(False)
-    self._params.put_bool("LateralManeuverMode", False)
-    self._lat_maneuver_toggle.action_item.set_state(False)
 
   def _on_long_maneuver_mode(self, state: bool):
     self._params.put_bool("LongitudinalManeuverMode", state)
-    self._params.put_bool("JoystickDebugMode", False)
-    self._joystick_toggle.action_item.set_state(False)
-    self._params.put_bool("LateralManeuverMode", False)
-    self._lat_maneuver_toggle.action_item.set_state(False)
 
   def _on_lat_maneuver_mode(self, state: bool):
     self._params.put_bool("LateralManeuverMode", state)
     self._params.put_bool("ExperimentalMode", False)
-    self._params.put_bool("LongitudinalManeuverMode", False)
-    self._long_maneuver_toggle.action_item.set_state(False)
-    self._params.put_bool("JoystickDebugMode", False)
-    self._joystick_toggle.action_item.set_state(False)
 
   def _on_alpha_long_enabled(self, state: bool):
     if state:

@@ -125,8 +125,6 @@ class DeveloperLayoutMici(NavScroller):
       if not long_man_enabled:
         self._long_maneuver_toggle.set_checked(False)
         ui_state.params.put_bool("LongitudinalManeuverMode", False)
-
-      self._lat_maneuver_toggle.set_enabled(ui_state.is_offroad())
     else:
       self._long_maneuver_toggle.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
@@ -137,26 +135,14 @@ class DeveloperLayoutMici(NavScroller):
 
   def _on_joystick_debug_mode(self, state: bool):
     ui_state.params.put_bool("JoystickDebugMode", state)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False)
-    self._long_maneuver_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False)
-    self._lat_maneuver_toggle.set_checked(False)
 
   def _on_long_maneuver_mode(self, state: bool):
     ui_state.params.put_bool("LongitudinalManeuverMode", state)
-    ui_state.params.put_bool("JoystickDebugMode", False)
-    self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False)
-    self._lat_maneuver_toggle.set_checked(False)
     restart_needed_callback(state)
 
   def _on_lat_maneuver_mode(self, state: bool):
     ui_state.params.put_bool("LateralManeuverMode", state)
     ui_state.params.put_bool("ExperimentalMode", False)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False)
-    self._long_maneuver_toggle.set_checked(False)
-    ui_state.params.put_bool("JoystickDebugMode", False)
-    self._joystick_toggle.set_checked(False)
     restart_needed_callback(state)
 
   def _on_alpha_long_enabled(self, state: bool):
