@@ -3,7 +3,6 @@ import sys
 import subprocess
 import threading
 import pyray as rl
-from collections.abc import Callable
 
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.system.hardware import HARDWARE, TICI
@@ -21,20 +20,6 @@ class UpdaterNetworkSetupPage(NetworkSetupPage):
     super().__init__(network_monitor, continue_callback, back_callback=None)
     self._continue_button.set_text("download\n& install")
     self._continue_button.set_green(False)
-
-
-class PromptPage(Scroller):
-  def __init__(self, continue_callback: Callable):
-    super().__init__()
-
-    self._continue_button = BigPillButton("continue")
-    self._continue_button.set_click_callback(continue_callback)
-
-    self._scroller.add_widgets([
-      GreyBigButton("update required", "The download size is\napproximately 1 GB",
-                    gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
-      self._continue_button,
-    ])
 
 
 class ProgressPage(Widget):
@@ -72,7 +57,7 @@ class ProgressPage(Widget):
     ))
 
 
-class Updater(Widget):
+class Updater(Scroller):
   def __init__(self, updater_path, manifest_path):
     super().__init__()
     self.updater = updater_path
@@ -87,8 +72,14 @@ class Updater(Widget):
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
 
-    self._prompt_page = PromptPage(lambda: gui_app.push_widget(self._network_setup_page))
-    self._prompt_page.set_enabled(lambda: self.enabled)
+    self._continue_button = BigPillButton("next")
+    self._continue_button.set_click_callback(lambda: gui_app.push_widget(self._network_setup_page))
+
+    self._scroller.add_widgets([
+      GreyBigButton("update required", "The download size is\napproximately 1 GB",
+                    gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
+      self._continue_button,
+    ])
 
     self._network_setup_page = UpdaterNetworkSetupPage(self._network_monitor, self._network_setup_continue_callback)
 
@@ -109,7 +100,7 @@ class Updater(Widget):
 
     if self._update_failed:
       self._update_failed = False
-      self._prompt_page.show_event()
+      self.show_event()
       gui_app.pop_widgets_to(self, instant=True)
       gui_app.push_widget(self._failed_page)
 
@@ -124,6 +115,7 @@ class Updater(Widget):
     self.update_thread.start()
 
   def _run_update_process(self):
+    # TODO: just import it and run in a thread without a subprocess
     try:
       cmd = [self.updater, "--swap", self.manifest]
       self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -147,9 +139,6 @@ class Updater(Widget):
       HARDWARE.reboot()
     else:
       self._update_failed = True
-
-  def _render(self, rect: rl.Rectangle):
-    self._prompt_page.render(rect)
 
   def close(self):
     self._network_monitor.stop()
