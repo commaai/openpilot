@@ -370,6 +370,7 @@ class NetworkSetupPageBase(Scroller):
     self._pending_has_internet_scroll = False
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
+    self._prev_any_forgetting = False
 
     def on_waiting_click():
       offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
@@ -381,8 +382,9 @@ class NetworkSetupPageBase(Scroller):
     self._waiting_button.set_click_callback(on_waiting_click)
     self._continue_button = BigPillButton("install openpilot", green=True)
     self._continue_button.set_click_callback(lambda: continue_callback(self._custom_software))
-    # Block clicks while connectivity is being re-verified after WiFi UI dismiss
-    self._continue_button.set_enabled(lambda: not self._network_monitor.recheck_event.is_set())
+    # Block clicks while connectivity is being re-verified or a network is being forgotten
+    self._continue_button.set_enabled(lambda: not self._network_monitor.recheck_event.is_set() and
+                                              not self._wifi_ui.any_network_forgetting)
 
     self._scroller.add_widgets([
       self._connect_button,
@@ -405,6 +407,12 @@ class NetworkSetupPageBase(Scroller):
 
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
+
+    # Invalidate stale connectivity after forget completes
+    any_forgetting = self._wifi_ui.any_network_forgetting
+    if self._prev_any_forgetting and not any_forgetting:
+      self._network_monitor.invalidate()
+    self._prev_any_forgetting = any_forgetting
 
     has_internet = self._network_monitor.network_connected.is_set()
     if has_internet and not self._prev_has_internet:
