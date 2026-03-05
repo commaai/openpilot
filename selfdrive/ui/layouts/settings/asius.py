@@ -12,6 +12,9 @@ DESCRIPTIONS = {
   "EnableWebRTC": tr_noop("Allow remote live streaming via Connect."),
   "EnableBLE": tr_noop("Make device discoverable via Bluetooth for local control without network."),
   "LaneTurnDesire": tr_noop("When blinker is on below 20 mph, steer in blinker direction. Useful at intersections and red lights."),
+  "TeslaCoopSteering": tr_noop(
+    "Allows the driver to provide limited steering input while openpilot is engaged. Blends driver torque into openpilot's steering angle."
+  ),
 }
 
 
@@ -39,6 +42,11 @@ class AsiusLayout(Widget):
       "LaneTurnDesire": (
         lambda: tr("Lane Turn Desire"),
         DESCRIPTIONS["LaneTurnDesire"],
+        "chffr_wheel.png",
+      ),
+      "TeslaCoopSteering": (
+        lambda: tr("Tesla Cooperative Steering"),
+        DESCRIPTIONS["TeslaCoopSteering"],
         "chffr_wheel.png",
       ),
     }

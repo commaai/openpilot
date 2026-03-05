@@ -20,6 +20,7 @@ class AsiusLayoutMici(NavWidget):
     self._ble_button.set_click_callback(self._start_ble_pairing)
 
     lane_turn_toggle = BigParamControl("lane turn desire", "LaneTurnDesire")
+    coop_steering_toggle = BigParamControl("cooperative steering", "TeslaCoopSteering")
 
     # Small circle toggles (like SSH/ADB in developer menu)
     self._ble_toggle = BigCircleParamControl(
@@ -36,6 +37,7 @@ class AsiusLayoutMici(NavWidget):
         self._webrtc_toggle,
         self._asius_api_toggle,
         lane_turn_toggle,
+        coop_steering_toggle,
       ],
       snap_items=False,
     )
@@ -44,6 +46,7 @@ class AsiusLayoutMici(NavWidget):
       ("EnableBLE", self._ble_toggle),
       ("EnableWebRTC", self._webrtc_toggle),
       ("LaneTurnDesire", lane_turn_toggle),
+      ("TeslaCoopSteering", coop_steering_toggle),
       ("AsiusAPIHost", self._asius_api_toggle),
     )
 
