@@ -444,7 +444,7 @@ class NetworkSetupPageBase(Scroller):
     if self._pending_has_internet_scroll is not None:
       # Scrolls over to continue button, then grows once in view
       elapsed = rl.get_time() - self._pending_has_internet_scroll
-      if elapsed > 0.7:
+      if elapsed > 0.7 or gui_app.get_active_widget() is self:  # instant scroll if not popping
         # Animate WifiUi down first before scroll
         self._pending_has_internet_scroll = None
         gui_app.pop_widgets_to(self, self._scroll_to_end_and_grow)
