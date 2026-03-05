@@ -65,6 +65,7 @@ class NavWidget(Widget, abc.ABC):
 
     self._back_callback: Callable[[], None] | None = None  # persistent callback for user-initiated back navigation
     self._dismiss_callback: Callable[[], None] | None = None  # transient callback for programmatic dismiss
+    # TODO: add this functionality to push_widget
     self._shown_callback: Callable[[], None] | None = None  # transient callback fired after show animation completes
 
     # TODO: move this state into NavBar
