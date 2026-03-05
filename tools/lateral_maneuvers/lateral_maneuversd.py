@@ -181,13 +181,18 @@ def main():
     alert_msg.valid = True
 
     plan_send = messaging.new_message('lateralManeuverPlan')
-    plan_send.valid = sm.all_checks()
 
     accel = 0
     v_ego = max(sm['carState'].vEgo, 0)
     cur_curvature = sm['controlsState'].curvature
 
     if maneuver is not None:
+      # abort active maneuver on steering override
+      if maneuver.active and sm['carState'].steeringPressed:
+        maneuver._active = False
+        maneuver._action_frames = 0
+        maneuver._action_index = 0
+
       accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, cur_curvature)
 
       if maneuver.active:
@@ -199,17 +204,16 @@ def main():
         alert_msg.alertDebug.alertText1 = 'Stabilizing lateral...'
       else:
         ready_time = max(3. - maneuver._ready_cnt * DT_MDL, 0)
-        alert_msg.alertDebug.alertText1 = f'Starting in {ready_time:0.1f}s'
-      alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
+        alert_msg.alertDebug.alertText1 = f'Start: {ready_time:0.1f}s'
+      alert_msg.alertDebug.alertText2 = maneuver.description if maneuver.active else ''
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
 
     pm.send('alertDebug', alert_msg)
 
-    if maneuver is not None and maneuver.active:
+    plan_send.valid = maneuver is not None and maneuver.active
+    if plan_send.valid:
       plan_send.lateralManeuverPlan.desiredCurvature = cur_curvature + accel / max(v_ego, MIN_SPEED) ** 2
-    else:
-      plan_send.lateralManeuverPlan.desiredCurvature = cur_curvature
     pm.send('lateralManeuverPlan', plan_send)
 
     if maneuver is not None and maneuver.finished:

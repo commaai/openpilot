@@ -162,7 +162,7 @@ if __name__ == '__main__':
 
   for msg in lr:
     if msg.which() == 'alertDebug':
-      active = 'Maneuver Active' in msg.alertDebug.alertText1
+      active = msg.alertDebug.alertText2 != ''
       if active and not active_prev:
         if msg.alertDebug.alertText2 == description_prev:
           maneuvers[-1][1].append([])
