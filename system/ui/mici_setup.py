@@ -426,6 +426,7 @@ class NetworkSetupPageBase(Scroller):
     self._prev_wifi_connected = wifi_connected
 
     if self._pending_has_internet_scroll is not None:
+      # Scrolls over to continue button, then grows once in view
       elapsed = rl.get_time() - self._pending_has_internet_scroll
       if elapsed > 0.5:
         self._pending_has_internet_scroll = None
@@ -437,6 +438,7 @@ class NetworkSetupPageBase(Scroller):
           self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
           self._pending_continue_grow_animation = True
 
+        # Animate WifiUi down first before scroll
         gui_app.pop_widgets_to(self, scroll_to_end)
 
   def set_custom_software(self, custom_software: bool):
