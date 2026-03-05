@@ -275,10 +275,10 @@ class WifiUIMici(NavScroller):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
 
+    self._scanning_btn = ScanningButton()
+
     self._wifi_manager = wifi_manager
     self._networks: dict[str, Network] = {}
-
-    self._scanning_btn = ScanningButton()
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
