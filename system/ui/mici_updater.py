@@ -64,13 +64,19 @@ class Updater(Scroller):
     self.manifest = manifest_path
 
     self.progress_value = 0
-    self.progress_text = "downloading"
+    self.progress_text = "loading"
     self.process = None
     self.update_thread = None
     self._update_failed = False
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
+
+    self._network_setup_page = UpdaterNetworkSetupPage(self._network_monitor, self._network_setup_continue_callback)
+
+    self._progress_page = ProgressPage()
+
+    self._failed_page = FailedPage(HARDWARE.reboot, self._retry, title="update failed")
 
     self._continue_button = BigPillButton("next")
     self._continue_button.set_click_callback(lambda: gui_app.push_widget(self._network_setup_page))
@@ -80,12 +86,6 @@ class Updater(Scroller):
                     gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
       self._continue_button,
     ])
-
-    self._network_setup_page = UpdaterNetworkSetupPage(self._network_monitor, self._network_setup_continue_callback)
-
-    self._progress_page = ProgressPage()
-
-    self._failed_page = FailedPage(HARDWARE.reboot, self._retry, title="update failed")
 
     gui_app.add_nav_stack_tick(self._nav_stack_tick)
 
@@ -111,6 +111,7 @@ class Updater(Scroller):
     gui_app.pop_widgets_to(self, instant=True)
     gui_app.push_widget(self._progress_page)
 
+    # Start the update process in a separate thread
     self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
     self.update_thread.start()
 
@@ -146,6 +147,7 @@ class Updater(Scroller):
 
 def main():
   config_realtime_process(0, 51)
+  # attempt to affine. AGNOS will start setup with all cores, should only fail when manually launching with screen off
   if TICI:
     try:
       set_core_affinity([5])
