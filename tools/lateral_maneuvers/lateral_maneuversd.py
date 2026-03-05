@@ -32,10 +32,13 @@ class Maneuver:
   _action_frames: int = 0
   _ready_cnt: int = 0
   _repeated: int = 0
+  _ready_curvature: float = 0.0
 
   def get_accel(self, v_ego: float, lat_active: bool, curvature: float) -> float:
-    ready = abs(v_ego - self.initial_speed) < 0.3 and lat_active and abs(curvature) < 0.001
-    self._ready_cnt = (self._ready_cnt + 1) if ready else 0
+    stable = abs(v_ego - self.initial_speed) < 1.0 and lat_active and abs(curvature - self._ready_curvature) < 0.001
+    if not stable:
+      self._ready_curvature = curvature
+    self._ready_cnt = (self._ready_cnt + 1) if stable else 0
 
     if self._ready_cnt > (3. / DT_MDL):
       self._active = True
@@ -182,21 +185,31 @@ def main():
 
     accel = 0
     v_ego = max(sm['carState'].vEgo, 0)
+    cur_curvature = sm['controlsState'].curvature
 
     if maneuver is not None:
-      accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, sm['controlsState'].curvature)
+      accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, cur_curvature)
 
       if maneuver.active:
-        alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
+        action_remaining = maneuver.actions[maneuver._action_index].time_bp[-1] - maneuver._action_frames * DT_MDL
+        alert_msg.alertDebug.alertText1 = f'{accel:+0.2f} m/s² | {max(action_remaining, 0):0.1f}s'
+      elif not (abs(v_ego - maneuver.initial_speed) < 1.0 and sm['carControl'].latActive):
+        alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
+      elif maneuver._ready_cnt == 0:
+        alert_msg.alertDebug.alertText1 = 'Stabilizing lateral...'
       else:
-        alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
+        ready_time = max(3. - maneuver._ready_cnt * DT_MDL, 0)
+        alert_msg.alertDebug.alertText1 = f'Starting in {ready_time:0.1f}s'
       alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
 
     pm.send('alertDebug', alert_msg)
 
-    plan_send.lateralManeuverPlan.desiredCurvature = accel / max(v_ego, MIN_SPEED) ** 2
+    if maneuver is not None and maneuver.active:
+      plan_send.lateralManeuverPlan.desiredCurvature = cur_curvature + accel / max(v_ego, MIN_SPEED) ** 2
+    else:
+      plan_send.lateralManeuverPlan.desiredCurvature = cur_curvature
     pm.send('lateralManeuverPlan', plan_send)
 
     if maneuver is not None and maneuver.finished:

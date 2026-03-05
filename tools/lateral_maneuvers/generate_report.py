@@ -61,14 +61,15 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       builder.append(f"<details {_open}><summary><h3 style='display: inline-block;'>{title}</h3></summary>\n")
 
-      # get first lateral acceleration target and first intersection
-      target_accel = lateralPlan[0].desiredCurvature * max(carState[0].vEgo, 1.0) ** 2
+      # get first lateral acceleration target and first intersection (relative to baseline)
+      baseline_accel = controlsState[0].curvature * max(carState[0].vEgo, 1.0) ** 2
+      target_accel = lateralPlan[0].desiredCurvature * max(carState[0].vEgo, 1.0) ** 2 - baseline_accel
       target_cross_time = None
       builder.append(f'<h3 style="font-weight: normal">Initial target: {round(target_accel, 2)} m/s^2')
 
       prev_crossed = False
       for t, cs, v in zip(t_controlsState, controlsState, [m.vEgo for m in carState], strict=False):
-        actual_accel = cs.curvature * max(v, 1.0) ** 2
+        actual_accel = cs.curvature * max(v, 1.0) ** 2 - baseline_accel
         crossed = (0 < target_accel < actual_accel) or (0 > target_accel > actual_accel)
         if crossed and prev_crossed:
           builder.append(f', <strong>crossed in {t:.3f}s</strong>')
