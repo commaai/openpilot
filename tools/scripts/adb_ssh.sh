@@ -31,8 +31,12 @@ for name, port in sorted(ports):
 PY
 )
 
-# Forward SSH port first for interactive shell access.
-adb forward tcp:2222 tcp:22
+# Forward SSH port, finding a free local port if 2222 is taken.
+SSH_PORT=2222
+while ss -tln | grep -q ":${SSH_PORT} "; do
+  SSH_PORT=$((SSH_PORT + 1))
+done
+adb forward tcp:${SSH_PORT} tcp:22
 
 # SSH!
-ssh comma@localhost -p 2222 "$@"
+ssh comma@localhost -p ${SSH_PORT} "$@"

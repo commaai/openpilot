@@ -12,14 +12,35 @@ from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButto
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialogV2
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
-from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide
+from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets.label import MiciLabel
 from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
+
+
+class ReviewTermsPage(TermsPage, NavScroller):
+  """TermsPage with NavWidget swipe-to-dismiss for reviewing in device settings."""
+  def __init__(self):
+    super().__init__(on_accept=self.dismiss, on_decline=self.dismiss)
+    self._terms_header.set_visible(False)
+    self._must_accept_card.set_visible(False)
+    self._accept_button.set_visible(False)
+    self._decline_button.set_visible(False)
+
+
+class ReviewTrainingGuide(TrainingGuide):
+  def show_event(self):
+    super().show_event()
+    device.set_override_interactive_timeout(300)
+
+  def hide_event(self):
+    super().hide_event()
+    device.set_override_interactive_timeout(None)
+    ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", False)
 
 
 class MiciFccModal(NavRawScrollPanel):
@@ -117,6 +138,8 @@ class PairBigButton(BigButton):
     return 64
 
   def _update_state(self):
+    super()._update_state()
+
     if ui_state.prime_state.is_paired():
       self.set_text("paired")
       if ui_state.prime_state.is_prime():
@@ -164,6 +187,8 @@ class UpdateOpenpilotBigButton(BigButton):
       self.set_enabled(True)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+
     if not system_time_valid():
       dlg = BigDialog(tr("Please connect to Wi-Fi to update"), "")
       gui_app.push_widget(dlg)
@@ -191,6 +216,8 @@ class UpdateOpenpilotBigButton(BigButton):
       self.set_text("update openpilot")
 
   def _update_state(self):
+    super()._update_state()
+
     if ui_state.started:
       self.set_enabled(False)
       return
@@ -305,8 +332,11 @@ class DeviceLayoutMici(NavScroller):
     driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
     review_training_guide_btn = BigButton("review\ntraining guide", "", "icons_mici/settings/device/info.png")
-    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(TrainingGuide(completed_callback=gui_app.pop_widget)))
+    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
+
+    terms_btn = BigButton("terms &\nconditions", "", "icons_mici/settings/device/info.png")
+    terms_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTermsPage()))
 
     self._scroller.add_widgets([
       DeviceInfoLayoutMici(),
@@ -314,9 +344,10 @@ class DeviceLayoutMici(NavScroller):
       PairBigButton(),
       review_training_guide_btn,
       driver_cam_btn,
+      terms_btn,
+      regulatory_btn,
       reset_calibration_btn,
       uninstall_openpilot_btn,
-      regulatory_btn,
       reboot_btn,
       self._power_off_btn,
     ])
