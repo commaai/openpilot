@@ -394,11 +394,25 @@ class NetworkSetupPageBase(Scroller):
     super().show_event()
     # make sure we populate strength and ip immediately if already have wifi
     self._wifi_manager.set_active(True)
-    self._prev_has_internet = False
-    self._prev_wifi_connected = False
+    self._prev_has_internet = self._has_internet
+    self._prev_wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
     self._pending_has_internet_scroll = None
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
+
+    if self._prev_has_internet or self._prev_wifi_connected:
+      self.set_shown_callback(lambda: self._scroll_to_end_and_grow())
+
+  @property
+  def _has_internet(self) -> bool:
+    network_changing = self._wifi_ui.any_network_forgetting or self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTING
+    if network_changing:
+      self._network_monitor.invalidate()
+
+    has_internet = (self._network_monitor.network_connected.is_set() and
+                    not network_changing and
+                    not self._network_monitor.recheck_event.is_set())
+    return has_internet
 
   def _nav_stack_tick(self):
     # Only run tick when this page or its WiFi UI is on the stack
@@ -408,13 +422,7 @@ class NetworkSetupPageBase(Scroller):
 
     # Check network state before processing callbacks so forgetting flag
     # is still set on the frame the forgotten callback fires
-    network_changing = self._wifi_ui.any_network_forgetting or self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTING
-    if network_changing:
-      self._network_monitor.invalidate()
-
-    has_internet = (self._network_monitor.network_connected.is_set() and
-                    not network_changing and
-                    not self._network_monitor.recheck_event.is_set())
+    has_internet = self._has_internet
     self._continue_button.set_visible(has_internet)
     self._waiting_button.set_visible(not has_internet)
 
@@ -437,17 +445,16 @@ class NetworkSetupPageBase(Scroller):
       # Scrolls over to continue button, then grows once in view
       elapsed = rl.get_time() - self._pending_has_internet_scroll
       if elapsed > 0.7:
-        self._pending_has_internet_scroll = None
-
-        def scroll_to_end():
-          self._scroller._layout()
-          end_offset = -(self._scroller.content_size - self._rect.width)
-          remaining = self._scroller.scroll_panel.get_offset() - end_offset
-          self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
-          self._pending_continue_grow_animation = True
-
         # Animate WifiUi down first before scroll
-        gui_app.pop_widgets_to(self, scroll_to_end)
+        self._pending_has_internet_scroll = None
+        gui_app.pop_widgets_to(self, self._scroll_to_end_and_grow)
+
+  def _scroll_to_end_and_grow(self):
+    self._scroller._layout()
+    end_offset = -(self._scroller.content_size - self._rect.width)
+    remaining = self._scroller.scroll_panel.get_offset() - end_offset
+    self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
+    self._pending_continue_grow_animation = True
 
   def set_custom_software(self, custom_software: bool):
     self._custom_software = custom_software
