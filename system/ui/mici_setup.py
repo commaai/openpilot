@@ -20,7 +20,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.utils import run_cmd
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.wifi_manager import WifiManager
+from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -402,12 +402,13 @@ class NetworkSetupPageBase(Scroller):
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
 
-    # Discard stale poll results while a network is being forgotten
-    if self._wifi_ui.any_network_forgetting:
+    # Discard stale poll results while network state is changing
+    network_changing = self._wifi_ui.any_network_forgetting or self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTING
+    if network_changing:
       self._network_monitor.invalidate()
 
     has_internet = (self._network_monitor.network_connected.is_set() and
-                    not self._wifi_ui.any_network_forgetting and
+                    not network_changing and
                     not self._network_monitor.recheck_event.is_set())
     self._continue_button.set_visible(has_internet)
     self._waiting_button.set_visible(not has_internet)
