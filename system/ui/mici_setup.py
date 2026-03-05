@@ -80,6 +80,7 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
+          time.sleep(2.0)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -425,10 +426,6 @@ class NetworkSetupPageBase(Scroller):
     self._custom_software = custom_software
     self._continue_button.set_text("install openpilot" if not custom_software else "choose software")
     self._continue_button.set_green(not custom_software)
-
-  def set_is_updater(self):
-    self._continue_button.set_text("download\n& install")
-    self._continue_button.set_green(False)
 
   def _update_state(self):
     super()._update_state()
