@@ -216,9 +216,11 @@ class DownloadingPage(Widget):
     ))
 
 
-class FailedPageBase(Widget):
+class FailedPage(NavWidget):
   def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
     super().__init__()
+    self.set_back_callback(retry_callback)
+
     self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                      font_weight=FontWeight.DISPLAY)
     self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
@@ -267,12 +269,6 @@ class FailedPageBase(Widget):
       self._reboot_slider.rect.width,
       self._reboot_slider.rect.height,
     ))
-
-
-class FailedPage(FailedPageBase, NavWidget):
-  def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
-    super().__init__(reboot_callback, retry_callback, title)
-    self.set_back_callback(retry_callback)
 
 
 class GreyBigButton(BigButton):
