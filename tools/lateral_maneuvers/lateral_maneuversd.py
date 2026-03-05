@@ -32,9 +32,11 @@ class Maneuver:
   _action_frames: int = 0
   _ready_cnt: int = 0
   _repeated: int = 0
+  _stab_cnt: int = 0
 
-  def get_accel(self, v_ego: float, lat_active: bool) -> float:
-    ready = abs(v_ego - self.initial_speed) < 0.3 and lat_active
+  def get_accel(self, v_ego: float, lat_active: bool, curvature: float) -> float:
+    settled = abs(curvature) < 0.001
+    ready = abs(v_ego - self.initial_speed) < 0.5 and lat_active and settled
     self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
@@ -167,13 +169,14 @@ def main():
 
     maneuver_active = False
     if maneuver is not None:
-      accel = maneuver.get_accel(v_ego, sm['carControl'].latActive)
+      accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, sm['controlsState'].curvature)
       maneuver_active = maneuver.active
 
       if maneuver_active:
         alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
       else:
-        alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
+        countdown = max(0, 3. - maneuver._ready_cnt * DT_MDL)
+        alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:.0f} mph ({countdown:.1f}s)'
       alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
