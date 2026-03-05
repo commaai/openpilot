@@ -406,7 +406,12 @@ class NetworkSetupPageBase(Scroller):
     if self._wifi_ui.any_network_forgetting:
       self._network_monitor.invalidate()
 
-    has_internet = self._network_monitor.network_connected.is_set()
+    has_internet = (self._network_monitor.network_connected.is_set() and
+                    not self._wifi_ui.any_network_forgetting and
+                    not self._network_monitor.recheck_event.is_set())
+    self._continue_button.set_visible(has_internet)
+    self._waiting_button.set_visible(not has_internet)
+
     if has_internet and not self._prev_has_internet:
       self._pending_has_internet_scroll = True
     self._prev_has_internet = has_internet
@@ -445,12 +450,6 @@ class NetworkSetupPageBase(Scroller):
     if self._pending_wifi_grow_animation and abs(self._wifi_button.rect.x - ITEM_SPACING) < 50:
       self._pending_wifi_grow_animation = False
       self._wifi_button.trigger_grow_animation()
-
-    has_internet = (self._network_monitor.network_connected.is_set() and
-                    not self._wifi_ui.any_network_forgetting and
-                    not self._network_monitor.recheck_event.is_set())
-    self._continue_button.set_visible(has_internet)
-    self._waiting_button.set_visible(not has_internet)
 
 
 class NetworkSetupPage(NetworkSetupPageBase, NavScroller):
