@@ -88,7 +88,6 @@ class Reset(Scroller):
     self._reset_button = BigCircleButton("icons_mici/settings/device/uninstall.png", red=True)
     self._reset_button.set_click_callback(show_confirm_dialog)
 
-    # may be cancel (normal startup) or reboot depending on mode
     self._cancel_button = BigCircleButton("icons_mici/settings/device/reboot.png")
     self._cancel_button.set_click_callback(show_cancel_dialog)
 
