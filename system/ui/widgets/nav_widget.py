@@ -152,7 +152,6 @@ class NavWidget(Widget, abc.ABC):
       new_y = self._y_pos_filter.x = 0.0
 
       if self._shown_callback is not None:
-        print('SHOWN CALLBACK FIRED')
         self._shown_callback()
         self._shown_callback = None
 
