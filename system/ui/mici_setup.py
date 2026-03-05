@@ -365,6 +365,8 @@ class NetworkSetupPageBase(Scroller):
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
     self._show_time = 0.0
+    self._prev_has_internet = False
+    self._prev_wifi_connected = False
     self._pending_has_internet_scroll = False
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
@@ -395,6 +397,7 @@ class NetworkSetupPageBase(Scroller):
     self._wifi_manager.set_active(True)
     self._show_time = rl.get_time()
     self._prev_has_internet = False
+    self._prev_wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
     self._pending_has_internet_scroll = False
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
@@ -413,25 +416,28 @@ class NetworkSetupPageBase(Scroller):
     self._continue_button.set_visible(has_internet)
     self._waiting_button.set_visible(not has_internet)
 
-    if has_internet and not self._prev_has_internet:
+    # Dismiss WiFi UI and scroll on WiFi connect or internet gain
+    wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
+    if (has_internet and not self._prev_has_internet) or (wifi_connected and not self._prev_wifi_connected and not has_internet):
       self._pending_has_internet_scroll = True
+    self._prev_wifi_connected = wifi_connected
     self._prev_has_internet = has_internet
 
     if self._pending_has_internet_scroll:
-      # Scrolls over to continue button, then grows once in view
       elapsed = rl.get_time() - self._show_time
       if elapsed > 0.5:
         self._pending_has_internet_scroll = False
+        grow = has_internet
 
-        def scroll_to_download():
+        def scroll_to_end():
           self._scroller._layout()
           end_offset = -(self._scroller.content_size - self._rect.width)
           remaining = self._scroller.scroll_panel.get_offset() - end_offset
           self._scroller.scroll_to(remaining, smooth=True, block_interaction=True)
-          self._pending_continue_grow_animation = True
+          if grow:
+            self._pending_continue_grow_animation = True
 
-        # Animate WifiUi down first before scroll
-        gui_app.pop_widgets_to(self, scroll_to_download)
+        gui_app.pop_widgets_to(self, scroll_to_end)
 
   def set_custom_software(self, custom_software: bool):
     self._custom_software = custom_software
