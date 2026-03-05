@@ -7,6 +7,7 @@ from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.controls.lib.drive_helpers import MIN_SPEED
 
 
 @dataclass
@@ -143,7 +144,7 @@ def main():
   cloudlog.info("lateral_maneuversd is waiting for CarParams")
   messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
-  sm = messaging.SubMaster(['carState', 'carControl', 'controlsState', 'selfdriveState'], poll='selfdriveState')
+  sm = messaging.SubMaster(['carState', 'carControl', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
   pm = messaging.PubMaster(['lateralManeuverPlan', 'alertDebug'])
 
   maneuvers = iter(MANEUVERS)
@@ -161,7 +162,7 @@ def main():
     plan_send = messaging.new_message('lateralManeuverPlan')
     plan_send.valid = sm.all_checks()
 
-    accel = 0.0
+    accel = 0
     v_ego = max(sm['carState'].vEgo, 0)
 
     if maneuver is not None:
@@ -177,7 +178,7 @@ def main():
 
     pm.send('alertDebug', alert_msg)
 
-    plan_send.lateralManeuverPlan.desiredCurvature = accel / max(v_ego, 1.0) ** 2
+    plan_send.lateralManeuverPlan.desiredCurvature = accel / max(v_ego, MIN_SPEED) ** 2
     pm.send('lateralManeuverPlan', plan_send)
 
     if maneuver is not None and maneuver.finished:
