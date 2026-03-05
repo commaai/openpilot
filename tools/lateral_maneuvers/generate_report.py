@@ -70,9 +70,9 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       if description.startswith('sine'):
         amplitude = max(abs(lat_accel(lp.desiredCurvature, cs.vEgo) - baseline_accel)
-                        for lp, cs in zip(lateralPlan, carState))
+                        for lp, cs in zip(lateralPlan, carState, strict=False))
         threshold = amplitude * 0.5
-        builder.append(f'<h3 style="font-weight: normal">50% peak')
+        builder.append('<h3 style="font-weight: normal">50% peak')
         for t, cs, v in zip(t_controlsState, controlsState, [m.vEgo for m in carState], strict=False):
           actual = lat_accel(cs.curvature, v) - baseline_accel
           if abs(actual) > threshold:
