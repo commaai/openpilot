@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import sys
-import os
 import subprocess
 import threading
 import pyray as rl
@@ -14,47 +13,6 @@ from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.mici_setup import (NetworkSetupPage, FailedPage, NetworkConnectivityMonitor,
                                             GreyBigButton, BigPillButton)
-
-
-def _subprocess_helper(cmd_read_fd, stdout_write_fd):
-  """Small helper process forked before GUI loads. Runs subprocess on demand without stalling the UI."""
-  os.close(1)
-  with os.fdopen(cmd_read_fd, 'r') as cmd_pipe, os.fdopen(stdout_write_fd, 'w') as out:
-    for line in cmd_pipe:
-      cmd = line.strip().split()
-      if not cmd:
-        continue
-      try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
-        if proc.stdout:
-          for proc_line in proc.stdout:
-            out.write(proc_line)
-            out.flush()
-        exit_code = proc.wait()
-      except Exception:
-        exit_code = -1
-      out.write(f"__EXIT__:{exit_code}\n")
-      out.flush()
-
-
-def fork_subprocess_helper():
-  """Fork a helper before GUI init so subprocess spawns don't stall the render loop."""
-  cmd_read_fd, cmd_write_fd = os.pipe()
-  stdout_read_fd, stdout_write_fd = os.pipe()
-
-  pid = os.fork()
-  if pid == 0:
-    os.close(cmd_write_fd)
-    os.close(stdout_read_fd)
-    try:
-      _subprocess_helper(cmd_read_fd, stdout_write_fd)
-    except Exception:
-      pass
-    os._exit(0)
-
-  os.close(cmd_read_fd)
-  os.close(stdout_write_fd)
-  return pid, os.fdopen(cmd_write_fd, 'w'), os.fdopen(stdout_read_fd, 'r')
 
 
 class UpdaterNetworkSetupPage(NetworkSetupPage):
@@ -100,16 +58,17 @@ class ProgressPage(Widget):
 
 
 class Updater(Scroller):
-  def __init__(self, updater_path, manifest_path, helper):
+  def __init__(self, updater_path, manifest_path):
     super().__init__()
     self.updater = updater_path
     self.manifest = manifest_path
-    self._helper_pid, self._helper_cmd, self._helper_stdout = helper
 
     self.progress_value = 0
     self.progress_text = "loading"
+    self.process = None
     self.update_thread = None
     self._update_failed = False
+    self._pending_update = False
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
@@ -140,6 +99,11 @@ class Updater(Scroller):
   def _nav_stack_tick(self):
     self._progress_page.set_progress(self.progress_text, self.progress_value)
 
+    if self._pending_update:
+      self._pending_update = False
+      self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
+      self.update_thread.start()
+
     if self._update_failed:
       self._update_failed = False
       self.show_event()
@@ -153,44 +117,36 @@ class Updater(Scroller):
     gui_app.pop_widgets_to(self, instant=True)
     gui_app.push_widget(self._progress_page)
 
-    # Start the update process in a separate thread
-    self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
-    self.update_thread.start()
+    # Defer subprocess start to next frame so the progress page renders first
+    self._pending_update = True
 
   def _run_update_process(self):
-    # Send command to pre-forked helper to avoid fork/exec stalling the UI
+    # TODO: just import it and run in a thread without a subprocess
     try:
-      self._helper_cmd.write(f"{self.updater} --swap {self.manifest}\n")
-      self._helper_cmd.flush()
+      cmd = [self.updater, "--swap", self.manifest]
+      self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                      text=True, bufsize=1, universal_newlines=True)
+
+      if self.process.stdout is not None:
+        for line in self.process.stdout:
+          parts = line.strip().split(":")
+          if len(parts) == 2:
+            self.progress_text = parts[0].lower()
+            try:
+              self.progress_value = int(float(parts[1]))
+            except ValueError:
+              pass
+
+      exit_code = self.process.wait()
+      if exit_code == 0:
+        HARDWARE.reboot()
+      else:
+        self._update_failed = True
     except Exception:
       self._update_failed = True
-      return
-
-    for line in self._helper_stdout:
-      line = line.strip()
-      if line.startswith("__EXIT__:"):
-        exit_code = int(line.split(":")[1])
-        if exit_code == 0:
-          HARDWARE.reboot()
-        else:
-          self._update_failed = True
-        return
-
-      parts = line.split(":")
-      if len(parts) == 2:
-        self.progress_text = parts[0].lower()
-        try:
-          self.progress_value = int(float(parts[1]))
-        except ValueError:
-          pass
-
-    self._update_failed = True
 
   def close(self):
     self._network_monitor.stop()
-    self._helper_cmd.close()
-    self._helper_stdout.close()
-    os.waitpid(self._helper_pid, 0)
 
 
 def main():
@@ -209,12 +165,9 @@ def main():
   updater_path = sys.argv[1]
   manifest_path = sys.argv[2]
 
-  # Fork helper before GUI init so subprocess spawns don't copy OpenGL page tables
-  helper = fork_subprocess_helper()
-
   try:
     gui_app.init_window("System Update")
-    updater = Updater(updater_path, manifest_path, helper)
+    updater = Updater(updater_path, manifest_path)
     gui_app.push_widget(updater)
     for _ in gui_app.render():
       pass
