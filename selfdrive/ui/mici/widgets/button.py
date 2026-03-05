@@ -70,6 +70,31 @@ class BigCircleButton(Widget):
     self._draw_content(btn_y)
 
 
+class ConfirmationButton(BigCircleButton):
+  """BigCircleButton that shows a matching BigConfirmationDialogV2 on click.
+  The dialog automatically uses the same icon and red state as the button."""
+
+  def __init__(self, icon: str, dialog_title: str, red: bool = False, exit_on_confirm: bool = True,
+               confirm_callback: Callable | None = None, **kwargs):
+    super().__init__(icon, red=red, **kwargs)
+    self._icon = icon
+    self._dialog_title = dialog_title
+    self._exit_on_confirm = exit_on_confirm
+    self._confirm_callback = confirm_callback
+    self.set_click_callback(self.show_confirmation_dialog)
+
+  def set_confirm_callback(self, callback: Callable | None):
+    self._confirm_callback = callback
+
+  def show_confirmation_dialog(self, confirm_callback: Callable | None = None):
+    from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
+    callback = confirm_callback or self._confirm_callback
+    dialog = BigConfirmationDialogV2(self._dialog_title, self._icon, red=self._red,
+                                     exit_on_confirm=self._exit_on_confirm,
+                                     confirm_callback=callback)
+    gui_app.push_widget(dialog)
+
+
 class BigCircleToggle(BigCircleButton):
   def __init__(self, icon: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
     super().__init__(icon, False, icon_size=icon_size, icon_offset=icon_offset)

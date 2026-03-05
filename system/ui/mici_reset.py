@@ -11,8 +11,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.mici_setup import GreyBigButton, FailedPage
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
-from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
+from openpilot.selfdrive.ui.mici.widgets.button import ConfirmationButton
 
 USERDATA = "/dev/disk/by-partlabel/userdata"
 TIMEOUT = 3*60
@@ -70,26 +69,11 @@ class Reset(Scroller):
     self._resetting_page = ResettingPage()
     self._reset_failed_page = ResetFailedPage()
 
-    def show_confirm_dialog():
-      dialog = BigConfirmationDialogV2("erase\ndevice", "icons_mici/settings/device/uninstall.png", red=True,
-                                       confirm_callback=self.start_reset)
-      gui_app.push_widget(dialog)
+    self._reset_button = ConfirmationButton("icons_mici/settings/device/uninstall.png", "erase\ndevice", red=True,
+                                              confirm_callback=self.start_reset)
 
-    def show_cancel_dialog():
-      dialog = BigConfirmationDialogV2("normal\nstartup", "icons_mici/settings/device/reboot.png",
-                                       exit_on_confirm=False, confirm_callback=gui_app.request_close)
-      gui_app.push_widget(dialog)
-
-    def show_reboot_dialog():
-      dialog = BigConfirmationDialogV2("reboot\ndevice", "icons_mici/settings/device/reboot.png",
-                                       exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
-      gui_app.push_widget(dialog)
-
-    self._reset_button = BigCircleButton("icons_mici/settings/device/uninstall.png", red=True)
-    self._reset_button.set_click_callback(show_confirm_dialog)
-
-    self._cancel_button = BigCircleButton("icons_mici/settings/device/reboot.png")
-    self._cancel_button.set_click_callback(show_cancel_dialog)
+    self._cancel_button = ConfirmationButton("icons_mici/settings/device/reboot.png", "normal\nstartup",
+                                              exit_on_confirm=False, confirm_callback=gui_app.request_close)
 
     main_card = GreyBigButton("factory reset", "all content and\nsettings will be erased",
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
@@ -98,7 +82,7 @@ class Reset(Scroller):
     if mode == ResetMode.RECOVER:
       main_card.set_text("unable to mount\ndata partition")
       main_card.set_value("it may be corrupted")
-      self._cancel_button.set_click_callback(show_reboot_dialog)
+      self._cancel_button.set_confirm_callback(HARDWARE.reboot)
 
     self._scroller.add_widgets([
       main_card,
