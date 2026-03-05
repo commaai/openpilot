@@ -1,7 +1,7 @@
 from enum import IntEnum
 import pyray as rl
 import numpy as np
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent, MAX_TOUCH_SLOTS
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
@@ -194,28 +194,36 @@ class MiciKeyboard(Widget):
     self._special_keys[2].insert(0, self._super_special_key)
     self._super_special_keys[2].insert(0, self._123_key2)
 
+    self._load_images()
+
+    self._multi_touch = True
+
+    # per-slot state for multi-touch
+    self._closest_key: list[tuple[Key | None, float]] = [(None, float('inf'))] * MAX_TOUCH_SLOTS
+    self._selected_key_t: list[float | None] = [None] * MAX_TOUCH_SLOTS
+    self._unselect_key_t: list[float | None] = [None] * MAX_TOUCH_SLOTS
+    self._dragging_on_keyboard: list[bool] = [False] * MAX_TOUCH_SLOTS
+    self._last_mouse_pos: list[MousePos | None] = [None] * MAX_TOUCH_SLOTS
+    self._releasing_slot: int = 0
+
     # set initial keys
     self._current_keys: list[list[Key]] = []
     self._set_keys(self._lower_keys)
     self._caps_state = CapsState.LOWER
     self._initialized = False
 
-    self._load_images()
-
-    self._closest_key: tuple[Key | None, float] = None, float('inf')
-    self._selected_key_t: float | None = None  # time key was initially selected
-    self._unselect_key_t: float | None = None  # time to unselect key after release
-    self._dragging_on_keyboard = False
-
     self._text: str = ""
 
     self._bg_scale_filter = BounceFilter(1.0, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
-    self._selected_key_filter = FirstOrderFilter(0.0, 0.075 * ANIMATION_SCALE, 1 / gui_app.target_fps)
+    self._selected_key_filters = [FirstOrderFilter(0.0, 0.075 * ANIMATION_SCALE, 1 / gui_app.target_fps) for _ in range(MAX_TOUCH_SLOTS)]
 
-  def get_candidate_character(self) -> str:
-    # return str of character about to be added to text
-    key = self._closest_key[0]
-    return key.char if key is not None and key.__class__ is Key and self._dragging_on_keyboard else ""
+  def get_candidate_characters(self) -> str:
+    chars = []
+    for slot in range(MAX_TOUCH_SLOTS):
+      key = self._closest_key[slot][0]
+      if key is not None and key.__class__ is Key and self._dragging_on_keyboard[slot]:
+        chars.append(key.char)
+    return "".join(chars)
 
   def get_keyboard_height(self) -> int:
     return int(self._txt_bg.height)
@@ -235,6 +243,12 @@ class MiciKeyboard(Widget):
 
     self._current_keys = keys
 
+    # re-evaluate closest key for any slot still dragging on the new layout
+    for slot in range(MAX_TOUCH_SLOTS):
+      if self._dragging_on_keyboard[slot] and self._last_mouse_pos[slot] is not None:
+        self._closest_key[slot] = (None, float('inf'))  # clears hysteresis
+        self._closest_key[slot] = self._get_closest_key(slot, self._last_mouse_pos[slot])
+
   def set_text(self, text: str):
     self._text = text
 
@@ -242,35 +256,43 @@ class MiciKeyboard(Widget):
     return self._text
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
+    slot = mouse_event.slot
     keyboard_pos_y = self._rect.y + self._rect.height - self._txt_bg.height
     if mouse_event.left_pressed:
       if mouse_event.pos.y > keyboard_pos_y:
-        self._dragging_on_keyboard = True
+        self._dragging_on_keyboard[slot] = True
     elif mouse_event.left_released:
-      self._dragging_on_keyboard = False
+      self._releasing_slot = slot
+      self._dragging_on_keyboard[slot] = False
 
-    if mouse_event.left_down and self._dragging_on_keyboard:
-      self._closest_key = self._get_closest_key()
-      if self._selected_key_t is None:
-        self._selected_key_t = rl.get_time()
+    if mouse_event.left_down and self._dragging_on_keyboard[slot]:
+      self._last_mouse_pos[slot] = mouse_event.pos
+      self._closest_key[slot] = self._get_closest_key(slot, mouse_event.pos)
+      if self._selected_key_t[slot] is None:
+        self._selected_key_t[slot] = rl.get_time()
 
       # unselect key temporarily if mouse goes above keyboard
       if mouse_event.pos.y <= keyboard_pos_y:
-        self._closest_key = (None, float('inf'))
+        self._closest_key[slot] = (None, float('inf'))
 
     if DEBUG:
-      print('HANDLE MOUSE EVENT', mouse_event, self._closest_key[0].char if self._closest_key[0] else 'None')
+      keys_str = ', '.join(ck[0].char if ck[0] else 'None' for ck in self._closest_key)
+      print(f'HANDLE MOUSE EVENT slot={slot}', mouse_event, keys_str)
 
-  def _get_closest_key(self) -> tuple[Key | None, float]:
+  def _get_closest_key(self, slot: int, mouse_pos: MousePos) -> tuple[Key | None, float]:
+    current_closest = self._closest_key[slot]
+    other_selected = {self._closest_key[i][0] for i in range(MAX_TOUCH_SLOTS) if i != slot and self._closest_key[i][0] is not None}
+
     closest_key: tuple[Key | None, float] = (None, float('inf'))
     for row in self._current_keys:
       for key in row:
-        mouse_pos = gui_app.last_mouse_event.pos
+        if key in other_selected:
+          continue
         # approximate distance for comparison is accurate enough
         # use local y coords so parent widget offset (e.g. during NavWidget animate-in) doesn't affect hit testing
         dist = abs(key.original_position.x - mouse_pos.x) + abs(key.original_position.y - (mouse_pos.y - self._rect.y))
         if dist < closest_key[1]:
-          if self._closest_key[0] is None or key is self._closest_key[0] or dist < self._closest_key[1] - KEY_DRAG_HYSTERESIS:
+          if current_closest[0] is None or key is current_closest[0] or dist < current_closest[1] - KEY_DRAG_HYSTERESIS:
             closest_key = (key, dist)
     return closest_key
 
@@ -290,17 +312,19 @@ class MiciKeyboard(Widget):
         self._set_uppercase(False)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if self._closest_key[0] is not None:
-      if self._closest_key[0] == self._caps_key:
+    slot = self._releasing_slot
+    key = self._closest_key[slot][0]
+    if key is not None:
+      if key == self._caps_key:
         self._set_uppercase(True)
-      elif self._closest_key[0] in (self._123_key, self._123_key2):
+      elif key in (self._123_key, self._123_key2):
         self._set_keys(self._special_keys)
-      elif self._closest_key[0] == self._abc_key:
+      elif key == self._abc_key:
         self._set_uppercase(False)
-      elif self._closest_key[0] == self._super_special_key:
+      elif key == self._super_special_key:
         self._set_keys(self._super_special_keys)
       else:
-        self._text += self._closest_key[0].char
+        self._text += key.char
 
         # Reset caps state
         if self._caps_state == CapsState.UPPER:
@@ -311,9 +335,9 @@ class MiciKeyboard(Widget):
           self._set_uppercase(False)
 
     # ensure minimum selected animation time
-    key_selected_dt = rl.get_time() - (self._selected_key_t or 0)
+    key_selected_dt = rl.get_time() - (self._selected_key_t[slot] or 0)
     cur_t = rl.get_time()
-    self._unselect_key_t = cur_t + KEY_MIN_ANIMATION_TIME if (key_selected_dt < KEY_MIN_ANIMATION_TIME) else cur_t
+    self._unselect_key_t[slot] = cur_t + KEY_MIN_ANIMATION_TIME if (key_selected_dt < KEY_MIN_ANIMATION_TIME) else cur_t
 
   def backspace(self):
     if self._text:
@@ -323,16 +347,24 @@ class MiciKeyboard(Widget):
     self._text += ' '
 
   def _update_state(self):
-    # update selected key filter
-    self._selected_key_filter.update(self._closest_key[0] is not None)
+    for slot in range(MAX_TOUCH_SLOTS):
+      self._selected_key_filters[slot].update(self._closest_key[slot][0] is not None)
 
-    # unselect key after animation plays
-    if (self._unselect_key_t is not None and rl.get_time() > self._unselect_key_t) or not self.enabled:
-      self._closest_key = (None, float('inf'))
-      self._unselect_key_t = None
-      self._selected_key_t = None
+      # unselect key after animation plays
+      if (self._unselect_key_t[slot] is not None and rl.get_time() > self._unselect_key_t[slot]) or not self.enabled:
+        self._closest_key[slot] = (None, float('inf'))
+        self._unselect_key_t[slot] = None
+        self._selected_key_t[slot] = None
 
   def _lay_out_keys(self, bg_x, bg_y, keys: list[list[Key]]):
+    # build map of selected keys -> slot for quick lookup
+    selected_keys: dict[Key, int] = {}
+    for slot in range(MAX_TOUCH_SLOTS):
+      sk = self._closest_key[slot][0]
+      if sk is not None:
+        selected_keys[sk] = slot
+    any_selected = bool(selected_keys)
+
     key_rect = rl.Rectangle(bg_x, bg_y, self._txt_bg.width, self._txt_bg.height)
     for row_idx, row in enumerate(keys):
       padding = KEYBOARD_ROW_PADDING[row_idx]
@@ -341,10 +373,11 @@ class MiciKeyboard(Widget):
         key_x = key_rect.x + padding + key_idx * ((key_rect.width - 2 * padding) / (len(row) - 1))
         key_y = key_rect.y + KEYBOARD_COLUMN_PADDING + row_idx * step_y
 
-        if self._closest_key[0] is None:
+        if not any_selected:
           key.set_alpha(1.0)
           key.set_font_size(CHAR_FONT_SIZE)
-        elif key == self._closest_key[0]:
+        elif key in selected_keys:
+          slot = selected_keys[key]
           # push key up with a max and inward so user can see key easier
           key_y = max(key_y - 120, 40)
           key_x += np.interp(key_x, [self._rect.x, self._rect.x + self._rect.width], [100, -100])
@@ -352,28 +385,36 @@ class MiciKeyboard(Widget):
           key.set_font_size(SELECTED_CHAR_FONT_SIZE)
 
           # draw black circle behind selected key
-          circle_alpha = int(self._selected_key_filter.x * 225)
+          circle_alpha = int(self._selected_key_filters[slot].x * 225)
           rl.draw_circle_gradient(int(key_x + key.rect.width / 2), int(key_y + key.rect.height / 2),
                                   SELECTED_CHAR_FONT_SIZE, rl.Color(0, 0, 0, circle_alpha), rl.BLANK)
         else:
-          # move other keys away from selected key a bit
-          dx = key.original_position.x - self._closest_key[0].original_position.x
-          dy = key.original_position.y - self._closest_key[0].original_position.y
-          distance_from_selected_key = fast_euclidean_distance(dx, dy)
+          # accumulate push from all selected keys
+          total_push_x = 0.0
+          total_push_y = 0.0
+          min_distance = float('inf')
+          for sel_key in selected_keys:
+            dx = key.original_position.x - sel_key.original_position.x
+            dy = key.original_position.y - sel_key.original_position.y
+            distance_from_selected_key = fast_euclidean_distance(dx, dy)
+            min_distance = min(min_distance, distance_from_selected_key)
 
-          inv = 1 / (distance_from_selected_key or 1.0)
-          ux = dx * inv
-          uy = dy * inv
+            inv = 1 / (distance_from_selected_key or 1.0)
+            ux = dx * inv
+            uy = dy * inv
 
-          # NOTE: hardcode to 20 to get entire keyboard to move
-          push_pixels = np.interp(distance_from_selected_key, [0, 250], [20, 0])
-          key_x += ux * push_pixels
-          key_y += uy * push_pixels
+            # NOTE: hardcode to 20 to get entire keyboard to move
+            push_pixels = np.interp(distance_from_selected_key, [0, 250], [20, 0])
+            total_push_x += ux * push_pixels
+            total_push_y += uy * push_pixels
+
+          key_x += total_push_x
+          key_y += total_push_y
 
           # TODO: slow enough to use an approximation or nah? also caching might work
-          font_size = np.interp(distance_from_selected_key, [0, 150], [CHAR_NEAR_FONT_SIZE, CHAR_FONT_SIZE])
+          font_size = np.interp(min_distance, [0, 150], [CHAR_NEAR_FONT_SIZE, CHAR_FONT_SIZE])
 
-          key_alpha = np.interp(distance_from_selected_key, [0, 100], [1.0, 0.35])
+          key_alpha = np.interp(min_distance, [0, 100], [1.0, 0.35])
           key.set_alpha(key_alpha)
           key.set_font_size(font_size)
 
@@ -386,7 +427,8 @@ class MiciKeyboard(Widget):
     bg_x = self._rect.x + (self._rect.width - self._txt_bg.width) / 2
     bg_y = self._rect.y + self._rect.height - self._txt_bg.height
 
-    scale = self._bg_scale_filter.update(1.0307692307692307 if self._closest_key[0] is not None else 1.0)
+    any_selected = any(ck[0] is not None for ck in self._closest_key)
+    scale = self._bg_scale_filter.update(1.0307692307692307 if any_selected else 1.0)
     src_rec = rl.Rectangle(0, 0, self._txt_bg.width, self._txt_bg.height)
     dest_rec = rl.Rectangle(self._rect.x + self._rect.width / 2 - self._txt_bg.width * scale / 2, bg_y,
                             self._txt_bg.width * scale, self._txt_bg.height)

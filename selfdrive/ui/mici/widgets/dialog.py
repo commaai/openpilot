@@ -153,7 +153,7 @@ class BigInputDialog(BigDialogBase):
   def _render(self, _):
     # draw current text so far below everything. text floats left but always stays in view
     text = self._keyboard.text()
-    candidate_char = self._keyboard.get_candidate_character()
+    candidate_char = self._keyboard.get_candidate_characters()
     text_size = measure_text_cached(gui_app.font(FontWeight.ROMAN), text + candidate_char or self._hint_label.text, self.TEXT_INPUT_SIZE)
 
     bg_block_margin = 5
