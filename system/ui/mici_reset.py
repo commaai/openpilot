@@ -8,13 +8,9 @@ from enum import IntEnum
 import pyray as rl
 
 from openpilot.system.hardware import PC
-from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.slider import SmallSlider
-from openpilot.system.ui.widgets.button import SmallButton, FullRoundedButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
-from openpilot.system.ui.widgets.label import gui_label, gui_text_box
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 
 from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
