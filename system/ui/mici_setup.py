@@ -401,9 +401,8 @@ class NetworkSetupPageBase(Scroller):
     self._pending_wifi_grow_animation = False
 
   def _nav_stack_tick(self):
-    self._wifi_manager.process_callbacks()
-
-    # Discard stale poll results while network state is changing
+    # Check network state before processing callbacks so forgetting flag
+    # is still set on the frame the forgotten callback fires
     network_changing = self._wifi_ui.any_network_forgetting or self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTING
     if network_changing:
       self._network_monitor.invalidate()
@@ -413,6 +412,8 @@ class NetworkSetupPageBase(Scroller):
                     not self._network_monitor.recheck_event.is_set())
     self._continue_button.set_visible(has_internet)
     self._waiting_button.set_visible(not has_internet)
+
+    self._wifi_manager.process_callbacks()
 
     # Dismiss WiFi UI and scroll on WiFi connect or internet gain
     wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
