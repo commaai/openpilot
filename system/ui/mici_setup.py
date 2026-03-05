@@ -55,6 +55,7 @@ class NetworkConnectivityMonitor:
     self.wifi_connected = threading.Event()
     self._should_check = should_check or (lambda: True)
     self._stop_event = threading.Event()
+    self.recheck_event = threading.Event()
     self._thread: threading.Thread | None = None
 
   def start(self):
@@ -69,9 +70,12 @@ class NetworkConnectivityMonitor:
       self._thread.join()
       self._thread = None
 
-  def reset(self):
+  def reset(self, invalidate: bool = False):
+    """If invalidate, discard stale in-flight results and force re-verification."""
     self.network_connected.clear()
     self.wifi_connected.clear()
+    if invalidate:
+      self.recheck_event.set()
 
   def _run(self):
     while not self._stop_event.is_set():
@@ -79,6 +83,10 @@ class NetworkConnectivityMonitor:
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
+          # Discard stale result if invalidated during request
+          if self.recheck_event.is_set():
+            self.recheck_event.clear()
+            continue
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -341,6 +349,8 @@ class NetworkSetupPageBase(Scroller):
                                          gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True))
     self._connect_button.set_visible(not disable_connect_hint)
 
+    # Force re-verification after leaving WiFi UI to prevent stale continue button
+    self._wifi_ui.set_back_callback(lambda: self._network_monitor.reset(invalidate=True))
     self._wifi_button = WifiNetworkButton(self._wifi_manager)
     self._wifi_button.set_click_callback(lambda: gui_app.push_widget(self._wifi_ui))
 
@@ -359,6 +369,9 @@ class NetworkSetupPageBase(Scroller):
     self._waiting_button.set_click_callback(on_waiting_click)
     self._continue_button = BigPillButton("install openpilot", green=True)
     self._continue_button.set_click_callback(lambda: continue_callback(self._custom_software))
+    # Block clicks while connectivity is being re-verified after WiFi UI dismiss
+    # TODO: change back to set_touch_valid_callback
+    self._continue_button.set_enabled(lambda: not self._network_monitor.recheck_event.is_set())
 
     self._scroller.add_widgets([
       self._connect_button,
