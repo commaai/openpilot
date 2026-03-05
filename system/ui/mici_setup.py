@@ -368,7 +368,6 @@ class NetworkSetupPageBase(Scroller):
     self._pending_has_internet_scroll = False
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
-    self._prev_any_forgetting = False
 
     def on_waiting_click():
       offset = (self._wifi_button.rect.x + self._wifi_button.rect.width / 2) - (self._rect.x + self._rect.width / 2)
@@ -403,11 +402,9 @@ class NetworkSetupPageBase(Scroller):
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
 
-    # Invalidate stale connectivity after forget completes
-    any_forgetting = self._wifi_ui.any_network_forgetting
-    if self._prev_any_forgetting and not any_forgetting:
+    # Discard stale poll results while a network is being forgotten
+    if self._wifi_ui.any_network_forgetting:
       self._network_monitor.invalidate()
-    self._prev_any_forgetting = any_forgetting
 
     has_internet = self._network_monitor.network_connected.is_set()
     if has_internet and not self._prev_has_internet:
