@@ -8,8 +8,8 @@ from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.mici_setup import (NetworkSetupPage, FailedPage, NetworkConnectivityMonitor,
                                             GreyBigButton, BigPillButton)
@@ -22,7 +22,7 @@ class UpdaterNetworkSetupPage(NetworkSetupPage):
     self._continue_button.set_green(False)
 
 
-class ProgressPage(Widget):
+class ProgressPage(NavWidget):
   def __init__(self):
     super().__init__()
 
@@ -32,12 +32,16 @@ class ProgressPage(Widget):
                                                 font_weight=FontWeight.ROMAN,
                                                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
+  def _back_enabled(self) -> bool:
+    return False
+
   def set_progress(self, text: str, value: int):
     self._progress_title_label.set_text(text.replace("_", "_\n") + "...")
     self._progress_percent_label.set_text(f"{value}%")
 
   def show_event(self):
     super().show_event()
+    self._nav_bar._alpha = 0.0
     self.set_progress("downloading", 0)
 
   def _render(self, rect: rl.Rectangle):
@@ -68,7 +72,6 @@ class Updater(Scroller):
     self.process = None
     self.update_thread = None
     self._update_failed = False
-    self._pending_update = 0
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
@@ -83,7 +86,7 @@ class Updater(Scroller):
     self._continue_button.set_click_callback(lambda: gui_app.push_widget(self._network_setup_page))
 
     self._scroller.add_widgets([
-      GreyBigButton("update required", "The download size is\napproximately 1 GB",
+      GreyBigButton("update required", "the download size\nis approximately 1 GB",
                     gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
       self._continue_button,
     ])
@@ -99,17 +102,13 @@ class Updater(Scroller):
   def _nav_stack_tick(self):
     self._progress_page.set_progress(self.progress_text, self.progress_value)
 
-    if self._pending_update > 0:
-      self._pending_update -= 1
-      if self._pending_update == 0:
-        self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
-        self.update_thread.start()
-
     if self._update_failed:
       self._update_failed = False
-      self.show_event()
-      gui_app.pop_widgets_to(self, instant=True)
-      gui_app.push_widget(self._failed_page)
+      self._progress_page.dismiss(self._show_failed_page)
+
+  def _show_failed_page(self):
+    self.show_event()
+    gui_app.push_widget(self._failed_page)
 
   def install_update(self):
     self.progress_value = 0
@@ -118,9 +117,12 @@ class Updater(Scroller):
     gui_app.pop_widgets_to(self, instant=True)
     gui_app.push_widget(self._progress_page)
 
-    # Defer subprocess start by 2 ticks so the progress page renders first
-    # (nav_stack_tick runs before render, so tick 1 = render, tick 2 = launch)
-    self._pending_update = 2
+    # Start subprocess after slide-up animation completes so the progress page is visible before fork stalls the UI
+    self._progress_page.set_shown_callback(self._start_update)
+
+  def _start_update(self):
+    self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
+    self.update_thread.start()
 
   def _run_update_process(self):
     # TODO: just import it and run in a thread without a subprocess

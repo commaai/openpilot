@@ -8,11 +8,11 @@ from enum import IntEnum
 import pyray as rl
 
 from openpilot.system.hardware import PC
-from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.slider import SmallSlider
-from openpilot.system.ui.widgets.button import SmallButton, FullRoundedButton
-from openpilot.system.ui.widgets.label import gui_label, gui_text_box
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.mici_setup import GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
 
 USERDATA = "/dev/disk/by-partlabel/userdata"
 TIMEOUT = 3*60
@@ -30,25 +30,57 @@ class ResetState(IntEnum):
   FAILED = 2
 
 
-class Reset(Widget):
+class Reset(Scroller):
   def __init__(self, mode):
     super().__init__()
     self._mode = mode
     self._previous_reset_state = None
     self._reset_state = ResetState.NONE
 
-    self._cancel_button = SmallButton("cancel")
-    self._cancel_button.set_click_callback(gui_app.request_close)
+    self._info_button = GreyBigButton("factory reset", self._get_body_text(),
+                                      gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
-    self._reboot_button = FullRoundedButton("reboot")
-    self._reboot_button.set_click_callback(self._do_reboot)
+    # red circle button: confirm reset (launches slide-to-reset dialog)
+    self._reset_button = BigCircleButton("icons_mici/settings/device/uninstall.png", red=True, icon_size=(64, 64))
+    self._reset_button.set_click_callback(self._on_reset_click)
 
-    self._confirm_slider = SmallSlider("reset", self._confirm)
+    # black circle button: cancel (USER_RESET) or reboot (RECOVER)
+    self._cancel_button = BigCircleButton("icons_mici/settings/device/power.png", red=False, icon_size=(64, 66))
+    self._cancel_button.set_click_callback(self._on_cancel_click)
+
+    # reboot button shown only in FAILED state
+    self._reboot_button = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
+    self._reboot_button.set_click_callback(self._on_reboot_click)
+    self._reboot_button.set_visible(False)
+
+    self._scroller.add_widgets([
+      self._info_button,
+      self._reset_button,
+      self._cancel_button,
+      self._reboot_button,
+    ])
+
+  def _on_reset_click(self):
+    dlg = BigConfirmationDialogV2("erase\ndevice", "icons_mici/settings/device/uninstall.png", red=True,
+                                  confirm_callback=self._confirm)
+    gui_app.push_widget(dlg)
+
+  def _on_cancel_click(self):
+    if self._mode == ResetMode.RECOVER:
+      self._on_reboot_click()
+    else:
+      dlg = BigConfirmationDialogV2("normal\nstartup", "icons_mici/settings/device/power.png", red=False,
+                                    confirm_callback=gui_app.request_close)
+      gui_app.push_widget(dlg)
+
+  def _on_reboot_click(self):
+    dlg = BigConfirmationDialogV2("reboot\ndevice", "icons_mici/settings/device/reboot.png", red=False,
+                                  confirm_callback=self._do_reboot)
+    gui_app.push_widget(dlg)
 
   def _do_reboot(self):
     if PC:
       return
-
     os.system("sudo reboot")
 
   def _do_erase(self):
@@ -70,64 +102,37 @@ class Reset(Widget):
     threading.Timer(0.1, self._do_erase).start()
 
   def _update_state(self):
+    super()._update_state()
+
     if self._reset_state != self._previous_reset_state:
       self._previous_reset_state = self._reset_state
       self._timeout_st = time.monotonic()
+      self._info_button.set_value(self._get_body_text())
+
+      if self._reset_state == ResetState.RESETTING:
+        self._reset_button.set_visible(False)
+        self._cancel_button.set_visible(False)
+        self._reboot_button.set_visible(False)
+      elif self._reset_state == ResetState.FAILED:
+        self._reset_button.set_visible(False)
+        # in RECOVER mode, keep cancel (reboot) visible; in USER_RESET, hide it
+        self._cancel_button.set_visible(self._mode == ResetMode.RECOVER)
+        self._reboot_button.set_visible(True)
+
     elif self._mode != ResetMode.RECOVER and self._reset_state != ResetState.RESETTING and (time.monotonic() - self._timeout_st) > TIMEOUT:
       exit(0)
-
-  def _render(self, rect: rl.Rectangle):
-    label_rect = rl.Rectangle(rect.x + 8, rect.y + 8, rect.width, 50)
-    gui_label(label_rect, "factory reset", 48, font_weight=FontWeight.BOLD,
-              color=rl.Color(255, 255, 255, int(255 * 0.9)))
-
-    text_rect = rl.Rectangle(rect.x + 8, rect.y + 56, rect.width - 8 * 2, rect.height - 80)
-    gui_text_box(text_rect, self._get_body_text(), 36, font_weight=FontWeight.ROMAN, line_scale=0.9)
-
-    if self._reset_state != ResetState.RESETTING:
-      # fade out cancel button as slider is moved, set visible to prevent pressing invisible cancel
-      self._cancel_button.set_opacity(1.0 - self._confirm_slider.slider_percentage)
-      self._cancel_button.set_visible(self._confirm_slider.slider_percentage < 0.8)
-
-      if self._mode == ResetMode.RECOVER:
-        self._cancel_button.set_text("reboot")
-        self._cancel_button.set_click_callback(self._do_reboot)
-        self._cancel_button.render(rl.Rectangle(
-          rect.x + 8,
-          rect.y + rect.height - self._cancel_button.rect.height,
-          self._cancel_button.rect.width,
-          self._cancel_button.rect.height))
-      elif self._mode == ResetMode.USER_RESET and self._reset_state != ResetState.FAILED:
-        self._cancel_button.render(rl.Rectangle(
-          rect.x + 8,
-          rect.y + rect.height - self._cancel_button.rect.height,
-          self._cancel_button.rect.width,
-          self._cancel_button.rect.height))
-
-      if self._reset_state != ResetState.FAILED:
-        self._confirm_slider.render(rl.Rectangle(
-          rect.x + rect.width - self._confirm_slider.rect.width,
-          rect.y + rect.height - self._confirm_slider.rect.height,
-          self._confirm_slider.rect.width,
-          self._confirm_slider.rect.height))
-      else:
-        self._reboot_button.render(rl.Rectangle(
-          rect.x + 8,
-          rect.y + rect.height - self._reboot_button.rect.height,
-          self._reboot_button.rect.width,
-          self._reboot_button.rect.height))
 
   def _confirm(self):
     self.start_reset()
 
   def _get_body_text(self):
     if self._reset_state == ResetState.RESETTING:
-      return "Resetting device... This may take up to a minute."
+      return "resetting device...\nthis may take up to a minute."
     if self._reset_state == ResetState.FAILED:
-      return "Reset failed. Reboot to try again."
+      return "reset failed.\nreboot to try again."
     if self._mode == ResetMode.RECOVER:
-      return "Unable to mount data partition. It may be corrupted."
-    return "All content and settings will be erased."
+      return "unable to mount data partition.\nit may be corrupted."
+    return "all content and\nsettings will be erased"
 
 
 def main():

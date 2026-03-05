@@ -65,6 +65,8 @@ class NavWidget(Widget, abc.ABC):
 
     self._back_callback: Callable[[], None] | None = None  # persistent callback for user-initiated back navigation
     self._dismiss_callback: Callable[[], None] | None = None  # transient callback for programmatic dismiss
+    self._shown_callback: Callable[[], None] | None = None  # transient callback fired after show animation completes
+    self._shown_fired = False
 
     # TODO: move this state into NavBar
     self._nav_bar = NavBar()
@@ -78,6 +80,9 @@ class NavWidget(Widget, abc.ABC):
 
   def set_back_callback(self, callback: Callable[[], None]) -> None:
     self._back_callback = callback
+
+  def set_shown_callback(self, callback: Callable[[], None] | None) -> None:
+    self._shown_callback = callback
 
   def _handle_mouse_event(self, mouse_event: MouseEvent) -> None:
     super()._handle_mouse_event(mouse_event)
@@ -147,6 +152,11 @@ class NavWidget(Widget, abc.ABC):
     if abs(new_y) < 1 and self._y_pos_filter.velocity.x == 0.0:
       new_y = self._y_pos_filter.x = 0.0
 
+      if not self._shown_fired and self._shown_callback is not None:
+        self._shown_fired = True
+        self._shown_callback()
+        self._shown_callback = None
+
     if new_y > self._rect.height + DISMISS_PUSH_OFFSET - 10:
       gui_app.pop_widget()
 
@@ -211,6 +221,7 @@ class NavWidget(Widget, abc.ABC):
     self._dragging_down = False
     self._playing_dismiss_animation = False
     self._dismiss_callback = None
+    self._shown_fired = False
     # Start NavWidget off-screen, no matter how tall it is
     self._y_pos_filter.update_alpha(0.1)
     self._y_pos_filter.x = gui_app.height
