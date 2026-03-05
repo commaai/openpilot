@@ -107,16 +107,6 @@ class Updater(Scroller):
       self.show_event()
       gui_app.pop_widgets_to(self, lambda: gui_app.push_widget(self._failed_page))
 
-
-      # self.show_event()
-      # gui_app.pop_widgets_to(self, lambda: gui_app.push_widget(self._failed_page))
-      # gui_app.pop_widgets_to(self, instant=True)
-      # gui_app.push_widget(self._failed_page)
-
-  def _show_failed_page(self):
-    gui_app.push_widget(self._failed_page)
-    # gui_app.pop_widgets_to(self, lambda: gui_app.push_widget(self._failed_page))
-
   def install_update(self):
     self.progress_value = 0
     self.progress_text = "downloading"
@@ -126,7 +116,6 @@ class Updater(Scroller):
       self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
       self.update_thread.start()
 
-    # gui_app.pop_widgets_to(self, instant=True)
     self._progress_page.set_shown_callback(start_update)
     gui_app.push_widget(self._progress_page)
 
