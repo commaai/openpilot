@@ -367,7 +367,7 @@ class NetworkSetupPageBase(Scroller):
 
     self._prev_has_internet = False
     self._prev_wifi_connected = False
-    self._pending_has_internet_scroll: float | None = None
+    self._pending_has_internet_scroll: float | None = None  # stores time to use as delay
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
 
@@ -397,7 +397,7 @@ class NetworkSetupPageBase(Scroller):
     self._wifi_manager.set_active(True)
     self._prev_has_internet = False
     self._prev_wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
-    self._pending_has_internet_scroll = False
+    self._pending_has_internet_scroll = None
     self._pending_continue_grow_animation = False
     self._pending_wifi_grow_animation = False
 
