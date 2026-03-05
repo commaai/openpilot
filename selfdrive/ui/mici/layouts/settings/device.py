@@ -13,7 +13,6 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmatio
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
-from openpilot.system.ui.mici_setup import BigPillButton
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
@@ -27,12 +26,10 @@ class ReviewTermsPage(TermsPage, NavScroller):
   """TermsPage with NavWidget swipe-to-dismiss for reviewing in device settings."""
   def __init__(self):
     super().__init__(on_accept=self.dismiss, on_decline=self.dismiss)
+    self._terms_header.set_visible(False)
+    self._must_accept_card.set_visible(False)
     self._accept_button.set_visible(False)
     self._decline_button.set_visible(False)
-
-    close_button = BigPillButton("close")
-    close_button.set_click_callback(self.dismiss)
-    self._scroller.add_widget(close_button)
 
 
 class ReviewTrainingGuide(TrainingGuide):
@@ -340,7 +337,6 @@ class DeviceLayoutMici(NavScroller):
 
     terms_btn = BigButton("terms &\nconditions", "", "icons_mici/settings/device/info.png")
     terms_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTermsPage()))
-    terms_btn.set_enabled(lambda: ui_state.is_offroad())
 
     self._scroller.add_widgets([
       DeviceInfoLayoutMici(),
