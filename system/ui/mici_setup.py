@@ -425,9 +425,10 @@ class NetworkSetupPageBase(Scroller):
 
     # Dismiss WiFi UI and scroll on WiFi connect or internet gain
     wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
-    if (has_internet and not self._prev_has_internet) or (wifi_connected and not self._prev_wifi_connected and not has_internet):
+    if (has_internet and not self._prev_has_internet) or (wifi_connected and not self._prev_wifi_connected):
       # TODO: cancel if connect is transient
       self._pending_has_internet_scroll = rl.get_time()
+
     self._prev_has_internet = has_internet
     self._prev_wifi_connected = wifi_connected
 
