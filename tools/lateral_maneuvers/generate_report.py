@@ -88,7 +88,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       ax[0].grid(linewidth=4)
       desired_lat_accel = [m.desiredCurvature * max(v, 1.0) ** 2 for m, v in zip(lateralPlan, [s.vEgo for s in carState], strict=False)]
-      ax[0].plot(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel, label='desired lat accel', linewidth=6)
+      ax[0].step(t_lateralPlan[:len(desired_lat_accel)], desired_lat_accel, label='desired lat accel', linewidth=6, where='post')
       actual_lat_accel = [cs.curvature * max(v, 1.0) ** 2 for cs, v in zip(controlsState, [m.vEgo for m in carState], strict=False)]
       ax[0].plot(t_controlsState[:len(actual_lat_accel)], actual_lat_accel, label='actual lat accel', linewidth=6)
       ax[0].set_ylabel('Lateral Accel (m/s^2)')

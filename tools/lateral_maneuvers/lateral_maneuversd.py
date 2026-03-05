@@ -32,12 +32,15 @@ class Maneuver:
   _action_frames: int = 0
   _ready_cnt: int = 0
   _repeated: int = 0
+  _baseline_curvature: float = 0.0
 
   def get_accel(self, v_ego: float, lat_active: bool, curvature: float) -> float:
     ready = abs(v_ego - self.initial_speed) < 1.0 and lat_active and abs(curvature) < 0.001
     self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
+      if not self._active:
+        self._baseline_curvature = curvature
       self._active = True
 
     if not self._active:
@@ -84,13 +87,13 @@ def _sine_action(amplitude, period, duration):
 
 MANEUVERS = [
   Maneuver(
-    "step-up 30mph a=0.3",
+    "wind-up right 30mph",
     [Action([0.3], [1.2])],
     repeat=2,
     initial_speed=30. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "wind-down 30mph a=0.3",
+    "wind-down right 30mph",
     [Action([0.3], [1.0]), Action([-0.3], [1.2])],
     repeat=2,
     initial_speed=30. * CV.MPH_TO_MS,
@@ -197,13 +200,13 @@ def main():
       if maneuver.active:
         action_remaining = maneuver.actions[maneuver._action_index].time_bp[-1] - maneuver._action_frames * DT_MDL
         alert_msg.alertDebug.alertText1 = f'Active {accel:+0.2f} m/s² | {max(action_remaining, 0):0.1f}s'
+        alert_msg.alertDebug.alertText2 = maneuver.description
       elif not (abs(v_ego - maneuver.initial_speed) < 1.0 and sm['carControl'].latActive):
         alert_msg.alertDebug.alertText1 = f'Set speed to {maneuver.initial_speed * CV.MS_TO_MPH:0.0f} mph'
       else:
         ready_time = max(3. - maneuver._ready_cnt * DT_MDL, 0)
         alert_msg.alertDebug.alertText1 = 'Go straight'
         alert_msg.alertDebug.alertText2 = f'{ready_time:0.1f}s'
-      alert_msg.alertDebug.alertText2 = maneuver.description if maneuver.active else ''
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
 
@@ -211,7 +214,7 @@ def main():
 
     plan_send.valid = maneuver is not None and maneuver.active
     if plan_send.valid:
-      plan_send.lateralManeuverPlan.desiredCurvature = cur_curvature + accel / max(v_ego, MIN_SPEED) ** 2
+      plan_send.lateralManeuverPlan.desiredCurvature = maneuver._baseline_curvature + accel / max(v_ego, MIN_SPEED) ** 2
     pm.send('lateralManeuverPlan', plan_send)
 
     if maneuver is not None and maneuver.finished:
