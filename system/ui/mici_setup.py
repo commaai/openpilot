@@ -401,6 +401,11 @@ class NetworkSetupPageBase(Scroller):
     self._pending_wifi_grow_animation = False
 
   def _nav_stack_tick(self):
+    # Only run tick when this page or its WiFi UI is on the stack
+    if gui_app.get_active_widget() is not self and not gui_app.widget_in_stack(self._wifi_ui):
+      self._wifi_manager.process_callbacks()
+      return
+
     # Check network state before processing callbacks so forgetting flag
     # is still set on the frame the forgotten callback fires
     network_changing = self._wifi_ui.any_network_forgetting or self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTING
@@ -425,7 +430,7 @@ class NetworkSetupPageBase(Scroller):
       if elapsed > 0.5:
         self._pending_has_internet_scroll = False
 
-        def scroll_to_download():
+        def scroll_to_end():
           self._scroller._layout()
           end_offset = -(self._scroller.content_size - self._rect.width)
           remaining = self._scroller.scroll_panel.get_offset() - end_offset
@@ -433,7 +438,7 @@ class NetworkSetupPageBase(Scroller):
           self._pending_continue_grow_animation = True
 
         # Animate WifiUi down first before scroll
-        gui_app.pop_widgets_to(self, scroll_to_download)
+        gui_app.pop_widgets_to(self, scroll_to_end)
 
   def set_custom_software(self, custom_software: bool):
     self._custom_software = custom_software
