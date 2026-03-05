@@ -83,26 +83,50 @@ def _sine_action(amplitude, period, duration):
 
 MANEUVERS = [
   Maneuver(
-    "step 60mph a=0.3",
+    "step-up 60mph a=0.3",
     [Action([0.3], [1.5])],
     repeat=2,
     initial_speed=60. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step 60mph a=-0.3",
+    "step-down 60mph a=0.3",
+    [Action([0.3], [0.5]), Action([0], [1.5])],
+    repeat=2,
+    initial_speed=60. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "step-up 60mph a=-0.3",
     [Action([-0.3], [1.5])],
     repeat=2,
     initial_speed=60. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step 70mph a=0.3",
+    "step-down 60mph a=-0.3",
+    [Action([-0.3], [0.5]), Action([0], [1.5])],
+    repeat=2,
+    initial_speed=60. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "step-up 70mph a=0.3",
     [Action([0.3], [1.5])],
     repeat=2,
     initial_speed=70. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step 70mph a=-0.3",
+    "step-down 70mph a=0.3",
+    [Action([0.3], [0.5]), Action([0], [1.5])],
+    repeat=2,
+    initial_speed=70. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "step-up 70mph a=-0.3",
     [Action([-0.3], [1.5])],
+    repeat=2,
+    initial_speed=70. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
+    "step-down 70mph a=-0.3",
+    [Action([-0.3], [0.5]), Action([0], [1.5])],
     repeat=2,
     initial_speed=70. * CV.MPH_TO_MS,
   ),
