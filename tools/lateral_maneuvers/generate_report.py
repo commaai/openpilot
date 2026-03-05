@@ -44,7 +44,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       t_carControl, carControl = zip(*[(m.logMonoTime, m.carControl) for m in msgs if m.which() == 'carControl'], strict=True)
       t_carState, carState = zip(*[(m.logMonoTime, m.carState) for m in msgs if m.which() == 'carState'], strict=True)
       t_controlsState, controlsState = zip(*[(m.logMonoTime, m.controlsState) for m in msgs if m.which() == 'controlsState'], strict=True)
-      t_lateralPlan, lateralPlan = zip(*[(m.logMonoTime, m.lateralManeuverPlan) for m in msgs if m.which() == 'lateralManeuverPlan'], strict=True)
+      t_lateralPlan, lateralPlan = zip(*[(m.logMonoTime, m.lateralManeuverPlan) for m in msgs if m.which() == 'lateralManeuverPlan' and m.valid], strict=True)
 
       # make time relative seconds
       t_carControl = [(t - t_carControl[0]) / 1e9 for t in t_carControl]
@@ -61,31 +61,68 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       builder.append(f"<details {_open}><summary><h3 style='display: inline-block;'>{title}</h3></summary>\n")
 
-      # get first lateral acceleration target and first intersection (relative to baseline)
+      # lateral accel relative to baseline
       baseline_accel = controlsState[0].curvature * max(carState[0].vEgo, 1.0) ** 2
-      target_accel = lateralPlan[0].desiredCurvature * max(carState[0].vEgo, 1.0) ** 2 - baseline_accel
-      target_cross_time = None
+      cross_markers = []
 
-      if not description.startswith('sine'):
-        builder.append(f'<h3 style="font-weight: normal">Initial target: {round(target_accel, 2)} m/s^2')
-        prev_crossed = False
+      if description.startswith('sine'):
+        # measure delay to reach 50% of sine peak
+        amplitude = max(abs(lp.desiredCurvature * max(cs.vEgo, 1.0) ** 2 - baseline_accel)
+                        for lp, cs in zip(lateralPlan, carState))
+        threshold = amplitude * 0.5
+        delay_time = None
         for t, cs, v in zip(t_controlsState, controlsState, [m.vEgo for m in carState], strict=False):
-          actual_accel = cs.curvature * max(v, 1.0) ** 2 - baseline_accel
-          crossed = (0 < target_accel < actual_accel) or (0 > target_accel > actual_accel)
-          if crossed and prev_crossed:
-            builder.append(f', <strong>crossed in {t:.3f}s</strong>')
-            target_cross_time = t
-            if maneuver_valid:
-              target_cross_times[description].append(t)
+          actual = cs.curvature * max(v, 1.0) ** 2 - baseline_accel
+          if abs(actual) > threshold:
+            delay_time = t
+            cross_markers.append((t, actual + baseline_accel))
             break
-          prev_crossed = crossed
+        builder.append(f'<h3 style="font-weight: normal">50% peak')
+        if delay_time is not None:
+          builder.append(f', <strong>crossed in {delay_time:.3f}s</strong>')
+          if maneuver_valid:
+            target_cross_times[description].append(delay_time)
         else:
           builder.append(', <strong>not crossed</strong>')
         builder.append('</h3>')
+      else:
+        # detect action boundaries from desired lateral accel changes
+        action_targets = [(0, lateralPlan[0].desiredCurvature * max(carState[0].vEgo, 1.0) ** 2 - baseline_accel)]
+        for i in range(1, min(len(lateralPlan), len(carState))):
+          desired = lateralPlan[i].desiredCurvature * max(carState[i].vEgo, 1.0) ** 2 - baseline_accel
+          if abs(desired - action_targets[-1][1]) > 0.2:
+            action_targets.append((i, desired))
+
+        for j, (start_i, act_target) in enumerate(action_targets):
+          start_time = t_lateralPlan[start_i]
+          end_time = t_lateralPlan[action_targets[j + 1][0]] if j + 1 < len(action_targets) else t_controlsState[-1]
+
+          builder.append(f'<h3 style="font-weight: normal">aTarget: {round(act_target, 1)} m/s^2')
+          prev_crossed = False
+          found = False
+          for t, cs, v in zip(t_controlsState, controlsState, [m.vEgo for m in carState], strict=False):
+            if t < start_time:
+              continue
+            if t > end_time:
+              break
+            actual_accel = cs.curvature * max(v, 1.0) ** 2 - baseline_accel
+            crossed = (0 < act_target < actual_accel) or (0 > act_target > actual_accel)
+            if crossed and prev_crossed:
+              cross_time = t - start_time
+              builder.append(f', <strong>crossed in {cross_time:.3f}s</strong>')
+              cross_markers.append((t, act_target + baseline_accel))
+              if maneuver_valid:
+                target_cross_times[description].append(cross_time)
+              found = True
+              break
+            prev_crossed = crossed
+          if not found:
+            builder.append(', <strong>not crossed</strong>')
+          builder.append('</h3>')
 
       plt.rcParams['font.size'] = 40
-      fig = plt.figure(figsize=(30, 22))
-      ax = fig.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 1]})
+      fig = plt.figure(figsize=(30, 18))
+      ax = fig.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3]})
 
       ax[0].grid(linewidth=4)
       desired_lat_accel = [m.desiredCurvature * max(v, 1.0) ** 2 for m, v in zip(lateralPlan, [s.vEgo for s in carState], strict=False)]
@@ -100,18 +137,14 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[0].set_ylabel('Lateral Accel (m/s^2)')
       ax[0].legend(prop={'size': 30})
 
-      if target_cross_time is not None:
-        ax[0].plot(target_cross_time, target_accel + baseline_accel, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
+      for ct, cv in cross_markers:
+        ax[0].plot(ct, cv, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
 
       ax[1].grid(linewidth=4)
       ax[1].plot(t_carState, [m.vEgo * CV.MS_TO_MPH for m in carState], 'g', label='vEgo', linewidth=6)
       ax[1].set_ylabel('Velocity (mph)')
+      ax[1].yaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
       ax[1].legend()
-
-      ax[2].plot(t_carState, [m.steeringPressed for m in carState], label='steeringPressed', linewidth=6)
-      ax[2].set_yticks([0, 1], minor=False)
-      ax[2].set_ylim(-1, 2)
-      ax[2].legend()
 
       ax[-1].set_xlabel("Time (s)")
       fig.tight_layout()
@@ -124,11 +157,13 @@ def report(platform, route, _description, CP, ID, maneuvers):
       builder.append("</details>\n")
 
   summary = ["<h2>Summary</h2>\n"]
-  cols = ['maneuver', 'crossed', 'runs', 'mean', 'min', 'max']
+  cols = ['maneuver', 'crossed', 'mean', 'min', 'max']
   table = []
   for description, runs in maneuvers:
     times = target_cross_times[description]
-    l = [description, len(times), len(runs)]
+    targets_per_run = 1 if description.startswith('sine') else 2
+    total_targets = len(runs) * targets_per_run
+    l = [description, f'{len(times)}/{total_targets}']
     if len(times):
       l.extend([round(sum(times) / len(times), 2), round(min(times), 2), round(max(times), 2)])
     table.append(l)
