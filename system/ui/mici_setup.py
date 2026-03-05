@@ -20,7 +20,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.utils import run_cmd
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.wifi_manager import WifiManager
+from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -55,6 +55,7 @@ class NetworkConnectivityMonitor:
   def __init__(self, should_check: Callable[[], bool] | None = None):
     self.network_connected = threading.Event()
     self.wifi_connected = threading.Event()
+    self.recheck_event = threading.Event()
     self._should_check = should_check or (lambda: True)
     self._stop_event = threading.Event()
     self._last_timesyncd_restart = 0.0
@@ -76,12 +77,21 @@ class NetworkConnectivityMonitor:
     self.network_connected.clear()
     self.wifi_connected.clear()
 
+  def invalidate(self):
+    self.recheck_event.set()
+
   def _run(self):
     while not self._stop_event.is_set():
       if self._should_check():
         try:
           request = urllib.request.Request(OPENPILOT_URL, method="HEAD")
           urllib.request.urlopen(request, timeout=2.0)
+
+          # Discard stale result if invalidated during request
+          if self.recheck_event.is_set():
+            self.recheck_event.clear()
+            continue
+
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
@@ -392,7 +402,17 @@ class NetworkSetupPageBase(Scroller):
   def _nav_stack_tick(self):
     self._wifi_manager.process_callbacks()
 
-    has_internet = self._network_monitor.network_connected.is_set()
+    # Discard stale poll results while network state is changing
+    network_changing = self._wifi_ui.any_network_forgetting or self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTING
+    if network_changing:
+      self._network_monitor.invalidate()
+
+    has_internet = (self._network_monitor.network_connected.is_set() and
+                    not network_changing and
+                    not self._network_monitor.recheck_event.is_set())
+    self._continue_button.set_visible(has_internet)
+    self._waiting_button.set_visible(not has_internet)
+
     if has_internet and not self._prev_has_internet:
       self._pending_has_internet_scroll = True
     self._prev_has_internet = has_internet
@@ -431,13 +451,6 @@ class NetworkSetupPageBase(Scroller):
     if self._pending_wifi_grow_animation and abs(self._wifi_button.rect.x - ITEM_SPACING) < 50:
       self._pending_wifi_grow_animation = False
       self._wifi_button.trigger_grow_animation()
-
-    if self._network_monitor.network_connected.is_set():
-      self._continue_button.set_visible(True)
-      self._waiting_button.set_visible(False)
-    else:
-      self._continue_button.set_visible(False)
-      self._waiting_button.set_visible(True)
 
 
 class NetworkSetupPage(NetworkSetupPageBase, NavScroller):

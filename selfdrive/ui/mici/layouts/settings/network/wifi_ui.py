@@ -110,6 +110,10 @@ class WifiButton(BigButton):
     if self._is_connected or self._is_connecting:
       self._wrong_password = False
 
+  @property
+  def network_forgetting(self) -> bool:
+    return self._network_forgetting
+
   def _forget_network(self):
     if self._network_forgetting:
       return
@@ -285,6 +289,11 @@ class WifiUIMici(NavScroller):
       forgotten=self._on_forgotten,
       networks_updated=self._on_network_updated,
     )
+
+  @property
+  def any_network_forgetting(self) -> bool:
+    # TODO: deactivate before forget and add DISCONNECTING state
+    return any(btn.network_forgetting for btn in self._scroller.items if isinstance(btn, WifiButton))
 
   def show_event(self):
     # Clear scroller items and update from latest scan results
