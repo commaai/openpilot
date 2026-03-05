@@ -119,8 +119,10 @@ class Updater(Scroller):
     # TODO: just import it and run in a thread without a subprocess
     try:
       cmd = [self.updater, "--swap", self.manifest]
+      # avoid fork() which stops all threads while copying page tables
       self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                      text=True, bufsize=1, universal_newlines=True)
+                                      text=True, bufsize=1, universal_newlines=True,
+                                      process_group=0)
     except Exception:
       self._update_failed = True
       return
