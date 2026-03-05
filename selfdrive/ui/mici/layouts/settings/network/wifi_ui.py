@@ -270,14 +270,29 @@ class ForgetButton(Widget):
     rl.draw_texture_ex(self._trash_txt, (trash_x, trash_y), 0, 1.0, rl.WHITE)
 
 
+class ScanningButton(BigButton):
+  def __init__(self):
+    super().__init__("", "searching for networks")
+    self.set_enabled(False)
+    self._loading_animation = LoadingAnimation()
+
+  def _draw_content(self, btn_y: float):
+    super()._draw_content(btn_y)
+    anim_w, anim_h = 90, 20
+    anim_x = self._rect.x + self._rect.width - anim_w - 20
+    anim_y = btn_y + self._rect.height - anim_h - 25
+    self._loading_animation.show_event()
+    self._loading_animation.render(rl.Rectangle(anim_x, anim_y, anim_w, anim_h))
+
+
 class WifiUIMici(NavScroller):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
 
-    self._loading_animation = LoadingAnimation()
-
     self._wifi_manager = wifi_manager
     self._networks: dict[str, Network] = {}
+
+    self._scanning_btn = ScanningButton()
 
     self._wifi_manager.add_callbacks(
       need_auth=self._on_need_auth,
@@ -288,9 +303,9 @@ class WifiUIMici(NavScroller):
   def show_event(self):
     # Clear scroller items and update from latest scan results
     super().show_event()
-    self._loading_animation.show_event()
     self._wifi_manager.set_active(True)
     self._scroller.items.clear()
+    self._scroller.add_widget(self._scanning_btn)
     # trigger button update on latest sorted networks
     self._on_network_updated(self._wifi_manager.networks)
 
@@ -309,6 +324,11 @@ class WifiUIMici(NavScroller):
         btn = WifiButton(network, self._wifi_manager)
         btn.set_click_callback(lambda ssid=network.ssid: self._connect_to_network(ssid))
         self._scroller.add_widget(btn)
+
+    # Keep scanning button at the end
+    items = self._scroller.items
+    if self._scanning_btn in items:
+      items.append(items.pop(items.index(self._scanning_btn)))
 
     # Mark networks no longer in scan results (display handled by _update_state)
     for btn in self._scroller.items:
@@ -371,16 +391,4 @@ class WifiUIMici(NavScroller):
 
     self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
 
-    # Show loading animation near end
-    max_scroll = max(self._scroller.content_size - self._scroller.rect.width, 1)
-    progress = -self._scroller.scroll_panel.get_offset() / max_scroll
-    if progress > 0.8 or len(self._scroller.items) <= 1:
-      self._loading_animation.show_event()
 
-  def _render(self, _):
-    super()._render(self._rect)
-
-    anim_w = 90
-    anim_x = self._rect.x + self._rect.width - anim_w
-    anim_y = self._rect.y + self._rect.height - 25 + 2
-    self._loading_animation.render(rl.Rectangle(anim_x, anim_y, anim_w, 20))
