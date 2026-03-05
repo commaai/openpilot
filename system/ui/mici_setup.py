@@ -21,14 +21,13 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.button import SmallButton
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPACING
-from openpilot.system.ui.widgets.slider import LargerSlider, SmallSlider
+from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -181,7 +180,8 @@ class CustomSoftwareWarningPage(NavScroller):
     ])
 
 
-class DownloadingPage(Widget):
+# TODO: unifi with updater's progress page
+class DownloadingPage(NavWidget):
   def __init__(self):
     super().__init__()
 
@@ -191,8 +191,12 @@ class DownloadingPage(Widget):
                                         font_weight=FontWeight.ROMAN, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
     self._progress = 0
 
+  def _back_enabled(self) -> bool:
+    return False
+
   def show_event(self):
     super().show_event()
+    self._nav_bar._alpha = 0.0  # not dismissable
     self.set_progress(0)
 
   def set_progress(self, progress: int):
@@ -216,59 +220,37 @@ class DownloadingPage(Widget):
     ))
 
 
-class FailedPage(NavWidget):
-  def __init__(self, reboot_callback: Callable, retry_callback: Callable, title: str = "download failed"):
+class FailedPage(NavScroller):
+  def __init__(self, retry_callback: Callable, title: str = "download failed", red_icon: bool = False):
     super().__init__()
     self.set_back_callback(retry_callback)
 
-    self._title_label = UnifiedLabel(title, 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                                     font_weight=FontWeight.DISPLAY)
-    self._reason_label = UnifiedLabel("", 36, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
-                                      font_weight=FontWeight.ROMAN)
+    def show_reboot_dialog():
+      dialog = BigConfirmationDialogV2("slide to reboot", "icons_mici/settings/device/reboot.png",
+                                       exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
+      gui_app.push_widget(dialog)
 
-    self._reboot_slider = SmallSlider("reboot", reboot_callback)
-    self._reboot_slider.set_enabled(lambda: self.enabled)  # for nav stack
+    reboot_button = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
+    reboot_button.set_click_callback(show_reboot_dialog)
 
-    self._retry_button = SmallButton("retry")
-    self._retry_button.set_click_callback(retry_callback)
-    self._retry_button.set_enabled(lambda: self.enabled)  # for nav stack
+    self._reason_card = GreyBigButton("", "")
+    self._reason_card.set_visible(False)
+
+    warning_icon = "icons_mici/setup/red_warning.png" if red_icon else "icons_mici/setup/warning.png"
+
+    self._scroller.add_widgets([
+      GreyBigButton(title, "swipe down to go\nback and try again",
+                    gui_app.texture(warning_icon, 64, 58)),
+      self._reason_card,
+      reboot_button,
+    ])
 
   def set_reason(self, reason: str):
-    self._reason_label.set_text(reason)
-
-  def show_event(self):
-    super().show_event()
-    self._reboot_slider.reset()
-
-  def _render(self, rect: rl.Rectangle):
-    self._title_label.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y + 10,
-      rect.width,
-      64,
-    ))
-
-    self._reason_label.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y + 10 + 64,
-      rect.width,
-      36,
-    ))
-
-    self._retry_button.set_opacity(1 - self._reboot_slider.slider_percentage)
-    self._retry_button.render(rl.Rectangle(
-      self._rect.x + 8,
-      self._rect.y + self._rect.height - self._retry_button.rect.height,
-      self._retry_button.rect.width,
-      self._retry_button.rect.height,
-    ))
-
-    self._reboot_slider.render(rl.Rectangle(
-      self._rect.x + self._rect.width - self._reboot_slider.rect.width,
-      self._rect.y + self._rect.height - self._reboot_slider.rect.height,
-      self._reboot_slider.rect.width,
-      self._reboot_slider.rect.height,
-    ))
+    if reason:
+      self._reason_card.set_value(reason)
+      self._reason_card.set_visible(True)
+    else:
+      self._reason_card.set_visible(False)
 
 
 class GreyBigButton(BigButton):
@@ -299,6 +281,9 @@ class GreyBigButton(BigButton):
 
   def _width_hint(self) -> int:
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
+
+  def _get_label_font_size(self):
+    return 36
 
   def _render(self, _):
     rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(255, 255, 255, int(255 * 0.15)))
@@ -474,7 +459,7 @@ class Setup(Widget):
 
     self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
 
-    self._download_failed_page = FailedPage(HARDWARE.reboot, self._pop_to_software_selection)
+    self._download_failed_page = FailedPage(self._pop_to_software_selection, red_icon=True)
 
     self._custom_software_warning_page = CustomSoftwareWarningPage(lambda: self._push_network_setup(True), self._pop_to_software_selection)
 
@@ -489,8 +474,7 @@ class Setup(Widget):
       reason = self._download_failed_reason
       self._download_failed_reason = None
       self._download_failed_page.set_reason(reason)
-      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
-      gui_app.push_widget(self._download_failed_page)
+      gui_app.pop_widgets_to(self._software_selection_page, lambda: gui_app.push_widget(self._download_failed_page))
 
   def _render(self, rect: rl.Rectangle):
     self._start_page.render(rect)
@@ -524,13 +508,11 @@ class Setup(Widget):
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
-      gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
       self._download(OPENPILOT_URL)
     else:
       def handle_keyboard_result(text):
         url = text.strip()
         if url:
-          gui_app.pop_widgets_to(self._software_selection_page, instant=True)  # don't reset sliders
           self._download(url)
 
       keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result, auto_return_to_letters="./")
@@ -545,10 +527,12 @@ class Setup(Widget):
     self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
     self.download_progress = 0
 
-    gui_app.push_widget(self._downloading_page)
+    def start_download():
+      self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
+      self.download_thread.start()
 
-    self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
-    self.download_thread.start()
+    self._downloading_page.set_shown_callback(start_download)
+    gui_app.push_widget(self._downloading_page)
 
   def _download_thread(self):
     try:
@@ -583,7 +567,7 @@ class Setup(Widget):
         is_elf = header == b'\x7fELF'
 
       if not is_elf:
-        self._download_failed_reason = "No custom software found at this URL."
+        self._download_failed_reason = "No custom software found at this URL: " + self.download_url.replace("https://", "", 1)
         return
 
       # AGNOS might try to execute the installer before this process exits.
@@ -600,9 +584,9 @@ class Setup(Widget):
 
     except urllib.error.HTTPError as e:
       if e.code == 409:
-        self._download_failed_reason = "Incompatible openpilot version"
+        self._download_failed_reason = "Incompatible openpilot version."
     except Exception:
-      self._download_failed_reason = "Invalid URL"
+      self._download_failed_reason = "Invalid URL: " + self.download_url.replace("https://", "", 1)
 
 
 def main():
