@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import re
+import ssl
 import threading
 import time
 import urllib.request
@@ -16,6 +17,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.utils import run_cmd
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManager
@@ -53,9 +55,10 @@ class NetworkConnectivityMonitor:
   def __init__(self, should_check: Callable[[], bool] | None = None):
     self.network_connected = threading.Event()
     self.wifi_connected = threading.Event()
+    self.recheck_event = threading.Event()
     self._should_check = should_check or (lambda: True)
     self._stop_event = threading.Event()
-    self.recheck_event = threading.Event()
+    self._last_timesyncd_restart = 0.0
     self._thread: threading.Thread | None = None
 
   def start(self):
@@ -91,6 +94,13 @@ class NetworkConnectivityMonitor:
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
+        except urllib.error.URLError as e:
+          if (isinstance(e.reason, ssl.SSLCertVerificationError) and
+              not system_time_valid() and
+              time.monotonic() - self._last_timesyncd_restart > 5):
+            self._last_timesyncd_restart = time.monotonic()
+            run_cmd(["sudo", "systemctl", "restart", "systemd-timesyncd"])
+          self.reset()
         except Exception:
           self.reset()
       else:
@@ -384,6 +394,8 @@ class NetworkSetupPageBase(Scroller):
 
   def show_event(self):
     super().show_event()
+    # make sure we populate strength and ip immediately if already have wifi
+    self._wifi_manager.set_active(True)
     self._show_time = rl.get_time()
     self._prev_has_internet = False
     self._pending_has_internet_scroll = False
