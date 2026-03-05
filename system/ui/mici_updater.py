@@ -68,7 +68,7 @@ class Updater(Scroller):
     self.process = None
     self.update_thread = None
     self._update_failed = False
-    self._pending_update = False
+    self._pending_update = 0
 
     self._network_monitor = NetworkConnectivityMonitor()
     self._network_monitor.start()
@@ -99,10 +99,11 @@ class Updater(Scroller):
   def _nav_stack_tick(self):
     self._progress_page.set_progress(self.progress_text, self.progress_value)
 
-    if self._pending_update:
-      self._pending_update = False
-      self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
-      self.update_thread.start()
+    if self._pending_update > 0:
+      self._pending_update -= 1
+      if self._pending_update == 0:
+        self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
+        self.update_thread.start()
 
     if self._update_failed:
       self._update_failed = False
@@ -117,8 +118,9 @@ class Updater(Scroller):
     gui_app.pop_widgets_to(self, instant=True)
     gui_app.push_widget(self._progress_page)
 
-    # Defer subprocess start to next frame so the progress page renders first
-    self._pending_update = True
+    # Defer subprocess start by 2 ticks so the progress page renders first
+    # (nav_stack_tick runs before render, so tick 1 = render, tick 2 = launch)
+    self._pending_update = 2
 
   def _run_update_process(self):
     # TODO: just import it and run in a thread without a subprocess
