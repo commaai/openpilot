@@ -106,7 +106,6 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[1].grid(linewidth=4)
       ax[1].plot(t_carState, [m.vEgo * CV.MS_TO_MPH for m in carState], 'g', label='vEgo', linewidth=6)
       ax[1].set_ylabel('Velocity (mph)')
-      ax[1].yaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
       ax[1].legend()
 
       ax[2].plot(t_carState, [m.steeringPressed for m in carState], label='steeringPressed', linewidth=6)

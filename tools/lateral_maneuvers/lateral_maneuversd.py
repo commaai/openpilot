@@ -12,7 +12,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import MIN_SPEED
 
 @dataclass
 class Action:
-  accel_bp: list[float]  # lateral acceleration (m/s^2)
+  accel_bp: list[float]  # m/s^2
   time_bp: list[float]   # seconds
 
   def __post_init__(self):
@@ -60,10 +60,7 @@ class Maneuver:
       # repeat maneuver
       elif self._repeated < self.repeat:
         self._repeated += 1
-        self._action_index = 0
-        self._action_frames = 0
-        self._active = False
-        self._ready_cnt = 0
+        self.reset()
       # finish maneuver
       else:
         self._finished = True
@@ -77,6 +74,12 @@ class Maneuver:
   @property
   def active(self):
     return self._active
+
+  def reset(self):
+    self._active = False
+    self._action_frames = 0
+    self._action_index = 0
+    self._ready_cnt = 0
 
 
 def _sine_action(amplitude, period, duration):
@@ -100,7 +103,7 @@ MANEUVERS = [
   ),
   Maneuver(
     "sine 0.5Hz 50mph",
-    [_sine_action(1.0, 2.0, 2.0)],
+    [_sine_action(1.0, 2.0, 2.0), Action([0.0], [0.5])],
     repeat=1,
     initial_speed=50. * CV.MPH_TO_MS,
   ),
@@ -118,7 +121,7 @@ MANEUVERS = [
   ),
   Maneuver(
     "sine 0.5Hz 70mph",
-    [_sine_action(1.0, 2.0, 2.0)],
+    [_sine_action(1.0, 2.0, 2.0), Action([0.0], [0.5])],
     repeat=1,
     initial_speed=70. * CV.MPH_TO_MS,
   ),
@@ -154,10 +157,7 @@ def main():
     if maneuver is not None:
       # abort active maneuver on steering override
       if maneuver.active and sm['carState'].steeringPressed:
-        maneuver._active = False
-        maneuver._action_frames = 0
-        maneuver._action_index = 0
-        maneuver._ready_cnt = 0
+        maneuver.reset()
 
       accel = maneuver.get_accel(v_ego, sm['carControl'].latActive, cur_curvature)
 
