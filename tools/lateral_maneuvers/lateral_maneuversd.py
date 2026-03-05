@@ -87,40 +87,40 @@ def _sine_action(amplitude, period, duration):
 
 MANEUVERS = [
   Maneuver(
-    "step right 30mph",
+    "step right 50mph",
     [Action([0.5], [1.0]), Action([-0.5], [1.5])],
     repeat=2,
-    initial_speed=30. * CV.MPH_TO_MS,
+    initial_speed=50. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step left 30mph",
+    "step left 50mph",
     [Action([-0.5], [1.0]), Action([0.5], [1.5])],
     repeat=2,
-    initial_speed=30. * CV.MPH_TO_MS,
+    initial_speed=50. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 0.5Hz 30mph",
+    "sine 0.5Hz 50mph",
     [_sine_action(1.0, 2.0, 2.0)],
     repeat=1,
-    initial_speed=30. * CV.MPH_TO_MS,
+    initial_speed=50. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step right 40mph",
+    "step right 70mph",
     [Action([0.5], [1.0]), Action([-0.5], [1.5])],
     repeat=2,
-    initial_speed=40. * CV.MPH_TO_MS,
+    initial_speed=70. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "step left 40mph",
+    "step left 70mph",
     [Action([-0.5], [1.0]), Action([0.5], [1.5])],
     repeat=2,
-    initial_speed=40. * CV.MPH_TO_MS,
+    initial_speed=70. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "sine 0.5Hz 40mph",
+    "sine 0.5Hz 70mph",
     [_sine_action(1.0, 2.0, 2.0)],
     repeat=1,
-    initial_speed=40. * CV.MPH_TO_MS,
+    initial_speed=70. * CV.MPH_TO_MS,
   ),
 ]
 
