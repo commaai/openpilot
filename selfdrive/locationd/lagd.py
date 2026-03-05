@@ -310,6 +310,9 @@ class LateralLagEstimator:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
+    desired = masked_symmetric_moving_average(desired, okay, SMOOTH_K_SIZE)
+    actual = masked_symmetric_moving_average(actual, okay, SMOOTH_K_SIZE)
+
     delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MIN_LAG, MAX_LAG)
     if corr < self.min_ncc or confidence < self.min_confidence or not is_valid:
       return
@@ -321,8 +324,6 @@ class LateralLagEstimator:
   def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray,
                      dt: float, min_lag: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
-    expected_sig = masked_symmetric_moving_average(expected_sig, mask, SMOOTH_K_SIZE)
-    actual_sig = masked_symmetric_moving_average(actual_sig, mask, SMOOTH_K_SIZE)
 
     min_lag_samples, max_lag_samples = int(round(min_lag / dt)), int(round(max_lag / dt))
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
