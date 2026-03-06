@@ -1,5 +1,8 @@
 Version 0.10.4 (2026-02-17)
 ========================
+* New driving model #36798
+  * Fully trained using a learned simulator
+  * Improved longitudinal performance in experimental mode
 * Kia K7 2017 support thanks to royjr!
 * Lexus LS 2018 support thanks to Hacheoy!
 * Reduce comma four standby power usage by 77% to 52 mW

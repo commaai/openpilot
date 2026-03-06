@@ -337,13 +337,16 @@ class TermsPage(Scroller):
     self._decline_button = BigCircleButton("icons_mici/setup/cancel.png", red=True)
     self._decline_button.set_click_callback(show_decline_dialog)
 
+    self._terms_header = GreyBigButton("terms and\nconditions", "scroll to continue",
+                                       gui_app.texture("icons_mici/setup/green_info.png", 64, 64))
+    self._must_accept_card = GreyBigButton("", "You must accept the Terms & Conditions to use openpilot.")
+
     self._scroller.add_widgets([
-      GreyBigButton("terms and\nconditions", "scroll to continue",
-                    gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
+      self._terms_header,
       GreyBigButton("swipe for QR code", "or go to https://comma.ai/terms",
                     gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True)),
       QRCodeWidget("https://comma.ai/terms"),
-      GreyBigButton("", "You must accept the Terms & Conditions to use openpilot."),
+      self._must_accept_card,
       self._accept_button,
       self._decline_button,
     ])
