@@ -120,6 +120,23 @@ public:
   void config_bps(int idx, int request_id);
   void config_ife(int idx, int request_id, bool init=false);
 
+  bool is_ife_secondary() const { return cc.ife_share_primary >= 0; }
+  SpectraCamera *ife_secondary = nullptr;   // the secondary camera sharing our IFE (set on primary)
+  SpectraCamera *ife_primary_ptr = nullptr;  // pointer back to primary (set on secondary)
+
+  // IFE sharing: PHY switching
+  int phy_sel_fd = -1;                           // sysfs fd for CSID phy_sel
+  bool secondary_frame_slot[MAX_IFE_BUFS] = {};  // per-slot: true if secondary frame
+  int secondary_out_idx_slot[MAX_IFE_BUFS] = {}; // per-slot: which secondary VIPC buf
+  int override_buf_handle_yuv = -1;              // if >= 0, next config_ife uses this output buffer
+  bool secondary_frame_ready = false;            // secondary frame was captured, ready for sendState
+  uint64_t primary_frame_count = 0;              // incrementing counter for primary frame IDs
+  uint64_t secondary_frame_count = 0;            // incrementing counter for secondary frame IDs
+  uint64_t secondary_enqueue_count = 0;
+  bool next_enqueue_is_secondary = false;
+
+  void switch_phy(uint32_t phy_num);
+
   int clear_req_queue();
   void enqueue_frame(uint64_t request_id);
 
@@ -189,8 +206,9 @@ public:
   CameraBuf buf;
   SpectraMaster *m;
 
-private:
   void clearAndRequeue(uint64_t from_request_id);
+
+private:
   bool validateEvent(uint64_t request_id, uint64_t frame_id_raw);
   bool waitForFrameReady(uint64_t request_id);
   bool processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp);
