@@ -28,7 +28,7 @@ class ScrollState(Enum):
 
 
 class BigCircleButton(Widget):
-  def __init__(self, icon: str, red: bool = False, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
+  def __init__(self, icon: str, red: bool = False, icon_size: tuple[int, int] = (64, 64), icon_offset: tuple[int, int] = (0, 0)):
     super().__init__()
     self._red = red
     self._icon_offset = icon_offset
