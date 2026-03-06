@@ -32,12 +32,16 @@ MIN_LAT_ACCEL_RANGE = 0.5
 MIN_CONFIDENCE = 0.7
 CORR_BORDER_OFFSET = 5
 LAG_CANDIDATE_CORR_THRESHOLD = 0.9
-SMOOTH_K_SIZE = 5
+SMOOTH_K = 5
+SMOOTH_SIGMA = 1.0
 
 
-def masked_symmetric_moving_average(x: np.ndarray, mask: np.ndarray, k: int) -> np.ndarray:
+def masked_symmetric_moving_average(x: np.ndarray, mask: np.ndarray, k: int, sigma: float) -> np.ndarray:
+    assert k >= 1 and k % 2 == 1, "k must be odd"
     pad = k // 2
-    w = np.ones(k)
+    i = np.arange(k) - pad
+    w = np.exp(-0.5 * (i / sigma) ** 2)
+    w /= w.sum()
     xp = np.pad(x * mask, pad, mode="edge")
     mp = np.pad(mask, pad, mode="edge")
     num = np.convolve(xp, w, mode="valid")
@@ -310,8 +314,8 @@ class LateralLagEstimator:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
-    desired = masked_symmetric_moving_average(desired, okay, SMOOTH_K_SIZE)
-    actual = masked_symmetric_moving_average(actual, okay, SMOOTH_K_SIZE)
+    desired = masked_symmetric_moving_average(desired, okay, SMOOTH_K, SMOOTH_SIGMA)
+    actual = masked_symmetric_moving_average(actual, okay, SMOOTH_K, SMOOTH_SIGMA)
 
     delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MIN_LAG, MAX_LAG)
     if corr < self.min_ncc or confidence < self.min_confidence or not is_valid:
