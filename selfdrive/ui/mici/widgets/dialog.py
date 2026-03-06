@@ -71,7 +71,7 @@ class BigConfirmationDialogV2(BigDialogBase):
     self._confirm_callback = confirm_callback
     self._exit_on_confirm = exit_on_confirm
 
-    icon_txt = gui_app.texture(icon, 64, 53)
+    icon_txt = gui_app.texture(icon, 64, 64)
     self._slider: BigSlider | RedBigSlider
     if red:
       self._slider = RedBigSlider(title, icon_txt, confirm_callback=self._on_confirm)
