@@ -260,6 +260,7 @@ class UpdateOpenpilotBigButton(BigButton):
     elif self._state == UpdaterState.IDLE:
       self.set_rotate_icon(False)
       if failed:
+        self.set_enabled(True)  # allow retry when failure came from updater param
         if self.get_value() != "failed to update":
           self.set_value("failed to update")
 
