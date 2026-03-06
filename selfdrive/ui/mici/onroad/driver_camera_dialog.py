@@ -7,7 +7,8 @@ from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.widgets import NavWidget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import gui_label
 
 EventName = log.OnroadEvent.EventName
@@ -24,19 +25,15 @@ class DriverCameraView(CameraView):
     return base
 
 
-class DriverCameraDialog(NavWidget):
-  def __init__(self, no_escape=False):
+class BaseDriverCameraDialog(Widget):
+  # Not a NavWidget so training guide can use this without back navigation
+  def __init__(self):
     super().__init__()
     self._camera_view = DriverCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer(lines=True)
     self.driver_state_renderer.set_rect(rl.Rectangle(0, 0, 200, 200))
     self.driver_state_renderer.load_icons()
     self._pm: messaging.PubMaster | None = None
-    if not no_escape:
-      # TODO: this can grow unbounded, should be given some thought
-      device.add_interactive_timeout_callback(lambda: gui_app.set_modal_overlay(None))
-    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
-    self.set_back_enabled(not no_escape)
 
     # Load eye icons
     self._eye_fill_texture = None
@@ -87,7 +84,7 @@ class DriverCameraDialog(NavWidget):
                 alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       rl.end_scissor_mode()
       self._publish_alert_sound(None)
-      return -1
+      return
 
     driver_data = self._draw_face_detection(rect)
     if driver_data is not None:
@@ -105,7 +102,7 @@ class DriverCameraDialog(NavWidget):
     self._render_dm_alerts(rect)
 
     rl.end_scissor_mode()
-    return -1
+    return
 
   def _publish_alert_sound(self, dm_state):
     """Publish selfdriveState with only alertSound field set"""
@@ -231,13 +228,20 @@ class DriverCameraDialog(NavWidget):
     rl.draw_texture_v(self._glasses_texture, glasses_pos, rl.Color(70, 80, 161, int(255 * glasses_prob)))
 
 
+class DriverCameraDialog(NavWidget, BaseDriverCameraDialog):
+  def __init__(self):
+    super().__init__()
+    # TODO: this can grow unbounded, should be given some thought
+    device.add_interactive_timeout_callback(gui_app.pop_widget)
+
+
 if __name__ == "__main__":
   gui_app.init_window("Driver Camera View (mici)")
 
   driver_camera_view = DriverCameraDialog()
+  gui_app.push_widget(driver_camera_view)
   try:
     for _ in gui_app.render():
       ui_state.update()
-      driver_camera_view.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     driver_camera_view.close()

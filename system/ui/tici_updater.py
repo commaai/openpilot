@@ -67,9 +67,14 @@ class Updater(Widget):
 
   def _run_update_process(self):
     # TODO: just import it and run in a thread without a subprocess
-    cmd = [self.updater, "--swap", self.manifest]
-    self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    text=True, bufsize=1, universal_newlines=True)
+    try:
+      cmd = [self.updater, "--swap", self.manifest]
+      self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                      text=True, bufsize=1, universal_newlines=True)
+    except Exception:
+      self.progress_text = "Update failed"
+      self.show_reboot_button = True
+      return
 
     if self.process.stdout is not None:
       for line in self.process.stdout:
@@ -161,10 +166,9 @@ def main():
 
   try:
     gui_app.init_window("System Update")
-    updater = Updater(updater_path, manifest_path)
-    for should_render in gui_app.render():
-      if should_render:
-        updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    gui_app.push_widget(Updater(updater_path, manifest_path))
+    for _ in gui_app.render():
+      pass
   finally:
     # Make sure we clean up even if there's an error
     gui_app.close()

@@ -6,11 +6,10 @@ export ZERO_AR_DATE=1
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-source "$DIR/../../scripts/platform.sh"
-ARCHNAME="$OPENPILOT_ARCH"
-
+ARCHNAME="x86_64"
 BLAS_TARGET="X64_AUTOMATIC"
 if [ -f /TICI ]; then
+  ARCHNAME="larch64"
   BLAS_TARGET="ARMV8A_ARM_CORTEX_A57"
 fi
 
@@ -18,6 +17,7 @@ ACADOS_FLAGS="-DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_T
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
   ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_MACOSX_RPATH=1"
+  ARCHNAME="Darwin"
 fi
 
 if [ ! -d acados_repo/ ]; then

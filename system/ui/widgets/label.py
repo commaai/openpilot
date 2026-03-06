@@ -489,6 +489,13 @@ class UnifiedLabel(Widget):
       self._spacing_pixels = self._font_size * letter_spacing
       self._cached_text = None  # Invalidate cache
 
+  def set_line_height(self, line_height: float):
+    """Update line height (multiplier, e.g., 1.0 = default)."""
+    new_line_height = line_height * 0.9
+    if self._line_height != new_line_height:
+      self._line_height = new_line_height
+      self._cached_text = None  # Invalidate cache (affects total height)
+
   def set_font_weight(self, font_weight: FontWeight):
     """Update the font weight."""
     if self._font_weight != font_weight:
@@ -753,7 +760,12 @@ class UnifiedLabel(Widget):
       # draw black fade on left and right
       fade_width = 20
       rl.draw_rectangle_gradient_h(int(self._rect.x + self._rect.width - fade_width), int(self._rect.y), fade_width, int(self._rect.height), rl.BLANK, rl.BLACK)
-      if self._scroll_state != ScrollState.STARTING:
+
+      # stop drawing left fade once text scrolls past
+      text_width = visible_sizes[0].x if visible_sizes else 0
+      first_copy_in_view = self._scroll_offset + text_width > 0
+      draw_left_fade = self._scroll_state != ScrollState.STARTING and first_copy_in_view
+      if draw_left_fade:
         rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), fade_width, int(self._rect.height), rl.BLACK, rl.BLANK)
 
       rl.end_scissor_mode()

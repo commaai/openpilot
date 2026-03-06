@@ -21,10 +21,10 @@ Each car brand is supported by a standard interface structure in `opendbc/car/[b
 * `values.py`: Limits for actuation, general constants for cars, and supported car documentation
 * `radar_interface.py`: Interface for parsing radar points from the car, if applicable
 
-## panda
+## safety
 
-* `board/safety/safety_[brand].h`: Brand-specific safety logic
-* `tests/safety/test_[brand].py`: Brand-specific safety CI tests
+* `opendbc_repo/opendbc/safety/modes/[brand].h`: Brand-specific safety logic
+* `opendbc_repo/opendbc/safety/tests/test_[brand].py`: Brand-specific safety CI tests
 
 ## openpilot
 

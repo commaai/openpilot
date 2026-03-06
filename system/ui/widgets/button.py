@@ -228,11 +228,12 @@ class SmallCircleIconButton(Widget):
 class SmallButton(Widget):
   def __init__(self, text: str):
     super().__init__()
+    self._click_delay = 0.075
     self._opacity_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
     self._load_assets()
 
-    self._label = UnifiedLabel(text, 36, font_weight=FontWeight.MEDIUM,
+    self._label = UnifiedLabel(text, 36, font_weight=FontWeight.SEMI_BOLD,
                                text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE)

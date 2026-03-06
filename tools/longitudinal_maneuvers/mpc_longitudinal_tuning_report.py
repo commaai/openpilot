@@ -5,29 +5,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.tests.test_following_distance import desired_follow_distance
+from openpilot.tools.longitudinal_maneuvers.maneuver_helpers import Axis, axis_labels
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
-TIME = 0
-LEAD_DISTANCE= 2
-EGO_V = 3
-EGO_A = 5
-D_REL = 6
-
-axis_labels = ['Time (s)',
-               'Ego position (m)',
-               'Lead absolute position (m)',
-               'Ego Velocity (m/s)',
-               'Lead Velocity (m/s)',
-               'Ego acceleration (m/s^2)',
-               'Lead distance (m)'
-               ]
 
 def get_html_from_results(results, labels, AXIS):
   fig, ax = plt.subplots(figsize=(16, 8))
-  for idx, speed in enumerate(list(results.keys())):
-    ax.plot(results[speed][:, TIME], results[speed][:, AXIS], label=labels[idx])
+  for idx, key in enumerate(results.keys()):
+    ax.plot(results[key][:, Axis.TIME], results[key][:, AXIS], label=labels[idx])
 
-  ax.set_xlabel('Time (s)')
+  ax.set_xlabel(axis_labels[Axis.TIME])
   ax.set_ylabel(axis_labels[AXIS])
   ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
   ax.grid(True, linestyle='--', alpha=0.7)
@@ -60,8 +47,8 @@ def generate_mpc_tuning_report():
     labels.append(f'{lead_accel} m/s^2 lead acceleration')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_V))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_V))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
 
 
   results = {}
@@ -78,12 +65,11 @@ def generate_mpc_tuning_report():
       breakpoints=[0., 30.],
     )
     valid, results[speed] = man.evaluate()
-    results[speed][:,2] = results[speed][:,2] - results[speed][:,1]
     labels.append(f'{speed} m/s approach speed')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
-  htmls.append(get_html_from_results(results, labels, D_REL))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.D_REL))
 
 
   results = {}
@@ -104,9 +90,9 @@ def generate_mpc_tuning_report():
     labels.append(f'{oscil} m/s oscillation size')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, D_REL))
-  htmls.append(get_html_from_results(results, labels, EGO_V))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.D_REL))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_V))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
 
 
   results = {}
@@ -128,12 +114,12 @@ def generate_mpc_tuning_report():
       breakpoints=bps,
     )
     valid, results[oscil] = man.evaluate()
-    labels.append(f'{oscil} m/s oscilliation size')
+    labels.append(f'{oscil} m/s oscillation size')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, D_REL))
-  htmls.append(get_html_from_results(results, labels, EGO_V))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.D_REL))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_V))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
 
 
   results = {}
@@ -150,12 +136,11 @@ def generate_mpc_tuning_report():
       breakpoints=[0.],
     )
     valid, results[distance] = man.evaluate()
-    results[distance][:,2] = results[distance][:,2] - results[distance][:,1]
     labels.append(f'{distance} m initial distance')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_V))
-  htmls.append(get_html_from_results(results, labels, D_REL))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_V))
+  htmls.append(get_html_from_results(results, labels, Axis.D_REL))
 
 
   results = {}
@@ -172,12 +157,11 @@ def generate_mpc_tuning_report():
       breakpoints=[0.],
     )
     valid, results[distance] = man.evaluate()
-    results[distance][:,2] = results[distance][:,2] - results[distance][:,1]
     labels.append(f'{distance} m initial distance')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_V))
-  htmls.append(get_html_from_results(results, labels, D_REL))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_V))
+  htmls.append(get_html_from_results(results, labels, Axis.D_REL))
 
 
   results = {}
@@ -195,12 +179,11 @@ def generate_mpc_tuning_report():
       breakpoints=[0., 5., 5 + stop_time],
     )
     valid, results[stop_time] = man.evaluate()
-    results[stop_time][:,2] = results[stop_time][:,2] - results[stop_time][:,1]
     labels.append(f'{stop_time} seconds stop time')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
-  htmls.append(get_html_from_results(results, labels, D_REL))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.D_REL))
 
 
   results = {}
@@ -222,8 +205,8 @@ def generate_mpc_tuning_report():
     labels.append(f'{speed} m/s speed')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
-  htmls.append(get_html_from_results(results, labels, D_REL))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.D_REL))
 
 
   results = {}
@@ -244,8 +227,8 @@ def generate_mpc_tuning_report():
     labels.append(f'{speed} m/s speed')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_V))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_V))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
 
 
   results = {}
@@ -267,8 +250,8 @@ def generate_mpc_tuning_report():
     labels.append(f'{speed} m/s speed')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_V))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_V))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
 
 
   results = {}
@@ -290,8 +273,8 @@ def generate_mpc_tuning_report():
     labels.append(f'{speed} m/s speed')
 
   htmls.append(markdown.markdown('# ' + name))
-  htmls.append(get_html_from_results(results, labels, EGO_V))
-  htmls.append(get_html_from_results(results, labels, EGO_A))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_V))
+  htmls.append(get_html_from_results(results, labels, Axis.EGO_A))
 
   return htmls
 

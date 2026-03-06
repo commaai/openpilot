@@ -46,13 +46,13 @@ int main(int argc, char *argv[]) {
     stream = new DeviceStream(&app, cmd_parser.value("zmq"));
   } else if (cmd_parser.isSet("panda") || cmd_parser.isSet("panda-serial")) {
     try {
-      stream = new PandaStream(&app, {.serial = cmd_parser.value("panda-serial")});
+      stream = new PandaStream(&app, {.serial = cmd_parser.value("panda-serial").toStdString()});
     } catch (std::exception &e) {
       qWarning() << e.what();
       return 0;
     }
   } else if (SocketCanStream::available() && cmd_parser.isSet("socketcan")) {
-    stream = new SocketCanStream(&app, {.device = cmd_parser.value("socketcan")});
+    stream = new SocketCanStream(&app, {.device = cmd_parser.value("socketcan").toStdString()});
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) replay_flags |= REPLAY_FLAG_ECAM;
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     if (!route.isEmpty()) {
       auto replay_stream = std::make_unique<ReplayStream>(&app);
       bool auto_source = cmd_parser.isSet("auto");
-      if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags, auto_source)) {
+      if (!replay_stream->loadRoute(route.toStdString(), cmd_parser.value("data_dir").toStdString(), replay_flags, auto_source)) {
         return 0;
       }
       stream = replay_stream.release();

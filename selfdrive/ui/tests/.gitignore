@@ -1,7 +1,2 @@
 test
 test_translations
-test_ui/report_1
-
-diff/**/*.mp4
-diff/**/*.html
-diff/.coverage

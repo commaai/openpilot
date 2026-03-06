@@ -23,19 +23,28 @@ def setup_state():
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
   params.put("DongleId", "test123456789")
+  # Combined description for layouts that still use it (BIG home, settings/software)
   params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
+
+  # Params for mici home
+  params.put("Version", "0.10.1")
+  params.put("GitBranch", "test-branch")
+  params.put("GitCommit", "abc12340ff9131237ba23a1d0fbd8edf9c80e87")
+  params.put("GitCommitDate", "'1732924800 2024-11-30 00:00:00 +0000'")
 
 
 def run_replay(variant: LayoutVariant) -> None:
-  from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
-  from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
-  from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
+  if HEADLESS:
+    rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
+    os.environ["OFFSCREEN"] = "1"  # Run UI without FPS limit (set before importing gui_app)
 
   setup_state()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
-  if HEADLESS:
-    rl.set_config_flags(rl.FLAG_WINDOW_HIDDEN)
+  from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
+  from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
+  from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
+
   gui_app.init_window("ui diff test", fps=FPS)
 
   # Dynamically import main layout based on variant
@@ -44,7 +53,6 @@ def run_replay(variant: LayoutVariant) -> None:
   else:
     from openpilot.selfdrive.ui.layouts.main import MainLayout
   main_layout = MainLayout()
-  main_layout.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
   script = build_script(pm, main_layout, variant)
@@ -57,7 +65,7 @@ def run_replay(variant: LayoutVariant) -> None:
   rl.get_time = lambda: frame / FPS
 
   # Main loop to replay events and render frames
-  for should_render in gui_app.render():
+  for _ in gui_app.render():
     # Handle all events for the current frame
     while script_index < len(script) and script[script_index][0] == frame:
       _, event = script[script_index]
@@ -80,9 +88,6 @@ def run_replay(variant: LayoutVariant) -> None:
 
     ui_state.update()
 
-    if should_render:
-      main_layout.render()
-
     frame += 1
 
     if script_index >= len(script):
@@ -104,6 +109,7 @@ def main():
   if args.big:
     os.environ["BIG"] = "1"
   os.environ["RECORD"] = "1"
+  os.environ["RECORD_QUALITY"] = "0"  # Use CRF 0 ("lossless" encode) for deterministic output across different machines
   os.environ["RECORD_OUTPUT"] = os.path.join(DIFF_OUT_DIR, os.environ.get("RECORD_OUTPUT", f"{variant}_ui_replay.mp4"))
 
   print(f"Running {variant} UI replay...")
