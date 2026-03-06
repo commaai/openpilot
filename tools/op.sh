@@ -96,6 +96,16 @@ function op_install_post_commit() {
   ln -sf ../../scripts/post-commit post-commit
 }
 
+function op_install_pre_push() {
+  op_get_openpilot_dir
+  if [[ ! -d $OPENPILOT_ROOT/.git/hooks/pre-push.d ]]; then
+    mkdir -p $OPENPILOT_ROOT/.git/hooks/pre-push.d
+    mv $OPENPILOT_ROOT/.git/hooks/pre-push $OPENPILOT_ROOT/.git/hooks/pre-push.d 2>/dev/null || true
+  fi
+  cd $OPENPILOT_ROOT/.git/hooks
+  ln -sf ../../scripts/pre-push pre-push
+}
+
 function op_check_openpilot_dir() {
   echo "Checking for openpilot directory..."
   if [[ -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
@@ -461,6 +471,7 @@ function op_default() {
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
   echo -e "  ${BOLD}lint${NC}         Run the linter"
   echo -e "  ${BOLD}post-commit${NC}  Install the linter as a post-commit hook"
+  echo -e "  ${BOLD}pre-push${NC}    Install the LFS pre-push hook (routes LFS pushes to GitHub)"
   echo -e "  ${BOLD}test${NC}         Run all unit tests from pytest"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
@@ -514,6 +525,7 @@ function _op() {
     stop )          shift 1; op_stop "$@" ;;
     restart )       shift 1; op_restart "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
+    pre-push )      shift 1; op_install_pre_push "$@" ;;
     adb )           shift 1; op_adb "$@" ;;
     ssh )           shift 1; op_ssh "$@" ;;
     script )        shift 1; op_script "$@" ;;

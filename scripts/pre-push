@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -e
+
+# Git pre-push hook that routes LFS pushes to GitHub.
+#
+# .lfsconfig points pulls at GitLab (unlimited bandwidth).
+# Pushes must go to GitHub so fork contributors can push LFS objects
+# to their own forks. This hook overrides lfs.pushurl at push time.
+
+remote="$1"
+url="$2"
+
+if [[ "${GIT_LFS_SKIP_PUSH:-0}" != "0" ]]; then
+  exit 0
+fi
+
+# Convert the remote URL to an HTTPS GitHub LFS endpoint.
+# Handles:  ssh://git@github.com/owner/repo.git
+#           git@github.com:owner/repo.git   (SCP-style)
+#           https://github.com/owner/repo.git
+github_lfs_url() {
+  local u="$1"
+  local path
+
+  case "$u" in
+    ssh://*)          path="${u#ssh://git@github.com/}" ;;
+    *github.com:*)    path="${u#*github.com:}" ;;
+    https://*)        path="${u#https://github.com/}" ;;
+    *)                return 1 ;;
+  esac
+
+  path="${path%.git}"
+  echo "https://github.com/${path}.git/info/lfs"
+}
+
+lfs_url=$(github_lfs_url "$url") || {
+  # Non-GitHub remote — fall through to default LFS behavior
+  git lfs pre-push "$remote" "$url"
+  exit $?
+}
+
+git -c "lfs.pushurl=${lfs_url}" lfs pre-push "$remote" "$url"
+
+# Chain any displaced pre-push hook
+if [[ -x .git/hooks/pre-push.d/pre-push ]]; then
+  .git/hooks/pre-push.d/pre-push "$@"
+fi

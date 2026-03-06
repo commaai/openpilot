@@ -1,0 +1,27 @@
+name: sync lfs to gitlab
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync-lfs:
+    if: github.repository == 'commaai/openpilot'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - name: Pull LFS objects from GitHub
+        run: git -c lfs.url=https://github.com/${{ github.repository }}.git/info/lfs lfs pull
+
+      - name: Push LFS objects to GitLab
+        if: env.GITLAB_TOKEN != ''
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          git remote add gitlab https://oauth2:${GITLAB_TOKEN}@gitlab.com/commaai/openpilot-lfs.git
+          git lfs push gitlab HEAD
