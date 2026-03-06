@@ -623,6 +623,17 @@ class WifiManager:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
     self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
+  def _start_worker(self, fn):
+    """Start a daemon worker thread with shutdown-safe D-Bus error handling."""
+    def wrapped():
+      try:
+        fn()
+      except Exception:
+        if not self._exit:
+          raise
+
+    threading.Thread(target=wrapped, daemon=True).start()
+
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
     self._set_connecting(ssid)
 
@@ -672,7 +683,7 @@ class WifiManager:
         # TODO: expose a failed connection state in the UI
         self._init_wifi_state()
 
-    threading.Thread(target=worker, daemon=True).start()
+    self._start_worker(worker)
 
   def forget_connection(self, ssid: str, block: bool = False):
     def worker():
@@ -688,7 +699,7 @@ class WifiManager:
     if block:
       worker()
     else:
-      threading.Thread(target=worker, daemon=True).start()
+      self._start_worker(worker)
 
   def activate_connection(self, ssid: str, block: bool = False):
     self._set_connecting(ssid)
@@ -712,7 +723,7 @@ class WifiManager:
     if block:
       worker()
     else:
-      threading.Thread(target=worker, daemon=True).start()
+      self._start_worker(worker)
 
   def _deactivate_connection(self, ssid: str):
     for active_conn in self._get_active_connections():
@@ -766,7 +777,7 @@ class WifiManager:
       if self.is_tethering_active():
         self.activate_connection(self._tethering_ssid, block=True)
 
-    threading.Thread(target=worker, daemon=True).start()
+    self._start_worker(worker)
 
   def _get_tethering_password(self) -> str:
     conn_path = self._connections.get(self._tethering_ssid, None)
@@ -804,7 +815,7 @@ class WifiManager:
       else:
         self._deactivate_connection(self._tethering_ssid)
 
-    threading.Thread(target=worker, daemon=True).start()
+    self._start_worker(worker)
 
   def set_current_network_metered(self, metered: MeteredType):
     def worker():
@@ -829,7 +840,7 @@ class WifiManager:
       if reply.header.message_type == MessageType.error:
         cloudlog.warning(f'Failed to update metered settings: {reply}')
 
-    threading.Thread(target=worker, daemon=True).start()
+    self._start_worker(worker)
 
   def _request_scan(self):
     if self._wifi_device is None:
