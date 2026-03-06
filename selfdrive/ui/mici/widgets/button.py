@@ -194,7 +194,9 @@ class BigButton(Widget):
     SHAKE_DURATION = 0.5
     SHAKE_AMPLITUDE = 24.0
     SHAKE_FREQUENCY = 32.0
-    t = rl.get_time() - (self._shake_start or 0.0)
+    if self._shake_start is None:
+      return 0.0
+    t = rl.get_time() - self._shake_start
     if t > SHAKE_DURATION:
       return 0.0
     decay = 1.0 - t / SHAKE_DURATION

@@ -93,16 +93,20 @@ class Reset(Scroller):
     main_card = GreyBigButton("factory reset\ntriggered", "swipe left for options",
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
+    info_card = GreyBigButton("", "Resetting erases all data. If you didn't intend to do this, the black button will restart normally.")
+
     # cancel button becomes reboot button
     if mode == ResetMode.RECOVER:
       main_card.set_text("unable to mount\ndata partition")
       main_card.set_value("it may be corrupted")
+      info_card.set_value("data partition could not\nbe mounted. reset will\nerase and reformat it.")
       self._cancel_button.set_click_callback(show_reboot_dialog)
 
     self._scroller.add_widgets([
       main_card,
-      self._reset_button,
+      info_card,
       self._cancel_button,
+      self._reset_button,
     ])
 
   def _do_erase(self):
