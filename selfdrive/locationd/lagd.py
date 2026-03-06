@@ -37,16 +37,16 @@ SMOOTH_SIGMA = 1.0
 
 
 def masked_symmetric_moving_average(x: np.ndarray, mask: np.ndarray, k: int, sigma: float) -> np.ndarray:
-    assert k >= 1 and k % 2 == 1, "k must be odd"
-    pad = k // 2
-    i = np.arange(k) - pad
-    w = np.exp(-0.5 * (i / sigma) ** 2)
-    w /= w.sum()
-    xp = np.pad(x * mask, pad, mode="edge")
-    mp = np.pad(mask, pad, mode="edge")
-    num = np.convolve(xp, w, mode="valid")
-    den = np.convolve(mp, w, mode="valid")
-    return np.divide(num, den, out=np.full_like(num, np.nan, dtype=np.float64), where=den != 0)
+  assert k >= 1 and k % 2 == 1, "k must be positive and odd"
+  pad = k // 2
+  i = np.arange(k) - pad
+  w = np.exp(-0.5 * (i / sigma) ** 2)
+  w /= w.sum()
+  xp = np.pad(x * mask, pad, mode="edge")
+  mp = np.pad(mask, pad, mode="edge")
+  num = np.convolve(xp, w, mode="valid")
+  den = np.convolve(mp, w, mode="valid")
+  return np.divide(num, den, out=np.full_like(num, np.nan, dtype=np.float64), where=den != 0)
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
   """
