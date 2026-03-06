@@ -51,6 +51,21 @@ def deleter_thread(exit_event: threading.Event):
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
+      # clean up non-directory entries that listdir_by_creation skips
+      # (e.g. stray .tar.gz files, broken symlinks)
+      try:
+        all_entries = os.listdir(Paths.log_root())
+      except OSError:
+        all_entries = []
+      for entry in all_entries:
+        entry_path = os.path.join(Paths.log_root(), entry)
+        if not os.path.isdir(entry_path):
+          try:
+            cloudlog.info(f"deleting non-directory {entry_path}")
+            os.remove(entry_path)
+          except OSError:
+            cloudlog.exception(f"issue deleting non-directory {entry_path}")
+
       dirs = listdir_by_creation(Paths.log_root())
       preserved_dirs = get_preserved_segments(dirs)
 
@@ -58,7 +73,11 @@ def deleter_thread(exit_event: threading.Event):
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
         delete_path = os.path.join(Paths.log_root(), delete_dir)
 
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+        try:
+          if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+            continue
+        except OSError:
+          cloudlog.exception(f"issue listing {delete_path}")
           continue
 
         try:
