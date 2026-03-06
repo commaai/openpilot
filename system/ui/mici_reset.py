@@ -21,7 +21,6 @@ TIMEOUT = 3*60
 class ResetMode(IntEnum):
   USER_RESET = 0  # user initiated a factory reset from openpilot
   RECOVER = 1     # userdata is corrupt for some reason, give a chance to recover
-  FORMAT = 2      # finish up a factory reset from a tool that doesn't flash an empty partition to userdata
 
 
 class ResetFailedPage(FailedPage):
@@ -91,7 +90,7 @@ class Reset(Scroller):
     self._cancel_button = BigCircleButton("icons_mici/settings/device/reboot.png")
     self._cancel_button.set_click_callback(show_cancel_dialog)
 
-    main_card = GreyBigButton("factory reset", "all content and\nsettings will be erased",
+    main_card = GreyBigButton("factory reset\ntriggered", "swipe left for options",
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
     # cancel button becomes reboot button
@@ -144,15 +143,10 @@ def main():
   if len(sys.argv) > 1:
     if sys.argv[1] == '--recover':
       mode = ResetMode.RECOVER
-    elif sys.argv[1] == "--format":
-      mode = ResetMode.FORMAT
 
   gui_app.init_window("System Reset")
   reset = Reset(mode)
   gui_app.push_widget(reset)
-
-  if mode == ResetMode.FORMAT:
-    reset.start_reset()
 
   for _ in gui_app.render():
     pass
