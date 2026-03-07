@@ -3,10 +3,56 @@ from collections.abc import Callable
 
 import pyray as rl
 
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, GL_VERSION
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.common.filter_simple import FirstOrderFilter
+
+SHIMMER_VERTEX_SHADER = GL_VERSION + """
+in vec3 vertexPosition;
+in vec2 vertexTexCoord;
+in vec4 vertexColor;
+uniform mat4 mvp;
+out vec2 fragTexCoord;
+out vec4 fragColor;
+void main() {
+  fragTexCoord = vertexTexCoord;
+  fragColor = vertexColor;
+  gl_Position = mvp * vec4(vertexPosition, 1.0);
+}
+"""
+
+SHIMMER_FRAGMENT_SHADER = GL_VERSION + """
+in vec2 fragTexCoord;
+in vec4 fragColor;
+uniform sampler2D texture0;
+uniform vec4 colDiffuse;
+uniform float time;
+uniform vec2 shimmerRange;
+out vec4 finalColor;
+
+void main() {
+  vec4 texelColor = texture(texture0, fragTexCoord);
+  finalColor = texelColor * colDiffuse * fragColor;
+
+  // shimmer band sweeping left to right
+  float range = shimmerRange.y - shimmerRange.x;
+  float bandWidth = range * 0.2;
+  float sigma = bandWidth * 0.4;
+
+  // sweep for 60% of period, pause for 40%
+  float period = 3.0;
+  float raw_t = mod(time, period) / period;
+  float t = smoothstep(0.0, 0.6, raw_t);
+
+  float shimmerCenter = shimmerRange.y + bandWidth * 2.0 - t * (range + bandWidth * 4.0);
+  float dist = gl_FragCoord.x - shimmerCenter;
+  float shimmer = exp(-0.5 * dist * dist / (sigma * sigma));
+
+  // boost alpha: base text is ~65% opacity, shimmer brings it toward 100%
+  finalColor.a *= 1.0 + shimmer * 0.54;
+}
+"""
 
 
 class SliderBase(Widget, abc.ABC):
@@ -39,6 +85,13 @@ class SliderBase(Widget, abc.ABC):
     self._label = UnifiedLabel(title, font_size=36, font_weight=FontWeight.SEMI_BOLD, text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
+
+    # Shimmer shader (lazy init)
+    self._shimmer_shader = None
+    self._shimmer_time_loc = -1
+    self._shimmer_range_loc = -1
+    self._shimmer_time_ptr = rl.ffi.new("float[]", [0.0])
+    self._shimmer_range_ptr = rl.ffi.new("float[]", [0.0, 0.0])
 
   @abc.abstractmethod
   def _load_assets(self):
@@ -117,9 +170,12 @@ class SliderBase(Widget, abc.ABC):
       # not activated yet, keep movement 1:1
       self._scroll_x_circle_filter.x = self._scroll_x_circle
 
-  def _render(self, _):
-    # TODO: iOS text shimmering animation
+  def _init_shimmer_shader(self):
+    self._shimmer_shader = rl.load_shader_from_memory(SHIMMER_VERTEX_SHADER, SHIMMER_FRAGMENT_SHADER)
+    self._shimmer_time_loc = rl.get_shader_location(self._shimmer_shader, "time")
+    self._shimmer_range_loc = rl.get_shader_location(self._shimmer_shader, "shimmerRange")
 
+  def _render(self, _):
     white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
 
     bg_txt_x = self._rect.x + (self._rect.width - self._bg_txt.width) / 2
@@ -137,7 +193,21 @@ class SliderBase(Widget, abc.ABC):
         self._rect.width - self._circle_bg_txt.width - 20 * 2.5,
         self._rect.height,
       )
+
+      # Shimmer shader for iOS-style text animation
+      if self._shimmer_shader is None:
+        self._init_shimmer_shader()
+
+      self._shimmer_time_ptr[0] = rl.get_time()
+      # gl_FragCoord.y is flipped, but we only use x
+      self._shimmer_range_ptr[0] = label_rect.x
+      self._shimmer_range_ptr[1] = label_rect.x + label_rect.width
+      rl.set_shader_value(self._shimmer_shader, self._shimmer_time_loc, self._shimmer_time_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+      rl.set_shader_value(self._shimmer_shader, self._shimmer_range_loc, self._shimmer_range_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
+
+      rl.begin_shader_mode(self._shimmer_shader)
       self._label.render(label_rect)
+      rl.end_shader_mode()
 
     # circle and arrow
     circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self._confirmed_time > 0 else self._circle_bg_txt
