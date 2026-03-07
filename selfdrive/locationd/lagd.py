@@ -31,7 +31,7 @@ MAX_LAT_ACCEL_DIFF = 0.6
 MIN_LAT_ACCEL_RANGE = 0.5
 MIN_CONFIDENCE = 0.7
 CORR_BORDER_OFFSET = 5
-LAG_CANDIDATE_CORR_THRESHOLD = 0.9
+LAG_CANDIDATE_CORR_THRESHOLD = 0.93
 SMOOTH_K = 5
 SMOOTH_SIGMA = 1.0
 
@@ -345,7 +345,7 @@ class LateralLagEstimator:
 
     # to estimate lag confidence, gather all high-correlation candidates and see how spread they are
     # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
-    ncc_thresh = (roi_ncc.max() - roi_ncc.min()) * LAG_CANDIDATE_CORR_THRESHOLD + roi_ncc.min()
+    ncc_thresh = (extended_roi_ncc.max() - extended_roi_ncc.min()) * LAG_CANDIDATE_CORR_THRESHOLD + extended_roi_ncc.min()
     good_lag_candidate_mask = extended_roi_ncc >= ncc_thresh
     good_lag_candidate_edges = np.diff(good_lag_candidate_mask.astype(int), prepend=0, append=0)
     starts, ends = np.where(good_lag_candidate_edges == 1)[0], np.where(good_lag_candidate_edges == -1)[0] - 1
