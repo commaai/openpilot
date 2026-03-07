@@ -64,18 +64,17 @@ class BigDialog(BigDialogBase):
 
 
 class BigConfirmationDialog(BigDialogBase):
-  def __init__(self, title: str, icon: str, confirm_callback: Callable[[], None],
+  def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable[[], None],
                exit_on_confirm: bool = True, red: bool = False):
     super().__init__()
     self._confirm_callback = confirm_callback
     self._exit_on_confirm = exit_on_confirm
 
-    icon_txt = gui_app.texture(icon, 64, 53)
     self._slider: BigSlider | RedBigSlider
     if red:
-      self._slider = RedBigSlider(title, icon_txt, confirm_callback=self._on_confirm)
+      self._slider = RedBigSlider(title, icon, confirm_callback=self._on_confirm)
     else:
-      self._slider = BigSlider(title, icon_txt, confirm_callback=self._on_confirm)
+      self._slider = BigSlider(title, icon, confirm_callback=self._on_confirm)
     self._slider.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
 
   def _on_confirm(self):
@@ -256,9 +255,9 @@ class BigDialogButton(BigButton):
 
 
 class BigConfirmationCircleButton(BigCircleButton):
-  def __init__(self, title: str, icon: str, confirm_callback: Callable[[], None], exit_on_confirm: bool = True,
-               red: bool = False, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(gui_app.texture(icon, *icon_size), red, icon_offset)
+  def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable[[], None], exit_on_confirm: bool = True,
+               red: bool = False, icon_offset: tuple[int, int] = (0, 0)):
+    super().__init__(icon, red, icon_offset)
 
     def show_confirm_dialog():
       gui_app.push_widget(BigConfirmationDialog(title, icon, confirm_callback,
