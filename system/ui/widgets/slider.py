@@ -6,12 +6,13 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 
 
 class SliderBase(Widget, abc.ABC):
   HORIZONTAL_PADDING = 8
   CONFIRM_DELAY = 0.2
+  PRESSED_SCALE = 1.07
 
   _bg_txt: rl.Texture
   _circle_bg_txt: rl.Texture
@@ -33,6 +34,8 @@ class SliderBase(Widget, abc.ABC):
     self._start_x_circle = 0.0
     self._scroll_x_circle = 0.0
     self._scroll_x_circle_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
+    self._circle_scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_delay = 0.075
 
     self._is_dragging_circle = False
 
@@ -139,12 +142,16 @@ class SliderBase(Widget, abc.ABC):
       )
       self._label.render(label_rect)
 
-    # circle and arrow
-    circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self.confirmed else self._circle_bg_txt
-    rl.draw_texture_ex(circle_bg_txt, rl.Vector2(btn_x, btn_y), 0.0, 1.0, white)
+    # circle and arrow with grow animation
+    circle_pressed = self._is_dragging_circle or self.confirmed or self.is_pressed
+    circle_bg_txt = self._circle_bg_pressed_txt if circle_pressed else self._circle_bg_txt
+    scale = self._circle_scale_filter.update(self.PRESSED_SCALE if circle_pressed else 1.0)
+    scaled_btn_x = btn_x + (self._circle_bg_txt.width * (1 - scale)) / 2
+    scaled_btn_y = btn_y + (self._circle_bg_txt.height * (1 - scale)) / 2
+    rl.draw_texture_ex(circle_bg_txt, rl.Vector2(scaled_btn_x, scaled_btn_y), 0.0, scale, white)
 
     arrow_x = btn_x + (self._circle_bg_txt.width - self._circle_arrow_txt.width) / 2
-    arrow_y = btn_y + (self._circle_bg_txt.height - self._circle_arrow_txt.height) / 2
+    arrow_y = scaled_btn_y + (self._circle_bg_txt.height - self._circle_arrow_txt.height) / 2
     rl.draw_texture_ex(self._circle_arrow_txt, rl.Vector2(arrow_x, arrow_y), 0.0, 1.0, white)
 
 
