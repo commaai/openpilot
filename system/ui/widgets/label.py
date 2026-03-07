@@ -467,6 +467,14 @@ class UnifiedLabel(Widget):
     """Get the current text content."""
     return str(_resolve_value(self._text))
 
+  @property
+  def font_size(self) -> int:
+    return self._font_size
+
+  @property
+  def text_width(self) -> float:
+    return max((s.x for s in self._cached_line_sizes), default=0.0)
+
   def set_text_color(self, color: rl.Color):
     """Update the text color."""
     self._text_color = color
