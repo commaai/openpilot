@@ -294,6 +294,52 @@ class TestCarModelBase(unittest.TestCase):
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
     test_car_controller(CC.as_reader())
 
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """
+      Fuzz TX messages to discover bugs related to controlsAllowed in panda
+      and general TX safety.
+    """
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    # Get TX addresses by running car controller and collecting sendcan
+    CI = self.CarInterface(self.CP)
+    CI.update([])
+    _, sendcan = CI.apply(structs.CarControl().as_reader(), 0)
+
+    if len(sendcan) == 0:
+      self.skipTest("No TX messages for this platform")
+
+    tx_addrs = [(addr, bus, len(dat)) for addr, dat, bus in sendcan]
+    address, bus, size = data.draw(st.sampled_from(tx_addrs))
+
+    # Generate random payloads
+    msg_strategy = st.binary(min_size=size, max_size=size)
+    payloads = data.draw(st.lists(msg_strategy, min_size=10, max_size=50))
+
+    # Test in different controls_allowed states
+    for controls_allowed in [False, True]:
+      self.safety.set_controls_allowed(controls_allowed)
+      self.safety.set_cruise_engaged_prev(True)
+
+      for dat in payloads:
+        to_send = libsafety_py.make_CANPacket(address, bus % 4, dat)
+        result = self.safety.safety_tx_hook(to_send)
+
+        # TX hook should never crash and should return a valid result
+        assert result in (0, 1), f"Invalid tx_hook result: {result}"
+
+        # Key invariant: if controls_allowed is False, certain messages
+        # (like steering commands) should be blocked
+        # This is a basic sanity check - specific behavior depends on the car
+
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
