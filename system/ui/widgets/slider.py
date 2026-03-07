@@ -1,4 +1,4 @@
-from abc import abstractmethod
+import abc
 from collections.abc import Callable
 
 import pyray as rl
@@ -9,7 +9,7 @@ from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.common.filter_simple import FirstOrderFilter
 
 
-class ABCSlider(Widget):
+class ABCSlider(Widget, abc.ABC):
   HORIZONTAL_PADDING = 8
   CONFIRM_DELAY = 0.2
 
@@ -41,7 +41,7 @@ class ABCSlider(Widget):
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
 
-  @abstractmethod
+  @abc.abstractmethod
   def _load_assets(self):
     ...
 
