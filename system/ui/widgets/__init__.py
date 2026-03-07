@@ -14,8 +14,9 @@ except ImportError:
     awake = True
   device = Device()
 
-
 W = TypeVar('W', bound='Widget')
+
+DEBUG = True
 
 
 class DialogResult(IntEnum):
@@ -212,19 +213,27 @@ class Widget(abc.ABC):
     self._children.append(widget)
     return widget
 
+  _show_hide_depth = 0
+
   def show_event(self):
     """Called when widget becomes visible. Propagates to registered children."""
-    print(f"show_event: {type(self).__name__}")
+    if DEBUG:
+      print(f"{'  ' * Widget._show_hide_depth}show_event: {type(self).__name__}")
+      Widget._show_hide_depth += 1
     for child in self._children:
-      print(f"  show_event: {type(self).__name__} -> {type(child).__name__}")
       child.show_event()
+    if DEBUG:
+      Widget._show_hide_depth -= 1
 
   def hide_event(self):
     """Called when widget is hidden. Propagates to registered children."""
-    print(f"hide_event: {type(self).__name__}")
+    if DEBUG:
+      print(f"{'  ' * Widget._show_hide_depth}hide_event: {type(self).__name__}")
+      Widget._show_hide_depth += 1
     for child in self._children:
-      print(f"  hide_event: {type(self).__name__} -> {type(child).__name__}")
       child.hide_event()
+    if DEBUG:
+      Widget._show_hide_depth -= 1
 
   def dismiss(self, callback: Callable[[], None] | None = None):
     """Immediately dismiss the widget, firing the callback after."""
