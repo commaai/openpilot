@@ -33,7 +33,7 @@ class SliderBase(Widget, abc.ABC):
     self._confirm_callback_called = False  # we keep dialog open by default, only call once
     self._start_x_circle = 0.0
     self._scroll_x_circle = 0.0
-    self._scroll_x_circle_filter = BounceFilter(0, 0.05, 1 / gui_app.target_fps, bounce=1.0)
+    self._scroll_x_circle_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._circle_scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
 
