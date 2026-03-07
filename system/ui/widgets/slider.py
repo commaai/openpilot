@@ -41,7 +41,7 @@ void main() {
   float sigma = bandWidth * 0.4;
 
   // sweep for 80% of period
-  float period = 2.0;
+  float period = 2.5;
   float raw_t = mod(time, period) / period;
   float t = smoothstep(0.0, 0.9, raw_t);
 
@@ -64,7 +64,7 @@ class SliderBase(Widget, abc.ABC):
   _circle_bg_pressed_txt: rl.Texture
   _circle_arrow_txt: rl.Texture
 
-  def __init__(self, title: str, confirm_callback: Callable | None = None):
+  def __init__(self, title: str, confirm_callback: Callable | None = None, shimmer_offset: float = 0.0):
     super().__init__()
     self._confirm_callback = confirm_callback
 
@@ -92,6 +92,7 @@ class SliderBase(Widget, abc.ABC):
     self._shimmer_range_loc = -1
     self._shimmer_time_ptr = rl.ffi.new("float[]", [0.0])
     self._shimmer_range_ptr = rl.ffi.new("float[]", [0.0, 0.0])
+    self._shimmer_offset = shimmer_offset
     self._shimmer_start_time = 0.0
 
   @abc.abstractmethod
@@ -107,7 +108,7 @@ class SliderBase(Widget, abc.ABC):
     self._is_dragging_circle = False
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
-    self._shimmer_start_time = rl.get_time()
+    self._shimmer_start_time = rl.get_time() + self._shimmer_offset
 
   def set_opacity(self, opacity: float, smooth: bool = False):
     if smooth:
@@ -222,9 +223,9 @@ class SliderBase(Widget, abc.ABC):
 
 
 class LargerSlider(SliderBase):
-  def __init__(self, title: str, confirm_callback: Callable | None = None, green: bool = True):
+  def __init__(self, title: str, confirm_callback: Callable | None = None, green: bool = True, shimmer_offset: float = 0.0):
     self._green = green
-    super().__init__(title, confirm_callback=confirm_callback)
+    super().__init__(title, confirm_callback=confirm_callback, shimmer_offset=shimmer_offset)
 
   def _load_assets(self):
     self.set_rect(rl.Rectangle(0, 0, 520 + self.HORIZONTAL_PADDING * 2, 115))
