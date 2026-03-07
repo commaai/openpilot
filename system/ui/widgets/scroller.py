@@ -72,7 +72,6 @@ class _Scroller(Widget):
   def __init__(self, items: list[Widget], horizontal: bool = True, snap_items: bool = False, spacing: int = ITEM_SPACING,
                pad: int = ITEM_SPACING, scroll_indicator: bool = True, edge_shadows: bool = True):
     super().__init__()
-    self._items: list[Widget] = []
     self._horizontal = horizontal
     self._snap_items = snap_items
     self._spacing = spacing
@@ -137,14 +136,14 @@ class _Scroller(Widget):
 
   @property
   def items(self) -> list[Widget]:
-    return self._items
+    return self._children
 
   @property
   def content_size(self) -> float:
     return self._content_size
 
   def add_widget(self, item: Widget) -> None:
-    self._items.append(item)
+    self._child(item)
 
     # preserve original touch valid callback
     original_touch_valid_callback = item._touch_valid_callback
@@ -239,12 +238,12 @@ class _Scroller(Widget):
       cloudlog.warning(f"Already moving items, cannot move from {from_idx} to {to_idx}")
       return
 
-    item = self._items.pop(from_idx)
-    self._items.insert(to_idx, item)
+    item = self._children.pop(from_idx)
+    self._children.insert(to_idx, item)
 
     # store original position in content space of all affected widgets to animate from
     for idx in range(min(from_idx, to_idx), max(from_idx, to_idx) + 1):
-      affected_item = self._items[idx]
+      affected_item = self._children[idx]
       self._move_animations[affected_item] = FirstOrderFilter(affected_item.rect.x - self._scroll_offset, SCROLL_RC, 1 / gui_app.target_fps)
       self._pending_move.add(affected_item)
 
@@ -293,7 +292,7 @@ class _Scroller(Widget):
     return target_x, target_y
 
   def _layout(self):
-    self._visible_items = [item for item in self._items if item.is_visible]
+    self._visible_items = [item for item in self._children if item.is_visible]
 
     self._content_size = sum(item.rect.width if self._horizontal else item.rect.height for item in self._visible_items)
     self._content_size += self._spacing * (len(self._visible_items) - 1)
@@ -398,8 +397,6 @@ class _Scroller(Widget):
 
   def show_event(self):
     super().show_event()
-    for item in self._items:
-      item.show_event()
 
     if self._reset_scroll_at_show:
       self.scroll_panel.set_offset(0.0)
@@ -411,11 +408,6 @@ class _Scroller(Widget):
     self._pending_move.clear()
     self._scrolling_to = None, False
     self._scrolling_to_filter.x = 0.0
-
-  def hide_event(self):
-    super().hide_event()
-    for item in self._items:
-      item.hide_event()
 
 
 class Scroller(Widget):

@@ -210,6 +210,7 @@ class Widget(abc.ABC):
     - If the widget is pushed onto the nav stack, do NOT register it (gui_app manages its lifecycle).
     - If the widget is rendered inline in _render(), register it.
     """
+    assert widget not in self._children, f"{type(widget).__name__} already a child of {type(self).__name__}"
     self._children.append(widget)
     return widget
 
