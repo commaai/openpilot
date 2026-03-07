@@ -246,7 +246,7 @@ class ForgetButton(Widget):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    dlg = BigConfirmationDialog("slide to forget", "icons_mici/settings/network/new/trash.png", self._forget_network, red=True)
+    dlg = BigConfirmationDialog("slide to forget", gui_app.texture("icons_mici/settings/network/new/trash.png", 54, 64), self._forget_network, red=True)
     gui_app.push_widget(dlg)
 
   def _render(self, _):

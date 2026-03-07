@@ -69,9 +69,12 @@ class Reset(Scroller):
     self._resetting_page = ResettingPage()
     self._reset_failed_page = ResetFailedPage()
 
-    self._reset_button = BigConfirmationCircleButton("erase\ndevice", "icons_mici/settings/device/uninstall.png", self.start_reset, red=True)
-    self._cancel_button = BigConfirmationCircleButton("normal\nstartup", "icons_mici/settings/device/reboot.png", gui_app.request_close, exit_on_confirm=False)
-    self._reboot_button = BigConfirmationCircleButton("reboot\ndevice", "icons_mici/settings/device/reboot.png", HARDWARE.reboot, exit_on_confirm=False)
+    self._reset_button = BigConfirmationCircleButton("erase\ndevice", gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
+                                                     self.start_reset, red=True)
+    self._cancel_button = BigConfirmationCircleButton("normal\nstartup", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
+                                                      gui_app.request_close, exit_on_confirm=False)
+    self._reboot_button = BigConfirmationCircleButton("reboot\ndevice", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
+                                                      HARDWARE.reboot, exit_on_confirm=False)
 
     # show reboot button if in recover mode
     self._cancel_button.set_visible(mode != ResetMode.RECOVER)
