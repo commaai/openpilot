@@ -261,13 +261,15 @@ class BigConfirmationCircleButton(BigCircleButton):
     super().__init__(icon, red, icon_size, icon_offset)
 
     self._title = title
+    self._icon = icon
     self._confirm_callback = confirm_callback
+    self._exit_on_confirm = exit_on_confirm
 
-    def show_confirm_dialog():
-      gui_app.push_widget(BigConfirmationDialog(self._title, icon, self._confirm_callback,
-                                                exit_on_confirm=exit_on_confirm, red=red))
+    self.set_click_callback(self._show_confirm_dialog)
 
-    self.set_click_callback(show_confirm_dialog)
+  def _show_confirm_dialog(self):
+    gui_app.push_widget(BigConfirmationDialog(self._title, self._icon, self._confirm_callback,
+                                              exit_on_confirm=self._exit_on_confirm, red=self._red))
 
   def set_title(self, title: str):
     self._title = title
