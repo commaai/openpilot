@@ -38,7 +38,7 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .enabled = !getenv("DISABLE_WIDE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_0,
   .vignetting_correction = false,
-  .output_type = ISP_IFE_PROCESSED,
+  .output_type = ISP_BPS_PROCESSED,
 };
 
 const CameraConfig ROAD_CAMERA_CONFIG = {
@@ -62,7 +62,7 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .enabled = !getenv("DISABLE_DRIVER"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
   .vignetting_correction = false,
-  .output_type = ISP_BPS_PROCESSED,
+  .output_type = ISP_IFE_PROCESSED,
 };
 
 const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};
