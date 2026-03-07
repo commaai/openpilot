@@ -13,6 +13,11 @@ class ABCSlider(Widget):
   HORIZONTAL_PADDING = 8
   CONFIRM_DELAY = 0.2
 
+  _bg_txt: rl.Texture
+  _circle_bg_txt: rl.Texture
+  _circle_bg_pressed_txt: rl.Texture
+  _circle_arrow_txt: rl.Texture
+
   def __init__(self, title: str, confirm_callback: Callable | None = None):
     # TODO: unify this with BigConfirmationDialog
     super().__init__()
