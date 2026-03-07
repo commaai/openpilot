@@ -3,57 +3,28 @@ import sys
 import subprocess
 import threading
 import pyray as rl
-from enum import IntEnum
 
-from openpilot.system.hardware import HARDWARE
+from openpilot.common.realtime import config_realtime_process, set_core_affinity
+from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.wifi_manager import WifiManager
-from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
+from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.button import FullRoundedButton
-from openpilot.system.ui.mici_setup import NetworkSetupPage, FailedPage, NetworkConnectivityMonitor
+from openpilot.system.ui.mici_setup import (NetworkSetupPage, FailedPage, NetworkConnectivityMonitor,
+                                            GreyBigButton, BigPillButton)
 
 
-class Screen(IntEnum):
-  PROMPT = 0
-  WIFI = 1
-  PROGRESS = 2
-  FAILED = 3
+class UpdaterNetworkSetupPage(NetworkSetupPage):
+  def __init__(self, network_monitor, continue_callback):
+    super().__init__(network_monitor, continue_callback, back_callback=None)
+    self._continue_button.set_text("download\n& install")
+    self._continue_button.set_green(False)
 
 
-class Updater(Widget):
-  def __init__(self, updater_path, manifest_path):
+class ProgressPage(NavWidget):
+  def __init__(self):
     super().__init__()
-    self.updater = updater_path
-    self.manifest = manifest_path
-    self.current_screen = Screen.PROMPT
-
-    self.progress_value = 0
-    self.progress_text = "loading"
-    self.process = None
-    self.update_thread = None
-    self._wifi_manager = WifiManager()
-    self._wifi_manager.set_active(True)
-
-    self._network_setup_page = NetworkSetupPage(self._wifi_manager, self._network_setup_continue_callback,
-                                                self._network_setup_back_callback)
-    self._network_setup_page.set_enabled(lambda: self.enabled)  # for nav stack
-
-    self._network_monitor = NetworkConnectivityMonitor()
-    self._network_monitor.start()
-
-    # Buttons
-    self._continue_button = FullRoundedButton("continue")
-    self._continue_button.set_click_callback(lambda: self.set_current_screen(Screen.WIFI))
-
-    self._title_label = UnifiedLabel("update required", 48, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                                     font_weight=FontWeight.DISPLAY)
-    self._subtitle_label = UnifiedLabel("The download size is approximately 1GB.", 36,
-                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                                        font_weight=FontWeight.ROMAN)
-
-    self._update_failed_page = FailedPage(HARDWARE.reboot, self._update_failed_retry_callback,
-                                          title="update failed")
 
     self._progress_title_label = UnifiedLabel("", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                               font_weight=FontWeight.DISPLAY, line_height=0.8)
@@ -61,47 +32,102 @@ class Updater(Widget):
                                                 font_weight=FontWeight.ROMAN,
                                                 alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
 
-  def _network_setup_back_callback(self):
-    self.set_current_screen(Screen.PROMPT)
+  def _back_enabled(self) -> bool:
+    return False
 
-  def _network_setup_continue_callback(self):
+  def set_progress(self, text: str, value: int):
+    self._progress_title_label.set_text(text.replace("_", "_\n") + "...")
+    self._progress_percent_label.set_text(f"{value}%")
+
+  def show_event(self):
+    super().show_event()
+    self._nav_bar._alpha = 0.0  # not dismissable
+    self.set_progress("downloading", 0)
+
+  def _render(self, rect: rl.Rectangle):
+    rl.draw_rectangle_rec(rect, rl.BLACK)
+    self._progress_title_label.render(rl.Rectangle(
+      rect.x + 12,
+      rect.y + 2,
+      rect.width,
+      self._progress_title_label.get_content_height(int(rect.width - 20)),
+    ))
+
+    self._progress_percent_label.render(rl.Rectangle(
+      rect.x + 12,
+      rect.y + 18,
+      rect.width,
+      rect.height,
+    ))
+
+
+class Updater(Scroller):
+  def __init__(self, updater_path, manifest_path):
+    super().__init__()
+    self.updater = updater_path
+    self.manifest = manifest_path
+
+    self.progress_value = 0
+    self.progress_text = "loading"
+    self.process = None
+    self.update_thread = None
+    self._update_failed = False
+
+    self._network_monitor = NetworkConnectivityMonitor()
+    self._network_monitor.start()
+
+    self._network_setup_page = UpdaterNetworkSetupPage(self._network_monitor, self._network_setup_continue_callback)
+
+    self._progress_page = ProgressPage()
+
+    self._failed_page = FailedPage(self._retry, title="update failed")
+
+    self._continue_button = BigPillButton("next")
+    self._continue_button.set_click_callback(lambda: gui_app.push_widget(self._network_setup_page))
+
+    self._scroller.add_widgets([
+      GreyBigButton("update required", "the download size\nis approximately 1 GB",
+                    gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
+      self._continue_button,
+    ])
+
+    gui_app.add_nav_stack_tick(self._nav_stack_tick)
+
+  def _network_setup_continue_callback(self, _):
     self.install_update()
 
-  def _update_failed_retry_callback(self):
-    self.set_current_screen(Screen.PROMPT)
+  def _retry(self):
+    gui_app.pop_widgets_to(self)
 
-  def set_current_screen(self, screen: Screen):
-    if self.current_screen != screen:
-      if screen == Screen.PROGRESS:
-        if self._network_setup_page:
-          self._network_setup_page.hide_event()
-      elif screen == Screen.WIFI:
-        if self._network_setup_page:
-          self._network_setup_page.show_event()
-      elif screen == Screen.PROMPT:
-        if self._network_setup_page:
-          self._network_setup_page.hide_event()
-      elif screen == Screen.FAILED:
-        if self._network_setup_page:
-          self._network_setup_page.hide_event()
+  def _nav_stack_tick(self):
+    self._progress_page.set_progress(self.progress_text, self.progress_value)
 
-    self.current_screen = screen
+    if self._update_failed:
+      self._update_failed = False
+      self.show_event()
+      gui_app.pop_widgets_to(self, lambda: gui_app.push_widget(self._failed_page))
 
   def install_update(self):
-    self.set_current_screen(Screen.PROGRESS)
     self.progress_value = 0
     self.progress_text = "downloading"
 
-    # Start the update process in a separate thread
-    self.update_thread = threading.Thread(target=self._run_update_process)
-    self.update_thread.daemon = True
-    self.update_thread.start()
+    def start_update():
+      self.update_thread = threading.Thread(target=self._run_update_process, daemon=True)
+      self.update_thread.start()
+
+    # Start the update process in a separate thread *after* show animation completes
+    self._progress_page.set_shown_callback(start_update)
+    gui_app.push_widget(self._progress_page)
 
   def _run_update_process(self):
     # TODO: just import it and run in a thread without a subprocess
-    cmd = [self.updater, "--swap", self.manifest]
-    self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    text=True, bufsize=1, universal_newlines=True)
+    try:
+      cmd = [self.updater, "--swap", self.manifest]
+      self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                      text=True, bufsize=1, universal_newlines=True)
+    except Exception:
+      self._update_failed = True
+      return
 
     if self.process.stdout is not None:
       for line in self.process.stdout:
@@ -117,68 +143,21 @@ class Updater(Widget):
     if exit_code == 0:
       HARDWARE.reboot()
     else:
-      self.set_current_screen(Screen.FAILED)
-
-  def render_prompt_screen(self, rect: rl.Rectangle):
-    self._title_label.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y - 5,
-      rect.width,
-      48,
-    ))
-
-    subtitle_width = rect.width - 16
-    subtitle_height = self._subtitle_label.get_content_height(int(subtitle_width))
-    self._subtitle_label.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y + 48,
-      subtitle_width,
-      subtitle_height,
-    ))
-
-    self._continue_button.render(rl.Rectangle(
-      rect.x + 8,
-      rect.y + rect.height - self._continue_button.rect.height,
-      self._continue_button.rect.width,
-      self._continue_button.rect.height,
-    ))
-
-  def render_progress_screen(self, rect: rl.Rectangle):
-    self._progress_title_label.set_text(self.progress_text.replace("_", "_\n") + "...")
-    self._progress_title_label.render(rl.Rectangle(
-      rect.x + 12,
-      rect.y + 2,
-      rect.width,
-      self._progress_title_label.get_content_height(int(rect.width - 20)),
-    ))
-
-    self._progress_percent_label.set_text(f"{self.progress_value}%")
-    self._progress_percent_label.render(rl.Rectangle(
-      rect.x + 12,
-      rect.y + 18,
-      rect.width,
-      rect.height,
-    ))
-
-  def _update_state(self):
-    self._wifi_manager.process_callbacks()
-
-  def _render(self, rect: rl.Rectangle):
-    if self.current_screen == Screen.PROMPT:
-      self.render_prompt_screen(rect)
-    elif self.current_screen == Screen.WIFI:
-      self._network_setup_page.set_has_internet(self._network_monitor.network_connected.is_set())
-      self._network_setup_page.render(rect)
-    elif self.current_screen == Screen.PROGRESS:
-      self.render_progress_screen(rect)
-    elif self.current_screen == Screen.FAILED:
-      self._update_failed_page.render(rect)
+      self._update_failed = True
 
   def close(self):
     self._network_monitor.stop()
 
 
 def main():
+  config_realtime_process(0, 51)
+  # attempt to affine. AGNOS will start setup with all cores, should only fail when manually launching with screen off
+  if TICI:
+    try:
+      set_core_affinity([5])
+    except OSError:
+      cloudlog.exception("Failed to set core affinity for updater process")
+
   if len(sys.argv) < 3:
     print("Usage: updater.py <updater_path> <manifest_path>")
     sys.exit(1)

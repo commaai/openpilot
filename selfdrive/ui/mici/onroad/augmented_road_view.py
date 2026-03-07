@@ -247,7 +247,7 @@ class AugmentedRoadView(CameraView):
     # Draw darkened background and text if not onroad
     if not ui_state.started:
       rl.draw_rectangle(int(self.rect.x), int(self.rect.y), int(self.rect.width), int(self.rect.height), rl.Color(0, 0, 0, 175))
-      self._offroad_label.render(self._content_rect)
+      self._offroad_label.render(self._rect)
 
     # publish uiDebug
     msg = messaging.new_message('uiDebug')

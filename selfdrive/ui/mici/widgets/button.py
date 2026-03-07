@@ -120,6 +120,7 @@ class BigButton(Widget):
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
     self._shake_start: float | None = None
+    self._grow_animation_until: float | None = None
 
     self._rotate_icon_t: float | None = None
 
@@ -144,6 +145,9 @@ class BigButton(Widget):
     self._txt_default_bg = gui_app.texture("icons_mici/buttons/button_rectangle.png", 402, 180)
     self._txt_pressed_bg = gui_app.texture("icons_mici/buttons/button_rectangle_pressed.png", 402, 180)
     self._txt_disabled_bg = gui_app.texture("icons_mici/buttons/button_rectangle_disabled.png", 402, 180)
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(lambda: touch_callback() and self._grow_animation_until is None)
 
   def _width_hint(self) -> int:
     # Single line if scrolling, so hide behind icon if exists
@@ -182,12 +186,17 @@ class BigButton(Widget):
   def trigger_shake(self):
     self._shake_start = rl.get_time()
 
+  def trigger_grow_animation(self, duration: float = 0.65):
+    self._grow_animation_until = rl.get_time() + duration
+
   @property
   def _shake_offset(self) -> float:
     SHAKE_DURATION = 0.5
     SHAKE_AMPLITUDE = 24.0
     SHAKE_FREQUENCY = 32.0
-    t = rl.get_time() - (self._shake_start or 0.0)
+    if self._shake_start is None:
+      return 0.0
+    t = rl.get_time() - self._shake_start
     if t > SHAKE_DURATION:
       return 0.0
     decay = 1.0 - t / SHAKE_DURATION
@@ -197,6 +206,10 @@ class BigButton(Widget):
     super().set_position(x + self._shake_offset, y)
 
   def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
+    if self._grow_animation_until is not None:
+      if rl.get_time() >= self._grow_animation_until:
+        self._grow_animation_until = None
+
     # draw _txt_default_bg
     txt_bg = self._txt_default_bg
     if not self.enabled:
@@ -204,7 +217,7 @@ class BigButton(Widget):
     elif self.is_pressed:
       txt_bg = self._txt_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
+    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed or self._grow_animation_until is not None else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     return txt_bg, btn_x, btn_y, scale

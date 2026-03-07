@@ -47,7 +47,7 @@ class ScrollIndicator(Widget):
     # position based on scroll ratio
     slide_range = self._viewport.width - indicator_w
     max_scroll = self._content_size - self._viewport.width
-    scroll_ratio = -self._scroll_offset / max_scroll
+    scroll_ratio = (-self._scroll_offset / abs(max_scroll)) if abs(max_scroll) > 1e-3 else 0.0
     x = self._viewport.x + scroll_ratio * slide_range
     # don't bounce up when NavWidget shows
     y = max(self._viewport.y, 0) + self._viewport.height - self._txt_scroll_indicator.height / 2
