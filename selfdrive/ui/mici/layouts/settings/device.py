@@ -8,8 +8,8 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog, BigConfirmationCircleButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
@@ -68,26 +68,27 @@ def _engaged_confirmation_click(callback: Callable, title: str, icon: rl.Texture
   if not ui_state.engaged:
     def confirm_callback():
       # Check engaged again in case it changed while the dialog was open
+      # TODO: if true, we stay on the dialog if not exit_on_confirm until normal onroad timeout
       if not ui_state.engaged:
         callback()
 
-    gui_app.push_widget(BigConfirmationDialog(title, icon, confirm_callback, red=red, exit_on_confirm=exit_on_confirm))
+    gui_app.push_widget(BigConfirmationDialog('slide to\n' + title, icon, confirm_callback, exit_on_confirm=exit_on_confirm, red=red))
   else:
-    gui_app.push_widget(BigDialog(f"Disengage to {title.replace('slide to\n', '')}", ""))
+    gui_app.push_widget(BigDialog(f"Disengage to {title}", ""))
 
 
-class EngagedConfirmationCircleButton(BigConfirmationCircleButton):
+class EngagedConfirmationCircleButton(BigCircleButton):
   def __init__(self, title: str, icon: rl.Texture, callback: Callable[[], None], exit_on_confirm: bool = True,
                red: bool = False, icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(title, icon, callback, exit_on_confirm=exit_on_confirm, red=red, icon_offset=icon_offset)
-    self.set_click_callback(lambda: _engaged_confirmation_click(callback, title, icon, red=red, exit_on_confirm=exit_on_confirm))
+    super().__init__(icon, red, icon_offset)
+    self.set_click_callback(lambda: _engaged_confirmation_click(callback, title, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
 class EngagedConfirmationButton(BigButton):
   def __init__(self, text: str, title: str, icon: rl.Texture, callback: Callable[[], None],
                exit_on_confirm: bool = True, red: bool = False):
     super().__init__(text, "", icon)
-    self.set_click_callback(lambda: _engaged_confirmation_click(callback, title, icon, red=red, exit_on_confirm=exit_on_confirm))
+    self.set_click_callback(lambda: _engaged_confirmation_click(callback, title, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
 class DeviceInfoLayoutMici(Widget):
@@ -307,17 +308,17 @@ class DeviceLayoutMici(NavScroller):
     def uninstall_openpilot_callback():
       ui_state.params.put_bool("DoUninstall", True)
 
-    reset_calibration_btn = EngagedConfirmationButton("reset calibration", "slide to\nreset", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64),
+    reset_calibration_btn = EngagedConfirmationButton("reset calibration", "reset", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64),
                                                       reset_calibration_callback)
 
-    uninstall_openpilot_btn = EngagedConfirmationButton("uninstall openpilot", "slide to\nuninstall",
+    uninstall_openpilot_btn = EngagedConfirmationButton("uninstall openpilot", "uninstall",
                                                         gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
                                                         uninstall_openpilot_callback, exit_on_confirm=False)
 
-    reboot_btn = EngagedConfirmationCircleButton("slide to\nreboot", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
+    reboot_btn = EngagedConfirmationCircleButton("reboot", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
                                                  reboot_callback, exit_on_confirm=False)
 
-    self._power_off_btn = EngagedConfirmationCircleButton("slide to\npower off", gui_app.texture("icons_mici/settings/device/power.png", 64, 66),
+    self._power_off_btn = EngagedConfirmationCircleButton("power off", gui_app.texture("icons_mici/settings/device/power.png", 64, 66),
                                                           power_off_callback, exit_on_confirm=False, red=True)
     self._power_off_btn.set_visible(lambda: not ui_state.ignition)
 
