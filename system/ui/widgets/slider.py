@@ -180,6 +180,21 @@ class SliderBase(Widget, abc.ABC):
     self._shimmer_time_loc = rl.get_shader_location(self._shimmer_shader, "time")
     self._shimmer_range_loc = rl.get_shader_location(self._shimmer_shader, "shimmerRange")
 
+  def _render_shimmer_label(self, label_rect: rl.Rectangle):
+    if self._shimmer_shader is None:
+      self._init_shimmer_shader()
+
+    self._shimmer_time_ptr[0] = rl.get_time() - self._shimmer_start_time
+    text_right = label_rect.x + label_rect.width
+    self._shimmer_range_ptr[0] = text_right - self._label.text_width
+    self._shimmer_range_ptr[1] = text_right
+    rl.set_shader_value(self._shimmer_shader, self._shimmer_time_loc, self._shimmer_time_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
+    rl.set_shader_value(self._shimmer_shader, self._shimmer_range_loc, self._shimmer_range_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
+
+    rl.begin_shader_mode(self._shimmer_shader)
+    self._label.render(label_rect)
+    rl.end_shader_mode()
+
   def _render(self, _):
     white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
 
@@ -190,30 +205,16 @@ class SliderBase(Widget, abc.ABC):
     btn_x = bg_txt_x + self._bg_txt.width - self._circle_bg_txt.width + self._scroll_x_circle_filter.x
     btn_y = self._rect.y + (self._rect.height - self._circle_bg_txt.height) / 2
 
-    if self._confirmed_time == 0.0 or self._scroll_x_circle > 0:
-      self._label.set_text_color(rl.Color(255, 255, 255, int(255 * (1.0 - self.slider_percentage) * self._opacity_filter.x)))
+    label_alpha = int(255 * (1.0 - self.slider_percentage) * self._opacity_filter.x)
+    if label_alpha > 0:
+      self._label.set_text_color(rl.Color(255, 255, 255, label_alpha))
       label_rect = rl.Rectangle(
         self._rect.x + 20,
         self._rect.y,
         self._rect.width - self._circle_bg_txt.width - 20 * 2.5,
         self._rect.height,
       )
-
-      # Shimmer shader for iOS-style text animation
-      if self._shimmer_shader is None:
-        self._init_shimmer_shader()
-
-      self._shimmer_time_ptr[0] = rl.get_time() - self._shimmer_start_time
-      # use actual text width (right-aligned) instead of full rect
-      text_right = label_rect.x + label_rect.width
-      self._shimmer_range_ptr[0] = text_right - self._label.text_width
-      self._shimmer_range_ptr[1] = text_right
-      rl.set_shader_value(self._shimmer_shader, self._shimmer_time_loc, self._shimmer_time_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
-      rl.set_shader_value(self._shimmer_shader, self._shimmer_range_loc, self._shimmer_range_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
-
-      rl.begin_shader_mode(self._shimmer_shader)
-      self._label.render(label_rect)
-      rl.end_shader_mode()
+      self._render_shimmer_label(label_rect)
 
     # circle and arrow
     circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self._confirmed_time > 0 else self._circle_bg_txt
