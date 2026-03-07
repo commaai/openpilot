@@ -376,7 +376,7 @@ class NetworkSetupPageBase(Scroller):
       # trigger grow when wifi button in view
       self._pending_wifi_grow_animation = True
 
-    self._waiting_button = BigPillButton("waiting for\ninternet...", disabled_background=True)
+    self._waiting_button = BigPillButton("connect to\ncontinue", disabled_background=True)
     self._waiting_button.set_click_callback(on_waiting_click)
     self._continue_button = BigPillButton("install openpilot", green=True)
     self._continue_button.set_click_callback(lambda: continue_callback(self._custom_software))
@@ -423,17 +423,19 @@ class NetworkSetupPageBase(Scroller):
     # Check network state before processing callbacks so forgetting flag
     # is still set on the frame the forgotten callback fires
     has_internet = self._has_internet
+    wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
+
     self._continue_button.set_visible(has_internet)
     self._waiting_button.set_visible(not has_internet)
 
     # TODO: fire show/hide events on visibility changes
     if not has_internet:
       self._pending_continue_grow_animation = False
+      self._waiting_button.set_text("waiting for\ninternet..." if wifi_connected else "connect to\ncontinue")
 
     self._wifi_manager.process_callbacks()
 
     # Dismiss WiFi UI and scroll on WiFi connect or internet gain
-    wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
     if (has_internet and not self._prev_has_internet) or (wifi_connected and not self._prev_wifi_connected):
       # TODO: cancel if connect is transient
       self._pending_has_internet_scroll = rl.get_time()
