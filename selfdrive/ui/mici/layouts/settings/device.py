@@ -64,7 +64,7 @@ class MiciFccModal(NavRawScrollPanel):
     rl.draw_texture_ex(self._fcc_logo, fcc_pos, 0.0, 1.0, rl.WHITE)
 
 
-def _engaged_confirmation_click(callback: Callable, title: str, icon: rl.Texture, red: bool = False, exit_on_confirm: bool = True):
+def _engaged_confirmation_click(callback: Callable, title: str, icon: rl.Texture, exit_on_confirm: bool = True, red: bool = False):
   if not ui_state.engaged:
     def confirm_callback():
       # Check engaged again in case it changed while the dialog was open
@@ -77,15 +77,15 @@ def _engaged_confirmation_click(callback: Callable, title: str, icon: rl.Texture
 
 
 class EngagedConfirmationCircleButton(BigConfirmationCircleButton):
-  def __init__(self, title: str, icon: rl.Texture, callback: Callable[[], None], red: bool = False,
-               exit_on_confirm: bool = True, icon_offset: tuple[int, int] = (0, 0)):
+  def __init__(self, title: str, icon: rl.Texture, callback: Callable[[], None], exit_on_confirm: bool = True,
+               red: bool = False, icon_offset: tuple[int, int] = (0, 0)):
     super().__init__(title, icon, callback, exit_on_confirm=exit_on_confirm, red=red, icon_offset=icon_offset)
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, title, icon, red=red, exit_on_confirm=exit_on_confirm))
 
 
 class EngagedConfirmationButton(BigButton):
-  def __init__(self, text: str, title: str, icon: rl.Texture, callback: Callable[[], None], red: bool = False,
-               exit_on_confirm: bool = True):
+  def __init__(self, text: str, title: str, icon: rl.Texture, callback: Callable[[], None],
+               exit_on_confirm: bool = True, red: bool = False):
     super().__init__(text, "", icon)
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, title, icon, red=red, exit_on_confirm=exit_on_confirm))
 
@@ -318,7 +318,7 @@ class DeviceLayoutMici(NavScroller):
                                                  reboot_callback, exit_on_confirm=False)
 
     self._power_off_btn = EngagedConfirmationCircleButton("slide to\npower off", gui_app.texture("icons_mici/settings/device/power.png", 64, 66),
-                                                          power_off_callback, red=True, exit_on_confirm=False)
+                                                          power_off_callback, exit_on_confirm=False, red=True)
     self._power_off_btn.set_visible(lambda: not ui_state.ignition)
 
     regulatory_btn = BigButton("regulatory info", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
