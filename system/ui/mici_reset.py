@@ -92,7 +92,7 @@ class Reset(Scroller):
     self._scroller.add_widget(main_card)
 
     if mode != ResetMode.USER_RESET:
-      self._scroller.add_widget(GreyBigButton("", "Resetting erases\nall user content & data."))
+      self._scroller.add_widget(GreyBigButton("", "Resetting erases all user content & data."))
       if mode == ResetMode.RECOVER:
         main_card.set_value("user data partition\ncould not be mounted")
       elif mode == ResetMode.TAP_RESET:
