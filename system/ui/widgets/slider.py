@@ -46,7 +46,9 @@ void main() {
   float sigma = range * BLUR_RADIUS;
 
   float t = smoothstep(0.0, SWEEP_FRACTION, mod(time, CYCLE_PERIOD) / CYCLE_PERIOD);
-  float center = shimmerRange.y + range * BAND_WIDTH * 2.0 - t * range * (1.0 + BAND_WIDTH * 4.0);
+  // Start one margin past the right edge, end one margin past the left edge
+  float margin = range * BAND_WIDTH;
+  float center = shimmerRange.y + margin - t * (range + 2.0 * margin);
 
   float d = gl_FragCoord.x - center;
   float shimmer = exp(-0.5 * d * d / (sigma * sigma));
@@ -95,6 +97,10 @@ class SliderBase(Widget, abc.ABC):
     self._shimmer_range_ptr = rl.ffi.new("float[]", [0.0, 0.0])
     self._shimmer_offset = shimmer_offset
     self._shimmer_start_time = 0.0
+
+  def __del__(self):
+    if self._shimmer_shader is not None:
+      rl.unload_shader(self._shimmer_shader)
 
   @abc.abstractmethod
   def _load_assets(self):
