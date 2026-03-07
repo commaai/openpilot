@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import pyray as rl
 from enum import IntEnum
+from typing import TypeVar
 from collections.abc import Callable
 from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS, MouseEvent
 
@@ -14,6 +15,9 @@ except ImportError:
   device = Device()
 
 
+W = TypeVar('W', bound='Widget')
+
+
 class DialogResult(IntEnum):
   CANCEL = 0
   CONFIRM = 1
@@ -22,6 +26,7 @@ class DialogResult(IntEnum):
 
 class Widget(abc.ABC):
   def __init__(self):
+    self._children: list[Widget] = []
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle | None = None
     self.__is_pressed = [False] * MAX_TOUCH_SLOTS
@@ -197,12 +202,24 @@ class Widget(abc.ABC):
     """Optionally handle mouse events. This is called before rendering."""
     # Default implementation does nothing, can be overridden by subclasses
 
+  def _child(self, widget: W) -> W:
+    """Register a widget as a child. Lifecycle events (show/hide) propagate to registered children."""
+    self._children.append(widget)
+    return widget
+
   def show_event(self):
-    """Optionally handle show event. Parent must manually call this"""
-    # TODO: iterate through all child objects, check for subclassing from Widget/Layout (Scroller)
+    """Called when widget becomes visible. Propagates to registered children."""
+    print(f"show_event: {type(self).__name__}")
+    for child in self._children:
+      print(f"  show_event: {type(self).__name__} -> {type(child).__name__}")
+      child.show_event()
 
   def hide_event(self):
-    """Optionally handle hide event. Parent must manually call this"""
+    """Called when widget is hidden. Propagates to registered children."""
+    print(f"hide_event: {type(self).__name__}")
+    for child in self._children:
+      print(f"  hide_event: {type(self).__name__} -> {type(child).__name__}")
+      child.hide_event()
 
   def dismiss(self, callback: Callable[[], None] | None = None):
     """Immediately dismiss the widget, firing the callback after."""
