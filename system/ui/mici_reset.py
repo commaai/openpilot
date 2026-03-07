@@ -69,9 +69,9 @@ class Reset(Scroller):
     self._resetting_page = ResettingPage()
     self._reset_failed_page = ResetFailedPage()
 
-    self._reset_button = BigConfirmationCircleButton("erase\ndevice", gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
+    self._reset_button = BigConfirmationCircleButton("reset &\nerase", gui_app.texture("icons_mici/settings/device/uninstall.png", 70, 70),
                                                      self.start_reset, red=True)
-    self._cancel_button = BigConfirmationCircleButton("normal\nstartup", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
+    self._cancel_button = BigConfirmationCircleButton("cancel", gui_app.texture("icons_mici/setup/cancel.png", 64, 64),
                                                       gui_app.request_close, exit_on_confirm=False)
     self._reboot_button = BigConfirmationCircleButton("reboot\ndevice", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
                                                       HARDWARE.reboot, exit_on_confirm=False)
@@ -84,8 +84,7 @@ class Reset(Scroller):
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
     if mode == ResetMode.RECOVER:
-      main_card.set_text("unable to mount\ndata partition")
-      main_card.set_value("it may be corrupted")
+      main_card.set_value("user data partition\ncould not be mounted")
 
     self._scroller.add_widgets([
       main_card,
