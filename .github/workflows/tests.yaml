@@ -24,17 +24,34 @@ env:
 
 jobs:
   build_release:
-    name: build release
+    name: build release (${{ matrix.os }})
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+          - os: fedora-42-x86
+            container: fedora:42
+          - os: fedora-42-arm64
+            container: fedora:42
+            arch: arm64
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
-      && fromJSON('["namespace-profile-amd64-8x16"]')
-      || fromJSON('["ubuntu-24.04"]') }}
+      && fromJSON(matrix.arch == 'arm64' && '["namespace-profile-arm64-8x16"]' || '["namespace-profile-amd64-8x16"]')
+      || fromJSON(matrix.arch == 'arm64' && '["ubuntu-24.04-arm"]' || '["ubuntu-24.04"]') }}
+    container: ${{ matrix.container || '' }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
       PYTHONPATH: /tmp/releasepilot
     steps:
+    - name: Bootstrap container
+      if: matrix.container
+      run: |
+        if command -v dnf &>/dev/null; then
+          dnf install -y --disablerepo=fedora-cisco-openh264 --setopt=install_weak_deps=False --setopt=tsflags=nodocs --setopt=max_parallel_downloads=10 git-lfs file
+        fi
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v6
       with:
         submodules: true
@@ -48,6 +65,8 @@ jobs:
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_stripped.sh
     - run: ./tools/op.sh setup
+      env:
+        UV_LINK_MODE: ${{ matrix.container && 'copy' || 'clone' }}
     - name: Build openpilot and run checks
       timeout-minutes: 30
       working-directory: ${{ env.STRIPPED_DIR }}
