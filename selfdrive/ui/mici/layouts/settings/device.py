@@ -73,17 +73,17 @@ def _engaged_confirmation_callback(callback: Callable, action_text: str):
 
     red = False
     if action_text == "power off":
-      icon = "icons_mici/settings/device/power.png"
+      icon = gui_app.texture("icons_mici/settings/device/power.png", 64, 66)
       red = True
     elif action_text == "reboot":
-      icon = "icons_mici/settings/device/reboot.png"
+      icon = gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70)
     elif action_text == "reset":
-      icon = "icons_mici/settings/device/lkas.png"
+      icon = gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64)
     elif action_text == "uninstall":
-      icon = "icons_mici/settings/device/uninstall.png"
+      icon = gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64)
     else:
       # TODO: check
-      icon = "icons_mici/settings/comma_icon.png"
+      icon = gui_app.texture("icons_mici/settings/comma_icon.png", 36, 64)
 
     dlg: BigConfirmationDialog | BigDialog = BigConfirmationDialog(f"slide to\n{action_text.lower()}", icon, confirm_callback,
                                                                    red=red, exit_on_confirm=action_text == "reset")
