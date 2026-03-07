@@ -247,7 +247,7 @@ class ForgetButton(Widget):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
     dlg = BigConfirmationDialog("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
-                                  confirm_callback=self._forget_network)
+                                confirm_callback=self._forget_network)
     gui_app.push_widget(dlg)
 
   def _render(self, _):
@@ -390,5 +390,3 @@ class WifiUIMici(NavScroller):
     super()._update_state()
 
     self._move_network_to_front(self._wifi_manager.wifi_state.ssid)
-
-

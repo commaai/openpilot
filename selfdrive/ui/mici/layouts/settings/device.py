@@ -86,8 +86,8 @@ def _engaged_confirmation_callback(callback: Callable, action_text: str):
       icon = "icons_mici/settings/comma_icon.png"
 
     dlg: BigConfirmationDialog | BigDialog = BigConfirmationDialog(f"slide to\n{action_text.lower()}", icon, red=red,
-                                                                       exit_on_confirm=action_text == "reset",
-                                                                       confirm_callback=confirm_callback)
+                                                                   exit_on_confirm=action_text == "reset",
+                                                                   confirm_callback=confirm_callback)
     gui_app.push_widget(dlg)
   else:
     dlg = BigDialog(f"Disengage to {action_text}", "")

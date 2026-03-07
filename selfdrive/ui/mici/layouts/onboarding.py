@@ -221,7 +221,7 @@ class TrainingGuideRecordFront(NavScroller):
         continue_callback()
 
       gui_app.push_widget(BigConfirmationDialog("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", exit_on_confirm=False,
-                                                  confirm_callback=on_accept))
+                                                confirm_callback=on_accept))
 
     def show_decline_dialog():
       def on_decline():
@@ -325,11 +325,11 @@ class TermsPage(Scroller):
 
     def show_accept_dialog():
       gui_app.push_widget(BigConfirmationDialog("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png",
-                                                  confirm_callback=on_accept))
+                                                confirm_callback=on_accept))
 
     def show_decline_dialog():
       gui_app.push_widget(BigConfirmationDialog("decline &\nuninstall", "icons_mici/setup/cancel.png",
-                                                  red=True, exit_on_confirm=False, confirm_callback=on_decline))
+                                                red=True, exit_on_confirm=False, confirm_callback=on_decline))
 
     self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
     self._accept_button.set_click_callback(show_accept_dialog)

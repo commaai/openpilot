@@ -72,17 +72,17 @@ class Reset(Scroller):
 
     def show_confirm_dialog():
       dialog = BigConfirmationDialog("erase\ndevice", "icons_mici/settings/device/uninstall.png", red=True,
-                                       confirm_callback=self.start_reset)
+                                     confirm_callback=self.start_reset)
       gui_app.push_widget(dialog)
 
     def show_cancel_dialog():
       dialog = BigConfirmationDialog("normal\nstartup", "icons_mici/settings/device/reboot.png",
-                                       exit_on_confirm=False, confirm_callback=gui_app.request_close)
+                                     exit_on_confirm=False, confirm_callback=gui_app.request_close)
       gui_app.push_widget(dialog)
 
     def show_reboot_dialog():
       dialog = BigConfirmationDialog("reboot\ndevice", "icons_mici/settings/device/reboot.png",
-                                       exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
+                                     exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
       gui_app.push_widget(dialog)
 
     self._reset_button = BigCircleButton("icons_mici/settings/device/uninstall.png", red=True)

@@ -249,7 +249,7 @@ class FailedPage(NavScroller):
 
     def show_reboot_dialog():
       dialog = BigConfirmationDialog("slide to reboot", "icons_mici/settings/device/reboot.png",
-                                       exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
+                                     exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
       gui_app.push_widget(dialog)
 
     reboot_button = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
