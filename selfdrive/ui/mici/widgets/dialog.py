@@ -258,7 +258,7 @@ class BigDialogButton(BigButton):
 class BigConfirmationCircleButton(BigCircleButton):
   def __init__(self, title: str, icon: str, confirm_callback: Callable[[], None], exit_on_confirm: bool = True,
                red: bool = False, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(icon, red, icon_size, icon_offset)
+    super().__init__(gui_app.texture(icon, *icon_size), red, icon_offset)
 
     def show_confirm_dialog():
       gui_app.push_widget(BigConfirmationDialog(title, icon, confirm_callback,

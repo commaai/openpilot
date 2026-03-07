@@ -28,7 +28,7 @@ class ScrollState(Enum):
 
 
 class BigCircleButton(Widget):
-  def __init__(self, icon: str, red: bool = False, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
+  def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0)):
     super().__init__()
     self._red = red
     self._icon_offset = icon_offset
@@ -39,7 +39,7 @@ class BigCircleButton(Widget):
     self._click_delay = 0.075
 
     # Icons
-    self._txt_icon = gui_app.texture(icon, *icon_size)
+    self._txt_icon = icon
     self._txt_btn_disabled_bg = gui_app.texture("icons_mici/buttons/button_circle_disabled.png", 180, 180)
 
     self._txt_btn_bg = gui_app.texture("icons_mici/buttons/button_circle.png", 180, 180)
@@ -71,8 +71,8 @@ class BigCircleButton(Widget):
 
 
 class BigCircleToggle(BigCircleButton):
-  def __init__(self, icon: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(icon, False, icon_size=icon_size, icon_offset=icon_offset)
+  def __init__(self, icon: rl.Texture, toggle_callback: Callable | None = None, icon_offset: tuple[int, int] = (0, 0)):
+    super().__init__(icon, False, icon_offset=icon_offset)
     self._toggle_callback = toggle_callback
 
     # State
@@ -372,9 +372,9 @@ class BigParamControl(BigToggle):
 
 # TODO: param control base class
 class BigCircleParamControl(BigCircleToggle):
-  def __init__(self, icon: str, param: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53),
+  def __init__(self, icon: rl.Texture, param: str, toggle_callback: Callable | None = None,
                icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(icon, toggle_callback, icon_size=icon_size, icon_offset=icon_offset)
+    super().__init__(icon, toggle_callback, icon_offset=icon_offset)
     self._param = param
     self.params = Params()
     self.set_checked(self.params.get_bool(self._param, False))

@@ -316,10 +316,10 @@ class DeviceLayoutMici(NavScroller):
     uninstall_openpilot_btn = BigButton("uninstall openpilot", "", "icons_mici/settings/device/uninstall.png")
     uninstall_openpilot_btn.set_click_callback(lambda: _engaged_confirmation_callback(uninstall_openpilot_callback, "uninstall"))
 
-    reboot_btn = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
+    reboot_btn = BigCircleButton(gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70))
     reboot_btn.set_click_callback(lambda: _engaged_confirmation_callback(reboot_callback, "reboot"))
 
-    self._power_off_btn = BigCircleButton("icons_mici/settings/device/power.png", red=True, icon_size=(64, 66))
+    self._power_off_btn = BigCircleButton(gui_app.texture("icons_mici/settings/device/power.png", 64, 66), red=True)
     self._power_off_btn.set_click_callback(lambda: _engaged_confirmation_callback(power_off_callback, "power off"))
     self._power_off_btn.set_visible(lambda: not ui_state.ignition)
 
