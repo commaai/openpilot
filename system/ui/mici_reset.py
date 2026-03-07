@@ -72,21 +72,24 @@ class Reset(Scroller):
 
     self._reset_button = BigConfirmationCircleButton("erase\ndevice", "icons_mici/settings/device/uninstall.png", self.start_reset, red=True)
     self._cancel_button = BigConfirmationCircleButton("normal\nstartup", "icons_mici/settings/device/reboot.png", gui_app.request_close, exit_on_confirm=False)
+    self._reboot_button = BigConfirmationCircleButton("reboot\ndevice", "icons_mici/settings/device/reboot.png", HARDWARE.reboot, exit_on_confirm=False)
+
+    # show reboot button if in recover mode
+    self._cancel_button.set_visible(mode != ResetMode.RECOVER)
+    self._reboot_button.set_visible(mode == ResetMode.RECOVER)
 
     main_card = GreyBigButton("factory reset", "all content and\nsettings will be erased",
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
-    # cancel button becomes reboot button
     if mode == ResetMode.RECOVER:
       main_card.set_text("unable to mount\ndata partition")
       main_card.set_value("it may be corrupted")
-      self._cancel_button.set_title("reboot\ndevice")
-      self._cancel_button.set_confirm_callback(HARDWARE.reboot)
 
     self._scroller.add_widgets([
       main_card,
       self._reset_button,
       self._cancel_button,
+      self._reboot_button,
     ])
 
   def _do_erase(self):
