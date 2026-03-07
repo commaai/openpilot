@@ -310,7 +310,7 @@ class DeviceLayoutMici(NavScroller):
     def uninstall_openpilot_callback():
       ui_state.params.put_bool("DoUninstall", True)
 
-    reset_calibration_btn = BigButton("reset calibration", "", gui_app.texture("icons_mici/settings/device/lkas.png", 114, 60))
+    reset_calibration_btn = BigButton("reset calibration", "", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64))
     reset_calibration_btn.set_click_callback(lambda: _engaged_confirmation_callback(reset_calibration_callback, "reset"))
 
     uninstall_openpilot_btn = BigButton("uninstall openpilot", "", gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64))

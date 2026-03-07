@@ -28,7 +28,7 @@ class SettingsLayout(NavScroller):
     network_btn.set_click_callback(lambda: gui_app.push_widget(network_panel))
 
     device_panel = DeviceLayoutMici()
-    device_btn = SettingsBigButton("device", "", gui_app.texture("icons_mici/settings/device_icon.png", 74, 60))
+    device_btn = SettingsBigButton("device", "", gui_app.texture("icons_mici/settings/device_icon.png", 72, 58))
     device_btn.set_click_callback(lambda: gui_app.push_widget(device_panel))
 
     developer_panel = DeveloperLayoutMici()
