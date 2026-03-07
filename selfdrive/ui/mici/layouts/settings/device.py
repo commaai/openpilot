@@ -64,7 +64,7 @@ class MiciFccModal(NavRawScrollPanel):
     rl.draw_texture_ex(self._fcc_logo, fcc_pos, 0.0, 1.0, rl.WHITE)
 
 
-def _engaged_confirmation_click(callback: Callable, title: str, icon: rl.Texture, exit_on_confirm: bool = True, red: bool = False):
+def _engaged_confirmation_click(callback: Callable, action_text: str, icon: rl.Texture, exit_on_confirm: bool = True, red: bool = False):
   if not ui_state.engaged:
     def confirm_callback():
       # Check engaged again in case it changed while the dialog was open
@@ -72,9 +72,9 @@ def _engaged_confirmation_click(callback: Callable, title: str, icon: rl.Texture
       if not ui_state.engaged:
         callback()
 
-    gui_app.push_widget(BigConfirmationDialog('slide to\n' + title, icon, confirm_callback, exit_on_confirm=exit_on_confirm, red=red))
+    gui_app.push_widget(BigConfirmationDialog('slide to\n' + action_text, icon, confirm_callback, exit_on_confirm=exit_on_confirm, red=red))
   else:
-    gui_app.push_widget(BigDialog(f"Disengage to {title}", ""))
+    gui_app.push_widget(BigDialog(f"Disengage to {action_text}", ""))
 
 
 class EngagedConfirmationCircleButton(BigCircleButton):
@@ -85,10 +85,10 @@ class EngagedConfirmationCircleButton(BigCircleButton):
 
 
 class EngagedConfirmationButton(BigButton):
-  def __init__(self, text: str, title: str, icon: rl.Texture, callback: Callable[[], None],
+  def __init__(self, text: str, action_text: str, icon: rl.Texture, callback: Callable[[], None],
                exit_on_confirm: bool = True, red: bool = False):
     super().__init__(text, "", icon)
-    self.set_click_callback(lambda: _engaged_confirmation_click(callback, title, icon, exit_on_confirm=exit_on_confirm, red=red))
+    self.set_click_callback(lambda: _engaged_confirmation_click(callback, action_text, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
 class DeviceInfoLayoutMici(Widget):
