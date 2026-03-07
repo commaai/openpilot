@@ -17,7 +17,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import device, ui_state
-from openpilot.system.ui.widgets.label import MiciLabel
+from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
@@ -101,11 +101,11 @@ class DeviceInfoLayoutMici(Widget):
     header_color = rl.Color(255, 255, 255, int(255 * 0.9))
     subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
     max_width = int(self._rect.width - 20)
-    self._dongle_id_label = MiciLabel("device ID", 48, width=max_width, color=header_color, font_weight=FontWeight.DISPLAY)
-    self._dongle_id_text_label = MiciLabel(params.get("DongleId") or 'N/A', 32, width=max_width, color=subheader_color, font_weight=FontWeight.ROMAN)
+    self._dongle_id_label = UnifiedLabel("device ID", 48, max_width=max_width, text_color=header_color, font_weight=FontWeight.DISPLAY, wrap_text=False)
+    self._dongle_id_text_label = UnifiedLabel(params.get("DongleId") or 'N/A', 32, max_width=max_width, text_color=subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False)
 
-    self._serial_number_label = MiciLabel("serial", 48, color=header_color, font_weight=FontWeight.DISPLAY)
-    self._serial_number_text_label = MiciLabel(params.get("HardwareSerial") or 'N/A', 32, width=max_width, color=subheader_color, font_weight=FontWeight.ROMAN)
+    self._serial_number_label = UnifiedLabel("serial", 48, max_width=max_width, text_color=header_color, font_weight=FontWeight.DISPLAY, wrap_text=False)
+    self._serial_number_text_label = UnifiedLabel(params.get("HardwareSerial") or 'N/A', 32, max_width=max_width, text_color=subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False)
 
   def _render(self, _):
     self._dongle_id_label.set_position(self._rect.x + 20, self._rect.y - 10)
