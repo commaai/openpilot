@@ -63,10 +63,9 @@ class BigDialog(BigDialogBase):
               alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
-class BigConfirmationDialogV2(BigDialogBase):
-  def __init__(self, title: str, icon: str, red: bool = False,
-               exit_on_confirm: bool = True,
-               confirm_callback: Callable | None = None):
+class BigConfirmationDialog(BigDialogBase):
+  def __init__(self, title: str, icon: str, confirm_callback: Callable[[], None],
+               exit_on_confirm: bool = True, red: bool = False):
     super().__init__()
     self._confirm_callback = confirm_callback
     self._exit_on_confirm = exit_on_confirm

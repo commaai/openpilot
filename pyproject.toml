@@ -32,12 +32,12 @@ dependencies = [
   "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
   "libjpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libjpeg",
   "libyuv @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libyuv",
-  "openssl3 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=openssl3",
   "python3-dev @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=python3-dev",
   "zstd @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zstd",
   "ncurses @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ncurses",
   "zeromq @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zeromq",
   "git-lfs @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=git-lfs",
+  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=gcc-arm-none-eabi",
 
   # body / webrtcd
   "av",
@@ -76,6 +76,7 @@ dependencies = [
   "raylib > 5.5.0.3",
   "qrcode",
   "jeepney",
+  "pillow",
 ]
 
 [project.optional-dependencies]
@@ -103,12 +104,10 @@ testing = [
 dev = [
   "matplotlib",
   "opencv-python-headless",
-  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=gcc-arm-none-eabi",
 ]
 
 tools = [
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
-  "dearpygui>=2.1.0; (sys_platform != 'linux' or platform_machine != 'aarch64')", # not vended for linux aarch64
 ]
 
 [project.urls]
