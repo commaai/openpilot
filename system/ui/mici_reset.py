@@ -80,18 +80,15 @@ class Reset(Scroller):
     self._cancel_button.set_visible(mode != ResetMode.RECOVER)
     self._reboot_button.set_visible(mode == ResetMode.RECOVER)
 
-    action_text = "resetting erases\nall user content & data"
-
-    main_card = GreyBigButton("factory reset", action_text,
+    main_card = GreyBigButton("factory reset", "resetting erases\nall user content & data",
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
     self._scroller.add_widget(main_card)
 
     if mode == ResetMode.RECOVER:
       main_card.set_value("user data partition\ncould not be mounted")
-      self._scroller.add_widget()
     elif mode == ResetMode.TAP_RESET:
       main_card.set_value("reset triggered by\ntapping the screen")
-      self._scroller.add_widget(GreyBigButton("", action_text))
+      self._scroller.add_widget(GreyBigButton("", "Resetting erases\nall user content & data."))
 
     self._scroller.add_widgets([
       GreyBigButton("", "For a deeper reset, go to\nhttps://flash.comma.ai"),
@@ -99,15 +96,6 @@ class Reset(Scroller):
       self._reboot_button,
       self._reset_button,
     ])
-
-
-    # self._scroller.add_widgets([
-    #   main_card,
-    #   GreyBigButton("", "For a deeper reset, go to\nhttps://flash.comma.ai"),
-    #   self._cancel_button,
-    #   self._reboot_button,
-    #   self._reset_button,
-    # ])
 
   def _do_erase(self):
     if PC:
