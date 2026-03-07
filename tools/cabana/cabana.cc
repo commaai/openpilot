@@ -5,7 +5,9 @@
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
+#ifdef __linux__
 #include "tools/cabana/streams/socketcanstream.h"
+#endif
 
 int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationName("Cabana");
@@ -29,9 +31,11 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"msgq", "read can messages from the msgq"});
   cmd_parser.addOption({"panda", "read can messages from panda"});
   cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
+#ifdef __linux__
   if (SocketCanStream::available()) {
     cmd_parser.addOption({"socketcan", "read can messages from given SocketCAN device", "socketcan"});
   }
+#endif
   cmd_parser.addOption({"zmq", "read can messages from zmq at the specified ip-address", "ip-address"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
@@ -51,8 +55,10 @@ int main(int argc, char *argv[]) {
       qWarning() << e.what();
       return 0;
     }
+#ifdef __linux__
   } else if (SocketCanStream::available() && cmd_parser.isSet("socketcan")) {
     stream = new SocketCanStream(&app, {.device = cmd_parser.value("socketcan").toStdString()});
+#endif
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) replay_flags |= REPLAY_FLAG_ECAM;

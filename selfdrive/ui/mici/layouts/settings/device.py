@@ -73,21 +73,20 @@ def _engaged_confirmation_callback(callback: Callable, action_text: str):
 
     red = False
     if action_text == "power off":
-      icon = "icons_mici/settings/device/power.png"
+      icon = gui_app.texture("icons_mici/settings/device/power.png", 64, 66)
       red = True
     elif action_text == "reboot":
-      icon = "icons_mici/settings/device/reboot.png"
+      icon = gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70)
     elif action_text == "reset":
-      icon = "icons_mici/settings/device/lkas.png"
+      icon = gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64)
     elif action_text == "uninstall":
-      icon = "icons_mici/settings/device/uninstall.png"
+      icon = gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64)
     else:
       # TODO: check
-      icon = "icons_mici/settings/comma_icon.png"
+      icon = gui_app.texture("icons_mici/settings/comma_icon.png", 36, 64)
 
-    dlg: BigConfirmationDialog | BigDialog = BigConfirmationDialog(f"slide to\n{action_text.lower()}", icon, red=red,
-                                                                   exit_on_confirm=action_text == "reset",
-                                                                   confirm_callback=confirm_callback)
+    dlg: BigConfirmationDialog | BigDialog = BigConfirmationDialog(f"slide to\n{action_text.lower()}", icon, confirm_callback,
+                                                                   red=red, exit_on_confirm=action_text == "reset")
     gui_app.push_widget(dlg)
   else:
     dlg = BigDialog(f"Disengage to {action_text}", "")
@@ -132,7 +131,7 @@ class UpdaterState(IntEnum):
 
 class PairBigButton(BigButton):
   def __init__(self):
-    super().__init__("pair", "connect.comma.ai", "icons_mici/settings/comma_icon.png", icon_size=(33, 60))
+    super().__init__("pair", "connect.comma.ai", gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60))
 
   def _get_label_font_size(self):
     return 64
@@ -311,31 +310,31 @@ class DeviceLayoutMici(NavScroller):
     def uninstall_openpilot_callback():
       ui_state.params.put_bool("DoUninstall", True)
 
-    reset_calibration_btn = BigButton("reset calibration", "", "icons_mici/settings/device/lkas.png", icon_size=(114, 60))
+    reset_calibration_btn = BigButton("reset calibration", "", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64))
     reset_calibration_btn.set_click_callback(lambda: _engaged_confirmation_callback(reset_calibration_callback, "reset"))
 
-    uninstall_openpilot_btn = BigButton("uninstall openpilot", "", "icons_mici/settings/device/uninstall.png")
+    uninstall_openpilot_btn = BigButton("uninstall openpilot", "", gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64))
     uninstall_openpilot_btn.set_click_callback(lambda: _engaged_confirmation_callback(uninstall_openpilot_callback, "uninstall"))
 
-    reboot_btn = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
+    reboot_btn = BigCircleButton(gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70))
     reboot_btn.set_click_callback(lambda: _engaged_confirmation_callback(reboot_callback, "reboot"))
 
-    self._power_off_btn = BigCircleButton("icons_mici/settings/device/power.png", red=True, icon_size=(64, 66))
+    self._power_off_btn = BigCircleButton(gui_app.texture("icons_mici/settings/device/power.png", 64, 66), red=True)
     self._power_off_btn.set_click_callback(lambda: _engaged_confirmation_callback(power_off_callback, "power off"))
     self._power_off_btn.set_visible(lambda: not ui_state.ignition)
 
-    regulatory_btn = BigButton("regulatory info", "", "icons_mici/settings/device/info.png")
+    regulatory_btn = BigButton("regulatory info", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     regulatory_btn.set_click_callback(self._on_regulatory)
 
-    driver_cam_btn = BigButton("driver\ncamera preview", "", "icons_mici/settings/device/cameras.png")
+    driver_cam_btn = BigButton("driver\ncamera preview", "", gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64))
     driver_cam_btn.set_click_callback(lambda: gui_app.push_widget(DriverCameraDialog()))
     driver_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
-    review_training_guide_btn = BigButton("review\ntraining guide", "", "icons_mici/settings/device/info.png")
+    review_training_guide_btn = BigButton("review\ntraining guide", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
-    terms_btn = BigButton("terms &\nconditions", "", "icons_mici/settings/device/info.png")
+    terms_btn = BigButton("terms &\nconditions", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     terms_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTermsPage()))
 
     self._scroller.add_widgets([
