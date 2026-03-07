@@ -35,22 +35,26 @@ void main() {
   vec4 texelColor = texture(texture0, fragTexCoord);
   finalColor = texelColor * colDiffuse * fragColor;
 
+  // --- tweakable parameters ---
+  const float BAND_WIDTH_FRAC = 0.3;     // shimmer width as fraction of text width
+  const float BLUR_SOFTNESS = 0.4;       // gaussian falloff: smaller = sharper edges, larger = softer glow
+  const float CYCLE_PERIOD = 2.5;        // seconds per full shimmer cycle
+  const float SWEEP_FRACTION = 0.9;      // fraction of cycle spent moving (rest is a pause)
+  const float LOWERED_OPACITY = 0.65;        // text opacity at rest, shimmer brings it to 1.0
+
   // shimmer band sweeping left to right
   float range = shimmerRange.y - shimmerRange.x;
-  float bandWidth = range * 0.3;
-  float sigma = bandWidth * 0.4;
+  float bandWidth = range * BAND_WIDTH_FRAC;
+  float blurRadius = bandWidth * BLUR_SOFTNESS;
 
-  // sweep for 80% of period
-  float period = 2.5;
-  float raw_t = mod(time, period) / period;
-  float t = smoothstep(0.0, 0.9, raw_t);
+  float raw_t = mod(time, CYCLE_PERIOD) / CYCLE_PERIOD;
+  float t = smoothstep(0.0, SWEEP_FRACTION, raw_t);
 
   float shimmerCenter = shimmerRange.y + bandWidth * 2.0 - t * (range + bandWidth * 4.0);
   float dist = gl_FragCoord.x - shimmerCenter;
-  float shimmer = exp(-0.5 * dist * dist / (sigma * sigma));
+  float shimmer = exp(-0.5 * dist * dist / (blurRadius * blurRadius));
 
-  // boost alpha: base text is ~65% opacity, shimmer brings it toward 100%
-  finalColor.a *= 1.0 + shimmer * 0.54;
+  finalColor.a *= mix(LOWERED_OPACITY, 1.0, shimmer);
 }
 """
 
@@ -82,7 +86,7 @@ class SliderBase(Widget, abc.ABC):
 
     self._is_dragging_circle = False
 
-    self._label = UnifiedLabel(title, font_size=36, font_weight=FontWeight.SEMI_BOLD, text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
+    self._label = UnifiedLabel(title, font_size=36, font_weight=FontWeight.SEMI_BOLD, text_color=rl.WHITE,
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
 
@@ -189,7 +193,7 @@ class SliderBase(Widget, abc.ABC):
     btn_y = self._rect.y + (self._rect.height - self._circle_bg_txt.height) / 2
 
     if self._confirmed_time == 0.0 or self._scroll_x_circle > 0:
-      self._label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.65 * (1.0 - self.slider_percentage) * self._opacity_filter.x)))
+      self._label.set_text_color(rl.Color(255, 255, 255, int(255 * (1.0 - self.slider_percentage) * self._opacity_filter.x)))
       label_rect = rl.Rectangle(
         self._rect.x + 20,
         self._rect.y,
@@ -241,7 +245,7 @@ class BigSlider(SliderBase):
   def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable | None = None):
     self._icon = icon
     super().__init__(title, confirm_callback=confirm_callback)
-    self._label = UnifiedLabel(title, font_size=48, font_weight=FontWeight.DISPLAY, text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
+    self._label = UnifiedLabel(title, font_size=48, font_weight=FontWeight.DISPLAY, text_color=rl.WHITE,
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
                                line_height=0.875)
 
