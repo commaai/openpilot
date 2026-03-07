@@ -256,18 +256,21 @@ class BigDialogButton(BigButton):
 
 
 class BigConfirmationCircleButton(BigCircleButton):
-  def __init__(self, icon: str, confirm_callback: Callable[[], None], exit_on_confirm: bool = True,
+  def __init__(self, title: str, icon: str, confirm_callback: Callable[[], None], exit_on_confirm: bool = True,
                red: bool = False, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
     super().__init__(icon, red, icon_size, icon_offset)
 
+    self._title = title
     self._confirm_callback = confirm_callback
 
     def show_confirm_dialog():
-      dialog = BigConfirmationDialog("erase\ndevice", "icons_mici/settings/device/uninstall.png",
-                                     confirm_callback, exit_on_confirm=exit_on_confirm, red=red)
-      gui_app.push_widget(dialog)
+      gui_app.push_widget(BigConfirmationDialog(self._title, icon, self._confirm_callback,
+                                                exit_on_confirm=exit_on_confirm, red=red))
 
     self.set_click_callback(show_confirm_dialog)
+
+  def set_title(self, title: str):
+    self._title = title
 
   def set_confirm_callback(self, confirm_callback: Callable[[], None]):
     self._confirm_callback = confirm_callback
