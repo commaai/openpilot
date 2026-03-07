@@ -203,7 +203,11 @@ class Widget(abc.ABC):
     # Default implementation does nothing, can be overridden by subclasses
 
   def _child(self, widget: W) -> W:
-    """Register a widget as a child. Lifecycle events (show/hide) propagate to registered children."""
+    """
+    Register a widget as a child. Lifecycle events (show/hide) propagate to registered children.
+    - If the widget is pushed onto the nav stack, do NOT register it (gui_app manages its lifecycle).
+    - If the widget is rendered inline in _render(), register it.
+    """
     self._children.append(widget)
     return widget
 
