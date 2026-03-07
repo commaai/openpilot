@@ -100,7 +100,7 @@ class SliderBase(Widget, abc.ABC):
     activated_pos = int(-self._bg_txt.width + self._circle_bg_txt.width)
     self._scroll_x_circle = max(min(self._scroll_x_circle, 0), activated_pos)
 
-    if self._confirmed_time > 0:
+    if self.confirmed:
       # swiped left to confirm
       self._scroll_x_circle_filter.update(activated_pos)
 
@@ -129,7 +129,7 @@ class SliderBase(Widget, abc.ABC):
     btn_x = bg_txt_x + self._bg_txt.width - self._circle_bg_txt.width + self._scroll_x_circle_filter.x
     btn_y = self._rect.y + (self._rect.height - self._circle_bg_txt.height) / 2
 
-    if self._confirmed_time == 0.0 or self._scroll_x_circle > 0:
+    if not self.confirmed:
       self._label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.65 * (1.0 - self.slider_percentage) * self._opacity_filter.x)))
       label_rect = rl.Rectangle(
         self._rect.x + 20,
@@ -140,7 +140,7 @@ class SliderBase(Widget, abc.ABC):
       self._label.render(label_rect)
 
     # circle and arrow
-    circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self._confirmed_time > 0 else self._circle_bg_txt
+    circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self.confirmed else self._circle_bg_txt
     rl.draw_texture_ex(circle_bg_txt, rl.Vector2(btn_x, btn_y), 0.0, 1.0, white)
 
     arrow_x = btn_x + (self._circle_bg_txt.width - self._circle_arrow_txt.width) / 2
