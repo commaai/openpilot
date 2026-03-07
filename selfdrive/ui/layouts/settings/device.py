@@ -72,6 +72,7 @@ class DeviceLayout(Widget):
     self._power_off_btn.action_item.right_button.set_visible(ui_state.is_offroad())
 
   def show_event(self):
+    super().show_event()
     self._scroller.show_event()
 
   def _render(self, rect):

@@ -20,6 +20,7 @@ class ExperimentalModeButton(Widget):
     self.experimental_pixmap = gui_app.texture("icons/experimental_grey.png", self.img_width, self.img_width)
 
   def show_event(self):
+    super().show_event()
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
 
   def _get_gradient_colors(self):

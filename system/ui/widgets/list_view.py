@@ -293,6 +293,7 @@ class ListItem(Widget):
     self._prev_description: str | None = self.description
 
   def show_event(self):
+    super().show_event()
     self._set_description_visible(False)
 
   def set_description_opened_callback(self, callback: Callable) -> None:
