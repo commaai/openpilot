@@ -1,3 +1,4 @@
+import abc
 from collections.abc import Callable
 
 import pyray as rl
@@ -8,16 +9,18 @@ from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.common.filter_simple import FirstOrderFilter
 
 
-class SmallSlider(Widget):
+class SliderBase(Widget, abc.ABC):
   HORIZONTAL_PADDING = 8
   CONFIRM_DELAY = 0.2
 
+  _bg_txt: rl.Texture
+  _circle_bg_txt: rl.Texture
+  _circle_bg_pressed_txt: rl.Texture
+  _circle_arrow_txt: rl.Texture
+
   def __init__(self, title: str, confirm_callback: Callable | None = None):
-    # TODO: unify this with BigConfirmationDialogV2
     super().__init__()
     self._confirm_callback = confirm_callback
-
-    self._font = gui_app.font(FontWeight.DISPLAY)
 
     self._load_assets()
 
@@ -37,13 +40,9 @@ class SmallSlider(Widget):
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
 
+  @abc.abstractmethod
   def _load_assets(self):
-    self.set_rect(rl.Rectangle(0, 0, 316 + self.HORIZONTAL_PADDING * 2, 100))
-
-    self._bg_txt = gui_app.texture("icons_mici/setup/small_slider/slider_bg.png", 316, 100)
-    self._circle_bg_txt = gui_app.texture("icons_mici/setup/small_slider/slider_red_circle.png", 100, 100)
-    self._circle_bg_pressed_txt = gui_app.texture("icons_mici/setup/small_slider/slider_red_circle_pressed.png", 100, 100)
-    self._circle_arrow_txt = gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 37, 32)
+    ...
 
   @property
   def confirmed(self) -> bool:
@@ -149,7 +148,7 @@ class SmallSlider(Widget):
     rl.draw_texture_ex(self._circle_arrow_txt, rl.Vector2(arrow_x, arrow_y), 0.0, 1.0, white)
 
 
-class LargerSlider(SmallSlider):
+class LargerSlider(SliderBase):
   def __init__(self, title: str, confirm_callback: Callable | None = None, green: bool = True):
     self._green = green
     super().__init__(title, confirm_callback=confirm_callback)
@@ -164,7 +163,7 @@ class LargerSlider(SmallSlider):
     self._circle_arrow_txt = gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 55)
 
 
-class BigSlider(SmallSlider):
+class BigSlider(SliderBase):
   def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable | None = None):
     self._icon = icon
     super().__init__(title, confirm_callback=confirm_callback)
