@@ -158,7 +158,7 @@ class SliderBase(Widget, abc.ABC):
     activated_pos = int(-self._bg_txt.width + self._circle_bg_txt.width)
     self._scroll_x_circle = max(min(self._scroll_x_circle, 0), activated_pos)
 
-    if self._confirmed_time > 0:
+    if self.confirmed:
       # swiped left to confirm
       self._scroll_x_circle_filter.update(activated_pos)
 
@@ -175,15 +175,12 @@ class SliderBase(Widget, abc.ABC):
       # not activated yet, keep movement 1:1
       self._scroll_x_circle_filter.x = self._scroll_x_circle
 
-  def _init_shimmer_shader(self):
-    self._shimmer_shader = rl.load_shader_from_memory(SHIMMER_VERTEX_SHADER, SHIMMER_FRAGMENT_SHADER)
-    self._shimmer_time_loc = rl.get_shader_location(self._shimmer_shader, "time")
-    self._shimmer_range_loc = rl.get_shader_location(self._shimmer_shader, "shimmerRange")
-
   def _render_shimmer_label(self, label_rect: rl.Rectangle):
     # Shimmer shader for iOS-style text animation
     if self._shimmer_shader is None:
-      self._init_shimmer_shader()
+      self._shimmer_shader = rl.load_shader_from_memory(SHIMMER_VERTEX_SHADER, SHIMMER_FRAGMENT_SHADER)
+      self._shimmer_time_loc = rl.get_shader_location(self._shimmer_shader, "time")
+      self._shimmer_range_loc = rl.get_shader_location(self._shimmer_shader, "shimmerRange")
 
     self._shimmer_time_ptr[0] = rl.get_time() - self._shimmer_start_time
     # use actual text width (right-aligned) instead of full rect
@@ -219,7 +216,7 @@ class SliderBase(Widget, abc.ABC):
       self._render_shimmer_label(label_rect)
 
     # circle and arrow
-    circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self._confirmed_time > 0 else self._circle_bg_txt
+    circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self.confirmed else self._circle_bg_txt
     rl.draw_texture_ex(circle_bg_txt, rl.Vector2(btn_x, btn_y), 0.0, 1.0, white)
 
     arrow_x = btn_x + (self._circle_bg_txt.width - self._circle_arrow_txt.width) / 2
