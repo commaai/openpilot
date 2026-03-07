@@ -36,23 +36,20 @@ void main() {
   finalColor = texelColor * colDiffuse * fragColor;
 
   // --- tweakable parameters ---
-  const float BAND_WIDTH_FRAC = 0.3;     // shimmer width as fraction of text width
-  const float BLUR_SOFTNESS = 0.4;       // gaussian falloff: smaller = sharper edges, larger = softer glow
+  const float BAND_WIDTH = 0.3;          // shimmer width as fraction of text width
+  const float BLUR_RADIUS = 0.12;        // gaussian blur as fraction of text width (smaller = sharper)
   const float CYCLE_PERIOD = 2.5;        // seconds per full shimmer cycle
-  const float SWEEP_FRACTION = 0.9;      // fraction of cycle spent moving (rest is a pause)
-  const float LOWERED_OPACITY = 0.65;        // text opacity at rest, shimmer brings it to 1.0
+  const float SWEEP_FRACTION = 0.9;      // fraction of cycle spent sweeping (rest is a pause)
+  const float LOWERED_OPACITY = 0.65;    // text opacity at rest, shimmer brings it to 1.0
 
-  // shimmer band sweeping left to right
   float range = shimmerRange.y - shimmerRange.x;
-  float bandWidth = range * BAND_WIDTH_FRAC;
-  float blurRadius = bandWidth * BLUR_SOFTNESS;
+  float sigma = range * BLUR_RADIUS;
 
-  float raw_t = mod(time, CYCLE_PERIOD) / CYCLE_PERIOD;
-  float t = smoothstep(0.0, SWEEP_FRACTION, raw_t);
+  float t = smoothstep(0.0, SWEEP_FRACTION, mod(time, CYCLE_PERIOD) / CYCLE_PERIOD);
+  float center = shimmerRange.y + range * BAND_WIDTH * 2.0 - t * range * (1.0 + BAND_WIDTH * 4.0);
 
-  float shimmerCenter = shimmerRange.y + bandWidth * 2.0 - t * (range + bandWidth * 4.0);
-  float dist = gl_FragCoord.x - shimmerCenter;
-  float shimmer = exp(-0.5 * dist * dist / (blurRadius * blurRadius));
+  float d = gl_FragCoord.x - center;
+  float shimmer = exp(-0.5 * d * d / (sigma * sigma));
 
   finalColor.a *= mix(LOWERED_OPACITY, 1.0, shimmer);
 }
