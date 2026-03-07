@@ -362,7 +362,8 @@ class WifiUIMici(NavScroller):
           break
       return
 
-    dlg = BigInputDialog("enter password...", "", lambda _password: self._connect_with_password(ssid, _password), minimum_length=8)
+    dlg = BigInputDialog("enter password...", "", minimum_length=8,
+                         confirm_callback=lambda _password: self._connect_with_password(ssid, _password))
     gui_app.push_widget(dlg)
 
   def _on_forgotten(self, ssid):

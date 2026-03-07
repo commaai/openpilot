@@ -73,7 +73,7 @@ def test_dialogs_do_not_leak():
     lambda: MiciOnboardingWindow(lambda: None),
     lambda: BigDialog("test", "test"),
     lambda: BigConfirmationDialog("test", "icons_mici/settings/network/new/trash.png", lambda: None),
-    lambda: BigInputDialog("test", "", lambda _: None),
+    lambda: BigInputDialog("test"),
     lambda: MiciFccModal(text="test"),
     # tici
     TiciDriverCameraDialog, TiciOnboardingWindow, TiciPairingDialog, Keyboard,
