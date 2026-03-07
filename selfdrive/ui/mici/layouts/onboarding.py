@@ -266,11 +266,8 @@ class TrainingGuide(NavWidget):
       TrainingGuideRecordFront(continue_callback=completed_callback),
     ]
 
+    self._child(self._steps[0])
     self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack
-
-  def show_event(self):
-    super().show_event()
-    self._steps[0].show_event()
 
   def _render(self, _):
     self._steps[0].render(self._rect)
