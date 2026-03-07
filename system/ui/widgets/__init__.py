@@ -26,14 +26,15 @@ class DialogResult(IntEnum):
 
 class Widget(abc.ABC):
   def __init__(self):
-    self._children: list[Widget] = []
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle | None = None
-    self.__is_pressed = [False] * MAX_TOUCH_SLOTS
-    # if current mouse/touch down started within the widget's rectangle
-    self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
+    self._children: list[Widget] = []
+
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
+
+    self.__is_pressed = [False] * MAX_TOUCH_SLOTS
+    self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS  # if mouse/touch down started within rect
     self._touch_valid_callback: Callable[[], bool] | None = None
     self._click_delay: float | None = None  # seconds to hold is_pressed after release
     self._click_release_time: float | None = None
