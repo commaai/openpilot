@@ -102,10 +102,12 @@ class DeviceInfoLayoutMici(Widget):
     subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
     max_width = int(self._rect.width - 20)
     self._dongle_id_label = UnifiedLabel("device ID", 48, max_width=max_width, text_color=header_color, font_weight=FontWeight.DISPLAY, wrap_text=False)
-    self._dongle_id_text_label = UnifiedLabel(params.get("DongleId") or 'N/A', 32, max_width=max_width, text_color=subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False)
+    self._dongle_id_text_label = UnifiedLabel(params.get("DongleId") or 'N/A', 32, max_width=max_width, text_color=subheader_color,
+                                              font_weight=FontWeight.ROMAN, wrap_text=False)
 
     self._serial_number_label = UnifiedLabel("serial", 48, max_width=max_width, text_color=header_color, font_weight=FontWeight.DISPLAY, wrap_text=False)
-    self._serial_number_text_label = UnifiedLabel(params.get("HardwareSerial") or 'N/A', 32, max_width=max_width, text_color=subheader_color, font_weight=FontWeight.ROMAN, wrap_text=False)
+    self._serial_number_text_label = UnifiedLabel(params.get("HardwareSerial") or 'N/A', 32, max_width=max_width, text_color=subheader_color,
+                                                  font_weight=FontWeight.ROMAN, wrap_text=False)
 
   def _render(self, _):
     self._dongle_id_label.set_position(self._rect.x + 20, self._rect.y - 10)
