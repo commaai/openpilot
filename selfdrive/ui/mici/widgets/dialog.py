@@ -79,6 +79,10 @@ class BigConfirmationDialog(BigDialogBase):
       self._slider = BigSlider(title, icon_txt, confirm_callback=self._on_confirm)
     self._slider.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
 
+  def show_event(self):
+    super().show_event()
+    self._slider.reset()
+
   def _on_confirm(self):
     if self._exit_on_confirm:
       self.dismiss(self._confirm_callback)

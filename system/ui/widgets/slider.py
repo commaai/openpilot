@@ -37,13 +37,13 @@ void main() {
 
   // shimmer band sweeping left to right
   float range = shimmerRange.y - shimmerRange.x;
-  float bandWidth = range * 0.2;
+  float bandWidth = range * 0.3;
   float sigma = bandWidth * 0.4;
 
-  // sweep for 60% of period, pause for 40%
-  float period = 3.0;
+  // sweep for 80% of period
+  float period = 2.5;
   float raw_t = mod(time, period) / period;
-  float t = smoothstep(0.0, 0.6, raw_t);
+  float t = smoothstep(0.0, 0.8, raw_t);
 
   float shimmerCenter = shimmerRange.y + bandWidth * 2.0 - t * (range + bandWidth * 4.0);
   float dist = gl_FragCoord.x - shimmerCenter;
@@ -92,6 +92,7 @@ class SliderBase(Widget, abc.ABC):
     self._shimmer_range_loc = -1
     self._shimmer_time_ptr = rl.ffi.new("float[]", [0.0])
     self._shimmer_range_ptr = rl.ffi.new("float[]", [0.0, 0.0])
+    self._shimmer_start_time = 0.0
 
   @abc.abstractmethod
   def _load_assets(self):
@@ -106,6 +107,7 @@ class SliderBase(Widget, abc.ABC):
     self._is_dragging_circle = False
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
+    self._shimmer_start_time = rl.get_time()
 
   def set_opacity(self, opacity: float, smooth: bool = False):
     if smooth:
@@ -198,7 +200,7 @@ class SliderBase(Widget, abc.ABC):
       if self._shimmer_shader is None:
         self._init_shimmer_shader()
 
-      self._shimmer_time_ptr[0] = rl.get_time()
+      self._shimmer_time_ptr[0] = rl.get_time() - self._shimmer_start_time
       # gl_FragCoord.y is flipped, but we only use x
       self._shimmer_range_ptr[0] = label_rect.x
       self._shimmer_range_ptr[1] = label_rect.x + label_rect.width
