@@ -316,7 +316,8 @@ class TermsPage(Scroller):
     super().__init__()
 
     self._accept_button = BigConfirmationCircleButton("accept\nterms", gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64), on_accept)
-    self._decline_button = BigConfirmationCircleButton("decline &\nuninstall", gui_app.texture("icons_mici/setup/cancel.png", 64, 64), on_decline, red=True, exit_on_confirm=False)
+    self._decline_button = BigConfirmationCircleButton("decline &\nuninstall", gui_app.texture("icons_mici/setup/cancel.png", 64, 64), on_decline,
+                                                       red=True, exit_on_confirm=False)
 
     self._terms_header = GreyBigButton("terms and\nconditions", "scroll to continue",
                                        gui_app.texture("icons_mici/setup/green_info.png", 64, 64))
