@@ -41,9 +41,9 @@ void main() {
   float sigma = bandWidth * 0.4;
 
   // sweep for 80% of period
-  float period = 2.5;
+  float period = 2.0;
   float raw_t = mod(time, period) / period;
-  float t = smoothstep(0.0, 0.8, raw_t);
+  float t = smoothstep(0.0, 0.9, raw_t);
 
   float shimmerCenter = shimmerRange.y + bandWidth * 2.0 - t * (range + bandWidth * 4.0);
   float dist = gl_FragCoord.x - shimmerCenter;
@@ -201,9 +201,10 @@ class SliderBase(Widget, abc.ABC):
         self._init_shimmer_shader()
 
       self._shimmer_time_ptr[0] = rl.get_time() - self._shimmer_start_time
-      # gl_FragCoord.y is flipped, but we only use x
-      self._shimmer_range_ptr[0] = label_rect.x
-      self._shimmer_range_ptr[1] = label_rect.x + label_rect.width
+      # use actual text width (right-aligned) instead of full rect
+      text_right = label_rect.x + label_rect.width
+      self._shimmer_range_ptr[0] = text_right - self._label.text_width
+      self._shimmer_range_ptr[1] = text_right
       rl.set_shader_value(self._shimmer_shader, self._shimmer_time_loc, self._shimmer_time_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT)
       rl.set_shader_value(self._shimmer_shader, self._shimmer_range_loc, self._shimmer_range_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
 
