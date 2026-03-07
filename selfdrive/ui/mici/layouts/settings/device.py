@@ -17,7 +17,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import device, ui_state
-from openpilot.system.ui.widgets.label import MiciLabel
+from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.widgets.layouts import VBoxLayout
 from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
@@ -91,34 +92,20 @@ class EngagedConfirmationButton(BigButton):
     self.set_click_callback(lambda: _engaged_confirmation_click(callback, action_text, icon, exit_on_confirm=exit_on_confirm, red=red))
 
 
-class DeviceInfoLayoutMici(Widget):
+class DeviceInfoLayoutMici(VBoxLayout):
   def __init__(self):
-    super().__init__()
-
-    self.set_rect(rl.Rectangle(0, 0, 360, 180))
-
-    params = Params()
     header_color = rl.Color(255, 255, 255, int(255 * 0.9))
     subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
-    max_width = int(self._rect.width - 20)
-    self._dongle_id_label = MiciLabel("device ID", 48, width=max_width, color=header_color, font_weight=FontWeight.DISPLAY)
-    self._dongle_id_text_label = MiciLabel(params.get("DongleId") or 'N/A', 32, width=max_width, color=subheader_color, font_weight=FontWeight.ROMAN)
 
-    self._serial_number_label = MiciLabel("serial", 48, color=header_color, font_weight=FontWeight.DISPLAY)
-    self._serial_number_text_label = MiciLabel(params.get("HardwareSerial") or 'N/A', 32, width=max_width, color=subheader_color, font_weight=FontWeight.ROMAN)
-
-  def _render(self, _):
-    self._dongle_id_label.set_position(self._rect.x + 20, self._rect.y - 10)
-    self._dongle_id_label.render()
-
-    self._dongle_id_text_label.set_position(self._rect.x + 20, self._rect.y + 68 - 25)
-    self._dongle_id_text_label.render()
-
-    self._serial_number_label.set_position(self._rect.x + 20, self._rect.y + 114 - 30)
-    self._serial_number_label.render()
-
-    self._serial_number_text_label.set_position(self._rect.x + 20, self._rect.y + 161 - 25)
-    self._serial_number_text_label.render()
+    max_width = 340
+    params = Params()
+    super().__init__(widgets=[
+      UnifiedLabel("device ID", font_size=48, max_width=max_width, text_color=header_color, font_weight=FontWeight.DISPLAY),
+      UnifiedLabel(params.get("DongleId") or 'N/A', font_size=32, max_width=max_width, text_color=subheader_color, font_weight=FontWeight.ROMAN),
+      UnifiedLabel("serial", font_size=48, max_width=max_width, text_color=header_color, font_weight=FontWeight.DISPLAY),
+      UnifiedLabel(params.get("HardwareSerial") or 'N/A', font_size=32, max_width=max_width, text_color=subheader_color, font_weight=FontWeight.ROMAN),
+    ])
+    self.set_rect(rl.Rectangle(0, 0, 360, 180))
 
 
 class UpdaterState(IntEnum):
