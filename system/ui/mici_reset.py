@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import math
 import os
 import sys
 import time
@@ -37,7 +36,7 @@ class ResetFailedPage(FailedPage):
 
 
 class ResettingPage(NavWidget):
-  DOT_STEP = 0.7
+  DOT_STEP = 0.6
 
   def __init__(self):
     super().__init__()
