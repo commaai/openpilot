@@ -255,7 +255,7 @@ class FailedPage(NavScroller):
                     gui_app.texture(icon, 64, 58)),
       self._reason_card,
       BigConfirmationCircleButton("slide to reboot", "icons_mici/settings/device/reboot.png",
-                                  HARDWARE.reboot, exit_on_confirm=False),
+                                  HARDWARE.reboot, exit_on_confirm=False, icon_size=(64, 70)),
     ])
 
   def set_reason(self, reason: str):
