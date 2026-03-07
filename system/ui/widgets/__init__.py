@@ -16,7 +16,7 @@ except ImportError:
 
 W = TypeVar('W', bound='Widget')
 
-DEBUG = False
+DEBUG = True
 
 
 class DialogResult(IntEnum):
