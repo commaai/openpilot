@@ -104,7 +104,7 @@ class TrainingGuideDMTutorial(NavWidget):
     self._good_button.set_enabled(False)
 
     self._progress = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
-    self._dialog = self._child(DriverCameraSetupDialog())
+    self._dialog = DriverCameraSetupDialog()
     self._bad_face_page = DMBadFaceDetected()
 
     # Disable driver monitoring model when device times out for inactivity
@@ -115,6 +115,7 @@ class TrainingGuideDMTutorial(NavWidget):
 
   def show_event(self):
     super().show_event()
+    self._dialog.show_event()
     self._progress.x = 0.0
 
   def _update_state(self):
