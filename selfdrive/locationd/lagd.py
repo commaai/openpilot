@@ -28,10 +28,25 @@ MIN_LAG = 0.15
 MAX_LAG_STD = 0.1
 MAX_LAT_ACCEL = 2.0
 MAX_LAT_ACCEL_DIFF = 0.6
+MIN_LAT_ACCEL_RANGE = 0.5
 MIN_CONFIDENCE = 0.7
 CORR_BORDER_OFFSET = 5
 LAG_CANDIDATE_CORR_THRESHOLD = 0.9
+SMOOTH_K = 5
+SMOOTH_SIGMA = 1.0
 
+
+def masked_symmetric_moving_average(x: np.ndarray, mask: np.ndarray, k: int, sigma: float) -> np.ndarray:
+  assert k >= 1 and k % 2 == 1, "k must be positive and odd"
+  pad = k // 2
+  i = np.arange(k) - pad
+  w = np.exp(-0.5 * (i / sigma) ** 2)
+  w /= w.sum()
+  xp = np.pad(x * mask, pad, mode="edge")
+  mp = np.pad(mask, pad, mode="edge")
+  num = np.convolve(xp, w, mode="valid")
+  den = np.convolve(mp, w, mode="valid")
+  return np.divide(num, den, out=np.full_like(num, np.nan, dtype=np.float64), where=den != 0)
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
   """
@@ -294,10 +309,13 @@ class LateralLagEstimator:
 
     times, desired, actual, okay = self.points.get()
     # check if there are any new valid data points since the last update
-    is_valid = self.points_valid()
+    is_valid = self.points_valid() and (actual.max() - actual.min() >= MIN_LAT_ACCEL_RANGE)
     if self.last_estimate_t != 0 and times[0] <= self.last_estimate_t:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
+
+    desired = masked_symmetric_moving_average(desired, okay, SMOOTH_K, SMOOTH_SIGMA)
+    actual = masked_symmetric_moving_average(actual, okay, SMOOTH_K, SMOOTH_SIGMA)
 
     delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MIN_LAG, MAX_LAG)
     if corr < self.min_ncc or confidence < self.min_confidence or not is_valid:
