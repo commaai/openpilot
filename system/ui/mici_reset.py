@@ -21,6 +21,7 @@ class ResetMode(IntEnum):
   USER_RESET = 0  # user initiated a factory reset from openpilot
   RECOVER = 1     # userdata is corrupt for some reason, give a chance to recover
   FORMAT = 2      # finish up a factory reset from a tool that doesn't flash an empty partition to userdata
+  TAP_RESET = 3   # user initiated a factory reset by tapping the screen during boot
 
 
 class ResetFailedPage(FailedPage):
@@ -80,19 +81,34 @@ class Reset(Scroller):
     self._cancel_button.set_visible(mode != ResetMode.RECOVER)
     self._reboot_button.set_visible(mode == ResetMode.RECOVER)
 
-    main_card = GreyBigButton("factory reset", "resetting erases\nall user content & data",
+    action_text = "resetting erases\nall user content & data"
+
+    main_card = GreyBigButton("factory reset", action_text,
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
+    self._scroller.add_widget(main_card)
 
     if mode == ResetMode.RECOVER:
       main_card.set_value("user data partition\ncould not be mounted")
+      self._scroller.add_widget()
+    elif mode == ResetMode.TAP_RESET:
+      main_card.set_value("reset triggered by\ntapping the screen")
+      self._scroller.add_widget(GreyBigButton("", action_text))
 
     self._scroller.add_widgets([
-      main_card,
       GreyBigButton("", "For a deeper reset, go to\nhttps://flash.comma.ai"),
       self._cancel_button,
       self._reboot_button,
       self._reset_button,
     ])
+
+
+    # self._scroller.add_widgets([
+    #   main_card,
+    #   GreyBigButton("", "For a deeper reset, go to\nhttps://flash.comma.ai"),
+    #   self._cancel_button,
+    #   self._reboot_button,
+    #   self._reset_button,
+    # ])
 
   def _do_erase(self):
     if PC:
@@ -134,6 +150,8 @@ def main():
       mode = ResetMode.RECOVER
     elif sys.argv[1] == "--format":
       mode = ResetMode.FORMAT
+    elif sys.argv[1] == '--tap-reset':
+      mode = ResetMode.TAP_RESET
 
   gui_app.init_window("System Reset")
   reset = Reset(mode)
