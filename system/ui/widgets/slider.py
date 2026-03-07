@@ -13,7 +13,7 @@ class SmallSlider(Widget):
   CONFIRM_DELAY = 0.2
 
   def __init__(self, title: str, confirm_callback: Callable | None = None):
-    # TODO: unify this with BigConfirmationDialogV2
+    # TODO: unify this with BigConfirmationDialog
     super().__init__()
     self._confirm_callback = confirm_callback
 
