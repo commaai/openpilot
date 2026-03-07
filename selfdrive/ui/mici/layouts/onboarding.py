@@ -14,8 +14,7 @@ from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.version import terms_version, training_version
 from openpilot.selfdrive.ui.ui_state import ui_state, device
-from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationCircleButton
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import BaseDriverCameraDialog
 
@@ -215,25 +214,18 @@ class TrainingGuideRecordFront(NavScroller):
   def __init__(self, continue_callback: Callable[[], None]):
     super().__init__()
 
-    def show_accept_dialog():
-      def on_accept():
-        ui_state.params.put_bool_nonblocking("RecordFront", True)
-        continue_callback()
+    def on_accept():
+      ui_state.params.put_bool_nonblocking("RecordFront", True)
+      continue_callback()
 
-      gui_app.push_widget(BigConfirmationDialog("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", on_accept, exit_on_confirm=False))
+    def on_decline():
+      ui_state.params.put_bool_nonblocking("RecordFront", False)
+      continue_callback()
 
-    def show_decline_dialog():
-      def on_decline():
-        ui_state.params.put_bool_nonblocking("RecordFront", False)
-        continue_callback()
+    self._accept_button = BigConfirmationCircleButton("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png",
+                                                      on_accept, exit_on_confirm=False)
 
-      gui_app.push_widget(BigConfirmationDialog("no, don't upload", "icons_mici/setup/cancel.png", on_decline, exit_on_confirm=False))
-
-    self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
-    self._accept_button.set_click_callback(show_accept_dialog)
-
-    self._decline_button = BigCircleButton("icons_mici/setup/cancel.png")
-    self._decline_button.set_click_callback(show_decline_dialog)
+    self._decline_button = BigConfirmationCircleButton("no, don't upload", "icons_mici/setup/cancel.png", on_decline, exit_on_confirm=False)
 
     self._scroller.add_widgets([
       GreyBigButton("driver camera data", "do you want to share video data for training?",
@@ -322,18 +314,8 @@ class TermsPage(Scroller):
   def __init__(self, on_accept, on_decline):
     super().__init__()
 
-    def show_accept_dialog():
-      gui_app.push_widget(BigConfirmationDialog("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png", on_accept))
-
-    def show_decline_dialog():
-      gui_app.push_widget(BigConfirmationDialog("decline &\nuninstall", "icons_mici/setup/cancel.png", on_decline,
-                                                red=True, exit_on_confirm=False))
-
-    self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
-    self._accept_button.set_click_callback(show_accept_dialog)
-
-    self._decline_button = BigCircleButton("icons_mici/setup/cancel.png", red=True)
-    self._decline_button.set_click_callback(show_decline_dialog)
+    self._accept_button = BigConfirmationCircleButton("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png", on_accept)
+    self._decline_button = BigConfirmationCircleButton("decline &\nuninstall", "icons_mici/setup/cancel.png", on_decline, red=True, exit_on_confirm=False)
 
     self._terms_header = GreyBigButton("terms and\nconditions", "scroll to continue",
                                        gui_app.texture("icons_mici/setup/green_info.png", 64, 64))

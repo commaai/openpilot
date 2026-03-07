@@ -11,7 +11,7 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
 
 DEBUG = False
 
@@ -253,3 +253,15 @@ class BigDialogButton(BigButton):
 
     dlg = BigDialog(self.text, self._description)
     gui_app.push_widget(dlg)
+
+
+class BigConfirmationCircleButton(BigCircleButton):
+  def __init__(self, title: str, icon: str, confirm_callback: Callable[[], None], exit_on_confirm: bool = True,
+               red: bool = False, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
+    super().__init__(icon, red, icon_size, icon_offset)
+
+    def show_confirm_dialog():
+      gui_app.push_widget(BigConfirmationDialog(title, icon, confirm_callback,
+                                                exit_on_confirm=exit_on_confirm, red=red))
+
+    self.set_click_callback(show_confirm_dialog)
