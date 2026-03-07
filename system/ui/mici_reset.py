@@ -71,12 +71,12 @@ class Reset(Scroller):
     self._reset_failed_page = ResetFailedPage()
 
     def show_confirm_dialog():
-      dialog = BigConfirmationDialog("erase\ndevice", "icons_mici/settings/device/uninstall.png", red=True,
+      dialog = BigConfirmationDialog("reset &\nerase", "icons_mici/settings/device/uninstall.png", red=True,
                                      confirm_callback=self.start_reset)
       gui_app.push_widget(dialog)
 
     def show_cancel_dialog():
-      dialog = BigConfirmationDialog("normal\nstartup", "icons_mici/settings/device/reboot.png",
+      dialog = BigConfirmationDialog("cancel", "icons_mici/setup/cancel.png",
                                      exit_on_confirm=False, confirm_callback=gui_app.request_close)
       gui_app.push_widget(dialog)
 
@@ -88,10 +88,10 @@ class Reset(Scroller):
     self._reset_button = BigCircleButton("icons_mici/settings/device/uninstall.png", red=True)
     self._reset_button.set_click_callback(show_confirm_dialog)
 
-    self._cancel_button = BigCircleButton("icons_mici/settings/device/reboot.png")
+    self._cancel_button = BigCircleButton("icons_mici/setup/cancel.png")
     self._cancel_button.set_click_callback(show_cancel_dialog)
 
-    main_card = GreyBigButton("factory reset", "all content and\nsettings will be erased",
+    main_card = GreyBigButton("factory reset", "resetting erases\nall user content & data",
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
     # cancel button becomes reboot button
@@ -102,8 +102,9 @@ class Reset(Scroller):
 
     self._scroller.add_widgets([
       main_card,
-      self._reset_button,
+      GreyBigButton("", "For a deeper reset, go to\nhttps://flash.comma.ai"),
       self._cancel_button,
+      self._reset_button,
     ])
 
   def _do_erase(self):
