@@ -175,8 +175,19 @@ class SliderBase(Widget, abc.ABC):
       # not activated yet, keep movement 1:1
       self._scroll_x_circle_filter.x = self._scroll_x_circle
 
-  def _render_shimmer_label(self, label_rect: rl.Rectangle):
-    # Shimmer shader for iOS-style text animation
+  def _render_shimmer_label(self):
+    label_alpha = int(255 * (1.0 - self.slider_percentage) * self._opacity_filter.x)
+    if label_alpha <= 0:
+      return
+
+    self._label.set_text_color(rl.Color(255, 255, 255, label_alpha))
+    label_rect = rl.Rectangle(
+      self._rect.x + 20,
+      self._rect.y,
+      self._rect.width - self._circle_bg_txt.width - 20 * 2.5,
+      self._rect.height,
+    )
+
     if self._shimmer_shader is None:
       self._shimmer_shader = rl.load_shader_from_memory(SHIMMER_VERTEX_SHADER, SHIMMER_FRAGMENT_SHADER)
       self._shimmer_time_loc = rl.get_shader_location(self._shimmer_shader, "time")
@@ -204,16 +215,8 @@ class SliderBase(Widget, abc.ABC):
     btn_x = bg_txt_x + self._bg_txt.width - self._circle_bg_txt.width + self._scroll_x_circle_filter.x
     btn_y = self._rect.y + (self._rect.height - self._circle_bg_txt.height) / 2
 
-    label_alpha = int(255 * (1.0 - self.slider_percentage) * self._opacity_filter.x)
-    if label_alpha > 0:
-      self._label.set_text_color(rl.Color(255, 255, 255, label_alpha))
-      label_rect = rl.Rectangle(
-        self._rect.x + 20,
-        self._rect.y,
-        self._rect.width - self._circle_bg_txt.width - 20 * 2.5,
-        self._rect.height,
-      )
-      self._render_shimmer_label(label_rect)
+    # Shimmer shader for label
+    self._render_shimmer_label()
 
     # circle and arrow
     circle_bg_txt = self._circle_bg_pressed_txt if self._is_dragging_circle or self.confirmed else self._circle_bg_txt
