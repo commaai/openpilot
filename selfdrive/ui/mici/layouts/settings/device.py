@@ -9,7 +9,7 @@ from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, ConfirmationButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
@@ -74,7 +74,7 @@ def _engaged_confirmation(callback: Callable, action_text: str, btn: Confirmatio
     if btn:
       btn.show_confirmation_dialog(confirm_callback=confirm_callback)
     else:
-      dlg = BigConfirmationDialogV2(f"slide to\n{action_text.lower()}", icon, red=red,
+      dlg = BigConfirmationDialog(f"slide to\n{action_text.lower()}", icon, red=red,
                                      exit_on_confirm=exit_on_confirm, confirm_callback=confirm_callback)
       gui_app.push_widget(dlg)
   else:

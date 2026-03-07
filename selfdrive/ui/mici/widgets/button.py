@@ -71,7 +71,7 @@ class BigCircleButton(Widget):
 
 
 class ConfirmationButton(BigCircleButton):
-  """BigCircleButton that shows a matching BigConfirmationDialogV2 on click.
+  """BigCircleButton that shows a matching BigConfirmationDialog on click.
   The dialog automatically uses the same icon and red state as the button."""
 
   def __init__(self, icon: str, dialog_title: str, red: bool = False, exit_on_confirm: bool = True,
@@ -87,9 +87,9 @@ class ConfirmationButton(BigCircleButton):
     self._confirm_callback = callback
 
   def show_confirmation_dialog(self, confirm_callback: Callable | None = None):
-    from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
+    from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
     callback = confirm_callback or self._confirm_callback
-    dialog = BigConfirmationDialogV2(self._dialog_title, self._icon, red=self._red,
+    dialog = BigConfirmationDialog(self._dialog_title, self._icon, red=self._red,
                                      exit_on_confirm=self._exit_on_confirm,
                                      confirm_callback=callback)
     gui_app.push_widget(dialog)
