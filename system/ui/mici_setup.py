@@ -28,7 +28,7 @@ from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPA
 from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
 
 NetworkType = log.DeviceState.NetworkType
@@ -248,8 +248,8 @@ class FailedPage(NavScroller):
     self.set_back_callback(retry_callback)
 
     def show_reboot_dialog():
-      dialog = BigConfirmationDialogV2("slide to reboot", "icons_mici/settings/device/reboot.png",
-                                       exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
+      dialog = BigConfirmationDialog("slide to reboot", "icons_mici/settings/device/reboot.png",
+                                     exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
       gui_app.push_widget(dialog)
 
     reboot_button = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
