@@ -222,7 +222,8 @@ class TrainingGuideRecordFront(NavScroller):
       ui_state.params.put_bool_nonblocking("RecordFront", False)
       continue_callback()
 
-    self._accept_button = BigConfirmationCircleButton("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", on_accept, exit_on_confirm=False)
+    self._accept_button = BigConfirmationCircleButton("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png",
+                                                      on_accept, exit_on_confirm=False)
 
     self._decline_button = BigConfirmationCircleButton("no, don't upload", "icons_mici/setup/cancel.png", on_decline, exit_on_confirm=False)
 
