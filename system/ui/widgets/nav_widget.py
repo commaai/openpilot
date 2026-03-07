@@ -69,7 +69,7 @@ class NavWidget(Widget, abc.ABC):
     self._shown_callback: Callable[[], None] | None = None  # transient callback fired after show animation completes
 
     # TODO: move this state into NavBar
-    self._nav_bar = NavBar()
+    self._nav_bar = self._child(NavBar())
     self._nav_bar_show_time = 0.0
     self._nav_bar_y_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
@@ -214,7 +214,6 @@ class NavWidget(Widget, abc.ABC):
 
   def show_event(self):
     super().show_event()
-    self._nav_bar.show_event()
 
     # Reset state
     self._drag_start_pos = None

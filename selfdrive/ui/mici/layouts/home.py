@@ -111,6 +111,7 @@ class MiciHomeLayout(Widget):
     self._version_commit_label = MiciLabel("", font_size=36, color=rl.GRAY, font_weight=FontWeight.ROMAN)
 
   def show_event(self):
+    super().show_event()
     self._version_text = self._get_version_text()
     self._update_params()
 
