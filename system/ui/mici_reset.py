@@ -20,7 +20,6 @@ TIMEOUT = 3*60
 class ResetMode(IntEnum):
   USER_RESET = 0  # user initiated a factory reset from openpilot
   RECOVER = 1     # userdata is corrupt for some reason, give a chance to recover
-  FORMAT = 2      # finish up a factory reset from a tool that doesn't flash an empty partition to userdata
 
 
 class ResetFailedPage(FailedPage):
@@ -70,7 +69,7 @@ class Reset(Scroller):
     self._reset_failed_page = ResetFailedPage()
 
     self._reset_button = BigConfirmationCircleButton("erase\ndevice", gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
-                                                     self.start_reset, red=True)
+                                                     self._start_reset, red=True)
     self._cancel_button = BigConfirmationCircleButton("normal\nstartup", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
                                                       gui_app.request_close, exit_on_confirm=False)
     self._reboot_button = BigConfirmationCircleButton("reboot\ndevice", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
@@ -108,7 +107,7 @@ class Reset(Scroller):
     else:
       self._reset_failed = True
 
-  def start_reset(self):
+  def _start_reset(self):
     self._resetting_page.set_shown_callback(self._do_erase)
     gui_app.push_widget(self._resetting_page)
 
@@ -132,15 +131,10 @@ def main():
   if len(sys.argv) > 1:
     if sys.argv[1] == '--recover':
       mode = ResetMode.RECOVER
-    elif sys.argv[1] == "--format":
-      mode = ResetMode.FORMAT
 
   gui_app.init_window("System Reset")
   reset = Reset(mode)
   gui_app.push_widget(reset)
-
-  if mode == ResetMode.FORMAT:
-    reset.start_reset()
 
   for _ in gui_app.render():
     pass
