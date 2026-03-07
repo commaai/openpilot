@@ -564,7 +564,7 @@ class Setup(Widget):
         if url:
           self._download(url)
 
-      keyboard = BigInputDialog("custom software URL...", confirm_callback=handle_keyboard_result, auto_return_to_letters="./")
+      keyboard = BigInputDialog("custom software URL...", handle_keyboard_result, auto_return_to_letters="./")
       gui_app.push_widget(keyboard)
 
   def _download(self, url: str):

@@ -28,7 +28,7 @@ class DeveloperLayoutMici(NavScroller):
 
     def ssh_keys_callback():
       github_username = ui_state.params.get("GithubUsername") or ""
-      dlg = BigInputDialog("enter GitHub username...", github_username, minimum_length=0, confirm_callback=github_username_callback)
+      dlg = BigInputDialog("enter GitHub username...", github_username_callback, github_username, minimum_length=0)
       if not system_time_valid():
         dlg = BigDialog("Please connect to Wi-Fi to fetch your key", "")
         gui_app.push_widget(dlg)
