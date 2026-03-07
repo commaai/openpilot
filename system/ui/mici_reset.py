@@ -11,7 +11,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.mici_setup import GreyBigButton, FailedPage
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
 
 USERDATA = "/dev/disk/by-partlabel/userdata"
@@ -71,17 +71,17 @@ class Reset(Scroller):
     self._reset_failed_page = ResetFailedPage()
 
     def show_confirm_dialog():
-      dialog = BigConfirmationDialogV2("erase\ndevice", "icons_mici/settings/device/uninstall.png", red=True,
+      dialog = BigConfirmationDialog("erase\ndevice", "icons_mici/settings/device/uninstall.png", red=True,
                                        confirm_callback=self.start_reset)
       gui_app.push_widget(dialog)
 
     def show_cancel_dialog():
-      dialog = BigConfirmationDialogV2("normal\nstartup", "icons_mici/settings/device/reboot.png",
+      dialog = BigConfirmationDialog("normal\nstartup", "icons_mici/settings/device/reboot.png",
                                        exit_on_confirm=False, confirm_callback=gui_app.request_close)
       gui_app.push_widget(dialog)
 
     def show_reboot_dialog():
-      dialog = BigConfirmationDialogV2("reboot\ndevice", "icons_mici/settings/device/reboot.png",
+      dialog = BigConfirmationDialog("reboot\ndevice", "icons_mici/settings/device/reboot.png",
                                        exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
       gui_app.push_widget(dialog)
 

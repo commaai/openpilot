@@ -15,7 +15,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.version import terms_version, training_version
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import BaseDriverCameraDialog
 
@@ -220,7 +220,7 @@ class TrainingGuideRecordFront(NavScroller):
         ui_state.params.put_bool_nonblocking("RecordFront", True)
         continue_callback()
 
-      gui_app.push_widget(BigConfirmationDialogV2("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", exit_on_confirm=False,
+      gui_app.push_widget(BigConfirmationDialog("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", exit_on_confirm=False,
                                                   confirm_callback=on_accept))
 
     def show_decline_dialog():
@@ -228,7 +228,7 @@ class TrainingGuideRecordFront(NavScroller):
         ui_state.params.put_bool_nonblocking("RecordFront", False)
         continue_callback()
 
-      gui_app.push_widget(BigConfirmationDialogV2("no, don't upload", "icons_mici/setup/cancel.png", exit_on_confirm=False, confirm_callback=on_decline))
+      gui_app.push_widget(BigConfirmationDialog("no, don't upload", "icons_mici/setup/cancel.png", exit_on_confirm=False, confirm_callback=on_decline))
 
     self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
     self._accept_button.set_click_callback(show_accept_dialog)
@@ -324,11 +324,11 @@ class TermsPage(Scroller):
     super().__init__()
 
     def show_accept_dialog():
-      gui_app.push_widget(BigConfirmationDialogV2("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png",
+      gui_app.push_widget(BigConfirmationDialog("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png",
                                                   confirm_callback=on_accept))
 
     def show_decline_dialog():
-      gui_app.push_widget(BigConfirmationDialogV2("decline &\nuninstall", "icons_mici/setup/cancel.png",
+      gui_app.push_widget(BigConfirmationDialog("decline &\nuninstall", "icons_mici/setup/cancel.png",
                                                   red=True, exit_on_confirm=False, confirm_callback=on_decline))
 
     self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")

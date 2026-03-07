@@ -4,7 +4,7 @@ import pyray as rl
 from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget
@@ -246,7 +246,7 @@ class ForgetButton(Widget):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    dlg = BigConfirmationDialogV2("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
+    dlg = BigConfirmationDialog("slide to forget", "icons_mici/settings/network/new/trash.png", red=True,
                                   confirm_callback=self._forget_network)
     gui_app.push_widget(dlg)
 
