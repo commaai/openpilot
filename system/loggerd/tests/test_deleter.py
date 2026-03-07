@@ -115,3 +115,18 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  def test_skip_stale_directory(self):
+    f_path = self.make_file_with_data(self.seg_dir, self.f_type, 1)
+    stale_dir = "00000000--deadbeef00--0"
+    original_listdir_by_creation = deleter.listdir_by_creation
+
+    deleter.listdir_by_creation = lambda _root: [stale_dir, self.seg_dir]
+    try:
+      self.start_thread()
+      with Timeout(2, "Timeout waiting for file to be deleted with stale directory present"):
+        while f_path.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+      deleter.listdir_by_creation = original_listdir_by_creation
