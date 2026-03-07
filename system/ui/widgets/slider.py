@@ -89,10 +89,9 @@ class SliderBase(Widget, abc.ABC):
 
     elif mouse_event.left_released:
       # swiped to left
-      if self._is_dragging_circle and self._scroll_x_circle < self._drag_threshold:
+      if self._scroll_x_circle_filter.x < self._drag_threshold:
         self._confirmed_time = rl.get_time()
 
-      self._scroll_x_circle = 0.0
       self._is_dragging_circle = False
 
     if self._is_dragging_circle:
