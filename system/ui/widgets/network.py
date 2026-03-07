@@ -75,10 +75,12 @@ class NetworkUI(Widget):
     self._nav_button.set_click_callback(self._cycle_panel)
 
   def show_event(self):
+    super().show_event()
     self._set_current_panel(PanelType.WIFI)
     self._wifi_panel.show_event()
 
   def hide_event(self):
+    super().hide_event()
     self._wifi_panel.hide_event()
 
   def _cycle_panel(self):
@@ -299,10 +301,12 @@ class WifiManagerUI(Widget):
                                      disconnected=self._on_disconnected)
 
   def show_event(self):
+    super().show_event()
     # start/stop scanning when widget is visible
     self._wifi_manager.set_active(True)
 
   def hide_event(self):
+    super().hide_event()
     self._wifi_manager.set_active(False)
 
   def _load_icons(self):
