@@ -144,12 +144,14 @@ class SoftwareSelectionPage(NavWidget):
 
     self._openpilot_slider = LargerSlider("slide to install\nopenpilot", use_openpilot_callback)
     self._openpilot_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
-    self._custom_software_slider = LargerSlider("slide to install\nother software", use_custom_software_callback, green=False)
+    self._custom_software_slider = LargerSlider("slide to install\nother software", use_custom_software_callback, green=False, shimmer_offset=0.4)
     self._custom_software_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def show_event(self):
     super().show_event()
     self._nav_bar._alpha = 0.0
+    self._openpilot_slider.show_event()
+    self._custom_software_slider.show_event()
 
   def _update_state(self):
     super()._update_state()
@@ -157,8 +159,8 @@ class SoftwareSelectionPage(NavWidget):
       self.reset()
 
   def reset(self):
-    self._openpilot_slider.reset()
-    self._custom_software_slider.reset()
+    self._openpilot_slider.reset(reset_shimmer=False)
+    self._custom_software_slider.reset(reset_shimmer=False)
 
   def _render(self, rect: rl.Rectangle):
     self._openpilot_slider.set_opacity(1.0 - self._custom_software_slider.slider_percentage)
@@ -490,7 +492,6 @@ class Setup(Widget):
     self._network_monitor.start()
 
     def getting_started_button_callback():
-      self._software_selection_page.reset()
       gui_app.push_widget(self._software_selection_page)
 
     self._start_page = StartPage()
