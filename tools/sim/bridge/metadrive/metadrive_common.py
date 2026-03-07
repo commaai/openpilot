@@ -13,11 +13,9 @@ class CopyRamRGBCamera(RGBCamera):
 
   def get_rgb_array_cpu(self):
     origin_img = self.cpu_texture
-    img = np.frombuffer(origin_img.getRamImageAs("RGBA").getData(), dtype=np.uint8)
-    img = img.reshape((origin_img.getYSize(), origin_img.getXSize(), 4))
-    img = img[:, :, :3]
-    # img = np.swapaxes(img, 1, 0)
-    img = img[::-1] # Flip on vertical axis
+    img = np.frombuffer(origin_img.getRamImageAs("RGB").getData(), dtype=np.uint8)
+    img = img.reshape((origin_img.getYSize(), origin_img.getXSize(), 3))
+    img = img[::-1]  # Flip on vertical axis
     return img
 
 
