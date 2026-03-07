@@ -100,8 +100,8 @@ class BigInputDialog(BigDialogBase):
 
   def __init__(self,
                hint: str,
+               default_text: str,
                confirm_callback: Callable[[str], None],
-               default_text: str = "",
                minimum_length: int = 1,
                auto_return_to_letters: str = ""):
     super().__init__()

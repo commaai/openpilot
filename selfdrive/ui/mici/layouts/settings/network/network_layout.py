@@ -38,7 +38,7 @@ class NetworkLayoutMici(NavScroller):
 
     def tethering_password_clicked():
       tethering_password = self._wifi_manager.tethering_password
-      dlg = BigInputDialog("enter password...", tethering_password_callback, tethering_password, minimum_length=8)
+      dlg = BigInputDialog("enter password...", tethering_password, tethering_password_callback, minimum_length=8)
       gui_app.push_widget(dlg)
 
     txt_tethering = gui_app.texture("icons_mici/settings/network/tethering.png", 64, 54)
@@ -129,7 +129,7 @@ class NetworkLayoutMici(NavScroller):
       self._wifi_manager.update_gsm_settings(ui_state.params.get_bool("GsmRoaming"), apn, ui_state.params.get_bool("GsmMetered"))
 
     current_apn = ui_state.params.get("GsmApn") or ""
-    dlg = BigInputDialog("enter APN...", update_apn, current_apn, minimum_length=0)
+    dlg = BigInputDialog("enter APN...", current_apn, update_apn, minimum_length=0)
     gui_app.push_widget(dlg)
 
   def _toggle_cellular_metered(self, checked: bool):
