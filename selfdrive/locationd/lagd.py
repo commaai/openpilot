@@ -328,7 +328,6 @@ class LateralLagEstimator:
   def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray,
                      dt: float, min_lag: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
-
     min_lag_samples, max_lag_samples = int(round(min_lag / dt)), int(round(max_lag / dt))
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
 
