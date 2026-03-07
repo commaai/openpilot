@@ -36,8 +36,11 @@ class ResetFailedPage(FailedPage):
 
 
 class ResettingPage(NavWidget):
+  DOT_HALF_CYCLE = 0.7  # seconds for buildup and hold each
+
   def __init__(self):
     super().__init__()
+    self._show_time = 0.0
 
     self._resetting_card = GreyBigButton("resetting device", "this may take up to\na minute...",
                                          gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
@@ -45,11 +48,15 @@ class ResettingPage(NavWidget):
   def show_event(self):
     super().show_event()
     self._nav_bar._alpha = 0.0  # not dismissable
+    self._show_time = rl.get_time()
 
   def _back_enabled(self) -> bool:
     return False
 
   def _render(self, _):
+    t = (rl.get_time() - self._show_time) % (self.DOT_HALF_CYCLE * 2)
+    dots = "." * min(int(t / (self.DOT_HALF_CYCLE / 4)), 3)
+    self._resetting_card.set_value(f"this may take up to\na minute{dots}")
     self._resetting_card.render(rl.Rectangle(
       self._rect.x + self._rect.width / 2 - self._resetting_card.rect.width / 2,
       self._rect.y + self._rect.height / 2 - self._resetting_card.rect.height / 2,
@@ -84,11 +91,12 @@ class Reset(Scroller):
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
     self._scroller.add_widget(main_card)
 
-    if mode == ResetMode.RECOVER:
-      main_card.set_value("user data partition\ncould not be mounted")
-    elif mode == ResetMode.TAP_RESET:
-      main_card.set_value("reset triggered by\ntapping the screen")
+    if mode != ResetMode.USER_RESET:
       self._scroller.add_widget(GreyBigButton("", "Resetting erases\nall user content & data."))
+      if mode == ResetMode.RECOVER:
+        main_card.set_value("user data partition\ncould not be mounted")
+      elif mode == ResetMode.TAP_RESET:
+        main_card.set_value("reset triggered by\ntapping the screen")
 
     self._scroller.add_widgets([
       GreyBigButton("", "For a deeper reset, go to\nhttps://flash.comma.ai"),
