@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import fcntl
+import math
 import os
 import queue
 import struct
@@ -271,15 +272,20 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
 
     # this subset is only used for offroad
+    # filter out NaN values from failed sensor reads
+    def max_valid_temp(temps, default=0.):
+      valid = [t for t in temps if math.isfinite(t)]
+      return max(valid, default=default)
+
     temp_sources = [
-      msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC, default=0.),
-      max(msg.deviceState.gpuTempC, default=0.),
+      msg.deviceState.memoryTempC if math.isfinite(msg.deviceState.memoryTempC) else 0.,
+      max_valid_temp(msg.deviceState.cpuTempC),
+      max_valid_temp(msg.deviceState.gpuTempC),
     ]
     offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
+    temp_sources.append(max_valid_temp(msg.deviceState.pmicTempC))
     all_comp_temp = all_temp_filter.update(max(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 

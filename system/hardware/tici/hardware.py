@@ -117,12 +117,18 @@ class Tici(HardwareBase):
     return self.get_cmdline()['androidboot.serialno']
 
   def get_voltage(self):
-    with open("/sys/class/hwmon/hwmon1/in1_input") as f:
-      return int(f.read())
+    try:
+      with open("/sys/class/hwmon/hwmon1/in1_input") as f:
+        return int(f.read())
+    except Exception:
+      return 0
 
   def get_current(self):
-    with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
-      return int(f.read())
+    try:
+      with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
+        return int(f.read())
+    except Exception:
+      return 0
 
   def set_ir_power(self, percent: int):
     if self.get_device_type() == "tizi":

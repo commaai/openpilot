@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import math
+
 import numpy as np
 
 from openpilot.common.pid import PIDController
@@ -16,6 +18,10 @@ class FanController:
     if ignition != self.last_ignition:
       self.controller.reset()
     self.last_ignition = ignition
+
+    # guard against NaN/Inf from failed sensor reads
+    if not math.isfinite(cur_temp):
+      cur_temp = 0.
 
     return int(self.controller.update(
                  error=(cur_temp - 75),  # temperature setpoint in C
