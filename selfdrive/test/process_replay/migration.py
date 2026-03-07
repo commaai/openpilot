@@ -14,7 +14,8 @@ from opendbc.car.gm.values import GMSafetyFlags
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
-from openpilot.selfdrive.controls.lib.longitudinal_planner import get_accel_from_plan, CONTROL_N_T_IDX
+from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan # FIXME migration for longtidunal plan needs to be fixed after no "plan" is output
+from openpilot.selfdrive.controls.lib.longcontrol import CONTROL_N_T_IDX
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
 
