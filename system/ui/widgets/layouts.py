@@ -21,6 +21,7 @@ class HBoxLayout(Widget):
   def __init__(self, widgets: list[Widget] | None = None, spacing: int = 0,
                alignment: Alignment = Alignment.LEFT | Alignment.V_CENTER):
     super().__init__()
+    self._widgets: list[Widget] = []
     self._spacing = spacing
     self._alignment = alignment
 
@@ -30,13 +31,13 @@ class HBoxLayout(Widget):
 
   @property
   def widgets(self) -> list[Widget]:
-    return self._children
+    return self._widgets
 
   def add_widget(self, widget: Widget) -> None:
-    self._child(widget)
+    self._widgets.append(widget)
 
   def _render(self, _):
-    visible_widgets = [w for w in self._children if w.is_visible]
+    visible_widgets = [w for w in self._widgets if w.is_visible]
 
     cur_offset_x = 0
 
