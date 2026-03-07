@@ -181,10 +181,12 @@ class SliderBase(Widget, abc.ABC):
     self._shimmer_range_loc = rl.get_shader_location(self._shimmer_shader, "shimmerRange")
 
   def _render_shimmer_label(self, label_rect: rl.Rectangle):
+    # Shimmer shader for iOS-style text animation
     if self._shimmer_shader is None:
       self._init_shimmer_shader()
 
     self._shimmer_time_ptr[0] = rl.get_time() - self._shimmer_start_time
+    # use actual text width (right-aligned) instead of full rect
     text_right = label_rect.x + label_rect.width
     self._shimmer_range_ptr[0] = text_right - self._label.text_width
     self._shimmer_range_ptr[1] = text_right
