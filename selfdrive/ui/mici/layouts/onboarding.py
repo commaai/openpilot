@@ -220,15 +220,14 @@ class TrainingGuideRecordFront(NavScroller):
         ui_state.params.put_bool_nonblocking("RecordFront", True)
         continue_callback()
 
-      gui_app.push_widget(BigConfirmationDialog("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", exit_on_confirm=False,
-                                                confirm_callback=on_accept))
+      gui_app.push_widget(BigConfirmationDialog("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png", on_accept, exit_on_confirm=False))
 
     def show_decline_dialog():
       def on_decline():
         ui_state.params.put_bool_nonblocking("RecordFront", False)
         continue_callback()
 
-      gui_app.push_widget(BigConfirmationDialog("no, don't upload", "icons_mici/setup/cancel.png", exit_on_confirm=False, confirm_callback=on_decline))
+      gui_app.push_widget(BigConfirmationDialog("no, don't upload", "icons_mici/setup/cancel.png", on_decline, exit_on_confirm=False))
 
     self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
     self._accept_button.set_click_callback(show_accept_dialog)
@@ -324,12 +323,11 @@ class TermsPage(Scroller):
     super().__init__()
 
     def show_accept_dialog():
-      gui_app.push_widget(BigConfirmationDialog("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png",
-                                                confirm_callback=on_accept))
+      gui_app.push_widget(BigConfirmationDialog("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png", on_accept))
 
     def show_decline_dialog():
-      gui_app.push_widget(BigConfirmationDialog("decline &\nuninstall", "icons_mici/setup/cancel.png",
-                                                red=True, exit_on_confirm=False, confirm_callback=on_decline))
+      gui_app.push_widget(BigConfirmationDialog("decline &\nuninstall", "icons_mici/setup/cancel.png", on_decline,
+                                                red=True, exit_on_confirm=False))
 
     self._accept_button = BigCircleButton("icons_mici/setup/driver_monitoring/dm_check.png")
     self._accept_button.set_click_callback(show_accept_dialog)

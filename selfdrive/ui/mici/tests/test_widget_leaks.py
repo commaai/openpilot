@@ -72,7 +72,7 @@ def test_dialogs_do_not_leak():
     lambda: MiciTrainingGuide(lambda: None),
     lambda: MiciOnboardingWindow(lambda: None),
     lambda: BigDialog("test", "test"),
-    lambda: BigConfirmationDialog("test", "icons_mici/settings/network/new/trash.png"),
+    lambda: BigConfirmationDialog("test", "icons_mici/settings/network/new/trash.png", lambda: None),
     lambda: BigInputDialog("test"),
     lambda: MiciFccModal(text="test"),
     # tici
