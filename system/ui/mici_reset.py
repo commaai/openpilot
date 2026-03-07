@@ -20,6 +20,7 @@ TIMEOUT = 3*60
 class ResetMode(IntEnum):
   USER_RESET = 0  # user initiated a factory reset from openpilot
   RECOVER = 1     # userdata is corrupt for some reason, give a chance to recover
+  TAP_RESET = 2   # user initiated a factory reset by tapping the screen during boot
 
 
 class ResetFailedPage(FailedPage):
@@ -35,8 +36,11 @@ class ResetFailedPage(FailedPage):
 
 
 class ResettingPage(NavWidget):
+  DOT_STEP = 0.6
+
   def __init__(self):
     super().__init__()
+    self._show_time = 0.0
 
     self._resetting_card = GreyBigButton("resetting device", "this may take up to\na minute...",
                                          gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
@@ -44,11 +48,15 @@ class ResettingPage(NavWidget):
   def show_event(self):
     super().show_event()
     self._nav_bar._alpha = 0.0  # not dismissable
+    self._show_time = rl.get_time()
 
   def _back_enabled(self) -> bool:
     return False
 
   def _render(self, _):
+    t = (rl.get_time() - self._show_time) % (self.DOT_STEP * 2)
+    dots = "." * min(int(t / (self.DOT_STEP / 4)), 3)
+    self._resetting_card.set_value(f"this may take up to\na minute{dots}")
     self._resetting_card.render(rl.Rectangle(
       self._rect.x + self._rect.width / 2 - self._resetting_card.rect.width / 2,
       self._rect.y + self._rect.height / 2 - self._resetting_card.rect.height / 2,
@@ -68,9 +76,9 @@ class Reset(Scroller):
     self._resetting_page = ResettingPage()
     self._reset_failed_page = ResetFailedPage()
 
-    self._reset_button = BigConfirmationCircleButton("erase\ndevice", gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),
+    self._reset_button = BigConfirmationCircleButton("reset &\nerase", gui_app.texture("icons_mici/settings/device/uninstall.png", 70, 70),
                                                      self._start_reset, red=True)
-    self._cancel_button = BigConfirmationCircleButton("normal\nstartup", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
+    self._cancel_button = BigConfirmationCircleButton("cancel", gui_app.texture("icons_mici/setup/cancel.png", 64, 64),
                                                       gui_app.request_close, exit_on_confirm=False)
     self._reboot_button = BigConfirmationCircleButton("reboot\ndevice", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
                                                       HARDWARE.reboot, exit_on_confirm=False)
@@ -79,18 +87,22 @@ class Reset(Scroller):
     self._cancel_button.set_visible(mode != ResetMode.RECOVER)
     self._reboot_button.set_visible(mode == ResetMode.RECOVER)
 
-    main_card = GreyBigButton("factory reset", "all content and\nsettings will be erased",
+    main_card = GreyBigButton("factory reset", "resetting erases\nall user content & data",
                               gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
+    self._scroller.add_widget(main_card)
 
-    if mode == ResetMode.RECOVER:
-      main_card.set_text("unable to mount\ndata partition")
-      main_card.set_value("it may be corrupted")
+    if mode != ResetMode.USER_RESET:
+      self._scroller.add_widget(GreyBigButton("", "Resetting erases all user content & data."))
+      if mode == ResetMode.RECOVER:
+        main_card.set_value("user data partition\ncould not be mounted")
+      elif mode == ResetMode.TAP_RESET:
+        main_card.set_value("reset triggered by\ntapping the screen")
 
     self._scroller.add_widgets([
-      main_card,
-      self._reset_button,
+      GreyBigButton("", "For a deeper reset, go to\nhttps://flash.comma.ai"),
       self._cancel_button,
       self._reboot_button,
+      self._reset_button,
     ])
 
   def _do_erase(self):
@@ -131,6 +143,8 @@ def main():
   if len(sys.argv) > 1:
     if sys.argv[1] == '--recover':
       mode = ResetMode.RECOVER
+    elif sys.argv[1] == '--tap-reset':
+      mode = ResetMode.TAP_RESET
 
   gui_app.init_window("System Reset")
   reset = Reset(mode)
