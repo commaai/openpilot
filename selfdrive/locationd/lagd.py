@@ -31,7 +31,7 @@ MAX_LAT_ACCEL_DIFF = 0.6
 MIN_LAT_ACCEL_RANGE = 0.5
 MIN_CONFIDENCE = 0.7
 CORR_BORDER_OFFSET = 5
-LAG_CANDIDATE_CORR_THRESHOLD = 0.93
+LAG_CANDIDATE_CORR_THRESHOLD = 0.9
 SMOOTH_K = 5
 SMOOTH_SIGMA = 1.0
 
@@ -328,16 +328,16 @@ class LateralLagEstimator:
   def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray,
                      dt: float, min_lag: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
-    min_lag_samples, max_lag_samples = int(round(min_lag / dt)), int(round(max_lag / dt))
-    padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
+    min_lag_samples, max_lag_samples, one_sec_samples = int(round(min_lag / dt)), int(round(max_lag / dt)), int(round(1.0 / dt))
+    padded_size = fft_next_good_size(len(expected_sig) + max(max_lag_samples, one_sec_samples))
 
     ncc = masked_normalized_cross_correlation(expected_sig, actual_sig, mask, padded_size)
 
-    # only consider lags from min_lag to max_lag
-    roi = np.s_[len(expected_sig) - 1 + min_lag_samples: len(expected_sig) - 1 + max_lag_samples]
-    extended_roi = np.s_[roi.start - CORR_BORDER_OFFSET: roi.stop + CORR_BORDER_OFFSET]
-    roi_ncc = ncc[roi]
-    extended_roi_ncc = ncc[extended_roi]
+    # only consider lags from ranges:
+    roi = np.s_[len(expected_sig) - 1 + min_lag_samples: len(expected_sig) - 1 + max_lag_samples] # min_lag - max_lag range
+    threshold_roi = np.s_[len(expected_sig) - 1: len(expected_sig) - 1 + one_sec_samples] # 0 - 1 second range
+    confidence_roi = np.s_[threshold_roi.start - CORR_BORDER_OFFSET: threshold_roi.stop + CORR_BORDER_OFFSET] # threshold range +/- border
+    roi_ncc, confidence_roi_ncc, threshold_roi_ncc = ncc[roi], ncc[confidence_roi], ncc[threshold_roi]
 
     max_corr_index = np.argmax(roi_ncc)
     corr = roi_ncc[max_corr_index]
@@ -345,8 +345,8 @@ class LateralLagEstimator:
 
     # to estimate lag confidence, gather all high-correlation candidates and see how spread they are
     # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
-    ncc_thresh = (extended_roi_ncc.max() - extended_roi_ncc.min()) * LAG_CANDIDATE_CORR_THRESHOLD + extended_roi_ncc.min()
-    good_lag_candidate_mask = extended_roi_ncc >= ncc_thresh
+    ncc_thresh = (threshold_roi_ncc.max() - threshold_roi_ncc.min()) * LAG_CANDIDATE_CORR_THRESHOLD + threshold_roi_ncc.min()
+    good_lag_candidate_mask = confidence_roi_ncc >= ncc_thresh
     good_lag_candidate_edges = np.diff(good_lag_candidate_mask.astype(int), prepend=0, append=0)
     starts, ends = np.where(good_lag_candidate_edges == 1)[0], np.where(good_lag_candidate_edges == -1)[0] - 1
     run_idx = np.searchsorted(starts, max_corr_index + CORR_BORDER_OFFSET, side='right') - 1
