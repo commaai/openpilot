@@ -79,7 +79,11 @@ class BigConfirmationDialog(BigDialogBase):
 
   def show_event(self):
     super().show_event()
-    self._slider.reset()
+    self._slider.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._slider.hide_event()
 
   def _on_confirm(self):
     if self._exit_on_confirm:

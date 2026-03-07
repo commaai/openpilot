@@ -98,10 +98,6 @@ class SliderBase(Widget, abc.ABC):
     self._shimmer_offset = shimmer_offset
     self._shimmer_start_time = 0.0
 
-  def __del__(self):
-    if self._shimmer_shader is not None:
-      rl.unload_shader(self._shimmer_shader)
-
   @abc.abstractmethod
   def _load_assets(self):
     ...
@@ -109,6 +105,16 @@ class SliderBase(Widget, abc.ABC):
   @property
   def confirmed(self) -> bool:
     return self._confirmed_time > 0.0
+
+  def show_event(self):
+    super().show_event()
+    self.reset()
+
+  def hide_event(self):
+    super().hide_event()
+    if self._shimmer_shader is not None:
+      rl.unload_shader(self._shimmer_shader)
+      self._shimmer_shader = None
 
   def reset(self, reset_shimmer: bool = True):
     # reset all slider state
