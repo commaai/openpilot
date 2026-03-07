@@ -107,12 +107,13 @@ class SliderBase(Widget, abc.ABC):
   def confirmed(self) -> bool:
     return self._confirmed_time > 0.0
 
-  def reset(self):
+  def reset(self, reset_shimmer: bool = True):
     # reset all slider state
     self._is_dragging_circle = False
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
-    self._shimmer_start_time = rl.get_time() + self._shimmer_offset
+    if reset_shimmer:
+      self._shimmer_start_time = rl.get_time() + self._shimmer_offset
 
   def set_opacity(self, opacity: float, smooth: bool = False):
     if smooth:

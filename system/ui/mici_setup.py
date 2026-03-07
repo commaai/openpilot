@@ -150,6 +150,8 @@ class SoftwareSelectionPage(NavWidget):
   def show_event(self):
     super().show_event()
     self._nav_bar._alpha = 0.0
+    self._openpilot_slider.reset()
+    self._custom_software_slider.reset()
 
   def _update_state(self):
     super()._update_state()
@@ -157,8 +159,8 @@ class SoftwareSelectionPage(NavWidget):
       self.reset()
 
   def reset(self):
-    self._openpilot_slider.reset()
-    self._custom_software_slider.reset()
+    self._openpilot_slider.reset(reset_shimmer=False)
+    self._custom_software_slider.reset(reset_shimmer=False)
 
   def _render(self, rect: rl.Rectangle):
     self._openpilot_slider.set_opacity(1.0 - self._custom_software_slider.slider_percentage)
