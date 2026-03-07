@@ -35,7 +35,8 @@ class Widget(abc.ABC):
     self._is_visible: bool | Callable[[], bool] = True
 
     self.__is_pressed = [False] * MAX_TOUCH_SLOTS
-    self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS  # if mouse/touch down started within rect
+    # if current mouse/touch down started within the widget's rectangle
+    self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
     self._touch_valid_callback: Callable[[], bool] | None = None
     self._click_delay: float | None = None  # seconds to hold is_pressed after release
     self._click_release_time: float | None = None
