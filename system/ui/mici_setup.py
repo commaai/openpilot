@@ -13,7 +13,7 @@ from collections.abc import Callable
 import pyray as rl
 
 from cereal import log
-from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
@@ -122,7 +122,7 @@ class StartPage(Widget):
 
     self._start_bg_txt = gui_app.texture("icons_mici/setup/start_button.png", 500, 224, keep_aspect_ratio=False)
     self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/start_button_pressed.png", 500, 224, keep_aspect_ratio=False)
-    self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
 
   def _render(self, rect: rl.Rectangle):
