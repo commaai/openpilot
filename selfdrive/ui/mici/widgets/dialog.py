@@ -89,6 +89,7 @@ class BigConfirmationDialog(BigDialogBase):
 
   def _update_state(self):
     super()._update_state()
+    # TODO: this stops shimmer when swiping down, do we want?
     if self.is_dismissing and not self._slider.confirmed:
       self._slider.reset()
 
