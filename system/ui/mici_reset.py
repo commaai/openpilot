@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import os
 import sys
 import time
@@ -36,7 +37,7 @@ class ResetFailedPage(FailedPage):
 
 
 class ResettingPage(NavWidget):
-  DOT_HALF_CYCLE = 0.7  # seconds for buildup and hold each
+  DOT_STEP = 0.7
 
   def __init__(self):
     super().__init__()
@@ -54,8 +55,8 @@ class ResettingPage(NavWidget):
     return False
 
   def _render(self, _):
-    t = (rl.get_time() - self._show_time) % (self.DOT_HALF_CYCLE * 2)
-    dots = "." * min(int(t / (self.DOT_HALF_CYCLE / 4)), 3)
+    t = (rl.get_time() - self._show_time) % (self.DOT_STEP * 2)
+    dots = "." * min(int(t / (self.DOT_STEP / 4)), 3)
     self._resetting_card.set_value(f"this may take up to\na minute{dots}")
     self._resetting_card.render(rl.Rectangle(
       self._rect.x + self._rect.width / 2 - self._resetting_card.rect.width / 2,
