@@ -65,12 +65,12 @@ class BigDialog(BigDialogBase):
 
 class BigConfirmationDialog(BigDialogBase):
   def __init__(self, title: str, icon: str, confirm_callback: Callable[[], None],
-               exit_on_confirm: bool = True, red: bool = False):
+               exit_on_confirm: bool = True, red: bool = False, icon_size: tuple[int, int] = (64, 53)):
     super().__init__()
     self._confirm_callback = confirm_callback
     self._exit_on_confirm = exit_on_confirm
 
-    icon_txt = gui_app.texture(icon, 64, 53)
+    icon_txt = gui_app.texture(icon, *icon_size)
     self._slider: BigSlider | RedBigSlider
     if red:
       self._slider = RedBigSlider(title, icon_txt, confirm_callback=self._on_confirm)
@@ -262,6 +262,6 @@ class BigConfirmationCircleButton(BigCircleButton):
 
     def show_confirm_dialog():
       gui_app.push_widget(BigConfirmationDialog(title, icon, confirm_callback,
-                                                exit_on_confirm=exit_on_confirm, red=red))
+                                                exit_on_confirm=exit_on_confirm, red=red, icon_size=icon_size))
 
     self.set_click_callback(show_confirm_dialog)
