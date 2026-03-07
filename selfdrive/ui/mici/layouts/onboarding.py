@@ -222,10 +222,11 @@ class TrainingGuideRecordFront(NavScroller):
       ui_state.params.put_bool_nonblocking("RecordFront", False)
       continue_callback()
 
-    self._accept_button = BigConfirmationCircleButton("allow data uploading", "icons_mici/setup/driver_monitoring/dm_check.png",
+    self._accept_button = BigConfirmationCircleButton("allow data uploading", gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64),
                                                       on_accept, exit_on_confirm=False)
 
-    self._decline_button = BigConfirmationCircleButton("no, don't upload", "icons_mici/setup/cancel.png", on_decline, exit_on_confirm=False)
+    self._decline_button = BigConfirmationCircleButton("no, don't upload", gui_app.texture("icons_mici/setup/cancel.png", 64, 64), on_decline,
+                                                       exit_on_confirm=False)
 
     self._scroller.add_widgets([
       GreyBigButton("driver camera data", "do you want to share video data for training?",
@@ -314,8 +315,9 @@ class TermsPage(Scroller):
   def __init__(self, on_accept, on_decline):
     super().__init__()
 
-    self._accept_button = BigConfirmationCircleButton("accept\nterms", "icons_mici/setup/driver_monitoring/dm_check.png", on_accept)
-    self._decline_button = BigConfirmationCircleButton("decline &\nuninstall", "icons_mici/setup/cancel.png", on_decline, red=True, exit_on_confirm=False)
+    self._accept_button = BigConfirmationCircleButton("accept\nterms", gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64), on_accept)
+    self._decline_button = BigConfirmationCircleButton("decline &\nuninstall", gui_app.texture("icons_mici/setup/cancel.png", 64, 64), on_decline,
+                                                       red=True, exit_on_confirm=False)
 
     self._terms_header = GreyBigButton("terms and\nconditions", "scroll to continue",
                                        gui_app.texture("icons_mici/setup/green_info.png", 64, 64))

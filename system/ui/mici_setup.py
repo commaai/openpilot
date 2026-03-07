@@ -254,8 +254,8 @@ class FailedPage(NavScroller):
       GreyBigButton(title, description or "swipe down to go\nback and try again",
                     gui_app.texture(icon, 64, 58)),
       self._reason_card,
-      BigConfirmationCircleButton("slide to reboot", "icons_mici/settings/device/reboot.png",
-                                  HARDWARE.reboot, exit_on_confirm=False, icon_size=(64, 70)),
+      BigConfirmationCircleButton("reboot\ndevice", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
+                                  HARDWARE.reboot, exit_on_confirm=False),
     ])
 
   def set_reason(self, reason: str):
