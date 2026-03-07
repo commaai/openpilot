@@ -107,15 +107,13 @@ class BigButton(Widget):
 
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
-  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", icon_size: tuple[int, int] = (64, 64),
-               scroll: bool = False):
+  def __init__(self, text: str, value: str = "", icon: Union[rl.Texture, None] = None, scroll: bool = False):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 402, 180))
     self.text = text
     self.value = value
-    self._icon_size = icon_size
+    self._txt_icon = icon
     self._scroll = scroll
-    self.set_icon(icon)
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
@@ -133,8 +131,8 @@ class BigButton(Widget):
 
     self._load_images()
 
-  def set_icon(self, icon: Union[str, rl.Texture]):
-    self._txt_icon = gui_app.texture(icon, *self._icon_size) if isinstance(icon, str) and len(icon) else icon
+  def set_icon(self, icon: Union[rl.Texture, None]):
+    self._txt_icon = icon
 
   def set_rotate_icon(self, rotate: bool):
     if rotate and self._rotate_icon_t is not None:
@@ -151,7 +149,7 @@ class BigButton(Widget):
 
   def _width_hint(self) -> int:
     # Single line if scrolling, so hide behind icon if exists
-    icon_size = self._icon_size[0] if self._txt_icon and self._scroll and self.value else 0
+    icon_size = self._txt_icon.width if self._txt_icon and self._scroll and self.value else 0
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _get_label_font_size(self):
