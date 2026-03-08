@@ -192,7 +192,7 @@ class CustomSoftwareWarningPage(NavScroller):
     self._scroller.add_widgets([
       GreyBigButton("use caution", "when installing\n3rd party software",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
-      GreyBigButton("", "• It has not been tested by comma"),
+      GreyBigButton("", "• It has not been tested by comma."),
       GreyBigButton("", "• It may not comply with relevant safety standards."),
       GreyBigButton("", "• It may cause damage to your device and/or vehicle."),
       GreyBigButton("how to restore to a\nfactory state later", "https://flash.comma.ai",
