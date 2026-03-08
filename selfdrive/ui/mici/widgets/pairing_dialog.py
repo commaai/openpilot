@@ -25,7 +25,7 @@ class PairingDialog(NavWidget):
 
     self._txt_pair = gui_app.texture("icons_mici/settings/device/pair.png", 33, 60)
     self._pair_label = UnifiedLabel("pair with comma connect", font_size=48, font_weight=FontWeight.BOLD,
-                                    text_color=rl.Color(255, 255, 255, int(255 * 0.9)), line_height=0.93)
+                                    text_color=rl.Color(255, 255, 255, int(255 * 0.9)), line_height=0.8)
 
   def _get_pairing_url(self) -> str:
     try:
