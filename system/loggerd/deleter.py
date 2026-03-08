@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 import os
 import shutil
 import threading
@@ -45,28 +45,44 @@ def get_preserved_segments(dirs_by_creation: list[str]) -> set[str]:
   return preserved
 
 
+def remove_path(delete_path: str) -> bool:
+  try:
+    if os.path.isdir(delete_path) and not os.path.islink(delete_path):
+      if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+        return False
+      cloudlog.info(f"deleting {delete_path}")
+      shutil.rmtree(delete_path)
+    else:
+      cloudlog.info(f"deleting {delete_path}")
+      os.remove(delete_path)
+    return True
+  except OSError:
+    cloudlog.exception(f"issue deleting {delete_path}")
+    return False
+
+
 def deleter_thread(exit_event: threading.Event):
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
-      dirs = listdir_by_creation(Paths.log_root())
+      log_root = Paths.log_root()
+      dirs = listdir_by_creation(log_root)
       preserved_dirs = get_preserved_segments(dirs)
+      try:
+        delete_order = sorted(name for name in os.listdir(log_root) if name not in dirs)
+      except OSError:
+        cloudlog.exception("issue listing log root")
+        exit_event.wait(.1)
+        continue
 
       # remove the earliest directory we can
-      for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        delete_path = os.path.join(Paths.log_root(), delete_dir)
-
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
-          continue
-
-        try:
-          cloudlog.info(f"deleting {delete_path}")
-          shutil.rmtree(delete_path)
+      delete_order.extend(sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)))
+      for delete_dir in delete_order:
+        delete_path = os.path.join(log_root, delete_dir)
+        if remove_path(delete_path):
           break
-        except OSError:
-          cloudlog.exception(f"issue deleting {delete_path}")
       exit_event.wait(.1)
     else:
       exit_event.wait(30)
