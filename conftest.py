@@ -3,10 +3,6 @@ import gc
 import os
 import pytest
 
-from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.system.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
-
 # TODO: pytest-cpp doesn't support FAIL, and we need to create test translations in sessionstart
 # pending https://github.com/pytest-dev/pytest-cpp/pull/147
 collect_ignore = [
@@ -19,12 +15,10 @@ collect_ignore_glob = [
   "selfdrive/modeld/*.py",
 ]
 
-
 def pytest_sessionstart(session):
   # TODO: fix tests and enable test order randomization
   if session.config.pluginmanager.hasplugin('randomly'):
     session.config.option.randomly_reorganize = False
-
 
 @pytest.hookimpl(hookwrapper=True, trylast=True)
 def pytest_runtest_call(item):
@@ -36,7 +30,6 @@ def pytest_runtest_call(item):
   else:
     yield
 
-
 @contextlib.contextmanager
 def clean_env():
   starting_env = dict(os.environ)
@@ -44,16 +37,17 @@ def clean_env():
   os.environ.clear()
   os.environ.update(starting_env)
 
-
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
+  # LAZY IMPORT: Moved from top of file
+  from openpilot.common.prefix import OpenpilotPrefix
+  from openpilot.system.manager import manager
+
   with clean_env():
     # setup a clean environment for each test
     with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
       prefix = os.environ["OPENPILOT_PREFIX"]
-
       yield
-
       # ensure the test doesn't change the prefix
       assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
 
@@ -65,26 +59,28 @@ def openpilot_function_fixture(request):
       gc.enable()
       gc.collect()
 
-# If you use setUpClass, the environment variables won't be cleared properly,
-# so we need to hook both the function and class pytest fixtures
 @pytest.fixture(scope="class", autouse=True)
 def openpilot_class_fixture():
   with clean_env():
     yield
 
-
 @pytest.fixture(scope="function")
 def tici_setup_fixture(request, openpilot_function_fixture):
   """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
+  # LAZY IMPORT: Moved from top of file
+  from openpilot.system.hardware import HARDWARE
+  
   if 'skip_tici_setup' in request.keywords:
     return
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
 
-
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
+  # LAZY IMPORT: Moved from top of file
+  from openpilot.system.hardware import TICI
+  
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
     if "tici" in item.keywords:
@@ -97,7 +93,6 @@ def pytest_collection_modifyitems(config, items):
       class_property_name = item.get_closest_marker('xdist_group_class_property').args[0]
       class_property_value = getattr(item.cls, class_property_name)
       item.add_marker(pytest.mark.xdist_group(class_property_value))
-
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):

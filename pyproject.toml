@@ -125,7 +125,8 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "-p no:benchmark -p no:dash -p no:nbmake -p no:hypothesis -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadscope"
+norecursedirs = "third_party __pycache__ .git build site-packages cereal opendbc panda rednose_repo tinygrad_repo"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
