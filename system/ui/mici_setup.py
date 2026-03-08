@@ -546,7 +546,7 @@ class Setup(Widget):
   def _push_network_setup(self, custom_software: bool = False):
     # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
-    gui_app.pop_widgets_to(self._software_selection_page, lambda: gui_app.push_widget(self._network_setup_page))
+    gui_app.push_widget(self._network_setup_page)
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
