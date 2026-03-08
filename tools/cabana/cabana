@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -e
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+ROOT="$(cd "$DIR/../../" && pwd)"
+
+install_qt() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    brew install qt@5
+    brew link qt@5 || true
+  else
+    SUDO=""
+    if [[ ! $(id -u) -eq 0 ]]; then
+      SUDO="sudo"
+    fi
+    $SUDO apt-get install -y --no-install-recommends \
+      qtbase5-dev \
+      qtbase5-dev-tools \
+      qttools5-dev-tools \
+      libqt5charts5-dev \
+      libqt5svg5-dev \
+      libqt5serialbus5-dev \
+      libqt5x11extras5-dev \
+      libqt5opengl5-dev
+  fi
+}
+
+# Install Qt if not found
+if ! command -v qmake &> /dev/null; then
+  echo "Qt not found, installing dependencies..."
+  install_qt
+fi
+
+# Build _cabana
+cd "$ROOT"
+scons -j"$(nproc)" tools/cabana/_cabana
+
+exec "$DIR/_cabana" "$@"

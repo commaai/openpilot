@@ -1,0 +1,2 @@
+class DataUnreadableError(Exception):
+  pass

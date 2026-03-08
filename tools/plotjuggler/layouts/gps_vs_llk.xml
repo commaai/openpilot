@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab tab_name="tab1" containers="1">
+   <Container>
+    <DockSplitter count="3" sizes="0.333805;0.33239;0.333805" orientation="-">
+     <DockArea name="...">
+      <plot mode="TimeSeries" style="Lines" flip_y="false" flip_x="false">
+       <range bottom="0.368228" right="196.811937" left="76.646983" top="32.070386"/>
+       <limitY/>
+       <curve name="haversine distance [m]" color="#1f77b4"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot mode="TimeSeries" style="Lines" flip_y="false" flip_x="false">
+       <range bottom="-0.259115" right="196.811937" left="76.646983" top="12.637299"/>
+       <limitY/>
+       <curve name="/carState/vEgo" color="#17becf"/>
+       <curve name="/gpsLocationExternal/speed" color="#bcbd22"/>
+      </plot>
+     </DockArea>
+     <DockSplitter count="2" sizes="0.500516;0.499484" orientation="|">
+      <DockArea name="...">
+       <plot mode="TimeSeries" style="Lines" flip_y="false" flip_x="false">
+        <range bottom="-0.100000" right="196.811937" left="76.646983" top="0.100000"/>
+        <limitY/>
+        <curve name="/liveLocationKalman/positionGeodetic/std/0" color="#d62728"/>
+        <curve name="/liveLocationKalman/positionGeodetic/std/1" color="#1ac938"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot mode="TimeSeries" style="Lines" flip_y="false" flip_x="false">
+        <range bottom="-0.449385" right="196.811937" left="76.646983" top="7.160833"/>
+        <limitY/>
+        <curve name="/gpsLocationExternal/horizontalAccuracy" color="#ff7f0e"/>
+        <curve name="/gpsLocationExternal/verticalAccuracy" color="#f14cc1"/>
+        <curve name="/gpsLocationExternal/speedAccuracy" color="#9467bd"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations>
+  <snippet name="haversine distance [m]">
+   <global>R = 6378.137 -- Radius of earth in KM</global>
+   <function>-- Compute the Haversine distance between 
+-- two points defined by latitude and longitude.
+-- Return the distance in meters
+lat1, lon1 = value, v1
+lat2, lon2 = v2, v3
+dLat = (lat2 - lat1) * math.pi / 180
+dLon = (lon2 - lon1) * math.pi / 180
+a = math.sin(dLat/2) * math.sin(dLat/2) +
+math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) *
+math.sin(dLon/2) * math.sin(dLon/2)
+c = 2 * math.atan(math.sqrt(a), math.sqrt(1-a))
+d = R * c
+distance = d * 1000 -- meters
+return distance</function>
+   <linked_source>/gpsLocationExternal/latitude</linked_source>
+   <additional_sources>
+    <v1>/gpsLocationExternal/longitude</v1>
+    <v2>/liveLocationKalman/positionGeodetic/value/0</v2>
+    <v3>/liveLocationKalman/positionGeodetic/value/1</v3>
+   </additional_sources>
+  </snippet>
+ </customMathEquations>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+
