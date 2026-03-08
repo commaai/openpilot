@@ -1,0 +1,4 @@
+*.cc
+fonts/*.fnt
+fonts/*.png
+translations_assets.qrc

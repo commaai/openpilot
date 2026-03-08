@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab containers="1" tab_name="tab1">
+   <Container>
+    <DockSplitter orientation="-" sizes="0.333333;0.333333;0.333333" count="3">
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range right="134.825489" top="4402341.574525" bottom="-107369.555525" left="0.000000"/>
+       <limitY/>
+       <curve name="/gpsLocationExternal/horizontalAccuracy" color="#1f77b4"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range right="134.825489" top="1.025000" bottom="-0.025000" left="0.000000"/>
+       <limitY/>
+       <curve name="/gpsLocationExternal/flags" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range right="134.825489" top="6.150000" bottom="-0.150000" left="0.000000"/>
+       <limitY/>
+       <curve name="/ubloxGnss/measurementReport/numMeas" color="#1ac938"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

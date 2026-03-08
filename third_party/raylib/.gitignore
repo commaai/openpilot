@@ -1,0 +1,4 @@
+/raylib_repo/
+/raylib_python_repo/
+/wheel/
+!*.a
