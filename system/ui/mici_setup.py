@@ -25,7 +25,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPACING
-from openpilot.system.ui.widgets.slider import LargerSlider
+from openpilot.system.ui.widgets.slider import SliderBase, SliderButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationCircleButton
@@ -112,6 +112,25 @@ class NetworkConnectivityMonitor:
         break
 
 
+class SetupSliderButton(SliderButton):
+  def __init__(self, green: bool = True, **kwargs):
+    fn = "slider_green_rounded_rectangle" if green else "slider_black_rounded_rectangle"
+    super().__init__(
+      gui_app.texture(f"icons_mici/setup/small_slider/{fn}.png", 180, 115),
+      gui_app.texture(f"icons_mici/setup/small_slider/{fn}_pressed.png", 180, 115),
+      gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 55),
+      **kwargs,
+    )
+
+
+class SetupSlider(SliderBase):
+  def __init__(self, title: str, confirm_callback: Callable | None = None, green: bool = True):
+    button = SetupSliderButton(green=green, on_release=self._on_button_release)
+    super().__init__(title, rl.Rectangle(0, 0, 536, 115),
+                     gui_app.texture("icons_mici/setup/small_slider/slider_bg_larger.png", 520, 115),
+                     button, confirm_callback=confirm_callback)
+
+
 class StartPage(Widget):
   def __init__(self):
     super().__init__()
@@ -142,9 +161,9 @@ class SoftwareSelectionPage(NavWidget):
                use_custom_software_callback: Callable):
     super().__init__()
 
-    self._openpilot_slider = LargerSlider("slide to install\nopenpilot", use_openpilot_callback)
+    self._openpilot_slider = SetupSlider("slide to install\nopenpilot", use_openpilot_callback)
     self._openpilot_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
-    self._custom_software_slider = LargerSlider("slide to install\nother software", use_custom_software_callback, green=False)
+    self._custom_software_slider = SetupSlider("slide to install\nother software", use_custom_software_callback, green=False)
     self._custom_software_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def show_event(self):

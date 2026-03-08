@@ -9,7 +9,7 @@ from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
-from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
+from openpilot.system.ui.widgets.slider import BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
 
@@ -70,11 +70,7 @@ class BigConfirmationDialog(BigDialogBase):
     self._confirm_callback = confirm_callback
     self._exit_on_confirm = exit_on_confirm
 
-    self._slider: BigSlider | RedBigSlider
-    if red:
-      self._slider = RedBigSlider(title, icon, confirm_callback=self._on_confirm)
-    else:
-      self._slider = BigSlider(title, icon, confirm_callback=self._on_confirm)
+    self._slider = BigSlider(title, icon, confirm_callback=self._on_confirm, red=red)
     self._slider.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
 
   def _on_confirm(self):
