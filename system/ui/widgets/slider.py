@@ -35,7 +35,7 @@ class SliderBase(Widget, abc.ABC):
     self._scroll_x_circle = 0.0
     self._scroll_x_circle_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._circle_scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
-    self._click_delay = 0.075
+    self._circle_press_time = 0.0
 
     self._is_dragging_circle = False
 
@@ -86,6 +86,7 @@ class SliderBase(Widget, abc.ABC):
       if rl.check_collision_point_rec(mouse_event.pos, circle_button_rect):
         self._start_x_circle = mouse_event.pos.x
         self._is_dragging_circle = True
+        self._circle_press_time = rl.get_time()
 
     elif mouse_event.left_released:
       # swiped to left
@@ -143,7 +144,7 @@ class SliderBase(Widget, abc.ABC):
       self._label.render(label_rect)
 
     # circle and arrow with grow animation
-    circle_pressed = self._is_dragging_circle or self.confirmed or self.is_pressed
+    circle_pressed = self._is_dragging_circle or self.confirmed
     circle_bg_txt = self._circle_bg_pressed_txt if circle_pressed else self._circle_bg_txt
     scale = self._circle_scale_filter.update(self.PRESSED_SCALE if circle_pressed else 1.0)
     scaled_btn_x = btn_x + (self._circle_bg_txt.width * (1 - scale)) / 2
