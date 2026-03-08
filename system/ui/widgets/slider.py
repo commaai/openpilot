@@ -1,4 +1,3 @@
-import abc
 from collections.abc import Callable
 
 import pyray as rl
@@ -12,8 +11,8 @@ from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 class SliderButton(Widget):
   PRESSED_SCALE = 1.07
 
-  def __init__(self, bg_txt: rl.Texture, bg_pressed_txt: rl.Texture,
-               icon_txt: rl.Texture, on_release: Callable[[], None] | None = None):
+  def __init__(self, bg_txt: rl.Texture, bg_pressed_txt: rl.Texture, icon_txt: rl.Texture,
+               on_release: Callable[[], None] | None = None):
     super().__init__()
     self._bg_txt = bg_txt
     self._bg_pressed_txt = bg_pressed_txt
@@ -89,46 +88,36 @@ class BigSliderButton(SliderButton):
     )
 
 
-class SliderBase(Widget, abc.ABC):
+class SliderBase(Widget):
   HORIZONTAL_PADDING = 8
   CONFIRM_DELAY = 0.2
 
-  _bg_txt: rl.Texture
-
-  def __init__(self, title: str, confirm_callback: Callable | None = None):
+  def __init__(self, title: str, rect: rl.Rectangle, bg_txt: rl.Texture,
+               button: SliderButton, confirm_callback: Callable | None = None):
     super().__init__()
+    self.set_rect(rect)
+    self._bg_txt = bg_txt
     self._confirm_callback = confirm_callback
-
-    self._load_assets()
-
-    self._drag_threshold = -self._rect.width // 2
+    self._drag_threshold = -rect.width // 2
 
     # State
     self._opacity_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._confirmed_time = 0.0
     self._confirm_callback_called = False  # we keep dialog open by default, only call once
-    self._scroll_x_circle_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
+    self._scroll_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
-    self._circle_button = self._child(self._create_circle_button(self._on_circle_release))
+    self._button = self._child(button)
 
     self._label = UnifiedLabel(title, font_size=36, font_weight=FontWeight.SEMI_BOLD, text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
                                alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE, line_height=0.9)
-
-  @abc.abstractmethod
-  def _load_assets(self):
-    ...
-
-  @abc.abstractmethod
-  def _create_circle_button(self, on_release: Callable) -> SliderButton:
-    ...
 
   @property
   def confirmed(self) -> bool:
     return self._confirmed_time > 0.0
 
   def reset(self):
-    self._circle_button.reset()
+    self._button.reset()
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
 
@@ -140,56 +129,49 @@ class SliderBase(Widget, abc.ABC):
 
   @property
   def slider_percentage(self):
-    activated_pos = -self._bg_txt.width + self._circle_button.button_width
-    return min(max(-self._scroll_x_circle_filter.x / abs(activated_pos), 0.0), 1.0)
+    activated_pos = -self._bg_txt.width + self._button.button_width
+    return min(max(-self._scroll_filter.x / abs(activated_pos), 0.0), 1.0)
 
   def _on_confirm(self):
     if self._confirm_callback:
       self._confirm_callback()
 
-  def _on_circle_release(self):
-    if self._scroll_x_circle_filter.x < self._drag_threshold:
+  def _on_button_release(self):
+    if self._scroll_filter.x < self._drag_threshold:
       self._confirmed_time = rl.get_time()
 
   def _update_state(self):
     super()._update_state()
-    # TODO: this math can probably be cleaned up to remove duplicate stuff
-    activated_pos = int(-self._bg_txt.width + self._circle_button.button_width)
-    self._circle_button.scroll_x = max(min(self._circle_button.scroll_x, 0), activated_pos)
+    activated_pos = int(-self._bg_txt.width + self._button.button_width)
+    self._button.scroll_x = max(min(self._button.scroll_x, 0), activated_pos)
 
     if self.confirmed:
       # swiped left to confirm
-      self._scroll_x_circle_filter.update(activated_pos)
+      self._scroll_filter.update(activated_pos)
 
       # activate once animation completes, small threshold for small floats
-      if self._scroll_x_circle_filter.x < (activated_pos + 1):
+      if self._scroll_filter.x < (activated_pos + 1):
         if not self._confirm_callback_called and (rl.get_time() - self._confirmed_time) >= self.CONFIRM_DELAY:
           self._confirm_callback_called = True
           self._on_confirm()
 
-    elif not self._circle_button.is_dragging:
+    elif not self._button.is_dragging:
       # reset back to right
-      self._scroll_x_circle_filter.update(0)
+      self._scroll_filter.update(0)
     else:
       # not activated yet, keep movement 1:1
-      self._scroll_x_circle_filter.x = self._circle_button.scroll_x
+      self._scroll_filter.x = self._button.scroll_x
 
-    self._circle_button.set_confirmed(self.confirmed)
-    self._circle_button.set_opacity(self._opacity_filter.x)
+    self._button.set_confirmed(self.confirmed)
+    self._button.set_opacity(self._opacity_filter.x)
 
   def _layout(self):
     bg_txt_x = self._rect.x + (self._rect.width - self._bg_txt.width) / 2
-    btn_x = bg_txt_x + self._bg_txt.width - self._circle_button.button_width + self._scroll_x_circle_filter.x
-    self._circle_button.set_rect(rl.Rectangle(
-      btn_x,
-      self._rect.y,
-      self._circle_button.button_width,
-      self._rect.height,
-    ))
+    btn_x = bg_txt_x + self._bg_txt.width - self._button.button_width + self._scroll_filter.x
+    self._button.set_rect(rl.Rectangle(btn_x, self._rect.y, self._button.button_width, self._rect.height))
 
   def _render(self, _):
     # TODO: iOS text shimmering animation
-
     white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
 
     bg_txt_x = self._rect.x + (self._rect.width - self._bg_txt.width) / 2
@@ -198,29 +180,19 @@ class SliderBase(Widget, abc.ABC):
 
     if not self.confirmed:
       self._label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.65 * (1.0 - self.slider_percentage) * self._opacity_filter.x)))
-      label_rect = rl.Rectangle(
-        self._rect.x + 20,
-        self._rect.y,
-        self._rect.width - self._circle_button.button_width - 20 * 2.5,
-        self._rect.height,
-      )
+      label_rect = rl.Rectangle(self._rect.x + 20, self._rect.y,
+                                self._rect.width - self._button.button_width - 20 * 2.5, self._rect.height)
       self._label.render(label_rect)
 
-    self._circle_button.render()
+    self._button.render()
 
 
 class BigSlider(SliderBase):
   def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable | None = None, red: bool = False):
-    self._icon = icon
-    self._red = red
-    super().__init__(title, confirm_callback=confirm_callback)
+    button = BigSliderButton(icon=icon, red=red, on_release=self._on_button_release)
+    super().__init__(title, rl.Rectangle(0, 0, 536, 180),
+                     gui_app.texture("icons_mici/buttons/slider_bg.png", 520, 180),
+                     button, confirm_callback=confirm_callback)
     self._label = UnifiedLabel(title, font_size=48, font_weight=FontWeight.DISPLAY, text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
                                alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
                                line_height=0.875)
-
-  def _load_assets(self):
-    self.set_rect(rl.Rectangle(0, 0, 520 + self.HORIZONTAL_PADDING * 2, 180))
-    self._bg_txt = gui_app.texture("icons_mici/buttons/slider_bg.png", 520, 180)
-
-  def _create_circle_button(self, on_release):
-    return BigSliderButton(icon=self._icon, red=self._red, on_release=on_release)

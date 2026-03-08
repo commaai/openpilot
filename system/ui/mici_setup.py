@@ -125,15 +125,10 @@ class SetupSliderButton(SliderButton):
 
 class SetupSlider(SliderBase):
   def __init__(self, title: str, confirm_callback: Callable | None = None, green: bool = True):
-    self._green = green
-    super().__init__(title, confirm_callback=confirm_callback)
-
-  def _load_assets(self):
-    self.set_rect(rl.Rectangle(0, 0, 520 + self.HORIZONTAL_PADDING * 2, 115))
-    self._bg_txt = gui_app.texture("icons_mici/setup/small_slider/slider_bg_larger.png", 520, 115)
-
-  def _create_circle_button(self, on_release):
-    return SetupSliderButton(green=self._green, on_release=on_release)
+    button = SetupSliderButton(green=green, on_release=self._on_button_release)
+    super().__init__(title, rl.Rectangle(0, 0, 536, 115),
+                     gui_app.texture("icons_mici/setup/small_slider/slider_bg_larger.png", 520, 115),
+                     button, confirm_callback=confirm_callback)
 
 
 class StartPage(Widget):
