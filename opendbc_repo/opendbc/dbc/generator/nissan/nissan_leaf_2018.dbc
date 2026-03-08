@@ -1,0 +1,62 @@
+CM_ "IMPORT _nissan_common.dbc";
+
+BO_ 42 SEATBELT: 8 XXX
+ SG_ SEATBELT_DRIVER_LATCHED : 27|1@1+ (1,0) [0|3] "" XXX
+ SG_ SEATBELT_DRIVER_UNLATCHED : 26|1@0+ (1,0) [0|1] "" XXX
+ SG_ unknown2 : 31|4@0+ (1,0) [0|15] "" XXX
+ SG_ unknown3 : 24|2@1+ (1,0) [0|3] "" XXX
+ SG_ unknown1 : 7|24@0+ (1,0) [0|16777215] "" XXX
+ SG_ unknown4 : 39|16@0+ (1,0) [0|65535] "" XXX
+
+BO_ 460 BRAKE_PEDAL: 8 XXX
+ SG_ BRAKE_PEDAL : 7|8@0+ (1,0) [0|256] "" XXX
+
+BO_ 569 CRUISE_THROTTLE: 8 XXX
+ SG_ GAS_PEDAL_INVERTED : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ GAS_PEDAL : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ CRUISE_AVAILABLE : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ unsure1 : 23|6@0+ (1,0) [0|63] "" XXX
+ SG_ unsure2 : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ unsure3 : 31|2@0+ (1,0) [0|3] "" XXX
+ SG_ NO_BUTTON_PRESSED : 29|1@0+ (1,0) [0|1] "" XXX
+ SG_ RES_BUTTON : 28|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_BUTTON : 27|1@0+ (1,0) [0|1] "" XXX
+ SG_ FOLLOW_DISTANCE_BUTTON : 26|1@0+ (1,0) [0|1] "" XXX
+ SG_ CANCEL_BUTTON : 25|1@0+ (1,0) [0|1] "" XXX
+ SG_ PROPILOT_BUTTON : 24|1@0+ (1,0) [0|1] "" XXX
+ SG_ USER_BRAKE_PRESSED : 37|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 32|2@1+ (1,0) [0|3] "" XXX
+ SG_ unsure5 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ unsure6 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ unsure7 : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 640 CANCEL_MSG: 8 XXX
+  SG_ CANCEL_SEATBELT : 1|1@0+ (1,0) [0|1] "" XXX
+  SG_ NEW_SIGNAL_1 : 7|6@0+ (1,0) [0|63] "" XXX
+  SG_ NEW_SIGNAL_2 : 0|1@0+ (1,0) [0|1] "" XXX
+  SG_ NEW_SIGNAL_3 : 15|56@0+ (1,0) [0|72057594037927940] "" XXX
+
+BO_ 644 WHEEL_SPEEDS_FRONT: 8 XXX
+ SG_ WHEEL_SPEED_FR : 7|16@0+ (0.005,0) [0|65535] "KPH" XXX
+ SG_ WHEEL_SPEED_FL : 23|16@0+ (0.005,0) [0|65535] "KPH" XXX
+
+BO_ 852 ESP: 8 XXX
+ SG_ ESP_DISABLED : 38|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 853 HUD_SETTINGS: 8 XXX
+ SG_ SPEED_MPH : 37|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 856 LIGHTS: 8 XXX
+ SG_ LEFT_BLINKER : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ RIGHT_BLINKER : 18|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1057 GEARBOX: 3 XXX
+ SG_ GEAR_SHIFTER : 5|3@0+ (1,0) [0|255] "" XXX
+
+BO_ 1549 DOORS_LIGHTS: 8 XXX
+ SG_ DOOR_OPEN_FL : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_FR : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RL : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RR : 6|1@0+ (1,0) [0|1] "" XXX
+
+VAL_ 1057 GEAR_SHIFTER 7 "B" 4 "D" 3 "N" 2 "R" 1 "P" ;

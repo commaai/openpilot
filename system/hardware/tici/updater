@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+AGNOS_PY=$1
+MANIFEST=$2
+
+if [[ ! -f "$AGNOS_PY" || ! -f "$MANIFEST" ]]; then
+  echo "invalid args"
+  exit 1
+fi
+
+if systemctl is-active --quiet weston-ready; then
+  $DIR/updater_weston $AGNOS_PY $MANIFEST
+else
+  $DIR/updater_magic $AGNOS_PY $MANIFEST
+fi

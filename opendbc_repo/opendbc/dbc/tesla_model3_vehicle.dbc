@@ -1,0 +1,339 @@
+VERSION ""
+
+
+BU_: CH DIPF DIPR ETH FC HVI HVS PARTY SDCV VEH VIRT
+
+
+BO_ 962 VCLEFT_switchStatus: 8 VEH
+ SG_ VCLEFT_frontBuckleSwitch m0: 48|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_btnWindowSwPackUpLF m0: 32|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_frontSeatTrackBack m0: 8|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_btnWindowSwPackAutoDownLF m0: 35|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowSwPackDownRR m0: 46|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowSwPackAutoUpRR m0: 45|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowSwPackAutoDownRR m0: 47|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_rightMirrorTilt m0: 5|3@1+ (1,0) [0|4] "" vcright
+ SG_ VCLEFT_btnWindowSwPackUpRR m0: 44|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_frontOccupancySwitch m0: 50|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_swcRightTiltLeft m1: 8|2@1+ (1,0) [0|3] "" das
+ SG_ VCLEFT_rearRightOccupancySwitch m0: 58|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_btnWindowSwPackDownLF m0: 34|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowSwPackAutoUpLF m0: 33|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_swcLeftTiltRight m1: 3|2@1+ (1,0) [0|3] "" das
+ SG_ VCLEFT_frontSeatBackrestForward m0: 22|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_swcRightTiltRight m1: 10|2@1+ (1,0) [0|3] "" das
+ SG_ VCLEFT_swcLeftScrollTicks m1: 16|6@1- (1,0) [-32|31] "" das
+ SG_ VCLEFT_btnWindowUpLR m1: 32|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowAutoDownLR m1: 35|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowSwPackDownRF m0: 42|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowSwPackAutoUpRF m0: 41|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_frontSeatLumbarIn m0: 28|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_frontSeatLiftUp m0: 18|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_btnWindowSwPackDownLR m0: 38|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowSwPackAutoUpLR m0: 37|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_frontSeatLumbarDown m0: 24|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_driverPresent m0: 4|1@1+ (1,0) [0|1] "" das
+ SG_ VCLEFT_frontSeatTiltDown m0: 12|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_frontSeatTrackForward m0: 10|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_rearLeftBuckleSwitch m0: 52|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_hazardButtonPressed m0: 3|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_swcRightScrollTicks m1: 24|6@1- (1,0) [-32|31] "" das
+ SG_ VCLEFT_swcRightPressed m1: 12|2@1+ (1,0) [0|3] "" das
+ SG_ VCLEFT_frontSeatLumbarOut m0: 30|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_brakePressed m0: 60|1@1+ (1,0) [0|1] "" di
+ SG_ VCLEFT_swcLeftTiltLeft m1: 14|2@1+ (1,0) [0|3] "" das
+ SG_ VCLEFT_swcLeftPressed m1: 5|2@1+ (1,0) [0|3] "" das
+ SG_ VCLEFT_btnWindowSwPackUpLR m0: 36|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_frontSeatTiltUp m0: 14|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_rearLeftOccupancySwitch m0: 56|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_frontSeatBackrestBack m0: 20|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_btnWindowSwPackAutoDownLR m0: 39|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_rearCenterOccupancySwitch m0: 54|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_frontSeatLumbarUp m0: 26|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_frontSeatLiftDown m0: 16|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCLEFT_hornSwitchPressed m0: 2|1@1+ (1,0) [0|1] "" app
+ SG_ VCLEFT_btnWindowSwPackUpRF m0: 40|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowAutoUpLR m1: 33|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_btnWindowSwPackAutoDownRF m0: 43|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_switchStatusIndex M: 0|2@1+ (1,0) [0|2] "" X
+ SG_ VCLEFT_btnWindowDownLR m1: 34|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_rearHVACButtonPressed m0: 61|1@1+ (1,0) [0|1] "" gtw
+
+BO_ 259 VCRIGHT_doorStatus: 8 VEH
+ SG_ VCRIGHT_reservedForBackCompat : 28|2@1+ (1,0) [0|3] "" X
+ SG_ VCRIGHT_trunkLatchStatus : 56|4@1+ (1,0) [0|8] "" di
+ SG_ VCRIGHT_mirrorFoldState : 52|3@1+ (1,0) [0|4] "" gtw
+ SG_ VCRIGHT_rearLatchStatus : 4|4@1+ (1,0) [0|8] "" aps
+ SG_ VCRIGHT_mirrorTiltYPosition : 41|8@1+ (0.02,0) [0|5] "V" gtw
+ SG_ VCRIGHT_frontRelActuatorSwitch : 12|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCRIGHT_mirrorRecallState : 60|3@1+ (1,0) [0|5] "" gtw
+ SG_ VCRIGHT_frontIntSwitchPressed : 31|1@1+ (1,0) [0|1] "" aps
+ SG_ VCRIGHT_mirrorState : 49|3@1+ (1,0) [0|4] "" gtw
+ SG_ VCRIGHT_rearRelActuatorSwitch : 13|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCRIGHT_frontHandlePulledPersist : 30|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCRIGHT_mirrorTiltXPosition : 33|8@1+ (0.02,0) [0|5] "V" gtw
+ SG_ VCRIGHT_mirrorDipped : 63|1@1+ (1,0) [0|1] "" X
+ SG_ VCRIGHT_frontHandlePulled : 10|1@1+ (1,0) [0|1] "" aps
+ SG_ VCRIGHT_frontLatchStatus : 0|4@1+ (1,0) [0|8] "" aps
+ SG_ VCRIGHT_rearHandlePulled : 11|1@1+ (1,0) [0|1] "" aps
+ SG_ VCRIGHT_frontHandlePWM : 14|7@1+ (1,0) [0|100] "%" X
+ SG_ VCRIGHT_frontLatchSwitch : 8|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCRIGHT_rearLatchSwitch : 9|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCRIGHT_rearHandlePWM : 21|7@1+ (1,0) [0|100] "%" X
+ SG_ VCRIGHT_rearIntSwitchPressed : 32|1@1+ (1,0) [0|1] "" aps
+
+BO_ 585 SCCM_leftStalk: 3 VEH
+ SG_ SCCM_leftStalkCounter : 8|4@1+ (1,0) [0|15] "" X
+ SG_ SCCM_washWipeButtonStatus : 14|2@1+ (1,0) [0|3] "" das
+ SG_ SCCM_turnIndicatorStalkStatus : 16|3@1+ (1,0) [0|5] "" das
+ SG_ SCCM_leftStalkCrc : 0|8@1+ (1,0) [0|255] "" X
+ SG_ SCCM_leftStalkReserved1 : 19|5@1+ (1,0) [0|31] "" X
+ SG_ SCCM_highBeamStalkStatus : 12|2@1+ (1,0) [0|3] "" das
+
+BO_ 280 DI_systemStatus: 8 VEH
+ SG_ DI_epbRequest : 44|2@1+ (1,0) [0|2] "" epbl
+ SG_ DI_systemStatusCounter : 8|4@1+ (1,0) [0|15] "" X
+ SG_ DI_proximity : 46|1@1+ (1,0) [0|1] "" bms
+ SG_ DI_keepAliveRequest : 47|1@1+ (1,0) [0|1] "" bms
+ SG_ DI_accelPedalPos : 32|8@1+ (0.4,0) [0|100] "%" vcfront
+ SG_ DI_gear : 21|3@1+ (1,0) [0|7] "" gtw
+ SG_ DI_tractionControlMode : 40|3@1+ (1,0) [0|5] "" X
+ SG_ DI_trackModeState : 48|2@1+ (1,0) [0|2] "" gtw
+ SG_ DI_regenLight : 26|1@1+ (1,0) [0|1] "" vcleft
+ SG_ DI_systemState : 16|3@1+ (1,0) [0|5] "" epbl
+ SG_ DI_immobilizerState : 27|3@1+ (1,0) [0|6] "" X
+ SG_ DI_systemStatusChecksum : 0|8@1+ (1,0) [0|255] "" X
+ SG_ DI_brakePedalState : 19|2@1+ (1,0) [0|2] "" vcleft
+
+BO_ 835 VCRIGHT_status: 8 VEH
+ SG_ VCRIGHT_5AVoltage : 18|10@1+ (0.005443676098,0) [0|5.56888] "V" gtw
+ SG_ VCRIGHT_loadShedPriority : 0|8@1+ (1,0) [0|255] "" X
+ SG_ VCRIGHT_rearDefrostState : 11|3@1+ (1,0) [0|4] "" gtw
+ SG_ VCRIGHT_vbatProt : 28|12@1+ (0.005443676098,0) [0|22.29185] "V" gtw
+ SG_ VCRIGHT_vehiclePowerStateDBG : 8|2@1+ (1,0) [0|3] "" gtw
+ SG_ VCRIGHT_swEnStatus : 10|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCRIGHT_mirrorHeatState : 14|3@1+ (1,0) [0|4] "" X
+ SG_ VCRIGHT_OTAState : 17|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCRIGHT_footwellLightCurrent : 40|12@1- (0.1,0) [-204.8|204.7] "mA" X
+ SG_ VCRIGHT_pcbaTemperature : 52|11@1+ (0.125,-40) [-40|150] "degC" gtw
+
+BO_ 553 SCCM_rightStalk: 3 VEH
+ SG_ SCCM_rightStalkCounter : 8|4@1+ (1,0) [0|15] "" X
+ SG_ SCCM_rightStalkCrc : 0|8@1+ (1,0) [0|255] "" X
+ SG_ SCCM_rightStalkReserved1 : 15|1@1+ (1,0) [0|1] "" X
+ SG_ SCCM_parkButtonStatus : 16|2@1+ (1,0) [0|3] "" das
+ SG_ SCCM_rightStalkReserved2 : 18|6@1+ (1,0) [0|63] "" X
+ SG_ SCCM_rightStalkStatus : 12|3@1+ (1,0) [0|6] "" das
+
+BO_ 297 SCCM_steeringAngleSensor: 8 VEH
+ SG_ SCCM_steeringAngleValidity : 30|2@1+ (1,0) [0|3] "" gtw
+ SG_ SCCM_supplierID : 12|2@1+ (1,0) [0|3] "" gtw
+ SG_ SCCM_steeringAngleSensorReservd1 : 46|2@1+ (1,0) [0|3] "" X
+ SG_ SCCM_steeringAngleCrc : 0|8@1+ (1,0) [0|255] "" gtw
+ SG_ SCCM_steeringAngleSensorStatus : 14|2@1+ (1,0) [0|3] "" aps
+ SG_ SCCM_steeringAngleSpeed : 32|14@1+ (0.5,-4096) [-4096|4095.5] "deg/s" das
+ SG_ SCCM_steeringAngle : 16|14@1+ (0.1,-819.2) [-819.2|819] "deg" aps
+ SG_ SCCM_steeringAngleSensorReservd2 : 48|8@1+ (1,0) [0|255] "" X
+ SG_ SCCM_steeringAngleCounter : 8|4@1+ (1,0) [0|15] "" gtw
+ SG_ SCCM_steeringAngleSensorReservd3 : 56|8@1+ (1,0) [0|255] "" X
+
+BO_ 258 VCLEFT_doorStatus: 8 VEH
+ SG_ VCLEFT_mirrorDipped : 61|1@1+ (1,0) [0|1] "" X
+ SG_ VCLEFT_frontHandlePulledPersist : 62|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_mirrorRecallState : 55|3@1+ (1,0) [0|5] "" gtw
+ SG_ VCLEFT_rearIntSwitchPressed : 32|1@1+ (1,0) [0|1] "" aps
+ SG_ VCLEFT_rearLatchSwitch : 9|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_rearHandlePWM : 24|7@1+ (1,0) [0|100] "%" X
+ SG_ VCLEFT_frontLatchSwitch : 8|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_frontHandlePWM : 16|7@1+ (1,0) [0|100] "%" X
+ SG_ VCLEFT_rearHandlePulled : 11|1@1+ (1,0) [0|1] "" aps
+ SG_ VCLEFT_rearLatchStatus : 4|4@1+ (1,0) [0|8] "" aps
+ SG_ VCLEFT_frontHandlePulled : 10|1@1+ (1,0) [0|1] "" aps
+ SG_ VCLEFT_mirrorTiltXPosition : 33|8@1+ (0.02,0) [0|5] "V" gtw
+ SG_ VCLEFT_mirrorState : 49|3@1+ (1,0) [0|4] "" gtw
+ SG_ VCLEFT_frontIntSwitchPressed : 31|1@1+ (1,0) [0|1] "" aps
+ SG_ VCLEFT_rearRelActuatorSwitch : 13|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_mirrorHeatState : 58|3@1+ (1,0) [0|4] "" X
+ SG_ VCLEFT_frontRelActuatorSwitch : 12|1@1+ (1,0) [0|1] "" gtw
+ SG_ VCLEFT_mirrorTiltYPosition : 41|8@1+ (0.02,0) [0|5] "V" gtw
+ SG_ VCLEFT_frontLatchStatus : 0|4@1+ (1,0) [0|8] "" aps
+ SG_ VCLEFT_mirrorFoldState : 52|3@1+ (1,0) [0|4] "" gtw
+
+
+BO_ 568 STW_ACTN_RQ: 8 STW
+ SG_ SpdCtrlLvr_Stat : 0|6@1+ (1,0) [0|0] "" NEO
+ SG_ VSL_Enbl_Rq : 6|1@1+ (1,0) [0|0] "" NEO
+ SG_ SpdCtrlLvrStat_Inv : 7|1@1+ (1,0) [0|0] "" NEO
+ SG_ DTR_Dist_Rq : 8|8@1+ (1,0) [0|200] "" NEO
+ SG_ TurnIndLvr_Stat : 16|2@1+ (1,0) [0|0] "" NEO
+ SG_ HiBmLvr_Stat : 18|2@1+ (1,0) [0|0] "" NEO
+ SG_ WprWashSw_Psd : 20|2@1+ (1,0) [0|0] "" NEO
+ SG_ WprWash_R_Sw_Posn_V2 : 22|2@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Lvr_Stat : 24|3@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Cond_Flt : 27|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Cond_Psd : 28|2@1+ (1,0) [0|0] "" NEO
+ SG_ HrnSw_Psd : 30|2@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw00_Psd : 32|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw01_Psd : 33|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw02_Psd : 34|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw03_Psd : 35|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw04_Psd : 36|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw05_Psd : 37|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw06_Psd : 38|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw07_Psd : 39|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw08_Psd : 40|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw09_Psd : 41|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw10_Psd : 42|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw11_Psd : 43|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw12_Psd : 44|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw13_Psd : 45|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw14_Psd : 46|1@1+ (1,0) [0|0] "" NEO
+ SG_ StW_Sw15_Psd : 47|1@1+ (1,0) [0|0] "" NEO
+ SG_ WprSw6Posn : 48|3@1+ (1,0) [0|0] "" NEO
+ SG_ MC_STW_ACTN_RQ : 52|4@1+ (1,0) [0|15] "" NEO
+ SG_ CRC_STW_ACTN_RQ : 56|8@1+ (1,0) [0|0] "" NEO
+
+BO_ 1001 DAS_bodyControls: 8 VEH
+ SG_ DAS_headlightRequest : 0|2@1+ (1,0) [0|3] "" aps
+ SG_ DAS_hazardLightRequest : 2|2@1+ (1,0) [0|3] "" aps
+ SG_ DAS_wiperSpeed : 4|4@1+ (1,0) [0|15] "" aps
+ SG_ DAS_turnIndicatorRequest : 8|2@1+ (1,0) [0|3] "" aps
+ SG_ DAS_highLowBeamDecision : 10|2@1+ (1,0) [0|3] "" aps
+ SG_ DAS_heaterRequest : 12|2@1+ (1,0) [0|2] "" aps
+ SG_ DAS_turnIndicatorRequestReason : 17|4@1+ (1,0) [0|8] "" aps
+ SG_ DAS_autopilotActive : 24|1@1+ (1,0) [0|1] "" XXX
+ SG_ DAS_accActive : 29|1@1+ (1,0) [0|1] "" XXX
+ SG_ DAS_bodyControlsCounter : 52|4@1+ (1,0) [0|15] "" aps
+ SG_ DAS_bodyControlsChecksum : 56|8@1+ (1,0) [0|255] "" aps
+
+BO_ 1013 ID3F5VCFRONT_lighting: 8 VEH
+ SG_ VCFRONT_lowBeamsCalibrated : 62|1@1+ (1,0) [0|1] ""  Receiver
+ SG_ VCFRONT_lowBeamsOnForDRL : 61|1@1+ (1,0) [0|1] ""  Receiver
+ SG_ VCFRONT_simLatchingStalk : 59|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_highBeamSwitchActive : 58|1@1+ (1,0) [0|1] ""  Receiver
+ SG_ VCFRONT_parkRightStatus : 56|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_parkLeftStatus : 54|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_turnSignalRightStatus : 52|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_turnSignalLeftStatus : 50|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_sideRepeaterRightStatus : 48|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_sideRepeaterLeftStatus : 46|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_sideMarkersStatus : 44|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_fogRightStatus : 42|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_fogLeftStatus : 40|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_DRLRightStatus : 38|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_DRLLeftStatus : 36|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_highBeamRightStatus : 34|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_highBeamLeftStatus : 32|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_lowBeamRightStatus : 30|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_lowBeamLeftStatus : 28|2@1+ (1,0) [0|3] ""  Receiver
+ SG_ VCFRONT_hazardSwitchBacklight : 27|1@1+ (1,0) [0|1] ""  Receiver
+ SG_ VCFRONT_seeYouHomeLightingReq : 26|1@1+ (1,0) [0|1] ""  Receiver
+ SG_ VCFRONT_approachLightingRequest : 25|1@1+ (1,0) [0|1] ""  Receiver
+ SG_ VCFRONT_courtesyLightingRequest : 24|1@1+ (1,0) [0|1] ""  Receiver
+ SG_ VCFRONT_switchLightingBrightness : 16|8@1+ (0.5,0) [0|127] "%"  Receiver
+ SG_ VCFRONT_ambientLightingBrightnes : 8|8@1+ (0.5,0) [0|127] "%"  Receiver
+ SG_ VCFRONT_hazardLightRequest : 4|4@1+ (1,0) [0|8] ""  Receiver
+ SG_ VCFRONT_indicatorRightRequest : 2|2@1+ (1,0) [0|2] ""  Receiver
+ SG_ VCFRONT_indicatorLeftRequest : 0|2@1+ (1,0) [0|2] ""  Receiver
+
+VAL_ 568 SpdCtrlLvr_Stat 32 "DN_1ST" 16 "UP_1ST" 8 "DN_2ND" 4 "UP_2ND" 2 "RWD" 1 "FWD" 0 "IDLE" ;
+VAL_ 568 DTR_Dist_Rq 255 "SNA" 200 "ACC_DIST_7" 166 "ACC_DIST_6" 133 "ACC_DIST_5" 100 "ACC_DIST_4" 66 "ACC_DIST_3" 33 "ACC_DIST_2" 0 "ACC_DIST_1" ;
+VAL_ 568 TurnIndLvr_Stat 3 "SNA" 2 "RIGHT" 1 "LEFT" 0 "IDLE" ;
+VAL_ 568 HiBmLvr_Stat 3 "SNA" 2 "HIBM_FLSH_ON_PSD" 1 "HIBM_ON_PSD" 0 "IDLE" ;
+VAL_ 568 WprWashSw_Psd 3 "SNA" 2 "WASH" 1 "TIPWIPE" 0 "NPSD" ;
+VAL_ 568 WprWash_R_Sw_Posn_V2 3 "SNA" 2 "WASH" 1 "INTERVAL" 0 "OFF" ;
+VAL_ 568 StW_Lvr_Stat 4 "STW_BACK" 3 "STW_FWD" 2 "STW_DOWN" 1 "STW_UP" 0 "NPSD" ;
+VAL_ 568 StW_Cond_Psd 3 "SNA" 2 "DOWN" 1 "UP" 0 "NPSD" ;
+VAL_ 568 HrnSw_Psd 3 "SNA" 2 "NDEF2" 1 "PSD" 0 "NPSD" ;
+VAL_ 568 StW_Sw00_Psd 1 "PRESSED" 0 "NOT_PRESSED_SNA" ;
+VAL_ 568 StW_Sw01_Psd 1 "PRESSED" 0 "NOT_PRESSED_SNA" ;
+VAL_ 568 StW_Sw03_Psd 1 "PRESSED" 0 "NOT_PRESSED_SNA" ;
+VAL_ 568 StW_Sw04_Psd 1 "PRESSED" 0 "NOT_PRESSED_SNA" ;
+VAL_ 568 WprSw6Posn 7 "SNA" 6 "STAGE2" 5 "STAGE1" 4 "INTERVAL4" 3 "INTERVAL3" 2 "INTERVAL2" 1 "INTERVAL1" 0 "OFF" ;
+
+VAL_ 1001 DAS_headlightRequest 3 "DAS_HEADLIGHT_REQUEST_INVALID" 1 "DAS_HEADLIGHT_REQUEST_ON" 0 "DAS_HEADLIGHT_REQUEST_OFF";
+VAL_ 1001 DAS_hazardLightRequest 3 "DAS_REQUEST_HAZARDS_SNA" 2 "DAS_REQUEST_HAZARDS_UNUSED" 0 "DAS_REQUEST_HAZARDS_OFF" 1 "DAS_REQUEST_HAZARDS_ON";
+VAL_ 1001 DAS_wiperSpeed 3 "DAS_WIPER_SPEED_3" 12 "DAS_WIPER_SPEED_12" 8 "DAS_WIPER_SPEED_8" 14 "DAS_WIPER_SPEED_14" 5 "DAS_WIPER_SPEED_5" 13 "DAS_WIPER_SPEED_13" 2 "DAS_WIPER_SPEED_2" 0 "DAS_WIPER_SPEED_OFF" 4 "DAS_WIPER_SPEED_4" 1 "DAS_WIPER_SPEED_1" 15 "DAS_WIPER_SPEED_INVALID" 10 "DAS_WIPER_SPEED_10" 11 "DAS_WIPER_SPEED_11" 7 "DAS_WIPER_SPEED_7" 9 "DAS_WIPER_SPEED_9" 6 "DAS_WIPER_SPEED_6";
+VAL_ 1001 DAS_turnIndicatorRequest 0 "DAS_TURN_INDICATOR_NONE" 2 "DAS_TURN_INDICATOR_RIGHT" 3 "DAS_TURN_INDICATOR_CANCEL" 1 "DAS_TURN_INDICATOR_LEFT";
+VAL_ 1001 DAS_highLowBeamDecision 2 "DAS_HIGH_BEAM_ON" 1 "DAS_HIGH_BEAM_OFF" 3 "DAS_HIGH_BEAM_SNA" 0 "DAS_HIGH_BEAM_UNDECIDED";
+VAL_ 1001 DAS_heaterRequest 0 "DAS_HEATER_SNA" 2 "DAS_HEATER_ON" 1 "DAS_HEATER_OFF";
+VAL_ 1001 DAS_turnIndicatorRequestReason 8 "DAS_ACTIVE_COMMANDED_LANE_CHANGE" 4 "DAS_CANCEL_LANE_CHANGE" 6 "DAS_ACTIVE_MERGE" 2 "DAS_ACTIVE_SPEED_LANE_CHANGE" 5 "DAS_CANCEL_FORK" 0 "DAS_NONE" 3 "DAS_ACTIVE_FORK" 7 "DAS_CANCEL_MERGE" 1 "DAS_ACTIVE_NAV_LANE_CHANGE";
+
+VAL_ 1013 VCFRONT_DRLLeftStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_DRLRightStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_ambientLightingBrightnes 255 "SNA" ;
+VAL_ 1013 VCFRONT_fogLeftStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_fogRightStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_hazardLightRequest 1 "HAZARD_REQUEST_BUTTON" 6 "HAZARD_REQUEST_CAR_ALARM" 5 "HAZARD_REQUEST_CRASH" 7 "HAZARD_REQUEST_DAS" 2 "HAZARD_REQUEST_LOCK" 4 "HAZARD_REQUEST_MISLOCK" 0 "HAZARD_REQUEST_NONE" 8 "HAZARD_REQUEST_UDS" 3 "HAZARD_REQUEST_UNLOCK" ;
+VAL_ 1013 VCFRONT_highBeamLeftStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_highBeamRightStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_indicatorLeftRequest 2 "TURN_SIGNAL_ACTIVE_HIGH" 1 "TURN_SIGNAL_ACTIVE_LOW" 0 "TURN_SIGNAL_OFF" ;
+VAL_ 1013 VCFRONT_indicatorRightRequest 2 "TURN_SIGNAL_ACTIVE_HIGH" 1 "TURN_SIGNAL_ACTIVE_LOW" 0 "TURN_SIGNAL_OFF" ;
+VAL_ 1013 VCFRONT_lowBeamLeftStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_lowBeamRightStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_parkLeftStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_parkRightStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_sideMarkersStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_sideRepeaterLeftStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_sideRepeaterRightStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_simLatchingStalk 0 "SIMULATED_LATCHING_STALK_IDLE" 1 "SIMULATED_LATCHING_STALK_LEFT" 2 "SIMULATED_LATCHING_STALK_RIGHT" 3 "SIMULATED_LATCHING_STALK_SNA" ;
+VAL_ 1013 VCFRONT_switchLightingBrightness 255 "SNA" ;
+VAL_ 1013 VCFRONT_turnSignalLeftStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 1013 VCFRONT_turnSignalRightStatus 2 "LIGHT_FAULT" 0 "LIGHT_OFF" 1 "LIGHT_ON" 3 "LIGHT_SNA" ;
+VAL_ 962 VCLEFT_frontBuckleSwitch 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatTrackBack 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_rightMirrorTilt 4 "MIRROR_TILT_LEFT" 2 "MIRROR_TILT_UP" 3 "MIRROR_TILT_RIGHT" 0 "MIRROR_TILT_STOP" 1 "MIRROR_TILT_DOWN";
+VAL_ 962 VCLEFT_frontOccupancySwitch 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_swcRightTiltLeft 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_rearRightOccupancySwitch 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_swcLeftTiltRight 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatBackrestForward 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_swcRightTiltRight 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatLumbarIn 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatLiftUp 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatLumbarDown 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatTiltDown 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatTrackForward 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_rearLeftBuckleSwitch 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_swcRightPressed 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatLumbarOut 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_swcLeftTiltLeft 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_swcLeftPressed 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatTiltUp 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_rearLeftOccupancySwitch 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatBackrestBack 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_rearCenterOccupancySwitch 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatLumbarUp 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_frontSeatLiftDown 2 "SWITCH_ON" 0 "SWITCH_SNA" 3 "SWITCH_FAULT" 1 "SWITCH_OFF";
+VAL_ 962 VCLEFT_switchStatusIndex 1 "VCLEFT_SWITCH_STATUS_INDEX_1" 2 "VCLEFT_SWITCH_STATUS_INDEX_INVALID" 0 "VCLEFT_SWITCH_STATUS_INDEX_0";
+VAL_ 259 VCRIGHT_trunkLatchStatus 8 "LATCH_FAULT" 2 "LATCH_CLOSED" 1 "LATCH_OPENED" 3 "LATCH_CLOSING" 7 "LATCH_DEFAULT" 4 "LATCH_OPENING" 5 "LATCH_AJAR" 6 "LATCH_TIMEOUT" 0 "LATCH_SNA";
+VAL_ 259 VCRIGHT_mirrorFoldState 4 "MIRROR_FOLD_STATE_UNFOLDING" 1 "MIRROR_FOLD_STATE_FOLDED" 3 "MIRROR_FOLD_STATE_FOLDING" 0 "MIRROR_FOLD_STATE_UNKNOWN" 2 "MIRROR_FOLD_STATE_UNFOLDED";
+VAL_ 259 VCRIGHT_rearLatchStatus 8 "LATCH_FAULT" 2 "LATCH_CLOSED" 1 "LATCH_OPENED" 3 "LATCH_CLOSING" 7 "LATCH_DEFAULT" 4 "LATCH_OPENING" 5 "LATCH_AJAR" 6 "LATCH_TIMEOUT" 0 "LATCH_SNA";
+VAL_ 259 VCRIGHT_mirrorRecallState 5 "MIRROR_RECALL_STATE_RECALLING_STOPPED" 2 "MIRROR_RECALL_STATE_RECALLING_AXIS_2" 0 "MIRROR_RECALL_STATE_INIT" 3 "MIRROR_RECALL_STATE_RECALLING_COMPLETE" 4 "MIRROR_RECALL_STATE_RECALLING_FAILED" 1 "MIRROR_RECALL_STATE_RECALLING_AXIS_1";
+VAL_ 259 VCRIGHT_mirrorState 3 "MIRROR_STATE_FOLD_UNFOLD" 1 "MIRROR_STATE_TILT_X" 0 "MIRROR_STATE_IDLE" 2 "MIRROR_STATE_TILT_Y" 4 "MIRROR_STATE_RECALL";
+VAL_ 259 VCRIGHT_frontLatchStatus 8 "LATCH_FAULT" 2 "LATCH_CLOSED" 1 "LATCH_OPENED" 3 "LATCH_CLOSING" 7 "LATCH_DEFAULT" 4 "LATCH_OPENING" 5 "LATCH_AJAR" 6 "LATCH_TIMEOUT" 0 "LATCH_SNA";
+VAL_ 585 SCCM_washWipeButtonStatus 3 "SNA" 0 "NOT_PRESSED" 2 "2ND_DETENT" 1 "1ST_DETENT";
+VAL_ 585 SCCM_turnIndicatorStalkStatus 3 "DOWN_1" 5 "SNA" 0 "IDLE" 1 "UP_1" 4 "DOWN_2" 2 "UP_2";
+VAL_ 585 SCCM_highBeamStalkStatus 3 "SNA" 0 "IDLE" 1 "PULL" 2 "PUSH";
+VAL_ 280 DI_epbRequest 0 "DI_EPBREQUEST_NO_REQUEST" 1 "DI_EPBREQUEST_PARK" 2 "DI_EPBREQUEST_UNPARK";
+VAL_ 280 DI_keepAliveRequest 1 "KEEP_ALIVE" 0 "NO_REQUEST";
+VAL_ 280 DI_accelPedalPos 255 "SNA";
+VAL_ 280 DI_gear 1 "DI_GEAR_P" 0 "DI_GEAR_INVALID" 7 "DI_GEAR_SNA" 2 "DI_GEAR_R" 3 "DI_GEAR_N" 4 "DI_GEAR_D";
+VAL_ 280 DI_tractionControlMode 0 "TC_NORMAL" 1 "TC_SLIP_START" 4 "TC_ROLLS_MODE" 2 "TC_DEV_MODE_1" 5 "TC_DYNO_MODE" 3 "TC_DEV_MODE_2";
+VAL_ 280 DI_trackModeState 0 "TRACK_MODE_UNAVAILABLE" 1 "TRACK_MODE_AVAILABLE" 2 "TRACK_MODE_ON";
+VAL_ 280 DI_systemState 5 "DI_SYS_ENABLE" 1 "DI_SYS_IDLE" 2 "DI_SYS_STANDBY" 0 "DI_SYS_UNAVAILABLE" 3 "DI_SYS_FAULT" 4 "DI_SYS_ABORT";
+VAL_ 280 DI_immobilizerState 2 "DI_IMM_STATE_AUTHENTICATING" 0 "DI_IMM_STATE_INIT_SNA" 3 "DI_IMM_STATE_DISARMED" 4 "DI_IMM_STATE_IDLE" 6 "DI_IMM_STATE_FAULT" 1 "DI_IMM_STATE_REQUEST" 5 "DI_IMM_STATE_RESET";
+VAL_ 280 DI_brakePedalState 2 "INVALID" 0 "OFF" 1 "ON";
+VAL_ 835 VCRIGHT_rearDefrostState 2 "HEATER_STATE_OFF" 4 "HEATER_STATE_FAULT" 1 "HEATER_STATE_ON" 0 "HEATER_STATE_SNA" 3 "HEATER_STATE_OFF_UNAVAILABLE";
+VAL_ 835 VCRIGHT_vehiclePowerStateDBG 3 "VEHICLE_POWER_STATE_DRIVE" 1 "VEHICLE_POWER_STATE_CONDITIONING" 2 "VEHICLE_POWER_STATE_ACCESSORY" 0 "VEHICLE_POWER_STATE_OFF";
+VAL_ 835 VCRIGHT_mirrorHeatState 2 "HEATER_STATE_OFF" 4 "HEATER_STATE_FAULT" 1 "HEATER_STATE_ON" 0 "HEATER_STATE_SNA" 3 "HEATER_STATE_OFF_UNAVAILABLE";
+VAL_ 553 SCCM_parkButtonStatus 3 "SNA" 0 "NOT_PRESSED" 2 "INIT" 1 "PRESSED";
+VAL_ 553 SCCM_rightStalkStatus 3 "DOWN_1" 6 "SNA" 0 "IDLE" 5 "INIT" 1 "UP_1" 4 "DOWN_2" 2 "UP_2";
+VAL_ 297 SCCM_steeringAngleValidity 3 "SNA" 2 "INIT" 0 "INVALID" 1 "VALID";
+VAL_ 297 SCCM_steeringAngleSensorStatus 0 "OK" 1 "INIT" 2 "ERROR" 3 "ERROR_INIT";
+VAL_ 258 VCLEFT_mirrorRecallState 5 "MIRROR_RECALL_STATE_RECALLING_STOPPED" 2 "MIRROR_RECALL_STATE_RECALLING_AXIS_2" 0 "MIRROR_RECALL_STATE_INIT" 3 "MIRROR_RECALL_STATE_RECALLING_COMPLETE" 4 "MIRROR_RECALL_STATE_RECALLING_FAILED" 1 "MIRROR_RECALL_STATE_RECALLING_AXIS_1";
+VAL_ 258 VCLEFT_rearLatchStatus 8 "LATCH_FAULT" 2 "LATCH_CLOSED" 1 "LATCH_OPENED" 3 "LATCH_CLOSING" 7 "LATCH_DEFAULT" 4 "LATCH_OPENING" 5 "LATCH_AJAR" 6 "LATCH_TIMEOUT" 0 "LATCH_SNA";
+VAL_ 258 VCLEFT_mirrorState 3 "MIRROR_STATE_FOLD_UNFOLD" 1 "MIRROR_STATE_TILT_X" 0 "MIRROR_STATE_IDLE" 2 "MIRROR_STATE_TILT_Y" 4 "MIRROR_STATE_RECALL";
+VAL_ 258 VCLEFT_mirrorHeatState 2 "HEATER_STATE_OFF" 4 "HEATER_STATE_FAULT" 1 "HEATER_STATE_ON" 0 "HEATER_STATE_SNA" 3 "HEATER_STATE_OFF_UNAVAILABLE";
+VAL_ 258 VCLEFT_frontLatchStatus 8 "LATCH_FAULT" 2 "LATCH_CLOSED" 1 "LATCH_OPENED" 3 "LATCH_CLOSING" 7 "LATCH_DEFAULT" 4 "LATCH_OPENING" 5 "LATCH_AJAR" 6 "LATCH_TIMEOUT" 0 "LATCH_SNA";
+VAL_ 258 VCLEFT_mirrorFoldState 4 "MIRROR_FOLD_STATE_UNFOLDING" 1 "MIRROR_FOLD_STATE_FOLDED" 3 "MIRROR_FOLD_STATE_FOLDING" 0 "MIRROR_FOLD_STATE_UNKNOWN" 2 "MIRROR_FOLD_STATE_UNFOLDED";

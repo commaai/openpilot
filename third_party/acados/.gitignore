@@ -1,0 +1,9 @@
+acados_repo/
+/lib
+!x86_64/
+!larch64/
+!aarch64/
+!Darwin/
+!*.so
+!*.so.*
+!*.dylib

@@ -1,0 +1,34 @@
+# on Windows -- $env:SKIP="tests,example"
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: python3 -m ruff check .
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: tiny
+        name: tiny tests
+        entry: python3 -m pytest test/test_tiny.py
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: mypy
+        name: mypy
+        entry: python3 -m mypy
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: example
+        name: test all devices
+        entry: python3 test/external/external_test_example.py
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: tests
+        name: comprehensive test suite
+        entry: env OMP_NUM_THREADS=1 SKIP_SLOW_TEST=1 PYTHONPATH="." python3 -m pytest -n=6 test/test_ops.py test/test_schedule.py test/unit/test_assign.py test/test_tensor.py test/test_jit.py test/unit/test_schedule_cache.py test/null/test_pattern_matcher.py test/null/test_uop_symbolic.py test/unit/test_helpers.py
+        language: system
+        always_run: true
+        pass_filenames: false

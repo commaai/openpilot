@@ -1,0 +1,15 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _lkas_hud_5byte.dbc";
+CM_ "IMPORT _nidec_scm_group_a.dbc";
+CM_ "IMPORT _steering_sensors_b.dbc";
+CM_ "IMPORT _steering_control_b.dbc";
+
+BO_ 392 GEARBOX_AUTO: 6 XXX
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" XXX
+ SG_ GEAR_SHIFTER : 27|4@0+ (1,0) [0|15] "" EON
+ SG_ GEAR : 36|5@0+ (1,0) [0|31] "" EON
+
+VAL_ 392 GEAR_SHIFTER 0 "S" 1 "P" 2 "R" 4 "N" 8 "D" ;
+VAL_ 392 GEAR 26 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;

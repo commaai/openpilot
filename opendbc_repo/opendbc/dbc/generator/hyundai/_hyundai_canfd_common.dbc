@@ -1,0 +1,232 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX CAMERA FRONT_RADAR ADRV APRK
+
+
+BO_ 80 LKAS: 16 XXX
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ LKA_MODE : 24|3@1+ (1,0) [0|7] "" XXX
+ SG_ LKA_AVAILABLE : 27|2@1+ (1,0) [0|255] "" XXX
+ SG_ LKA_WARNING : 32|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKA_ICON : 38|2@1+ (1,0) [0|255] "" XXX
+ SG_ FCA_SYSWARN : 40|1@0+ (1,0) [0|1] "" XXX
+ SG_ TORQUE_REQUEST : 41|11@1+ (1,-1024) [0|4095] "" XXX
+ SG_ STEER_REQ : 52|1@1+ (1,0) [0|1] "" XXX
+ SG_ LFA_BUTTON : 56|1@1+ (1,0) [0|255] "" XXX
+ SG_ LKA_ASSIST : 62|1@1+ (1,0) [0|1] "" XXX
+ SG_ STEER_MODE : 65|3@1+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_2 : 70|2@0+ (1,0) [0|3] "" XXX
+ SG_ HAS_LANE_SAFETY : 80|1@0+ (1,0) [0|1] "" XXX
+ SG_ DAMP_FACTOR : 64|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 81 ADRV_0x51: 32 ADRV
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 384 CAM_0x180: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 385 CAM_0x181: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 386 CAM_0x182: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 387 CAM_0x183: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 388 CAM_0x184: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 389 CAM_0x185: 8 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 438 CAM_0x1b6: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 439 CAM_0x1b7: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 440 CAM_0x1b8: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 441 CAM_0x1b9: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 513 RADAR_0x201: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 528 RADAR_0x210: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 529 RADAR_0x211: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 530 RADAR_0x212: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 531 RADAR_0x213: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 532 RADAR_0x214: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 533 RADAR_0x215: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 534 RADAR_0x216: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 535 RADAR_0x217: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 536 RADAR_0x218: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 537 RADAR_0x219: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 538 RADAR_0x21a: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 539 RADAR_0x21b: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 540 RADAR_0x21c: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 541 RADAR_0x21d: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 542 RADAR_0x21e: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 543 RADAR_0x21f: 32 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 576 RADAR_0x240: 16 FRONT_RADAR
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 674 CAM_0x2a2: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 675 CAM_0x2a3: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 676 CAM_0x2a4: 24 XXX
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE3 : 24|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE4 : 32|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE5 : 40|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE6 : 48|8@1+ (1,0) [0|255] "" XXX
+ SG_ LEFT_LANE_LINE : 56|2@1+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_0 : 58|2@1+ (1,0) [0|3] "" XXX
+ SG_ RIGHT_LANE_LINE : 60|2@1+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_0_2 : 62|2@1+ (1,0) [0|3] "" XXX
+ SG_ BYTE8 : 64|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE9 : 72|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE10 : 80|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE11 : 88|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE12 : 96|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE13 : 104|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE14 : 112|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE15 : 120|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE16 : 128|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE17 : 136|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE18 : 144|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE19 : 152|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE20 : 160|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE21 : 168|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE22 : 176|8@1+ (1,0) [0|255] "" XXX
+ SG_ BYTE23 : 184|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 699 CAM_0x2bb: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 700 CAM_0x2bc: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 701 CAM_0x2bd: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 702 CAM_0x2be: 32 CAMERA
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
+ SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+CM_ BO_ 676 "Contains signals with detailed lane line information. Used by ADAS ECU on HDA 2 vehicles to operate LFA.";
+
+CM_ SG_ 80 HAS_LANE_SAFETY "If 0, hides LKAS 'Lane Safety' menu from vehicle settings";
+CM_ SG_ 676 LEFT_LANE_LINE "Left lane line confidence";
+CM_ SG_ 676 RIGHT_LANE_LINE "Right lane line confidence";
+VAL_ 80 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green" ;
+VAL_ 80 LKA_MODE 1 "warning only" 2 "assist" 6 "off" ;
+VAL_ 676 LEFT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
+VAL_ 676 RIGHT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
