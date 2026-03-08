@@ -144,7 +144,7 @@ class SliderBase(Widget, abc.ABC):
       self._label.render(label_rect)
 
     # circle and arrow with grow animation
-    circle_pressed = self._is_dragging_circle or self.confirmed
+    circle_pressed = self._is_dragging_circle or self.confirmed or (self._circle_press_time > 0 and rl.get_time() - self._circle_press_time < 0.075)
     circle_bg_txt = self._circle_bg_pressed_txt if circle_pressed else self._circle_bg_txt
     scale = self._circle_scale_filter.update(self.PRESSED_SCALE if circle_pressed else 1.0)
     scaled_btn_x = btn_x + (self._circle_bg_txt.width * (1 - scale)) / 2
