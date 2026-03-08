@@ -20,6 +20,7 @@ from openpilot.common.utils import retry
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware.tici.pure_python_modem import QuectelATClient
 from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from openpilot.system.qcomgpsd.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
@@ -33,6 +34,10 @@ DEBUG = int(os.getenv("DEBUG", "0"))==1
 ASSIST_DATA_FILE = '/tmp/xtra3grc.bin'
 ASSIST_DATA_FILE_DOWNLOAD = ASSIST_DATA_FILE + '.download'
 ASSISTANCE_URL = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
+PURE_MODEM_PORT = os.getenv("OPENPILOT_MODEM_TTY", "/dev/ttyUSB2")
+PURE_MODEM_TIMEOUT = float(os.getenv("OPENPILOT_MODEM_AT_TIMEOUT", "30"))
+FORCE_MODEMMANAGER = os.getenv("OPENPILOT_FORCE_MODEMMANAGER", "0") == "1"
+STRICT_PURE_MODEM = os.getenv("OPENPILOT_PURE_MODEM_STRICT", "1") == "1"
 
 LOG_TYPES = [
   LOG_GNSS_GPS_MEASUREMENT_REPORT,
@@ -86,12 +91,37 @@ measurementStatusGlonassFields = {
   "glonassTimeMarkValid": 17
 }
 
+_pure_modem: QuectelATClient | None = None
+
+
+def _want_pure_python_modem() -> bool:
+  return not FORCE_MODEMMANAGER
+
+
+def _get_pure_modem() -> QuectelATClient:
+  global _pure_modem
+  if _pure_modem is None:
+    _pure_modem = QuectelATClient(
+      port=PURE_MODEM_PORT,
+      timeout=0.8,
+      write_timeout=0.8,
+    )
+  return _pure_modem
+
 @retry(attempts=10, delay=1.0)
 def try_setup_logs(diag, logs):
   return setup_logs(diag, logs)
 
 @retry(attempts=3, delay=1.0)
 def at_cmd(cmd: str) -> str | None:
+  if _want_pure_python_modem():
+    try:
+      lines = _get_pure_modem().send(cmd, timeout=PURE_MODEM_TIMEOUT)
+      return "\n".join(lines)
+    except Exception as err:
+      if STRICT_PURE_MODEM:
+        raise
+      cloudlog.warning(f"pure_python_modem command failed, fallback to mmcli: {cmd} err={err}")
   return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
 
 def gps_enabled() -> bool:
@@ -210,9 +240,12 @@ def teardown_quectel(diag):
 def wait_for_modem(cmd="AT+QGPS?"):
   cloudlog.warning("waiting for modem to come up")
   while True:
-    ret = subprocess.call(f"mmcli -m any --timeout 10 --command=\"{cmd}\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
-    if ret == 0:
-      return
+    try:
+      reply = at_cmd(cmd) or ""
+      if "ERROR" not in reply:
+        return
+    except Exception:
+      pass
     time.sleep(0.1)
 
 
