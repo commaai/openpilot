@@ -1,5 +1,6 @@
 import ctypes
 import functools
+import math
 import multiprocessing
 import numpy as np
 import time
@@ -9,7 +10,7 @@ from multiprocessing import Pipe, Array
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
                                                                     metadrive_vehicle_state)
-from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.common import SimulatorState, World, vec3
 from openpilot.tools.sim.lib.camerad import W, H
 
 
@@ -58,6 +59,10 @@ class MetaDriveWorld(World):
     self.reset_time = 0
     self.should_reset = False
 
+    self.prev_velocity = None
+    self.prev_bearing = 0.0
+    self.prev_sensor_time = time.monotonic()
+
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 2:
       self.vc[0] = steer_angle
@@ -90,6 +95,32 @@ class MetaDriveWorld(World):
       state.steering_angle = md_vehicle.steering_angle
       state.gps.from_xy(curr_pos)
       state.valid = True
+
+      # Derive IMU sensor values from vehicle state changes
+      now = time.monotonic()
+      dt = now - self.prev_sensor_time
+      state.imu.bearing = md_vehicle.bearing
+
+      if dt > 0 and self.prev_velocity is not None:
+        # Accelerometer: derivative of velocity + gravity on z-axis
+        state.imu.accelerometer = vec3(
+          (md_vehicle.velocity.x - self.prev_velocity.x) / dt,
+          (md_vehicle.velocity.y - self.prev_velocity.y) / dt,
+          -9.81
+        )
+
+        # Gyroscope: yaw rate from bearing change (bearing is in degrees)
+        dbearing = md_vehicle.bearing - self.prev_bearing
+        if dbearing > 180:
+          dbearing -= 360
+        elif dbearing < -180:
+          dbearing += 360
+        yaw_rate = math.radians(dbearing) / dt
+        state.imu.gyroscope = vec3(0, 0, yaw_rate)
+
+      self.prev_velocity = md_vehicle.velocity
+      self.prev_bearing = md_vehicle.bearing
+      self.prev_sensor_time = now
 
       is_engaged = state.is_engaged
       if is_engaged and self.first_engage is None:
