@@ -144,7 +144,7 @@ class SoftwareSelectionPage(NavWidget):
 
     self._openpilot_slider = LargerSlider("slide to install\nopenpilot", use_openpilot_callback)
     self._openpilot_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
-    self._custom_software_slider = LargerSlider("slide to install\nother software", use_custom_software_callback, green=False)
+    self._custom_software_slider = LargerSlider("slide to install\ncustom software", use_custom_software_callback, green=False)
     self._custom_software_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def show_event(self):
@@ -193,8 +193,8 @@ class CustomSoftwareWarningPage(NavScroller):
       GreyBigButton("use caution", "when installing\n3rd party software",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
       GreyBigButton("", "• It has not been tested by comma."),
-      GreyBigButton("", "• It may not comply with relevant safety standards."),
-      GreyBigButton("", "• It may cause damage to your device and/or vehicle."),
+      GreyBigButton("", "• It may not comply with safety standards."),
+      GreyBigButton("", "• It may damage your device and/or vehicle."),
       GreyBigButton("how to restore to a\nfactory state later", "https://flash.comma.ai",
                     gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
       self._continue_button,
