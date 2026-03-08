@@ -190,7 +190,7 @@ class CustomSoftwareWarningPage(NavScroller):
     self._continue_button.set_click_callback(continue_callback)
 
     self._scroller.add_widgets([
-      GreyBigButton("use caution", "when installing\n3rd party software",
+      GreyBigButton("caution: installing\n3rd party software", "swipe down to go back",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
       GreyBigButton("", "• It has not been tested by comma."),
       GreyBigButton("", "• It may not comply with safety standards."),
