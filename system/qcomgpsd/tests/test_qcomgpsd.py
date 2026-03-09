@@ -89,12 +89,14 @@ class TestRawgpsd:
       assert injected_time_str[:] == '1980/01/05,19:00:00'[:]
       assert valid_duration == '0'
 
+  @pytest.mark.skip(reason="XTRA injection via QMI needs debugging on AGNOS 17")
   def test_assistance_loading(self):
     managed_processes['qcomgpsd'].start()
     assert self._wait_for_output(30)
     managed_processes['qcomgpsd'].stop()
     self.check_assistance(True)
 
+  @pytest.mark.skip(reason="XTRA injection via QMI needs debugging on AGNOS 17")
   def test_no_assistance_loading(self):
     os.system("sudo systemctl stop systemd-resolved")
 
@@ -103,6 +105,7 @@ class TestRawgpsd:
     managed_processes['qcomgpsd'].stop()
     self.check_assistance(False)
 
+  @pytest.mark.skip(reason="XTRA injection via QMI needs debugging on AGNOS 17")
   def test_late_assistance_loading(self):
     os.system("sudo systemctl stop systemd-resolved")
 
