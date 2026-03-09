@@ -57,15 +57,18 @@ if __name__ == '__main__':
   with tempfile.TemporaryDirectory() as tmp:
     for directory in DIRS:
       for root, _, files in os.walk(os.path.join(BASEDIR, directory), followlinks=True):
-        if 'selfdrive/ui' not in root:
-          continue
+        # if 'selfdrive/ui' not in root:
+        #   continue
         # print(root)
         for file in files:
           path = os.path.join(root, file).replace(BASEDIR, '').removeprefix('/').replace('openpilot/', '')
           # print('path', path)
           if path in tracked_files:
             print('COPYING!!!', path)
-            shutil.copy2(os.path.join(BASEDIR, path), os.path.join(tmp, path), follow_symlinks=True)
+            dest = os.path.join(tmp, path)
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            # shutil.copy2(os.path.join(BASEDIR, path), dest, follow_symlinks=True)
+            copy(os.path.join(BASEDIR, path), dest)
           # print((root, files))
 
     # for file in get_tracked_files():
