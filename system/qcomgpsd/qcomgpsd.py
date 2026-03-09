@@ -7,6 +7,7 @@ import math
 import time
 import requests
 import shutil
+import subprocess
 from serial import Serial
 import datetime
 from multiprocessing import Process, Event
@@ -92,20 +93,24 @@ def try_setup_logs(diag, logs):
 
 AT_PORT = "/dev/modem_at0"
 
-@retry(attempts=3, delay=1.0)
+@retry(attempts=5, delay=1.0)
 def at_cmd(cmd: str) -> str:
   with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
     ser.reset_input_buffer()
     ser.write(f"{cmd}\r".encode())
-    response = b""
+    lines = []
     while True:
       line = ser.readline()
       if not line:
         raise RuntimeError(f"AT command timeout: {cmd}")
-      response += line
-      if b"OK" in line or b"ERROR" in line:
+      line = line.decode('utf-8', errors='replace').strip()
+      if line == "OK":
         break
-  return response.decode('utf-8', errors='replace')
+      if line == "ERROR" or line.startswith("+CME ERROR"):
+        raise RuntimeError(f"AT command error: {cmd}: {line}")
+      if line and line != cmd:
+        lines.append(line)
+  return '\n'.join(lines)
 
 def gps_enabled() -> bool:
   return "QGPS: 1" in at_cmd("AT+QGPS?")
@@ -144,26 +149,8 @@ def downloader_loop(event):
 
 @retry(attempts=5, delay=0.2, ignore_failure=True)
 def inject_assistance():
-  with open(ASSIST_DATA_FILE, 'rb') as f:
-    data = f.read()
-  with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
-    ser.reset_input_buffer()
-    ser.write(f"AT+QGPSXTRADATA={len(data)}\r".encode())
-    # wait for CONNECT prompt
-    while True:
-      line = ser.readline()
-      if b"CONNECT" in line:
-        break
-      if b"ERROR" in line or not line:
-        raise RuntimeError("Failed to start XTRA data injection")
-    ser.write(data)
-    # wait for OK
-    while True:
-      line = ser.readline()
-      if b"OK" in line:
-        break
-      if b"ERROR" in line or not line:
-        raise RuntimeError("Failed to inject XTRA data")
+  cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
+  subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
   cloudlog.info("successfully loaded assistance data")
 
 @retry(attempts=5, delay=1.0)
