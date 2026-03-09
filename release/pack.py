@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+import os
 import importlib
 import shutil
+import subprocess
 import sys
 import tempfile
 import zipapp
@@ -11,9 +13,16 @@ from pathlib import Path
 from openpilot.common.basedir import BASEDIR
 
 
-DIRS = ['cereal', 'openpilot']
+DIRS = ['openpilot']
+MODULES = ['cereal']
+# SYMLINKS = os
 EXTS = ['.png', '.py', '.ttf', '.capnp', '.json', '.fnt', '.mo', '.po']
 INTERPRETER = '/usr/bin/env python3'
+
+
+def get_tracked_files():
+  result = subprocess.run(['git', 'ls-files'], cwd=BASEDIR, capture_output=True, text=True, check=True)
+  return set(result.stdout.splitlines())
 
 
 def copy(src, dest):
@@ -41,9 +50,29 @@ if __name__ == '__main__':
     print(f'{args.module} does not have a {args.entrypoint}() function, typo?')
     sys.exit(1)
 
+  tracked_files = get_tracked_files()
+
+  # print(tracked_files)
+
   with tempfile.TemporaryDirectory() as tmp:
     for directory in DIRS:
-      shutil.copytree(BASEDIR + '/' + directory, tmp + '/' + directory, symlinks=False, dirs_exist_ok=True, copy_function=copy)
+      for root, _, files in os.walk(os.path.join(BASEDIR, directory), followlinks=True):
+        if 'selfdrive/ui' not in root:
+          continue
+        # print(root)
+        for file in files:
+          path = os.path.join(root, file).replace(BASEDIR, '').removeprefix('/').replace('openpilot/', '')
+          # print('path', path)
+          if path in tracked_files:
+            print('COPYING!!!', path)
+            shutil.copy2(os.path.join(BASEDIR, path), os.path.join(tmp, path), follow_symlinks=True)
+          # print((root, files))
+
+    # for file in get_tracked_files():
+    #   print(file)
+
+    # for directory in DIRS:
+    #   shutil.copytree(BASEDIR + '/' + directory, tmp + '/' + directory, symlinks=False, dirs_exist_ok=True, copy_function=copy)
     entry = f'{args.module}:{args.entrypoint}'
     zipapp.create_archive(tmp, target=args.output, interpreter=INTERPRETER, main=entry)
 
