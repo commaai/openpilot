@@ -229,10 +229,10 @@ def wait_for_modem():
   cloudlog.warning("waiting for modem to come up")
   while not os.path.exists(AT_PORT):
     time.sleep(0.5)
-  # wait until the modem responds to AT commands
+  # wait until the modem GNSS subsystem responds
   while True:
     try:
-      at_cmd("AT")
+      at_cmd("AT+QGPS?")
       return
     except Exception:
       time.sleep(0.5)
