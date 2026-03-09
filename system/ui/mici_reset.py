@@ -105,6 +105,8 @@ class Reset(Scroller):
       self._reset_button,
     ])
 
+    gui_app.add_nav_stack_tick(self._nav_stack_tick)
+
   def _do_erase(self):
     if PC:
       self._reset_failed = True
@@ -124,9 +126,7 @@ class Reset(Scroller):
     self._resetting_page.set_shown_callback(self._do_erase)
     gui_app.push_widget(self._resetting_page)
 
-  def _update_state(self):
-    super()._update_state()
-
+  def _nav_stack_tick(self):
     if self._reset_failed:
       self._reset_failed = False
       gui_app.pop_widgets_to(self, lambda: gui_app.push_widget(self._reset_failed_page))
