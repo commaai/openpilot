@@ -209,7 +209,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-  unblock_stdout()
+  # os.forkpty() in unblock_stdout() crashes on macOS after raylib/AppKit initialization
+  if sys.platform != "darwin":
+    unblock_stdout()
 
   try:
     main()
