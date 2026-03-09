@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import select
 import signal
 import itertools
 import math
@@ -144,12 +145,136 @@ def downloader_loop(event):
   except KeyboardInterrupt:
     pass
 
+# QMI protocol constants
+QMI_DEV = "/dev/cdc-wdm0"
+QMI_SERVICE_LOC = 0x10
+QMI_CTL_ALLOCATE_CID = 0x0022
+QMI_CTL_RELEASE_CID = 0x0023
+QMI_LOC_REG_EVENTS = 0x0021
+QMI_LOC_INJECT_XTRA_DATA = 0x00A7
+MAX_XTRA_CHUNK = 1024
+
+def _qmi_build_tlv(tlv_type: int, data: bytes) -> bytes:
+  return pack('<BH', tlv_type, len(data)) + data
+
+def _qmi_build_msg(service: int, client_id: int, tx_id: int, msg_id: int, tlv_data: bytes = b'') -> bytes:
+  if service == 0:  # CTL has 1-byte tx_id
+    sdu = pack('<BBHH', 0x00, tx_id & 0xFF, msg_id, len(tlv_data)) + tlv_data
+  else:
+    sdu = pack('<BHHH', 0x00, tx_id & 0xFFFF, msg_id, len(tlv_data)) + tlv_data
+  return pack('<BHBBB', 0x01, len(sdu) + 3, 0x00, service, client_id) + sdu
+
+def _qmi_parse_msg(data: bytes) -> dict | None:
+  if len(data) < 7 or data[0] != 0x01:
+    return None
+  _, _, service, client_id = unpack_from('<HBBB', data, 1)
+  sdu = data[6:]
+  if service == 0:  # CTL
+    if len(sdu) < 6:
+      return None
+    sdu_flags, tx_id, msg_id, tlv_len = unpack_from('<BBHH', sdu)
+    tlv_data = sdu[6:6 + tlv_len]
+  else:
+    if len(sdu) < 7:
+      return None
+    sdu_flags, tx_id, msg_id, tlv_len = unpack_from('<BHHH', sdu)
+    tlv_data = sdu[7:7 + tlv_len]
+  return {'service': service, 'client_id': client_id, 'flags': sdu_flags,
+          'tx_id': tx_id, 'msg_id': msg_id, 'tlv_data': tlv_data}
+
+def _qmi_parse_tlvs(data: bytes) -> dict:
+  tlvs = {}
+  offset = 0
+  while offset + 3 <= len(data):
+    tlv_type = data[offset]
+    tlv_len = unpack_from('<H', data, offset + 1)[0]
+    offset += 3
+    if offset + tlv_len > len(data):
+      break
+    tlvs[tlv_type] = data[offset:offset + tlv_len]
+    offset += tlv_len
+  return tlvs
+
+def _qmi_recv(fd: int, service: int, msg_id: int, flag_mask: int, timeout: float = 10.0) -> dict:
+  """Receive a QMI message matching service/msg_id/flags."""
+  deadline = time.monotonic() + timeout
+  while time.monotonic() < deadline:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+      break
+    r, _, _ = select.select([fd], [], [], remaining)
+    if not r:
+      break
+    data = os.read(fd, 4096)
+    msg = _qmi_parse_msg(data)
+    if msg and msg['service'] == service and msg['msg_id'] == msg_id and (msg['flags'] & flag_mask):
+      return msg
+  raise TimeoutError(f"QMI timeout: service=0x{service:02x} msg=0x{msg_id:04x}")
+
 @retry(attempts=5, delay=0.2, ignore_failure=True)
 def inject_assistance():
-  import subprocess
-  cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
-  subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
-  cloudlog.info("successfully loaded assistance data")
+  xtra_data = open(ASSIST_DATA_FILE, 'rb').read()
+  total_size = len(xtra_data)
+  total_parts = (total_size + MAX_XTRA_CHUNK - 1) // MAX_XTRA_CHUNK
+
+  fd = os.open(QMI_DEV, os.O_RDWR)
+  try:
+    tx_id = 1
+
+    def send(service, client_id, msg_id, tlv_data=b''):
+      nonlocal tx_id
+      os.write(fd, _qmi_build_msg(service, client_id, tx_id, msg_id, tlv_data))
+      cur = tx_id
+      tx_id += 1
+      return cur
+
+    # 1. Allocate CID for LOC service
+    send(0, 0, QMI_CTL_ALLOCATE_CID, _qmi_build_tlv(0x01, pack('<B', QMI_SERVICE_LOC)))
+    resp = _qmi_recv(fd, 0, QMI_CTL_ALLOCATE_CID, 0x02)
+    tlvs = _qmi_parse_tlvs(resp['tlv_data'])
+    if 0x02 in tlvs and unpack_from('<H', tlvs[0x02])[0] != 0:
+      raise RuntimeError(f"CTL AllocateCID failed: {tlvs[0x02].hex()}")
+    loc_client = tlvs[0x01][1]
+    cloudlog.info(f"QMI LOC client allocated: {loc_client}")
+
+    try:
+      # 2. Register for events (bit 6 = predicted orbits)
+      send(QMI_SERVICE_LOC, loc_client, QMI_LOC_REG_EVENTS,
+           _qmi_build_tlv(0x01, pack('<Q', 1 << 6)))
+      _qmi_recv(fd, QMI_SERVICE_LOC, QMI_LOC_REG_EVENTS, 0x02)
+
+      # 3. Inject XTRA data in chunks
+      for part_num in range(total_parts):
+        chunk = xtra_data[part_num * MAX_XTRA_CHUNK:(part_num + 1) * MAX_XTRA_CHUNK]
+        tlv = b''
+        tlv += _qmi_build_tlv(0x01, pack('<I', total_size))
+        tlv += _qmi_build_tlv(0x02, pack('<H', total_parts))
+        tlv += _qmi_build_tlv(0x03, pack('<H', part_num))
+        tlv += _qmi_build_tlv(0x04, pack('<H', len(chunk)) + chunk)
+
+        send(QMI_SERVICE_LOC, loc_client, QMI_LOC_INJECT_XTRA_DATA, tlv)
+        # Wait for response (ACK)
+        resp = _qmi_recv(fd, QMI_SERVICE_LOC, QMI_LOC_INJECT_XTRA_DATA, 0x02)
+        tlvs = _qmi_parse_tlvs(resp['tlv_data'])
+        if 0x02 in tlvs and unpack_from('<H', tlvs[0x02])[0] != 0:
+          raise RuntimeError(f"InjectXtraData failed for part {part_num}: {tlvs[0x02].hex()}")
+        # Wait for indication (actual result)
+        ind = _qmi_recv(fd, QMI_SERVICE_LOC, QMI_LOC_INJECT_XTRA_DATA, 0x04)
+        ind_tlvs = _qmi_parse_tlvs(ind['tlv_data'])
+        if 0x01 in ind_tlvs and unpack_from('<I', ind_tlvs[0x01])[0] != 0:
+          raise RuntimeError(f"InjectXtraData indication failed for part {part_num}: status={unpack_from('<I', ind_tlvs[0x01])[0]}")
+
+      cloudlog.info("successfully loaded assistance data via QMI")
+    finally:
+      # 4. Release CID
+      send(0, 0, QMI_CTL_RELEASE_CID,
+           _qmi_build_tlv(0x01, pack('<BB', QMI_SERVICE_LOC, loc_client)))
+      try:
+        _qmi_recv(fd, 0, QMI_CTL_RELEASE_CID, 0x02, timeout=5)
+      except TimeoutError:
+        pass
+  finally:
+    os.close(fd)
 
 @retry(attempts=5, delay=1.0)
 def setup_quectel(diag: ModemDiag) -> bool:
