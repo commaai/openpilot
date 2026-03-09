@@ -109,7 +109,6 @@ class Reset(Scroller):
 
   def _do_erase(self):
     if PC:
-      self._reset_failed = True
       return
 
     # Removing data and formatting
