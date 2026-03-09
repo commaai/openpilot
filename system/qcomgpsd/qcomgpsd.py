@@ -104,10 +104,8 @@ def at_cmd(cmd: str) -> str:
       if not line:
         raise RuntimeError(f"AT command timeout: {cmd}")
       line = line.decode('utf-8', errors='replace').strip()
-      if line == "OK":
+      if line in ("OK", "ERROR") or line.startswith("+CME ERROR"):
         break
-      if line == "ERROR" or line.startswith("+CME ERROR"):
-        raise RuntimeError(f"AT command error: {cmd}: {line}")
       if line and line != cmd:
         lines.append(line)
   return '\n'.join(lines)
@@ -232,10 +230,12 @@ def wait_for_modem():
   # wait until the modem GNSS subsystem responds
   while True:
     try:
-      at_cmd("AT+QGPS?")
-      return
+      resp = at_cmd("AT+QGPS?")
+      if "+QGPS:" in resp:
+        return
     except Exception:
-      time.sleep(0.5)
+      pass
+    time.sleep(0.5)
 
 
 def main() -> NoReturn:
