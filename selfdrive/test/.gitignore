@@ -5,5 +5,4 @@ process_replay/diff.txt
 process_replay/model_diff.txt
 valgrind_logs.txt
 
-*.bz2
 *.hevc

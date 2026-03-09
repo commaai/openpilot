@@ -14,8 +14,6 @@ a.out
 .hypothesis
 .cache/
 
-/docs_site/
-
 *.mp4
 *.dylib
 *.DSYM
@@ -74,8 +72,6 @@ build/
 
 !**/.gitkeep
 
-poetry.toml
-Pipfile
 
 ### VisualStudioCode ###
 .vscode/*
