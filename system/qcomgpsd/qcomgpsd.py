@@ -7,7 +7,6 @@ import math
 import time
 import requests
 import shutil
-import subprocess
 from serial import Serial
 import datetime
 from multiprocessing import Process, Event
@@ -147,8 +146,44 @@ def downloader_loop(event):
 
 @retry(attempts=5, delay=0.2, ignore_failure=True)
 def inject_assistance():
-  cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
-  subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
+  with open(ASSIST_DATA_FILE, 'rb') as f:
+    data = f.read()
+
+  with Serial(AT_PORT, baudrate=115200, timeout=5) as ser:
+    ser.reset_input_buffer()
+    # upload xtra file to modem RAM
+    ser.write(f'AT+QFUPL="RAM:xtra3grc.bin",{len(data)},60\r'.encode())
+    # wait for CONNECT prompt
+    while True:
+      line = ser.readline()
+      if not line:
+        raise RuntimeError("AT+QFUPL timeout waiting for CONNECT")
+      line = line.decode('utf-8', errors='replace').strip()
+      if line == "CONNECT":
+        break
+      if "ERROR" in line:
+        raise RuntimeError(f"AT+QFUPL error: {line}")
+    # send raw binary data
+    ser.write(data)
+    # wait for OK after upload
+    got_ok = False
+    while True:
+      line = ser.readline()
+      if not line:
+        raise RuntimeError("AT+QFUPL timeout waiting for OK after upload")
+      line = line.decode('utf-8', errors='replace').strip()
+      if line == "OK":
+        got_ok = True
+        break
+      if "ERROR" in line:
+        raise RuntimeError(f"AT+QFUPL upload error: {line}")
+    if not got_ok:
+      raise RuntimeError("AT+QFUPL: never got OK")
+
+  # inject the uploaded data into GNSS engine
+  at_cmd('AT+QGPSXTRADATA="RAM:xtra3grc.bin"')
+  # cleanup
+  at_cmd('AT+QFDEL="RAM:xtra3grc.bin"')
   cloudlog.info("successfully loaded assistance data")
 
 @retry(attempts=5, delay=1.0)
