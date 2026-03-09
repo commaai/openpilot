@@ -405,6 +405,7 @@ function op_switch() {
   git submodule deinit --all --force
   git reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
+  git submodule sync --recursive
   git submodule update --init --recursive
   git submodule foreach git reset --hard
   git submodule foreach git clean -df
