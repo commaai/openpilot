@@ -1,7 +1,24 @@
+import os
+import subprocess
+
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
 
 replay_env = env.Clone()
 replay_env['CCFLAGS'] += ['-Wno-deprecated-declarations']
+
+if arch == "Darwin":
+  openssl_prefixes = []
+  for formula in ("openssl@3", "openssl"):
+    try:
+      prefix = subprocess.check_output(['brew', '--prefix', formula], encoding='utf8').strip()
+      if os.path.isdir(prefix):
+        openssl_prefixes.append(prefix)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+      continue
+
+  for prefix in openssl_prefixes:
+    replay_env['CPPPATH'] += [f"{prefix}/include"]
+    replay_env['LIBPATH'] += [f"{prefix}/lib"]
 
 base_frameworks = []
 base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread']
