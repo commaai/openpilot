@@ -12,7 +12,7 @@
 #include "tools/replay/seg_mgr.h"
 #include "tools/replay/timeline.h"
 
-#define DEMO_ROUTE "a2a0ccea32023010|2023-07-27--13-01-19"
+#define DEMO_ROUTE "5beb9b58bd12b691/0000010a--a51155e496"
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,

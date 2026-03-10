@@ -28,7 +28,7 @@ class ScrollState(Enum):
 
 
 class BigCircleButton(Widget):
-  def __init__(self, icon: str, red: bool = False, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
+  def __init__(self, icon: rl.Texture, red: bool = False, icon_offset: tuple[int, int] = (0, 0)):
     super().__init__()
     self._red = red
     self._icon_offset = icon_offset
@@ -36,9 +36,10 @@ class BigCircleButton(Widget):
     # State
     self.set_rect(rl.Rectangle(0, 0, 180, 180))
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_delay = 0.075
 
     # Icons
-    self._txt_icon = gui_app.texture(icon, *icon_size)
+    self._txt_icon = icon
     self._txt_btn_disabled_bg = gui_app.texture("icons_mici/buttons/button_circle_disabled.png", 180, 180)
 
     self._txt_btn_bg = gui_app.texture("icons_mici/buttons/button_circle.png", 180, 180)
@@ -70,8 +71,8 @@ class BigCircleButton(Widget):
 
 
 class BigCircleToggle(BigCircleButton):
-  def __init__(self, icon: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53), icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(icon, False, icon_size=icon_size, icon_offset=icon_offset)
+  def __init__(self, icon: rl.Texture, toggle_callback: Callable | None = None, icon_offset: tuple[int, int] = (0, 0)):
+    super().__init__(icon, False, icon_offset=icon_offset)
     self._toggle_callback = toggle_callback
 
     # State
@@ -106,18 +107,18 @@ class BigButton(Widget):
 
   """A lightweight stand-in for the Qt BigButton, drawn & updated each frame."""
 
-  def __init__(self, text: str, value: str = "", icon: Union[str, rl.Texture] = "", icon_size: tuple[int, int] = (64, 64),
-               scroll: bool = False):
+  def __init__(self, text: str, value: str = "", icon: Union[rl.Texture, None] = None, scroll: bool = False):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, 402, 180))
     self.text = text
     self.value = value
-    self._icon_size = icon_size
+    self._txt_icon = icon
     self._scroll = scroll
-    self.set_icon(icon)
 
     self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._click_delay = 0.075
     self._shake_start: float | None = None
+    self._grow_animation_until: float | None = None
 
     self._rotate_icon_t: float | None = None
 
@@ -130,8 +131,8 @@ class BigButton(Widget):
 
     self._load_images()
 
-  def set_icon(self, icon: Union[str, rl.Texture]):
-    self._txt_icon = gui_app.texture(icon, *self._icon_size) if isinstance(icon, str) and len(icon) else icon
+  def set_icon(self, icon: Union[rl.Texture, None]):
+    self._txt_icon = icon
 
   def set_rotate_icon(self, rotate: bool):
     if rotate and self._rotate_icon_t is not None:
@@ -143,9 +144,12 @@ class BigButton(Widget):
     self._txt_pressed_bg = gui_app.texture("icons_mici/buttons/button_rectangle_pressed.png", 402, 180)
     self._txt_disabled_bg = gui_app.texture("icons_mici/buttons/button_rectangle_disabled.png", 402, 180)
 
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(lambda: touch_callback() and self._grow_animation_until is None)
+
   def _width_hint(self) -> int:
     # Single line if scrolling, so hide behind icon if exists
-    icon_size = self._icon_size[0] if self._txt_icon and self._scroll and self.value else 0
+    icon_size = self._txt_icon.width if self._txt_icon and self._scroll and self.value else 0
     return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2 - icon_size)
 
   def _get_label_font_size(self):
@@ -180,12 +184,17 @@ class BigButton(Widget):
   def trigger_shake(self):
     self._shake_start = rl.get_time()
 
+  def trigger_grow_animation(self, duration: float = 0.65):
+    self._grow_animation_until = rl.get_time() + duration
+
   @property
   def _shake_offset(self) -> float:
     SHAKE_DURATION = 0.5
     SHAKE_AMPLITUDE = 24.0
     SHAKE_FREQUENCY = 32.0
-    t = rl.get_time() - (self._shake_start or 0.0)
+    if self._shake_start is None:
+      return 0.0
+    t = rl.get_time() - self._shake_start
     if t > SHAKE_DURATION:
       return 0.0
     decay = 1.0 - t / SHAKE_DURATION
@@ -195,6 +204,10 @@ class BigButton(Widget):
     super().set_position(x + self._shake_offset, y)
 
   def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
+    if self._grow_animation_until is not None:
+      if rl.get_time() >= self._grow_animation_until:
+        self._grow_animation_until = None
+
     # draw _txt_default_bg
     txt_bg = self._txt_default_bg
     if not self.enabled:
@@ -202,7 +215,7 @@ class BigButton(Widget):
     elif self.is_pressed:
       txt_bg = self._txt_pressed_bg
 
-    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
+    scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed or self._grow_animation_until is not None else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     return txt_bg, btn_x, btn_y, scale
@@ -357,9 +370,9 @@ class BigParamControl(BigToggle):
 
 # TODO: param control base class
 class BigCircleParamControl(BigCircleToggle):
-  def __init__(self, icon: str, param: str, toggle_callback: Callable | None = None, icon_size: tuple[int, int] = (64, 53),
+  def __init__(self, icon: rl.Texture, param: str, toggle_callback: Callable | None = None,
                icon_offset: tuple[int, int] = (0, 0)):
-    super().__init__(icon, toggle_callback, icon_size=icon_size, icon_offset=icon_offset)
+    super().__init__(icon, toggle_callback, icon_offset=icon_offset)
     self._param = param
     self.params = Params()
     self.set_checked(self.params.get_bool(self._param, False))

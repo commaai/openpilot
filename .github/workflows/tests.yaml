@@ -19,6 +19,8 @@ concurrency:
 
 env:
   CI: 1
+  PYTHONPATH: ${{ github.workspace }}
+  PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
   build_release:
@@ -111,8 +113,8 @@ jobs:
       run: |
         source selfdrive/test/setup_xvfb.sh
         # Pre-compile Python bytecode so each pytest worker doesn't need to
-        pytest --collect-only -m 'not slow' -qq
-        MAX_EXAMPLES=1 pytest -m 'not slow'
+        $PYTEST --collect-only -m 'not slow' -qq
+        MAX_EXAMPLES=1 $PYTEST -m 'not slow'
 
   process_replay:
     name: process replay
@@ -168,7 +170,7 @@ jobs:
       timeout-minutes: 4
       env:
         ONNXCPU: 1
-      run: pytest selfdrive/test/process_replay/test_regen.py
+      run: $PYTEST selfdrive/test/process_replay/test_regen.py
 
   simulator_driving:
     name: simulator driving

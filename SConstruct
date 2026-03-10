@@ -4,6 +4,7 @@ import sys
 import sysconfig
 import platform
 import shlex
+import importlib
 import numpy as np
 
 import SCons.Errors
@@ -18,6 +19,7 @@ AddOption('--asan', action='store_true', help='turn on ASAN')
 AddOption('--ubsan', action='store_true', help='turn on UBSan')
 AddOption('--mutation', action='store_true', help='generate mutation-ready code')
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
+AddOption('--verbose', action='store_true', default=False, help='show full build commands')
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -37,22 +39,8 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
-if arch != "larch64":
-  import capnproto
-  import eigen
-  import ffmpeg as ffmpeg_pkg
-  import libjpeg
-  import ncurses
-  import openssl3
-  import python3_dev
-  import zeromq
-  import zstd
-  pkgs = [capnproto, eigen, ffmpeg_pkg, libjpeg, ncurses, openssl3, zeromq, zstd]
-  py_include = python3_dev.INCLUDE_DIR
-else:
-  # TODO: remove when AGNOS has our new vendor pkgs
-  pkgs = []
-  py_include = sysconfig.get_paths()['include']
+pkg_names = ['bzip2', 'capnproto', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
+pkgs = [importlib.import_module(name) for name in pkg_names]
 
 env = Environment(
   ENV={
@@ -87,7 +75,6 @@ env = Environment(
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
-    "#third_party/libyuv/include",
     [x.INCLUDE_DIR for x in pkgs],
   ],
   LIBPATH=[
@@ -96,7 +83,6 @@ env = Environment(
     "#third_party",
     "#selfdrive/pandad",
     "#rednose/helpers",
-    f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
     [x.LIB_DIR for x in pkgs],
   ],
@@ -148,6 +134,22 @@ if _extra_cc:
 if arch != "Darwin":
   env.Append(LINKFLAGS=["-Wl,--as-needed", "-Wl,--no-undefined"])
 
+# Shorter build output: show brief descriptions instead of full commands.
+# Full command lines are still printed on failure by scons.
+if not GetOption('verbose'):
+  for action, short in (
+    ("CC",     "CC"),
+    ("CXX",    "CXX"),
+    ("LINK",   "LINK"),
+    ("SHCC",   "CC"),
+    ("SHCXX",  "CXX"),
+    ("SHLINK", "LINK"),
+    ("AR",     "AR"),
+    ("RANLIB", "RANLIB"),
+    ("AS",     "AS"),
+  ):
+    env[f"{action}COMSTR"] = f"  [{short}] $TARGET"
+
 # progress output
 node_interval = 5
 node_count = 0
@@ -160,7 +162,7 @@ if os.environ.get('SCONS_PROGRESS'):
 
 # ********** Cython build environment **********
 envCython = env.Clone()
-envCython["CPPPATH"] += [py_include, np.get_include()]
+envCython["CPPPATH"] += [sysconfig.get_paths()['include'], np.get_include()]
 envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]
 envCython["CCFLAGS"].remove("-Werror")
 

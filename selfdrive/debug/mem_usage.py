@@ -8,7 +8,7 @@ import numpy as np
 from openpilot.common.utils import tabulate
 from openpilot.tools.lib.logreader import LogReader
 
-DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+DEMO_ROUTE = "5beb9b58bd12b691/0000010a--a51155e496"
 MB = 1024 * 1024
 TABULATE_OPTS = dict(tablefmt="simple_grid", stralign="center", numalign="center")
 

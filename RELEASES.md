@@ -1,8 +1,16 @@
-Version 0.10.4 (2026-02-17)
+Version 0.11.1 (2026-04-08)
 ========================
+* New driver monitoring model
+* Improved image processing pipeline for driver camera
+
+Version 0.11.0 (2026-03-17)
+========================
+* New driving model #36798
+  * Fully trained using a learned simulator
+  * Improved longitudinal performance in Experimental mode
+* Reduce comma four standby power usage by 77% to 52 mW
 * Kia K7 2017 support thanks to royjr!
 * Lexus LS 2018 support thanks to Hacheoy!
-* Reduce comma four standby power usage by 77% to 52 mW
 
 Version 0.10.3 (2025-12-17)
 ========================

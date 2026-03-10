@@ -6,7 +6,7 @@ Import('env', 'arch', 'common')
 generator = File("#selfdrive/assets/fonts/process.py")
 source_files = Glob("#selfdrive/assets/fonts/*.ttf") + Glob("#selfdrive/assets/fonts/*.otf")
 output_files = [
-  (f.abspath.split('.')[0] + ".fnt", f.abspath.split('.')[0] + ".png")
+  (f"#{Path(f.path).with_suffix('.fnt')}", f"#{Path(f.path).with_suffix('.png')}")
   for f in source_files
   if "NotoColor" not in f.name
 ]

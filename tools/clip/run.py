@@ -24,7 +24,7 @@ from openpilot.common.utils import Timer
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 FRAMERATE = 20
-DEMO_ROUTE, DEMO_START, DEMO_END = 'a2a0ccea32023010/2023-07-27--13-01-19', 90, 105
+DEMO_ROUTE, DEMO_START, DEMO_END = '5beb9b58bd12b691/0000010a--a51155e496', 90, 105
 
 logger = logging.getLogger('clip')
 

@@ -1,5 +1,6 @@
 #include <getopt.h>
 
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -131,6 +132,10 @@ int main(int argc, char *argv[]) {
   // With all sockets opened, we might hit the default limit of 256 on macOS
   util::set_file_descriptor_limit(1024);
 #endif
+
+  // The vendored ncurses static library has a wrong compiled-in terminfo path.
+  // Point it at the system terminfo database if not already set.
+  setenv("TERMINFO_DIRS", "/usr/share/terminfo:/lib/terminfo:/usr/lib/terminfo", 0);
 
   ReplayConfig config;
 

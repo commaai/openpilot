@@ -321,11 +321,12 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
-    intake, exhaust, case = None, None, None
+    intake, exhaust, gnss, bottomSoc = None, None, None, None
     if self.get_device_type() == "mici":
-      case = ThermalZone("case")
+      gnss = ThermalZone("gnss")
       intake = ThermalZone("intake")
       exhaust = ThermalZone("exhaust")
+      bottomSoc = ThermalZone("bottom_soc")
     return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-silver-usr") for i in range(4)] +
                              [ThermalZone(f"cpu{i}-gold-usr") for i in range(4)],
                          gpu=[ThermalZone("gpu0-usr"), ThermalZone("gpu1-usr")],
@@ -334,7 +335,8 @@ class Tici(HardwareBase):
                          pmic=[ThermalZone("pm8998_tz"), ThermalZone("pm8005_tz")],
                          intake=intake,
                          exhaust=exhaust,
-                         case=case)
+                         gnss=gnss,
+                         bottomSoc=bottomSoc)
 
   def set_display_power(self, on):
     try:

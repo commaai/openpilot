@@ -11,7 +11,7 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
 
 DEBUG = False
 
@@ -22,7 +22,6 @@ class BigDialogBase(NavWidget, abc.ABC):
   def __init__(self):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    self.set_back_callback(gui_app.pop_widget)
 
 
 class BigDialog(BigDialogBase):
@@ -64,31 +63,29 @@ class BigDialog(BigDialogBase):
               alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
-class BigConfirmationDialogV2(BigDialogBase):
-  def __init__(self, title: str, icon: str, red: bool = False,
-               exit_on_confirm: bool = True,
-               confirm_callback: Callable | None = None):
+class BigConfirmationDialog(BigDialogBase):
+  def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable[[], None],
+               exit_on_confirm: bool = True, red: bool = False):
     super().__init__()
     self._confirm_callback = confirm_callback
     self._exit_on_confirm = exit_on_confirm
 
-    icon_txt = gui_app.texture(icon, 64, 53)
     self._slider: BigSlider | RedBigSlider
     if red:
-      self._slider = RedBigSlider(title, icon_txt, confirm_callback=self._on_confirm)
+      self._slider = RedBigSlider(title, icon, confirm_callback=self._on_confirm)
     else:
-      self._slider = BigSlider(title, icon_txt, confirm_callback=self._on_confirm)
-    self._slider.set_enabled(lambda: self.enabled and not self._swiping_away)  # self.enabled for nav stack
+      self._slider = BigSlider(title, icon, confirm_callback=self._on_confirm)
+    self._slider.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
 
   def _on_confirm(self):
     if self._exit_on_confirm:
-      gui_app.pop_widget()
-    if self._confirm_callback:
+      self.dismiss(self._confirm_callback)
+    elif self._confirm_callback:
       self._confirm_callback()
 
   def _update_state(self):
     super()._update_state()
-    if self._swiping_away and not self._slider.confirmed:
+    if self.is_dismissing and not self._slider.confirmed:
       self._slider.reset()
 
   def _render(self, _):
@@ -104,13 +101,14 @@ class BigInputDialog(BigDialogBase):
                hint: str,
                default_text: str = "",
                minimum_length: int = 1,
-               confirm_callback: Callable[[str], None] | None = None):
+               confirm_callback: Callable[[str], None] | None = None,
+               auto_return_to_letters: str = ""):
     super().__init__()
     self._hint_label = UnifiedLabel(hint, font_size=35, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
                                     font_weight=FontWeight.MEDIUM)
-    self._keyboard = MiciKeyboard()
+    self._keyboard = MiciKeyboard(auto_return_to_letters=auto_return_to_letters)
     self._keyboard.set_text(default_text)
-    self._keyboard.set_enabled(lambda: self.enabled)  # for nav stack
+    self._keyboard.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
     self._minimum_length = minimum_length
 
     self._backspace_held_time: float | None = None
@@ -128,13 +126,15 @@ class BigInputDialog(BigDialogBase):
 
     def confirm_callback_wrapper():
       text = self._keyboard.text()
-      gui_app.pop_widget()
-      if confirm_callback:
-        confirm_callback(text)
+      self.dismiss((lambda: confirm_callback(text)) if confirm_callback else None)
     self._confirm_callback = confirm_callback_wrapper
 
   def _update_state(self):
     super()._update_state()
+
+    if self.is_dismissing:
+      self._backspace_held_time = None
+      return
 
     last_mouse_event = gui_app.last_mouse_event
     if last_mouse_event.left_down and rl.check_collision_point_rec(last_mouse_event.pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 1:
@@ -230,6 +230,10 @@ class BigInputDialog(BigDialogBase):
     super()._handle_mouse_press(mouse_pos)
     # TODO: need to track where press was so enter and back can activate on release rather than press
     #  or turn into icon widgets :eyes_open:
+
+    if self.is_dismissing:
+      return
+
     # handle backspace icon click
     if rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
       self._keyboard.backspace()
@@ -248,3 +252,15 @@ class BigDialogButton(BigButton):
 
     dlg = BigDialog(self.text, self._description)
     gui_app.push_widget(dlg)
+
+
+class BigConfirmationCircleButton(BigCircleButton):
+  def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable[[], None], exit_on_confirm: bool = True,
+               red: bool = False, icon_offset: tuple[int, int] = (0, 0)):
+    super().__init__(icon, red, icon_offset)
+
+    def show_confirm_dialog():
+      gui_app.push_widget(BigConfirmationDialog(title, icon, confirm_callback,
+                                                exit_on_confirm=exit_on_confirm, red=red))
+
+    self.set_click_callback(show_confirm_dialog)

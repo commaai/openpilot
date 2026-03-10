@@ -4,6 +4,21 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd "$DIR/../" && pwd)"
 
+function retry() {
+  local attempts=$1
+  shift
+  for i in $(seq 1 "$attempts"); do
+    if "$@"; then
+      return 0
+    fi
+    if [ "$i" -lt "$attempts" ]; then
+      echo "  Attempt $i/$attempts failed, retrying in 5s..."
+      sleep 5
+    fi
+  done
+  return 1
+}
+
 function install_ubuntu_deps() {
   SUDO=""
 
@@ -83,7 +98,8 @@ function install_python_deps() {
 
   if ! command -v "uv" > /dev/null 2>&1; then
     echo "installing uv..."
-    curl -LsSf --retry 5 --retry-delay 5 --retry-all-errors https://astral.sh/uv/install.sh | sh
+    # TODO: outer retry can be removed once https://github.com/axodotdev/cargo-dist/pull/2311 is merged
+    retry 3 sh -c 'curl --retry 5 --retry-delay 5 --retry-all-errors -LsSf https://astral.sh/uv/install.sh | UV_GITHUB_TOKEN="${GITHUB_TOKEN:-}" sh'
     UV_BIN="$HOME/.local/bin"
     PATH="$UV_BIN:$PATH"
   fi
@@ -95,10 +111,16 @@ function install_python_deps() {
   echo "installing python packages..."
   uv sync --frozen --all-extras
   source .venv/bin/activate
+}
 
-  if [[ "$(uname)" == 'Darwin' ]]; then
-    touch "$ROOT"/.env
-    echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> "$ROOT"/.env
+function install_macos_deps() {
+  if ! command -v brew > /dev/null 2>&1; then
+    echo "homebrew not found, skipping macOS system dependency install"
+    return 0
+  fi
+
+  if ! command -v cmake > /dev/null 2>&1; then
+    brew install cmake
   fi
 }
 
@@ -108,6 +130,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   install_ubuntu_deps
   echo "[ ] installed system dependencies t=$SECONDS"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
+  install_macos_deps
   if [[ $SHELL == "/bin/zsh" ]]; then
     RC_FILE="$HOME/.zshrc"
   elif [[ $SHELL == "/bin/bash" ]]; then

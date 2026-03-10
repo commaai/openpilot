@@ -30,7 +30,7 @@ const std::string VALID_CACHE_PATH = "/data/.openpilot_cache";
 
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
-const int FONT_SIZE = 120;
+const int FONT_SIZE = 160;
 
 extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_start");
 extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_end");
@@ -88,7 +88,7 @@ void finishInstall() {
       int text_width = MeasureText(m, FONT_SIZE);
       DrawTextEx(font_display, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + FONT_SIZE, (float)(GetScreenHeight() - FONT_SIZE)/2}, FONT_SIZE, 0, WHITE);
     } else {
-      DrawTextEx(font_display, "finishing setup", (Vector2){8, 10}, 82, 0, WHITE);
+      DrawTextEx(font_display, "finishing setup", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
     }
   EndDrawing();
   util::sleep_for(60 * 1000);
@@ -106,10 +106,10 @@ void renderProgress(int progress) {
       DrawRectangleRec(bar, (Color){70, 91, 234, 255});
       DrawTextEx(font_inter, (std::to_string(progress) + "%").c_str(), (Vector2){150, 670}, 85, 0, WHITE);
     } else {
-      DrawTextEx(font_display, "installing", (Vector2){8, 10}, 82, 0, WHITE);
+      DrawTextEx(font_display, "installing...", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
       const std::string percent_str = std::to_string(progress) + "%";
-      DrawTextEx(font_roman, percent_str.c_str(), (Vector2){6, (float)(GetScreenHeight() - 128 + 18)}, 128, 0,
-                 (Color){255, 255, 255, (unsigned char)(255 * 0.9 * 0.35)});
+      DrawTextEx(font_inter, percent_str.c_str(), (Vector2){12, (float)(GetScreenHeight() - 154 + 20)}, 154, 0,
+                 (Color){255, 255, 255, (unsigned char)(255 * 0.9 * 0.65)});
     }
 
   EndDrawing();

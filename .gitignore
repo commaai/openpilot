@@ -13,13 +13,13 @@ venv/
 a.out
 .hypothesis
 .cache/
-
-/docs_site/
+bin/
 
 *.mp4
 *.dylib
 *.DSYM
 *.d
+*.pem
 *.pyc
 *.pyo
 .*.swp
@@ -39,11 +39,13 @@ a.out
 *.mo
 *_pyx.cpp
 *.stats
+*.pkl
+*.pkl*
 config.json
-clcache
 compile_commands.json
 compare_runtime*.html
 
+# build artifacts
 selfdrive/pandad/pandad
 cereal/services.h
 cereal/gen
@@ -56,46 +58,30 @@ system/camerad/test/ae_gray_test
 .coverage*
 coverage.xml
 htmlcov
-pandaextra
-
-.mypy_cache/
-flycheck_*
-
-cppcheck_report.txt
-comma*.sh
-
-selfdrive/modeld/models/*.pkl*
 
 # openpilot log files
 *.bz2
 *.zst
+*.rlog
 
 build/
 
 !**/.gitkeep
 
-poetry.toml
-Pipfile
 
 ### VisualStudioCode ###
+*.vsix
+.history
+.ionide
 .vscode/*
+.history/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
-# Local History for Visual Studio Code
-.history/
-
-# Built Visual Studio Code Extensions
-*.vsix
-
-### VisualStudioCode Patch ###
-# Ignore all local history of files
-.history
-.ionide
-
+# agents
 .claude/
 .context/
 PLAN.md

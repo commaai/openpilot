@@ -11,7 +11,6 @@ from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
 class DeveloperLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
-    self.set_back_callback(gui_app.pop_widget)
 
     def github_username_callback(username: str):
       if username:
@@ -43,8 +42,8 @@ class DeveloperLayoutMici(NavScroller):
 
     # adb, ssh, ssh keys, debug mode, joystick debug mode, longitudinal maneuver mode, ip address
     # ******** Main Scroller ********
-    self._adb_toggle = BigCircleParamControl("icons_mici/adb_short.png", "AdbEnabled", icon_size=(82, 82), icon_offset=(0, 12))
-    self._ssh_toggle = BigCircleParamControl("icons_mici/ssh_short.png", "SshEnabled", icon_size=(82, 82), icon_offset=(0, 12))
+    self._adb_toggle = BigCircleParamControl(gui_app.texture("icons_mici/adb_short.png", 82, 82), "AdbEnabled", icon_offset=(0, 12))
+    self._ssh_toggle = BigCircleParamControl(gui_app.texture("icons_mici/ssh_short.png", 82, 82), "SshEnabled", icon_offset=(0, 12))
     self._joystick_toggle = BigToggle("joystick debug mode",
                                       initial_state=ui_state.params.get_bool("JoystickDebugMode"),
                                       toggle_callback=self._on_joystick_debug_mode)

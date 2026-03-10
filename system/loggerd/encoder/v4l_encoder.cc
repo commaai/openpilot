@@ -7,7 +7,6 @@
 #include "common/util.h"
 #include "common/timing.h"
 
-#include "third_party/libyuv/include/libyuv.h"
 #include "third_party/linux/include/msm_media_info.h"
 
 // has to be in this order
