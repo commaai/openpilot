@@ -200,6 +200,17 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   def add_prime_state_setup(prime_type: PrimeType) -> None:
     script.set_send(lambda: set_prime_state(prime_type))
 
+  def do_onboarding() -> None:
+    """Click through the training guide and close."""
+    from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS
+    step = 0
+    for step_rect in STEP_RECTS:
+      if step < len(STEP_RECTS) - 1:
+        script.click(int(step_rect.x), int(step_rect.y), wait_after=FAST_CLICK)
+      else:
+        script.click(950, 900)  # On the last step, click Finish instead of restart
+      step += 1
+
   def type_keyboard() -> None:
     """Types 8 characters using the big keyboard to test different layouts and interactions."""
     KEY = (150, 430)  # e.g. 'Q' key
@@ -238,16 +249,18 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(2000, 450)  # pair device
   script.click(110, 110)  # close pairing dialog
   add_prime_state_setup(PrimeType.NONE)  # changed from unpaired to hide pair device button
-  # regulatory info
-  script.click(2000, 970)  # regulatory button
-  script.click(2000, 970)  # OK
   # calibration
   script.setup(setup_calibration_params, wait_after=0)
   script.click(1000, 620)  # expand calibration description
   script.click(2000, 620)  # reset calibration confirmation
   script.click(1500, 750)  # confirm reset
-
-  # TODO: go through training guide
+  script.click(1000, 620)  # collapse calibration description
+  # training guide
+  script.click(2000, 800)  # open training guide
+  do_onboarding()
+  # regulatory info
+  script.click(2000, 970)  # regulatory button
+  script.click(2000, 970)  # OK
 
   # === Settings - Network ===
   script.click(278, 450)
