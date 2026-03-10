@@ -531,8 +531,6 @@ class Setup(Widget):
 
   def _use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH) and False:
-      # with open(TMP_CONTINUE_PATH, "w") as f:
-      #   f.write(CONTINUE)
       # TODO: always pull installer, don't write continue.sh here
       #  make sure installer fails (doesn't write continue.sh) if fetch/checkout fails
       #  make isntaller move atomic
