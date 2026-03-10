@@ -531,7 +531,6 @@ class Setup(Widget):
 
   def _use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH) and False:
-      os.remove(VALID_CACHE_PATH)
       # with open(TMP_CONTINUE_PATH, "w") as f:
       #   f.write(CONTINUE)
       # TODO: always pull installer, don't write continue.sh here
