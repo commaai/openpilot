@@ -36,19 +36,20 @@ NetworkType = log.DeviceState.NetworkType
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
-CONTINUE_PATH = "/data/continue.sh"
-TMP_CONTINUE_PATH = "/data/continue.sh.new"
+# CONTINUE_PATH = "/data/continue.sh"
+# TMP_CONTINUE_PATH = "/data/continue.sh.new"
 INSTALL_PATH = "/data/openpilot"
 VALID_CACHE_PATH = "/data/.openpilot_cache"
 INSTALLER_SOURCE_PATH = "/usr/comma/installer"
 INSTALLER_DESTINATION_PATH = "/tmp/installer"
+TMP_INSTALLER_PATH = "/tmp/installer.new"
 INSTALLER_URL_PATH = "/tmp/installer_url"
 
-CONTINUE = """#!/usr/bin/env bash
-
-cd /data/openpilot
-exec ./launch_openpilot.sh
-"""
+# CONTINUE = """#!/usr/bin/env bash
+#
+# cd /data/openpilot
+# exec ./launch_openpilot.sh
+# """
 
 
 class NetworkConnectivityMonitor:
@@ -531,11 +532,16 @@ class Setup(Widget):
   def _use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
       os.remove(VALID_CACHE_PATH)
-      with open(TMP_CONTINUE_PATH, "w") as f:
-        f.write(CONTINUE)
-      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
+      # with open(TMP_CONTINUE_PATH, "w") as f:
+      #   f.write(CONTINUE)
+      # TODO: always pull installer, don't write continue.sh here
+      #  make sure installer fails (doesn't write continue.sh) if fetch/checkout fails
+      #  make isntaller move atomic
+      # run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
       shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
-      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
+      # shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
+      shutil.copyfile(INSTALLER_SOURCE_PATH, TMP_INSTALLER_PATH)
+      os.rename(TMP_INSTALLER_PATH, INSTALLER_DESTINATION_PATH)
 
       # give time for installer UI to take over
       time.sleep(0.1)
