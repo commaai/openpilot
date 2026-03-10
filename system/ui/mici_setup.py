@@ -36,20 +36,8 @@ NetworkType = log.DeviceState.NetworkType
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
-# CONTINUE_PATH = "/data/continue.sh"
-# TMP_CONTINUE_PATH = "/data/continue.sh.new"
-INSTALL_PATH = "/data/openpilot"
-VALID_CACHE_PATH = "/data/.openpilot_cache"
-INSTALLER_SOURCE_PATH = "/usr/comma/installer"
 INSTALLER_DESTINATION_PATH = "/tmp/installer"
-TMP_INSTALLER_PATH = "/tmp/installer.new"
 INSTALLER_URL_PATH = "/tmp/installer_url"
-
-# CONTINUE = """#!/usr/bin/env bash
-#
-# cd /data/openpilot
-# exec ./launch_openpilot.sh
-# """
 
 
 class NetworkConnectivityMonitor:
@@ -598,7 +586,7 @@ class Setup(Widget):
         self._download_failed_reason = "No custom software found at this URL: " + self.download_url.replace("https://", "", 1)
         return
 
-      # TODO: this is unused?!
+      # NOTE: currently unused, for future logging
       with open(INSTALLER_URL_PATH, "w") as f:
         f.write(self.download_url)
 
