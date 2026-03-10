@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import threading
 from enum import IntEnum
 
 import pyray as rl
@@ -122,7 +123,10 @@ class Reset(Scroller):
       self._reset_failed = True
 
   def _start_reset(self):
-    self._resetting_page.set_shown_callback(self._do_erase)
+    def do_erase_thread():
+      threading.Thread(target=self._do_erase, daemon=True).start()
+
+    self._resetting_page.set_shown_callback(do_erase_thread)
     gui_app.push_widget(self._resetting_page)
 
   def _nav_stack_tick(self):
