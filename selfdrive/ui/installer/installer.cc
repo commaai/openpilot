@@ -125,6 +125,10 @@ int doInstall() {
   // cleanup previous install attempts
   run("rm -rf " TMP_INSTALL_PATH);
 
+  // TODO: always pull installer, don't write continue.sh here
+  //  make sure installer fails (doesn't write continue.sh) if fetch/checkout fails
+  //  make isntaller move atomic
+
   // do the install
   if (util::file_exists(INSTALL_PATH) && util::file_exists(VALID_CACHE_PATH)) {
     return cachedFetch(INSTALL_PATH);

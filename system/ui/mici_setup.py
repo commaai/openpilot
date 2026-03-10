@@ -529,23 +529,6 @@ class Setup(Widget):
     # reset sliders after dismiss completes
     gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
 
-  def _use_openpilot(self):
-    if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH) and False:
-      # TODO: always pull installer, don't write continue.sh here
-      #  make sure installer fails (doesn't write continue.sh) if fetch/checkout fails
-      #  make isntaller move atomic
-      # run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
-      # shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
-      # shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
-      shutil.copyfile(INSTALLER_SOURCE_PATH, TMP_INSTALLER_PATH)
-      os.rename(TMP_INSTALLER_PATH, INSTALLER_DESTINATION_PATH)
-
-      # give time for installer UI to take over
-      time.sleep(0.1)
-      gui_app.request_close()
-    else:
-      self._push_network_setup()
-
   def _push_network_setup(self, custom_software: bool = False):
     # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
