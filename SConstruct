@@ -4,6 +4,7 @@ import sys
 import sysconfig
 import platform
 import shlex
+import importlib
 import numpy as np
 
 import SCons.Errors
@@ -38,21 +39,8 @@ assert arch in [
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
 
-if arch != "larch64":
-  import bzip2
-  import capnproto
-  import eigen
-  import ffmpeg as ffmpeg_pkg
-  import libjpeg
-  import libyuv
-  import ncurses
-  import openssl3
-  import zeromq
-  import zstd
-  pkgs = [bzip2, capnproto, eigen, ffmpeg_pkg, libjpeg, libyuv, ncurses, openssl3, zeromq, zstd]
-else:
-  # TODO: remove when AGNOS has our new vendor pkgs
-  pkgs = []
+pkg_names = ['bzip2', 'capnproto', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
+pkgs = [importlib.import_module(name) for name in pkg_names]
 
 env = Environment(
   ENV={

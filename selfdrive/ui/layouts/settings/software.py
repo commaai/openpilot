@@ -80,6 +80,7 @@ class SoftwareLayout(Widget):
     ], line_separator=True, spacing=0)
 
   def show_event(self):
+    super().show_event()
     self._scroller.show_event()
 
   def _render(self, rect):

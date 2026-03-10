@@ -28,7 +28,7 @@ class BounceFilter(FirstOrderFilter):
     scale = self.dt / (1.0 / 60.0)  # tuned at 60 fps
     self.velocity.x += (x - self.x) * self.bounce * scale * self.dt
     self.velocity.update(0.0)
-    if abs(self.velocity.x) < 1e-5:
+    if abs(self.velocity.x) < 1e-3:
       self.velocity.x = 0.0
     self.x += self.velocity.x
     return self.x

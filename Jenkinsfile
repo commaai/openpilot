@@ -218,14 +218,14 @@ node {
       'camerad OX03C10': {
         deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
+          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
+          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 90]),
         ])
       },
