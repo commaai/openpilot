@@ -63,8 +63,10 @@ def parse_args():
   return args
 
 
-def setup_env(output_path: str, big: bool = False, speed: int = 1, target_mb: float = 0, duration: int = 0):
-  os.environ.update({"RECORD": "1", "OFFSCREEN": "1", "RECORD_OUTPUT": str(Path(output_path).with_suffix(".mp4"))})
+def setup_env(output_path: str, big: bool = False, speed: int = 1, target_mb: float = 0, duration: int = 0, headless: bool = True):
+  os.environ.update({"RECORD": "1", "RECORD_OUTPUT": str(Path(output_path).with_suffix(".mp4"))})
+  if headless:
+    os.environ["OFFSCREEN"] = "1"
   if speed > 1:
     os.environ["RECORD_SPEED"] = str(speed)
   if target_mb > 0 and duration > 0:
@@ -349,8 +351,9 @@ def main():
   logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s\t%(message)s")
   args = parse_args()
 
-  setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start)
-  clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, not args.windowed,
+  headless = not args.windowed
+  setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start, headless=headless)
+  clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, headless,
        args.big, args.title, not args.no_metadata, not args.no_time_overlay, args.qcam)
 
 
