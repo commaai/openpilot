@@ -7,12 +7,10 @@ import urllib.request
 import urllib.error
 from urllib.parse import urlparse
 from enum import IntEnum
-import shutil
 
 import pyray as rl
 
 from cereal import log
-from openpilot.common.utils import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
@@ -35,20 +33,8 @@ BUTTON_SPACING = 50
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
-CONTINUE_PATH = "/data/continue.sh"
-TMP_CONTINUE_PATH = "/data/continue.sh.new"
-INSTALL_PATH = "/data/openpilot"
-VALID_CACHE_PATH = "/data/.openpilot_cache"
-INSTALLER_SOURCE_PATH = "/usr/comma/installer"
 INSTALLER_DESTINATION_PATH = "/tmp/installer"
-TMP_INSTALLER_PATH = "/tmp/installer.new"
 INSTALLER_URL_PATH = "/tmp/installer_url"
-
-CONTINUE = """#!/usr/bin/env bash
-
-cd /data/openpilot
-exec ./launch_openpilot.sh
-"""
 
 
 class SetupState(IntEnum):
@@ -344,22 +330,9 @@ class Setup(Widget):
     gui_app.push_widget(self.keyboard)
 
   def use_openpilot(self):
-    if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
-      os.remove(VALID_CACHE_PATH)
-      with open(TMP_CONTINUE_PATH, "w") as f:
-        f.write(CONTINUE)
-      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
-      shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
-      shutil.copyfile(INSTALLER_SOURCE_PATH, TMP_INSTALLER_PATH)
-      os.rename(TMP_INSTALLER_PATH, INSTALLER_DESTINATION_PATH)
-
-      # give time for installer UI to take over
-      time.sleep(0.1)
-      gui_app.request_close()
-    else:
-      self.state = SetupState.NETWORK_SETUP
-      self.stop_network_check_thread.clear()
-      self.start_network_check()
+    self.state = SetupState.NETWORK_SETUP
+    self.stop_network_check_thread.clear()
+    self.start_network_check()
 
   def download(self, url: str):
     # autocomplete incomplete URLs

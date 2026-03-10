@@ -7,7 +7,6 @@ import time
 import urllib.request
 import urllib.error
 from urllib.parse import urlparse
-import shutil
 from collections.abc import Callable
 
 import pyray as rl
