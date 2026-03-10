@@ -26,166 +26,6 @@ class ScrollState(IntEnum):
   SCROLLING = 1
 
 
-# TODO: merge anything new here to master
-class MiciLabel(Widget):
-  def __init__(self,
-               text: str,
-               font_size: int = DEFAULT_TEXT_SIZE,
-               width: int | None = None,
-               color: rl.Color = DEFAULT_TEXT_COLOR,
-               font_weight: FontWeight = FontWeight.NORMAL,
-               alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-               alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
-               spacing: int = 0,
-               line_height: int | None = None,
-               elide_right: bool = True,
-               wrap_text: bool = False,
-               scroll: bool = False):
-    super().__init__()
-    self.text = text
-    self.wrapped_text: list[str] = []
-    self.font_size = font_size
-    self.width = width
-    self.color = color
-    self.font_weight = font_weight
-    self.alignment = alignment
-    self.alignment_vertical = alignment_vertical
-    self.spacing = spacing
-    self.line_height = line_height if line_height is not None else font_size
-    self.elide_right = elide_right
-    self.wrap_text = wrap_text
-    self._height = 0
-
-    # Scroll state
-    self.scroll = scroll
-    self._needs_scroll = False
-    self._scroll_offset = 0
-    self._scroll_pause_t: float | None = None
-    self._scroll_state: ScrollState = ScrollState.STARTING
-
-    assert not (self.scroll and self.wrap_text), "Cannot enable both scroll and wrap_text"
-    assert not (self.scroll and self.elide_right), "Cannot enable both scroll and elide_right"
-
-    self.set_text(text)
-
-  @property
-  def text_height(self):
-    return self._height
-
-  def set_font_size(self, font_size: int):
-    self.font_size = font_size
-    self.set_text(self.text)
-
-  def set_width(self, width: int):
-    self.width = width
-    self._rect.width = width
-    self.set_text(self.text)
-
-  def set_text(self, txt: str):
-    self.text = txt
-    text_size = measure_text_cached(gui_app.font(self.font_weight), self.text, self.font_size, self.spacing)
-    if self.width is not None:
-      self._rect.width = self.width
-    else:
-      self._rect.width = text_size.x
-
-    if self.wrap_text:
-      self.wrapped_text = wrap_text(gui_app.font(self.font_weight), self.text, self.font_size, int(self._rect.width))
-      self._height = len(self.wrapped_text) * self.line_height
-    elif self.scroll:
-      self._needs_scroll = self.scroll and text_size.x > self._rect.width
-      self._rect.height = text_size.y
-
-  def set_color(self, color: rl.Color):
-    self.color = color
-
-  def set_font_weight(self, font_weight: FontWeight):
-    self.font_weight = font_weight
-    self.set_text(self.text)
-
-  def _render(self, rect: rl.Rectangle):
-    # Only scissor when we know there is a single scrolling line
-    if self._needs_scroll:
-      rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-
-    font = gui_app.font(self.font_weight)
-
-    text_y_offset = 0
-    # Draw the text in the specified rectangle
-    lines = self.wrapped_text or [self.text]
-    if self.alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
-      lines = lines[::-1]
-
-    for display_text in lines:
-      text_size = measure_text_cached(font, display_text, self.font_size, self.spacing)
-
-      # Elide text to fit within the rectangle
-      if self.elide_right and text_size.x > rect.width:
-        ellipsis = "..."
-        left, right = 0, len(display_text)
-        while left < right:
-          mid = (left + right) // 2
-          candidate = display_text[:mid] + ellipsis
-          candidate_size = measure_text_cached(font, candidate, self.font_size, self.spacing)
-          if candidate_size.x <= rect.width:
-            left = mid + 1
-          else:
-            right = mid
-        display_text = display_text[: left - 1] + ellipsis if left > 0 else ellipsis
-        text_size = measure_text_cached(font, display_text, self.font_size, self.spacing)
-
-      # Handle scroll state
-      elif self.scroll and self._needs_scroll:
-        if self._scroll_state == ScrollState.STARTING:
-          if self._scroll_pause_t is None:
-            self._scroll_pause_t = rl.get_time() + 2.0
-          if rl.get_time() >= self._scroll_pause_t:
-            self._scroll_state = ScrollState.SCROLLING
-            self._scroll_pause_t = None
-
-        elif self._scroll_state == ScrollState.SCROLLING:
-          self._scroll_offset -= 0.8 / 60. * gui_app.target_fps
-          # don't fully hide
-          if self._scroll_offset <= -text_size.x - self._rect.width / 3:
-            self._scroll_offset = 0
-            self._scroll_state = ScrollState.STARTING
-            self._scroll_pause_t = None
-
-      # Calculate horizontal position based on alignment
-      text_x = rect.x + {
-        rl.GuiTextAlignment.TEXT_ALIGN_LEFT: 0,
-        rl.GuiTextAlignment.TEXT_ALIGN_CENTER: (rect.width - text_size.x) / 2,
-        rl.GuiTextAlignment.TEXT_ALIGN_RIGHT: rect.width - text_size.x,
-      }.get(self.alignment, 0) + self._scroll_offset
-
-      # Calculate vertical position based on alignment
-      text_y = rect.y + {
-        rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP: 0,
-        rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE: (rect.height - text_size.y) / 2,
-        rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM: rect.height - text_size.y,
-      }.get(self.alignment_vertical, 0)
-      text_y += text_y_offset
-
-      rl.draw_text_ex(font, display_text, rl.Vector2(round(text_x), text_y), self.font_size, self.spacing, self.color)
-      # Draw 2nd instance for scrolling
-      if self._needs_scroll and self._scroll_state != ScrollState.STARTING:
-        text2_scroll_offset = text_size.x + self._rect.width / 3
-        rl.draw_text_ex(font, display_text, rl.Vector2(round(text_x + text2_scroll_offset), text_y), self.font_size, self.spacing, self.color)
-      if self.alignment_vertical == rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM:
-        text_y_offset -= self.line_height
-      else:
-        text_y_offset += self.line_height
-
-    if self._needs_scroll:
-      # draw black fade on left and right
-      fade_width = 20
-      rl.draw_rectangle_gradient_h(int(rect.x + rect.width - fade_width), int(rect.y), fade_width, int(rect.height), rl.BLANK, rl.BLACK)
-      if self._scroll_state != ScrollState.STARTING:
-        rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), fade_width, int(rect.height), rl.BLACK, rl.BLANK)
-
-      rl.end_scissor_mode()
-
-
 # TODO: This should be a Widget class
 def gui_label(
   rect: rl.Rectangle,
@@ -392,7 +232,7 @@ class Label(Widget):
 
 class UnifiedLabel(Widget):
   """
-  Unified label widget that combines functionality from gui_label, gui_text_box, Label, and MiciLabel.
+  Unified label widget that combines functionality from gui_label, gui_text_box, and Label.
 
   Supports:
   - Emoji rendering
@@ -466,6 +306,14 @@ class UnifiedLabel(Widget):
   def text(self) -> str:
     """Get the current text content."""
     return str(_resolve_value(self._text))
+
+  @property
+  def font_size(self) -> int:
+    return self._font_size
+
+  @property
+  def text_width(self) -> float:
+    return max((s.x for s in self._cached_line_sizes), default=0.0)
 
   def set_text_color(self, color: rl.Color):
     """Update the text color."""

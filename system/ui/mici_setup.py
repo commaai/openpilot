@@ -7,13 +7,12 @@ import time
 import urllib.request
 import urllib.error
 from urllib.parse import urlparse
-import shutil
 from collections.abc import Callable
 
 import pyray as rl
 
 from cereal import log
-from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.filter_simple import BounceFilter
 from openpilot.system.hardware import HARDWARE, TICI
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
@@ -28,27 +27,16 @@ from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPA
 from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialogV2
-from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationCircleButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 
 NetworkType = log.DeviceState.NetworkType
 
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
-CONTINUE_PATH = "/data/continue.sh"
-TMP_CONTINUE_PATH = "/data/continue.sh.new"
-INSTALL_PATH = "/data/openpilot"
-VALID_CACHE_PATH = "/data/.openpilot_cache"
-INSTALLER_SOURCE_PATH = "/usr/comma/installer"
 INSTALLER_DESTINATION_PATH = "/tmp/installer"
 INSTALLER_URL_PATH = "/tmp/installer_url"
-
-CONTINUE = """#!/usr/bin/env bash
-
-cd /data/openpilot
-exec ./launch_openpilot.sh
-"""
 
 
 class NetworkConnectivityMonitor:
@@ -122,7 +110,7 @@ class StartPage(Widget):
 
     self._start_bg_txt = gui_app.texture("icons_mici/setup/start_button.png", 500, 224, keep_aspect_ratio=False)
     self._start_bg_pressed_txt = gui_app.texture("icons_mici/setup/start_button_pressed.png", 500, 224, keep_aspect_ratio=False)
-    self._scale_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._scale_filter = BounceFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._click_delay = 0.075
 
   def _render(self, rect: rl.Rectangle):
@@ -144,7 +132,7 @@ class SoftwareSelectionPage(NavWidget):
 
     self._openpilot_slider = LargerSlider("slide to install\nopenpilot", use_openpilot_callback)
     self._openpilot_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
-    self._custom_software_slider = LargerSlider("slide to install\nother software", use_custom_software_callback, green=False)
+    self._custom_software_slider = LargerSlider("slide to install\ncustom software", use_custom_software_callback, green=False)
     self._custom_software_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def show_event(self):
@@ -190,11 +178,11 @@ class CustomSoftwareWarningPage(NavScroller):
     self._continue_button.set_click_callback(continue_callback)
 
     self._scroller.add_widgets([
-      GreyBigButton("use caution", "when installing\n3rd party software",
+      GreyBigButton("caution: installing\n3rd party software", "swipe down to go back",
                     gui_app.texture("icons_mici/setup/warning.png", 64, 58)),
-      GreyBigButton("", "• It has not been tested by comma"),
-      GreyBigButton("", "• It may not comply with relevant safety standards."),
-      GreyBigButton("", "• It may cause damage to your device and/or vehicle."),
+      GreyBigButton("", "• It has not been tested by comma."),
+      GreyBigButton("", "• It may not comply with safety standards."),
+      GreyBigButton("", "• It may damage your device and/or vehicle."),
       GreyBigButton("how to restore to a\nfactory state later", "https://flash.comma.ai",
                     gui_app.texture("icons_mici/setup/restore.png", 64, 64)),
       self._continue_button,
@@ -247,14 +235,6 @@ class FailedPage(NavScroller):
     super().__init__()
     self.set_back_callback(retry_callback)
 
-    def show_reboot_dialog():
-      dialog = BigConfirmationDialogV2("slide to reboot", "icons_mici/settings/device/reboot.png",
-                                       exit_on_confirm=False, confirm_callback=HARDWARE.reboot)
-      gui_app.push_widget(dialog)
-
-    reboot_button = BigCircleButton("icons_mici/settings/device/reboot.png", red=False, icon_size=(64, 70))
-    reboot_button.set_click_callback(show_reboot_dialog)
-
     self._reason_card = GreyBigButton("", "")
     self._reason_card.set_visible(False)
 
@@ -262,7 +242,8 @@ class FailedPage(NavScroller):
       GreyBigButton(title, description or "swipe down to go\nback and try again",
                     gui_app.texture(icon, 64, 58)),
       self._reason_card,
-      reboot_button,
+      BigConfirmationCircleButton("reboot\ndevice", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
+                                  HARDWARE.reboot, exit_on_confirm=False),
     ])
 
   def set_reason(self, reason: str):
@@ -376,7 +357,7 @@ class NetworkSetupPageBase(Scroller):
       # trigger grow when wifi button in view
       self._pending_wifi_grow_animation = True
 
-    self._waiting_button = BigPillButton("waiting for\ninternet...", disabled_background=True)
+    self._waiting_button = BigPillButton("connect to\ncontinue", disabled_background=True)
     self._waiting_button.set_click_callback(on_waiting_click)
     self._continue_button = BigPillButton("install openpilot", green=True)
     self._continue_button.set_click_callback(lambda: continue_callback(self._custom_software))
@@ -423,17 +404,19 @@ class NetworkSetupPageBase(Scroller):
     # Check network state before processing callbacks so forgetting flag
     # is still set on the frame the forgotten callback fires
     has_internet = self._has_internet
+    wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
+
     self._continue_button.set_visible(has_internet)
     self._waiting_button.set_visible(not has_internet)
 
     # TODO: fire show/hide events on visibility changes
     if not has_internet:
       self._pending_continue_grow_animation = False
+      self._waiting_button.set_text("waiting for\ninternet..." if wifi_connected else "connect to\ncontinue")
 
     self._wifi_manager.process_callbacks()
 
     # Dismiss WiFi UI and scroll on WiFi connect or internet gain
-    wifi_connected = self._wifi_manager.wifi_state.status == ConnectStatus.CONNECTED
     if (has_internet and not self._prev_has_internet) or (wifi_connected and not self._prev_wifi_connected):
       # TODO: cancel if connect is transient
       self._pending_has_internet_scroll = rl.get_time()
@@ -504,7 +487,7 @@ class Setup(Widget):
 
     self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback, self._pop_to_software_selection)
 
-    self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
+    self._software_selection_page = SoftwareSelectionPage(self._push_network_setup, lambda: gui_app.push_widget(self._custom_software_warning_page))
 
     self._download_failed_page = FailedPage(self._pop_to_software_selection, icon="icons_mici/setup/red_warning.png")
 
@@ -533,25 +516,10 @@ class Setup(Widget):
     # reset sliders after dismiss completes
     gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
 
-  def _use_openpilot(self):
-    if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
-      os.remove(VALID_CACHE_PATH)
-      with open(TMP_CONTINUE_PATH, "w") as f:
-        f.write(CONTINUE)
-      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
-      shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
-      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
-
-      # give time for installer UI to take over
-      time.sleep(0.1)
-      gui_app.request_close()
-    else:
-      self._push_network_setup()
-
   def _push_network_setup(self, custom_software: bool = False):
     # to fire the correct continue callback later
     self._network_setup_page.set_custom_software(custom_software)
-    gui_app.pop_widgets_to(self._software_selection_page, lambda: gui_app.push_widget(self._network_setup_page))
+    gui_app.push_widget(self._network_setup_page)
 
   def _network_setup_continue_callback(self, custom_software: bool):
     if not custom_software:
@@ -617,13 +585,14 @@ class Setup(Widget):
         self._download_failed_reason = "No custom software found at this URL: " + self.download_url.replace("https://", "", 1)
         return
 
+      # NOTE: currently unused, for future logging
+      with open(INSTALLER_URL_PATH, "w") as f:
+        f.write(self.download_url)
+
       # AGNOS might try to execute the installer before this process exits.
       # Therefore, important to close the fd before renaming the installer.
       os.close(fd)
       os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
-
-      with open(INSTALLER_URL_PATH, "w") as f:
-        f.write(self.download_url)
 
       # give time for installer UI to take over
       time.sleep(0.1)
