@@ -12,8 +12,18 @@ from pathlib import Path
 
 from openpilot.common.basedir import BASEDIR
 
+# TODO: change to prefix -> folders
+# DIRS = {
+#   'openpilot': ['common', 'selfdrive', 'system', 'third_party', 'tools'],  # these are symlinks
+#   'cereal': [],
+# }
 
-DIRS = ['openpilot']
+DIRS = {
+  # 'openpilot': ['common', 'selfdrive', 'system', 'third_party', 'tools'],  # these are symlinks  TODO: ls /openpilot
+  'openpilot': os.listdir(os.path.join(BASEDIR, 'openpilot')),  # these are symlinks  TODO: ls /openpilot
+  '': ['cereal'],
+}
+
 MODULES = ['cereal']
 # SYMLINKS = os
 EXTS = ['.png', '.py', '.ttf', '.capnp', '.json', '.fnt', '.mo', '.po']
@@ -55,21 +65,35 @@ if __name__ == '__main__':
   # print(tracked_files)
 
   with tempfile.TemporaryDirectory() as tmp:
-    for directory in DIRS:
-      for root, _, files in os.walk(os.path.join(BASEDIR, directory), followlinks=True):
-        # if 'selfdrive/ui' not in root:
-        #   continue
-        # print(root)
-        for file in files:
-          path = os.path.join(root, file).replace(BASEDIR, '').removeprefix('/').replace('openpilot/', '')
-          # print('path', path)
-          if path in tracked_files:
-            print('COPYING!!!', path)
-            dest = os.path.join(tmp, path)
-            os.makedirs(os.path.dirname(dest), exist_ok=True)
-            # shutil.copy2(os.path.join(BASEDIR, path), dest, follow_symlinks=True)
-            copy(os.path.join(BASEDIR, path), dest)
-          # print((root, files))
+    for prefix, folders in DIRS.items():
+      for folder in folders:
+        for root, _, files in os.walk(os.path.join(BASEDIR, folder)):
+          # print(root, files)
+          for file in files:
+            path = os.path.join(root, file).replace(BASEDIR, '').removeprefix('/')
+            if path in tracked_files:
+              dest = os.path.join(tmp, prefix, path)
+              print('COPYING!!!', path, dest)
+              os.makedirs(os.path.dirname(dest), exist_ok=True)
+              copy(os.path.join(BASEDIR, path), dest)
+
+    # --- START WORKS
+    # for directory in DIRS:
+    #   for root, _, files in os.walk(os.path.join(BASEDIR, directory), followlinks=True):
+    #     # if 'selfdrive/ui' not in root:
+    #     #   continue
+    #     # print(root)
+    #     for file in files:
+    #       path = os.path.join(root, file).replace(BASEDIR, '').removeprefix('/openpilot/')
+    #       # print('path', path)
+    #       if path in tracked_files:
+    #         print('COPYING!!!', path)
+    #         dest = os.path.join(tmp, path)
+    #         os.makedirs(os.path.dirname(dest), exist_ok=True)
+    #         # shutil.copy2(os.path.join(BASEDIR, path), dest, follow_symlinks=True)
+    #         copy(os.path.join(BASEDIR, path), dest)
+    #       # print((root, files))
+    # --- END WORKS
 
     # for file in get_tracked_files():
     #   print(file)
