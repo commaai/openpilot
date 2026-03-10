@@ -317,9 +317,7 @@ class TestOnroad:
   def test_camera_sync(self, subtests):
     cam_states = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
     encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
-    synced_cam_states = ['roadCameraState', 'wideRoadCameraState']
-    synced_encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx']
-    for cams, synced_cams in ((cam_states, synced_cam_states), (encode_cams, synced_encode_cams)):
+    for cams in (cam_states, encode_cams):
       with subtests.test(cams=cams):
         # sanity checks within a single cam
         for cam in cams:
@@ -342,21 +340,15 @@ class TestOnroad:
         last_fid = {max(self.ts[c]['frameId']) for c in cams}
         assert max(last_fid) - min(last_fid) < 10
 
-        # road and wide cameras should be synced within 2ms
         start, end = min(first_fid), min(last_fid)
         for i in range(end-start):
-          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in synced_cams}
+          # road and wide cameras (first two) should be synced within 2ms
+          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams[:2]}
           diff = (max(ts.values()) - min(ts.values()))
           assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
 
-        # driver camera should be staggered ~25ms from road camera
-        if cams == cam_states:
-          road_key, dcam_key = 'roadCameraState', 'driverCameraState'
-        else:
-          road_key, dcam_key = 'roadEncodeIdx', 'driverEncodeIdx'
-        for i in range(end-start):
-          offset = (self.ts[dcam_key]['timestampSof'][i] - self.ts[road_key]['timestampSof'][i]) / 1e6
-          offset_ms = offset % 50  # normalize to [0, 50) ms
+          # driver camera should be staggered ~25ms from road camera
+          offset_ms = abs(self.ts[cams[2]]['timestampSof'][i] - self.ts[cams[0]]['timestampSof'][i]) / 1e6
           assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
 
   def test_camera_encoder_matches(self, subtests):

@@ -118,10 +118,8 @@ class TestCamerad:
     assert len(laggy_frames) == 0, f"Frames not synced properly: {laggy_frames=}"
 
     # driver camera should be staggered ~25ms from road camera
-    dcam_offsets = [(logs['driverCameraState']['timestampSof'][i] - logs['roadCameraState']['timestampSof'][i])/1e6 for i in n]
-    for i, offset in enumerate(dcam_offsets):
-      # normalize to [0, 50) ms range (wraps around the 50ms period)
-      offset_ms = offset % 50
+    for i in n:
+      offset_ms = abs(logs['driverCameraState']['timestampSof'][i] - logs['roadCameraState']['timestampSof'][i]) / 1e6
       assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {i}: {offset_ms:.1f}ms (expected ~25ms)"
 
   def test_sanity_checks(self, logs):

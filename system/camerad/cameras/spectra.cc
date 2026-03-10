@@ -1472,7 +1472,8 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t 
   const uint64_t half_period_ns = 25 * 1000000ULL;  // 25ms
   const uint64_t tolerance_ns = 200000ULL;           // 0.2ms
   bool all_cams_synced = true;
-  for (const auto &[_, sync_data] : camera_sync_data) {
+  for (const auto &[cam, sync_data] : camera_sync_data) {
+    if (cam == camera_id) continue;
     uint64_t diff = std::max(timestamp, sync_data.timestamp) -
                     std::min(timestamp, sync_data.timestamp);
     bool pair_staggered = staggered != sync_data.staggered;
