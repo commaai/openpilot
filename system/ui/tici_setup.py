@@ -163,7 +163,9 @@ class Setup(Widget):
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
-      self.use_openpilot()
+      self.state = SetupState.NETWORK_SETUP
+      self.stop_network_check_thread.clear()
+      self.start_network_check()
     else:
       self.state = SetupState.CUSTOM_SOFTWARE_WARNING
 
@@ -328,11 +330,6 @@ class Setup(Widget):
     self.keyboard.set_title("Enter URL", "for Custom Software")
     self.keyboard.set_callback(handle_keyboard_result)
     gui_app.push_widget(self.keyboard)
-
-  def use_openpilot(self):
-    self.state = SetupState.NETWORK_SETUP
-    self.stop_network_check_thread.clear()
-    self.start_network_check()
 
   def download(self, url: str):
     # autocomplete incomplete URLs
