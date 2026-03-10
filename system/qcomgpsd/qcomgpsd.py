@@ -335,6 +335,9 @@ def main() -> NoReturn:
       report = unpack_position(log_payload)
       if report["u_PosSource"] != 2:
         continue
+      # 0xFFFF is an invalid sentinel value from the modem (see https://github.com/commaai/openpilot/issues/36925)
+      if report['w_GpsWeekNumber'] >= 65535:
+        continue
       vNED = [report["q_FltVelEnuMps[1]"], report["q_FltVelEnuMps[0]"], -report["q_FltVelEnuMps[2]"]]
       vNEDsigma = [report["q_FltVelSigmaMps[1]"], report["q_FltVelSigmaMps[0]"], -report["q_FltVelSigmaMps[2]"]]
 
