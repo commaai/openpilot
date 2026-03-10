@@ -28,6 +28,8 @@ if __name__ == '__main__':
   parser.add_argument('module', help="the module to target, e.g. 'openpilot.system.ui.spinner'")
   args = parser.parse_args()
 
+  print('WARNING: copying all files! make sure to run scons and git tree is clean')
+
   if not args.output:
     args.output = args.module
 
