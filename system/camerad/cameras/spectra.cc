@@ -1466,12 +1466,16 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t 
                                            [](const auto &config) { return config.enabled; });
   bool all_cams_up = camera_sync_data.size() == enabled_camera_count;
 
-  // Wait until the timestamps line up
+  // Wait until the timestamps line up (modulo half-period for staggered cameras)
   bool all_cams_synced = true;
   for (const auto &[_, sync_data] : camera_sync_data) {
     uint64_t diff = std::max(timestamp, sync_data.timestamp) -
                     std::min(timestamp, sync_data.timestamp);
-    if (diff > 0.2*1e6) { // milliseconds
+    // allow timestamps to be within 0.2ms of a half-period boundary (0ms or 25ms)
+    uint64_t half_period = 25 * 1000000ULL;  // 25ms in nanoseconds
+    uint64_t remainder = diff % half_period;
+    uint64_t nearest = std::min(remainder, half_period - remainder);
+    if (nearest > 0.2*1e6) { // milliseconds
       all_cams_synced = false;
     }
   }
