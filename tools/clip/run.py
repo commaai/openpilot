@@ -302,11 +302,11 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
     logger.error("No messages to render")
     sys.exit(1)
 
-  metadata = load_route_metadata(route) if show_metadata else None
   if headless:
     rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
 
   with OpenpilotPrefix(shared_download_cache=True):
+    metadata = load_route_metadata(route) if show_metadata else None
     camera_paths = route.qcamera_paths() if use_qcam else route.camera_paths()
     frame_queue = FrameQueue(camera_paths, start, end, fps=FRAMERATE, use_qcam=use_qcam)
 
