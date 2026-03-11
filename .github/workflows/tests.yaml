@@ -164,7 +164,7 @@ jobs:
         echo "${{ github.sha }}" > ref_commit
         git add .
         git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}" || echo "No changes to commit"
-        git push origin process-replay
+        git push origin process-replay --force
     - name: Run regen
       if: false
       timeout-minutes: 4
