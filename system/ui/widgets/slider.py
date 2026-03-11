@@ -183,10 +183,9 @@ class BigSlider(SliderBase):
   def __init__(self, title: str, icon: rl.Texture, confirm_callback: Callable | None = None):
     self._icon = icon
     super().__init__(title, confirm_callback=confirm_callback)
-    self._children.remove(self._label)
-    self._label = self._child(UnifiedLabel(title, font_size=48, font_weight=FontWeight.DISPLAY, text_color=rl.WHITE,
-                                           alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT, alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-                                           line_height=0.875, shimmer=True))
+    self._label.set_font_size(48)
+    self._label.set_font_weight(FontWeight.DISPLAY)
+    self._label.set_line_height(0.875)
 
   def _load_assets(self):
     self.set_rect(rl.Rectangle(0, 0, 520 + self.HORIZONTAL_PADDING * 2, 180))

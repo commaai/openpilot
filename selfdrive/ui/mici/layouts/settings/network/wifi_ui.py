@@ -151,16 +151,15 @@ class WifiButton(BigButton):
   def _get_label_font_size(self):
     return 48
 
-  def _draw_content(self, scale: float):
+  def _draw_content(self, btn_y: float):
     self._label.set_color(LABEL_COLOR)
-    _, ly = self._scale_from_center(0, self._rect.y + self.LABEL_VERTICAL_PADDING, scale)
-    label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, ly,
+    label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + self.LABEL_VERTICAL_PADDING,
                               self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
       sub_label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
-      _, label_y = self._scale_from_center(0, self._rect.y + self._rect.height - self.LABEL_VERTICAL_PADDING, scale)
+      label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
       sub_label_w = self.SUB_LABEL_WIDTH - (self._forget_btn.rect.width if self._show_forget_btn else 0)
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
 
@@ -173,20 +172,18 @@ class WifiButton(BigButton):
       self._sub_label.render(sub_label_rect)
 
     # Wifi icon
-    _, wy = self._scale_from_center(0, self._rect.y + 30, scale)
     self._wifi_icon.render(rl.Rectangle(
       self._rect.x + 30,
-      wy,
+      btn_y + 30,
       self._wifi_icon.rect.width,
       self._wifi_icon.rect.height,
     ))
 
     # Forget button
     if self._show_forget_btn:
-      _, fy = self._scale_from_center(0, self._rect.y + self._rect.height - self._forget_btn.rect.height, scale)
       self._forget_btn.render(rl.Rectangle(
         self._rect.x + self._rect.width - self._forget_btn.rect.width,
-        fy,
+        btn_y + self._rect.height - self._forget_btn.rect.height,
         self._forget_btn.rect.width,
         self._forget_btn.rect.height,
       ))
@@ -268,11 +265,11 @@ class ScanningButton(BigButton):
     self.set_enabled(False)
     self._loading_animation = LoadingAnimation()
 
-  def _draw_content(self, scale: float):
-    super()._draw_content(scale)
+  def _draw_content(self, btn_y: float):
+    super()._draw_content(btn_y)
     anim = self._loading_animation
     x = self._rect.x + self._rect.width - anim.rect.width - 40
-    _, y = self._scale_from_center(0, self._rect.y + self._rect.height - anim.rect.height - 30, scale)
+    y = btn_y + self._rect.height - anim.rect.height - 30
     anim.set_position(x, y)
     anim.render()
 
