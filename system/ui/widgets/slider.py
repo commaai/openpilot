@@ -235,7 +235,7 @@ class SliderBase(Widget, abc.ABC):
     circle_bg_txt = self._circle_bg_pressed_txt if circle_pressed else self._circle_bg_txt
     scale = self._circle_scale_filter.update(self.PRESSED_SCALE if circle_pressed else 1.0)
     scaled_btn_x = btn_x + (self._circle_bg_txt.width * (1 - scale)) / 2
-    scaled_btn_y = btn_y - (self._circle_bg_txt.height * (1 - scale)) / 2
+    scaled_btn_y = btn_y + (self._circle_bg_txt.height * (1 - scale)) / 2
     rl.draw_texture_ex(circle_bg_txt, rl.Vector2(scaled_btn_x, scaled_btn_y), 0.0, scale, white)
 
     arrow_x = btn_x + (self._circle_bg_txt.width - self._circle_arrow_txt.width) / 2

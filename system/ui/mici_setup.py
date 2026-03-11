@@ -130,16 +130,14 @@ class SoftwareSelectionPage(NavWidget):
                use_custom_software_callback: Callable):
     super().__init__()
 
-    self._openpilot_slider = LargerSlider("slide to install\nopenpilot", use_openpilot_callback)
+    self._openpilot_slider = self._child(LargerSlider("slide to install\nopenpilot", use_openpilot_callback))
     self._openpilot_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
-    self._custom_software_slider = LargerSlider("slide to install\ncustom software", use_custom_software_callback, green=False, shimmer_offset=0.4)
+    self._custom_software_slider = self._child(LargerSlider("slide to install\ncustom software", use_custom_software_callback, green=False, shimmer_offset=0.4))
     self._custom_software_slider.set_enabled(lambda: self.enabled and not self.is_dismissing)
 
   def show_event(self):
     super().show_event()
     self._nav_bar._alpha = 0.0
-    self._openpilot_slider.show_event()
-    self._custom_software_slider.show_event()
 
   def _update_state(self):
     super()._update_state()
