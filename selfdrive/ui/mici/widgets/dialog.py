@@ -86,7 +86,7 @@ class BigConfirmationDialog(BigDialogBase):
   def _update_state(self):
     super()._update_state()
     if self.is_dismissing and not self._slider.confirmed:
-      self._slider.reset(reset_shimmer=False)
+      self._slider.reset()
 
   def _render(self, _):
     self._slider.render(self._rect)

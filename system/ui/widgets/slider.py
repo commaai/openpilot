@@ -57,14 +57,13 @@ class SliderBase(Widget, abc.ABC):
     super().show_event()
     self.reset()
 
-  def reset(self, reset_shimmer: bool = True):
+  def reset(self):
     # reset all slider state
     self._is_dragging_circle = False
     self._circle_press_time = None
     self._confirmed_time = 0.0
     self._confirm_callback_called = False
-    if reset_shimmer:
-      self._label.reset_shimmer(self._shimmer_offset)
+    self._label.reset_shimmer(self._shimmer_offset)
 
   def set_opacity(self, opacity: float, smooth: bool = False):
     if smooth:
