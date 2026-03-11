@@ -1,4 +1,5 @@
 import math
+import time as _time
 from enum import IntEnum
 from collections.abc import Callable
 from itertools import zip_longest
@@ -658,6 +659,10 @@ class UnifiedLabel(Widget):
     shimmer = math.exp(-0.5 * d * d / (sigma * sigma))
     return self.SHIMMER_LOW_OPACITY + (1.0 - self.SHIMMER_LOW_OPACITY) * shimmer
 
+  _perf_totals = {'normal': 0.0, 'shimmer': 0.0}
+  _perf_counts = {'normal': 0, 'shimmer': 0}
+  _perf_last_print = 0.0
+
   def _render_line(self, line, size, emojis, current_y, x_offset=0.0):
     # Calculate horizontal position
     if self._alignment == rl.GuiTextAlignment.TEXT_ALIGN_LEFT:
@@ -670,10 +675,28 @@ class UnifiedLabel(Widget):
       line_x = self._rect.x + self._text_padding
     line_x += self._scroll_offset + x_offset
 
+    t0 = _time.perf_counter()
     if self._shimmer:
       self._render_line_shimmer(line, line_x, current_y)
+      key = 'shimmer'
     else:
       self._render_line_normal(line, emojis, line_x, current_y)
+      key = 'normal'
+    elapsed = _time.perf_counter() - t0
+    UnifiedLabel._perf_totals[key] += elapsed
+    UnifiedLabel._perf_counts[key] += 1
+
+    now = _time.perf_counter()
+    if now - UnifiedLabel._perf_last_print >= 2.0:
+      UnifiedLabel._perf_last_print = now
+      import sys
+      for k in ('normal', 'shimmer'):
+        c = UnifiedLabel._perf_counts[k]
+        if c > 0:
+          avg = UnifiedLabel._perf_totals[k] / c * 1e6
+          print(f"_render_line_{k}: {avg:.1f}us avg ({c} calls)", file=sys.stderr, flush=True)
+      UnifiedLabel._perf_totals = {'normal': 0.0, 'shimmer': 0.0}
+      UnifiedLabel._perf_counts = {'normal': 0, 'shimmer': 0}
 
   def _render_line_normal(self, line, emojis, line_x, current_y):
     line_pos = rl.Vector2(line_x, current_y)
@@ -700,6 +723,8 @@ class UnifiedLabel(Widget):
     if text_after:
       rl.draw_text_ex(self._font, text_after, line_pos, self._font_size, self._spacing_pixels, self._text_color)
 
+  SHIMMER_CHUNK_SIZE = 2
+
   def _render_line_shimmer(self, line, line_x, current_y):
     # Shimmer range based on widest line so sweep is even across all lines
     max_width = self.text_width
@@ -712,10 +737,12 @@ class UnifiedLabel(Widget):
 
     base_a = self._text_color.a / 255.0
     cursor_x = line_x
-    for ch in line:
-      char_width = measure_text_cached(self._font, ch, self._font_size, self._spacing_pixels).x
-      char_center_x = cursor_x + char_width / 2.0
-      alpha = int(255 * self._shimmer_alpha(char_center_x, shimmer_left, max_width) * base_a)
+    chunk_size = self.SHIMMER_CHUNK_SIZE
+    for i in range(0, len(line), chunk_size):
+      chunk = line[i:i + chunk_size]
+      chunk_width = measure_text_cached(self._font, chunk, self._font_size, self._spacing_pixels).x
+      chunk_center_x = cursor_x + chunk_width / 2.0
+      alpha = int(255 * self._shimmer_alpha(chunk_center_x, shimmer_left, max_width) * base_a)
       color = rl.Color(self._text_color.r, self._text_color.g, self._text_color.b, alpha)
-      rl.draw_text_ex(self._font, ch, rl.Vector2(cursor_x, current_y), self._font_size, 0, color)
-      cursor_x += char_width + self._spacing_pixels
+      rl.draw_text_ex(self._font, chunk, rl.Vector2(cursor_x, current_y), self._font_size, self._spacing_pixels, color)
+      cursor_x += chunk_width + self._spacing_pixels

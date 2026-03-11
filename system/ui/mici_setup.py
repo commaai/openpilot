@@ -506,6 +506,9 @@ class Setup(Widget):
       gui_app.pop_widgets_to(self._software_selection_page, lambda: gui_app.push_widget(self._download_failed_page))
 
   def _render(self, rect: rl.Rectangle):
+    if not hasattr(self, '_bench_pushed'):
+      self._bench_pushed = True
+      gui_app.push_widget(self._software_selection_page)
     self._start_page.render(rect)
 
   def close(self):
