@@ -670,6 +670,7 @@ class UnifiedLabel(Widget):
       line_x = self._rect.x + self._text_padding
     line_x += self._scroll_offset + x_offset
 
+    # Render line with emojis
     if self._shimmer:
       self._render_line_shimmer(line, line_x, current_y)
     else:
