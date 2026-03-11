@@ -1,3 +1,5 @@
+import os
+import random
 import time
 import threading
 from collections import namedtuple
@@ -6,7 +8,8 @@ from collections.abc import Sequence
 
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
-from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase, create_random_file
+from openpilot.system.hardware.hw import Paths
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 
@@ -64,6 +67,15 @@ class TestDeleter(UploaderTestCase):
 
     assert deleted_order == f_paths, "Files not deleted in expected order"
 
+  def assertDeleted(self, paths: Sequence[Path], timeout: int = 5) -> None:
+    self.start_thread()
+    try:
+      with Timeout(timeout, "Timeout waiting for paths to be deleted"):
+        while any(os.path.lexists(path) for path in paths):
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+
   def test_delete_order(self):
     self.assertDeleteOrder([
       self.make_file_with_data(self.seg_format.format(0), self.f_type),
@@ -115,3 +127,63 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  def test_delete_random_mixed_entries(self):
+    rng = random.Random(0)
+    root = Path(Paths.log_root())
+    paths_to_delete: list[Path] = []
+
+    for i in range(6):
+      file_path = root / f"stray_file_{i}.bin"
+      create_random_file(file_path, 0.01)
+      paths_to_delete.append(file_path)
+
+    for i in range(4):
+      dir_path = root / f"stray_dir_{i}"
+      current = dir_path
+      for depth in range(rng.randint(1, 3)):
+        current /= f"nested_{depth}"
+        current.mkdir(parents=True, exist_ok=True)
+        for file_idx in range(rng.randint(1, 3)):
+          create_random_file(current / f"nested_file_{depth}_{file_idx}.bin", 0.01)
+      paths_to_delete.append(dir_path)
+
+    external_target = root.parent / "deleter_symlink_target.bin"
+    create_random_file(external_target, 0.01)
+    symlink_path = root / "stray_symlink"
+    os.symlink(external_target, symlink_path)
+    paths_to_delete.append(symlink_path)
+
+    try:
+      self.assertDeleted(paths_to_delete, timeout=10)
+      assert external_target.exists(), "Deleting a symlink should not remove its target"
+    finally:
+      if external_target.exists():
+        external_target.unlink()
+
+  def test_continue_after_entry_error(self, monkeypatch):
+    root = Path(Paths.log_root())
+    bad_dir = root / "0_bad_dir"
+    good_dir = root / "1_good_dir"
+
+    create_random_file(bad_dir / "nested" / "bad.bin", 0.01)
+    create_random_file(good_dir / "nested" / "good.bin", 0.01)
+
+    original_listdir = deleter.os.listdir
+
+    def fake_listdir(path):
+      if path == str(bad_dir):
+        raise PermissionError("permission denied")
+      return original_listdir(path)
+
+    monkeypatch.setattr(deleter.os, "listdir", fake_listdir)
+
+    self.start_thread()
+    try:
+      with Timeout(5, "Timeout waiting for good_dir to be deleted"):
+        while good_dir.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+
+    assert bad_dir.exists(), "The failing directory should remain after a deletion error"
