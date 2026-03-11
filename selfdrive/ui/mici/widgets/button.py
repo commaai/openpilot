@@ -48,11 +48,18 @@ class BigCircleButton(Widget):
     self._txt_btn_red_bg = gui_app.texture("icons_mici/buttons/button_circle_red.png", 180, 180)
     self._txt_btn_red_pressed_bg = gui_app.texture("icons_mici/buttons/button_circle_red_pressed.png", 180, 180)
 
-  def _draw_content(self, btn_y: float):
-    # draw icon
+  def _scale_from_center(self, x: float, y: float, scale: float) -> tuple[float, float]:
+    cx = self._rect.x + self._rect.width / 2
+    cy = self._rect.y + self._rect.height / 2
+    return cx + (x - cx) * scale, cy + (y - cy) * scale
+
+  def _draw_content(self, scale: float):
+    # draw icon - scale icon center from button center, then offset to top-left
     icon_color = rl.Color(255, 255, 255, int(255 * 0.9)) if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
-    rl.draw_texture_ex(self._txt_icon, (self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0],
-                                        btn_y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), 0, 1.0, icon_color)
+    icon_cx = self._rect.x + self._rect.width / 2 + self._icon_offset[0]
+    icon_cy = self._rect.y + self._rect.height / 2 + self._icon_offset[1]
+    sx, sy = self._scale_from_center(icon_cx, icon_cy, scale)
+    rl.draw_texture_ex(self._txt_icon, (sx - self._txt_icon.width / 2, sy - self._txt_icon.height / 2), 0, 1.0, icon_color)
 
   def _render(self, _):
     # draw background
@@ -67,7 +74,7 @@ class BigCircleButton(Widget):
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
 
-    self._draw_content(btn_y)
+    self._draw_content(scale)
 
 
 class BigCircleToggle(BigCircleButton):
@@ -92,13 +99,16 @@ class BigCircleToggle(BigCircleButton):
     if self._toggle_callback:
       self._toggle_callback(self._checked)
 
-  def _draw_content(self, btn_y: float):
-    super()._draw_content(btn_y)
+  def _draw_content(self, scale: float):
+    super()._draw_content(scale)
 
-    # draw status icon
+    # draw status icon - scale center of toggle dot
+    dot_cx = self._rect.x + self._rect.width / 2
+    dot_cy = self._rect.y + 5 + self._txt_toggle_enabled.height / 2
+    sx, sy = self._scale_from_center(dot_cx, dot_cy, scale)
+    tx, ty = sx - self._txt_toggle_enabled.width / 2, sy - self._txt_toggle_enabled.height / 2
     rl.draw_texture_ex(self._txt_toggle_enabled if self._checked else self._txt_toggle_disabled,
-                       (self._rect.x + (self._rect.width - self._txt_toggle_enabled.width) / 2, btn_y + 5),
-                       0, 1.0, rl.WHITE)
+                       (tx, ty), 0, 1.0, rl.WHITE)
 
 
 class BigButton(Widget):
@@ -220,20 +230,28 @@ class BigButton(Widget):
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
     return txt_bg, btn_x, btn_y, scale
 
-  def _draw_content(self, btn_y: float):
+  def _scale_from_center(self, x: float, y: float, scale: float) -> tuple[float, float]:
+    cx = self._rect.x + self._rect.width / 2
+    cy = self._rect.y + self._rect.height / 2
+    return cx + (x - cx) * scale, cy + (y - cy) * scale
+
+  def _draw_content(self, scale: float):
     # LABEL ------------------------------------------------------------------
     label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
+    label_y = self._rect.y + self.LABEL_VERTICAL_PADDING
+    lx, ly = self._scale_from_center(label_x, label_y, scale)
 
     label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
-    label_rect = rl.Rectangle(label_x, btn_y + self.LABEL_VERTICAL_PADDING, self._width_hint(),
+    label_rect = rl.Rectangle(lx, ly, self._width_hint(),
                               self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
 
     if self.value:
-      label_y = btn_y + self.LABEL_VERTICAL_PADDING + self._label.get_content_height(self._width_hint())
-      sub_label_height = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING - label_y
-      sub_label_rect = rl.Rectangle(label_x, label_y, self._width_hint(), sub_label_height)
+      sub_label_y = label_y + self._label.get_content_height(self._width_hint())
+      _, sly = self._scale_from_center(label_x, sub_label_y, scale)
+      sub_label_height = self._rect.height - self.LABEL_VERTICAL_PADDING * 2 - self._label.get_content_height(self._width_hint())
+      sub_label_rect = rl.Rectangle(lx, sly, self._width_hint(), sub_label_height)
       self._sub_label.render(sub_label_rect)
 
     # ICON -------------------------------------------------------------------
@@ -243,8 +261,9 @@ class BigButton(Widget):
         rotation = (rl.get_time() - self._rotate_icon_t) * 180
 
       # draw top right with 30px padding
-      x = self._rect.x + self._rect.width - 30 - self._txt_icon.width / 2
-      y = btn_y + 30 + self._txt_icon.height / 2
+      orig_x = self._rect.x + self._rect.width - 30 - self._txt_icon.width / 2
+      orig_y = self._rect.y + 30 + self._txt_icon.height / 2
+      x, y = self._scale_from_center(orig_x, orig_y, scale)
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
       dest_rec = rl.Rectangle(x, y, self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
@@ -258,11 +277,11 @@ class BigButton(Widget):
       scaled_rect = rl.Rectangle(btn_x, btn_y, self._rect.width * scale, self._rect.height * scale)
       rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.5)))
 
-      self._draw_content(btn_y)
+      self._draw_content(scale)
       rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
     else:
       rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
-      self._draw_content(btn_y)
+      self._draw_content(scale)
 
 
 class BigToggle(BigButton):
@@ -292,11 +311,12 @@ class BigToggle(BigButton):
     else:
       rl.draw_texture_ex(self._txt_disabled_toggle, (x, y), 0, 1.0, rl.WHITE)
 
-  def _draw_content(self, btn_y: float):
-    super()._draw_content(btn_y)
+  def _draw_content(self, scale: float):
+    super()._draw_content(scale)
 
-    x = self._rect.x + self._rect.width - self._txt_enabled_toggle.width
-    y = btn_y
+    orig_x = self._rect.x + self._rect.width - self._txt_enabled_toggle.width
+    orig_y = self._rect.y
+    x, y = self._scale_from_center(orig_x, orig_y, scale)
     self._draw_pill(x, y, self._checked)
 
 
@@ -321,18 +341,18 @@ class BigMultiToggle(BigToggle):
     if self._select_callback:
       self._select_callback(self.value)
 
-  def _draw_content(self, btn_y: float):
+  def _draw_content(self, scale: float):
     # don't draw pill from BigToggle
-    BigButton._draw_content(self, btn_y)
+    BigButton._draw_content(self, scale)
 
     checked_idx = self._options.index(self.value)
 
-    x = self._rect.x + self._rect.width - self._txt_enabled_toggle.width
-    y = btn_y
+    orig_x = self._rect.x + self._rect.width - self._txt_enabled_toggle.width
+    orig_y = self._rect.y
 
     for i in range(len(self._options)):
+      x, y = self._scale_from_center(orig_x, orig_y + i * 35, scale)
       self._draw_pill(x, y, checked_idx == i)
-      y += 35
 
 
 class BigMultiParamToggle(BigMultiToggle):
