@@ -229,24 +229,28 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
   SWIPE_WAIT = FPS * 3 // 4
 
   def click(times: int = 1, wait_after: int = WAIT_SHORT) -> None:
-    """Helper function to click at the center of the screen the given number of times with the specified wait after."""
+    """Click at the center of the screen the given number of times with optional delay after."""
     for _ in range(times):
       script.click(*center, wait_after=wait_after)
 
   def press(x: int, y: int, duration_frames: int = DURATION, wait_after: int = WAIT_SHORT) -> None:
-    """Perform a drag with no movement to simulate a left_down mouse event at the given position for the specified duration and wait after."""
+    """Perform a drag with no movement to simulate a left_down mouse event at the given position for the specified duration and delay after."""
     script.drag(x, y, (0, 0), 0, duration_frames, wait_after=wait_after)
 
   def swipe_left(distance: int = right[0] - left[0], duration_frames: int = DURATION, wait_after: int = SWIPE_WAIT) -> None:
+    """Drag from right edge to left (scroll right)."""
     script.drag(*right, DIR_LEFT, distance, duration_frames, wait_after)
 
   def swipe_right(distance: int = right[0] - left[0], duration_frames: int = DURATION, wait_after: int = SWIPE_WAIT) -> None:
+    """Drag from left edge to right (scroll left)."""
     script.drag(*left, DIR_RIGHT, distance, duration_frames, wait_after)
 
   def swipe_down(distance: int = bottom[1] - top[1], duration_frames: int = DURATION, wait_after: int = SWIPE_WAIT) -> None:
+    """Drag from top edge to bottom (scroll up / go back)."""
     script.drag(*top, DIR_DOWN, distance, duration_frames, wait_after)
 
   def swipe_up(distance: int = bottom[1] - top[1], duration_frames: int = DURATION, wait_after: int = SWIPE_WAIT) -> None:
+    """Drag from bottom edge to top (scroll down)."""
     script.drag(*bottom, DIR_UP, distance, duration_frames, wait_after)
 
   ActionFn = Callable[[], None] | None
@@ -358,8 +362,8 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
   swipe_left(width, wait_after=WAIT_SHORT)  # close alerts
 
   # === Settings === #
-  click()  # Open settings
-  scroll_through_cases([lambda case=case: explore_setting(case) for case in settings_cases])  # Explore settings
+  click()  # open settings
+  scroll_through_cases([lambda case=case: explore_setting(case) for case in settings_cases])  # explore settings
   swipe_down()  # back to home
 
   # === Onroad ===
