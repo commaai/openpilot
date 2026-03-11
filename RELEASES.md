@@ -1,3 +1,8 @@
+Version 0.11.1 (2026-04-08)
+========================
+* New driver monitoring model
+* Improved image processing pipeline for driver camera
+
 Version 0.11.0 (2026-03-17)
 ========================
 * New driving model #36798

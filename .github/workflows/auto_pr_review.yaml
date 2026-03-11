@@ -36,12 +36,11 @@ jobs:
 
     # Welcome comment
     - name: "First timers PR"
-      uses: actions/first-interaction@v3
+      uses: actions/first-interaction@v1
       if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
       with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        issue_message: ""
-        pr_message: |
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        pr-message: |
             <!-- _(run_id **${{ github.run_id }}**)_ -->
             Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
             * Convert your PR to a draft unless it's ready to review

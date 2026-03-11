@@ -25,6 +25,7 @@ struct CameraConfig {
   uint32_t phy;
   bool vignetting_correction;
   SpectraOutputType output_type;
+  bool staggered_sof;  // SOF is staggered (half-period offset) from other cameras
 };
 
 // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
@@ -39,6 +40,7 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .phy = CAM_ISP_IFE_IN_RES_PHY_0,
   .vignetting_correction = false,
   .output_type = ISP_IFE_PROCESSED,
+  .staggered_sof = false,
 };
 
 const CameraConfig ROAD_CAMERA_CONFIG = {
@@ -51,6 +53,7 @@ const CameraConfig ROAD_CAMERA_CONFIG = {
   .phy = CAM_ISP_IFE_IN_RES_PHY_1,
   .vignetting_correction = true,
   .output_type = ISP_IFE_PROCESSED,
+  .staggered_sof = false,
 };
 
 const CameraConfig DRIVER_CAMERA_CONFIG = {
@@ -63,6 +66,7 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
   .vignetting_correction = false,
   .output_type = ISP_BPS_PROCESSED,
+  .staggered_sof = true,
 };
 
 const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};

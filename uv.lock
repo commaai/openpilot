@@ -806,7 +806,6 @@ dependencies = [
     { name = "pycryptodome" },
     { name = "pyjwt" },
     { name = "pyserial" },
-    { name = "python3-dev" },
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "raylib" },
@@ -897,7 +896,6 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'testing'" },
     { name = "pytest-subtests", marker = "extra == 'testing'" },
     { name = "pytest-xdist", marker = "extra == 'testing'", git = "https://github.com/sshane/pytest-xdist?rev=2b4372bd62699fb412c4fe2f95bf9f01bd2018da" },
-    { name = "python3-dev", git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases" },
     { name = "pyzmq" },
     { name = "qrcode" },
     { name = "raylib", specifier = ">5.5.0.3" },
@@ -1285,11 +1283,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload-time = "2024-03-01T18:36:18.57Z" },
 ]
-
-[[package]]
-name = "python3-dev"
-version = "3.12.8"
-source = { git = "https://github.com/commaai/dependencies.git?subdirectory=python3-dev&rev=releases#9777ee38aa5ca9439843125392af38ed1262e500" }
 
 [[package]]
 name = "pyyaml"

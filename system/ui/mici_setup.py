@@ -7,7 +7,6 @@ import time
 import urllib.request
 import urllib.error
 from urllib.parse import urlparse
-import shutil
 from collections.abc import Callable
 
 import pyray as rl
@@ -36,19 +35,8 @@ NetworkType = log.DeviceState.NetworkType
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
-CONTINUE_PATH = "/data/continue.sh"
-TMP_CONTINUE_PATH = "/data/continue.sh.new"
-INSTALL_PATH = "/data/openpilot"
-VALID_CACHE_PATH = "/data/.openpilot_cache"
-INSTALLER_SOURCE_PATH = "/usr/comma/installer"
 INSTALLER_DESTINATION_PATH = "/tmp/installer"
 INSTALLER_URL_PATH = "/tmp/installer_url"
-
-CONTINUE = """#!/usr/bin/env bash
-
-cd /data/openpilot
-exec ./launch_openpilot.sh
-"""
 
 
 class NetworkConnectivityMonitor:
@@ -499,7 +487,7 @@ class Setup(Widget):
 
     self._network_setup_page = NetworkSetupPage(self._network_monitor, self._network_setup_continue_callback, self._pop_to_software_selection)
 
-    self._software_selection_page = SoftwareSelectionPage(self._use_openpilot, lambda: gui_app.push_widget(self._custom_software_warning_page))
+    self._software_selection_page = SoftwareSelectionPage(self._push_network_setup, lambda: gui_app.push_widget(self._custom_software_warning_page))
 
     self._download_failed_page = FailedPage(self._pop_to_software_selection, icon="icons_mici/setup/red_warning.png")
 
@@ -527,21 +515,6 @@ class Setup(Widget):
   def _pop_to_software_selection(self):
     # reset sliders after dismiss completes
     gui_app.pop_widgets_to(self._software_selection_page, self._software_selection_page.reset)
-
-  def _use_openpilot(self):
-    if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
-      os.remove(VALID_CACHE_PATH)
-      with open(TMP_CONTINUE_PATH, "w") as f:
-        f.write(CONTINUE)
-      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
-      shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
-      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
-
-      # give time for installer UI to take over
-      time.sleep(0.1)
-      gui_app.request_close()
-    else:
-      self._push_network_setup()
 
   def _push_network_setup(self, custom_software: bool = False):
     # to fire the correct continue callback later
@@ -612,13 +585,14 @@ class Setup(Widget):
         self._download_failed_reason = "No custom software found at this URL: " + self.download_url.replace("https://", "", 1)
         return
 
+      # NOTE: currently unused, for future logging
+      with open(INSTALLER_URL_PATH, "w") as f:
+        f.write(self.download_url)
+
       # AGNOS might try to execute the installer before this process exits.
       # Therefore, important to close the fd before renaming the installer.
       os.close(fd)
       os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
-
-      with open(INSTALLER_URL_PATH, "w") as f:
-        f.write(self.download_url)
 
       # give time for installer UI to take over
       time.sleep(0.1)
