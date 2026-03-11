@@ -238,7 +238,7 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
     script.drag(x, y, (0, 0), 0, duration_frames, wait_after=wait_after)
 
   def swipe_left(distance: int = right[0] - left[0], duration_frames: int = DURATION, wait_after: int = SWIPE_WAIT) -> None:
-    """Drag from right edge to left (scroll right)."""
+    """Drag from right edge to left (scroll right / slide confirmation)."""
     script.drag(*right, DIR_LEFT, distance, duration_frames, wait_after)
 
   def swipe_right(distance: int = right[0] - left[0], duration_frames: int = DURATION, wait_after: int = SWIPE_WAIT) -> None:
