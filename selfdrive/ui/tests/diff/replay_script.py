@@ -234,7 +234,7 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
       script.click(*center, wait_after=wait_after)
 
   def press(x: int, y: int, duration_frames: int = DURATION, wait_after: int = WAIT_SHORT) -> None:
-    """Perform a drag with no movement to simulate a long press at the given position for the specified duration and wait after."""
+    """Perform a drag with no movement to simulate a left_down mouse event at the given position for the specified duration and wait after."""
     script.drag(x, y, (0, 0), 0, duration_frames, wait_after=wait_after)
 
   def swipe_left(distance: int = right[0] - left[0], duration_frames: int = DURATION, wait_after: int = SWIPE_WAIT) -> None:
