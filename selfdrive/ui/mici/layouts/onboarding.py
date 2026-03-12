@@ -258,8 +258,10 @@ class TrainingGuideAttentionNotice(Scroller):
 
 
 class TrainingGuide(NavWidget):
-  def __init__(self, completed_callback: Callable[[], None]):
+  def __init__(self, completed_callback: Callable[[], None], block_back: bool = False):
     super().__init__()
+
+    self._block_back = block_back
 
     self._steps = [
       TrainingGuideAttentionNotice(continue_callback=lambda: gui_app.push_widget(self._steps[1])),
@@ -270,6 +272,14 @@ class TrainingGuide(NavWidget):
 
     self._child(self._steps[0])
     self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack
+
+  def _back_enabled(self) -> bool:
+    return not self._block_back
+
+  def show_event(self):
+    super().show_event()
+    if self._block_back:
+      self._nav_bar._alpha = 0.0
 
   def _render(self, _):
     self._steps[0].render(self._rect)
@@ -314,7 +324,8 @@ class TermsPage(Scroller):
   def __init__(self, on_accept, on_decline):
     super().__init__()
 
-    self._accept_button = BigConfirmationCircleButton("accept\nterms", gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64), on_accept)
+    self._accept_button = BigConfirmationCircleButton("accept\nterms", gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64), on_accept,
+                                                      exit_on_confirm=False)
     self._decline_button = BigConfirmationCircleButton("decline &\nuninstall", gui_app.texture("icons_mici/setup/cancel.png", 64, 64), on_decline,
                                                        red=True, exit_on_confirm=False)
 
@@ -349,7 +360,7 @@ class OnboardingWindow(Widget):
     # Windows
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_uninstall)
     self._terms.set_enabled(lambda: self.enabled)  # for nav stack
-    self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
+    self._training_guide = TrainingGuide(completed_callback=self._on_completed_training, block_back=True)
     self._training_guide.set_enabled(lambda: self.enabled)  # for nav stack
 
   def _on_uninstall(self):
