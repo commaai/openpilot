@@ -313,7 +313,7 @@ class QRCodeWidget(Widget):
   def _render(self, _):
     if self._qr_texture:
       scale = self._size / self._qr_texture.height
-      rl.draw_texture_ex(self._qr_texture, rl.Vector2(self._rect.x, self._rect.y), 0.0, scale, rl.WHITE)
+      rl.draw_texture_ex(self._qr_texture, rl.Vector2(round(self._rect.x), round(self._rect.y)), 0.0, scale, rl.WHITE)
 
   def __del__(self):
     if self._qr_texture and self._qr_texture.id != 0:
