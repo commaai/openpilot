@@ -458,11 +458,8 @@ class GuiApplication:
       if self._scale != 1.0 and width is not None and height is not None:
         # Load at higher resolution for sharp rendering, capped at source size
         probe = rl.load_image(fspath.as_posix())
-        want_w, want_h = int(width * self._scale), int(height * self._scale)
-        load_w = min(want_w, probe.width)
-        load_h = min(want_h, probe.height)
-        if probe.width < want_w or probe.height < want_h:
-          print(f"SCALE: {asset_path} source {probe.width}x{probe.height} < needed {want_w}x{want_h} (logical {width}x{height})")
+        load_w = min(int(width * self._scale), probe.width)
+        load_h = min(int(height * self._scale), probe.height)
         rl.unload_image(probe)
       image_obj = self._load_image_from_path(fspath.as_posix(), load_w, load_h, alpha_premultiply, keep_aspect_ratio, flip_x)
       texture_obj = self._load_texture_from_image(image_obj)
