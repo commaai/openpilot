@@ -700,8 +700,7 @@ class GuiApplication:
     rl.draw_text_ex = _draw_text_ex_scaled
 
   def _patch_scissor_mode(self):
-    scale = self._scale
-    if scale == 1.0:
+    if self._scale == 1.0:
       return
 
     if not hasattr(rl, "_orig_begin_scissor_mode"):
@@ -709,8 +708,8 @@ class GuiApplication:
 
     def _begin_scissor_mode_scaled(x, y, width, height):
       return rl._orig_begin_scissor_mode(
-        int(x * scale), int(y * scale),
-        int(math.ceil(width * scale)), int(math.ceil(height * scale)))
+        int(x * self._scale), int(y * self._scale),
+        int(math.ceil(width * self._scale)), int(math.ceil(height * self._scale)))
 
     rl.begin_scissor_mode = _begin_scissor_mode_scaled
 
