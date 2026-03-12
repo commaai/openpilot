@@ -204,6 +204,7 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
 "pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
 "pyray.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
+"pyray.draw_texture".msg = "Use rl.draw_texture_ex for float position support"
 
 [tool.ruff.format]
 quote-style = "preserve"
