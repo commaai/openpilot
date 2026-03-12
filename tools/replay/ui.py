@@ -30,6 +30,8 @@ ANGLE_SCALE = 5.0
 
 
 def ui_thread(addr):
+  cv2.setNumThreads(1)
+
   # Get monitor info before creating window
   rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
   rl.init_window(1, 1, "")
