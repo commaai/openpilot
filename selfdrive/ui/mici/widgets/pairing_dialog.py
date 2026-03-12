@@ -92,7 +92,7 @@ class PairingDialog(NavWidget):
       return
 
     scale = self._rect.height / self._qr_texture.height
-    pos = rl.Vector2(self._rect.x + 8, self._rect.y)
+    pos = rl.Vector2(round(self._rect.x + 8), round(self._rect.y))
     rl.draw_texture_ex(self._qr_texture, pos, 0.0, scale, rl.WHITE)
 
   def __del__(self):

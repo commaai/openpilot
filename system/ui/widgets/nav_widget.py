@@ -148,7 +148,7 @@ class NavWidget(Widget, abc.ABC):
     if self._playing_dismiss_animation:
       new_y = self._rect.height + DISMISS_PUSH_OFFSET
 
-    new_y = round(self._y_pos_filter.update(new_y))
+    new_y = self._y_pos_filter.update(new_y)
     if abs(new_y) < 1 and abs(self._y_pos_filter.velocity.x) < 0.5:
       new_y = self._y_pos_filter.x = 0.0
       self._y_pos_filter.velocity.x = 0.0
@@ -176,10 +176,10 @@ class NavWidget(Widget, abc.ABC):
   def _layout(self):
     # Dim whatever is behind this widget, fading with position (runs after _update_state so position is correct)
     overlay_alpha = int(200 * max(0.0, min(1.0, 1.0 - self._rect.y / self._rect.height))) if self._rect.height > 0 else 0
-    rl.draw_rectangle(0, 0, int(self._rect.width), int(self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
+    rl.draw_rectangle_rec(rl.Rectangle(0, 0, self._rect.width, self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
 
     bounce_height = 20
-    rl.draw_rectangle(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height + bounce_height), rl.BLACK)
+    rl.draw_rectangle_rec(rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, self._rect.height + bounce_height), rl.BLACK)
 
   def render(self, rect: rl.Rectangle | None = None) -> bool | int | None:
     ret = super().render(rect)
@@ -196,7 +196,7 @@ class NavWidget(Widget, abc.ABC):
     else:
       self._nav_bar_y_filter.update(NAV_BAR_MARGIN)
 
-    self._nav_bar.set_position(bar_x, round(self._nav_bar_y_filter.x))
+    self._nav_bar.set_position(bar_x, self._nav_bar_y_filter.x)
     self._nav_bar.render()
 
     return ret

@@ -190,7 +190,7 @@ class _Scroller(Widget):
     self.scroll_panel.set_enabled(scroll_enabled and self.enabled and not self._scrolling_to[1])
     self.scroll_panel.update(self._rect, content_size)
     if not self._snap_items:
-      return round(self.scroll_panel.get_offset())
+      return self.scroll_panel.get_offset()
 
     # Snap closest item to center
     center_pos = self._rect.x + self._rect.width / 2 if self._horizontal else self._rect.y + self._rect.height / 2
@@ -341,7 +341,7 @@ class _Scroller(Widget):
       x, y = self._do_move_animation(item, x, y)
 
       # Update item state
-      item.set_position(round(x), round(y))  # round to prevent jumping when settling
+      item.set_position(x, y)
       item.set_parent_rect(self._rect)
 
   def _render_item(self, item: Widget):

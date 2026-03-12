@@ -151,8 +151,10 @@ class TrainingGuideDMTutorial(NavWidget):
   def _render(self, _):
     self._dialog.render(self._rect)
 
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - 80),
-                                 int(self._rect.width), 80, rl.BLANK, rl.BLACK)
+    gradient_y = int(self._rect.y + self._rect.height - 80)
+    gradient_h = int(self._rect.y) + int(self._rect.height) - gradient_y
+    rl.draw_rectangle_gradient_v(int(self._rect.x), gradient_y,
+                                 int(self._rect.width), gradient_h, rl.BLANK, rl.BLACK)
 
     # draw white ring around dm icon to indicate progress
     ring_thickness = 8
@@ -256,8 +258,10 @@ class TrainingGuideAttentionNotice(Scroller):
 
 
 class TrainingGuide(NavWidget):
-  def __init__(self, completed_callback: Callable[[], None]):
+  def __init__(self, completed_callback: Callable[[], None], block_back: bool = False):
     super().__init__()
+
+    self._block_back = block_back
 
     self._steps = [
       TrainingGuideAttentionNotice(continue_callback=lambda: gui_app.push_widget(self._steps[1])),
@@ -268,6 +272,14 @@ class TrainingGuide(NavWidget):
 
     self._child(self._steps[0])
     self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack
+
+  def _back_enabled(self) -> bool:
+    return not self._block_back
+
+  def show_event(self):
+    super().show_event()
+    if self._block_back:
+      self._nav_bar._alpha = 0.0
 
   def _render(self, _):
     self._steps[0].render(self._rect)
@@ -301,7 +313,7 @@ class QRCodeWidget(Widget):
   def _render(self, _):
     if self._qr_texture:
       scale = self._size / self._qr_texture.height
-      rl.draw_texture_ex(self._qr_texture, rl.Vector2(self._rect.x, self._rect.y), 0.0, scale, rl.WHITE)
+      rl.draw_texture_ex(self._qr_texture, rl.Vector2(round(self._rect.x), round(self._rect.y)), 0.0, scale, rl.WHITE)
 
   def __del__(self):
     if self._qr_texture and self._qr_texture.id != 0:
@@ -312,7 +324,8 @@ class TermsPage(Scroller):
   def __init__(self, on_accept, on_decline):
     super().__init__()
 
-    self._accept_button = BigConfirmationCircleButton("accept\nterms", gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64), on_accept)
+    self._accept_button = BigConfirmationCircleButton("accept\nterms", gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 64, 64), on_accept,
+                                                      exit_on_confirm=False)
     self._decline_button = BigConfirmationCircleButton("decline &\nuninstall", gui_app.texture("icons_mici/setup/cancel.png", 64, 64), on_decline,
                                                        red=True, exit_on_confirm=False)
 
@@ -347,7 +360,7 @@ class OnboardingWindow(Widget):
     # Windows
     self._terms = TermsPage(on_accept=self._on_terms_accepted, on_decline=self._on_uninstall)
     self._terms.set_enabled(lambda: self.enabled)  # for nav stack
-    self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
+    self._training_guide = TrainingGuide(completed_callback=self._on_completed_training, block_back=True)
     self._training_guide.set_enabled(lambda: self.enabled)  # for nav stack
 
   def _on_uninstall(self):

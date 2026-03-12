@@ -45,13 +45,17 @@ def tg_compile(flags, model_name):
   pkl = fn + "_tinygrad.pkl"
   onnx_path = fn + ".onnx"
   chunk_targets = get_chunk_paths(pkl, estimate_pickle_max_size(os.path.getsize(onnx_path)))
+  compile_node = lenv.Command(
+    pkl,
+    [onnx_path] + tinygrad_files + [chunker_file],
+    f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
+  )
   def do_chunk(target, source, env):
     chunk_file(pkl, chunk_targets)
   return lenv.Command(
     chunk_targets,
-    [onnx_path] + tinygrad_files + [chunker_file],
-    [f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
-     do_chunk]
+    compile_node,
+    do_chunk,
   )
 
 # Compile small models
