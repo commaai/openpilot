@@ -1,5 +1,6 @@
 import os
 import glob
+from SCons.Action import Action as SAction
 from openpilot.common.file_chunker import chunk_file, get_chunk_paths
 
 Import('env', 'arch')
@@ -51,7 +52,7 @@ def tg_compile(flags, model_name):
     chunk_targets,
     [onnx_path] + tinygrad_files + [chunker_file],
     [f'{pythonpath_string} {flags} {image_flag} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {pkl}',
-     do_chunk]
+     SAction(do_chunk, lambda *a, **kw: f'  [CHUNK] {pkl}')]
   )
 
 # Compile small models
