@@ -370,7 +370,7 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.set_send(lambda: send_onroad(pm))
   swipe_left(width, wait_after=WAIT_SHORT)  # onroad screen
   test_onroad_alerts(script, pm)
-  swipe_right()  # back to home
+  swipe_right(width)  # back to home
 
   script.end()
 
