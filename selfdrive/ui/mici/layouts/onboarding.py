@@ -151,8 +151,10 @@ class TrainingGuideDMTutorial(NavWidget):
   def _render(self, _):
     self._dialog.render(self._rect)
 
-    rl.draw_rectangle_gradient_v(int(self._rect.x), int(self._rect.y + self._rect.height - 80),
-                                 int(self._rect.width), 80, rl.BLANK, rl.BLACK)
+    gradient_y = int(self._rect.y + self._rect.height - 80)
+    gradient_h = int(self._rect.y) + int(self._rect.height) - gradient_y
+    rl.draw_rectangle_gradient_v(int(self._rect.x), gradient_y,
+                                 int(self._rect.width), gradient_h, rl.BLANK, rl.BLACK)
 
     # draw white ring around dm icon to indicate progress
     ring_thickness = 8
