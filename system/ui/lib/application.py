@@ -1,5 +1,6 @@
 import atexit
 import cffi
+import math
 import os
 import queue
 import time
@@ -278,7 +279,7 @@ class GuiApplication:
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
       if needs_render_texture:
-        self._render_texture = rl.load_render_texture(self._width, self._height)
+        self._render_texture = rl.load_render_texture(self._scaled_width, self._scaled_height)
         rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
       if RECORD:
@@ -289,7 +290,7 @@ class GuiApplication:
           '-nostats',               # Suppress encoding progress
           '-f', 'rawvideo',         # Input format
           '-pix_fmt', 'rgba',       # Input pixel format
-          '-s', f'{self._width}x{self._height}',  # Input resolution
+          '-s', f'{self._scaled_width}x{self._scaled_height}',  # Input resolution
           '-r', str(fps),           # Input frame rate
           '-i', 'pipe:0',           # Input from stdin
           '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert to yuv420p
@@ -319,6 +320,7 @@ class GuiApplication:
       self._set_styles()
       self._load_fonts()
       self._patch_text_functions()
+      self._patch_scissor_mode()
       if BURN_IN_MODE and self._burn_in_shader is None:
         self._burn_in_shader = rl.load_shader_from_memory(BURN_IN_VERTEX_SHADER, BURN_IN_FRAGMENT_SHADER)
 
@@ -452,8 +454,22 @@ class GuiApplication:
       return self._textures[cache_key]
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-      image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio, flip_x)
+      load_w, load_h = width, height
+      if self._scale != 1.0 and width is not None and height is not None:
+        # Load at higher resolution for sharp rendering, capped at source size
+        probe = rl.load_image(fspath.as_posix())
+        want_w, want_h = int(width * self._scale), int(height * self._scale)
+        load_w = min(want_w, probe.width)
+        load_h = min(want_h, probe.height)
+        if probe.width < want_w or probe.height < want_h:
+          print(f"SCALE: {asset_path} source {probe.width}x{probe.height} < needed {want_w}x{want_h} (logical {width}x{height})")
+        rl.unload_image(probe)
+      image_obj = self._load_image_from_path(fspath.as_posix(), load_w, load_h, alpha_premultiply, keep_aspect_ratio, flip_x)
       texture_obj = self._load_texture_from_image(image_obj)
+    # Set logical size so widget layout math stays at 1x coordinates
+    if self._scale != 1.0 and width is not None and height is not None:
+      texture_obj.width = width
+      texture_obj.height = height
     self._textures[cache_key] = texture_obj
     return texture_obj
 
@@ -588,6 +604,10 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
+        if self._scale != 1.0:
+          rl.rl_push_matrix()
+          rl.rl_scalef(self._scale, self._scale, 1.0)
+
         # Allow a Widget to still run a function regardless of the stack depth
         for tick in self._nav_stack_ticks:
           tick()
@@ -598,11 +618,14 @@ class GuiApplication:
 
         yield True
 
+        if self._scale != 1.0:
+          rl.rl_pop_matrix()
+
         if self._render_texture:
           rl.end_texture_mode()
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
-          src_rect = rl.Rectangle(0, 0, float(self._width), -float(self._height))
+          src_rect = rl.Rectangle(0, 0, float(self._scaled_width), -float(self._scaled_height))
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
           texture = self._render_texture.texture
           if texture:
@@ -678,6 +701,21 @@ class GuiApplication:
       return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
 
     rl.draw_text_ex = _draw_text_ex_scaled
+
+  def _patch_scissor_mode(self):
+    scale = self._scale
+    if scale == 1.0:
+      return
+
+    if not hasattr(rl, "_orig_begin_scissor_mode"):
+      rl._orig_begin_scissor_mode = rl.begin_scissor_mode
+
+    def _begin_scissor_mode_scaled(x, y, width, height):
+      return rl._orig_begin_scissor_mode(
+        int(x * scale), int(y * scale),
+        int(math.ceil(width * scale)), int(math.ceil(height * scale)))
+
+    rl.begin_scissor_mode = _begin_scissor_mode_scaled
 
   def _set_log_callback(self):
     ffi_libc = cffi.FFI()
