@@ -454,19 +454,14 @@ class GuiApplication:
       return self._textures[cache_key]
 
     with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-      load_w, load_h = width, height
-      if self._scale != 1.0 and width is not None and height is not None:
-        # Load at higher resolution for sharp rendering, capped at source size
-        probe = rl.load_image(fspath.as_posix())
-        load_w = min(int(width * self._scale), probe.width)
-        load_h = min(int(height * self._scale), probe.height)
-        rl.unload_image(probe)
-      image_obj = self._load_image_from_path(fspath.as_posix(), load_w, load_h, alpha_premultiply, keep_aspect_ratio, flip_x)
+      image_obj = self._load_image_from_path(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio, flip_x)
       texture_obj = self._load_texture_from_image(image_obj)
+
     # Set logical size so widget layout math stays at 1x coordinates
     if self._scale != 1.0 and width is not None and height is not None:
       texture_obj.width = width
       texture_obj.height = height
+
     self._textures[cache_key] = texture_obj
     return texture_obj
 
@@ -477,6 +472,11 @@ class GuiApplication:
 
     if alpha_premultiply:
       rl.image_alpha_premultiply(image)
+
+    # Scale up load size for sharper rendering, capped at source resolution
+    if self._scale != 1.0 and width is not None and height is not None:
+      width = min(int(width * self._scale), image.width)
+      height = min(int(height * self._scale), image.height)
 
     if width is not None and height is not None:
       same_dimensions = image.width == width and image.height == height
