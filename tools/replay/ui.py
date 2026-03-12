@@ -3,10 +3,7 @@ import argparse
 import os
 import sys
 
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH", None)
-import cv2  # noqa: E402
-cv2.setNumThreads(0)  # prevent Qt thread issues
-os.environ.pop("QT_QPA_PLATFORM_PLUGIN_PATH", None)
+import cv2
 import numpy as np
 import pyray as rl
 
