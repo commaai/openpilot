@@ -299,7 +299,7 @@ class GuiApplication:
           '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert to yuv420p
           '-r', str(output_fps),    # Output frame rate (for speed multiplier)
           '-c:v', 'libx264',
-          '-preset', 'ultrafast',
+          '-preset', 'veryfast',
           '-crf', str(RECORD_QUALITY)
         ]
         if RECORD_BITRATE:
