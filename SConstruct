@@ -196,7 +196,8 @@ msgq_repo = Dir('#msgq_repo')
 libmsgq = File('#msgq_repo/libmsgq.a')
 libvisionipc = File('#msgq_repo/libvisionipc.a')
 msgq_python = File('#msgq_repo/msgq/ipc_pyx.so')
-env.Command([libmsgq, libvisionipc, msgq_python], [], f'cd {msgq_repo.abspath} && python build.py')
+env.Command([libmsgq, libvisionipc, msgq_python], [],
+            f'cd {msgq_repo.abspath} && EXTRA_CXXFLAGS=\'-DSWAGLOG="common/swaglog.h"\' python build.py')
 env.AlwaysBuild(libmsgq)
 
 msgq = libmsgq
