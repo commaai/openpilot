@@ -299,7 +299,8 @@ class GuiApplication:
           '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert to yuv420p
           '-r', str(output_fps),    # Output frame rate (for speed multiplier)
           '-c:v', 'libx264',
-          '-x264-params', 'deterministic=1',  # Ensure deterministic output for same input
+          '-threads', '1',              # Single-threaded encoding for cross-machine determinism
+          '-x264-params', 'deterministic=1:asm=0',  # deterministic=1 disables non-det rate-control; asm=0 forces pure C codepath so SIMD differences across CPUs (SSE/AVX/etc.) don't affect rounding
           '-preset', 'ultrafast',
           '-crf', str(RECORD_QUALITY)
         ]
