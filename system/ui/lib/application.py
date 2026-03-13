@@ -298,6 +298,9 @@ class GuiApplication:
           '-i', 'pipe:0',           # Input from stdin
           '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert to yuv420p
           '-r', str(output_fps),    # Output frame rate (for speed multiplier)
+          '-fflags', '+bitexact',       # No non-deterministic timestamps/metadata in container
+          '-flags', '+bitexact',        # AV_CODEC_FLAG_BITEXACT: bitexact encoder output
+          '-sws_flags', 'bitexact',     # Bitexact software scaler (used by format=yuv420p filter)
           '-c:v', 'libx264',
           '-threads', '1',              # Single-threaded encoding for cross-machine determinism
           '-x264-params', 'deterministic=1:asm=0',  # deterministic=1 disables non-det rate-control; asm=0 forces pure C codepath so SIMD differences across CPUs (SSE/AVX/etc.) don't affect rounding
