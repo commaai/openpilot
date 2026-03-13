@@ -303,7 +303,7 @@ class GuiApplication:
           '-sws_flags', 'bitexact',     # Bitexact software scaler (used by format=yuv420p filter)
           '-c:v', 'libx264',
           '-threads', '1',              # Single-threaded encoding for cross-machine determinism
-          '-x264-params', 'deterministic=1:asm=0:threads=1:no-scenecut=1:cpu-independent=1:aq-mode=0:mbtree=0',
+          '-x264-params', 'deterministic=1:asm=0:threads=1:no-scenecut=1:cpu-independent=1:aq-mode=0:mbtree=0:lookahead_threads=1:ref=1:bframes=0:weightp=0:me=dia:subme=0:trellis=0:mixed-refs=0:fast-pskip=0:psy=0:keyint=25:keyint_min=25:scenecut=0',
           '-preset', 'ultrafast',
           '-crf', str(RECORD_QUALITY)
         ]
