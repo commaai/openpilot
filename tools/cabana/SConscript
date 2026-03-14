@@ -64,7 +64,7 @@ qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 
 base_frameworks = qt_env['FRAMEWORKS']
-base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, messaging, cereal, visionipc, 'm', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
   base_frameworks.append('QtCharts')

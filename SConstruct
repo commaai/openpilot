@@ -48,7 +48,7 @@ pkgs = [importlib.import_module(name) for name in pkg_names]
 # vendored in commaai/dependencies.
 allowed_system_libs = {
   "EGL", "GLESv2", "GL", "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
-  "crypto", "dl", "drm", "gbm", "m", "pthread", "ssl", "usb-1.0",
+  "dl", "drm", "gbm", "m", "pthread", "usb-1.0",
 }
 
 def _resolve_lib(env, name):
