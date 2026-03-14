@@ -5,9 +5,12 @@ import sysconfig
 import platform
 import shlex
 import importlib
+import glob
 import numpy as np
 
 import SCons.Errors
+import SCons.Util
+from SCons.Defaults import _stripixes
 
 SCons.Warnings.warningAsException(True)
 
@@ -15,6 +18,7 @@ Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
+AddOption('--with-cabana', action='store_true', help='include cabana in the default build')
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
 AddOption('--minimal',
@@ -38,6 +42,99 @@ assert arch in [
 
 pkg_names = ['bzip2', 'capnproto', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
+
+allowed_system_libs = {
+  "EGL",
+  "GLESv2",
+  "GL",
+  "Qt5Charts",
+  "Qt5Core",
+  "Qt5Gui",
+  "Qt5Widgets",
+  "crypto",
+  "dl",
+  "drm",
+  "gbm",
+  "m",
+  "pthread",
+  "ssl",
+  "usb-1.0",
+}
+
+
+def _flatten_libs(items):
+  if SCons.Util.is_List(items):
+    for item in items:
+      yield from _flatten_libs(item)
+  else:
+    yield items
+
+
+def _iter_lib_dirs(env):
+  for lib_dir in _flatten_libs(env.get('LIBPATH', [])):
+    if hasattr(lib_dir, "abspath"):
+      yield lib_dir.abspath
+    else:
+      yield Dir(str(lib_dir)).abspath
+
+
+def _iter_candidate_libs(env, lib_dir, lib_name):
+  prefixes = [env.subst(prefix) for prefix in _flatten_libs(env.get('LIBPREFIXES', ['lib']))]
+  suffixes = []
+  for suffix in [env.subst('$LIBSUFFIX'), env.subst('$SHLIBSUFFIX')] + list(_flatten_libs(env.get('LIBSUFFIXES', []))):
+    if suffix and suffix not in suffixes:
+      suffixes.append(suffix)
+
+  for suffix in suffixes:
+    for prefix in prefixes:
+      yield File(os.path.join(lib_dir, f"{prefix}{lib_name}{suffix}"))
+
+  shared_suffix = env.subst('$SHLIBSUFFIX')
+  if shared_suffix:
+    for prefix in prefixes:
+      pattern = os.path.join(lib_dir, f"{prefix}{lib_name}{shared_suffix}.*")
+      for match in sorted(glob.glob(pattern)):
+        yield File(match)
+
+
+def _resolve_library(env, lib_name):
+  for lib_dir in _iter_lib_dirs(env):
+    for candidate in _iter_candidate_libs(env, lib_dir, lib_name):
+      if candidate.exists() or candidate.has_builder():
+        return candidate
+
+  if lib_name in allowed_system_libs:
+    return lib_name
+
+  raise SCons.Errors.UserError(f"Unexpected non-vendored library '{lib_name}'")
+
+
+def _libflags(target, source, env, for_signature):
+  libs = []
+  literal_prefix = env.subst('$LIBLITERALPREFIX')
+
+  for lib in _flatten_libs(env.get('LIBS', [])):
+    if isinstance(lib, str):
+      if os.sep in lib or lib.startswith('#'):
+        libs.append(File(lib))
+      elif literal_prefix and lib.startswith(literal_prefix):
+        libs.append(lib)
+      elif lib.startswith('-'):
+        libs.append(lib)
+      else:
+        libs.append(_resolve_library(env, lib))
+    else:
+      libs.append(lib)
+
+  return _stripixes(
+    env['LIBLINKPREFIX'],
+    libs,
+    env['LIBLINKSUFFIX'],
+    env['LIBPREFIXES'],
+    env['LIBSUFFIXES'],
+    env,
+    env['LIBLITERALPREFIX'],
+  )
 
 env = Environment(
   ENV={
@@ -90,14 +187,12 @@ env = Environment(
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
+env['_LIBFLAGS'] = _libflags
 
 # Arch-specific flags and paths
 if arch == "larch64":
   env["CC"] = "clang"
   env["CXX"] = "clang++"
-  env.Append(LIBPATH=[
-    "/usr/lib/aarch64-linux-gnu",
-  ])
   arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
   env.Append(CCFLAGS=arch_flags)
   env.Append(CXXFLAGS=arch_flags)
@@ -212,7 +307,12 @@ SConscript([
   'selfdrive/ui/SConscript',
 ])
 
-if Dir('#tools/cabana/').exists() and arch != "larch64":
+cabana_targets = [str(target) for target in COMMAND_LINE_TARGETS]
+build_cabana = GetOption('with_cabana') or any(
+  target == "tools/cabana" or target.startswith("tools/cabana/")
+  for target in cabana_targets
+)
+if Dir('#tools/cabana/').exists() and arch != "larch64" and build_cabana:
   SConscript(['tools/cabana/SConscript'])
 
 
