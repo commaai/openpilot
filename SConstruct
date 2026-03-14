@@ -57,7 +57,7 @@ def _resolve_lib(env, name):
     for ext in ('.a', '.so', '.dylib'):
       f = File(os.path.join(p, f'lib{name}{ext}'))
       if f.exists() or f.has_builder():
-        return f
+        return name
   if name in allowed_system_libs:
     return name
   raise SCons.Errors.UserError(f"Unexpected non-vendored library '{name}'")
