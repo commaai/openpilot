@@ -60,7 +60,6 @@ class SshKeyFetcher:
   def update(self):
     if not self._done:
       return
-
     self._done = False
     if self._error is not None:
       self.clear()

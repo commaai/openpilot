@@ -16,8 +16,10 @@ class DeveloperLayoutMici(NavScroller):
     def github_username_callback(username: str):
       if username:
         self._ssh_keys_btn.set_value("Loading...")
+        self._ssh_keys_btn.set_enabled(False)
 
         def on_response(error):
+          self._ssh_keys_btn.set_enabled(True)
           if error is None:
             self._ssh_keys_btn.set_value(username)
           else:
