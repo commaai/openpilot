@@ -87,12 +87,8 @@ class SimulatorBridge(ABC):
     bridge_p.start()
     return bridge_p
 
-  def print_status(self):
-    print(
-    f"""
-State:
-Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_engaged}
-    """)
+  def print_status(self, id: int):
+    print(f"[{id}] State: Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_engaged}")
 
   @abstractmethod
   def spawn_world(self, q: Queue) -> World:
@@ -171,6 +167,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
       self.simulated_car.sm.update(0)
       self.simulator_state.is_engaged = self.simulated_car.sm['selfdriveState'].active
+      # print(f"is_engaged = {self.simulator_state.is_engaged}")
 
       if self.simulator_state.is_engaged:
         throttle_op = np.clip(self.simulated_car.sm['carControl'].actuators.accel / 1.6, 0.0, 1.0)
@@ -186,6 +183,8 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       brake_out = brake_op if self.simulator_state.is_engaged else brake_manual
       steer_out = steer_op if self.simulator_state.is_engaged else steer_manual
 
+      # print(f"throttle_out: {throttle_out}, brake_out: {brake_out}, steer_out: {steer_out}")
+
       self.world.apply_controls(steer_out, throttle_out, brake_out)
       self.world.read_state()
       self.world.read_sensors(self.simulator_state)
@@ -199,7 +198,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
       # don't print during test, so no print/IO Block between OP and metadrive processes
       if not self.test_run and self.rk.frame % 25 == 0:
-        self.print_status()
+        self.print_status(self.rk.frame)
 
       self.started.value = True
 

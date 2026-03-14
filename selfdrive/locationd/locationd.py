@@ -289,6 +289,7 @@ def main():
     sm.update()
 
     acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
+    # print(f"Running locationd ...")
 
     if filter_initialized:
       msgs = []

@@ -48,8 +48,10 @@ def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) ->
   dat = log.Event.new_message(**args)
   if service is not None:
     if size is None:
+      # print(f"Initing {service} ...")
       dat.init(service)
     else:
+      # print(f"Initing {service} with size {size}")
       dat.init(service, size)
   return dat
 
@@ -195,6 +197,7 @@ class SubMaster:
       self.data[s] = getattr(data.as_reader(), s)
       self.freq_tracker[s] = FrequencyTracker(SERVICE_LIST[s].frequency, self.update_freq, s == poll)
 
+  # Access canpn data
   def __getitem__(self, s: str) -> capnp.lib.capnp._DynamicStructReader:
     return self.data[s]
 

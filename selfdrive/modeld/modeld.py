@@ -202,10 +202,13 @@ class ModelState:
     for key in bufs.keys():
       ptr = bufs[key].data.ctypes.data
       yuv_size = self.frame_buf_params[key][3]
-      # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-      if ptr not in self._blob_cache:
-        self._blob_cache[ptr] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
-      self.full_frames[key] = self._blob_cache[ptr]
+      # If this key is 'big_img' and it points to the same memory as 'img', create a new tensor without caching
+      if key == 'big_img' and 'img' in bufs and ptr == bufs['img'].data.ctypes.data:
+          self.full_frames[key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+      else:
+          if ptr not in self._blob_cache:
+              self._blob_cache[ptr] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
+          self.full_frames[key] = self._blob_cache[ptr]
     for key in bufs.keys():
       self.transforms_np[key][:,:] = transforms[key][:,:]
 
