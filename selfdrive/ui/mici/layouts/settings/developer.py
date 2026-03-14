@@ -104,8 +104,9 @@ class DeveloperLayoutMici(NavScroller):
     if self._ssh_fetcher.error:
       dlg = BigDialog("", self._ssh_fetcher.error)
       gui_app.push_widget(dlg)
-      self._ssh_keys_btn.set_value("Not set")
       self._ssh_fetcher.error = ""
+      self._ssh_fetcher.remove()
+      self._ssh_keys_btn.set_value("Not set")
     super()._render(rect)
 
   def show_event(self):
