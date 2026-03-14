@@ -8,17 +8,16 @@ TIMEOUT=30
 # Allow Ctrl-C to exit cleanly during the ping wait
 trap 'echo; exit 130' INT
 
-# Wait for the device to be reachable
-echo "Waiting for comma device at ${DEVICE_IP}..."
+echo "waiting for comma device at ${DEVICE_IP}..."
 elapsed=0
-while ! ping -c 1 -W 1 "${DEVICE_IP}" &>/dev/null; do
+while ! nc -z -w 1 "${DEVICE_IP}" 22 &>/dev/null; do
   elapsed=$((elapsed + 1))
   if [ "$elapsed" -ge "$TIMEOUT" ]; then
     echo "Timed out waiting for device. Is it connected via USB?" >&2
     exit 1
   fi
+  sleep 0.2
 done
-echo "Device found."
 
 # SSH into the device
 # -o StrictHostKeyChecking=no: different devices share the same IP
