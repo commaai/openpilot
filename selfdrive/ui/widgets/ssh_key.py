@@ -27,11 +27,8 @@ VALUE_FONT_SIZE = 48
 class SshKeyFetcher:
   HTTP_TIMEOUT = 15  # seconds
 
-  """Generic SSH key fetcher with no UI dependencies. Owns the background thread.
-  Call update() from the main thread to dispatch on_response."""
-
-  def __init__(self, params: Params | None = None):
-    self._params = params or Params()
+  def __init__(self, params: Params):
+    self._params = params
     self._on_response: Callable[[str | None], None] | None = None
     self._done: bool = False
     self._error: str | None = None
@@ -40,6 +37,19 @@ class SshKeyFetcher:
     self._error = None
     self._on_response = on_response
     threading.Thread(target=self._fetch_thread, args=(username,), daemon=True).start()
+
+  def update(self):
+    if not self._done:
+      return
+    self._done = False
+    if self._error is not None:
+      self.clear()
+    if self._on_response:
+      self._on_response(self._error)
+
+  def clear(self):
+    self._params.remove("GithubUsername")
+    self._params.remove("GithubSshKeys")
 
   def _fetch_thread(self, username: str):
     try:
@@ -57,19 +67,6 @@ class SshKeyFetcher:
       self._error = tr("No SSH keys found for user '{}'").format(username)
     finally:
       self._done = True
-
-  def update(self):
-    if not self._done:
-      return
-    self._done = False
-    if self._error is not None:
-      self.clear()
-    if self._on_response:
-      self._on_response(self._error)
-
-  def clear(self):
-    self._params.remove("GithubUsername")
-    self._params.remove("GithubSshKeys")
 
 
 class SshKeyActionState(Enum):
