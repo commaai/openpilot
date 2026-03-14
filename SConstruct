@@ -108,14 +108,6 @@ elif arch == "Darwin":
   env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
   env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
 
-# Sanitizers and extra CCFLAGS from CLI
-if GetOption('asan'):
-  env.Append(CCFLAGS=["-fsanitize=address", "-fno-omit-frame-pointer"])
-  env.Append(LINKFLAGS=["-fsanitize=address"])
-elif GetOption('ubsan'):
-  env.Append(CCFLAGS=["-fsanitize=undefined"])
-  env.Append(LINKFLAGS=["-fsanitize=undefined"])
-
 _extra_cc = shlex.split(GetOption('ccflags') or '')
 if _extra_cc:
   env.Append(CCFLAGS=_extra_cc)
