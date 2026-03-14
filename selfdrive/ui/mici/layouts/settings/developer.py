@@ -1,5 +1,3 @@
-import threading
-
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl
@@ -15,16 +13,21 @@ class DeveloperLayoutMici(NavScroller):
     super().__init__()
     self._ssh_fetcher = SshKeyFetcher(ui_state.params)
 
-    def _fetch_thread(username: str):
-      if self._ssh_fetcher.fetch(username):
-        self._ssh_keys_btn.set_value(username)
-
     def github_username_callback(username: str):
       if username:
         self._ssh_keys_btn.set_value("Loading...")
-        threading.Thread(target=_fetch_thread, args=(username,), daemon=True).start()
+
+        def on_response(success):
+          if success:
+            self._ssh_keys_btn.set_value(username)
+          else:
+            self._ssh_keys_btn.set_value("Not set")
+            gui_app.push_widget(BigDialog("", self._ssh_fetcher.error))
+            self._ssh_fetcher.clear()
+
+        self._ssh_fetcher.fetch(username, on_response=on_response)
       else:
-        self._ssh_fetcher.remove()
+        self._ssh_fetcher.clear()
         self._ssh_keys_btn.set_value("Not set")
 
     def ssh_keys_callback():
@@ -102,12 +105,7 @@ class DeveloperLayoutMici(NavScroller):
 
   def _update_state(self):
     super()._update_state()
-    if self._ssh_fetcher.error:
-      dlg = BigDialog("", self._ssh_fetcher.error)
-      gui_app.push_widget(dlg)
-      self._ssh_fetcher.error = ""
-      self._ssh_fetcher.remove()
-      self._ssh_keys_btn.set_value("Not set")
+    self._ssh_fetcher.update()
 
   def show_event(self):
     super().show_event()

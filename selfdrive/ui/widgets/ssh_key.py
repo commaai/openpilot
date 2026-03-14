@@ -1,7 +1,6 @@
 import pyray as rl
 import requests
 import threading
-import copy
 from collections.abc import Callable
 from enum import Enum
 
@@ -27,20 +26,23 @@ SSH_KEY_HTTP_TIMEOUT = 15  # seconds
 
 
 class SshKeyFetcher:
-  """Generic SSH key fetcher with no UI dependencies. Safe to call from any thread."""
+  """Generic SSH key fetcher with no UI dependencies. Owns the background thread.
+  Call update() from the main thread to dispatch on_response."""
 
   def __init__(self, params: Params | None = None):
     self._params = params or Params()
+    self._on_response: Callable[[bool], None] | None = None
+    self._done: bool = False
     self.error: str = ""
-    self.loading: bool = False
 
-  def fetch(self, username: str) -> bool:
-    """Fetch SSH keys for a GitHub username. Returns True on success. Sets self.error on failure."""
+  def fetch(self, username: str, on_response: Callable[[bool], None]):
     self.error = ""
-    self.loading = True
+    self._on_response = on_response
+    threading.Thread(target=self._fetch_thread, args=(username,), daemon=True).start()
+
+  def _fetch_thread(self, username: str):
     try:
-      url = f"https://github.com/{username}.keys"
-      response = requests.get(url, timeout=SSH_KEY_HTTP_TIMEOUT)
+      response = requests.get(f"https://github.com/{username}.keys", timeout=SSH_KEY_HTTP_TIMEOUT)
       response.raise_for_status()
       keys = response.text.strip()
       if not keys:
@@ -48,17 +50,22 @@ class SshKeyFetcher:
 
       self._params.put("GithubUsername", username)
       self._params.put("GithubSshKeys", keys)
-      return True
     except requests.exceptions.Timeout:
       self.error = tr("Request timed out")
-      return False
     except Exception:
       self.error = tr("No SSH keys found for user '{}'").format(username)
-      return False
     finally:
-      self.loading = False
+      self._done = True
 
-  def remove(self):
+  def update(self):
+    if not self._done:
+      return
+
+    self._done = False
+    if self._on_response:
+      self._on_response(not self.error)
+
+  def clear(self):
     self._params.remove("GithubUsername")
     self._params.remove("GithubSshKeys")
 
@@ -92,14 +99,11 @@ class SshKeyAction(ItemAction):
     self._username = self._params.get("GithubUsername")
     self._state = SshKeyActionState.REMOVE if self._params.get("GithubSshKeys") else SshKeyActionState.ADD
 
-  def _render(self, rect: rl.Rectangle) -> bool:
-    # Show error dialog if there's an error
-    if self._fetcher.error:
-      message = copy.copy(self._fetcher.error)
-      gui_app.push_widget(alert_dialog(message))
-      self._username = ""
-      self._fetcher.error = ""
+  def _update_state(self):
+    super()._update_state()
+    self._fetcher.update()
 
+  def _render(self, rect: rl.Rectangle) -> bool:
     # Draw username if exists
     if self._username:
       text_size = measure_text_cached(self._text_font, self._username, VALUE_FONT_SIZE)
@@ -127,7 +131,7 @@ class SshKeyAction(ItemAction):
       self._keyboard.set_callback(self._on_username_submit)
       gui_app.push_widget(self._keyboard)
     elif self._state == SshKeyActionState.REMOVE:
-      self._fetcher.remove()
+      self._fetcher.clear()
       self._refresh_state()
 
   def _on_username_submit(self, result: DialogResult):
@@ -139,14 +143,17 @@ class SshKeyAction(ItemAction):
       return
 
     self._state = SshKeyActionState.LOADING
-    threading.Thread(target=self._fetch_thread, args=(username,), daemon=True).start()
+    self._fetcher.fetch(username, on_response=self._on_fetch_response)
 
-  def _fetch_thread(self, username: str):
-    if self._fetcher.fetch(username):
+  def _on_fetch_response(self, success: bool):
+    if success:
       self._state = SshKeyActionState.REMOVE
-      self._username = username
+      self._username = self._params.get("GithubUsername")
     else:
       self._state = SshKeyActionState.ADD
+      self._username = ""
+      gui_app.push_widget(alert_dialog(self._fetcher.error))
+      self._fetcher.clear()
 
 
 def ssh_key_item(title: str | Callable[[], str], description: str | Callable[[], str]) -> ListItem:
