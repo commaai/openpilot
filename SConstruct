@@ -15,8 +15,6 @@ Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
-AddOption('--asan', action='store_true', help='turn on ASAN')
-AddOption('--ubsan', action='store_true', help='turn on UBSan')
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
 AddOption('--minimal',
