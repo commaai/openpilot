@@ -31,12 +31,12 @@ class SshKeyFetcher:
 
   def __init__(self, params: Params | None = None):
     self._params = params or Params()
-    self._on_response: Callable[[bool], None] | None = None
+    self._on_response: Callable[[str | None], None] | None = None
     self._done: bool = False
-    self.error: str = ""
+    self._error: str | None = None
 
-  def fetch(self, username: str, on_response: Callable[[bool], None]):
-    self.error = ""
+  def fetch(self, username: str, on_response: Callable[[str | None], None]):
+    self._error = None
     self._on_response = on_response
     threading.Thread(target=self._fetch_thread, args=(username,), daemon=True).start()
 
@@ -51,9 +51,9 @@ class SshKeyFetcher:
       self._params.put("GithubUsername", username)
       self._params.put("GithubSshKeys", keys)
     except requests.exceptions.Timeout:
-      self.error = tr("Request timed out")
+      self._error = tr("Request timed out")
     except Exception:
-      self.error = tr("No SSH keys found for user '{}'").format(username)
+      self._error = tr("No SSH keys found for user '{}'").format(username)
     finally:
       self._done = True
 
@@ -63,7 +63,7 @@ class SshKeyFetcher:
 
     self._done = False
     if self._on_response:
-      self._on_response(not self.error)
+      self._on_response(self._error)
 
   def clear(self):
     self._params.remove("GithubUsername")
@@ -145,14 +145,14 @@ class SshKeyAction(ItemAction):
     self._state = SshKeyActionState.LOADING
     self._fetcher.fetch(username, on_response=self._on_fetch_response)
 
-  def _on_fetch_response(self, success: bool):
-    if success:
+  def _on_fetch_response(self, error: str | None):
+    if error is None:
       self._state = SshKeyActionState.REMOVE
       self._username = self._params.get("GithubUsername")
     else:
       self._state = SshKeyActionState.ADD
       self._username = ""
-      gui_app.push_widget(alert_dialog(self._fetcher.error))
+      gui_app.push_widget(alert_dialog(error))
       self._fetcher.clear()
 
 

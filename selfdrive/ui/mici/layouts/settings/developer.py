@@ -17,12 +17,12 @@ class DeveloperLayoutMici(NavScroller):
       if username:
         self._ssh_keys_btn.set_value("Loading...")
 
-        def on_response(success):
-          if success:
+        def on_response(error):
+          if error is None:
             self._ssh_keys_btn.set_value(username)
           else:
             self._ssh_keys_btn.set_value("Not set")
-            gui_app.push_widget(BigDialog("", self._ssh_fetcher.error))
+            gui_app.push_widget(BigDialog("", error))
             self._ssh_fetcher.clear()
 
         self._ssh_fetcher.fetch(username, on_response=on_response)
