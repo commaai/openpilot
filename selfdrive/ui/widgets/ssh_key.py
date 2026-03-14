@@ -142,7 +142,7 @@ class SshKeyAction(ItemAction):
       return
 
     self._state = SshKeyActionState.LOADING
-    self._fetcher.fetch(username, on_response=self._on_fetch_response)
+    self._fetcher.fetch(username, self._on_fetch_response)
 
   def _on_fetch_response(self, error: str | None):
     if error is None:
