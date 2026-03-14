@@ -392,14 +392,14 @@ function op_switch() {
 function op_start() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
-    op_run_command sudo systemctl restart comma $@
+    op_run_command sudo sv restart comma $@
   fi
 }
 
 function op_stop() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
-    op_run_command sudo systemctl stop comma $@
+    op_run_command sudo sv stop comma $@
   fi
 }
 
