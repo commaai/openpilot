@@ -52,7 +52,6 @@ class ResettingPage(BigDialog):
     return False
 
   def _render(self, _):
-    # TODO: use BigDialog here
     t = (rl.get_time() - self._show_time) % (self.DOT_STEP * 2)
     dots = "." * min(int(t / (self.DOT_STEP / 4)), 3)
     self._card.set_value(f"this may take up to\na minute{dots}")
