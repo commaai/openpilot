@@ -23,6 +23,44 @@ from openpilot.system.ui.widgets.list_view import (
 )
 
 VALUE_FONT_SIZE = 48
+SSH_KEY_HTTP_TIMEOUT = 15  # seconds
+
+
+class SshKeyFetcher:
+  """Generic SSH key fetcher with no UI dependencies. Safe to call from any thread."""
+
+  def __init__(self, params: Params | None = None):
+    self._params = params or Params()
+    self.error: str = ""
+    self.loading: bool = False
+
+  def fetch(self, username: str) -> bool:
+    """Fetch SSH keys for a GitHub username. Returns True on success. Sets self.error on failure."""
+    self.error = ""
+    self.loading = True
+    try:
+      url = f"https://github.com/{username}.keys"
+      response = requests.get(url, timeout=SSH_KEY_HTTP_TIMEOUT)
+      response.raise_for_status()
+      keys = response.text.strip()
+      if not keys:
+        raise requests.exceptions.HTTPError("No SSH keys found")
+
+      self._params.put("GithubUsername", username)
+      self._params.put("GithubSshKeys", keys)
+      return True
+    except requests.exceptions.Timeout:
+      self.error = tr("Request timed out")
+      return False
+    except Exception:
+      self.error = tr("No SSH keys found for user '{}'").format(username)
+      return False
+    finally:
+      self.loading = False
+
+  def remove(self):
+    self._params.remove("GithubUsername")
+    self._params.remove("GithubSshKeys")
 
 
 class SshKeyActionState(Enum):
@@ -32,7 +70,6 @@ class SshKeyActionState(Enum):
 
 
 class SshKeyAction(ItemAction):
-  HTTP_TIMEOUT = 15  # seconds
   MAX_WIDTH = 500
 
   def __init__(self):
@@ -40,7 +77,7 @@ class SshKeyAction(ItemAction):
 
     self._keyboard = Keyboard(min_text_size=1)
     self._params = Params()
-    self._error_message: str = ""
+    self._fetcher = SshKeyFetcher(self._params)
     self._text_font = gui_app.font(FontWeight.NORMAL)
     self._button = Button("", click_callback=self._handle_button_click, button_style=ButtonStyle.LIST_ACTION,
                           border_radius=BUTTON_BORDER_RADIUS, font_size=BUTTON_FONT_SIZE)
@@ -57,11 +94,11 @@ class SshKeyAction(ItemAction):
 
   def _render(self, rect: rl.Rectangle) -> bool:
     # Show error dialog if there's an error
-    if self._error_message:
-      message = copy.copy(self._error_message)
+    if self._fetcher.error:
+      message = copy.copy(self._fetcher.error)
       gui_app.push_widget(alert_dialog(message))
       self._username = ""
-      self._error_message = ""
+      self._fetcher.error = ""
 
     # Draw username if exists
     if self._username:
@@ -90,8 +127,7 @@ class SshKeyAction(ItemAction):
       self._keyboard.set_callback(self._on_username_submit)
       gui_app.push_widget(self._keyboard)
     elif self._state == SshKeyActionState.REMOVE:
-      self._params.remove("GithubUsername")
-      self._params.remove("GithubSshKeys")
+      self._fetcher.remove()
       self._refresh_state()
 
   def _on_username_submit(self, result: DialogResult):
@@ -103,28 +139,13 @@ class SshKeyAction(ItemAction):
       return
 
     self._state = SshKeyActionState.LOADING
-    threading.Thread(target=lambda: self._fetch_ssh_key(username), daemon=True).start()
+    threading.Thread(target=self._fetch_thread, args=(username,), daemon=True).start()
 
-  def _fetch_ssh_key(self, username: str):
-    try:
-      url = f"https://github.com/{username}.keys"
-      response = requests.get(url, timeout=self.HTTP_TIMEOUT)
-      response.raise_for_status()
-      keys = response.text.strip()
-      if not keys:
-        raise requests.exceptions.HTTPError(tr("No SSH keys found"))
-
-      # Success - save keys
-      self._params.put("GithubUsername", username)
-      self._params.put("GithubSshKeys", keys)
+  def _fetch_thread(self, username: str):
+    if self._fetcher.fetch(username):
       self._state = SshKeyActionState.REMOVE
       self._username = username
-
-    except requests.exceptions.Timeout:
-      self._error_message = tr("Request timed out")
-      self._state = SshKeyActionState.ADD
-    except Exception:
-      self._error_message = tr("No SSH keys found for user '{}'").format(username)
+    else:
       self._state = SshKeyActionState.ADD
 
 

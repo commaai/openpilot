@@ -1,3 +1,5 @@
+import threading
+
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl
@@ -5,25 +7,24 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
+from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
 
 
 class DeveloperLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
+    self._ssh_fetcher = SshKeyFetcher(ui_state.params)
+
+    def _fetch_thread(username: str):
+      if self._ssh_fetcher.fetch(username):
+        self._ssh_keys_btn.set_value(username)
 
     def github_username_callback(username: str):
       if username:
-        ssh_keys = SshKeyAction()
-        ssh_keys._fetch_ssh_key(username)
-        if not ssh_keys._error_message:
-          self._ssh_keys_btn.set_value(username)
-        else:
-          dlg = BigDialog("", ssh_keys._error_message)
-          gui_app.push_widget(dlg)
+        self._ssh_keys_btn.set_value("Loading...")
+        threading.Thread(target=_fetch_thread, args=(username,), daemon=True).start()
       else:
-        ui_state.params.remove("GithubUsername")
-        ui_state.params.remove("GithubSshKeys")
+        self._ssh_fetcher.remove()
         self._ssh_keys_btn.set_value("Not set")
 
     def ssh_keys_callback():
@@ -98,6 +99,14 @@ class DeveloperLayoutMici(NavScroller):
       gui_app.set_show_fps(True)
 
     ui_state.add_offroad_transition_callback(self._update_toggles)
+
+  def _render(self, rect):
+    if self._ssh_fetcher.error:
+      dlg = BigDialog("", self._ssh_fetcher.error)
+      gui_app.push_widget(dlg)
+      self._ssh_keys_btn.set_value("Not set")
+      self._ssh_fetcher.error = ""
+    super()._render(rect)
 
   def show_event(self):
     super().show_event()
