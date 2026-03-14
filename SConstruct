@@ -53,7 +53,7 @@ allowed_system_libs = {
 def _resolve_lib(env, name):
   for d in env.Flatten(env.get('LIBPATH', [])):
     p = Dir(str(d)).abspath
-    for ext in ('.a', '.so'):
+    for ext in ('.a', '.so', '.dylib'):
       f = File(os.path.join(p, f'lib{name}{ext}'))
       if f.exists() or f.has_builder():
         return f
