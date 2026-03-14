@@ -42,9 +42,10 @@ pkgs = [importlib.import_module(name) for name in pkg_names]
 
 
 # ***** enforce a whitelist of system libraries *****
-# these libraries should be available on all Linux
-# and macOS systems, and everything else should be
-# a vendored package in commaai/dependencies
+# this prevents silently relying on a 3rd party package,
+# e.g. apt-installed libusb. all libraries should either
+# be distributed with all Linux distros and macOS, or
+# vendored in commaai/dependencies.
 allowed_system_libs = {
   "EGL", "GLESv2", "GL", "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
   "crypto", "dl", "drm", "gbm", "m", "pthread", "ssl", "usb-1.0",
