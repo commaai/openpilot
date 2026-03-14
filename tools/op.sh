@@ -142,16 +142,20 @@ function op_check_os() {
 
     if [ -f "/etc/os-release" ]; then
       source /etc/os-release
-      case "$VERSION_CODENAME" in
-        "jammy" | "kinetic" | "noble" | "focal")
-          echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
-          ;;
-        * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
-          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
-          return 1
-          ;;
-      esac
+      if [[ "$ID" == "void" ]]; then
+        echo -e " ↳ [${GREEN}✔${NC}] Void Linux detected."
+      else
+        case "$VERSION_CODENAME" in
+          "jammy" | "kinetic" | "noble" | "focal")
+            echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
+            ;;
+          * )
+            echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+            loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
+            return 1
+            ;;
+        esac
+      fi
     else
       echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
       loge "ERROR_UNKNOWN_UBUNTU"
