@@ -212,7 +212,15 @@ if arch == "larch64":
 # Build openpilot
 SConscript(['third_party/SConscript'])
 
-SConscript(['selfdrive/SConscript'])
+# Build selfdrive
+SConscript([
+  'selfdrive/pandad/SConscript',
+  'selfdrive/controls/lib/lateral_mpc_lib/SConscript',
+  'selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
+  'selfdrive/locationd/SConscript',
+  'selfdrive/modeld/SConscript',
+  'selfdrive/ui/SConscript',
+])
 
 if Dir('#tools/cabana/').exists() and arch != "larch64":
   SConscript(['tools/cabana/SConscript'])
