@@ -156,9 +156,9 @@ class PairBigButton(BigButton):
       return
     dlg: BigDialog | PairingDialog
     if not system_time_valid():
-      dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing"))
+      dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing."))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):
-      dlg = BigDialog("", tr("Device must be registered with the comma.ai backend to pair"))
+      dlg = BigDialog("", tr("Device must be registered with the comma.ai backend to pair."))
     else:
       dlg = PairingDialog()
     gui_app.push_widget(dlg)
@@ -188,7 +188,7 @@ class UpdateOpenpilotBigButton(BigButton):
     super()._handle_mouse_release(mouse_pos)
 
     if not system_time_valid():
-      dlg = BigDialog("", tr("Please connect to Wi-Fi to update"))
+      dlg = BigDialog("", tr("Please connect to Wi-Fi to update."))
       gui_app.push_widget(dlg)
       return
 
