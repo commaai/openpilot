@@ -40,6 +40,11 @@ assert arch in [
 pkg_names = ['bzip2', 'capnproto', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 
+
+# ***** enforce a whitelist of system libraries *****
+# these libraries should be available on all Linux
+# and macOS systems, and everything else should be
+# a vendored package in commaai/dependencies
 allowed_system_libs = {
   "EGL", "GLESv2", "GL", "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
   "crypto", "dl", "drm", "gbm", "m", "pthread", "ssl", "usb-1.0",
