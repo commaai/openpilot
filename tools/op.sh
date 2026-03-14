@@ -276,9 +276,9 @@ function op_venv() {
   esac
 }
 
-function op_adb() {
+function op_shell() {
   op_before_cmd
-  op_run_command tools/scripts/adb_ssh.sh "$@"
+  op_run_command tools/scripts/usb_ssh.sh "$@"
 }
 
 function op_ssh() {
@@ -426,7 +426,7 @@ function op_default() {
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
-  echo -e "  ${BOLD}adb${NC}          Run adb shell"
+  echo -e "  ${BOLD}shell${NC}        SSH into a USB-connected comma device"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Scripts]:${NC}"
@@ -489,7 +489,7 @@ function _op() {
     stop )          shift 1; op_stop "$@" ;;
     restart )       shift 1; op_restart "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
-    adb )           shift 1; op_adb "$@" ;;
+    shell )         shift 1; op_shell "$@" ;;
     ssh )           shift 1; op_ssh "$@" ;;
     script )        shift 1; op_script "$@" ;;
     * ) op_default "$@" ;;
