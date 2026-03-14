@@ -99,8 +99,6 @@ if arch == "larch64":
   env["CC"] = "clang"
   env["CXX"] = "clang++"
   env.Append(LIBPATH=[
-    "/usr/local/lib",
-    "/system/vendor/lib64",
     "/usr/lib/aarch64-linux-gnu",
   ])
   arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
@@ -112,11 +110,6 @@ elif arch == "Darwin":
   ])
   env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
   env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
-else:
-  env.Append(LIBPATH=[
-    "/usr/lib",
-    "/usr/local/lib",
-  ])
 
 # Sanitizers and extra CCFLAGS from CLI
 if GetOption('asan'):
