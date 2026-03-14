@@ -23,7 +23,6 @@ class DeveloperLayoutMici(NavScroller):
           else:
             self._ssh_keys_btn.set_value("Not set")
             gui_app.push_widget(BigDialog("", error))
-            self._ssh_fetcher.clear()
 
         self._ssh_fetcher.fetch(username, on_response=on_response)
       else:

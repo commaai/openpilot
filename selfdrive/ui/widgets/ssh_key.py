@@ -62,6 +62,8 @@ class SshKeyFetcher:
       return
 
     self._done = False
+    if self._error is not None:
+      self.clear()
     if self._on_response:
       self._on_response(self._error)
 
@@ -153,7 +155,6 @@ class SshKeyAction(ItemAction):
       self._state = SshKeyActionState.ADD
       self._username = ""
       gui_app.push_widget(alert_dialog(error))
-      self._fetcher.clear()
 
 
 def ssh_key_item(title: str | Callable[[], str], description: str | Callable[[], str]) -> ListItem:
