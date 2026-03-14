@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
+if TICI:
+  os.environ['DEV'] = 'QCOM'
+  os.environ['QCOM_IR3'] = '1'
+else:
+  os.environ['DEV'] = 'CPU'
 from tinygrad.tensor import Tensor
 import time
 import pickle
