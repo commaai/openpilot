@@ -11,8 +11,8 @@ from openpilot.system.ui.widgets import DialogResult
 
 # Description constants
 DESCRIPTIONS = {
-  'enable_adb': tr_noop(
-    "ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. " +
+  'enable_usb_networking': tr_noop(
+    "USB NCM networking allows connecting to your device over USB for SSH access. " +
     "See https://docs.comma.ai/how-to/connect-to-comma for more info."
   ),
   'ssh_key': tr_noop(
@@ -35,11 +35,11 @@ class DeveloperLayout(Widget):
     self._is_release = self._params.get_bool("IsReleaseBranch")
 
     # Build items and keep references for callbacks/state updates
-    self._adb_toggle = toggle_item(
-      lambda: tr("Enable ADB"),
-      description=lambda: tr(DESCRIPTIONS["enable_adb"]),
-      initial_state=self._params.get_bool("AdbEnabled"),
-      callback=self._on_enable_adb,
+    self._usb_ncm_toggle = toggle_item(
+      lambda: tr("Enable USB Networking"),
+      description=lambda: tr(DESCRIPTIONS["enable_usb_networking"]),
+      initial_state=self._params.get_bool("UsbNcmEnabled"),
+      callback=self._on_enable_usb_ncm,
       enabled=ui_state.is_offroad,
     )
 
@@ -84,7 +84,7 @@ class DeveloperLayout(Widget):
     self._on_enable_ui_debug(self._params.get_bool("ShowDebugInfo"))
 
     self._scroller = Scroller([
-      self._adb_toggle,
+      self._usb_ncm_toggle,
       self._ssh_toggle,
       self._ssh_keys,
       self._joystick_toggle,
@@ -133,7 +133,7 @@ class DeveloperLayout(Widget):
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
     for key, item in (
-      ("AdbEnabled", self._adb_toggle),
+      ("UsbNcmEnabled", self._usb_ncm_toggle),
       ("SshEnabled", self._ssh_toggle),
       ("JoystickDebugMode", self._joystick_toggle),
       ("LongitudinalManeuverMode", self._long_maneuver_toggle),
@@ -147,8 +147,8 @@ class DeveloperLayout(Widget):
     gui_app.set_show_touches(state)
     gui_app.set_show_fps(state)
 
-  def _on_enable_adb(self, state: bool):
-    self._params.put_bool("AdbEnabled", state)
+  def _on_enable_usb_ncm(self, state: bool):
+    self._params.put_bool("UsbNcmEnabled", state)
 
   def _on_enable_ssh(self, state: bool):
     self._params.put_bool("SshEnabled", state)

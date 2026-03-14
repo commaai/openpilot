@@ -303,8 +303,8 @@ msgstr "啟用"
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py:39
 #, python-format
-msgid "Enable ADB"
-msgstr "啟用 ADB"
+msgid "Enable USB Networking"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py:64
 #, python-format

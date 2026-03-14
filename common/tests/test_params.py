@@ -131,9 +131,9 @@ class TestParams:
     assert self.params.get("BootCount") == 1441
 
     # bool
-    self.params.put("AdbEnabled", True)
-    assert self.params.get("AdbEnabled")
-    assert isinstance(self.params.get("AdbEnabled"), bool)
+    self.params.put("UsbNcmEnabled", True)
+    assert self.params.get("UsbNcmEnabled")
+    assert isinstance(self.params.get("UsbNcmEnabled"), bool)
 
     # time
     now = datetime.datetime.now(datetime.UTC)
