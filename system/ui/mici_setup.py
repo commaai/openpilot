@@ -89,7 +89,7 @@ class NetworkConnectivityMonitor:
               not system_time_valid() and
               time.monotonic() - self._last_timesyncd_restart > 5):
             self._last_timesyncd_restart = time.monotonic()
-            run_cmd(["sudo", "systemctl", "restart", "systemd-timesyncd"])
+            run_cmd(["sudo", "sv", "restart", "busybox-ntpd"])
           self.reset()
         except Exception:
           self.reset()
