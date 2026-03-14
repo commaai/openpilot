@@ -22,10 +22,11 @@ from openpilot.system.ui.widgets.list_view import (
 )
 
 VALUE_FONT_SIZE = 48
-SSH_KEY_HTTP_TIMEOUT = 15  # seconds
 
 
 class SshKeyFetcher:
+  HTTP_TIMEOUT = 15  # seconds
+
   """Generic SSH key fetcher with no UI dependencies. Owns the background thread.
   Call update() from the main thread to dispatch on_response."""
 
@@ -42,7 +43,7 @@ class SshKeyFetcher:
 
   def _fetch_thread(self, username: str):
     try:
-      response = requests.get(f"https://github.com/{username}.keys", timeout=SSH_KEY_HTTP_TIMEOUT)
+      response = requests.get(f"https://github.com/{username}.keys", timeout=self.HTTP_TIMEOUT)
       response.raise_for_status()
       keys = response.text.strip()
       if not keys:
