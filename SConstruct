@@ -16,10 +16,6 @@ Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
-AddOption('--asan', action='store_true', help='turn on ASAN')
-AddOption('--ubsan', action='store_true', help='turn on UBSan')
-AddOption('--mutation', action='store_true', help='generate mutation-ready code')
-AddOption('--with-cabana', action='store_true', help='include cabana in the default build')
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
 AddOption('--minimal',
@@ -134,7 +130,7 @@ if arch == "larch64":
   env["CC"] = "clang"
   env["CXX"] = "clang++"
   env.Append(LIBPATH=[
-    "/system/vendor/lib64",
+    "/usr/lib/aarch64-linux-gnu",
   ])
   arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
   env.Append(CCFLAGS=arch_flags)
@@ -145,14 +141,6 @@ elif arch == "Darwin":
   ])
   env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
   env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
-
-# Sanitizers and extra CCFLAGS from CLI
-if GetOption('asan'):
-  env.Append(CCFLAGS=["-fsanitize=address", "-fno-omit-frame-pointer"])
-  env.Append(LINKFLAGS=["-fsanitize=address"])
-elif GetOption('ubsan'):
-  env.Append(CCFLAGS=["-fsanitize=undefined"])
-  env.Append(LINKFLAGS=["-fsanitize=undefined"])
 
 _extra_cc = shlex.split(GetOption('ccflags') or '')
 if _extra_cc:
@@ -248,11 +236,17 @@ if arch == "larch64":
 # Build openpilot
 SConscript(['third_party/SConscript'])
 
-SConscript(['selfdrive/SConscript'])
+# Build selfdrive
+SConscript([
+  'selfdrive/pandad/SConscript',
+  'selfdrive/controls/lib/lateral_mpc_lib/SConscript',
+  'selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
+  'selfdrive/locationd/SConscript',
+  'selfdrive/modeld/SConscript',
+  'selfdrive/ui/SConscript',
+])
 
-cabana_targets = [str(t) for t in COMMAND_LINE_TARGETS]
-build_cabana = GetOption('with_cabana') or any(t == "tools/cabana" or t.startswith("tools/cabana/") for t in cabana_targets)
-if Dir('#tools/cabana/').exists() and arch != "larch64" and build_cabana:
+if Dir('#tools/cabana/').exists() and arch != "larch64":
   SConscript(['tools/cabana/SConscript'])
 
 
