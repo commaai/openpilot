@@ -100,14 +100,14 @@ class DeveloperLayoutMici(NavScroller):
 
     ui_state.add_offroad_transition_callback(self._update_toggles)
 
-  def _render(self, rect):
+  def _update_state(self):
+    super()._update_state()
     if self._ssh_fetcher.error:
       dlg = BigDialog("", self._ssh_fetcher.error)
       gui_app.push_widget(dlg)
       self._ssh_fetcher.error = ""
       self._ssh_fetcher.remove()
       self._ssh_keys_btn.set_value("Not set")
-    super()._render(rect)
 
   def show_event(self):
     super().show_event()
