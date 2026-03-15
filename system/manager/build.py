@@ -17,6 +17,26 @@ CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
 TOTAL_SCONS_NODES = 2705
 MAX_BUILD_PROGRESS = 100
 
+def get_scons_cache_lock_path() -> Path:
+  return CACHE_DIR / "config.lock"
+
+def clear_stale_scons_cache_lock(build_output: list[bytes]) -> bool:
+  lock_path = get_scons_cache_lock_path()
+  lock_path_b = str(lock_path).encode()
+  if not any(b"SConsLockFailure" in line and lock_path_b in line for line in build_output):
+    return False
+
+  try:
+    lock_path.unlink()
+  except FileNotFoundError:
+    return False
+  except OSError:
+    cloudlog.exception(f"failed to remove stale scons cache lock {lock_path}")
+    return False
+
+  cloudlog.warning(f"removed stale scons cache lock {lock_path}, retrying build")
+  return True
+
 def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
   env = os.environ.copy()
   env['SCONS_PROGRESS'] = "1"
@@ -33,7 +53,11 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
   # building with all cores can result in using too
   # much memory, so retry with less parallelism
   compile_output: list[bytes] = []
-  for n in (nproc, nproc/2, 1):
+  retry_job_counts = [nproc, nproc/2, 1]
+  retried_after_lock_cleanup = False
+  i = 0
+  while i < len(retry_job_counts):
+    n = retry_job_counts[i]
     compile_output.clear()
     scons: subprocess.Popen = subprocess.Popen(["scons", f"-j{int(n)}", "--cache-populate", *extra_args], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
     assert scons.stderr is not None
@@ -56,14 +80,18 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
       except Exception:
         pass
 
+    compile_output += [line for line in scons.stderr.read().split(b'\n') if len(line)]
+
     if scons.returncode == 0:
       break
 
-  if scons.returncode != 0:
-    # Read remaining output
-    if scons.stderr is not None:
-      compile_output += scons.stderr.read().split(b'\n')
+    if not retried_after_lock_cleanup and clear_stale_scons_cache_lock(compile_output):
+      retried_after_lock_cleanup = True
+      continue
 
+    i += 1
+
+  if scons.returncode != 0:
     # Build failed log errors
     error_s = b"\n".join(compile_output).decode('utf8', 'replace')
     add_file_handler(cloudlog)
