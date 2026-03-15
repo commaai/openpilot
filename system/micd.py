@@ -8,6 +8,8 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
+from openpilot.system.audio import get_sounddevice_device
+
 RATE = 10
 FFT_SAMPLES = 1600 # 100ms
 REFERENCE_SPL = 2e-5  # newtons/m^2
@@ -99,7 +101,16 @@ class Mic:
     # reload sounddevice to reinitialize portaudio
     sd._terminate()
     sd._initialize()
-    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
+    stream_kwargs = {
+      "channels": 1,
+      "samplerate": SAMPLE_RATE,
+      "callback": self.callback,
+      "blocksize": SAMPLE_BUFFER,
+    }
+    device = get_sounddevice_device(sd, is_input=True)
+    if device is not None:
+      stream_kwargs["device"] = device
+    return sd.InputStream(**stream_kwargs)
 
   def micd_thread(self):
     # sounddevice must be imported after forking processes
