@@ -2,7 +2,7 @@ from openpilot.common.params import Params
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigCircleParamControl, BigCircleToggle
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 
@@ -54,5 +54,5 @@ class AsiusLayoutMici(NavScroller):
       self._params.remove("DongleId")
       self._params.put_bool_nonblocking("DoReboot", True)
 
-    dlg = BigConfirmationDialogV2(title, "icons_mici/settings/device/reboot.png", red=True, confirm_callback=on_confirm)
+    dlg = BigConfirmationDialog(title, "icons_mici/settings/device/reboot.png", red=True, confirm_callback=on_confirm)
     gui_app.set_modal_overlay(dlg, callback=lambda _: self._asius_api_toggle.set_checked(bool(self._params.get("AsiusAPIHost"))))
