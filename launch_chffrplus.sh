@@ -27,57 +27,6 @@ function agnos_init {
   fi
 }
 
-function init_ble {
-  if [ ! -e /dev/ttyHS1 ]; then
-    return
-  fi
-
-  # Add system packages (gi/GLib/dbus) to venv so ble.py can import them
-  PTH_FILE="/usr/local/venv/lib/python3.12/site-packages/system-packages.pth"
-  if [ ! -f "$PTH_FILE" ]; then
-    echo "Adding system packages to venv..."
-    sudo mount -o remount,rw / 2>/dev/null || true
-    echo '/usr/lib/python3/dist-packages' | sudo tee "$PTH_FILE" > /dev/null
-  fi
-
-  # If btattach is already running and adapter is powered, skip re-init
-  if pgrep -f "btattach.*ttyHS1" >/dev/null 2>&1 && hciconfig hci0 >/dev/null 2>&1; then
-    echo "Bluetooth already running"
-    return
-  fi
-
-  echo "Initializing Bluetooth..."
-  sudo pkill -f btattach 2>/dev/null || true
-  sudo hciconfig hci0 down 2>/dev/null || true
-  sleep 1
-
-  sudo btattach -B /dev/ttyHS1 -S 115200 &
-
-  # wait for adapter
-  for i in $(seq 1 10); do
-    sleep 1
-    if hciconfig hci0 >/dev/null 2>&1; then
-      echo "Bluetooth adapter found"
-      sudo hciconfig hci0 down
-
-      # set static address derived from DongleId
-      DONGLE_ID=$(cat /data/params/d/DongleId 2>/dev/null)
-      if [ -n "$DONGLE_ID" ]; then
-        DID=$(echo "$DONGLE_ID" | tr '[:upper:]' '[:lower:]')
-        MAC="C0:${DID:0:2}:${DID:2:2}:${DID:4:2}:${DID:6:2}:${DID:8:2}"
-        sudo btmgmt --index 0 static-addr "$MAC" 2>/dev/null || true
-        sudo btmgmt --index 0 privacy on 2>/dev/null || true
-      fi
-
-      sudo hciconfig hci0 up
-      echo "Bluetooth initialized"
-      return
-    fi
-    echo "Waiting for Bluetooth... ($i/10)"
-  done
-  echo "WARNING: Bluetooth init failed"
-}
-
 function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
@@ -123,7 +72,6 @@ function launch {
   # hardware specific init
   if [ -f /AGNOS ]; then
     agnos_init
-    init_ble
   fi
 
   # write tmux scrollback to a file

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import hashlib
+import io
 import json
 import os
 import queue
@@ -16,6 +18,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
 from queue import Queue
+from typing import cast
 from collections.abc import Callable
 
 import requests
@@ -23,19 +26,17 @@ from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import ABNF, WebSocket, WebSocketException, WebSocketTimeoutException, create_connection
 
-# Import shared RPC methods - registers them with dispatcher
-from openpilot.system.athena import rpc_methods  # noqa: F401
-from openpilot.system.athena.rpc_methods import set_transport
-
 import cereal.messaging as messaging
 from cereal import log
-from openpilot.common.api import Api
+from cereal.services import SERVICE_LIST
+from openpilot.common.api import Api, get_key_pair
 from openpilot.common.utils import CallbackReader, get_upload_stream
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
 
 AsiusAPIHost = Params().get("AsiusAPIHost")
@@ -120,6 +121,7 @@ class UploadItem:
     return self.priority == other.priority
 
 
+dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
 send_queue: Queue[str] = queue.Queue()
 upload_queue: Queue[UploadItem] = queue.PriorityQueue()
@@ -198,7 +200,6 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       data = recv_queue.get(timeout=1)
       if "method" in data:
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
-        set_transport("websocket")
         response = JSONRPCResponseManager.handle(data, dispatcher)
         send_queue.put_nowait(response.json)
       elif "id" in data and ("result" in data or "error" in data):
@@ -322,6 +323,282 @@ def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> req
   finally:
     if stream:
       stream.close()
+
+
+@dispatcher.add_method
+def getMessage(service: str, timeout: int = 1000) -> dict:
+  if service is None or service not in SERVICE_LIST:
+    raise Exception("invalid service")
+  socket = messaging.sub_sock(service, timeout=timeout)
+  try:
+    ret = messaging.recv_one(socket)
+    if ret is None:
+      raise TimeoutError
+    return cast(dict, ret.to_dict())
+  finally:
+    del socket
+
+
+@dispatcher.add_method
+def getVersion() -> dict[str, str]:
+  build_metadata = get_build_metadata()
+  return {
+    "version": build_metadata.openpilot.version,
+    "remote": build_metadata.openpilot.git_normalized_origin,
+    "branch": build_metadata.channel,
+    "commit": build_metadata.openpilot.git_commit,
+  }
+
+
+def scan_dir(path: str, prefix: str) -> list[str]:
+  files = []
+  with os.scandir(path) as i:
+    for e in i:
+      rel_path = os.path.relpath(e.path, Paths.log_root())
+      if e.is_dir(follow_symlinks=False):
+        rel_path = os.path.join(rel_path, '')
+        if rel_path.startswith(prefix) or prefix.startswith(rel_path):
+          files.extend(scan_dir(e.path, prefix))
+      else:
+        if rel_path.startswith(prefix):
+          files.append(rel_path)
+  return files
+
+
+@dispatcher.add_method
+def listDataDirectory(prefix='') -> list[str]:
+  return scan_dir(Paths.log_root(), prefix)
+
+
+@dispatcher.add_method
+def setRouteViewed(route: str) -> dict[str, int | str]:
+  params = Params()
+  r = params.get("AthenadRecentlyViewedRoutes")
+  routes = [] if r is None else r.split(",")
+  routes.append(route)
+  routes = list(dict.fromkeys(routes))
+  params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
+  return {"success": 1}
+
+
+@dispatcher.add_method
+def getPublicKey() -> str | None:
+  _, _, public_key = get_key_pair()
+  return public_key
+
+
+@dispatcher.add_method
+def getSshAuthorizedKeys() -> str:
+  return cast(str, Params().get("GithubSshKeys") or "")
+
+
+@dispatcher.add_method
+def getGithubUsername() -> str:
+  return cast(str, Params().get("GithubUsername") or "")
+
+
+@dispatcher.add_method
+def getSimInfo():
+  return HARDWARE.get_sim_info()
+
+
+@dispatcher.add_method
+def getNetworkType():
+  return HARDWARE.get_network_type()
+
+
+@dispatcher.add_method
+def getNetworkMetered() -> bool:
+  network_type = HARDWARE.get_network_type()
+  return HARDWARE.get_network_metered(network_type)
+
+
+@dispatcher.add_method
+def getNetworks():
+  return HARDWARE.get_networks()
+
+
+@dispatcher.add_method
+def takeSnapshot() -> str | dict[str, str] | None:
+  from openpilot.system.camerad.snapshot import jpeg_write, snapshot
+
+  ret = snapshot()
+  if ret is not None:
+
+    def b64jpeg(x):
+      if x is not None:
+        f = io.BytesIO()
+        jpeg_write(f, x)
+        return base64.b64encode(f.getvalue()).decode("utf-8")
+      return None
+
+    return {'jpegBack': b64jpeg(ret[0]), 'jpegFront': b64jpeg(ret[1])}
+  raise Exception("not available while camerad is started")
+
+
+@dispatcher.add_method
+def getAllParams() -> dict[str, str | bool | int | float | None]:
+  from openpilot.common.params_pyx import ParamKeyType
+  import json as _json
+
+  available_keys: list[str] = [k.decode('utf-8') for k in Params().all_keys()]
+  result: dict[str, str | bool | int | float | None] = {}
+  params = Params()
+
+  for key in available_keys:
+    value = params.get(key)
+    if value is None:
+      result[key] = None
+      continue
+
+    key_type = params.get_type(key)
+    if key_type == ParamKeyType.BYTES:
+      continue
+    elif key_type == ParamKeyType.BOOL:
+      result[key] = bool(value) if isinstance(value, bool) else value in (b'1', b'true', b'True', '1', 'true', 'True')
+    elif key_type == ParamKeyType.INT:
+      result[key] = int(value) if isinstance(value, int) else int(value.decode('utf-8') if isinstance(value, bytes) else value)
+    elif key_type == ParamKeyType.FLOAT:
+      result[key] = float(value) if isinstance(value, float) else float(value.decode('utf-8') if isinstance(value, bytes) else value)
+    elif key_type == ParamKeyType.TIME:
+      result[key] = value.timestamp()
+    elif key_type == ParamKeyType.JSON:
+      if isinstance(value, (dict, list)):
+        result[key] = value
+      else:
+        result[key] = _json.loads(value.decode('utf-8') if isinstance(value, bytes) else value)
+    else:
+      result[key] = value.decode('utf-8') if isinstance(value, bytes) else str(value)
+
+  return result
+
+
+@dispatcher.add_method
+def saveParams(params_to_update: dict[str, str | bool | int | float | dict | list | None]) -> dict[str, str]:
+  import json as _json
+  from openpilot.common.params_pyx import ParamKeyType
+  from openpilot.common.swaglog import cloudlog as _cloudlog
+
+  params = Params()
+  results = {}
+
+  for key, value in params_to_update.items():
+    try:
+      if value is None:
+        params.remove(key)
+        results[key] = "ok: removed"
+        continue
+
+      key_type = params.get_type(key)
+      if key_type == ParamKeyType.BYTES:
+        results[key] = "error: bytes not supported"
+        continue
+      elif key_type == ParamKeyType.BOOL:
+        params.put(key, bool(value))
+      elif key_type == ParamKeyType.INT:
+        params.put(key, int(value))
+      elif key_type == ParamKeyType.FLOAT or key_type == ParamKeyType.TIME:
+        params.put(key, float(value))
+      elif key_type == ParamKeyType.JSON:
+        params.put(key, _json.dumps(value) if isinstance(value, (dict, list)) else str(value))
+      else:
+        params.put(key, str(value))
+
+      results[key] = "ok"
+    except Exception as e:
+      results[key] = f"error: {e}"
+
+  return results
+
+
+@dispatcher.add_method
+def webrtc(sdp: str, cameras: list[str], bridge_services_in: list[str], bridge_services_out: list[str]):
+  from openpilot.common.swaglog import cloudlog as _cloudlog
+
+  if not Params().get_bool("EnableWebRTC"):
+    raise Exception("EnableWebRTC is disabled")
+  try:
+    from openpilot.system.webrtc.session_manager import create_session
+
+    return create_session(sdp, cameras, bridge_services_in, bridge_services_out)
+  except Exception as e:
+    _cloudlog.exception("athena.webrtc.exception")
+    return {"error": str(e)}
+
+
+# =============================================================================
+# SKILLS
+# =============================================================================
+
+def _get_skills() -> dict:
+  return Params().get("Skills") or {}
+
+def _save_skills(skills: dict):
+  Params().put("Skills", skills)
+
+@dispatcher.add_method
+def getSkills() -> dict:
+  return _get_skills()
+
+@dispatcher.add_method
+def addSkill(skill_type: str, name: str, description: str, bus: int, msg_id: int, count: int, data: str) -> dict:
+  import secrets
+  skills = _get_skills()
+  skill_id = secrets.token_hex(4)
+  skills[skill_id] = {
+    "skill_type": skill_type,
+    "name": name,
+    "description": description,
+    "bus": bus,
+    "msg_id": msg_id,
+    "count": count,
+    "data": data,
+  }
+  _save_skills(skills)
+  return {"skill_id": skill_id}
+
+
+@dispatcher.add_method
+def removeSkill(skill_id: str) -> dict:
+  skills = _get_skills()
+  if skill_id not in skills:
+    raise Exception(f"Skill {skill_id} not found")
+  del skills[skill_id]
+  _save_skills(skills)
+  return {"status": "ok"}
+
+
+@dispatcher.add_method
+def runSkill(skill_id: str) -> dict:
+  import time as _time
+  from panda import Panda
+  from opendbc.car.structs import CarParams
+
+  skills = _get_skills()
+  if skill_id not in skills:
+    raise Exception(f"Skill {skill_id} not found")
+
+  skill = skills[skill_id]
+  msg_id = skill["msg_id"]
+  bus = skill["bus"]
+  count = skill["count"]
+  data = bytes.fromhex(skill["data"])
+
+  panda = Panda()
+  health = panda.health()
+  original_safety_mode = health["safety_mode"]
+  original_safety_param = health["safety_param"]
+
+  panda.set_safety_mode(CarParams.SafetyModel.allOutput)
+
+  for _ in range(count):
+    panda.can_send(msg_id, data, bus)
+    _time.sleep(0.02)
+
+  panda.set_safety_mode(original_safety_mode, original_safety_param)
+  panda.close()
+
+  return {"status": "ok", "skill": skill["name"]}
 
 
 @dispatcher.add_method

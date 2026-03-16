@@ -134,10 +134,6 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"LaneTurnDesire", {PERSISTENT, BOOL, "1"}},
     {"WebRTCOnline", {CLEAR_ON_MANAGER_START, BOOL}},
     {"AsiusAPIHost", {PERSISTENT, STRING}},
-    {"EnableBLE", {PERSISTENT, BOOL, "0"}},
     {"EnableWebRTC", {PERSISTENT, BOOL, "1"}},
-    {"BlePairingCode", {CLEAR_ON_MANAGER_START, STRING}},
-    {"BlePid", {PERSISTENT, INT}},
-    {"BleToken", {PERSISTENT, STRING}},
     {"Skills", {PERSISTENT, JSON}},
 };
