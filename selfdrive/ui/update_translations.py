@@ -3,6 +3,7 @@ from itertools import chain
 import os
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.multilang import SYSTEM_UI_DIR, UI_DIR, TRANSLATIONS_DIR, multilang
+from openpilot.selfdrive.ui.translations.potools import extract_strings, generate_pot, merge_po, init_po
 
 LANGUAGES_FILE = os.path.join(str(TRANSLATIONS_DIR), "languages.json")
 POT_FILE = os.path.join(str(TRANSLATIONS_DIR), "app.pot")
@@ -18,24 +19,17 @@ def update_translations():
       if filename.endswith(".py"):
         files.append(os.path.relpath(os.path.join(root, filename), BASEDIR))
 
-  # Create main translation file
-  cmd = ("xgettext -L Python --keyword=tr --keyword=trn:1,2 --keyword=tr_noop --from-code=UTF-8 " +
-         "--flag=tr:1:python-brace-format --flag=trn:1:python-brace-format --flag=trn:2:python-brace-format " +
-         f"-D {BASEDIR} -o {POT_FILE} {' '.join(files)}")
-
-  ret = os.system(cmd)
-  assert ret == 0
+  # Extract translatable strings and generate .pot template
+  entries = extract_strings(files, BASEDIR)
+  generate_pot(entries, POT_FILE)
 
   # Generate/update translation files for each language
   for name in multilang.languages.values():
-    if os.path.exists(os.path.join(TRANSLATIONS_DIR, f"app_{name}.po")):
-      cmd = f"msgmerge --update --no-fuzzy-matching --backup=none --sort-output {TRANSLATIONS_DIR}/app_{name}.po {POT_FILE}"
-      ret = os.system(cmd)
-      assert ret == 0
+    po_file = os.path.join(TRANSLATIONS_DIR, f"app_{name}.po")
+    if os.path.exists(po_file):
+      merge_po(po_file, POT_FILE)
     else:
-      cmd = f"msginit -l {name} --no-translator --input {POT_FILE} --output-file {TRANSLATIONS_DIR}/app_{name}.po"
-      ret = os.system(cmd)
-      assert ret == 0
+      init_po(POT_FILE, po_file, name)
 
 
 if __name__ == "__main__":

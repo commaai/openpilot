@@ -4,22 +4,22 @@
 
 // EditMsgCommand
 
-EditMsgCommand::EditMsgCommand(const MessageId &id, const QString &name, int size,
-                               const QString &node, const QString &comment, QUndoCommand *parent)
+EditMsgCommand::EditMsgCommand(const MessageId &id, const std::string &name, int size,
+                               const std::string &node, const std::string &comment, QUndoCommand *parent)
     : id(id), new_name(name), new_size(size), new_node(node), new_comment(comment), QUndoCommand(parent) {
   if (auto msg = dbc()->msg(id)) {
     old_name = msg->name;
     old_size = msg->size;
     old_node = msg->transmitter;
     old_comment = msg->comment;
-    setText(QObject::tr("edit message %1:%2").arg(name).arg(id.address));
+    setText(QObject::tr("edit message %1:%2").arg(QString::fromStdString(name)).arg(id.address));
   } else {
-    setText(QObject::tr("new message %1:%2").arg(name).arg(id.address));
+    setText(QObject::tr("new message %1:%2").arg(QString::fromStdString(name)).arg(id.address));
   }
 }
 
 void EditMsgCommand::undo() {
-  if (old_name.isEmpty())
+  if (old_name.empty())
     dbc()->removeMsg(id);
   else
     dbc()->updateMsg(id, old_name, old_size, old_node, old_comment);
@@ -34,12 +34,12 @@ void EditMsgCommand::redo() {
 RemoveMsgCommand::RemoveMsgCommand(const MessageId &id, QUndoCommand *parent) : id(id), QUndoCommand(parent) {
   if (auto msg = dbc()->msg(id)) {
     message = *msg;
-    setText(QObject::tr("remove message %1:%2").arg(message.name).arg(id.address));
+    setText(QObject::tr("remove message %1:%2").arg(QString::fromStdString(message.name)).arg(id.address));
   }
 }
 
 void RemoveMsgCommand::undo() {
-  if (!message.name.isEmpty()) {
+  if (!message.name.empty()) {
     dbc()->updateMsg(id, message.name, message.size, message.transmitter, message.comment);
     for (auto s : message.getSignals())
       dbc()->addSignal(id, *s);
@@ -47,7 +47,7 @@ void RemoveMsgCommand::undo() {
 }
 
 void RemoveMsgCommand::redo() {
-  if (!message.name.isEmpty())
+  if (!message.name.empty())
     dbc()->removeMsg(id);
 }
 
@@ -55,7 +55,7 @@ void RemoveMsgCommand::redo() {
 
 AddSigCommand::AddSigCommand(const MessageId &id, const cabana::Signal &sig, QUndoCommand *parent)
     : id(id), signal(sig), QUndoCommand(parent) {
-  setText(QObject::tr("add signal %1 to %2:%3").arg(sig.name).arg(msgName(id)).arg(id.address));
+  setText(QObject::tr("add signal %1 to %2:%3").arg(QString::fromStdString(sig.name)).arg(QString::fromStdString(msgName(id))).arg(id.address));
 }
 
 void AddSigCommand::undo() {
@@ -85,7 +85,7 @@ RemoveSigCommand::RemoveSigCommand(const MessageId &id, const cabana::Signal *si
       }
     }
   }
-  setText(QObject::tr("remove signal %1 from %2:%3").arg(sig->name).arg(msgName(id)).arg(id.address));
+  setText(QObject::tr("remove signal %1 from %2:%3").arg(QString::fromStdString(sig->name)).arg(QString::fromStdString(msgName(id))).arg(id.address));
 }
 
 void RemoveSigCommand::undo() { for (const auto &s : sigs) dbc()->addSignal(id, s); }
@@ -108,7 +108,7 @@ EditSignalCommand::EditSignalCommand(const MessageId &id, const cabana::Signal *
       }
     }
   }
-  setText(QObject::tr("edit signal %1 in %2:%3").arg(sig->name).arg(msgName(id)).arg(id.address));
+  setText(QObject::tr("edit signal %1 in %2:%3").arg(QString::fromStdString(sig->name)).arg(QString::fromStdString(msgName(id))).arg(id.address));
 }
 
 void EditSignalCommand::undo() { for (const auto &s : sigs) dbc()->updateSignal(id, s.second.name, s.first); }

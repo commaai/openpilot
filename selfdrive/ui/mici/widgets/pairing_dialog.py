@@ -7,9 +7,9 @@ from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.widgets import NavWidget
+from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
-from openpilot.system.ui.widgets.label import MiciLabel
+from openpilot.system.ui.widgets.label import UnifiedLabel
 
 
 class PairingDialog(NavWidget):
@@ -19,14 +19,12 @@ class PairingDialog(NavWidget):
 
   def __init__(self):
     super().__init__()
-    self.set_back_callback(lambda: gui_app.set_modal_overlay(None))
     self._params = Params()
     self._qr_texture: rl.Texture | None = None
     self._last_qr_generation = float("-inf")
 
     self._txt_pair = gui_app.texture("icons_mici/settings/device/pair.png", 33, 60)
-    self._pair_label = MiciLabel("pair with comma connect", 48, font_weight=FontWeight.BOLD,
-                                 color=rl.Color(255, 255, 255, int(255 * 0.9)), line_height=40, wrap_text=True)
+    self._pair_label = UnifiedLabel("pair with comma connect", font_size=48, font_weight=FontWeight.BOLD, line_height=0.8)
 
   def _get_pairing_url(self) -> str:
     try:
@@ -69,23 +67,21 @@ class PairingDialog(NavWidget):
 
   def _update_state(self):
     super()._update_state()
-    if ui_state.prime_state.is_paired():
-      self._playing_dismiss_animation = True
+    if ui_state.prime_state.is_paired() and not self.is_dismissing:
+      self.dismiss()
 
-  def _render(self, rect: rl.Rectangle) -> int:
+  def _render(self, rect: rl.Rectangle):
     self._check_qr_refresh()
 
     self._render_qr_code()
 
     label_x = self._rect.x + 8 + self._rect.height + 24
-    self._pair_label.set_width(int(self._rect.width - label_x))
+    self._pair_label.set_max_width(int(self._rect.width - label_x))
     self._pair_label.set_position(label_x, self._rect.y + 16)
     self._pair_label.render()
 
     rl.draw_texture_ex(self._txt_pair, rl.Vector2(label_x, self._rect.y + self._rect.height - self._txt_pair.height - 16),
                        0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.35)))
-
-    return -1
 
   def _render_qr_code(self) -> None:
     if not self._qr_texture:
@@ -96,7 +92,7 @@ class PairingDialog(NavWidget):
       return
 
     scale = self._rect.height / self._qr_texture.height
-    pos = rl.Vector2(self._rect.x + 8, self._rect.y)
+    pos = rl.Vector2(round(self._rect.x + 8), round(self._rect.y))
     rl.draw_texture_ex(self._qr_texture, pos, 0.0, scale, rl.WHITE)
 
   def __del__(self):
@@ -107,10 +103,9 @@ class PairingDialog(NavWidget):
 if __name__ == "__main__":
   gui_app.init_window("pairing device")
   pairing = PairingDialog()
+  gui_app.push_widget(pairing)
   try:
     for _ in gui_app.render():
-      result = pairing.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-      if result != -1:
-        break
+      pass
   finally:
     del pairing

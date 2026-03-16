@@ -65,8 +65,8 @@ public:
   virtual void start() = 0;
   virtual bool liveStreaming() const { return true; }
   virtual void seekTo(double ts) {}
-  virtual QString routeName() const = 0;
-  virtual QString carFingerprint() const { return ""; }
+  virtual std::string routeName() const = 0;
+  virtual std::string carFingerprint() const { return ""; }
   virtual QDateTime beginDateTime() const { return {}; }
   virtual uint64_t beginMonoTime() const { return 0; }
   virtual double minSeconds() const { return 0; }
@@ -149,7 +149,7 @@ class DummyStream : public AbstractStream {
   Q_OBJECT
 public:
   DummyStream(QObject *parent) : AbstractStream(parent) {}
-  QString routeName() const override { return tr("No Stream"); }
+  std::string routeName() const override { return "No Stream"; }
   void start() override {}
 };
 

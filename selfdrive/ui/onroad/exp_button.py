@@ -50,7 +50,7 @@ class ExpButton(Widget):
 
     texture = self._txt_exp if self._held_or_actual_mode() else self._txt_wheel
     rl.draw_circle(center_x, center_y, self._rect.width / 2, self._black_bg)
-    rl.draw_texture(texture, center_x - texture.width // 2, center_y - texture.height // 2, self._white_color)
+    rl.draw_texture_ex(texture, rl.Vector2(center_x - texture.width / 2, center_y - texture.height / 2), 0.0, 1.0, self._white_color)
 
   def _held_or_actual_mode(self):
     now = time.monotonic()

@@ -1,4 +1,3 @@
-import asyncio
 import dataclasses
 import json
 import logging
@@ -6,8 +5,6 @@ import os
 import ssl
 import subprocess
 
-import pyaudio
-import wave
 from aiohttp import web
 from aiohttp import ClientSession
 
@@ -21,35 +18,6 @@ logging.basicConfig(level=logging.INFO)
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 WEBRTCD_HOST, WEBRTCD_PORT = "localhost", 5001
 
-
-## UTILS
-async def play_sound(sound: str):
-  SOUNDS = {
-    "engage": "selfdrive/assets/sounds/engage.wav",
-    "disengage": "selfdrive/assets/sounds/disengage.wav",
-    "error": "selfdrive/assets/sounds/warning_immediate.wav",
-  }
-  assert sound in SOUNDS
-
-  chunk = 5120
-  with wave.open(os.path.join(BASEDIR, SOUNDS[sound]), "rb") as wf:
-    def callback(in_data, frame_count, time_info, status):
-      data = wf.readframes(frame_count)
-      return data, pyaudio.paContinue
-
-    p = pyaudio.PyAudio()
-    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
-                    output=True,
-                    frames_per_buffer=chunk,
-                    stream_callback=callback)
-    stream.start_stream()
-    while stream.is_active():
-      await asyncio.sleep(0)
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
 
 ## SSL
 def create_ssl_cert(cert_path: str, key_path: str):
@@ -86,14 +54,6 @@ async def ping(request: 'web.Request'):
   return web.Response(text="pong")
 
 
-async def sound(request: 'web.Request'):
-  params = await request.json()
-  sound_to_play = params["sound"]
-
-  await play_sound(sound_to_play)
-  return web.json_response({"status": "ok"})
-
-
 async def offer(request: 'web.Request'):
   params = await request.json()
   body = StreamRequestBody(params["sdp"], ["driver"], ["testJoystick"], ["carState"])
@@ -111,14 +71,13 @@ def main():
   # Enable joystick debug mode
   Params().put_bool("JoystickDebugMode", True)
 
-  # App needs to be HTTPS for microphone and audio autoplay to work on the browser
+  # App needs to be HTTPS for WebRTC to work on the browser
   ssl_context = create_ssl_context()
 
   app = web.Application()
   app.router.add_get("/", index)
   app.router.add_get("/ping", ping, allow_head=True)
   app.router.add_post("/offer", offer)
-  app.router.add_post("/sound", sound)
   app.router.add_static('/static', os.path.join(TELEOPDIR, 'static'))
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
 

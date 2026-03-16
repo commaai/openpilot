@@ -1,11 +1,10 @@
-Import('env', 'envCython', 'arch')
+Import('env', 'envCython')
 
 common_libs = [
   'params.cc',
   'swaglog.cc',
   'util.cc',
   'ratekeeper.cc',
-  'clutil.cc',
 ]
 
 _common = env.Library('common', common_libs, LIBS="json11")

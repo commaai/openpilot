@@ -1,18 +1,14 @@
-from collections.abc import Callable
-
 from openpilot.common.params import Params
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigCircleParamControl, BigCircleToggle
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialogV2
-from openpilot.system.ui.widgets import NavWidget
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 
-class AsiusLayoutMici(NavWidget):
-  def __init__(self, back_callback: Callable):
+class AsiusLayoutMici(NavScroller):
+  def __init__(self):
     super().__init__()
-    self.set_back_callback(back_callback)
     self._params = Params()
 
     lane_turn_toggle = BigParamControl("lane turn desire", "LaneTurnDesire")
@@ -22,15 +18,12 @@ class AsiusLayoutMici(NavWidget):
     self._asius_api_toggle = BigCircleToggle("asius/asius_short.png", toggle_callback=self._handle_asius_api_toggle, icon_size=(82, 82), icon_offset=(0, 12))
     self._asius_api_toggle.set_checked(bool(self._params.get("AsiusAPIHost")))
 
-    self._scroller = Scroller(
-      [
-        self._webrtc_toggle,
-        self._asius_api_toggle,
-        lane_turn_toggle,
-        coop_steering_toggle,
-      ],
-      snap_items=False,
-    )
+    self._scroller.add_widgets([
+      self._webrtc_toggle,
+      self._asius_api_toggle,
+      lane_turn_toggle,
+      coop_steering_toggle,
+    ])
 
     self._refresh_toggles = (
       ("EnableWebRTC", self._webrtc_toggle),
@@ -41,7 +34,6 @@ class AsiusLayoutMici(NavWidget):
 
   def show_event(self):
     super().show_event()
-    self._scroller.show_event()
     self._update_toggles()
 
   def _update_toggles(self):
@@ -52,7 +44,7 @@ class AsiusLayoutMici(NavWidget):
 
   def _render(self, rect):
     self._update_toggles()
-    self._scroller.render(rect)
+    super()._render(rect)
 
   def _handle_asius_api_toggle(self, state: bool):
     title = "switch to asius api" if state else "switch to comma api"

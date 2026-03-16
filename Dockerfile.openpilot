@@ -1,14 +1,38 @@
-FROM ghcr.io/commaai/openpilot-base:latest
+FROM ubuntu:24.04
 
 ENV PYTHONUNBUFFERED=1
 
-ENV OPENPILOT_PATH=/home/batman/openpilot
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends sudo tzdata locales && \
+    rm -rf /var/lib/apt/lists/*
 
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
+
+ARG USER=batman
+ARG USER_UID=1001
+RUN useradd -m -s /bin/bash -u $USER_UID $USER
+RUN usermod -aG sudo $USER
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER $USER
+
+ENV OPENPILOT_PATH=/home/$USER/openpilot
 RUN mkdir -p ${OPENPILOT_PATH}
 WORKDIR ${OPENPILOT_PATH}
 
-COPY . ${OPENPILOT_PATH}/
+COPY --chown=$USER . ${OPENPILOT_PATH}/
 
-ENV UV_BIN="/home/batman/.local/bin/"
-ENV PATH="$UV_BIN:$PATH"
-RUN UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV uv run scons --cache-readonly -j$(nproc)
+ENV UV_BIN="/home/$USER/.local/bin/"
+ENV VIRTUAL_ENV=${OPENPILOT_PATH}/.venv
+ENV PATH="$UV_BIN:$VIRTUAL_ENV/bin:$PATH"
+RUN tools/setup_dependencies.sh && \
+    sudo rm -rf /var/lib/apt/lists/*
+
+USER root
+RUN git config --global --add safe.directory '*'

@@ -5,7 +5,7 @@ import re
 import xml.etree.ElementTree as ET
 import string
 import requests
-from parameterized import parameterized_class
+from openpilot.common.parameterized import parameterized_class
 from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, LANGUAGES_FILE
 
 with open(str(LANGUAGES_FILE)) as f:

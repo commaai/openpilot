@@ -1,40 +1,44 @@
-import pyray as rl
-from collections.abc import Callable
-
 from openpilot.common.time_helpers import system_time_valid
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigToggle, BigParamControl, BigCircleParamControl
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.widgets import NavWidget
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
+from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
 
 
-class DeveloperLayoutMici(NavWidget):
-  def __init__(self, back_callback: Callable):
+class DeveloperLayoutMici(NavScroller):
+  def __init__(self):
     super().__init__()
-    self.set_back_callback(back_callback)
+    self._ssh_fetcher = SshKeyFetcher(ui_state.params)
 
     def github_username_callback(username: str):
       if username:
-        ssh_keys = SshKeyAction()
-        ssh_keys._fetch_ssh_key(username)
-        if not ssh_keys._error_message:
-          self._ssh_keys_btn.set_value(username)
-        else:
-          dlg = BigDialog("", ssh_keys._error_message)
-          gui_app.set_modal_overlay(dlg)
+        self._ssh_keys_btn.set_value("Loading...")
+        self._ssh_keys_btn.set_enabled(False)
+
+        def on_response(error):
+          self._ssh_keys_btn.set_enabled(True)
+          if error is None:
+            self._ssh_keys_btn.set_value(username)
+          else:
+            self._ssh_keys_btn.set_value("Not set")
+            gui_app.push_widget(BigDialog("", error))
+
+        self._ssh_fetcher.fetch(username, on_response)
+      else:
+        self._ssh_fetcher.clear()
+        self._ssh_keys_btn.set_value("Not set")
 
     def ssh_keys_callback():
       github_username = ui_state.params.get("GithubUsername") or ""
-      dlg = BigInputDialog("enter GitHub username", github_username, confirm_callback=github_username_callback)
+      dlg = BigInputDialog("enter GitHub username...", github_username, minimum_length=0, confirm_callback=github_username_callback)
       if not system_time_valid():
-        dlg = BigDialog("Please connect to Wi-Fi to fetch your key", "")
-        gui_app.set_modal_overlay(dlg)
+        dlg = BigDialog("", "Please connect to Wi-Fi to fetch your key.")
+        gui_app.push_widget(dlg)
         return
-      gui_app.set_modal_overlay(dlg)
+      gui_app.push_widget(dlg)
 
     txt_ssh = gui_app.texture("icons_mici/settings/developer/ssh.png", 56, 64)
     github_username = ui_state.params.get("GithubUsername") or ""
@@ -43,8 +47,8 @@ class DeveloperLayoutMici(NavWidget):
 
     # adb, ssh, ssh keys, debug mode, joystick debug mode, longitudinal maneuver mode, ip address
     # ******** Main Scroller ********
-    self._adb_toggle = BigCircleParamControl("icons_mici/adb_short.png", "AdbEnabled", icon_size=(82, 82), icon_offset=(0, 12))
-    self._ssh_toggle = BigCircleParamControl("icons_mici/ssh_short.png", "SshEnabled", icon_size=(82, 82), icon_offset=(0, 12))
+    self._adb_toggle = BigCircleParamControl(gui_app.texture("icons_mici/adb_short.png", 82, 82), "AdbEnabled", icon_offset=(0, 12))
+    self._ssh_toggle = BigCircleParamControl(gui_app.texture("icons_mici/ssh_short.png", 82, 82), "SshEnabled", icon_offset=(0, 12))
     self._joystick_toggle = BigToggle("joystick debug mode",
                                       initial_state=ui_state.params.get_bool("JoystickDebugMode"),
                                       toggle_callback=self._on_joystick_debug_mode)
@@ -58,7 +62,7 @@ class DeveloperLayoutMici(NavWidget):
                                               toggle_callback=lambda checked: (gui_app.set_show_touches(checked),
                                                                                gui_app.set_show_fps(checked)))
 
-    self._scroller = Scroller([
+    self._scroller.add_widgets([
       self._adb_toggle,
       self._ssh_toggle,
       self._ssh_keys_btn,
@@ -66,7 +70,7 @@ class DeveloperLayoutMici(NavWidget):
       self._long_maneuver_toggle,
       self._alpha_long_toggle,
       self._debug_mode_toggle,
-    ], snap_items=False)
+    ])
 
     # Toggle lists
     self._refresh_toggles = (
@@ -100,13 +104,13 @@ class DeveloperLayoutMici(NavWidget):
 
     ui_state.add_offroad_transition_callback(self._update_toggles)
 
+  def _update_state(self):
+    super()._update_state()
+    self._ssh_fetcher.update()
+
   def show_event(self):
     super().show_event()
-    self._scroller.show_event()
     self._update_toggles()
-
-  def _render(self, rect: rl.Rectangle):
-    self._scroller.render(rect)
 
   def _update_toggles(self):
     ui_state.update_params()

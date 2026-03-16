@@ -24,7 +24,7 @@ from openpilot.common.utils import Timer
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 FRAMERATE = 20
-DEMO_ROUTE, DEMO_START, DEMO_END = 'a2a0ccea32023010/2023-07-27--13-01-19', 90, 105
+DEMO_ROUTE, DEMO_START, DEMO_END = '5beb9b58bd12b691/0000010a--a51155e496', 90, 105
 
 logger = logging.getLogger('clip')
 
@@ -63,8 +63,10 @@ def parse_args():
   return args
 
 
-def setup_env(output_path: str, big: bool = False, speed: int = 1, target_mb: float = 0, duration: int = 0):
-  os.environ.update({"RECORD": "1", "OFFSCREEN": "1", "RECORD_OUTPUT": str(Path(output_path).with_suffix(".mp4"))})
+def setup_env(output_path: str, big: bool = False, speed: int = 1, target_mb: float = 0, duration: int = 0, headless: bool = True):
+  os.environ.update({"RECORD": "1", "RECORD_OUTPUT": str(Path(output_path).with_suffix(".mp4"))})
+  if headless:
+    os.environ["OFFSCREEN"] = "1"
   if speed > 1:
     os.environ["RECORD_SPEED"] = str(speed)
   if target_mb > 0 and duration > 0:
@@ -85,7 +87,7 @@ def _parse_and_chunk_segment(args: tuple) -> list[dict]:
   if not messages:
     return []
 
-  dt_ns, chunks, current, next_time = 1e9 / fps, [], {}, messages[0].logMonoTime + 1e9 / fps  # type: ignore[var-annotated]
+  dt_ns, chunks, current, next_time = 1e9 / fps, [], {}, messages[0].logMonoTime + 1e9 / fps
   for msg in messages:
     if msg.logMonoTime >= next_time:
       chunks.append(current)
@@ -159,7 +161,7 @@ def iter_segment_frames(camera_paths, start_time, end_time, fps=20, use_qcam=Fal
         seg_frames = FrameReader(path, pix_fmt="nv12")
 
     assert seg_frames is not None
-    frame = seg_frames[local_idx] if use_qcam else seg_frames.get(local_idx)  # type: ignore[index, union-attr]
+    frame = seg_frames[local_idx] if use_qcam else seg_frames.get(local_idx)
     yield global_idx, frame
 
 
@@ -286,7 +288,7 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
   if big:
     from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
   else:
-    from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView  # type: ignore[assignment]
+    from openpilot.selfdrive.ui.mici.onroad.augmented_road_view import AugmentedRoadView
   from openpilot.selfdrive.ui.ui_state import ui_state
   from openpilot.system.ui.lib.application import gui_app, FontWeight
   timer.lap("import")
@@ -302,11 +304,11 @@ def clip(route: Route, output: str, start: int, end: int, headless: bool = True,
     logger.error("No messages to render")
     sys.exit(1)
 
-  metadata = load_route_metadata(route) if show_metadata else None
   if headless:
     rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
 
   with OpenpilotPrefix(shared_download_cache=True):
+    metadata = load_route_metadata(route) if show_metadata else None
     camera_paths = route.qcamera_paths() if use_qcam else route.camera_paths()
     frame_queue = FrameQueue(camera_paths, start, end, fps=FRAMERATE, use_qcam=use_qcam)
 
@@ -349,8 +351,9 @@ def main():
   logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s\t%(message)s")
   args = parse_args()
 
-  setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start)
-  clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, not args.windowed,
+  headless = not args.windowed
+  setup_env(args.output, big=args.big, speed=args.speed, target_mb=args.file_size, duration=args.end - args.start, headless=headless)
+  clip(Route(args.route, data_dir=args.data_dir), args.output, args.start, args.end, headless,
        args.big, args.title, not args.no_metadata, not args.no_time_overlay, args.qcam)
 
 

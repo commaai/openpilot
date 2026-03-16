@@ -1,14 +1,31 @@
 import subprocess
 import os
+import shutil
 
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib', 'cereal')
+import libusb
+
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+
+# Detect Qt - skip build if not available
+if arch == "Darwin":
+  try:
+    brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
+    has_qt = os.path.isdir(os.path.join(brew_prefix, "opt/qt@5"))
+  except (FileNotFoundError, subprocess.CalledProcessError):
+    has_qt = False
+else:
+  has_qt = shutil.which('qmake') is not None
+if not has_qt:
+  Return()
+
+SConscript(['#tools/replay/SConscript'])
+Import('replay_lib')
 
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
+qt_modules = ["Widgets", "Gui", "Core"]
 
 qt_libs = []
 if arch == "Darwin":
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
   qt_env['QTDIR'] = f"{brew_prefix}/opt/qt@5"
   qt_dirs = [
     os.path.join(qt_env['QTDIR'], "include"),
@@ -31,16 +48,11 @@ else:
   qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
-  qt_libs = [f"Qt5{m}" for m in qt_modules]
-  if arch == "larch64":
-    qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
-  elif arch != "Darwin":
-    qt_libs += ["GL"]
+  qt_libs = [f"Qt5{m}" for m in qt_modules] + ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']
 qt_env.Tool('qt3')
 
-qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode"]
+qt_env['CPPPATH'] += qt_dirs
 qt_flags = [
   "-D_REENTRANT",
   "-DQT_NO_DEBUG",
@@ -54,22 +66,18 @@ qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 
 base_frameworks = qt_env['FRAMEWORKS']
-base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, messaging, cereal, visionipc, 'm', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
-  base_frameworks.append('OpenCL')
   base_frameworks.append('QtCharts')
-  base_frameworks.append('QtSerialBus')
 else:
-  base_libs.append('OpenCL')
   base_libs.append('Qt5Charts')
-  base_libs.append('Qt5SerialBus')
-
-qt_libs = base_libs
 
 cabana_env = qt_env.Clone()
+cabana_env['CPPPATH'] += [libusb.INCLUDE_DIR]
+cabana_env['LIBPATH'] += [libusb.LIB_DIR]
 
-cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
+cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'bz2', 'zstd', 'yuv', 'usb-1.0'] + base_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
@@ -79,13 +87,16 @@ assets_src = "assets/assets.qrc"
 cabana_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
 cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "assets/assets.o"]))
 
-cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/socketcanstream.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
-                                               'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
-                                               'utils/export.cc', 'utils/util.cc', 'utils/elidedlabel.cc', 'utils/api.cc',
-                                               'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
-                                               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
-                                               'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
-cabana_env.Program('cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_srcs = ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
+               'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
+               'utils/export.cc', 'utils/util.cc', 'utils/elidedlabel.cc',
+               'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
+               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
+               'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc']
+if arch != "Darwin":
+  cabana_srcs += ['streams/socketcanstream.cc']
+cabana_lib = cabana_env.Library("cabana_lib", cabana_srcs, LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):
   cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])

@@ -52,7 +52,8 @@ class ThermalConfig:
   memory: ThermalZone | None = None
   intake: ThermalZone | None = None
   exhaust: ThermalZone | None = None
-  case: ThermalZone | None = None
+  gnss: ThermalZone | None = None
+  bottomSoc: ThermalZone | None = None
 
   def get_msg(self):
     ret = {}

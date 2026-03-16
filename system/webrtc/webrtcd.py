@@ -2,7 +2,6 @@
 
 import argparse
 import asyncio
-import base64
 import json
 import uuid
 import logging
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
 
 from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
-from openpilot.common.params import Params
 
 
 class CerealOutgoingMessageProxy:
@@ -34,15 +32,11 @@ class CerealOutgoingMessageProxy:
 
   def to_json(self, msg_content: Any):
     if isinstance(msg_content, capnp._DynamicStructReader):
-      msg_dict = self.to_json(msg_content.to_dict())
+      msg_dict = msg_content.to_dict()
     elif isinstance(msg_content, capnp._DynamicListReader):
       msg_dict = [self.to_json(msg) for msg in msg_content]
-    elif isinstance(msg_content, dict):
-      msg_dict = {k: self.to_json(v) for k, v in msg_content.items()}
-    elif isinstance(msg_content, list):
-      msg_dict = [self.to_json(item) for item in msg_content]
     elif isinstance(msg_content, bytes):
-      msg_dict = base64.b64encode(msg_content).decode('ascii')
+      msg_dict = msg_content.decode()
     else:
       msg_dict = msg_content
 
@@ -125,10 +119,8 @@ class StreamSession:
   shared_pub_master = DynamicPubMaster([])
 
   def __init__(self, sdp: str, cameras: list[str], incoming_services: list[str], outgoing_services: list[str], debug_mode: bool = False):
-    from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack
-    from aiortc.contrib.media import MediaBlackhole
+    from aiortc.mediastreams import VideoStreamTrack
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
-    from openpilot.system.webrtc.device.audio import AudioInputStreamTrack, CerealAudioStreamTrack, SocketAudioOutput
     from teleoprtc import WebRTCAnswerBuilder
     from teleoprtc.info import parse_info_from_offer
 
@@ -138,18 +130,6 @@ class StreamSession:
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
       builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
-    if config.expected_audio_track:
-      if debug_mode:
-        audio_track = AudioStreamTrack()
-      else:
-        try:
-          audio_track = AudioInputStreamTrack()
-        except Exception:
-          audio_track = CerealAudioStreamTrack()
-      builder.add_audio_stream(audio_track)
-    if config.incoming_audio_track:
-      self.audio_output_cls = SocketAudioOutput if not debug_mode else MediaBlackhole
-      builder.offer_to_receive_audio_stream()
 
     self.stream = builder.stream()
     self.identifier = str(uuid.uuid4())
@@ -164,11 +144,10 @@ class StreamSession:
       self.outgoing_bridge = CerealOutgoingMessageProxy(messaging.SubMaster(outgoing_services))
       self.outgoing_bridge_runner = CerealProxyRunner(self.outgoing_bridge)
 
-    self.audio_output: SocketAudioOutput | MediaBlackhole | None = None
     self.run_task: asyncio.Task | None = None
     self.logger = logging.getLogger("webrtcd")
-    self.logger.info("New stream session (%s), cameras %s, audio in %s out %s, incoming services %s, outgoing services %s",
-                      self.identifier, cameras, config.incoming_audio_track, config.expected_audio_track, incoming_services, outgoing_services)
+    self.logger.info("New stream session (%s), cameras %s, incoming services %s, outgoing services %s",
+                      self.identifier, cameras, incoming_services, outgoing_services)
 
   def start(self):
     self.run_task = asyncio.create_task(self.run())
@@ -190,17 +169,9 @@ class StreamSession:
     except Exception:
       self.logger.exception("Cereal incoming proxy failure")
 
-  active_count = 0
-
   async def run(self):
-    active = False
     try:
       await self.stream.wait_for_connection()
-      active = True
-      StreamSession.active_count += 1
-      if StreamSession.active_count == 1:
-        Params().put_bool("WebRTCOnline", True)
-
       if self.stream.has_messaging_channel():
         if self.incoming_bridge is not None:
           await self.shared_pub_master.add_services_if_needed(self.incoming_bridge_services)
@@ -209,11 +180,6 @@ class StreamSession:
           channel = self.stream.get_messaging_channel()
           self.outgoing_bridge_runner.proxy.add_channel(channel)
           self.outgoing_bridge_runner.start()
-      if self.stream.has_incoming_audio_track():
-        track = self.stream.get_incoming_audio_track(buffered=False)
-        self.audio_output = self.audio_output_cls()
-        self.audio_output.addTrack(track)
-        self.audio_output.start()
       self.logger.info("Stream session (%s) connected", self.identifier)
 
       await self.stream.wait_for_disconnection()
@@ -222,18 +188,11 @@ class StreamSession:
       self.logger.info("Stream session (%s) ended", self.identifier)
     except Exception:
       self.logger.exception("Stream session failure")
-    finally:
-      if active:
-        StreamSession.active_count -= 1
-        if StreamSession.active_count == 0:
-          Params().put_bool("WebRTCOnline", False)
 
   async def post_run_cleanup(self):
     await self.stream.stop()
     if self.outgoing_bridge is not None:
       self.outgoing_bridge_runner.stop()
-    if self.audio_output:
-      self.audio_output.stop()
 
 
 @dataclass
@@ -291,9 +250,6 @@ def webrtcd_thread(host: str, port: int, debug: bool):
   logging_level = logging.DEBUG if debug else logging.INFO
   logging.getLogger("WebRTCStream").setLevel(logging_level)
   logging.getLogger("webrtcd").setLevel(logging_level)
-
-  # Reset WebRTC online status on startup
-  Params().put_bool("WebRTCOnline", False)
 
   app = web.Application()
 

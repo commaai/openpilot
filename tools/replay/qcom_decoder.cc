@@ -175,8 +175,8 @@ bool MsmVidc::setPlaneFormat(enum v4l2_buf_type type, uint32_t fourcc) {
 bool MsmVidc::setFPS(uint32_t fps) {
   struct v4l2_streamparm streamparam = {
     .type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
-    .parm.output.timeperframe = {1, fps}
   };
+  streamparam.parm.output.timeperframe = {1, fps};
   util::safe_ioctl(fd, VIDIOC_S_PARM, &streamparam, "VIDIOC_S_PARM failed");
   return true;
 }

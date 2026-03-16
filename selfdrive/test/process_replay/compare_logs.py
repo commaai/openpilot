@@ -3,12 +3,15 @@ import sys
 import math
 import capnp
 import numbers
-import dictdiffer
 from collections import Counter
 
 from openpilot.tools.lib.logreader import LogReader
 
 EPSILON = sys.float_info.epsilon
+
+_DynamicStructReader = capnp.lib.capnp._DynamicStructReader
+_DynamicListReader = capnp.lib.capnp._DynamicListReader
+_DynamicEnum = capnp.lib.capnp._DynamicEnum
 
 
 def remove_ignored_fields(msg, ignore):
@@ -39,6 +42,61 @@ def remove_ignored_fields(msg, ignore):
   return msg
 
 
+def _diff_capnp(r1, r2, path, tolerance):
+  """Walk two capnp struct readers and yield (action, dotted_path, value) diffs.
+
+  Floats are compared with the given tolerance (combined absolute+relative).
+  """
+  schema = r1.schema
+
+  for fname in schema.non_union_fields:
+    child_path = path + (fname,)
+    v1 = getattr(r1, fname)
+    v2 = getattr(r2, fname)
+    yield from _diff_capnp_values(v1, v2, child_path, tolerance)
+
+  if schema.union_fields:
+    w1, w2 = r1.which(), r2.which()
+    if w1 != w2:
+      yield 'change', '.'.join(path), (w1, w2)
+    else:
+      child_path = path + (w1,)
+      v1, v2 = getattr(r1, w1), getattr(r2, w2)
+      yield from _diff_capnp_values(v1, v2, child_path, tolerance)
+
+
+def _diff_capnp_values(v1, v2, path, tolerance):
+  if isinstance(v1, _DynamicStructReader):
+    yield from _diff_capnp(v1, v2, path, tolerance)
+
+  elif isinstance(v1, _DynamicListReader):
+    dot = '.'.join(path)
+    n1, n2 = len(v1), len(v2)
+    n = min(n1, n2)
+    for i in range(n):
+      yield from _diff_capnp_values(v1[i], v2[i], path + (str(i),), tolerance)
+    if n2 > n:
+      yield 'add', dot, list(enumerate(v2[n:], n))
+    if n1 > n:
+      yield 'remove', dot, list(reversed([(i, v1[i]) for i in range(n, n1)]))
+
+  elif isinstance(v1, _DynamicEnum):
+    s1, s2 = str(v1), str(v2)
+    if s1 != s2:
+      yield 'change', '.'.join(path), (s1, s2)
+
+  elif isinstance(v1, float):
+    if not (v1 == v2 or (
+      math.isfinite(v1) and math.isfinite(v2) and
+      abs(v1 - v2) <= max(tolerance, tolerance * max(abs(v1), abs(v2)))
+    )):
+      yield 'change', '.'.join(path), (v1, v2)
+
+  else:
+    if v1 != v2:
+      yield 'change', '.'.join(path), (v1, v2)
+
+
 def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None,):
   if ignore_fields is None:
     ignore_fields = []
@@ -65,26 +123,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     msg2 = remove_ignored_fields(msg2, ignore_fields)
 
     if msg1.to_bytes() != msg2.to_bytes():
-      msg1_dict = msg1.as_reader().to_dict(verbose=True)
-      msg2_dict = msg2.as_reader().to_dict(verbose=True)
-
-      dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
-
-      # Dictdiffer only supports relative tolerance, we also want to check for absolute
-      # TODO: add this to dictdiffer
-      def outside_tolerance(diff):
-        try:
-          if diff[0] == "change":
-            a, b = diff[2]
-            finite = math.isfinite(a) and math.isfinite(b)
-            if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-              return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
-        except TypeError:
-          pass
-        return True
-
-      dd = list(filter(outside_tolerance, dd))
-
+      dd = list(_diff_capnp(msg1.as_reader(), msg2.as_reader(), (), tolerance))
       diff.extend(dd)
   return diff
 
