@@ -103,6 +103,11 @@ def setup_settings_software_branch_switcher(click, pm: PubMaster):
   click(1984, 449)
 
 
+def setup_settings_firehose(click, pm: PubMaster):
+  setup_settings(click, pm)
+  click(278, 845)
+
+
 def setup_settings_developer(click, pm: PubMaster):
   CP = car.CarParams()
   CP.alphaLongitudinalAvailable = True  # show alpha long control toggle
@@ -221,6 +226,7 @@ CASES = {
   "settings_software_download": setup_settings_software_download,
   "settings_software_release_notes": setup_settings_software_release_notes,
   "settings_software_branch_switcher": setup_settings_software_branch_switcher,
+  "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "keyboard": setup_keyboard,
   "pair_device": setup_pair_device,
