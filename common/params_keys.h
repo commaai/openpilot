@@ -10,6 +10,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"AdbEnabled", {PERSISTENT, BOOL}},
     {"AlwaysOnDM", {PERSISTENT, BOOL}},
     {"ApiCache_Device", {PERSISTENT, STRING}},
+    {"ApiCache_FirehoseStats", {PERSISTENT, JSON}},
     {"AssistNowToken", {PERSISTENT, STRING}},
     {"AthenadPid", {PERSISTENT, INT}},
     {"AthenadUploadQueue", {PERSISTENT, JSON}},
@@ -135,5 +136,4 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"WebRTCOnline", {CLEAR_ON_MANAGER_START, BOOL}},
     {"AsiusAPIHost", {PERSISTENT, STRING}},
     {"EnableWebRTC", {PERSISTENT, BOOL, "1"}},
-    {"Skills", {PERSISTENT, JSON}},
 };
