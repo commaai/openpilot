@@ -3,9 +3,25 @@ import gc
 import os
 import pytest
 
-from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.system.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
+# Imports moved to lazy loading to speed up pytest --collect-only
+# See: https://github.com/commaai/openpilot/issues/32611
+
+# Lazy import helpers - only load hardware/system modules when actually needed
+def _get_openpilot_prefix():
+  from openpilot.common.prefix import OpenpilotPrefix
+  return OpenpilotPrefix
+
+def _get_manager():
+  from openpilot.system.manager import manager
+  return manager
+
+def _get_hardware():
+  from openpilot.system.hardware import HARDWARE
+  return HARDWARE
+
+def _get_tici():
+  from openpilot.system.hardware import TICI
+  return TICI
 
 # TODO: pytest-cpp doesn't support FAIL, and we need to create test translations in sessionstart
 # pending https://github.com/pytest-dev/pytest-cpp/pull/147
@@ -46,6 +62,9 @@ def clean_env():
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
+  OpenpilotPrefix = _get_openpilot_prefix()
+  manager = _get_manager()
+
   with clean_env():
     # setup a clean environment for each test
     with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
@@ -75,6 +94,7 @@ def openpilot_class_fixture():
 @pytest.fixture(scope="function")
 def tici_setup_fixture(request, openpilot_function_fixture):
   """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
+  HARDWARE = _get_hardware()
   if 'skip_tici_setup' in request.keywords:
     return
   HARDWARE.initialize_hardware()
@@ -85,6 +105,7 @@ def tici_setup_fixture(request, openpilot_function_fixture):
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
+  TICI = _get_tici()
   for item in items:
     if "tici" in item.keywords:
       if not TICI:
@@ -108,3 +129,13 @@ def pytest_configure(config):
 
   config_line = "shared_download_cache: share download cache between tests"
   config.addinivalue_line("markers", config_line)
+
+  # OPTIMIZATION: Speed up pytest --collect-only by limiting hypothesis examples
+  # See: https://github.com/commaai/openpilot/issues/32611
+  if config.getoption('--collect-only'):
+    try:
+      from hypothesis import settings, HealthCheck
+      settings.register_profile("collect", max_examples=1, suppress_health_check=[HealthCheck.too_slow])
+      settings.load_profile("collect")
+    except ImportError:
+      pass  # hypothesis not installed
