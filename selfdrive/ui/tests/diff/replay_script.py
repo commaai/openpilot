@@ -468,6 +468,10 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   scroll_down(height * 1.5)  # scroll regulatory info
   script.click(2000, 970)  # OK
   scroll_down()  # scroll device settings
+  script.click(950, 960)  # reboot
+  script.click(1500, 750)  # confirm reboot
+  script.click(1800, 960)  # shutdown
+  script.click(1500, 750)  # confirm shutdown
 
   # === Settings - Network ===
   script.click(278, 450)
