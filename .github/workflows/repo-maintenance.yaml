@@ -68,7 +68,6 @@ jobs:
         git add .
     - name: update car docs
       run: |
-        scons -j$(nproc) --minimal opendbc_repo
         python selfdrive/car/docs.py
         git add docs/CARS.md
     - name: Create Pull Request

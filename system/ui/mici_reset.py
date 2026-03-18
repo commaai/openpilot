@@ -10,9 +10,8 @@ import pyray as rl
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.mici_setup import GreyBigButton, FailedPage
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationCircleButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationCircleButton
 
 USERDATA = "/dev/disk/by-partlabel/userdata"
 TIMEOUT = 3*60
@@ -36,15 +35,13 @@ class ResetFailedPage(FailedPage):
     return False
 
 
-class ResettingPage(NavWidget):
+class ResettingPage(BigDialog):
   DOT_STEP = 0.6
 
   def __init__(self):
-    super().__init__()
+    super().__init__("resetting device", "this may take up to\na minute...",
+                     gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
     self._show_time = 0.0
-
-    self._resetting_card = GreyBigButton("resetting device", "this may take up to\na minute...",
-                                         gui_app.texture("icons_mici/setup/factory_reset.png", 64, 64))
 
   def show_event(self):
     super().show_event()
@@ -57,13 +54,8 @@ class ResettingPage(NavWidget):
   def _render(self, _):
     t = (rl.get_time() - self._show_time) % (self.DOT_STEP * 2)
     dots = "." * min(int(t / (self.DOT_STEP / 4)), 3)
-    self._resetting_card.set_value(f"this may take up to\na minute{dots}")
-    self._resetting_card.render(rl.Rectangle(
-      self._rect.x + self._rect.width / 2 - self._resetting_card.rect.width / 2,
-      self._rect.y + self._rect.height / 2 - self._resetting_card.rect.height / 2,
-      self._resetting_card.rect.width,
-      self._resetting_card.rect.height,
-    ))
+    self._card.set_value(f"this may take up to\na minute{dots}")
+    super()._render(_)
 
 
 class Reset(Scroller):
