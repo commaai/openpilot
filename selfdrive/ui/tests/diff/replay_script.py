@@ -465,7 +465,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   do_onboarding()
   # regulatory info
   script.click(2000, 970)  # regulatory button
-  scroll_down(height * 1.5)  # scroll regulatory info
+  scroll_down(int(height * 1.5))  # scroll regulatory info
   script.click(2000, 970)  # OK
   # scroll device settings
   scroll_down()
