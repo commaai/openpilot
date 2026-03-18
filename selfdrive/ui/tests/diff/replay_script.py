@@ -474,7 +474,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
     script.click(2000, 800)  # open language selection
     if i == 0:
       scroll_down()  # scroll languages
-      script.click(1000, 500)  # select a language (Chinese, requires unifont)
+      script.click(1000, 500)  # select unifont language
     else:
       script.click(1000, 300)  # reset to English
     script.click(1500, 900)  # confirm language
