@@ -467,7 +467,18 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(2000, 970)  # regulatory button
   scroll_down(height * 1.5)  # scroll regulatory info
   script.click(2000, 970)  # OK
-  scroll_down()  # scroll device settings
+  # scroll device settings
+  scroll_down()
+  # change language
+  for i in range(2):
+    script.click(2000, 800)  # open language selection
+    if i == 0:
+      scroll_down()  # scroll languages
+      script.click(1000, 500)  # select a language (Chinese, requires unifont)
+    else:
+      script.click(1000, 300)  # reset to English
+    script.click(1500, 900)  # confirm language
+  # reboot/shutdown
   script.click(950, 960)  # reboot
   script.click(1500, 750)  # confirm reboot
   script.click(1800, 960)  # shutdown
