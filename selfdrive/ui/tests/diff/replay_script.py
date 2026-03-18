@@ -447,7 +447,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(620, 950)  # close alerts
 
   # === Settings (click sidebar settings button) ===
-  script.click(150, 90)
+  script.click(150, 90)  # open settings (device panel)
 
   # === Settings - Device ===
   # pair device
@@ -474,7 +474,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(1500, 750)  # confirm shutdown
 
   # === Settings - Network ===
-  script.click(278, 450)
+  script.click(278, 450)  # open network panel
   # TODO: mock networks
   script.click(1880, 100)  # advanced network settings
 
@@ -491,14 +491,14 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(630, 80)  # back from advanced network
 
   # === Settings - Toggles ===
-  script.click(278, 600)
+  script.click(278, 600)  # open toggles panel
   for _ in range(2):
     script.click(1200, 280)  # toggle experimental mode description
   scroll_down()  # scroll toggles
 
   # === Settings - Software ===
   script.setup(lambda: setup_update_available(False), wait_after=0)  # start with no update available
-  script.click(278, 720)  # software
+  script.click(278, 720)  # open software panel
   for _ in range(2):
     script.click(720, 120)  # toggle current release notes
   script.setup(setup_update_available)  # set update available
@@ -513,12 +513,12 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   scroll_down()  # scroll software settings
 
   # === Settings - Firehose ===
-  script.click(278, 845)
+  script.click(278, 845)  # open firehose panel
   scroll_down()  # scroll firehose panel
 
   # === Settings - Developer (set CarParamsPersistent first) ===
   script.setup(setup_developer_params, wait_after=0)
-  script.click(278, 950)
+  script.click(278, 950)  # open developer panel
   script.click(1930, 470)  # SSH keys (keyboard)
   script.click(1930, 115)  # click cancel on keyboard
   script.click(2000, 960)  # toggle alpha long
