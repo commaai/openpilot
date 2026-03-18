@@ -377,6 +377,18 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
 
 def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   """Build the replay script for the tizi layout."""
+  from openpilot.system.ui.lib.application import gui_app
+
+  width, height = gui_app.width, gui_app.height
+  center = (width // 2, height // 2)
+
+  SWIPE_DISTANCE = height // 3  # roughly a full page scroll for toggles
+  SWIPE_DURATION = 5
+  SWIPE_WAIT = FPS * 3 // 4
+
+  def scroll_down(distance: int = SWIPE_DISTANCE, duration_frames: int = SWIPE_DURATION, wait_after: int = SWIPE_WAIT) -> None:
+    """Drag upward from the center (scroll down)."""
+    script.drag(*center, DIR_UP, distance, duration_frames, wait_after)
 
   def make_home_refresh_setup(fn: Callable) -> Callable:
     """Return setup function that calls the given function to modify state and forces an immediate refresh on the home layout."""
@@ -427,9 +439,11 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Update Available (auto-transitions via HomeLayout refresh) ===
   script.setup(make_home_refresh_setup(setup_update_available))
+  scroll_down()  # scroll release notes
 
   # === Offroad Alerts (auto-transitions via HomeLayout refresh, overrides update) ===
   script.setup(make_home_refresh_setup(setup_offroad_alerts))
+  scroll_down()  # scroll alerts
   script.click(620, 950)  # close alerts
 
   # === Settings (click sidebar settings button) ===
@@ -451,12 +465,15 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   do_onboarding()
   # regulatory info
   script.click(2000, 970)  # regulatory button
+  scroll_down(height * 1.5)  # scroll regulatory info
   script.click(2000, 970)  # OK
+  scroll_down()  # scroll device settings
 
   # === Settings - Network ===
   script.click(278, 450)
   # TODO: mock networks
   script.click(1880, 100)  # advanced network settings
+  scroll_down()  # scroll advanced network settings
 
   # Keyboard (tethering password)
   script.click(2000, 420, wait_after=FAST_CLICK)  # open tether password keyboard
@@ -471,7 +488,9 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Settings - Toggles ===
   script.click(278, 600)
-  script.click(1200, 280)  # expand experimental mode description
+  for _ in range(2):
+    script.click(1200, 280)  # toggle experimental mode description
+  scroll_down()  # scroll toggles
 
   # === Settings - Software ===
   script.setup(lambda: setup_update_available(False), wait_after=0)  # start with no update available
@@ -482,6 +501,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   for _ in range(2):
     script.click(720, 450)  # toggle new release notes
   script.click(2000, 630)  # open select branch dialog
+  scroll_down()  # scroll branches
   script.click(1000, 300)  # select 1st option
   script.click(1600, 900)  # confirm selection
   script.click(2000, 800)  # uninstall
@@ -489,6 +509,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   # === Settings - Firehose ===
   script.click(278, 845)
+  scroll_down()  # scroll firehose panel
 
   # === Settings - Developer (set CarParamsPersistent first) ===
   script.setup(setup_developer_params, wait_after=0)
@@ -497,6 +518,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(1930, 115)  # click cancel on keyboard
   script.click(2000, 960)  # toggle alpha long
   script.click(1500, 875)  # confirm
+  scroll_down()  # scroll developer options
 
   # === Close settings ===
   script.click(250, 160)
