@@ -535,6 +535,8 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(2000, 960)  # toggle alpha long
   script.click(1500, 875)  # confirm
   scroll_down()  # scroll developer options
+  for _ in range(2):
+    script.click(2000, 960)  # toggle UI debug mode
 
   # === Close settings ===
   script.click(250, 160)
