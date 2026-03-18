@@ -510,6 +510,7 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
   script.click(1600, 900)  # confirm selection
   script.click(2000, 800)  # uninstall
   script.click(650, 750)  # cancel uninstall
+  scroll_down()  # scroll software settings
 
   # === Settings - Firehose ===
   script.click(278, 845)
