@@ -53,7 +53,7 @@ class PoseKalman(KalmanFilter):
                0.005**2, 0.005**2, 0.005**2])
 
   obs_noise = {ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
-               ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
+               ObservationKind.PHONE_ACCEL: np.diag([0.75**2, 0.75**2, 0.75**2]),
                ObservationKind.CAMERA_ODO_TRANSLATION: np.diag([0.5**2, 0.5**2, 0.5**2]),
                ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2])}
 
