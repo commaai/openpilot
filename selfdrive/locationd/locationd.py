@@ -30,7 +30,8 @@ INPUT_INVALID_RECOVERY = 10.0 # ~10 secs to resume after exceeding allowed bad i
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
 CAM_ODO_POSE_DELAY = 0.1
-CAM_ODO_STD_MULT = 10
+CAM_ODO_ROT_STD_MULT = 10
+CAM_ODO_TRANS_STD_MULT = 4
 
 
 def calculate_invalid_input_decay(invalid_limit, recovery_time, frequency):
@@ -182,8 +183,8 @@ class LocationEstimator:
       self.posenet_stds[-1] = trans_calib_std[0]
 
       # Multiply by N to avoid to high certainty in kalman filter because of temporally correlated noise
-      rot_calib_std *= CAM_ODO_STD_MULT
-      trans_calib_std *= CAM_ODO_STD_MULT
+      rot_calib_std *= CAM_ODO_ROT_STD_MULT
+      trans_calib_std *= CAM_ODO_TRANS_STD_MULT
 
       rot_device_std = rotate_std(self.device_from_calib, rot_calib_std)
       trans_device_std = rotate_std(self.device_from_calib, trans_calib_std)
