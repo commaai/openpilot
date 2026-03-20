@@ -23,8 +23,43 @@ env:
   PYTEST: pytest --continue-on-collection-errors --durations=0 -n logical
 
 jobs:
+  classify_changes:
+    name: classify changes
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: read
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+    - name: Classify PR files
+      id: classify
+      uses: actions/github-script@v8
+      with:
+        script: |
+          if (context.eventName !== "pull_request") {
+            core.setOutput("docs_only", "false");
+            return;
+          }
+
+          const files = await github.paginate(github.rest.pulls.listFiles, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.payload.pull_request.number,
+            per_page: 100,
+          });
+
+          const docsOnly = files.length > 0 && files.every(({ filename }) =>
+            filename === "mkdocs.yml" ||
+            filename.startsWith("docs/") ||
+            filename.endsWith(".md")
+          );
+
+          core.setOutput("docs_only", docsOnly ? "true" : "false");
+
   build_release:
     name: build release
+    needs: classify_changes
+    if: needs.classify_changes.outputs.docs_only != 'true'
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
@@ -63,6 +98,8 @@ jobs:
 
   build_mac:
     name: build macOS
+    needs: classify_changes
+    if: needs.classify_changes.outputs.docs_only != 'true'
     runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v6
@@ -78,6 +115,8 @@ jobs:
 
   static_analysis:
     name: static analysis
+    needs: classify_changes
+    if: needs.classify_changes.outputs.docs_only != 'true'
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
@@ -95,6 +134,8 @@ jobs:
 
   unit_tests:
     name: unit tests
+    needs: classify_changes
+    if: needs.classify_changes.outputs.docs_only != 'true'
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
@@ -118,6 +159,8 @@ jobs:
 
   process_replay:
     name: process replay
+    needs: classify_changes
+    if: needs.classify_changes.outputs.docs_only != 'true'
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
@@ -174,6 +217,7 @@ jobs:
 
   simulator_driving:
     name: simulator driving
+    needs: classify_changes
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
@@ -196,6 +240,8 @@ jobs:
 
   create_ui_report:
     name: Create UI Report
+    needs: classify_changes
+    if: needs.classify_changes.outputs.docs_only != 'true'
     runs-on: ${{
       (github.repository == 'commaai/openpilot') &&
       ((github.event_name != 'pull_request') ||
