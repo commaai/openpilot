@@ -25,6 +25,18 @@ install_qt() {
   fi
 }
 
+get_job_count() {
+  if command -v nproc &> /dev/null; then
+    nproc
+  elif [[ "$(uname)" == "Darwin" ]]; then
+    sysctl -n hw.ncpu
+  elif command -v getconf &> /dev/null; then
+    getconf _NPROCESSORS_ONLN
+  else
+    echo 2
+  fi
+}
+
 # Install Qt if not found
 if ! command -v qmake &> /dev/null; then
   echo "Qt not found, installing dependencies..."
@@ -33,6 +45,6 @@ fi
 
 # Build _cabana
 cd "$ROOT"
-scons -j"$(nproc)" tools/cabana/_cabana
+scons -j"$(get_job_count)" tools/cabana/_cabana
 
 exec "$DIR/_cabana" "$@"
