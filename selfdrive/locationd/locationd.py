@@ -9,7 +9,7 @@ from collections import defaultdict
 from cereal import log, messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.transformations.orientation import rot_from_euler
-from openpilot.common.realtime import config_realtime_process, DT_MDL
+from openpilot.common.realtime import config_realtime_process
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.locationd.helpers import rotate_std
