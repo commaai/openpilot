@@ -15,7 +15,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
-from openpilot.selfdrive.modeld.constants import ModelConstants
 
 ACCEL_SANITY_CHECK = 100.0  # m/s^2
 ROTATION_SANITY_CHECK = 10.0  # rad/s
@@ -29,7 +28,7 @@ INPUT_INVALID_LIMIT = 2.0 # 1 (camodo) / 9 (sensor) bad input[s] ignored
 INPUT_INVALID_RECOVERY = 10.0 # ~10 secs to resume after exceeding allowed bad inputs by one
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
-CAM_ODO_POSE_DELAY = 0.1
+CAM_ODO_POSE_DELAY = 0.1 # dependent on the vision model context frames and temporal frequency (current model is 5 fps with 2 context frames)
 CAM_ODO_ROT_STD_MULT = 10
 CAM_ODO_TRANS_STD_MULT = 4
 
