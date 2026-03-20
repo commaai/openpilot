@@ -34,7 +34,7 @@ For doing development work on device, it's recommended to use [SSH agent forward
 
 In order to use ADB on your device, you'll need to perform the following steps using the image below for reference:
 
-![comma three/comma four back](../assets/three-back.svg)
+![comma 3/3x back](../assets/three-back.svg)
 
 * Plug your device into constant power using port 2, letting the device boot up
 * Enable ADB in your device's settings
