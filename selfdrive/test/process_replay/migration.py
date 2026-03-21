@@ -197,10 +197,9 @@ def migrate_livePose(msgs):
 
   for index, msg in msgs:
     if msg.which() == "livePose":
-      if msg.livePose.timestamp == 0:
-        new_msg = msg.as_builder()
-        new_msg.livePose.timestamp = msg.logMonoTime
-        ops.append((index, new_msg.as_reader()))
+      new_msg = msg.as_builder()
+      new_msg.livePose.timestamp = msg.logMonoTime
+      ops.append((index, new_msg.as_reader()))
   return ops, [], []
 
 
