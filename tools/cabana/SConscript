@@ -69,7 +69,7 @@ base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, 'm', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
-  base_frameworks.append('QtCharts')
+  base_frameworks += ['QtCharts', 'CoreFoundation', 'IOKit', 'Security']
 else:
   base_libs.append('Qt5Charts')
 
