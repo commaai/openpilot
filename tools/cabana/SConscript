@@ -4,7 +4,7 @@ import shutil
 
 import libusb
 
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
 
 # Detect Qt - skip build if not available
 if arch == "Darwin":
@@ -17,9 +17,6 @@ else:
   has_qt = shutil.which('qmake') is not None
 if not has_qt:
   Return()
-
-SConscript(['#tools/replay/SConscript'])
-Import('replay_lib')
 
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core"]
