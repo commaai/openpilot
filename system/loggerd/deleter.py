@@ -54,8 +54,17 @@ def deleter_thread(exit_event: threading.Event):
       dirs = listdir_by_creation(Paths.log_root())
       preserved_dirs = get_preserved_segments(dirs)
 
+      # listdir_by_creation only returns directories; also collect stray
+      # files and symlinks so they get cleaned up instead of crashing
+      dir_set = set(dirs)
+      try:
+        stray = [e for e in os.listdir(Paths.log_root()) if e not in dir_set]
+      except OSError:
+        stray = []
+      all_entries = stray + sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs))
+
       # remove the earliest entry we can
-      for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
+      for delete_dir in all_entries:
         delete_path = os.path.join(Paths.log_root(), delete_dir)
 
         try:
