@@ -1,3 +1,5 @@
+import os
+import shutil
 import time
 import threading
 from collections import namedtuple
@@ -6,7 +8,8 @@ from collections.abc import Sequence
 
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
-from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase, create_random_file
+from openpilot.system.hardware.hw import Paths
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 
@@ -115,3 +118,97 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  def test_delete_stray_file(self):
+    """Stray files (e.g. tar.gz) in log_root should be deleted without crashing."""
+    root = Path(Paths.log_root())
+    stray = root / "2023-09-23.tar.gz"
+    create_random_file(stray, 0.01)
+
+    seg_file = self.make_file_with_data(self.seg_dir, self.f_type, 0.1)
+
+    self.start_thread()
+    try:
+      with Timeout(5, "Timeout waiting for stray file to be deleted"):
+        while stray.exists() or seg_file.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+
+  def test_delete_stray_symlink(self):
+    """Symlinks in log_root should be removed (unlinked), not followed."""
+    root = Path(Paths.log_root())
+    target = root.parent / "symlink_target.bin"
+    create_random_file(target, 0.01)
+
+    link = root / "stray_symlink"
+    os.symlink(target, link)
+
+    self.start_thread()
+    try:
+      with Timeout(5, "Timeout waiting for symlink to be deleted"):
+        while os.path.lexists(link):
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+      assert target.exists(), "Symlink target should not be deleted"
+      target.unlink()
+
+  def test_delete_mixed_entries(self):
+    """Deleter handles a mix of segment dirs, stray files, and nested dirs."""
+    root = Path(Paths.log_root())
+    paths = []
+
+    # stray files
+    for name in ["backup.tar.gz", "notes.txt", ".hidden_file"]:
+      p = root / name
+      create_random_file(p, 0.01)
+      paths.append(p)
+
+    # stray nested directory
+    nested = root / "stray_logs" / "sub" / "deep"
+    nested.mkdir(parents=True, exist_ok=True)
+    create_random_file(nested / "data.bin", 0.01)
+    paths.append(root / "stray_logs")
+
+    # normal segment directory
+    seg_file = self.make_file_with_data(self.seg_dir, self.f_type, 0.1)
+    paths.append(seg_file)
+
+    self.start_thread()
+    try:
+      with Timeout(10, "Timeout waiting for mixed entries to be deleted"):
+        while any(os.path.lexists(p) for p in paths):
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+
+  def test_delete_continues_after_error(self, monkeypatch):
+    """Deleter should continue to the next entry if one fails to delete."""
+    root = Path(Paths.log_root())
+
+    bad = root / "0_bad_entry"
+    bad.mkdir(parents=True, exist_ok=True)
+    create_random_file(bad / "file.bin", 0.01)
+
+    good_file = root / "1_good_file.bin"
+    create_random_file(good_file, 0.01)
+
+    original_rmtree = shutil.rmtree
+
+    def failing_rmtree(path, *args, **kwargs):
+      if str(path) == str(bad):
+        raise PermissionError("simulated permission error")
+      return original_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(shutil, "rmtree", failing_rmtree)
+
+    self.start_thread()
+    try:
+      with Timeout(5, "Timeout waiting for good file to be deleted"):
+        while good_file.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+
+    assert bad.exists(), "Bad entry should survive the error"

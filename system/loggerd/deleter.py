@@ -54,16 +54,19 @@ def deleter_thread(exit_event: threading.Event):
       dirs = listdir_by_creation(Paths.log_root())
       preserved_dirs = get_preserved_segments(dirs)
 
-      # remove the earliest directory we can
+      # remove the earliest entry we can
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
         delete_path = os.path.join(Paths.log_root(), delete_dir)
 
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
-          continue
-
         try:
-          cloudlog.info(f"deleting {delete_path}")
-          shutil.rmtree(delete_path)
+          if os.path.isdir(delete_path) and not os.path.islink(delete_path):
+            if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+              continue
+            cloudlog.info(f"deleting {delete_path}")
+            shutil.rmtree(delete_path)
+          else:
+            cloudlog.info(f"deleting {delete_path}")
+            os.remove(delete_path)
           break
         except OSError:
           cloudlog.exception(f"issue deleting {delete_path}")
