@@ -509,6 +509,7 @@ CONFIGS = [
     ignore=["logMonoTime"],
     should_recv_callback=MessageBasedRcvCallback("cameraOdometry"),
     tolerance=NUMPY_TOLERANCE,
+    processing_time=0.01,
   ),
   ProcessConfig(
     proc_name="paramsd",

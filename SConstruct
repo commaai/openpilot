@@ -47,8 +47,9 @@ pkgs = [importlib.import_module(name) for name in pkg_names]
 # be distributed with all Linux distros and macOS, or
 # vendored in commaai/dependencies.
 allowed_system_libs = {
-  "EGL", "GLESv2", "GL", "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
-  "crypto", "dl", "drm", "gbm", "m", "pthread", "ssl", "usb-1.0",
+  "EGL", "GLESv2", "GL",
+  "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
+  "dl", "drm", "gbm",  "m", "pthread",
 }
 
 def _resolve_lib(env, name):
@@ -57,7 +58,7 @@ def _resolve_lib(env, name):
     for ext in ('.a', '.so', '.dylib'):
       f = File(os.path.join(p, f'lib{name}{ext}'))
       if f.exists() or f.has_builder():
-        return f
+        return name
   if name in allowed_system_libs:
     return name
   raise SCons.Errors.UserError(f"Unexpected non-vendored library '{name}'")
@@ -253,8 +254,12 @@ SConscript([
   'selfdrive/ui/SConscript',
 ])
 
-if Dir('#tools/cabana/').exists() and arch != "larch64":
-  SConscript(['tools/cabana/SConscript'])
+# Build tools
+if arch != "larch64":
+  SConscript([
+    'tools/replay/SConscript',
+    'tools/cabana/SConscript',
+  ])
 
 
 env.CompilationDatabase('compile_commands.json')

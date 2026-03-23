@@ -1426,6 +1426,8 @@ struct LivePose {
   posenetOK @5 :Bool = false;
   sensorsOK @6 :Bool = false;
 
+  timestamp @8 :UInt64;
+
   debugFilterState @7 :FilterState;
 
   struct XYZMeasurement {
