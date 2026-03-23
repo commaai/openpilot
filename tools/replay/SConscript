@@ -3,7 +3,7 @@ Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
 replay_env = env.Clone()
 replay_env['CCFLAGS'] += ['-Wno-deprecated-declarations']
 
-base_frameworks = []
+base_frameworks = ['VideoToolbox', 'CoreMedia', 'CoreFoundation', 'CoreVideo'] if arch == "Darwin" else []
 base_libs = [common, messaging, cereal, visionipc, 'm', 'pthread']
 
 replay_lib_src = ["replay.cc", "consoleui.cc", "camera.cc", "filereader.cc", "logreader.cc", "framereader.cc",
@@ -13,6 +13,8 @@ if arch != "Darwin":
 replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
 Export('replay_lib')
 replay_libs = [replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'bz2', 'zstd', 'yuv', 'ncurses'] + base_libs
+if arch != "Darwin":
+  replay_libs += ['va', 'va-drm', 'drm']
 replay_env.Program("replay", ["main.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):
