@@ -68,7 +68,7 @@ msgstr ""
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:30
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:74
 msgid "ADD"
 msgstr "AÑADIR"
 
@@ -361,7 +361,7 @@ msgstr ""
 msgid "Enter password"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:89
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:129
 #, python-format
 msgid "Enter your GitHub username"
 msgstr "Introduce tu nombre de usuario de GitHub"
@@ -451,7 +451,7 @@ msgstr "Instalar actualización"
 msgid "Joystick Debug Mode"
 msgstr "Modo de depuración de joystick"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:29
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:73
 msgid "LOADING"
 msgstr "CARGANDO"
 
@@ -488,12 +488,7 @@ msgstr "NO"
 msgid "Network"
 msgstr "Red"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:115
-#, python-format
-msgid "No SSH keys found"
-msgstr "No se encontraron claves SSH"
-
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:127
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:67
 #, python-format
 msgid "No SSH keys found for user '{}'"
 msgstr "No se encontraron claves SSH para el usuario '{username}'"
@@ -596,7 +591,7 @@ msgstr "Previsualiza la cámara hacia el conductor para asegurarte de que la sup
 msgid "QR Code Error"
 msgstr "Error de código QR"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:31
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:75
 msgid "REMOVE"
 msgstr "ELIMINAR"
 
@@ -660,7 +655,7 @@ msgstr "Acceso remoto"
 msgid "Remote snapshots"
 msgstr "Capturas remotas"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:124
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:65
 #, python-format
 msgid "Request timed out"
 msgstr "Se agotó el tiempo de espera de la solicitud"

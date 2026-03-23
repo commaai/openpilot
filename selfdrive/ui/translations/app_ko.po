@@ -68,7 +68,7 @@ msgstr "<br><br>스티어링 지연 보정이 완료되었습니다."
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr "<br><br>스티어링 지연 보정이 {}% 완료되었습니다."
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:30
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:74
 msgid "ADD"
 msgstr "추가"
 
@@ -361,7 +361,7 @@ msgstr "새 테더링 비밀번호 입력"
 msgid "Enter password"
 msgstr "비밀번호 입력"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:89
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:129
 #, python-format
 msgid "Enter your GitHub username"
 msgstr "GitHub 사용자 이름 입력"
@@ -451,7 +451,7 @@ msgstr "업데이트 설치"
 msgid "Joystick Debug Mode"
 msgstr "조이스틱 디버그 모드"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:29
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:73
 msgid "LOADING"
 msgstr "로딩 중"
 
@@ -488,12 +488,7 @@ msgstr "아니오"
 msgid "Network"
 msgstr "네트워크"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:115
-#, python-format
-msgid "No SSH keys found"
-msgstr "SSH 키를 찾을 수 없습니다"
-
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:127
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:67
 #, python-format
 msgid "No SSH keys found for user '{}'"
 msgstr "사용자 '{}'의 SSH 키를 찾을 수 없습니다"
@@ -596,7 +591,7 @@ msgstr "운전자 모니터링의 가시성을 확인하기 위해 운전자 카
 msgid "QR Code Error"
 msgstr "QR 코드 오류"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:31
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:75
 msgid "REMOVE"
 msgstr "제거"
 
@@ -660,7 +655,7 @@ msgstr "원격 액세스"
 msgid "Remote snapshots"
 msgstr "원격 스냅샷"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:124
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:65
 #, python-format
 msgid "Request timed out"
 msgstr "요청 시간이 초과되었습니다"

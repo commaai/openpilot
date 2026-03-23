@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-09 14:21+0000\n"
+"POT-Creation-Date: 2026-03-23 14:26+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -260,34 +260,29 @@ msgstr ""
 msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:29
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:73
 msgid "LOADING"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:30
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:74
 msgid "ADD"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:31
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:75
 msgid "REMOVE"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:89
-#, python-format
-msgid "Enter your GitHub username"
-msgstr ""
-
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:124
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:65
 #, python-format
 msgid "Request timed out"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:115
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:129
 #, python-format
-msgid "No SSH keys found"
+msgid "Enter your GitHub username"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:127
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:67
 #, python-format
 msgid "No SSH keys found for user '{}'"
 msgstr ""

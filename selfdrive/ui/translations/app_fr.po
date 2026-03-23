@@ -69,7 +69,7 @@ msgstr "<br><br>L'étalonnage du délai de réponse de la direction est terminé
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr "<br><br>L'étalonnage du délai de réponse de la direction est terminé à {}%."
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:30
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:74
 msgid "ADD"
 msgstr "AJOUTER"
 
@@ -362,7 +362,7 @@ msgstr "Saisir le mot de passe du partage de connexion"
 msgid "Enter password"
 msgstr "Saisir le mot de passe"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:89
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:129
 #, python-format
 msgid "Enter your GitHub username"
 msgstr "Entrez votre nom d'utilisateur GitHub"
@@ -452,7 +452,7 @@ msgstr "Installer la mise à jour"
 msgid "Joystick Debug Mode"
 msgstr "Mode débogage joystick"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:29
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:73
 msgid "LOADING"
 msgstr "CHARGEMENT"
 
@@ -489,12 +489,7 @@ msgstr "NON"
 msgid "Network"
 msgstr "Réseau"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:115
-#, python-format
-msgid "No SSH keys found"
-msgstr "Aucune clé SSH trouvée"
-
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:127
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:67
 #, python-format
 msgid "No SSH keys found for user '{}'"
 msgstr "Aucune clé SSH trouvée pour l'utilisateur '{}'"
@@ -597,7 +592,7 @@ msgstr "Prévisualisez la caméra orientée conducteur pour vous assurer que la 
 msgid "QR Code Error"
 msgstr "Erreur de code QR"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:31
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:75
 msgid "REMOVE"
 msgstr "SUPPRIMER"
 
@@ -661,7 +656,7 @@ msgstr "Accès à distance"
 msgid "Remote snapshots"
 msgstr "Captures à distance"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:124
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:65
 #, python-format
 msgid "Request timed out"
 msgstr "Délai de la requête dépassé"

@@ -68,7 +68,7 @@ msgstr "<br><br>轉向延遲校正完成。"
 msgid "<br><br>Steering lag calibration is {}% complete."
 msgstr "<br><br>轉向延遲校正已完成 {}%。"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:30
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:74
 msgid "ADD"
 msgstr "新增"
 
@@ -361,7 +361,7 @@ msgstr "輸入新的網路共享密碼"
 msgid "Enter password"
 msgstr "輸入密碼"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:89
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:129
 #, python-format
 msgid "Enter your GitHub username"
 msgstr "輸入您的 GitHub 使用者名稱"
@@ -451,7 +451,7 @@ msgstr "安裝更新"
 msgid "Joystick Debug Mode"
 msgstr "搖桿除錯模式"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:29
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:73
 msgid "LOADING"
 msgstr "載入中"
 
@@ -488,12 +488,7 @@ msgstr "否"
 msgid "Network"
 msgstr "網路"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:115
-#, python-format
-msgid "No SSH keys found"
-msgstr "找不到 SSH 金鑰"
-
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:127
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:67
 #, python-format
 msgid "No SSH keys found for user '{}'"
 msgstr "找不到使用者 '{}' 的 SSH 金鑰"
@@ -596,7 +591,7 @@ msgstr "預覽車內鏡頭以確保駕駛監控視野良好。（車輛須熄火
 msgid "QR Code Error"
 msgstr "QR 碼錯誤"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:31
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:75
 msgid "REMOVE"
 msgstr "移除"
 
@@ -660,7 +655,7 @@ msgstr "遠端存取"
 msgid "Remote snapshots"
 msgstr "遠端擷圖"
 
-#: openpilot/selfdrive/ui/widgets/ssh_key.py:124
+#: openpilot/selfdrive/ui/widgets/ssh_key.py:65
 #, python-format
 msgid "Request timed out"
 msgstr "要求逾時"
