@@ -145,7 +145,7 @@ class ProcessContainer:
     self.cfg = copy.deepcopy(cfg)
     self.process = copy.deepcopy(managed_processes[cfg.proc_name])
     self.msg_queue: list[capnp._DynamicStructReader] = []
-    self.last_input_log_mono_time: int = 0
+    self.last_input_log_mono_time: int = -1
     self.cnt = 0
     self.pm: messaging.PubMaster | None = None
     self.sockets: list[messaging.SubSocket] | None = None
@@ -268,6 +268,7 @@ class ProcessContainer:
       ms = messaging.drain_sock(socket)
       for m in ms:
         m = m.as_builder()
+        assert start_time > 0, "start_time must be positive"
         m.logMonoTime = start_time + int(self.cfg.processing_time * 1e9)
         output_msgs.append(m.as_reader())
     return output_msgs
@@ -715,8 +716,7 @@ def _replay_multi_process(
 
     # flush last set of messages from each process
     for container in containers:
-      last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
-      log_msgs.extend(container.get_output_msgs(last_time))
+      log_msgs.extend(container.get_output_msgs(container.last_input_log_mono_time))
   finally:
     for container in containers:
       container.stop()
