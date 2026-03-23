@@ -66,7 +66,7 @@ base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, 'm', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
-  base_frameworks += ['QtCharts', 'CoreFoundation', 'IOKit', 'Security']
+  base_frameworks += ['QtCharts', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'IOKit', 'Security', 'VideoToolbox']
 else:
   base_libs.append('Qt5Charts')
 
@@ -75,6 +75,8 @@ cabana_env['CPPPATH'] += [libusb.INCLUDE_DIR]
 cabana_env['LIBPATH'] += [libusb.LIB_DIR]
 
 cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'bz2', 'zstd', 'yuv', 'usb-1.0'] + base_libs
+if arch != "Darwin":
+  cabana_libs += ['va', 'va-drm', 'drm']
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
