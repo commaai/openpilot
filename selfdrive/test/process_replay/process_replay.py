@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import time
 import copy
 import heapq
 import signal
@@ -715,7 +716,8 @@ def _replay_multi_process(
 
     # flush last set of messages from each process
     for container in containers:
-      log_msgs.extend(container.get_output_msgs(container.last_input_log_mono_time))
+      last_time = container.last_input_log_mono_time if container.last_input_log_mono_time > 0 else int(time.monotonic() * 1e9)
+      log_msgs.extend(container.get_output_msgs(last_time))
   finally:
     for container in containers:
       container.stop()
