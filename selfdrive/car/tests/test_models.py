@@ -14,6 +14,7 @@ from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
 from opendbc.car.structs import car
+from opendbc.car.toyota.values import CarControllerParams as ToyotaCarControllerParams
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from opendbc.car.values import Platform, PLATFORMS
 from opendbc.safety.tests.libsafety import libsafety_py
@@ -37,10 +38,10 @@ CI = os.environ.get("CI", None) is not None
 
 TX_FUZZ_HISTORY = 300
 TX_FUZZ_WINDOW = 50
+TX_FUZZ_MAX_FRAMES = 200
 TX_FUZZ_MIN_START = 300
 MAX_FUZZ_CURVATURE = 0.02
 MAX_FUZZ_STEERING_ANGLE_DELTA = 10.0
-TOYOTA_LTA_REGRESSION_FRAMES = 12
 
 
 def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
@@ -253,19 +254,20 @@ class TestCarModelBase(unittest.TestCase):
 
     return CC.as_reader()
 
-  def _get_toyota_lta_regression_control(self, CS: car.CarState, step: int):
+  def _get_sendcan_message(self, sendcan, addr: int):
+    return next(((dat, bus) for tx_addr, dat, bus in sendcan if tx_addr == addr), None)
+
+  def _get_toyota_lta_regression_control(self, CS: car.CarState, lat_active: bool, angle_offset: float):
     CC = car.CarControl.new_message()
-    active = (step % 4) < 2
-    angle_offset = 0.5 if (step % 8) < 4 else -0.5
 
     CC.enabled = True
-    CC.latActive = active
+    CC.latActive = lat_active
     CC.longActive = False
     CC.actuators.accel = 0.0
     CC.actuators.longControlState = car.CarControl.Actuators.LongControlState.off
     CC.actuators.torque = 0.0
     CC.actuators.curvature = 0.0
-    CC.actuators.steeringAngleDeg = float(CS.steeringAngleDeg + (angle_offset if active else 0.0))
+    CC.actuators.steeringAngleDeg = float(CS.steeringAngleDeg + (angle_offset if lat_active else 0.0))
 
     return CC.as_reader()
 
@@ -410,7 +412,7 @@ class TestCarModelBase(unittest.TestCase):
       self.skipTest("Skipping test for notCar")
 
     min_start_idx = max(TX_FUZZ_MIN_START, self.elm_frame or 0, self.car_safety_mode_frame or 0)
-    max_start_idx = len(self.can_msgs) - TX_FUZZ_WINDOW
+    max_start_idx = len(self.can_msgs) - TX_FUZZ_MAX_FRAMES
     self.assertGreater(max_start_idx, min_start_idx, "route too short for tx fuzz testing")
     start_idx = data.draw(st.integers(min_value=min_start_idx, max_value=max_start_idx))
 
@@ -424,11 +426,13 @@ class TestCarModelBase(unittest.TestCase):
       self._replay_can_frame(CI, can, start_ts, assert_rx=False)
 
     checked_msgs = 0
-    for frame_idx, can in enumerate(self.can_msgs[start_idx:start_idx + TX_FUZZ_WINDOW], start=start_idx):
+    valid_frames = 0
+    for frame_idx, can in enumerate(self.can_msgs[start_idx:start_idx + TX_FUZZ_MAX_FRAMES], start=start_idx):
       CS = self._replay_can_frame(CI, can, start_ts, assert_rx=True)
       if not CS.canValid or not self.safety.safety_config_valid():
         continue
 
+      valid_frames += 1
       CC = self._get_fuzzy_car_control(data.draw, CS)
       _, sendcan = CI.apply(CC, can[0])
 
@@ -438,13 +442,17 @@ class TestCarModelBase(unittest.TestCase):
                         f"panda blocked openpilot tx at frame {frame_idx}: {(hex(addr), dat.hex(), bus)}")
         checked_msgs += 1
 
+      if checked_msgs > 0 and valid_frames >= TX_FUZZ_WINDOW:
+        break
+
+    self.assertGreaterEqual(valid_frames, TX_FUZZ_WINDOW, "tx fuzz test did not find enough valid frames")
     self.assertGreater(checked_msgs, 0, "tx fuzz test did not exercise any messages")
 
   @pytest.mark.nocapture
-  def test_toyota_lta_history_regression(self):
+  def test_toyota_lta_tx_regression(self):
     """
-      Exercise a deterministic active/inactive LTA sequence on real route data to cover
-      desired-angle history handling across state transitions.
+      Exercise accepted, blocked, inactive, and recovered Toyota LTA TX paths on
+      real route data.
     """
     if self.CP.brand != "toyota" or self.CP.steerControlType != SteerControlType.angle:
       self.skipTest("only applies to Toyota angle-control platforms")
@@ -458,37 +466,56 @@ class TestCarModelBase(unittest.TestCase):
     for can in self.can_msgs[warmup_start_idx:min_start_idx]:
       self._replay_can_frame(CI, can, start_ts, assert_rx=False)
 
-    exercised_frames = 0
-    lta_msgs = 0
-    saw_active_lta = False
-    saw_inactive_lta = False
+    phase_plan = (
+      ("accepted_active", True, 0.5, False, True, 100),
+      ("blocked_active", True, 1.0, True, False, 100),
+      ("accepted_inactive", False, 0.0, False, True, 0),
+      ("recovered_active", True, -0.5, False, True, 100),
+    )
+    phase_idx = 0
 
     for frame_idx, can in enumerate(self.can_msgs[min_start_idx:], start=min_start_idx):
       CS = self._replay_can_frame(CI, can, start_ts, assert_rx=True)
       if not CS.canValid or not self.safety.safety_config_valid():
         continue
 
-      CC = self._get_toyota_lta_regression_control(CS, exercised_frames)
-      _, sendcan = CI.apply(CC, can[0])
+      phase_name, lat_active, angle_offset, inject_torque_limit, should_allow_lta, expected_wind_down = phase_plan[phase_idx]
 
+      self.safety.set_controls_allowed(True)
+      self.safety.set_cruise_engaged_prev(True)
+      if inject_torque_limit:
+        self.safety.set_torque_meas(ToyotaCarControllerParams.STEER_MAX + 1, ToyotaCarControllerParams.STEER_MAX + 1)
+        self.safety.set_torque_driver(ToyotaCarControllerParams.MAX_LTA_DRIVER_TORQUE_ALLOWANCE + 1,
+                                      ToyotaCarControllerParams.MAX_LTA_DRIVER_TORQUE_ALLOWANCE + 1)
+      else:
+        self.safety.set_torque_meas(0, 0)
+        self.safety.set_torque_driver(0, 0)
+
+      CC = self._get_toyota_lta_regression_control(CS, lat_active, angle_offset)
+      _, sendcan = CI.apply(CC, can[0])
+      if self._get_sendcan_message(sendcan, 0x191) is None:
+        continue
+
+      saw_lta = False
       for addr, dat, bus in sendcan:
         to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
-        self.assertTrue(self.safety.safety_tx_hook(to_send),
-                        f"toyota LTA regression blocked tx at frame {frame_idx}: {(hex(addr), dat.hex(), bus)}")
+        allowed = self.safety.safety_tx_hook(to_send)
 
         if addr == 0x191:
-          lta_msgs += 1
-          active = bool(dat[0] & 0x1)
-          saw_active_lta |= active
-          saw_inactive_lta |= not active
+          saw_lta = True
+          self.assertEqual(should_allow_lta, allowed,
+                           f"unexpected Toyota LTA tx result for {phase_name} at frame {frame_idx}: {(hex(addr), dat.hex(), bus)}")
+          self.assertEqual(lat_active, bool(dat[0] & 0x1), f"unexpected Toyota LTA active bit for {phase_name}")
+          self.assertEqual(expected_wind_down, dat[5], f"unexpected Toyota LTA torque wind down for {phase_name}")
+        else:
+          self.assertTrue(allowed, f"toyota LTA regression blocked non-LTA tx for {phase_name}: {(hex(addr), dat.hex(), bus)}")
 
-      exercised_frames += 1
-      if exercised_frames >= TOYOTA_LTA_REGRESSION_FRAMES:
+      self.assertTrue(saw_lta, f"Toyota regression did not emit LTA message for {phase_name}")
+      phase_idx += 1
+      if phase_idx >= len(phase_plan):
         break
 
-    self.assertEqual(exercised_frames, TOYOTA_LTA_REGRESSION_FRAMES, "failed to find enough valid Toyota LTA frames")
-    self.assertGreater(lta_msgs, 0, "Toyota regression did not exercise any LTA messages")
-    self.assertTrue(saw_active_lta and saw_inactive_lta, "Toyota regression did not cover active and inactive LTA states")
+    self.assertEqual(phase_idx, len(phase_plan), "failed to exercise full Toyota LTA regression sequence")
 
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
