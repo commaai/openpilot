@@ -42,6 +42,7 @@ TX_FUZZ_MAX_FRAMES = 200
 TX_FUZZ_MIN_START = 300
 MAX_FUZZ_CURVATURE = 0.02
 MAX_FUZZ_STEERING_ANGLE_DELTA = 10.0
+TOYOTA_TORQUE_HISTORY_SAMPLES = 6
 
 
 def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
@@ -257,6 +258,22 @@ class TestCarModelBase(unittest.TestCase):
   def _get_sendcan_message(self, sendcan, addr: int):
     return next(((dat, bus) for tx_addr, dat, bus in sendcan if tx_addr == addr), None)
 
+  def _inject_toyota_torque_history(self, CI, eps_torque: int, driver_torque: int):
+    eps_scale = self.CP.safetyConfigs[-1].safetyParam & 0xFF
+    self.assertGreater(eps_scale, 0, "invalid Toyota EPS scale")
+
+    values = {
+      "STEER_TORQUE_EPS": (eps_torque / eps_scale) * 100.0,
+      "STEER_TORQUE_DRIVER": driver_torque,
+    }
+    addr, dat, bus = CI.CC.packer.make_can_msg("STEER_TORQUE_SENSOR", 0, values)
+
+    for _ in range(TOYOTA_TORQUE_HISTORY_SAMPLES):
+      ret = self.safety.safety_rx_hook(libsafety_py.make_CANPacket(addr, bus % 4, dat))
+      self.assertEqual(1, ret, f"Toyota torque history rx failed: {(hex(addr), dat.hex(), bus)}")
+
+    self.safety.safety_tick_current_safety_config()
+
   def _get_toyota_lta_regression_control(self, CS: car.CarState, lat_active: bool, angle_offset: float):
     CC = car.CarControl.new_message()
 
@@ -467,10 +484,10 @@ class TestCarModelBase(unittest.TestCase):
       self._replay_can_frame(CI, can, start_ts, assert_rx=False)
 
     phase_plan = (
-      ("accepted_active", True, 0.5, False, True, 100),
-      ("blocked_active", True, 1.0, True, False, 100),
-      ("accepted_inactive", False, 0.0, False, True, 0),
-      ("recovered_active", True, -0.5, False, True, 100),
+      ("accepted_active", True, 0.5, None, True, 100),
+      ("blocked_active", True, 1.0, (0, ToyotaCarControllerParams.MAX_LTA_DRIVER_TORQUE_ALLOWANCE + 1), False, 100),
+      ("recovered_active", True, -0.5, (0, 0), True, 100),
+      ("accepted_inactive", False, 0.0, None, True, 0),
     )
     phase_idx = 0
 
@@ -479,17 +496,12 @@ class TestCarModelBase(unittest.TestCase):
       if not CS.canValid or not self.safety.safety_config_valid():
         continue
 
-      phase_name, lat_active, angle_offset, inject_torque_limit, should_allow_lta, expected_wind_down = phase_plan[phase_idx]
+      phase_name, lat_active, angle_offset, torque_history, should_allow_lta, expected_wind_down = phase_plan[phase_idx]
 
       self.safety.set_controls_allowed(True)
       self.safety.set_cruise_engaged_prev(True)
-      if inject_torque_limit:
-        self.safety.set_torque_meas(ToyotaCarControllerParams.STEER_MAX + 1, ToyotaCarControllerParams.STEER_MAX + 1)
-        self.safety.set_torque_driver(ToyotaCarControllerParams.MAX_LTA_DRIVER_TORQUE_ALLOWANCE + 1,
-                                      ToyotaCarControllerParams.MAX_LTA_DRIVER_TORQUE_ALLOWANCE + 1)
-      else:
-        self.safety.set_torque_meas(0, 0)
-        self.safety.set_torque_driver(0, 0)
+      if torque_history is not None:
+        self._inject_toyota_torque_history(CI, *torque_history)
 
       CC = self._get_toyota_lta_regression_control(CS, lat_active, angle_offset)
       _, sendcan = CI.apply(CC, can[0])
