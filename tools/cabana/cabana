@@ -33,6 +33,6 @@ fi
 
 # Build _cabana
 cd "$ROOT"
-scons -j"$(nproc)" tools/cabana/_cabana
+scons -j4 tools/cabana/_cabana
 
 exec "$DIR/_cabana" "$@"

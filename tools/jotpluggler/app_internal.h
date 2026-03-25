@@ -87,8 +87,6 @@ void mark_all_docks_dirty(UiState *state);
 void clear_layout_autosave(const AppSession &session);
 bool autosave_layout(AppSession *session, UiState *state);
 bool apply_axis_limits_editor(AppSession *session, UiState *state);
-bool apply_cabana_signal_edit(AppSession *session, UiState *state);
-bool apply_cabana_signal_delete(AppSession *session, UiState *state);
 void open_axis_limits_editor(const AppSession &session, UiState *state, int pane_index);
 void persist_shared_range_to_tab(WorkspaceTab *tab, const UiState &state);
 void clear_pane_vertical_limits(Pane *pane);
@@ -99,20 +97,6 @@ void apply_dbc_override_change(AppSession *session, UiState *state, const std::s
 
 void app_push_bold_font();
 void app_pop_bold_font();
-ImVec4 cabana_window_bg();
-ImVec4 cabana_panel_bg();
-ImVec4 cabana_panel_alt_bg();
-ImVec4 cabana_border_color();
-ImVec4 cabana_accent();
-ImVec4 cabana_accent_hover();
-ImVec4 cabana_accent_active();
-ImVec4 cabana_muted_text();
-void push_cabana_mode_style();
-void pop_cabana_mode_style();
-void draw_cabana_panel_title(const char *title, std::string_view subtitle = {});
-bool draw_cabana_bottom_tab(const char *id, const char *label, bool active, float width);
-void draw_cabana_detail_tab_strip(UiState *state);
-void draw_cabana_welcome_panel();
 void draw_vertical_splitter(const char *id, float height, float min_left, float max_left, float *left_width);
 void draw_right_splitter(const char *id, float height, float min_right, float max_right, float *right_width);
 bool draw_horizontal_splitter(const char *id, float width, float min_top, float max_top, float *top_height);
@@ -123,20 +107,13 @@ void draw_signal_sparkline(const AppSession &session,
                            std::string_view signal_path,
                            bool selected,
                            ImVec2 size = ImVec2(0.0f, 24.0f));
-void draw_signal_overlay_legend(const std::vector<std::pair<const CabanaSignalSummary *, ImU32>> &highlighted);
 ImU32 mix_color(ImU32 a, ImU32 b, float t);
 void draw_empty_panel(const char *title, const char *message);
-void draw_cabana_toolbar_button(const char *label, bool enabled, const std::function<void()> &on_click);
-void draw_cabana_warning_banner(const std::vector<std::string> &warnings);
-void draw_chart_panel(AppSession *session, UiState *state, const CabanaMessageSummary *message);
-void draw_signal_panel(AppSession *session, UiState *state, const CabanaMessageSummary &message);
 
 UiMetrics compute_ui_metrics(const ImVec2 &size, float top_offset, float sidebar_width);
 void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool show_camera_feed);
 void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state);
 void draw_pane_windows(AppSession *session, UiState *state);
-void draw_cabana_mode(AppSession *session, const UiMetrics &ui, UiState *state);
-void rebuild_cabana_messages(AppSession *session);
 
 // app_plot.cc
 void draw_plot(const AppSession &session, Pane *pane, UiState *state);

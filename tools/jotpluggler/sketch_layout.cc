@@ -397,7 +397,7 @@ std::string basedir() {
 const std::unordered_map<std::string, std::string> &car_fingerprint_to_dbc_map() {
   static const std::unordered_map<std::string, std::string> map = []() {
     std::unordered_map<std::string, std::string> out;
-    const fs::path json_path = fs::path(basedir()) / "tools" / "cabana" / "dbc" / "car_fingerprint_to_dbc.json";
+    const fs::path json_path = fs::path(basedir()) / "tools" / "jotpluggler" / "car_fingerprint_to_dbc.json";
     const std::string raw = util::read_file(json_path.string());
     if (raw.empty()) return out;
     std::string parse_error;

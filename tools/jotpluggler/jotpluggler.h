@@ -34,7 +34,6 @@ struct Options {
   bool show = false;
   bool sync_load = false;
   bool stream = false;
-  bool start_cabana = false;
   double stream_buffer_seconds = 30.0;
 };
 
@@ -455,101 +454,19 @@ enum class SessionDataMode : uint8_t {
 enum class StreamSourceKind : uint8_t {
   CerealLocal,
   CerealRemote,
-  Panda,
-  SocketCan,
-};
-
-struct PandaBusConfig {
-  int can_speed_kbps = 500;
-  int data_speed_kbps = 2000;
-  bool can_fd = false;
-};
-
-struct PandaStreamConfig {
-  std::string serial;
-  std::array<PandaBusConfig, 3> buses = {};
-};
-
-struct SocketCanStreamConfig {
-  std::string device;
 };
 
 struct StreamSourceConfig {
   StreamSourceKind kind = StreamSourceKind::CerealLocal;
   std::string address = "127.0.0.1";
-  PandaStreamConfig panda;
-  SocketCanStreamConfig socketcan;
 };
 
-enum class AppViewMode : uint8_t {
-  Plot,
-  Cabana,
-};
+enum class AppViewMode : uint8_t { Plot };
 
 struct BrowserNode {
   std::string label;
   std::string full_path;
   std::vector<BrowserNode> children;
-};
-
-struct CabanaSignalSummary {
-  std::string path;
-  std::string name;
-  std::string unit;
-  std::string receiver_name;
-  std::string comment;
-  int start_bit = 0;
-  int msb = 0;
-  int lsb = 0;
-  int size = 0;
-  double factor = 1.0;
-  double offset = 0.0;
-  double min = 0.0;
-  double max = 0.0;
-  int type = 0;
-  int multiplex_value = 0;
-  int value_description_count = 0;
-  bool is_signed = false;
-  bool is_little_endian = false;
-  bool has_bit_range = false;
-};
-
-struct CabanaMessageSummary {
-  std::string root_path;
-  std::string service;
-  std::string name;
-  std::string node;
-  std::vector<CabanaSignalSummary> signals;
-  int bus = -1;
-  uint32_t address = 0;
-  int dbc_size = -1;
-  bool has_address = false;
-  size_t sample_count = 0;
-  double frequency_hz = 0.0;
-};
-
-struct CabanaSimilarBitMatch {
-  std::string message_root;
-  std::string label;
-  int bus = -1;
-  uint32_t address = 0;
-  int byte_index = -1;
-  int bit_index = -1;
-  double score = 0.0;
-  double ones_ratio = 0.0;
-  double flip_ratio = 0.0;
-};
-
-struct CabanaChartState {
-  int id = 0;
-  int series_type = 0;
-  std::vector<std::string> signal_paths;
-  std::vector<bool> hidden;
-};
-
-struct CabanaChartTabState {
-  int id = 0;
-  std::vector<CabanaChartState> charts;
 };
 
 struct AppSession {
@@ -566,7 +483,6 @@ struct AppSession {
   RouteData route_data;
   std::unordered_map<std::string, RouteSeries *> series_by_path;
   std::vector<BrowserNode> browser_nodes;
-  std::vector<CabanaMessageSummary> cabana_messages;
   std::unique_ptr<AsyncRouteLoader> route_loader;
   std::unique_ptr<StreamPoller> stream_poller;
   std::array<std::unique_ptr<CameraFeedView>, 4> pane_camera_feeds;
@@ -635,81 +551,6 @@ struct LogsUiState {
   LogTimeMode time_mode = LogTimeMode::Route;
 };
 
-struct CabanaUiState {
-  float layout_left_frac = 0.30f;
-  float layout_center_frac = 0.32f;
-  float layout_center_top_frac = 0.58f;
-  float layout_signal_list_frac = 0.56f;
-  float layout_right_top_frac = 0.52f;
-  bool detail_top_auto_fit = true;
-  std::array<char, 128> message_filter = {};
-  std::array<char, 32> message_bus_filter = {};
-  std::array<char, 48> message_addr_filter = {};
-  std::array<char, 64> message_node_filter = {};
-  std::array<char, 32> message_freq_filter = {};
-  std::array<char, 32> message_count_filter = {};
-  std::array<char, 64> message_bytes_filter = {};
-  std::array<char, 96> signal_filter = {};
-  int sparkline_range_sec = 15;
-  bool suppress_defined_signals = false;
-  bool sync_message_tabs = true;
-  std::string selected_message_root;
-  std::string selected_signal_path;
-  std::vector<std::string> open_message_roots;
-  std::vector<std::string> chart_signal_paths;
-  int detail_tab = 0;
-  CameraViewKind camera_view = CameraViewKind::Road;
-  bool heatmap_live_mode = true;
-  bool logs_hex_mode = true;
-  int logs_filter_compare = 0;
-  std::array<char, 48> logs_filter_value = {};
-  bool has_bit_selection = false;
-  int selected_bit_byte = -1;
-  int selected_bit_index = -1;
-  bool binary_drag_active = false;
-  bool binary_drag_resizing = false;
-  bool binary_drag_moved = false;
-  bool binary_drag_signal_is_little_endian = true;
-  bool pending_apply_signal_edit = false;
-  bool pending_delete_signal = false;
-  int binary_drag_press_byte = -1;
-  int binary_drag_press_bit = -1;
-  int binary_drag_anchor_byte = -1;
-  int binary_drag_anchor_bit = -1;
-  int binary_drag_current_byte = -1;
-  int binary_drag_current_bit = -1;
-  std::string binary_drag_signal_path;
-  std::string similar_bits_source_root;
-  int similar_bits_source_byte = -1;
-  int similar_bits_source_bit = -1;
-  bool similar_bits_loading = false;
-  std::vector<CabanaSimilarBitMatch> similar_bit_matches;
-  std::future<std::vector<CabanaSimilarBitMatch>> similar_bit_future;
-  std::vector<CabanaChartTabState> chart_tabs;
-  std::vector<std::optional<std::pair<double, double>>> chart_zoom_history;
-  std::vector<std::optional<std::pair<double, double>>> chart_zoom_redo;
-  int next_chart_tab_id = 1;
-  int next_chart_id = 1;
-  int active_chart_tab = 0;
-  int active_chart_index = 0;
-  int chart_columns = 1;
-  bool chart_scrub_was_playing = false;
-  bool chart_zoom_drag_active = false;
-  int chart_zoom_drag_chart_id = -1;
-  float chart_zoom_drag_plot_min_x = 0.0f;
-  float chart_zoom_drag_plot_min_y = 0.0f;
-  float chart_zoom_drag_plot_max_x = 0.0f;
-  float chart_zoom_drag_plot_max_y = 0.0f;
-  float chart_zoom_drag_start_x = 0.0f;
-  bool chart_timeline_zoom_drag_active = false;
-  float chart_timeline_zoom_start_x = 0.0f;
-  float chart_timeline_zoom_min_x = 0.0f;
-  float chart_timeline_zoom_max_x = 0.0f;
-  double chart_timeline_zoom_range_min = 0.0;
-  double chart_timeline_zoom_range_max = 0.0;
-  double chart_hover_sec = -1.0;
-};
-
 struct AxisLimitsEditorState {
   bool open = false;
   int pane_index = -1;
@@ -728,32 +569,6 @@ struct DbcEditorState {
   std::string source_path;
   std::string save_name;
   std::string text;
-};
-
-struct CabanaSignalEditorState {
-  bool open = false;
-  bool loaded = false;
-  bool creating = false;
-  std::string message_root;
-  std::string message_name;
-  std::string service;
-  std::string signal_path;
-  int bus = -1;
-  uint32_t message_address = 0;
-  std::string original_signal_name;
-  std::string signal_name;
-  int start_bit = 0;
-  int size = 1;
-  double factor = 1.0;
-  double offset = 0.0;
-  double min = 0.0;
-  double max = 0.0;
-  bool is_signed = false;
-  bool is_little_endian = true;
-  int type = 0;
-  int multiplex_value = 0;
-  std::string receiver_name;
-  std::string unit;
 };
 
 enum class TimelineDragMode : uint8_t {
@@ -822,7 +637,6 @@ struct UiState {
   bool request_duplicate_tab = false;
   bool request_close_tab = false;
   bool follow_latest = false;
-  bool cabana_mode_initialized = false;
   bool has_shared_range = false;
   bool has_tracker_time = false;
   bool layout_dirty = false;
@@ -832,7 +646,6 @@ struct UiState {
   bool show_fps_overlay = false;
   bool fps_overlay_initialized = false;
   bool view_mode_initialized = false;
-  bool start_cabana = false;
   bool suppress_range_side_effects = false;
   bool browser_nodes_dirty = false;
   int active_tab_index = 0;
@@ -844,8 +657,6 @@ struct UiState {
   std::vector<TabUiState> tabs;
   std::array<char, 128> route_buffer = {};
   std::array<char, 128> stream_address_buffer = {};
-  std::array<char, 128> panda_serial_buffer = {};
-  std::array<char, 128> socketcan_device_buffer = {};
   std::array<char, 128> rename_tab_buffer = {};
   std::array<char, 128> browser_filter = {};
   std::array<char, 512> data_dir_buffer = {};
@@ -864,9 +675,6 @@ struct UiState {
   bool editing_route_slice = false;
   bool focus_route_slice_input = false;
   StreamSourceKind stream_source_kind = StreamSourceKind::CerealLocal;
-  std::array<int, 3> panda_can_speed_kbps = {500, 500, 500};
-  std::array<int, 3> panda_data_speed_kbps = {2000, 2000, 2000};
-  std::array<bool, 3> panda_can_fd = {false, false, false};
   float sidebar_width = 320.0f;
   double route_x_min = 0.0;
   double route_x_max = 1.0;
@@ -882,8 +690,6 @@ struct UiState {
   double timeline_drag_anchor_x_max = 0.0;
   AxisLimitsEditorState axis_limits;
   DbcEditorState dbc_editor;
-  CabanaSignalEditorState cabana_signal_editor;
-  CabanaUiState cabana;
   CustomSeriesEditorState custom_series;
   LogsUiState logs;
   UndoStack undo;

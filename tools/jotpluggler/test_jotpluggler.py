@@ -33,12 +33,10 @@ KEYS = [
 @dataclass(frozen=True)
 class Scenario:
   name: str
-  cabana: bool = False
 
 
 SCENARIOS = [
   Scenario("plot"),
-  Scenario("cabana", cabana=True),
 ]
 
 
@@ -51,7 +49,7 @@ class Session:
     self._fhs = []
     self._w, self._h = width, height
 
-  def start(self, *, route: str, cabana: bool = False, layout: str | None = None, sync_load: bool = False):
+  def start(self, *, route: str, layout: str | None = None, sync_load: bool = False):
     self.xvfb = subprocess.Popen(
       ["Xvfb", "-displayfd", "1", "-screen", "0", f"{self._w}x{self._h}x24", "-dpi", "96", "-nolisten", "tcp"],
       stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
@@ -61,8 +59,6 @@ class Session:
 
     self.env = os.environ.copy()
     self.env["DISPLAY"] = self.display
-    if cabana:
-      self.env["JOTP_START_CABANA"] = "1"
 
     cmd = [str(BINARY), "--show", "--width", str(self._w), "--height", str(self._h)]
     if layout:
@@ -133,12 +129,12 @@ class Session:
     time.sleep(0.05)
     return f"click ({x}, {y}) btn={button}"
 
-  def doubleclick(self, x, y):
+  def double_click(self, x, y):
     self._xdo("mousemove", str(x), str(y))
     time.sleep(0.02)
     self._xdo("click", "--repeat", "2", "--delay", "80", "1")
     time.sleep(0.05)
-    return f"dblclick ({x}, {y})"
+    return f"double-click ({x}, {y})"
 
   def drag(self, x1, y1, x2, y2):
     self._xdo("mousemove", str(x1), str(y1))
@@ -186,15 +182,17 @@ class Session:
 
 
 def _rand_action(session: Session, rng: random.Random) -> str:
-  xy = lambda: (rng.randint(0, WIDTH - 1), rng.randint(0, HEIGHT - 1))
+  def xy() -> tuple[int, int]:
+    return rng.randint(0, WIDTH - 1), rng.randint(0, HEIGHT - 1)
+
   kind = rng.choices(
-    ["click", "dblclick", "drag", "scroll", "key", "type", "move"],
+    ["click", "double_click", "drag", "scroll", "key", "type", "move"],
     weights=[35, 8, 15, 15, 15, 5, 7], k=1,
   )[0]
   if kind == "click":
     return session.click(*xy(), rng.choice([1, 1, 1, 1, 3]))
-  if kind == "dblclick":
-    return session.doubleclick(*xy())
+  if kind == "double_click":
+    return session.double_click(*xy())
   if kind == "drag":
     x1, y1 = xy()
     x2 = max(0, min(WIDTH - 1, x1 + rng.randint(-400, 400)))
@@ -216,7 +214,7 @@ def run_fuzz(scenario: Scenario, round_id: int):
 
   session = Session()
   try:
-    session.start(route=route, cabana=scenario.cabana)
+    session.start(route=route)
     print(f"\n[{label}] pid={session.jotp.pid} display={session.display} route={'full' if route == DEMO_ROUTE else 'quick'}")
 
     shots_dir = session.tmpdir / "screenshots"
@@ -312,9 +310,13 @@ def codex_review(image_paths: list[Path] | Path, prompt: str, timeout: float = 6
   answer = result.stdout.strip()
   if not answer:
     # codex may print the model answer in stderr after the banner
+    ignored_prefixes = (
+      "tokens", "OpenAI", "---", "workdir", "model", "provider",
+      "approval", "sandbox", "reasoning", "session",
+    )
     for line in reversed(result.stderr.strip().splitlines()):
       stripped = line.strip()
-      if stripped and stripped not in ("codex", "") and not stripped.startswith(("tokens", "OpenAI", "---", "workdir", "model", "provider", "approval", "sandbox", "reasoning", "session")):
+      if stripped and stripped != "codex" and not stripped.startswith(ignored_prefixes):
         answer = stripped
         break
   passed = "PASS" in answer.upper().split("\n")[0] if answer else False
@@ -368,7 +370,9 @@ def run_layout_screenshot(layout: str):
       "- the app rendered without crashing (not a blank/black window)",
       "- plot panes are laid out correctly (not overlapping each other)",
       "- text labels and legends are readable (not garbled or clipped by other elements)",
-      "- no UI elements overlapping other UI elements (e.g. buttons covering text, legends colliding with controls). in particular, check that close/dismiss buttons (X) have clear spacing from nearby text like legends — if they touch or crowd, that is a FAIL",
+      "- no UI elements overlapping other UI elements (e.g. buttons covering text, legends colliding with controls).",
+      "- close/dismiss buttons (X) must have clear spacing from nearby text like legends",
+      "- if a close/dismiss button touches or crowds nearby text, that is a FAIL",
       "- no rendering artifacts or broken UI elements",
       "- the sidebar is visible on the left",
       "- error dialogs about missing data or custom series are acceptable — not a failure",

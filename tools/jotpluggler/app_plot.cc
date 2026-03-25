@@ -853,22 +853,21 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
   const bool has_cursor_time = state->has_tracker_time;
   const double cursor_time = state->tracker_time;
 
-  const bool cabana_mode = state->view_mode == AppViewMode::Cabana;
-  ImPlot::PushStyleColor(ImPlotCol_PlotBg, cabana_mode ? color_rgb(52, 54, 57) : color_rgb(255, 255, 255));
-  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, cabana_mode ? color_rgb(95, 100, 106) : color_rgb(186, 190, 196));
-  ImPlot::PushStyleColor(ImPlotCol_LegendBg, cabana_mode ? color_rgb(46, 47, 49, 0.94f) : color_rgb(248, 249, 251, 0.92f));
-  ImPlot::PushStyleColor(ImPlotCol_LegendBorder, cabana_mode ? color_rgb(95, 100, 106) : color_rgb(168, 175, 184));
-  ImPlot::PushStyleColor(ImPlotCol_LegendText, cabana_mode ? color_rgb(220, 224, 229) : color_rgb(57, 62, 69));
-  ImPlot::PushStyleColor(ImPlotCol_TitleText, cabana_mode ? color_rgb(220, 224, 229) : color_rgb(57, 62, 69));
-  ImPlot::PushStyleColor(ImPlotCol_InlayText, cabana_mode ? color_rgb(214, 219, 225) : color_rgb(95, 103, 112));
-  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, cabana_mode ? color_rgb(86, 90, 96) : color_rgb(188, 196, 206));
-  ImPlot::PushStyleColor(ImPlotCol_AxisText, cabana_mode ? color_rgb(182, 188, 196) : color_rgb(95, 103, 112));
-  ImPlot::PushStyleColor(ImPlotCol_AxisBg, cabana_mode ? color_rgb(60, 63, 65, 0.0f) : color_rgb(255, 255, 255, 0.0f));
-  ImPlot::PushStyleColor(ImPlotCol_AxisBgHovered, cabana_mode ? color_rgb(78, 82, 88, 0.38f) : color_rgb(214, 220, 228, 0.45f));
-  ImPlot::PushStyleColor(ImPlotCol_AxisBgActive, cabana_mode ? color_rgb(92, 98, 106, 0.48f) : color_rgb(199, 209, 222, 0.55f));
-  ImPlot::PushStyleColor(ImPlotCol_Selection, cabana_mode ? color_rgb(117, 161, 242, 0.22f) : color_rgb(252, 211, 77, 0.28f));
-  ImPlot::PushStyleColor(ImPlotCol_Crosshairs, cabana_mode ? color_rgb(214, 219, 225, 0.70f) : color_rgb(120, 128, 138, 0.70f));
-  ImPlot::PushStyleVar(ImPlotStyleVar_LegendPadding, cabana_mode ? ImVec2(10.0f, 10.0f) : ImVec2(56.0f, 10.0f));
+  ImPlot::PushStyleColor(ImPlotCol_PlotBg, color_rgb(255, 255, 255));
+  ImPlot::PushStyleColor(ImPlotCol_PlotBorder, color_rgb(186, 190, 196));
+  ImPlot::PushStyleColor(ImPlotCol_LegendBg, color_rgb(248, 249, 251, 0.92f));
+  ImPlot::PushStyleColor(ImPlotCol_LegendBorder, color_rgb(168, 175, 184));
+  ImPlot::PushStyleColor(ImPlotCol_LegendText, color_rgb(57, 62, 69));
+  ImPlot::PushStyleColor(ImPlotCol_TitleText, color_rgb(57, 62, 69));
+  ImPlot::PushStyleColor(ImPlotCol_InlayText, color_rgb(95, 103, 112));
+  ImPlot::PushStyleColor(ImPlotCol_AxisGrid, color_rgb(188, 196, 206));
+  ImPlot::PushStyleColor(ImPlotCol_AxisText, color_rgb(95, 103, 112));
+  ImPlot::PushStyleColor(ImPlotCol_AxisBg, color_rgb(255, 255, 255, 0.0f));
+  ImPlot::PushStyleColor(ImPlotCol_AxisBgHovered, color_rgb(214, 220, 228, 0.45f));
+  ImPlot::PushStyleColor(ImPlotCol_AxisBgActive, color_rgb(199, 209, 222, 0.55f));
+  ImPlot::PushStyleColor(ImPlotCol_Selection, color_rgb(252, 211, 77, 0.28f));
+  ImPlot::PushStyleColor(ImPlotCol_Crosshairs, color_rgb(120, 128, 138, 0.70f));
+  ImPlot::PushStyleVar(ImPlotStyleVar_LegendPadding, ImVec2(56.0f, 10.0f));
 
   ImPlotFlags plot_flags = ImPlotFlags_NoTitle | ImPlotFlags_NoMenus;
   if (state_block_mode) {

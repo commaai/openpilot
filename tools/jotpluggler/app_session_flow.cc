@@ -29,13 +29,8 @@ void apply_route_data(AppSession *session, UiState *state, RouteData route_data)
   }
   session->route_data = std::move(route_data);
   rebuild_route_index(session);
-  if (state->view_mode == AppViewMode::Cabana) {
-    state->browser_nodes_dirty = true;
-  } else {
-    rebuild_browser_nodes(session, state);
-    state->browser_nodes_dirty = false;
-  }
-  rebuild_cabana_messages(session);
+  rebuild_browser_nodes(session, state);
+  state->browser_nodes_dirty = false;
   refresh_all_custom_curves(session, state);
   sync_camera_feeds(session);
   state->has_shared_range = false;
@@ -777,14 +772,6 @@ float draw_main_menu_bar(AppSession *session, UiState *state) {
       ImGui::Separator();
       if (ImGui::MenuItem("Close")) {
         state->request_close = true;
-      }
-      ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("View")) {
-      const bool cabana_mode = state->view_mode == AppViewMode::Cabana;
-      if (ImGui::MenuItem("Cabana Mode", nullptr, cabana_mode)) {
-        state->view_mode = cabana_mode ? AppViewMode::Plot : AppViewMode::Cabana;
-        state->status_text = cabana_mode ? "Plot mode enabled" : "Cabana mode enabled";
       }
       ImGui::EndMenu();
     }

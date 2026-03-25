@@ -1,6 +1,5 @@
 #include "tools/jotpluggler/jotpluggler.h"
 #include "tools/jotpluggler/app_common.h"
-#include "tools/jotpluggler/app_socketcan.h"
 
 #include "cereal/services.h"
 #include "common/timing.h"
@@ -10,7 +9,6 @@
 #include "implot.h"
 #include "libyuv.h"
 #include "msgq_repo/msgq/ipc.h"
-#include "tools/cabana/panda.h"
 #include "tools/replay/framereader.h"
 
 #include <GLFW/glfw3.h>
@@ -61,10 +59,6 @@ std::string stream_source_target_label(const StreamSourceConfig &source) {
   switch (source.kind) {
     case StreamSourceKind::CerealRemote:
       return normalize_stream_address(source.address);
-    case StreamSourceKind::Panda:
-      return source.panda.serial.empty() ? std::string("auto") : source.panda.serial;
-    case StreamSourceKind::SocketCan:
-      return source.socketcan.device.empty() ? std::string("can0") : source.socketcan.device;
     case StreamSourceKind::CerealLocal:
     default:
       return "127.0.0.1";
@@ -419,8 +413,6 @@ struct StreamPoller::Impl {
         source.address = "127.0.0.1";
       } else if (source.kind == StreamSourceKind::CerealRemote) {
         source.address = normalize_stream_address(source.address);
-      } else if (source.kind == StreamSourceKind::SocketCan && source.socketcan.device.empty()) {
-        source.socketcan.device = "can0";
       }
       buffer_seconds = std::max(1.0, requested_buffer_seconds);
       latest_dbc_name = dbc_name;
@@ -437,12 +429,6 @@ struct StreamPoller::Impl {
           case StreamSourceKind::CerealLocal:
           case StreamSourceKind::CerealRemote:
             run_cereal_source(&accumulator);
-            break;
-          case StreamSourceKind::Panda:
-            run_panda_source(&accumulator);
-            break;
-          case StreamSourceKind::SocketCan:
-            run_socketcan_source(&accumulator);
             break;
         }
       } catch (const std::exception &err) {
@@ -638,105 +624,6 @@ struct StreamPoller::Impl {
       }
       publish_batch(accumulator);
     }
-  }
-
-  void configure_panda(Panda *panda) const {
-    panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
-    for (size_t bus = 0; bus < source.panda.buses.size(); ++bus) {
-      const PandaBusConfig &cfg = source.panda.buses[bus];
-      panda->set_can_speed_kbps(static_cast<uint16_t>(bus), static_cast<uint16_t>(cfg.can_speed_kbps));
-      if (panda->hw_type == cereal::PandaState::PandaType::RED_PANDA
-          || panda->hw_type == cereal::PandaState::PandaType::RED_PANDA_V2) {
-        panda->set_data_speed_kbps(static_cast<uint16_t>(bus),
-                                   static_cast<uint16_t>(cfg.can_fd ? cfg.data_speed_kbps : 10));
-      }
-    }
-  }
-
-  void run_panda_source(StreamAccumulator *accumulator) {
-    std::unique_ptr<Panda> panda;
-    std::vector<can_frame> raw_can_data;
-    while (running.load()) {
-      if (!panda || !panda->connected()) {
-        connected.store(false);
-        try {
-          panda = std::make_unique<Panda>(source.panda.serial);
-          configure_panda(panda.get());
-          clear_error_text();
-          connected.store(true);
-        } catch (const std::exception &err) {
-          set_error_text(err.what());
-          std::this_thread::sleep_for(std::chrono::milliseconds(500));
-          continue;
-        }
-      }
-
-      raw_can_data.clear();
-      if (!panda->can_receive(raw_can_data)) {
-        connected.store(false);
-        panda.reset();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        continue;
-      }
-      if (raw_can_data.empty()) {
-        panda->send_heartbeat(false);
-        publish_batch(accumulator);
-        continue;
-      }
-
-      received_messages.fetch_add(raw_can_data.size());
-      if (!paused.load()) {
-        const double mono_time = static_cast<double>(nanos_since_boot()) / 1.0e9;
-        std::vector<LiveCanFrame> frames;
-        frames.reserve(raw_can_data.size());
-        for (const can_frame &frame : raw_can_data) {
-          frames.push_back(LiveCanFrame{
-            .mono_time = mono_time,
-            .bus = static_cast<uint8_t>(frame.src),
-            .address = static_cast<uint32_t>(frame.address),
-            .bus_time = 0,
-            .data = frame.dat,
-          });
-        }
-        accumulator->appendCanFrames(CanServiceKind::Can, frames);
-      }
-      panda->send_heartbeat(false);
-      publish_batch(accumulator);
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-  }
-
-  void run_socketcan_source(StreamAccumulator *accumulator) {
-#ifdef __linux__
-    while (running.load()) {
-      connected.store(false);
-      try {
-        SocketCanReader reader(source.socketcan.device.empty() ? "can0" : source.socketcan.device);
-        clear_error_text();
-        connected.store(true);
-        while (running.load()) {
-          LiveCanFrame frame;
-          if (!reader.readFrame(&frame)) {
-            publish_batch(accumulator);
-            continue;
-          }
-          received_messages.fetch_add(1);
-          if (!paused.load()) {
-            std::vector<LiveCanFrame> frames;
-            frames.push_back(std::move(frame));
-            accumulator->appendCanFrames(CanServiceKind::Can, frames);
-          }
-          publish_batch(accumulator);
-        }
-      } catch (const std::exception &err) {
-        set_error_text(err.what());
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      }
-    }
-#else
-    (void)accumulator;
-    throw std::runtime_error("SocketCAN is not available on this platform");
-#endif
   }
 
   mutable std::mutex mutex;

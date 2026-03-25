@@ -1,6 +1,4 @@
 #include "tools/jotpluggler/app_internal.h"
-#include "tools/jotpluggler/app_socketcan.h"
-#include "tools/cabana/panda.h"
 #include "system/hardware/hw.h"
 
 #include <cstdio>
@@ -20,30 +18,10 @@ struct FindSignalMatch {
   int score = 0;
 };
 
-template <size_t N>
-void copy_string_to_buffer(const std::string &value, std::array<char, N> *buffer) {
-  std::snprintf(buffer->data(), buffer->size(), "%s", value.c_str());
-}
-
-constexpr int kPandaCanSpeeds[] = {10, 20, 50, 100, 125, 250, 500, 1000};
-constexpr int kPandaDataSpeeds[] = {10, 20, 50, 100, 125, 250, 500, 1000, 2000, 5000};
-
-std::vector<std::string> list_panda_serials() {
-  try {
-    return Panda::list();
-  } catch (...) {
-    return {};
-  }
-}
-
 std::string stream_source_target_label(const StreamSourceConfig &source) {
   switch (source.kind) {
     case StreamSourceKind::CerealRemote:
       return source.address.empty() ? std::string("127.0.0.1") : source.address;
-    case StreamSourceKind::Panda:
-      return source.panda.serial.empty() ? std::string("auto") : source.panda.serial;
-    case StreamSourceKind::SocketCan:
-      return source.socketcan.device.empty() ? std::string("can0") : source.socketcan.device;
     case StreamSourceKind::CerealLocal:
     default:
       return "127.0.0.1";
@@ -54,17 +32,8 @@ StreamSourceConfig stream_source_config_from_ui(const UiState &state) {
   StreamSourceConfig source;
   source.kind = state.stream_source_kind;
   source.address = trim_copy(state.stream_address_buffer.data());
-  source.panda.serial = trim_copy(state.panda_serial_buffer.data());
-  source.socketcan.device = trim_copy(state.socketcan_device_buffer.data());
-  for (size_t i = 0; i < source.panda.buses.size(); ++i) {
-    source.panda.buses[i].can_speed_kbps = state.panda_can_speed_kbps[i];
-    source.panda.buses[i].data_speed_kbps = state.panda_data_speed_kbps[i];
-    source.panda.buses[i].can_fd = state.panda_can_fd[i];
-  }
   if (source.kind == StreamSourceKind::CerealLocal) {
     source.address = "127.0.0.1";
-  } else if (source.kind == StreamSourceKind::SocketCan && source.socketcan.device.empty()) {
-    source.socketcan.device = "can0";
   }
   return source;
 }
@@ -117,22 +86,7 @@ std::vector<FindSignalMatch> find_signal_matches(const AppSession &session, std:
   return matches;
 }
 
-bool open_find_signal_result(AppSession *session, UiState *state, const std::string &path) {
-  for (const CabanaMessageSummary &message : session->cabana_messages) {
-    const auto signal_it = std::find_if(message.signals.begin(), message.signals.end(), [&](const CabanaSignalSummary &signal) {
-      return signal.path == path;
-    });
-    if (signal_it != message.signals.end()) {
-      state->view_mode = AppViewMode::Cabana;
-      state->cabana.selected_message_root = message.root_path;
-      state->cabana.selected_signal_path = path;
-      state->cabana.has_bit_selection = false;
-      state->cabana.similar_bit_matches.clear();
-      state->status_text = "Opened signal in Cabana";
-      return true;
-    }
-  }
-
+bool open_find_signal_result(UiState *state, const std::string &path) {
   state->view_mode = AppViewMode::Plot;
   state->selected_browser_paths = {path};
   state->selected_browser_path = path;
@@ -169,8 +123,6 @@ void draw_stream_popup(AppSession *session, UiState *state) {
   if (!ImGui::BeginPopupModal("Live Stream", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
     return;
   }
-  static std::vector<std::string> panda_serials;
-  static std::vector<std::string> socketcan_devices;
 
   ImGui::TextUnformatted("Connect to a live source.");
   ImGui::Separator();
@@ -180,87 +132,9 @@ void draw_stream_popup(AppSession *session, UiState *state) {
   if (ImGui::RadioButton("Remote (ZMQ)", state->stream_source_kind == StreamSourceKind::CerealRemote)) {
     state->stream_source_kind = StreamSourceKind::CerealRemote;
   }
-  if (ImGui::RadioButton("Panda", state->stream_source_kind == StreamSourceKind::Panda)) {
-    state->stream_source_kind = StreamSourceKind::Panda;
-    if (panda_serials.empty()) panda_serials = list_panda_serials();
-  }
-#ifdef __linux__
-  if (ImGui::RadioButton("SocketCAN", state->stream_source_kind == StreamSourceKind::SocketCan)) {
-    state->stream_source_kind = StreamSourceKind::SocketCan;
-    if (socketcan_devices.empty()) socketcan_devices = list_socketcan_devices();
-  }
-#else
-  ImGui::BeginDisabled(true);
-  ImGui::RadioButton("SocketCAN", false);
-  ImGui::EndDisabled();
-#endif
 
   if (state->stream_source_kind == StreamSourceKind::CerealRemote) {
     ImGui::InputText("Address", state->stream_address_buffer.data(), state->stream_address_buffer.size());
-  } else if (state->stream_source_kind == StreamSourceKind::Panda) {
-    if (ImGui::Button("Refresh Pandas")) {
-      panda_serials = list_panda_serials();
-    }
-    ImGui::SameLine();
-    ImGui::TextDisabled("%zu found", panda_serials.size());
-    if (ImGui::BeginCombo("Serial", state->panda_serial_buffer.data()[0] == '\0' ? "auto" : state->panda_serial_buffer.data())) {
-      const bool auto_selected = state->panda_serial_buffer.data()[0] == '\0';
-      if (ImGui::Selectable("auto", auto_selected)) {
-        state->panda_serial_buffer[0] = '\0';
-      }
-      for (const std::string &serial : panda_serials) {
-        const bool selected = serial == state->panda_serial_buffer.data();
-        if (ImGui::Selectable(serial.c_str(), selected)) {
-          copy_string_to_buffer(serial, &state->panda_serial_buffer);
-        }
-      }
-      ImGui::EndCombo();
-    }
-    for (int bus = 0; bus < 3; ++bus) {
-      ImGui::PushID(bus);
-      ImGui::SeparatorText((std::string("Bus ") + std::to_string(bus)).c_str());
-      if (ImGui::BeginCombo("CAN Speed", (std::to_string(state->panda_can_speed_kbps[bus]) + " kbps").c_str())) {
-        for (const int speed : kPandaCanSpeeds) {
-          const bool selected = speed == state->panda_can_speed_kbps[bus];
-          if (ImGui::Selectable((std::to_string(speed) + " kbps").c_str(), selected)) {
-            state->panda_can_speed_kbps[bus] = speed;
-          }
-        }
-        ImGui::EndCombo();
-      }
-      ImGui::Checkbox("CAN-FD", &state->panda_can_fd[bus]);
-      ImGui::BeginDisabled(!state->panda_can_fd[bus]);
-      if (ImGui::BeginCombo("Data Speed", (std::to_string(state->panda_data_speed_kbps[bus]) + " kbps").c_str())) {
-        for (const int speed : kPandaDataSpeeds) {
-          const bool selected = speed == state->panda_data_speed_kbps[bus];
-          if (ImGui::Selectable((std::to_string(speed) + " kbps").c_str(), selected)) {
-            state->panda_data_speed_kbps[bus] = speed;
-          }
-        }
-        ImGui::EndCombo();
-      }
-      ImGui::EndDisabled();
-      ImGui::PopID();
-    }
-  } else if (state->stream_source_kind == StreamSourceKind::SocketCan) {
-#ifdef __linux__
-    if (ImGui::Button("Refresh Devices")) {
-      socketcan_devices = list_socketcan_devices();
-    }
-    ImGui::SameLine();
-    ImGui::TextDisabled("%zu found", socketcan_devices.size());
-    if (ImGui::BeginCombo("Device", state->socketcan_device_buffer.data()[0] == '\0' ? "can0" : state->socketcan_device_buffer.data())) {
-      for (const std::string &device : socketcan_devices) {
-        const bool selected = device == state->socketcan_device_buffer.data();
-        if (ImGui::Selectable(device.c_str(), selected)) {
-          copy_string_to_buffer(device, &state->socketcan_device_buffer);
-        }
-      }
-      ImGui::EndCombo();
-    }
-#else
-    ImGui::TextDisabled("SocketCAN is only available on Linux.");
-#endif
   }
   ImGui::InputDouble("Buffer (seconds)", &state->stream_buffer_seconds, 0.0, 0.0, "%.0f");
   ImGui::Spacing();
@@ -383,7 +257,7 @@ void draw_find_signal_popup(AppSession *session, UiState *state) {
       const size_t slash = path.find_last_of('/');
       const std::string_view label = slash == std::string::npos ? std::string_view(path) : std::string_view(path).substr(slash + 1);
       if (ImGui::Selectable((std::string(label) + "##" + path).c_str(), false, ImGuiSelectableFlags_SpanAllColumns)) {
-        if (open_find_signal_result(session, state, path)) {
+        if (open_find_signal_result(state, path)) {
           ImGui::CloseCurrentPopup();
         }
       }
@@ -472,130 +346,6 @@ bool ensure_dbc_editor_loaded(const AppSession &session, UiState *state) {
   return true;
 }
 
-std::string multiplex_indicator_for_signal(const CabanaSignalEditorState &signal) {
-  if (signal.type == static_cast<int>(dbc::Signal::Type::Multiplexor)) {
-    return "M ";
-  }
-  if (signal.type == static_cast<int>(dbc::Signal::Type::Multiplexed)) {
-    return "m" + std::to_string(signal.multiplex_value) + " ";
-  }
-  return {};
-}
-
-std::string build_signal_definition_line(const CabanaSignalEditorState &signal) {
-  return " SG_ " + signal.signal_name + " " + multiplex_indicator_for_signal(signal) + ": "
-       + std::to_string(signal.start_bit) + "|" + std::to_string(signal.size) + "@"
-       + std::string(1, signal.is_little_endian ? '1' : '0')
-       + std::string(1, signal.is_signed ? '-' : '+')
-       + " (" + util::string_format("%.15g", signal.factor) + "," + util::string_format("%.15g", signal.offset) + ")"
-       + " [" + util::string_format("%.15g", signal.min) + "|" + util::string_format("%.15g", signal.max) + "]"
-       + " \"" + signal.unit + "\" " + (signal.receiver_name.empty() ? "XXX" : signal.receiver_name);
-}
-
-bool replace_signal_line(std::string *text,
-                         uint32_t address,
-                         const std::string &signal_name,
-                         const std::string &replacement) {
-  std::istringstream in(*text);
-  std::string line;
-  std::string out;
-  bool in_message = false;
-  bool replaced = false;
-  while (std::getline(in, line)) {
-    const std::string trimmed = trim_copy(line);
-    if (trimmed.rfind("BO_ ", 0) == 0) {
-      char *end = nullptr;
-      const long parsed = std::strtol(trimmed.c_str() + 4, &end, 10);
-      in_message = end != nullptr && parsed == static_cast<long>(address);
-    } else if (in_message && trimmed.rfind("SG_ ", 0) == 0) {
-      const size_t name_start = 4;
-      const size_t name_end = trimmed.find(' ', name_start);
-      const std::string current_name = name_end == std::string::npos ? trimmed.substr(name_start) : trimmed.substr(name_start, name_end - name_start);
-      if (current_name == signal_name) {
-        out += replacement + "\n";
-        replaced = true;
-        continue;
-      }
-    }
-    out += line + "\n";
-  }
-  if (replaced) {
-    *text = std::move(out);
-  }
-  return replaced;
-}
-
-bool insert_signal_line(std::string *text,
-                        uint32_t address,
-                        const std::string &line_to_insert) {
-  std::istringstream in(*text);
-  std::string line;
-  std::string out;
-  bool in_message = false;
-  bool inserted = false;
-  while (std::getline(in, line)) {
-    const std::string trimmed = trim_copy(line);
-    if (trimmed.rfind("BO_ ", 0) == 0) {
-      if (in_message && !inserted) {
-        out += line_to_insert + "\n";
-        inserted = true;
-      }
-      char *end = nullptr;
-      const long parsed = std::strtol(trimmed.c_str() + 4, &end, 10);
-      in_message = end != nullptr && parsed == static_cast<long>(address);
-      out += line + "\n";
-      continue;
-    }
-    if (in_message && !inserted) {
-      const bool starts_new_top_level = !trimmed.empty() && trimmed.rfind("SG_ ", 0) != 0;
-      if (starts_new_top_level) {
-        out += line_to_insert + "\n";
-        inserted = true;
-      }
-    }
-    out += line + "\n";
-  }
-  if (in_message && !inserted) {
-    out += line_to_insert + "\n";
-    inserted = true;
-  }
-  if (inserted) {
-    *text = std::move(out);
-  }
-  return inserted;
-}
-
-bool remove_signal_line(std::string *text,
-                        uint32_t address,
-                        const std::string &signal_name) {
-  std::istringstream in(*text);
-  std::string line;
-  std::string out;
-  bool in_message = false;
-  bool removed = false;
-  while (std::getline(in, line)) {
-    const std::string trimmed = trim_copy(line);
-    if (trimmed.rfind("BO_ ", 0) == 0) {
-      char *end = nullptr;
-      const long parsed = std::strtol(trimmed.c_str() + 4, &end, 10);
-      in_message = end != nullptr && parsed == static_cast<long>(address);
-    } else if (in_message && trimmed.rfind("SG_ ", 0) == 0) {
-      const size_t name_start = 4;
-      const size_t name_end = trimmed.find(' ', name_start);
-      const std::string current_name = name_end == std::string::npos ? trimmed.substr(name_start) : trimmed.substr(name_start, name_end - name_start);
-      if (current_name == signal_name) {
-        removed = true;
-        continue;
-      }
-    }
-    out += line + "\n";
-  }
-  if (removed) {
-    *text = std::move(out);
-  }
-  return removed;
-}
-
 bool save_dbc_editor_contents(AppSession *session, UiState *state) {
   DbcEditorState &editor = state->dbc_editor;
   editor.save_name = trim_copy(editor.save_name);
@@ -636,102 +386,6 @@ bool save_dbc_editor_contents(AppSession *session, UiState *state) {
   }
 }
 
-bool apply_cabana_signal_edit_impl(AppSession *session, UiState *state) {
-  if (!ensure_dbc_editor_loaded(*session, state)) {
-    return false;
-  }
-  CabanaSignalEditorState &signal = state->cabana_signal_editor;
-  if (trim_copy(signal.signal_name).empty()) {
-    state->error_text = "Signal name cannot be empty";
-    state->open_error_popup = true;
-    return false;
-  }
-  signal.signal_name = trim_copy(signal.signal_name);
-  signal.receiver_name = trim_copy(signal.receiver_name);
-  if (signal.size <= 0) {
-    state->error_text = "Signal size must be positive";
-    state->open_error_popup = true;
-    return false;
-  }
-  if (signal.creating) {
-    if (!insert_signal_line(&state->dbc_editor.text,
-                            signal.message_address,
-                            build_signal_definition_line(signal))) {
-      state->error_text = "Failed to locate message in DBC text";
-      state->open_error_popup = true;
-      return false;
-    }
-  } else {
-    if (!replace_signal_line(&state->dbc_editor.text,
-                             signal.message_address,
-                             signal.original_signal_name,
-                             build_signal_definition_line(signal))) {
-      state->error_text = "Failed to locate signal in DBC text";
-      state->open_error_popup = true;
-      return false;
-    }
-  }
-  if (save_dbc_editor_contents(session, state)) {
-    const std::string old_path = signal.creating
-      ? std::string()
-      : "/" + signal.service + "/" + std::to_string(signal.bus) + "/" + signal.message_name + "/" + signal.original_signal_name;
-    const std::string new_path = "/" + signal.service + "/" + std::to_string(signal.bus) + "/" + signal.message_name + "/" + signal.signal_name;
-    state->cabana_signal_editor.open = false;
-    state->cabana_signal_editor.loaded = false;
-    state->cabana.selected_message_root = signal.message_root;
-    state->cabana.selected_signal_path = new_path;
-    bool replaced_chart = false;
-    if (!old_path.empty()) {
-      for (std::string &path : state->cabana.chart_signal_paths) {
-        if (path == old_path) {
-          path = new_path;
-          replaced_chart = true;
-        }
-      }
-    }
-    if (!signal.creating && !replaced_chart) {
-      state->cabana.chart_signal_paths.erase(
-        std::remove(state->cabana.chart_signal_paths.begin(), state->cabana.chart_signal_paths.end(), new_path),
-        state->cabana.chart_signal_paths.end());
-    }
-    state->status_text = std::string(signal.creating ? "Created signal " : "Updated signal ") + signal.signal_name;
-    return true;
-  }
-  return false;
-}
-
-bool apply_cabana_signal_delete_impl(AppSession *session, UiState *state) {
-  if (!ensure_dbc_editor_loaded(*session, state)) {
-    return false;
-  }
-  CabanaSignalEditorState &signal = state->cabana_signal_editor;
-  if (signal.creating || trim_copy(signal.original_signal_name).empty()) {
-    state->error_text = "No existing signal selected for deletion";
-    state->open_error_popup = true;
-    return false;
-  }
-  if (!remove_signal_line(&state->dbc_editor.text, signal.message_address, signal.original_signal_name)) {
-    state->error_text = "Failed to locate signal in DBC text";
-    state->open_error_popup = true;
-    return false;
-  }
-  if (save_dbc_editor_contents(session, state)) {
-    const std::string old_path = "/" + signal.service + "/" + std::to_string(signal.bus) + "/" + signal.message_name + "/" + signal.original_signal_name;
-    state->cabana_signal_editor.open = false;
-    state->cabana_signal_editor.loaded = false;
-    state->cabana.selected_message_root = signal.message_root;
-    if (state->cabana.selected_signal_path == old_path) {
-      state->cabana.selected_signal_path.clear();
-    }
-    state->cabana.chart_signal_paths.erase(
-      std::remove(state->cabana.chart_signal_paths.begin(), state->cabana.chart_signal_paths.end(), old_path),
-      state->cabana.chart_signal_paths.end());
-    state->status_text = "Deleted signal " + signal.original_signal_name;
-    return true;
-  }
-  return false;
-}
-
 void draw_dbc_editor_popup(AppSession *session, UiState *state) {
   if (!ImGui::BeginPopupModal("DBC Editor", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
     return;
@@ -766,50 +420,6 @@ void draw_dbc_editor_popup(AppSession *session, UiState *state) {
   ImGui::SameLine();
   if (ImGui::Button("Close", ImVec2(120.0f, 0.0f))) {
     editor.loaded = false;
-    ImGui::CloseCurrentPopup();
-  }
-  ImGui::EndPopup();
-}
-
-void draw_cabana_signal_editor_popup(AppSession *session, UiState *state) {
-  if (!ImGui::BeginPopupModal("Edit CAN Signal", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-    return;
-  }
-  CabanaSignalEditorState &signal = state->cabana_signal_editor;
-  ImGui::TextUnformatted(signal.creating
-                           ? "Create a decoded signal from the selected bit and save it into generated_dbcs."
-                           : "Edit the selected decoded signal and save it into generated_dbcs.");
-  ImGui::Separator();
-  input_text_string("Name", &signal.signal_name, ImGuiInputTextFlags_AutoSelectAll);
-  ImGui::SetNextItemWidth(140.0f);
-  ImGui::InputInt("Start Bit", &signal.start_bit);
-  ImGui::SetNextItemWidth(140.0f);
-  ImGui::InputInt("Size", &signal.size);
-  ImGui::Checkbox("Little Endian", &signal.is_little_endian);
-  ImGui::Checkbox("Signed", &signal.is_signed);
-  ImGui::SetNextItemWidth(140.0f);
-  ImGui::InputDouble("Factor", &signal.factor, 0.0, 0.0, "%.6g");
-  ImGui::SetNextItemWidth(140.0f);
-  ImGui::InputDouble("Offset", &signal.offset, 0.0, 0.0, "%.6g");
-  ImGui::SetNextItemWidth(140.0f);
-  ImGui::InputDouble("Min", &signal.min, 0.0, 0.0, "%.6g");
-  ImGui::SetNextItemWidth(140.0f);
-  ImGui::InputDouble("Max", &signal.max, 0.0, 0.0, "%.6g");
-  input_text_string("Unit", &signal.unit);
-  input_text_string("Receiver", &signal.receiver_name);
-  ImGui::Spacing();
-  if (ImGui::Button("Apply + Save", ImVec2(140.0f, 0.0f))) {
-    if (apply_cabana_signal_edit_impl(session, state)) {
-      ImGui::CloseCurrentPopup();
-    }
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Open Raw DBC Editor", ImVec2(170.0f, 0.0f))) {
-    state->dbc_editor.open = true;
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Close", ImVec2(120.0f, 0.0f))) {
-    state->cabana_signal_editor.loaded = false;
     ImGui::CloseCurrentPopup();
   }
   ImGui::EndPopup();
@@ -888,14 +498,6 @@ void draw_error_popup(UiState *state) {
 }
 
 }  // namespace
-
-bool apply_cabana_signal_edit(AppSession *session, UiState *state) {
-  return apply_cabana_signal_edit_impl(session, state);
-}
-
-bool apply_cabana_signal_delete(AppSession *session, UiState *state) {
-  return apply_cabana_signal_delete_impl(session, state);
-}
 
 bool reset_layout(AppSession *session, UiState *state) {
   try {
@@ -1121,7 +723,6 @@ void draw_popups(AppSession *session, UiState *state) {
   open_queued_popup(state->open_save_layout, "Save Layout");
   open_queued_popup(state->open_preferences, "Preferences");
   open_queued_popup(state->dbc_editor.open, "DBC Editor");
-  open_queued_popup(state->cabana_signal_editor.open, "Edit CAN Signal");
   open_queued_popup(state->open_find_signal, "Find Signal");
   open_queued_popup(state->axis_limits.open, "Edit Axis Limits");
 
@@ -1131,7 +732,6 @@ void draw_popups(AppSession *session, UiState *state) {
   draw_save_layout_popup(session, state);
   draw_preferences_popup(session, state);
   draw_dbc_editor_popup(session, state);
-  draw_cabana_signal_editor_popup(session, state);
   draw_find_signal_popup(session, state);
   draw_axis_limits_popup(session, state);
   draw_error_popup(state);

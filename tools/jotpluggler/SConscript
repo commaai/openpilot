@@ -24,8 +24,6 @@ jot_sources = [
   "main.cc",
   "app.cc",
   "app_browser.cc",
-  "app_cabana.cc",
-  "app_cabana_widgets.cc",
   "app_camera.cc",
   "app_common.cc",
   "app_custom_series.cc",
@@ -38,11 +36,9 @@ jot_sources = [
   "app_runtime.cc",
   "app_session_flow.cc",
   "app_sidebar_flow.cc",
-  "app_socketcan.cc",
   "app_stream_flow.cc",
   "bootstrap_icons.cc",
   "dbc_core.cc",
-  "../cabana/panda.cc",
   "sketch_layout.cc",
 ]
 

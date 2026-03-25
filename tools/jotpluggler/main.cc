@@ -22,13 +22,11 @@ void print_usage(const char *argv0) {
       << "  --output <png>\n"
       << "  --show\n"
       << "  --sync-load\n"
-      << "  --cabana\n"
       << "\n"
       << "Examples:\n"
       << "  " << argv0 << "\n"
       << "  " << argv0 << " --demo\n"
       << "  " << argv0 << " --layout longitudinal --demo\n"
-      << "  " << argv0 << " --layout longitudinal --demo --cabana\n"
       << "  " << argv0 << " --layout longitudinal --demo --output /tmp/longitudinal.png\n"
       << "  " << argv0 << " --stream --show\n"
       << "  " << argv0 << " --stream --address 192.168.60.52 --buffer-seconds 45 --show\n";
@@ -96,8 +94,6 @@ int main(int argc, char *argv[]) {
       options.show = true;
     } else if (arg == "--sync-load") {
       options.sync_load = true;
-    } else if (arg == "--cabana") {
-      options.start_cabana = true;
     } else if (arg == "--help" || arg == "-h") {
       print_usage(argv[0]);
       return 0;
