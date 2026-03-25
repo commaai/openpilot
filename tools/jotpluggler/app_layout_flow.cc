@@ -1,7 +1,6 @@
 #include "tools/jotpluggler/app_internal.h"
 #include "system/hardware/hw.h"
 
-#include <cstdio>
 #include <fstream>
 #include <unistd.h>
 
@@ -18,22 +17,14 @@ struct FindSignalMatch {
   int score = 0;
 };
 
-std::string stream_source_target_label(const StreamSourceConfig &source) {
-  switch (source.kind) {
-    case StreamSourceKind::CerealRemote:
-      return source.address.empty() ? std::string("127.0.0.1") : source.address;
-    case StreamSourceKind::CerealLocal:
-    default:
-      return "127.0.0.1";
-  }
-}
-
 StreamSourceConfig stream_source_config_from_ui(const UiState &state) {
   StreamSourceConfig source;
   source.kind = state.stream_source_kind;
   source.address = trim_copy(state.stream_address_buffer.data());
   if (source.kind == StreamSourceKind::CerealLocal) {
     source.address = "127.0.0.1";
+  } else {
+    source.address = normalize_stream_address(std::move(source.address));
   }
   return source;
 }
@@ -273,17 +264,6 @@ void draw_find_signal_popup(AppSession *session, UiState *state) {
   ImGui::EndPopup();
 }
 
-const fs::path &repo_root() {
-  static const fs::path root = []() {
-#ifdef JOTP_REPO_ROOT
-    return fs::path(JOTP_REPO_ROOT);
-#else
-    return fs::current_path();
-#endif
-  }();
-  return root;
-}
-
 std::string default_dbc_template() {
   return "VERSION \"\"\n\nNS_ :\nBS_:\nBU_: XXX\n";
 }
@@ -292,14 +272,11 @@ std::string active_dbc_name(const AppSession &session) {
   return !session.dbc_override.empty() ? session.dbc_override : session.route_data.dbc_name;
 }
 
-fs::path generated_dbc_dir() {
-  return repo_root() / "tools" / "jotpluggler" / "generated_dbcs";
-}
-
 fs::path resolve_dbc_editor_source(const std::string &dbc_name) {
+  const fs::path generated_dbc_dir = repo_root() / "tools" / "jotpluggler" / "generated_dbcs";
   for (const fs::path &candidate : {
          repo_root() / "opendbc" / "dbc" / (dbc_name + ".dbc"),
-         generated_dbc_dir() / (dbc_name + ".dbc"),
+         generated_dbc_dir / (dbc_name + ".dbc"),
        }) {
     if (fs::exists(candidate)) {
       return candidate;
@@ -363,8 +340,9 @@ bool save_dbc_editor_contents(AppSession *session, UiState *state) {
   }
   try {
     dbc::Database::fromContent(editor.text, editor.save_name + ".dbc");
-    fs::create_directories(generated_dbc_dir());
-    const fs::path output = generated_dbc_dir() / (editor.save_name + ".dbc");
+    const fs::path generated_dbc_dir = repo_root() / "tools" / "jotpluggler" / "generated_dbcs";
+    fs::create_directories(generated_dbc_dir);
+    const fs::path output = generated_dbc_dir / (editor.save_name + ".dbc");
     std::ofstream out(output);
     if (!out.is_open()) {
       throw std::runtime_error("Failed to open " + output.string());

@@ -383,21 +383,10 @@ RouteIdentifier make_route_identifier(const RouteSelection &route, const std::ma
   return route_id;
 }
 
-std::string basedir() {
-  if (const char *env_basedir = std::getenv("BASEDIR"); env_basedir != nullptr && std::strlen(env_basedir) > 0) {
-    return env_basedir;
-  }
-#ifdef JOTP_REPO_ROOT
-  return JOTP_REPO_ROOT;
-#else
-  return fs::current_path().string();
-#endif
-}
-
 const std::unordered_map<std::string, std::string> &car_fingerprint_to_dbc_map() {
   static const std::unordered_map<std::string, std::string> map = []() {
     std::unordered_map<std::string, std::string> out;
-    const fs::path json_path = fs::path(basedir()) / "tools" / "jotpluggler" / "car_fingerprint_to_dbc.json";
+    const fs::path json_path = repo_root() / "tools" / "jotpluggler" / "car_fingerprint_to_dbc.json";
     const std::string raw = util::read_file(json_path.string());
     if (raw.empty()) return out;
     std::string parse_error;
@@ -425,8 +414,8 @@ std::string detect_dbc_for_fingerprint(std::string_view car_fingerprint) {
 std::vector<std::string> available_dbc_names_impl() {
   std::set<std::string> names;
   for (const fs::path &dbc_dir : {
-         fs::path(basedir()) / "opendbc" / "dbc",
-         fs::path(basedir()) / "tools" / "jotpluggler" / "generated_dbcs",
+         repo_root() / "opendbc" / "dbc",
+         repo_root() / "tools" / "jotpluggler" / "generated_dbcs",
        }) {
     if (fs::exists(dbc_dir) && fs::is_directory(dbc_dir)) {
       for (const auto &entry : fs::directory_iterator(dbc_dir)) {
@@ -447,8 +436,8 @@ std::vector<std::string> available_dbc_names_impl() {
 
 fs::path resolve_dbc_path(const std::string &dbc_name) {
   for (const fs::path &candidate : {
-         fs::path(basedir()) / "opendbc" / "dbc" / (dbc_name + ".dbc"),
-         fs::path(basedir()) / "tools" / "jotpluggler" / "generated_dbcs" / (dbc_name + ".dbc"),
+         repo_root() / "opendbc" / "dbc" / (dbc_name + ".dbc"),
+         repo_root() / "tools" / "jotpluggler" / "generated_dbcs" / (dbc_name + ".dbc"),
        }) {
     if (fs::exists(candidate)) return candidate;
   }

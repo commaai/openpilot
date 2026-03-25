@@ -51,20 +51,6 @@ CameraType decoder_camera_type(CameraViewKind view) {
   }
 }
 
-std::string normalize_stream_address(std::string address) {
-  return is_local_stream_address(address) ? "127.0.0.1" : address;
-}
-
-std::string stream_source_target_label(const StreamSourceConfig &source) {
-  switch (source.kind) {
-    case StreamSourceKind::CerealRemote:
-      return normalize_stream_address(source.address);
-    case StreamSourceKind::CerealLocal:
-    default:
-      return "127.0.0.1";
-  }
-}
-
 bool stream_batch_has_data(const StreamExtractBatch &batch) {
   return !batch.series.empty()
       || !batch.can_messages.empty()

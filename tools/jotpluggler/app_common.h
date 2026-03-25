@@ -34,11 +34,15 @@ bool pane_is_special(const Pane &pane);
 bool pane_kind_is_special(PaneKind kind);
 bool is_default_special_title(std::string_view title);
 CameraViewKind sidebar_preview_camera_view(const AppSession &session);
+const std::filesystem::path &repo_root();
 
 ImU32 timeline_entry_color(TimelineEntry::Type type, float alpha = 1.0f);
 ImU32 timeline_entry_color(TimelineEntry::Type type, float alpha, std::array<uint8_t, 3> none_color);
 const char *timeline_entry_label(TimelineEntry::Type type);
 TimelineEntry::Type timeline_type_at_time(const std::vector<TimelineEntry> &timeline, double time_value);
+std::string normalize_stream_address(std::string address);
+const char *stream_source_kind_label(StreamSourceKind kind);
+std::string stream_source_target_label(const StreamSourceConfig &source);
 
 bool env_flag_enabled(const char *name, bool default_value = false);
 void open_external_url(std::string_view url);

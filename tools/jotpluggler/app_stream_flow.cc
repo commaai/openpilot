@@ -130,7 +130,6 @@ void apply_stream_batch(AppSession *session, UiState *state, StreamExtractBatch 
     append_stream_timeline_entries(&session->route_data.timeline, std::move(batch.timeline));
   }
 
-  bool can_messages_changed = false;
   for (CanMessageData &incoming : batch.can_messages) {
     auto it = std::lower_bound(session->route_data.can_messages.begin(),
                                session->route_data.can_messages.end(),
@@ -145,7 +144,6 @@ void apply_stream_batch(AppSession *session, UiState *state, StreamExtractBatch 
                          std::make_move_iterator(incoming.samples.begin()),
                          std::make_move_iterator(incoming.samples.end()));
     }
-    can_messages_changed = true;
   }
 
   if (new_paths) {

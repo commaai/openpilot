@@ -2,6 +2,7 @@ import os
 
 import imgui
 import libusb
+from openpilot.common.basedir import BASEDIR
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
 
@@ -11,7 +12,8 @@ jot_env["CPPPATH"] += [imgui.INCLUDE_DIR]
 jot_env["CPPPATH"] += [libusb.INCLUDE_DIR]
 jot_env["LIBPATH"] += [libusb.LIB_DIR]
 jot_env["CXXFLAGS"] += ["-DGLFW_INCLUDE_NONE"]
-repo_root = jot_env.Dir("../..").abspath
+jot_env["CPPPATH"] += ["."]
+repo_root = os.path.realpath(BASEDIR)
 jot_env["CXXFLAGS"] += ['-DJOTP_REPO_ROOT=\'"%s"\'' % repo_root]
 generated_dbc_dir = "tools/jotpluggler/generated_dbcs"
 generated_dbc_stamp = jot_env.Command(

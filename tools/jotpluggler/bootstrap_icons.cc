@@ -1,4 +1,5 @@
 #include "tools/jotpluggler/jotpluggler.h"
+#include "tools/jotpluggler/app_common.h"
 
 #include <cstdio>
 
@@ -6,21 +7,10 @@ namespace {
 
 ImFont *g_icon_font = nullptr;
 
-const std::filesystem::path &font_path() {
-  static const std::filesystem::path path = []() -> std::filesystem::path {
-#ifdef JOTP_REPO_ROOT
-    return std::filesystem::path(JOTP_REPO_ROOT) / "third_party" / "bootstrap" / "bootstrap-icons.ttf";
-#else
-    return std::filesystem::current_path() / "third_party" / "bootstrap" / "bootstrap-icons.ttf";
-#endif
-  }();
-  return path;
-}
-
 }  // namespace
 
 void icon_add_font(float size, bool merge) {
-  const auto &ttf = font_path();
+  const std::filesystem::path ttf = repo_root() / "third_party" / "bootstrap" / "bootstrap-icons.ttf";
   ImGuiIO &io = ImGui::GetIO();
   ImFontConfig config;
   config.MergeMode = merge;

@@ -37,75 +37,16 @@ ImFont *g_ui_font = nullptr;
 ImFont *g_ui_bold_font = nullptr;
 ImFont *g_mono_font = nullptr;
 
-const fs::path &repo_root() {
-  static const fs::path root = []() -> fs::path {
-#ifdef JOTP_REPO_ROOT
-    return JOTP_REPO_ROOT;
-#else
-    std::array<char, 4096> buf = {};
-    const ssize_t count = readlink("/proc/self/exe", buf.data(), buf.size() - 1);
-    if (count <= 0) throw std::runtime_error("Unable to resolve executable path");
-    return fs::path(std::string(buf.data(), static_cast<size_t>(count))).parent_path().parent_path().parent_path();
-#endif
-  }();
-  return root;
-}
-
-std::optional<fs::path> jetbrains_mono_font_path() {
-  const char *home = std::getenv("HOME");
-  std::vector<fs::path> candidates;
-  if (home != nullptr) {
-    candidates.push_back(fs::path(home) / ".local/share/fonts/fonts/ttf/JetBrainsMono-Regular.ttf");
-    candidates.push_back(fs::path(home) / ".local/share/fonts/fonts/variable/JetBrainsMono[wght].ttf");
-  }
-  candidates.push_back(fs::path("/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf"));
-  for (const fs::path &candidate : candidates) {
-    if (fs::exists(candidate)) return candidate;
-  }
-  return std::nullopt;
-}
-
-std::optional<fs::path> inter_font_path() {
-  std::vector<fs::path> candidates = {
-    repo_root() / "selfdrive" / "assets" / "fonts" / "Inter-Regular.ttf",
-    repo_root() / "selfdrive" / "ui" / "installer" / "inter-ascii.ttf",
-  };
-  for (const fs::path &candidate : candidates) {
-    if (fs::exists(candidate)) return candidate;
-  }
-  return std::nullopt;
-}
-
-std::optional<fs::path> inter_semibold_font_path() {
-  const fs::path candidate = repo_root() / "selfdrive" / "assets" / "fonts" / "Inter-SemiBold.ttf";
-  if (fs::exists(candidate)) {
-    return candidate;
-  }
-  return std::nullopt;
-}
-
 std::string layout_name_from_arg(const std::string &layout_arg) {
   const fs::path raw(layout_arg);
   if (raw.extension() == ".xml" || raw.extension() == ".json") {
     return raw.stem().string();
   }
-  if (raw.filename() != raw) return raw.filename().replace_extension("").string();
+  if (raw.filename() != raw) {
+    return raw.filename().replace_extension("").string();
+  }
   fs::path stem_path = raw;
   return stem_path.replace_extension("").string();
-}
-
-fs::path resolve_layout_path(const std::string &layout_arg) {
-  const fs::path direct(layout_arg);
-  if (fs::exists(direct)) {
-    if (direct.extension() == ".json") return fs::absolute(direct);
-    const fs::path sibling_json = direct.parent_path() / (direct.stem().string() + ".json");
-    if (direct.extension() == ".xml" && fs::exists(sibling_json)) {
-      return fs::absolute(sibling_json);
-    }
-  }
-  const fs::path candidate = repo_root() / "tools" / "jotpluggler" / "layouts" / (layout_name_from_arg(layout_arg) + ".json");
-  if (!fs::exists(candidate)) throw std::runtime_error("Unknown layout: " + layout_arg);
-  return candidate;
 }
 
 fs::path layouts_dir() {
@@ -139,12 +80,26 @@ fs::path autosave_dir() {
   return layouts_dir() / ".jotpluggler_autosave";
 }
 
+fs::path resolve_layout_path(const std::string &layout_arg) {
+  const fs::path direct(layout_arg);
+  if (fs::exists(direct)) {
+    if (direct.extension() == ".json") return fs::absolute(direct);
+    const fs::path sibling_json = direct.parent_path() / (direct.stem().string() + ".json");
+    if (direct.extension() == ".xml" && fs::exists(sibling_json)) {
+      return fs::absolute(sibling_json);
+    }
+  }
+  const fs::path candidate = layouts_dir() / (layout_name_from_arg(layout_arg) + ".json");
+  if (!fs::exists(candidate)) throw std::runtime_error("Unknown layout: " + layout_arg);
+  return candidate;
+}
+
 fs::path autosave_path_for_layout(const fs::path &layout_path) {
   const std::string stem = layout_path.empty() ? "untitled" : layout_path.stem().string();
   return autosave_dir() / (sanitize_layout_stem(stem) + ".json");
 }
 
-std::vector<std::string> scan_layout_names() {
+std::vector<std::string> available_layout_names() {
   std::vector<std::string> names;
   const fs::path root = layouts_dir();
   if (!fs::exists(root) || !fs::is_directory(root)) {
@@ -160,31 +115,9 @@ std::vector<std::string> scan_layout_names() {
   return names;
 }
 
-std::vector<std::string> available_layout_names() {
-  return scan_layout_names();
-}
-
 void run_or_throw(const std::string &command, const std::string &action) {
   const int ret = std::system(command.c_str());
   if (ret != 0) throw std::runtime_error(action + " failed with exit code " + std::to_string(ret));
-}
-
-const char *stream_source_kind_label(StreamSourceKind kind) {
-  switch (kind) {
-    case StreamSourceKind::CerealRemote: return "Remote (ZMQ)";
-    case StreamSourceKind::CerealLocal:
-    default: return "Local (MSGQ)";
-  }
-}
-
-std::string stream_source_target_label(const StreamSourceConfig &source) {
-  switch (source.kind) {
-    case StreamSourceKind::CerealRemote:
-      return source.address.empty() ? std::string("127.0.0.1") : source.address;
-    case StreamSourceKind::CerealLocal:
-    default:
-      return "127.0.0.1";
-  }
 }
 
 void refresh_replaced_layout_ui(AppSession *session, UiState *state, bool mark_docks) {
@@ -320,9 +253,7 @@ void configure_style() {
   g_ui_font = nullptr;
   g_ui_bold_font = nullptr;
   g_mono_font = nullptr;
-  const std::optional<fs::path> ui_font_path = inter_font_path();
-  const std::optional<fs::path> ui_bold_font_path = inter_semibold_font_path();
-  const std::optional<fs::path> mono_font_path = jetbrains_mono_font_path();
+  const fs::path fonts_dir = repo_root() / "selfdrive" / "assets" / "fonts";
   ImFontConfig font_cfg;
   font_cfg.OversampleH = 2;
   font_cfg.OversampleV = 2;
@@ -335,23 +266,19 @@ void configure_style() {
     }
     return font;
   };
-  if (ui_font_path.has_value()) {
-    if (ImFont *font = add_font_with_icons(*ui_font_path, 16.0f); font != nullptr) {
-      g_ui_font = font;
-      io.FontDefault = font;
-    }
+  if (ImFont *font = add_font_with_icons(fonts_dir / "Inter-Regular.ttf", 16.0f); font != nullptr) {
+    g_ui_font = font;
+    io.FontDefault = font;
   }
-  if (ui_bold_font_path.has_value()) {
-    g_ui_bold_font = add_font_with_icons(*ui_bold_font_path, 16.75f);
-  }
-  if (g_ui_font == nullptr && mono_font_path.has_value()) {
-    if (ImFont *font = add_font_with_icons(*mono_font_path, 15.75f); font != nullptr) {
+  g_ui_bold_font = add_font_with_icons(fonts_dir / "Inter-SemiBold.ttf", 16.75f);
+  if (g_ui_font == nullptr) {
+    if (ImFont *font = add_font_with_icons(fonts_dir / "JetBrainsMono-Medium.ttf", 15.75f); font != nullptr) {
       g_mono_font = font;
       io.FontDefault = font;
     }
   }
-  if (g_mono_font == nullptr && mono_font_path.has_value()) {
-    g_mono_font = add_font_with_icons(*mono_font_path, 15.75f);
+  if (g_mono_font == nullptr) {
+    g_mono_font = add_font_with_icons(fonts_dir / "JetBrainsMono-Medium.ttf", 15.75f);
   }
   if (g_ui_bold_font == nullptr) {
     g_ui_bold_font = g_ui_font;

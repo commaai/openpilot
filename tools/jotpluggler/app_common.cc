@@ -103,6 +103,11 @@ CameraViewKind sidebar_preview_camera_view(const AppSession &session) {
     : CameraViewKind::Road;
 }
 
+const std::filesystem::path &repo_root() {
+  static const std::filesystem::path root(JOTP_REPO_ROOT);
+  return root;
+}
+
 ImU32 timeline_entry_color(TimelineEntry::Type type, float alpha) {
   return timeline_entry_color(type, alpha, {111, 143, 175});
 }
@@ -145,6 +150,30 @@ TimelineEntry::Type timeline_type_at_time(const std::vector<TimelineEntry> &time
     }
   }
   return TimelineEntry::Type::None;
+}
+
+std::string normalize_stream_address(std::string address) {
+  return is_local_stream_address(address) ? "127.0.0.1" : address;
+}
+
+const char *stream_source_kind_label(StreamSourceKind kind) {
+  switch (kind) {
+    case StreamSourceKind::CerealRemote:
+      return "Remote (ZMQ)";
+    case StreamSourceKind::CerealLocal:
+    default:
+      return "Local (MSGQ)";
+  }
+}
+
+std::string stream_source_target_label(const StreamSourceConfig &source) {
+  switch (source.kind) {
+    case StreamSourceKind::CerealRemote:
+      return normalize_stream_address(source.address);
+    case StreamSourceKind::CerealLocal:
+    default:
+      return "127.0.0.1";
+  }
 }
 
 bool env_flag_enabled(const char *name, bool default_value) {

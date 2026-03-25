@@ -1,4 +1,5 @@
 #include "tools/jotpluggler/jotpluggler.h"
+#include "tools/jotpluggler/app_common.h"
 
 #include "implot.h"
 
@@ -55,18 +56,6 @@ ProcessResult run_process(const std::vector<std::string> &args) {
   const int status = pclose(pipe);
   result.exit_code = WIFEXITED(status) ? WEXITSTATUS(status) : 1;
   return result;
-}
-
-fs::path math_eval_script_path() {
-#ifdef JOTP_REPO_ROOT
-  return fs::path(JOTP_REPO_ROOT) / "tools" / "jotpluggler" / "math_eval.py";
-#else
-  std::array<char, 4096> buf = {};
-  const ssize_t length = ::readlink("/proc/self/exe", buf.data(), buf.size() - 1);
-  if (length <= 0) throw std::runtime_error("Failed to resolve executable path");
-  buf[static_cast<size_t>(length)] = '\0';
-  return fs::path(buf.data()).parent_path() / "math_eval.py";
-#endif
 }
 
 void write_binary_vector(const fs::path &path, const std::vector<double> &values) {
@@ -240,7 +229,7 @@ PythonEvalResult evaluate_custom_python_series(const AppSession &session,
 
     const ProcessResult process = run_process({
       "python3",
-      math_eval_script_path().string(),
+      (repo_root() / "tools" / "jotpluggler" / "math_eval.py").string(),
       manifest_path.string(),
       globals_path.string(),
       code_path.string(),
