@@ -49,7 +49,7 @@ pkgs = [importlib.import_module(name) for name in pkg_names]
 allowed_system_libs = {
   "EGL", "GLESv2", "GL",
   "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
-  "dl", "drm", "gbm",  "m", "pthread",
+  "dl", "drm", "gbm", "m", "pthread",
 }
 
 def _resolve_lib(env, name):
@@ -259,6 +259,7 @@ if arch != "larch64":
   SConscript([
     'tools/replay/SConscript',
     'tools/cabana/SConscript',
+    'tools/jotpluggler/SConscript',
   ])
 
 

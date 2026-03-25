@@ -1,0 +1,65 @@
+import os
+
+import imgui
+import libusb
+
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
+
+jot_env = env.Clone()
+jot_env["LIBPATH"] += [imgui.MESA_DIR]
+jot_env["CPPPATH"] += [imgui.INCLUDE_DIR]
+jot_env["CPPPATH"] += [libusb.INCLUDE_DIR]
+jot_env["LIBPATH"] += [libusb.LIB_DIR]
+jot_env["CXXFLAGS"] += ["-DGLFW_INCLUDE_NONE"]
+repo_root = jot_env.Dir("../..").abspath
+jot_env["CXXFLAGS"] += ['-DJOTP_REPO_ROOT=\'"%s"\'' % repo_root]
+generated_dbc_dir = "tools/jotpluggler/generated_dbcs"
+generated_dbc_stamp = jot_env.Command(
+  f"{generated_dbc_dir}/.stamp",
+  ["materialize_generated_dbcs.py"],
+  f"python3 tools/jotpluggler/materialize_generated_dbcs.py --out {generated_dbc_dir}",
+)
+
+jot_sources = [
+  "main.cc",
+  "app.cc",
+  "app_browser.cc",
+  "app_cabana.cc",
+  "app_cabana_widgets.cc",
+  "app_camera.cc",
+  "app_common.cc",
+  "app_custom_series.cc",
+  "app_layout_flow.cc",
+  "app_layout_io.cc",
+  "app_logs.cc",
+  "app_map.cc",
+  "app_plot.cc",
+  "app_render_flow.cc",
+  "app_runtime.cc",
+  "app_session_flow.cc",
+  "app_sidebar_flow.cc",
+  "app_socketcan.cc",
+  "app_stream_flow.cc",
+  "bootstrap_icons.cc",
+  "dbc_core.cc",
+  "../cabana/panda.cc",
+  "sketch_layout.cc",
+]
+
+objects = []
+for source in jot_sources:
+  basename = os.path.splitext(os.path.basename(source))[0]
+  objects.append(jot_env.Object(target=f"jot_{basename}", source=source))
+
+imgui_static = File(f"{imgui.LIB_DIR}/libimgui.a")
+glfw_static = File(f"{imgui.LIB_DIR}/libglfw3.a")
+frameworks = []
+libs = [replay_lib, common, messaging, visionipc, cereal, imgui_static, glfw_static,
+        "avformat", "avcodec", "avutil", "x264", "yuv", "z", "bz2", "zstd", "m", "pthread", "usb-1.0"]
+if arch == "Darwin":
+  frameworks = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
+else:
+  libs += ["GL", "dl", "va", "va-drm", "drm"]
+
+program = jot_env.Program("jotpluggler", objects, LIBS=libs, FRAMEWORKS=frameworks)
+jot_env.Depends(program, generated_dbc_stamp)
