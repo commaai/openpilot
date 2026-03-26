@@ -18,7 +18,7 @@ def estimate_pickle_max_size(onnx_size):
 if arch == 'larch64' and os.path.exists('/dev/kgsl-3d0'):
   tg_flags = 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 QCOM_IR3=1'
 elif arch == 'larch64':
-  tg_flags = 'DEV=MSM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0'
+  tg_flags = 'DEV=MSM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 MESA_PATH=/data/libtinymesa.so'
 elif arch == 'Darwin':
   tg_flags = f'DEV=CPU THREADS=0 HOME={os.path.expanduser("~")}'
 else:
