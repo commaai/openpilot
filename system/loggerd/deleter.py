@@ -58,6 +58,15 @@ def deleter_thread(exit_event: threading.Event):
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
         delete_path = os.path.join(Paths.log_root(), delete_dir)
 
+        if not os.path.isdir(delete_path):
+          try:
+            cloudlog.info(f"deleting file {delete_path}")
+            os.remove(delete_path)
+            break
+          except OSError:
+            cloudlog.exception(f"issue deleting {delete_path}")
+          continue
+
         if any(name.endswith(".lock") for name in os.listdir(delete_path)):
           continue
 
