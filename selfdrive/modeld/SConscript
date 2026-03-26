@@ -15,10 +15,14 @@ def estimate_pickle_max_size(onnx_size):
 
 # compile warp
 # THREADS=0 is need to prevent bug: https://github.com/tinygrad/tinygrad/issues/14689
-tg_flags = {
-    'larch64': 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 QCOM_IR3=1',
-    'Darwin': f'DEV=CPU THREADS=0 HOME={os.path.expanduser("~")}', # tinygrad calls brew which needs a $HOME in the env
-}.get(arch, 'DEV=CPU CPU_LLVM=1 THREADS=0')
+if arch == 'larch64' and os.path.exists('/dev/kgsl-3d0'):
+  tg_flags = 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 QCOM_IR3=1'
+elif arch == 'larch64':
+  tg_flags = 'DEV=NULL NULL_IR3=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0'
+elif arch == 'Darwin':
+  tg_flags = f'DEV=CPU THREADS=0 HOME={os.path.expanduser("~")}'
+else:
+  tg_flags = 'DEV=CPU CPU_LLVM=1 THREADS=0'
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
@@ -27,9 +31,7 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
   lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
 
-image_flag = {
-     'larch64': 'IMAGE=2',
-}.get(arch, 'IMAGE=0')
+image_flag = 'IMAGE=2' if arch == 'larch64' and os.path.exists('/dev/kgsl-3d0') else 'IMAGE=0'
 script_files = [File(Dir("#selfdrive/modeld").File("compile_warp.py").abspath)]
 compile_warp_cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/compile_warp.py '
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
