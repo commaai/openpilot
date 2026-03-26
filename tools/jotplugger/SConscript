@@ -1,0 +1,44 @@
+import os
+import imgui
+import libusb
+from opendbc import get_generated_dbcs
+from openpilot.common.basedir import BASEDIR
+
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
+
+jot_env = env.Clone()
+jot_env["LIBPATH"] += [imgui.MESA_DIR, libusb.LIB_DIR]
+jot_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
+jot_env["CXXFLAGS"] += [
+  "-DGLFW_INCLUDE_NONE",
+  '-DJOTP_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
+]
+
+def materialize_generated_dbcs(target, source, env):
+  out_dir = os.path.dirname(str(target[0]))
+  os.makedirs(out_dir, exist_ok=True)
+
+  for name in os.listdir(out_dir):
+    if name.endswith('.dbc'):
+      os.unlink(os.path.join(out_dir, name))
+
+  for name, content in sorted(get_generated_dbcs().items()):
+    with open(os.path.join(out_dir, f"{name}.dbc"), "w") as f:
+      f.write(content)
+
+  with open(str(target[0]), "w") as f:
+    f.write("ok\n")
+
+  return None
+
+generated_dbc_stamp = jot_env.Command(f"generated_dbcs/.stamp", [], materialize_generated_dbcs)
+
+libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a"),
+        "avformat", "avcodec", "avutil", "x264", "yuv", "z", "bz2", "zstd", "m", "pthread", "usb-1.0"]
+if arch == "Darwin":
+  jot_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
+else:
+  libs += ["GL", "dl", "va", "va-drm", "drm"]
+
+program = jot_env.Program("jotplugger", jot_env.Glob("*.cc"), LIBS=libs)
+jot_env.Depends(program, generated_dbc_stamp)

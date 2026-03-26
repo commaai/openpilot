@@ -1,0 +1,4 @@
+__pycache__/
+jot_*.o
+jotplugger
+reports/
