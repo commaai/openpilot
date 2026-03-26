@@ -33,28 +33,6 @@ def materialize_generated_dbcs(target, source, env):
 
 generated_dbc_stamp = jot_env.Command(f"generated_dbcs/.stamp", [], materialize_generated_dbcs)
 
-jot_sources = [
-  "main.cc",
-  "app.cc",
-  "browser.cc",
-  "camera.cc",
-  "common.cc",
-  "custom_series.cc",
-  "layout.cc",
-  "layout_io.cc",
-  "logs.cc",
-  "map.cc",
-  "plot.cc",
-  "render.cc",
-  "runtime.cc",
-  "session.cc",
-  "sidebar.cc",
-  "stream.cc",
-  "icons.cc",
-  "sketch_layout.cc",
-  "util.cc",
-]
-
 libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a"),
         "avformat", "avcodec", "avutil", "x264", "yuv", "z", "bz2", "zstd", "m", "pthread", "usb-1.0"]
 if arch == "Darwin":
@@ -62,10 +40,5 @@ if arch == "Darwin":
 else:
   libs += ["GL", "dl", "va", "va-drm", "drm"]
 
-objects = []
-for source in jot_sources:
-  basename = os.path.splitext(os.path.basename(source))[0]
-  objects.append(jot_env.Object(target=f"jot_{basename}", source=source))
-
-program = jot_env.Program("jotpluggler", objects, LIBS=libs)
+program = jot_env.Program("jotpluggler", jot_env.Glob("*.cc"), LIBS=libs)
 jot_env.Depends(program, generated_dbc_stamp)

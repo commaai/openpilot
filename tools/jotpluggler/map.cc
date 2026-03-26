@@ -53,17 +53,6 @@ struct GeoPoint {
   double lon = 0.0;
 };
 
-struct GeoBounds {
-  double south = 0.0;
-  double west = 0.0;
-  double north = 0.0;
-  double east = 0.0;
-
-  bool valid() const {
-    return south < north && west < east;
-  }
-};
-
 struct ProjectedPoint {
   float x = 0.0f;
   float y = 0.0f;
@@ -1023,162 +1012,111 @@ void draw_edge_fade(ImDrawList *draw_list,
 
 }  // namespace
 
-struct MapDataManager::Impl {
-  struct Request {
-    std::string key;
-    GeoBounds bounds;
-    std::string query;
-  };
+MapDataManager::MapDataManager() : worker_([this]() { run(); }) {}
 
-  Impl() : worker([this]() { run(); }) {}
-
-  ~Impl() {
-    {
-      std::lock_guard<std::mutex> lock(mutex);
-      stopping = true;
-    }
-    cv.notify_all();
-    if (worker.joinable()) {
-      worker.join();
-    }
+MapDataManager::~MapDataManager() {
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    stopping_ = true;
   }
-
-  void ensureTrace(const GpsTrace &trace) {
-    if (trace.points.empty()) {
-      return;
-    }
-    const MapRequestSpec wanted = build_request_for_trace(trace);
-    if (!wanted.bounds.valid()) {
-      return;
-    }
-
-    std::lock_guard<std::mutex> lock(mutex);
-    if (current && current->key == wanted.key) {
-      return;
-    }
-    if (pending && pending->key == wanted.key) {
-      return;
-    }
-
-    if (const auto cached = load_compressed_basemap(basemap_cache_path(wanted.key), wanted.key)) {
-      current = std::make_unique<RouteBasemap>(std::move(*cached));
-      completed.reset();
-      pending.reset();
-      active.reset();
-      return;
-    }
-
-    pending = Request{
-      .key = wanted.key,
-      .bounds = wanted.bounds,
-      .query = wanted.query,
-    };
-    cv.notify_one();
+  cv_.notify_all();
+  if (worker_.joinable()) {
+    worker_.join();
   }
-
-  void pump() {
-    std::optional<RouteBasemap> ready;
-    {
-      std::lock_guard<std::mutex> lock(mutex);
-      if (completed) {
-        ready = std::move(completed);
-        completed.reset();
-      }
-    }
-    if (ready) {
-      current = std::make_unique<RouteBasemap>(std::move(*ready));
-    }
-  }
-
-  bool loading() const {
-    std::lock_guard<std::mutex> lock(mutex);
-    return active || pending;
-  }
-
-  void clearCache() {
-    std::lock_guard<std::mutex> lock(mutex);
-    clear_cache_directory();
-  }
-
-  MapCacheStats cacheStats() const {
-    return MapCacheStats{
-      .bytes = cache_directory_size_bytes(),
-      .files = cache_directory_file_count(),
-    };
-  }
-
-  const RouteBasemap *currentData() const {
-    return current.get();
-  }
-
-  void run() {
-    while (true) {
-      Request request;
-      {
-        std::unique_lock<std::mutex> lock(mutex);
-        cv.wait(lock, [&]() { return stopping || pending.has_value(); });
-        if (stopping) {
-          return;
-        }
-        request = *pending;
-        active = pending;
-        pending.reset();
-      }
-
-      std::optional<RouteBasemap> parsed;
-      const std::string raw = load_overpass_json(request.query);
-      if (!raw.empty()) {
-        parsed = parse_basemap_json(raw, request.bounds, request.key);
-        if (parsed) {
-          save_compressed_basemap(basemap_cache_path(request.key), *parsed);
-        }
-      }
-
-      {
-        std::lock_guard<std::mutex> lock(mutex);
-        if (active && active->key == request.key) {
-          completed = std::move(parsed);
-          active.reset();
-        }
-      }
-    }
-  }
-
-  mutable std::mutex mutex;
-  std::condition_variable cv;
-  bool stopping = false;
-  std::optional<Request> pending;
-  std::optional<Request> active;
-  std::optional<RouteBasemap> completed;
-  std::unique_ptr<RouteBasemap> current;
-  std::thread worker;
-};
-
-MapDataManager::MapDataManager() : impl_(std::make_unique<Impl>()) {}
-MapDataManager::~MapDataManager() = default;
+}
 
 void MapDataManager::pump() {
-  impl_->pump();
+  std::unique_ptr<RouteBasemap> ready;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ready = std::move(completed_);
+  }
+  if (ready) {
+    current_ = std::move(ready);
+  }
 }
 
 void MapDataManager::ensureTrace(const GpsTrace &trace) {
-  impl_->ensureTrace(trace);
+  if (trace.points.empty()) {
+    return;
+  }
+  const MapRequestSpec wanted = build_request_for_trace(trace);
+  if (!wanted.bounds.valid()) {
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(mutex_);
+  if ((current_ && current_->key == wanted.key) || (pending_ && pending_->key == wanted.key)) {
+    return;
+  }
+
+  if (const auto cached = load_compressed_basemap(basemap_cache_path(wanted.key), wanted.key)) {
+    current_ = std::make_unique<RouteBasemap>(std::move(*cached));
+    completed_.reset();
+    pending_.reset();
+    active_.reset();
+    return;
+  }
+
+  pending_ = std::make_unique<Request>(Request{
+    .key = wanted.key,
+    .bounds = wanted.bounds,
+    .query = wanted.query,
+  });
+  cv_.notify_one();
 }
 
 bool MapDataManager::loading() const {
-  return impl_->loading();
+  std::lock_guard<std::mutex> lock(mutex_);
+  return active_ || pending_;
 }
 
 const RouteBasemap *MapDataManager::current() const {
-  return impl_->currentData();
+  return current_.get();
 }
 
 void MapDataManager::clearCache() {
-  impl_->clearCache();
+  std::lock_guard<std::mutex> lock(mutex_);
+  clear_cache_directory();
 }
 
 MapCacheStats MapDataManager::cacheStats() const {
-  return impl_->cacheStats();
+  return MapCacheStats{
+    .bytes = cache_directory_size_bytes(),
+    .files = cache_directory_file_count(),
+  };
+}
+
+void MapDataManager::run() {
+  while (true) {
+    Request request;
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      cv_.wait(lock, [&]() { return stopping_ || pending_ != nullptr; });
+      if (stopping_) {
+        return;
+      }
+      request = *pending_;
+      active_ = std::move(pending_);
+    }
+
+    std::unique_ptr<RouteBasemap> parsed;
+    const std::string raw = load_overpass_json(request.query);
+    if (!raw.empty()) {
+      if (auto basemap = parse_basemap_json(raw, request.bounds, request.key)) {
+        save_compressed_basemap(basemap_cache_path(request.key), *basemap);
+        parsed = std::make_unique<RouteBasemap>(std::move(*basemap));
+      }
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      if (active_ && active_->key == request.key) {
+        completed_ = std::move(parsed);
+        active_.reset();
+      }
+    }
+  }
 }
 
 void draw_map_pane(AppSession *session, UiState *state, Pane *, int pane_index) {
