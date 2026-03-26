@@ -1,39 +1,59 @@
 import os
+import glob as globmod
 import fcntl
 import ctypes
 from functools import cache
 
+@cache
+def get_tlmm_base() -> int:
+  """Discover TLMM GPIO chip base. Non-zero on mainline kernel, 0 on downstream."""
+  bases = globmod.glob("/sys/bus/platform/devices/3400000.pinctrl/gpio/*/base")
+  if bases:
+    try:
+      with open(bases[0]) as f:
+        return int(f.read().strip())
+    except (OSError, ValueError):
+      pass
+  return 0
+
+def _sysfs_pin(pin: int) -> int:
+  return get_tlmm_base() + pin
+
 def gpio_init(pin: int, output: bool) -> None:
+  sysfs_pin = _sysfs_pin(pin)
   try:
-    with open(f"/sys/class/gpio/gpio{pin}/direction", 'wb') as f:
+    with open(f"/sys/class/gpio/gpio{sysfs_pin}/direction", 'wb') as f:
       f.write(b"out" if output else b"in")
   except Exception as e:
     print(f"Failed to set gpio {pin} direction: {e}")
 
 def gpio_set(pin: int, high: bool) -> None:
+  sysfs_pin = _sysfs_pin(pin)
   try:
-    with open(f"/sys/class/gpio/gpio{pin}/value", 'wb') as f:
+    with open(f"/sys/class/gpio/gpio{sysfs_pin}/value", 'wb') as f:
       f.write(b"1" if high else b"0")
   except Exception as e:
     print(f"Failed to set gpio {pin} value: {e}")
 
 def gpio_read(pin: int) -> bool | None:
+  sysfs_pin = _sysfs_pin(pin)
   val = None
   try:
-    with open(f"/sys/class/gpio/gpio{pin}/value", 'rb') as f:
+    with open(f"/sys/class/gpio/gpio{sysfs_pin}/value", 'rb') as f:
       val = bool(int(f.read().strip()))
   except Exception as e:
-    print(f"Failed to set gpio {pin} value: {e}")
+    print(f"Failed to read gpio {pin} value: {e}")
 
   return val
 
 def gpio_export(pin: int) -> None:
-  if os.path.isdir(f"/sys/class/gpio/gpio{pin}"):
+  sysfs_pin = _sysfs_pin(pin)
+  if os.path.isdir(f"/sys/class/gpio/gpio{sysfs_pin}"):
     return
 
   try:
     with open("/sys/class/gpio/export", 'w') as f:
-      f.write(str(pin))
+      f.write(str(sysfs_pin))
   except Exception:
     print(f"Failed to export gpio {pin}")
 
