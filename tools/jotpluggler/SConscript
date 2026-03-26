@@ -1,63 +1,44 @@
 import os
-
 import imgui
 import libusb
+from opendbc import get_generated_dbcs
 from openpilot.common.basedir import BASEDIR
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
 
 jot_env = env.Clone()
-jot_env["LIBPATH"] += [imgui.MESA_DIR]
-jot_env["CPPPATH"] += [imgui.INCLUDE_DIR]
-jot_env["CPPPATH"] += [libusb.INCLUDE_DIR]
-jot_env["LIBPATH"] += [libusb.LIB_DIR]
-jot_env["CXXFLAGS"] += ["-DGLFW_INCLUDE_NONE"]
-jot_env["CPPPATH"] += ["."]
-repo_root = os.path.realpath(BASEDIR)
-jot_env["CXXFLAGS"] += ['-DJOTP_REPO_ROOT=\'"%s"\'' % repo_root]
-generated_dbc_dir = "tools/jotpluggler/generated_dbcs"
-generated_dbc_stamp = jot_env.Command(
-  f"{generated_dbc_dir}/.stamp",
-  ["materialize_generated_dbcs.py"],
-  f"python3 tools/jotpluggler/materialize_generated_dbcs.py --out {generated_dbc_dir}",
-)
-
-jot_sources = [
-  "main.cc",
-  "app.cc",
-  "app_browser.cc",
-  "app_camera.cc",
-  "app_common.cc",
-  "app_custom_series.cc",
-  "app_layout_flow.cc",
-  "app_layout_io.cc",
-  "app_logs.cc",
-  "app_map.cc",
-  "app_plot.cc",
-  "app_render_flow.cc",
-  "app_runtime.cc",
-  "app_session_flow.cc",
-  "app_sidebar_flow.cc",
-  "app_stream_flow.cc",
-  "bootstrap_icons.cc",
-  "dbc_core.cc",
-  "sketch_layout.cc",
+jot_env["LIBPATH"] += [imgui.MESA_DIR, libusb.LIB_DIR]
+jot_env["CPPPATH"] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
+jot_env["CXXFLAGS"] += [
+  "-DGLFW_INCLUDE_NONE",
+  '-DJOTP_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR),
 ]
 
-objects = []
-for source in jot_sources:
-  basename = os.path.splitext(os.path.basename(source))[0]
-  objects.append(jot_env.Object(target=f"jot_{basename}", source=source))
+def materialize_generated_dbcs(target, source, env):
+  out_dir = os.path.dirname(str(target[0]))
+  os.makedirs(out_dir, exist_ok=True)
 
-imgui_static = File(f"{imgui.LIB_DIR}/libimgui.a")
-glfw_static = File(f"{imgui.LIB_DIR}/libglfw3.a")
-frameworks = []
-libs = [replay_lib, common, messaging, visionipc, cereal, imgui_static, glfw_static,
+  for name in os.listdir(out_dir):
+    if name.endswith('.dbc'):
+      os.unlink(os.path.join(out_dir, name))
+
+  for name, content in sorted(get_generated_dbcs().items()):
+    with open(os.path.join(out_dir, f"{name}.dbc"), "w") as f:
+      f.write(content)
+
+  with open(str(target[0]), "w") as f:
+    f.write("ok\n")
+
+  return None
+
+generated_dbc_stamp = jot_env.Command(f"generated_dbcs/.stamp", [], materialize_generated_dbcs)
+
+libs = [replay_lib, common, messaging, visionipc, cereal, File(f"{imgui.LIB_DIR}/libimgui.a"), File(f"{imgui.LIB_DIR}/libglfw3.a"),
         "avformat", "avcodec", "avutil", "x264", "yuv", "z", "bz2", "zstd", "m", "pthread", "usb-1.0"]
 if arch == "Darwin":
-  frameworks = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
+  jot_env["FRAMEWORKS"] = ["OpenGL", "Cocoa", "IOKit", "CoreFoundation", "CoreVideo", "CoreMedia", "VideoToolbox"]
 else:
   libs += ["GL", "dl", "va", "va-drm", "drm"]
 
-program = jot_env.Program("jotpluggler", objects, LIBS=libs, FRAMEWORKS=frameworks)
+program = jot_env.Program("jotpluggler", jot_env.Glob("*.cc"), LIBS=libs)
 jot_env.Depends(program, generated_dbc_stamp)

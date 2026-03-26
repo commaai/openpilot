@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "tools/jotpluggler/jotpluggler.h"
+#include "tools/jotpluggler/app.h"
 
 namespace {
 

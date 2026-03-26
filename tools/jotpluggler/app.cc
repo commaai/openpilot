@@ -1,8 +1,8 @@
-#include "tools/jotpluggler/jotpluggler.h"
-#include "tools/jotpluggler/app_camera.h"
-#include "tools/jotpluggler/app_common.h"
-#include "tools/jotpluggler/app_internal.h"
-#include "tools/jotpluggler/app_map.h"
+#include "tools/jotpluggler/app.h"
+#include "tools/jotpluggler/camera.h"
+#include "tools/jotpluggler/common.h"
+#include "tools/jotpluggler/internal.h"
+#include "tools/jotpluggler/map.h"
 #include "system/hardware/hw.h"
 #include "imgui_impl_glfw.h"
 
@@ -18,9 +18,6 @@
 #include <cfloat>
 #include <cstring>
 #include <condition_variable>
-#include <cstdio>
-#include <cstdlib>
-#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -31,6 +28,8 @@
 #include <unistd.h>
 
 #include "third_party/json11/json11.hpp"
+
+namespace fs = std::filesystem;
 
 constexpr const char *UNTITLED_PANE_TITLE = "...";
 ImFont *g_ui_font = nullptr;
@@ -115,11 +114,6 @@ std::vector<std::string> available_layout_names() {
   return names;
 }
 
-void run_or_throw(const std::string &command, const std::string &action) {
-  const int ret = std::system(command.c_str());
-  if (ret != 0) throw std::runtime_error(action + " failed with exit code " + std::to_string(ret));
-}
-
 void refresh_replaced_layout_ui(AppSession *session, UiState *state, bool mark_docks) {
   state->tabs.clear();
   cancel_rename_tab(state);
@@ -142,7 +136,8 @@ void start_new_layout(AppSession *session, UiState *state, const std::string &st
 }
 
 bool is_decoded_can_series_path(std::string_view path) {
-  return path.rfind("/can/", 0) == 0 || path.rfind("/sendcan/", 0) == 0;
+  const std::string value(path);
+  return util::starts_with(value, "/can/") || util::starts_with(value, "/sendcan/");
 }
 
 bool apply_route_can_decode_update(AppSession *session, UiState *state);
@@ -150,9 +145,10 @@ bool apply_route_can_decode_update(AppSession *session, UiState *state);
 void rebuild_series_lookup_preserving_formats(AppSession *session,
                                               std::string_view updated_prefix,
                                               bool refresh_updated_formats_only) {
+  const std::string prefix(updated_prefix);
   if (!updated_prefix.empty()) {
     for (auto it = session->route_data.series_formats.begin(); it != session->route_data.series_formats.end();) {
-      if (it->first.rfind(updated_prefix, 0) == 0) {
+      if (util::starts_with(it->first, prefix)) {
         it = session->route_data.series_formats.erase(it);
       } else {
         ++it;
@@ -164,7 +160,7 @@ void rebuild_series_lookup_preserving_formats(AppSession *session,
   for (RouteSeries &series : session->route_data.series) {
     session->series_by_path.emplace(series.path, &series);
     if (refresh_updated_formats_only) {
-      if (!updated_prefix.empty() && series.path.rfind(updated_prefix, 0) == 0) {
+      if (!updated_prefix.empty() && util::starts_with(series.path, prefix)) {
         const bool enum_like = session->route_data.enum_info.find(series.path) != session->route_data.enum_info.end();
         session->route_data.series_formats[series.path] = compute_series_format(series.values, enum_like);
       }
@@ -379,16 +375,6 @@ UiMetrics compute_ui_metrics(const ImVec2 &size, float top_offset, float sidebar
   return ui;
 }
 
-template <size_t N>
-void copy_to_buffer(const std::string &value, std::array<char, N> *buffer) {
-  buffer->fill('\0');
-  if constexpr (N > 0) {
-    const size_t count = std::min(value.size(), N - 1);
-    std::copy_n(value.data(), count, buffer->data());
-    (*buffer)[count] = '\0';
-  }
-}
-
 void sync_ui_state(UiState *state, const SketchLayout &layout) {
   const bool initializing = state->tabs.empty();
   state->tabs.resize(layout.tabs.size());
@@ -422,12 +408,12 @@ void resize_tab_pane_state(TabUiState *tab_state, size_t pane_count) {
 }
 
 void sync_route_buffers(UiState *state, const AppSession &session) {
-  copy_to_buffer(session.route_name, &state->route_buffer);
-  copy_to_buffer(session.data_dir, &state->data_dir_buffer);
+  state->route_buffer = session.route_name;
+  state->data_dir_buffer = session.data_dir;
 }
 
 void sync_stream_buffers(UiState *state, const AppSession &session) {
-  copy_to_buffer(session.stream_source.address, &state->stream_address_buffer);
+  state->stream_address_buffer = session.stream_source.address;
   state->stream_source_kind = session.stream_source.kind;
   state->stream_buffer_seconds = session.stream_buffer_seconds;
 }
@@ -437,8 +423,8 @@ fs::path default_layout_save_path(const AppSession &session) {
 }
 
 void sync_layout_buffers(UiState *state, const AppSession &session) {
-  copy_to_buffer(session.layout_path.empty() ? std::string() : session.layout_path.string(), &state->load_layout_buffer);
-  copy_to_buffer(default_layout_save_path(session).string(), &state->save_layout_buffer);
+  state->load_layout_buffer = session.layout_path.empty() ? std::string() : session.layout_path.string();
+  state->save_layout_buffer = default_layout_save_path(session).string();
 }
 
 const WorkspaceTab *app_active_tab(const SketchLayout &layout, const UiState &state) {
@@ -461,15 +447,11 @@ TabUiState *app_active_tab_state(UiState *state) {
 
 std::string pane_window_name(int tab_runtime_id, int pane_index, const Pane &pane) {
   const char *title = pane.title.empty() ? UNTITLED_PANE_TITLE : pane.title.c_str();
-  char buf[256];
-  std::snprintf(buf, sizeof(buf), "%s###tab%d_pane%d", title, tab_runtime_id, pane_index);
-  return buf;
+  return util::string_format("%s###tab%d_pane%d", title, tab_runtime_id, pane_index);
 }
 
 std::string tab_item_label(const WorkspaceTab &tab, int tab_runtime_id) {
-  char buf[256];
-  std::snprintf(buf, sizeof(buf), "%s##workspace_tab_%d", tab.tab_name.c_str(), tab_runtime_id);
-  return buf;
+  return util::string_format("%s##workspace_tab_%d", tab.tab_name.c_str(), tab_runtime_id);
 }
 
 void request_tab_selection(UiState *state, int tab_index) {
@@ -481,7 +463,7 @@ void begin_rename_tab(const SketchLayout &layout, UiState *state, int tab_index)
   if (tab_index < 0 || tab_index >= static_cast<int>(layout.tabs.size())) {
     return;
   }
-  copy_to_buffer(layout.tabs[static_cast<size_t>(tab_index)].tab_name, &state->rename_tab_buffer);
+  state->rename_tab_buffer = layout.tabs[static_cast<size_t>(tab_index)].tab_name;
   state->rename_tab_index = tab_index;
   state->focus_rename_tab_input = true;
   request_tab_selection(state, tab_index);
@@ -493,9 +475,7 @@ void cancel_rename_tab(UiState *state) {
 }
 
 ImGuiID dockspace_id_for_tab(int tab_runtime_id) {
-  char buf[48];
-  std::snprintf(buf, sizeof(buf), "jotpluggler_dockspace_%d", tab_runtime_id);
-  return ImHashStr(buf);
+  return ImHashStr(util::string_format("jotpluggler_dockspace_%d", tab_runtime_id).c_str());
 }
 
 bool curve_has_local_samples(const Curve &curve) {
@@ -660,7 +640,7 @@ std::string next_tab_name(const SketchLayout &layout, const std::string &base_na
   if (base_name == "tab" || base_name == "tab1") {
     int max_suffix = 0;
     for (const WorkspaceTab &tab : layout.tabs) {
-      if (tab.tab_name.size() > 3 && tab.tab_name.rfind("tab", 0) == 0) {
+      if (tab.tab_name.size() > 3 && util::starts_with(tab.tab_name, "tab")) {
         const std::string suffix = tab.tab_name.substr(3);
         if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), ::isdigit)) {
           max_suffix = std::max(max_suffix, std::stoi(suffix));
@@ -712,7 +692,7 @@ bool active_tab_has_map_pane(const SketchLayout &layout) {
   const int tab_index = std::clamp(layout.current_tab_index, 0, static_cast<int>(layout.tabs.size()) - 1);
   const WorkspaceTab &tab = layout.tabs[static_cast<size_t>(tab_index)];
   return std::any_of(tab.panes.begin(), tab.panes.end(), [](const Pane &pane) {
-    return pane_is_special(pane);
+    return pane_kind_is_special(pane.kind);
   });
 }
 
@@ -835,7 +815,11 @@ void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool
     }
     ImGui::SeparatorText("Layout");
     ImGui::SetNextItemWidth(-FLT_MIN);
-    if (ImGui::BeginCombo("##layout_combo", layout_combo_label(*session, *state).c_str())) {
+    const std::string layout_combo_label = [&] {
+      const std::string base = session->layout_path.empty() ? std::string("untitled") : session->layout_path.stem().string();
+      return state->layout_dirty ? base + " *" : base;
+    }();
+    if (ImGui::BeginCombo("##layout_combo", layout_combo_label.c_str())) {
       if (ImGui::Selectable("New Layout")) {
         start_new_layout(session, state);
       }
@@ -873,7 +857,7 @@ void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool
 
     ImGui::SeparatorText("Data Sources");
     ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##browser_filter", "Search...", state->browser_filter.data(), state->browser_filter.size());
+    input_text_with_hint_string("##browser_filter", "Search...", &state->browser_filter);
     const float footer_height = ImGui::GetFrameHeightWithSpacing()
                               + ImGui::GetTextLineHeightWithSpacing()
                               + 16.0f
@@ -882,12 +866,12 @@ void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.0f, 2.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 3.0f));
     if (ImGui::BeginChild("##timeseries_browser", ImVec2(0.0f, browser_height), true)) {
-      const std::string filter = lowercase(state->browser_filter.data());
+      const std::string filter = lowercase_copy(state->browser_filter);
       std::vector<std::string> visible_paths;
       for (const BrowserNode &node : session->browser_nodes) {
         collect_visible_leaf_paths(node, filter, &visible_paths);
       }
-      for (const SpecialItemSpec &spec : special_item_specs()) {
+      for (const SpecialItemSpec &spec : kSpecialItemSpecs) {
         draw_browser_special_item(spec.id, spec.label);
       }
       ImGui::Dummy(ImVec2(0.0f, 2.0f));
@@ -1029,17 +1013,13 @@ bool app_add_curve_to_active_pane(AppSession *session, UiState *state, const std
   return add_path_curve_to_pane(session, state, tab_state->active_pane_index, path);
 }
 
-bool pane_is_empty_for_special_item(const Pane &pane) {
-  return pane.kind == PaneKind::Plot && pane.curves.empty();
-}
-
 bool apply_special_item_to_pane(WorkspaceTab *tab, TabUiState *tab_state, int pane_index, std::string_view item_id) {
   if (tab == nullptr || tab_state == nullptr) return false;
   if (pane_index < 0 || pane_index >= static_cast<int>(tab->panes.size())) return false;
   const SpecialItemSpec *spec = special_item_spec(item_id);
   if (spec == nullptr) return false;
   Pane &pane = tab->panes[static_cast<size_t>(pane_index)];
-  if (!(pane_is_empty_for_special_item(pane) || pane_kind_is_special(pane.kind))) {
+  if (!((pane.kind == PaneKind::Plot && pane.curves.empty()) || pane_kind_is_special(pane.kind))) {
     return false;
   }
   if (pane.kind == spec->kind && (spec->kind != PaneKind::Camera || pane.camera_view == spec->camera_view)) {
@@ -1168,7 +1148,7 @@ void rename_runtime_tab(SketchLayout *layout, UiState *state) {
   if (state->rename_tab_index < 0 || state->rename_tab_index >= static_cast<int>(layout->tabs.size())) {
     return;
   }
-  layout->tabs[static_cast<size_t>(state->rename_tab_index)].tab_name = state->rename_tab_buffer.data();
+  layout->tabs[static_cast<size_t>(state->rename_tab_index)].tab_name = state->rename_tab_buffer;
   state->status_text = "Renamed tab";
   layout->current_tab_index = state->rename_tab_index;
   cancel_rename_tab(state);
@@ -1189,10 +1169,9 @@ void draw_inline_tab_editor(AppSession *session, UiState *state, const ImRect &t
     ImGui::SetKeyboardFocusHere();
     state->focus_rename_tab_input = false;
   }
-  const bool submitted = ImGui::InputText("##rename_tab_inline",
-                                          state->rename_tab_buffer.data(),
-                                          state->rename_tab_buffer.size(),
-                                          ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+  const bool submitted = input_text_string("##rename_tab_inline",
+                                           &state->rename_tab_buffer,
+                                           ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
   const bool active = ImGui::IsItemActive();
   const bool escape = active && ImGui::IsKeyPressed(ImGuiKey_Escape);
   const bool deactivated = ImGui::IsItemDeactivated();
@@ -1271,7 +1250,7 @@ std::optional<PaneDropAction> draw_pane_drop_target(int tab_index, int pane_inde
           return deliver(std::move(action));
         }
       }
-      if (zone.zone != PaneDropZone::Center || pane_is_empty_for_special_item(target_pane) || pane_kind_is_special(target_pane.kind)) {
+      if (zone.zone != PaneDropZone::Center || (target_pane.kind == PaneKind::Plot && target_pane.curves.empty()) || pane_kind_is_special(target_pane.kind)) {
         if (const ImGuiPayload *p = try_accept("JOTP_SPECIAL_ITEM"); p && p->Delivery) {
           PaneDropAction action;
           action.special_item_id = static_cast<const char *>(p->Data);
@@ -1405,8 +1384,9 @@ bool apply_pane_drop_action(AppSession *session, UiState *state, const PaneDropA
       if (action.target_pane_index < 0 || action.target_pane_index >= static_cast<int>(tab->panes.size())) {
         return false;
       }
-      if (!(pane_is_empty_for_special_item(tab->panes[static_cast<size_t>(action.target_pane_index)])
-            || pane_kind_is_special(tab->panes[static_cast<size_t>(action.target_pane_index)].kind))) {
+      if (!((tab->panes[static_cast<size_t>(action.target_pane_index)].kind == PaneKind::Plot
+             && tab->panes[static_cast<size_t>(action.target_pane_index)].curves.empty())
+             || pane_kind_is_special(tab->panes[static_cast<size_t>(action.target_pane_index)].kind))) {
         state->status_text = std::string(special_item_label(action.special_item_id)) + " can only replace another special pane or use an empty pane";
         return false;
       }

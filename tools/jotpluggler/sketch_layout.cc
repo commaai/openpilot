@@ -1,5 +1,6 @@
-#include "tools/jotpluggler/jotpluggler.h"
-#include "tools/jotpluggler/app_common.h"
+#include "tools/jotpluggler/app.h"
+#include "tools/jotpluggler/car_fingerprint_to_dbc.h"
+#include "tools/jotpluggler/common.h"
 
 #include <capnp/dynamic.h>
 
@@ -244,7 +245,7 @@ const std::string &selected_log_path(const SegmentLogs &segment, LogSelector sel
 
 RouteSelection parse_route_selection(std::string route_name) {
   RouteSelection route = {};
-  route_name = trim_copy(route_name);
+  route_name = util::strip(route_name);
   if (route_name.size() >= 2 && route_name[route_name.size() - 2] == '/'
       && is_log_selector_char(static_cast<char>(std::tolower(route_name.back())))) {
     route.selector = parse_log_selector_char(static_cast<char>(std::tolower(route_name.back())));
@@ -383,32 +384,8 @@ RouteIdentifier make_route_identifier(const RouteSelection &route, const std::ma
   return route_id;
 }
 
-const std::unordered_map<std::string, std::string> &car_fingerprint_to_dbc_map() {
-  static const std::unordered_map<std::string, std::string> map = []() {
-    std::unordered_map<std::string, std::string> out;
-    const fs::path json_path = repo_root() / "tools" / "jotpluggler" / "car_fingerprint_to_dbc.json";
-    const std::string raw = util::read_file(json_path.string());
-    if (raw.empty()) return out;
-    std::string parse_error;
-    const json11::Json parsed = json11::Json::parse(raw, parse_error);
-    if (!parse_error.empty() || !parsed.is_object()) {
-      return out;
-    }
-    for (const auto &[fingerprint, dbc] : parsed.object_items()) {
-      if (dbc.is_string() && !dbc.string_value().empty()) {
-        out.emplace(fingerprint, dbc.string_value());
-      }
-    }
-    return out;
-  }();
-  return map;
-}
-
 std::string detect_dbc_for_fingerprint(std::string_view car_fingerprint) {
-  if (car_fingerprint.empty()) return {};
-  const auto &map = car_fingerprint_to_dbc_map();
-  auto it = map.find(std::string(car_fingerprint));
-  return it == map.end() ? std::string() : it->second;
+  return std::string(dbc_for_car_fingerprint(car_fingerprint));
 }
 
 std::vector<std::string> available_dbc_names_impl() {
@@ -426,9 +403,9 @@ std::vector<std::string> available_dbc_names_impl() {
       }
     }
   }
-  for (const auto &[_, dbc_name] : car_fingerprint_to_dbc_map()) {
+  for (const auto &[_, dbc_name] : kCarFingerprintToDbc) {
     if (!dbc_name.empty()) {
-      names.insert(dbc_name);
+      names.insert(std::string(dbc_name));
     }
   }
   return std::vector<std::string>(names.begin(), names.end());
