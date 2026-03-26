@@ -83,15 +83,18 @@ def init_egl() -> bool:
       typedef void *EGLImageKHR;
       typedef void *GLeglImageOES;
 
+      typedef void (*__eglMustCastToProperFunctionPointerType)(void);
+
       EGLDisplay eglGetCurrentDisplay(void);
       EGLint eglGetError(void);
-      EGLImageKHR eglCreateImageKHR(EGLDisplay dpy, EGLContext ctx,
-                                  EGLenum target, EGLClientBuffer buffer,
-                                  const EGLint *attrib_list);
-      EGLBoolean eglDestroyImageKHR(EGLDisplay dpy, EGLImageKHR image);
-      void glEGLImageTargetTexture2DOES(GLenum target, GLeglImageOES image);
+      __eglMustCastToProperFunctionPointerType eglGetProcAddress(const char *procname);
       void glBindTexture(GLenum target, unsigned int texture);
       void glActiveTexture(GLenum texture);
+
+      // Function pointer types for EGL/GL extensions
+      typedef EGLImageKHR (*PFNEGLCREATEIMAGEKHRPROC)(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLint *);
+      typedef EGLBoolean (*PFNEGLDESTROYIMAGEKHRPROC)(EGLDisplay, EGLImageKHR);
+      typedef void (*PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum, GLeglImageOES);
     """)
 
     # Load libraries
@@ -103,14 +106,17 @@ def init_egl() -> bool:
     _egl.NO_DISPLAY = _egl.ffi.cast("void *", 0)
     _egl.NO_IMAGE_KHR = _egl.ffi.cast("void *", 0)
 
-    # Bind functions
+    # Bind core functions directly
     _egl.get_current_display = _egl.egl_lib.eglGetCurrentDisplay
-    _egl.create_image_khr = _egl.egl_lib.eglCreateImageKHR
-    _egl.destroy_image_khr = _egl.egl_lib.eglDestroyImageKHR
-    _egl.image_target_texture = _egl.gles_lib.glEGLImageTargetTexture2DOES
     _egl.get_error = _egl.egl_lib.eglGetError
     _egl.bind_texture = _egl.gles_lib.glBindTexture
     _egl.active_texture = _egl.gles_lib.glActiveTexture
+
+    # Load extension functions via eglGetProcAddress (required by GLVND/mesa)
+    _get_proc = _egl.egl_lib.eglGetProcAddress
+    _egl.create_image_khr = _egl.ffi.cast("PFNEGLCREATEIMAGEKHRPROC", _get_proc(b"eglCreateImageKHR"))
+    _egl.destroy_image_khr = _egl.ffi.cast("PFNEGLDESTROYIMAGEKHRPROC", _get_proc(b"eglDestroyImageKHR"))
+    _egl.image_target_texture = _egl.ffi.cast("PFNGLEGLIMAGETARGETTEXTURE2DOESPROC", _get_proc(b"glEGLImageTargetTexture2DOES"))
 
     # Initialize EGL display once here
     _egl.display = _egl.get_current_display()
