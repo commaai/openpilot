@@ -429,7 +429,7 @@ constexpr const char X_SQUARE[]              = "\xef\x98\xa9";
 constexpr const char ZOOM_OUT[]              = "\xef\x98\xad";
 }  // namespace icon
 
-void icon_add_font(float size, bool merge = false);
+void icon_add_font(float size, bool merge = false, const ImFont *base_font = nullptr);
 bool icon_menu_item(const char *glyph,
                     const char *label,
                     const char *shortcut = nullptr,

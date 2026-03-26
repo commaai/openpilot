@@ -258,7 +258,7 @@ void configure_style() {
   const auto add_font_with_icons = [&](const fs::path &path, float size) -> ImFont * {
     ImFont *font = io.Fonts->AddFontFromFileTTF(path.c_str(), size, &font_cfg);
     if (font != nullptr) {
-      icon_add_font(size, true);
+      icon_add_font(size, true, font);
     }
     return font;
   };
