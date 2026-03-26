@@ -18,32 +18,30 @@ def estimate_pickle_max_size(onnx_size):
 if arch == 'larch64' and os.path.exists('/dev/kgsl-3d0'):
   tg_flags = 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 QCOM_IR3=1'
 elif arch == 'larch64':
-  # tinymesa provides the IR3 compiler for shader compilation without KGSL
-  mesa_lib = '/data/libtinymesa.so'
-  tg_flags = f'DEV=NULL NULL_IR3=1 NULL_ALLOW_COPYOUT=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 MESA_PATH={mesa_lib}'
+  tg_flags = 'DEV=MSM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0'
 elif arch == 'Darwin':
   tg_flags = f'DEV=CPU THREADS=0 HOME={os.path.expanduser("~")}'
 else:
   tg_flags = 'DEV=CPU CPU_LLVM=1 THREADS=0'
 
-# Skip tinygrad model compilation on mainline (no KGSL device for GPU inference)
-if arch != 'larch64' or os.path.exists('/dev/kgsl-3d0'):
-  # Get model metadata
-  for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
-    fn = File(f"models/{model_name}").abspath
-    script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
-    cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
-    lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
+# Get model metadata
+for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+  fn = File(f"models/{model_name}").abspath
+  script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
+  cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+  lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
 
-  image_flag = 'IMAGE=2' if arch == 'larch64' else 'IMAGE=0'
-  script_files = [File(Dir("#selfdrive/modeld").File("compile_warp.py").abspath)]
-  compile_warp_cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/compile_warp.py '
-  from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
-  warp_targets = []
-  for cam in [_ar_ox_fisheye, _os_fisheye]:
-    w, h = cam.width, cam.height
-    warp_targets += [File(f"models/warp_{w}x{h}_tinygrad.pkl").abspath, File(f"models/dm_warp_{w}x{h}_tinygrad.pkl").abspath]
-  lenv.Command(warp_targets, tinygrad_files + script_files, compile_warp_cmd)
+image_flag = {
+     'larch64': 'IMAGE=2',
+}.get(arch, 'IMAGE=0')
+script_files = [File(Dir("#selfdrive/modeld").File("compile_warp.py").abspath)]
+compile_warp_cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/compile_warp.py '
+from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
+warp_targets = []
+for cam in [_ar_ox_fisheye, _os_fisheye]:
+  w, h = cam.width, cam.height
+  warp_targets += [File(f"models/warp_{w}x{h}_tinygrad.pkl").abspath, File(f"models/dm_warp_{w}x{h}_tinygrad.pkl").abspath]
+lenv.Command(warp_targets, tinygrad_files + script_files, compile_warp_cmd)
 
 def tg_compile(flags, model_name):
   pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
@@ -64,11 +62,9 @@ def tg_compile(flags, model_name):
     do_chunk,
   )
 
-# Compile small models (skip on mainline where tinygrad NULL device can't run inference)
-kgsl_available = arch == 'larch64' and os.path.exists('/dev/kgsl-3d0')
-if arch != 'larch64' or kgsl_available:
-  for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
-    tg_compile(tg_flags, model_name)
+# Compile small models
+for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+  tg_compile(tg_flags, model_name)
 
 # Compile BIG model if USB GPU is available
 if "USBGPU" in os.environ:
