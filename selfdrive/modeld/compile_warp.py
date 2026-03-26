@@ -97,8 +97,8 @@ def make_update_img_input(frame_prepare, model_w, model_h):
   def update_img_input_tinygrad(tensor, frame, M_inv):
     M_inv = M_inv.to(Device.DEFAULT)
     new_img = frame_prepare(frame, M_inv)
-    full_buffer = tensor[6:].cat(new_img, dim=0).contiguous()
-    return full_buffer, Tensor.cat(full_buffer[:6], full_buffer[-6:], dim=0).contiguous().reshape(1, 12, model_h//2, model_w//2)
+    tensor.assign(tensor[6:].cat(new_img, dim=0).contiguous())
+    return tensor, Tensor.cat(tensor[:6], tensor[-6:], dim=0).contiguous().reshape(1, 12, model_h//2, model_w//2)
   return update_img_input_tinygrad
 
 
