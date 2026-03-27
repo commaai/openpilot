@@ -393,43 +393,24 @@ def listDataDirectory(prefix='') -> list[str]:
 @dispatcher.add_method
 def getAllParams() -> dict[str, str | bool | int | float | None]:
   from openpilot.common.params_pyx import ParamKeyType
+  import datetime
 
-  available_keys: list[str] = [k.decode('utf-8') for k in Params().all_keys()]
-  result: dict[str, str | bool | int | float | None] = {}
   params = Params()
+  result: dict[str, str | bool | int | float | None] = {}
 
-  for key in available_keys:
+  for key in [k.decode('utf-8') for k in params.all_keys()]:
+    if params.get_type(key) == ParamKeyType.BYTES:
+      continue
     value = params.get(key)
-    if value is None:
-      result[key] = None
-      continue
-
-    key_type = params.get_type(key)
-    if key_type == ParamKeyType.BYTES:
-      continue
-    elif key_type == ParamKeyType.BOOL:
-      result[key] = bool(value) if isinstance(value, bool) else value in (b'1', b'true', b'True', '1', 'true', 'True')
-    elif key_type == ParamKeyType.INT:
-      result[key] = int(value) if isinstance(value, int) else int(value.decode('utf-8') if isinstance(value, bytes) else value)
-    elif key_type == ParamKeyType.FLOAT:
-      result[key] = float(value) if isinstance(value, float) else float(value.decode('utf-8') if isinstance(value, bytes) else value)
-    elif key_type == ParamKeyType.TIME:
-      result[key] = value.timestamp()
-    elif key_type == ParamKeyType.JSON:
-      if isinstance(value, (dict, list)):
-        result[key] = value
-      else:
-        result[key] = json.loads(value.decode('utf-8') if isinstance(value, bytes) else value)
-    else:
-      result[key] = value.decode('utf-8') if isinstance(value, bytes) else str(value)
+    if isinstance(value, datetime.datetime):
+      value = value.timestamp()
+    result[key] = value
 
   return result
 
 
 @dispatcher.add_method
 def saveParams(params_to_update: dict[str, str | bool | int | float | dict | list | None]) -> dict[str, str]:
-  from openpilot.common.params_pyx import ParamKeyType
-
   params = Params()
   results = {}
 
@@ -438,24 +419,9 @@ def saveParams(params_to_update: dict[str, str | bool | int | float | dict | lis
       if value is None:
         params.remove(key)
         results[key] = "ok: removed"
-        continue
-
-      key_type = params.get_type(key)
-      if key_type == ParamKeyType.BYTES:
-        results[key] = "error: bytes not supported"
-        continue
-      elif key_type == ParamKeyType.BOOL:
-        params.put(key, bool(value))
-      elif key_type == ParamKeyType.INT:
-        params.put(key, int(value))
-      elif key_type == ParamKeyType.FLOAT or key_type == ParamKeyType.TIME:
-        params.put(key, float(value))
-      elif key_type == ParamKeyType.JSON:
-        params.put(key, json.dumps(value) if isinstance(value, (dict, list)) else str(value))
       else:
-        params.put(key, str(value))
-
-      results[key] = "ok"
+        params.put(key, value)
+        results[key] = "ok"
     except Exception as e:
       results[key] = f"error: {e}"
 

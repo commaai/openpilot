@@ -63,11 +63,11 @@ def create_session(sdp: str, cameras: list[str], bridge_services_in: list[str], 
   return future.result(timeout=timeout)
 
 
-async def _notify_all_async(payload: Any) -> None:
+def _notify_all(payload: Any) -> None:
+  msg = json.dumps(payload)
   for session in list(_sessions.values()):
     try:
-      ch = session.stream.get_messaging_channel()
-      ch.send(json.dumps(payload))
+      session.stream.get_messaging_channel().send(msg)
     except Exception:
       continue
 
@@ -75,4 +75,4 @@ async def _notify_all_async(payload: Any) -> None:
 def notify_all(payload: Any) -> None:
   """Push a JSON payload to all active WebRTC sessions' data channels."""
   loop = _ensure_loop()
-  asyncio.run_coroutine_threadsafe(_notify_all_async(payload), loop)
+  loop.call_soon_threadsafe(_notify_all, payload)
