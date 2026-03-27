@@ -1,3 +1,4 @@
+#ifndef __APPLE__
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
@@ -54,7 +55,7 @@ private:
          util::hexdump(tx_buf, std::min((int)header.tx_len, 8)).c_str()); \
       } while (0)
 
-PandaSpiHandle::PandaSpiHandle(std::string serial) {
+PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   int ret;
   const int uid_len = 12;
   uint8_t uid[uid_len] = {0};
@@ -406,3 +407,4 @@ fail:
   if (ret >= 0) ret = -1;
   return ret;
 }
+#endif
