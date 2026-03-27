@@ -45,7 +45,7 @@ class AsiusLayout(Widget):
         title,
         desc,
         initial_state,
-        callback=lambda state, p=param: self._toggle_callback(state, p),
+        callback=lambda state, p=param: self._params.put_bool(p, state),
         icon=icon,
       )
       self._toggles[param] = toggle
@@ -64,6 +64,3 @@ class AsiusLayout(Widget):
 
   def _render(self, rect):
     self._scroller.render(rect)
-
-  def _toggle_callback(self, state: bool, param: str):
-    self._params.put_bool(param, state)

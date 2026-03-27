@@ -1,4 +1,3 @@
-from openpilot.common.params import Params
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigCircleParamControl
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -7,7 +6,6 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 class AsiusLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
-    self._params = Params()
 
     lane_turn_toggle = BigParamControl("lane turn desire", "LaneTurnDesire")
     coop_steering_toggle = BigParamControl("cooperative steering", "TeslaCoopSteering")
