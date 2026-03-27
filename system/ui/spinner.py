@@ -69,14 +69,9 @@ class Spinner(Widget):
     self._rotation = (self._rotation + DEGREES_PER_SECOND * delta_time) % 360.0
 
     # Draw rotating spinner and static comma logo
-    rl.draw_texture_pro(
-      self._spinner_texture,
-      rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
-      rl.Rectangle(center.x, center.y, TEXTURE_SIZE, TEXTURE_SIZE),
-      spinner_origin,
-      self._rotation,
-      rl.WHITE,
-    )
+    rl.draw_texture_pro(self._spinner_texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
+                        rl.Rectangle(center.x, center.y, TEXTURE_SIZE, TEXTURE_SIZE),
+                        spinner_origin, self._rotation, rl.WHITE)
     rl.draw_texture_v(self._comma_texture, comma_position, rl.WHITE)
 
     # Display the progress bar or text based on user input
@@ -89,7 +84,8 @@ class Spinner(Widget):
     elif self._wrapped_lines:
       for i, line in enumerate(self._wrapped_lines):
         text_size = measure_text_cached(gui_app.font(), line, FONT_SIZE)
-        rl.draw_text_ex(gui_app.font(), line, rl.Vector2(center.x - text_size.x / 2, y_pos + i * LINE_HEIGHT), FONT_SIZE, 0.0, rl.WHITE)
+        rl.draw_text_ex(gui_app.font(), line, rl.Vector2(center.x - text_size.x / 2, y_pos + i * LINE_HEIGHT),
+                        FONT_SIZE, 0.0, rl.WHITE)
 
 
 def _read_stdin():
