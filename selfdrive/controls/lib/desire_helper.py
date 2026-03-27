@@ -49,19 +49,13 @@ class DesireHelper:
     self.desire = log.Desire.none
     self.lane_turn_direction = TurnDirection.none
 
-    self._params = Params()
-    self._lane_turn_enabled = self._params.get_bool("LaneTurnDesire")
-    self._param_read_counter = 0
+    self._lane_turn_enabled = Params().get_bool("LaneTurnDesire")
 
   @staticmethod
   def get_lane_change_direction(CS):
     return LaneChangeDirection.left if CS.leftBlinker else LaneChangeDirection.right
 
   def update(self, carstate, lateral_active, lane_change_prob):
-    if self._param_read_counter % 50 == 0:
-      self._lane_turn_enabled = self._params.get_bool("LaneTurnDesire")
-    self._param_read_counter += 1
-
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
