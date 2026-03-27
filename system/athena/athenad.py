@@ -41,8 +41,7 @@ from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
 
 
-AsiusAPIHost = Params().get("AsiusAPIHost")
-ATHENA_HOST = f'wss://{AsiusAPIHost}' if AsiusAPIHost else os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
+ATHENA_HOST = Params().get("AthenaHost", return_default=True)
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {22, }  # SSH
 

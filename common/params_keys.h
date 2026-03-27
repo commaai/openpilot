@@ -133,6 +133,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     // Asius
     {"TeslaCoopSteering", {PERSISTENT, BOOL, "1"}},
     {"LaneTurnDesire", {PERSISTENT, BOOL, "1"}},
-    {"AsiusAPIHost", {PERSISTENT, STRING}},
     {"EnableWebRTC", {PERSISTENT, BOOL, "1"}},
+    {"APIHost", {PERSISTENT, STRING, "https://api.commadotai.com"}},
+    {"AthenaHost", {PERSISTENT, STRING, "wss://athena.comma.ai"}},
 };

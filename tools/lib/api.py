@@ -2,8 +2,7 @@ import os
 import requests
 from openpilot.common.params import Params
 
-AsiusAPIHost = Params().get("AsiusAPIHost")
-API_HOST = f'https://{AsiusAPIHost}' if AsiusAPIHost else os.getenv('API_HOST', 'https://api.commadotai.com')
+API_HOST = Params().get("APIHost", return_default=True)
 
 # TODO: this should be merged into common.api
 
