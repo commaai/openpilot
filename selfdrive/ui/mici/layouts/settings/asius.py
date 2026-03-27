@@ -17,8 +17,8 @@ class AsiusLayoutMici(NavScroller):
     lane_turn_toggle = BigParamControl("lane turn desire", "LaneTurnDesire")
     coop_steering_toggle = BigParamControl("cooperative steering", "TeslaCoopSteering")
 
-    self._webrtc_toggle = BigCircleParamControl("asius/webrtc_short.png", "EnableWebRTC", icon_offset=(0, 12))
-    self._api_toggle = BigCircleToggle("asius/asius_short.png", toggle_callback=self._handle_api_toggle, icon_offset=(0, 12))
+    self._webrtc_toggle = BigCircleParamControl(gui_app.texture("asius/webrtc_short.png", 82, 82), "EnableWebRTC", icon_offset=(0, 12))
+    self._api_toggle = BigCircleToggle(gui_app.texture("asius/asius_short.png", 82, 82), toggle_callback=self._handle_api_toggle, icon_offset=(0, 12))
     self._api_toggle.set_checked(self._params.get("APIHost") == ASIUS_API_HOST)
 
     self._scroller.add_widgets([
