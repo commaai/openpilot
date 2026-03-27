@@ -98,6 +98,8 @@ def main():
   maneuvers = iter(MANEUVERS)
   maneuver = None
   complete_cnt = 0
+  display_holdoff = 0
+  prev_text = ''
 
   while True:
     sm.update()
@@ -151,6 +153,17 @@ def main():
         alert_msg.alertDebug.alertText2 = maneuver.description
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
+
+    # prevent flickering text
+    setup = ('Set speed', 'Starting', 'Waiting')
+    text = alert_msg.alertDebug.alertText1
+    same = text == prev_text or (text.startswith('Starting') and prev_text.startswith('Starting'))
+    if not same and text.startswith(setup) and prev_text.startswith(setup) and display_holdoff > 0:
+      alert_msg.alertDebug.alertText1 = prev_text
+      display_holdoff -= 1
+    else:
+      prev_text = text
+      display_holdoff = int(0.5 / DT_MDL) if text.startswith(setup) else 0
 
     pm.send('alertDebug', alert_msg)
 
