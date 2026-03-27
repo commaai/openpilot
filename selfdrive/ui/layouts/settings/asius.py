@@ -97,4 +97,4 @@ class AsiusLayout(Widget):
       else:
         self._api_toggle.action_item.set_state(not state)
 
-    gui_app.set_modal_overlay(ConfirmDialog(msg, tr("Switch and Reboot")), callback=confirm_callback)
+    gui_app.push_widget(ConfirmDialog(msg, tr("Switch and Reboot"), callback=confirm_callback))

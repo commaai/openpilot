@@ -61,6 +61,5 @@ class AsiusLayoutMici(NavScroller):
       self._params.remove("DongleId")
       self._params.put_bool_nonblocking("DoReboot", True)
 
-    dlg = BigConfirmationDialog(title, "icons_mici/settings/device/reboot.png", red=True, confirm_callback=on_confirm)
-    gui_app.set_modal_overlay(dlg, callback=lambda _: self._api_toggle.set_checked(self._params.get("APIHost") == ASIUS_API_HOST))
+    gui_app.push_widget(BigConfirmationDialog(title, "icons_mici/settings/device/reboot.png", confirm_callback=on_confirm, red=True))
 
