@@ -61,13 +61,8 @@ class DesireHelper:
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
     # Lane turn desire: steer in blinker direction at low speed
-    if self._lane_turn_enabled and below_lane_change_speed:
-      if carstate.leftBlinker and not carstate.rightBlinker and not carstate.leftBlindspot:
-        self.lane_turn_direction = TurnDirection.turnLeft
-      elif carstate.rightBlinker and not carstate.leftBlinker and not carstate.rightBlindspot:
-        self.lane_turn_direction = TurnDirection.turnRight
-      else:
-        self.lane_turn_direction = TurnDirection.none
+    if self._lane_turn_enabled and one_blinker and below_lane_change_speed:
+      self.lane_turn_direction = TurnDirection.turnLeft if carstate.leftBlinker else TurnDirection.turnRight
     else:
       self.lane_turn_direction = TurnDirection.none
 
