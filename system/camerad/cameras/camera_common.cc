@@ -29,6 +29,15 @@ void CameraBuf::init(SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, Vis
   LOGD("created %d YUV vipc buffers with size %dx%d", VIPC_BUFFER_COUNT, cam->stride, cam->y_height);
 }
 
+void CameraBuf::init(VisionIpcServer *v, int frame_cnt, VisionStreamType type,
+                     uint32_t yuv_sz, uint32_t strd, uint32_t uv_off) {
+  vipc_server = v;
+  stream_type = type;
+  frame_buf_count = frame_cnt;
+  vipc_server->create_buffers_with_sizes(stream_type, VIPC_BUFFER_COUNT, out_img_width, out_img_height, yuv_sz, strd, uv_off);
+  LOGD("V4L2: created %d YUV vipc buffers %dx%d", VIPC_BUFFER_COUNT, out_img_width, out_img_height);
+}
+
 CameraBuf::~CameraBuf() {
   if (camera_bufs_raw != nullptr) {
     for (int i = 0; i < frame_buf_count; i++) {
