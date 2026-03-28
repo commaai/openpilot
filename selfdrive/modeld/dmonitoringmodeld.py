@@ -6,7 +6,6 @@ if TICI and os.path.exists('/dev/kgsl-3d0'):
   os.environ['QCOM_IR3'] = '1'
 elif TICI:
   os.environ['DEV'] = 'MSM'
-  os.environ['MESA_PATH'] = '/data/libtinymesa.so'
 else:
   os.environ['DEV'] = 'CPU'
 from tinygrad.tensor import Tensor
