@@ -1,7 +1,6 @@
 import pyray as rl
 import requests
 import threading
-import copy
 from collections.abc import Callable
 from enum import Enum
 
@@ -25,6 +24,51 @@ from openpilot.system.ui.widgets.list_view import (
 VALUE_FONT_SIZE = 48
 
 
+class SshKeyFetcher:
+  HTTP_TIMEOUT = 15  # seconds
+
+  def __init__(self, params: Params):
+    self._params = params
+    self._on_response: Callable[[str | None], None] | None = None
+    self._done: bool = False
+    self._error: str | None = None
+
+  def fetch(self, username: str, on_response: Callable[[str | None], None]):
+    self._error = None
+    self._on_response = on_response
+    threading.Thread(target=self._fetch_thread, args=(username,), daemon=True).start()
+
+  def update(self):
+    if not self._done:
+      return
+    self._done = False
+    if self._error is not None:
+      self.clear()
+    if self._on_response:
+      self._on_response(self._error)
+
+  def clear(self):
+    self._params.remove("GithubUsername")
+    self._params.remove("GithubSshKeys")
+
+  def _fetch_thread(self, username: str):
+    try:
+      response = requests.get(f"https://github.com/{username}.keys", timeout=self.HTTP_TIMEOUT)
+      response.raise_for_status()
+      keys = response.text.strip()
+      if not keys:
+        raise requests.exceptions.HTTPError("No SSH keys found")
+
+      self._params.put("GithubUsername", username)
+      self._params.put("GithubSshKeys", keys)
+    except requests.exceptions.Timeout:
+      self._error = tr("Request timed out")
+    except Exception:
+      self._error = tr("No SSH keys found for user '{}'").format(username)
+    finally:
+      self._done = True
+
+
 class SshKeyActionState(Enum):
   LOADING = tr_noop("LOADING")
   ADD = tr_noop("ADD")
@@ -32,7 +76,6 @@ class SshKeyActionState(Enum):
 
 
 class SshKeyAction(ItemAction):
-  HTTP_TIMEOUT = 15  # seconds
   MAX_WIDTH = 500
 
   def __init__(self):
@@ -40,7 +83,7 @@ class SshKeyAction(ItemAction):
 
     self._keyboard = Keyboard(min_text_size=1)
     self._params = Params()
-    self._error_message: str = ""
+    self._fetcher = SshKeyFetcher(self._params)
     self._text_font = gui_app.font(FontWeight.NORMAL)
     self._button = Button("", click_callback=self._handle_button_click, button_style=ButtonStyle.LIST_ACTION,
                           border_radius=BUTTON_BORDER_RADIUS, font_size=BUTTON_FONT_SIZE)
@@ -55,14 +98,11 @@ class SshKeyAction(ItemAction):
     self._username = self._params.get("GithubUsername")
     self._state = SshKeyActionState.REMOVE if self._params.get("GithubSshKeys") else SshKeyActionState.ADD
 
-  def _render(self, rect: rl.Rectangle) -> bool:
-    # Show error dialog if there's an error
-    if self._error_message:
-      message = copy.copy(self._error_message)
-      gui_app.push_widget(alert_dialog(message))
-      self._username = ""
-      self._error_message = ""
+  def _update_state(self):
+    super()._update_state()
+    self._fetcher.update()
 
+  def _render(self, rect: rl.Rectangle) -> bool:
     # Draw username if exists
     if self._username:
       text_size = measure_text_cached(self._text_font, self._username, VALUE_FONT_SIZE)
@@ -90,8 +130,7 @@ class SshKeyAction(ItemAction):
       self._keyboard.set_callback(self._on_username_submit)
       gui_app.push_widget(self._keyboard)
     elif self._state == SshKeyActionState.REMOVE:
-      self._params.remove("GithubUsername")
-      self._params.remove("GithubSshKeys")
+      self._fetcher.clear()
       self._refresh_state()
 
   def _on_username_submit(self, result: DialogResult):
@@ -103,29 +142,16 @@ class SshKeyAction(ItemAction):
       return
 
     self._state = SshKeyActionState.LOADING
-    threading.Thread(target=lambda: self._fetch_ssh_key(username), daemon=True).start()
+    self._fetcher.fetch(username, self._on_fetch_response)
 
-  def _fetch_ssh_key(self, username: str):
-    try:
-      url = f"https://github.com/{username}.keys"
-      response = requests.get(url, timeout=self.HTTP_TIMEOUT)
-      response.raise_for_status()
-      keys = response.text.strip()
-      if not keys:
-        raise requests.exceptions.HTTPError(tr("No SSH keys found"))
-
-      # Success - save keys
-      self._params.put("GithubUsername", username)
-      self._params.put("GithubSshKeys", keys)
+  def _on_fetch_response(self, error: str | None):
+    if error is None:
       self._state = SshKeyActionState.REMOVE
-      self._username = username
-
-    except requests.exceptions.Timeout:
-      self._error_message = tr("Request timed out")
+      self._username = self._params.get("GithubUsername")
+    else:
       self._state = SshKeyActionState.ADD
-    except Exception:
-      self._error_message = tr("No SSH keys found for user '{}'").format(username)
-      self._state = SshKeyActionState.ADD
+      self._username = ""
+      gui_app.push_widget(alert_dialog(error))
 
 
 def ssh_key_item(title: str | Callable[[], str], description: str | Callable[[], str]) -> ListItem:

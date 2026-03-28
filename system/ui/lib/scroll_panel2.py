@@ -20,6 +20,21 @@ MAX_SPEED = 10000.0  # px/s
 DEBUG = os.getenv("DEBUG_SCROLL", "0") == "1"
 
 
+# Weights older (steadier) velocity samples more heavily on release.
+# Finger-lift samples are noisy; trusting earlier samples gives consistent fling velocity.
+# Reverse-engineered from iOS UIScrollView (tuned at 120Hz touch) by Flutter team:
+# https://github.com/flutter/flutter/pull/60501
+# 3 samples ≈ 25ms at 120Hz (iOS) / ~21ms at 140Hz (comma). Scale if touch rate changes.
+def weighted_velocity(buffer: deque) -> float:
+  if len(buffer) >= 3:
+    return buffer[-3] * 0.6 + buffer[-2] * 0.35 + buffer[-1] * 0.05
+  elif len(buffer) == 2:
+    return buffer[-2] * 0.7 + buffer[-1] * 0.3
+  elif len(buffer) == 1:
+    return buffer[-1]
+  return 0.0
+
+
 # from https://ariya.io/2011/10/flick-list-with-its-momentum-scrolling-and-deceleration
 class ScrollState(Enum):
   STEADY = 0
@@ -151,7 +166,13 @@ class GuiScrollPanel2:
         # Touch rejection: when releasing finger after swiping and stopping, panel
         # reports a few erroneous touch events with high velocity, try to ignore.
 
-        # If velocity decelerates very quickly, assume user doesn't intend to auto scroll
+        # If velocity decelerates very quickly, assume user doesn't intend to auto scroll.
+        # Catches two cases: 1) swipe, stop finger, then lift (stale high velocity in buffer)
+        # 2) dirty finger lift where finger rotates/slides producing spurious velocity spike.
+        # TODO: this heuristic false-positives on fast swipes because 140Hz touch polling
+        #  jitter causes velocity to oscillate (not real deceleration). Better approaches:
+        #  - Use evdev kernel timestamps to eliminate velocity oscillation at the source
+        #  - Replace with a time-since-last-event check (40ms timeout) for swipe-stop-lift
         high_decel = False
         if len(self._velocity_buffer) > 2:
           # We limit max to first half since final few velocities can surpass first few
@@ -165,6 +186,8 @@ class GuiScrollPanel2:
             if DEBUG:
               print('deceleration too high, going to STEADY')
             high_decel = True
+
+        self._velocity = weighted_velocity(self._velocity_buffer)
 
         # If final velocity is below some threshold, switch to steady state too
         low_speed = abs(self._velocity) <= MIN_VELOCITY_FOR_CLICKING * 1.5  # plus some margin

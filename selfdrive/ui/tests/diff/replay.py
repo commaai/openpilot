@@ -4,12 +4,16 @@ import argparse
 import coverage
 import pyray as rl
 
+from tqdm import tqdm
 from typing import Literal
 from collections.abc import Callable
 from cereal.messaging import PubMaster
+from openpilot.common.api import Api
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.ui.tests.diff.diff import DIFF_OUT_DIR
+from openpilot.system.updated.updated import parse_release_notes
 from openpilot.system.version import terms_version, training_version
 
 LayoutVariant = Literal["mici", "tizi"]
@@ -25,12 +29,15 @@ def setup_state():
   params.put("DongleId", "test123456789")
   # Combined description for layouts that still use it (BIG home, settings/software)
   params.put("UpdaterCurrentDescription", "0.10.1 / test-branch / abc1234 / Nov 30")
-
+  params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
   # Params for mici home
   params.put("Version", "0.10.1")
   params.put("GitBranch", "test-branch")
   params.put("GitCommit", "abc12340ff9131237ba23a1d0fbd8edf9c80e87")
   params.put("GitCommitDate", "'1732924800 2024-11-30 00:00:00 +0000'")
+
+  # Patch Api.get_token to return a static token so the pairing QR code is deterministic across runs
+  Api.get_token = lambda self, payload_extra=None, expiry_hours=0: "test_token"
 
 
 def run_replay(variant: LayoutVariant) -> None:
@@ -41,7 +48,7 @@ def run_replay(variant: LayoutVariant) -> None:
   setup_state()
   os.makedirs(DIFF_OUT_DIR, exist_ok=True)
 
-  from openpilot.selfdrive.ui.ui_state import ui_state  # Import within OpenpilotPrefix context so param values are setup correctly
+  from openpilot.selfdrive.ui.ui_state import ui_state, device  # Import within OpenpilotPrefix context so param values are setup correctly
   from openpilot.system.ui.lib.application import gui_app  # Import here for accurate coverage
   from openpilot.selfdrive.ui.tests.diff.replay_script import build_script
 
@@ -54,6 +61,10 @@ def run_replay(variant: LayoutVariant) -> None:
     from openpilot.selfdrive.ui.layouts.main import MainLayout
   main_layout = MainLayout()
 
+  # Disable interactive timeout — replay clicks use left_down=False so they never reset the timer,
+  # and after 30s of real wall-clock time the settings panel would close automatically.
+  device.set_override_interactive_timeout(99999)
+
   pm = PubMaster(["deviceState", "pandaStates", "driverStateV2", "selfdriveState"])
   script = build_script(pm, main_layout, variant)
   script_index = 0
@@ -65,33 +76,35 @@ def run_replay(variant: LayoutVariant) -> None:
   rl.get_time = lambda: frame / FPS
 
   # Main loop to replay events and render frames
-  for _ in gui_app.render():
-    # Handle all events for the current frame
-    while script_index < len(script) and script[script_index][0] == frame:
-      _, event = script[script_index]
-      # Call setup function, if any
-      if event.setup:
-        event.setup()
-      # Send mouse events to the application
-      if event.mouse_events:
-        with gui_app._mouse._lock:
-          gui_app._mouse._events.extend(event.mouse_events)
-      # Update persistent send function
-      if event.send_fn is not None:
-        send_fn = event.send_fn
-      # Move to next script event
-      script_index += 1
+  with tqdm(total=script[-1][0] + 1, desc="Replaying", unit="frame", disable=bool(os.getenv("CI"))) as pbar:
+    for _ in gui_app.render():
+      # Handle all events for the current frame
+      while script_index < len(script) and script[script_index][0] == frame:
+        _, event = script[script_index]
+        # Call setup function, if any
+        if event.setup:
+          event.setup()
+        # Send mouse events to the application
+        if event.mouse_events:
+          with gui_app._mouse._lock:
+            gui_app._mouse._events.extend(event.mouse_events)
+        # Update persistent send function
+        if event.send_fn is not None:
+          send_fn = event.send_fn
+        # Move to next script event
+        script_index += 1
 
-    # Keep sending cereal messages for persistent states (onroad, alerts)
-    if send_fn:
-      send_fn()
+      # Keep sending cereal messages for persistent states (onroad, alerts)
+      if send_fn:
+        send_fn()
 
-    ui_state.update()
+      ui_state.update()
 
-    frame += 1
+      frame += 1
+      pbar.update(1)
 
-    if script_index >= len(script):
-      break
+      if script_index >= len(script):
+        break
 
   gui_app.close()
 

@@ -47,7 +47,7 @@ class ScrollIndicator(Widget):
     # position based on scroll ratio
     slide_range = self._viewport.width - indicator_w
     max_scroll = self._content_size - self._viewport.width
-    scroll_ratio = -self._scroll_offset / max_scroll
+    scroll_ratio = (-self._scroll_offset / abs(max_scroll)) if abs(max_scroll) > 1e-3 else 0.0
     x = self._viewport.x + scroll_ratio * slide_range
     # don't bounce up when NavWidget shows
     y = max(self._viewport.y, 0) + self._viewport.height - self._txt_scroll_indicator.height / 2
@@ -190,7 +190,7 @@ class _Scroller(Widget):
     self.scroll_panel.set_enabled(scroll_enabled and self.enabled and not self._scrolling_to[1])
     self.scroll_panel.update(self._rect, content_size)
     if not self._snap_items:
-      return round(self.scroll_panel.get_offset())
+      return self.scroll_panel.get_offset()
 
     # Snap closest item to center
     center_pos = self._rect.x + self._rect.width / 2 if self._horizontal else self._rect.y + self._rect.height / 2
@@ -341,7 +341,7 @@ class _Scroller(Widget):
       x, y = self._do_move_animation(item, x, y)
 
       # Update item state
-      item.set_position(round(x), round(y))  # round to prevent jumping when settling
+      item.set_position(x, y)
       item.set_parent_rect(self._rect)
 
   def _render_item(self, item: Widget):
@@ -422,17 +422,9 @@ class Scroller(Widget):
   """Wrapper for _Scroller so that children do not need to call events or pass down enabled for nav stack."""
   def __init__(self, **kwargs):
     super().__init__()
-    self._scroller = _Scroller([], **kwargs)
+    self._scroller = self._child(_Scroller([], **kwargs))
     # pass down enabled to child widget for nav stack
     self._scroller.set_enabled(lambda: self.enabled)
-
-  def show_event(self):
-    super().show_event()
-    self._scroller.show_event()
-
-  def hide_event(self):
-    super().hide_event()
-    self._scroller.hide_event()
 
   def _render(self, _):
     self._scroller.render(self._rect)

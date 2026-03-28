@@ -26,18 +26,18 @@ dependencies = [
   "numpy >=2.0",
 
   # vendored native dependencies
-  "bzip2 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=bzip2",
-  "capnproto @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=capnproto",
-  "eigen @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=eigen",
-  "ffmpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ffmpeg",
-  "libjpeg @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libjpeg",
-  "libyuv @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=libyuv",
-  "openssl3 @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=openssl3",
-  "python3-dev @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=python3-dev",
-  "zstd @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zstd",
-  "ncurses @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=ncurses",
-  "zeromq @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=zeromq",
-  "git-lfs @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=git-lfs",
+  "bzip2 @ git+https://github.com/commaai/dependencies.git@release-bzip2#subdirectory=bzip2",
+  "capnproto @ git+https://github.com/commaai/dependencies.git@release-capnproto#subdirectory=capnproto",
+  "eigen @ git+https://github.com/commaai/dependencies.git@release-eigen#subdirectory=eigen",
+  "ffmpeg @ git+https://github.com/commaai/dependencies.git@release-ffmpeg#subdirectory=ffmpeg",
+  "libjpeg @ git+https://github.com/commaai/dependencies.git@release-libjpeg#subdirectory=libjpeg",
+  "libyuv @ git+https://github.com/commaai/dependencies.git@release-libyuv#subdirectory=libyuv",
+  "zstd @ git+https://github.com/commaai/dependencies.git@release-zstd#subdirectory=zstd",
+  "ncurses @ git+https://github.com/commaai/dependencies.git@release-ncurses#subdirectory=ncurses",
+  "zeromq @ git+https://github.com/commaai/dependencies.git@release-zeromq#subdirectory=zeromq",
+  "libusb @ git+https://github.com/commaai/dependencies.git@release-libusb#subdirectory=libusb",
+  "git-lfs @ git+https://github.com/commaai/dependencies.git@release-git-lfs#subdirectory=git-lfs",
+  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@release-gcc-arm-none-eabi#subdirectory=gcc-arm-none-eabi",
 
   # body / webrtcd
   "av",
@@ -76,6 +76,7 @@ dependencies = [
   "raylib > 5.5.0.3",
   "qrcode",
   "jeepney",
+  "pillow",
 ]
 
 [project.optional-dependencies]
@@ -103,12 +104,11 @@ testing = [
 dev = [
   "matplotlib",
   "opencv-python-headless",
-  "gcc-arm-none-eabi @ git+https://github.com/commaai/dependencies.git@releases#subdirectory=gcc-arm-none-eabi",
 ]
 
 tools = [
+  "imgui  @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
-  "dearpygui>=2.1.0; (sys_platform != 'linux' or platform_machine != 'aarch64')", # not vended for linux aarch64
 ]
 
 [project.urls]
@@ -206,6 +206,7 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
 "pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
 "pyray.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
+"pyray.draw_texture".msg = "Use rl.draw_texture_ex for float position support"
 
 [tool.ruff.format]
 quote-style = "preserve"
@@ -249,3 +250,6 @@ unsupported-operator = "ignore"
 # Ignore not-subscriptable - false positives from dynamic types
 not-subscriptable = "ignore"
 # not-iterable errors are now fixed
+
+[tool.uv]
+python-preference = "only-managed"

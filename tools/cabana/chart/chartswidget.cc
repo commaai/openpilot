@@ -427,7 +427,7 @@ void ChartsWidget::doAutoScroll() {
 }
 
 QSize ChartsWidget::minimumSizeHint() const {
-  return QSize(CHART_MIN_WIDTH * 1.5 * qApp->devicePixelRatio(), QWidget::minimumSizeHint().height());
+  return QSize(CHART_MIN_WIDTH * 1.5, QWidget::minimumSizeHint().height());
 }
 
 void ChartsWidget::newChart() {
