@@ -18,7 +18,10 @@ FONT_SIZE_SUB = 34
 CARD_BG = rl.Color(170, 85, 0, 230)    # dark amber, semi-transparent
 
 # How long to display the warning for a single hazard before suppressing it.
-SHOW_TIMEOUT = 15.0  # seconds
+SHOW_TIMEOUT = 30.0  # seconds
+
+# How long to keep showing the card after the hazard has been passed.
+PASSED_LINGER = 2.0  # seconds
 
 # Bearing window that counts as "ahead".
 AHEAD_THRESHOLD_DEG = 90.0
@@ -32,9 +35,10 @@ class HazardAheadRenderer(Widget):
 
   Per-hazard lifecycle:
     - First appears when the hazard enters warning range and is ahead.
+    - After passing (bearing delta > 90°), lingers for 2 more seconds.
     - Suppressed (removed) when any of the following occur:
-        1. The hazard passes behind the device (bearing delta > 90°).
-        2. The warning has been visible for 15 seconds (driver has been warned).
+        1. The 2-second post-pass linger expires.
+        2. The warning has been visible for 30 seconds (timeout).
     - Suppression persists for the remainder of the drive — the hazard will
       not reappear even if it is returned by a subsequent API fetch.
   """
@@ -44,6 +48,8 @@ class HazardAheadRenderer(Widget):
     self._fetcher = fetcher
     # event_id → monotonic time when the card first became visible
     self._show_start: dict[str, float] = {}
+    # event_id → monotonic time when the hazard first went behind the device
+    self._passed_at: dict[str, float] = {}
     # event_ids that have been dismissed and should never show again
     self._suppressed: set[str] = set()
 
@@ -83,27 +89,38 @@ class HazardAheadRenderer(Widget):
     closest_dist = float('inf')
 
     for hazard in hazards:
-      if hazard.event_id in self._suppressed:
+      eid = hazard.event_id
+      if eid in self._suppressed:
         continue
 
       dist = hazard.distance_m(device_lat, device_lon)
       bearing_to = hazard.bearing_deg(device_lat, device_lon)
+      is_behind = _bearing_delta(device_bearing, bearing_to) > AHEAD_THRESHOLD_DEG
 
-      # Suppress if the hazard is now behind us.
-      if _bearing_delta(device_bearing, bearing_to) > AHEAD_THRESHOLD_DEG:
-        self._suppressed.add(hazard.event_id)
+      # Start the visibility clock the first time this hazard enters warn range.
+      if dist <= warn_distance_m and eid not in self._show_start:
+        self._show_start[eid] = now
+
+      # Not yet in warning range — skip without suppressing.
+      if eid not in self._show_start:
         continue
 
-      if dist > warn_distance_m:
+      # Suppress after the overall timeout.
+      if now - self._show_start[eid] > SHOW_TIMEOUT:
+        self._suppressed.add(eid)
         continue
 
-      # Start the visibility clock the first time this hazard enters range.
-      if hazard.event_id not in self._show_start:
-        self._show_start[hazard.event_id] = now
+      # Track when the hazard first goes behind us.
+      if is_behind and eid not in self._passed_at:
+        self._passed_at[eid] = now
 
-      # Suppress after the timeout.
-      if now - self._show_start[hazard.event_id] > SHOW_TIMEOUT:
-        self._suppressed.add(hazard.event_id)
+      # Clear passed state if the hazard comes back ahead (e.g. driver U-turns).
+      if not is_behind and eid in self._passed_at:
+        del self._passed_at[eid]
+
+      # Suppress after the post-pass linger expires.
+      if eid in self._passed_at and now - self._passed_at[eid] > PASSED_LINGER:
+        self._suppressed.add(eid)
         continue
 
       if dist < closest_dist:
