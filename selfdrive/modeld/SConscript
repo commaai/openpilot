@@ -31,8 +31,9 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
   lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
 
+# IMAGE=2 causes GPU translation faults on MSM DRM (IOVAs above 4GB range)
 image_flag = {
-     'larch64': 'IMAGE=2',
+     'larch64': 'IMAGE=1' if 'DEV=MSM' in tg_flags else 'IMAGE=2',
 }.get(arch, 'IMAGE=0')
 script_files = [File(Dir("#selfdrive/modeld").File("compile_warp.py").abspath)]
 compile_warp_cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/compile_warp.py '
