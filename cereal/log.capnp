@@ -2370,6 +2370,12 @@ struct Sentinel {
 
 struct UIDebug {
   drawTimeMillis @0 :Float32;
+
+  # RoadPass: hazard-ahead card → longitudinal hints (read by plannerd when param enabled).
+  roadPassLongitudinalActive @1 :Bool;
+  roadPassHazardDistanceM @2 :Float32;
+  roadPassHazardMaxSpeedMs @3 :Float32;
+  roadPassHazardMaxAccelMs2 @4 :Float32;
 }
 
 struct ManagerState {

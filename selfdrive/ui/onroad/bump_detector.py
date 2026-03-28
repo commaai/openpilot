@@ -29,6 +29,8 @@ class BumpDetector:
     # Circular buffer of (timestamp, aEgo) samples
     self._history: deque[tuple[float, float]] = deque()
     self._last_trigger: float = -BUMP_COOLDOWN  # allow immediate trigger on startup
+    # Filled on the frame that returns True; consumed by instrumentation via consume_last_trigger_diag().
+    self._trigger_diag: dict[str, float] | None = None
 
   def update(self, a_ego: float) -> bool:
     now = time.monotonic()
@@ -57,9 +59,20 @@ class BumpDetector:
 
     if abs(newest_a) > BUMP_ACCEL_THRESHOLD and jerk > BUMP_JERK_THRESHOLD:
       self._last_trigger = now
+      self._trigger_diag = {
+        "aEgoMs2": float(newest_a),
+        "jerkMs3": float(jerk),
+        "windowS": float(dt),
+      }
       return True
 
     return False
+
+  def consume_last_trigger_diag(self) -> dict[str, float] | None:
+    """Return bump diagnostics for the most recent True frame, then clear."""
+    d = self._trigger_diag
+    self._trigger_diag = None
+    return d
 
   def reset_cooldown(self):
     """Force the cooldown to expire so the next spike will trigger immediately."""

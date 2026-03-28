@@ -13,6 +13,7 @@ from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import Longi
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
+from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.swaglog import cloudlog
 
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
@@ -20,6 +21,15 @@ A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
+
+_ROADPASS_LONGITUDINAL_PARAM = "RoadPassLongitudinalEnabled"
+
+
+def _roadpass_longitudinal_param_enabled(params: Params) -> bool:
+  try:
+    return params.get_bool(_ROADPASS_LONGITUDINAL_PARAM)
+  except UnknownKeyName:
+    return False
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -48,6 +58,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
+    self._rp_params = Params()
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
@@ -128,6 +139,8 @@ class LongitudinalPlanner:
     if force_slow_decel:
       v_cruise = 0.0
 
+    v_cruise, accel_clip = self._apply_roadpass_hazard(sm, v_cruise, accel_clip)
+
     self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     self.mpc.update(sm['radarState'], v_cruise, personality=sm['selfdriveState'].personality)
@@ -165,6 +178,30 @@ class LongitudinalPlanner:
       accel_clip[idx] = np.clip(accel_clip[idx], self.prev_accel_clip[idx] - 0.05, self.prev_accel_clip[idx] + 0.05)
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
     self.prev_accel_clip = accel_clip
+
+  def _apply_roadpass_hazard(self, sm, v_cruise: float, accel_clip: list):
+    """
+    When RoadPassLongitudinalEnabled and the UI marks an ahead hazard, cap planner
+    cruise speed and positive acceleration using uiDebug (from onroad UI).
+    """
+    if not _roadpass_longitudinal_param_enabled(self._rp_params):
+      return v_cruise, accel_clip
+    # SubMaster provides `.seen`; unit tests pass a plain dict of messages.
+    if hasattr(sm, 'seen'):
+      if not sm.seen.get('uiDebug', False):
+        return v_cruise, accel_clip
+    elif 'uiDebug' not in sm:
+      return v_cruise, accel_clip
+    dbg = sm['uiDebug']
+    if not dbg.roadPassLongitudinalActive:
+      return v_cruise, accel_clip
+    vmax = float(dbg.roadPassHazardMaxSpeedMs)
+    amax = float(dbg.roadPassHazardMaxAccelMs2)
+    if vmax > 0.0 and v_cruise > 0.0:
+      v_cruise = min(v_cruise, vmax)
+    if amax > 0.0:
+      accel_clip[1] = min(accel_clip[1], amax)
+    return v_cruise, accel_clip
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
