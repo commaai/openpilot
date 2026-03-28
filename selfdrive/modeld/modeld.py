@@ -243,6 +243,7 @@ class ModelState:
     off_policy_outputs_dict = self.parser.parse_off_policy_outputs(self.slice_outputs(self.off_policy_output, self.off_policy_output_slices))
     off_policy_outputs_dict.pop('plan')
 
+
     combined_outputs_dict = {**vision_outputs_dict, **off_policy_outputs_dict, **policy_outputs_dict}
     if 'planplus' in combined_outputs_dict and 'plan' in combined_outputs_dict:
       combined_outputs_dict['plan'] = combined_outputs_dict['plan'] + combined_outputs_dict['planplus']
