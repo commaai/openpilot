@@ -34,6 +34,9 @@ def ublox(started: bool, params: Params, CP: car.CarParams) -> bool:
 def joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and params.get_bool("JoystickDebugMode")
 
+def body_autonomy(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started and CP.notCar and params.get_bool("BodyAutonomyEnabled")
+
 def not_joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not params.get_bool("JoystickDebugMode")
 
@@ -116,6 +119,7 @@ procs = [
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
+  PythonProcess("bodyautonomyd", "tools.bodyteleop.autonomyd", body_autonomy),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]
 

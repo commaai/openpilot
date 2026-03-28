@@ -93,6 +93,27 @@
       </div>
       <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
         <div class="panel row">
+          <div class="col-sm-3" style="text-align: center;">
+            <p>Autonomy</p>
+          </div>
+          <div class="col-sm-9">
+            <button type="button" id="autonomy-enable" class="btn btn-outline-success btn-lg">Enable</button>
+            <button type="button" id="autonomy-disable" class="btn btn-outline-danger btn-lg">Disable</button>
+            <label class="small" style="margin-left:10px;">Target Visible</label>
+            <input id="target-visible" type="checkbox" checked />
+            <label class="small" style="margin-left:10px;">Dist (m)</label>
+            <input id="target-distance" type="number" min="0.3" max="5" step="0.1" value="2.0" />
+            <label class="small" style="margin-left:10px;">Bearing (deg)</label>
+            <input id="target-bearing" type="number" min="-90" max="90" step="1" value="0" />
+            <label class="small" style="margin-left:10px;">Obstacle (m)</label>
+            <input id="obstacle-distance" type="number" min="0.1" max="5" step="0.1" value="3.0" />
+            <button type="button" id="autonomy-config" class="btn btn-outline-primary">Update</button>
+            <p id="autonomy-status" class="small" style="margin-top:8px;">state: -</p>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
+        <div class="panel row">
           <div class="col-sm-6"><canvas id="chart-ping"></canvas></div>
           <div class="col-sm-6"><canvas id="chart-battery"></canvas></div>
         </div>
