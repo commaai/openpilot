@@ -6,7 +6,7 @@
   url = ../../commaai/opendbc.git
 [submodule "msgq"]
   path = msgq_repo
-  url = ../../commaai/msgq.git
+  url = ../msgq.git
 [submodule "rednose_repo"]
   path = rednose_repo
   url = ../../commaai/rednose.git
@@ -15,4 +15,4 @@
   url = ../../commaai/teleoprtc
 [submodule "tinygrad"]
   path = tinygrad_repo
-  url = https://github.com/tinygrad/tinygrad.git
+  url = ../tinygrad.git
