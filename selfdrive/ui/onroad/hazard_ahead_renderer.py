@@ -74,7 +74,8 @@ class HazardAheadRenderer(Widget):
       return
 
     hazard, dist = closest
-    self._draw_card(rect, hazard, dist)
+    passed = hazard.event_id in self._passed_at
+    self._draw_card(rect, hazard, dist, passed)
 
   def _find_closest(
     self,
@@ -150,7 +151,7 @@ class HazardAheadRenderer(Widget):
     hazard, dist = pair
     return hazard, dist, warn_distance_m
 
-  def _draw_card(self, rect: rl.Rectangle, hazard: HazardAhead, distance_m: float) -> None:
+  def _draw_card(self, rect: rl.Rectangle, hazard: HazardAhead, distance_m: float, passed: bool = False) -> None:
     # Position in the top-right corner of the content rect.
     x = rect.x + rect.width - CARD_WIDTH - CARD_MARGIN
     y = rect.y + CARD_MARGIN
@@ -159,8 +160,11 @@ class HazardAheadRenderer(Widget):
     roundness = CARD_RADIUS / (min(CARD_WIDTH, CARD_HEIGHT) / 2)
     rl.draw_rectangle_rounded(card_rect, roundness, 10, CARD_BG)
 
-    dist_str = f"{int(distance_m)}m"
-    line_main = f"Hazard ahead  \xb7  {dist_str}"
+    if passed:
+      line_main = "Hazard passed"
+    else:
+      dist_str = f"{int(distance_m)}m"
+      line_main = f"Hazard ahead  \xb7  {dist_str}"
     if hazard.score is not None:
       sc = hazard.score
       if sc.responded > 0:
