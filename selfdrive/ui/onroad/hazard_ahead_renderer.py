@@ -9,10 +9,11 @@ from openpilot.system.ui.widgets import Widget
 
 # Small floating card — does not cover the road view or HUD.
 CARD_WIDTH = 560
-CARD_HEIGHT = 90
+CARD_HEIGHT = 118
 CARD_MARGIN = 30        # from the right and top edges of the content rect
 CARD_RADIUS = 16        # corner rounding in pixels
-FONT_SIZE = 54
+FONT_SIZE_MAIN = 46
+FONT_SIZE_SUB = 34
 
 CARD_BG = rl.Color(170, 85, 0, 230)    # dark amber, semi-transparent
 
@@ -111,6 +112,27 @@ class HazardAheadRenderer(Widget):
 
     return (closest_hazard, closest_dist) if closest_hazard is not None else None
 
+  def get_active_ahead_hazard(
+    self,
+    device_lat: float,
+    device_lon: float,
+    device_bearing: float,
+    speed_ms: float,
+  ) -> tuple[HazardAhead, float, int] | None:
+    """
+    Same hazard and distance as the on-screen warning card (including suppression rules).
+    Returns (hazard, distanceM, warnDistanceM) or None.
+    """
+    hazards = self._fetcher.get_hazards()
+    if not hazards:
+      return None
+    _, warn_distance_m = _speed_to_bucket(speed_ms)
+    pair = self._find_closest(hazards, device_lat, device_lon, device_bearing, warn_distance_m)
+    if pair is None:
+      return None
+    hazard, dist = pair
+    return hazard, dist, warn_distance_m
+
   def _draw_card(self, rect: rl.Rectangle, hazard: HazardAhead, distance_m: float) -> None:
     # Position in the top-right corner of the content rect.
     x = rect.x + rect.width - CARD_WIDTH - CARD_MARGIN
@@ -121,16 +143,23 @@ class HazardAheadRenderer(Widget):
     rl.draw_rectangle_rounded(card_rect, roundness, 10, CARD_BG)
 
     dist_str = f"{int(distance_m)}m"
-    summary = hazard.response_summary
-    total = summary.get("total", 0)
-
-    text = f"Hazard ahead  \xb7  {dist_str}"
-    if total > 0:
-      yes = summary.get("yes", 0)
-      text += f"  {yes}/{total}"
+    line_main = f"Hazard ahead  \xb7  {dist_str}"
+    if hazard.score is not None:
+      sc = hazard.score
+      if sc.responded > 0:
+        line_sub = f"Score {sc.score_pct}% · {sc.tier_label} · {sc.yes}/{sc.responded} yes"
+      else:
+        line_sub = f"Score {sc.score_pct}% · {sc.tier_label} · server"
+    else:
+      line_sub = "Score: not enough driver votes yet"
 
     font = gui_app.font(FontWeight.BOLD)
-    text_size = measure_text_cached(font, text, FONT_SIZE)
-    tx = x + (CARD_WIDTH - text_size.x) / 2
-    ty = y + (CARD_HEIGHT - text_size.y) / 2
-    rl.draw_text_ex(font, text, rl.Vector2(int(tx), int(ty)), FONT_SIZE, 0, rl.WHITE)
+    sz_m = measure_text_cached(font, line_main, FONT_SIZE_MAIN)
+    sz_s = measure_text_cached(font, line_sub, FONT_SIZE_SUB)
+    gap = 6
+    block_h = sz_m.y + gap + sz_s.y
+    ty0 = y + (CARD_HEIGHT - block_h) / 2
+    tx_m = x + (CARD_WIDTH - sz_m.x) / 2
+    tx_s = x + (CARD_WIDTH - sz_s.x) / 2
+    rl.draw_text_ex(font, line_main, rl.Vector2(int(tx_m), int(ty0)), FONT_SIZE_MAIN, 0, rl.WHITE)
+    rl.draw_text_ex(font, line_sub, rl.Vector2(int(tx_s), int(ty0 + sz_m.y + gap)), FONT_SIZE_SUB, 0, rl.WHITE)

@@ -12,12 +12,15 @@ from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.onroad.hazard_ahead_renderer import HazardAheadRenderer
 from openpilot.selfdrive.ui.onroad.hazard_fetcher import HazardFetcher
 from openpilot.selfdrive.ui.onroad.hazard_popup import HazardPopup
+from openpilot.selfdrive.ui.onroad.hazard_detection_metrics import metrics as comma1_metrics
 from openpilot.selfdrive.ui.onroad.hazard_reporter import HazardReporter
 from openpilot.selfdrive.ui.onroad.hud_renderer import HudRenderer
 from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
+from openpilot.selfdrive.ui.onroad.hazard_longitudinal_limits import cruise_kph_for_limits, longitudinal_limits_from_hazard
 from openpilot.common.transformations.orientation import rot_from_euler
 
 OpState = log.SelfdriveState.OpenpilotState
@@ -39,6 +42,14 @@ INF_POINT = np.array([1000.0, 0.0, 0.0])
 # Touch this file from SSH to manually trigger the hazard popup:
 #   touch /tmp/hazard_trigger
 HAZARD_TRIGGER_FILE = "/tmp/hazard_trigger"
+_ROADPASS_LONGITUDINAL_PARAM = "RoadPassLongitudinalEnabled"
+
+
+def _roadpass_longitudinal_param_enabled(params: Params) -> bool:
+  try:
+    return params.get_bool(_ROADPASS_LONGITUDINAL_PARAM)
+  except UnknownKeyName:
+    return False
 
 
 class AugmentedRoadView(CameraView):
@@ -65,7 +76,7 @@ class AugmentedRoadView(CameraView):
     self._hazard_fetcher = HazardFetcher()
     self._hazard_ahead_renderer = HazardAheadRenderer(self._hazard_fetcher)
 
-    # debug
+    self._params = Params()
     self._pm = messaging.PubMaster(['uiDebug'])
 
   def _render(self, rect):
@@ -116,9 +127,12 @@ class AugmentedRoadView(CameraView):
     # Show hazard popup on bump detection or manual SSH trigger
     trigger_source = None
     if self._bump_detector.update(ui_state.sm['carState'].aEgo):
+      diag = self._bump_detector.consume_last_trigger_diag() or {}
+      comma1_metrics.record_bump_trigger(diag)
       trigger_source = "bump_detector"
     elif os.path.exists(HAZARD_TRIGGER_FILE):
       os.remove(HAZARD_TRIGGER_FILE)
+      comma1_metrics.record_manual_trigger()
       trigger_source = "manual"
 
     if trigger_source is not None and not gui_app.widget_in_stack(self._hazard_popup):
@@ -132,9 +146,26 @@ class AugmentedRoadView(CameraView):
     # Draw colored border based on driving state
     self._draw_border(rect)
 
-    # publish uiDebug
+    # publish uiDebug (draw timing + optional RoadPass longitudinal hints for plannerd)
     msg = messaging.new_message('uiDebug')
-    msg.uiDebug.drawTimeMillis = (time.monotonic() - start_draw) * 1000
+    dbg = msg.uiDebug
+    dbg.drawTimeMillis = (time.monotonic() - start_draw) * 1000
+    dbg.roadPassLongitudinalActive = False
+    dbg.roadPassHazardDistanceM = 0.0
+    dbg.roadPassHazardMaxSpeedMs = 0.0
+    dbg.roadPassHazardMaxAccelMs2 = 0.0
+    if _roadpass_longitudinal_param_enabled(self._params) and gps.hasFix:
+      ahead = self._hazard_ahead_renderer.get_active_ahead_hazard(
+        gps.latitude, gps.longitude, gps.bearingDeg, ui_state.sm['carState'].vEgo,
+      )
+      if ahead is not None:
+        _, dist_m, warn_m = ahead
+        v_kph = cruise_kph_for_limits(ui_state.sm['carState'])
+        v_cap, a_cap = longitudinal_limits_from_hazard(v_kph, dist_m, warn_m)
+        dbg.roadPassLongitudinalActive = True
+        dbg.roadPassHazardDistanceM = float(dist_m)
+        dbg.roadPassHazardMaxSpeedMs = float(v_cap)
+        dbg.roadPassHazardMaxAccelMs2 = float(a_cap)
     self._pm.send('uiDebug', msg)
 
   def _handle_mouse_press(self, _):

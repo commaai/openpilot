@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 import requests
 
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.ui.onroad.hazard_scoring import HazardScore, hazard_score_from_api
 
 BASE_URL = "https://roadpass.jpadams.xyz"
 TIMEOUT = 10.0
@@ -105,6 +106,7 @@ class HazardAhead:
   lon: float
   accel_ms2: float
   response_summary: dict = field(default_factory=dict)
+  score: HazardScore | None = None
 
   @classmethod
   def from_api(cls, data: dict, device_lat: float, device_lon: float) -> 'HazardAhead':
@@ -120,6 +122,7 @@ class HazardAhead:
       lon=lon,
       accel_ms2=data.get('accel_ms2', 0.0),
       response_summary=data.get('response_summary', {}),
+      score=hazard_score_from_api(data),
     )
 
   def distance_m(self, device_lat: float, device_lon: float) -> float:

@@ -6,6 +6,7 @@ import requests
 
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.ui.onroad.hazard_detection_metrics import metrics as comma1_metrics
 
 BASE_URL = "https://roadpass.jpadams.xyz"
 TIMEOUT = 10.0  # seconds
@@ -97,6 +98,7 @@ class HazardReporter:
     # Generate a client-side event_id immediately so respond() can always
     # send the PATCH even if the server is unreachable.
     event_id = str(uuid.uuid4())
+    comma1_metrics.record_detect(trigger_source, event_id)
     payload = _build_payload(sm, dongle_id, event_id, trigger_source)
 
     with self._lock:
@@ -113,6 +115,7 @@ class HazardReporter:
     answer: "yes" | "no" | "timeout"
     latency_s: seconds from popup appearance to response
     """
+    comma1_metrics.record_driver_response(answer, latency_s)
     with self._lock:
       event_id = self._event_id
       if event_id is None:
@@ -130,8 +133,10 @@ class HazardReporter:
       # Prefer the server's event_id if it sends one back, else keep ours.
       event_id = resp.json().get("event_id", payload["event_id"])
       cloudlog.info(f"HazardReporter: event created event_id={event_id}")
+      comma1_metrics.record_post_result(True)
     except Exception as e:
       cloudlog.error(f"HazardReporter POST /events failed: {e}")
+      comma1_metrics.record_post_result(False)
       event_id = payload["event_id"]
 
     with self._lock:
@@ -156,5 +161,7 @@ class HazardReporter:
       )
       resp.raise_for_status()
       cloudlog.info(f"HazardReporter: response sent event_id={event_id} answer={answer}")
+      comma1_metrics.record_patch_result(True)
     except Exception as e:
       cloudlog.error(f"HazardReporter PATCH /events/response failed: {e}")
+      comma1_metrics.record_patch_result(False)
