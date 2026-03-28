@@ -30,6 +30,26 @@ export function pingHeadRequest() {
   });
 }
 
+export function setAutonomyEnabled(enabled) {
+  return fetch('/autonomy', {
+    body: JSON.stringify({enabled}),
+    headers: {'Content-Type': 'application/json'},
+    method: 'POST'
+  });
+}
+
+export function setAutonomyConfig(payload) {
+  return fetch('/autonomy/config', {
+    body: JSON.stringify(payload),
+    headers: {'Content-Type': 'application/json'},
+    method: 'POST'
+  });
+}
+
+export function getAutonomyStatus() {
+  return fetch('/autonomy/status', {method: 'GET'});
+}
+
 
 export function createPeerConnection(pc) {
   var config = {
