@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import pyray as rl
@@ -6,7 +7,12 @@ from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui import UI_BORDER_SIZE
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.onroad.alert_renderer import AlertRenderer
+from openpilot.selfdrive.ui.onroad.bump_detector import BumpDetector
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
+from openpilot.selfdrive.ui.onroad.hazard_ahead_renderer import HazardAheadRenderer
+from openpilot.selfdrive.ui.onroad.hazard_fetcher import HazardFetcher
+from openpilot.selfdrive.ui.onroad.hazard_popup import HazardPopup
+from openpilot.selfdrive.ui.onroad.hazard_reporter import HazardReporter
 from openpilot.selfdrive.ui.onroad.hud_renderer import HudRenderer
 from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
@@ -30,6 +36,10 @@ WIDE_CAM_MAX_SPEED = 10.0  # m/s (22 mph)
 ROAD_CAM_MIN_SPEED = 15.0  # m/s (34 mph)
 INF_POINT = np.array([1000.0, 0.0, 0.0])
 
+# Touch this file from SSH to manually trigger the hazard popup:
+#   touch /tmp/hazard_trigger
+HAZARD_TRIGGER_FILE = "/tmp/hazard_trigger"
+
 
 class AugmentedRoadView(CameraView):
   def __init__(self, stream_type: VisionStreamType = VisionStreamType.VISION_STREAM_ROAD):
@@ -48,6 +58,12 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer = HudRenderer()
     self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
+
+    self._bump_detector = BumpDetector()
+    self._hazard_popup = HazardPopup()
+    self._hazard_reporter = HazardReporter()
+    self._hazard_fetcher = HazardFetcher()
+    self._hazard_ahead_renderer = HazardAheadRenderer(self._hazard_fetcher)
 
     # debug
     self._pm = messaging.PubMaster(['uiDebug'])
@@ -83,14 +99,32 @@ class AugmentedRoadView(CameraView):
     # Render the base camera view
     super()._render(rect)
 
+    # Feed current GPS into the background hazard fetcher
+    gps = ui_state.sm['gpsLocationExternal']
+    self._hazard_fetcher.update_gps(
+      gps.latitude, gps.longitude, gps.bearingDeg,
+      ui_state.sm['carState'].vEgo, gps.hasFix,
+    )
+
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
     self.alert_renderer.render(self._content_rect)
     self.driver_state_renderer.render(self._content_rect)
+    self._hazard_ahead_renderer.render(self._content_rect)
 
-    # Custom UI extension point - add custom overlays here
-    # Use self._content_rect for positioning within camera bounds
+    # Show hazard popup on bump detection or manual SSH trigger
+    trigger_source = None
+    if self._bump_detector.update(ui_state.sm['carState'].aEgo):
+      trigger_source = "bump_detector"
+    elif os.path.exists(HAZARD_TRIGGER_FILE):
+      os.remove(HAZARD_TRIGGER_FILE)
+      trigger_source = "manual"
+
+    if trigger_source is not None and not gui_app.widget_in_stack(self._hazard_popup):
+      self._hazard_reporter.detect(ui_state.sm, trigger_source)
+      self._hazard_popup.set_response_callback(self._hazard_reporter.respond)
+      gui_app.push_widget(self._hazard_popup)
 
     # End clipping region
     rl.end_scissor_mode()
