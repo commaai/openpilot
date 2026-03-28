@@ -93,7 +93,7 @@ class HazardReporter:
     Snapshot the current SubMaster state and POST to /events.
     Call this at the moment of hazard detection.
     """
-    dongle_id = self._params.get("DongleId", encoding="utf8") or "unknown"
+    dongle_id = self._params.get("DongleId") or "unknown"
 
     # Generate a client-side event_id immediately so respond() can always
     # send the PATCH even if the server is unreachable.
