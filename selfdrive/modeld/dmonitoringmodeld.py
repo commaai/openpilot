@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-if TICI:
+if TICI and os.path.exists('/dev/kgsl-3d0'):
   os.environ['DEV'] = 'QCOM'
   os.environ['QCOM_IR3'] = '1'
+elif TICI:
+  os.environ['DEV'] = 'MSM'
+  os.environ['MESA_PATH'] = '/data/libtinymesa.so'
 else:
   os.environ['DEV'] = 'CPU'
 from tinygrad.tensor import Tensor
