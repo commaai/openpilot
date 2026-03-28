@@ -1,6 +1,5 @@
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_v4l2.h"
-#include "system/camerad/cameras/spectra.h"
 
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -13,10 +12,13 @@
 #include <string>
 #include <vector>
 
-#include "media/cam_sensor_cmn_header.h"
-
 #include "common/params.h"
 #include "common/swaglog.h"
+
+#ifdef HAS_SPECTRA
+#include "system/camerad/cameras/spectra.h"
+#include "media/cam_sensor_cmn_header.h"
+#endif
 
 
 ExitHandler do_exit;
@@ -26,6 +28,8 @@ const bool env_debug_frames = getenv("DEBUG_FRAMES") != nullptr;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != nullptr;
 const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != nullptr;
 
+
+#ifdef HAS_SPECTRA
 
 class CameraState {
 public:
@@ -247,14 +251,7 @@ void CameraState::sendState() {
   pm->send(camera.cc.publish_name, msg);
 }
 
-void camerad_thread() {
-  bool mainline = is_mainline_camss();
-  fprintf(stderr, "camerad: is_mainline_camss() = %d\n", mainline);
-  if (mainline) {
-    camerad_thread_v4l2();
-    return;
-  }
-
+static void camerad_thread_spectra() {
   VisionIpcServer v("camerad");
 
   // *** initial ISP init ***
@@ -314,4 +311,19 @@ void camerad_thread() {
       LOGE("VIDIOC_DQEVENT failed, errno=%d", errno);
     }
   }
+}
+
+#endif
+
+void camerad_thread() {
+  if (is_mainline_camss()) {
+    camerad_thread_v4l2();
+    return;
+  }
+
+#ifdef HAS_SPECTRA
+  camerad_thread_spectra();
+#else
+  LOGE("No camera backend available (no Spectra, no mainline CAMSS)");
+#endif
 }
