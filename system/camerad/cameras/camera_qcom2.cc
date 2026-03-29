@@ -1,5 +1,4 @@
 #include "system/camerad/cameras/camera_common.h"
-#include "system/camerad/cameras/camera_v4l2.h"
 #include "system/camerad/cameras/spectra.h"
 
 #include <poll.h>
@@ -248,12 +247,7 @@ void CameraState::sendState() {
 }
 
 void camerad_thread() {
-  bool mainline = is_mainline_camss();
-  fprintf(stderr, "camerad: is_mainline_camss() = %d\n", mainline);
-  if (mainline) {
-    camerad_thread_v4l2();
-    return;
-  }
+  // TODO: centralize enabled handling
 
   VisionIpcServer v("camerad");
 

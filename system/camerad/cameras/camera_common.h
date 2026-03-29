@@ -37,8 +37,6 @@ public:
   CameraBuf() = default;
   ~CameraBuf();
   void init(SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
-  void init(VisionIpcServer *v, int frame_cnt, VisionStreamType type,
-            uint32_t yuv_size, uint32_t stride, uint32_t uv_offset);
   void sendFrameToVipc();
 };
 
