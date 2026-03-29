@@ -131,6 +131,10 @@ void fill_panda_state(cereal::PandaState::Builder &ps, cereal::PandaState::Panda
   ps.setSbu1Voltage(health.sbu1_voltage_mV / 1000.0f);
   ps.setSbu2Voltage(health.sbu2_voltage_mV / 1000.0f);
   ps.setSoundOutputLevel(health.sound_output_level_pkt);
+
+  // reserved for forks, such as sunnypilot's MADS implementation
+  ps.setControlsAllowedRESERVED1(health.controls_allowed_reserved1_pkt);
+  ps.setControlsAllowedRESERVED2(health.controls_allowed_reserved2_pkt);
 }
 
 void fill_panda_can_state(cereal::PandaState::PandaCanState::Builder &cs, const can_health_t &can_health) {
@@ -341,9 +345,9 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
     }
 
     if (ir_pwr != prev_ir_pwr || sm.frame % 100 == 0) {
-      int16_t ir_panda = util::map_val(ir_pwr, 0, 100, 0, MAX_IR_PANDA_VAL); 
+      int16_t ir_panda = util::map_val(ir_pwr, 0, 100, 0, MAX_IR_PANDA_VAL);
       panda->set_ir_pwr(ir_panda);
-      Hardware::set_ir_power(ir_pwr); 
+      Hardware::set_ir_power(ir_pwr);
       prev_ir_pwr = ir_pwr;
     }
   }
