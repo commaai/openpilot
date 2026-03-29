@@ -3,7 +3,6 @@ import os
 from openpilot.system.hardware import TICI
 if TICI and os.path.exists('/dev/kgsl-3d0'):
   os.environ['DEV'] = 'QCOM'
-  os.environ['QCOM_IR3'] = '1'
 elif TICI:
   os.environ['DEV'] = 'MSM'
 else:
