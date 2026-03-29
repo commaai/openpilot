@@ -52,58 +52,17 @@ static const V4L2CameraConfig *v4l2_config_for_camera(int camera_num) {
 
 // *** Media controller helpers ***
 
-static int find_subdev_fd(const char *name) {
-  for (int i = 0; i < 30; i++) {
-    std::string n = util::read_file(util::string_format("/sys/class/video4linux/v4l-subdev%d/name", i));
-    if (n.empty()) break;
-    if (n.find(name) == 0) {
-      return HANDLE_EINTR(open(util::string_format("/dev/v4l-subdev%d", i).c_str(), O_RDWR));
-    }
-  }
-  return -1;
+// Use media-ctl shell commands for pipeline setup (handles format negotiation correctly)
+static void media_ctl_set_fmt(const char *entity, int pad, const char *fmt_str) {
+  std::string cmd = util::string_format(
+    "media-ctl -d /dev/media0 --set-v4l2 '\"%s\":%d[fmt:%s]'", entity, pad, fmt_str);
+  system(cmd.c_str());
 }
 
-static void subdev_set_fmt(int fd, int pad, uint32_t code, uint32_t w, uint32_t h) {
-  struct v4l2_subdev_format fmt = {};
-  fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-  fmt.pad = pad;
-  fmt.format.code = code;
-  fmt.format.width = w;
-  fmt.format.height = h;
-  fmt.format.field = V4L2_FIELD_NONE;
-  fmt.format.colorspace = V4L2_COLORSPACE_SRGB;
-  ioctl(fd, VIDIOC_SUBDEV_S_FMT, &fmt);
-}
-
-static void media_setup_link(int media_fd, const char *src_name, int src_pad,
-                              const char *sink_name, int sink_pad) {
-  struct media_entity_desc ent = {};
-  for (ent.id = 0 | MEDIA_ENT_ID_FLAG_NEXT; ; ent.id |= MEDIA_ENT_ID_FLAG_NEXT) {
-    if (ioctl(media_fd, MEDIA_IOC_ENUM_ENTITIES, &ent) < 0) break;
-    if (strstr(ent.name, src_name) == nullptr) continue;
-
-    auto links = std::vector<struct media_link_desc>(ent.links);
-    auto pads_desc = std::vector<struct media_pad_desc>(ent.pads);
-    struct media_links_enum lenum = {};
-    lenum.entity = ent.id;
-    lenum.links = links.data();
-    lenum.pads = pads_desc.data();
-    if (ioctl(media_fd, MEDIA_IOC_ENUM_LINKS, &lenum) < 0) continue;
-
-    for (uint32_t i = 0; i < ent.links; i++) {
-      if ((int)links[i].source.index != src_pad) continue;
-      struct media_entity_desc sink_ent = {};
-      sink_ent.id = links[i].sink.entity;
-      if (ioctl(media_fd, MEDIA_IOC_ENUM_ENTITIES, &sink_ent) < 0) continue;
-      if (strstr(sink_ent.name, sink_name) && (int)links[i].sink.index == sink_pad) {
-        if (!(links[i].flags & MEDIA_LNK_FL_IMMUTABLE)) {
-          links[i].flags |= MEDIA_LNK_FL_ENABLED;
-          ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &links[i]);
-        }
-        return;
-      }
-    }
-  }
+static void media_ctl_set_link(const char *src, int src_pad, const char *sink, int sink_pad) {
+  std::string cmd = util::string_format(
+    "media-ctl -d /dev/media0 -l '\"%s\":%d->\"%s\":%d[1]'", src, src_pad, sink, sink_pad);
+  system(cmd.c_str());
 }
 
 // *** V4L2Camera implementation ***
@@ -142,52 +101,17 @@ int V4L2Camera::find_sensor_subdev() {
 }
 
 void V4L2Camera::setup_media_links() {
-  media_setup_link(media_fd, v4l2_cc.csiphy_name, 1, v4l2_cc.csid_name, 0);
-  media_setup_link(media_fd, v4l2_cc.csid_name, 4, v4l2_cc.vfe_pix_name, 0);
+  media_ctl_set_link(v4l2_cc.csiphy_name, 1, v4l2_cc.csid_name, 0);
+  media_ctl_set_link(v4l2_cc.csid_name, 4, v4l2_cc.vfe_pix_name, 0);
 }
 
 void V4L2Camera::setup_formats() {
-  const uint32_t W = 1928, H = 1224;
-
-  // Query sensor's actual mbus code first
-  uint32_t sensor_code = 0x3012;
-  int sensor_fd_tmp = find_subdev_fd(v4l2_cc.sensor_name);
-  if (sensor_fd_tmp >= 0) {
-    struct v4l2_subdev_format sfmt = {};
-    sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-    sfmt.pad = 0;
-    // Set format to trigger sensor init
-    subdev_set_fmt(sensor_fd_tmp, 0, 0x3012, W, H);
-    // Read back actual code
-    ioctl(sensor_fd_tmp, VIDIOC_SUBDEV_G_FMT, &sfmt);
-    sensor_code = sfmt.format.code;
-    close(sensor_fd_tmp);
-    fprintf(stderr, "V4L2: sensor mbus code = 0x%x\n", sensor_code);
-  }
-
-  // Set formats on all pads (CSIPHY needs sink pad set to propagate)
-  struct { const char *name; int pad; } fmts[] = {
-    {v4l2_cc.csiphy_name, 0},
-    {v4l2_cc.csid_name, 0},
-    {v4l2_cc.csid_name, 4},
-    {v4l2_cc.vfe_pix_name, 0},
-  };
-  for (const auto &f : fmts) {
-    int fd = find_subdev_fd(f.name);
-    if (fd >= 0) {
-      subdev_set_fmt(fd, f.pad, sensor_code, W, H);
-      // Read back to verify
-      struct v4l2_subdev_format sfmt = {};
-      sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-      sfmt.pad = f.pad;
-      ioctl(fd, VIDIOC_SUBDEV_G_FMT, &sfmt);
-      fprintf(stderr, "V4L2: %s:%d -> 0x%x %dx%d\n",
-              f.name, f.pad, sfmt.format.code, sfmt.format.width, sfmt.format.height);
-      close(fd);
-    } else {
-      fprintf(stderr, "V4L2: subdev %s not found\n", f.name);
-    }
-  }
+  const char *bayer = "SGRBG12_1X12/1928x1224";
+  media_ctl_set_fmt(v4l2_cc.sensor_name, 0, bayer);
+  media_ctl_set_fmt(v4l2_cc.csiphy_name, 1, bayer);
+  media_ctl_set_fmt(v4l2_cc.csid_name, 0, bayer);
+  media_ctl_set_fmt(v4l2_cc.csid_name, 4, bayer);
+  media_ctl_set_fmt(v4l2_cc.vfe_pix_name, 0, bayer);
 }
 
 void V4L2Camera::camera_open(VisionIpcServer *v) {
@@ -203,46 +127,25 @@ void V4L2Camera::camera_open(VisionIpcServer *v) {
   setup_media_links();
   setup_formats();
 
-  // Query VFE source pad format to match video device
-  int vfe_fd = find_subdev_fd(v4l2_cc.vfe_pix_name);
-  uint32_t out_w = 1920, out_h = 1224;
-  if (vfe_fd >= 0) {
-    struct v4l2_subdev_format sfmt = {};
-    sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-    sfmt.pad = 1;  // source pad
-    if (ioctl(vfe_fd, VIDIOC_SUBDEV_G_FMT, &sfmt) == 0) {
-      out_w = sfmt.format.width;
-      out_h = sfmt.format.height;
-      fprintf(stderr, "V4L2: VFE source pad format %dx%d\n", out_w, out_h);
-    }
-    close(vfe_fd);
-  }
-
   // Open video capture device
   std::string video_path = util::string_format("/dev/video%d", v4l2_cc.video_dev_index);
   video_fd = HANDLE_EINTR(open(video_path.c_str(), O_RDWR));
   assert(video_fd >= 0);
 
-  // Set NV12 output format matching VFE source pad
+  // Set NV12 output format
   struct v4l2_format fmt = {};
   fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-  fmt.fmt.pix_mp.width = out_w;
-  fmt.fmt.pix_mp.height = out_h;
+  fmt.fmt.pix_mp.width = 1920;
+  fmt.fmt.pix_mp.height = 1224;
   fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12;
   fmt.fmt.pix_mp.num_planes = 1;
   int ret = ioctl(video_fd, VIDIOC_S_FMT, &fmt);
-  if (ret < 0) fprintf(stderr, "V4L2: S_FMT failed: %s\n", strerror(errno));
+  assert(ret == 0);
 
   // Read back actual format
   ioctl(video_fd, VIDIOC_G_FMT, &fmt);
-  out_w = fmt.fmt.pix_mp.width;
-  out_h = fmt.fmt.pix_mp.height;
   stride = fmt.fmt.pix_mp.plane_fmt[0].bytesperline;
-  y_height = out_h;
-  uv_height = out_h / 2;
-  uv_offset = stride * y_height;
-  yuv_size = stride * y_height + stride * uv_height;
-  fprintf(stderr, "V4L2: video format %dx%d stride=%d\n", out_w, out_h, stride);
+  LOG("V4L2: format %dx%d stride=%d", fmt.fmt.pix_mp.width, fmt.fmt.pix_mp.height, stride);
 
   // Request buffers
   struct v4l2_requestbuffers reqbufs = {};
@@ -296,14 +199,9 @@ void V4L2Camera::sensors_start() {
   // Start streaming
   int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
   int ret = ioctl(video_fd, VIDIOC_STREAMON, &type);
-  if (ret < 0) {
-    fprintf(stderr, "V4L2: STREAMON failed for camera %d: %s (%d)\n",
-            cc.camera_num, strerror(errno), errno);
-    enabled = false;
-    return;
-  }
+  assert(ret == 0);
 
-  fprintf(stderr, "V4L2: camera %d streaming\n", cc.camera_num);
+  LOG("V4L2: camera %d streaming", cc.camera_num);
 }
 
 void V4L2Camera::queue_buffer(int idx) {
