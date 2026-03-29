@@ -4,9 +4,9 @@ Import('env', 'arch', 'messaging', 'common', 'visionipc')
 libs = [common, messaging, visionipc]
 
 if arch != "Darwin":
-  cam_env = env.Clone()
   camera_sources = ['cameras/camera_qcom2.cc', 'cameras/camera_common.cc',
                     'cameras/camera_v4l2.cc', 'sensors/ox03c10.cc', 'sensors/os04c10.cc']
+  cam_env = env.Clone()
   if os.path.exists('/dev/ion'):
     camera_sources += ['cameras/spectra.cc', 'cameras/cdm.cc']
     cam_env.Append(CPPDEFINES=['HAS_SPECTRA'])
