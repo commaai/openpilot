@@ -1,4 +1,4 @@
-from math import atan2
+from math import atan2, radians
 import numpy as np
 
 from cereal import car, log
@@ -43,6 +43,7 @@ class DRIVER_MONITOR_SETTINGS:
     self._POSE_YAW_THRESHOLD = 0.4020
     self._POSE_YAW_THRESHOLD_SLACK = 0.5042
     self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
+    self._POSE_YAW_STEER_FACTOR = -0.15
     self._PITCH_NATURAL_OFFSET = 0.011 # initial value before offset is learned
     self._PITCH_NATURAL_THRESHOLD = 0.449
     self._YAW_NATURAL_OFFSET = 0.075 # initial value before offset is learned
@@ -101,6 +102,7 @@ class DriverPose:
     self.low_std = True
     self.cfactor_pitch = 1.
     self.cfactor_yaw = 1.
+    self.steer_yaw_offset = 0.
 
 class DriverProb:
   def __init__(self, raw_priors, max_trackable):
@@ -238,7 +240,11 @@ class DriverMonitoring:
       yaw_error = self.pose.yaw - min(max(self.pose.yaw_offseter.filtered_stat.mean(),
                                                     self.settings._YAW_MIN_OFFSET), self.settings._YAW_MAX_OFFSET)
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
-    yaw_error = abs(yaw_error)
+
+    if yaw_error * self.pose.steer_yaw_offset > 0: # unidirectional
+      yaw_error = max(abs(yaw_error) - abs(self.pose.steer_yaw_offset), 0.)
+    else:
+      yaw_error = abs(yaw_error)
 
     pitch_threshold = self.settings._POSE_PITCH_THRESHOLD * self.pose.cfactor_pitch if self.pose.calibrated else self.settings._PITCH_NATURAL_THRESHOLD
     yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
@@ -254,7 +260,7 @@ class DriverMonitoring:
 
     return distracted_types
 
-  def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False):
+  def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False, steering_angle_deg=0.):
     rhd_pred = driver_state.wheelOnRightProb
     # calibrates only when there's movement and either face detected
     if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
@@ -277,8 +283,10 @@ class DriverMonitoring:
 
     self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
     self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
+    self.pose.steer_yaw_offset = radians(steering_angle_deg) * self.settings._POSE_YAW_STEER_FACTOR
     if self.wheel_on_right:
       self.pose.yaw *= -1
+      self.pose.steer_yaw_offset *= -1
     self.wheel_on_right_last = self.wheel_on_right
     self.pose.pitch_std = driver_data.faceOrientationStd[0]
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
@@ -360,9 +368,10 @@ class DriverMonitoring:
       if self.awareness > self.threshold_prompt:
         return
 
+    _reaching_pre = self.awareness - self.step_change <= self.threshold_pre
     _reaching_audible = self.awareness - self.step_change <= self.threshold_prompt
     _reaching_terminal = self.awareness - self.step_change <= 0
-    standstill_orange_exemption = standstill and _reaching_audible
+    standstill_exemption = standstill and _reaching_pre
     always_on_red_exemption = always_on_valid and not op_engaged and _reaching_terminal
     always_on_lowspeed_exemption = always_on_valid and not op_engaged and car_speed < self.settings._ALWAYS_ON_ALERT_MIN_SPEED
 
@@ -370,9 +379,9 @@ class DriverMonitoring:
     maybe_distracted = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME or not self.face_detected
 
     if certainly_distracted or maybe_distracted:
-      # should always be counting if distracted unless at standstill (lowspeed for always-on) and reaching orange
+      # should always be counting if distracted unless at standstill (lowspeed for always-on) and reaching green
       # also will not be reaching 0 if DM is active when not engaged
-      if not (standstill_orange_exemption or always_on_red_exemption or (always_on_lowspeed_exemption and _reaching_audible)):
+      if not (standstill_exemption or always_on_red_exemption or (always_on_lowspeed_exemption and _reaching_audible)):
         self.awareness = max(self.awareness - self.step_change, -0.1)
 
     alert = None
@@ -451,6 +460,7 @@ class DriverMonitoring:
       op_engaged=enabled,
       standstill=standstill,
       demo_mode=demo,
+      steering_angle_deg=sm['carState'].steeringAngleDeg,
     )
 
     # Update distraction events

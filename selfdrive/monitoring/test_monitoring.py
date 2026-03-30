@@ -186,10 +186,12 @@ class TestMonitoring:
     standstill_vector = always_true[:]
     standstill_vector[int(_redlight_time/DT_DMON):] = [False] * int((TEST_TIMESPAN-_redlight_time)/DT_DMON)
     events, d_status = self._run_seq(always_distracted, always_false, always_true, standstill_vector)
-    assert events[int((d_status.settings._DISTRACTED_TIME-d_status.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL+1)/DT_DMON)].names[0] == \
-                                                                                                                    EventName.preDriverDistracted
-    assert events[int((_redlight_time-0.1)/DT_DMON)].names[0] == EventName.preDriverDistracted
-    assert events[int((_redlight_time+0.5)/DT_DMON)].names[0] == EventName.promptDriverDistracted
+    # standstill exemption: awareness freezes at pre threshold, no alerts during standstill
+    assert len(events[int((_redlight_time-0.1)/DT_DMON)]) == 0
+    # after moving, awareness resumes decaying from pre threshold: pre immediately, then prompt
+    _pre_to_prompt = d_status.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL - d_status.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL
+    assert events[int((_redlight_time+0.5)/DT_DMON)].names[0] == EventName.preDriverDistracted
+    assert events[int((_redlight_time+_pre_to_prompt+0.5)/DT_DMON)].names[0] == EventName.promptDriverDistracted
 
   # engaged, model is somehow uncertain and driver is distracted
   #  - should fall back to wheel touch after uncertain alert
