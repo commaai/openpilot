@@ -19,7 +19,6 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.system.hardware import TICI
 from openpilot.system.loggerd.xattr_cache import getxattr
 from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
-from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.version import get_version
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
@@ -77,6 +76,7 @@ class TestLoggerd:
   def _publish_random_messages(self, services: list[str]) -> dict[str, list]:
     pm = messaging.PubMaster(services)
 
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes["loggerd"].start()
     for s in services:
       assert pm.wait_for_readers_to_update(s, timeout=5)

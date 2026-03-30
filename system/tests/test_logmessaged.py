@@ -3,7 +3,6 @@ import os
 import time
 
 import cereal.messaging as messaging
-from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog, ipchandler
 
@@ -14,6 +13,7 @@ class TestLogmessaged:
     ipchandler.close()
     ipchandler.connect()
 
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes['logmessaged'].start()
     self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)

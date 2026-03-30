@@ -5,7 +5,6 @@ import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware.tici.pins import GPIO
 
 
@@ -14,6 +13,7 @@ from openpilot.system.hardware.tici.pins import GPIO
 class TestPigeond:
 
   def teardown_method(self):
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes['pigeond'].stop()
 
   @with_processes(['pigeond'])

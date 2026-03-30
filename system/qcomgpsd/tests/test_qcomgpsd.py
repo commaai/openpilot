@@ -5,7 +5,6 @@ import datetime
 
 import cereal.messaging as messaging
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
-from openpilot.system.manager.process_config import managed_processes
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 
@@ -21,6 +20,7 @@ class TestRawgpsd:
 
   @classmethod
   def teardown_class(cls):
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes['qcomgpsd'].stop()
     os.system("sudo systemctl restart systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")

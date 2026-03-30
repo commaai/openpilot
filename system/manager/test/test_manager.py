@@ -32,6 +32,7 @@ class TestManager:
     manager.main()
 
   def test_duplicate_procs(self):
+    from openpilot.system.manager.process_config import managed_processes
     assert len(procs) == len(managed_processes), "Duplicate process names"
 
   def test_blacklisted_procs(self):

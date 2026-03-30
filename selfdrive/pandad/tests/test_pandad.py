@@ -6,7 +6,6 @@ import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
 from panda import Panda, PandaDFU
-from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.pins import GPIO
 
@@ -22,6 +21,7 @@ class TestPandad:
       self._run_test(60)
 
   def teardown_method(self):
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes['pandad'].stop()
 
   def _run_test(self, timeout=30) -> float:

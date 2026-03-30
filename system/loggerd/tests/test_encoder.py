@@ -13,7 +13,6 @@ from tqdm import trange
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import TICI
-from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
 
@@ -55,6 +54,7 @@ class TestEncoder:
   def test_log_rotation(self, record_front):
     Params().put_bool("RecordFront", record_front)
 
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes['sensord'].start()
     managed_processes['loggerd'].start()
     managed_processes['encoderd'].start()

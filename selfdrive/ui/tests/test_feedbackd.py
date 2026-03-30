@@ -2,7 +2,6 @@ import pytest
 import cereal.messaging as messaging
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.system.manager.process_config import managed_processes
 
 
 @pytest.mark.skip("tmp disabled")
@@ -29,6 +28,7 @@ class TestFeedbackd:
   def test_audio_feedback(self, record_feedback):
     Params().put_bool("RecordAudioFeedback", record_feedback)
 
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes["feedbackd"].start()
     assert self.pm.wait_for_readers_to_update('carState', timeout=5)
     assert self.pm.wait_for_readers_to_update('rawAudioData', timeout=5)

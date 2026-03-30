@@ -10,7 +10,6 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.manager.process_config import managed_processes
 
 LSM = {
   ('lsm6ds3', 'acceleration'),
@@ -97,6 +96,7 @@ class TestSensord:
 
   @classmethod
   def teardown_class(cls):
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes["sensord"].stop()
 
   def teardown_method(self):
