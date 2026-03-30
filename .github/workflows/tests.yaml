@@ -108,6 +108,10 @@ jobs:
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons -j$(nproc)
+    - name: Measure pytest collection time
+      run: |
+        source selfdrive/test/setup_xvfb.sh
+        { time pytest --collect-only -q 2>&1; } 2>&1 | grep -E "collected in|^real|^user|^sys"
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       run: |
