@@ -117,6 +117,7 @@ class TestLoggerd:
 
     os.environ["LOGGERD_TEST"] = "1"
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(segment_length)
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes["loggerd"].start()
     managed_processes["encoderd"].start()
     assert pm.wait_for_readers_to_update("roadCameraState", timeout=5)

@@ -14,6 +14,7 @@ class TestLogmessaged:
     ipchandler.connect()
 
     from openpilot.system.manager.process_config import managed_processes
+    self.managed_processes = managed_processes
     managed_processes['logmessaged'].start()
     self.sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
@@ -26,7 +27,7 @@ class TestLogmessaged:
   def teardown_method(self):
     del self.sock
     del self.error_sock
-    managed_processes['logmessaged'].stop(block=True)
+    self.managed_processes['logmessaged'].stop(block=True)
 
   def _get_log_files(self):
     return list(glob.glob(os.path.join(Paths.swaglog_root(), "swaglog.*")))
