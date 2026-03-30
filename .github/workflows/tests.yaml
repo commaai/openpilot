@@ -111,6 +111,17 @@ jobs:
     - name: Measure pytest collection time
       run: |
         source selfdrive/test/setup_xvfb.sh
+        # Pre-compile bytecode (mirrors developer workflow where .pyc files exist from prior runs)
+        python -m compileall -j0 -q common selfdrive system tools cereal 2>/dev/null || true
+        # Profile the heaviest individual imports to identify bottlenecks
+        python -c "
+import time, sys
+for mod in ['cereal.messaging', 'openpilot.system.manager.process_config', 'openpilot.common.prefix', 'openpilot.system.hardware']:
+    t = time.time()
+    __import__(mod)
+    print(f'{mod}: {time.time()-t:.3f}s')
+"
+        # Full collection time with pre-compiled bytecode
         { time pytest --collect-only -q 2>&1; } 2>&1 | grep -E "collected in|^real|^user|^sys"
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
