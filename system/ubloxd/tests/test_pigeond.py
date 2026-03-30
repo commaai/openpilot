@@ -29,6 +29,7 @@ class TestPigeond:
       assert sm.all_checks()
 
   def test_startup_time(self):
+    from openpilot.system.manager.process_config import managed_processes
     for _ in range(5):
       sm = messaging.SubMaster(['ubloxRaw'])
       managed_processes['pigeond'].start()
@@ -45,6 +46,7 @@ class TestPigeond:
       managed_processes['pigeond'].stop()
 
   def test_turns_off_ublox(self):
+    from openpilot.system.manager.process_config import managed_processes
     for s in (0.1, 0.5, 1, 5):
       managed_processes['pigeond'].start()
       time.sleep(s)

@@ -83,6 +83,7 @@ class TestSensord:
 
     # read initial sensor values every test case can use
     os.system("pkill -f \\\\./sensord")
+    from openpilot.system.manager.process_config import managed_processes
     try:
       managed_processes["sensord"].start()
       cls.sample_secs = int(os.getenv("SAMPLE_SECS", "10"))
@@ -100,6 +101,7 @@ class TestSensord:
     managed_processes["sensord"].stop()
 
   def teardown_method(self):
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes["sensord"].stop()
 
   def test_sensors_present(self):
@@ -203,6 +205,7 @@ class TestSensord:
         assert s.sanity_min <= mean_norm <= s.sanity_max, err_msg
 
   def test_sensor_verify_no_interrupts_after_stop(self):
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes["sensord"].start()
     time.sleep(3)
 

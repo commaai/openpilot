@@ -29,6 +29,7 @@ class TestRawgpsd:
     self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   def teardown_method(self):
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes['qcomgpsd'].stop()
     os.system("sudo systemctl restart systemd-resolved")
 
@@ -47,11 +48,13 @@ class TestRawgpsd:
     at_cmd("AT+QGPSDEL=0")
 
   def test_wait_for_modem(self):
+    from openpilot.system.manager.process_config import managed_processes
     os.system("sudo systemctl stop ModemManager")
     managed_processes['qcomgpsd'].start()
     assert self._wait_for_output(30)
 
   def test_startup_time(self, subtests):
+    from openpilot.system.manager.process_config import managed_processes
     for internet in (True, False):
       if not internet:
         os.system("sudo systemctl stop systemd-resolved")
@@ -61,6 +64,7 @@ class TestRawgpsd:
         managed_processes['qcomgpsd'].stop()
 
   def test_turns_off_gnss(self, subtests):
+    from openpilot.system.manager.process_config import managed_processes
     for s in (0.1, 1, 5):
       with subtests.test(runtime=s):
         managed_processes['qcomgpsd'].start()
@@ -91,6 +95,7 @@ class TestRawgpsd:
 
   @pytest.mark.skip(reason="XTRA injection via QMI needs debugging on AGNOS 17")
   def test_assistance_loading(self):
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes['qcomgpsd'].start()
     assert self._wait_for_output(30)
     managed_processes['qcomgpsd'].stop()
@@ -98,6 +103,7 @@ class TestRawgpsd:
 
   @pytest.mark.skip(reason="XTRA injection via QMI needs debugging on AGNOS 17")
   def test_no_assistance_loading(self):
+    from openpilot.system.manager.process_config import managed_processes
     os.system("sudo systemctl stop systemd-resolved")
 
     managed_processes['qcomgpsd'].start()
@@ -107,6 +113,7 @@ class TestRawgpsd:
 
   @pytest.mark.skip(reason="XTRA injection via QMI needs debugging on AGNOS 17")
   def test_late_assistance_loading(self):
+    from openpilot.system.manager.process_config import managed_processes
     os.system("sudo systemctl stop systemd-resolved")
 
     managed_processes['qcomgpsd'].start()

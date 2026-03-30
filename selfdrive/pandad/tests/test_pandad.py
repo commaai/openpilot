@@ -28,6 +28,7 @@ class TestPandad:
     st = time.monotonic()
     sm = messaging.SubMaster(['pandaStates'])
 
+    from openpilot.system.manager.process_config import managed_processes
     managed_processes['pandad'].start()
     while (time.monotonic() - st) < timeout:
       sm.update(100)
