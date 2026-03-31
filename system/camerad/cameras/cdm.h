@@ -6,10 +6,26 @@
 #include <vector>
 #include <memory>
 
-// our helpers
+// CDM hardware packet builders (downstream kernel)
 int write_random(uint8_t *dst, const std::vector<uint32_t> &vals);
 int write_cont(uint8_t *dst, uint32_t reg, const std::vector<uint32_t> &vals);
 int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, uint8_t sel);
+
+// flat register list builders (mainline kernel)
+struct reg_write {
+  uint32_t offset;
+  uint32_t value;
+};
+
+struct dmi_upload {
+  uint32_t cfg_offset;
+  uint8_t ram_select;
+  const uint32_t *data;
+  uint32_t count;
+};
+
+void collect_cont(std::vector<reg_write> &out, uint32_t base, const std::vector<uint32_t> &vals);
+void collect_random(std::vector<reg_write> &out, const std::vector<uint32_t> &vals);
 
 // from drivers/media/platform/msm/camera/cam_cdm/cam_cdm_util.{c,h}
 
