@@ -101,7 +101,20 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
   }
 
   // open sensor subdev for register writes
-  sensor_fd = open_v4l_by_name_and_index("ox03c10", cc.camera_num);
+  // can't use open_v4l_by_name_and_index because subdev numbering has gaps
+  {
+    int match_idx = 0;
+    for (int i = 0; i < 32; i++) {
+      std::string name = util::read_file(util::string_format("/sys/class/video4linux/v4l-subdev%d/name", i));
+      if (name.find("ox03c10") == 0 || name.find("os04c10") == 0) {
+        if (match_idx == cc.camera_num) {
+          sensor_fd = HANDLE_EINTR(open(util::string_format("/dev/v4l-subdev%d", i).c_str(), O_RDWR));
+          break;
+        }
+        match_idx++;
+      }
+    }
+  }
   if (sensor_fd < 0) {
     LOGE("failed to open sensor subdev for camera %d", cc.camera_num);
     enabled = false;
