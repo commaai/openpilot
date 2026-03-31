@@ -44,6 +44,7 @@ class DRIVER_MONITOR_SETTINGS:
     self._POSE_YAW_THRESHOLD_SLACK = 0.5042
     self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
     self._POSE_YAW_STEER_FACTOR = -0.15
+    self._POSE_YAW_STEER_MAX = 0.3927
     self._PITCH_NATURAL_OFFSET = 0.011 # initial value before offset is learned
     self._PITCH_NATURAL_THRESHOLD = 0.449
     self._YAW_NATURAL_OFFSET = 0.075 # initial value before offset is learned
@@ -242,7 +243,7 @@ class DriverMonitoring:
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
 
     if yaw_error * self.pose.steer_yaw_offset > 0: # unidirectional
-      yaw_error = max(abs(yaw_error) - abs(self.pose.steer_yaw_offset), 0.)
+      yaw_error = max(abs(yaw_error) - min(abs(self.pose.steer_yaw_offset), self.settings._POSE_YAW_STEER_MAX), 0.)
     else:
       yaw_error = abs(yaw_error)
 
