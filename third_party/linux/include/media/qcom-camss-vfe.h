@@ -52,7 +52,7 @@ struct vfe_set_buf_cmd {
 	__u32 pad;
 };
 
-#define VFE_IOC_MAGIC		'V'
+#define VFE_IOC_MAGIC		'#'
 
 #define VFE_WRITE_REGS		_IOW(VFE_IOC_MAGIC, 1, struct vfe_write_regs_cmd)
 #define VFE_WRITE_DMI		_IOW(VFE_IOC_MAGIC, 2, struct vfe_dmi_cmd)
