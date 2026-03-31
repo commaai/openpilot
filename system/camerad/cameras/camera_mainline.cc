@@ -135,7 +135,7 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
       return;
     }
     iova_map[i] = cmd.iova;
-    LOGD("camera %d: mapped buf %d fd=%d iova=0x%lx", cc.camera_num, i, vb->fd, cmd.iova);
+    LOGD("camera %d: mapped buf %d fd=%d iova=0x%llx", cc.camera_num, i, vb->fd, (unsigned long long)cmd.iova);
   }
 
   // write initial ISP config
