@@ -18,6 +18,7 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
+AddOption('--mainline', action='store_true', default=False, help='build camerad for mainline kernel (qcom-camss)')
 AddOption('--minimal',
           action='store_false',
           dest='extras',
