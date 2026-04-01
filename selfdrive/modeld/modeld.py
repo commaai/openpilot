@@ -34,13 +34,13 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
-OFF_POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_off_policy_tinygrad.pkl'
-POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_on_policy_tinygrad.pkl'
-VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
-OFF_POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_off_policy_metadata.pkl'
-POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_on_policy_metadata.pkl'
 MODELS_DIR = Path(__file__).parent / 'models'
+VISION_PKL_PATH = MODELS_DIR / 'driving_vision_tinygrad.pkl'
+VISION_METADATA_PATH = MODELS_DIR / 'driving_vision_metadata.pkl'
+ON_POLICY_PKL_PATH = MODELS_DIR / 'driving_on_policy_tinygrad.pkl'
+ON_POLICY_METADATA_PATH = MODELS_DIR / 'driving_on_policy_metadata.pkl'
+OFF_POLICY_PKL_PATH = MODELS_DIR / 'driving_off_policy_tinygrad.pkl'
+OFF_POLICY_METADATA_PATH = MODELS_DIR / 'driving_off_policy_metadata.pkl'
 
 LAT_SMOOTH_SECONDS = 0.0
 LONG_SMOOTH_SECONDS = 0.3
@@ -159,7 +159,7 @@ class ModelState:
       self.off_policy_output_slices = off_policy_metadata['output_slices']
       off_policy_output_size = off_policy_metadata['output_shapes']['outputs'][1]
 
-    with open(POLICY_METADATA_PATH, 'rb') as f:
+    with open(ON_POLICY_METADATA_PATH, 'rb') as f:
       policy_metadata = pickle.load(f)
       self.policy_input_shapes =  policy_metadata['input_shapes']
       self.policy_output_slices = policy_metadata['output_slices']
@@ -188,7 +188,7 @@ class ModelState:
     self.frame_buf_params : dict[str, tuple[int, int, int, int]] = {}
     self.update_imgs = None
     self.vision_run = pickle.loads(read_file_chunked(str(VISION_PKL_PATH)))
-    self.policy_run = pickle.loads(read_file_chunked(str(POLICY_PKL_PATH)))
+    self.policy_run = pickle.loads(read_file_chunked(str(ON_POLICY_PKL_PATH)))
     self.off_policy_run = pickle.loads(read_file_chunked(str(OFF_POLICY_PKL_PATH)))
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
