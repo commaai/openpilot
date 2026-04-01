@@ -123,6 +123,40 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
     return;
   }
 
+  // set up media links: csiphy -> csid -> vfe_pix
+  {
+    int media_fd = HANDLE_EINTR(open("/dev/media0", O_RDWR));
+    if (media_fd >= 0) {
+      // Entity IDs from media graph (stable as long as module load order is same)
+      // Camera 0: csiphy0(1) -> csid0(13) -> vfe0_pix(58)
+      // Camera 1: csiphy1(4) -> csid1(19) -> vfe1_pix(94)
+      const int csiphy_ent[] = {1, 4};
+      const int csid_ent[] = {13, 19};
+      const int vfe_pix_ent[] = {58, 94};
+      int cam = cc.camera_num;
+
+      struct media_link_desc link = {};
+
+      // csiphy -> csid (source pad 1 -> sink pad 0)
+      link.source = {.entity = (uint32_t)csiphy_ent[cam], .index = 1};
+      link.sink = {.entity = (uint32_t)csid_ent[cam], .index = 0};
+      link.flags = MEDIA_LNK_FL_ENABLED;
+      if (ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link) != 0)
+        LOGE("camera %d: setup link csiphy->csid failed: %d", cam, errno);
+
+      // csid -> vfe_pix (source pad 4 -> sink pad 0)
+      memset(&link, 0, sizeof(link));
+      link.source = {.entity = (uint32_t)csid_ent[cam], .index = 4};
+      link.sink = {.entity = (uint32_t)vfe_pix_ent[cam], .index = 0};
+      link.flags = MEDIA_LNK_FL_ENABLED;
+      if (ioctl(media_fd, MEDIA_IOC_SETUP_LINK, &link) != 0)
+        LOGE("camera %d: setup link csid->vfe_pix failed: %d", cam, errno);
+
+      close(media_fd);
+      LOG("camera %d: media links enabled", cam);
+    }
+  }
+
   // power on camera subsystem (titan_top_gdsc) before sensor init
   // this enables CAMCC clocks including MCLK for sensors
   {
