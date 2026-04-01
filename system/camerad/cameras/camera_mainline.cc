@@ -121,12 +121,16 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
     return;
   }
 
-  // power on camera subsystem before sensor init
-  // STREAMON enables CAMCC GDSC which provides MCLK for sensors
+  // power on camera subsystem (titan_top_gdsc) before sensor init
+  // this enables CAMCC clocks including MCLK for sensors
   {
-    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-    int ret = HANDLE_EINTR(ioctl(vfe_fd, VIDIOC_STREAMON, &type));
-    if (ret != 0) LOG("camera %d: STREAMON for power-on returned %d (errno %d, ok if no buffers)", cc.camera_num, ret, errno);
+    std::string power_ctrl = "/sys/bus/platform/devices/acb3000.camss/power/control";
+    int pfd = open(power_ctrl.c_str(), O_WRONLY);
+    if (pfd >= 0) {
+      write(pfd, "on", 2);
+      close(pfd);
+      usleep(1000);  // let GDSC stabilize
+    }
   }
 
   // write sensor init registers
