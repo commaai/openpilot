@@ -121,6 +121,14 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
     return;
   }
 
+  // power on camera subsystem before sensor init
+  // STREAMON enables CAMCC GDSC which provides MCLK for sensors
+  {
+    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    int ret = HANDLE_EINTR(ioctl(vfe_fd, VIDIOC_STREAMON, &type));
+    if (ret != 0) LOG("camera %d: STREAMON for power-on returned %d (errno %d, ok if no buffers)", cc.camera_num, ret, errno);
+  }
+
   // write sensor init registers
   sensors_i2c(sensor->init_reg_array.data(), sensor->init_reg_array.size(), sensor->data_word);
   LOG("camera %d: wrote %zu sensor init registers", cc.camera_num, sensor->init_reg_array.size());
