@@ -89,10 +89,19 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
   uv_offset = stride * y_height;
 
   // open VFE PIX video device
-  // VFE0 for camera 0 (wide), VFE1 for camera 1 (road)
-  // the PIX line video device is typically the last one per VFE
-  std::string vfe_path = "/dev/video" + std::to_string(cc.camera_num == 0 ? 0 : 1);
+  // PIX is the 4th video device per VFE: VFE0=video3, VFE1=video7
   // TODO: discover dynamically via media controller
+  {
+    int target_vfe = cc.camera_num;  // camera 0 -> VFE0, camera 1 -> VFE1
+    int match = 0;
+    for (int i = 0; i < 16 && vfe_fd < 0; i++) {
+      std::string name = util::read_file(util::string_format("/sys/class/video4linux/video%d/name", i));
+      if (name.find(util::string_format("msm_vfe%d_video3", target_vfe)) == 0) {
+        vfe_fd = HANDLE_EINTR(open(util::string_format("/dev/video%d", i).c_str(), O_RDWR));
+      }
+    }
+  }
+  std::string vfe_path = "(pix)";
   vfe_fd = HANDLE_EINTR(open(vfe_path.c_str(), O_RDWR));
   if (vfe_fd < 0) {
     LOGE("failed to open VFE %s: %d", vfe_path.c_str(), errno);
