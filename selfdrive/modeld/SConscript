@@ -18,7 +18,7 @@ def estimate_pickle_max_size(onnx_size):
 tg_flags = {
     'larch64': 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0',
     'Darwin': f'DEV=CPU THREADS=0 HOME={os.path.expanduser("~")}', # tinygrad calls brew which needs a $HOME in the env
-}.get(arch, 'DEV=CPU CPU_LLVM=1 THREADS=0')
+}.get(arch, 'DEV=CPU:LLVM THREADS=0')
 
 # Get model metadata
 for model_name in ['driving_vision', 'driving_off_policy', 'driving_on_policy', 'dmonitoring_model']:
