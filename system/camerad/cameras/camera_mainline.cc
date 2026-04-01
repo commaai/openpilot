@@ -93,7 +93,6 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
   // TODO: discover dynamically via media controller
   {
     int target_vfe = cc.camera_num;  // camera 0 -> VFE0, camera 1 -> VFE1
-    int match = 0;
     for (int i = 0; i < 16 && vfe_fd < 0; i++) {
       std::string name = util::read_file(util::string_format("/sys/class/video4linux/video%d/name", i));
       if (name.find(util::string_format("msm_vfe%d_video3", target_vfe)) == 0) {
