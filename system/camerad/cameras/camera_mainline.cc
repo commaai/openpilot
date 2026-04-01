@@ -96,9 +96,8 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
     vfe_fd = HANDLE_EINTR(open(path.c_str(), O_RDWR));
     LOG("camera %d: opening %s fd=%d", cc.camera_num, path.c_str(), vfe_fd);
   }
-  vfe_fd = HANDLE_EINTR(open(vfe_path.c_str(), O_RDWR));
   if (vfe_fd < 0) {
-    LOGE("failed to open VFE %s: %d", vfe_path.c_str(), errno);
+    LOGE("failed to open VFE PIX for camera %d: %d", cc.camera_num, errno);
     enabled = false;
     return;
   }
