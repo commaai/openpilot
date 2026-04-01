@@ -89,21 +89,13 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
   uv_offset = stride * y_height;
 
   // open VFE PIX video device
-  // PIX is the 4th video device per VFE: VFE0=video3, VFE1=video7
-  // TODO: discover dynamically via media controller
+  // PIX is video3 for VFE0, video7 for VFE1
   {
-    int target_vfe = cc.camera_num;  // camera 0 -> VFE0, camera 1 -> VFE1
-    std::string target_name = util::string_format("msm_vfe%d_video3", target_vfe);
-    for (int i = 0; i < 16 && vfe_fd < 0; i++) {
-      std::string name = util::read_file(util::string_format("/sys/class/video4linux/video%d/name", i));
-      if (name.find(target_name) == 0) {
-        std::string path = util::string_format("/dev/video%d", i);
-        LOG("camera %d: found PIX device %s (%s)", cc.camera_num, path.c_str(), name.c_str());
-        vfe_fd = HANDLE_EINTR(open(path.c_str(), O_RDWR));
-      }
-    }
+    const int pix_devs[] = {3, 7};  // VFE0 PIX, VFE1 PIX
+    std::string path = util::string_format("/dev/video%d", pix_devs[cc.camera_num]);
+    vfe_fd = HANDLE_EINTR(open(path.c_str(), O_RDWR));
+    LOG("camera %d: opening %s fd=%d", cc.camera_num, path.c_str(), vfe_fd);
   }
-  std::string vfe_path = "(pix)";
   vfe_fd = HANDLE_EINTR(open(vfe_path.c_str(), O_RDWR));
   if (vfe_fd < 0) {
     LOGE("failed to open VFE %s: %d", vfe_path.c_str(), errno);
