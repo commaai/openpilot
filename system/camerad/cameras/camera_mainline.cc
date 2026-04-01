@@ -233,8 +233,14 @@ void MainlineCamera::sensors_i2c(const i2c_random_wr_payload *dat, int len, bool
 
 void MainlineCamera::sensors_start() {
   if (!enabled) return;
+
+  // start VFE pipeline (powers on CSIPHY, CSID, VFE, enables IRQs)
+  int ret = vfe_ioctl(VFE_START, nullptr);
+  if (ret != 0) LOGE("VFE_START failed: %d", errno);
+
+  // start sensor streaming
   sensors_i2c(sensor->start_reg_array.data(), sensor->start_reg_array.size(), sensor->data_word);
-  LOG("camera %d: sensor streaming started", cc.camera_num);
+  LOG("camera %d: streaming started", cc.camera_num);
 }
 
 void MainlineCamera::enqueue_frame(int buf_idx) {

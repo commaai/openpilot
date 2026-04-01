@@ -60,6 +60,8 @@ struct vfe_set_buf_cmd {
 #define VFE_UNMAP_BUF		_IOW(VFE_IOC_MAGIC, 4, struct vfe_unmap_buf_cmd)
 #define VFE_SET_BUF		_IOW(VFE_IOC_MAGIC, 5, struct vfe_set_buf_cmd)
 #define VFE_REG_UPDATE		_IO(VFE_IOC_MAGIC, 6)
+#define VFE_START		_IO(VFE_IOC_MAGIC, 7)
+#define VFE_STOP		_IO(VFE_IOC_MAGIC, 8)
 
 /*
  * Sensor register write interface.
