@@ -61,13 +61,13 @@ public:
   int vfe_fd = -1;
   int sensor_fd = -1;
 
-private:
-  uint64_t iova_map[VIPC_BUFFER_COUNT] = {};
-  uint32_t wm_y = 3, wm_uv = 4;  // PIX write master indices (same as downstream)
-
   int vfe_ioctl(unsigned long cmd, void *arg) {
     return HANDLE_EINTR(ioctl(vfe_fd, cmd, arg));
   }
+
+private:
+  uint64_t iova_map[VIPC_BUFFER_COUNT] = {};
+  uint32_t wm_y = 3, wm_uv = 4;  // PIX write master indices (same as downstream)
 };
 
 
@@ -173,10 +173,7 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
   sensors_i2c(sensor->init_reg_array.data(), sensor->init_reg_array.size(), sensor->data_word);
   LOG("camera %d: wrote %zu sensor init registers", cc.camera_num, sensor->init_reg_array.size());
 
-  // subscribe to V4L2 events (SOF)
-  struct v4l2_event_subscription sub = {};
-  sub.type = V4L2_EVENT_FRAME_SYNC;
-  HANDLE_EINTR(ioctl(vfe_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
+  // SOF events delivered via VFE_WAIT_SOF ioctl (no V4L2 event subscription needed)
 
   // allocate VisionIPC buffers
   buf.vipc_server = v;
@@ -556,34 +553,21 @@ void camerad_thread() {
   }
 
   // main event loop
-  LOG("-- Polling for events");
+  LOG("-- Waiting for SOF events");
   uint32_t frame_counter = 0;
   while (!do_exit) {
-    // build poll fds for all cameras
-    std::vector<struct pollfd> fds;
     for (auto &cam : cams) {
-      if (cam->camera.enabled) {
-        fds.push_back({.fd = cam->camera.vfe_fd, .events = POLLPRI});
+      if (!cam->camera.enabled) continue;
+
+      // block until SOF interrupt
+      int ret = cam->camera.vfe_ioctl(VFE_WAIT_SOF, nullptr);
+      if (ret != 0) {
+        if (errno == ETIMEDOUT) continue;
+        LOGE("VFE_WAIT_SOF failed: %d", errno);
+        continue;
       }
-    }
 
-    int ret = poll(fds.data(), fds.size(), 1000);
-    if (ret < 0) {
-      if (errno == EINTR || errno == EAGAIN) continue;
-      LOGE("poll failed (%d - %d)", ret, errno);
-      break;
-    }
-
-    for (size_t i = 0; i < fds.size(); i++) {
-      if (!(fds[i].revents & POLLPRI)) continue;
-
-      auto &cam = cams[i];
-      struct v4l2_event ev = {};
-      ret = HANDLE_EINTR(ioctl(fds[i].fd, VIDIOC_DQEVENT, &ev));
-      if (ret != 0) continue;
-
-      // SOF event with timestamp
-      uint64_t timestamp = ev.timestamp.tv_sec * 1000000000ULL + ev.timestamp.tv_nsec;
+      uint64_t timestamp = nanos_since_boot();
       frame_counter++;
 
       if (env_debug_frames) {
