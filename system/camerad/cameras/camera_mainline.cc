@@ -93,10 +93,13 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
   // TODO: discover dynamically via media controller
   {
     int target_vfe = cc.camera_num;  // camera 0 -> VFE0, camera 1 -> VFE1
+    std::string target_name = util::string_format("msm_vfe%d_video3", target_vfe);
     for (int i = 0; i < 16 && vfe_fd < 0; i++) {
       std::string name = util::read_file(util::string_format("/sys/class/video4linux/video%d/name", i));
-      if (name.find(util::string_format("msm_vfe%d_video3", target_vfe)) == 0) {
-        vfe_fd = HANDLE_EINTR(open(util::string_format("/dev/video%d", i).c_str(), O_RDWR));
+      if (name.find(target_name) == 0) {
+        std::string path = util::string_format("/dev/video%d", i);
+        LOG("camera %d: found PIX device %s (%s)", cc.camera_num, path.c_str(), name.c_str());
+        vfe_fd = HANDLE_EINTR(open(path.c_str(), O_RDWR));
       }
     }
   }
