@@ -43,8 +43,9 @@ class DRIVER_MONITOR_SETTINGS:
     self._POSE_YAW_THRESHOLD = 0.4020
     self._POSE_YAW_THRESHOLD_SLACK = 0.5042
     self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
-    self._POSE_YAW_STEER_FACTOR = -0.15
-    self._POSE_YAW_STEER_MAX = 0.3927
+    self._POSE_YAW_MIN_STEER_DEG = 30
+    self._POSE_YAW_STEER_FACTOR = 0.15
+    self._POSE_YAW_STEER_MAX_OFFSET = 0.3927
     self._PITCH_NATURAL_OFFSET = 0.011 # initial value before offset is learned
     self._PITCH_NATURAL_THRESHOLD = 0.449
     self._YAW_NATURAL_OFFSET = 0.075 # initial value before offset is learned
@@ -242,7 +243,7 @@ class DriverMonitoring:
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
 
     if yaw_error * self.pose.steer_yaw_offset > 0: # unidirectional
-      yaw_error = max(abs(yaw_error) - min(abs(self.pose.steer_yaw_offset), self.settings._POSE_YAW_STEER_MAX), 0.)
+      yaw_error = max(abs(yaw_error) - min(abs(self.pose.steer_yaw_offset), self.settings._POSE_YAW_STEER_MAX_OFFSET), 0.)
     else:
       yaw_error = abs(yaw_error)
 
@@ -283,7 +284,7 @@ class DriverMonitoring:
 
     self.face_detected = driver_data.faceProb > self.settings._FACE_THRESHOLD
     self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
-    self.pose.steer_yaw_offset = radians(steering_angle_deg) * self.settings._POSE_YAW_STEER_FACTOR
+    self.pose.steer_yaw_offset = radians(max(abs(steering_angle_deg) - self.settings._POSE_YAW_MIN_STEER_DEG, 0.)) * -np.sign(steering_angle_deg) * self.settings._POSE_YAW_STEER_FACTOR
     if self.wheel_on_right:
       self.pose.yaw *= -1
       self.pose.steer_yaw_offset *= -1
