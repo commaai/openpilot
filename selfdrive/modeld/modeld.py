@@ -36,10 +36,10 @@ SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
 OFF_POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_off_policy_tinygrad.pkl'
-POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
+POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_on_policy_tinygrad.pkl'
 VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
 OFF_POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_off_policy_metadata.pkl'
-POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
+POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_on_policy_metadata.pkl'
 MODELS_DIR = Path(__file__).parent / 'models'
 
 LAT_SMOOTH_SECONDS = 0.0
