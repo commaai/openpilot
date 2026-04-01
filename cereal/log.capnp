@@ -88,6 +88,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     lowMemory @51;
     stockAeb @52;
     stockLkas @98;
+    lateralManeuver @99;
     ldw @53;
     carUnrecognized @54;
     invalidLkasSetting @55;
@@ -1241,6 +1242,10 @@ struct DriverAssistance {
   # FCW, AEB, etc. will go here
 }
 
+struct LateralManeuverPlan {
+  desiredCurvature @0 :Float32;  # 1/m
+}
+
 struct LongitudinalPlan @0xe00b5b3eba12876c {
   modelMonoTime @9 :UInt64;
   hasLead @7 :Bool;
@@ -1425,6 +1430,8 @@ struct LivePose {
   inputsOK @4 :Bool = false;
   posenetOK @5 :Bool = false;
   sensorsOK @6 :Bool = false;
+
+  timestamp @8 :UInt64;
 
   debugFilterState @7 :FilterState;
 
@@ -2611,6 +2618,8 @@ struct Event {
     userBookmark @93 :UserBookmark;
     bookmarkButton @148 :UserBookmark;
     audioFeedback @149 :AudioFeedback;
+
+    lateralManeuverPlan @150 :LateralManeuverPlan;
 
     # *********** debug ***********
     testJoystick @52 :Joystick;

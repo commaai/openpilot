@@ -107,6 +107,7 @@ dev = [
 ]
 
 tools = [
+  "imgui  @ git+https://github.com/commaai/dependencies.git@release-imgui#subdirectory=imgui",
   "metadrive-simulator @ git+https://github.com/commaai/metadrive.git@minimal ; (platform_machine != 'aarch64')",
 ]
 

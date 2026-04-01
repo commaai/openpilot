@@ -24,14 +24,14 @@
       <plot style="Lines" mode="TimeSeries">
        <range left="0.000000" top="0.166067" bottom="-1.598381" right="631.038276"/>
        <limitY/>
-       <curve color="#ffb000" name="/liveLocationKalman/calibratedOrientationNED/value/0"/>
+       <curve color="#ffb000" name="/carControl/orientationNED/0"/>
       </plot>
      </DockArea>
      <DockArea name="Engaged [green] Steering Pressed [blue]">
       <plot style="Lines" mode="TimeSeries">
        <range left="1.252984" top="1.025000" bottom="-0.025000" right="631.055584"/>
        <limitY/>
-       <curve color="#009e73" name="/controlsState/enabled"/>
+       <curve color="#009e73" name="/selfdriveState/enabled"/>
        <curve color="#0072b2" name="/carState/steeringPressed"/>
       </plot>
      </DockArea>
@@ -39,7 +39,7 @@
       <plot style="Lines" mode="TimeSeries">
        <range left="1.253354" top="1.025000" bottom="-0.025000" right="631.055584"/>
        <limitY/>
-       <curve name="/carState/steeringRateLimited" color="#ffb000"/>
+       <curve name="steering rate limited" color="#ffb000"/>
        <curve name="/controlsState/lateralControlState/pidState/saturated" color="#dc267f"/>
       </plot>
      </DockArea>
@@ -71,7 +71,7 @@
       <plot style="Lines" mode="TimeSeries">
        <range left="0.000000" top="0.158854" bottom="-0.594843" right="631.038276"/>
        <limitY/>
-       <curve color="#ffb000" name="/liveLocationKalman/calibratedOrientationNED/value/1"/>
+       <curve color="#ffb000" name="/carControl/orientationNED/1"/>
       </plot>
      </DockArea>
      <DockArea name="Engaged [green] Gas [orange] Brake [magenta]">
@@ -126,7 +126,7 @@
       <plot style="Lines" mode="TimeSeries">
        <range left="1.253354" top="1.025000" bottom="-0.025000" right="631.055584"/>
        <limitY/>
-       <curve name="/carState/steeringRateLimited" color="#ffb000"/>
+       <curve name="steering rate limited" color="#ffb000"/>
        <curve name="/controlsState/lateralControlState/pidState/saturated" color="#dc267f"/>
       </plot>
      </DockArea>
@@ -161,11 +161,11 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linked_source>/liveLocationKalman/angularVelocityCalibrated/value/2</linked_source>
+   <linked_source>/carControl/angularVelocity/2</linked_source>
    <additional_sources>
     <v1>/carState/steeringPressed</v1>
     <v2>/carControl/enabled</v2>
-    <v3>/liveLocationKalman/velocityCalibrated/value/0</v3>
+    <v3>/carState/vEgo</v3>
    </additional_sources>
   </snippet>
   <snippet name="engaged curvature vehicle model">
@@ -206,7 +206,7 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linked_source>/lateralPlan/curvatures/0</linked_source>
+   <linked_source>/modelV2/action/desiredCurvature</linked_source>
    <additional_sources>
     <v1>/carState/steeringPressed</v1>
     <v2>/carControl/enabled</v2>
@@ -284,8 +284,17 @@ end</function>
     <v3>/carControl/enabled</v3>
    </additional_sources>
   </snippet>
+  <snippet name="steering rate limited">
+   <global></global>
+   <function>return (math.abs(value - v1) > 0.001 or math.abs(v2 - v3) > 0.05) and 1 or 0</function>
+   <linked_source>/carControl/actuators/torque</linked_source>
+   <additional_sources>
+    <v1>/carOutput/actuatorsOutput/torque</v1>
+    <v2>/carControl/actuators/steeringAngleDeg</v2>
+    <v3>/carOutput/actuatorsOutput/steeringAngleDeg</v3>
+   </additional_sources>
+  </snippet>
  </customMathEquations>
  <snippets/>
  <!-- - - - - - - - - - - - - - - -->
 </root>
-
