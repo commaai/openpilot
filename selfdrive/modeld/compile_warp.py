@@ -147,7 +147,7 @@ def compile_modeld_warp(cam_w, cam_h):
     Device.default.synchronize()
 
     st = time.perf_counter()
-    out = update_img_jit(*inputs)
+    _ = update_img_jit(*inputs)
     mt = time.perf_counter()
     Device.default.synchronize()
     et = time.perf_counter()
