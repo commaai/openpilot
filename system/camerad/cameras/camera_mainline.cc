@@ -157,6 +157,41 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
     }
   }
 
+  // set V4L2 format on CSID subdev pads (configures IPP pixel path)
+  {
+    const int csid_subdevs[] = {4, 5};  // msm_csid0=v4l-subdev4, msm_csid1=v4l-subdev5
+    int csid_fd = HANDLE_EINTR(open(util::string_format("/dev/v4l-subdev%d", csid_subdevs[cc.camera_num]).c_str(), O_RDWR));
+    if (csid_fd >= 0) {
+      // Set format on CSID sink pad (pad 0): SGRBG12 1928x1224
+      struct v4l2_subdev_format sfmt = {};
+      sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+      sfmt.pad = 0;
+      sfmt.format.width = sensor->frame_width;
+      sfmt.format.height = sensor->frame_height + sensor->extra_height;
+      sfmt.format.code = 0x3014;  // MEDIA_BUS_FMT_SGRBG12_1X12
+      sfmt.format.field = V4L2_FIELD_NONE;
+      HANDLE_EINTR(ioctl(csid_fd, VIDIOC_SUBDEV_S_FMT, &sfmt));
+
+      // Set format on CSID PIX source pad (pad 4)
+      sfmt.pad = 4;
+      HANDLE_EINTR(ioctl(csid_fd, VIDIOC_SUBDEV_S_FMT, &sfmt));
+      close(csid_fd);
+      LOG("camera %d: CSID format set %dx%d", cc.camera_num, sfmt.format.width, sfmt.format.height);
+    }
+  }
+
+  // set V4L2 format on VFE video device (for WM dimensions)
+  {
+    struct v4l2_format vfmt = {};
+    vfmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    vfmt.fmt.pix_mp.width = out_w;
+    vfmt.fmt.pix_mp.height = out_h;
+    vfmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12;
+    vfmt.fmt.pix_mp.plane_fmt[0].bytesperline = stride;
+    HANDLE_EINTR(ioctl(vfe_fd, VIDIOC_S_FMT, &vfmt));
+    LOG("camera %d: VFE format set %dx%d stride=%d", cc.camera_num, out_w, out_h, stride);
+  }
+
   // power on camera subsystem (titan_top_gdsc) before sensor init
   // this enables CAMCC clocks including MCLK for sensors
   {

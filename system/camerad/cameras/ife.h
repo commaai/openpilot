@@ -287,11 +287,17 @@ build_initial_config_flat(const CameraConfig &cam, const SensorInfo *s, uint32_t
   auto regs = build_update_flat(cam, s);
   std::vector<dmi_upload> dmis;
 
+  // VFE CORE_CFG: pixel_pattern=1 (GRGR for SGRBG12), input=CAMIF
+  collect_cont(regs, 0x050, {0x00000001});
+
   // CAMIF setup
   collect_cont(regs, 0x478, {0x00000004, 0x004000c0});
   collect_cont(regs, 0x488, {0x00000000, 0x00000000, 0x00000f0f});
   collect_cont(regs, 0x49c, {0x00000001});
-  collect_cont(regs, 0xce4, {0x00000000, 0x00000000});
+  // CAMIF raw crop: full frame
+  collect_cont(regs, 0xce4, {s->frame_width - 1, s->frame_height - 1});
+  // EPOCH IRQ at half frame
+  collect_cont(regs, 0x4a0, {((s->frame_height / 2) << 16) | 0x14});
 
   // linearization
   collect_cont(regs, 0x4dc, {0x00000000});
@@ -350,6 +356,14 @@ build_initial_config_flat(const CameraConfig &cam, const SensorInfo *s, uint32_t
 
   // YUV conversion
   collect_common_ife_yuv(regs);
+
+  // VFE BUS: PIX output enable - route ISP output to WM3 (Y) + WM4 (UV)
+  collect_cont(regs, 0x2018, {(1 << 3) | (1 << 4)});  // BIT(3)|BIT(4) = WM3+WM4
+  // Composite group 0: WM3+WM4 for composite done IRQ
+  collect_cont(regs, 0x2070, {(1 << 3) | (1 << 4)});
+  // WM output port mapping: WM3+WM4 -> port 0x16 (PIX processed output)
+  collect_cont(regs, 0x25a0, {0x16});  // WM3: 0x2200 + 3*0x100 + 0xa0
+  collect_cont(regs, 0x26a0, {0x16});  // WM4: 0x2200 + 4*0x100 + 0xa0
 
   return {regs, dmis};
 }
