@@ -110,15 +110,9 @@ def compile_modeld(cam_w, cam_h):
 
   _, _, _, yuv_size = get_nv12_info(cam_w, cam_h)
 
-  # keep numpy arrays alive across iterations to prevent from_blob dangling pointers
-  frame_np = np.zeros(yuv_size, dtype=np.uint8)
-  big_frame_np = np.zeros(yuv_size, dtype=np.uint8)
-  frame = Tensor.from_blob(frame_np.ctypes.data, (yuv_size,), dtype='uint8')
-  big_frame = Tensor.from_blob(big_frame_np.ctypes.data, (yuv_size,), dtype='uint8')
-
   for i in range(10):
-    frame_np[:] = np.random.randint(0, 255, yuv_size, dtype=np.uint8)
-    big_frame_np[:] = np.random.randint(0, 255, yuv_size, dtype=np.uint8)
+    frame = Tensor(np.random.randint(0, 255, yuv_size, dtype=np.uint8)).realize()
+    big_frame = Tensor(np.random.randint(0, 255, yuv_size, dtype=np.uint8)).realize()
 
     st = time.perf_counter()
     outs = run_modeld(
