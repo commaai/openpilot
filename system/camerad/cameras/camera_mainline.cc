@@ -158,6 +158,25 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
     }
   }
 
+  // set V4L2 format on CSIPHY subdev pads
+  {
+    const int csiphy_subdevs[] = {0, 1};  // msm_csiphy0=v4l-subdev0, msm_csiphy1=v4l-subdev1
+    int csiphy_fd = HANDLE_EINTR(open(util::string_format("/dev/v4l-subdev%d", csiphy_subdevs[cc.camera_num]).c_str(), O_RDWR));
+    if (csiphy_fd >= 0) {
+      struct v4l2_subdev_format sfmt = {};
+      sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+      sfmt.pad = 0;  // sink
+      sfmt.format.width = sensor->frame_width;
+      sfmt.format.height = sensor->frame_height + sensor->extra_height;
+      sfmt.format.code = 0x3014;  // MEDIA_BUS_FMT_SGRBG12_1X12
+      HANDLE_EINTR(ioctl(csiphy_fd, VIDIOC_SUBDEV_S_FMT, &sfmt));
+      sfmt.pad = 1;  // source
+      HANDLE_EINTR(ioctl(csiphy_fd, VIDIOC_SUBDEV_S_FMT, &sfmt));
+      close(csiphy_fd);
+      LOG("camera %d: CSIPHY format set", cc.camera_num);
+    }
+  }
+
   // set V4L2 format on CSID subdev pads (configures IPP pixel path)
   {
     const int csid_subdevs[] = {4, 5};  // msm_csid0=v4l-subdev4, msm_csid1=v4l-subdev5
@@ -178,6 +197,23 @@ void MainlineCamera::camera_open(VisionIpcServer *v) {
       HANDLE_EINTR(ioctl(csid_fd, VIDIOC_SUBDEV_S_FMT, &sfmt));
       close(csid_fd);
       LOG("camera %d: CSID format set %dx%d", cc.camera_num, sfmt.format.width, sfmt.format.height);
+    }
+  }
+
+  // set V4L2 format on VFE PIX subdev (sink pad)
+  {
+    const int vfe_pix_subdevs[] = {10, 14};  // msm_vfe0_pix=v4l-subdev10, msm_vfe1_pix=v4l-subdev14
+    int vfe_sub_fd = HANDLE_EINTR(open(util::string_format("/dev/v4l-subdev%d", vfe_pix_subdevs[cc.camera_num]).c_str(), O_RDWR));
+    if (vfe_sub_fd >= 0) {
+      struct v4l2_subdev_format sfmt = {};
+      sfmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+      sfmt.pad = 0;  // sink
+      sfmt.format.width = sensor->frame_width;
+      sfmt.format.height = sensor->frame_height + sensor->extra_height;
+      sfmt.format.code = 0x3014;  // MEDIA_BUS_FMT_SGRBG12_1X12
+      HANDLE_EINTR(ioctl(vfe_sub_fd, VIDIOC_SUBDEV_S_FMT, &sfmt));
+      close(vfe_sub_fd);
+      LOG("camera %d: VFE PIX subdev format set", cc.camera_num);
     }
   }
 
