@@ -222,7 +222,7 @@ class ModelState:
 
     out = self.update_imgs(self.img_queues['img'], self.full_frames['img'], self.transforms['img'],
                            self.img_queues['big_img'], self.full_frames['big_img'], self.transforms['big_img'])
-    vision_inputs = {'img': out[1], 'big_img': out[3]}
+    vision_inputs = {'img': out[0], 'big_img': out[1]}
 
     if prepare_only:
       return None
