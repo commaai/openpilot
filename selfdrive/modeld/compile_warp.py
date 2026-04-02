@@ -190,7 +190,6 @@ def compile_dm_warp(cam_w, cam_h):
 
 def run_and_save_pickle():
   for cam_w, cam_h in CAMERA_CONFIGS:
-    compile_modeld_warp(cam_w, cam_h)
     compile_dm_warp(cam_w, cam_h)
 
 
