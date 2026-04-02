@@ -61,7 +61,7 @@ class DriverStateRenderer(Widget):
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
     center_size = round(36 / self.BASE_SIZE * self._rect.width)
     self._dm_center = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_center.png", center_size, center_size)
-    self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", self._rect.width, self._rect.height)
+    self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", int(self._rect.width), int(self._rect.height))
 
   def set_should_draw(self, should_draw: bool):
     self._should_draw = should_draw
@@ -88,15 +88,14 @@ class DriverStateRenderer(Widget):
     if DEBUG:
       rl.draw_rectangle_lines_ex(self._rect, 1, rl.RED)
 
-    rl.draw_texture(self._dm_background,
-                    int(self._rect.x),
-                    int(self._rect.y),
-                    rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
+    rl.draw_texture_ex(self._dm_background,
+                       rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0,
+                       rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
 
-    rl.draw_texture(self._dm_person,
-                    int(self._rect.x + (self._rect.width - self._dm_person.width) / 2),
-                    int(self._rect.y + (self._rect.height - self._dm_person.height) / 2),
-                    rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
+    rl.draw_texture_ex(self._dm_person,
+                       rl.Vector2(self._rect.x + (self._rect.width - self._dm_person.width) / 2,
+                                  self._rect.y + (self._rect.height - self._dm_person.height) / 2), 0.0, 1.0,
+                       rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     if self.effective_active:
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)

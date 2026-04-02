@@ -7,6 +7,7 @@ source "$DIR/launch_env.sh"
 function agnos_init {
   # TODO: move this to agnos
   sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
+  rm -f /data/scons_cache/config.lock
 
   # set success flag for current boot slot
   sudo abctl --set_success

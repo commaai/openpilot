@@ -149,11 +149,16 @@ std::string runPython(const std::vector<std::string> &args, std::atomic<bool> *a
   int status;
   waitpid(pid, &status, 0);
 
-  bool failed = (abort && *abort) ||
+  const bool aborted = abort && *abort;
+  const bool expected_sigterm = aborted && WIFSIGNALED(status) && WTERMSIG(status) == SIGTERM;
+  bool failed = aborted ||
                 (WIFEXITED(status) && WEXITSTATUS(status) != 0) ||
                 WIFSIGNALED(status);
   if (failed) {
-    if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+    if (expected_sigterm) {
+      // Route/camera teardown cancels outstanding downloader subprocesses.
+      // Keep that expected shutdown path quiet.
+    } else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
       rWarning("py_downloader: process exited with code %d", WEXITSTATUS(status));
     } else if (WIFSIGNALED(status)) {
       rWarning("py_downloader: process killed by signal %d", WTERMSIG(status));

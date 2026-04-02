@@ -39,6 +39,7 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
     migrate_controlsState,
     migrate_carState,
     migrate_liveLocationKalman,
+    migrate_livePose,
     migrate_liveTracks,
     migrate_driverAssistance,
     migrate_drivingModelData,
@@ -175,6 +176,7 @@ def migrate_liveLocationKalman(msgs):
     m = messaging.new_message('livePose')
     m.valid = msg.valid
     m.logMonoTime = msg.logMonoTime
+    m.livePose.timestamp = msg.logMonoTime
     for field in ["orientationNED", "velocityDevice", "accelerationDevice", "angularVelocityDevice"]:
       lp_field, llk_field = getattr(m.livePose, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
       lp_field.x, lp_field.y, lp_field.z = llk_field.value or nans
@@ -183,6 +185,21 @@ def migrate_liveLocationKalman(msgs):
     for flag in ["inputsOK", "posenetOK", "sensorsOK"]:
       setattr(m.livePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
     ops.append((index, m.as_reader()))
+  return ops, [], []
+
+
+@migration(inputs=["livePose"])
+def migrate_livePose(msgs):
+  ops = []
+  needs_migration = all(msg.livePose.timestamp == 0 for _, msg in msgs if msg.which() == 'livePose')
+  if not needs_migration:
+    return [], [], []
+
+  for index, msg in msgs:
+    if msg.which() == "livePose":
+      new_msg = msg.as_builder()
+      new_msg.livePose.timestamp = msg.logMonoTime
+      ops.append((index, new_msg.as_reader()))
   return ops, [], []
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import pyray as rl
 from enum import IntEnum
+from typing import TypeVar
 from collections.abc import Callable
 from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS, MouseEvent
 
@@ -12,6 +13,10 @@ except ImportError:
   class Device:
     awake = True
   device = Device()
+
+W = TypeVar('W', bound='Widget')
+
+DEBUG = False
 
 
 class DialogResult(IntEnum):
@@ -24,11 +29,14 @@ class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle | None = None
+    self._children: list[Widget] = []
+
+    self._enabled: bool | Callable[[], bool] = True
+    self._is_visible: bool | Callable[[], bool] = True
+
     self.__is_pressed = [False] * MAX_TOUCH_SLOTS
     # if current mouse/touch down started within the widget's rectangle
     self.__tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
-    self._enabled: bool | Callable[[], bool] = True
-    self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
     self._click_delay: float | None = None  # seconds to hold is_pressed after release
     self._click_release_time: float | None = None
@@ -197,12 +205,37 @@ class Widget(abc.ABC):
     """Optionally handle mouse events. This is called before rendering."""
     # Default implementation does nothing, can be overridden by subclasses
 
+  def _child(self, widget: W) -> W:
+    """
+    Register a widget as a child. Lifecycle events (show/hide) propagate to registered children.
+    - If the widget is pushed onto the nav stack, do NOT register it (gui_app manages its lifecycle).
+    - If the widget is rendered inline in _render(), register it.
+    """
+    assert widget not in self._children, f"{type(widget).__name__} already a child of {type(self).__name__}"
+    self._children.append(widget)
+    return widget
+
+  _show_hide_depth = 0
+
   def show_event(self):
-    """Optionally handle show event. Parent must manually call this"""
-    # TODO: iterate through all child objects, check for subclassing from Widget/Layout (Scroller)
+    """Called when widget becomes visible. Propagates to registered children."""
+    if DEBUG:
+      print(f"{'  ' * Widget._show_hide_depth}show_event: {type(self).__name__}")
+      Widget._show_hide_depth += 1
+    for child in self._children:
+      child.show_event()
+    if DEBUG:
+      Widget._show_hide_depth -= 1
 
   def hide_event(self):
-    """Optionally handle hide event. Parent must manually call this"""
+    """Called when widget is hidden. Propagates to registered children."""
+    if DEBUG:
+      print(f"{'  ' * Widget._show_hide_depth}hide_event: {type(self).__name__}")
+      Widget._show_hide_depth += 1
+    for child in self._children:
+      child.hide_event()
+    if DEBUG:
+      Widget._show_hide_depth -= 1
 
   def dismiss(self, callback: Callable[[], None] | None = None):
     """Immediately dismiss the widget, firing the callback after."""
