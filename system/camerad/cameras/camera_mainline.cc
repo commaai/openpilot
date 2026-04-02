@@ -4,6 +4,7 @@
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <linux/media.h>
+#include <linux/v4l2-subdev.h>
 #include <linux/videodev2.h>
 
 #include <algorithm>
