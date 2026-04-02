@@ -186,6 +186,15 @@ class ModelState:
     self.frame_buf_params: dict[str, tuple[int, int, int, int]] = {}
     self.run_modeld = None
 
+  def load(self, cam_w: int, cam_h: int) -> None:
+    self.frame_buf_params = {'img': get_nv12_info(cam_w, cam_h), 'big_img': get_nv12_info(cam_w, cam_h)}
+    pkl_path = modeld_pkl_path(cam_w, cam_h)
+    cloudlog.warning("loading combined modeld jit")
+    st = time.perf_counter()
+    with open(pkl_path, 'rb') as f:
+      self.run_modeld = pickle.load(f)
+    cloudlog.warning(f"combined modeld jit loaded from {pkl_path} in {time.perf_counter() - st:.1f}s")
+
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
     return parsed_model_outputs
@@ -196,16 +205,6 @@ class ModelState:
     inputs['desire_pulse'][0] = 0
     new_desire = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
-    if self.run_modeld is None:
-      for key in bufs.keys():
-        cam_w, cam_h = bufs[key].width, bufs[key].height
-        self.frame_buf_params[key] = get_nv12_info(cam_w, cam_h)
-      pkl_path = modeld_pkl_path(cam_w, cam_h)
-      cloudlog.warning("loading combined modeld jit")
-      st = time.perf_counter()
-      with open(pkl_path, 'rb') as f:
-        self.run_modeld = pickle.load(f)
-      cloudlog.warning(f"combined modeld jit loaded from {pkl_path} in {time.perf_counter() - st:.1f}s")
 
     for key in bufs.keys():
       ptr = bufs[key].data.ctypes.data
@@ -286,6 +285,8 @@ def main(demo=False):
   cloudlog.warning(f"connected main cam with buffer size: {vipc_client_main.buffer_len} ({vipc_client_main.width} x {vipc_client_main.height})")
   if use_extra_client:
     cloudlog.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
+
+  model.load(vipc_client_main.width, vipc_client_main.height)
 
   # messaging
   pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
