@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
-#include <unordered_set>
 
 constexpr double PLOT_Y_PAD_FRACTION = 0.4;
 
@@ -107,23 +106,10 @@ bool curves_are_bool_like(const std::vector<PreparedCurve> &prepared_curves) {
 }
 
 bool curve_is_state_like(const PreparedCurve &curve) {
-  if (!curve.display_info.integer_like || curve.xs.size() < 2 || curve.xs.size() != curve.ys.size()) {
+  if (curve.enum_info == nullptr || curve.xs.size() < 2 || curve.xs.size() != curve.ys.size()) {
     return false;
   }
-  if (curve.enum_info != nullptr) {
-    return true;
-  }
-  std::unordered_set<int> distinct_values;
-  for (double value : curve.ys) {
-    if (!std::isfinite(value)) {
-      continue;
-    }
-    distinct_values.insert(static_cast<int>(std::llround(value)));
-    if (distinct_values.size() > 12) {
-      return false;
-    }
-  }
-  return !distinct_values.empty();
+  return true;
 }
 
 bool curves_use_state_blocks(const std::vector<PreparedCurve> &prepared_curves) {
