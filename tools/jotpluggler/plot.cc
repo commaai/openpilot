@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
-#include <unordered_set>
 
 constexpr double PLOT_Y_PAD_FRACTION = 0.4;
 
@@ -74,10 +73,6 @@ struct StateBlock {
   std::string label;
 };
 
-struct PaneEnumContext {
-  std::vector<const EnumInfo *> enums;
-};
-
 struct PaneValueFormatContext {
   SeriesFormat format;
   bool valid = false;
@@ -100,38 +95,6 @@ bool curves_are_bool_like(const std::vector<PreparedCurve> &prepared_curves) {
       }
     }
     if (!found_finite) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool curve_is_state_like(const PreparedCurve &curve) {
-  if (!curve.display_info.integer_like || curve.xs.size() < 2 || curve.xs.size() != curve.ys.size()) {
-    return false;
-  }
-  if (curve.enum_info != nullptr) {
-    return true;
-  }
-  std::unordered_set<int> distinct_values;
-  for (double value : curve.ys) {
-    if (!std::isfinite(value)) {
-      continue;
-    }
-    distinct_values.insert(static_cast<int>(std::llround(value)));
-    if (distinct_values.size() > 12) {
-      return false;
-    }
-  }
-  return !distinct_values.empty();
-}
-
-bool curves_use_state_blocks(const std::vector<PreparedCurve> &prepared_curves) {
-  if (prepared_curves.empty()) {
-    return false;
-  }
-  for (const PreparedCurve &curve : prepared_curves) {
-    if (!curve_is_state_like(curve)) {
       return false;
     }
   }
@@ -305,36 +268,6 @@ std::optional<double> app_sample_xy_value_at_time(const std::vector<double> &xs,
   if (stairs || x1 <= x0) return y0;
   const double alpha = (tm - x0) / (x1 - x0);
   return y0 + (y1 - y0) * alpha;
-}
-
-int format_enum_axis_tick(double value, char *buf, int size, void *user_data) {
-  const auto *ctx = static_cast<const PaneEnumContext *>(user_data);
-  const int idx = static_cast<int>(std::llround(value));
-  if (ctx != nullptr && idx >= 0 && std::abs(value - static_cast<double>(idx)) < 0.01) {
-    std::vector<std::string_view> names;
-    names.reserve(ctx->enums.size());
-    for (const EnumInfo *info : ctx->enums) {
-      if (info == nullptr || static_cast<size_t>(idx) >= info->names.size()) {
-        continue;
-      }
-      const std::string &name = info->names[static_cast<size_t>(idx)];
-      if (name.empty()) continue;
-      if (std::find(names.begin(), names.end(), std::string_view(name)) == names.end()) {
-        names.emplace_back(name);
-      }
-    }
-    if (!names.empty()) {
-      std::string joined;
-      for (size_t i = 0; i < names.size(); ++i) {
-        if (i != 0) {
-          joined += ", ";
-        }
-        joined += names[i];
-      }
-      return std::snprintf(buf, size, "%d (%s)", idx, joined.c_str());
-    }
-  }
-  return std::snprintf(buf, size, "%.6g", value);
 }
 
 int format_numeric_axis_tick(double value, char *buf, int size, void *user_data) {
@@ -831,22 +764,15 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
   }
 
   const PlotBounds bounds = compute_plot_bounds(*pane, prepared_curves, *state);
-  PaneEnumContext enum_context;
   PaneValueFormatContext pane_value_format;
-  const bool state_block_mode = curves_use_state_blocks(prepared_curves);
-  bool all_enum_curves = !prepared_curves.empty();
+  bool state_block_mode = !prepared_curves.empty();
   size_t max_legend_label_width = 0;
   for (const PreparedCurve &curve : prepared_curves) {
     max_legend_label_width = std::max(max_legend_label_width, curve.label.size());
-    if (curve.enum_info != nullptr) {
-      enum_context.enums.push_back(curve.enum_info);
-    } else {
-      all_enum_curves = false;
+    if (curve.enum_info == nullptr) {
+      state_block_mode = false;
       merge_pane_value_format(&pane_value_format, curve.display_info);
     }
-  }
-  if (prepared_curves.empty()) {
-    all_enum_curves = false;
   }
   const int supported_count = static_cast<int>(prepared_curves.size());
   const ImVec2 plot_size = ImGui::GetContentRegionAvail();
@@ -895,8 +821,6 @@ void draw_plot(const AppSession &session, Pane *pane, UiState *state) {
     ImPlot::SetupAxisFormat(ImAxis_X1, "%.1f");
     if (state_block_mode) {
       ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, 1.0, ImPlotCond_Always);
-    } else if (all_enum_curves && !enum_context.enums.empty()) {
-      ImPlot::SetupAxisFormat(ImAxis_Y1, format_enum_axis_tick, &enum_context);
     } else if (pane_value_format.valid) {
       ImPlot::SetupAxisFormat(ImAxis_Y1, format_numeric_axis_tick, &pane_value_format);
     } else {

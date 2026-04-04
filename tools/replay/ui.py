@@ -3,7 +3,6 @@ import argparse
 import os
 import sys
 
-import cv2
 import numpy as np
 import pyray as rl
 
@@ -22,7 +21,8 @@ from openpilot.tools.replay.lib.ui_helpers import (
   plot_lead,
   plot_model,
 )
-from msgq.visionipc import VisionIpcClient, VisionStreamType
+from msgq.visionipc import VisionStreamType
+from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 
 os.environ['BASEDIR'] = BASEDIR
 
@@ -30,8 +30,6 @@ ANGLE_SCALE = 5.0
 
 
 def ui_thread(addr):
-  cv2.setNumThreads(1)
-
   # Get monitor info before creating window
   rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
   rl.init_window(1, 1, "")
@@ -59,14 +57,15 @@ def ui_thread(addr):
   font_path = os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf")
   font = rl.load_font_ex(font_path, 32, None, 0)
 
-  # Create textures for camera and top-down view
-  camera_image = rl.gen_image_color(640, 480, rl.BLACK)
-  camera_texture = rl.load_texture_from_image(camera_image)
-  rl.unload_image(camera_image)
+  camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
+
+  # Overlay texture for model/lane line drawing
+  overlay_img = np.zeros((480, 640, 4), dtype='uint8')
+  overlay_image = rl.gen_image_color(640, 480, rl.BLANK)
+  overlay_texture = rl.load_texture_from_image(overlay_image)
+  rl.unload_image(overlay_image)
 
   # lid_overlay array is (lidar_x, lidar_y) = (384, 960)
-  # pygame treats first axis as width, so texture is 384 wide x 960 tall
-  # For raylib, we need to transpose to get (height, width) = (960, 384) for the RGBA array
   top_down_image = rl.gen_image_color(UP.lidar_x, UP.lidar_y, rl.BLACK)
   top_down_texture = rl.load_texture_from_image(top_down_image)
   rl.unload_image(top_down_image)
@@ -89,7 +88,6 @@ def ui_thread(addr):
   )
 
   img = np.zeros((480, 640, 3), dtype='uint8')
-  imgff = None
   num_px = 0
   calibration = None
 
@@ -138,20 +136,16 @@ def ui_thread(addr):
   palette[110] = [110, 110, 110, 255]  # car_color (gray)
   palette[255] = [255, 255, 255, 255]  # WHITE
 
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
   while not rl.window_should_close():
-    # ***** frame *****
-    if not vipc_client.is_connected():
-      vipc_client.connect(False)
-
     rl.begin_drawing()
     rl.clear_background(rl.Color(64, 64, 64, 255))
 
-    yuv_img_raw = vipc_client.recv()
-    if yuv_img_raw is None or not yuv_img_raw.data.any():
-      rl.draw_text_ex(font, "waiting for frames", rl.Vector2(200, 200), 30, 0, rl.WHITE)
-      rl.end_drawing()
-      continue
+    # Render camera (NV12->RGB on GPU via shader)
+    if camera_view.frame:
+      cam_h = 640.0 * camera_view.frame.height / camera_view.frame.width
+    else:
+      cam_h = 480.0
+    camera_view.render(rl.Rectangle(0, 0, 640, cam_h))
 
     lid_overlay = lid_overlay_blank.copy()
     top_down = top_down_texture, lid_overlay
@@ -159,19 +153,10 @@ def ui_thread(addr):
     sm.update(0)
 
     camera = DEVICE_CAMERAS[("tici", str(sm['roadCameraState'].sensor))]
-
-    # Use received buffer dimensions (full HEVC can have stride != buffer_len/rows due to VENUS padding)
-    h, w, stride = yuv_img_raw.height, yuv_img_raw.width, yuv_img_raw.stride
-    nv12_size = h * 3 // 2 * stride
-    imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8, count=nv12_size).reshape((h * 3 // 2, stride))
-    num_px = w * h
-    rgb = cv2.cvtColor(imgff[: h * 3 // 2, : w], cv2.COLOR_YUV2RGB_NV12)
-
-    qcam = "QCAM" in os.environ
-    bb_scale = (528 if qcam else camera.fcam.width) / 640.0
     calib_scale = camera.fcam.width / 640.0
-    zoom_matrix = np.asarray([[bb_scale, 0.0, 0.0], [0.0, bb_scale, 0.0], [0.0, 0.0, 1.0]])
-    cv2.warpAffine(rgb, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
+
+    if camera_view.frame:
+      num_px = camera_view.frame.width * camera_view.frame.height
 
     intrinsic_matrix = camera.fcam.intrinsics
 
@@ -201,6 +186,8 @@ def ui_thread(addr):
     if len(sm['longitudinalPlan'].accels):
       plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].accels[0]
 
+    # Draw model overlays onto img, then blit as transparent overlay
+    img[:] = 0
     if sm.recv_frame['modelV2']:
       plot_model(sm['modelV2'], img, calibration, top_down)
 
@@ -214,11 +201,12 @@ def ui_thread(addr):
       rpyCalib = np.asarray(sm['liveCalibration'].rpyCalib)
       calibration = Calibration(num_px, rpyCalib, intrinsic_matrix, calib_scale)
 
-    # *** blits ***
-    # Update camera texture from numpy array
-    img_rgba = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
-    rl.update_texture(camera_texture, rl.ffi.cast("void *", img_rgba.ctypes.data))
-    rl.draw_texture(camera_texture, 0, 0, rl.WHITE)  # noqa: TID251
+    # Update overlay texture (RGB img -> RGBA with non-black pixels visible)
+    mask = np.any(img > 0, axis=2)
+    overlay_img[:, :, :3] = img
+    overlay_img[:, :, 3] = mask * 255
+    rl.update_texture(overlay_texture, rl.ffi.cast("void *", overlay_img.ctypes.data))
+    rl.draw_texture(overlay_texture, 0, 0, rl.WHITE)  # noqa: TID251
 
     # display alerts
     rl.draw_text_ex(font, sm['selfdriveState'].alertText1, rl.Vector2(180, 150), 30, 0, rl.RED)
@@ -257,9 +245,10 @@ def ui_thread(addr):
 
     rl.end_drawing()
 
-  rl.unload_texture(camera_texture)
+  rl.unload_texture(overlay_texture)
   rl.unload_texture(top_down_texture)
   rl.unload_font(font)
+  camera_view.close()
   rl.close_window()
 
 
