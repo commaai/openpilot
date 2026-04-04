@@ -603,8 +603,6 @@ struct PandaState @0xa7649e2575e4591e {
 
   # safety stuff
   controlsAllowed @3 :Bool;
-  controlsAllowedRESERVED1 @38 :Bool;
-  controlsAllowedRESERVED2 @39 :Bool;
   safetyRxInvalid @19 :UInt32;
   safetyTxBlocked @24 :UInt32;
   safetyModel @14 :Car.CarParams.SafetyModel;
@@ -614,6 +612,11 @@ struct PandaState @0xa7649e2575e4591e {
 
   voltage @0 :UInt32;
   current @1 :UInt32;
+
+  # these fields are not used by openpilot, but they're
+  # reserved for forks building alternate experiences.
+  controlsAllowedRESERVED1 @38 :Bool;
+  controlsAllowedRESERVED2 @39 :Bool;
 
   enum FaultStatus {
     none @0;
