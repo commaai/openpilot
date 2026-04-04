@@ -145,7 +145,12 @@ def ui_thread(addr):
     rl.clear_background(rl.Color(64, 64, 64, 255))
 
     # Render camera via shader (handles VisionIPC + NV12->RGB on GPU)
-    camera_view.render(rl.Rectangle(0, 0, 640, 480))
+    # Use exact aspect ratio rect so frame is top-aligned (no vertical centering)
+    if camera_view.frame:
+      cam_h = 640.0 * camera_view.frame.height / camera_view.frame.width
+    else:
+      cam_h = 480.0
+    camera_view.render(rl.Rectangle(0, 0, 640, cam_h))
 
     lid_overlay = lid_overlay_blank.copy()
     top_down = top_down_texture, lid_overlay
