@@ -131,10 +131,6 @@ void fill_panda_state(cereal::PandaState::Builder &ps, cereal::PandaState::Panda
   ps.setSbu1Voltage(health.sbu1_voltage_mV / 1000.0f);
   ps.setSbu2Voltage(health.sbu2_voltage_mV / 1000.0f);
   ps.setSoundOutputLevel(health.sound_output_level_pkt);
-
-  // reserved for forks
-  ps.setControlsAllowedRESERVED1(health.controls_allowed_reserved1_pkt);
-  ps.setControlsAllowedRESERVED2(health.controls_allowed_reserved2_pkt);
 }
 
 void fill_panda_can_state(cereal::PandaState::PandaCanState::Builder &cs, const can_health_t &can_health) {
