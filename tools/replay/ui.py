@@ -3,9 +3,6 @@ import argparse
 import os
 import sys
 
-import matplotlib
-matplotlib.use('Agg')
-
 import numpy as np
 import pyray as rl
 
@@ -60,7 +57,6 @@ def ui_thread(addr):
   font_path = os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf")
   font = rl.load_font_ex(font_path, 32, None, 0)
 
-  # Camera view using shader-based NV12 rendering
   camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
 
   # Overlay texture for model/lane line drawing
@@ -144,8 +140,7 @@ def ui_thread(addr):
     rl.begin_drawing()
     rl.clear_background(rl.Color(64, 64, 64, 255))
 
-    # Render camera via shader (handles VisionIPC + NV12->RGB on GPU)
-    # Use exact aspect ratio rect so frame is top-aligned (no vertical centering)
+    # Render camera (NV12->RGB on GPU via shader)
     if camera_view.frame:
       cam_h = 640.0 * camera_view.frame.height / camera_view.frame.width
     else:
