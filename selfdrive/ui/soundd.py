@@ -106,6 +106,8 @@ class Soundd:
         ret[written_frames:written_frames+frames_to_write] = sound_data[current_sound_frame:current_sound_frame+frames_to_write]
         written_frames += frames_to_write
         self.current_sound_frame += frames_to_write
+        current_sound_frame = self.current_sound_frame % len(sound_data)
+        loops = self.current_sound_frame // len(sound_data)
 
     return ret * self.current_volume
 
