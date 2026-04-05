@@ -4,61 +4,10 @@ Validates that recent_blinker uses DT_MDL (model rate, 20Hz)
 instead of DT_CTRL (control rate, 100Hz), since sm.frame in
 plannerd advances at the model rate.
 """
-import os
-import sys
 import types
 
-# ---------------------------------------------------------------------------
-# Stub out ALL heavy dependencies BEFORE importing ldw.
-#
-# openpilot's cereal/capnp toolchain is required for a full build, but for
-# this focused unit test we only need the LaneDepartureWarning class and
-# the DT_* constants.  We stub every transitive import that would pull in
-# native extensions.
-# ---------------------------------------------------------------------------
-
-# 1. cereal  (capnp-based, needs compiled schemas)
-_cereal = types.ModuleType("cereal")
-_cereal_log = types.ModuleType("cereal.log")
-_cereal_log.Desire = types.SimpleNamespace(laneChangeLeft=1, laneChangeRight=2)
-_cereal.log = _cereal_log
-sys.modules["cereal"] = _cereal
-sys.modules["cereal.log"] = _cereal_log
-
-# 2. openpilot namespace packages
-for _ns in ("openpilot", "openpilot.common", "openpilot.common.constants",
-            "openpilot.common.realtime", "openpilot.common.utils",
-            "openpilot.common.params", "openpilot.common.params_pyx",
-            "openpilot.system", "openpilot.system.hardware",
-            "openpilot.selfdrive", "openpilot.selfdrive.controls",
-            "openpilot.selfdrive.controls.lib"):
-  if _ns not in sys.modules:
-    sys.modules[_ns] = types.ModuleType(_ns)
-
-# 3. openpilot.common.constants.CV
-sys.modules["openpilot.common.constants"].CV = types.SimpleNamespace(MPH_TO_MS=0.44704)
-
-# 4. openpilot.common.realtime -- the constants we actually care about
-_realtime = sys.modules["openpilot.common.realtime"]
-_realtime.DT_CTRL = 0.01   # 100 Hz control loop
-_realtime.DT_MDL = 0.05    # 20 Hz model loop
-
-# 5. Now import the module under test (ldw.py).
-#    It will resolve `from cereal import log` and
-#    `from openpilot.common.realtime import DT_MDL` through the stubs above.
-#    We need to force-reload in case pytest cached a partial import.
-if "openpilot.selfdrive.controls.lib.ldw" in sys.modules:
-  del sys.modules["openpilot.selfdrive.controls.lib.ldw"]
-
-# Add the repo root to sys.path so the local package is found.
-_repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-if _repo_root not in sys.path:
-  sys.path.insert(0, _repo_root)
-
+from openpilot.common.realtime import DT_CTRL, DT_MDL
 from openpilot.selfdrive.controls.lib.ldw import LaneDepartureWarning
-
-DT_MDL = 0.05
-DT_CTRL = 0.01
 
 
 # ---------------------------------------------------------------------------
