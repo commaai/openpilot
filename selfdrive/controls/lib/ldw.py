@@ -1,5 +1,5 @@
 from cereal import log
-from openpilot.common.realtime import DT_CTRL
+from openpilot.common.realtime import DT_MDL
 from openpilot.common.constants import CV
 
 
@@ -17,7 +17,7 @@ class LaneDepartureWarning:
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = frame
 
-    recent_blinker = (frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
+    recent_blinker = (frame - self.last_blinker_frame) * DT_MDL < 5.0  # 5s blinker cooldown
     ldw_allowed = CS.vEgo > LDW_MIN_SPEED and not recent_blinker and not CC.latActive
 
     desire_prediction = modelV2.meta.desirePrediction
