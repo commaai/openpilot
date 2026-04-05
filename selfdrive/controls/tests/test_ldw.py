@@ -4,11 +4,9 @@ Validates that recent_blinker uses DT_MDL (model rate, 20Hz)
 instead of DT_CTRL (control rate, 100Hz), since sm.frame in
 plannerd advances at the model rate.
 """
+import os
 import sys
 import types
-from unittest.mock import MagicMock
-
-import pytest
 
 # ---------------------------------------------------------------------------
 # Stub out ALL heavy dependencies BEFORE importing ldw.
@@ -40,7 +38,7 @@ for _ns in ("openpilot", "openpilot.common", "openpilot.common.constants",
 # 3. openpilot.common.constants.CV
 sys.modules["openpilot.common.constants"].CV = types.SimpleNamespace(MPH_TO_MS=0.44704)
 
-# 4. openpilot.common.realtime — the constants we actually care about
+# 4. openpilot.common.realtime -- the constants we actually care about
 _realtime = sys.modules["openpilot.common.realtime"]
 _realtime.DT_CTRL = 0.01   # 100 Hz control loop
 _realtime.DT_MDL = 0.05    # 20 Hz model loop
@@ -49,20 +47,15 @@ _realtime.DT_MDL = 0.05    # 20 Hz model loop
 #    It will resolve `from cereal import log` and
 #    `from openpilot.common.realtime import DT_MDL` through the stubs above.
 #    We need to force-reload in case pytest cached a partial import.
-import importlib
 if "openpilot.selfdrive.controls.lib.ldw" in sys.modules:
   del sys.modules["openpilot.selfdrive.controls.lib.ldw"]
 
-# Add the repo root to sys.path so the local `selfdrive/` package is found.
-import os
+# Add the repo root to sys.path so the local package is found.
 _repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 if _repo_root not in sys.path:
   sys.path.insert(0, _repo_root)
 
-from selfdrive.controls.lib.ldw import LaneDepartureWarning  # noqa: E402
-
-# Re-read which DT constant the module actually imported
-import selfdrive.controls.lib.ldw as _ldw_module  # noqa: E402
+from openpilot.selfdrive.controls.lib.ldw import LaneDepartureWarning
 
 DT_MDL = 0.05
 DT_CTRL = 0.01
@@ -73,37 +66,30 @@ DT_CTRL = 0.01
 # ---------------------------------------------------------------------------
 def _make_cs(v_ego: float = 20.0, left_blinker: bool = False,
              right_blinker: bool = False):
-  cs = MagicMock()
-  cs.vEgo = v_ego
-  cs.leftBlinker = left_blinker
-  cs.rightBlinker = right_blinker
-  return cs
+  return types.SimpleNamespace(
+    vEgo=v_ego,
+    leftBlinker=left_blinker,
+    rightBlinker=right_blinker,
+  )
 
 
 def _make_cc(lat_active: bool = False):
-  cc = MagicMock()
-  cc.latActive = lat_active
-  return cc
+  return types.SimpleNamespace(latActive=lat_active)
 
 
 def _make_model(l_change_prob: float = 0.0, r_change_prob: float = 0.0):
   """Build a modelV2-like mock with lane lines and desire prediction."""
-  model = MagicMock()
-  # desire_prediction: indexed by Desire enum values (1=laneChangeLeft, 2=laneChangeRight)
   desire_prediction = [0.0, l_change_prob, r_change_prob]
-  model.meta.desirePrediction = desire_prediction
 
-  # laneLineProbs: indices 1 (left) and 2 (right) must be > 0.5 for visibility
-  model.laneLineProbs = [0.0, 0.9, 0.9, 0.0]
+  left_line = types.SimpleNamespace(y=[0.0])    # > -(1.08 + 0.04) => close
+  right_line = types.SimpleNamespace(y=[0.5])   # < (1.08 - 0.04) => close
+  dummy_line = types.SimpleNamespace(y=[0.0])
 
-  # lane line y-values: close enough to trigger departure
-  left_line = MagicMock()
-  left_line.y = [0.0]  # > -(1.08 + 0.04) => close
-  right_line = MagicMock()
-  right_line.y = [0.5]  # < (1.08 - 0.04) => close
-  model.laneLines = [MagicMock(), left_line, right_line, MagicMock()]
-
-  return model
+  return types.SimpleNamespace(
+    meta=types.SimpleNamespace(desirePrediction=desire_prediction),
+    laneLineProbs=[0.0, 0.9, 0.9, 0.0],
+    laneLines=[dummy_line, left_line, right_line, dummy_line],
+  )
 
 
 # ---------------------------------------------------------------------------
@@ -136,7 +122,7 @@ class TestRecentBlinkerTiming:
     ldw.update(101, model, cs_no_blinker, cc)
     assert ldw.left is True, (
       "LDW should trigger after 101 model frames (~5.05s with DT_MDL); "
-      "if this fails, DT_CTRL is likely still in use"
+      + "if this fails, DT_CTRL is likely still in use"
     )
 
   def test_blinker_still_active_within_cooldown(self):
