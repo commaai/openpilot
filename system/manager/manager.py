@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import datetime
 import os
+import platform
 import signal
 import sys
 import time
@@ -209,7 +210,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-  unblock_stdout()
+  # Avoid forking before process startup in macOS simulation runs.
+  should_unblock_stdout = not (platform.system() == "Darwin" and os.getenv("SIMULATION") == "1")
+  if should_unblock_stdout:
+    unblock_stdout()
 
   try:
     main()

@@ -3,27 +3,23 @@ import time
 import numpy as np
 
 from collections import namedtuple
-from panda3d.core import Vec3
 from multiprocessing.connection import Connection
-
-from metadrive.engine.core.engine_core import EngineCore
-from metadrive.engine.core.image_buffer import ImageBuffer
-from metadrive.envs.metadrive_env import MetaDriveEnv
-from metadrive.obs.image_obs import ImageObservation
 
 from openpilot.common.realtime import Ratekeeper
 
 from openpilot.tools.sim.lib.common import vec3
 from openpilot.tools.sim.lib.camerad import W, H
 
-C3_POSITION = Vec3(0.0, 0, 1.22)
-C3_HPR = Vec3(0, 0,0)
-
-
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
 metadrive_vehicle_state = namedtuple("metadrive_vehicle_state", ["velocity", "position", "bearing", "steering_angle"])
 
 def apply_metadrive_patches(arrive_dest_done=True):
+  # Import metadrive and panda3d lazily to avoid initializing Cocoa paths in parent processes.
+  from metadrive.engine.core.engine_core import EngineCore
+  from metadrive.engine.core.image_buffer import ImageBuffer
+  from metadrive.envs.metadrive_env import MetaDriveEnv
+  from metadrive.obs.image_obs import ImageObservation
+
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
   def add_image_sensor_patched(self, name: str, cls, args):
     if self.global_config["image_on_cuda"]:# and name == self.global_config["vehicle_config"]["image_source"]:
@@ -51,8 +47,13 @@ def apply_metadrive_patches(arrive_dest_done=True):
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
                       exit_event, op_engaged, test_duration, test_run):
+  from panda3d.core import Vec3
+  from metadrive.envs.metadrive_env import MetaDriveEnv
+
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
+  c3_position = Vec3(0.0, 0, 1.22)
+  c3_hpr = Vec3(0, 0,0)
 
   road_image = np.frombuffer(camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
   if dual_camera:
@@ -86,8 +87,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   def get_cam_as_rgb(cam):
     cam = env.engine.sensors[cam]
     cam.get_cam().reparentTo(env.vehicle.origin)
-    cam.get_cam().setPos(C3_POSITION)
-    cam.get_cam().setHpr(C3_HPR)
+    cam.get_cam().setPos(c3_position)
+    cam.get_cam().setHpr(c3_hpr)
     img = cam.perceive(to_float=False)
     if not isinstance(img, np.ndarray):
       img = img.get() # convert cupy array to numpy
