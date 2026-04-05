@@ -27,8 +27,12 @@ def _make_cc(lat_active: bool = False):
 
 
 def _make_model(l_change_prob: float = 0.0, r_change_prob: float = 0.0):
-  """Build a modelV2-like mock with lane lines and desire prediction."""
-  desire_prediction = [0.0, l_change_prob, r_change_prob]
+  """Build a modelV2-like mock with lane lines and desire prediction.
+
+  Desire enum indices: none=0, turnLeft=1, turnRight=2,
+  laneChangeLeft=3, laneChangeRight=4, keepLeft=5, keepRight=6.
+  """
+  desire_prediction = [0.0, 0.0, 0.0, l_change_prob, r_change_prob, 0.0, 0.0]
 
   left_line = types.SimpleNamespace(y=[0.0])    # > -(1.08 + 0.04) => close
   right_line = types.SimpleNamespace(y=[0.5])   # < (1.08 - 0.04) => close
