@@ -18,10 +18,10 @@ def estimate_pickle_max_size(onnx_size):
 tg_flags = {
     'larch64': 'DEV=QCOM FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0',
     'Darwin': f'DEV=CPU THREADS=0 HOME={os.path.expanduser("~")}', # tinygrad calls brew which needs a $HOME in the env
-}.get(arch, 'DEV=CPU CPU_LLVM=1 THREADS=0')
+}.get(arch, 'DEV=CPU:LLVM THREADS=0')
 
 # Get model metadata
-for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+for model_name in ['driving_vision', 'driving_off_policy', 'driving_on_policy', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
   script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
   cmd = f'{tg_flags} python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
@@ -59,19 +59,5 @@ def tg_compile(flags, model_name):
   )
 
 # Compile small models
-for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+for model_name in ['driving_vision', 'driving_off_policy', 'driving_on_policy', 'dmonitoring_model']:
   tg_compile(tg_flags, model_name)
-
-# Compile BIG model if USB GPU is available
-if "USBGPU" in os.environ:
-  import subprocess
-  # because tg doesn't support multi-process
-  devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True, cwd=env.Dir('#').abspath)
-  if b"AMD" in devs:
-    print("USB GPU detected... building")
-    flags = "DEV=AMD AMD_IFACE=USB AMD_LLVM=1 NOLOCALS=0 IMAGE=0"
-    bp = tg_compile(flags, "big_driving_policy")
-    bv = tg_compile(flags, "big_driving_vision")
-    lenv.SideEffect('lock', [bp, bv])  # tg doesn't support multi-process so build serially
-  else:
-    print("USB GPU not detected... skipping")

@@ -39,8 +39,6 @@ class BaseDriverCameraDialog(Widget):
     self._eye_fill_texture = None
     self._eye_orange_texture = None
     self._eye_size = 74
-    self._glasses_texture = None
-    self._glasses_size = 171
 
     self._load_eye_textures()
 
@@ -154,8 +152,6 @@ class BaseDriverCameraDialog(Widget):
       self._eye_fill_texture = gui_app.texture("icons_mici/onroad/eye_fill.png", self._eye_size, self._eye_size)
     if self._eye_orange_texture is None:
       self._eye_orange_texture = gui_app.texture("icons_mici/onroad/eye_orange.png", self._eye_size, self._eye_size)
-    if self._glasses_texture is None:
-      self._glasses_texture = gui_app.texture("icons_mici/onroad/glasses.png", self._glasses_size, self._glasses_size)
 
   def _draw_face_detection(self, rect: rl.Rectangle):
     dm_state = ui_state.sm["driverMonitoringState"]
@@ -202,30 +198,20 @@ class BaseDriverCameraDialog(Widget):
     eye_offset_x = 10
     eye_offset_y = 10
     eye_spacing = self._eye_size + 15
+    eyes_prob = driver_data.eyesVisibleProb
 
     left_eye_x = rect.x + eye_offset_x
     left_eye_y = rect.y + eye_offset_y
-    left_eye_prob = driver_data.leftEyeProb
 
     right_eye_x = rect.x + eye_offset_x + eye_spacing
     right_eye_y = rect.y + eye_offset_y
-    right_eye_prob = driver_data.rightEyeProb
 
     # Draw eyes with opacity based on probability
-    for eye_x, eye_y, eye_prob in [(left_eye_x, left_eye_y, left_eye_prob), (right_eye_x, right_eye_y, right_eye_prob)]:
-      fill_opacity = eye_prob
-      orange_opacity = 1.0 - eye_prob
-
+    fill_opacity = eyes_prob
+    orange_opacity = 1.0 - eyes_prob
+    for eye_x, eye_y in [(left_eye_x, left_eye_y), (right_eye_x, right_eye_y)]:
       rl.draw_texture_v(self._eye_orange_texture, (eye_x, eye_y), rl.Color(255, 255, 255, int(255 * orange_opacity)))
       rl.draw_texture_v(self._eye_fill_texture, (eye_x, eye_y), rl.Color(255, 255, 255, int(255 * fill_opacity)))
-
-    # Draw sunglasses indicator based on sunglasses probability
-    # Position glasses centered between the two eyes at top left
-    glasses_x = rect.x + eye_offset_x - 4
-    glasses_y = rect.y
-    glasses_pos = rl.Vector2(glasses_x, glasses_y)
-    glasses_prob = driver_data.sunglassesProb
-    rl.draw_texture_v(self._glasses_texture, glasses_pos, rl.Color(70, 80, 161, int(255 * glasses_prob)))
 
 
 class DriverCameraDialog(NavWidget, BaseDriverCameraDialog):
