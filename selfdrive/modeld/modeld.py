@@ -33,7 +33,6 @@ from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-REPLAY = bool(int(os.getenv('REPLAY', '0')))
 
 VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
 POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
