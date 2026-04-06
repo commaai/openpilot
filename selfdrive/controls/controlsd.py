@@ -99,6 +99,7 @@ class Controls:
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
+    actuators.maxPlannedSpeed = float(max(long_plan.speeds, default=0.0))
 
     # Enable blinkers while lane changing
     if model_v2.meta.laneChangeState != LaneChangeState.off:
