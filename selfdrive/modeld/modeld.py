@@ -389,7 +389,7 @@ def main(demo=False):
       drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
 
-      frame_delay = DT_MDL if REPLAY else (modelv2_send.logMonoTime -  meta_main.timestamp_eof) * 1e-9 # compensate for time passed since the frame was captured
+      frame_delay = DT_MDL # compensate for time passed since the frame was captured: current_time - timestamp_eof is 50ms on average
       action_delay = DT_MDL / 2 # middle of the interval between model output (current state) and next frame (expected state)
       action = get_action_from_model(model_output, prev_action, lat_delay + frame_delay + action_delay, long_delay + frame_delay + action_delay, v_ego)
       prev_action = action
