@@ -4,14 +4,13 @@ import pyray as rl
 from typing import Union
 from collections.abc import Callable
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
+from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, BigButton, GreyBigButton
 
 DEBUG = False
 
@@ -25,42 +24,17 @@ class BigDialogBase(NavWidget, abc.ABC):
 
 
 class BigDialog(BigDialogBase):
-  def __init__(self,
-               title: str,
-               description: str):
+  def __init__(self, title: str, description: str, icon: Union[rl.Texture, None] = None):
     super().__init__()
-    self._title = title
-    self._description = description
+    self._card = GreyBigButton(title, description, icon)
 
   def _render(self, _):
-    super()._render(_)
-
-    # draw title
-    # TODO: we desperately need layouts
-    # TODO: coming up with these numbers manually is a pain and not scalable
-    # TODO: no clue what any of these numbers mean. VBox and HBox would remove all of this shite
-    max_width = self._rect.width - PADDING * 2
-
-    title_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.BOLD), self._title, 50, int(max_width)))
-    title_size = measure_text_cached(gui_app.font(FontWeight.BOLD), title_wrapped, 50)
-    text_x_offset = 0
-    title_rect = rl.Rectangle(self._rect.x + text_x_offset + PADDING,
-                              self._rect.y + PADDING,
-                              max_width,
-                              title_size.y)
-    gui_label(title_rect, title_wrapped, 50, font_weight=FontWeight.BOLD,
-              alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
-
-    # draw description
-    desc_wrapped = '\n'.join(wrap_text(gui_app.font(FontWeight.MEDIUM), self._description, 30, int(max_width)))
-    desc_size = measure_text_cached(gui_app.font(FontWeight.MEDIUM), desc_wrapped, 30)
-    desc_rect = rl.Rectangle(self._rect.x + text_x_offset + PADDING,
-                             self._rect.y + self._rect.height / 3,
-                             max_width,
-                             desc_size.y)
-    # TODO: text align doesn't seem to work properly with newlines
-    gui_label(desc_rect, desc_wrapped, 30, font_weight=FontWeight.MEDIUM,
-              alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self._card.render(rl.Rectangle(
+      self._rect.x + self._rect.width / 2 - self._card.rect.width / 2,
+      self._rect.y + self._rect.height / 2 - self._card.rect.height / 2,
+      self._card.rect.width,
+      self._card.rect.height,
+    ))
 
 
 class BigConfirmationDialog(BigDialogBase):

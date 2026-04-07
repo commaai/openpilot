@@ -5,32 +5,37 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigInputDialog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyAction
+from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
 
 
 class DeveloperLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
+    self._ssh_fetcher = SshKeyFetcher(ui_state.params)
 
     def github_username_callback(username: str):
       if username:
-        ssh_keys = SshKeyAction()
-        ssh_keys._fetch_ssh_key(username)
-        if not ssh_keys._error_message:
-          self._ssh_keys_btn.set_value(username)
-        else:
-          dlg = BigDialog("", ssh_keys._error_message)
-          gui_app.push_widget(dlg)
+        self._ssh_keys_btn.set_value("Loading...")
+        self._ssh_keys_btn.set_enabled(False)
+
+        def on_response(error):
+          self._ssh_keys_btn.set_enabled(True)
+          if error is None:
+            self._ssh_keys_btn.set_value(username)
+          else:
+            self._ssh_keys_btn.set_value("Not set")
+            gui_app.push_widget(BigDialog("", error))
+
+        self._ssh_fetcher.fetch(username, on_response)
       else:
-        ui_state.params.remove("GithubUsername")
-        ui_state.params.remove("GithubSshKeys")
+        self._ssh_fetcher.clear()
         self._ssh_keys_btn.set_value("Not set")
 
     def ssh_keys_callback():
       github_username = ui_state.params.get("GithubUsername") or ""
       dlg = BigInputDialog("enter GitHub username...", github_username, minimum_length=0, confirm_callback=github_username_callback)
       if not system_time_valid():
-        dlg = BigDialog("Please connect to Wi-Fi to fetch your key", "")
+        dlg = BigDialog("", "Please connect to Wi-Fi to fetch your key.")
         gui_app.push_widget(dlg)
         return
       gui_app.push_widget(dlg)
@@ -50,6 +55,9 @@ class DeveloperLayoutMici(NavScroller):
     self._long_maneuver_toggle = BigToggle("longitudinal maneuver mode",
                                            initial_state=ui_state.params.get_bool("LongitudinalManeuverMode"),
                                            toggle_callback=self._on_long_maneuver_mode)
+    self._lat_maneuver_toggle = BigToggle("lateral maneuver mode",
+                                          initial_state=ui_state.params.get_bool("LateralManeuverMode"),
+                                          toggle_callback=self._on_lat_maneuver_mode)
     self._alpha_long_toggle = BigToggle("alpha longitudinal",
                                         initial_state=ui_state.params.get_bool("AlphaLongitudinalEnabled"),
                                         toggle_callback=self._on_alpha_long_enabled)
@@ -63,6 +71,7 @@ class DeveloperLayoutMici(NavScroller):
       self._ssh_keys_btn,
       self._joystick_toggle,
       self._long_maneuver_toggle,
+      self._lat_maneuver_toggle,
       self._alpha_long_toggle,
       self._debug_mode_toggle,
     ])
@@ -73,12 +82,13 @@ class DeveloperLayoutMici(NavScroller):
       ("SshEnabled", self._ssh_toggle),
       ("JoystickDebugMode", self._joystick_toggle),
       ("LongitudinalManeuverMode", self._long_maneuver_toggle),
+      ("LateralManeuverMode", self._lat_maneuver_toggle),
       ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
       ("ShowDebugInfo", self._debug_mode_toggle),
     )
     onroad_blocked_toggles = (self._adb_toggle, self._joystick_toggle)
-    release_blocked_toggles = (self._joystick_toggle, self._long_maneuver_toggle, self._alpha_long_toggle)
-    engaged_blocked_toggles = (self._long_maneuver_toggle, self._alpha_long_toggle)
+    release_blocked_toggles = (self._joystick_toggle, self._long_maneuver_toggle, self._lat_maneuver_toggle, self._alpha_long_toggle)
+    engaged_blocked_toggles = (self._long_maneuver_toggle, self._lat_maneuver_toggle, self._alpha_long_toggle)
 
     # Hide non-release toggles on release builds
     for item in release_blocked_toggles:
@@ -98,6 +108,10 @@ class DeveloperLayoutMici(NavScroller):
       gui_app.set_show_fps(True)
 
     ui_state.add_offroad_transition_callback(self._update_toggles)
+
+  def _update_state(self):
+    super()._update_state()
+    self._ssh_fetcher.update()
 
   def show_event(self):
     super().show_event()
@@ -120,8 +134,12 @@ class DeveloperLayoutMici(NavScroller):
       if not long_man_enabled:
         self._long_maneuver_toggle.set_checked(False)
         ui_state.params.put_bool("LongitudinalManeuverMode", False)
+
+      lat_man_enabled = ui_state.is_offroad()
+      self._lat_maneuver_toggle.set_enabled(lat_man_enabled)
     else:
       self._long_maneuver_toggle.set_enabled(False)
+      self._lat_maneuver_toggle.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
 
     # Refresh toggles from params to mirror external changes
@@ -132,11 +150,24 @@ class DeveloperLayoutMici(NavScroller):
     ui_state.params.put_bool("JoystickDebugMode", state)
     ui_state.params.put_bool("LongitudinalManeuverMode", False)
     self._long_maneuver_toggle.set_checked(False)
+    ui_state.params.put_bool("LateralManeuverMode", False)
+    self._lat_maneuver_toggle.set_checked(False)
 
   def _on_long_maneuver_mode(self, state: bool):
     ui_state.params.put_bool("LongitudinalManeuverMode", state)
     ui_state.params.put_bool("JoystickDebugMode", False)
     self._joystick_toggle.set_checked(False)
+    ui_state.params.put_bool("LateralManeuverMode", False)
+    self._lat_maneuver_toggle.set_checked(False)
+    restart_needed_callback(state)
+
+  def _on_lat_maneuver_mode(self, state: bool):
+    ui_state.params.put_bool("LateralManeuverMode", state)
+    ui_state.params.put_bool("ExperimentalMode", False)
+    ui_state.params.put_bool("JoystickDebugMode", False)
+    self._joystick_toggle.set_checked(False)
+    ui_state.params.put_bool("LongitudinalManeuverMode", False)
+    self._long_maneuver_toggle.set_checked(False)
     restart_needed_callback(state)
 
   def _on_alpha_long_enabled(self, state: bool):

@@ -299,7 +299,7 @@ class GuiApplication:
           '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert to yuv420p
           '-r', str(output_fps),    # Output frame rate (for speed multiplier)
           '-c:v', 'libx264',
-          '-preset', 'ultrafast',
+          '-preset', 'veryfast',
           '-crf', str(RECORD_QUALITY)
         ]
         if RECORD_BITRATE:
@@ -452,6 +452,11 @@ class GuiApplication:
 
   def texture(self, asset_path: str, width: int | None = None, height: int | None = None,
               alpha_premultiply=False, keep_aspect_ratio=True, flip_x: bool = False) -> rl.Texture:
+    if width is not None:
+      width = round(width)
+    if height is not None:
+      height = round(height)
+
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}_{keep_aspect_ratio}_{flip_x}"
     if cache_key in self._textures:
       return self._textures[cache_key]

@@ -24,8 +24,8 @@
        <plot mode="TimeSeries" style="Lines" flip_y="false" flip_x="false">
         <range bottom="-0.100000" right="196.811937" left="76.646983" top="0.100000"/>
         <limitY/>
-        <curve name="/liveLocationKalman/positionGeodetic/std/0" color="#d62728"/>
-        <curve name="/liveLocationKalman/positionGeodetic/std/1" color="#1ac938"/>
+        <curve name="/liveLocationKalmanDEPRECATED/positionGeodetic/std/0" color="#d62728"/>
+        <curve name="/liveLocationKalmanDEPRECATED/positionGeodetic/std/1" color="#1ac938"/>
        </plot>
       </DockArea>
       <DockArea name="...">
@@ -72,12 +72,11 @@ return distance</function>
    <linked_source>/gpsLocationExternal/latitude</linked_source>
    <additional_sources>
     <v1>/gpsLocationExternal/longitude</v1>
-    <v2>/liveLocationKalman/positionGeodetic/value/0</v2>
-    <v3>/liveLocationKalman/positionGeodetic/value/1</v3>
+    <v2>/liveLocationKalmanDEPRECATED/positionGeodetic/value/0</v2>
+    <v3>/liveLocationKalmanDEPRECATED/positionGeodetic/value/1</v3>
    </additional_sources>
   </snippet>
  </customMathEquations>
  <snippets/>
  <!-- - - - - - - - - - - - - - - -->
 </root>
-

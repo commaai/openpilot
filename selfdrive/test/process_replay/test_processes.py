@@ -3,6 +3,7 @@ import argparse
 import concurrent.futures
 import os
 import sys
+import traceback
 from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
@@ -11,6 +12,7 @@ from opendbc.car.car_helpers import interface_names
 from openpilot.common.git import get_commit
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
+from openpilot.selfdrive.test.process_replay.diff_report import diff_process, diff_report
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
                                                                    check_most_messages_valid
 from openpilot.tools.lib.filereader import FileReader
@@ -72,11 +74,16 @@ EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
+  ref_log_msgs = list(LogReader(ref_log_path))
   lr = LogReader.from_bytes(lr_dat)
-  res, log_msgs = test_process(cfg, lr, segment, ref_log_path, cur_log_fn, args.ignore_fields, args.ignore_msgs)
+  res, log_msgs = test_process(cfg, lr, segment, ref_log_msgs, cur_log_fn, args.ignore_fields, args.ignore_msgs)
   # save logs so we can update refs
   save_log(cur_log_fn, log_msgs)
-  return (segment, cfg.proc_name, res)
+  try:
+    diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
+  except Exception:
+    diff_data = traceback.format_exc()
+  return (segment, cfg.proc_name, res, diff_data)
 
 
 def get_log_data(segment):
@@ -85,13 +92,11 @@ def get_log_data(segment):
     return (segment, f.read())
 
 
-def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, segment, ref_log_msgs, new_log_path, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
     ignore_msgs = []
-
-  ref_log_msgs = list(LogReader(ref_log_path))
 
   try:
     log_msgs = replay_process(cfg, lr, disable_progress=True)
@@ -201,15 +206,22 @@ if __name__ == "__main__":
         log_paths[segment][cfg.proc_name]['new'] = cur_log_fn
 
     results: Any = defaultdict(dict)
+    diffs: list = []
     p2 = pool.map(run_test_process, pool_args)
-    for (segment, proc, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
+    for (segment, proc, result, diff_data) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       results[segment][proc] = result
+      diffs.append((segment, proc, diff_data))
 
   diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
   if not args.update_refs:
     with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
       f.write(diff_long)
     print(diff_short)
+
+    try:
+      diff_report(diffs, segments)
+    except Exception:
+      print(f"failed to generate diff report:\n{traceback.format_exc()}")
 
     if failed:
       print("TEST FAILED")

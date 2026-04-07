@@ -8,6 +8,7 @@ import importlib
 import numpy as np
 
 import SCons.Errors
+from SCons.Defaults import _stripixes
 
 SCons.Warnings.warningAsException(True)
 
@@ -15,9 +16,6 @@ Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
-AddOption('--asan', action='store_true', help='turn on ASAN')
-AddOption('--ubsan', action='store_true', help='turn on UBSan')
-AddOption('--mutation', action='store_true', help='generate mutation-ready code')
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
 AddOption('--minimal',
@@ -41,6 +39,45 @@ assert arch in [
 
 pkg_names = ['bzip2', 'capnproto', 'eigen', 'ffmpeg', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
+
+
+# ***** enforce a whitelist of system libraries *****
+# this prevents silently relying on a 3rd party package,
+# e.g. apt-installed libusb. all libraries should either
+# be distributed with all Linux distros and macOS, or
+# vendored in commaai/dependencies.
+allowed_system_libs = {
+  "EGL", "GLESv2", "GL",
+  "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
+  "dl", "drm", "gbm", "m", "pthread",
+}
+
+def _resolve_lib(env, name):
+  for d in env.Flatten(env.get('LIBPATH', [])):
+    p = Dir(str(d)).abspath
+    for ext in ('.a', '.so', '.dylib'):
+      f = File(os.path.join(p, f'lib{name}{ext}'))
+      if f.exists() or f.has_builder():
+        return name
+  if name in allowed_system_libs:
+    return name
+  raise SCons.Errors.UserError(f"Unexpected non-vendored library '{name}'")
+
+def _libflags(target, source, env, for_signature):
+  libs = []
+  lp = env.subst('$LIBLITERALPREFIX')
+  for lib in env.Flatten(env.get('LIBS', [])):
+    if isinstance(lib, str):
+      if os.sep in lib or lib.startswith('#'):
+        libs.append(File(lib))
+      elif lib.startswith('-') or (lp and lib.startswith(lp)):
+        libs.append(lib)
+      else:
+        libs.append(_resolve_lib(env, lib))
+    else:
+      libs.append(lib)
+  return _stripixes(env['LIBLINKPREFIX'], libs, env['LIBLINKSUFFIX'],
+                    env['LIBPREFIXES'], env['LIBSUFFIXES'], env, env['LIBLITERALPREFIX'])
 
 env = Environment(
   ENV={
@@ -93,14 +130,14 @@ env = Environment(
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
+if arch != "larch64":
+  env['_LIBFLAGS'] = _libflags
 
 # Arch-specific flags and paths
 if arch == "larch64":
   env["CC"] = "clang"
   env["CXX"] = "clang++"
   env.Append(LIBPATH=[
-    "/usr/local/lib",
-    "/system/vendor/lib64",
     "/usr/lib/aarch64-linux-gnu",
   ])
   arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
@@ -112,19 +149,6 @@ elif arch == "Darwin":
   ])
   env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
   env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
-else:
-  env.Append(LIBPATH=[
-    "/usr/lib",
-    "/usr/local/lib",
-  ])
-
-# Sanitizers and extra CCFLAGS from CLI
-if GetOption('asan'):
-  env.Append(CCFLAGS=["-fsanitize=address", "-fno-omit-frame-pointer"])
-  env.Append(LINKFLAGS=["-fsanitize=address"])
-elif GetOption('ubsan'):
-  env.Append(CCFLAGS=["-fsanitize=undefined"])
-  env.Append(LINKFLAGS=["-fsanitize=undefined"])
 
 _extra_cc = shlex.split(GetOption('ccflags') or '')
 if _extra_cc:
@@ -220,10 +244,23 @@ if arch == "larch64":
 # Build openpilot
 SConscript(['third_party/SConscript'])
 
-SConscript(['selfdrive/SConscript'])
+# Build selfdrive
+SConscript([
+  'selfdrive/pandad/SConscript',
+  'selfdrive/controls/lib/lateral_mpc_lib/SConscript',
+  'selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
+  'selfdrive/locationd/SConscript',
+  'selfdrive/modeld/SConscript',
+  'selfdrive/ui/SConscript',
+])
 
-if Dir('#tools/cabana/').exists() and arch != "larch64":
-  SConscript(['tools/cabana/SConscript'])
+# Build tools
+if arch != "larch64":
+  SConscript([
+    'tools/replay/SConscript',
+    'tools/cabana/SConscript',
+    'tools/jotpluggler/SConscript',
+  ])
 
 
 env.CompilationDatabase('compile_commands.json')
