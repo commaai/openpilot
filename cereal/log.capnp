@@ -68,12 +68,12 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     longitudinalManeuver @30;
     steerTempUnavailableSilent @31;
     resumeRequired @32;
-    preDriverDistracted @33;
-    promptDriverDistracted @34;
-    driverDistracted @35;
-    preDriverUnresponsive @36;
-    promptDriverUnresponsive @37;
-    driverUnresponsive @38;
+    driverDistracted1 @33;
+    driverDistracted2 @34;
+    driverDistracted3 @35;
+    driverUnresponsive1 @36;
+    driverUnresponsive2 @37;
+    driverUnresponsive3 @38;
     belowSteerSpeed @39;
     lowBattery @40;
     accFaulted @41;

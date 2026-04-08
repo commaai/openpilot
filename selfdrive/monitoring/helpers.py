@@ -379,16 +379,16 @@ class DriverMonitoring:
     alert = None
     if self.awareness <= 0.:
       # terminal red alert: disengagement required
-      alert = EventName.driverDistracted if self.active_monitoring_mode else EventName.driverUnresponsive
+      alert = EventName.driverDistracted3 if self.active_monitoring_mode else EventName.driverUnresponsive3
       self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_prompt:
       # prompt orange alert
-      alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
+      alert = EventName.driverDistracted2 if self.active_monitoring_mode else EventName.driverUnresponsive2
     elif self.awareness <= self.threshold_pre:
       # pre green alert
-      alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive
+      alert = EventName.driverDistracted1 if self.active_monitoring_mode else EventName.driverUnresponsive1
 
     if alert is not None:
       self.current_events.add(alert)
