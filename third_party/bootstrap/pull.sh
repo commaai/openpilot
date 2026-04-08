@@ -12,3 +12,13 @@ cd icons
 git fetch --all
 git checkout d5aa187483a1b0b186f87adcfa8576350d970d98
 cp bootstrap-icons.svg ../
+
+# Convert WOFF → TTF for imgui (imgui only reads TTF/OTF)
+python3 -c "
+from fontTools.ttLib import TTFont
+import io
+f = TTFont('font/fonts/bootstrap-icons.woff')
+f.flavor = None
+f.save('../bootstrap-icons.ttf')
+print('bootstrap-icons.ttf written')
+"

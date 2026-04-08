@@ -335,6 +335,43 @@ class BigMultiToggle(BigToggle):
       y += 35
 
 
+class GreyBigButton(BigButton):
+  """Users should manage newlines with this class themselves"""
+
+  LABEL_HORIZONTAL_PADDING = 30
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.set_touch_valid_callback(lambda: False)
+
+    self._rect.width = 476
+
+    self._label.set_font_size(36)
+    self._label.set_font_weight(FontWeight.BOLD)
+    self._label.set_line_height(1.0)
+
+    self._sub_label.set_font_size(36)
+    self._sub_label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.9)))
+    self._sub_label.set_font_weight(FontWeight.DISPLAY_REGULAR)
+    self._sub_label.set_alignment_vertical(rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE if not self._label.text else
+                                           rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM)
+    self._sub_label.set_line_height(0.95)
+
+  @property
+  def LABEL_VERTICAL_PADDING(self):
+    return BigButton.LABEL_VERTICAL_PADDING if self._label.text else 18
+
+  def _width_hint(self) -> int:
+    return int(self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2)
+
+  def _get_label_font_size(self):
+    return 36
+
+  def _render(self, _):
+    rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(255, 255, 255, int(255 * 0.15)))
+    self._draw_content(self._rect.y)
+
+
 class BigMultiParamToggle(BigMultiToggle):
   def __init__(self, text: str, param: str, options: list[str], toggle_callback: Callable | None = None,
                select_callback: Callable | None = None):

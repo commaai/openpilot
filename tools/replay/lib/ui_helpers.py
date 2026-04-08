@@ -5,6 +5,7 @@ import numpy as np
 import pyray as rl
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.offsetbox import AnchoredOffsetbox, HPacker, TextArea
 
 from openpilot.common.transformations.camera import get_view_frame_from_calib_frame
 from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
@@ -94,6 +95,7 @@ def draw_path(path, color, img, calibration, top_down, lid_color=None, z_off=0):
 
 def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles):
   color_palette = {"r": (1, 0, 0), "g": (0, 1, 0), "b": (0, 0, 1), "k": (0, 0, 0), "y": (1, 1, 0), "p": (0, 1, 1), "m": (1, 0, 1)}
+  label_palette = {**color_palette, "b": (43/255, 114/255, 1.0)}
 
   dpi = 90
   fig = plt.figure(figsize=(575 / dpi, 600 / dpi), dpi=dpi)
@@ -116,10 +118,18 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       plots.append(plot)
       idxs.append(name_to_arr_idx[item])
       plot_select.append(i)
-    axs[i].set_title(", ".join(f"{nm} ({cl})" for (nm, cl) in zip(pl_list, plot_colors[i], strict=False)), fontsize=10)
+    # Build colored title: each label colored to match its plot line
+    title_texts = []
+    for j2, (nm, cl) in enumerate(zip(pl_list, plot_colors[i], strict=False)):
+      if j2 > 0:
+        title_texts.append(TextArea(", ", textprops=dict(color="white", fontsize=10)))
+      title_texts.append(TextArea(nm, textprops=dict(color=label_palette[cl], fontsize=10)))
+    packed = HPacker(children=title_texts, pad=0, sep=0)
+    ab = AnchoredOffsetbox(loc='lower center', child=packed, bbox_to_anchor=(0.5, 1.0),
+                           bbox_transform=axs[i].transAxes, frameon=False, pad=0)
+    axs[i].add_artist(ab)
     axs[i].tick_params(axis="x", colors="white")
     axs[i].tick_params(axis="y", colors="white")
-    axs[i].title.set_color("white")
 
     if i < len(plot_ylims) - 1:
       axs[i].set_xticks([])

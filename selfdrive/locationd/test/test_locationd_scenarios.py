@@ -3,6 +3,7 @@ from collections import defaultdict
 from enum import Enum
 
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.selfdrive.locationd.lagd import masked_symmetric_moving_average
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
 
@@ -15,6 +16,7 @@ SELECT_COMPARE_FIELDS = {
   'inputs_flag': ['inputsOK'],
   'sensors_flag': ['sensorsOK'],
 }
+SMOOTH_FIELDS = ['yaw_rate', 'roll']
 JUNK_IDX = 100
 CONSISTENT_SPIKES_COUNT = 10
 
@@ -32,6 +34,8 @@ class Scenario(Enum):
 
 
 def get_select_fields_data(logs):
+  def sig_smooth(signal):
+    return masked_symmetric_moving_average(signal, np.ones_like(signal), 5, 1.0)
   def get_nested_keys(msg, keys):
     val = None
     for key in keys:
@@ -44,6 +48,8 @@ def get_select_fields_data(logs):
       data[key].append(get_nested_keys(msg, fields))
   for key in data:
     data[key] = np.array(data[key][JUNK_IDX:], dtype=float)
+    if key in SMOOTH_FIELDS:
+      data[key] = sig_smooth(data[key])
   return data
 
 
@@ -110,7 +116,7 @@ class TestLocationdScenarios:
     """
     orig_data, replayed_data = run_scenarios(Scenario.BASE, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
-    assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
+    assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.35))
 
   def test_gyro_off(self):
     """
@@ -135,7 +141,7 @@ class TestLocationdScenarios:
     """
     orig_data, replayed_data = run_scenarios(Scenario.GYRO_SPIKE_MIDWAY, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
-    assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
+    assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.35))
     assert np.all(replayed_data['inputs_flag'] == orig_data['inputs_flag'])
     assert np.all(replayed_data['sensors_flag'] == orig_data['sensors_flag'])
 
@@ -169,7 +175,7 @@ class TestLocationdScenarios:
     """
     orig_data, replayed_data = run_scenarios(Scenario.ACCEL_SPIKE_MIDWAY, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
-    assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
+    assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.35))
 
   def test_single_timing_spike(self):
     """
