@@ -19,7 +19,10 @@ def estimate_pickle_max_size(onnx_size):
 # THREADS=0 is need to prevent bug: https://github.com/tinygrad/tinygrad/issues/14689
 # get fastest TG config
 available = set(Device.get_available_devices())
-if 'CUDA' in available:
+if 'NV' in available:
+  tg_backend = 'NV'
+  tg_flags = f'DEV={tg_backend}'
+elif 'CUDA' in available:
   tg_backend = 'CUDA'
   tg_flags = f'DEV={tg_backend}'
 elif 'QCOM' in available:
