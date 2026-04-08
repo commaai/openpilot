@@ -197,7 +197,7 @@ class TestMonitoring:
     standstill_vector[int(_stop_time/DT_DMON):] = [True] * int((TEST_TIMESPAN-_stop_time)/DT_DMON)
     events, _ = self._run_seq(always_distracted, always_false, always_true, standstill_vector)
     # just before and briefly after stopping: orange alert; goes away quickly after stopped
-    assert events[int((_stop_time+0.1)/DT_DMON)].names[0] == EventName.promptDriverDistracted
+    assert events[int((_stop_time+0.1)/DT_DMON)].names[0] == EventName.driverDistracted2
     assert len(events[int((_stop_time+0.5)/DT_DMON)]) == 0
 
   # engaged, model is somehow uncertain and driver is distracted

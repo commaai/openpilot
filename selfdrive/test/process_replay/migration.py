@@ -22,6 +22,15 @@ MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
 MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
 MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 
+LEGACY_ONROAD_EVENT_NAME_MAP = {
+  "preDriverDistracted": "driverDistracted1",
+  "promptDriverDistracted": "driverDistracted2",
+  "driverDistracted": "driverDistracted3",
+  "preDriverUnresponsive": "driverUnresponsive1",
+  "promptDriverUnresponsive": "driverUnresponsive2",
+  "driverUnresponsive": "driverUnresponsive3",
+}
+
 
 # rules for migration functions
 # 1. must use the decorator @migration(inputs=[...], product="...") and MigrationFunc signature
@@ -96,6 +105,10 @@ def migration(inputs: list[str], product: str|None=None):
     wrapper.product = product
     return wrapper
   return decorator
+
+
+def migrate_onroad_event_name(name: str) -> str:
+  return LEGACY_ONROAD_EVENT_NAME_MAP.get(name, name)
 
 
 @migration(inputs=["longitudinalPlan", "carParams"])
@@ -456,8 +469,10 @@ def migrate_onroadEvents(msgs):
     for event in msg.onroadEventsDEPRECATED:
       try:
         if not str(event.name).endswith('DEPRECATED'):
+          event_dict = event.to_dict()
           # dict converts name enum into string representation
-          onroadEvents.append(log.OnroadEvent(**event.to_dict()))
+          event_dict["name"] = migrate_onroad_event_name(event_dict["name"])
+          onroadEvents.append(log.OnroadEvent(**event_dict))
       except RuntimeError:  # Member was null
         traceback.print_exc()
 
@@ -479,8 +494,10 @@ def migrate_driverMonitoringState(msgs):
     for event in msg.driverMonitoringState.eventsDEPRECATED:
       try:
         if not str(event.name).endswith('DEPRECATED'):
+          event_dict = event.to_dict()
           # dict converts name enum into string representation
-          events.append(log.OnroadEvent(**event.to_dict()))
+          event_dict["name"] = migrate_onroad_event_name(event_dict["name"])
+          events.append(log.OnroadEvent(**event_dict))
       except RuntimeError:  # Member was null
         traceback.print_exc()
 
