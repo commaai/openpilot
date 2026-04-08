@@ -44,6 +44,7 @@ bin/
 config.json
 compile_commands.json
 compare_runtime*.html
+selfdrive/modeld/models/tg_compiled_flags.json
 
 # build artifacts
 selfdrive/pandad/pandad
