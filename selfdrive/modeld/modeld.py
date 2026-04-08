@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-import json
 import os
-from pathlib import Path
+from openpilot.selfdrive.modeld.tinygrad_helpers import MODELS_DIR, set_tinygrad_backend_from_compiled_flags
 
-MODELS_DIR = Path(__file__).parent / 'models'
-COMPILED_FLAGS_PATH = MODELS_DIR / 'tg_compiled_flags.json'
-with open(COMPILED_FLAGS_PATH) as f:
-  os.environ['DEV'] = str(json.load(f)['DEV'])
+set_tinygrad_backend_from_compiled_flags()
 
 USBGPU = "USBGPU" in os.environ
 if USBGPU:

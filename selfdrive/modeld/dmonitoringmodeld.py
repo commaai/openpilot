@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-import json
 import os
-from pathlib import Path
+from openpilot.selfdrive.modeld.tinygrad_helpers import MODELS_DIR, set_tinygrad_backend_from_compiled_flags
 
-MODELS_DIR = Path(__file__).parent / 'models'
-COMPILED_FLAGS_PATH = MODELS_DIR / 'tg_compiled_flags.json'
-with open(COMPILED_FLAGS_PATH) as f:
-  os.environ['DEV'] = str(json.load(f)['DEV'])
+set_tinygrad_backend_from_compiled_flags()
 
 from tinygrad.tensor import Tensor
 import time
@@ -26,8 +22,8 @@ from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
-METADATA_PATH = Path(__file__).parent / 'models/dmonitoring_model_metadata.pkl'
+MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
+METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'
 
 class ModelState:
   inputs: dict[str, np.ndarray]
