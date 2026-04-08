@@ -9,28 +9,6 @@ env:
   PYTHONPATH: ${{ github.workspace }}
 
 jobs:
-  update_translations:
-    runs-on: ubuntu-latest
-    if: github.repository == 'commaai/openpilot'
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - run: ./tools/op.sh setup
-      - name: Update translations
-        run: python3 selfdrive/ui/update_translations.py --vanish
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
-        with:
-          author: Vehicle Researcher <user@comma.ai>
-          commit-message: "Update translations"
-          title: "[bot] Update translations"
-          body: "Automatic PR from repo-maintenance -> update_translations"
-          branch: "update-translations"
-          base: "master"
-          delete-branch: true
-          labels: bot
-
   package_updates:
     name: package_updates
     runs-on: ubuntu-latest

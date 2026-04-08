@@ -2,7 +2,9 @@ import subprocess
 import os
 import shutil
 
-Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+import libusb
+
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
 
 # Detect Qt - skip build if not available
 if arch == "Darwin":
@@ -15,9 +17,6 @@ else:
   has_qt = shutil.which('qmake') is not None
 if not has_qt:
   Return()
-
-SConscript(['#tools/replay/SConscript'])
-Import('replay_lib')
 
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core"]
@@ -64,21 +63,20 @@ qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 
 base_frameworks = qt_env['FRAMEWORKS']
-base_libs = [common, messaging, cereal, visionipc, 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, messaging, cereal, visionipc, 'm', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
-  base_frameworks.append('QtCharts')
+  base_frameworks += ['QtCharts', 'CoreFoundation', 'CoreVideo', 'CoreMedia', 'IOKit', 'Security', 'VideoToolbox']
 else:
   base_libs.append('Qt5Charts')
 
-qt_libs = base_libs
-
 cabana_env = qt_env.Clone()
-if arch == "Darwin":
-  cabana_env['CPPPATH'] += [f"{brew_prefix}/include"]
-  cabana_env['LIBPATH'] += [f"{brew_prefix}/lib"]
+cabana_env['CPPPATH'] += [libusb.INCLUDE_DIR]
+cabana_env['LIBPATH'] += [libusb.LIB_DIR]
 
-cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'bz2', 'zstd', 'yuv', 'usb-1.0'] + qt_libs
+cabana_libs = [cereal, messaging, visionipc, replay_lib, 'avformat', 'avcodec', 'swresample', 'avutil', 'x264', 'z', 'bz2', 'zstd', 'yuv', 'usb-1.0'] + base_libs
+if arch != "Darwin":
+  cabana_libs += ['va', 'va-drm', 'drm']
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 

@@ -1,124 +1,106 @@
-import pytest
 import json
-import os
 import re
-import xml.etree.ElementTree as ET
 import string
-import requests
-from openpilot.common.parameterized import parameterized_class
-from openpilot.system.ui.lib.multilang import TRANSLATIONS_DIR, LANGUAGES_FILE
+from pathlib import Path
 
-with open(str(LANGUAGES_FILE)) as f:
-  translation_files = json.load(f)
+import pytest
 
-UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""  # non-empty translations can be marked unfinished
-LOCATION_TAG = "<location "
-FORMAT_ARG = re.compile("%[0-9]+")
+from openpilot.selfdrive.ui.translations.potools import parse_po
+from openpilot.system.ui.lib.multilang import LANGUAGES_FILE, TRANSLATIONS_DIR
+
+PERCENT_PLACEHOLDER_RE = re.compile(r"%(?:n|\d+)")
+BAD_ENTITY_RE = re.compile(r'@(\w+);')
+LINE_NUMBER_REF_RE = re.compile(r'^#:\s+.+:\d+(?:\s|$)')
+FORMATTER = string.Formatter()
+PO_DIR = Path(str(TRANSLATIONS_DIR))
+
+with LANGUAGES_FILE.open(encoding='utf-8') as f:
+  TRANSLATION_LANGUAGES = json.load(f)
 
 
-@pytest.mark.skip("TODO: update for raylib")
-@parameterized_class(("name", "file"), translation_files.items())
-class TestTranslations:
-  name: str
-  file: str
+def extract_placeholders(text: str) -> list[str]:
+  placeholders = PERCENT_PLACEHOLDER_RE.findall(text)
 
-  @staticmethod
-  def _read_translation_file(path, file):
-    tr_file = os.path.join(path, f"{file}.ts")
-    with open(tr_file) as f:
-      return f.read()
+  try:
+    parsed = list(FORMATTER.parse(text))
+  except ValueError as e:
+    raise AssertionError(f"invalid brace formatting in {text!r}: {e}") from e
 
-  def test_missing_translation_files(self):
-    assert os.path.exists(os.path.join(str(TRANSLATIONS_DIR), f"{self.file}.ts")), \
-                    f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py"
+  for _, field_name, format_spec, conversion in parsed:
+    if field_name is None:
+      continue
 
-  @pytest.mark.skip("Only test unfinished translations before going to release")
-  def test_unfinished_translations(self):
-    cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
-    assert UNFINISHED_TRANSLATION_TAG not in cur_translations, \
-                    f"{self.file} ({self.name}) translation file has unfinished translations. Finish translations or mark them as completed in Qt Linguist"
+    token = "{"
+    token += field_name
+    if conversion:
+      token += f"!{conversion}"
+    if format_spec:
+      token += f":{format_spec}"
+    token += "}"
+    placeholders.append(token)
 
-  def test_vanished_translations(self):
-    cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
-    assert "<translation type=\"vanished\">" not in cur_translations, \
-                    f"{self.file} ({self.name}) translation file has obsolete translations. Run selfdrive/ui/update_translations.py --vanish to remove them"
+  return sorted(placeholders)
 
-  def test_finished_translations(self):
-    """
-      Tests ran on each translation marked "finished"
-      Plural:
-      - that any numerus (plural) translations have all plural forms non-empty
-      - that the correct format specifier is used (%n)
-      Non-plural:
-      - that translation is not empty
-      - that translation format arguments are consistent
-    """
-    tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts"))
 
-    for context in tr_xml.getroot():
-      for message in context.iterfind("message"):
-        translation = message.find("translation")
-        source_text = message.find("source").text
+def load_po_text(po_path: Path) -> str:
+  return po_path.read_text(encoding='utf-8')
 
-        # Do not test unfinished translations
-        if translation.get("type") == "unfinished":
-          continue
 
-        if message.get("numerus") == "yes":
-          numerusform = [t.text for t in translation.findall("numerusform")]
+@pytest.mark.parametrize("language_code", sorted(TRANSLATION_LANGUAGES.values()))
+def test_translation_file_exists(language_code: str):
+  po_path = PO_DIR / f"app_{language_code}.po"
+  assert po_path.exists(), f"missing translation file: {po_path}"
 
-          for nf in numerusform:
-            assert nf is not None, f"Ensure all plural translation forms are completed: {source_text}"
-            assert "%n" in nf, "Ensure numerus argument (%n) exists in translation."
-            assert FORMAT_ARG.search(nf) is None, f"Plural translations must use %n, not %1, %2, etc.: {numerusform}"
 
-        else:
-          assert translation.text is not None, f"Ensure translation is completed: {source_text}"
+@pytest.mark.parametrize("po_path", sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
+def test_translation_placeholders_are_preserved(po_path: Path):
+  _, entries = parse_po(po_path)
+  language = po_path.stem.removeprefix("app_")
 
-          source_args = FORMAT_ARG.findall(source_text)
-          translation_args = FORMAT_ARG.findall(translation.text)
-          assert sorted(source_args) == sorted(translation_args), \
-                           f"Ensure format arguments are consistent: `{source_text}` vs. `{translation.text}`"
+  for entry in entries:
+    source_placeholders = extract_placeholders(entry.msgid)
 
-  def test_no_locations(self):
-    for line in self._read_translation_file(TRANSLATIONS_DIR, self.file).splitlines():
-      assert not line.strip().startswith(LOCATION_TAG), \
-                       f"Line contains location tag: {line.strip()}, remove all line numbers."
-
-  def test_entities_error(self):
-    cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
-    matches = re.findall(r'@(\w+);', cur_translations)
-    assert len(matches) == 0, f"The string(s) {matches} were found with '@' instead of '&'"
-
-  def test_bad_language(self):
-    IGNORED_WORDS = {'pédale'}
-
-    match = re.search(r'([a-zA-Z]{2,3})', self.file)
-    assert match, f"{self.name} - could not parse language"
-
-    try:
-      response = requests.get(
-        f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}"
+    if entry.is_plural:
+      plural_placeholders = extract_placeholders(entry.msgid_plural)
+      message = (
+        f"{language}: source plural placeholders do not match singular for "
+        + f"{entry.msgid!r}: {source_placeholders} vs {plural_placeholders}"
       )
-      response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-      if e.response is not None and e.response.status_code == 429:
-        pytest.skip("word list rate limited")
-      raise
+      assert plural_placeholders == source_placeholders, message
 
-    banned_words = {line.strip() for line in response.text.splitlines()}
-
-    for context in ET.parse(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")).getroot():
-      for message in context.iterfind("message"):
-        translation = message.find("translation")
-        if translation.get("type") == "unfinished":
+      for idx, msgstr in sorted(entry.msgstr_plural.items()):
+        if not msgstr:
           continue
 
-        translation_text = " ".join([t.text for t in translation.findall("numerusform")]) if message.get("numerus") == "yes" else translation.text
+        translated_placeholders = extract_placeholders(msgstr)
+        message = (
+          f"{language}: plural form {idx} changes placeholders for {entry.msgid!r}: "
+          + f"expected {source_placeholders}, got {translated_placeholders}"
+        )
+        assert translated_placeholders == source_placeholders, message
+    else:
+      if not entry.msgstr:
+        continue
 
-        if not translation_text:
-          continue
+      translated_placeholders = extract_placeholders(entry.msgstr)
+      message = (
+        f"{language}: translation changes placeholders for {entry.msgid!r}: "
+        + f"expected {source_placeholders}, got {translated_placeholders}"
+      )
+      assert translated_placeholders == source_placeholders, message
 
-        words = set(translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split())
-        bad_words_found = words & (banned_words - IGNORED_WORDS)
-        assert not bad_words_found, f"Bad language found in {self.name}: '{translation_text}'. Bad word(s): {', '.join(bad_words_found)}"
+
+@pytest.mark.parametrize("po_path", sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
+def test_translation_refs_do_not_include_line_numbers(po_path: Path):
+  for line in load_po_text(po_path).splitlines():
+    assert not LINE_NUMBER_REF_RE.match(line), (
+      f"{po_path.name}: line-number source reference found: {line}"
+    )
+
+
+@pytest.mark.parametrize("po_path", sorted(PO_DIR.glob("app_*.po")), ids=lambda p: p.name)
+def test_translation_entities_are_valid(po_path: Path):
+  matches = BAD_ENTITY_RE.findall(load_po_text(po_path))
+  assert not matches, (
+    f"{po_path.name}: found '@...;' entity typo(s): {', '.join(sorted(set(matches)))}"
+  )

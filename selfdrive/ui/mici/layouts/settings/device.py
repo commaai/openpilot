@@ -74,7 +74,7 @@ def _engaged_confirmation_click(callback: Callable, action_text: str, icon: rl.T
 
     gui_app.push_widget(BigConfirmationDialog(f"slide to\n{action_text.lower()}", icon, confirm_callback, exit_on_confirm=exit_on_confirm, red=red))
   else:
-    gui_app.push_widget(BigDialog(f"Disengage to {action_text}", ""))
+    gui_app.push_widget(BigDialog("", f"Disengage to {action_text}"))
 
 
 class EngagedConfirmationCircleButton(BigCircleButton):
@@ -156,9 +156,9 @@ class PairBigButton(BigButton):
       return
     dlg: BigDialog | PairingDialog
     if not system_time_valid():
-      dlg = BigDialog(tr("Please connect to Wi-Fi to complete initial pairing"), "")
+      dlg = BigDialog("", tr("Please connect to Wi-Fi to complete initial pairing."))
     elif UNREGISTERED_DONGLE_ID == (ui_state.params.get("DongleId") or UNREGISTERED_DONGLE_ID):
-      dlg = BigDialog(tr("Device must be registered with the comma.ai backend to pair"), "")
+      dlg = BigDialog("", tr("Device must be registered with the comma.ai backend to pair."))
     else:
       dlg = PairingDialog()
     gui_app.push_widget(dlg)
@@ -188,7 +188,7 @@ class UpdateOpenpilotBigButton(BigButton):
     super()._handle_mouse_release(mouse_pos)
 
     if not system_time_valid():
-      dlg = BigDialog(tr("Please connect to Wi-Fi to update"), "")
+      dlg = BigDialog("", tr("Please connect to Wi-Fi to update."))
       gui_app.push_widget(dlg)
       return
 

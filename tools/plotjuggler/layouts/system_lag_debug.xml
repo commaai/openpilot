@@ -45,7 +45,7 @@
       <plot mode="TimeSeries" flip_x="false" flip_y="false" style="Lines">
        <range top="-3.593455" right="59.992103" left="0.000000" bottom="-12.190956"/>
        <limitY/>
-       <curve name="/controlsState/cumLagMs" color="#9467bd"/>
+       <curve name="/carState/cumLagMs" color="#9467bd"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -64,4 +64,3 @@
  <!-- - - - - - - - - - - - - - - -->
  <!-- - - - - - - - - - - - - - - -->
 </root>
-
