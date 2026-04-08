@@ -26,7 +26,7 @@ elif 'QCOM' in available:
   tg_backend = 'QCOM'
   tg_flags = f'DEV={tg_backend} FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0'
 else:
-  tg_backend = 'CPU'
+  tg_backend = 'CPU' if arch == 'Darwin' else 'CPU:LLVM'
   tg_flags = f'DEV={tg_backend} THREADS=0'
 
 def write_tg_compiled_flags(target, source, env):
