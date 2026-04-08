@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
+import json
 import os
-from openpilot.system.hardware import TICI
-os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
+from pathlib import Path
+
+MODELS_DIR = Path(__file__).parent / 'models'
+COMPILED_FLAGS_PATH = MODELS_DIR / 'tg_compiled_flags.json'
+with open(COMPILED_FLAGS_PATH) as f:
+  os.environ['DEV'] = str(json.load(f)['DEV'])
+
 from tinygrad.tensor import Tensor
 import time
 import pickle
 import numpy as np
-from pathlib import Path
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
@@ -23,7 +28,6 @@ PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 METADATA_PATH = Path(__file__).parent / 'models/dmonitoring_model_metadata.pkl'
-MODELS_DIR = Path(__file__).parent / 'models'
 
 class ModelState:
   inputs: dict[str, np.ndarray]
