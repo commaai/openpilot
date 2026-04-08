@@ -22,15 +22,6 @@ MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
 MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
 MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 
-LEGACY_ONROAD_EVENT_NAME_MAP = {
-  "preDriverDistracted": "driverDistracted1",
-  "promptDriverDistracted": "driverDistracted2",
-  "driverDistracted": "driverDistracted3",
-  "preDriverUnresponsive": "driverUnresponsive1",
-  "promptDriverUnresponsive": "driverUnresponsive2",
-  "driverUnresponsive": "driverUnresponsive3",
-}
-
 
 # rules for migration functions
 # 1. must use the decorator @migration(inputs=[...], product="...") and MigrationFunc signature
@@ -107,8 +98,15 @@ def migration(inputs: list[str], product: str|None=None):
   return decorator
 
 
-def migrate_onroad_event_name(name: str) -> str:
-  return LEGACY_ONROAD_EVENT_NAME_MAP.get(name, name)
+def migrate_onroad_event(event: capnp.lib.capnp._DynamicStructReader):
+  event_dict = event.to_dict()
+  try:
+    return log.OnroadEvent(**event_dict)
+  except capnp.lib.capnp.KjException as e:
+    # Ignore legacy events the current schema no longer defines.
+    if "enum has no such enumerant" in str(e):
+      return None
+    raise
 
 
 @migration(inputs=["longitudinalPlan", "carParams"])
@@ -469,14 +467,13 @@ def migrate_onroadEvents(msgs):
     for event in msg.onroadEventsDEPRECATED:
       try:
         if not str(event.name).endswith('DEPRECATED'):
-          event_dict = event.to_dict()
-          # dict converts name enum into string representation
-          event_dict["name"] = migrate_onroad_event_name(event_dict["name"])
-          onroadEvents.append(log.OnroadEvent(**event_dict))
+          migrated_event = migrate_onroad_event(event)
+          if migrated_event is not None:
+            onroadEvents.append(migrated_event)
       except RuntimeError:  # Member was null
         traceback.print_exc()
 
-    new_msg = messaging.new_message('onroadEvents', len(msg.onroadEventsDEPRECATED))
+    new_msg = messaging.new_message('onroadEvents', len(onroadEvents))
     new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
     new_msg.onroadEvents = onroadEvents
@@ -494,10 +491,9 @@ def migrate_driverMonitoringState(msgs):
     for event in msg.driverMonitoringState.eventsDEPRECATED:
       try:
         if not str(event.name).endswith('DEPRECATED'):
-          event_dict = event.to_dict()
-          # dict converts name enum into string representation
-          event_dict["name"] = migrate_onroad_event_name(event_dict["name"])
-          events.append(log.OnroadEvent(**event_dict))
+          migrated_event = migrate_onroad_event(event)
+          if migrated_event is not None:
+            events.append(migrated_event)
       except RuntimeError:  # Member was null
         traceback.print_exc()
 
