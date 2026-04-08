@@ -345,10 +345,14 @@ class DriverMonitoring:
       self._reset_awareness()
       return
 
-    driver_attentive = self.driver_distraction_filter.x < 0.37
     awareness_prev = self.awareness
+    _reaching_pre = self.awareness - self.step_change <= self.threshold_pre
+    _reaching_terminal = self.awareness - self.step_change <= 0
+    standstill_orange_exemption = standstill and _reaching_pre
+    always_on_red_exemption = always_on_valid and not op_engaged and _reaching_terminal
 
-    if (driver_attentive and self.face_detected and self.pose.low_std and self.awareness > 0):
+    if self.awareness > 0 and \
+       ((self.driver_distraction_filter.x < 0.37 and self.face_detected and self.pose.low_std) or standstill_orange_exemption):
       if driver_engaged:
         self._reset_awareness()
         return
@@ -361,19 +365,13 @@ class DriverMonitoring:
       if self.awareness > self.threshold_prompt:
         return
 
-    _reaching_pre = self.awareness - self.step_change <= self.threshold_pre
-    _reaching_audible = self.awareness - self.step_change <= self.threshold_prompt
-    _reaching_terminal = self.awareness - self.step_change <= 0
-    standstill_exemption = standstill and _reaching_pre
-    always_on_red_exemption = always_on_valid and not op_engaged and _reaching_terminal
-
     certainly_distracted = self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected
     maybe_distracted = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME or not self.face_detected
 
     if certainly_distracted or maybe_distracted:
       # should always be counting if distracted unless at standstill and reaching green
       # also will not be reaching 0 if DM is active when not engaged
-      if not (standstill_exemption or always_on_red_exemption):
+      if not (standstill_orange_exemption or always_on_red_exemption):
         self.awareness = max(self.awareness - self.step_change, -0.1)
 
     alert = None

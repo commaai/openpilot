@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import os
-from openpilot.system.hardware import TICI
-os.environ['DEV'] = 'QCOM' if TICI else 'CPU'
+from openpilot.selfdrive.modeld.tinygrad_helpers import MODELS_DIR, set_tinygrad_backend_from_compiled_flags
+set_tinygrad_backend_from_compiled_flags()
+
 from tinygrad.tensor import Tensor
 import time
 import pickle
 import numpy as np
-from pathlib import Path
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
@@ -21,9 +21,8 @@ from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
-METADATA_PATH = Path(__file__).parent / 'models/dmonitoring_model_metadata.pkl'
-MODELS_DIR = Path(__file__).parent / 'models'
+MODEL_PKL_PATH = MODELS_DIR / 'dmonitoring_model_tinygrad.pkl'
+METADATA_PATH = MODELS_DIR / 'dmonitoring_model_metadata.pkl'
 
 class ModelState:
   inputs: dict[str, np.ndarray]
