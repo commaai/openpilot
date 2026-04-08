@@ -22,9 +22,6 @@ available = set(Device.get_available_devices())
 if 'NV' in available:
   tg_backend = 'NV'
   tg_flags = f'DEV={tg_backend}'
-elif 'CUDA' in available:
-  tg_backend = 'CUDA'
-  tg_flags = f'DEV={tg_backend}'
 elif 'QCOM' in available:
   tg_backend = 'QCOM'
   tg_flags = f'DEV={tg_backend} FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0'
