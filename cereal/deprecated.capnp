@@ -659,8 +659,6 @@ struct NavModelData @0xac3de5c437be057a {
   }
 }
 
-# ***** moved from log.capnp nested types *****
-
 struct AndroidBuildInfo @0xfe2919d5c21f426c {
   board @0 :Text;
   bootloader @1 :Text;
