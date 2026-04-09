@@ -365,7 +365,7 @@ class UbloxMsgParser:
     assert isinstance(s1, Glonass.String1)
     eph.p1 = int(s1.p1)
     tk = int(s1.t_k)
-    eph.tkDEPRECATED = tk
+    eph.deprecated.tk = tk
     eph.xVel = float(s1.x_vel) * math.pow(2, -20)
     eph.xAccel = float(s1.x_accel) * math.pow(2, -30)
     eph.x = float(s1.x) * math.pow(2, -11)
