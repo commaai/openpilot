@@ -169,11 +169,11 @@ class Soundd:
 
         self.get_audible_alert(sm)
 
+        # Ramp up immediate warning sound over 4s
         if self.current_alert == AudibleAlert.warningImmediate:
           elapsed = time.monotonic() - self.ramp_start_time
           ramp_vol = float(np.interp(elapsed, [0, ALERT_RAMP_TIME], [self.ramp_start_volume, MAX_VOLUME]))
-          spl_vol = self.calculate_volume(float(self.spl_filter_weighted.x))
-          self.current_volume = max(spl_vol, ramp_vol)
+          self.current_volume = max(self.current_volume, ramp_vol)
 
         rk.keep_time()
 
