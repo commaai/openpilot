@@ -808,19 +808,6 @@ struct LiveCalibrationData {
   }
 }
 
-struct LiveTracksDEPRECATED {
-  trackId @0 :Int32;
-  dRel @1 :Float32;
-  yRel @2 :Float32;
-  vRel @3 :Float32;
-  aRel @4 :Float32;
-  timeStamp @5 :Float32;
-  status @6 :Float32;
-  currentTime @7 :Float32;
-  stationary @8 :Bool;
-  oncoming @9 :Bool;
-}
-
 struct SelfdriveState {
   # high level system state
   state @0 :OpenpilotState;
@@ -2135,30 +2122,6 @@ struct Clocks {
   modemUptimeMillisDEPRECATED @4 :UInt64;
 }
 
-struct LiveMpcData {
-  x @0 :List(Float32);
-  y @1 :List(Float32);
-  psi @2 :List(Float32);
-  curvature @3 :List(Float32);
-  qpIterations @4 :UInt32;
-  calculationTime @5 :UInt64;
-  cost @6 :Float64;
-}
-
-struct LiveLongitudinalMpcData {
-  xEgo @0 :List(Float32);
-  vEgo @1 :List(Float32);
-  aEgo @2 :List(Float32);
-  xLead @3 :List(Float32);
-  vLead @4 :List(Float32);
-  aLead @5 :List(Float32);
-  aLeadTau @6 :Float32;    # lead accel time constant
-  qpIterations @7 :UInt32;
-  mpcId @8 :UInt32;
-  calculationTime @9 :UInt64;
-  cost @10 :Float64;
-}
-
 struct Joystick {
   # convenient for debug and live tuning
   axes @0: List(Float32);
@@ -2196,38 +2159,6 @@ struct DriverStateV2 {
 
   dspExecutionTimeDEPRECATED @2 :Float32;
   poorVisionProbDEPRECATED @4 :Float32;
-}
-
-struct DriverStateDEPRECATED @0xb83c6cc593ed0a00 {
-  frameId @0 :UInt32;
-  modelExecutionTime @14 :Float32;
-  dspExecutionTime @16 :Float32;
-  rawPredictions @15 :Data;
-
-  faceOrientation @3 :List(Float32);
-  facePosition @4 :List(Float32);
-  faceProb @5 :Float32;
-  leftEyeProb @6 :Float32;
-  rightEyeProb @7 :Float32;
-  leftBlinkProb @8 :Float32;
-  rightBlinkProb @9 :Float32;
-  faceOrientationStd @11 :List(Float32);
-  facePositionStd @12 :List(Float32);
-  sunglassesProb @13 :Float32;
-  poorVision @17 :Float32;
-  partialFace @18 :Float32;
-  distractedPose @19 :Float32;
-  distractedEyes @20 :Float32;
-  eyesOnRoad @21 :Float32;
-  phoneUse @22 :Float32;
-  occludedProb @23 :Float32;
-
-  readyProb @24 :List(Float32);
-  notReadyProb @25 :List(Float32);
-
-  irPwrDEPRECATED @10 :Float32;
-  descriptorDEPRECATED @1 :List(Float32);
-  stdDEPRECATED @2 :Float32;
 }
 
 struct DriverMonitoringState @0xb83cda094a1da284 {
@@ -2464,25 +2395,6 @@ struct MapRenderState {
   frameId @2: UInt32;
 }
 
-struct NavModelData {
-  frameId @0 :UInt32;
-  locationMonoTime @6 :UInt64;
-  modelExecutionTime @1 :Float32;
-  dspExecutionTime @2 :Float32;
-  features @3 :List(Float32);
-  # predicted future position
-  position @4 :XYData;
-  desirePrediction @5 :List(Float32);
-
-  # All SI units and in device frame
-  struct XYData {
-    x @0 :List(Float32);
-    y @1 :List(Float32);
-    xStd @2 :List(Float32);
-    yStd @3 :List(Float32);
-  }
-}
-
 struct EncodeData {
   idx @0 :EncodeIndex;
   data @1 :Data;
@@ -2672,8 +2584,8 @@ struct Event {
 
     # *********** legacy + deprecated ***********
     model @9 :Deprecated.ModelData; # TODO: rename modelV2 and mark this as deprecated
-    liveMpcDEPRECATED @36 :LiveMpcData;
-    liveLongitudinalMpcDEPRECATED @37 :LiveLongitudinalMpcData;
+    liveMpcDEPRECATED @36 :Deprecated.LiveMpcData;
+    liveLongitudinalMpcDEPRECATED @37 :Deprecated.LiveLongitudinalMpcData;
     liveLocationKalmanDeprecatedDEPRECATED @51 :Deprecated.LiveLocationData;
     orbslamCorrectionDEPRECATED @45 :Deprecated.OrbslamCorrection;
     liveUIDEPRECATED @14 :Deprecated.LiveUI;
@@ -2706,13 +2618,13 @@ struct Event {
     kalmanOdometryDEPRECATED @65 :Deprecated.KalmanOdometry;
     uiLayoutStateDEPRECATED @57 :Deprecated.UiLayoutState;
     pandaStateDEPRECATED @12 :PandaState;
-    driverStateDEPRECATED @59 :DriverStateDEPRECATED;
+    driverStateDEPRECATED @59 :Deprecated.DriverStateDEPRECATED;
     sensorEventsDEPRECATED @11 :List(SensorEventData);
     lateralPlanDEPRECATED @64 :LateralPlan;
-    navModelDEPRECATED @104 :NavModelData;
+    navModelDEPRECATED @104 :Deprecated.NavModelData;
     uiPlanDEPRECATED @106 :UiPlan;
     liveLocationKalmanDEPRECATED @72 :LiveLocationKalman;
-    liveTracksDEPRECATED @16 :List(LiveTracksDEPRECATED);
+    liveTracksDEPRECATED @16 :List(Deprecated.LiveTracksDEPRECATED);
     onroadEventsDEPRECATED @68: List(Car.OnroadEventDEPRECATED);
     gyroscope2DEPRECATED @100 :SensorEventData;
     accelerometer2DEPRECATED @101 :SensorEventData;
