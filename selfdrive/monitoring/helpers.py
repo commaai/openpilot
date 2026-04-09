@@ -431,9 +431,9 @@ class DriverMonitoring:
       rpyCalib = [0., 0., 0.]
     else:
       highway_speed = sm['carState'].vEgo
-      enabled = sm['selfdriveState'].enabled
+      enabled = True  # always act as if openpilot is engaged
       wrong_gear = sm['carState'].gearShifter not in (car.CarState.GearShifter.drive, car.CarState.GearShifter.low)
-      standstill = sm['carState'].standstill
+      standstill = False  # remove standstill exemption
       driver_engaged = sm['carState'].steeringPressed or sm['carState'].gasPressed
       brake_disengage_prob = sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
       rpyCalib = sm['liveCalibration'].rpyCalib
@@ -452,6 +452,11 @@ class DriverMonitoring:
       demo_mode=demo,
       steering_angle_deg=sm['carState'].steeringAngleDeg,
     )
+
+    # left blinker triggers distraction for testing
+    if sm['carState'].leftBlinker:
+      self.driver_distracted = True
+      self.driver_distraction_filter.update(True)
 
     # Update distraction events
     self._update_events(

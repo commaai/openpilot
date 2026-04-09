@@ -163,7 +163,7 @@ class Soundd:
         sm.update(0)
 
         # Always updates volume, even when alert is playing
-        if sm.updated['soundPressure']:
+        if sm.updated['soundPressure'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
           self.spl_filter_weighted.update(sm["soundPressure"].soundPressureWeightedDb)
           self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
@@ -171,7 +171,7 @@ class Soundd:
 
         if self.current_alert == AudibleAlert.warningImmediate:
           elapsed = time.monotonic() - self.ramp_start_time
-          ramp_vol = self.ramp_start_volume + (1.0 - self.ramp_start_volume) * min(elapsed / ALERT_RAMP_TIME, 1.0)
+          ramp_vol = float(np.interp(elapsed, [0, ALERT_RAMP_TIME], [self.ramp_start_volume, MAX_VOLUME]))
           spl_vol = self.calculate_volume(float(self.spl_filter_weighted.x))
           self.current_volume = max(spl_vol, ramp_vol)
 
