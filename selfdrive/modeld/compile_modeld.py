@@ -186,7 +186,6 @@ def compile_modeld(cam_w, cam_h):
   run_policy_jit = TinyJit(_run, prune=True)
   bufs, npy = make_buffers(vision_input_shapes, policy_input_shapes, frame_skip)
 
-
   for i in range(3):
     frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
     big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
@@ -205,31 +204,36 @@ def compile_modeld(cam_w, cam_h):
     et = time.perf_counter()
     print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
-    if i == 1: # copy outputs and buffers after sync
-      test_val = [np.copy(v.numpy()) for v in outs] + [np.copy(i.numpy()) for i in inputs.values()]
+    if i == 1: # copy outputs and buffers
+      test_val = [np.copy(v.numpy()) for v in outs]
+      # TODO maybe return buffer from jit? and only use for test?
+      test_buffers = [np.copy(v.numpy()) for v in inputs.values()]
 
   pkl_path = policy_pkl_path(cam_w, cam_h)
   with open(pkl_path, "wb") as f:
     pickle.dump(run_policy_jit, f)
   print(f"  Saved to {pkl_path}")
-  return test_inputs, test_val
+  return test_inputs, test_val, test_buffers
 
 
-def test_vs_compile(run, inputs: dict[str, Tensor], test_val: list[np.ndarray]):
-  # run 20 times
+def test_vs_compile(run, inputs: dict[str, Tensor], test_val: list[np.ndarray], test_buffers: list[np.ndarray]):
+  # 2x input before run, as it'll mutate the buffers
+  inputs_2x = {k: Tensor(v.numpy()*2, device=v.device) for k,v in inputs.items()}
+
   for i in range(20):
     st = time.perf_counter()
     out = run(**inputs)
     mt = time.perf_counter()
-    val = [v.numpy() for v in out] + [np.copy(i.numpy()) for i in inputs.values()]
+    val = [v.numpy() for v in out]
+    buffers = [v.numpy().copy() for v in inputs.values()] # TODO need copy()?
     et = time.perf_counter()
     print(f"enqueue {(mt-st)*1e3:6.2f} ms -- total run {(et-st)*1e3:6.2f} ms")
 
-    if test_val is not None and i == 0:  # check output matches before buffers get mutated by the jit
+    if i == 0:  # check output matches before buffers get mutated by the jit
       np.testing.assert_equal(test_val, val)
+      np.testing.assert_equal(test_buffers, buffers)
 
   # test that changing the inputs changes the model outputs
-  inputs_2x = {k: Tensor(v.numpy()*2, device=v.device) for k,v in inputs.items()}
   out = run(**inputs_2x)
   changed_val = [v.numpy() for v in out]
   for v, cv in zip(val, changed_val):
@@ -265,9 +269,9 @@ def compile_dm_warp(cam_w, cam_h):
 
 def run_and_save_pickle():
   for cam_w, cam_h in CAMERA_CONFIGS:
-    inputs, outputs = compile_modeld(cam_w, cam_h)
+    inputs, outputs, buffers = compile_modeld(cam_w, cam_h)
     pickle_loaded = pickle.load(open(policy_pkl_path(cam_w, cam_h), "rb"))
-    test_vs_compile(pickle_loaded, inputs, outputs)
+    test_vs_compile(pickle_loaded, inputs, outputs, buffers)
 
     compile_dm_warp(cam_w, cam_h)
 
