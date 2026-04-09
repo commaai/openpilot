@@ -571,8 +571,6 @@ struct LidarPts @0xe3d6685d4e9d8f7a {
   pkt @4 :Data;
 }
 
-# ***** moved out of log.capnp *****
-
 struct LiveTracksDEPRECATED @0xb16f60103159415a {
   trackId @0 :Int32;
   dRel @1 :Float32;
