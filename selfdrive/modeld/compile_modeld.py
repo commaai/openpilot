@@ -197,15 +197,16 @@ def compile_modeld(cam_w, cam_h):
     st = time.perf_counter()
     with Context(OPENPILOT_HACKS=1):
       inputs = {**bufs, 'frame': frame, 'big_frame': big_frame}
+      if i == 1:  # copy inputs and buffers before running
+        test_inputs = {k: Tensor(v.numpy().copy(), device=v.device) for k, v in inputs.items()}
       outs = run_policy_jit(**inputs)
     mt = time.perf_counter()
     Device.default.synchronize()
     et = time.perf_counter()
     print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
 
-    if i == 1:
-      test_val = [np.copy(v.numpy()) for v in outs]
-      test_inputs = {k: Tensor(v.numpy().copy(), device=v.device) for k, v in inputs.items()}
+    if i == 1: # copy outputs and buffers after sync
+      test_val = [np.copy(v.numpy()) for v in outs] + [np.copy(i.numpy()) for i in inputs.values()]
 
   pkl_path = policy_pkl_path(cam_w, cam_h)
   with open(pkl_path, "wb") as f:
@@ -220,7 +221,7 @@ def test_vs_compile(run, inputs: dict[str, Tensor], test_val: list[np.ndarray]):
     st = time.perf_counter()
     out = run(**inputs)
     mt = time.perf_counter()
-    val = [v.numpy() for v in out]
+    val = [v.numpy() for v in out] + [np.copy(i.numpy()) for i in inputs.values()]
     et = time.perf_counter()
     print(f"enqueue {(mt-st)*1e3:6.2f} ms -- total run {(et-st)*1e3:6.2f} ms")
 
