@@ -12,8 +12,8 @@ AlertSize = log.SelfdriveState.AlertSize
 
 DEBUG = False
 
-LOOKING_CENTER_THRESHOLD_UPPER = math.radians(6)
-LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3)
+LOOKING_CENTER_THRESHOLD_UPPER = math.radians(6 * 2)
+LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3 * 2)
 
 
 class DriverStateRenderer(Widget):
@@ -39,8 +39,8 @@ class DriverStateRenderer(Widget):
     self._looking_center = False
 
     self._fade_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
-    self._pitch_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
-    self._yaw_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
+    self._pitch_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
+    self._yaw_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
     self._rotation_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
     self._looking_center_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
@@ -187,23 +187,23 @@ class DriverStateRenderer(Widget):
     else:
       cal_rpy = [0.0, 0.0, 0.0]
 
-    roll, pitch, yaw = face_orientation_from_net(driver_orient, driver_position, cal_rpy)
+    _, pitch, yaw = face_orientation_from_net(driver_orient, driver_position, cal_rpy)
+    pitch += math.radians(6)
     yaw = -yaw  # undo sign flip in face_orientation_from_net to match UI convention
 
     pitch = self._pitch_filter.update(pitch)
     yaw = self._yaw_filter.update(yaw)
 
-    # hysteresis on looking center
-    if abs(pitch) < LOOKING_CENTER_THRESHOLD_LOWER and abs(yaw) < LOOKING_CENTER_THRESHOLD_LOWER:
-      self._looking_center = True
-    elif abs(pitch) > LOOKING_CENTER_THRESHOLD_UPPER or abs(yaw) > LOOKING_CENTER_THRESHOLD_UPPER:
-      self._looking_center = False
-    self._looking_center_filter.update(1 if self._looking_center else 0)
+    # # hysteresis on looking center
+    # if abs(pitch) < LOOKING_CENTER_THRESHOLD_LOWER and abs(yaw) < LOOKING_CENTER_THRESHOLD_LOWER:
+    #   self._looking_center = True
+    # elif abs(pitch) > LOOKING_CENTER_THRESHOLD_UPPER or abs(yaw) > LOOKING_CENTER_THRESHOLD_UPPER:
+    #   self._looking_center = False
+    # self._looking_center_filter.update(1 if self._looking_center else 0)
 
     if DEBUG:
       pitchd = math.degrees(pitch)
       yawd = math.degrees(yaw)
-      rolld = math.degrees(roll)
 
       rl.draw_line_ex((0, 100), (200, 100), 3, rl.RED)
       rl.draw_line_ex((0, 120), (200, 120), 3, rl.RED)
@@ -211,13 +211,11 @@ class DriverStateRenderer(Widget):
 
       pitch_x = 100 + pitchd
       yaw_x = 100 + yawd
-      roll_x = 100 + rolld
       rl.draw_circle(int(pitch_x), 100, 5, rl.GREEN)
       rl.draw_circle(int(yaw_x), 120, 5, rl.GREEN)
-      rl.draw_circle(int(roll_x), 140, 5, rl.GREEN)
 
     # filter head rotation, handling wrap-around
-    rotation = math.degrees(math.atan2(pitch, yaw))
+    rotation = math.degrees(math.atan2(pitch * 2, yaw))
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)
