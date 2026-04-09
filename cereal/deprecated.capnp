@@ -3,7 +3,7 @@ $Cxx.namespace("cereal");
 
 @0x80ef1ec4889c2a63;
 
-# legacy.capnp: a home for deprecated structs
+# deprecated.capnp: a home for deprecated structs
 
 struct LogRotate @0x9811e1f38f62f2d1 {
   segmentNum @0 :Int32;

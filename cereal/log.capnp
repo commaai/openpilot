@@ -2,7 +2,7 @@ using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
 using Car = import "car.capnp";
-using Legacy = import "legacy.capnp";
+using Deprecated = import "deprecated.capnp";
 using Custom = import "custom.capnp";
 
 @0xf3b1f17e25a4285b;
@@ -2666,40 +2666,40 @@ struct Event {
     customReserved19 @145 :Custom.CustomReserved19;
 
     # *********** legacy + deprecated ***********
-    model @9 :Legacy.ModelData; # TODO: rename modelV2 and mark this as deprecated
+    model @9 :Deprecated.ModelData; # TODO: rename modelV2 and mark this as deprecated
     liveMpcDEPRECATED @36 :LiveMpcData;
     liveLongitudinalMpcDEPRECATED @37 :LiveLongitudinalMpcData;
-    liveLocationKalmanLegacyDEPRECATED @51 :Legacy.LiveLocationData;
-    orbslamCorrectionDEPRECATED @45 :Legacy.OrbslamCorrection;
-    liveUIDEPRECATED @14 :Legacy.LiveUI;
+    liveLocationKalmanDeprecatedDEPRECATED @51 :Deprecated.LiveLocationData;
+    orbslamCorrectionDEPRECATED @45 :Deprecated.OrbslamCorrection;
+    liveUIDEPRECATED @14 :Deprecated.LiveUI;
     sensorEventDEPRECATED @4 :SensorEventData;
-    liveEventDEPRECATED @8 :List(Legacy.LiveEventData);
-    liveLocationDEPRECATED @25 :Legacy.LiveLocationData;
-    ethernetDataDEPRECATED @26 :List(Legacy.EthernetPacket);
-    cellInfoDEPRECATED @28 :List(Legacy.CellInfo);
-    wifiScanDEPRECATED @29 :List(Legacy.WifiScan);
-    uiNavigationEventDEPRECATED @50 :Legacy.UiNavigationEvent;
+    liveEventDEPRECATED @8 :List(Deprecated.LiveEventData);
+    liveLocationDEPRECATED @25 :Deprecated.LiveLocationData;
+    ethernetDataDEPRECATED @26 :List(Deprecated.EthernetPacket);
+    cellInfoDEPRECATED @28 :List(Deprecated.CellInfo);
+    wifiScanDEPRECATED @29 :List(Deprecated.WifiScan);
+    uiNavigationEventDEPRECATED @50 :Deprecated.UiNavigationEvent;
     liveMapDataDEPRECATED @62 :LiveMapDataDEPRECATED;
-    gpsPlannerPointsDEPRECATED @40 :Legacy.GPSPlannerPoints;
-    gpsPlannerPlanDEPRECATED @41 :Legacy.GPSPlannerPlan;
+    gpsPlannerPointsDEPRECATED @40 :Deprecated.GPSPlannerPoints;
+    gpsPlannerPlanDEPRECATED @41 :Deprecated.GPSPlannerPlan;
     applanixRawDEPRECATED @42 :Data;
-    androidGnssDEPRECATED @30 :Legacy.AndroidGnss;
-    lidarPtsDEPRECATED @32 :Legacy.LidarPts;
-    navStatusDEPRECATED @38 :Legacy.NavStatus;
-    trafficEventsDEPRECATED @43 :List(Legacy.TrafficEvent);
-    liveLocationTimingDEPRECATED @44 :Legacy.LiveLocationData;
-    liveLocationCorrectedDEPRECATED @46 :Legacy.LiveLocationData;
-    navUpdateDEPRECATED @27 :Legacy.NavUpdate;
-    orbObservationDEPRECATED @47 :List(Legacy.OrbObservation);
-    locationDEPRECATED @49 :Legacy.LiveLocationData;
-    orbOdometryDEPRECATED @53 :Legacy.OrbOdometry;
-    orbFeaturesDEPRECATED @54 :Legacy.OrbFeatures;
-    applanixLocationDEPRECATED @55 :Legacy.LiveLocationData;
-    orbKeyFrameDEPRECATED @56 :Legacy.OrbKeyFrame;
-    orbFeaturesSummaryDEPRECATED @58 :Legacy.OrbFeaturesSummary;
-    featuresDEPRECATED @10 :Legacy.CalibrationFeatures;
-    kalmanOdometryDEPRECATED @65 :Legacy.KalmanOdometry;
-    uiLayoutStateDEPRECATED @57 :Legacy.UiLayoutState;
+    androidGnssDEPRECATED @30 :Deprecated.AndroidGnss;
+    lidarPtsDEPRECATED @32 :Deprecated.LidarPts;
+    navStatusDEPRECATED @38 :Deprecated.NavStatus;
+    trafficEventsDEPRECATED @43 :List(Deprecated.TrafficEvent);
+    liveLocationTimingDEPRECATED @44 :Deprecated.LiveLocationData;
+    liveLocationCorrectedDEPRECATED @46 :Deprecated.LiveLocationData;
+    navUpdateDEPRECATED @27 :Deprecated.NavUpdate;
+    orbObservationDEPRECATED @47 :List(Deprecated.OrbObservation);
+    locationDEPRECATED @49 :Deprecated.LiveLocationData;
+    orbOdometryDEPRECATED @53 :Deprecated.OrbOdometry;
+    orbFeaturesDEPRECATED @54 :Deprecated.OrbFeatures;
+    applanixLocationDEPRECATED @55 :Deprecated.LiveLocationData;
+    orbKeyFrameDEPRECATED @56 :Deprecated.OrbKeyFrame;
+    orbFeaturesSummaryDEPRECATED @58 :Deprecated.OrbFeaturesSummary;
+    featuresDEPRECATED @10 :Deprecated.CalibrationFeatures;
+    kalmanOdometryDEPRECATED @65 :Deprecated.KalmanOdometry;
+    uiLayoutStateDEPRECATED @57 :Deprecated.UiLayoutState;
     pandaStateDEPRECATED @12 :PandaState;
     driverStateDEPRECATED @59 :DriverStateDEPRECATED;
     sensorEventsDEPRECATED @11 :List(SensorEventData);
