@@ -207,7 +207,7 @@ def compile_modeld(cam_w, cam_h):
     if i == 1: # copy outputs and buffers
       test_val = [np.copy(v.numpy()) for v in outs]
       # TODO maybe return buffer from jit? and only use for test?
-      test_buffers = [np.copy(v.numpy()) for v in inputs.values()]
+      test_buffers = [np.copy(v.numpy().copy()) for v in inputs.values()]
 
   pkl_path = policy_pkl_path(cam_w, cam_h)
   with open(pkl_path, "wb") as f:
@@ -217,25 +217,24 @@ def compile_modeld(cam_w, cam_h):
 
 
 def test_vs_compile(run, inputs: dict[str, Tensor], test_val: list[np.ndarray], test_buffers: list[np.ndarray]):
-  # 2x input before run, as it'll mutate the buffers
-  inputs_2x = {k: Tensor(v.numpy()*2, device=v.device) for k,v in inputs.items()}
-
   for i in range(20):
     st = time.perf_counter()
     out = run(**inputs)
     mt = time.perf_counter()
-    val = [v.numpy() for v in out]
-    buffers = [v.numpy().copy() for v in inputs.values()] # TODO need copy()?
+    Device.default.synchronize()
     et = time.perf_counter()
     print(f"enqueue {(mt-st)*1e3:6.2f} ms -- total run {(et-st)*1e3:6.2f} ms")
 
     if i == 0:  # check output matches before buffers get mutated by the jit
+      val = [v.numpy() for v in out]
+      buffers = [v.numpy().copy() for v in inputs.values()]
       np.testing.assert_equal(test_val, val)
       np.testing.assert_equal(test_buffers, buffers)
 
   # test that changing the inputs changes the model outputs
-  out = run(**inputs_2x)
-  changed_val = [v.numpy() for v in out]
+  inputs_2x = {k: Tensor(v.numpy().copy()*2, device=v.device) for k,v in inputs.items()}
+  changed_val = [v.numpy() for v in run(**inputs_2x)]
+  val = [v.numpy() for v in run(**inputs)]
   for v, cv in zip(val, changed_val):
     assert not np.array_equal(v, cv), f"output with shape {v.shape} didn't change when inputs were doubled"
   print('test_vs_compile OK')
