@@ -2230,7 +2230,7 @@ struct DriverStateDEPRECATED @0xb83c6cc593ed0a00 {
   stdDEPRECATED @2 :Float32;
 }
 
-struct DriverMonitoringState @0xb83cda094a1da284 {
+struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
   events @18 :List(OnroadEvent);
   faceDetected @1 :Bool;
   isDistracted @2 :Bool;
@@ -2254,6 +2254,71 @@ struct DriverMonitoringState @0xb83cda094a1da284 {
   isPreviewDEPRECATED @15 :Bool;
   rhdCheckedDEPRECATED @5 :Bool;
   eventsDEPRECATED @0 :List(Car.OnroadEventDEPRECATED);
+}
+
+struct DriverMonitoringStateV2 {
+  monitoringLockout @0 :Bool;
+  terminalAlertCountLockoutPercent @1 :UInt32;
+  terminalAlertTimeLockoutPercent @2 :UInt32;
+
+  alwaysOn @3 :Bool;
+  alwaysOnNoEntry @4 :Bool;
+
+  alertLevel @5 :AlertLevel;
+  monitoringPolicy @6 :MonitoringPolicy;
+  isRHD @7 :Bool;
+  rhdCalibration @8 :CalibrationState;
+
+  visionPolicyState @9 :VisionPolicyState;
+  wheeltouchPolicyState @10 :WheeltouchPolicyState;
+
+  enum AlertLevel {
+    none @0;
+    low @1;
+    mid @2;
+    high @3;
+  }
+
+  enum MonitoringPolicy {
+    wheeltouch @0;
+    vision @1;
+  }
+
+  struct VisionPolicyState {
+    awarenessPercent @0 :Float32;
+    isDistracted @1 :Bool;
+    distractedTypes @2 :List(DistractedType);
+
+    faceDetected @3 :Bool;
+    rpyPose @4 :List(Float32);
+    poseCalibration @5 :PoseCalibration;
+    poseUncertainShortTerm @6 :Bool;
+    poseUncertainLongTerm @7 :Bool;
+    wheeltouchFallbackPercent @8 :Float32;
+    uncertainOffroadAlertPercent @9 :Float32;
+
+    enum DistractedType {
+      pose @0;
+      blink @1;
+      phone @2;
+    }
+
+    struct PoseCalibration {
+      calibrated @0 :Bool;
+      pitch @1 :CalibrationState;
+      yaw @2 :CalibrationState;
+    }
+  }
+
+  struct WheeltouchPolicyState {
+    awarenessPercent @0 :Float32;
+    driverInteracting @1 :Bool;
+  }
+
+  struct CalibrationState {
+    calibratedPercent @0 :Float32;
+    offset @1 :Float32;
+  }
 }
 
 struct Boot {
