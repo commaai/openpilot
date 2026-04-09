@@ -8,7 +8,6 @@ import ast
 import os
 import re
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -165,18 +164,18 @@ def write_po(path: str | Path, header: POEntry | None, entries: list[POEntry]) -
     if header:
       for c in header.comments:
         f.write(c + '\n')
-      if header.flags:
-        f.write('#, ' + ', '.join(header.flags) + '\n')
       f.write(f'msgid {_quote("")}\n')
       f.write(f'msgstr {_quote(header.msgstr)}\n\n')
 
     for entry in entries:
       for c in entry.comments:
         f.write(c + '\n')
-      for ref in entry.source_refs:
+      # Keep file-level context for translators, but drop line numbers to
+      # avoid churning PO diffs on unrelated code edits.
+      source_files = sorted({ref.rsplit(':', 1)[0] for ref in entry.source_refs})
+      for ref in source_files:
         f.write(f'#: {ref}\n')
-      if entry.flags:
-        f.write('#, ' + ', '.join(entry.flags) + '\n')
+      # Runtime loading ignores gettext flags; omit them to reduce noise.
       f.write(f'msgid {_quote(entry.msgid)}\n')
       if entry.is_plural:
         f.write(f'msgid_plural {_quote(entry.msgid_plural)}\n')
@@ -256,31 +255,24 @@ def extract_strings(files: list[str], basedir: str) -> list[POEntry]:
 
 # ──── POT generation ────
 
+def _build_pot_header() -> POEntry:
+  return POEntry(
+    msgstr='Content-Type: text/plain; charset=UTF-8\n',
+  )
+
+
+def _build_po_header(language: str) -> POEntry:
+  plural_forms = PLURAL_FORMS.get(language, 'nplurals=2; plural=(n != 1);')
+  return POEntry(
+    msgstr='Content-Type: text/plain; charset=UTF-8\n' +
+      f'Language: {language}\n' +
+      f'Plural-Forms: {plural_forms}\n',
+  )
+
+
 def generate_pot(entries: list[POEntry], pot_path: str | Path) -> None:
   """Generate a .pot template file from extracted entries."""
-  now = datetime.now(UTC).strftime('%Y-%m-%d %H:%M%z')
-  header = POEntry(
-    comments=[
-      '# SOME DESCRIPTIVE TITLE.',
-      "# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER",
-      '# This file is distributed under the same license as the PACKAGE package.',
-      '# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.',
-      '#',
-    ],
-    flags=['fuzzy'],
-    msgstr='Project-Id-Version: PACKAGE VERSION\n' +
-      'Report-Msgid-Bugs-To: \n' +
-      f'POT-Creation-Date: {now}\n' +
-      'PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n' +
-      'Last-Translator: FULL NAME <EMAIL@ADDRESS>\n' +
-      'Language-Team: LANGUAGE <LL@li.org>\n' +
-      'Language: \n' +
-      'MIME-Version: 1.0\n' +
-      'Content-Type: text/plain; charset=UTF-8\n' +
-      'Content-Transfer-Encoding: 8bit\n' +
-      'Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n',
-  )
-  write_po(pot_path, header, entries)
+  write_po(pot_path, _build_pot_header(), entries)
 
 
 # ──── PO init (replaces msginit) ────
@@ -305,43 +297,22 @@ def init_po(pot_path: str | Path, po_path: str | Path, language: str) -> None:
   """Create a new .po file from a .pot template (replaces msginit)."""
   _, entries = parse_po(pot_path)
   plural_forms = PLURAL_FORMS.get(language, 'nplurals=2; plural=(n != 1);')
-  now = datetime.now(UTC).strftime('%Y-%m-%d %H:%M%z')
-
-  header = POEntry(
-    comments=[
-      f'# {language} translations for PACKAGE package.',
-      "# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER",
-      '# This file is distributed under the same license as the PACKAGE package.',
-      '# Automatically generated.',
-      '#',
-    ],
-    msgstr='Project-Id-Version: PACKAGE VERSION\n' +
-      'Report-Msgid-Bugs-To: \n' +
-      f'POT-Creation-Date: {now}\n' +
-      f'PO-Revision-Date: {now}\n' +
-      'Last-Translator: Automatically generated\n' +
-      'Language-Team: none\n' +
-      f'Language: {language}\n' +
-      'MIME-Version: 1.0\n' +
-      'Content-Type: text/plain; charset=UTF-8\n' +
-      'Content-Transfer-Encoding: 8bit\n' +
-      f'Plural-Forms: {plural_forms}\n',
-  )
 
   nplurals = int(re.search(r'nplurals=(\d+)', plural_forms).group(1))
   for e in entries:
     if e.is_plural:
       e.msgstr_plural = dict.fromkeys(range(nplurals), '')
 
-  write_po(po_path, header, entries)
+  write_po(po_path, _build_po_header(language), entries)
 
 
 # ──── PO merge (replaces msgmerge) ────
 
 def merge_po(po_path: str | Path, pot_path: str | Path) -> None:
   """Update a .po file with entries from a .pot template (replaces msgmerge --update)."""
-  po_header, po_entries = parse_po(po_path)
+  _, po_entries = parse_po(po_path)
   _, pot_entries = parse_po(pot_path)
+  language = Path(po_path).stem.removeprefix("app_")
 
   existing = {e.msgid: e for e in po_entries}
   merged = []
@@ -359,4 +330,4 @@ def merge_po(po_path: str | Path, pot_path: str | Path) -> None:
       merged.append(pot_e)
 
   merged.sort(key=lambda e: e.msgid)
-  write_po(po_path, po_header, merged)
+  write_po(po_path, _build_po_header(language), merged)

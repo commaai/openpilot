@@ -20,7 +20,6 @@ TIMEOUT = 3*60
 class ResetMode(IntEnum):
   USER_RESET = 0  # user initiated a factory reset from openpilot
   RECOVER = 1     # userdata is corrupt for some reason, give a chance to recover
-  FORMAT = 2      # finish up a factory reset from a tool that doesn't flash an empty partition to userdata
 
 
 class ResetState(IntEnum):
@@ -54,7 +53,7 @@ class Reset(Widget):
     else:
       self._reset_state = ResetState.FAILED
 
-  def start_reset(self):
+  def _start_reset(self):
     self._reset_state = ResetState.RESETTING
     threading.Timer(0.1, self._do_erase).start()
 
@@ -92,7 +91,7 @@ class Reset(Widget):
 
   def _confirm(self):
     if self._reset_state == ResetState.CONFIRM:
-      self.start_reset()
+      self._start_reset()
     else:
       self._reset_state = ResetState.CONFIRM
 
@@ -113,14 +112,9 @@ def main():
   if len(sys.argv) > 1:
     if sys.argv[1] == '--recover':
       mode = ResetMode.RECOVER
-    elif sys.argv[1] == "--format":
-      mode = ResetMode.FORMAT
 
   gui_app.init_window("System Reset", 20)
   reset = Reset(mode)
-
-  if mode == ResetMode.FORMAT:
-    reset.start_reset()
 
   gui_app.push_widget(reset)
 

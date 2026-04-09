@@ -854,8 +854,12 @@ class WifiManager:
 
         # NOTE: AccessPoints property may exclude hidden APs (use GetAllAccessPoints method if needed)
         wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
-        wifi_props = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all()).body[0]
-        ap_paths = wifi_props.get('AccessPoints', ('ao', []))[1]
+        wifi_props_reply = self._router_main.send_and_get_reply(Properties(wifi_addr).get_all())
+        if wifi_props_reply.header.message_type == MessageType.error:
+          cloudlog.warning(f"Failed to get WiFi properties: {wifi_props_reply}")
+          return
+
+        ap_paths = wifi_props_reply.body[0].get('AccessPoints', ('ao', []))[1]
 
         aps: dict[str, list[AccessPoint]] = {}
 

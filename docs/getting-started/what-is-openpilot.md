@@ -5,7 +5,7 @@
 
 ## How do I use it?
 
-openpilot is designed to be used on the comma 3X.
+openpilot is designed to be used on the comma four.
 
 ## How does it work?
 

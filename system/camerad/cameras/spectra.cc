@@ -1436,7 +1436,7 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
 }
 
 bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp) {
-  if (!syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
+  if (!syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp, cc.staggered_sof)) {
     return false;
   }
 
@@ -1455,23 +1455,31 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t fram
   return true;
 }
 
-bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp) {
+bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp, bool staggered) {
   if (first_frame_synced) return true;
 
   // Store the frame data for this camera
-  camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1};
+  camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1, staggered};
 
   // Ensure all cameras are up
   int enabled_camera_count = std::count_if(std::begin(ALL_CAMERA_CONFIGS), std::end(ALL_CAMERA_CONFIGS),
                                            [](const auto &config) { return config.enabled; });
   bool all_cams_up = camera_sync_data.size() == enabled_camera_count;
 
-  // Wait until the timestamps line up
+  // Check that camera timestamps are properly aligned:
+  // - non-staggered cameras should be within 0.2ms of each other
+  // - staggered cameras should be within 0.2ms of a 25ms offset from non-staggered cameras
+  const uint64_t half_period_ns = 25 * 1000000ULL;  // 25ms
+  const uint64_t tolerance_ns = 200000ULL;           // 0.2ms
   bool all_cams_synced = true;
-  for (const auto &[_, sync_data] : camera_sync_data) {
+  for (const auto &[cam, sync_data] : camera_sync_data) {
+    if (cam == camera_id) continue;
     uint64_t diff = std::max(timestamp, sync_data.timestamp) -
                     std::min(timestamp, sync_data.timestamp);
-    if (diff > 0.2*1e6) { // milliseconds
+    bool pair_staggered = staggered != sync_data.staggered;
+    uint64_t expected_offset = pair_staggered ? half_period_ns : 0;
+    uint64_t error = (diff > expected_offset) ? diff - expected_offset : expected_offset - diff;
+    if (error > tolerance_ns) {
       all_cams_synced = false;
     }
   }

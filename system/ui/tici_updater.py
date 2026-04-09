@@ -67,9 +67,14 @@ class Updater(Widget):
 
   def _run_update_process(self):
     # TODO: just import it and run in a thread without a subprocess
-    cmd = [self.updater, "--swap", self.manifest]
-    self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    text=True, bufsize=1, universal_newlines=True)
+    try:
+      cmd = [self.updater, "--swap", self.manifest]
+      self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                      text=True, bufsize=1, universal_newlines=True)
+    except Exception:
+      self.progress_text = "Update failed"
+      self.show_reboot_button = True
+      return
 
     if self.process.stdout is not None:
       for line in self.process.stdout:
