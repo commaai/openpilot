@@ -456,7 +456,7 @@ class DriverMonitoring:
     # left blinker triggers distraction for testing
     if sm['carState'].leftBlinker:
       self.driver_distracted = True
-      self.driver_distraction_filter.update(True)
+      self.driver_distraction_filter.x = 1.0
 
     # Update distraction events
     self._update_events(
