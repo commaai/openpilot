@@ -2257,12 +2257,12 @@ struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
 }
 
 struct DriverMonitoringStateV2 {
-  monitoringLockout @0 :Bool;
+  terminalLockout @0 :Bool;
   terminalAlertCountLockoutPercent @1 :UInt32;
   terminalAlertTimeLockoutPercent @2 :UInt32;
 
   alwaysOn @3 :Bool;
-  alwaysOnNoEntry @4 :Bool;
+  alwaysOnLockout @4 :Bool;
 
   alertLevel @5 :AlertLevel;
   monitoringPolicy @6 :MonitoringPolicy;
