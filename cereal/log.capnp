@@ -992,8 +992,6 @@ struct ModelDataV2 {
   meta @12 :MetaData;
   confidence @23: ConfidenceClass;
 
-  # Model perceived motion
-
   # e2e lateral planner
   action @26: Action;
 
