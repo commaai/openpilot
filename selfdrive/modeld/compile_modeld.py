@@ -194,11 +194,10 @@ def compile_modeld(cam_w, cam_h):
     Device.default.synchronize()
 
     st = time.perf_counter()
-    with Context(OPENPILOT_HACKS=1):
-      inputs = {**bufs, 'frame': frame, 'big_frame': big_frame}
-      if i == 1:  # copy inputs and buffers before running
-        test_inputs = {k: Tensor(v.numpy().copy(), device=v.device) for k, v in inputs.items()}
-      outs = run_policy_jit(**inputs)
+    inputs = {**bufs, 'frame': frame, 'big_frame': big_frame}
+    if i == 1:  # copy inputs and buffers before running
+      test_inputs = {k: Tensor(v.numpy().copy(), device=v.device) for k, v in inputs.items()}
+    outs = run_policy_jit(**inputs)
     mt = time.perf_counter()
     Device.default.synchronize()
     et = time.perf_counter()
