@@ -2274,9 +2274,9 @@ struct DriverMonitoringStateV2 {
 
   enum AlertLevel {
     none @0;
-    low @1;
-    mid @2;
-    high @3;
+    one @1;
+    two @2;
+    three @3;
   }
 
   enum MonitoringPolicy {
