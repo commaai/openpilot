@@ -184,35 +184,51 @@ def compile_modeld(cam_w, cam_h):
   _run = make_run_policy(vision_runner, on_policy_runner, off_policy_runner,
                          cam_w, cam_h, vision_features_slice, frame_skip)
   run_policy_jit = TinyJit(_run, prune=True)
-  bufs, npy = make_buffers(vision_input_shapes, policy_input_shapes, frame_skip)
 
-  for i in range(3):
-    frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
-    big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
-    for v in npy.values():
-      v[:] = np.random.randn(*v.shape).astype(v.dtype)
-    Device.default.synchronize()
+  N_RUNS = 3 + 7
+  SEED = 42
 
-    st = time.perf_counter()
-    inputs = {**bufs, 'frame': frame, 'big_frame': big_frame}
-    if i == 1:  # copy inputs and buffers before running
-      test_inputs = {k: Tensor(v.numpy().copy(), device=v.device) for k, v in inputs.items()}
-    outs = run_policy_jit(**inputs)
-    mt = time.perf_counter()
-    Device.default.synchronize()
-    et = time.perf_counter()
-    print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
+  def random_inputs_run_fn(fn, test_val=None, test_buffers=None):
+    bufs, npy = make_buffers(vision_input_shapes, policy_input_shapes, frame_skip)
+    np.random.seed(SEED)
 
-    if i == 1: # copy outputs and buffers
-      test_val = [np.copy(v.numpy()) for v in outs]
-      # TODO maybe return buffer from jit? and only use for test?
-      test_buffers = [np.copy(v.numpy().copy()) for v in inputs.values()]
+    for i in range(N_RUNS):
+      frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
+      big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
+      for v in npy.values():
+        v[:] = np.random.randn(*v.shape).astype(v.dtype)
+      Device.default.synchronize()
 
+      st = time.perf_counter()
+      outs = fn(**{**bufs, 'frame': frame, 'big_frame': big_frame})
+      # .realize() not needed (and harmless?) once jitted, but needed for unjitted fn
+      for o in outs: o.realize()
+      mt = time.perf_counter()
+      Device.default.synchronize()
+      et = time.perf_counter()
+      print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
+
+    val = [np.copy(v.numpy()) for v in outs]
+    buffers = [np.copy(v.numpy().copy()) for v in bufs.values()]
+    if test_val:
+      np.testing.assert_equal(val, test_val)
+    if test_buffers:
+      np.testing.assert_equal(buffers, test_buffers)
+    return fn, val, buffers
+
+  print('run unjitted')
+  _, test_val, test_buffers = random_inputs_run_fn(_run)
+  print('capture + replay')
+  run_policy_jit, _, _ = random_inputs_run_fn(run_policy_jit, test_val, test_buffers)
+
+  print('pickle round trip')
   pkl_path = policy_pkl_path(cam_w, cam_h)
-  with open(pkl_path, "wb") as f:
-    pickle.dump(run_policy_jit, f)
-  print(f"  Saved to {pkl_path}")
-  return test_inputs, test_val, test_buffers
+  with open(pkl_path, "wb") as f: pickle.dump(run_policy_jit, f)
+  with open(pkl_path, "rb") as f: run_policy_jit = pickle.load(f)
+  _, _, _ = random_inputs_run_fn(run_policy_jit, test_val, test_buffers)
+
+  # print(f"  Saved to {pkl_path}")
+  # return test_inputs, test_val, test_buffers
 
 
 def test_vs_compile(run, inputs: dict[str, Tensor], test_val: list[np.ndarray], test_buffers: list[np.ndarray]):
@@ -267,9 +283,9 @@ def compile_dm_warp(cam_w, cam_h):
 
 def run_and_save_pickle():
   for cam_w, cam_h in CAMERA_CONFIGS:
-    inputs, outputs, buffers = compile_modeld(cam_w, cam_h)
-    pickle_loaded = pickle.load(open(policy_pkl_path(cam_w, cam_h), "rb"))
-    test_vs_compile(pickle_loaded, inputs, outputs, buffers)
+    compile_modeld(cam_w, cam_h)
+    # pickle_loaded = pickle.load(open(policy_pkl_path(cam_w, cam_h), "rb"))
+    # test_vs_compile(pickle_loaded, inputs, outputs, buffers)
 
     compile_dm_warp(cam_w, cam_h)
 
