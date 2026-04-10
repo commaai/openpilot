@@ -201,9 +201,9 @@ def compile_modeld(cam_w, cam_h):
 
       st = time.perf_counter()
       outs = fn(**{**bufs, 'frame': frame, 'big_frame': big_frame})
+      mt = time.perf_counter()
       # .realize() not needed (and harmless?) once jitted, but needed for unjitted fn
       for o in outs: o.realize()
-      mt = time.perf_counter()
       Device.default.synchronize()
       et = time.perf_counter()
       print(f"  [{i+1}/10] enqueue {(mt-st)*1e3:6.2f} ms -- total {(et-st)*1e3:6.2f} ms")
