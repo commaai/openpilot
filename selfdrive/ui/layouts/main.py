@@ -83,9 +83,12 @@ class MainLayout(Widget):
   def _set_mode_for_state(self):
     if ui_state.started:
       # Don't hide sidebar from interactive timeout
-      if self._current_mode != MainState.ONROAD:
-        self._sidebar.set_visible(False)
-      self._set_current_layout(MainState.ONROAD)
+      if self._is_body:
+        self._set_current_layout(MainState.HOME)
+      else:
+        if self._current_mode != MainState.ONROAD:
+          self._sidebar.set_visible(False)
+        self._set_current_layout(MainState.ONROAD)
     else:
       self._set_current_layout(MainState.HOME)
       # Body sidebar always starts closed; regular sidebar starts open
