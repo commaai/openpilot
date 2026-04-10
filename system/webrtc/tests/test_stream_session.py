@@ -84,3 +84,4 @@ class TestStreamSession:
         start_pts = packet.pts
       assert abs(i + packet.pts - (start_pts + (((time.monotonic_ns() - start_ns) * VIDEO_CLOCK_RATE) // 1_000_000_000))) < 450 #5ms
       assert packet.size == 0
+
