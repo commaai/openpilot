@@ -3,7 +3,6 @@ import numpy as np
 
 from cereal import car, log
 import cereal.messaging as messaging
-from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
@@ -160,9 +159,7 @@ class DriverMonitoring:
     self.dcam_uncertain = False
     self.dcam_uncertain_cnt = 0
     self.dcam_reset_cnt = 0
-
-    self.params = Params()
-    self.too_distracted = self.params.get_bool("DriverTooDistracted")
+    self.too_distracted = Params().get_bool("DriverTooDistracted")
 
     self._reset_awareness()
     self._set_timers(active_monitoring=True)
@@ -312,7 +309,7 @@ class DriverMonitoring:
   def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear, car_speed):
     self.alert_level = DMS.AlertLevel.none
     self.driver_interacting = driver_engaged
-    # Block engaging until ignition cycle after max number or time of distractions
+
     if self.terminal_alert_cnt >= self.settings._MAX_TERMINAL_ALERTS or \
        self.terminal_time >= self.settings._MAX_TERMINAL_DURATION:
       self.too_distracted = True
