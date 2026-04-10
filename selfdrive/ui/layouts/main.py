@@ -56,14 +56,13 @@ class MainLayout(Widget):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_bookmark_clicked,
                                 open_settings=lambda: self.open_settings(PanelType.TOGGLES))
-    if not self._is_body:
+    if self._is_body:
+      self._layouts[MainState.HOME].set_click_callback(self._on_onroad_clicked)
+    else:
       self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
+      device.add_interactive_timeout_callback(self._set_mode_for_state)
     self._layouts[MainState.HOME].set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
-    self._layouts[MainState.HOME].set_click_callback(self._on_onroad_clicked)
-
-    if not self._is_body:
-      device.add_interactive_timeout_callback(self._set_mode_for_state)
 
   def _update_layout_rects(self):
     if self._is_body:
@@ -81,19 +80,17 @@ class MainLayout(Widget):
       self._set_mode_for_state()
 
   def _set_mode_for_state(self):
+    if self._is_body:
+      self._set_current_layout(MainState.HOME)
+      return
+
     if ui_state.started:
       # Don't hide sidebar from interactive timeout
-      if self._is_body:
-        self._set_current_layout(MainState.HOME)
-      else:
-        if self._current_mode != MainState.ONROAD:
-          self._sidebar.set_visible(False)
-        self._set_current_layout(MainState.ONROAD)
+      if self._current_mode != MainState.ONROAD:
+        self._sidebar.set_visible(False)
+      self._set_current_layout(MainState.ONROAD)
     else:
       self._set_current_layout(MainState.HOME)
-      # Body sidebar always starts closed; regular sidebar starts open
-      if not self._is_body:
-        self._sidebar.set_visible(True)
 
   def _set_current_layout(self, layout: MainState):
     if layout != self._current_mode:

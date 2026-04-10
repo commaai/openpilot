@@ -8,7 +8,6 @@ from time import sleep
 
 from cereal import car, log, messaging
 from openpilot.common.params import Params
-from openpilot.selfdrive.ui.ui import main as ui_main
 
 
 def send_messages():
@@ -19,7 +18,7 @@ def send_messages():
   car_params.carParams.notCar = True
 
   device_state = messaging.new_message('deviceState')
-  device_state.deviceState.started = True
+  device_state.deviceState.started = False
 
   panda_states = messaging.new_message('pandaStates', 1)
   panda_states.pandaStates[0].ignitionLine = True
@@ -89,6 +88,7 @@ def main():
 
   Thread(target=send_messages, daemon=True).start()
 
+  from openpilot.selfdrive.ui.ui import main as ui_main
   ui_main()
 
 
