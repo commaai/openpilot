@@ -1,15 +1,13 @@
 from math import atan2, radians
 import numpy as np
 
-from cereal import car, log
+from cereal import car
 import cereal.messaging as messaging
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.stat_live import RunningStatFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
-
-DMS = log.DriverMonitoringStateV2
 
 def to_perc(v):
   return min(max(v * 100., 0.), 100.)
@@ -138,7 +136,7 @@ class DriverMonitoring:
     self.blink_prob = 0.
     self.phone_prob = 0.
 
-    self.alert_level = DMS.AlertLevel.none
+    self.alert_level = 'none'
     self.always_on = always_on
     self.distracted_types = []
     self.driver_distracted = False
@@ -232,13 +230,13 @@ class DriverMonitoring:
     yaw_threshold = self.settings._POSE_YAW_THRESHOLD * self.pose.cfactor_yaw
 
     if pitch_error > pitch_threshold or yaw_error > yaw_threshold:
-      self.distracted_types.append(DMS.VisionPolicyState.DistractedType.pose)
+      self.distracted_types.append('pose')
 
     if self.blink_prob > self.settings._BLINK_THRESHOLD:
-      self.distracted_types.append(DMS.VisionPolicyState.DistractedType.blink)
+      self.distracted_types.append('blink')
 
     if self.phone_prob > self.settings._PHONE_THRESH:
-      self.distracted_types.append(DMS.VisionPolicyState.DistractedType.phone)
+      self.distracted_types.append('phone')
 
   def _update_states(self, driver_state, cal_rpy, car_speed, op_engaged, standstill, demo_mode=False, steering_angle_deg=0.):
     rhd_pred = driver_state.wheelOnRightProb
@@ -307,7 +305,7 @@ class DriverMonitoring:
       self.hi_stds = 0
 
   def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear, car_speed):
-    self.alert_level = DMS.AlertLevel.none
+    self.alert_level = 'none'
     self.driver_interacting = driver_engaged
 
     if self.terminal_alert_cnt >= self.settings._MAX_TERMINAL_ALERTS or \
@@ -353,14 +351,14 @@ class DriverMonitoring:
 
     if self.awareness <= 0.:
       # terminal alert: disengagement required
-      self.alert_level = DMS.AlertLevel.three
+      self.alert_level = 'three'
       self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_alert_2:
-      self.alert_level = DMS.AlertLevel.two
+      self.alert_level = 'two'
     elif self.awareness <= self.threshold_alert_1:
-      self.alert_level = DMS.AlertLevel.one
+      self.alert_level = 'one'
 
   def get_state_packet(self, valid=True):
     # build driverMonitoringState packet
@@ -373,7 +371,7 @@ class DriverMonitoring:
     dm.alwaysOn = self.always_on
     dm.alwaysOnLockout = self.always_on and self.awareness <= self.threshold_alert_2
     dm.alertLevel = self.alert_level
-    dm.monitoringPolicy = DMS.MonitoringPolicy.vision if self.active_monitoring_mode else DMS.MonitoringPolicy.wheeltouch
+    dm.monitoringPolicy = 'vision' if self.active_monitoring_mode else 'wheeltouch'
     dm.isRHD = self.wheel_on_right
     dm.rhdCalibration.calibratedPercent = to_perc(self.wheelpos.prob_offseter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
     dm.rhdCalibration.offset = self.wheelpos.prob_offseter.filtered_stat.M
