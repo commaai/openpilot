@@ -4,7 +4,7 @@ import numpy as np
 
 from openpilot.common.parameterized import parameterized_class
 from cereal import log
-from openpilot.selfdrive.car.cruise import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
+from openpilot.selfdrive.car.cruise import CRUISE_LONG_PRESS, VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
 from cereal import car
 from openpilot.common.constants import CV
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
@@ -61,6 +61,14 @@ class TestVCruiseHelper:
     # Simulates user pressing set with a current speed
     self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=v_ego), experimental_mode)
 
+  def update_cruise(self, enabled, is_metric, button_type=None, pressed=None, button_enable=False,
+                    gas_pressed=False, standstill=False, v_ego=0.):
+    CS = car.CarState(vEgo=float(v_ego), gasPressed=gas_pressed, buttonEnable=button_enable,
+                      cruiseState={"available": True, "standstill": standstill})
+    CS.buttonEvents = [] if button_type is None else [ButtonEvent(type=button_type, pressed=pressed)]
+    self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=is_metric)
+    return CS
+
   def test_adjust_speed(self):
     """
     Asserts speed changes on falling edges of buttons.
@@ -94,6 +102,83 @@ class TestVCruiseHelper:
 
       # Expected diff on enabling. Speed should not change on falling edge of pressed
       assert (not pressed) == (self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
+
+  def test_falling_edge_enable_does_not_adjust(self):
+    """
+    Asserts a shared button release used to enable openpilot does not also adjust the set speed.
+    """
+
+    self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
+    initial_v_cruise_kph = self.v_cruise_helper.v_cruise_kph
+
+    self.update_cruise(enabled=False, is_metric=False, button_type=ButtonType.decelCruise, pressed=True)
+    self.update_cruise(enabled=False, is_metric=False, button_type=ButtonType.decelCruise, pressed=False, button_enable=True)
+
+    assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
+
+  def test_long_press_while_enabled_steps_correctly(self):
+    """
+    Asserts long presses step once at the long press threshold and do not step again on release.
+    """
+
+    for is_metric, long_press_delta in ((True, 5.), (False, 5. * IMPERIAL_INCREMENT)):
+      for button_type, sign in ((ButtonType.accelCruise, 1), (ButtonType.decelCruise, -1)):
+        self.reset_cruise_speed_state()
+        self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
+        initial_v_cruise_kph = self.v_cruise_helper.v_cruise_kph
+
+        self.update_cruise(enabled=True, is_metric=is_metric, button_type=button_type, pressed=True)
+        for _ in range(CRUISE_LONG_PRESS - 1):
+          self.update_cruise(enabled=True, is_metric=is_metric)
+          assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
+
+        self.update_cruise(enabled=True, is_metric=is_metric)
+        assert initial_v_cruise_kph + sign * long_press_delta == self.v_cruise_helper.v_cruise_kph
+
+        self.update_cruise(enabled=True, is_metric=is_metric, button_type=button_type, pressed=False)
+        assert initial_v_cruise_kph + sign * long_press_delta == self.v_cruise_helper.v_cruise_kph
+
+  def test_long_hold_disabled_does_not_drift_before_falling_edge_enable(self):
+    """
+    Asserts a shared falling-edge enable button does not drift the set speed while held disabled.
+    """
+
+    self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
+    initial_v_cruise_kph = self.v_cruise_helper.v_cruise_kph
+
+    self.update_cruise(enabled=False, is_metric=False, button_type=ButtonType.accelCruise, pressed=True)
+    for _ in range(CRUISE_LONG_PRESS):
+      self.update_cruise(enabled=False, is_metric=False)
+      assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
+
+    release_cs = self.update_cruise(enabled=False, is_metric=False, button_type=ButtonType.accelCruise,
+                                    pressed=False, button_enable=True)
+    assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
+
+    self.v_cruise_helper.initialize_v_cruise(release_cs, False)
+    assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
+
+  def test_long_hold_disabled_does_not_drift_after_rising_edge_enable(self):
+    """
+    Asserts a shared rising-edge enable button does not drift the set speed during the same hold.
+    """
+
+    self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
+    initial_v_cruise_kph = self.v_cruise_helper.v_cruise_kph
+
+    press_cs = self.update_cruise(enabled=False, is_metric=False, button_type=ButtonType.accelCruise,
+                                  pressed=True, button_enable=True)
+    assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
+
+    self.v_cruise_helper.initialize_v_cruise(press_cs, False)
+    assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
+
+    for _ in range(CRUISE_LONG_PRESS):
+      self.update_cruise(enabled=True, is_metric=False)
+      assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
+
+    self.update_cruise(enabled=True, is_metric=False, button_type=ButtonType.accelCruise, pressed=False)
+    assert initial_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
 
   def test_resume_in_standstill(self):
     """
