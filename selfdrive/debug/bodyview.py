@@ -19,7 +19,7 @@ def send_messages():
   car_params_msg.carParams.notCar = True
 
   device_state_msg = messaging.new_message('deviceState')
-  device_state_msg.deviceState.started = False
+  device_state_msg.deviceState.started = True
 
   panda_msg = messaging.new_message('pandaStates', 1)
   panda_msg.pandaStates[0].ignitionLine = True
