@@ -2639,7 +2639,7 @@ struct Event {
     thumbnail @66: Thumbnail;
     onroadEvents @134: List(OnroadEvent);
     carParams @69: Car.CarParams;
-    driverMonitoringState @71: DriverMonitoringState;
+    driverMonitoringStateV2 @151 :DriverMonitoringStateV2;
     livePose @129 :LivePose;
     modelV2 @75 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
@@ -2782,5 +2782,6 @@ struct Event {
     gyroscope2DEPRECATED @100 :SensorEventData;
     accelerometer2DEPRECATED @101 :SensorEventData;
     temperatureSensor2DEPRECATED @123 :SensorEventData;
+    driverMonitoringStateDEPRECATED @71: DriverMonitoringStateDEPRECATED;
   }
 }
