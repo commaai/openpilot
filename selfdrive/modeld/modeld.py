@@ -162,7 +162,7 @@ class ModelState:
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
     self.frame_skip = ModelConstants.MODEL_RUN_FREQ // ModelConstants.MODEL_CONTEXT_FREQ
-    self.bufs, self.npy = make_buffers(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip)
+    self.bufs, _ = make_buffers(self.vision_input_shapes, self.policy_input_shapes, self.frame_skip)
     self.full_frames : dict[str, Tensor] = {}
     self._blob_cache : dict[int, Tensor] = {}
 
@@ -190,12 +190,15 @@ class ModelState:
         self._blob_cache[cache_key] = Tensor.from_blob(ptr, (yuv_size,), dtype='uint8')
       self.full_frames[key] = self._blob_cache[cache_key]
 
-    self.npy['desire'][:] = new_desire
-    self.npy['traffic_convention'][:] = inputs['traffic_convention']
-    self.npy['tfm'][:,:] = transforms['img'][:,:]
-    self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
+    # create fresh device tensors each frame to avoid NPY BufferCopy issues on QCOM
+    npy_inputs = {
+      'desire': Tensor(new_desire.copy()).realize(),
+      'traffic_convention': Tensor(inputs['traffic_convention'].copy()).realize(),
+      'tfm': Tensor(transforms['img'].copy()).realize(),
+      'big_tfm': Tensor(transforms['big_img'].copy()).realize(),
+    }
     vision_output, on_policy_output, off_policy_output = self.run_policy(
-      **self.bufs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
+      **self.bufs, **npy_inputs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
 
     vision_output = vision_output.realize().numpy().flatten()
