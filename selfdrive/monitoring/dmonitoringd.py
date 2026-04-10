@@ -9,7 +9,7 @@ def dmonitoringd_thread():
   config_realtime_process([0, 1, 2, 3], 5)
 
   params = Params()
-  pm = messaging.PubMaster(['driverMonitoringState'])
+  pm = messaging.PubMaster(['driverMonitoringStateV2'])
   sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'selfdriveState', 'modelV2'], poll='driverStateV2')
 
   DM = DriverMonitoring(rhd_saved=params.get_bool("IsRhdDetected"), always_on=params.get_bool("AlwaysOnDM"))
@@ -30,7 +30,7 @@ def dmonitoringd_thread():
 
     # publish
     dat = DM.get_state_packet(valid=valid)
-    pm.send('driverMonitoringState', dat)
+    pm.send('driverMonitoringStateV2', dat)
 
     # load live always-on toggle
     if sm['driverStateV2'].frameId % 40 == 1:
