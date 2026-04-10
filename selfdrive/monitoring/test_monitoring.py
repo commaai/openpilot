@@ -19,10 +19,8 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds.leftDriverData.faceOrientation = [0., 0., 0.]
   ds.leftDriverData.facePosition = [0., 0.]
   ds.leftDriverData.faceProb = 1. * face_detected
-  ds.leftDriverData.leftEyeProb = 1.
-  ds.leftDriverData.rightEyeProb = 1.
-  ds.leftDriverData.leftBlinkProb = 1. * distracted
-  ds.leftDriverData.rightBlinkProb = 1. * distracted
+  ds.leftDriverData.eyesVisibleProb = 1.
+  ds.leftDriverData.eyesClosedProb = 1. * distracted
   ds.leftDriverData.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.leftDriverData.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
   # TODO: test both separately when e2e is used
@@ -77,11 +75,11 @@ class TestMonitoring:
     assert len(events[int((d_status.settings._DISTRACTED_TIME-d_status.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL)/2/DT_DMON)]) == 0
     assert events[int((d_status.settings._DISTRACTED_TIME-d_status.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL + \
                     ((d_status.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL-d_status.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0] == \
-                    EventName.preDriverDistracted
+                    EventName.driverDistracted1
     assert events[int((d_status.settings._DISTRACTED_TIME-d_status.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL + \
-                    ((d_status.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0] == EventName.promptDriverDistracted
+                    ((d_status.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0] == EventName.driverDistracted2
     assert events[int((d_status.settings._DISTRACTED_TIME + \
-                    ((TEST_TIMESPAN-10-d_status.settings._DISTRACTED_TIME)/2))/DT_DMON)].names[0] == EventName.driverDistracted
+                    ((TEST_TIMESPAN-10-d_status.settings._DISTRACTED_TIME)/2))/DT_DMON)].names[0] == EventName.driverDistracted3
     assert isinstance(d_status.awareness, float)
 
   # engaged, no face detected the whole time, no action
@@ -90,11 +88,11 @@ class TestMonitoring:
     assert len(events[int((d_status.settings._AWARENESS_TIME-d_status.settings._AWARENESS_PRE_TIME_TILL_TERMINAL)/2/DT_DMON)]) == 0
     assert events[int((d_status.settings._AWARENESS_TIME-d_status.settings._AWARENESS_PRE_TIME_TILL_TERMINAL + \
                       ((d_status.settings._AWARENESS_PRE_TIME_TILL_TERMINAL-d_status.settings._AWARENESS_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0] == \
-                      EventName.preDriverUnresponsive
+                      EventName.driverUnresponsive1
     assert events[int((d_status.settings._AWARENESS_TIME-d_status.settings._AWARENESS_PROMPT_TIME_TILL_TERMINAL + \
-                      ((d_status.settings._AWARENESS_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0] == EventName.promptDriverUnresponsive
+                      ((d_status.settings._AWARENESS_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0] == EventName.driverUnresponsive2
     assert events[int((d_status.settings._AWARENESS_TIME + \
-                      ((TEST_TIMESPAN-10-d_status.settings._AWARENESS_TIME)/2))/DT_DMON)].names[0] == EventName.driverUnresponsive
+                      ((TEST_TIMESPAN-10-d_status.settings._AWARENESS_TIME)/2))/DT_DMON)].names[0] == EventName.driverUnresponsive3
 
   # engaged, down to orange, driver pays attention, back to normal; then down to orange, driver touches wheel
   #  - should have short orange recovery time and no green afterwards; wheel touch only recovers when paying attention
@@ -107,10 +105,10 @@ class TestMonitoring:
                          [car_interaction_DETECTED] * (int(TEST_TIMESPAN/DT_DMON)-int(DISTRACTED_SECONDS_TO_ORANGE*3/DT_DMON))
     events, _ = self._run_seq(ds_vector, interaction_vector, always_true, always_false)
     assert len(events[int(DISTRACTED_SECONDS_TO_ORANGE*0.5/DT_DMON)]) == 0
-    assert events[int((DISTRACTED_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0] == EventName.promptDriverDistracted
+    assert events[int((DISTRACTED_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0] == EventName.driverDistracted2
     assert len(events[int(DISTRACTED_SECONDS_TO_ORANGE*1.5/DT_DMON)]) == 0
-    assert events[int((DISTRACTED_SECONDS_TO_ORANGE*3-0.1)/DT_DMON)].names[0] == EventName.promptDriverDistracted
-    assert events[int((DISTRACTED_SECONDS_TO_ORANGE*3+0.1)/DT_DMON)].names[0] == EventName.promptDriverDistracted
+    assert events[int((DISTRACTED_SECONDS_TO_ORANGE*3-0.1)/DT_DMON)].names[0] == EventName.driverDistracted2
+    assert events[int((DISTRACTED_SECONDS_TO_ORANGE*3+0.1)/DT_DMON)].names[0] == EventName.driverDistracted2
     assert len(events[int((DISTRACTED_SECONDS_TO_ORANGE*3+2.5)/DT_DMON)]) == 0
 
   # engaged, down to orange, driver dodges camera, then comes back still distracted, down to red, \
@@ -130,9 +128,9 @@ class TestMonitoring:
     op_vector[int((DISTRACTED_SECONDS_TO_RED+2*_invisible_time+2.5)/DT_DMON):int((DISTRACTED_SECONDS_TO_RED+2*_invisible_time+3)/DT_DMON)] \
                                                         = [False] * int(0.5/DT_DMON)
     events, _ = self._run_seq(ds_vector, interaction_vector, op_vector, always_false)
-    assert events[int((DISTRACTED_SECONDS_TO_ORANGE+0.5*_invisible_time)/DT_DMON)].names[0] == EventName.promptDriverDistracted
-    assert events[int((DISTRACTED_SECONDS_TO_RED+1.5*_invisible_time)/DT_DMON)].names[0] == EventName.driverDistracted
-    assert events[int((DISTRACTED_SECONDS_TO_RED+2*_invisible_time+1.5)/DT_DMON)].names[0] == EventName.driverDistracted
+    assert events[int((DISTRACTED_SECONDS_TO_ORANGE+0.5*_invisible_time)/DT_DMON)].names[0] == EventName.driverDistracted2
+    assert events[int((DISTRACTED_SECONDS_TO_RED+1.5*_invisible_time)/DT_DMON)].names[0] == EventName.driverDistracted3
+    assert events[int((DISTRACTED_SECONDS_TO_RED+2*_invisible_time+1.5)/DT_DMON)].names[0] == EventName.driverDistracted3
     assert len(events[int((DISTRACTED_SECONDS_TO_RED+2*_invisible_time+3.5)/DT_DMON)]) == 0
 
   # engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
@@ -146,13 +144,13 @@ class TestMonitoring:
     interaction_vector[int((INVISIBLE_SECONDS_TO_ORANGE)/DT_DMON):int((INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON)] = [True] * int(1/DT_DMON)
     events, _ = self._run_seq(ds_vector, interaction_vector, 2*always_true, 2*always_false)
     assert len(events[int(INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)]) == 0
-    assert events[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0] == EventName.promptDriverUnresponsive
+    assert events[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0] == EventName.driverUnresponsive2
     assert len(events[int((INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)]) == 0
     if _visible_time == 0.5:
-      assert events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0] == EventName.promptDriverUnresponsive
-      assert events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)].names[0] == EventName.preDriverUnresponsive
+      assert events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0] == EventName.driverUnresponsive2
+      assert events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)].names[0] == EventName.driverUnresponsive1
     elif _visible_time == 10:
-      assert events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0] == EventName.promptDriverUnresponsive
+      assert events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0] == EventName.driverUnresponsive2
       assert len(events[int((INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)]) == 0
 
   # engaged, invisible driver, down to red, driver appears and then touches wheel, then disengages/reengages
@@ -167,10 +165,10 @@ class TestMonitoring:
     op_vector[int((INVISIBLE_SECONDS_TO_RED+_visible_time+1)/DT_DMON):int((INVISIBLE_SECONDS_TO_RED+_visible_time+0.5)/DT_DMON)] = [False] * int(0.5/DT_DMON)
     events, _ = self._run_seq(ds_vector, interaction_vector, op_vector, always_false)
     assert len(events[int(INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)]) == 0
-    assert events[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0] == EventName.promptDriverUnresponsive
-    assert events[int((INVISIBLE_SECONDS_TO_RED-0.1)/DT_DMON)].names[0] == EventName.driverUnresponsive
-    assert events[int((INVISIBLE_SECONDS_TO_RED+0.5*_visible_time)/DT_DMON)].names[0] == EventName.driverUnresponsive
-    assert events[int((INVISIBLE_SECONDS_TO_RED+_visible_time+0.5)/DT_DMON)].names[0] == EventName.driverUnresponsive
+    assert events[int((INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0] == EventName.driverUnresponsive2
+    assert events[int((INVISIBLE_SECONDS_TO_RED-0.1)/DT_DMON)].names[0] == EventName.driverUnresponsive3
+    assert events[int((INVISIBLE_SECONDS_TO_RED+0.5*_visible_time)/DT_DMON)].names[0] == EventName.driverUnresponsive3
+    assert events[int((INVISIBLE_SECONDS_TO_RED+_visible_time+0.5)/DT_DMON)].names[0] == EventName.driverUnresponsive3
     assert len(events[int((INVISIBLE_SECONDS_TO_RED+_visible_time+1+0.1)/DT_DMON)]) == 0
 
   # disengaged, always distracted driver
@@ -186,10 +184,21 @@ class TestMonitoring:
     standstill_vector = always_true[:]
     standstill_vector[int(_redlight_time/DT_DMON):] = [False] * int((TEST_TIMESPAN-_redlight_time)/DT_DMON)
     events, d_status = self._run_seq(always_distracted, always_false, always_true, standstill_vector)
-    assert events[int((d_status.settings._DISTRACTED_TIME-d_status.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL+1)/DT_DMON)].names[0] == \
-                                                                                                                    EventName.preDriverDistracted
-    assert events[int((_redlight_time-0.1)/DT_DMON)].names[0] == EventName.preDriverDistracted
-    assert events[int((_redlight_time+0.5)/DT_DMON)].names[0] == EventName.promptDriverDistracted
+    assert len(events[int((_redlight_time-0.1)/DT_DMON)]) == 0
+    _pre_to_prompt = d_status.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL - d_status.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL
+    assert events[int((_redlight_time+0.5)/DT_DMON)].names[0] == EventName.driverDistracted1
+    assert events[int((_redlight_time+_pre_to_prompt+0.5)/DT_DMON)].names[0] == EventName.driverDistracted2
+
+  # engaged, distracted while moving, then car stops after reaching orange
+  #  - should reset timer to pre green at standstill
+  def test_distracted_then_stops(self):
+    _stop_time = DISTRACTED_SECONDS_TO_ORANGE + 1  # stop 1 second after reaching orange
+    standstill_vector = always_false[:]
+    standstill_vector[int(_stop_time/DT_DMON):] = [True] * int((TEST_TIMESPAN-_stop_time)/DT_DMON)
+    events, _ = self._run_seq(always_distracted, always_false, always_true, standstill_vector)
+    # just before and briefly after stopping: orange alert; goes away quickly after stopped
+    assert events[int((_stop_time+0.1)/DT_DMON)].names[0] == EventName.driverDistracted2
+    assert len(events[int((_stop_time+0.5)/DT_DMON)]) == 0
 
   # engaged, model is somehow uncertain and driver is distracted
   #  - should fall back to wheel touch after uncertain alert
@@ -197,10 +206,9 @@ class TestMonitoring:
     ds_vector = [msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN] * int(TEST_TIMESPAN/DT_DMON)
     interaction_vector = always_false[:]
     events, d_status = self._run_seq(ds_vector, interaction_vector, always_true, always_false)
-    assert EventName.preDriverUnresponsive in \
+    assert EventName.driverUnresponsive1 in \
                               events[int((INVISIBLE_SECONDS_TO_ORANGE-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME-0.1)/DT_DMON)].names
-    assert EventName.promptDriverUnresponsive in \
+    assert EventName.driverUnresponsive2 in \
                               events[int((INVISIBLE_SECONDS_TO_ORANGE-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names
-    assert EventName.driverUnresponsive in \
+    assert EventName.driverUnresponsive3 in \
                               events[int((INVISIBLE_SECONDS_TO_RED-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names
-

@@ -293,6 +293,7 @@ class ListItem(Widget):
     self._prev_description: str | None = self.description
 
   def show_event(self):
+    super().show_event()
     self._set_description_visible(False)
 
   def set_description_opened_callback(self, callback: Callable) -> None:
@@ -354,7 +355,7 @@ class ListItem(Widget):
     if self.title:
       # Draw icon if present
       if self.icon:
-        rl.draw_texture(self._icon_texture, int(content_x), int(self._rect.y + (ITEM_BASE_HEIGHT - self._icon_texture.height) // 2), rl.WHITE)
+        rl.draw_texture_ex(self._icon_texture, rl.Vector2(content_x, self._rect.y + (ITEM_BASE_HEIGHT - self._icon_texture.height) / 2), 0.0, 1.0, rl.WHITE)
         text_x += ICON_SIZE + ITEM_PADDING
 
       # Draw main text

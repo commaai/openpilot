@@ -342,9 +342,14 @@ class TestOnroad:
 
         start, end = min(first_fid), min(last_fid)
         for i in range(end-start):
-          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams}
+          # road and wide cameras (first two) should be synced within 2ms
+          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams[:2]}
           diff = (max(ts.values()) - min(ts.values()))
           assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
+
+          # driver camera should be staggered ~25ms from road camera
+          offset_ms = abs(self.ts[cams[2]]['timestampSof'][i] - self.ts[cams[0]]['timestampSof'][i]) / 1e6
+          assert 20 < offset_ms < 30, f"driver camera stagger out of range at frame {start+i}: {offset_ms:.1f}ms"
 
   def test_camera_encoder_matches(self, subtests):
     # sanity check that the frame metadata is consistent with the encoded frames

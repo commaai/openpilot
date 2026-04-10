@@ -194,10 +194,11 @@ private:
   bool validateEvent(uint64_t request_id, uint64_t frame_id_raw);
   bool waitForFrameReady(uint64_t request_id);
   bool processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp);
-  static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp);
+  static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp, bool staggered);
   struct SyncData {
     uint64_t timestamp;
     uint64_t frame_id_offset = 0;
+    bool staggered = false;
   };
   inline static std::map<int, SyncData> camera_sync_data;
   inline static bool first_frame_synced = false;
