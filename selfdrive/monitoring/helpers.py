@@ -159,7 +159,6 @@ class DriverMonitoring:
     self.threshold_alert_2 = 0.
     self.dcam_uncertain = False
     self.dcam_uncertain_cnt = 0
-    self.dcam_uncertain_alerted = False # once per drive
     self.dcam_reset_cnt = 0
 
     self.params = Params()
