@@ -172,16 +172,6 @@ def compile_modeld(cam_w, cam_h):
   on_policy_runner = OnnxRunner(MODELS_DIR / 'driving_on_policy.onnx')
   off_policy_runner = OnnxRunner(MODELS_DIR / 'driving_off_policy.onnx')
 
-  # Eagerly move weights to the compute device and realize them BEFORE JIT capture.
-  # Otherwise the NPY->DEFAULT copy + layout transform ends up as "onetime" pruned kernels
-  # whose output buffers can get aliased with scratch by memory planning, so the "baked"
-  # transformed-weight data read on replay ends up being scribbled-over garbage on CI devices.
-  # Mutate graph_values directly since get_parameters returns a list and .to() produces new tensors.
-  for runner in (vision_runner, on_policy_runner, off_policy_runner):
-    for name, t in list(runner.graph_values.items()):
-      if isinstance(t, Tensor):
-        runner.graph_values[name] = t.to(Device.DEFAULT).realize()
-
   with open(MODELS_DIR / 'driving_vision_metadata.pkl', 'rb') as f:
     vision_metadata = pickle.load(f)
     vision_features_slice = vision_metadata['output_slices']['hidden_state']
