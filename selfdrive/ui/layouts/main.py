@@ -2,13 +2,15 @@ import pyray as rl
 from enum import IntEnum
 import cereal.messaging as messaging
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
-from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
+from openpilot.selfdrive.ui.body.layouts.onroad import BodyLayout
+from openpilot.selfdrive.ui.body.widgets.sidebar import BodySidebar, BODY_SIDEBAR_HEIGHT
 
 
 class MainState(IntEnum):
@@ -23,12 +25,15 @@ class MainLayout(Widget):
 
     self._pm = messaging.PubMaster(['bookmarkButton'])
 
-    self._sidebar = Sidebar()
+    self._is_body = ui_state.is_body
+    self._sidebar = BodySidebar() if self._is_body else Sidebar()
     self._current_mode = MainState.HOME
     self._prev_onroad = False
 
     # Initialize layouts
     self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
+    if self._is_body:
+      self._layouts[MainState.HOME] = BodyLayout()
 
     self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
     self._content_rect = rl.Rectangle(0, 0, 0, 0)
@@ -51,22 +56,28 @@ class MainLayout(Widget):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_bookmark_clicked,
                                 open_settings=lambda: self.open_settings(PanelType.TOGGLES))
-    self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
+    if not self._is_body:
+      self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
     self._layouts[MainState.HOME].set_settings_callback(lambda: self.open_settings(PanelType.TOGGLES))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
-    self._layouts[MainState.ONROAD].set_click_callback(self._on_onroad_clicked)
-    device.add_interactive_timeout_callback(self._set_mode_for_state)
+    self._layouts[MainState.HOME].set_click_callback(self._on_onroad_clicked)
+
+    if not self._is_body:
+      device.add_interactive_timeout_callback(self._set_mode_for_state)
 
   def _update_layout_rects(self):
-    self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
-
-    x_offset = SIDEBAR_WIDTH if self._sidebar.is_visible else 0
-    self._content_rect = rl.Rectangle(self._rect.y + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
+    if self._is_body:
+      self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, BODY_SIDEBAR_HEIGHT)
+      y_offset = BODY_SIDEBAR_HEIGHT if self._sidebar.is_visible else 0
+      self._content_rect = rl.Rectangle(self._rect.x, self._rect.y + y_offset, self._rect.width, self._rect.height - y_offset)
+    else:
+      self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
+      x_offset = SIDEBAR_WIDTH if self._sidebar.is_visible else 0
+      self._content_rect = rl.Rectangle(self._rect.x + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
 
   def _handle_onroad_transition(self):
-    if ui_state.started != self._prev_onroad:
+    if ui_state.started != self._prev_onroad and not self._is_body:
       self._prev_onroad = ui_state.started
-
       self._set_mode_for_state()
 
   def _set_mode_for_state(self):
@@ -77,7 +88,9 @@ class MainLayout(Widget):
       self._set_current_layout(MainState.ONROAD)
     else:
       self._set_current_layout(MainState.HOME)
-      self._sidebar.set_visible(True)
+      # Body sidebar always starts closed; regular sidebar starts open
+      if not self._is_body:
+        self._sidebar.set_visible(True)
 
   def _set_current_layout(self, layout: MainState):
     if layout != self._current_mode:
@@ -102,9 +115,14 @@ class MainLayout(Widget):
     self._sidebar.set_visible(not self._sidebar.is_visible)
 
   def _render_main_content(self):
-    # Render sidebar
-    if self._sidebar.is_visible:
-      self._sidebar.render(self._sidebar_rect)
+    if self._is_body: # overlay sidebar but recompute boundaries for proper click events
+      parent_rect = rl.Rectangle(self._rect.x, self._rect.y + BODY_SIDEBAR_HEIGHT,
+                                 self._rect.width, self._rect.height - BODY_SIDEBAR_HEIGHT) if self._sidebar.is_visible else None
+      self._layouts[self._current_mode].set_parent_rect(parent_rect)
+      self._layouts[self._current_mode].render(self._rect)
+    else:
+      content_rect = self._content_rect if self._sidebar.is_visible else self._rect
+      self._layouts[self._current_mode].render(content_rect)
 
-    content_rect = self._content_rect if self._sidebar.is_visible else self._rect
-    self._layouts[self._current_mode].render(content_rect)
+    if self._sidebar.is_visible:
+        self._sidebar.render(self._sidebar_rect)

@@ -54,6 +54,7 @@ class UIState:
         "carOutput",
         "carControl",
         "liveParameters",
+        "testJoystick",
         "rawAudioData",
       ]
     )
@@ -74,6 +75,7 @@ class UIState:
     self.started: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
+    self.joystick_debug_mode: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
@@ -102,6 +104,10 @@ class UIState:
 
   def is_offroad(self) -> bool:
     return not self.started
+
+  @property
+  def is_body(self) -> bool:
+    return self.CP is not None and self.CP.notCar
 
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
@@ -138,6 +144,7 @@ class UIState:
 
     # Update recording audio state
     self.recording_audio = self.params.get_bool("RecordAudio") and self.started
+    self.joystick_debug_mode = self.params.get_bool("JoystickDebugMode")
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")

@@ -536,6 +536,7 @@ def getSshAuthorizedKeys() -> str:
 def getGithubUsername() -> str:
   return cast(str, Params().get("GithubUsername") or "")
 
+
 @dispatcher.add_method
 def getSimInfo():
   return HARDWARE.get_sim_info()
