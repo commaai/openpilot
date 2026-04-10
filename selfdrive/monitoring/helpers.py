@@ -173,8 +173,8 @@ class DriverMonitoring:
 
   def _reset_awareness(self):
     self.awareness = 1.
-    self.awareness_active = 1.
-    self.awareness_passive = 1.
+    self.last_vision_awareness = 1.
+    self.last_wheeltouch_awareness = 1.
 
   def _set_timers(self, active_monitoring):
     if self.active_monitoring_mode and self.awareness <= self.threshold_prompt:
@@ -189,8 +189,8 @@ class DriverMonitoring:
     if active_monitoring:
       # when falling back from passive mode to active mode, reset awareness to avoid false alert
       if not self.active_monitoring_mode:
-        self.awareness_passive = self.awareness
-        self.awareness = self.awareness_active
+        self.last_wheeltouch_awareness = self.awareness
+        self.awareness = self.last_vision_awareness
 
       self.threshold_pre = self.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
       self.threshold_prompt = self.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
@@ -198,8 +198,8 @@ class DriverMonitoring:
       self.active_monitoring_mode = True
     else:
       if self.active_monitoring_mode:
-        self.awareness_active = self.awareness
-        self.awareness = self.awareness_passive
+        self.last_vision_awareness = self.awareness
+        self.awareness = self.last_wheeltouch_awareness
 
       self.threshold_pre = self.settings._AWARENESS_PRE_TIME_TILL_TERMINAL / self.settings._AWARENESS_TIME
       self.threshold_prompt = self.settings._AWARENESS_PROMPT_TIME_TILL_TERMINAL / self.settings._AWARENESS_TIME
@@ -346,7 +346,7 @@ class DriverMonitoring:
       self.awareness = min(self.awareness + ((self.settings._RECOVERY_FACTOR_MAX-self.settings._RECOVERY_FACTOR_MIN)*
                                              (1.-self.awareness)+self.settings._RECOVERY_FACTOR_MIN)*self.step_change, 1.)
       if self.awareness == 1.:
-        self.awareness_passive = min(self.awareness_passive + self.step_change, 1.)
+        self.last_wheeltouch_awareness = min(self.last_wheeltouch_awareness + self.step_change, 1.)
       # don't display alert banner when awareness is recovering and has cleared orange
       if self.awareness > self.threshold_prompt:
         return
@@ -392,7 +392,7 @@ class DriverMonitoring:
     dm.rhdCalibration.calibratedPercent = to_perc(self.wheelpos.prob_offseter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
     dm.rhdCalibration.offset = self.wheelpos.prob_offseter.filtered_stat.M
 
-    dm.visionPolicyState.awarenessPercent = to_perc(self.awareness_active) if not self.active_monitoring_mode else to_perc(self.awareness)
+    dm.visionPolicyState.awarenessPercent = to_perc(self.last_vision_awareness) if not self.active_monitoring_mode else to_perc(self.awareness)
     dm.visionPolicyState.isDistracted = self.driver_distracted
     dm.visionPolicyState.distractedTypes = self.distracted_types
     dm.visionPolicyState.faceDetected = self.face_detected
@@ -407,7 +407,7 @@ class DriverMonitoring:
     dm.visionPolicyState.wheeltouchFallbackPercent = to_perc(self.hi_stds / self.settings._HI_STD_FALLBACK_TIME)
     dm.visionPolicyState.uncertainOffroadAlertPercent = to_perc(self.dcam_uncertain_cnt / self.settings._DCAM_UNCERTAIN_ALERT_COUNT)
 
-    dm.wheeltouchPolicyState.awarenessPercent = to_perc(self.awareness_passive) if self.active_monitoring_mode else to_perc(self.awareness)
+    dm.wheeltouchPolicyState.awarenessPercent = to_perc(self.last_wheeltouch_awareness) if self.active_monitoring_mode else to_perc(self.awareness)
     dm.wheeltouchPolicyState.driverInteracting = self.driver_interacting
     return dat
 
