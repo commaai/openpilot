@@ -116,32 +116,34 @@ class BaseDriverCameraDialog(Widget):
 
   def _render_dm_alerts(self, rect: rl.Rectangle):
     """Render driver monitoring event names"""
-    dm_state = ui_state.sm["driverMonitoringState"]
+    dm_state = ui_state.sm["driverMonitoringStateV2"]
     self._publish_alert_sound(dm_state)
 
+    is_vision = dm_state.monitoringPolicy == log.DriverMonitoringStateV2.MonitoringPolicy.vision
+    awareness_pct = dm_state.visionPolicyState.awarenessPercent if is_vision else dm_state.wheeltouchPolicyState.awarenessPercent
     gui_label(rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height),
-              f"Awareness: {dm_state.awarenessStatus * 100:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
+              f"Awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
               alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
               color=rl.Color(0, 0, 0, 180))
-    gui_label(rect, f"Awareness: {dm_state.awarenessStatus * 100:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
+    gui_label(rect, f"Awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
               alignment=rl.GuiTextAlignment.TEXT_ALIGN_RIGHT,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
               color=rl.Color(255, 255, 255, int(255 * 0.9)))
 
-    if not dm_state.events:
+    if dm_state.alertLevel == 0:
       return
 
-    # Show first event (only one should be active at a time)
-    event_name_str = str(dm_state.events[0].name).split('.')[-1]
+    # Show alert level
+    alert_level_str = str(dm_state.alertLevel).split('.')[-1]
     alignment = rl.GuiTextAlignment.TEXT_ALIGN_RIGHT if self.driver_state_renderer.is_rhd else rl.GuiTextAlignment.TEXT_ALIGN_LEFT
 
     shadow_rect = rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height)
-    gui_label(shadow_rect, event_name_str, font_size=40, font_weight=FontWeight.BOLD,
+    gui_label(shadow_rect, alert_level_str, font_size=40, font_weight=FontWeight.BOLD,
               alignment=alignment,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM,
               color=rl.Color(0, 0, 0, 180))
-    gui_label(rect, event_name_str, font_size=40, font_weight=FontWeight.BOLD,
+    gui_label(rect, alert_level_str, font_size=40, font_weight=FontWeight.BOLD,
               alignment=alignment,
               alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM,
               color=rl.Color(255, 255, 255, int(255 * 0.9)))
@@ -154,9 +156,9 @@ class BaseDriverCameraDialog(Widget):
       self._eye_orange_texture = gui_app.texture("icons_mici/onroad/eye_orange.png", self._eye_size, self._eye_size)
 
   def _draw_face_detection(self, rect: rl.Rectangle):
-    dm_state = ui_state.sm["driverMonitoringState"]
+    dm_state = ui_state.sm["driverMonitoringStateV2"]
     driver_data = self.driver_state_renderer.get_driver_data()
-    if not dm_state.faceDetected:
+    if not dm_state.visionPolicyState.faceDetected:
       return
 
     # Get face position and orientation

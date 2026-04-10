@@ -124,10 +124,10 @@ class TrainingGuideDMTutorial(NavWidget):
       ui_state.params.put_bool_nonblocking("IsDriverViewEnabled", True)
 
     sm = ui_state.sm
-    if sm.recv_frame.get("driverMonitoringState", 0) == 0:
+    if sm.recv_frame.get("driverMonitoringStateV2", 0) == 0:
       return
 
-    dm_state = sm["driverMonitoringState"]
+    dm_state = sm["driverMonitoringStateV2"]
     driver_data = self._dialog.driver_state_renderer.get_driver_data()
 
     if len(driver_data.faceOrientation) == 3:
@@ -138,7 +138,7 @@ class TrainingGuideDMTutorial(NavWidget):
 
     # stay at 100% once reached
     in_bad_face = gui_app.get_active_widget() == self._bad_face_page
-    if ((dm_state.faceDetected and looking_center) or self._progress.x > 0.99) and not in_bad_face:
+    if ((dm_state.visionPolicyState.faceDetected and looking_center) or self._progress.x > 0.99) and not in_bad_face:
       slow = self._progress.x < 0.25
       duration = self.PROGRESS_DURATION * 2 if slow else self.PROGRESS_DURATION
       self._progress.x += 1.0 / (duration * gui_app.target_fps)
