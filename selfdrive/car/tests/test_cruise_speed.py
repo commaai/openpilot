@@ -83,10 +83,10 @@ class TestVCruiseHelper:
     """
 
     # NOTE: enabled is always one frame behind the result from button press in controlsd
-    for enabled, pressed in ((False, False),
-                             (False, True),
-                             (True, False)):
-      CS = car.CarState(cruiseState={"available": True})
+    for enabled, pressed, button_enable in ((False, False, False),
+                                            (False, True, False),
+                                            (True, False, True)):
+      CS = car.CarState(cruiseState={"available": True}, buttonEnable=button_enable)
       CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=pressed)]
       self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=False)
       if pressed:
