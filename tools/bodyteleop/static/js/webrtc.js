@@ -15,15 +15,6 @@ export function offerRtcRequest(sdp, type) {
 }
 
 
-export function playSoundRequest(sound) {
-  return fetch('/sound', {
-    body: JSON.stringify({sound}),
-    headers: {'Content-Type': 'application/json'},
-    method: 'POST'
-  });
-}
-
-
 export function pingHeadRequest() {
   return fetch('/', {
     method: 'HEAD'
