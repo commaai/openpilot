@@ -418,6 +418,7 @@ class DriverMonitoring:
       driver_engaged = sm['carState'].steeringPressed or sm['carState'].gasPressed
       brake_disengage_prob = sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
       rpyCalib = sm['liveCalibration'].rpyCalib
+
     self._set_pose_strictness(
       brake_disengage_prob=brake_disengage_prob,
       car_speed=car_speed,
