@@ -316,8 +316,6 @@ class DriverMonitoring:
     # Block engaging until ignition cycle after max number or time of distractions
     if self.terminal_alert_cnt >= self.settings._MAX_TERMINAL_ALERTS or \
        self.terminal_time >= self.settings._MAX_TERMINAL_DURATION:
-      if not self.too_distracted:
-        self.params.put_bool_nonblocking("DriverTooDistracted", True)
       self.too_distracted = True
 
     always_on_valid = self.always_on and not wrong_gear
@@ -367,11 +365,6 @@ class DriverMonitoring:
       self.alert_level = DMS.AlertLevel.two
     elif self.awareness <= self.threshold_alert_1:
       self.alert_level = DMS.AlertLevel.one
-
-    if self.dcam_uncertain_cnt >= self.settings._DCAM_UNCERTAIN_ALERT_COUNT and not self.dcam_uncertain_alerted:
-      set_offroad_alert("Offroad_DriverMonitoringUncertain", True)
-      self.dcam_uncertain_alerted = True
-
 
   def get_state_packet(self, valid=True):
     # build driverMonitoringState packet
