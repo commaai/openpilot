@@ -195,7 +195,7 @@ class ModelState:
     self.npy['tfm'][:,:] = transforms['img'][:,:]
     self.npy['big_tfm'][:,:] = transforms['big_img'][:,:]
     vision_output, on_policy_output, off_policy_output = self.run_policy(
-      **self.bufs, **{k: Tensor.from_blob(v.ctypes.data, v.shape, dtype=v.dtype.name) for k, v in self.npy.items()},
+      **self.bufs, **{k: Tensor(v) for k, v in self.npy.items()},
       frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
     )
 

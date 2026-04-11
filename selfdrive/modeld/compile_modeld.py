@@ -199,7 +199,7 @@ def compile_modeld(cam_w, cam_h):
       Device.default.synchronize()
 
       st = time.perf_counter()
-      outs = fn(**bufs, **{k: Tensor.from_blob(v.ctypes.data, v.shape, dtype=v.dtype.name) for k, v in npy.items()}, frame=frame, big_frame=big_frame)
+      outs = fn(**bufs, **{k: Tensor(v) for k, v in npy.items()}, frame=frame, big_frame=big_frame)
       mt = time.perf_counter()
       # .realize() not needed (and harmless?) once jitted, but needed for unjitted fn
       for o in outs: o.realize()
