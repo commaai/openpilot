@@ -54,8 +54,7 @@ image_flag = {
      'larch64': 'IMAGE=2',
 }.get(arch, 'IMAGE=0')
 script_files = [File(Dir("#selfdrive/modeld").File("compile_modeld.py").abspath)]
-# nuke stale cached pkl+chunks before compiling (UNSAFE CI checkout keeps gitignored files)
-compile_modeld_cmd = f'rm -f {Dir("#selfdrive/modeld").abspath}/models/driving_*_tinygrad.pkl* && {tg_flags} {mac_brew_string} {image_flag} python3 {Dir("#selfdrive/modeld").abspath}/compile_modeld.py '
+compile_modeld_cmd = f'{tg_flags} {mac_brew_string} {image_flag} python3 {Dir("#selfdrive/modeld").abspath}/compile_modeld.py '
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 driving_onnx_deps = [File(f"models/{m}.onnx").abspath for m in ['driving_vision', 'driving_on_policy', 'driving_off_policy']]
 driving_metadata_deps = [File(f"models/{m}_metadata.pkl").abspath for m in ['driving_vision', 'driving_on_policy']]
