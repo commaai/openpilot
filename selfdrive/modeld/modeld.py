@@ -192,10 +192,10 @@ class ModelState:
 
     # create fresh device tensors each frame to avoid NPY BufferCopy issues on QCOM
     npy_inputs = {
-      'desire': Tensor(new_desire.astype(np.float32)).realize(),
-      'traffic_convention': Tensor(inputs['traffic_convention'].reshape(1, 2).astype(np.float32)).realize(),
-      'tfm': Tensor(transforms['img'].astype(np.float32)).realize(),
-      'big_tfm': Tensor(transforms['big_img'].astype(np.float32)).realize(),
+      'desire': Tensor(new_desire.copy()).realize(),
+      'traffic_convention': Tensor(inputs['traffic_convention'].copy()).realize(),
+      'tfm': Tensor(transforms['img'].copy()).realize(),
+      'big_tfm': Tensor(transforms['big_img'].copy()).realize(),
     }
     vision_output, on_policy_output, off_policy_output = self.run_policy(
       **self.bufs, **npy_inputs, frame=self.full_frames['img'], big_frame=self.full_frames['big_img']
