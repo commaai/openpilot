@@ -99,19 +99,20 @@ def make_buffers(vision_input_shapes, policy_input_shapes, frame_skip):
   dp = policy_input_shapes['desire_pulse']  # (1, 25, 8)
   tc = policy_input_shapes['traffic_convention']  # (1, 2)
 
-  npy_shapes = {
-    'desire': (dp[2],),
-    'traffic_convention': tc,
-    'tfm': (3, 3),
-    'big_tfm': (3, 3),
+  npy = {
+    'desire': np.zeros(dp[2], dtype=np.float32),
+    'traffic_convention': np.zeros(tc, dtype=np.float32),
+    'tfm': np.zeros((3, 3), dtype=np.float32),
+    'big_tfm': np.zeros((3, 3), dtype=np.float32),
   }
   bufs = {
     'img_buf': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
     'big_img_buf': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
     'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
     'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
+    **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
-  return bufs, npy_shapes
+  return bufs, npy
 
 
 def shift_and_sample(buf, new_val, sample_fn):
@@ -188,18 +189,18 @@ def compile_modeld(cam_w, cam_h):
   SEED = 42
 
   def random_inputs_run_fn(fn, test_val=None, test_buffers=None):
-    bufs, npy_shapes = make_buffers(vision_input_shapes, policy_input_shapes, frame_skip)
+    bufs, npy = make_buffers(vision_input_shapes, policy_input_shapes, frame_skip)
     np.random.seed(SEED)
 
     for i in range(N_RUNS):
       frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
       big_frame = Tensor(np.random.randint(0, 256, yuv_size, dtype=np.uint8)).realize()
-      # create fresh device tensors each iteration to avoid NPY BufferCopy issues on QCOM
-      npy_tensors = {k: Tensor(np.random.randn(*s).astype(np.float32)).realize() for k, s in npy_shapes.items()}
+      for v in npy.values():
+        v[:] = np.random.randn(*v.shape).astype(v.dtype)
       Device.default.synchronize()
 
       st = time.perf_counter()
-      outs = fn(**{**bufs, **npy_tensors, 'frame': frame, 'big_frame': big_frame})
+      outs = fn(**{**bufs, 'frame': frame, 'big_frame': big_frame})
       mt = time.perf_counter()
       # .realize() not needed (and harmless?) once jitted, but needed for unjitted fn
       for o in outs: o.realize()
