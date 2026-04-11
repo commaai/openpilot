@@ -110,6 +110,7 @@ def make_buffers(vision_input_shapes, policy_input_shapes, frame_skip):
     'big_img_buf': Tensor.zeros(img_buf_shape, dtype='uint8').contiguous().realize(),
     'feat_q': Tensor.zeros(frame_skip * (fb[1] - 1) + 1, fb[0], fb[2]).contiguous().realize(),
     'desire_q': Tensor.zeros(frame_skip * dp[1], dp[0], dp[2]).contiguous().realize(),
+    **{k: Tensor(v, device='NPY').realize() for k, v in npy.items()},
   }
   return bufs, npy
 
@@ -199,7 +200,7 @@ def compile_modeld(cam_w, cam_h):
       Device.default.synchronize()
 
       st = time.perf_counter()
-      outs = fn(**bufs, **{k: Tensor(v) for k, v in npy.items()}, frame=frame, big_frame=big_frame)
+      outs = fn(**{k: v.to(Device.DEFAULT) if v.device == 'NPY' else v for k, v in bufs.items()}, frame=frame, big_frame=big_frame)
       mt = time.perf_counter()
       # .realize() not needed (and harmless?) once jitted, but needed for unjitted fn
       for o in outs: o.realize()
