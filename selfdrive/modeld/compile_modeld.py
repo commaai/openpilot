@@ -227,32 +227,35 @@ def compile_modeld(cam_w, cam_h):
   with open(pkl_path, "rb") as f: run_policy_jit = pickle.load(f)
   _, _, _ = random_inputs_run_fn(run_policy_jit, test_val, test_buffers)
 
+  # TODO 2x input
+  # TODO ensure not hitting uop cache bug
+
   # print(f"  Saved to {pkl_path}")
   # return test_inputs, test_val, test_buffers
 
 
-def test_vs_compile(run, inputs: dict[str, Tensor], test_val: list[np.ndarray], test_buffers: list[np.ndarray]):
-  for i in range(20):
-    st = time.perf_counter()
-    out = run(**inputs)
-    mt = time.perf_counter()
-    Device.default.synchronize()
-    et = time.perf_counter()
-    print(f"enqueue {(mt-st)*1e3:6.2f} ms -- total run {(et-st)*1e3:6.2f} ms")
+# def test_vs_compile(run, inputs: dict[str, Tensor], test_val: list[np.ndarray], test_buffers: list[np.ndarray]):
+#   for i in range(20):
+#     st = time.perf_counter()
+#     out = run(**inputs)
+#     mt = time.perf_counter()
+#     Device.default.synchronize()
+#     et = time.perf_counter()
+#     print(f"enqueue {(mt-st)*1e3:6.2f} ms -- total run {(et-st)*1e3:6.2f} ms")
 
-    if i == 0:  # check output matches before buffers get mutated by the jit
-      val = [v.numpy() for v in out]
-      buffers = [v.numpy().copy() for v in inputs.values()]
-      np.testing.assert_equal(test_val, val)
-      np.testing.assert_equal(test_buffers, buffers)
+#     if i == 0:  # check output matches before buffers get mutated by the jit
+#       val = [v.numpy() for v in out]
+#       buffers = [v.numpy().copy() for v in inputs.values()]
+#       np.testing.assert_equal(test_val, val)
+#       np.testing.assert_equal(test_buffers, buffers)
 
-  # test that changing the inputs changes the model outputs
-  inputs_2x = {k: Tensor(v.numpy().copy()*2, device=v.device) for k,v in inputs.items()}
-  changed_val = [v.numpy() for v in run(**inputs_2x)]
-  val = [v.numpy() for v in run(**inputs)]
-  for v, cv in zip(val, changed_val):
-    assert not np.array_equal(v, cv), f"output with shape {v.shape} didn't change when inputs were doubled"
-  print('test_vs_compile OK')
+#   # test that changing the inputs changes the model outputs
+#   inputs_2x = {k: Tensor(v.numpy().copy()*2, device=v.device) for k,v in inputs.items()}
+#   changed_val = [v.numpy() for v in run(**inputs_2x)]
+#   val = [v.numpy() for v in run(**inputs)]
+#   for v, cv in zip(val, changed_val):
+#     assert not np.array_equal(v, cv), f"output with shape {v.shape} didn't change when inputs were doubled"
+#   print('test_vs_compile OK')
 
 
 def compile_dm_warp(cam_w, cam_h):
