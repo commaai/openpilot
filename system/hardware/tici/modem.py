@@ -293,7 +293,14 @@ class Modem:
 
   def _reconnect(self):
     cloudlog.warning("modem reconnecting")
-    self.S.update(state="reconnecting", connected=False, ip_address="")
+    self.S.update(
+      state="reconnecting", connected=False, ip_address="",
+      iccid="", imei="", modem_version="",
+      signal_strength=0, signal_quality=0,
+      network_type="unknown", operator="", band="", channel=0,
+      registration="unknown", temperatures=[], extra="",
+      tx_bytes=0, rx_bytes=0, error="",
+    )
     self._ws()
     self._reset.set()
     self._kill_ppp()
