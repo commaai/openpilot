@@ -281,10 +281,13 @@ class Modem:
     self._ppp_lines = queue.Queue()
 
     def _read_pppd(proc, q):
-      assert proc.stdout is not None
-      for raw in proc.stdout:
-        q.put(raw)
-      proc.stdout.close()
+      try:
+        assert proc.stdout is not None
+        for raw in proc.stdout:
+          q.put(raw)
+        proc.stdout.close()
+      except Exception as e:
+        cloudlog.warning(f"modem pppd reader error: {e}")
 
     threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
     cloudlog.info(f"modem PPP dialing CID {self._cid}")
@@ -300,23 +303,24 @@ class Modem:
       line = raw.decode(errors="ignore").strip()
       if not line:
         continue
-        cloudlog.debug(f"pppd: {line}")
-        if "local  IP address" in line:
-          ip = line.split("local  IP address")[-1].strip()
-          self.S.update(ip_address=ip, connected=True, state="connected")
-        elif "remote IP address" in line and self.S["ip_address"]:
-          peer = line.split("remote IP address")[-1].strip()
-          self._cleanup_routes()
-          subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
-                         capture_output=True)
-          subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "table", "1000"],
-                         capture_output=True)
-          subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
-                         capture_output=True)
-          self._ws()
-        elif "Connection terminated" in line or "Modem hangup" in line:
-          self.S.update(connected=False, state="disconnected", ip_address="")
-          self._ws()
+      cloudlog.debug(f"pppd: {line}")
+      if "local  IP address" in line:
+        ip = line.split("local  IP address")[-1].strip()
+        self.S.update(ip_address=ip, connected=True, state="connected")
+      elif "remote IP address" in line and self.S["ip_address"]:
+        peer = line.split("remote IP address")[-1].strip()
+        self._cleanup_routes()
+        subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
+                       capture_output=True)
+        subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "table", "1000"],
+                       capture_output=True)
+        subprocess.run(["sudo", "ip", "rule", "add", "from", self.S["ip_address"], "table", "1000"],
+                       capture_output=True)
+        cloudlog.info(f"modem route set up for {self.S['ip_address']} via {peer}")
+        self._ws()
+      elif "Connection terminated" in line or "Modem hangup" in line:
+        self.S.update(connected=False, state="disconnected", ip_address="")
+        self._ws()
 
     # check if pppd exited
     if self._ppp and self._ppp.poll() is not None:
