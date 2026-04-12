@@ -246,15 +246,25 @@ class Modem:
     return State.REGISTERING
 
   def _do_registering(self):
+    # check for param changes while waiting
+    new_roaming = self._read_param("GsmRoaming") != "0"
+    if new_roaming != self._roaming_allowed:
+      cloudlog.info(f"modem roaming changed: {self._roaming_allowed} -> {new_roaming}")
+      self._roaming_allowed = new_roaming
+
     v = self._atv("AT+CREG?", "+CREG:")
     if v:
       try:
         reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
       except (ValueError, IndexError):
         reg = "unknown"
+      self.S["registration"] = reg
       if reg == "home" or (reg == "roaming" and self._roaming_allowed):
-        self.S["registration"] = reg
+        self.S["error"] = ""
         return State.CONNECTING
+      if reg == "roaming" and not self._roaming_allowed:
+        self.S["error"] = "roaming_disabled"
+        self._ws()
     if self._sim_change or not os.path.exists(AT_PORT):
       return State.RECONNECTING
     time.sleep(0.5)
