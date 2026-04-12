@@ -10,6 +10,8 @@ import termios
 import time
 import threading
 
+from openpilot.common.swaglog import cloudlog
+
 AT_PORT = "/dev/modem_at0"
 PPP_PORT = "/dev/modem_at1"
 STATE_PATH = "/dev/shm/modem"
@@ -91,13 +93,13 @@ class Modem:
         if line == "ERROR" or line.startswith("+CME ERROR"):
           raise RuntimeError(line)
         if "+QUSIM:" in line:
-          print(f"[urc] {line}")
+          cloudlog.warning(f"modem URC: {line}")
           self._reset.set()
           os.system("sudo killall -9 pppd 2>/dev/null")
         lines.append(line)
       return lines
     except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
-      print(f"[at] {cmd} FAIL: {e}")
+      cloudlog.debug(f"AT {cmd} failed: {e}")
       return []
     finally:
       fcntl.flock(fd, fcntl.LOCK_UN)
@@ -153,10 +155,10 @@ class Modem:
           best = (c, a)
     if best:
       self._cid = best[0]
-      print(f"[pdp] APN '{best[1]}' CID {self._cid}")
+      cloudlog.info(f"modem APN '{best[1]}' CID {self._cid}")
     else:
       self._at('AT+CGDCONT=1,"IP",""')
-      print("[pdp] no APN, using CID 1")
+      cloudlog.warning("modem no APN found, using CID 1")
 
   def _wait_reg(self, timeout=60):
     t = time.monotonic()
@@ -210,7 +212,7 @@ class Modem:
         s.read(100)
       s.close()
     except Exception as e:
-      print(f"[flash] {e}")
+      cloudlog.warning(f"modem data port reset failed: {e}")
 
   def _kill_ppp(self):
     os.system("sudo killall -9 pppd 2>/dev/null")
@@ -226,7 +228,7 @@ class Modem:
       while self.running and not self._reset.is_set():
         if fails > 0:
           self._reset_data_port()
-        print(f"[ppp] dialing CID {self._cid}")
+        cloudlog.info(f"modem PPP dialing CID {self._cid}")
         try:
           proc = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
           ok = False
@@ -234,7 +236,7 @@ class Modem:
             line = raw.decode(errors="ignore").strip()
             if not line:
               continue
-            print(f"[pppd] {line}")
+            cloudlog.debug(f"pppd: {line}")
             if "local  IP address" in line:
               ip = line.split("local  IP address")[-1].strip()
               self.S.update(ip_address=ip, connected=True, state="connected")
@@ -246,9 +248,9 @@ class Modem:
           proc.wait()
           if not ok:
             fails += 1
-            print(f"[ppp] fail {fails}/3")
+            cloudlog.warning(f"modem PPP fail {fails}/3")
         except Exception as e:
-          print(f"[ppp] {e}")
+          cloudlog.exception(f"modem PPP error: {e}")
           fails += 1
         if fails >= 3:
           self._reset.set()
@@ -258,7 +260,7 @@ class Modem:
     self._ppp.start()
 
   def _reconnect(self):
-    print("[reconnect] starting")
+    cloudlog.warning("modem reconnecting")
     self.S.update(state="reconnecting", connected=False, ip_address="")
     self._ws()
     self._reset.set()
@@ -332,7 +334,7 @@ class Modem:
     self._ws()
 
   def run(self):
-    print(f"[modem] starting {time.strftime('%H:%M:%S')}")
+    cloudlog.info(f"modem starting {time.strftime('%H:%M:%S')}")
     os.system("sudo systemctl mask ModemManager 2>/dev/null")
     os.system("sudo systemctl stop ModemManager 2>/dev/null")
     os.system("sudo killall pppd 2>/dev/null")
@@ -348,7 +350,7 @@ class Modem:
           self._poll()
           last_poll = time.monotonic()
       except Exception as e:
-        print(f"[err] {e}")
+        cloudlog.exception(f"modem error: {e}")
       time.sleep(2)
 
   def stop(self):
