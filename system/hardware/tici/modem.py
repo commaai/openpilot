@@ -289,13 +289,7 @@ class Modem:
     time.sleep(0.5)
     return State.REGISTERING
 
-  def _do_connecting(self):
-    print("[modem] _do_connecting: starting pppd")
-    self._update(state="connecting")
-    self._ppp_fails = 0
-    self._sim_change = False
-
-    # start pppd with a reader thread to avoid blocking
+  def _start_pppd(self):
     self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     self._ppp_lines = queue.Queue()
 
@@ -310,6 +304,13 @@ class Modem:
 
     threading.Thread(target=_read_pppd, args=(self._ppp, self._ppp_lines), daemon=True).start()
     cloudlog.info("modem PPP dialing")
+
+  def _do_connecting(self):
+    print("[modem] _do_connecting: starting pppd")
+    self._update(state="connecting")
+    self._ppp_fails = 0
+    self._sim_change = False
+    self._start_pppd()
     return State.CONNECTED
 
   def _do_connected(self):
@@ -352,8 +353,7 @@ class Modem:
       self._reset_data_port()
       if not os.path.exists(AT_PORT):
         return State.RECONNECTING
-      self._ppp = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-      cloudlog.info("modem PPP dialing")
+      self._start_pppd()
       return State.CONNECTED
 
     # check for SIM change, port loss, or param changes
