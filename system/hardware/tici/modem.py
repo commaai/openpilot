@@ -49,6 +49,7 @@ class Modem:
     self._ppp_fails = 0
     self._sim_change = False
     self._apn = ""
+    self._roaming_allowed = True
     self.running = True
     self.S = {
       "state": "init",
@@ -237,8 +238,9 @@ class Modem:
 
     # configure APN on CID 1 — use custom APN from param, or empty to let network assign
     self._apn = self._read_param("GsmApn")
+    self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
-    cloudlog.info(f"modem APN '{self._apn or '(auto)'}' CID 1")
+    cloudlog.info(f"modem APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
 
     self._ws()
     return State.REGISTERING
@@ -250,8 +252,7 @@ class Modem:
         reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
       except (ValueError, IndexError):
         reg = "unknown"
-      roaming_allowed = self._read_param("GsmRoaming") != "0"
-      if reg == "home" or (reg == "roaming" and roaming_allowed):
+      if reg == "home" or (reg == "roaming" and self._roaming_allowed):
         self.S["registration"] = reg
         return State.CONNECTING
     if self._sim_change or not os.path.exists(AT_PORT):
@@ -334,6 +335,10 @@ class Modem:
     new_apn = self._read_param("GsmApn")
     if new_apn != self._apn:
       cloudlog.info(f"modem APN changed: '{self._apn}' -> '{new_apn}'")
+      return State.RECONNECTING
+    new_roaming = self._read_param("GsmRoaming") != "0"
+    if new_roaming != self._roaming_allowed:
+      cloudlog.info(f"modem roaming changed: {self._roaming_allowed} -> {new_roaming}")
       return State.RECONNECTING
 
     # poll modem status every pass (main loop sleeps 2s)
