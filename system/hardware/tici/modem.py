@@ -1,0 +1,290 @@
+#!/usr/bin/env python3
+import fcntl
+import json
+import os
+import serial
+import signal
+import subprocess
+import tempfile
+import termios
+import time
+import threading
+
+AT_PORT = "/dev/modem_at0"
+PPP_PORT = "/dev/modem_at1"
+STATE_PATH = "/dev/shm/modem"
+AT_LOCK = "/dev/shm/modem_lpa.lock"  # shared with LPA
+AT_INIT = ["ATE0", "ATV1", "AT+CMEE=1", "ATX4", "AT&C1"]
+CREG = {0: "not_registered", 1: "home", 2: "searching", 3: "denied", 4: "unknown", 5: "roaming"}
+PPPD = [
+  "sudo", "pppd", PPP_PORT, "460800", "noauth", "nodetach", "noipdefault", "usepeerdns",
+  "defaultroute", "replacedefaultroute", "connect", "/usr/sbin/chat -v -f /dev/shm/modem_chat",
+  "lcp-echo-interval", "30", "lcp-echo-failure", "4", "mtu", "1500", "mru", "1500",
+  "novj", "novjccomp", "ipcp-accept-local", "ipcp-accept-remote", "nomagic",
+  "user", '""', "password", '""',
+]
+CHAT = (
+  "ABORT 'NO CARRIER'\nABORT 'NO DIALTONE'\nABORT 'BUSY'\n"
+  "ABORT 'NO ANSWER'\nABORT 'ERROR'\nTIMEOUT 5\n"
+  "'' AT\nOK ATD*99***{cid}#\nCONNECT ''\n"
+)
+
+
+class Modem:
+  def __init__(self):
+    self._ser = None
+    self.running = True
+    self._ppp = None
+    self._reset = threading.Event()
+    self._cid = 1
+    self.S = {
+      "state": "init", "connected": False, "ip_address": "", "iccid": "", "imei": "",
+      "modem_version": "", "signal_strength": 0, "signal_quality": 0,
+      "network_type": "unknown", "operator": "", "mcc_mnc": "", "band": "", "channel": 0,
+      "registration": "unknown", "temperatures": [], "extra": "",
+      "tx_bytes": 0, "rx_bytes": 0, "error": "",
+    }
+
+  def _ws(self):
+    with tempfile.NamedTemporaryFile(mode="w", dir="/dev/shm", delete=False) as f:
+      json.dump(self.S, f)
+      f.flush()
+      os.fsync(f.fileno())
+      os.chmod(f.name, 0o644)
+    os.replace(f.name, STATE_PATH)
+
+  def _at(self, cmd):
+    """Send AT command, return response lines. [] on error or if LPA holds port."""
+    fd = os.open(AT_LOCK, os.O_CREAT | os.O_RDWR, 0o666)
+    try:
+      fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+      os.close(fd)
+      return []  # LPA is using the port
+    try:
+      self._ser.write((cmd + "\r").encode())
+      lines = []
+      while True:
+        raw = self._ser.readline()
+        if not raw:
+          raise TimeoutError("AT timeout")
+        line = raw.decode(errors="ignore").strip()
+        if not line: continue
+        if line == "OK": break
+        if line == "ERROR" or line.startswith("+CME ERROR"):
+          raise RuntimeError(line)
+        if "+QUSIM:" in line:
+          print(f"[urc] {line}")
+          self._reset.set()
+          os.system("sudo killall -9 pppd 2>/dev/null")
+        lines.append(line)
+      return lines
+    except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
+      print(f"[at] {cmd} FAIL: {e}")
+      return []
+    finally:
+      fcntl.flock(fd, fcntl.LOCK_UN)
+      os.close(fd)
+
+  def _atv(self, cmd, pfx):
+    for line in self._at(cmd):
+      if pfx in line and ":" in line:
+        return line.split(":", 1)[1].strip()
+    return None
+
+  def _init(self):
+    for c in AT_INIT + ["AT$QCSIMSLEEP=0", "AT$QCSIMCFG=SimPowerSave,0", "AT+CREG=2", "AT+CGREG=2"]:
+      self._at(c)
+    try:
+      with open("/sys/firmware/devicetree/base/model") as f:
+        device = f.read().strip('\x00').split('comma ')[-1]
+    except Exception:
+      device = ""
+    if device == "tizi":
+      for c in ["AT+QSIMDET=1,0", "AT+QSIMSTAT=1",
+                 'AT+QNVW=5280,0,"0102000000000000"',
+                 'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+                 'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01']:
+        self._at(c)
+    else:
+      self._at('AT$QCPCFG=usbNet,1')
+    r = self._at("AT+CGSN")
+    if r: self.S["imei"] = r[0].strip()
+    v = self._atv("AT+QCCID", "+QCCID:")
+    if v: self.S["iccid"] = v
+    r = self._at("AT+GMR")
+    if r: self.S["modem_version"] = r[0].strip()
+
+  def _pdp(self):
+    self._cid, best = 1, None
+    for line in self._at("AT+CGDCONT?"):
+      if "+CGDCONT:" not in line: continue
+      p = line.split(":", 1)[1].strip().split(",")
+      if len(p) >= 3:
+        c, a = int(p[0]), p[2].strip('"')
+        if a and a != "ims": best = (c, a)
+    if best:
+      self._cid = best[0]
+      print(f"[pdp] APN '{best[1]}' CID {self._cid}")
+    else:
+      self._at('AT+CGDCONT=1,"IP",""')
+      print("[pdp] no APN found, using CID 1")
+
+  def _wait_reg(self, timeout=60):
+    t = time.monotonic()
+    while time.monotonic() - t < timeout:
+      v = self._atv("AT+CREG?", "+CREG:")
+      if v:
+        try: reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
+        except (ValueError, IndexError): reg = "unknown"
+        if reg in ("home", "roaming"):
+          self.S["registration"] = reg
+          return True
+      time.sleep(0.5)
+    return False
+
+  def _boot(self):
+    if self._ser:
+      try: self._ser.close()
+      except Exception: pass
+    self._ser = serial.Serial(AT_PORT, 9600, timeout=5)
+    time.sleep(1)
+    self._init()
+    self._pdp()
+    if not self._wait_reg(timeout=30):
+      return False
+    self.S["state"] = "connecting"
+    self._ws()
+    self._start_ppp()
+    return True
+
+  @staticmethod
+  def _reset_data_port():
+    try:
+      fd = os.open(PPP_PORT, os.O_RDWR | os.O_NOCTTY)
+      attrs = termios.tcgetattr(fd)
+      attrs[4] = attrs[5] = termios.B0
+      termios.tcsetattr(fd, termios.TCSANOW, attrs)
+      time.sleep(1)
+      attrs[4] = attrs[5] = termios.B460800
+      termios.tcsetattr(fd, termios.TCSANOW, attrs)
+      os.close(fd)
+    except Exception as e:
+      print(f"[flash] {e}")
+
+  def _kill_ppp(self):
+    os.system("sudo killall -9 pppd 2>/dev/null")
+    if self._ppp and self._ppp.is_alive(): self._ppp.join(timeout=5)
+
+  def _start_ppp(self):
+    with open("/dev/shm/modem_chat", "w") as f:
+      f.write(CHAT.format(cid=self._cid))
+
+    def run():
+      fails = 0
+      while self.running and not self._reset.is_set():
+        if fails > 0:
+          self._reset_data_port()
+        print(f"[ppp] dialing CID {self._cid}")
+        try:
+          t = time.monotonic()
+          proc = subprocess.Popen(PPPD, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+          proc.wait()
+          if time.monotonic() - t > 30:
+            fails = 0  # was connected, don't count as failure
+          fails += 1
+          print(f"[ppp] exited, fail {fails}/3")
+        except Exception as e:
+          print(f"[ppp] {e}")
+          fails += 1
+        if fails >= 3:
+          self._reset.set()
+          return
+        time.sleep(2)
+
+    self._ppp = threading.Thread(target=run, daemon=True)
+    self._ppp.start()
+
+  def _reconnect(self):
+    print("[reconnect] starting")
+    self.S.update(state="reconnecting", connected=False, ip_address="")
+    self._ws()
+    self._reset.set()
+    self._kill_ppp()
+    self._reset_data_port()
+    self._reset.clear()
+    self._boot()
+
+  def _poll(self):
+    v = self._atv("AT+CSQ", "+CSQ:")
+    if v:
+      try:
+        rssi = int(v.split(",")[0])
+        if rssi != 99:
+          self.S["signal_strength"] = rssi
+          self.S["signal_quality"] = min(100, int(rssi / 31 * 100))
+      except (ValueError, IndexError): pass
+    self._at("AT+COPS=3,2")  # numeric format
+    v = self._atv("AT+COPS?", "+COPS:")
+    if v:
+      p = v.split(",")
+      if len(p) >= 3: self.S["mcc_mnc"] = p[2].strip('"')
+      if len(p) >= 4: self.S["network_type"] = {0: "gsm", 2: "utran", 7: "lte"}.get(int(p[3]), "unknown")
+    self._at("AT+COPS=3,0")  # restore alpha format
+    v = self._atv("AT+QNWINFO", "+QNWINFO:")
+    if v:
+      info = v.replace('"', '').split(",")
+      if len(info) >= 4:
+        self.S["operator"], self.S["band"], self.S["channel"] = info[1], info[2], int(info[3])
+    v = self._atv('AT+QENG="servingcell"', "+QENG:")
+    if v: self.S["extra"] = v.replace('"', '')
+    v = self._atv("AT+QTEMP", "+QTEMP:")
+    if v:
+      try: self.S["temperatures"] = [t for t in (int(x) for x in v.split(",") if x.strip()) if t != 255]
+      except (ValueError, IndexError): pass
+    try:
+      with open("/sys/class/net/ppp0/operstate") as f: up = f.read().strip() == "unknown"  # ppp uses "unknown" for up
+      if up:
+        r = subprocess.run(["ip", "-4", "-o", "addr", "show", "ppp0"], capture_output=True, text=True, timeout=2)
+        ip = r.stdout.split("inet ")[1].split("/")[0] if "inet " in r.stdout else ""
+        if ip: self.S.update(ip_address=ip, connected=True, state="connected")
+        with open("/sys/class/net/ppp0/statistics/tx_bytes") as f: self.S["tx_bytes"] = int(f.read().strip())
+        with open("/sys/class/net/ppp0/statistics/rx_bytes") as f: self.S["rx_bytes"] = int(f.read().strip())
+      elif self.S["connected"]:
+        self.S.update(connected=False, state="registered", ip_address="")
+    except FileNotFoundError: pass
+    self._ws()
+
+  def run(self):
+    print(f"modem.py starting {time.strftime('%H:%M:%S')}")
+    os.system("sudo systemctl stop ModemManager 2>/dev/null")
+    os.system("sudo killall pppd 2>/dev/null")
+    self._boot()
+
+    last_poll = 0.0
+    while self.running:
+      try:
+        if not os.path.exists(AT_PORT) or self._reset.is_set():
+          self._reconnect()
+          last_poll = time.monotonic()
+        elif time.monotonic() - last_poll >= 10:
+          self._poll()
+          last_poll = time.monotonic()
+      except Exception as e:
+        print(f"[err] {e}")
+      time.sleep(2)
+
+  def stop(self):
+    self.running = False
+    self._reset.set()
+    self._kill_ppp()
+    if self._ser: self._ser.close()
+
+
+if __name__ == "__main__":
+  m = Modem()
+  def _sig(*_): m.running = False
+  signal.signal(signal.SIGINT, _sig)
+  signal.signal(signal.SIGTERM, _sig)
+  m.run()
+  m.stop()
