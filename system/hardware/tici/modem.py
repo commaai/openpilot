@@ -243,7 +243,13 @@ class Modem:
               self.S.update(ip_address=ip, connected=True, state="connected")
             elif "remote IP address" in line:
               peer = line.split("remote IP address")[-1].strip()
+              # high-metric default route as fallback when wifi is down
               subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
+                             capture_output=True)
+              # source-based routing so ppp0-bound traffic uses ppp0
+              subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "table", "1000"],
+                             capture_output=True)
+              subprocess.run(["sudo", "ip", "rule", "add", "from", ip, "table", "1000"],
                              capture_output=True)
               self._ws()
               ok, fails = True, 0
