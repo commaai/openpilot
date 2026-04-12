@@ -232,6 +232,7 @@ class Modem:
         try:
           proc = subprocess.Popen(PPPD, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
           ok = False
+          ip = None
           assert proc.stdout is not None
           for raw in proc.stdout:
             line = raw.decode(errors="ignore").strip()
@@ -241,7 +242,7 @@ class Modem:
             if "local  IP address" in line:
               ip = line.split("local  IP address")[-1].strip()
               self.S.update(ip_address=ip, connected=True, state="connected")
-            elif "remote IP address" in line:
+            elif "remote IP address" in line and ip:
               peer = line.split("remote IP address")[-1].strip()
               # high-metric default route as fallback when wifi is down
               subprocess.run(["sudo", "ip", "route", "add", "default", "via", peer, "dev", "ppp0", "metric", "1000"],
@@ -370,6 +371,11 @@ class Modem:
     self._kill_ppp()
     if self._ser:
       self._ser.close()
+    # clean up routes
+    if self.S["ip_address"]:
+      subprocess.run(["sudo", "ip", "rule", "del", "from", self.S["ip_address"], "table", "1000"], capture_output=True)
+    subprocess.run(["sudo", "ip", "route", "flush", "table", "1000"], capture_output=True)
+    subprocess.run(["sudo", "ip", "route", "del", "default", "dev", "ppp0"], capture_output=True)
     os.system("sudo systemctl unmask ModemManager 2>/dev/null")
     os.system("sudo systemctl start ModemManager 2>/dev/null")
 
