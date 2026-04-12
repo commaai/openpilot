@@ -194,6 +194,10 @@ class Modem:
       return State.WAITING_PORT
     time.sleep(1)
 
+    # kill any stale pppd from previous run
+    self._kill_ppp()
+    self._cleanup_routes()
+
     # AT init
     for c in AT_INIT + ["AT$QCSIMSLEEP=0", "AT$QCSIMCFG=SimPowerSave,0", "AT+CREG=2", "AT+CGREG=2"]:
       self._at(c)
