@@ -71,6 +71,14 @@ class Modem:
       "error": "",
     }
 
+  @staticmethod
+  def _read_param(key):
+    try:
+      with open(f"/data/params/d/{key}") as f:
+        return f.read().strip()
+    except FileNotFoundError:
+      return ""
+
   # -- state file --
 
   def _ws(self):
@@ -228,8 +236,7 @@ class Modem:
       self.S["modem_version"] = r[0].strip()
 
     # configure APN on CID 1 — use custom APN from param, or empty to let network assign
-    from openpilot.common.params import Params
-    self._apn = Params().get("GsmApn", encoding="utf-8") or ""
+    self._apn = self._read_param("GsmApn")
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
     cloudlog.info(f"modem APN '{self._apn or '(auto)'}' CID 1")
 
@@ -323,8 +330,7 @@ class Modem:
     # check for SIM change, port loss, or APN change
     if self._sim_change or not os.path.exists(AT_PORT):
       return State.RECONNECTING
-    from openpilot.common.params import Params
-    new_apn = Params().get("GsmApn", encoding="utf-8") or ""
+    new_apn = self._read_param("GsmApn")
     if new_apn != self._apn:
       cloudlog.info(f"modem APN changed: '{self._apn}' -> '{new_apn}'")
       return State.RECONNECTING
