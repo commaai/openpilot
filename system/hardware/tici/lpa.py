@@ -441,7 +441,4 @@ class TiciLPA(LPABase):
         code = self._enable_profile(iccid)
       if code not in (PROFILE_OK, PROFILE_NOT_IN_DISABLED_STATE):
         raise LPAError(f"EnableProfile failed: {PROFILE_ERROR_CODES.get(code, 'unknown')} (0x{code:02X})")
-    from openpilot.system.hardware import HARDWARE
-    if HARDWARE.get_device_type() == "mici":
-      self._client.send_raw(b'AT+CFUN=0\rAT+CFUN=1\r')  # mici has no SIM presence pin; raw because CFUN=0 drops serial
-      self._client._ensure_serial(reconnect=True)
+    # no CFUN needed — refreshFlag=0 in _enable_profile triggers modem to detect the change
