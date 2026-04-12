@@ -122,7 +122,7 @@ class Modem:
         lines.append(line)
       return lines
     except (RuntimeError, TimeoutError, OSError, serial.SerialException) as e:
-      cloudlog.debug(f"AT {cmd} failed: {e}")
+      cloudlog.info(f"AT {cmd} failed: {e}")
       return []
     finally:
       fcntl.flock(fd, fcntl.LOCK_UN)
@@ -291,7 +291,7 @@ class Modem:
       line = raw.decode(errors="ignore").strip()
       if not line:
         continue
-      cloudlog.debug(f"pppd: {line}")
+      cloudlog.info(f"pppd: {line}")
       if "local  IP address" in line:
         ip = line.split("local  IP address")[-1].strip()
         self.S.update(ip_address=ip, connected=True, state="connected")
