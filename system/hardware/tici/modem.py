@@ -178,11 +178,13 @@ class Modem:
 
   def _do_waiting_port(self):
     if os.path.exists(AT_PORT):
+      print("[modem] _do_waiting_port: port found")
       return State.INIT
     time.sleep(1)
     return State.WAITING_PORT
 
   def _do_init(self):
+    print("[modem] _do_init: opening serial port")
     if self._ser:
       try:
         self._ser.close()
@@ -190,15 +192,18 @@ class Modem:
         pass
     try:
       self._ser = serial.Serial(AT_PORT, 9600, timeout=5)
-    except (OSError, serial.SerialException):
+    except (OSError, serial.SerialException) as e:
+      print(f"[modem] _do_init: serial open failed: {e}")
       return State.WAITING_PORT
     time.sleep(1)
 
     # kill any stale pppd from previous run
+    print("[modem] _do_init: killing stale pppd")
     self._kill_ppp()
     self._cleanup_routes()
 
     # AT init
+    print("[modem] _do_init: AT init")
     for c in AT_INIT + ["AT$QCSIMSLEEP=0", "AT$QCSIMCFG=SimPowerSave,0", "AT+CREG=2", "AT+CGREG=2"]:
       self._at(c)
 
@@ -220,6 +225,7 @@ class Modem:
       self._at('AT$QCPCFG=usbNet,1')
 
     # read identity
+    print("[modem] _do_init: reading identity")
     imei, iccid, modem_version = "", "", ""
     r = self._at("AT+CGSN")
     if r:
@@ -230,14 +236,17 @@ class Modem:
     r = self._at("AT+GMR")
     if r:
       modem_version = r[0].strip()
+    print(f"[modem] _do_init: imei={imei} iccid={iccid} ver={modem_version}")
 
     # configure APN on CID 1
     self._apn = self._read_param("GsmApn")
     self._roaming_allowed = self._read_param("GsmRoaming") != "0"
     self._at(f'AT+CGDCONT=1,"IP","{self._apn}"')
+    print(f"[modem] _do_init: APN='{self._apn or '(auto)'}' roaming={'on' if self._roaming_allowed else 'off'} sim_change={self._sim_change}")
     cloudlog.info(f"modem APN '{self._apn or '(auto)'}' CID 1, roaming={'on' if self._roaming_allowed else 'off'}")
 
     self._sim_change = False  # clear — we just re-read identity with the new SIM
+    print("[modem] _do_init: done, -> registering")
     self._update(imei=imei, iccid=iccid, modem_version=modem_version)
     return State.REGISTERING
 
@@ -245,6 +254,7 @@ class Modem:
     # check for param changes while waiting
     new_roaming = self._read_param("GsmRoaming") != "0"
     if new_roaming != self._roaming_allowed:
+      print(f"[modem] _do_registering: roaming changed {self._roaming_allowed} -> {new_roaming}")
       cloudlog.info(f"modem roaming changed: {self._roaming_allowed} -> {new_roaming}")
       self._roaming_allowed = new_roaming
 
@@ -254,17 +264,22 @@ class Modem:
         reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
       except (ValueError, IndexError):
         reg = "unknown"
+      print(f"[modem] _do_registering: reg={reg} roaming_allowed={self._roaming_allowed}")
       if reg == "home" or (reg == "roaming" and self._roaming_allowed):
         self._update(registration=reg, error="")
         return State.CONNECTING
       if reg == "roaming" and not self._roaming_allowed:
         self._update(registration=reg, error="roaming_disabled")
+    else:
+      print(f"[modem] _do_registering: CREG returned None")
     if self._sim_change or not os.path.exists(AT_PORT):
+      print(f"[modem] _do_registering: -> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
       return State.RECONNECTING
     time.sleep(0.5)
     return State.REGISTERING
 
   def _do_connecting(self):
+    print("[modem] _do_connecting: starting pppd")
     self._update(state="connecting")
     self._ppp_fails = 0
     self._sim_change = False
@@ -347,6 +362,7 @@ class Modem:
     return State.CONNECTED
 
   def _do_reconnecting(self):
+    print("[modem] _do_reconnecting")
     cloudlog.warning("modem reconnecting")
     self._update(
       state="reconnecting", connected=False, ip_address="",
@@ -455,8 +471,10 @@ class Modem:
         state = handlers[state]()
         self.S["state"] = state.value
         if state != prev:
+          print(f"[modem] {prev.value} -> {state.value}")
           cloudlog.info(f"modem {prev.value} -> {state.value}")
       except Exception as e:
+        print(f"[modem] ERROR in {state.value}: {e}")
         cloudlog.exception(f"modem error in {state.value}: {e}")
         state = State.RECONNECTING
       if state not in (State.REGISTERING, State.WAITING_PORT):
