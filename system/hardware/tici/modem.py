@@ -450,6 +450,10 @@ class Modem:
 
   def run(self):
     cloudlog.info(f"modem starting {time.strftime('%H:%M:%S')}")
+    try:
+      os.remove(STATE_PATH)
+    except FileNotFoundError:
+      pass
     subprocess.run(["sudo", "systemctl", "mask", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "systemctl", "stop", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "killall", "pppd"], capture_output=True)
@@ -486,6 +490,10 @@ class Modem:
     if self._ser:
       self._ser.close()
     self._cleanup_routes()
+    try:
+      os.remove(STATE_PATH)
+    except FileNotFoundError:
+      pass
     subprocess.run(["sudo", "systemctl", "unmask", "ModemManager"], capture_output=True)
     subprocess.run(["sudo", "systemctl", "start", "ModemManager"], capture_output=True)
 
