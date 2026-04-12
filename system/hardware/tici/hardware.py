@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import subprocess
@@ -51,6 +52,7 @@ class NMMetered(IntEnum):
   NM_METERED_GUESS_YES = 3
   NM_METERED_GUESS_NO = 4
 
+MODEM_STATE_PATH = "/dev/shm/modem"
 TIMEOUT = 0.1
 REFRESH_RATE_MS = 1000
 
@@ -97,6 +99,14 @@ class Tici(HardwareBase):
     if self.get_device_type() == "mici":
       return None
     return Amplifier()
+
+  def get_modem_state(self):
+    """Read modem.py state file. Returns dict or None if modem.py isn't running."""
+    try:
+      with open(MODEM_STATE_PATH) as f:
+        return json.load(f)
+    except Exception:
+      return None
 
   def get_os_version(self):
     with open("/VERSION") as f:
@@ -163,6 +173,17 @@ class Tici(HardwareBase):
     except Exception:
       pass
 
+    # modem.py manages connectivity outside of NetworkManager
+    ms = self.get_modem_state()
+    if ms is not None and ms.get('connected'):
+      nt = ms.get('network_type', '')
+      if nt == 'lte':
+        return NetworkType.cell4G
+      elif nt in ('utran', 'umts'):
+        return NetworkType.cell3G
+      elif nt == 'gsm':
+        return NetworkType.cell2G
+
     return NetworkType.none
 
   def get_modem(self):
@@ -179,6 +200,17 @@ class Tici(HardwareBase):
     return self.bus.get_object(NM, wwan_path)
 
   def get_sim_info(self):
+    ms = self.get_modem_state()
+    if ms is not None:
+      sim_id = ms.get('iccid', '')
+      return {
+        'sim_id': sim_id,
+        'mcc_mnc': ms.get('mcc_mnc') or None,
+        'network_type': ["Unknown"],
+        'sim_state': ["ABSENT"] if not sim_id else ["READY"],
+        'data_connected': ms.get('connected', False),
+      }
+
     modem = self.get_modem()
     sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
@@ -207,11 +239,29 @@ class Tici(HardwareBase):
     if slot != 0:
       return ""
 
+    ms = self.get_modem_state()
+    if ms is not None:
+      return ms.get('imei', '')
+
     return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
 
   def get_network_info(self):
     if self.get_device_type() == "mici":
       return None
+
+    ms = self.get_modem_state()
+    if ms is not None:
+      state_map = {"connected": "CONNECTED", "connecting": "CONNECTING", "searching": "SEARCHING",
+                   "registered": "REGISTERED", "init": "INITIALIZING"}
+      return {
+        'technology': ms.get('network_type', '').upper() if ms.get('network_type') else '',
+        'operator': ms.get('operator', ''),
+        'band': ms.get('band', ''),
+        'channel': ms.get('channel', 0),
+        'extra': ms.get('extra', ''),
+        'state': state_map.get(ms.get('state', ''), 'UNKNOWN'),
+      }
+
     try:
       modem = self.get_modem()
       info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
@@ -265,9 +315,13 @@ class Tici(HardwareBase):
           strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
           network_strength = self.parse_strength(strength)
       else:  # Cellular
-        modem = self.get_modem()
-        strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)[0])
-        network_strength = self.parse_strength(strength)
+        ms = self.get_modem_state()
+        if ms is not None:
+          network_strength = self.parse_strength(ms.get('signal_quality', 0))
+        else:
+          modem = self.get_modem()
+          strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)[0])
+          network_strength = self.parse_strength(strength)
     except Exception:
       pass
 
@@ -295,6 +349,10 @@ class Tici(HardwareBase):
     return super().get_network_metered(network_type)
 
   def get_modem_version(self):
+    ms = self.get_modem_state()
+    if ms is not None:
+      return ms.get('modem_version') or None
+
     try:
       modem = self.get_modem()
       return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -302,6 +360,10 @@ class Tici(HardwareBase):
       return None
 
   def get_modem_temperatures(self):
+    ms = self.get_modem_state()
+    if ms is not None:
+      return ms.get('temperatures', [])
+
     timeout = 0.2  # Default timeout is too short
     try:
       modem = self.get_modem()
@@ -458,43 +520,45 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
-    cmds = []
-    modem = self.get_modem()
+    # modem.py handles AT configuration when active
+    if self.get_modem_state() is None:
+      cmds = []
+      modem = self.get_modem()
 
-    # Quectel EG25
-    if self.get_device_type() in ("tizi", ):
-      # clear out old blue prime initial APN
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
+      # Quectel EG25
+      if self.get_device_type() in ("tizi", ):
+        # clear out old blue prime initial APN
+        os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
 
-      cmds += [
-        # SIM hot swap
-        'AT+QSIMDET=1,0',
-        'AT+QSIMSTAT=1',
-
-        # configure modem as data-centric
-        'AT+QNVW=5280,0,"0102000000000000"',
-        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-      ]
-
-    # Quectel EG916
-    else:
-      # this modem gets upset with too many AT commands
-      if sim_id is None or len(sim_id) == 0:
         cmds += [
-          # SIM sleep disable
-          'AT$QCSIMSLEEP=0',
-          'AT$QCSIMCFG=SimPowerSave,0',
+          # SIM hot swap
+          'AT+QSIMDET=1,0',
+          'AT+QSIMSTAT=1',
 
-          # ethernet config
-          'AT$QCPCFG=usbNet,1',
+          # configure modem as data-centric
+          'AT+QNVW=5280,0,"0102000000000000"',
+          'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+          'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
         ]
 
-    for cmd in cmds:
-      try:
-        modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      except Exception:
-        pass
+      # Quectel EG916
+      else:
+        # this modem gets upset with too many AT commands
+        if sim_id is None or len(sim_id) == 0:
+          cmds += [
+            # SIM sleep disable
+            'AT$QCSIMSLEEP=0',
+            'AT$QCSIMCFG=SimPowerSave,0',
+
+            # ethernet config
+            'AT$QCPCFG=usbNet,1',
+          ]
+
+      for cmd in cmds:
+        try:
+          modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+        except Exception:
+          pass
 
     # eSIM prime
     dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
@@ -510,6 +574,9 @@ class Tici(HardwareBase):
       os.system(f"sudo nmcli con load {dest}")
 
   def reboot_modem(self):
+    if self.get_modem_state() is not None:
+      return
+
     modem = self.get_modem()
     for state in (0, 1):
       try:
@@ -545,6 +612,10 @@ class Tici(HardwareBase):
     return r
 
   def get_modem_data_usage(self):
+    ms = self.get_modem_state()
+    if ms is not None:
+      return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
+
     try:
       wwan = self.get_wwan()
 
