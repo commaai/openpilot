@@ -114,8 +114,9 @@ class Modem:
   @staticmethod
   def _stop_mm():
     """Stop ModemManager so we own the AT/PPP ports."""
+    os.system("sudo systemctl mask ModemManager 2>/dev/null")
     os.system("sudo systemctl stop ModemManager 2>/dev/null")
-    print("[mm] stopped")
+    print("[mm] masked + stopped")
 
   def _init(self):
     for c in AT_INIT + [
@@ -376,9 +377,12 @@ class Modem:
     self._kill_ppp()
     if self._ser:
       self._ser.close()
+    os.system("sudo systemctl unmask ModemManager 2>/dev/null")
+    os.system("sudo systemctl start ModemManager 2>/dev/null")
+    print("[mm] unmasked + started")
 
 
-if __name__ == "__main__":
+def main():
   m = Modem()
 
   def _sig(*_):
@@ -388,3 +392,7 @@ if __name__ == "__main__":
   signal.signal(signal.SIGTERM, _sig)
   m.run()
   m.stop()
+
+
+if __name__ == "__main__":
+  main()
