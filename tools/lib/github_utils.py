@@ -62,7 +62,7 @@ class GithubUtils:
     self.api_call(github_path, data=data, method=HTTPMethod.POST, data_call=True)
 
   def get_bucket_sha(self, bucket):
-    github_path = f"git/refs/heads/{bucket}"
+    github_path = f"git/ref/heads/{bucket}"
     r = self.api_call(github_path, data_call=True, raise_on_failure=False)
     return r.json()['object']['sha'] if r.ok else None
 
