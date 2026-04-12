@@ -264,14 +264,25 @@ class Modem:
         reg = CREG.get(int(v.split(",")[1].strip('"')), "unknown")
       except (ValueError, IndexError):
         reg = "unknown"
-      print(f"[modem] _do_registering: reg={reg} roaming_allowed={self._roaming_allowed}")
-      if reg == "home" or (reg == "roaming" and self._roaming_allowed):
-        self._update(registration=reg, error="")
-        return State.CONNECTING
-      if reg == "roaming" and not self._roaming_allowed:
+      # also check packet-switched registration
+      greg = "unknown"
+      gv = self._atv("AT+CGREG?", "+CGREG:")
+      if gv:
+        try:
+          greg = CREG.get(int(gv.split(",")[1].strip('"')), "unknown")
+        except (ValueError, IndexError):
+          pass
+      print(f"[modem] _do_registering: creg={reg} cgreg={greg} roaming_allowed={self._roaming_allowed}")
+      if reg in ("home", "roaming") and greg in ("home", "roaming"):
+        if not self._roaming_allowed and (reg == "roaming" or greg == "roaming"):
+          self._update(registration=reg, error="roaming_disabled")
+        else:
+          self._update(registration=reg, error="")
+          return State.CONNECTING
+      elif reg == "roaming" and not self._roaming_allowed:
         self._update(registration=reg, error="roaming_disabled")
     else:
-      print(f"[modem] _do_registering: CREG returned None")
+      print("[modem] _do_registering: CREG returned None")
     if self._sim_change or not os.path.exists(AT_PORT):
       print(f"[modem] _do_registering: -> reconnecting (sim_change={self._sim_change} port={os.path.exists(AT_PORT)})")
       return State.RECONNECTING
